@@ -1,9 +1,26 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+// node:child_process.spawnSync is used here directly (not lib's
+// spawnSync wrapper) because the wrapper's types don't expose the
+// `input` field — we need to pipe the hook payload through stdin.
+// The wrapper isn't adding any security here: nodeBin comes from
+// whichSync (validated path) and the only arg is hookScript (a
+// path we control). Same shape Node's native API has.
+import { spawnSync } from 'node:child_process'
+import { promises as fsp, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
 import { whichSync } from '@socketsecurity/lib/bin'
-import { spawnSync } from '@socketsecurity/lib/spawn'
 
+import {
+  buildAuditRecords,
+  depFromPurl,
+  depIdentity,
+  deriveSessionId,
+  levenshtein,
+  suggestSimilarName,
+} from '../audit.mts'
 import {
   cache,
   cacheGet,
@@ -17,9 +34,19 @@ import {
 } from '../index.mts'
 
 const hookScript = new URL('../index.mts', import.meta.url).pathname
-const nodeBin = whichSync('node')
-if (!nodeBin) {
+const nodeBinRaw = whichSync('node')
+if (!nodeBinRaw) {
   throw new Error('"node" not found on PATH')
+}
+// whichSync can return string | string[]; the first hit is canonical.
+const nodeBin: string = Array.isArray(nodeBinRaw) ? nodeBinRaw[0]! : nodeBinRaw
+
+interface RunHookOptions {
+  // Override HOME/USERPROFILE so the audit log + 404 cache don't
+  // leak into the developer's real ~/.claude.
+  home?: string
+  transcript_path?: string
+  session_id?: string
 }
 
 // Helper: run the full hook as a subprocess.
@@ -27,20 +54,45 @@ if (!nodeBin) {
 function runHook(
   toolInput: Record<string, unknown>,
   toolName = 'Edit',
+  options: RunHookOptions = {},
 ): { code: number | null; stdout: string; stderr: string } {
-  const input = JSON.stringify({
+  const payload: Record<string, unknown> = {
     tool_name: toolName,
     tool_input: toolInput,
-  })
+  }
+  if (options.transcript_path) payload['transcript_path'] = options.transcript_path
+  if (options.session_id) payload['session_id'] = options.session_id
+  const input = JSON.stringify(payload)
+  // Inherit the parent env (so PATH / NODE / etc. work) and only
+  // override HOME/USERPROFILE when the test wants an isolated $HOME.
+  const env: NodeJS.ProcessEnv = { ...process.env }
+  if (options.home) {
+    env['HOME'] = options.home
+    env['USERPROFILE'] = options.home
+  }
   const result = spawnSync(nodeBin, [hookScript], {
     input,
     timeout: 15_000,
     stdio: ['pipe', 'pipe', 'pipe'],
+    env,
   })
   return {
     code: result.status ?? 1,
     stdout: typeof result.stdout === 'string' ? result.stdout : result.stdout.toString(),
     stderr: typeof result.stderr === 'string' ? result.stderr : result.stderr.toString(),
+  }
+}
+
+// Allocate a throwaway $HOME for each test that touches persistent
+// state. Cleaned up via a finally block so failing tests don't pile
+// up junk in $TMPDIR.
+function makeTempHome(): string {
+  return mkdtempSync(path.join(os.tmpdir(), 'check-new-deps-test-'))
+}
+
+function removeTempHome(home: string): void {
+  if (existsSync(home)) {
+    rmSync(home, { recursive: true, force: true })
   }
 }
 
@@ -746,5 +798,297 @@ describe('hook integration', () => {
       new_string: 'source = "hashicorp/consul/aws"',
     })
     assert.equal(r.code, 0)
+  })
+})
+
+// ============================================================================
+// Unit tests: PURL <-> identity helpers
+// ============================================================================
+
+describe('depIdentity / depFromPurl', () => {
+  it('round-trips an unscoped npm dep', () => {
+    const id = depIdentity({ type: 'npm', name: 'lodash' })
+    assert.equal(id, 'npm/lodash')
+  })
+  it('round-trips a scoped npm dep', () => {
+    const id = depIdentity({
+      type: 'npm',
+      name: 'node',
+      namespace: '@types',
+    })
+    assert.equal(id, 'npm/@types/node')
+  })
+  it('parses unscoped purl', () => {
+    const d = depFromPurl('pkg:npm/lodash@4.17.21')
+    assert.equal(d?.type, 'npm')
+    assert.equal(d?.name, 'lodash')
+    assert.equal(d?.namespace, undefined)
+  })
+  it('parses scoped purl (url-encoded @)', () => {
+    // socket-sdk PURLs url-encode @ to %40 — the parser does not need
+    // to round-trip-decode, just to peel off `{type}/{namespace}/{name}`.
+    const d = depFromPurl('pkg:npm/%40types/node@20')
+    assert.equal(d?.type, 'npm')
+    assert.equal(d?.namespace, '%40types')
+    assert.equal(d?.name, 'node')
+  })
+  it('parses purl without version', () => {
+    const d = depFromPurl('pkg:cargo/serde')
+    assert.equal(d?.type, 'cargo')
+    assert.equal(d?.name, 'serde')
+  })
+  it('returns undefined for non-purl', () => {
+    assert.equal(depFromPurl('lodash@4'), undefined)
+    assert.equal(depFromPurl('pkg:'), undefined)
+  })
+})
+
+// ============================================================================
+// Unit tests: levenshtein + suggestSimilarName
+// ============================================================================
+
+describe('levenshtein', () => {
+  it('returns 0 for identical strings', () => {
+    assert.equal(levenshtein('foo', 'foo'), 0)
+  })
+  it('returns length when one side is empty', () => {
+    assert.equal(levenshtein('', 'foo'), 3)
+    assert.equal(levenshtein('foo', ''), 3)
+  })
+  it('handles a single substitution', () => {
+    assert.equal(levenshtein('cat', 'bat'), 1)
+  })
+  it('handles a single insertion', () => {
+    assert.equal(levenshtein('cat', 'cats'), 1)
+  })
+  it('handles a transposition (two edits)', () => {
+    assert.equal(levenshtein('expres', 'express'), 1)
+  })
+  it('returns difference for very-different strings', () => {
+    // Bailout path: returns rowMin once it exceeds 2.
+    const d = levenshtein('totally-fake', 'lodash')
+    assert.ok(d > 2)
+  })
+})
+
+describe('suggestSimilarName', () => {
+  it('suggests express for expres', () => {
+    assert.equal(suggestSimilarName('npm', 'expres'), 'express')
+  })
+  it('suggests lodash for loadash', () => {
+    assert.equal(suggestSimilarName('npm', 'loadash'), 'lodash')
+  })
+  it('returns undefined for nothing close enough', () => {
+    assert.equal(suggestSimilarName('npm', 'totally-fake'), undefined)
+  })
+  it('returns undefined for unknown ecosystem', () => {
+    assert.equal(suggestSimilarName('made-up', 'lodash'), undefined)
+  })
+  it('suggests requests for requets (pypi)', () => {
+    assert.equal(suggestSimilarName('pypi', 'requets'), 'requests')
+  })
+})
+
+// ============================================================================
+// Unit tests: deriveSessionId
+// ============================================================================
+
+describe('deriveSessionId', () => {
+  it('prefers explicit session_id over transcript_path', () => {
+    const id = deriveSessionId({
+      tool_name: 'Edit',
+      session_id: 'sess-abc',
+      transcript_path: '/foo/sess-zzz.jsonl',
+    })
+    assert.equal(id, 'sess-abc')
+  })
+  it('strips .jsonl from transcript path basename', () => {
+    const id = deriveSessionId({
+      tool_name: 'Edit',
+      transcript_path: '/path/to/abc-1234.jsonl',
+    })
+    assert.equal(id, 'abc-1234')
+  })
+  it('returns undefined when neither is set', () => {
+    assert.equal(deriveSessionId({ tool_name: 'Edit' }), undefined)
+  })
+})
+
+// ============================================================================
+// Unit tests: buildAuditRecords
+// ============================================================================
+
+describe('buildAuditRecords', () => {
+  it('emits one record per dep with correct verdict mix', () => {
+    const deps = [
+      { type: 'npm', name: 'lodash' },
+      { type: 'npm', name: 'evil-pkg' },
+      { type: 'npm', name: 'ghost-pkg' },
+      { type: 'npm', name: 'mystery-pkg' },
+    ]
+    const records = buildAuditRecords(
+      {
+        tool_name: 'Edit',
+        session_id: 'sess-1',
+      },
+      deps,
+      {
+        blocked: [{
+          purl: 'pkg:npm/evil-pkg',
+          blocked: true,
+          reason: 'malware — critical',
+        }],
+        notFound: new Set(['pkg:npm/ghost-pkg']),
+        ok: new Set(['pkg:npm/lodash']),
+      },
+    )
+    assert.equal(records.length, 4)
+    const byName = new Map(records.map(r => [r.name, r]))
+    assert.equal(byName.get('lodash')?.verdict, 'allow')
+    assert.equal(byName.get('evil-pkg')?.verdict, 'block')
+    assert.equal(byName.get('evil-pkg')?.reason, 'malware — critical')
+    assert.equal(byName.get('ghost-pkg')?.verdict, 'notfound')
+    assert.equal(byName.get('mystery-pkg')?.verdict, 'unknown')
+    // Session id flows through.
+    for (const r of records) assert.equal(r.session, 'sess-1')
+    // Repo basename is the cwd basename (which varies by where tests run).
+    for (const r of records) {
+      assert.ok(typeof r.repo === 'string' && r.repo.length > 0)
+    }
+  })
+})
+
+// ============================================================================
+// Integration tests: audit log + 404 tracking
+// ============================================================================
+
+describe('audit log integration', () => {
+  it('writes one jsonl record per checked dep', async () => {
+    const home = makeTempHome()
+    try {
+      const r = runHook(
+        {
+          file_path: '/tmp/package.json',
+          new_string: '"lodash": "^4.17.21"',
+        },
+        'Edit',
+        { home, session_id: 'sess-audit-1' },
+      )
+      assert.equal(r.code, 0)
+      const log = path.join(home, '.claude', 'audit', 'check-new-deps.jsonl')
+      assert.ok(existsSync(log), 'audit log file should exist')
+      const body = await fsp.readFile(log, 'utf8')
+      const lines = body.trim().split('\n')
+      assert.equal(lines.length, 1)
+      const record = JSON.parse(lines[0]!) as Record<string, unknown>
+      assert.equal(record['name'], 'lodash')
+      assert.equal(record['type'], 'npm')
+      assert.equal(record['session'], 'sess-audit-1')
+      assert.equal(record['verdict'], 'allow')
+      assert.equal(typeof record['ts'], 'number')
+      assert.equal(typeof record['repo'], 'string')
+    } finally {
+      removeTempHome(home)
+    }
+  })
+
+  it('appends records across multiple invocations', async () => {
+    const home = makeTempHome()
+    try {
+      runHook(
+        {
+          file_path: '/tmp/package.json',
+          new_string: '"lodash": "^4"',
+        },
+        'Edit',
+        { home, session_id: 'sess-1' },
+      )
+      runHook(
+        {
+          file_path: '/tmp/package.json',
+          new_string: '"express": "^4"',
+        },
+        'Edit',
+        { home, session_id: 'sess-2' },
+      )
+      const log = path.join(home, '.claude', 'audit', 'check-new-deps.jsonl')
+      const body = await fsp.readFile(log, 'utf8')
+      const lines = body.trim().split('\n').filter(Boolean)
+      assert.equal(lines.length, 2)
+      const records = lines.map(l => JSON.parse(l) as Record<string, unknown>)
+      const names = records.map(r => r['name']).sort()
+      assert.deepEqual(names, ['express', 'lodash'])
+    } finally {
+      removeTempHome(home)
+    }
+  })
+
+  it('records block verdict on malware hit', async () => {
+    const home = makeTempHome()
+    try {
+      const r = runHook(
+        {
+          file_path: '/tmp/package.json',
+          new_string: '"bradleymeck": "^1.0.0"',
+        },
+        'Edit',
+        { home },
+      )
+      assert.equal(r.code, 2)
+      const log = path.join(home, '.claude', 'audit', 'check-new-deps.jsonl')
+      const body = await fsp.readFile(log, 'utf8')
+      const lines = body.trim().split('\n').filter(Boolean)
+      const blocked = lines.map(l => JSON.parse(l) as Record<string, unknown>)
+        .find(r => r['verdict'] === 'block')
+      assert.ok(blocked, 'should have a block record')
+      assert.equal(blocked!['name'], 'bradleymeck')
+      assert.ok(typeof blocked!['reason'] === 'string'
+        && (blocked!['reason'] as string).length > 0)
+    } finally {
+      removeTempHome(home)
+    }
+  })
+
+  it('writes nothing for non-manifest files', async () => {
+    const home = makeTempHome()
+    try {
+      const r = runHook(
+        {
+          file_path: '/tmp/main.rs',
+          new_string: 'fn main(){}',
+        },
+        'Edit',
+        { home },
+      )
+      assert.equal(r.code, 0)
+      const log = path.join(home, '.claude', 'audit', 'check-new-deps.jsonl')
+      assert.equal(existsSync(log), false)
+    } finally {
+      removeTempHome(home)
+    }
+  })
+
+  it('does not crash when audit dir is unwritable', async () => {
+    // Point HOME at a path that already exists as a regular file so
+    // mkdir of $HOME/.claude/audit fails with ENOTDIR. Hook must
+    // still return its real verdict (allow for lodash) — exit 0.
+    const home = path.join(
+      os.tmpdir(),
+      `check-new-deps-bad-home-${Date.now()}`,
+    )
+    await fsp.writeFile(home, 'blocking file', 'utf8')
+    try {
+      const r = runHook(
+        {
+          file_path: '/tmp/package.json',
+          new_string: '"lodash": "^4"',
+        },
+        'Edit',
+        { home },
+      )
+      assert.equal(r.code, 0, 'unwritable audit must not fail the hook')
+    } finally {
+      if (existsSync(home)) rmSync(home, { force: true })
+    }
   })
 })

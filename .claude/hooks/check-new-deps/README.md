@@ -88,6 +88,41 @@ API responses are cached in-memory for 5 minutes (max 500 entries)
 to avoid redundant network calls when Claude touches the same
 manifest a few times in one session.
 
+## Slopsquatting defense (Threat 2.2)
+
+AI agents sometimes hallucinate package names that don't exist —
+attackers register those names and wait. This hook detects every
+"not found" response from the Socket.dev firewall API and counts it
+in a persistent cacache-backed TTL cache (7-day window, keyed by
+`{ecosystem}/{namespace?}/{name}` — version stripped so a burst of
+fake `@1`/`@2`/`@3` requests counts as one). After three attempts on
+the same nonexistent name, the hook surfaces a warning to stderr with
+a "did you mean" hint when the typo is close to a known package.
+
+The cache survives across sessions and processes — an attacker can't
+shake the counter by triggering a new Claude session.
+
+## Audit log
+
+Every invocation appends one JSONL record per checked dependency to
+`~/.claude/audit/check-new-deps.jsonl`. Each record has:
+
+- `ts` — timestamp (ms)
+- `repo` — basename of `process.cwd()`
+- `type` — ecosystem (`npm`, `pypi`, `cargo`, …)
+- `name` — package name
+- `namespace?` — scope/group when present
+- `version?` — version range when present in the manifest
+- `verdict` — one of `allow` / `block` / `notfound` / `unknown`
+- `reason?` — block reason (only set when `verdict === 'block'`)
+- `session?` — Claude session id (derived from `transcript_path`)
+
+The log is **LOCAL ONLY**. Nothing in this file leaves the
+developer's machine via this hook — no outbound channel is added.
+Private package names already pass through the Socket.dev API call
+(unchanged from the original behavior); the audit log just records
+locally what was checked.
+
 ## Wiring
 
 The hook is registered in `.claude/settings.json`:
@@ -132,3 +167,11 @@ This README and the hook itself live in
 [`socket-wheelhouse`](https://github.com/SocketDev/socket-wheelhouse/tree/main/template/.claude/hooks/check-new-deps)
 and are required to be byte-identical across every fleet repo.
 `scripts/sync-scaffolding.mts` flags drift; `--fix` rewrites it.
+
+## Files
+
+- `index.mts` — main hook (dep extraction + Socket.dev API check)
+- `audit.mts` — slopsquatting tracking + audit log
+- `types.mts` — shared type definitions
+- `package.json` / `tsconfig.json` — workspace and TS config
+- `test/extract-deps.test.mts` — unit + integration tests

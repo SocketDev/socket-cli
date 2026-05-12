@@ -9,9 +9,13 @@
 // Diff-aware: when old_string is present (Edit), only deps that
 // appear in new_string but NOT in old_string are checked.
 //
-// Caching: API responses are cached in-process with a TTL to avoid
-// redundant network calls when the same dep is checked repeatedly.
-// The cache auto-evicts expired entries and caps at MAX_CACHE_SIZE.
+// In-process caching: API responses are cached in-process with a TTL
+// to avoid redundant network calls when the same dep is checked
+// repeatedly. The cache auto-evicts expired entries and caps at
+// MAX_CACHE_SIZE.
+//
+// Slopsquatting defense + audit log live in `./audit.mts` — see that
+// module's file-header comment for the Threat 2.2 mitigation.
 //
 // Exit codes:
 //   0 = allow (no new deps, all clean, or non-dep file)
@@ -36,6 +40,14 @@ import {
 import { SocketSdk } from '@socketsecurity/sdk'
 import type { MalwareCheckPackage } from '@socketsecurity/sdk'
 
+import { recordCheckOutcome } from './audit.mts'
+import type {
+  BatchOutcome,
+  CheckResult,
+  Dep,
+  HookInput,
+} from './types.mts'
+
 const logger = getDefaultLogger()
 
 // Per-request timeout (ms) to avoid blocking the hook on slow responses.
@@ -51,35 +63,6 @@ const MAX_CACHE_SIZE = 500
 const sdk = new SocketSdk(SOCKET_PUBLIC_API_TOKEN, {
   timeout: API_TIMEOUT,
 })
-
-// --- types ---
-
-// Extracted dependency with ecosystem type, name, and optional scope.
-interface Dep {
-  type: string
-  name: string
-  namespace?: string
-  version?: string
-}
-
-// Shape of the JSON blob Claude Code pipes to the hook via stdin.
-interface HookInput {
-  tool_name: string
-  tool_input?: {
-    file_path?: string
-    new_string?: string
-    old_string?: string
-    content?: string
-  }
-}
-
-// Result of checking a single dep against the Socket.dev API.
-interface CheckResult {
-  purl: string
-  blocked?: boolean
-  reason?: string
-}
-
 
 // A cached API lookup result with expiration timestamp.
 interface CacheEntry {
@@ -332,7 +315,11 @@ async function check(hook: HookInput): Promise<number> {
   if (deps.length === 0) return 0
 
   // Check all deps via SDK checkMalware().
-  const blocked = await checkDepsBatch(deps)
+  const { blocked, notFound, ok } = await checkDepsBatch(deps)
+
+  // Fire-and-forget audit + slopsquatting accounting. Failures here
+  // must not change the verdict, so swallow everything.
+  await recordCheckOutcome(hook, deps, { blocked, notFound, ok })
 
   if (blocked.length > 0) {
     logger.error(`Socket: blocked ${blocked.length} dep(s):`)
@@ -348,8 +335,10 @@ async function check(hook: HookInput): Promise<number> {
 // Deps already in cache are skipped; results are cached after lookup.
 async function checkDepsBatch(
   deps: Dep[],
-): Promise<CheckResult[]> {
+): Promise<BatchOutcome> {
   const blocked: CheckResult[] = []
+  const notFound = new Set<string>()
+  const ok = new Set<string>()
 
   // Partition deps into cached vs uncached.
   const uncached: Array<{ dep: Dep; purl: string }> = []
@@ -357,13 +346,17 @@ async function checkDepsBatch(
     const purl = stringify(dep as unknown as PackageURL)
     const cached = cacheGet(purl)
     if (cached) {
-      if (cached.result?.blocked) blocked.push(cached.result)
+      if (cached.result?.blocked) {
+        blocked.push(cached.result)
+      } else {
+        ok.add(purl)
+      }
       continue
     }
     uncached.push({ dep, purl })
   }
 
-  if (!uncached.length) return blocked
+  if (!uncached.length) return { blocked, notFound, ok }
 
   try {
     // Process in chunks to respect API batch size limit.
@@ -374,24 +367,33 @@ async function checkDepsBatch(
       const result = await sdk.checkMalware(components)
 
       if (!result.success) {
+        // Whole-API failure — log and don't infer 404s. Returning
+        // everything-as-ok would taint the audit log; instead leave
+        // the batch as unknown and the caller emits 'unknown'.
         logger.warn(
           `Socket: API returned ${result.status}, allowing all`
         )
-        return blocked
+        return { blocked, notFound, ok }
       }
 
       // Build lookup keyed by full PURL (includes namespace + version).
       const purlByKey = new Map<string, string>()
+      const requestedKeys = new Set<string>()
       for (const { dep, purl } of batch) {
         const ns = dep.namespace ? `${dep.namespace}/` : ''
-        purlByKey.set(`${dep.type}:${ns}${dep.name}`, purl)
+        const key = `${dep.type}:${ns}${dep.name}`
+        purlByKey.set(key, purl)
+        requestedKeys.add(key)
       }
 
-      for (const pkg of result.data as MalwareCheckPackage[]) {
+      const seenKeys = new Set<string>()
+      const pkgs: MalwareCheckPackage[] = result.data
+      for (const pkg of pkgs) {
         const ns = pkg.namespace ? `${pkg.namespace}/` : ''
         const key = `${pkg.type}:${ns}${pkg.name}`
         const purl = purlByKey.get(key)
         if (!purl) continue
+        seenKeys.add(key)
 
         // Check for malware alerts.
         const malware = pkg.alerts.find(
@@ -410,6 +412,16 @@ async function checkDepsBatch(
 
         // No malware alerts — clean dep.
         cacheSet(purl, undefined)
+        ok.add(purl)
+      }
+
+      // Anything we requested but didn't see in the response is a
+      // 404 from the firewall API (the SDK drops them silently).
+      // Slopsquatting tip-off lives here.
+      for (const key of requestedKeys) {
+        if (seenKeys.has(key)) continue
+        const purl = purlByKey.get(key)
+        if (purl) notFound.add(purl)
       }
     }
   } catch (e) {
@@ -417,7 +429,7 @@ async function checkDepsBatch(
     logger.warn(`Socket: network error (${errorMessage(e)}), allowing all`)
   }
 
-  return blocked
+  return { blocked, notFound, ok }
 }
 
 // Return deps in `newDeps` that don't appear in `oldDeps` (by PURL).
