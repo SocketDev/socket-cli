@@ -155,6 +155,26 @@ test('DISABLE_PRECOMMIT_LINT=1 allowed with phrase', async () => {
   assert.strictEqual(result.code, 0)
 })
 
+test('SKIP_ASSET_DOWNLOAD=1 is blocked without phrase', async () => {
+  const result = await runHook({
+    tool_input: { command: 'SKIP_ASSET_DOWNLOAD=1 pnpm run build' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow asset-download bypass/)
+})
+
+test('SKIP_ASSET_DOWNLOAD=1 allowed with phrase', async () => {
+  const result = await runHook(
+    {
+      tool_input: { command: 'SKIP_ASSET_DOWNLOAD=1 pnpm run build' },
+      tool_name: 'Bash',
+    },
+    userTurn('Allow asset-download bypass — GitHub releases rate-limited'),
+  )
+  assert.strictEqual(result.code, 0)
+})
+
 test('git push --force is blocked', async () => {
   const result = await runHook({
     tool_input: { command: 'git push --force origin main' },

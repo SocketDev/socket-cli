@@ -131,6 +131,17 @@ const rule = {
           return
         }
 
+        // Type-only imports have zero runtime impact — they exist purely
+        // for the type checker (e.g. `import type * as NodeFs from
+        // 'node:fs'` used in `vi.importActual<typeof NodeFs>('node:fs')`
+        // type arguments). The fleet's value-import shape rules don't
+        // apply to them: a type namespace import doesn't carry the
+        // "loaded the whole module" semantics of a value namespace
+        // import. Skip.
+        if (node.importKind === 'type') {
+          return
+        }
+
         // node:fs — should be named-imports.
         if (specifier === 'node:fs') {
           let bannedSpec

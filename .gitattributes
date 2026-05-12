@@ -164,6 +164,7 @@
 .config/rolldown/lib-stub.mts linguist-generated=true
 .config/socket-wheelhouse-schema.json linguist-generated=true
 .config/taze.config.mts linguist-generated=true
+.config/tsconfig.base.json linguist-generated=true
 .git-hooks/_helpers.mts linguist-generated=true
 .git-hooks/commit-msg.mts linguist-generated=true
 .git-hooks/pre-commit.mts linguist-generated=true

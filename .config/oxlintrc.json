@@ -155,6 +155,7 @@
     "**/.config/lockstep.schema.json",
     "**/.config/socket-wheelhouse-schema.json",
     "**/.config/taze.config.mts",
+    "**/.config/tsconfig.base.json",
     "**/packages/build-infra/lib/release-checksums/consumer.mts",
     "**/packages/build-infra/lib/release-checksums/core.mts",
     "**/packages/build-infra/lib/release-checksums/producer.mts",

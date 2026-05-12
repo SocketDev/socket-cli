@@ -10,8 +10,9 @@ The phrase format is `Allow <X> bypass` — case-sensitive, exact match.
 | `git --no-verify` (skips husky hooks)                                                                                                                                                                       | `Allow no-verify bypass`  |
 | `git --no-gpg-sign` / `-c commit.gpgsign=false`                                                                                                                                                             | `Allow gpg bypass`        |
 | `DISABLE_PRECOMMIT_LINT=1` (skips lint step)                                                                                                                                                                | `Allow lint bypass`       |
-| `DISABLE_PRECOMMIT_TEST=1` (skips test step)                                                                                                                                                                | `Allow test bypass`       |
-| `git push --force` / `-f`                                                                                                                                                                                   | `Allow force-push bypass` |
+| `DISABLE_PRECOMMIT_TEST=1` (skips test step)                                                                                                                                                                | `Allow test bypass`           |
+| `SKIP_ASSET_DOWNLOAD=1` (skips release-asset fetch in build — degraded-mode flag; becomes a bypass when used to push past rate-limited pre-commit)                                                          | `Allow asset-download bypass` |
+| `git push --force` / `-f`                                                                                                                                                                                   | `Allow force-push bypass`     |
 
 ## Scope
 

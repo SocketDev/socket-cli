@@ -84,6 +84,17 @@ const CHECKS: readonly GuardCheck[] = [
     pattern: /\bDISABLE_PRECOMMIT_TEST\s*=\s*[1-9]/,
   },
   {
+    // SKIP_ASSET_DOWNLOAD is a documented degraded-mode flag in
+    // socket-cli's download-assets.mts (use cached assets when
+    // offline/rate-limited). It becomes a *bypass* when used to push
+    // past pre-commit by short-circuiting the build's network step.
+    // Treat as a bypass so agents can't unilaterally trade build
+    // completeness for commit speed.
+    bypassPhrase: 'Allow asset-download bypass',
+    label: 'SKIP_ASSET_DOWNLOAD=1 (skips release-asset fetch in build)',
+    pattern: /\bSKIP_ASSET_DOWNLOAD\s*=\s*[1-9]/,
+  },
+  {
     bypassPhrase: 'Allow force-push bypass',
     label: 'git push --force / -f',
     pattern: /(?:^|[\s;&|(`])git\s+push\b[^;&|()`]*\s(?:--force\b|-f\b)/,
