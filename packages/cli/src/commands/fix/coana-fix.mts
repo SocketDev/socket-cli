@@ -355,9 +355,11 @@ export async function coanaFix(
     debug('miss: no GHSA IDs to process')
   }
 
+  /* c8 ignore start -- defensive: shouldOpenPrs requires repoInfo truthy at line 168, so reaching this branch with repoInfo undefined is unreachable. */
   if (!fixEnv.repoInfo) {
     debug('miss: no repo info detected')
   }
+  /* c8 ignore stop */
 
   if (!ids?.length || !fixEnv.repoInfo) {
     spinner?.stop()

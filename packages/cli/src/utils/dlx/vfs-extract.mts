@@ -433,12 +433,14 @@ export async function extractExternalTools(
     }
 
     // Verify all tools were extracted.
+    /* c8 ignore start -- defensive: the for-loop above unconditionally assigns toolPaths[tool] for every entry unless extractTool throws (which already aborts via the outer catch), so this length-mismatch branch is unreachable from tests. */
     if (Object.keys(toolPaths).length !== EXTERNAL_TOOLS.length) {
       const missingTools = EXTERNAL_TOOLS.filter(t => !toolPaths[t])
       throw new Error(
         `SEA VFS extraction returned ${Object.keys(toolPaths).length}/${EXTERNAL_TOOLS.length} tools (missing: ${joinAnd(missingTools)}); the SEA bundle is incomplete — rebuild with all external tools included`,
       )
     }
+    /* c8 ignore stop */
 
     // Create cache marker to signal successful extraction.
     await fs.writeFile(cacheMarker, '', 'utf8')
