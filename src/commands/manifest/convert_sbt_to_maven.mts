@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
+import { getErrorCause } from '../../utils/errors.mts'
 
 // Walk up from a pom path to find a `target` directory ancestor and return
 // its parent (the project root). Returns undefined if no `target` ancestor
@@ -141,7 +142,7 @@ export async function convertSbtToMaven({
           copied.push(destPath)
         } catch (e) {
           logger.warn(
-            `Failed to copy \`${pomPath}\` to \`${destPath}\`: ${(e as Error).message}`,
+            `Failed to copy \`${pomPath}\` to \`${destPath}\`: ${getErrorCause(e)}`,
           )
         }
       }
