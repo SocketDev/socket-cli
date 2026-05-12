@@ -168,6 +168,12 @@ minimumReleaseAgeExclude:
   # Network-mocking lib used in fleet test suites. v15 betas pre-date
   # npm's `time` field for the major; allow pinned beta until v15 GA.
   - 'nock@15.0.0-beta.11'
+  # Security fix for CVE-class CSS injection in JSX SSR + JWT
+  # NumericDate validation + cache-leak. Dependabot advisories #140,
+  # #141, #142 (all hono <4.12.18). Override forces the patched version
+  # via pnpm-workspace.yaml `overrides`; pulling it through the
+  # minimum-release-age gate as an explicit security exception.
+  - 'hono@4.12.18'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we
@@ -191,6 +197,7 @@ overrides:
   emoji-regex: 'catalog:'
   es-define-property: 'catalog:'
   es-set-tostringtag: 'catalog:'
+  fast-uri: '>=3.1.2'
   function-bind: 'catalog:'
   glob: '>=13.0.6'
   globalthis: 'catalog:'
@@ -201,7 +208,7 @@ overrides:
   has-symbols: 'catalog:'
   has-tostringtag: 'catalog:'
   hasown: 'catalog:'
-  hono: '>=4.12.16'
+  hono: '>=4.12.18'
   https-proxy-agent: 'catalog:'
   indent-string: 'catalog:'
   ip-address: '>=10.2.0'
