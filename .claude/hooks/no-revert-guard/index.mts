@@ -95,6 +95,26 @@ const CHECKS: readonly GuardCheck[] = [
     pattern: /\bSKIP_ASSET_DOWNLOAD\s*=\s*[1-9]/,
   },
   {
+    // `git stash` (in any form: bare, push, save, --keep-index) is
+    // forbidden in the primary checkout under the parallel-Claude
+    // rule. The stash store is shared across sessions — another agent
+    // can `git stash pop` yours and destroy work. CLAUDE.md says use
+    // worktrees instead. This catches the *initial* stash (the
+    // existing revert pattern below catches drop/pop/clear, which is
+    // a separate destruction surface).
+    //
+    // Observed violation pattern: agents instinctively reach for
+    // `git stash` when they want to test in a clean tree without
+    // their changes interfering. Reflex of SWE muscle memory; the
+    // worktree pattern is less familiar. Block the reflex; the
+    // bypass phrase exists for single-session contexts where the
+    // user knows no other Claude session is active.
+    bypassPhrase: 'Allow stash bypass',
+    label: 'git stash (primary-checkout parallel-Claude hazard)',
+    pattern:
+      /(?:^|[\s;&|(`])git\s+stash(?:\s+(?:push|save|--keep-index|--patch|-[a-z]+)|\s*$|\s+[^a-z])/,
+  },
+  {
     bypassPhrase: 'Allow force-push bypass',
     label: 'git push --force / -f',
     pattern: /(?:^|[\s;&|(`])git\s+push\b[^;&|()`]*\s(?:--force\b|-f\b)/,

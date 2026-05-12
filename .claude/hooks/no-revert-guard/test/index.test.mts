@@ -175,6 +175,53 @@ test('SKIP_ASSET_DOWNLOAD=1 allowed with phrase', async () => {
   assert.strictEqual(result.code, 0)
 })
 
+test('bare git stash is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git stash' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow stash bypass/)
+})
+
+test('git stash --keep-index is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git stash --keep-index' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow stash bypass/)
+})
+
+test('git stash push is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git stash push -m "test"' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow stash bypass/)
+})
+
+test('git stash is allowed with phrase', async () => {
+  const result = await runHook(
+    {
+      tool_input: { command: 'git stash --keep-index' },
+      tool_name: 'Bash',
+    },
+    userTurn('Allow stash bypass — single Claude session, safe'),
+  )
+  assert.strictEqual(result.code, 0)
+})
+
+test('git stash drop is blocked by the revert check, not the stash check', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git stash drop stash@{0}' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow revert bypass/)
+})
+
 test('git push --force is blocked', async () => {
   const result = await runHook({
     tool_input: { command: 'git push --force origin main' },
