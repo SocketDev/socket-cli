@@ -342,11 +342,12 @@ export async function run(
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input.length ? [...cli.input] : [cwd]
 
-  /* c8 ignore next 4 - defensive: targets always has at least [cwd] from the line above */
+  /* c8 ignore start - defensive: targets always has at least [cwd] from the line above */
   if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
     updatedInput = true
   }
+  /* c8 ignore stop */
 
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.

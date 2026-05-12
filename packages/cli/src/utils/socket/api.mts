@@ -249,13 +249,14 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 
 export async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl()
-  /* c8 ignore next 6 - getDefaultApiBaseUrl returns API_V0_URL by default; only undefined when env is misconfigured */
+  /* c8 ignore start - getDefaultApiBaseUrl returns API_V0_URL by default; only undefined when env is misconfigured */
   if (!baseUrl) {
     throw new ConfigError(
       'Socket API base URL is not configured.',
       CONFIG_KEY_API_BASE_URL,
     )
   }
+  /* c8 ignore stop */
 
   return await socketHttpRequest(
     `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
@@ -443,7 +444,7 @@ export async function sendApiRequest<T>(
   }
 
   const baseUrl = getDefaultApiBaseUrl()
-  /* c8 ignore next 8 - getDefaultApiBaseUrl returns API_V0_URL by default; only undefined when env is misconfigured */
+  /* c8 ignore start - getDefaultApiBaseUrl returns API_V0_URL by default; only undefined when env is misconfigured */
   if (!baseUrl) {
     return {
       ok: false,
@@ -452,6 +453,7 @@ export async function sendApiRequest<T>(
         'Socket API endpoint is not configured. Please check your environment configuration.',
     }
   }
+  /* c8 ignore stop */
 
   const { body, commandPath, description, method } = {
     __proto__: null,
@@ -587,10 +589,11 @@ export async function socketHttpRequest(
   options?: HttpRequestOptions | undefined,
 ): Promise<HttpResponse> {
   const ca = getExtraCaCerts()
-  /* c8 ignore next 3 - SSL_CERT_FILE not set in tests; getExtraCaCerts returns undefined */
+  /* c8 ignore start - SSL_CERT_FILE not set in tests; getExtraCaCerts returns undefined */
   if (ca) {
     return await httpRequest(url, { ...(options ?? {}), ca })
   }
+  /* c8 ignore stop */
   return await httpRequest(url, options)
 }
 
@@ -601,7 +604,9 @@ export async function socketHttpRequest(
 export function tryReadResponseText(result: HttpResponse): string | undefined {
   try {
     return result.text?.()
+    /* c8 ignore start - defensive fallback when response.text() throws (e.g. already consumed body) */
   } catch {
     return undefined
   }
+  /* c8 ignore stop */
 }

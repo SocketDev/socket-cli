@@ -243,13 +243,14 @@ export class GitHubProvider implements PrProvider {
         cursor = pageInfo.endCursor
         pageIndex += 1
 
-        /* c8 ignore next 7 - GQL_PAGE_SENTINEL safety limit; tests page through at most a few pages */
+        /* c8 ignore start - GQL_PAGE_SENTINEL safety limit; tests page through at most a few pages */
         if (pageIndex === GQL_PAGE_SENTINEL) {
           debug(
             `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
           )
           break
         }
+        /* c8 ignore stop */
 
         // Early exit optimization: if we found matches and only looking for specific GHSA,
         // we can stop pagination since we likely found what we need.

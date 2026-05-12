@@ -136,10 +136,12 @@ export class MultiProgress {
     this.renderInterval = setInterval(() => {
       try {
         this.render()
+        /* c8 ignore start - defensive: render() doesn't throw in normal operation; this catch is for write-stream failures */
       } catch {
         // Stop interval on render error to prevent error spam.
         this.stop()
       }
+      /* c8 ignore stop */
     }, 100)
 
     // Ensure interval is cleared on process exit to prevent leaks.
@@ -256,10 +258,12 @@ export class Spinner {
           `\r${colors.cyan(this.frames[this.current]!)} ${this.message}`,
         )
         this.current = (this.current + 1) % this.frames.length
+        /* c8 ignore start - defensive: stream.write rarely throws; this catch protects against stream failures */
       } catch {
         // Stop interval on write error to prevent error spam.
         this.stop()
       }
+      /* c8 ignore stop */
     }, 80)
 
     // Ensure interval is cleared on process exit to prevent leaks.

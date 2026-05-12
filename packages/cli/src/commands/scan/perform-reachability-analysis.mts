@@ -146,19 +146,21 @@ export async function performReachabilityAnalysis(
     spinner?.stop()
 
     if (!uploadCResult.ok) {
-      /* c8 ignore next 3 - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
+      /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {
         spinner?.start()
       }
+      /* c8 ignore stop */
       return uploadCResult
     }
 
     tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
     if (!tarHash) {
-      /* c8 ignore next 3 - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
+      /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {
         spinner?.start()
       }
+      /* c8 ignore stop */
       return {
         ok: false,
         message: 'Failed to get manifest tar hash',
@@ -257,10 +259,11 @@ export async function performReachabilityAnalysis(
     stdio: machineMode ? 'ignore' : 'inherit',
   })
 
-  /* c8 ignore next 3 - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
+  /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
   if (wasSpinning) {
     spinner?.start()
   }
+  /* c8 ignore stop */
 
   if (!coanaResult.ok) {
     const logger = getDefaultLogger()

@@ -287,10 +287,11 @@ export function preProcess(
     const purl = `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
     if (rows.has(purl)) {
       const row = rows.get(purl)
-      /* c8 ignore next 3 - rows.has just confirmed; .get cannot return undefined here */
+      /* c8 ignore start - rows.has just confirmed; .get cannot return undefined here */
       if (!row) {
         continue
       }
+      /* c8 ignore stop */
       if ((artifact.score?.supplyChain ?? 100) < row.score.supplyChain) {
         row.score.supplyChain = artifact.score?.supplyChain ?? 100
       }

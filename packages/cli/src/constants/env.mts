@@ -253,14 +253,17 @@ const ENV = new Proxy(envSnapshot, {
         return process.env[prop]
       }
     }
+    /* c8 ignore start - vitest sets all INLINED_* in process.env so the snapshot-fallback path is never reached in tests */
     return Reflect.get(target, prop)
+    /* c8 ignore stop */
   },
   has(target, prop) {
     if (isVitestMode && typeof prop === 'string') {
       return prop in process.env || Reflect.has(target, prop)
     }
-    /* c8 ignore next - non-vitest fallback unreachable from tests */
+    /* c8 ignore start - non-vitest fallback unreachable from tests */
     return Reflect.has(target, prop)
+    /* c8 ignore stop */
   },
   ownKeys(target) {
     if (isVitestMode) {
@@ -269,8 +272,9 @@ const ENV = new Proxy(envSnapshot, {
       const snapshotKeys = Reflect.ownKeys(target)
       return [...new Set([...envKeys, ...snapshotKeys])]
     }
-    /* c8 ignore next - non-vitest fallback unreachable from tests */
+    /* c8 ignore start - non-vitest fallback unreachable from tests */
     return Reflect.ownKeys(target)
+    /* c8 ignore stop */
   },
   getOwnPropertyDescriptor(target, prop) {
     if (isVitestMode && typeof prop === 'string') {
@@ -292,8 +296,9 @@ const ENV = new Proxy(envSnapshot, {
       process.env[prop] = value
       return true
     }
-    /* c8 ignore next - non-vitest path; production ENV is read-only */
+    /* c8 ignore start - non-vitest path; production ENV is read-only */
     return false
+    /* c8 ignore stop */
   },
 })
 

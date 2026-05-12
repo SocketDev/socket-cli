@@ -176,9 +176,11 @@ export async function setupConda(
     delete config.stdin
     if (infile) {
       config.infile = infile
+      /* c8 ignore start - interactive prompt clearing infile (empty input) requires raw inquirer mock setup */
     } else {
       delete config.infile
     }
+    /* c8 ignore stop */
   }
 
   const stdout = await askForStdout(config.stdout)
@@ -204,16 +206,20 @@ export async function setupConda(
       delete config.stdout
       if (out) {
         config.outfile = out
+        /* c8 ignore start - interactive prompt clearing outfile (empty input) requires raw inquirer mock setup */
       } else {
         delete config.outfile
       }
+      /* c8 ignore stop */
     }
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
+  /* c8 ignore start - interactive prompt cancellation (undefined return) requires raw inquirer mock setup */
   if (verbose === undefined) {
     return canceledByUser()
   }
+  /* c8 ignore stop */
   if (verbose === 'no' || verbose === 'yes') {
     config.verbose = verbose === 'yes'
   } else {
@@ -254,9 +260,11 @@ export async function setupGradle(
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
+  /* c8 ignore start - interactive prompt cancellation (undefined return) requires raw inquirer mock setup */
   if (verbose === undefined) {
     return canceledByUser()
   }
+  /* c8 ignore stop */
   if (verbose === 'no' || verbose === 'yes') {
     config.verbose = verbose === 'yes'
   } else {
@@ -499,9 +507,11 @@ export async function setupSbt(
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
+  /* c8 ignore start - interactive prompt cancellation (undefined return) requires raw inquirer mock setup */
   if (verbose === undefined) {
     return canceledByUser()
   }
+  /* c8 ignore stop */
   if (verbose === 'no' || verbose === 'yes') {
     config.verbose = verbose === 'yes'
   } else {

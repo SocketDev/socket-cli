@@ -46,13 +46,14 @@ export function getBootstrapExecPath(preferSystemNode = true): string {
   }
 
   // For SEA binaries, try to use system Node.js if available.
-  /* c8 ignore next 6 - findSystemNodejs path depends on SEA mode + system-node availability */
+  /* c8 ignore start - findSystemNodejs path depends on SEA mode + system-node availability */
   if (preferSystemNode) {
     const systemNode = findSystemNodejs()
     if (systemNode) {
       return systemNode
     }
   }
+  /* c8 ignore stop */
 
   // Fall back to SEA binary itself (will use IPC handshake for subprocesses).
   return process.execPath
@@ -158,10 +159,11 @@ export function waitForBootstrapHandshake(
     let resolved = false
 
     const handler = (message: unknown) => {
-      /* c8 ignore next 3 - guard fires only on a duplicate IPC message after promise resolved */
+      /* c8 ignore start - guard fires only on a duplicate IPC message after promise resolved */
       if (resolved) {
         return
       }
+      /* c8 ignore stop */
 
       // Check if message has SOCKET_IPC_HANDSHAKE key.
       if (

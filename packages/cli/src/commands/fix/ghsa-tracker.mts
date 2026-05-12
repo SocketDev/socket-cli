@@ -32,12 +32,13 @@ export async function getFixedGhsas(cwd: string): Promise<GhsaFixRecord[]> {
   try {
     const tracker = await loadGhsaTracker(cwd)
     return tracker.fixed
-    /* c8 ignore next 5 - loadGhsaTracker already returns a safe fallback on read failure */
+    /* c8 ignore start - loadGhsaTracker already returns a safe fallback on read failure */
   } catch (e) {
     debug('ghsa-tracker: failed to get fixed GHSAs')
     debugDir(e)
     return []
   }
+  /* c8 ignore stop */
 }
 
 /**

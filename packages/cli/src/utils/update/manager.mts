@@ -110,10 +110,11 @@ export async function checkForUpdates(
     }
   }
 
-  /* c8 ignore next 4 - registry URL validation is defensive; isNonEmptyString already truth-checked by the && above */
+  /* c8 ignore start - registry URL validation is defensive; isNonEmptyString already truth-checked by the && above */
   if (registryUrl && !isNonEmptyString(registryUrl)) {
     loggerLocal.warn('Invalid registry URL provided, using default')
   }
+  /* c8 ignore stop */
 
   let record: StoreRecord | undefined
 
@@ -295,8 +296,9 @@ export async function scheduleUpdateCheck(
 
   try {
     await checkForUpdates(updateOptions)
-    /* c8 ignore next 6 - update-check failures are silent and can't be triggered without mocking the entire update pipeline */
+    /* c8 ignore start - update-check failures are silent and can't be triggered without mocking the entire update pipeline */
   } catch (e) {
     logger.log(`Update check failed: ${errorMessage(e)}`)
   }
+  /* c8 ignore stop */
 }

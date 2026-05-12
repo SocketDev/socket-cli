@@ -20,10 +20,11 @@ export async function detectFramework(
   root: string,
 ): Promise<string | undefined> {
   const pkgPath = path.join(root, 'package.json')
-  /* c8 ignore next 3 - root came from findProjectRoot which already verified package.json exists */
+  /* c8 ignore start - root came from findProjectRoot which already verified package.json exists */
   if (!existsSync(pkgPath)) {
     return undefined
   }
+  /* c8 ignore stop */
 
   try {
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))
@@ -211,10 +212,11 @@ export async function getProjectContext(
  */
 export async function isMonorepo(root: string): Promise<boolean> {
   const pkgPath = path.join(root, 'package.json')
-  /* c8 ignore next 3 - root came from findProjectRoot which already verified package.json exists */
+  /* c8 ignore start - root came from findProjectRoot which already verified package.json exists */
   if (!existsSync(pkgPath)) {
     return false
   }
+  /* c8 ignore stop */
 
   try {
     const pkg = JSON.parse(await readFile(pkgPath, 'utf8'))

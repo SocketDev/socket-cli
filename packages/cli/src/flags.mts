@@ -52,9 +52,10 @@ export function getMaxOldSpaceSizeFlag(): number {
       )?.[0]
       if (match) {
         const parsed = Number(match)
-        /* c8 ignore next 3 - regex (\d+) guarantees a numeric string; defensive guard */
+        /* c8 ignore start - regex (\d+) guarantees a numeric string; defensive guard */
         if (Number.isNaN(parsed) || parsed < 0) {
           _maxOldSpaceSizeFlag = 0
+          /* c8 ignore stop */
         } else {
           _maxOldSpaceSizeFlag = parsed
         }
@@ -83,9 +84,10 @@ export function getMaxSemiSpaceSizeFlag(): number {
       )?.[0]
       if (match) {
         const parsed = Number(match)
-        /* c8 ignore next 3 - regex (\d+) guarantees a numeric string; defensive guard */
+        /* c8 ignore start - regex (\d+) guarantees a numeric string; defensive guard */
         if (Number.isNaN(parsed) || parsed < 0) {
           _maxSemiSpaceSizeFlag = 0
+          /* c8 ignore stop */
         } else {
           _maxSemiSpaceSizeFlag = parsed
         }
@@ -159,7 +161,7 @@ export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
     const maxOldSpaceSize = Number(cli.flags['maxOldSpaceSize'])
     const maxSemiSpaceSize = Number(cli.flags['maxSemiSpaceSize'])
 
-    /* c8 ignore next 10 - meow type='number' guarantees numeric values; these guards are belt-and-suspenders */
+    /* c8 ignore start - meow type='number' guarantees numeric values; these guards are belt-and-suspenders */
     if (Number.isNaN(maxOldSpaceSize) || maxOldSpaceSize < 0) {
       throw new Error(
         `--max-old-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxOldSpaceSize']}"); pass a whole number like --max-old-space-size=4096 for 4GB`,
@@ -170,6 +172,7 @@ export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
         `--max-semi-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxSemiSpaceSize']}"); pass a whole number like --max-semi-space-size=128`,
       )
     }
+    /* c8 ignore stop */
 
     _rawSpaceSizeFlags = {
       maxOldSpaceSize,

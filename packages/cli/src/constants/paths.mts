@@ -88,8 +88,9 @@ export function getBinCliPath(): string {
     // Resolve relative paths against project root to support cwd changes in tests.
     return path.isAbsolute(binPath) ? binPath : path.join(rootPath, binPath)
   }
-  /* c8 ignore next - .env.test always sets SOCKET_CLI_BIN_PATH so the fallback is unreachable in unit tests */
+  /* c8 ignore start - .env.test always sets SOCKET_CLI_BIN_PATH so the fallback is unreachable in unit tests */
   return path.join(rootPath, 'dist/index.js')
+  /* c8 ignore stop */
 }
 
 export function getBinPath(): string {
@@ -144,8 +145,9 @@ export function getNmBunPath(): string | undefined {
 
 export function getNmNodeGypPath(): string | undefined {
   try {
-    /* c8 ignore next - node-gyp is not installed in tests; require.resolve throws before realpathSync runs */
+    /* c8 ignore start - node-gyp is not installed in tests; require.resolve throws before realpathSync runs */
     return realpathSync(require.resolve('node-gyp/package.json'))
+    /* c8 ignore stop */
   } catch {
     return undefined
   }
@@ -197,11 +199,12 @@ export function getSocketAppDataPath(): string | undefined {
     : ENV.XDG_DATA_HOME
   if (!dataHome) {
     const home = os.homedir()
-    /* c8 ignore next 5 - WIN32-only fallback when LOCALAPPDATA env var missing; tests run on macOS/Linux */
+    /* c8 ignore start - WIN32-only fallback when LOCALAPPDATA env var missing; tests run on macOS/Linux */
     if (isWin32) {
       dataHome = path.join(home, 'AppData', 'Local')
       const logger = getDefaultLogger()
       logger.warn('LOCALAPPDATA not set, using fallback path.')
+      /* c8 ignore stop */
     } else {
       const isDarwin = process.platform === 'darwin'
       dataHome = path.join(
@@ -235,12 +238,13 @@ export function getSocketCachePath(): string {
 
 export function getSocketRegistryPath(): string {
   const appDataPath = getSocketAppDataPath()
-  /* c8 ignore next 5 - HOME/USERPROFILE/LOCALAPPDATA/XDG_DATA_HOME all unset is essentially impossible in any real environment */
+  /* c8 ignore start - HOME/USERPROFILE/LOCALAPPDATA/XDG_DATA_HOME all unset is essentially impossible in any real environment */
   if (!appDataPath) {
     throw new Error(
       `could not determine the Socket app-data directory: getSocketAppDataPath() returned undefined because none of HOME, USERPROFILE, LOCALAPPDATA, or XDG_DATA_HOME are set; export one of those env vars (typically HOME on macOS/Linux or LOCALAPPDATA on Windows) and retry`,
     )
   }
+  /* c8 ignore stop */
   return path.join(appDataPath, 'registry')
 }
 

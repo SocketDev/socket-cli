@@ -169,7 +169,7 @@ export async function run(
       all = false
     }
   }
-  /* c8 ignore next 7 - githubApiUrl flag has DEFAULT_GITHUB_URL as its default, so this block only runs when both the flag default AND CLI input are empty */
+  /* c8 ignore start - githubApiUrl flag has DEFAULT_GITHUB_URL as its default, so this block only runs when both the flag default AND CLI input are empty */
   if (!githubApiUrl) {
     if (sockJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
       githubApiUrl = sockJson.defaults.scan.github.githubApiUrl
@@ -177,6 +177,7 @@ export async function run(
       githubApiUrl = DEFAULT_GITHUB_URL
     }
   }
+  /* c8 ignore stop */
   if (!orgGithub) {
     if (sockJson.defaults?.scan?.github?.orgGithub !== undefined) {
       orgGithub = sockJson.defaults.scan.github.orgGithub

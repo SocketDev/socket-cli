@@ -108,12 +108,13 @@ export async function cleanupSocketFixPrs(
           if (success) {
             debug(`pr: deleted merged branch ${match.headRefName} for ${prRef}`)
             logPrEvent('merged', prNum, ghsaId, 'Branch cleaned up')
-            /* c8 ignore next 5 - branch-delete failure path; depends on remote git state we don't control in tests */
+            /* c8 ignore start - branch-delete failure path; depends on remote git state we don't control in tests */
           } else {
             debug(
               `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
             )
           }
+          /* c8 ignore stop */
         } catch (e) {
           // Don't treat this as a hard error - branch might already be deleted.
           debug(
@@ -237,6 +238,7 @@ export async function getSocketFixPrsWithContext(
       // eslint-disable-next-line no-await-in-loop
       const gqlResp = (await cacheFetch(
         `${gqlCacheKey}-page-${pageIndex}`,
+        /* c8 ignore start - cacheFetch factory only fires on cache miss; tests pass mocked cached values directly */
         () =>
           octokitGraphql(
             `
@@ -269,6 +271,7 @@ export async function getSocketFixPrsWithContext(
               after: cursor,
             },
           ),
+        /* c8 ignore stop */
       )) as GqlPullRequestsResponse
 
       const { nodes, pageInfo } = gqlResp?.repository?.pullRequests ?? {
@@ -304,13 +307,14 @@ export async function getSocketFixPrsWithContext(
       cursor = pageInfo.endCursor
       pageIndex += 1
 
-      /* c8 ignore next 7 - GQL_PAGE_SENTINEL safety limit; tests page through at most a few pages */
+      /* c8 ignore start - GQL_PAGE_SENTINEL safety limit; tests page through at most a few pages */
       if (pageIndex === GQL_PAGE_SENTINEL) {
         debug(
           `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
         )
         break
       }
+      /* c8 ignore stop */
 
       // Early exit optimization: if we found matches and only looking for specific GHSA,
       // we can stop pagination since we likely found what we need.

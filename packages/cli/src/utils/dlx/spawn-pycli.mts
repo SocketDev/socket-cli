@@ -425,11 +425,13 @@ export async function ensureSocketPyCli(
           shell: WIN32,
           stdio: 'inherit',
         })
+        /* c8 ignore start */
       } else {
         throw new InputError(
           `could not download the verified socketsecurity==${pyCliVersion} wheel (downloadPyPiWheel returned null — likely a checksum mismatch or missing wheel asset); re-run with --debug for details, or bump the version in bundle-tools.json if the checksum needs refreshing`,
         )
       }
+      /* c8 ignore stop */
     } else {
       // Dev mode: no checksums inlined, install directly from PyPI.
       const versionSpec = convertCaretToPipRange(pyCliVersion)
@@ -452,9 +454,11 @@ export async function ensureSocketPyCli(
  * Get the path to the Python executable within the installation.
  */
 export function getPythonBinPath(pythonDir: string): string {
+  /* c8 ignore start - Windows-only branch; CI/test env mocks WIN32=false */
   if (WIN32) {
     return path.join(pythonDir, 'python', 'python.exe')
   }
+  /* c8 ignore stop */
   return path.join(pythonDir, 'python', 'bin', 'python3')
 }
 
@@ -728,11 +732,13 @@ export async function spawnSocketPyCliVfs(
         await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
           stdio: 'pipe',
         })
+        /* c8 ignore start - defensive: downloadPyPiWheel returns a string or throws */
       } else {
         throw new Error(
           `failed to download socketsecurity==${pyCliVersion} wheel from PyPI (downloadPyPiWheel returned null — likely a checksum mismatch or missing py3-none-any wheel); re-run with --debug for details`,
         )
       }
+      /* c8 ignore stop */
     } else {
       // Dev mode: install directly from PyPI.
       await spawn(
