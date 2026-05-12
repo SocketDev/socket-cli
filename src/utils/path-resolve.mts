@@ -12,6 +12,7 @@ import {
   createSupportedFilesFilter,
   globWithGitIgnore,
   pathsToGlobPatterns,
+  stripTrailingSlash,
 } from './glob.mts'
 
 import type { SocketYml } from '@socketsecurity/config'
@@ -100,8 +101,33 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
 }
 
 export type PackageFilesForScanOptions = {
+  // Already-anchored minimatch patterns to skip, forwarded straight to
+  // fast-glob. Bypasses the gitignore translator — use this for CLI-supplied
+  // exclusions whose contract is anchored micromatch from `cwd`. Mix with
+  // `config.projectIgnorePaths` for gitignore-style patterns.
+  additionalIgnores?: readonly string[] | undefined
   cwd?: string | undefined
   config?: SocketYml | undefined
+}
+
+/**
+ * Converts absolute scan targets inside cwd back to cwd-relative paths before
+ * glob expansion. SCA excludes passed through `additionalIgnores` are anchored
+ * to cwd, so package discovery needs target globs in the same coordinate
+ * system for fast-glob to apply those ignores consistently.
+ */
+function normalizeScanInputPath(pathToNormalize: string, cwd: string): string {
+  if (!path.isAbsolute(pathToNormalize)) {
+    return pathToNormalize
+  }
+  const relativePath = path.relative(cwd, pathToNormalize)
+  const isInsideCwd =
+    relativePath === '' ||
+    (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+  if (!isInsideCwd) {
+    return pathToNormalize
+  }
+  return stripTrailingSlash(relativePath.replaceAll('\\', '/')) || '.'
 }
 
 export async function getPackageFilesForScan(
@@ -109,7 +135,11 @@ export async function getPackageFilesForScan(
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
   options?: PackageFilesForScanOptions | undefined,
 ): Promise<string[]> {
-  const { config: socketConfig, cwd = process.cwd() } = {
+  const {
+    additionalIgnores,
+    config: socketConfig,
+    cwd = process.cwd(),
+  } = {
     __proto__: null,
     ...options,
   } as PackageFilesForScanOptions
@@ -119,9 +149,14 @@ export async function getPackageFilesForScan(
   // where accumulating all paths before filtering causes OOM errors.
   const filter = createSupportedFilesFilter(supportedFiles)
 
+  const normalizedInputPaths = inputPaths.map(p =>
+    normalizeScanInputPath(p, cwd),
+  )
+
   return await globWithGitIgnore(
-    pathsToGlobPatterns(inputPaths, options?.cwd),
+    pathsToGlobPatterns(normalizedInputPaths, cwd),
     {
+      additionalIgnores,
       cwd,
       filter,
       socketConfig,

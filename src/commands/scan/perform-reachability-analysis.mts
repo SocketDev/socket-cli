@@ -16,6 +16,7 @@ import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type ReachabilityOptions = {
+  excludePaths: string[]
   reachAnalysisMemoryLimit: number
   reachAnalysisTimeout: number
   reachConcurrency: number

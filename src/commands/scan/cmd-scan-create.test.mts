@@ -40,6 +40,7 @@ describe('socket scan create', async () => {
             --committers        Committers
             --cwd               working directory, defaults to process.cwd()
             --default-branch    Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
+            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output as JSON
             --markdown          Output as Markdown
@@ -68,7 +69,6 @@ describe('socket scan create', async () => {
             --reach-disable-external-tool-checks  Disable external tool checks during reachability analysis.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-enable-analysis-splitting  Allow the reachability analysis to partition CVEs into buckets that are processed in separate analysis runs. May improve accuracy, but not recommended by default.
-            --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
             --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
             --reach-use-only-pregenerated-sboms  When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.
             --reach-version     Override the version of @coana-tech/cli used for reachability analysis. Default: <coana-version>.
@@ -182,6 +182,62 @@ describe('socket scan create', async () => {
         code,
         'should exit with non-zero code when validation fails',
       ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--exclude-paths',
+      'tests',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed when --exclude-paths is used without --reach',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(
+        code,
+        'should exit with code 0 when --exclude-paths is used standalone',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--exclude-paths',
+      '!tests/keep',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should reject --exclude-paths negation patterns',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        "--exclude-paths does not support negation patterns. Got: '!tests/keep'.",
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
 
@@ -434,6 +490,32 @@ describe('socket scan create', async () => {
         code,
         'should exit with code 0 when comma-separated values are used',
       ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'test/fixtures/commands/scan/simple-npm',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--exclude-paths',
+      'tests',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed when --exclude-paths is used with --reach',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
   )
 

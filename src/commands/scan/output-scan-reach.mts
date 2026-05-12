@@ -33,9 +33,7 @@ export async function outputScanReach(
   logger.info(`Reachability report has been written to: ${actualOutputPath}`)
 
   // Warn about individual vulnerabilities where reachability analysis errored.
-  const errors = extractReachabilityErrors(
-    result.data.reachabilityReport,
-  )
+  const errors = extractReachabilityErrors(result.data.reachabilityReport)
   if (errors.length) {
     logger.log('')
     logger.warn(

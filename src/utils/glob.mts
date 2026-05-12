@@ -141,7 +141,7 @@ function ignorePatternToMinimatch(pattern: string): string {
 // here as `**/dist/` after `ignorePatternToMinimatch`, which fast-glob
 // then drops — defeating the entire ignore. Strip the trailing slash
 // so fast-glob actually honors the pattern.
-function stripTrailingSlash(pattern: string): string {
+export function stripTrailingSlash(pattern: string): string {
   if (
     pattern.length > 1 &&
     pattern.charCodeAt(pattern.length - 1) === 47 /*'/'*/
@@ -204,6 +204,13 @@ export function getSupportedFilePatterns(
 }
 
 type GlobWithGitIgnoreOptions = GlobOptions & {
+  // Already-anchored minimatch patterns merged into fast-glob's `ignore`
+  // option in every code path. These bypass the gitignore translator and
+  // the `ignore` package matcher entirely; use this channel for CLI flags
+  // whose contract is anchored micromatch from `cwd` (e.g. --exclude-paths).
+  // Patterns in `socketConfig.projectIgnorePaths` and discovered `.gitignore`
+  // files take the other channel: they're gitignore-translated first.
+  additionalIgnores?: readonly string[] | undefined
   // Optional filter function to apply during streaming.
   // When provided, only files passing this filter are accumulated.
   // This is critical for memory efficiency when scanning large monorepos.
@@ -216,6 +223,7 @@ export async function globWithGitIgnore(
   options: GlobWithGitIgnoreOptions,
 ): Promise<string[]> {
   const {
+    additionalIgnores,
     cwd = process.cwd(),
     filter,
     socketConfig,
@@ -265,14 +273,21 @@ export async function globWithGitIgnore(
     }
   }
 
+  // CLI-supplied `additionalIgnores` are already anchored minimatch — they
+  // must not pass through the `ignore` package (whose gitignore "match
+  // anywhere" semantics would re-interpret a bare `tests` to match
+  // `subdir/tests/foo.json`). Keep them in fast-glob's ignore list across
+  // both paths; only gitignore-translated entries go into the `ig` matcher.
+  const cliMinimatchIgnores = additionalIgnores ?? []
+
   const globOptions = {
     __proto__: null,
     absolute: true,
     cwd,
     dot: true,
     ignore: hasNegatedPattern
-      ? defaultIgnore
-      : [...ignores].map(stripTrailingSlash),
+      ? [...defaultIgnore, ...cliMinimatchIgnores]
+      : [...ignores, ...cliMinimatchIgnores].map(stripTrailingSlash),
     ...additionalOptions,
   } as GlobOptions
 

@@ -94,8 +94,9 @@ export const reachabilityFlags: MeowFlags = {
   reachExcludePaths: {
     type: 'string',
     isMultiple: true,
+    hidden: true,
     description:
-      'List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
+      'Deprecated: use --exclude-paths instead. List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
   },
   reachLazyMode: {
     type: 'boolean',
@@ -114,5 +115,14 @@ export const reachabilityFlags: MeowFlags = {
     default: false,
     description:
       'When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.',
+  },
+}
+
+export const excludePathsFlag: MeowFlags = {
+  excludePaths: {
+    type: 'string',
+    isMultiple: true,
+    description:
+      'List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (`--cwd` if set), not the reachability target: `tests` matches only `<cwd>/tests`; use `**/tests` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
   },
 }
