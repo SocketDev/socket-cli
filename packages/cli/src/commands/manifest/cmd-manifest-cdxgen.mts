@@ -1,3 +1,4 @@
+/* oxlint-disable socket/sort-source-methods -- `arrayToLower` / `toLower` helpers are kept together at the top (alphabetical anchor for the cdxgen flag mapping below); `run` is the command entry point and lives near its config + cmdManifestCdxgen export, not interleaved with helpers. */
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
@@ -30,8 +31,12 @@ interface CdxgenFlags {
 // Socket CLI's custom meow implementation would provide consistency with other
 // commands but requires significant work to map all cdxgen flags and maintain
 // compatibility with cdxgen's complex option structure.
-const toLower = (arg: string) => arg.toLowerCase()
-const arrayToLower = (arg: string[]) => arg.map(toLower)
+export function arrayToLower(arg: string[]): string[] {
+  return arg.map(toLower)
+}
+export function toLower(arg: string): string {
+  return arg.toLowerCase()
+}
 
 // npx @cyclonedx/cdxgen@11.2.7 --help
 //
@@ -252,7 +257,9 @@ export async function run(
 
   const pathArgs: string[] = []
   const unknowns: string[] = []
-  for (const a of yargv._) {
+  const positionals = yargv._ as string[]
+  for (let i = 0, { length } = positionals; i < length; i += 1) {
+    const a = positionals[i]!
     if (isPath(a)) {
       pathArgs.push(a)
     } else {
