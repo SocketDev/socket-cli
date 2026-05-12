@@ -153,6 +153,7 @@ export async function globWithGitIgnore(
   }
 
   let hasNegatedPattern = false
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- ignores is a Set (no .length / no numeric index)
   for (const p of ignores) {
     if (p.charCodeAt(0) === 33 /*'!'*/) {
       hasNegatedPattern = true

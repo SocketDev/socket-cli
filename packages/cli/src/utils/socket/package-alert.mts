@@ -607,6 +607,7 @@ export function logAlertsMap(
     } else {
       output.write(`${prevAboveTheFold ? '\n' : ''}${hyperlink}:\n`)
     }
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- lines is a Set<string> (no .length / no numeric index)
     for (const line of lines) {
       output.write(`${line}\n`)
     }
