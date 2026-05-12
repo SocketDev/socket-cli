@@ -83,6 +83,28 @@ The order **main → master** matches fleet reality (overwhelming majority on `m
 - **When adding commits to an OPEN PR**, update the PR title and description to match the new scope. Use `gh pr edit <num> --title … --body …`. The reviewer should know what's in the PR without scrolling commits.
 - **Replying to Cursor Bugbot** — reply on the inline review-comment thread, not as a detached PR comment: `gh api repos/{owner}/{repo}/pulls/{pr}/comments/{comment_id}/replies -X POST -f body=…`.
 
+### Version bumps
+
+🚨 When the user asks for a version bump (`bump to vX.Y.Z`, `tag X.Y.Z`, `release X`, etc.), follow this sequence exactly. Order matters — skipping or reordering steps produces broken releases.
+
+1. **Pre-bump prep, in this order** (each must finish clean before the next):
+   - `pnpm run update`
+   - `pnpm i`
+   - `pnpm run fix --all`
+   - `pnpm run check --all`
+
+   If any step surfaces failures, fix them before continuing. Don't bump a broken tree.
+
+2. **CHANGELOG entry — public-facing only.** The new `## [X.Y.Z]` block describes what a downstream consumer needs to know to upgrade. Include: new exports, removed exports, renamed exports, signature changes, behavioral changes, perf characteristics they will measure, migration recipes. **Exclude** internal refactors, file moves, test reorg, primordials cleanup, lint passes, `chore(sync)` cascades, build-script tweaks — these are noise to the consumer. Use Keep-a-Changelog sections (Added / Changed / Removed / Renamed / Fixed / Performance / Migration). Source the raw list with `git log <prev-tag>..HEAD --pretty="%s"` and filter to consumer-visible commits only.
+
+3. **The bump commit is the LAST commit on the release.** If a session has other unrelated work to commit, those land first; the `chore: bump version to X.Y.Z` (carrying both `package.json` and `CHANGELOG.md`) is the tip of the branch when tagging. If a version-bump commit already exists earlier in history, rebase it forward so it ends up at the tip.
+
+4. **Tag at the end:** `git tag vX.Y.Z` at the bump commit, then push the tag.
+
+5. **Do NOT dispatch the publish workflow.** Per the _Public-surface hygiene_ rule, releases are user-triggered. Stop after the tag push; the user runs the publish workflow manually.
+
+**Why:** Bisecting from `main` past the tag must not land on a temporarily-broken state. `git describe` is cleaner when the bump is the tip. The pre-bump prep wave catches dependency drift, formatting drift, and type drift that consumers would otherwise hit on first install. The public-facing-only filter is the difference between a changelog people read and a changelog people skip.
+
 ### Programmatic Claude calls
 
 🚨 Workflows / skills / scripts that invoke `claude` CLI or `@anthropic-ai/claude-agent-sdk` MUST set all four lockdown flags: `tools`, `allowedTools`, `disallowedTools`, `permissionMode: 'dontAsk'`. Never `default` mode in headless contexts. Never `bypassPermissions`. See `.claude/skills/locking-down-programmatic-claude/SKILL.md`.

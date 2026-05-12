@@ -222,6 +222,101 @@ test('git stash drop is blocked by the revert check, not the stash check', async
   assert.match(result.stderr, /Allow revert bypass/)
 })
 
+test('python -c with open(...,"w") is blocked', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: `python3 -c 'open("docs/file.md","w").write("content")'`,
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow bash-write bypass/)
+})
+
+test('python -c with .write_text is blocked', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: `python3 -c 'import pathlib; pathlib.Path("foo.md").write_text("x")'`,
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow bash-write bypass/)
+})
+
+test('sed -i is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'sed -i "s/foo/bar/g" src/file.ts' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow bash-write bypass/)
+})
+
+test('heredoc redirected to source file is blocked', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: `cat << EOF > src/foo.ts\nexport const x = 1\nEOF`,
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow bash-write bypass/)
+})
+
+test('dd of= is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'dd if=/dev/zero of=src/blob.bin bs=1024 count=1' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow bash-write bypass/)
+})
+
+test('tee writing to a source file is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'echo "x" | tee src/foo.ts' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow bash-write bypass/)
+})
+
+test('bash-write is allowed with phrase', async () => {
+  const result = await runHook(
+    {
+      tool_input: { command: 'sed -i "s/foo/bar/g" build/generated.json' },
+      tool_name: 'Bash',
+    },
+    userTurn('Allow bash-write bypass — generated file, no Edit hook needed'),
+  )
+  assert.strictEqual(result.code, 0)
+})
+
+test('mv is NOT a bash-write (file move, not content write)', async () => {
+  const result = await runHook({
+    tool_input: { command: 'mv src/old.ts src/new.ts' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('cp is NOT a bash-write', async () => {
+  const result = await runHook({
+    tool_input: { command: 'cp template/x.json downstream/x.json' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('python -c without file write is NOT blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: `python3 -c 'print("hello")'` },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
 test('git push --force is blocked', async () => {
   const result = await runHook({
     tool_input: { command: 'git push --force origin main' },

@@ -115,6 +115,41 @@ const CHECKS: readonly GuardCheck[] = [
       /(?:^|[\s;&|(`])git\s+stash(?:\s+(?:push|save|--keep-index|--patch|-[a-z]+)|\s*$|\s+[^a-z])/,
   },
   {
+    // Bash file-write surfaces agents reach for when an Edit/Write
+    // hook blocks them. Catches the "go around" pattern: agent tries
+    // Edit, gets blocked by markdown-filename-guard / path-guard /
+    // no-fleet-fork-guard / etc., then switches to `python3 -c`
+    // (or `sed -i` / heredoc / printf >) to write the same content
+    // via Bash where the Edit-layer hooks don't fire.
+    //
+    // The contract: when an Edit/Write hook blocks, the path forward
+    // is (a) move the file to a canonical location, (b) refactor the
+    // change so the rule no longer triggers, or (c) get the canonical
+    // bypass phrase for the original hook. Switching tools to dodge
+    // the hook is not a path.
+    //
+    // Observed 2026-05-12: agent used `python3 -c '...write(...)'`
+    // to rename a markdown file after markdown-filename-guard blocked
+    // Edit on it.
+    //
+    // Patterns matched:
+    //   - python -c '...' with open(...,'w') or .write_text(
+    //   - sed -i (in-place edit)
+    //   - heredoc redirected to file (cat << EOF > file)
+    //   - tee writing to a non-tmp file
+    //   - dd of=<file>
+    //
+    // Carve-outs intentionally NOT matched: plain `>` / `>>` (too
+    // broad — every build/log/test invocation uses these), `mv` / `cp`
+    // (file moves, not content writes), tools that write their own
+    // output (`tsc`, `pnpm build`, etc. — they don't use Bash write
+    // primitives directly).
+    bypassPhrase: 'Allow bash-write bypass',
+    label: 'Bash file-write (likely dodging an Edit/Write hook)',
+    pattern:
+      /(?:^|[\s;&|(`])(?:python3?\s+-c\b.*(?:open\([^)]*['"]w['"]?|\.write_text\(|\.write\([^)]*\)\s*$)|sed\s+-i\b|cat\s+<<-?\s*['"]?[A-Z_]+['"]?\b[^|;`]*>\s*[^/]|tee\s+(?!-)\S*\.(?:m?[jt]sx?|json|md|ya?ml|toml|sh|py|rs|go|css)\b|\bdd\s+[^|;`]*\bof=)/,
+  },
+  {
     bypassPhrase: 'Allow force-push bypass',
     label: 'git push --force / -f',
     pattern: /(?:^|[\s;&|(`])git\s+push\b[^;&|()`]*\s(?:--force\b|-f\b)/,

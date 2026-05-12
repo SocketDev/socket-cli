@@ -13,6 +13,7 @@ The phrase format is `Allow <X> bypass` — case-sensitive, exact match.
 | `DISABLE_PRECOMMIT_TEST=1` (skips test step)                                                                                                                                                                | `Allow test bypass`           |
 | `SKIP_ASSET_DOWNLOAD=1` (skips release-asset fetch in build — degraded-mode flag; becomes a bypass when used to push past rate-limited pre-commit)                                                          | `Allow asset-download bypass` |
 | `git stash` (any form: bare, `push`, `save`, `--keep-index`) in primary checkout — shared stash store, another Claude session can pop yours. Use a worktree instead.                                        | `Allow stash bypass`          |
+| Bash file-write (`python -c '...write...'`, `sed -i`, heredoc `cat << EOF > file`, `tee <source-file>`, `dd of=…`) — typically used to dodge an Edit/Write hook block. Move file / refactor / get original-hook bypass instead. | `Allow bash-write bypass`     |
 | `git push --force` / `-f`                                                                                                                                                                                   | `Allow force-push bypass`     |
 
 ## Scope
