@@ -257,6 +257,14 @@ const rule = {
         const iterText = sourceCode.getText(callee.object)
         const itemName = itemParam.name
         const indexName = indexParam ? indexParam.name : 'i'
+        // If the callback body reassigns the item param (e.g.
+        // `arr.forEach(line => { line = line.trim(); ... })`), the
+        // rewritten `const line = arr[i]` would trip `no-const-assign`.
+        // Emit `let` in that case so the rewrite preserves the
+        // mutable-binding semantics the original arrow had per call.
+        const itemKind = reassignsInBody(sourceCode, cb.body, itemName)
+          ? 'let'
+          : 'const'
 
         context.report({
           node,
@@ -269,7 +277,7 @@ const rule = {
             )
             const indent = leadingIndent(sourceCode, parent)
             const innerIndent = `${indent}  `
-            const replacement = `for (let ${indexName} = 0, { length } = ${iterText}; ${indexName} < length; ${indexName} += 1) {\n${innerIndent}const ${itemName} = ${iterText}[${indexName}]${bodyInner}\n${indent}}`
+            const replacement = `for (let ${indexName} = 0, { length } = ${iterText}; ${indexName} < length; ${indexName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${indexName}]${bodyInner}\n${indent}}`
             return fixer.replaceText(parent, replacement)
           },
         })
@@ -323,6 +331,18 @@ const rule = {
         const itemName = declarator.id.name
         const iterText = iter.name
         const counterName = pickCounterName(itemName)
+        // Preserve the original `let`/`const` declaration kind from
+        // the `for...of`. `for (let item of arr)` opted into a
+        // mutable per-iteration binding (the body may reassign
+        // `item`); collapsing it to a `const` would break the loop.
+        // If the original was `const`, only keep `const` when the
+        // body never reassigns the loop variable.
+        const originalKind = left.kind
+        const itemKind =
+          originalKind === 'let' ||
+          reassignsInBody(sourceCode, node.body, itemName)
+            ? 'let'
+            : 'const'
 
         context.report({
           node,
@@ -335,7 +355,7 @@ const rule = {
             )
             const indent = leadingIndent(sourceCode, node)
             const innerIndent = `${indent}  `
-            const replacement = `for (let ${counterName} = 0, { length } = ${iterText}; ${counterName} < length; ${counterName} += 1) {\n${innerIndent}const ${itemName} = ${iterText}[${counterName}]${bodyInner}\n${indent}}`
+            const replacement = `for (let ${counterName} = 0, { length } = ${iterText}; ${counterName} < length; ${counterName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${counterName}]${bodyInner}\n${indent}}`
             return fixer.replaceText(node, replacement)
           },
         })
@@ -354,6 +374,45 @@ function pickCounterName(itemName) {
     return 'i'
   }
   return 'i2'
+}
+
+/**
+ * Textual check: does the loop body reassign the named identifier?
+ * Catches `name = ...`, `name +=`, `name++`, `++name`, etc., and
+ * destructuring-as-assignment patterns. Conservative: false
+ * positives only force `let` (semantically safe), false negatives
+ * trip `no-const-assign` (the bug this guards against).
+ *
+ * AST-walking would be more precise but oxlint's plugin host
+ * doesn't expose a uniform visitor for body subtrees here; the
+ * regex catches every reassignment shape that compiles today.
+ */
+function reassignsInBody(sourceCode, bodyNode, name) {
+  if (!bodyNode) {
+    return false
+  }
+  const text = sourceCode.text.slice(bodyNode.range[0], bodyNode.range[1])
+  // Escape any regex specials in the identifier (defensive — JS
+  // identifiers can't actually contain them, but cheap).
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  // Patterns:
+  //   1. <name> = ...   (simple assignment, not `==` / `===`)
+  //   2. <name> += ...  / -=, *=, /=, %=, **=, &=, |=, ^=, <<=, >>=, >>>=, &&=, ||=, ??=
+  //   3. <name>++ / <name>--
+  //   4. ++<name> / --<name>
+  //   5. ({ <name> } = ...) / ([<name>] = ...) destructuring — caught by the
+  //      same `<name>... =` shape inside a destructure since the rightmost
+  //      `=` is the assignment.
+  // Use `\b` boundaries on the name. The `(?!=)` lookahead rejects `==`.
+  const reassignRE = new RegExp(
+    String.raw`\b${escaped}\b\s*(?:=(?!=)|[-+*/%&|^]=|<<=|>>=|>>>=|\*\*=|&&=|\|\|=|\?\?=|\+\+|--)`,
+  )
+  if (reassignRE.test(text)) {
+    return true
+  }
+  // Prefix increment/decrement: `++<name>` / `--<name>`.
+  const prefixRE = new RegExp(String.raw`(?:\+\+|--)\s*\b${escaped}\b`)
+  return prefixRE.test(text)
 }
 
 /**
