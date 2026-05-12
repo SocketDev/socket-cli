@@ -1,7 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "import"],
-  "jsPlugins": ["./oxlint-plugin/index.mts"],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "import"
+  ],
+  "jsPlugins": [
+    "./oxlint-plugin/index.mts"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -144,6 +150,8 @@
     "**/.git-hooks/**",
     "**/.husky/**",
     "**/.pnpm-store/**",
+    "**/vendor/**",
+    "**/wasm_exec.js",
     "**/.config/lockstep.schema.json",
     "**/.config/socket-wheelhouse-schema.json",
     "**/.config/taze.config.mts",

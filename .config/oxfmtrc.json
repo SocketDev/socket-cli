@@ -52,6 +52,8 @@
     "**/.git-hooks/**",
     "**/.husky/**",
     "**/.pnpm-store/**",
+    "**/vendor/**",
+    "**/wasm_exec.js",
     "**/.config/lockstep.schema.json",
     "**/.config/socket-wheelhouse-schema.json",
     "**/.config/taze.config.mts",

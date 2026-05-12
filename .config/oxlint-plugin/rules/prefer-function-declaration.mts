@@ -173,23 +173,101 @@ const rule = {
 }
 
 /**
- * Cheap textual scan for a bare `this` keyword inside the function
- * body. AST walk is more accurate but oxlint's plugin host doesn't
- * expose a scope analyzer here; the textual check has false
- * positives (`this` inside a string literal, a property key
- * `obj.this`) — that's the conservative direction (skip autofix when
- * unsure).
+ * Walk the function body iteratively looking for a `ThisExpression`.
+ *
+ * We previously serialized the AST with JSON.stringify + regex on
+ * `\bthis\b`, but oxlint's AST nodes can carry back-references
+ * (parent, scope, type-arg back-pointers from the TS plugin) via
+ * getters that return fresh wrapper objects. A WeakSet de-cycle
+ * keyed on object identity misses those cases — the seen-check
+ * returns false and JSON.stringify hits the limit and throws
+ * "Converting circular structure to JSON," crashing the rule. The
+ * AST walk avoids serialization entirely: each visit checks the
+ * node's `type` and pushes child nodes onto a work queue. Identity-
+ * based seen-set still de-cycles for safety, this time without
+ * paying the cost of stringification.
  */
 function referencesThis(node) {
   if (!node.body) {
     return false
   }
-  if (node.body.type !== 'BlockStatement') {
-    // Expression body — quick string check.
-    return /\bthis\b/.test(JSON.stringify(node.body))
+  const seen = new WeakSet()
+  // Inline child-list keys we know the ESTree shape uses. Skip
+  // `parent` and other navigational back-refs — anything that's not
+  // a structural child of the function body.
+  const STRUCTURAL_KEYS = [
+    'argument',
+    'arguments',
+    'body',
+    'callee',
+    'cases',
+    'consequent',
+    'declaration',
+    'declarations',
+    'discriminant',
+    'elements',
+    'expression',
+    'expressions',
+    'finalizer',
+    'handler',
+    'id',
+    'init',
+    'key',
+    'left',
+    'object',
+    'param',
+    'params',
+    'properties',
+    'property',
+    'quasi',
+    'quasis',
+    'right',
+    'specifiers',
+    'tag',
+    'test',
+    'update',
+    'value',
+  ]
+  const queue = [
+    node.body.type === 'BlockStatement' ? node.body.body : node.body,
+  ]
+  while (queue.length > 0) {
+    const item = queue.pop()
+    if (item === null || item === undefined) {
+      continue
+    }
+    if (Array.isArray(item)) {
+      for (let i = 0, { length } = item; i < length; i += 1) {
+        queue.push(item[i])
+      }
+      continue
+    }
+    if (typeof item !== 'object') {
+      continue
+    }
+    if (seen.has(item)) {
+      continue
+    }
+    seen.add(item)
+    if (item.type === 'ThisExpression') {
+      return true
+    }
+    // Don't recurse into nested function-like nodes — they bind
+    // their own `this`, so a `this` inside them doesn't count.
+    if (
+      item.type === 'FunctionExpression' ||
+      item.type === 'FunctionDeclaration'
+    ) {
+      continue
+    }
+    for (let i = 0, { length } = STRUCTURAL_KEYS; i < length; i += 1) {
+      const k = STRUCTURAL_KEYS[i]
+      if (k && item[k] !== undefined) {
+        queue.push(item[k])
+      }
+    }
   }
-  // Body is an array of statements; serialize and grep.
-  return /\bthis\b/.test(JSON.stringify(node.body.body))
+  return false
 }
 
 export default rule

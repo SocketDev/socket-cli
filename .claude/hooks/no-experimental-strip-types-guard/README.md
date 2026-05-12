@@ -25,7 +25,7 @@ The hook reads the Claude Code PreToolUse JSON payload from stdin, inspects `too
 
 ## Bypass
 
-None. If a tool genuinely needs the flag (e.g. you're testing Node behavior on a stale runtime), invoke node directly without going through Bash, or pin a specific older Node version in the script. There is no whitelist — every fleet repo runs Node 22.6+.
+None. If a tool genuinely needs the flag (e.g. you're testing Node behavior on a stale runtime), invoke node directly without going through Bash, or pin a specific older Node version in the script. There is no allowlist — every fleet repo runs Node 22.6+.
 
 ## Test
 

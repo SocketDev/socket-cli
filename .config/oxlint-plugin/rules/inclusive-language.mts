@@ -57,12 +57,22 @@ const REPORT_ONLY_TERMS = ['master', 'slave']
 
 const BYPASS_RE = /inclusive-language:\s*external-api/
 
-/** Build a regex matching any legacy stem with word boundaries. */
+/** Build a regex matching any legacy stem with word boundaries.
+ *
+ * Stems are sorted alphabetically before being joined so the regex
+ * alternation has a deterministic, stable form. Two reasons:
+ *   1. The fleet ships a `sort-regex-alternations` rule that flags
+ *      unsorted `(a|b|c)`-style alternations; this regex would trip
+ *      its own sibling rule without the sort.
+ *   2. Regex engines treat `|` as "first match wins" when alternatives
+ *      have shared prefixes — sorting keeps the precedence visible
+ *      in source rather than depending on declaration order.
+ */
 function buildDetectorRegex() {
   const stems = [
     ...SUBSTITUTIONS.map(([legacy]) => legacy),
     ...REPORT_ONLY_TERMS,
-  ]
+  ].sort()
   return new RegExp(`\\b(${stems.join('|')})\\w*`, 'gi')
 }
 

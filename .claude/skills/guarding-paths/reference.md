@@ -127,7 +127,7 @@ Each Dockerfile `FROM` stage is its own scope — `ENV` from the build stage doe
 The patterns to reuse when converting a repo to the strategy:
 
 - **TS-first packages**: each package owns a `scripts/paths.mts` with `PACKAGE_ROOT`, `BUILD_ROOT`, `getBuildPaths(mode, platformArch)` returning at minimum `outputFinalDir` and `outputFinalBinary` / `outputFinalFile`.
-- **Cross-package consumers**: `package.json` `exports` whitelists `./scripts/paths`. Consumer adds `"<producer>": "workspace:*"` and imports.
+- **Cross-package consumers**: `package.json` `exports` allowlists `./scripts/paths`. Consumer adds `"<producer>": "workspace:*"` and imports.
 - **Workflows**: each job has a "Compute <pkg> paths" step (`id: paths`) early in the job. Step outputs include `package_dir`, `platform_build_dir`, `final_dir`, named files. `_rel` companions when `working-directory:` is used.
 - **Docker stages**: each `FROM` stage declares `ENV PLATFORM_BUILD_DIR=...` and `ENV FINAL_DIR=...` once. Subsequent `RUN` steps reference the variables.
 

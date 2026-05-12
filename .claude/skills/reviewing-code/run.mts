@@ -77,10 +77,15 @@ const BACKENDS: Readonly<Record<BackendName, BackendDescriptor>> = {
     name: 'claude',
     run(_promptFile, _outFile) {
       const model = process.env['CLAUDE_MODEL'] ?? 'opus'
-      // Programmatic-Claude lockdown — all four flags per CLAUDE.md.
-      // Verify pass is read-only by design; dontAsk + explicit
-      // disallowedTools enforces that, and the allowedTools list is
-      // tight (read + git introspection only).
+      // Programmatic-Claude lockdown — all four flags per CLAUDE.md
+      // (tools / allowedTools / disallowedTools / permission-mode).
+      // The official permission flow is hooks → deny → mode → allow →
+      // canUseTool; in dontAsk mode the last step is skipped, so any
+      // tool not listed in `tools` is invisible to the model and any
+      // tool in `disallowedTools` is denied even on bypass. Verify
+      // pass is read-only by design: tools is the same set as
+      // allowedTools (read + git introspection only), with Edit /
+      // Write / destructive Bash explicitly denied.
       return {
         argv: [
           '--print',
@@ -89,6 +94,11 @@ const BACKENDS: Readonly<Record<BackendName, BackendDescriptor>> = {
           '--no-session-persistence',
           '--permission-mode',
           'dontAsk',
+          '--tools',
+          'Read',
+          'Glob',
+          'Grep',
+          'Bash(git:*)',
           '--allowedTools',
           'Read',
           'Glob',
