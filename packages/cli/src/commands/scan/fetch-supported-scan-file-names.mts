@@ -29,7 +29,7 @@ export async function fetchSupportedScanFileNames(
 
   // Use provided orgSlug or discover it.
   let resolvedOrgSlug = orgSlug
-  /* c8 ignore next 7 - getDefaultOrgSlug discovery path; all unit-test callers pass orgSlug explicitly, and the .mjs/.mts boundary makes mocking getDefaultOrgSlug unreliable in this test file */
+  /* c8 ignore start -- defensive: getDefaultOrgSlug discovery path; all unit-test callers pass orgSlug explicitly, and the .mjs/.mts boundary makes mocking getDefaultOrgSlug unreliable in this test file */
   if (!resolvedOrgSlug) {
     const orgSlugCResult = await getDefaultOrgSlug()
     if (!orgSlugCResult.ok) {
@@ -37,6 +37,7 @@ export async function fetchSupportedScanFileNames(
     }
     resolvedOrgSlug = orgSlugCResult.data
   }
+  /* c8 ignore stop */
 
   return await handleApiCall<'getSupportedFiles'>(
     sockSdk.getSupportedFiles(resolvedOrgSlug),
