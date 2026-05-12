@@ -49,6 +49,18 @@ export function isSocketJsonSuccess<T = unknown>(
  * @param expectedExitCode - Expected exit code (0 for success, non-zero for failure)
  * @returns Parsed JSON if valid, throws if invalid
  */
+type RawSocketJson = {
+  ok?: unknown
+  data?: unknown
+  message?: unknown
+  cause?: unknown
+  code?: unknown
+}
+
+function isRecord(value: unknown): value is RawSocketJson {
+  return typeof value === 'object' && value !== null
+}
+
 export function validateSocketJson<T = unknown>(
   jsonString: string,
   expectedExitCode: number,
@@ -65,6 +77,12 @@ export function validateSocketJson<T = unknown>(
   } catch (e) {
     throw new Error(
       `command output is not valid JSON (JSON.parse threw: ${e instanceof Error ? e.message : String(e)}); got: ${preview} — check for unclosed braces, trailing commas, or non-JSON text mixed into stdout`,
+    )
+  }
+
+  if (!isRecord(parsed)) {
+    throw new Error(
+      `Socket JSON contract violation: expected a JSON object (got: ${typeof parsed}); got: ${preview} — return {ok:boolean, ...} from the output handler`,
     )
   }
 

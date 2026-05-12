@@ -50,7 +50,7 @@ export async function findUp(
   // This ensures root directory is checked when cwd is root.
   do {
     for (let i = 0, { length } = names; i < length; i += 1) {
-      const name = names[i]
+      const name = names[i]!
       if (signal?.aborted) {
         return undefined
       }

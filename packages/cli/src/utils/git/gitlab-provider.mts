@@ -170,7 +170,7 @@ export class GitLabProvider implements PrProvider {
         })) as MergeRequestSchema[]
 
         for (let i = 0, { length } = mrs; i < length; i += 1) {
-          const mr = mrs[i]
+          const mr = mrs[i]!
           matches.push({
             author: mr.author.username,
             baseRefName: mr.target_branch,

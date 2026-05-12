@@ -32,7 +32,7 @@ export function applyMachineModeIfActive(
  */
 export function inferSubcommand(args: readonly string[]): string | undefined {
   for (let i = 0, { length } = args; i < length; i += 1) {
-    const arg = args[i]
+    const arg = args[i]!
     if (!arg.startsWith('-')) {
       return arg
     }

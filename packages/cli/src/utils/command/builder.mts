@@ -80,7 +80,7 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
               if (examples.length > 0) {
                 lines.push('\nExamples')
                 for (let i = 0, { length } = examples; i < length; i += 1) {
-                  const ex = examples[i]
+                  const ex = examples[i]!
                   lines.push(`  $ ${command} ${ex.command}`)
                   if (ex.description) {
                     lines.push(`    ${ex.description}`)

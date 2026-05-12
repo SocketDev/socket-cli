@@ -104,7 +104,7 @@ export function findBestCommandMatch(
   let bestScore = Number.POSITIVE_INFINITY
   const allCommands = [...Object.keys(subcommands), ...Object.keys(aliases)]
   for (let i = 0, { length } = allCommands; i < length; i += 1) {
-    const command = allCommands[i]
+    const command = allCommands[i]!
     const distance = levenshteinDistance(
       input.toLowerCase(),
       command.toLowerCase(),

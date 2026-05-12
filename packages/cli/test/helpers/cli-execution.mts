@@ -62,7 +62,7 @@ export async function executeBatchCliCommands(
   const results: CliExecutionResult[] = []
 
   for (let i = 0, { length } = commands; i < length; i += 1) {
-    const args = commands[i]
+    const args = commands[i]!
     // eslint-disable-next-line no-await-in-loop
     const result = await executeCliCommand(args, options)
     results.push(result)

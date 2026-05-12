@@ -120,7 +120,7 @@ export function runStandardValidations(options: ValidationOptions): boolean {
 
   // Run custom validations first
   for (let i = 0, { length } = customValidations; i < length; i += 1) {
-    const validation = customValidations[i]
+    const validation = customValidations[i]!
     if (!validation()) {
       return false
     }

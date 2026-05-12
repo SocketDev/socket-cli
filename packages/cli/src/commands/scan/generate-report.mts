@@ -179,7 +179,7 @@ export function generateReport(
   if (securityRules) {
     // Note: reportLevel: error > warn > monitor > ignore > defer
     for (let i = 0, { length } = scan; i < length; i += 1) {
-      const artifact = scan[i]
+      const artifact = scan[i]!
       const {
         alerts,
         name: pkgName = UNKNOWN_VALUE,

@@ -122,14 +122,14 @@ export function generateGlobalHelp(registry: CommandRegistry): string {
   if (visibleTopLevel.length > 0) {
     lines.push('Commands:')
     for (let i = 0, { length } = visibleTopLevel; i < length; i += 1) {
-      const cmd = visibleTopLevel[i]
+      const cmd = visibleTopLevel[i]!
       const cmdLine = `  ${cmd.name.padEnd(20)} ${cmd.description}`
       lines.push(cmdLine)
 
       // Show subcommands
       const subcommands = registry.list(cmd.name)
       for (let i = 0, { length } = subcommands; i < length; i += 1) {
-        const sub = subcommands[i]
+        const sub = subcommands[i]!
         if (!sub.hidden) {
           const subLine = `    ${sub.name.padEnd(18)} ${sub.description}`
           lines.push(subLine)

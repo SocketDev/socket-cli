@@ -108,7 +108,7 @@ export async function createScanFromGithub({
   let blockingError: CResult<undefined> | undefined
   const perRepoFailures: Array<{ repo: string; message: string }> = []
   for (let i = 0, { length } = targetRepos; i < length; i += 1) {
-    const repoSlug = targetRepos[i]
+    const repoSlug = targetRepos[i]!
     reposScanned += 1
     // eslint-disable-next-line no-await-in-loop
     const scanCResult = await scanRepo(repoSlug, {
@@ -534,7 +534,7 @@ export async function testAndDownloadManifestFiles({
   let fileCount = 0
   let firstFailureResult: CResult<never> | undefined
   for (let i = 0, { length } = files; i < length; i += 1) {
-    const file = files[i]
+    const file = files[i]!
     // eslint-disable-next-line no-await-in-loop
     const result = await testAndDownloadManifestFile({
       defaultBranch,

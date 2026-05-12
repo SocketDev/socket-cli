@@ -269,7 +269,7 @@ export function pushRootBucketedLayout(
       )
     }
     for (let i = 0, { length } = names; i < length; i += 1) {
-      const cmdName = names[i]
+      const cmdName = names[i]!
       // Skip commands already covered by hero rows in `main`.
       if (bucket === 'main' && cmdName === 'login') {
         continue

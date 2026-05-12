@@ -213,8 +213,9 @@ export function displayThreatFeedWithIocraft({
     logger.error('Error rendering threat feed:', errorMessage(e))
     logger.warn('Falling back to plain text output')
     logger.log(`Total threats: ${results.length}`)
-    for (let i = 0, { length } = results.slice(0, 10); i < length; i += 1) {
-      const threat = results.slice(0, 10)[i]
+    const head = results.slice(0, 10)
+    for (let i = 0, { length } = head; i < length; i += 1) {
+      const threat = head[i]!
       logger.log(
         `[${i + 1}] ${threat.parsed?.ecosystem || 'N/A'}/${threat.parsed?.name || 'N/A'}@${threat.parsed?.version || 'N/A'}`,
       )

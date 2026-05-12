@@ -199,7 +199,7 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     const highestForUpgrade: HighestVersionByMajor = new Map()
     const unfixableAlerts: SocketPackageAlert[] = []
     for (let i = 0, { length } = sockPkgAlerts; i < length; i += 1) {
-      const sockPkgAlert = sockPkgAlerts[i]
+      const sockPkgAlert = sockPkgAlerts[i]!
       const alert = sockPkgAlert.raw
       const fixType = alert.fix?.type ?? ''
       if (fixType === ALERT_FIX_TYPE.cve) {
@@ -346,7 +346,7 @@ export function getCveInfoFromAlertsMap(
       ...(purlObj.namespace && { namespace: purlObj.namespace }),
     })
     for (let i = 0, { length } = sockPkgAlerts; i < length; i += 1) {
-      const sockPkgAlert = sockPkgAlerts[i]
+      const sockPkgAlert = sockPkgAlerts[i]!
       const alert = sockPkgAlert.raw
       if (
         alert.fix?.type !== ALERT_FIX_TYPE.cve ||
@@ -416,7 +416,7 @@ export function getHiddenRiskCounts(
     low: 0,
   }
   for (let i = 0, { length } = hiddenAlerts; i < length; i += 1) {
-    const alert = hiddenAlerts[i]
+    const alert = hiddenAlerts[i]!
     switch (getAlertSeverityOrder(alert)) {
       case ALERT_SEVERITY_ORDER.critical:
         riskCounts.critical += 1
@@ -560,7 +560,7 @@ export function logAlertsMap(
     const { 0: purl, 1: alerts } = entries[i]!
     const lines = new Set<string>()
     for (let i = 0, { length } = alerts; i < length; i += 1) {
-      const alert = alerts[i]
+      const alert = alerts[i]!
       const { type } = alert
       const severity = alert.raw.severity ?? ''
       const attributes = [

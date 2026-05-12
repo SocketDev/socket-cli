@@ -10,7 +10,7 @@ export function pick<T extends Record<string, unknown>, K extends keyof T>(
 ): Pick<T, K> {
   const result: Partial<Pick<T, K>> = {}
   for (let i = 0, { length } = keys; i < length; i += 1) {
-    const key = keys[i]
+    const key = keys[i]!
     result[key] = input[key]
   }
   return result as Pick<T, K>

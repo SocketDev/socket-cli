@@ -15,9 +15,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
-type DiffScanArtifact =
-  SocketSdkSuccessResult<'GetOrgDiffScan'>['data']['artifacts']['added'][number]
-
 export async function handleJson(
   data: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
   file: string,
@@ -67,12 +64,9 @@ export async function handleMarkdown(
   logger.log(`- Added packages: ${data.artifacts.added.length}`)
 
   if (data.artifacts.added.length > 0) {
-    for (
-      let i = 0, { length } = data.artifacts.added.slice(0, 10);
-      i < length;
-      i += 1
-    ) {
-      const artifact = data.artifacts.added.slice(0, 10)[i]
+    const addedHead = data.artifacts.added.slice(0, 10)
+    for (let i = 0, { length } = addedHead; i < length; i += 1) {
+      const artifact = addedHead[i]!
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
     if (data.artifacts.added.length > 10) {
@@ -82,12 +76,9 @@ export async function handleMarkdown(
 
   logger.log(`- Removed packages: ${data.artifacts.removed.length}`)
   if (data.artifacts.removed.length > 0) {
-    for (
-      let i = 0, { length } = data.artifacts.removed.slice(0, 10);
-      i < length;
-      i += 1
-    ) {
-      const artifact = data.artifacts.removed.slice(0, 10)[i]
+    const removedHead = data.artifacts.removed.slice(0, 10)
+    for (let i = 0, { length } = removedHead; i < length; i += 1) {
+      const artifact = removedHead[i]!
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
     if (data.artifacts.removed.length > 10) {
@@ -97,12 +88,9 @@ export async function handleMarkdown(
 
   logger.log(`- Replaced packages: ${data.artifacts.replaced.length}`)
   if (data.artifacts.replaced.length > 0) {
-    for (
-      let i = 0, { length } = data.artifacts.replaced.slice(0, 10);
-      i < length;
-      i += 1
-    ) {
-      const artifact = data.artifacts.replaced.slice(0, 10)[i]
+    const replacedHead = data.artifacts.replaced.slice(0, 10)
+    for (let i = 0, { length } = replacedHead; i < length; i += 1) {
+      const artifact = replacedHead[i]!
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
     if (data.artifacts.replaced.length > 10) {
@@ -112,12 +100,9 @@ export async function handleMarkdown(
 
   logger.log(`- Updated packages: ${data.artifacts.updated.length}`)
   if (data.artifacts.updated.length > 0) {
-    for (
-      let i = 0, { length } = data.artifacts.updated.slice(0, 10);
-      i < length;
-      i += 1
-    ) {
-      const artifact = data.artifacts.updated.slice(0, 10)[i]
+    const updatedHead = data.artifacts.updated.slice(0, 10)
+    for (let i = 0, { length } = updatedHead; i < length; i += 1) {
+      const artifact = updatedHead[i]!
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
     if (data.artifacts.updated.length > 10) {
@@ -130,7 +115,7 @@ export async function handleMarkdown(
   if (unchanged.length > 0) {
     const firstUpToTen = unchanged.slice(0, 10)
     for (let i = 0, { length } = firstUpToTen; i < length; i += 1) {
-      const artifact = firstUpToTen[i]
+      const artifact = firstUpToTen[i]!
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
     if (unchanged.length > 10) {

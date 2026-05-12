@@ -117,10 +117,10 @@ export function getHelpListOutput(
   let result = ''
   const names = Object.keys(list).sort(naturalCompare)
   for (let i = 0, { length } = names; i < length; i += 1) {
-    const name = names[i]
+    const name = names[i]!
     const entry = list[name]
     const entryIsObj = isObject(entry)
-    if (entryIsObj && 'hidden' in entry && entry?.hidden) {
+    if (entryIsObj && 'hidden' in entry && entry['hidden']) {
       continue
     }
     const printedName = `${keyPrefix}${camelToKebab(name)}`
@@ -128,7 +128,9 @@ export function getHelpListOutput(
 
     result += preDescription
 
-    const description = entryIsObj ? entry.description : String(entry)
+    const description = entryIsObj
+      ? String(entry['description'] ?? '')
+      : String(entry)
     if (description) {
       result += indentString(description, {
         count: preDescription.length,

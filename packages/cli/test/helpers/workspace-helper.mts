@@ -61,7 +61,7 @@ export interface Workspace {
   /** Read file from workspace */
   readFile: (relativePath: string) => Promise<string>
   /** Check if file exists in workspace */
-  fileExists: (relativePath: string) => Promise<boolean>
+  fileExists: (relativePath: string) => boolean
   /** Get absolute path for relative path in workspace */
   resolve: (...segments: string[]) => string
 }
@@ -173,7 +173,7 @@ export async function createTestWorkspace(
 
   // Create specified files
   for (let i = 0, { length } = files; i < length; i += 1) {
-    const file = files[i]
+    const file = files[i]!
     const filePath = path.join(workspacePath, file.path)
     const fileDir = path.dirname(filePath)
     // eslint-disable-next-line no-await-in-loop

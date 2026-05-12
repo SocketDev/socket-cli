@@ -90,7 +90,7 @@ export async function fetchScanData(
     const lines = ndJsonString.split('\n').filter(Boolean)
     const data: SocketArtifact[] = []
     for (let i = 0, { length } = lines; i < length; i += 1) {
-      const line = lines[i]
+      const line = lines[i]!
       try {
         data.push(JSON.parse(line))
       } catch (e) {

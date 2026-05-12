@@ -367,7 +367,7 @@ export function expectOrderedPatterns(
   let lastIndex = -1
 
   for (let i = 0, { length } = patterns; i < length; i += 1) {
-    const pattern = patterns[i]
+    const pattern = patterns[i]!
     const index =
       typeof pattern === 'string'
         ? output.indexOf(pattern, lastIndex + 1)
@@ -466,7 +466,7 @@ export function expectTableStructure(output: string): void {
   const maxDeviation = avgLength * 0.3 // Allow 30% deviation
 
   for (let i = 0, { length } = lineLengths; i < length; i += 1) {
-    const length = lineLengths[i]
+    const length = lineLengths[i]!
     expect(Math.abs(length - avgLength)).toBeLessThan(maxDeviation)
   }
 }

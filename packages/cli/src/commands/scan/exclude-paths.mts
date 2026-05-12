@@ -76,7 +76,7 @@ export function applyFullExcludePaths({
  */
 export function assertNoNegationPatterns(paths: readonly string[]): void {
   for (let i = 0, { length } = paths; i < length; i += 1) {
-    const path = paths[i]
+    const path = paths[i]!
     if (path.startsWith('!')) {
       throw new InputError(
         `--exclude-paths does not support negation patterns. Got: '${path}'.`,

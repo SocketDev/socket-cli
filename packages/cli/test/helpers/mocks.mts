@@ -46,7 +46,9 @@ export function createLoggerMocks() {
 /**
  * Creates a mock Socket SDK with common methods
  */
-export function createMockSdk(overrides: Partial<SocketSdk> = {}): unknown {
+export function createMockSdk(overrides: Partial<SocketSdk> = {}): SocketSdk {
+  // Tests substitute a vitest-mock-shaped object for the real SocketSdk; this
+  // is intentionally structural so command code under test sees a method to call.
   return {
     deleteOrgRepo: vi.fn(),
     createOrgRepo: vi.fn(),
@@ -63,7 +65,7 @@ export function createMockSdk(overrides: Partial<SocketSdk> = {}): unknown {
     getRepoAnalytics: vi.fn(),
     batchPackageFetch: vi.fn(),
     ...overrides,
-  }
+  } as unknown as SocketSdk
 }
 
 /**

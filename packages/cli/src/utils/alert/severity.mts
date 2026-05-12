@@ -32,7 +32,7 @@ export function formatSeverityCount(
 ): string {
   const summary: string[] = []
   for (let i = 0, { length } = ALERT_SEVERITIES_SORTED; i < length; i += 1) {
-    const severity = ALERT_SEVERITIES_SORTED[i]
+    const severity = ALERT_SEVERITIES_SORTED[i]!
     if (severityCount[severity]) {
       summary.push(`${severityCount[severity]} ${severity}`)
     }
@@ -45,7 +45,7 @@ export function getDesiredSeverities(
 ): Array<SocketSdkAlert['severity']> {
   const result: Array<SocketSdkAlert['severity']> = []
   for (let i = 0, { length } = ALERT_SEVERITIES_SORTED; i < length; i += 1) {
-    const severity = ALERT_SEVERITIES_SORTED[i]
+    const severity = ALERT_SEVERITIES_SORTED[i]!
     result.push(severity)
     if (severity === lowestToInclude) {
       break
@@ -64,7 +64,7 @@ export function getSeverityCount(
   ) as Record<SocketSdkAlert['severity'], number>
 
   for (let i = 0, { length } = issues; i < length; i += 1) {
-    const issue = issues[i]
+    const issue = issues[i]!
     const { value } = issue
     if (!value) {
       continue

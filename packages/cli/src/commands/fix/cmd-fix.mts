@@ -368,7 +368,7 @@ export async function run(
   const validatedEcosystems: PURL_Type[] = []
   const validEcosystemChoices = getEcosystemChoicesForMeow()
   for (let i = 0, { length } = ecosystemsRaw; i < length; i += 1) {
-    const ecosystem = ecosystemsRaw[i]
+    const ecosystem = ecosystemsRaw[i]!
     if (!validEcosystemChoices.includes(ecosystem)) {
       logger.fail(
         `--ecosystems must be one of: ${joinAnd(validEcosystemChoices)} (saw: "${ecosystem}"); pass a supported ecosystem like --ecosystems=${validEcosystemChoices[0]}`,

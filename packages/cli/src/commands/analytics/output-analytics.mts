@@ -53,12 +53,12 @@ export function formatDataOrg(
 
   const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
   for (let i = 0, { length } = METRICS; i < length; i += 1) {
-    const metric = METRICS[i]
+    const metric = METRICS[i]!
     formattedData[metric] = {}
   }
 
   for (let i = 0, { length } = data; i < length; i += 1) {
-    const entry = data[i]
+    const entry = data[i]!
     const topFiveAlertTypes = entry.top_five_alert_types
     // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const type of Object.keys(topFiveAlertTypes)) {
@@ -72,10 +72,10 @@ export function formatDataOrg(
   }
 
   for (let i = 0, { length } = METRICS; i < length; i += 1) {
-    const metric = METRICS[i]
+    const metric = METRICS[i]!
     const formatted = formattedData[metric]
     for (let i = 0, { length } = data; i < length; i += 1) {
-      const entry = data[i]
+      const entry = data[i]!
       const date = formatDate(entry.created_at)
       if (formatted[date]) {
         formatted[date] += entry[metric]!
@@ -107,13 +107,13 @@ export function formatDataRepo(
 
   const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
   for (let i = 0, { length } = METRICS; i < length; i += 1) {
-    const metric = METRICS[i]
+    const metric = METRICS[i]!
     formattedData[metric] = {}
   }
 
   // Aggregate alert counts: sum across time entries (consistent with formatDataOrg).
   for (let i = 0, { length } = data; i < length; i += 1) {
-    const entry = data[i]
+    const entry = data[i]!
     const topFiveAlertTypes = entry.top_five_alert_types
     // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const type of Object.keys(topFiveAlertTypes)) {
@@ -126,9 +126,9 @@ export function formatDataRepo(
     }
   }
   for (let i = 0, { length } = data; i < length; i += 1) {
-    const entry = data[i]
+    const entry = data[i]!
     for (let i = 0, { length } = METRICS; i < length; i += 1) {
-      const metric = METRICS[i]
+      const metric = METRICS[i]!
       formattedData[metric]![formatDate(entry.created_at)] = entry[metric]
     }
   }

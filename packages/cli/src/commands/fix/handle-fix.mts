@@ -40,7 +40,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
   const errors: string[] = []
 
   for (let i = 0, { length } = ids; i < length; i += 1) {
-    const id = ids[i]
+    const id = ids[i]!
     const trimmedId = id.trim()
 
     if (trimmedId.startsWith('GHSA-')) {

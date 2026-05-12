@@ -174,7 +174,7 @@ export function mdTable<T extends Array<Record<string, string>>>(
   const cws = cols.map(col => col.length)
 
   for (let i = 0, { length } = logs; i < length; i += 1) {
-    const log = logs[i]
+    const log = logs[i]!
     for (let i = 0, { length } = cols; i < length; i += 1) {
       const val: unknown = log[cols[i] ?? ''] ?? ''
       cws[i] = Math.max(
@@ -187,7 +187,7 @@ export function mdTable<T extends Array<Record<string, string>>>(
 
   let div = '|'
   for (let i = 0, { length } = cws; i < length; i += 1) {
-    const cw = cws[i]
+    const cw = cws[i]!
     div += ` ${'-'.repeat(cw)} |`
   }
 
@@ -198,7 +198,7 @@ export function mdTable<T extends Array<Record<string, string>>>(
 
   let body = ''
   for (let i = 0, { length } = logs; i < length; i += 1) {
-    const log = logs[i]
+    const log = logs[i]!
     body += '|'
     for (let i = 0, { length } = cols; i < length; i += 1) {
       const val: unknown = log[cols[i] ?? ''] ?? ''
@@ -227,7 +227,7 @@ export function mdTableOfPairs(
 
   let div = '|'
   for (let i = 0, { length } = cws; i < length; i += 1) {
-    const cw = cws[i]
+    const cw = cws[i]!
     div += ` ${'-'.repeat(cw)} |`
   }
 

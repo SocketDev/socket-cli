@@ -29,7 +29,7 @@ export function findDefaultBranchValueMisuse(
   // value to what meow treats as a boolean flag, so the value is
   // silently dropped.
   for (let i = 0, { length } = argv; i < length; i += 1) {
-    const arg = argv[i]
+    const arg = argv[i]!
     const prefix = DEFAULT_BRANCH_PREFIXES.find(p => arg.startsWith(p))
     if (!prefix) {
       continue

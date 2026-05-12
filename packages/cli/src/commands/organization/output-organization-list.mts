@@ -38,7 +38,7 @@ export async function outputOrganizationList(
     )
     // Just dump.
     for (let i = 0, { length } = organizations; i < length; i += 1) {
-      const o = organizations[i]
+      const o = organizations[i]!
       logger.log(
         `- Name: ${colors.bold(o.name ?? 'undefined')}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`,
       )
@@ -54,7 +54,7 @@ export async function outputOrganizationList(
   let mw2 = 2
   let mw3 = 4
   for (let i = 0, { length } = organizations; i < length; i += 1) {
-    const o = organizations[i]
+    const o = organizations[i]!
     mw1 = Math.max(mw1, o.name?.length ?? 0)
     mw2 = Math.max(mw2, o.id.length)
     mw3 = Math.max(mw3, o.plan.length)
@@ -68,7 +68,7 @@ export async function outputOrganizationList(
   )
   logger.log(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`)
   for (let i = 0, { length } = organizations; i < length; i += 1) {
-    const o = organizations[i]
+    const o = organizations[i]!
     logger.log(
       `| ${(o.name || '').padEnd(mw1, ' ')} | ${(o.id || '').padEnd(mw2, ' ')} | ${(o.plan || '').padEnd(mw3, ' ')} |`,
     )

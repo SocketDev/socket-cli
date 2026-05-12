@@ -4,6 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Mock } from 'vitest'
 
+declare global {
+  // Test-only global used to expose the mock SDK to command modules under test.
+  // eslint-disable-next-line no-var
+  var mockSdk: Record<string, unknown> | undefined
+}
+
 /**
  * Common test setup for CLI commands
  */
@@ -16,7 +22,13 @@ export interface TestSetupOptions {
   env?: Record<string, string>
 }
 
-export function setupCommandTest(options: TestSetupOptions) {
+export interface TestStubs {
+  loggerLog: Mock | undefined
+  sdk: Record<string, unknown>
+  config: Record<string, unknown>
+}
+
+export function setupCommandTest(options: TestSetupOptions): TestStubs {
   const {
     // Commented out to avoid unused variable errors.
     // commandPath,
@@ -27,14 +39,14 @@ export function setupCommandTest(options: TestSetupOptions) {
     mockSdk = true,
   } = options
 
-  const stubs = {
-    loggerLog: undefined as Mock | undefined,
-    sdk: {} as unknown,
+  const stubs: TestStubs = {
+    loggerLog: undefined,
+    sdk: {},
     config: mockConfig,
   }
 
   // Expose mock SDK globally for tests to access
-  ;(global as unknown).mockSdk = stubs.sdk
+  globalThis.mockSdk = stubs.sdk
 
   beforeEach(() => {
     // Reset environment
@@ -44,8 +56,8 @@ export function setupCommandTest(options: TestSetupOptions) {
     }
 
     // Reset mock SDK for each test
-    stubs.sdk = {} as unknown
-    ;(global as unknown).mockSdk = stubs.sdk
+    stubs.sdk = {}
+    globalThis.mockSdk = stubs.sdk
 
     // Mock SDK if needed
     if (mockSdk) {
@@ -86,7 +98,7 @@ export interface CommandTestCase {
   expectedOutput?: string | RegExp | string[]
   expectedError?: string | RegExp
   setup?: () => void | Promise<void>
-  validate?: (stubs: unknown) => void | Promise<void>
+  validate?: (stubs: TestStubs) => void | Promise<void>
 }
 
 export function buildCommandTests(
@@ -98,7 +110,7 @@ export function buildCommandTests(
     const stubs = setupCommandTest(setupOptions)
 
     for (let i = 0, { length } = testCases; i < length; i += 1) {
-      const testCase = testCases[i]
+      const testCase = testCases[i]!
       it(testCase.name, async () => {
         // Run setup if provided
         if (testCase.setup) {
@@ -197,9 +209,10 @@ export const commonTests = {
     args: [],
     flags: { json: true },
     validate: stubs => {
-      const output = stubs.loggerLog?.mock.calls
-        .map((call: unknown[]) => call[0])
-        .join('')
+      const output =
+        stubs.loggerLog?.mock.calls
+          .map((call: unknown[]) => call[0])
+          .join('') ?? ''
       expect(() => JSON.parse(output)).not.toThrow()
     },
   }),
@@ -244,14 +257,22 @@ export const commonTests = {
 /**
  * Mock API responses
  */
-export function mockApiResponse<T>(sdk: unknown, method: string, response: T) {
+export function mockApiResponse<T>(
+  sdk: Record<string, unknown>,
+  method: string,
+  response: T,
+) {
   sdk[method] = vi.fn().mockResolvedValue({
     ok: true,
     data: response,
   })
 }
 
-export function mockApiError(sdk: unknown, method: string, error: string) {
+export function mockApiError(
+  sdk: Record<string, unknown>,
+  method: string,
+  error: string,
+) {
   sdk[method] = vi.fn().mockResolvedValue({
     ok: false,
     message: error,

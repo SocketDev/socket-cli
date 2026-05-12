@@ -125,7 +125,7 @@ export async function globWithGitIgnore(
       cwd,
     )
     for (let i = 0, { length } = ignorePatterns; i < length; i += 1) {
-      const pattern = ignorePatterns[i]
+      const pattern = ignorePatterns[i]!
       ignores.add(pattern)
     }
   }
@@ -147,7 +147,7 @@ export async function globWithGitIgnore(
     { concurrency: 8 },
   )) {
     for (let i = 0, { length } = ignorePatterns; i < length; i += 1) {
-      const p = ignorePatterns[i]
+      const p = ignorePatterns[i]!
       ignores.add(p)
     }
   }

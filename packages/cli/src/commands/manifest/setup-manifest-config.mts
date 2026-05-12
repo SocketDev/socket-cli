@@ -340,7 +340,7 @@ export async function setupManifestConfig(
   ]
 
   for (let i = 0, { length } = choices; i < length; i += 1) {
-    const obj = choices[i]
+    const obj = choices[i]!
     if (detected[obj.value as keyof typeof detected]) {
       obj.name += ' [detected]'
     }

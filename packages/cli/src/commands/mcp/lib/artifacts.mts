@@ -31,7 +31,7 @@ export function deduplicateArtifacts(
 ): ArtifactData[] {
   const groups = new Map<string, ArtifactData[]>()
   for (let i = 0, { length } = artifacts; i < length; i += 1) {
-    const artifact = artifacts[i]
+    const artifact = artifacts[i]!
     const key = artifactGroupKey(artifact)
     let group = groups.get(key)
     if (!group) {

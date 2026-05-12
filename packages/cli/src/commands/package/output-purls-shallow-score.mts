@@ -253,7 +253,7 @@ export function preProcess(
   // Generate all purls to try so we can try to match search request.
   const purls: Set<string> = new Set()
   for (let i = 0, { length } = artifacts; i < length; i += 1) {
-    const data = artifacts[i]
+    const data = artifacts[i]!
     purls.add(
       `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}@${data.version}`,
     )
@@ -284,7 +284,7 @@ export function preProcess(
   // Merge the alerts for duped packages. Use lowest score between all of them.
   const rows: Map<string, DedupedArtifact> = new Map()
   for (let i = 0, { length } = artifacts; i < length; i += 1) {
-    const artifact = artifacts[i]
+    const artifact = artifacts[i]!
     const purl = `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
     if (rows.has(purl)) {
       const row = rows.get(purl)
