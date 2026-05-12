@@ -66,7 +66,8 @@ export function validateCheckpointChain(chain: string[], packageName: string) {
     )
   }
   const seen = new Set()
-  for (const cp of chain) {
+  for (let i = 0, { length } = chain; i < length; i += 1) {
+    const cp = chain[i]
     if (seen.has(cp)) {
       throw new Error(`${packageName}: Duplicate checkpoint in chain: ${cp}`)
     }

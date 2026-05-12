@@ -24,7 +24,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 export async function computeSourceHash(sourcePaths) {
   const hash = createHash('sha256')
 
-  for (const sourcePath of sourcePaths) {
+  for (let i = 0, { length } = sourcePaths; i < length; i += 1) {
+    const sourcePath = sourcePaths[i]
     const content = readFileSync(sourcePath, 'utf-8')
     hash.update(content)
   }
@@ -81,7 +82,8 @@ export async function shouldExtract({
   }
 
   // Check if all sources exist.
-  for (const sourcePath of sources) {
+  for (let i = 0, { length } = sources; i < length; i += 1) {
+    const sourcePath = sources[i]
     if (!existsSync(sourcePath)) {
       return true
     }

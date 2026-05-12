@@ -194,7 +194,13 @@ export function hashSourcePaths(sourcePaths) {
   return hash.digest('hex')
 }
 
-export function platformCacheKey({ buildMode, nodeVersion, platform, arch, libc }) {
+export function platformCacheKey({
+  buildMode,
+  nodeVersion,
+  platform,
+  arch,
+  libc,
+}) {
   const parts = [
     buildMode && `mode=${buildMode}`,
     nodeVersion && `node=${nodeVersion}`,

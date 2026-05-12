@@ -206,7 +206,8 @@ export function parseFlags(argv) {
   const args = new Set(argv)
   const getValue = flag => {
     const prefix = `${flag}=`
-    for (const arg of argv) {
+    for (let i = 0, { length } = argv; i < length; i += 1) {
+      const arg = argv[i]
       if (arg.startsWith(prefix)) {
         return arg.slice(prefix.length)
       }
@@ -404,7 +405,8 @@ export async function runPipeline(options, cliOverrides) {
   if (outputFiles.length) {
     logger.info('')
     logger.info('Files:')
-    for (const file of outputFiles) {
+    for (let i = 0, { length } = outputFiles; i < length; i += 1) {
+      const file = outputFiles[i]
       logger.info(`  - ${path.relative(packageRoot, file)}`)
     }
     logger.info('')

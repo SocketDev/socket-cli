@@ -31,7 +31,8 @@ export function unicodeTransformPlugin() {
           return
         }
 
-        for (const output of outputs) {
+        for (let i = 0, { length } = outputs; i < length; i += 1) {
+          const output = outputs[i]
           let content = output.text
 
           // Transform Unicode property escapes for --with-intl=none compatibility.

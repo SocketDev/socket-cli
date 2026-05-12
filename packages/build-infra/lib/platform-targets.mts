@@ -268,7 +268,8 @@ export function formatPlatformTarget(platform, arch, libc) {
 export function parsePlatformArgs(args) {
   const result = { arch: undefined, libc: undefined, platform: undefined }
 
-  for (const arg of args) {
+  for (let i = 0, { length } = args; i < length; i += 1) {
+    const arg = args[i]
     if (arg.startsWith('--platform=')) {
       const parts = arg.split('=')
       if (parts.length >= 2) {

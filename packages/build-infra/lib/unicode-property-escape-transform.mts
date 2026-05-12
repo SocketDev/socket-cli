@@ -11,7 +11,6 @@ import MagicString from 'magic-string'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
-
 const logger = getDefaultLogger()
 const traverse =
   typeof traverseImport === 'function'

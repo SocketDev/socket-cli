@@ -138,7 +138,8 @@ export async function getLatestRelease(
         }
 
         // Find the first release matching the prefix.
-        for (const release of releases) {
+        for (let i = 0, { length } = releases; i < length; i += 1) {
+          const release = releases[i]
           const { tag_name: tag } = release
           if (tag.startsWith(`${prefix}-`)) {
             if (!quiet) {
