@@ -312,12 +312,14 @@ export class FileProgress {
       this.total > 0 ? Math.floor((this.processed / this.total) * 100) : 0
     const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1)
 
-    process.stderr.write(
+    // Uses raw stderr.write for \r-based progress redraw — logger
+    // appends newlines and can't replace the current line.
+    process.stderr.write( // socket-hook: allow console
       `\r${this.operation}: [${this.processed}/${this.total}] ${percentage}% ${colors.gray(`(${elapsed}s)`)} ${colors.cyan(file)}`,
     )
 
     if (this.processed === this.total) {
-      process.stderr.write('\n')
+      process.stderr.write('\n') // socket-hook: allow console
     }
   }
 }
