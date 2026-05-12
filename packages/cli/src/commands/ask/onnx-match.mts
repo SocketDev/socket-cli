@@ -39,9 +39,11 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
  * a disabled pipeline is a silent no-op.
  */
 export async function ensureCommandEmbeddings(): Promise<void> {
+  /* c8 ignore start -- defensive: commandEmbeddings only populates when the ONNX pipeline is enabled, which is currently disabled (see getEmbeddingPipeline). */
   if (Object.keys(commandEmbeddings).length > 0) {
     return
   }
+  /* c8 ignore stop */
 
   const commandDescriptions = {
     __proto__: null,
@@ -58,9 +60,11 @@ export async function ensureCommandEmbeddings(): Promise<void> {
     if (description) {
       // eslint-disable-next-line no-await-in-loop
       const embedding = await getEmbedding(description)
+      /* c8 ignore start -- defensive: getEmbedding always returns undefined while the ONNX pipeline is disabled. */
       if (embedding) {
         commandEmbeddings[action] = embedding
       }
+      /* c8 ignore stop */
     }
   }
 }
@@ -76,6 +80,7 @@ export async function getEmbedding(
   if (!model) {
     return undefined
   }
+  /* c8 ignore start -- defensive: model is always undefined while the ONNX pipeline is disabled, so this branch is unreachable. */
   try {
     const result = await model.embed(text)
     return result.embedding
@@ -83,6 +88,7 @@ export async function getEmbedding(
     // Silently fail — pattern matching will handle the query.
     return undefined
   }
+  /* c8 ignore stop */
 }
 
 /**
@@ -94,9 +100,11 @@ export async function getEmbedding(
  * verifying the WASM bundle ships with the SEA build.
  */
 export async function getEmbeddingPipeline() {
+  /* c8 ignore start -- defensive: embeddingPipeline is a constant `undefined` while the ONNX pipeline is disabled. */
   if (embeddingPipeline) {
     return embeddingPipeline
   }
+  /* c8 ignore stop */
   if (embeddingPipelineFailure) {
     return undefined
   }
@@ -112,11 +120,12 @@ export async function getEmbeddingPipeline() {
     // Temporarily fall back to pattern matching only.
     embeddingPipelineFailure = true
     return undefined
-  } catch (_e) {
+  } /* c8 ignore start -- defensive: the try block above only contains synchronous assignments and a return, so the catch is unreachable. */ catch (_e) {
     // Model not available — silently fall back to pattern matching.
     embeddingPipelineFailure = true
     return undefined
   }
+  /* c8 ignore stop */
 }
 
 /**
@@ -139,6 +148,7 @@ export async function onnxSemanticMatch(query: string): Promise<
     return undefined
   }
 
+  /* c8 ignore start -- defensive: queryEmbedding is always undefined and commandEmbeddings always empty while the ONNX pipeline is disabled, so the early-return above always fires. */
   let bestAction = ''
   let bestScore = 0
 
@@ -157,4 +167,5 @@ export async function onnxSemanticMatch(query: string): Promise<
   }
 
   return { action: bestAction, confidence: bestScore }
+  /* c8 ignore stop */
 }
