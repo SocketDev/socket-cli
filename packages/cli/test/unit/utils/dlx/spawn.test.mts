@@ -1,4 +1,9 @@
 /**
+ * max-file-lines: legitimate — comprehensive single-module test suite.
+ * Covers TOCTOU lock handling, zip-slip protection, tar.gz extraction,
+ * error wrapping; vi.mock setup is shared so splitting would duplicate
+ * boilerplate.
+ *
  * Unit tests for utils/dlx/spawn.
  *
  * Covers validatePackageName, spawnDlx, spawnToolVfs, and

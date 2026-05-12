@@ -1,4 +1,10 @@
 /**
+ * max-file-lines: legitimate — comprehensive single-module test suite.
+ * Tests the extractExternalTools state machine (cache marker, lock
+ * waits, stale locks, recursion-depth guard, tool revalidation, error
+ * wrapping). The vi.mock setup is shared across every describe;
+ * splitting would duplicate the boilerplate that IS the cohesion.
+ *
  * Unit tests for utils/dlx/vfs-extract.
  *
  * Covers the public availability check, tool-path map, extractTool, and the
@@ -10,6 +16,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type * as NodeFs from 'node:fs'
 
 const mockIsSeaBinary = vi.hoisted(() => vi.fn(() => false))
 const mockExistsSync = vi.hoisted(() => vi.fn(() => false))
@@ -29,7 +37,7 @@ vi.mock('../../../../src/constants/paths.mts', () => ({
 }))
 
 vi.mock('node:fs', async () => {
-  const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
+  const actual = await vi.importActual<typeof NodeFs>('node:fs')
   const promises = {
     writeFile: mockFsWriteFile,
     readFile: mockFsReadFile,

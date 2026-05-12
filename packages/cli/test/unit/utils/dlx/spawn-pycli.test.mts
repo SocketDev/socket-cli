@@ -1,4 +1,10 @@
 /**
+ * max-file-lines: legitimate — comprehensive single-module test suite.
+ * Covers 13 entry points of src/utils/dlx/spawn-pycli.mts (helpers +
+ * ensure* state machines + spawn* dispatchers). Splitting would
+ * duplicate the ~130 lines of vi.mock setup that every describe
+ * relies on; the mock contract IS the test-file's cohesion.
+ *
  * Unit tests for utils/dlx/spawn-pycli.
  *
  * Covers convertCaretToPipRange, downloadPyPiWheel, downloadPython,
@@ -10,7 +16,9 @@
  * - src/utils/dlx/spawn-pycli.mts
  */
 
-import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type * as NodeFs from 'node:fs'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockSpawnNode = vi.hoisted(() => vi.fn())
@@ -70,7 +78,7 @@ vi.mock('@socketsecurity/lib/constants/platform', () => ({
 }))
 
 vi.mock('node:fs', async () => {
-  const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
+  const actual = await vi.importActual<typeof NodeFs>('node:fs')
   const promises = {
     writeFile: mockFsWriteFile,
     readFile: mockFsReadFile,
