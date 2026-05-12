@@ -74,10 +74,13 @@ export function applyFullExcludePaths({
 }: ApplyFullExcludePathsOptions): ApplyFullExcludePathsResult {
   const { excludePaths } = reachabilityOptions
   const additionalScaIgnores = excludePaths.flatMap(excludePathToScanIgnores)
-  const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(excludePaths, {
-    cwd,
-    target,
-  })
+  const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(
+    excludePaths,
+    {
+      cwd,
+      target,
+    },
+  )
   const mergedReachabilityOptions = excludePaths.length
     ? {
         ...reachabilityOptions,
@@ -139,7 +142,6 @@ export function assertValidExcludePaths(paths: readonly string[]): void {
     }
   }
 }
-
 
 /**
  * Expands an anchored-micromatch --exclude-paths entry into the minimatch

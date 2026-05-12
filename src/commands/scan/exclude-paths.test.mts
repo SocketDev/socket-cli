@@ -46,9 +46,7 @@ describe('exclude-paths', () => {
     })
 
     it('rejects negation patterns', () => {
-      expect(() => assertValidExcludePaths(['!tests/keep'])).toThrow(
-        InputError,
-      )
+      expect(() => assertValidExcludePaths(['!tests/keep'])).toThrow(InputError)
       expect(() => assertValidExcludePaths(['!tests/keep'])).toThrow(
         "--exclude-paths does not support negation patterns. Got: '!tests/keep'.",
       )
@@ -66,9 +64,7 @@ describe('exclude-paths', () => {
     it.each(['/repo/tests', '/etc/passwd'])(
       'rejects absolute path %j',
       input => {
-        expect(() => assertValidExcludePaths([input])).toThrow(
-          /absolute path/,
-        )
+        expect(() => assertValidExcludePaths([input])).toThrow(/absolute path/)
       },
     )
 
