@@ -94,8 +94,9 @@ export const reachabilityFlags: MeowFlags = {
   reachExcludePaths: {
     type: 'string',
     isMultiple: true,
+    hidden: true,
     description:
-      'List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
+      'Deprecated: use --exclude-paths instead. List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
   },
   reachLazyMode: {
     type: 'boolean',
