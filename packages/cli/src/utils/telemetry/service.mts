@@ -60,14 +60,14 @@ type TelemetryConfig = SocketSdkSuccessResult<'getOrgTelemetryConfig'>['data']
  * Debug wrapper for telemetry service.
  * Wraps debugNs to provide a simpler API.
  */
-const debug = (message: string): void => {
+export function debug(message: string): void {
   debugNs('socket:telemetry:service', message)
 }
 
 /**
  * DebugDir wrapper for telemetry service.
  */
-const debugDirWrapper = (obj: unknown, inspectOpts?: InspectOptions): void => {
+export function debugDirWrapper(obj: unknown, inspectOpts?: InspectOptions): void {
   debugDirNs('socket:telemetry:service', obj, inspectOpts)
 }
 
@@ -134,6 +134,7 @@ export function withTimeout<T>(
   errorMessage: string,
 ): Promise<T> {
   let timeoutId: NodeJS.Timeout | undefined
+  // oxlint-disable-next-line socket/no-promise-race -- finalizer race: the .finally() arm clears the timeout the moment the promise settles, so the losing Promise resolves to undefined and is GC'd. No handler-list leak.
   return Promise.race([
     promise.finally(() => {
       if (timeoutId) {
@@ -401,7 +402,8 @@ export class TelemetryService {
     )
 
     // Log results and collect statistics.
-    for (const settledResult of results) {
+    for (let i = 0, { length } = results; i < length; i += 1) {
+      const settledResult = results[i]!
       if (settledResult.status === 'fulfilled') {
         const { event, result } = settledResult.value
         if (result.success) {

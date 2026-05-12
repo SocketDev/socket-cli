@@ -53,13 +53,6 @@ import { getConfigValueOrUndef } from '../config.mts'
 
 import type { TelemetryContext } from './types.mts'
 
-/**
- * Debug wrapper for telemetry integration.
- */
-const debug = (message: string): void => {
-  debugNs('socket:telemetry:integration', message)
-}
-
 // Track whether exit handlers have been set up to prevent duplicate registration.
 let exitHandlersRegistered = false
 
@@ -95,6 +88,13 @@ export function buildContext(argv: string[]): TelemetryContext {
  */
 export function calculateDuration(startTime: number): number {
   return Date.now() - startTime
+}
+
+/**
+ * Debug wrapper for telemetry integration.
+ */
+export function debug(message: string): void {
+  debugNs('socket:telemetry:integration', message)
 }
 
 
@@ -268,7 +268,8 @@ export function setupTelemetryExitHandlers(): void {
   // These are synchronous contexts, so we can only trigger flush without awaiting.
   const fatalSignals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
 
-  for (const signal of fatalSignals) {
+  for (let i = 0, { length } = fatalSignals; i < length; i += 1) {
+    const signal = fatalSignals[i]!
     try {
       process.on(signal, () => {
         debug(`Signal ${signal} received, attempting sync flush`)
