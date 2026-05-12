@@ -29,7 +29,7 @@
     "check-ci": "pnpm run check",
     "lint": "oxlint -c ../../.config/oxlintrc.json",
     "lint-ci": "pnpm run lint",
-    "type": "tsc -p ../../.config/tsconfig.json --noEmit",
+    "type": "tsc -p tsconfig.json --noEmit",
     "type-ci": "pnpm run type",
     "sync-checksums": "node scripts/sync-checksums.mts",
     "cover": "node --import=./scripts/load.mts scripts/cover.mts",
