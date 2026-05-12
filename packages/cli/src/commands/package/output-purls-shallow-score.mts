@@ -23,10 +23,11 @@ export function formatReportCard(
     License: Math.floor((artifact.score?.license ?? 0) * 100),
   }
   const alertString = getAlertString(artifact.alerts, { colorize })
-  /* c8 ignore next 3 - artifact.ecosystem is required by the SDK contract */
+  /* c8 ignore start - artifact.ecosystem is required by the SDK contract */
   if (!artifact.ecosystem) {
     debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
   }
+  /* c8 ignore stop */
   const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
 
   // Calculate proper padding based on longest label.

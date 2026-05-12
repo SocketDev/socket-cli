@@ -220,11 +220,12 @@ export async function runSocketBasics(
     }
   }
 
-  /* c8 ignore next 4 - spinner only when caller passes one; unit tests omit it */
+  /* c8 ignore start - spinner only when caller passes one; unit tests omit it */
   if (spinner) {
     spinner.stop()
     spinner.success('Security tools extracted')
   }
+  /* c8 ignore stop */
 
   // Determine output path for .socket.facts.json.
   const factsPath =
@@ -247,11 +248,12 @@ export async function runSocketBasics(
 
     // Check spawn result - it can be null if process failed to start.
     if (!pipInstallResult) {
-      /* c8 ignore next 4 - spinner only when caller passes one */
+      /* c8 ignore start - spinner only when caller passes one */
       if (spinner) {
         spinner.stop()
         spinner.fail('Failed to start pip install')
       }
+      /* c8 ignore stop */
       return {
         ok: false,
         message: 'Failed to start pip install process',
@@ -260,11 +262,12 @@ export async function runSocketBasics(
     }
 
     if (pipInstallResult.code !== 0) {
-      /* c8 ignore next 4 - spinner only when caller passes one */
+      /* c8 ignore start - spinner only when caller passes one */
       if (spinner) {
         spinner.stop()
         spinner.fail('Failed to install Socket Python CLI')
       }
+      /* c8 ignore stop */
       debug('error', 'pip install failed:', pipInstallResult.stderr)
       return {
         ok: false,

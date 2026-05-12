@@ -155,10 +155,11 @@ export function debugApiResponse(
     } else {
       debugNs('error', `API ${endpoint}: HTTP ${status}`)
     }
-    /* c8 ignore next 3 */
+    /* c8 ignore start - notice-level debug ns rarely enabled in tests */
   } else if (isDebugNs('notice')) {
     debugNs('notice', `API ${endpoint}: ${status || 'pending'}`)
   }
+  /* c8 ignore stop */
 }
 
 /**
@@ -176,10 +177,11 @@ export function debugConfig(
     })
   } else if (found) {
     debug(`Config loaded: ${source}`)
-    /* c8 ignore next 3 */
+    /* c8 ignore start - silly-level debug ns rarely enabled in tests */
   } else if (isDebugNs('silly')) {
     debugNs('silly', `Config not found: ${source}`)
   }
+  /* c8 ignore stop */
 }
 
 /**
@@ -197,10 +199,11 @@ export function debugFileOp(
       filepath,
       error: errorMessage(error),
     })
-    /* c8 ignore next 3 */
+    /* c8 ignore start - silly-level debug ns rarely enabled in tests */
   } else if (isDebugNs('silly')) {
     debugNs('silly', `File ${operation}: ${filepath}`)
   }
+  /* c8 ignore stop */
 }
 
 /**
