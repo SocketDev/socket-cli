@@ -20,8 +20,10 @@
 .claude/hooks/auth-rotation-reminder/test/auth-rotation-reminder.test.mts linguist-generated=true
 .claude/hooks/auth-rotation-reminder/tsconfig.json linguist-generated=true
 .claude/hooks/check-new-deps/README.md linguist-generated=true
+.claude/hooks/check-new-deps/audit.mts linguist-generated=true
 .claude/hooks/check-new-deps/index.mts linguist-generated=true
 .claude/hooks/check-new-deps/package.json linguist-generated=true
+.claude/hooks/check-new-deps/types.mts linguist-generated=true
 .claude/hooks/claude-md-size-guard/README.md linguist-generated=true
 .claude/hooks/claude-md-size-guard/index.mts linguist-generated=true
 .claude/hooks/claude-md-size-guard/package.json linguist-generated=true
