@@ -275,9 +275,11 @@ export function pushRootBucketedLayout(
         continue
       }
       const cmd = subcommands[cmdName]
+      /* c8 ignore start - defensive: cmdName comes from grouped subcommands so the lookup always resolves */
       if (!cmd) {
         continue
       }
+      /* c8 ignore stop */
       lines.push(`  ${cmdName.padEnd(HELP_PAD_NAME)}${description(cmd)}`)
     }
     lines.push('')

@@ -150,10 +150,11 @@ export function safeParseNpmSpec(
   // Extract name and version from parsed spec.
   const name = parsed.name || pkgSpec
 
-  /* c8 ignore next 4 - defensive: name falls back to pkgSpec, so this only fires for an empty pkgSpec which won't reach here */
+  /* c8 ignore start - defensive: name falls back to pkgSpec, so this only fires for an empty pkgSpec which won't reach here */
   if (!name) {
     return undefined
   }
+  /* c8 ignore stop */
 
   let version: string | undefined
 

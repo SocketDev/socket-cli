@@ -191,10 +191,11 @@ export async function run(
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input.length ? [...cli.input] : [cwd]
 
-  /* c8 ignore next 3 - defensive: targets always has at least [cwd] from the line above, so this branch never fires in practice */
+  /* c8 ignore start - defensive: targets always has at least [cwd] from the line above, so this branch never fires in practice */
   if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
   }
+  /* c8 ignore stop */
 
   const { 0: orgSlug } = await determineOrgSlug(orgFlag, interactive, dryRun)
 

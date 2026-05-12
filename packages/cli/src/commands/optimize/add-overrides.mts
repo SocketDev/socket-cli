@@ -225,6 +225,7 @@ export async function addOverrides(
                       // default to the manifest entry version.
                       (() => {
                         const parsed = safeNpa(thisSpec)
+                        /* c8 ignore start - defensive: alias-spec path with semver.coerce returning falsy is unreachable in current optimize tests */
                         if (parsed && parsed.type === 'alias') {
                           return (
                             semver.coerce(
@@ -232,6 +233,7 @@ export async function addOverrides(
                             )?.version ?? version
                           )
                         }
+                        /* c8 ignore stop */
                         return version
                       })(),
                     ) !== major

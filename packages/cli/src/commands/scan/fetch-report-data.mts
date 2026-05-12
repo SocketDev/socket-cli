@@ -178,7 +178,7 @@ export async function fetchScanData(
     return securityPolicy
   }
 
-  /* c8 ignore next 7 - defensive: scan.data is always SocketArtifact[] from the loop above */
+  /* c8 ignore start - defensive: scan.data is always SocketArtifact[] from the loop above */
   if (!Array.isArray(scan.data)) {
     return {
       ok: false,
@@ -186,6 +186,7 @@ export async function fetchScanData(
       cause: 'Was unable to fetch scan result, bailing',
     }
   }
+  /* c8 ignore stop */
 
   return {
     ok: true,

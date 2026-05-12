@@ -29,10 +29,11 @@ export function getTabCompletionScriptRaw(): CResult<string> {
     const cliPackageJson = require.resolve('@socketsecurity/cli/package.json')
     const cliPackageRoot = path.dirname(cliPackageJson)
     sourcePath = path.join(cliPackageRoot, 'data', 'socket-completion.bash')
-    /* c8 ignore next 4 - fallback for source-tree development; require.resolve always succeeds in tests because the workspace package is installed */
+    /* c8 ignore start - fallback for source-tree development; require.resolve always succeeds in tests because the workspace package is installed */
   } catch {
     sourcePath = path.resolve(__dirname, '../../../data/socket-completion.bash')
   }
+  /* c8 ignore stop */
 
   if (!existsSync(sourcePath)) {
     return {

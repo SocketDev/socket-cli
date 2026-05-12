@@ -80,9 +80,11 @@ export function normalizeQuery(query: string): string {
     doc.verbs().toInfinitive()
     doc.nouns().toSingular()
     return doc.out('text').toLowerCase()
+    /* c8 ignore start - defensive fallback when compromise NLP library throws unexpectedly */
   } catch (_e) {
     return query.toLowerCase()
   }
+  /* c8 ignore stop */
 }
 
 /**

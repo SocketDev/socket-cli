@@ -63,10 +63,11 @@ export class PromiseQueue {
     }
 
     const task = this.queue.shift()
-    /* c8 ignore next 3 - defensive: queue.length checked above so shift cannot return undefined here */
+    /* c8 ignore start - defensive: queue.length checked above so shift cannot return undefined here */
     if (!task) {
       return
     }
+    /* c8 ignore stop */
 
     this.running++
 

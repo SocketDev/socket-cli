@@ -236,9 +236,11 @@ export class CommandRegistry implements ICommandRegistry {
 
       const fn = middleware[i]
 
+      /* c8 ignore start - defensive: dispatch terminates when i >= middleware.length, so this lookup never yields undefined */
       if (!fn) {
         return
       }
+      /* c8 ignore stop */
 
       await fn(context, () => dispatch(i + 1))
     }

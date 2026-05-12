@@ -157,10 +157,11 @@ export async function extractBasicsTools(
     for (let i = 0, { length } = toolsToValidate; i < length; i += 1) {
       const tool = toolsToValidate[i]
       const toolPath = extractedPaths[tool]
-      /* c8 ignore next - defensive: extraction populates all toolsToValidate keys before this loop */
+      /* c8 ignore start - defensive: extraction populates all toolsToValidate keys before this loop */
       if (!toolPath) {
         continue
       }
+      /* c8 ignore stop */
 
       // eslint-disable-next-line no-await-in-loop
       const toolValidateResult = await spawn(toolPath, ['--version'], {
