@@ -145,6 +145,7 @@ export function pathRelativeToTarget(
   if (normalized.startsWith(targetPrefix)) {
     return normalized.slice(targetPrefix.length)
   }
+  /* c8 ignore next 4 - unreachable: recursiveTargetPrefix = `${targetPrefix}**\/` so any startsWith(recursiveTargetPrefix) match would have been caught by the startsWith(targetPrefix) check above. */
   const recursiveTargetPrefix = `${targetPrefix}**/`
   if (normalized.startsWith(recursiveTargetPrefix)) {
     return normalized.slice(targetPrefix.length)
