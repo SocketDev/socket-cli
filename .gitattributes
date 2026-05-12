@@ -175,6 +175,7 @@
 .git-hooks/test/commit-msg.test.mts linguist-generated=true
 .git-hooks/test/pre-commit.test.mts linguist-generated=true
 .git-hooks/test/pre-push.test.mts linguist-generated=true
+.github/dependabot.yml linguist-generated=true
 .husky/commit-msg linguist-generated=true
 .husky/pre-commit linguist-generated=true
 .husky/pre-push linguist-generated=true
