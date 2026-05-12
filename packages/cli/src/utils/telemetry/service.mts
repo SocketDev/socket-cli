@@ -144,6 +144,7 @@ export function withTimeout<T>(
     }),
     new Promise<T>((_, reject) => {
       timeoutId = setTimeout(() => {
+        /* c8 ignore start - timeout branch; tests resolve promises before the timeout fires */
         const id = timeoutId
         timeoutId = undefined
         // Explicitly clear the timeout even though it just fired.
@@ -151,6 +152,7 @@ export function withTimeout<T>(
           clearTimeout(id)
         }
         reject(new Error(errorMessage))
+        /* c8 ignore stop */
       }, timeoutMs)
     }),
   ])

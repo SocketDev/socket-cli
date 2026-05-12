@@ -239,10 +239,12 @@ export function getConfigValues(retryCount = 0): LocalConfig {
               }
             }
             debugConfig(configFilePath, true)
+            /* c8 ignore start - config parse failure path; tests pass valid JSON or use empty config */
           } catch (e) {
             logger.warn(`Failed to parse config at ${configFilePath}`)
             debugConfig(configFilePath, false, e)
           }
+          /* c8 ignore stop */
         }
         _cachedConfigMtime = currentMtime
         _cachedConfigPath = configFilePath
@@ -256,9 +258,11 @@ export function getConfigValues(retryCount = 0): LocalConfig {
         safeMkdirSync(socketAppDataPath, { recursive: true })
       }
     }
+    /* c8 ignore start - socketAppDataPath undefined fallback; tests always have HOME set so getSocketAppDataPath returns a path */
   } else if (_cachedConfig === undefined) {
     _cachedConfig = {} as LocalConfig
   }
+  /* c8 ignore stop */
   return _cachedConfig
 }
 

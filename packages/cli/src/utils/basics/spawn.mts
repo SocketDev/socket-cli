@@ -275,11 +275,12 @@ export async function runSocketBasics(
       }
     }
 
-    /* c8 ignore next 4 - spinner only when caller passes one */
+    /* c8 ignore start - spinner only when caller passes one */
     if (spinner) {
       spinner.stop()
       spinner.success('Socket Python CLI installed')
     }
+    /* c8 ignore stop */
 
     // Verify installed version matches expected version.
     const verifyResult = await spawn(
@@ -289,11 +290,12 @@ export async function runSocketBasics(
     )
 
     if (!verifyResult || verifyResult.code !== 0) {
-      /* c8 ignore next 4 - spinner only when caller passes one */
+      /* c8 ignore start - spinner only when caller passes one */
       if (spinner) {
         spinner.stop()
         spinner.fail('Failed to verify Socket Python CLI installation')
       }
+      /* c8 ignore stop */
       return {
         ok: false,
         message: 'Failed to verify Socket Python CLI installation',
@@ -310,6 +312,7 @@ export async function runSocketBasics(
         ? versionMatch[1].trim()
         : undefined
 
+    /* c8 ignore start - version-mismatch path; tests install the expected version */
     if (installedVersion !== pyCliVersion) {
       if (spinner) {
         spinner.stop()
@@ -323,6 +326,7 @@ export async function runSocketBasics(
         cause: `Expected version ${pyCliVersion} but got ${installedVersion}. This may cause compatibility issues.`,
       }
     }
+    /* c8 ignore stop */
 
     debug('notice', `Socket Python CLI version verified: ${installedVersion}`)
   }

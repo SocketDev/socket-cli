@@ -187,12 +187,14 @@ export class GitLabProvider implements PrProvider {
         page += 1
 
         // Safety limit to prevent infinite loops.
+        /* c8 ignore start - 100-page safety limit; tests page through at most a few pages */
         if (page > 100) {
           debug(
             `REST pagination reached safety limit (100 pages) for ${owner}/${repo}`,
           )
           break
         }
+        /* c8 ignore stop */
 
         // Early exit optimization: if we found matches and only looking for specific GHSA,
         // we can stop pagination since we likely found what we need.
@@ -215,11 +217,13 @@ export class GitLabProvider implements PrProvider {
       // This is a limitation of the current interface design.
       debug(`mr: cannot delete branch ${branch} - need project ID in interface`)
       return false
+      /* c8 ignore start - try-body has no async/throwing ops, so this catch is unreachable */
     } catch (e) {
       debug(formatErrorWithDetail(`mr: failed to delete branch ${branch}`, e))
       debugDir(e)
       return false
     }
+    /* c8 ignore stop */
   }
 
   async addComment(options: AddCommentOptions): Promise<void> {

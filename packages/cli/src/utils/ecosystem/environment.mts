@@ -453,6 +453,7 @@ export async function getAgentExecPath(agent: Agent): Promise<string> {
     // If getNpmExecPath() doesn't exist, try common locations.
     // Check npm in the same directory as node.
     const nodeDir = path.dirname(process.execPath)
+    /* c8 ignore start - WIN32-only branch and existsSync(npm-in-node-dir) hit; tests run on macOS/Linux against test fixtures, not a real node install dir */
     if (WIN32) {
       const npmCmdInNodeDir = path.join(nodeDir, `${NPM}.cmd`)
       if (existsSync(npmCmdInNodeDir)) {
@@ -463,6 +464,7 @@ export async function getAgentExecPath(agent: Agent): Promise<string> {
     if (existsSync(npmInNodeDir)) {
       return preferWindowsCmdShim(npmInNodeDir, NPM)
     }
+    /* c8 ignore stop */
     // Fall back to which.
     const whichRealResult = await whichReal(binName, { nothrow: true })
     return (
@@ -505,6 +507,7 @@ export async function getAgentVersion(
     // (e.g. the extensionless `npm` shim on Windows). Resolve the underlying entrypoint
     // and run it with Node when it is a JS file.
     let shouldRunWithNode: string | undefined = undefined
+    /* c8 ignore start - WIN32-only branch for resolving JS shim entrypoints; tests run on macOS/Linux */
     if (WIN32) {
       try {
         const resolved = resolveBinPathSync(agentExecPath)
@@ -536,6 +539,7 @@ export async function getAgentVersion(
         typeof result.stdout === 'string'
           ? result.stdout
           : result.stdout.toString()
+      /* c8 ignore stop */
     } else {
       const result = await spawn(agentExecPath, [FLAG_VERSION], {
         cwd,

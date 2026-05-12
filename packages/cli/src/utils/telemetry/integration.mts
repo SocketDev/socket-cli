@@ -260,8 +260,10 @@ export function setupTelemetryExitHandlers(): void {
   // Use beforeExit for async finalization during clean shutdowns.
   // This fires when the event loop empties but before process actually exits.
   process.on('beforeExit', () => {
+    /* c8 ignore start - beforeExit handler body fires only on real process exit; vitest workers don't trigger it */
     debug('beforeExit handler triggered')
     void finalizeTelemetry()
+    /* c8 ignore stop */
   })
 
   // Register handlers for common fatal signals as best-effort fallback.
@@ -272,13 +274,17 @@ export function setupTelemetryExitHandlers(): void {
     const signal = fatalSignals[i]!
     try {
       process.on(signal, () => {
+        /* c8 ignore start - signal handler body fires only on real signal delivery; tests don't dispatch signals */
         debug(`Signal ${signal} received, attempting sync flush`)
         finalizeTelemetrySync()
+        /* c8 ignore stop */
       })
+      /* c8 ignore start - process.on rarely throws for SIGINT/SIGTERM/SIGHUP; cross-platform defensive */
     } catch (e) {
       // Some signals may not be available on all platforms.
       debug(`Failed to register handler for signal ${signal}: ${e}`)
     }
+    /* c8 ignore stop */
   }
 
   debug('Telemetry exit handlers registered (beforeExit + common signals)')

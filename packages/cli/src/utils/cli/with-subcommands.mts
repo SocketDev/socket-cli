@@ -616,20 +616,24 @@ export async function meowWithSubcommands(
   }
 
   // Handle --version flag at root level.
+  /* c8 ignore start - --version causes meow to print and exit; tests avoid invoking this path to prevent process.exit */
   if (versionFlag) {
     cli2.showVersion()
   }
+  /* c8 ignore stop */
 
   // ...else we provide basic instructions and help.
   if (!shouldSuppressBanner(cli2.flags)) {
     emitBanner(name, orgFlag, compactMode, cli2.flags)
     // Meow will add newline so don't add stderr spacing here.
   }
+  /* c8 ignore start - dry-run process.exit branch; tests avoid invoking this to prevent process termination */
   if (!helpFlag && dryRun) {
     logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     // Exit immediately to prevent tests from hanging waiting for stdin.
     // eslint-disable-next-line n/no-process-exit -- Required for dry-run mode.
     process.exit(0)
+    /* c8 ignore stop */
   } else {
     // When you explicitly request --help, the command should be successful
     // so we exit(0). If we do it because we need more input, we exit(2).

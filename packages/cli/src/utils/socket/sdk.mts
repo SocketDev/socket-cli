@@ -130,7 +130,7 @@ export function getExtraCaCerts(): string[] | undefined {
   if (!certPath) {
     return undefined
   }
-  /* c8 ignore next 11 - SSL_CERT_FILE is not set in tests; this entire CA-cert loader is unreachable */
+  /* c8 ignore start - SSL_CERT_FILE is not set in tests; this entire CA-cert loader is unreachable */
   try {
     const extraCerts = readFileSync(certPath, 'utf-8')
     // Combine default root certificates with extra certificates. Specifying ca
@@ -141,6 +141,7 @@ export function getExtraCaCerts(): string[] | undefined {
     debugLib(`Failed to read certificate file: ${certPath}`)
     return undefined
   }
+  /* c8 ignore stop */
 }
 
 export function getPublicApiToken(): string {
@@ -179,7 +180,7 @@ export async function setupSdk(
   const opts = { __proto__: null, ...options } as SetupSdkOptions
   let { apiToken = getDefaultApiToken() } = opts
 
-  /* c8 ignore next 7 - interactive password prompt only fires in TTY mode; tests are non-interactive */
+  /* c8 ignore start - interactive password prompt only fires in TTY mode; tests are non-interactive */
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({
       message:
@@ -187,6 +188,7 @@ export async function setupSdk(
     })
     _defaultToken = apiToken
   }
+  /* c8 ignore stop */
 
   if (!apiToken) {
     return {
@@ -234,10 +236,11 @@ export async function setupSdk(
         // Skip tracking for telemetry submission endpoints to prevent infinite loop.
         const isTelemetryEndpoint = info.url.includes('/telemetry')
 
-        /* c8 ignore next 4 - SOCKET_CLI_DEBUG not set in tests */
+        /* c8 ignore start - SOCKET_CLI_DEBUG not set in tests */
         if (SOCKET_CLI_DEBUG) {
           debugApiRequest(info.method, info.url, info.timeout)
         }
+        /* c8 ignore stop */
         if (!isTelemetryEndpoint) {
           // Track API request event.
           void trackCliEvent('api_request', process.argv, {
@@ -274,7 +277,7 @@ export async function setupSdk(
           }
         }
 
-        /* c8 ignore next 9 - SOCKET_CLI_DEBUG not set in tests */
+        /* c8 ignore start - SOCKET_CLI_DEBUG not set in tests */
         if (SOCKET_CLI_DEBUG) {
           debugApiResponse(info.url, info.status, info.error, {
             method: info.method,
@@ -283,6 +286,7 @@ export async function setupSdk(
             headers: info.headers,
           })
         }
+        /* c8 ignore stop */
       },
     },
     onFileValidation: (
@@ -315,12 +319,13 @@ export async function setupSdk(
     }),
   }
 
-  /* c8 ignore next 5 - SOCKET_CLI_DEBUG not set in tests */
+  /* c8 ignore start - SOCKET_CLI_DEBUG not set in tests */
   if (SOCKET_CLI_DEBUG) {
     logger.info(
       `[DEBUG] ${new Date().toISOString()} SDK options: ${JSON.stringify(sdkOptions)}`,
     )
   }
+  /* c8 ignore stop */
 
   const sdk = new SocketSdk(apiToken, sdkOptions)
 
