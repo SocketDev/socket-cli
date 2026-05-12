@@ -119,7 +119,8 @@ async function main(): Promise<void> {
 
     // Run type check across all packages.
     let exitCode = 0
-    for (const pkg of packages) {
+    for (let i = 0, { length } = packages; i < length; i += 1) {
+      const pkg = packages[i]
       const result = await runPackageTypeCheck(pkg, quiet)
       if (result !== 0) {
         exitCode = result

@@ -17,7 +17,10 @@ export const PACKAGE_BUILDER_ROOT = path.join(__dirname, '..')
 // Template directories.
 export const TEMPLATES_DIR = path.join(PACKAGE_BUILDER_ROOT, 'templates')
 export const CLI_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-package')
-export const CLI_SENTRY_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-sentry-package')
+export const CLI_SENTRY_TEMPLATE_DIR = path.join(
+  TEMPLATES_DIR,
+  'cli-sentry-package',
+)
 export const SOCKET_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'socket-package')
 export const SOCKETADDON_MAIN_TEMPLATE_DIR = path.join(
   TEMPLATES_DIR,
@@ -27,7 +30,10 @@ export const SOCKETADDON_TEMPLATE_DIR = path.join(
   TEMPLATES_DIR,
   'socketaddon-package',
 )
-export const SOCKETBIN_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'socketbin-package')
+export const SOCKETBIN_TEMPLATE_DIR = path.join(
+  TEMPLATES_DIR,
+  'socketbin-package',
+)
 
 /**
  * Get build mode (dev/prod).
@@ -117,7 +123,10 @@ export function getSocketbinBinaryPath(
   // Accept both win and win32 for Windows detection.
   const binaryName =
     platform === 'win' || platform === 'win32' ? 'socket.exe' : 'socket'
-  return path.join(getSocketbinPackageDir(platform, arch, libc, mode), binaryName)
+  return path.join(
+    getSocketbinPackageDir(platform, arch, libc, mode),
+    binaryName,
+  )
 }
 
 /**

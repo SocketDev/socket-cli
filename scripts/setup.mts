@@ -371,7 +371,9 @@ export async function installHomebrew(): Promise<boolean> {
 /**
  * Install a package using Chocolatey (Windows).
  */
-export async function installWithChocolatey(packageName: string): Promise<boolean> {
+export async function installWithChocolatey(
+  packageName: string,
+): Promise<boolean> {
   if (!(await hasCommand('choco'))) {
     logger.error('Chocolatey not available')
     return false
@@ -396,7 +398,9 @@ export async function installWithChocolatey(packageName: string): Promise<boolea
 /**
  * Install a package using Homebrew (macOS/Linux).
  */
-export async function installWithHomebrew(packageName: string): Promise<boolean> {
+export async function installWithHomebrew(
+  packageName: string,
+): Promise<boolean> {
   if (!(await hasCommand('brew'))) {
     logger.error('Homebrew not available')
     return false

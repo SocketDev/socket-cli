@@ -24,7 +24,8 @@ export function printError(
   if (instructions.length > 0) {
     logger.error('')
     logger.error('What to do:')
-    for (const instruction of instructions) {
+    for (let i = 0, { length } = instructions; i < length; i += 1) {
+      const instruction = instructions[i]
       logger.error(`  • ${instruction}`)
     }
   }
@@ -82,7 +83,8 @@ export function printWarning(
   if (suggestions.length > 0) {
     logger.warn('')
     logger.warn('Suggestions:')
-    for (const suggestion of suggestions) {
+    for (let i = 0, { length } = suggestions; i < length; i += 1) {
+      const suggestion = suggestions[i]
       logger.warn(`  • ${suggestion}`)
     }
   }

@@ -29,7 +29,8 @@ export function getAffectedPackages(changedFiles: string[]): PackageInfo[] {
   const affectedPkgs = new Set<PackageInfo>()
   const packages = getPackagesWithScript('lint')
 
-  for (const file of changedFiles) {
+  for (let i = 0, { length } = changedFiles; i < length; i += 1) {
+    const file = changedFiles[i]
     // Root level files affect all packages.
     if (
       !file.startsWith('packages/') &&
@@ -91,7 +92,8 @@ export function getPackagesWithScript(scriptName: string): PackageInfo[] {
     'node-smol-builder',
   ]
 
-  for (const pkgDir of otherPackages) {
+  for (let i = 0, { length } = otherPackages; i < length; i += 1) {
+    const pkgDir = otherPackages[i]
     const pkgPath = path.join(packagesDir, pkgDir, 'package.json')
     if (existsSync(pkgPath)) {
       const pkgJson = JSON.parse(readFileSync(pkgPath, 'utf8'))
@@ -125,7 +127,8 @@ export async function runAcrossPackages(
     return 0
   }
 
-  for (const pkg of packages) {
+  for (let i = 0, { length } = packages; i < length; i += 1) {
+    const pkg = packages[i]
     const progressMessage =
       sectionTitle || `${pkg.displayName || pkg.name}: running ${scriptName}`
     const exitCode = await runPackageScript(

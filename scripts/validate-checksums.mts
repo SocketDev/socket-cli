@@ -76,7 +76,8 @@ export function validateChecksums(): boolean {
     const checksums = toolConfig.checksums || {}
     const missingAssets: string[] = []
 
-    for (const assetName of assets) {
+    for (let i = 0, { length } = assets; i < length; i += 1) {
+      const assetName = assets[i]
       if (!checksums[assetName]) {
         missingAssets.push(assetName)
       }
@@ -114,7 +115,8 @@ export function validateChecksums(): boolean {
   logger.log('')
   if (warnings.length > 0) {
     logger.warn('Warnings:')
-    for (const warning of warnings) {
+    for (let i = 0, { length } = warnings; i < length; i += 1) {
+      const warning = warnings[i]
       logger.warn(`  ${warning}`)
     }
     logger.log('')
@@ -123,7 +125,8 @@ export function validateChecksums(): boolean {
   if (errors.length > 0) {
     logger.error('CHECKSUM VALIDATION FAILED')
     logger.log('')
-    for (const error of errors) {
+    for (let i = 0, { length } = errors; i < length; i += 1) {
+      const error = errors[i]
       logger.error(error)
     }
     logger.log('')

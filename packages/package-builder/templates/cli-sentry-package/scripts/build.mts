@@ -75,7 +75,8 @@ async function main() {
       'logo-dark.png',
       'logo-light.png',
     ]
-    for (const file of filesToCopy) {
+    for (let i = 0, { length } = filesToCopy; i < length; i += 1) {
+      const file = filesToCopy[i]
       await fs.cp(path.join(repoRoot, file), path.join(rootPath, file))
     }
     logger.success('Copied files from repo root')

@@ -81,7 +81,8 @@ export function analyzePatchContent(patchContent: string): PatchAnalysis {
   const lines = patchContent.split('\n')
   let currentFile: string | undefined
 
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]
     // Track which files are modified.
     if (line.startsWith('---') || line.startsWith('+++')) {
       const match = line.match(/[+-]{3}\s+(?:a\/|b\/)?(.+)/)
@@ -126,7 +127,8 @@ export function checkPatchConflicts(
   // Check for multiple patches modifying same files.
   const fileModifications = new Map<string, string[]>()
 
-  for (const patch of patches) {
+  for (let i = 0, { length } = patches; i < length; i += 1) {
+    const patch = patches[i]
     for (const file of patch.analysis.modifiesFiles) {
       if (!fileModifications.has(file)) {
         fileModifications.set(file, [])
@@ -217,7 +219,8 @@ export function parsePatchMetadata(patchContent: string): PatchMetadata {
     conflicts: [],
   }
 
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]
     // Stop at first non-comment
     if (!line.startsWith('#')) {
       break

@@ -166,7 +166,8 @@ Strict Mode Transformation Stats:
         const { node } = path
         let transformed = false
 
-        node.quasis.forEach(quasi => {
+        for (let i = 0, { length } = node.quasis; i < length; i += 1) {
+          const quasi = node.quasis[i]
           const { value } = quasi
           if (value.raw && /\\[0-7]/.test(value.raw)) {
             const transformedCooked = transformOctalEscapes(
@@ -181,7 +182,7 @@ Strict Mode Transformation Stats:
               transformed = true
             }
           }
-        })
+        }
 
         if (transformed) {
           stats.octalEscapes++

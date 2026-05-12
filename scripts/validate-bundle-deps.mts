@@ -119,7 +119,8 @@ async function extractExternalsFromConfigs(): Promise<Set<string>> {
     path.join(cliPackagePath, '.config/esbuild.index.config.mts'),
   ]
 
-  for (const configFile of configFiles) {
+  for (let i = 0, { length } = configFiles; i < length; i += 1) {
+    const configFile = configFiles[i]
     try {
       const content = await fs.readFile(configFile, 'utf8')
       // Extract external array from config.
@@ -129,7 +130,8 @@ async function extractExternalsFromConfigs(): Promise<Set<string>> {
         const externalContent = externalMatch[1]
         // Extract quoted strings from the array.
         const packageMatches = externalContent.matchAll(/['"]([^'"]+)['"]/g)
-        for (const match of packageMatches) {
+        for (let i = 0, { length } = packageMatches; i < length; i += 1) {
+          const match = packageMatches[i]
           const packageName = getPackageName(match[1])
           if (packageName && !BUILTIN_MODULES.has(packageName)) {
             externals.add(packageName)
@@ -154,7 +156,8 @@ async function findDistFiles(distPath: string): Promise<string[]> {
   try {
     const entries = await fs.readdir(distPath, { withFileTypes: true })
 
-    for (const entry of entries) {
+    for (let i = 0, { length } = entries; i < length; i += 1) {
+      const entry = entries[i]
       const fullPath = path.join(distPath, entry.name)
 
       if (entry.isDirectory()) {
@@ -184,7 +187,8 @@ async function findSourceFiles(srcPath: string): Promise<string[]> {
   try {
     const entries = await fs.readdir(srcPath, { withFileTypes: true })
 
-    for (const entry of entries) {
+    for (let i = 0, { length } = entries; i < length; i += 1) {
+      const entry = entries[i]
       const fullPath = path.join(srcPath, entry.name)
 
       if (entry.isDirectory()) {
@@ -277,7 +281,8 @@ async function isDirectDependency(
     const srcPath = path.join(cliPackagePath, 'src')
     const srcFiles = await findSourceFiles(srcPath)
 
-    for (const file of srcFiles) {
+    for (let i = 0, { length } = srcFiles; i < length; i += 1) {
+      const file = srcFiles[i]
       const content = await fs.readFile(file, 'utf8')
       // Check for direct imports: from 'package-name' or from "package-name"
       // For scoped packages: from '@scope/package' or from "@scope/package"
@@ -323,9 +328,11 @@ async function validateBundleDeps(): Promise<BundleValidationResult> {
   // Collect bundled packages from dist files.
   const allBundled = new Set()
 
-  for (const file of distFiles) {
+  for (let i = 0, { length } = distFiles; i < length; i += 1) {
+    const file = distFiles[i]
     const bundled = await extractBundledPackages(file)
-    for (const bun of bundled) {
+    for (let i = 0, { length } = bundled; i < length; i += 1) {
+      const bun = bundled[i]
       allBundled.add(bun)
     }
   }
@@ -334,7 +341,8 @@ async function validateBundleDeps(): Promise<BundleValidationResult> {
   const warnings = []
 
   // Validate external packages are in dependencies or peerDependencies.
-  for (const packageName of allExternals) {
+  for (let i = 0, { length } = allExternals; i < length; i += 1) {
+    const packageName = allExternals[i]
     if (EXCUSED_EXTERNALS.has(packageName)) {
       continue
     }
@@ -351,7 +359,8 @@ async function validateBundleDeps(): Promise<BundleValidationResult> {
   }
 
   // Validate bundled packages are in devDependencies (not dependencies).
-  for (const packageName of allBundled) {
+  for (let i = 0, { length } = allBundled; i < length; i += 1) {
+    const packageName = allBundled[i]
     if (dependencies.has(packageName)) {
       violations.push({
         type: 'bundled-in-deps',
@@ -392,7 +401,8 @@ async function main(): Promise<void> {
     if (violations.length > 0) {
       logger.error('❌ Bundle dependencies validation failed\n')
 
-      for (const violation of violations) {
+      for (let i = 0, { length } = violations; i < length; i += 1) {
+        const violation = violations[i]
         logger.error(`  ${violation.message}`)
         logger.error(`  ${violation.fix}`)
         logger.log('')
@@ -402,7 +412,8 @@ async function main(): Promise<void> {
     if (warnings.length > 0) {
       logger.warn('⚠ Warnings:\n')
 
-      for (const warning of warnings) {
+      for (let i = 0, { length } = warnings; i < length; i += 1) {
+        const warning = warnings[i]
         logger.warn(`  ${warning.message}`)
         logger.warn(`  ${warning.fix}\n`)
       }

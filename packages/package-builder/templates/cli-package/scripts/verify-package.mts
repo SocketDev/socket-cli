@@ -52,7 +52,8 @@ export async function validate() {
       'logo-dark.png',
       'logo-light.png',
     ]
-    for (const required of requiredInFiles) {
+    for (let i = 0, { length } = requiredInFiles; i < length; i += 1) {
+      const required = requiredInFiles[i]
       if (!pkg.files?.includes(required)) {
         errors.push(`package.json files array missing: ${required}`)
       }
@@ -64,7 +65,8 @@ export async function validate() {
 
   // Check root files exist (LICENSE, CHANGELOG.md).
   const rootFiles = ['LICENSE', 'CHANGELOG.md']
-  for (const file of rootFiles) {
+  for (let i = 0, { length } = rootFiles; i < length; i += 1) {
+    const file = rootFiles[i]
     logger.info(`Checking ${file}...`)
     const filePath = path.join(packageRoot, file)
     if (!(await existsSync(filePath))) {
@@ -76,7 +78,8 @@ export async function validate() {
 
   // Check dist files exist.
   const distFiles = ['index.js', 'cli.js']
-  for (const file of distFiles) {
+  for (let i = 0, { length } = distFiles; i < length; i += 1) {
+    const file = distFiles[i]
     logger.info(`Checking dist/${file}...`)
     const filePath = path.join(packageRoot, 'dist', file)
     if (!(await existsSync(filePath))) {
@@ -108,7 +111,8 @@ export async function validate() {
       'alert-translations.json',
       'command-api-requirements.json',
     ]
-    for (const file of dataFiles) {
+    for (let i = 0, { length } = dataFiles; i < length; i += 1) {
+      const file = dataFiles[i]
       logger.info(`Checking data/${file}...`)
       const filePath = path.join(dataPath, file)
       if (!(await existsSync(filePath))) {
@@ -128,7 +132,8 @@ export async function validate() {
 
   if (errors.length > 0) {
     logger.log(`${colors.red('Errors:')}`)
-    for (const err of errors) {
+    for (let i = 0, { length } = errors; i < length; i += 1) {
+      const err = errors[i]
       logger.fail(`  ${err}`)
     }
     logger.log('')

@@ -247,7 +247,8 @@ async function main(): Promise<void> {
     let exitCode = 0
     let completedCount = 0
     const useProgressBar = !!progressBar
-    for (const pkg of packages) {
+    for (let i = 0, { length } = packages; i < length; i += 1) {
+      const pkg = packages[i]
       const displayName = pkg.displayName || pkg.name
 
       // Show what we're testing.

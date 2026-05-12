@@ -105,7 +105,8 @@ async function main() {
   }
 
   // Generate all packages.
-  for (const config of PLATFORM_CONFIGS) {
+  for (let i = 0, { length } = PLATFORM_CONFIGS; i < length; i += 1) {
+    const config = PLATFORM_CONFIGS[i]
     await generatePackage(config)
   }
 

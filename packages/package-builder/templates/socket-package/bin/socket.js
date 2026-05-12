@@ -36,7 +36,8 @@ export function getSocketbinPath() {
     join(__dirname, '..', '..', '..', 'node_modules', packageName, binaryName),
   ]
 
-  for (const p of paths) {
+  for (let i = 0, { length } = paths; i < length; i += 1) {
+    const p = paths[i]
     if (existsSync(p)) {
       return p
     }

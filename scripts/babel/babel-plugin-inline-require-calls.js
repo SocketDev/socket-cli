@@ -71,7 +71,8 @@ module.exports = function inlineRequireCalls(babel) {
           // Find the first path that exists.
           const fs = require('node:fs')
           let resolvedPath = absolutePath
-          for (const testPath of possiblePaths) {
+          for (let i = 0, { length } = possiblePaths; i < length; i += 1) {
+            const testPath = possiblePaths[i]
             try {
               if (fs.existsSync(testPath)) {
                 resolvedPath = testPath

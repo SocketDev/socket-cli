@@ -93,7 +93,8 @@ export default function inlineConstEnum(babel, options = {}) {
         // Look for: const MyEnum = { Value: 0, ... }
         const { declarations } = path.node
 
-        for (const decl of declarations) {
+        for (let i = 0, { length } = declarations; i < length; i += 1) {
+          const decl = declarations[i]
           if (
             !t.isVariableDeclarator(decl) ||
             !t.isIdentifier(decl.id) ||

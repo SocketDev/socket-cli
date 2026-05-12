@@ -98,7 +98,9 @@ export async function getFilesToCheck(
 /**
  * Run Oxlint check via lint script on affected packages.
  */
-export async function runOxlintCheck(options: CheckOptions = {}): Promise<number> {
+export async function runOxlintCheck(
+  options: CheckOptions = {},
+): Promise<number> {
   const { quiet = false } = options
 
   // Get files to check and affected packages.

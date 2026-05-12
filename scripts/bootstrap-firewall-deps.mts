@@ -161,7 +161,8 @@ const readPinnedVersion = (pkgName: string): string => {
     const content = readFileSync(wsPath, 'utf8')
     const lines = content.split('\n')
     let inCatalog = false
-    for (const rawLine of lines) {
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const rawLine = lines[i]
       const line = rawLine.replace(/\r$/, '')
       if (/^catalog:\s*$/.test(line)) {
         inCatalog = true
@@ -293,7 +294,8 @@ const main = async (): Promise<number> => {
   log(
     `Bootstrapping ${BOOTSTRAP_PACKAGES.length} package(s) from npm registry...`,
   )
-  for (const pkg of BOOTSTRAP_PACKAGES) {
+  for (let i = 0, { length } = BOOTSTRAP_PACKAGES; i < length; i += 1) {
+    const pkg = BOOTSTRAP_PACKAGES[i]
     try {
       await bootstrapPackage(pkg)
     } catch (e) {

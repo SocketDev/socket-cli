@@ -343,7 +343,8 @@ export function computeBuildSignature(pkg: BuildPackageConfig): string {
   files.sort()
 
   const hash = createHash('sha256')
-  for (const file of files) {
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const file = files[i]
     const relative = path.relative(rootDir, file)
     hash.update(relative)
     hash.update('\0')
@@ -557,7 +558,8 @@ export async function runSequentialBuilds(
   const startTime = Date.now()
   const results = []
 
-  for (const target of targetsToBuild) {
+  for (let i = 0, { length } = targetsToBuild; i < length; i += 1) {
+    const target = targetsToBuild[i]
     const result = await buildTarget(target, buildArgs)
     results.push(result)
 
@@ -778,7 +780,8 @@ export function showHelp(): void {
   logger.log('      All pre-built binaries are cached in ~/.socket/ directory')
   logger.log('')
   logger.log('Platform Targets:')
-  for (const target of PLATFORM_TARGETS) {
+  for (let i = 0, { length } = PLATFORM_TARGETS; i < length; i += 1) {
+    const target = PLATFORM_TARGETS[i]
     logger.log(`  ${target}`)
   }
   logger.log('')
@@ -798,7 +801,10 @@ export function signaturePath(pkg: BuildPackageConfig): string {
   return path.join(rootDir, `${pkg.outputCheck}.build-signature`)
 }
 
-export function writeSignature(pkg: BuildPackageConfig, signature: string): void {
+export function writeSignature(
+  pkg: BuildPackageConfig,
+  signature: string,
+): void {
   writeFileSync(signaturePath(pkg), `${signature}\n`, 'utf8')
 }
 

@@ -67,7 +67,8 @@ export function getTestsToRun(options: GetTestsOptions = {}): GetTestsResult {
   let runAllTests = false
   let runAllReason = ''
 
-  for (const file of changedFiles) {
+  for (let i = 0, { length } = changedFiles; i < length; i += 1) {
+    const file = changedFiles[i]
     const normalized = normalizePath(file)
 
     // Test files always run themselves
@@ -87,7 +88,8 @@ export function getTestsToRun(options: GetTestsOptions = {}): GetTestsResult {
       break
     }
 
-    for (const test of tests) {
+    for (let i = 0, { length } = tests; i < length; i += 1) {
+      const test = tests[i]
       // Handle directory patterns
       if (test.endsWith('/')) {
         runAllTests = true

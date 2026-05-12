@@ -166,4 +166,4 @@ export function loadNativeAddon() {
 // Load and export the native addon.
 const iocraft = loadNativeAddon()
 
-export default iocraft
+export { iocraft }

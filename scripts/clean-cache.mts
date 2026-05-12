@@ -56,7 +56,8 @@ export function analyzeCacheDir(cacheDir: string): CacheEntry[] {
 
   try {
     const items = readdirSync(cacheDir)
-    for (const item of items) {
+    for (let i = 0, { length } = items; i < length; i += 1) {
+      const item = items[i]
       const itemPath = join(cacheDir, item)
       const stats = statSync(itemPath)
 
@@ -89,7 +90,8 @@ export function findCacheDirs(): CacheDirInfo[] {
 
   try {
     const packages = readdirSync(packagesDir)
-    for (const pkg of packages) {
+    for (let i = 0, { length } = packages; i < length; i += 1) {
+      const pkg = packages[i]
       const cacheDir = join(packagesDir, pkg, '.cache')
       try {
         statSync(cacheDir)
@@ -129,7 +131,8 @@ export function getDirSize(dir: string): number {
   let size = 0
   try {
     const items = readdirSync(dir)
-    for (const item of items) {
+    for (let i = 0, { length } = items; i < length; i += 1) {
+      const item = items[i]
       const itemPath = join(dir, item)
       const stats = statSync(itemPath)
       if (stats.isDirectory()) {
@@ -171,7 +174,8 @@ async function main(): Promise<void> {
 
     if (cleanAll) {
       // Delete everything.
-      for (const entry of entries) {
+      for (let i = 0, { length } = entries; i < length; i += 1) {
+        const entry = entries[i]
         logger.log(
           `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
         )
@@ -190,7 +194,8 @@ async function main(): Promise<void> {
         `  ✓ ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
       )
 
-      for (const entry of older) {
+      for (let i = 0, { length } = older; i < length; i += 1) {
+        const entry = older[i]
         logger.log(
           `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
         )

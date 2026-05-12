@@ -49,7 +49,8 @@ async function main() {
   logger.log('='.repeat(50))
   logger.log('')
 
-  for (const pkg of PACKAGES) {
+  for (let i = 0, { length } = PACKAGES; i < length; i += 1) {
+    const pkg = PACKAGES[i]
     const packagePath = getPackageOutDir(pkg.outputDir)
 
     // Copy entire template directory.
