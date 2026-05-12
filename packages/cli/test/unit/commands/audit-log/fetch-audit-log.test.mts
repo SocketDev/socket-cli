@@ -177,7 +177,8 @@ describe('fetchAuditLog', () => {
 
     const logTypes = ['all', 'security', 'configuration', 'access']
 
-    for (const logType of logTypes) {
+    for (let i = 0, { length } = logTypes; i < length; i += 1) {
+      const logType = logTypes[i]
       const config = {
         logType,
         orgSlug: 'test-org',

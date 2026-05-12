@@ -79,7 +79,8 @@ describe('socket pnpm', async () => {
                 $ socket pnpm exec package-name"
       \`,
       )
-      expect(\`\n   ${stderr}`).toMatchInlineSnapshot(`
+      expect(\`\n   ${stderr}`,
+      ).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>

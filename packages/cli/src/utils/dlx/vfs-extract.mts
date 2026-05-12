@@ -263,7 +263,8 @@ export async function extractExternalTools(
           // Build and validate toolPaths from cache.
           const toolPaths: Partial<Record<ExternalTool, string>> = {}
           let allValid = true
-          for (const tool of EXTERNAL_TOOLS) {
+          for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+            const tool = EXTERNAL_TOOLS[i]
             const toolPath = getToolFilePath(tool, nodeSmolBase)
             const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
             // Validate tool exists and is executable.
@@ -327,7 +328,8 @@ export async function extractExternalTools(
         debug('notice', 'External tools extracted just before timeout')
         const toolPaths: Partial<Record<ExternalTool, string>> = {}
         let allValid = true
-        for (const tool of EXTERNAL_TOOLS) {
+        for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+          const tool = EXTERNAL_TOOLS[i]
           const toolPath = getToolFilePath(tool, nodeSmolBase)
           const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
           if (!existsSync(toolPathWithExt)) {
@@ -360,7 +362,8 @@ export async function extractExternalTools(
       debug('notice', 'External tools already extracted (cache marker found)')
       const toolPaths: Partial<Record<ExternalTool, string>> = {}
       let allValid = true
-      for (const tool of EXTERNAL_TOOLS) {
+      for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+        const tool = EXTERNAL_TOOLS[i]
         const toolPath = getToolFilePath(tool, nodeSmolBase)
         const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
         // Validate tool exists before adding to paths.
@@ -396,7 +399,8 @@ export async function extractExternalTools(
 
     const toolPaths: Partial<Record<ExternalTool, string>> = {}
 
-    for (const tool of EXTERNAL_TOOLS) {
+    for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+      const tool = EXTERNAL_TOOLS[i]
       const toolPath = getToolFilePath(tool, nodeSmolBase)
       const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
 
@@ -648,7 +652,8 @@ export function getToolPaths(): Record<ExternalTool, string> {
 
   const paths: Partial<Record<ExternalTool, string>> = {}
 
-  for (const tool of EXTERNAL_TOOLS) {
+  for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+    const tool = EXTERNAL_TOOLS[i]
     const toolPath = getToolFilePath(tool, nodeSmolBase)
     paths[tool] = isPlatWin ? `${toolPath}.exe` : toolPath
   }

@@ -40,7 +40,8 @@ export async function checkBundledDependencies(content: string): Promise<{
       /@socketsecurity\/registry/,
     ]
 
-    for (const pattern of bundledPackagePatterns) {
+    for (let i = 0, { length } = bundledPackagePatterns; i < length; i += 1) {
+      const pattern = bundledPackagePatterns[i]
       // Check if package name appears in context that suggests bundling.
       // Look for: var import_package = require("package") without the actual require call.
       // This would indicate the package code is bundled inline.
@@ -54,6 +55,7 @@ export async function checkBundledDependencies(content: string): Promise<{
     }
   } else {
     // If we have dependencies, check that they remain external (not bundled).
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const dep of Object.keys(dependencies)) {
       const escapedDep = dep.replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&')
       // Check if dependency code is bundled by looking for __toCommonJS pattern.
@@ -90,7 +92,8 @@ export function hasAbsolutePaths(content: string): {
   ]
 
   const matches: string[] = []
-  for (const pattern of patterns) {
+  for (let i = 0, { length } = patterns; i < length; i += 1) {
+    const pattern = patterns[i]
     const found = content.match(pattern)
     if (found) {
       matches.push(...found)
@@ -112,6 +115,7 @@ describe('Bundle validation', () => {
 
     if (result.hasIssue) {
       logger.fail('Found absolute paths in bundle:')
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
       for (const match of result.matches) {
         logger.fail(`  - ${match}`)
       }
@@ -130,6 +134,7 @@ describe('Bundle validation', () => {
 
     if (!result.hasNoBundledDeps) {
       logger.fail('Found bundled dependencies (should be external):')
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
       for (const dep of result.bundledDeps) {
         logger.fail(`  - ${dep}`)
       }

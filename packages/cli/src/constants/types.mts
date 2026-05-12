@@ -2,7 +2,7 @@
  * Type definitions for constants module.
  */
 
-import type ENV from './env.mts'
+import type { ENV } from './env.mts'
 
 // Re-export platform constants from registry
 export { WIN32 } from '@socketsecurity/lib/constants/platform'

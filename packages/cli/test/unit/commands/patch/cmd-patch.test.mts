@@ -22,10 +22,7 @@ const mockSpawnSocketPatchDlx = vi.hoisted(() =>
 vi.mock(
   '../../../../src/utils/cli/with-subcommands.mts',
   async importOriginal => {
-    const actual =
-      await importOriginal<
-        typeof WithSubcommandsModule
-      >()
+    const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {
       ...actual,
       meowOrExit: mockMeowOrExit,

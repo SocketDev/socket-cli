@@ -123,7 +123,8 @@ describe('handleConfigUnset', () => {
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 
-    for (const key of keys) {
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]
       const mockResult = createSuccessResult(undefined)
       mockUpdateConfigValue.mockReturnValue(mockResult)
 

@@ -79,7 +79,8 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
 
               if (examples.length > 0) {
                 lines.push('\nExamples')
-                for (const ex of examples) {
+                for (let i = 0, { length } = examples; i < length; i += 1) {
+                  const ex = examples[i]
                   lines.push(`  $ ${command} ${ex.command}`)
                   if (ex.description) {
                     lines.push(`    ${ex.description}`)
@@ -93,6 +94,7 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
 
               lines.push('\nOptions')
               // Auto-generate options from flags
+              // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
               for (const [key, flag] of Object.entries(combinedFlags)) {
                 if (!flag || typeof flag !== 'object') {
                   continue
@@ -167,6 +169,7 @@ export function buildParentCommand(
       // This is typically handled by meowWithSubcommands
       // but we can provide a fallback
       logger.log(`Available subcommands for ${name}:`)
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [key, cmd] of Object.entries(subcommands)) {
         if (!cmd.hidden) {
           logger.log(`  ${key} - ${cmd.description}`)

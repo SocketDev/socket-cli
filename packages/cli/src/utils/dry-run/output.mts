@@ -71,6 +71,7 @@ export function outputDryRunFetch(
 
   if (queryParams && Object.keys(queryParams).length > 0) {
     out('  Query parameters:')
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined && value !== '') {
         out(`    ${key}: ${value}`)
@@ -116,10 +117,12 @@ export function outputDryRunPreview(preview: DryRunPreview): void {
     out('  No actions would be performed.')
   } else {
     out('  Actions that would be performed:')
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const action of preview.actions) {
       const targetStr = action.target ? ` → ${action.target}` : ''
       out(`    - [${action.type}] ${action.description}${targetStr}`)
       if (action.details) {
+        // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
         for (const [key, value] of Object.entries(action.details)) {
           out(`        ${key}: ${JSON.stringify(value)}`)
         }
@@ -151,9 +154,11 @@ export function outputDryRunUpload(
   out(`${DRY_RUN_LABEL}: Would upload ${resourceType}`)
   out('')
   out('  Details:')
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [key, value] of Object.entries(details)) {
     if (typeof value === 'object' && value !== null) {
       out(`    ${key}:`)
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [subKey, subValue] of Object.entries(
         value as Record<string, unknown>,
       )) {
@@ -182,7 +187,8 @@ export function outputDryRunWrite(
   out(`  Target file: ${filePath}`)
   if (changes && changes.length > 0) {
     out('  Changes:')
-    for (const change of changes) {
+    for (let i = 0, { length } = changes; i < length; i += 1) {
+      const change = changes[i]
       out(`    - ${change}`)
     }
   }

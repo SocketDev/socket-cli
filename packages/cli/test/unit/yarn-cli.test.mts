@@ -6,7 +6,7 @@ vi.mock('../../src/utils/dlx/spawn.mts', () => ({
 }))
 
 // Import modules after mocks are set up.
-const { default: runYarnCli } = await import('../../src/yarn-cli.mts')
+const { runYarnCli } = await import('../../src/yarn-cli.mts')
 const spawnModule = await import('../../src/utils/dlx/spawn.mts')
 const mockSpawnSfw = vi.mocked(spawnModule.spawnSfw)
 

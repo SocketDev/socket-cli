@@ -28,7 +28,11 @@ vi.mock('../../../../src/utils/dlx/spawn.mts', () => {
   // Return the actual implementation for spawnCdxgenDlx.
   return {
     spawnDlx: mockSpawnDlx,
-    spawnCdxgenDlx: async (args: unknown, options: unknown, spawnExtra: unknown) => {
+    spawnCdxgenDlx: async (
+      args: unknown,
+      options: unknown,
+      spawnExtra: unknown,
+    ) => {
       // Replicate the actual implementation.
       return mockSpawnDlx(
         { name: '@cyclonedx/cdxgen', version: 'undefined' },

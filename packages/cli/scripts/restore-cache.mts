@@ -171,7 +171,8 @@ export async function hashFiles(globPattern, cwd) {
       return 'none'
     }
     const hash = createHash('sha256')
-    for (const file of files) {
+    for (let i = 0, { length } = files; i < length; i += 1) {
+      const file = files[i]
       const content = await fs.readFile(path.join(cwd, file), 'utf8')
       hash.update(content)
     }

@@ -49,10 +49,7 @@ const { mockRunDepscore } = vi.hoisted(() => ({
 }))
 
 vi.mock('../../../../src/commands/mcp/depscore.mts', async importOriginal => {
-  const actual =
-    await importOriginal<
-      typeof DepscoreModule
-    >()
+  const actual = await importOriginal<typeof DepscoreModule>()
   return {
     ...actual,
     runDepscore: mockRunDepscore,

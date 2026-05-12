@@ -306,10 +306,11 @@ describe('debug utilities', () => {
         'create',
       ]
 
-      operations.forEach(op => {
+      for (let i = 0, { length } = operations; i < length; i += 1) {
+        const op = operations[i]
         debugFileOp(op, `/path/${op}`)
         // No errors expected.
-      })
+      }
     })
   })
 

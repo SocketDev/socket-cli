@@ -6,7 +6,7 @@ vi.mock('../../src/utils/dlx/spawn.mts', () => ({
 }))
 
 // Import modules after mocks are set up.
-const { default: runPnpmCli } = await import('../../src/pnpm-cli.mts')
+const { runPnpmCli } = await import('../../src/pnpm-cli.mts')
 const spawnModule = await import('../../src/utils/dlx/spawn.mts')
 const mockSpawnSfw = vi.mocked(spawnModule.spawnSfw)
 

@@ -29,11 +29,13 @@ export function formatResults(results) {
   const warnings = []
   const infos = []
 
-  for (const result of results) {
+  for (let i = 0, { length } = results; i < length; i += 1) {
+    const result = results[i]
     if (result.issues.length === 0) {
       continue
     }
 
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const issue of result.issues) {
       const message = `${result.file}: ${issue.message}`
       if (issue.severity === 'error') {
@@ -63,7 +65,8 @@ export async function getTestFiles() {
    */
   async function collectFiles(dir) {
     const entries = await fs.readdir(dir, { withFileTypes: true })
-    for (const entry of entries) {
+    for (let i = 0, { length } = entries; i < length; i += 1) {
+      const entry = entries[i]
       const fullPath = path.join(dir, entry.name)
       if (entry.isDirectory() && !entry.name.startsWith('.')) {
         await collectFiles(fullPath)
@@ -99,7 +102,8 @@ export async function validateBuildArtifacts() {
   // Check for key entry points.
   const requiredArtifacts = ['build/cli.js', 'dist/index.js']
 
-  for (const artifact of requiredArtifacts) {
+  for (let i = 0, { length } = requiredArtifacts; i < length; i += 1) {
+    const artifact = requiredArtifacts[i]
     const fullPath = path.join(rootPath, artifact)
     if (!existsSync(fullPath)) {
       issues.push({
@@ -142,6 +146,7 @@ export async function validateImportSyntax(testFile) {
       },
     ]
 
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { fix, pattern, severity } of problematicPatterns) {
       if (pattern.test(content)) {
         issues.push({
@@ -217,7 +222,8 @@ export async function validateTestFile(testFile) {
   ]
 
   const results = await Promise.allSettled(validations)
-  for (const result of results) {
+  for (let i = 0, { length } = results; i < length; i += 1) {
+    const result = results[i]
     if (result.status === 'fulfilled') {
       allIssues.push(...result.value)
     }
@@ -274,7 +280,8 @@ async function main() {
   // Validate build artifacts first.
   const buildIssues = await validateBuildArtifacts()
   if (buildIssues.some(issue => issue.severity === 'error')) {
-    for (const issue of buildIssues) {
+    for (let i = 0, { length } = buildIssues; i < length; i += 1) {
+      const issue = buildIssues[i]
       logger.fail(issue.message)
     }
     logger.fail(

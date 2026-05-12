@@ -17,7 +17,7 @@ import {
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib/paths/dirnames'
 
-import ENV from './env.mts'
+import { ENV } from './env.mts'
 
 // Import socket constants for re-export.
 import { SOCKET_JSON } from './socket.mts'

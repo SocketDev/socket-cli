@@ -258,7 +258,8 @@ export async function run(
   const reachEcosystems: PURL_Type[] = []
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const validEcosystems = getEcosystemChoicesForMeow()
-  for (const ecosystem of reachEcosystemsRaw) {
+  for (let i = 0, { length } = reachEcosystemsRaw; i < length; i += 1) {
+    const ecosystem = reachEcosystemsRaw[i]
     if (!validEcosystems.includes(ecosystem)) {
       throw new InputError(
         `--reach-ecosystems must be one of: ${joinAnd(validEcosystems)} (saw: "${ecosystem}"); pass a supported ecosystem like --reach-ecosystems=${validEcosystems[0]}`,

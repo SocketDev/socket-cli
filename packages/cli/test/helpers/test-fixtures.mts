@@ -56,6 +56,7 @@ export async function createTempFixtures(
   const tempFixtures = Object.create(null) as Record<string, string>
   const tempDirs: string[] = []
 
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [name, fixturePath] of Object.entries(fixtures)) {
     // eslint-disable-next-line no-await-in-loop
     const tempDir = await createTempFixture(fixturePath)

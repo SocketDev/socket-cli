@@ -58,7 +58,8 @@ export async function loadAddOverrides(opts: {
   }))
   vi.doMock('@socketsecurity/lib/promises', () => ({
     pEach: async (items: unknown[], fn: unknown) => {
-      for (const item of items) {
+      for (let i = 0, { length } = items; i < length; i += 1) {
+        const item = items[i]
         await fn(item)
       }
     },
@@ -118,8 +119,7 @@ export async function loadAddOverrides(opts: {
   }))
   if (opts.fetchPackageManifest) {
     vi.doMock('@socketsecurity/lib/packages', async importOriginal => {
-      const actual =
-        await importOriginal<typeof PackagesModule>()
+      const actual = await importOriginal<typeof PackagesModule>()
       return {
         ...actual,
         fetchPackageManifest: opts.fetchPackageManifest,

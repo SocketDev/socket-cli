@@ -422,7 +422,8 @@ describe('error message quality', () => {
       'fetching file content for package.json in org/repo',
     ]
 
-    for (const context of contexts) {
+    for (let i = 0, { length } = contexts; i < length; i += 1) {
+      const context = contexts[i]
       const errorResult = {
         ok: false as const,
         message: 'GitHub API error',

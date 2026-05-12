@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import ENV from '../../src/constants/env.mts'
+import { ENV } from '../../src/constants/env.mts'
 import { spawnDlx } from '../../src/utils/dlx/spawn.mts'
 import { findUp } from '../../src/utils/fs/find-up.mts'
 import { getDefaultApiToken } from '../../src/utils/socket/sdk.mts'

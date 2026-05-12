@@ -40,8 +40,7 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual =
-    await importOriginal<typeof LoggerModule>()
+  const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -73,7 +72,7 @@ vi.mock('../../../../src/commands/mcp/transport-http.mts', () => ({
 // undefined and exercise the `|| '0.0.0'` fallback branch.
 const versionRef = { current: '7.7.7' as string | undefined }
 vi.mock('../../../../src/constants.mts', () => ({
-  default: {
+  constants: {
     ENV: {
       get INLINED_VERSION() {
         return versionRef.current

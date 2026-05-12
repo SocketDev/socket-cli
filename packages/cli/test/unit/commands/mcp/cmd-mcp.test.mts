@@ -37,8 +37,7 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual =
-    await importOriginal<typeof LoggerModule>()
+  const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -101,10 +100,7 @@ vi.mock('../../../../src/commands/mcp/handle-mcp.mts', () => ({
 vi.mock(
   '../../../../src/utils/cli/with-subcommands.mjs',
   async importOriginal => {
-    const actual =
-      await importOriginal<
-        typeof WithSubcommandsModule
-      >()
+    const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {
       ...actual,
       meowOrExit: mockMeowOrExit,
@@ -131,14 +127,16 @@ const savedEnv: Record<string, string | undefined> = {}
 
 beforeEach(() => {
   vi.clearAllMocks()
-  for (const k of ENV_KEYS) {
+  for (let i = 0, { length } = ENV_KEYS; i < length; i += 1) {
+    const k = ENV_KEYS[i]
     savedEnv[k] = process.env[k]
     delete process.env[k]
   }
 })
 
 afterEach(() => {
-  for (const k of ENV_KEYS) {
+  for (let i = 0, { length } = ENV_KEYS; i < length; i += 1) {
+    const k = ENV_KEYS[i]
     if (savedEnv[k] === undefined) {
       delete process.env[k]
     } else {

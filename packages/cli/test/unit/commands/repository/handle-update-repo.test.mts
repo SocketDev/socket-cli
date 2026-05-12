@@ -126,7 +126,8 @@ describe('handleUpdateRepo', () => {
 
     const visibilities = ['public', 'private', 'internal']
 
-    for (const visibility of visibilities) {
+    for (let i = 0, { length } = visibilities; i < length; i += 1) {
+      const visibility = visibilities[i]
       // eslint-disable-next-line no-await-in-loop
       await handleUpdateRepo(
         {

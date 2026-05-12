@@ -92,6 +92,7 @@ export async function createMonorepoWorkspace(
   const files: WorkspaceFile[] = []
 
   // Create package.json for each package
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [pkgPath, pkgConfig] of Object.entries(packages)) {
     files.push({
       content: pkgConfig,
@@ -171,7 +172,8 @@ export async function createTestWorkspace(
   }
 
   // Create specified files
-  for (const file of files) {
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const file = files[i]
     const filePath = path.join(workspacePath, file.path)
     const fileDir = path.dirname(filePath)
     // eslint-disable-next-line no-await-in-loop

@@ -90,7 +90,7 @@ vi.mock('../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
 }))
 
 vi.mock('../../../../src/constants.mts', () => ({
-  default: {
+  constants: {
     REPORT_LEVEL_ERROR: 'error',
   },
 }))

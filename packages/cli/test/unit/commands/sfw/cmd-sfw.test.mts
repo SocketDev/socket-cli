@@ -137,6 +137,7 @@ describe('cmd-sfw', () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
       // Test various package managers.
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
       for (const pm of [
         'npm',
         'pnpm',

@@ -15,10 +15,7 @@ const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 vi.mock(
   '../../../../src/utils/cli/with-subcommands.mjs',
   async importOriginal => {
-    const actual =
-      await importOriginal<
-        typeof WithSubcommandsModule
-      >()
+    const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {
       ...actual,
       meowWithSubcommands: mockMeowWithSubcommands,

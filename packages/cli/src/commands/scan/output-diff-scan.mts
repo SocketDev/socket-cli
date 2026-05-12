@@ -67,9 +67,14 @@ export async function handleMarkdown(
   logger.log(`- Added packages: ${data.artifacts.added.length}`)
 
   if (data.artifacts.added.length > 0) {
-    data.artifacts.added.slice(0, 10).forEach((artifact: DiffScanArtifact) => {
+    for (
+      let i = 0, { length } = data.artifacts.added.slice(0, 10);
+      i < length;
+      i += 1
+    ) {
+      const artifact = data.artifacts.added.slice(0, 10)[i]
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    })
+    }
     if (data.artifacts.added.length > 10) {
       logger.log(`  … and ${data.artifacts.added.length - 10} more`)
     }
@@ -77,11 +82,14 @@ export async function handleMarkdown(
 
   logger.log(`- Removed packages: ${data.artifacts.removed.length}`)
   if (data.artifacts.removed.length > 0) {
-    data.artifacts.removed
-      .slice(0, 10)
-      .forEach((artifact: DiffScanArtifact) => {
-        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-      })
+    for (
+      let i = 0, { length } = data.artifacts.removed.slice(0, 10);
+      i < length;
+      i += 1
+    ) {
+      const artifact = data.artifacts.removed.slice(0, 10)[i]
+      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+    }
     if (data.artifacts.removed.length > 10) {
       logger.log(`  … and ${data.artifacts.removed.length - 10} more`)
     }
@@ -89,11 +97,14 @@ export async function handleMarkdown(
 
   logger.log(`- Replaced packages: ${data.artifacts.replaced.length}`)
   if (data.artifacts.replaced.length > 0) {
-    data.artifacts.replaced
-      .slice(0, 10)
-      .forEach((artifact: DiffScanArtifact) => {
-        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-      })
+    for (
+      let i = 0, { length } = data.artifacts.replaced.slice(0, 10);
+      i < length;
+      i += 1
+    ) {
+      const artifact = data.artifacts.replaced.slice(0, 10)[i]
+      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+    }
     if (data.artifacts.replaced.length > 10) {
       logger.log(`  … and ${data.artifacts.replaced.length - 10} more`)
     }
@@ -101,11 +112,14 @@ export async function handleMarkdown(
 
   logger.log(`- Updated packages: ${data.artifacts.updated.length}`)
   if (data.artifacts.updated.length > 0) {
-    data.artifacts.updated
-      .slice(0, 10)
-      .forEach((artifact: DiffScanArtifact) => {
-        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-      })
+    for (
+      let i = 0, { length } = data.artifacts.updated.slice(0, 10);
+      i < length;
+      i += 1
+    ) {
+      const artifact = data.artifacts.updated.slice(0, 10)[i]
+      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+    }
     if (data.artifacts.updated.length > 10) {
       logger.log(`  … and ${data.artifacts.updated.length - 10} more`)
     }
@@ -115,7 +129,8 @@ export async function handleMarkdown(
   logger.log(`- Unchanged packages: ${unchanged.length}`)
   if (unchanged.length > 0) {
     const firstUpToTen = unchanged.slice(0, 10)
-    for (const artifact of firstUpToTen) {
+    for (let i = 0, { length } = firstUpToTen; i < length; i += 1) {
+      const artifact = firstUpToTen[i]
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
     if (unchanged.length > 10) {
@@ -130,6 +145,7 @@ export async function handleMarkdown(
     'This Scan was considered to be the "base" / "from" / "before" Scan.',
   )
   logger.log('')
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of Object.entries(data.before)) {
     if (key === 'pull_request' && !value) {
       continue
@@ -147,6 +163,7 @@ export async function handleMarkdown(
   logger.log('')
   logger.log('This Scan was considered to be the "head" / "to" / "after" Scan.')
   logger.log('')
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of Object.entries(data.after)) {
     if (key === 'pull_request' && !value) {
       continue

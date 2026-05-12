@@ -109,7 +109,8 @@ export async function extractBasicsTools(
     // Extract all tools using async process.smol.mount().
     // mount() manages caching, locking, and extraction automatically.
     // Async mount() is non-blocking for large extractions (Python with 3000+ files).
-    for (const tool of tools) {
+    for (let i = 0, { length } = tools; i < length; i += 1) {
+      const tool = tools[i]
       const vfsRelativePath = BASICS_TOOL_VFS_PATHS[tool]
       const vfsPath = `/snapshot/${vfsRelativePath}`
 
@@ -153,7 +154,8 @@ export async function extractBasicsTools(
 
     // Validate other security tools.
     const toolsToValidate = ['trivy', 'trufflehog', 'opengrep'] as const
-    for (const tool of toolsToValidate) {
+    for (let i = 0, { length } = toolsToValidate; i < length; i += 1) {
+      const tool = toolsToValidate[i]
       const toolPath = extractedPaths[tool]
       /* c8 ignore next - defensive: extraction populates all toolsToValidate keys before this loop */
       if (!toolPath) {

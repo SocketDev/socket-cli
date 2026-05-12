@@ -273,6 +273,7 @@ export function sanitizeHeaders(
   headers: Record<string, string>,
 ): Record<string, string> {
   const sanitized: Record<string, string> = Object.create(null)
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [key, value] of Object.entries(headers)) {
     const lowerKey = key.toLowerCase()
     if (lowerKey === 'authorization' || lowerKey.includes('api-key')) {

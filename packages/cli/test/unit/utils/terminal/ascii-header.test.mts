@@ -6,13 +6,13 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  type HeaderTheme,
   formatInfoLine,
   renderLogoWithFallback,
   renderShimmerFrame,
   renderStaticLogo,
   supportsFullColor,
 } from '../../../../src/utils/terminal/ascii-header.mts'
+import type { HeaderTheme } from '../../../../src/utils/terminal/ascii-header.mts'
 
 /**
  * Strip ANSI color codes from string for shimmer testing.
@@ -163,7 +163,8 @@ describe('ascii-header', () => {
         'ocean',
         'sunset',
       ]
-      for (const theme of themes) {
+      for (let i = 0, { length } = themes; i < length; i += 1) {
+        const theme = themes[i]
         const logo = renderShimmerFrame(0, theme)
         const stripped = stripAnsi(logo)
         expect(stripped).toContain('|')
@@ -253,7 +254,8 @@ describe('ascii-header', () => {
         'ocean',
         'sunset',
       ]
-      for (const theme of themes) {
+      for (let i = 0, { length } = themes; i < length; i += 1) {
+        const theme = themes[i]
         const logo = renderLogoWithFallback(undefined, theme)
         expect(logo).toContain('|   __|___') // ASCII art content
       }
@@ -275,7 +277,8 @@ describe('ascii-header', () => {
         'ocean',
         'sunset',
       ]
-      for (const theme of themes) {
+      for (let i = 0, { length } = themes; i < length; i += 1) {
+        const theme = themes[i]
         const formatted = formatInfoLine('Version 1.0.0', theme)
         expect(formatted).toContain('Version 1.0.0')
         expect(formatted).toContain('\x1b[38;2;')

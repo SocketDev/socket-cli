@@ -40,7 +40,10 @@ export function findSocketLibPath(importerPath: string) {
   return undefined
 }
 
-export function resolveSocketLibExternal(socketLibPath: string, packageName: string) {
+export function resolveSocketLibExternal(
+  socketLibPath: string,
+  packageName: string,
+) {
   if (packageName.startsWith('@')) {
     const parts = packageName.split('/')
     const scope = parts[0]!

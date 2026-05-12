@@ -86,7 +86,8 @@ export function createMarkdownReport(data: PurlDataResponse): string {
   if (selfCaps.length) {
     o.push('These are the capabilities detected in the package itself:')
     o.push('')
-    for (const cap of selfCaps) {
+    for (let i = 0, { length } = selfCaps; i < length; i += 1) {
+      const cap = selfCaps[i]
       o.push(`- ${cap}`)
     }
   } else {
@@ -150,7 +151,8 @@ export function createMarkdownReport(data: PurlDataResponse): string {
     if (capabilities.length) {
       o.push('These are the capabilities detected in at least one package:')
       o.push('')
-      for (const cap of capabilities) {
+      for (let i = 0, { length } = capabilities; i < length; i += 1) {
+        const cap = capabilities[i]
         o.push(`- ${cap}`)
       }
     } else {

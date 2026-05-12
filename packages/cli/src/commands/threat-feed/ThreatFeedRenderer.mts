@@ -213,13 +213,14 @@ export function displayThreatFeedWithIocraft({
     logger.error('Error rendering threat feed:', errorMessage(e))
     logger.warn('Falling back to plain text output')
     logger.log(`Total threats: ${results.length}`)
-    results.slice(0, 10).forEach((threat, i) => {
+    for (let i = 0, { length } = results.slice(0, 10); i < length; i += 1) {
+      const threat = results.slice(0, 10)[i]
       logger.log(
         `[${i + 1}] ${threat.parsed?.ecosystem || 'N/A'}/${threat.parsed?.name || 'N/A'}@${threat.parsed?.version || 'N/A'}`,
       )
       logger.log(`    Type: ${threat.threatType || 'N/A'}`)
       logger.log(`    Created: ${threat.createdAt || 'N/A'}`)
-    })
+    }
     if (results.length > 10) {
       logger.log(`... and ${results.length - 10} more threats`)
     }

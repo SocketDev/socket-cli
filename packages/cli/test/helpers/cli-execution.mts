@@ -1,6 +1,6 @@
 /** @fileoverview CLI execution test helpers for Socket CLI. Provides high-level utilities for executing CLI commands with comprehensive output validation and assertion capabilities. */
 
-import constants from '../../src/constants.mts'
+import { constants } from '../../src/constants.mts'
 import { spawnSocketCli } from '../utils.mts'
 
 import type { SpawnOptions } from '@socketsecurity/lib/spawn'
@@ -61,7 +61,8 @@ export async function executeBatchCliCommands(
 ): Promise<CliExecutionResult[]> {
   const results: CliExecutionResult[] = []
 
-  for (const args of commands) {
+  for (let i = 0, { length } = commands; i < length; i += 1) {
+    const args = commands[i]
     // eslint-disable-next-line no-await-in-loop
     const result = await executeCliCommand(args, options)
     results.push(result)

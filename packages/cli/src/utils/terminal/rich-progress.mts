@@ -48,6 +48,7 @@ export class MultiProgress {
     // Prevent unbounded Map growth by enforcing max concurrent tasks.
     if (this.tasks.size >= MAX_CONCURRENT_TASKS) {
       // Remove oldest completed/failed task to make room.
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [taskId, task] of this.tasks) {
         if (task.status === 'done' || task.status === 'failed') {
           this.tasks.delete(taskId)
@@ -183,6 +184,7 @@ export class MultiProgress {
 
     const lines: string[] = []
 
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const task of this.tasks.values()) {
       lines.push(this.renderTask(task))
     }

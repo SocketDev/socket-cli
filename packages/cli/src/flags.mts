@@ -1,7 +1,7 @@
 import os from 'node:os'
 
 import { NODE_OPTIONS } from './env/node-options.mts'
-import meow, { defineFlags } from './meow.mts'
+import { defineFlags, meow } from './meow.mts'
 
 import type { MeowFlag as Flag } from './meow.mts'
 

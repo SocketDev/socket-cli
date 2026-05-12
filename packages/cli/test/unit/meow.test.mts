@@ -36,7 +36,7 @@ vi.mock('@socketsecurity/lib/packages', () => ({
   readPackageJsonSync: mockReadPackageJsonSync,
 }))
 
-import meow from '../../src/meow.mts'
+import { meow } from '../../src/meow.mts'
 
 describe('meow', () => {
   beforeEach(() => {

@@ -48,7 +48,7 @@ import { isError } from '@socketsecurity/lib/errors'
 import { escapeRegExp } from '@socketsecurity/lib/regexps'
 
 import { TelemetryService } from './service.mts'
-import constants, { CONFIG_KEY_DEFAULT_ORG } from '../../constants.mts'
+import { CONFIG_KEY_DEFAULT_ORG, constants } from '../../constants.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 
 import type { TelemetryContext } from './types.mts'
@@ -96,6 +96,7 @@ export function buildContext(argv: string[]): TelemetryContext {
 export function calculateDuration(startTime: number): number {
   return Date.now() - startTime
 }
+
 
 /**
  * Finalize telemetry and clean up resources (async version).

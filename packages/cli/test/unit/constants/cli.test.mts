@@ -133,7 +133,8 @@ describe('cli constants', () => {
         FLAG_VERBOSE,
         FLAG_VERSION,
       ]
-      for (const flag of flags) {
+      for (let i = 0, { length } = flags; i < length; i += 1) {
+        const flag = flags[i]
         expect(flag.startsWith('--')).toBe(true)
       }
     })

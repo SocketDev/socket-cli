@@ -359,9 +359,9 @@ describe('runCdxgen', () => {
   it('preserves --no-X form for negated lifecycle flags', async () => {
     const { argvObjectToArray } =
       await import('../../../../src/commands/manifest/run-cdxgen.mts')
-    expect(argvObjectToArray({ babel: false, validate: false } as unknown)).toEqual(
-      ['--no-babel', '--no-validate'],
-    )
+    expect(
+      argvObjectToArray({ babel: false, validate: false } as unknown),
+    ).toEqual(['--no-babel', '--no-validate'])
   })
 
   it('emits --key value for string values', async () => {

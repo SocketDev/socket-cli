@@ -105,6 +105,7 @@ describe('fetchDeleteOrgFullScan', () => {
       ['org123', 'scan_with_underscore'],
     ]
 
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [org, scanId] of testCases) {
       // eslint-disable-next-line no-await-in-loop
       await fetchDeleteOrgFullScan(org, scanId)

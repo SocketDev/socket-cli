@@ -76,14 +76,24 @@ export async function detectDefaultBranch(
   cwd = process.cwd(),
 ): Promise<string> {
   // First pass: check all local branches
-  for (const branch of COMMON_DEFAULT_BRANCH_NAMES) {
+  for (
+    let i = 0, { length } = COMMON_DEFAULT_BRANCH_NAMES;
+    i < length;
+    i += 1
+  ) {
+    const branch = COMMON_DEFAULT_BRANCH_NAMES[i]
     // eslint-disable-next-line no-await-in-loop
     if (await gitLocalBranchExists(branch, cwd)) {
       return branch
     }
   }
   // Second pass: check remote branches only if no local branch found
-  for (const branch of COMMON_DEFAULT_BRANCH_NAMES) {
+  for (
+    let i = 0, { length } = COMMON_DEFAULT_BRANCH_NAMES;
+    i < length;
+    i += 1
+  ) {
+    const branch = COMMON_DEFAULT_BRANCH_NAMES[i]
     // eslint-disable-next-line no-await-in-loop
     if (await gitRemoteBranchExists(branch, cwd)) {
       return branch

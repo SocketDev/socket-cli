@@ -19,7 +19,8 @@ const scripts = [
   path.join(packageBuilderScripts, 'generate-socketbin-packages.mts'),
 ]
 
-for (const script of scripts) {
+for (let i = 0, { length } = scripts; i < length; i += 1) {
+  const script = scripts[i]
   const result = await spawn('node', [script], { stdio: 'inherit' })
 
   if (!result) {

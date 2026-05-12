@@ -20,8 +20,7 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual =
-    await importOriginal<typeof LoggerModule>()
+  const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -49,10 +48,7 @@ vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
 }))
 
 vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual =
-    await importOriginal<
-      typeof SdkModule
-    >()
+  const actual = await importOriginal<typeof SdkModule>()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,

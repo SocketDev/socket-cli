@@ -89,7 +89,8 @@ vi.mock('@socketsecurity/registry', () => ({
 
 vi.mock('@socketsecurity/lib/promises', () => ({
   pEach: async (items: unknown[], fn: unknown, opts?: unknown) => {
-    for (const item of items) {
+    for (let i = 0, { length } = items; i < length; i += 1) {
+      const item = items[i]
       await fn(item)
     }
   },

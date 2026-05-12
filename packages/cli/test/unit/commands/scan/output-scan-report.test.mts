@@ -71,10 +71,7 @@ vi.mock('node:fs/promises', () => ({
 const mockGenerateReport = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../../src/commands/scan/generate-report.mts', async orig => {
-  const actual =
-    await orig<
-      typeof GenerateReportModule
-    >()
+  const actual = await orig<typeof GenerateReportModule>()
   return {
     ...actual,
     generateReport: mockGenerateReport,

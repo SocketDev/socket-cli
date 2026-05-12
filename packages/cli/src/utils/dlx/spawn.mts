@@ -193,7 +193,8 @@ export async function downloadGitHubReleaseBinary(
 
       // Security: validate all entries for path traversal before extraction.
       const entries = zip.getEntries()
-      for (const entry of entries) {
+      for (let i = 0, { length } = entries; i < length; i += 1) {
+        const entry = entries[i]
         const entryPath = path.resolve(path.join(cacheDir, entry.entryName))
         if (!entryPath.startsWith(normalizedCacheDir)) {
           throw new InputError(
@@ -206,7 +207,8 @@ export async function downloadGitHubReleaseBinary(
 
       // Security: validate no symlinks escape the cache directory after extraction.
       const extractedFiles = await fs.readdir(cacheDir, { recursive: true })
-      for (const file of extractedFiles) {
+      for (let i = 0, { length } = extractedFiles; i < length; i += 1) {
+        const file = extractedFiles[i]
         const fullPath = path.join(cacheDir, file)
         // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isSymbolicLink() metadata for symlink escape validation.
         const stats = await fs.lstat(fullPath)

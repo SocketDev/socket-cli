@@ -133,6 +133,7 @@ export function logPermissionsFor403(cmdPath?: string | undefined): void {
   logger.error('')
   if (requirements?.permissions?.length) {
     logger.group('🔐 Required API Permissions:')
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const permission of requirements.permissions) {
       logger.error(permission)
     }

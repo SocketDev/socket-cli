@@ -28,7 +28,10 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   }),
 }))
 
-export function makeSubcommand(description: string, hidden = false): CliSubcommand {
+export function makeSubcommand(
+  description: string,
+  hidden = false,
+): CliSubcommand {
   return {
     description,
     hidden,
@@ -38,7 +41,11 @@ export function makeSubcommand(description: string, hidden = false): CliSubcomma
 
 const FLAGS: MeowFlags = {
   banner: { type: 'boolean', default: true, description: 'Banner' } as unknown,
-  spinner: { type: 'boolean', default: true, description: 'Spinner' } as unknown,
+  spinner: {
+    type: 'boolean',
+    default: true,
+    description: 'Spinner',
+  } as unknown,
   json: { type: 'boolean', description: 'JSON output' } as unknown,
   markdown: { type: 'boolean', description: 'Markdown output' } as unknown,
 }
@@ -85,7 +92,8 @@ export function rootSubcommands(): Record<string, CliSubcommand> {
     'mcp',
   ]
   const subs: Record<string, CliSubcommand> = {}
-  for (const n of names) {
+  for (let i = 0, { length } = names; i < length; i += 1) {
+    const n = names[i]
     subs[n] = makeSubcommand(`${n} description`)
   }
   return subs

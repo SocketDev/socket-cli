@@ -20,7 +20,8 @@ export type FilterConfig = {
 export function toFilterConfig(obj: unknown): FilterConfig {
   const normalized = Object.create(null) as FilterConfig
   const keys = isObject(obj) ? Object.keys(obj) : []
-  for (const key of keys) {
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]
     const value = (obj as Record<string, unknown>)[key]
     if (typeof value === 'boolean' || Array.isArray(value)) {
       normalized[key] = value

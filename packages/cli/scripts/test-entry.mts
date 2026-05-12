@@ -17,7 +17,8 @@ if (process.argv[1] === process.execPath) {
       logger.log('\nChecking VFS assets:')
 
       const tools = ['trivy', 'trufflehog', 'opengrep']
-      for (const tool of tools) {
+      for (let i = 0, { length } = tools; i < length; i += 1) {
+        const tool = tools[i]
         try {
           const assetBuffer = getAsset(`external-tools/${tool}`)
           const sizeMB = (assetBuffer.byteLength / 1024 / 1024).toFixed(2)

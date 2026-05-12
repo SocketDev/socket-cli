@@ -168,7 +168,9 @@ class CliProcessPool {
    * Call this in afterAll() hooks.
    */
   async cleanup(): Promise<void> {
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const processes of this.pool.values()) {
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const { process: proc } of processes) {
         try {
           proc.kill('SIGTERM')
@@ -186,6 +188,7 @@ class CliProcessPool {
   getStats(): { poolSize: number; busyProcesses: number } {
     let total = 0
     let busy = 0
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const processes of this.pool.values()) {
       total += processes.length
       busy += processes.filter(p => p.busy).length

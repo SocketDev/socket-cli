@@ -126,7 +126,7 @@ export type Result<F extends MeowFlags = MeowFlags> = MeowResult<F>
 /**
  * Parse command-line arguments meow-style.
  */
-export default function meow<const F extends MeowFlags = MeowFlags>(
+export function meow<const F extends MeowFlags = MeowFlags>(
   options: MeowOptions<F> = {},
 ): MeowResult<F> {
   const {
@@ -157,6 +157,7 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
   // Convert meow flags to parseArgs options.
   const parseArgsOptions: Record<string, ParseArgsOptionsConfig> = {}
   const flagEntries = Object.entries(flags as MeowFlags)
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [name, flag] of flagEntries) {
     const type = flag.type === 'number' ? 'string' : flag.type || 'boolean'
     parseArgsOptions[name] = {
@@ -168,7 +169,8 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
 
     // Handle aliases.
     const aliases = flag.aliases || (flag.alias ? [flag.alias].flat() : [])
-    for (const alias of aliases) {
+    for (let i = 0, { length } = aliases; i < length; i += 1) {
+      const alias = aliases[i]
       parseArgsOptions[alias as string] = {
         type,
         default: flag.default,
@@ -189,6 +191,7 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
   const flagValues = parsed.values as InferFlagValues<F>
 
   // Convert number flags.
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [name, flag] of flagEntries) {
     if (
       flag.type === 'number' &&
@@ -203,6 +206,7 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
 
   // Handle boolean defaults.
   if (booleanDefault !== undefined) {
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [name, flag] of flagEntries) {
       if (flag.type === 'boolean' && !(name in flagValues)) {
         ;(flagValues as Record<string, unknown>)[name] = booleanDefault
@@ -233,7 +237,8 @@ export default function meow<const F extends MeowFlags = MeowFlags>(
   // Collect unknown flags.
   const unknownFlags: string[] = []
   if (collectUnknownFlags) {
-    for (const arg of argv) {
+    for (let i = 0, { length } = argv; i < length; i += 1) {
+      const arg = argv[i]
       if (typeof arg === 'string' && arg.startsWith('-')) {
         const flagName = arg.replace(/^-+/, '').split('=')[0] || ''
         if (flagName && !(flagName in flags)) {

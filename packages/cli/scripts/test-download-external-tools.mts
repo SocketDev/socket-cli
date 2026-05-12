@@ -199,7 +199,8 @@ async function main() {
   const tools = ['trivy', 'trufflehog', 'opengrep']
   const toolPaths = new Map()
 
-  for (const tool of tools) {
+  for (let i = 0, { length } = tools; i < length; i += 1) {
+    const tool = tools[i]
     try {
       const toolPath = await downloadTool(tool, platform)
       if (toolPath) {
@@ -213,6 +214,7 @@ async function main() {
   logger.log('')
   logger.log('Downloaded tools:')
   let totalSize = 0
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [tool, toolPath] of toolPaths) {
     const stats = await fs.stat(toolPath)
     const sizeMB = stats.size / 1024 / 1024

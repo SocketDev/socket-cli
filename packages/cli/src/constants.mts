@@ -86,8 +86,9 @@ import {
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
 } from './constants/config.mts'
-import ENV, {
+import {
   DISABLE_GITHUB_CACHE,
+  ENV,
   GITHUB_API_URL,
   GITHUB_BASE_REF,
   GITHUB_REF_NAME,
@@ -483,8 +484,8 @@ export {
   YARN_LOCK,
 }
 
-// Default export that includes all constants from ENV plus additional constants.
-export default {
+// Bundle export that includes all constants from ENV plus additional constants.
+export const constants = {
   ...ENV,
   ENV,
   ALERT_TYPE_CRITICAL_CVE,

@@ -146,6 +146,7 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
   )
 
   let sockPkgAlerts: SocketPackageAlert[] = []
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const alert of artifact.alerts) {
     const action = alert.action ?? ''
     const enabledFlag = enabledState.get(alert.type)
@@ -197,7 +198,8 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     const highestForCve: HighestVersionByMajor = new Map()
     const highestForUpgrade: HighestVersionByMajor = new Map()
     const unfixableAlerts: SocketPackageAlert[] = []
-    for (const sockPkgAlert of sockPkgAlerts) {
+    for (let i = 0, { length } = sockPkgAlerts; i < length; i += 1) {
+      const sockPkgAlert = sockPkgAlerts[i]
       const alert = sockPkgAlert.raw
       const fixType = alert.fix?.type ?? ''
       if (fixType === ALERT_FIX_TYPE.cve) {
@@ -326,6 +328,7 @@ export function getCveInfoFromAlertsMap(
   const filterConfig = toFilterConfig(getOwn(options, 'filter')) as CveFilter
 
   let infoByPartialPurl: CveInfoByPartialPurl | undefined = undefined
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
     const purlObj = getPurlObject(purl, { throws: false })
     if (!purlObj) {
@@ -342,7 +345,8 @@ export function getCveInfoFromAlertsMap(
       name: purlObj.name!,
       ...(purlObj.namespace && { namespace: purlObj.namespace }),
     })
-    for (const sockPkgAlert of sockPkgAlerts) {
+    for (let i = 0, { length } = sockPkgAlerts; i < length; i += 1) {
+      const sockPkgAlert = sockPkgAlerts[i]
       const alert = sockPkgAlert.raw
       if (
         alert.fix?.type !== ALERT_FIX_TYPE.cve ||
@@ -411,7 +415,8 @@ export function getHiddenRiskCounts(
     middle: 0,
     low: 0,
   }
-  for (const alert of hiddenAlerts) {
+  for (let i = 0, { length } = hiddenAlerts; i < length; i += 1) {
+    const alert = hiddenAlerts[i]
     switch (getAlertSeverityOrder(alert)) {
       case ALERT_SEVERITY_ORDER.critical:
         riskCounts.critical += 1
@@ -506,6 +511,7 @@ export function logAlertsMap(
   }
 
   // If MIN_ABOVE_THE_FOLD_COUNT is NOT met add more from viewable pkg ids.
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: purl } of viewableAlertsByPurl.entries()) {
     if (aboveTheFoldPurls.size >= MIN_ABOVE_THE_FOLD_COUNT) {
       break
@@ -513,6 +519,7 @@ export function logAlertsMap(
     aboveTheFoldPurls.add(purl)
   }
   // If MIN_ABOVE_THE_FOLD_COUNT is STILL NOT met add more from hidden pkg ids.
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: purl, 1: hiddenAlerts } of hiddenAlertsByPurl.entries()) {
     if (aboveTheFoldPurls.size >= MIN_ABOVE_THE_FOLD_COUNT) {
       break
@@ -551,7 +558,8 @@ export function logAlertsMap(
   ) {
     const { 0: purl, 1: alerts } = entries[i]!
     const lines = new Set<string>()
-    for (const alert of alerts) {
+    for (let i = 0, { length } = alerts; i < length; i += 1) {
+      const alert = alerts[i]
       const { type } = alert
       const severity = alert.raw.severity ?? ''
       const attributes = [
@@ -628,6 +636,7 @@ export function logAlertsMap(
       middle: 0,
       low: 0,
     }
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { 0: purl, 1: alerts } of hiddenAlertsByPurl.entries()) {
       if (mentionedPurlsWithHiddenAlerts.has(purl)) {
         continue

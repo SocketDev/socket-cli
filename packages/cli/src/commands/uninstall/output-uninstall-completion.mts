@@ -36,9 +36,10 @@ export async function outputUninstallCompletion(
       'Detected more Socket Alias completions left in bashrc. Run `socket uninstall <cmd>` to remove them too.',
     )
     logger.log('')
-    result.data.left.forEach(str => {
+    for (let i = 0, { length } = result.data.left; i < length; i += 1) {
+      const str = result.data.left[i]
       logger.log(`  - \`${str}\``)
-    })
+    }
     logger.log('')
   }
 }

@@ -188,7 +188,8 @@ export async function run(
     if (modifiedFiles.length > 0) {
       arr.push('## Modified Files')
       arr.push('')
-      for (const file of modifiedFiles) {
+      for (let i = 0, { length } = modifiedFiles; i < length; i += 1) {
+        const file = modifiedFiles[i]
         arr.push(`- \`${file}\``)
       }
       arr.push('')
@@ -197,7 +198,8 @@ export async function run(
     if (skippedFiles.length > 0) {
       arr.push('## Skipped Files (already configured)')
       arr.push('')
-      for (const file of skippedFiles) {
+      for (let i = 0, { length } = skippedFiles; i < length; i += 1) {
+        const file = skippedFiles[i]
         arr.push(`- \`${file}\``)
       }
       arr.push('')

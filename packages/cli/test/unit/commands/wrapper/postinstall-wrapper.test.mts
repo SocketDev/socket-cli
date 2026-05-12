@@ -18,7 +18,6 @@
  * - src/postinstallWrapper.mts (implementation)
  */
 
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockExistsSync = vi.hoisted(() => vi.fn())
@@ -311,7 +310,10 @@ describe('postinstallWrapper', () => {
 
     mockExistsSync.mockReturnValue(true)
     mockCheckSetup.mockReturnValue(true)
-    mockGetDetails.mockReturnValue({ ok: false, message: 'Not found' } as unknown)
+    mockGetDetails.mockReturnValue({
+      ok: false,
+      message: 'Not found',
+    } as unknown)
 
     await postinstallWrapper()
 

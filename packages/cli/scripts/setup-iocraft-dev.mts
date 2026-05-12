@@ -29,6 +29,7 @@ const packages = {
 
 logger.log('Setting up iocraft dev build in node_modules...\n')
 
+// oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
 for (const [sourceDir, targetName] of Object.entries(packages)) {
   const sourcePath = join(packagesDir, sourceDir)
 
@@ -70,6 +71,7 @@ for (const [sourceDir, targetName] of Object.entries(packages)) {
   }
 
   // Copy LICENSE and README.
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const file of ['LICENSE', 'README.md']) {
     const source = join(sourcePath, file)
     if (existsSync(source)) {
@@ -128,6 +130,7 @@ if (!existsSync(iocraftScope)) {
 }
 
 // Symlink all platform packages into iocraft's node_modules.
+// oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
 for (const [sourceDir, targetName] of Object.entries(packages)) {
   if (targetName === '@socketaddon/iocraft') {
     continue // Skip main package.

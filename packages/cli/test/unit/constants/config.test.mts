@@ -72,7 +72,8 @@ describe('config constants', () => {
         CONFIG_KEY_ENFORCED_ORGS,
         CONFIG_KEY_ORG,
       ]
-      for (const key of keys) {
+      for (let i = 0, { length } = keys; i < length; i += 1) {
+        const key = keys[i]
         // camelCase starts with lowercase and has no underscores or hyphens.
         expect(key).toMatch(/^[a-z][a-zA-Z]*$/)
       }

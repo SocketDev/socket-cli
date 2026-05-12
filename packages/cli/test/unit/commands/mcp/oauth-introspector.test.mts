@@ -32,8 +32,7 @@ const { mockHttpRequest } = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/http-request', async importOriginal => {
-  const actual =
-    await importOriginal<typeof HttpRequestModule>()
+  const actual = await importOriginal<typeof HttpRequestModule>()
   return {
     ...actual,
     httpRequest: mockHttpRequest,
@@ -48,7 +47,11 @@ const CLIENT_ID = 'client-id'
 const CLIENT_SECRET = 'client-secret'
 const SCOPES = ['packages:list'] as const
 
-export function fakeResponse(opts: { status: number; body?: unknown; text?: string }) {
+export function fakeResponse(opts: {
+  status: number
+  body?: unknown
+  text?: string
+}) {
   const text =
     opts.text ?? (opts.body !== undefined ? JSON.stringify(opts.body) : '')
   return {

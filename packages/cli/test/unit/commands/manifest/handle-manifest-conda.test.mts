@@ -112,7 +112,8 @@ describe('handleManifestConda', () => {
 
     const formats = ['text', 'json', 'markdown'] as const
 
-    for (const format of formats) {
+    for (let i = 0, { length } = formats; i < length; i += 1) {
+      const format = formats[i]
       // eslint-disable-next-line no-await-in-loop
       await handleManifestConda({
         cwd: '.',
@@ -159,7 +160,8 @@ describe('handleManifestConda', () => {
 
     const cwds = ['/root', '/home/user/project', './relative', '.']
 
-    for (const cwd of cwds) {
+    for (let i = 0, { length } = cwds; i < length; i += 1) {
+      const cwd = cwds[i]
       // eslint-disable-next-line no-await-in-loop
       await handleManifestConda({
         cwd,

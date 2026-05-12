@@ -38,7 +38,8 @@ const rootNodeModulesBinPath = path.join(
  */
 export function checkBuildArtifacts() {
   const requiredArtifacts = ['build/cli.js', 'dist/index.js']
-  for (const artifact of requiredArtifacts) {
+  for (let i = 0, { length } = requiredArtifacts; i < length; i += 1) {
+    const artifact = requiredArtifacts[i]
     const fullPath = path.join(rootPath, artifact)
     if (!existsSync(fullPath)) {
       logger.error(`Required build artifact missing: ${artifact}`)
@@ -128,7 +129,8 @@ async function main() {
 
     // Expand glob patterns in arguments.
     const expandedArgs = []
-    for (const arg of args) {
+    for (let i = 0, { length } = args; i < length; i += 1) {
+      const arg = args[i]
       // Check if argument looks like a glob pattern.
       if (arg.includes('*') && !arg.startsWith('-')) {
         const files = fastGlob.sync(arg, { cwd: rootPath })

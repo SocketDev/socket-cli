@@ -207,7 +207,8 @@ describe('handleCreateRepo', () => {
   it('handles different visibility types', async () => {
     const visibilities = ['public', 'private', 'internal']
 
-    for (const visibility of visibilities) {
+    for (let i = 0, { length } = visibilities; i < length; i += 1) {
+      const visibility = visibilities[i]
       mockFetchCreateRepo.mockResolvedValue({
         ok: true,
         data: { id: '1', name: 'repo', visibility },

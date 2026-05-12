@@ -137,7 +137,8 @@ describe('addSocketWrapper', () => {
       '/home/user/.profile',
     ]
 
-    for (const shellFile of shells) {
+    for (let i = 0, { length } = shells; i < length; i += 1) {
+      const shellFile = shells[i]
       vi.clearAllMocks()
       mockAppendFile.mockResolvedValue(undefined)
 

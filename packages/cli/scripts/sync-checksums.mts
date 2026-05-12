@@ -149,7 +149,8 @@ export async function fetchGitHubReleaseChecksums(
   const checksums = {}
 
   try {
-    for (const assetName of assetNames) {
+    for (let i = 0, { length } = assetNames; i < length; i += 1) {
+      const assetName = assetNames[i]
       const asset = assets.find(a => a.name === assetName)
       if (!asset) {
         logger.log(`    Warning: Asset ${assetName} not found in release`)
@@ -179,6 +180,7 @@ export async function fetchGitHubReleaseChecksums(
  */
 export function parseChecksums(content) {
   const checksums = {}
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const line of content.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed) {
@@ -246,7 +248,8 @@ async function main() {
   let unchanged = 0
   let failed = 0
 
-  for (const tool of githubTools) {
+  for (let i = 0, { length } = githubTools; i < length; i += 1) {
+    const tool = githubTools[i]
     const repoPath = tool.repository.replace(/^[^:]+:/, '')
     const releaseTag = tool.tag ?? tool.version
     logger.log(`[${tool.key}] ${repoPath} @ ${releaseTag}`)

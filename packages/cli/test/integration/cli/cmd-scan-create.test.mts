@@ -3,11 +3,12 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import constants, {
+import {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
   FLAG_HELP,
   FLAG_ORG,
+  constants,
 } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 

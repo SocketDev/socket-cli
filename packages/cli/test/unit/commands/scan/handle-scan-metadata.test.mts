@@ -118,7 +118,8 @@ describe('handleOrgScanMetadata', () => {
       'uuid-1234-5678-9012-3456',
     ]
 
-    for (const scanId of scanIds) {
+    for (let i = 0, { length } = scanIds; i < length; i += 1) {
+      const scanId = scanIds[i]
       mockFetch.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleOrgScanMetadata('test-org', scanId, 'json')

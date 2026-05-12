@@ -679,7 +679,6 @@ describe('prExistForBranch', () => {
 
     expect(typeof result).toBe('boolean')
   })
-
 })
 
 describe('fetchGhsaDetails', () => {

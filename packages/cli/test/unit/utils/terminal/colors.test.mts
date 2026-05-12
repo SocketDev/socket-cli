@@ -61,10 +61,16 @@ describe('colorOrMarkdown', () => {
 
   it('handles all format types', () => {
     const formats = ['text', 'json', 'markdown', 'other'] as const
-    formats.forEach(format => {
-      const result = colorOrMarkdown(format as unknown, 'plain', 'red', '**bold**')
+    for (let i = 0, { length } = formats; i < length; i += 1) {
+      const format = formats[i]
+      const result = colorOrMarkdown(
+        format as unknown,
+        'plain',
+        'red',
+        '**bold**',
+      )
       expect(typeof result).toBe('string')
-    })
+    }
   })
 })
 

@@ -63,7 +63,7 @@ vi.mock('../../../../src/utils/config.mts', () => ({
 // Mock constants - set VITEST to false to enable telemetry tracking.
 vi.mock('../../../../src/constants.mts', () => ({
   CONFIG_KEY_DEFAULT_ORG: 'defaultOrg',
-  default: {
+  constants: {
     ENV: {
       INLINED_VERSION: '1.0.0-test',
       VITEST: false,

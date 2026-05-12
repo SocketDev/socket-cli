@@ -152,7 +152,8 @@ describe('fetchDiffScan', () => {
       'long.org.name.with.dots',
     ]
 
-    for (const orgSlug of testCases) {
+    for (let i = 0, { length } = testCases; i < length; i += 1) {
+      const orgSlug = testCases[i]
       // eslint-disable-next-line no-await-in-loop
       await fetchDiffScan({
         id1: 'scan-1',

@@ -9,7 +9,8 @@ export function pick<T extends Record<string, unknown>, K extends keyof T>(
   keys: K[] | readonly K[],
 ): Pick<T, K> {
   const result: Partial<Pick<T, K>> = {}
-  for (const key of keys) {
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]
     result[key] = input[key]
   }
   return result as Pick<T, K>

@@ -6,7 +6,7 @@ import { spawnSfw } from './utils/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 
-export default async function runYarnCli() {
+export async function runYarnCli() {
   process.exitCode = 1
 
   // Forward to sfw (Socket Firewall).

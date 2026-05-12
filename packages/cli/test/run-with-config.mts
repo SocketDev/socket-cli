@@ -22,7 +22,7 @@
  */
 
 import { spawnSocketCli } from './utils.mts'
-import constants from '../src/constants.mts'
+import { constants } from '../src/constants.mts'
 
 /**
  * Run Socket CLI command with isolated configuration.

@@ -232,9 +232,13 @@ describe('update-manifest-by-agent', () => {
     })
 
     it('uses overrides for unknown agent', async () => {
-      await updateManifest('unknown' as unknown, makeEnv({ agent: 'unknown' }), {
-        lodash: '4.17.21',
-      })
+      await updateManifest(
+        'unknown' as unknown,
+        makeEnv({ agent: 'unknown' }),
+        {
+          lodash: '4.17.21',
+        },
+      )
       expect(pkgJson.fromJSON).toHaveBeenCalled()
     })
 
@@ -286,7 +290,8 @@ describe('update-manifest-by-agent', () => {
 
       expect(pkgJson.fromJSON).toHaveBeenCalled()
       // The new content should include overrides positioned after main.
-      const fromJsonCall = (pkgJson.fromJSON as unknown).mock.calls[0][0] as string
+      const fromJsonCall = (pkgJson.fromJSON as unknown).mock
+        .calls[0][0] as string
       const parsed = JSON.parse(fromJsonCall)
       const keys = Object.keys(parsed)
       expect(keys.indexOf('overrides')).toBeGreaterThan(keys.indexOf('main'))

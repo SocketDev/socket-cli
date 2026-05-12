@@ -30,7 +30,8 @@ export function deduplicateArtifacts(
   platform?: string | undefined,
 ): ArtifactData[] {
   const groups = new Map<string, ArtifactData[]>()
-  for (const artifact of artifacts) {
+  for (let i = 0, { length } = artifacts; i < length; i += 1) {
+    const artifact = artifacts[i]
     const key = artifactGroupKey(artifact)
     let group = groups.get(key)
     if (!group) {
@@ -40,6 +41,7 @@ export function deduplicateArtifacts(
     group.push(artifact)
   }
   const results: ArtifactData[] = []
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const group of groups.values()) {
     results.push(selectBestArtifact(group, platform))
   }

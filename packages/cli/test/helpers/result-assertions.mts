@@ -311,7 +311,8 @@ export function expectResultHasProperties<T>(
   expect(result.ok).toBe(true)
   const data = (result as { data: T }).data
 
-  for (const prop of expectedProps) {
+  for (let i = 0, { length } = expectedProps; i < length; i += 1) {
+    const prop = expectedProps[i]
     expect(data).toHaveProperty(prop as string)
   }
 }

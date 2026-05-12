@@ -51,7 +51,7 @@ import { getCliName } from './env/cli-name.mts'
 import { getCliVersion } from './env/cli-version.mts'
 import { SOCKET_CLI_SKIP_UPDATE_CHECK } from './env/socket-cli-skip-update-check.mts'
 import { VITEST } from './env/vitest.mts'
-import meow from './meow.mts'
+import { meow } from './meow.mts'
 import { meowWithSubcommands } from './utils/cli/with-subcommands.mts'
 import {
   formatErrorForJson,

@@ -299,4 +299,3 @@ const ENV = new Proxy(envSnapshot, {
 
 // Named export for ES module imports.
 export { ENV }
-export default ENV

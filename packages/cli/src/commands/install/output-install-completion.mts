@@ -30,9 +30,10 @@ export async function outputInstallCompletion(
   )
   logger.log('')
 
-  result.data.actions.forEach(action => {
+  for (let i = 0, { length } = result.data.actions; i < length; i += 1) {
+    const action = result.data.actions[i]
     logger.log(`  - ${action}`)
-  })
+  }
   logger.log('')
   logger.log('Socket tab completion works automatically in new terminals.')
   logger.log('')

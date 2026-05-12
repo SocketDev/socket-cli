@@ -308,7 +308,7 @@ export function calculateStringSimilarity(str1: string, str2: string): number {
   let overlap = 0
   for (const word of words1) {
     if (words2.has(word)) {
-      overlap++
+      overlap += 1
     }
   }
 

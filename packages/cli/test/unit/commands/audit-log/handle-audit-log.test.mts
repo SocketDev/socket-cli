@@ -223,7 +223,8 @@ describe('handleAuditLog', () => {
 
     const logTypes = ['all', 'security', 'access', 'config', 'data']
 
-    for (const logType of logTypes) {
+    for (let i = 0, { length } = logTypes; i < length; i += 1) {
+      const logType = logTypes[i]
       mockFetchAuditLog.mockResolvedValue(createSuccessResult([]))
 
       // eslint-disable-next-line no-await-in-loop

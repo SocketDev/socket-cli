@@ -194,9 +194,10 @@ describe('removeSocketWrapper', () => {
 
     expect(mockWriteFileSync).toHaveBeenCalledWith(
       '/home/user/.bashrc',
-      ['alias npm2="socket npm"', 'alias npx-extra="socket pnpm exec --extra"'].join(
-        '\n',
-      ),
+      [
+        'alias npm2="socket npm"',
+        'alias npx-extra="socket pnpm exec --extra"',
+      ].join('\n'),
       'utf8',
     )
   })

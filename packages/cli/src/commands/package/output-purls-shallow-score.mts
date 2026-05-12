@@ -79,6 +79,7 @@ export function generateMarkdownReport(
 ): string {
   const blocks: string[] = []
   const dupes: Set<string> = new Set()
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const artifact of artifacts.values()) {
     const block = `## ${formatReportCard(artifact, false)}`
     if (dupes.has(block)) {
@@ -118,6 +119,7 @@ export function generateTextReport(
     )
   }
   const dupes: Set<string> = new Set()
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const artifact of artifacts.values()) {
     const block = formatReportCard(artifact, true)
     if (dupes.has(block)) {
@@ -249,7 +251,8 @@ export function preProcess(
   // API does not tell us which purls were not found.
   // Generate all purls to try so we can try to match search request.
   const purls: Set<string> = new Set()
-  for (const data of artifacts) {
+  for (let i = 0, { length } = artifacts; i < length; i += 1) {
+    const data = artifacts[i]
     purls.add(
       `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}@${data.version}`,
     )
@@ -279,7 +282,8 @@ export function preProcess(
   // .release field (observed with python, at least).
   // Merge the alerts for duped packages. Use lowest score between all of them.
   const rows: Map<string, DedupedArtifact> = new Map()
-  for (const artifact of artifacts) {
+  for (let i = 0, { length } = artifacts; i < length; i += 1) {
+    const artifact = artifacts[i]
     const purl = `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
     if (rows.has(purl)) {
       const row = rows.get(purl)
@@ -303,6 +307,7 @@ export function preProcess(
         row.score.license = artifact.score?.license ?? 100
       }
 
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
       artifact.alerts?.forEach(alert => {
         const severity = alert.severity ?? ''
         const { type } = alert
@@ -313,6 +318,7 @@ export function preProcess(
       })
     } else {
       const alerts = new Map<string, { type: string; severity: string }>()
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
       artifact.alerts?.forEach(alert => {
         const severity = alert.severity ?? ''
         const { type } = alert

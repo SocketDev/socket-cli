@@ -113,7 +113,8 @@ describe('handleConfigAuto', () => {
 
     const keys = ['apiToken', 'apiUrl', 'orgId', 'orgSlug'] as const
 
-    for (const key of keys) {
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]
       mockDiscoverConfigValue.mockResolvedValue(
         createSuccessResult(`${key}-value`),
       )

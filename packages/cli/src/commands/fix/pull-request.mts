@@ -18,8 +18,6 @@ import {
 } from '../../constants/github.mts'
 import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
 import {
-  type GhsaDetails,
-  type Pr,
   cacheFetch,
   getOctokit,
   getOctokitGraphql,
@@ -27,6 +25,7 @@ import {
   withGitHubRetry,
   writeCache,
 } from '../../utils/git/github.mts'
+import type { GhsaDetails, Pr } from '../../utils/git/github.mts'
 import { createPrProvider } from '../../utils/git/provider-factory.mts'
 
 import type { OctokitResponse } from '@octokit/types'

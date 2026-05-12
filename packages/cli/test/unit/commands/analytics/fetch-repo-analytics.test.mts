@@ -110,7 +110,8 @@ describe('fetchRepoAnalytics', () => {
 
     const repos = ['org/repo1', 'org/repo2', 'another-org/repo', 'user/project']
 
-    for (const repo of repos) {
+    for (let i = 0, { length } = repos; i < length; i += 1) {
+      const repo = repos[i]
       // eslint-disable-next-line no-await-in-loop
       await fetchRepoAnalyticsData(repo, 30)
       expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(repo, '30')
@@ -122,7 +123,8 @@ describe('fetchRepoAnalytics', () => {
 
     const timeRanges = [1, 7, 14, 30, 60, 90, 365]
 
-    for (const time of timeRanges) {
+    for (let i = 0, { length } = timeRanges; i < length; i += 1) {
+      const time = timeRanges[i]
       // eslint-disable-next-line no-await-in-loop
       await fetchRepoAnalyticsData('test-repo', time)
       expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(

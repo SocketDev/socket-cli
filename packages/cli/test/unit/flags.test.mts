@@ -35,7 +35,7 @@ const mockValues = vi.hoisted(() => ({
 // as the identity helper since flags.mts uses it to declare commonFlags
 // / outputFlags / validationFlags.
 vi.mock('../../src/meow.mts', () => ({
-  default: vi.fn(() => ({
+  meow: vi.fn(() => ({
     flags: {
       maxOldSpaceSize: mockValues.maxOldSpaceSize,
       maxSemiSpaceSize: mockValues.maxSemiSpaceSize,
@@ -252,6 +252,7 @@ describe('flags', () => {
     })
 
     it('has descriptions for all flags', () => {
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, flag] of Object.entries(commonFlags)) {
         expect(flag).toHaveProperty('description')
         expect(typeof flag.description).toBe('string')
@@ -291,6 +292,7 @@ describe('flags', () => {
     })
 
     it('has descriptions for all flags', () => {
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, flag] of Object.entries(outputFlags)) {
         expect(flag).toHaveProperty('description')
         expect(typeof flag.description).toBe('string')
@@ -319,6 +321,7 @@ describe('flags', () => {
     })
 
     it('has descriptions for all flags', () => {
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, flag] of Object.entries(validationFlags)) {
         expect(flag).toHaveProperty('description')
         expect(typeof flag.description).toBe('string')

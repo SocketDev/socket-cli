@@ -6,12 +6,13 @@ import { spawnSfw } from './utils/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 
-export default async function runNpxCli() {
+export async function runNpxCli() {
   process.exitCode = 1
 
   // Forward to sfw (Socket Firewall).
   // Auto-detects SEA vs npm CLI mode (VFS extraction vs dlx download).
   const { spawnPromise } = await spawnSfw(['npx', ...process.argv.slice(2)], {
+    // socket-hook: allow npx
     stdio: 'inherit',
   })
 

@@ -24,7 +24,8 @@ export async function fetchScan(
   const lines = jsonsString.split('\n').filter(Boolean)
   const data: SocketArtifact[] = []
 
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]
     try {
       data.push(JSON.parse(line))
     } catch (e) {

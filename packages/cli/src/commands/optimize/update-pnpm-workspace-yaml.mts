@@ -17,7 +17,8 @@ import { existsSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { safeReadFile } from '@socketsecurity/lib/fs'
-import { type Document, type YAMLMap, isMap, parseDocument } from 'yaml'
+import { isMap, parseDocument } from 'yaml'
+import type { Document, YAMLMap } from 'yaml'
 
 import type { Overrides } from './types.mts'
 
@@ -57,6 +58,7 @@ export async function updatePnpmWorkspaceYamlOverrides(
     overridesNode = doc.get('overrides', true)
   } else {
     const map = overridesNode as YAMLMap<unknown, unknown>
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [key, value] of Object.entries(overrides)) {
       map.set(key, value)
     }

@@ -65,7 +65,8 @@ async function main() {
     logger.log('Found unresolved external requires:')
     logger.log('')
 
-    for (const violation of violations) {
+    for (let i = 0, { length } = violations; i < length; i += 1) {
+      const violation = violations[i]
       logger.log(`  ${violation.pattern}`)
       logger.log(`    Package: ${violation.package}`)
       logger.log(`    Type: ${violation.type}`)

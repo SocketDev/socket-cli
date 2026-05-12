@@ -115,7 +115,8 @@ describe('reachability-flags', () => {
       const flagNames = Object.keys(reachabilityFlags) as Array<
         keyof typeof reachabilityFlags
       >
-      for (const flagName of flagNames) {
+      for (let i = 0, { length } = flagNames; i < length; i += 1) {
+        const flagName = flagNames[i]
         expect(reachabilityFlags[flagName]!.description).toBeDefined()
         expect(
           reachabilityFlags[flagName]!.description!.length,

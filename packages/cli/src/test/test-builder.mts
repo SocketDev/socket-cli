@@ -38,6 +38,7 @@ export function setupCommandTest(options: TestSetupOptions) {
 
   beforeEach(() => {
     // Reset environment
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [key, value] of Object.entries(env)) {
       process.env[key] = value
     }
@@ -65,6 +66,7 @@ export function setupCommandTest(options: TestSetupOptions) {
     vi.resetModules()
 
     // Clean up environment
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const key of Object.keys(env)) {
       delete process.env[key]
     }
@@ -95,7 +97,8 @@ export function buildCommandTests(
   describe(suiteName, () => {
     const stubs = setupCommandTest(setupOptions)
 
-    for (const testCase of testCases) {
+    for (let i = 0, { length } = testCases; i < length; i += 1) {
+      const testCase = testCases[i]
       it(testCase.name, async () => {
         // Run setup if provided
         if (testCase.setup) {
@@ -105,6 +108,7 @@ export function buildCommandTests(
         // Build command arguments
         const args = [...testCase.args]
         if (testCase.flags) {
+          // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
           for (const [flag, value] of Object.entries(testCase.flags)) {
             if (value === true) {
               args.push(`--${flag}`)
@@ -134,6 +138,7 @@ export function buildCommandTests(
             .map(call => call[0])
             .join('\n')
           if (Array.isArray(testCase.expectedOutput)) {
+            // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
             for (const expected of testCase.expectedOutput) {
               expect(output).toContain(expected)
             }

@@ -12,7 +12,7 @@ import { indentString, trimNewlines } from '@socketsecurity/lib/strings'
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'
 import { commonFlags } from '../../flags.mts'
-import meow from '../../meow.mts'
+import { meow } from '../../meow.mts'
 import { overrideCachedConfig, overrideConfigApiToken } from '../config.mts'
 import { isDebug } from '../debug.mts'
 import {
@@ -103,7 +103,8 @@ export function findBestCommandMatch(
   let bestMatch = undefined
   let bestScore = Number.POSITIVE_INFINITY
   const allCommands = [...Object.keys(subcommands), ...Object.keys(aliases)]
-  for (const command of allCommands) {
+  for (let i = 0, { length } = allCommands; i < length; i += 1) {
+    const command = allCommands[i]
     const distance = levenshteinDistance(
       input.toLowerCase(),
       command.toLowerCase(),

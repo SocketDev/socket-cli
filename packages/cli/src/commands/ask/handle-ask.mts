@@ -265,6 +265,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
 
   // Detect severity.
   let severity: string | undefined
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [level, keywords] of Object.entries(SEVERITY_KEYWORDS)) {
     if (
       Array.isArray(keywords) &&
@@ -277,6 +278,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
 
   // Detect environment.
   let environment: string | undefined
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [env, keywords] of Object.entries(ENVIRONMENT_KEYWORDS)) {
     if (
       Array.isArray(keywords) &&
@@ -298,6 +300,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
       }
     | undefined = undefined
 
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [action, pattern] of Object.entries(PATTERNS)) {
     if (!pattern) {
       continue

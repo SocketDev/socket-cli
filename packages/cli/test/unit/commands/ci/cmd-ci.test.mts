@@ -40,8 +40,7 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual =
-    await importOriginal<typeof LoggerModule>()
+  const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -117,10 +116,7 @@ const mockMeowOrExit = vi.hoisted(() =>
 vi.mock(
   '../../../../src/utils/cli/with-subcommands.mjs',
   async importOriginal => {
-    const actual =
-      await importOriginal<
-        typeof WithSubcommandsModule
-      >()
+    const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {
       ...actual,
       meowOrExit: mockMeowOrExit,

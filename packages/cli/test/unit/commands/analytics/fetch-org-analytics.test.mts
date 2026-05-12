@@ -113,7 +113,8 @@ describe('fetchOrgAnalytics', () => {
 
     const times = [7, 14, 30, 60, 90]
 
-    for (const time of times) {
+    for (let i = 0, { length } = times; i < length; i += 1) {
+      const time = times[i]
       // eslint-disable-next-line no-await-in-loop
       await fetchOrgAnalyticsData(time)
       expect(mockSdk.getOrgAnalytics).toHaveBeenCalledWith(time.toString())

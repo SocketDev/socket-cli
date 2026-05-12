@@ -231,6 +231,7 @@ export function getConfigValues(retryCount = 0): LocalConfig {
             const parsed = JSON.parse(decoded)
             // Only copy supported config keys to prevent prototype pollution.
             if (parsed && typeof parsed === 'object') {
+              // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
               for (const key of Object.keys(parsed)) {
                 if (isSupportedConfigKey(key)) {
                   ;(_cachedConfig as Record<string, unknown>)[key] = parsed[key]
@@ -328,6 +329,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   // Only copy supported config keys to prevent prototype pollution.
   _cachedConfig = {} as LocalConfig
   const configObj = config as Record<string, unknown>
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const key of Object.keys(configObj)) {
     if (isSupportedConfigKey(key)) {
       ;(_cachedConfig as Record<string, unknown>)[key] = configObj[key]

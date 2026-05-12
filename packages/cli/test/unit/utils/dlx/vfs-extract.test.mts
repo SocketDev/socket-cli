@@ -52,7 +52,8 @@ describe('utils/dlx/vfs-extract', () => {
     it('exposes a non-empty list of tool names', () => {
       expect(EXTERNAL_TOOLS.length).toBeGreaterThan(0)
       // Quick: every entry is a string.
-      for (const tool of EXTERNAL_TOOLS) {
+      for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+        const tool = EXTERNAL_TOOLS[i]
         expect(typeof tool).toBe('string')
       }
     })
@@ -79,7 +80,8 @@ describe('utils/dlx/vfs-extract', () => {
   describe('getToolPaths', () => {
     it('returns a non-empty path for every tool in EXTERNAL_TOOLS', () => {
       const paths = getToolPaths()
-      for (const tool of EXTERNAL_TOOLS) {
+      for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+        const tool = EXTERNAL_TOOLS[i]
         expect(paths[tool]).toBeTypeOf('string')
         expect((paths[tool] as string).length).toBeGreaterThan(0)
       }
@@ -93,7 +95,8 @@ describe('utils/dlx/vfs-extract', () => {
       })
       try {
         const paths = getToolPaths()
-        for (const tool of EXTERNAL_TOOLS) {
+        for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+          const tool = EXTERNAL_TOOLS[i]
           expect(paths[tool]).toMatch(/\.exe$/)
         }
       } finally {
@@ -112,7 +115,8 @@ describe('utils/dlx/vfs-extract', () => {
       })
       try {
         const paths = getToolPaths()
-        for (const tool of EXTERNAL_TOOLS) {
+        for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+          const tool = EXTERNAL_TOOLS[i]
           expect(paths[tool]).not.toMatch(/\.exe$/)
         }
       } finally {

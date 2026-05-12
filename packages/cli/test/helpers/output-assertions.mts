@@ -366,7 +366,8 @@ export function expectOrderedPatterns(
 ): void {
   let lastIndex = -1
 
-  for (const pattern of patterns) {
+  for (let i = 0, { length } = patterns; i < length; i += 1) {
+    const pattern = patterns[i]
     const index =
       typeof pattern === 'string'
         ? output.indexOf(pattern, lastIndex + 1)
@@ -415,7 +416,8 @@ export function expectStdoutContainsAll(
   output: string,
   expected: string[],
 ): void {
-  for (const text of expected) {
+  for (let i = 0, { length } = expected; i < length; i += 1) {
+    const text = expected[i]
     expect(output).toContain(text)
   }
 }
@@ -463,7 +465,8 @@ export function expectTableStructure(output: string): void {
     lineLengths.reduce((sum, len) => sum + len, 0) / lineLengths.length
   const maxDeviation = avgLength * 0.3 // Allow 30% deviation
 
-  for (const length of lineLengths) {
+  for (let i = 0, { length } = lineLengths; i < length; i += 1) {
+    const length = lineLengths[i]
     expect(Math.abs(length - avgLength)).toBeLessThan(maxDeviation)
   }
 }

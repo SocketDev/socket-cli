@@ -73,8 +73,7 @@ vi.mock('../../../../src/commands/wrapper/postinstall-wrapper.mts', () => ({
 }))
 
 vi.mock('../../../../src/constants/paths.mts', async importOriginal => {
-  const actual =
-    await importOriginal<typeof PathsModule>()
+  const actual = await importOriginal<typeof PathsModule>()
   return {
     ...actual,
     getBashRcPath: mockGetBashRcPath,

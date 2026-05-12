@@ -4,10 +4,7 @@
     "declarationMap": false,
     "sourceMap": false
   },
-  "include": [
-    "../src/**/*.mts",
-    "../src/**/*.d.ts"
-  ],
+  "include": ["../src/**/*.mts", "../src/**/*.d.ts"],
   "exclude": [
     "../src/**/*.test.mts",
     "../src/**/*.tsx",

@@ -70,7 +70,8 @@ export async function createPatch(patchDef) {
     }
 
     let hasChanges = false
-    for (const file of files) {
+    for (let i = 0, { length } = files; i < length; i += 1) {
+      const file = files[i]
       logger.log(`Transforming ${file}...`)
       const changed = await transform(file, utils)
       if (changed) {

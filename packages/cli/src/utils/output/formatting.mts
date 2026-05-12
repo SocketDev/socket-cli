@@ -116,7 +116,8 @@ export function getHelpListOutput(
   } as HelpListOptions
   let result = ''
   const names = Object.keys(list).sort(naturalCompare)
-  for (const name of names) {
+  for (let i = 0, { length } = names; i < length; i += 1) {
+    const name = names[i]
     const entry = list[name]
     const entryIsObj = isObject(entry)
     if (entryIsObj && 'hidden' in entry && entry?.hidden) {

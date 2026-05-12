@@ -219,7 +219,8 @@ describe('handleListRepos', () => {
   it('handles different sort options', async () => {
     const sortOptions = ['name', 'created', 'updated', 'pushed']
 
-    for (const sort of sortOptions) {
+    for (let i = 0, { length } = sortOptions; i < length; i += 1) {
+      const sort = sortOptions[i]
       mockFetchListRepos.mockResolvedValue({
         ok: true,
         data: { repos: [], nextPage: undefined },

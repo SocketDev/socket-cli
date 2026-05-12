@@ -54,7 +54,8 @@ describe('ecosystem utilities', () => {
       expect(ALL_SUPPORTED_ECOSYSTEMS).toBeInstanceOf(Set)
       expect(ALL_SUPPORTED_ECOSYSTEMS.size).toBe(ALL_ECOSYSTEMS.length)
 
-      for (const ecosystem of ALL_ECOSYSTEMS) {
+      for (let i = 0, { length } = ALL_ECOSYSTEMS; i < length; i += 1) {
+        const ecosystem = ALL_ECOSYSTEMS[i]
         expect(ALL_SUPPORTED_ECOSYSTEMS.has(ecosystem)).toBe(true)
       }
     })
@@ -92,7 +93,8 @@ describe('ecosystem utilities', () => {
     })
 
     it('validates all ecosystems in ALL_ECOSYSTEMS', () => {
-      for (const ecosystem of ALL_ECOSYSTEMS) {
+      for (let i = 0, { length } = ALL_ECOSYSTEMS; i < length; i += 1) {
+        const ecosystem = ALL_ECOSYSTEMS[i]
         expect(isValidEcosystem(ecosystem)).toBe(true)
       }
     })

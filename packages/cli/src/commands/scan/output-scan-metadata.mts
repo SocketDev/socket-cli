@@ -29,6 +29,7 @@ export async function outputScanMetadata(
   if (outputKind === 'markdown') {
     logger.log(`${mdHeader('Scan meta data')}\n`)
     logger.log(`${mdKeyValue('Scan ID', scanId)}\n`)
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (
         [
@@ -49,6 +50,7 @@ export async function outputScanMetadata(
     )
   } else {
     logger.log(`Scan ID: ${scanId}\n`)
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (
         [

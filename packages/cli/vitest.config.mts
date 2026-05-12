@@ -48,6 +48,7 @@ if (existsSync(bundleToolsPath)) {
       INLINED_VERSION: '0.0.0-test',
       INLINED_VERSION_HASH: '0.0.0-test:abc1234:test',
     }
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [key, value] of Object.entries(toolVersions)) {
       if (!process.env[key] && value) {
         process.env[key] = value
@@ -82,6 +83,7 @@ export function getMaxThreads(): number {
   return os.cpus().length
 }
 
+// oxlint-disable-next-line socket/no-default-export -- vitest config file requires default export
 export default defineConfig({
   resolve: {
     preserveSymlinks: false,

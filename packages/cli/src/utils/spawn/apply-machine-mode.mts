@@ -31,7 +31,8 @@ export function applyMachineModeIfActive(
  * etc.). Returns undefined if args starts with a flag or is empty.
  */
 export function inferSubcommand(args: readonly string[]): string | undefined {
-  for (const arg of args) {
+  for (let i = 0, { length } = args; i < length; i += 1) {
+    const arg = args[i]
     if (!arg.startsWith('-')) {
       return arg
     }

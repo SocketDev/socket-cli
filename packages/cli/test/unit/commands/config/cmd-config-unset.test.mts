@@ -45,8 +45,7 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual =
-    await importOriginal<typeof LoggerModule>()
+  const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
@@ -72,8 +71,7 @@ const mockGetSupportedConfigEntries = vi.hoisted(() =>
 )
 
 vi.mock('../../../../src/utils/config.mts', async importOriginal => {
-  const actual =
-    await importOriginal<typeof ConfigModule>()
+  const actual = await importOriginal<typeof ConfigModule>()
   return {
     ...actual,
     getSupportedConfigEntries: mockGetSupportedConfigEntries,
@@ -139,10 +137,7 @@ const mockMeowOrExit = vi.hoisted(() =>
 vi.mock(
   '../../../../src/utils/cli/with-subcommands.mjs',
   async importOriginal => {
-    const actual =
-      await importOriginal<
-        typeof WithSubcommandsModule
-      >()
+    const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {
       ...actual,
       meowOrExit: mockMeowOrExit,
@@ -214,7 +209,8 @@ describe('cmd-config-unset', () => {
       it('should handle multiple valid config keys', async () => {
         const keys = ['apiToken', 'defaultOrg', 'apiBaseUrl', 'apiProxy']
 
-        for (const key of keys) {
+        for (let i = 0, { length } = keys; i < length; i += 1) {
+          const key = keys[i]
           vi.clearAllMocks()
           mockCheckCommandInput.mockReturnValue(true)
 

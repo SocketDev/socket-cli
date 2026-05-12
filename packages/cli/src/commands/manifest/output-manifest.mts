@@ -57,7 +57,8 @@ export async function outputManifest(
     )
     arr.push('')
 
-    for (const file of files) {
+    for (let i = 0, { length } = files; i < length; i += 1) {
+      const file = files[i]
       arr.push(`- \`${file}\``)
     }
 

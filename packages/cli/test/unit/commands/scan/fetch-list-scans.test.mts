@@ -213,6 +213,7 @@ describe('fetchOrgFullScanList', () => {
       { page: 100, perPage: 1 },
     ]
 
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { page, perPage } of testCases) {
       const config = {
         branch: 'main',
@@ -253,6 +254,7 @@ describe('fetchOrgFullScanList', () => {
       { sort: 'status', direction: 'desc' },
     ]
 
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { direction, sort } of testCases) {
       const config = {
         branch: 'main',

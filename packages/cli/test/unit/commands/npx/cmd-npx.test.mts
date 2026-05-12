@@ -83,7 +83,9 @@ describe('cmd-npx', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdNpx.description).toBe('Run pnpm exec with Socket Firewall security')
+      expect(cmdNpx.description).toBe(
+        'Run pnpm exec with Socket Firewall security',
+      )
     })
 
     it('should not be hidden', () => {

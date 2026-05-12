@@ -32,8 +32,7 @@ vi.mock('@socketsecurity/lib/env/ci', () => ({
 // Mock @socketsecurity/lib/env/socket-cli.
 const mockGetSocketCliGithubToken = vi.hoisted(() => vi.fn())
 vi.mock('@socketsecurity/lib/env/socket-cli', async importOriginal => {
-  const actual =
-    (await importOriginal()) as typeof SocketCliModule
+  const actual = (await importOriginal()) as typeof SocketCliModule
   return {
     ...actual,
     getSocketCliGithubToken: mockGetSocketCliGithubToken,

@@ -21,7 +21,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import meow from '../../../../src/meow.mts'
+import { meow } from '../../../../src/meow.mts'
 import {
   description,
   emitBanner,
@@ -51,11 +51,12 @@ vi.mock('../../../../src/meow.mts', () => ({
   // validationFlags) and by per-command flag blocks. Test mock just
   // returns the schema unchanged.
   defineFlags: <T,>(flags: T): T => flags,
-  default: vi.fn((helpText, options) => {
+  meow: vi.fn((helpText, options) => {
     // Simulate meow processing flags with defaults.
     const argv = options?.argv || []
     const processedFlags = {}
     if (options?.flags) {
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [key, flag] of Object.entries(options.flags)) {
         // Check if flag is present in argv.
         const flagName = `--${key}`
@@ -243,7 +244,7 @@ describe('meow-with-subcommands', () => {
       // declared flags, so we override its return value just for this test
       // to simulate meow detecting --version on the cli.flags shape.
       const meowMod: unknown = await import('../../../../src/meow.mts')
-      const meowMock = vi.mocked(meowMod.default)
+      const meowMock = vi.mocked(meowMod.meow)
       meowMock.mockReturnValueOnce({
         flags: { version: true },
         input: ['--version'],

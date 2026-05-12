@@ -29,7 +29,7 @@ import {
 
 // Mock constants.
 vi.mock('../../../../../src/constants.mts', () => ({
-  default: {
+  constants: {
     SOCKET_WEBSITE_URL: 'https://socket.dev',
   },
 }))

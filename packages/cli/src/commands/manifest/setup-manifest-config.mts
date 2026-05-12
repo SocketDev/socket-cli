@@ -331,11 +331,12 @@ export async function setupManifestConfig(
     },
   ]
 
-  choices.forEach(obj => {
+  for (let i = 0, { length } = choices; i < length; i += 1) {
+    const obj = choices[i]
     if (detected[obj.value as keyof typeof detected]) {
       obj.name += ' [detected]'
     }
-  })
+  }
 
   // Surface detected language first, then by alphabet
   choices.sort((a, b) => {

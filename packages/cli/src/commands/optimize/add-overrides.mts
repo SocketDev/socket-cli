@@ -128,6 +128,7 @@ export async function addOverrides(
       }
       const sockOverridePrefix = `npm:${sockRegPkgName}@`
       const sockOverrideSpec = `${sockOverridePrefix}${pin ? version : `^${major}`}`
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const { 1: depObj } of depEntries) {
         const sockSpec = hasOwn(depObj, sockRegPkgName)
           ? (depObj[sockRegPkgName] as string)
@@ -282,6 +283,7 @@ export async function addOverrides(
             spinner,
           },
         )
+        // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
         for (const key of [
           'added',
           'addedInWorkspaces',
@@ -294,6 +296,7 @@ export async function addOverrides(
             'added' | 'addedInWorkspaces' | 'updated' | 'updatedInWorkspaces'
           >
         >) {
+          // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
           for (const value of otherState[key]) {
             state[key].add(value)
           }
@@ -308,6 +311,7 @@ export async function addOverrides(
       Object.fromEntries(depEntries) as PackageJson,
     )
     if (isWorkspaceRoot) {
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const { overrides, type } of overridesDataObjects) {
         // updateManifest is async because the pnpm 11+ path writes to
         // pnpm-workspace.yaml; older pnpm and other agents resolve

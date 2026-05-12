@@ -794,12 +794,9 @@ describe('git utilities', () => {
       vi.doMock('@socketsecurity/lib/bin', () => ({
         whichReal: vi.fn().mockResolvedValue(undefined),
       }))
-      const { getGitPath: freshGetGitPath } = await import(
-        '../../../../src/utils/git/operations.mts'
-      )
-      await expect(freshGetGitPath()).rejects.toThrow(
-        /whichReal returned null/,
-      )
+      const { getGitPath: freshGetGitPath } =
+        await import('../../../../src/utils/git/operations.mts')
+      await expect(freshGetGitPath()).rejects.toThrow(/whichReal returned null/)
       vi.doUnmock('@socketsecurity/lib/bin')
       vi.resetModules()
     })
@@ -809,9 +806,8 @@ describe('git utilities', () => {
       vi.doMock('@socketsecurity/lib/bin', () => ({
         whichReal: vi.fn().mockResolvedValue(['/usr/bin/git', '/opt/bin/git']),
       }))
-      const { getGitPath: freshGetGitPath } = await import(
-        '../../../../src/utils/git/operations.mts'
-      )
+      const { getGitPath: freshGetGitPath } =
+        await import('../../../../src/utils/git/operations.mts')
       await expect(freshGetGitPath()).rejects.toThrow(/multiple matches/)
       vi.doUnmock('@socketsecurity/lib/bin')
       vi.resetModules()

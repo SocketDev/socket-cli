@@ -37,7 +37,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
-import ENV from '../../src/constants/env.mts'
+import { ENV } from '../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../src/utils/socket/sdk.mts'
 import { executeCliCommand } from '../helpers/cli-execution.mts'
 
@@ -251,7 +251,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         'wrapper',
       ]
 
-      commands.forEach(cmd => {
+      for (let i = 0, { length } = commands; i < length; i += 1) {
+        const cmd = commands[i]
         it.skipIf(!ENV.RUN_E2E_TESTS)(
           `should display ${cmd} command help`,
           async () => {
@@ -268,7 +269,7 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             expect(result.stdout.length).toBeGreaterThan(0)
           },
         )
-      })
+      }
     })
 
     describe('Config command help (no auth required)', () => {
@@ -281,7 +282,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         ['config', 'unset', '--help'],
       ]
 
-      commands.forEach(cmd => {
+      for (let i = 0, { length } = commands; i < length; i += 1) {
+        const cmd = commands[i]
         it.skipIf(!ENV.RUN_E2E_TESTS)(
           `should display ${cmd.join(' ')} help`,
           async () => {
@@ -298,7 +300,7 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             expect(result.stdout.length).toBeGreaterThan(0)
           },
         )
-      })
+      }
     })
 
     describe('Install/Uninstall command help (no auth required)', () => {
@@ -309,7 +311,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         ['uninstall', 'completion', '--help'],
       ]
 
-      commands.forEach(cmd => {
+      for (let i = 0, { length } = commands; i < length; i += 1) {
+        const cmd = commands[i]
         it.skipIf(!ENV.RUN_E2E_TESTS)(
           `should display ${cmd.join(' ')} help`,
           async () => {
@@ -326,7 +329,7 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             expect(result.stdout.length).toBeGreaterThan(0)
           },
         )
-      })
+      }
     })
 
     describe('Manifest command help (no auth required)', () => {
@@ -341,7 +344,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         ['manifest', 'setup', '--help'],
       ]
 
-      commands.forEach(cmd => {
+      for (let i = 0, { length } = commands; i < length; i += 1) {
+        const cmd = commands[i]
         it.skipIf(!ENV.RUN_E2E_TESTS)(
           `should display ${cmd.join(' ')} help`,
           async () => {
@@ -358,7 +362,7 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             expect(result.stdout.length).toBeGreaterThan(0)
           },
         )
-      })
+      }
     })
 
     describe('Organization command help (no auth required)', () => {
@@ -372,7 +376,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         ['organization', 'quota', '--help'],
       ]
 
-      commands.forEach(cmd => {
+      for (let i = 0, { length } = commands; i < length; i += 1) {
+        const cmd = commands[i]
         it.skipIf(!ENV.RUN_E2E_TESTS)(
           `should display ${cmd.join(' ')} help`,
           async () => {
@@ -389,7 +394,7 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             expect(result.stdout.length).toBeGreaterThan(0)
           },
         )
-      })
+      }
     })
 
     describe('Package command help (no auth required)', () => {
@@ -399,7 +404,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         ['package', 'shallow', '--help'],
       ]
 
-      commands.forEach(cmd => {
+      for (let i = 0, { length } = commands; i < length; i += 1) {
+        const cmd = commands[i]
         it.skipIf(!ENV.RUN_E2E_TESTS)(
           `should display ${cmd.join(' ')} help`,
           async () => {
@@ -416,7 +422,7 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             expect(result.stdout.length).toBeGreaterThan(0)
           },
         )
-      })
+      }
     })
 
     describe('Package manager wrapper command help (no auth required)', () => {
@@ -436,7 +442,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         'yarn',
       ]
 
-      commands.forEach(cmd => {
+      for (let i = 0, { length } = commands; i < length; i += 1) {
+        const cmd = commands[i]
         it.skipIf(!ENV.RUN_E2E_TESTS)(
           `should display ${cmd} command help`,
           async () => {
@@ -453,7 +460,7 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             expect(result.stdout.length).toBeGreaterThan(0)
           },
         )
-      })
+      }
     })
 
     describe('Repository command help (no auth required)', () => {
@@ -466,7 +473,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         ['repository', 'view', '--help'],
       ]
 
-      commands.forEach(cmd => {
+      for (let i = 0, { length } = commands; i < length; i += 1) {
+        const cmd = commands[i]
         it.skipIf(!ENV.RUN_E2E_TESTS)(
           `should display ${cmd.join(' ')} help`,
           async () => {
@@ -483,7 +491,7 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             expect(result.stdout.length).toBeGreaterThan(0)
           },
         )
-      })
+      }
     })
 
     describe('Scan command help (no auth required)', () => {
@@ -501,7 +509,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
         ['scan', 'view', '--help'],
       ]
 
-      commands.forEach(cmd => {
+      for (let i = 0, { length } = commands; i < length; i += 1) {
+        const cmd = commands[i]
         it.skipIf(!ENV.RUN_E2E_TESTS)(
           `should display ${cmd.join(' ')} help`,
           async () => {
@@ -518,7 +527,7 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             expect(result.stdout.length).toBeGreaterThan(0)
           },
         )
-      })
+      }
     })
 
     describe('Auth-required commands', () => {

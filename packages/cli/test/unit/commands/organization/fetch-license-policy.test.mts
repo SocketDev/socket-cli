@@ -123,7 +123,8 @@ describe('fetchLicensePolicy', () => {
       'my-organization-name',
     ]
 
-    for (const orgSlug of orgSlugs) {
+    for (let i = 0, { length } = orgSlugs; i < length; i += 1) {
+      const orgSlug = orgSlugs[i]
       // eslint-disable-next-line no-await-in-loop
       await fetchLicensePolicy(orgSlug)
       expect(mockSdk.getOrgLicensePolicy).toHaveBeenCalledWith(orgSlug)

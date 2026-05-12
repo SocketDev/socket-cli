@@ -334,7 +334,8 @@ export function createBox(
   )
 
   // Content lines with side borders
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]
     const paddedLine = line.padEnd(paddedWidth, ' ')
     result.push(color(border.vertical) + paddedLine + color(border.vertical))
   }

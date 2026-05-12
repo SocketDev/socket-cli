@@ -128,7 +128,8 @@ describe('types', () => {
         { outputDefault: { format: ['text', 'json'] } },
       ]
 
-      for (const config of configs) {
+      for (let i = 0, { length } = configs; i < length; i += 1) {
+        const config = configs[i]
         expect(config.outputDefault).toBeDefined()
         expect(Array.isArray(config.outputDefault?.format)).toBe(true)
       }

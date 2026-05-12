@@ -643,7 +643,9 @@ describe('api utilities', () => {
     it('returns error when not authenticated', async () => {
       mockGetDefaultApiToken.mockReturnValue(undefined)
 
-      const result = await sendApiRequest<unknown>('test/path', { method: 'POST' })
+      const result = await sendApiRequest<unknown>('test/path', {
+        method: 'POST',
+      })
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -704,7 +706,9 @@ describe('api utilities', () => {
         }),
       )
 
-      const result = await sendApiRequest<unknown>('test/path', { method: 'POST' })
+      const result = await sendApiRequest<unknown>('test/path', {
+        method: 'POST',
+      })
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -734,7 +738,9 @@ describe('api utilities', () => {
         createHttpResponse({ body: 'not-json' }),
       )
 
-      const result = await sendApiRequest<unknown>('test/path', { method: 'POST' })
+      const result = await sendApiRequest<unknown>('test/path', {
+        method: 'POST',
+      })
 
       expect(result.ok).toBe(false)
       if (!result.ok) {

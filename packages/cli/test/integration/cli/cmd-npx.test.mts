@@ -156,7 +156,10 @@ describe('socket npx', async () => {
       // Validate dry-run output to prevent flipped snapshots.
       expectDryRunOutput(stdout)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'dry-run pnpm exec with --config should exit with code 0').toBe(0)
+      expect(
+        code,
+        'dry-run pnpm exec with --config should exit with code 0',
+      ).toBe(0)
     },
   )
 

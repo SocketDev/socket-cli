@@ -28,7 +28,8 @@ export function findDefaultBranchValueMisuse(
   // `--default-branch=main` — unambiguous: the `=` form attaches a
   // value to what meow treats as a boolean flag, so the value is
   // silently dropped.
-  for (const arg of argv) {
+  for (let i = 0, { length } = argv; i < length; i += 1) {
+    const arg = argv[i]
     const prefix = DEFAULT_BRANCH_PREFIXES.find(p => arg.startsWith(p))
     if (!prefix) {
       continue

@@ -14,7 +14,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import constants, {
+import {
   FLAG_DRY_RUN,
   FLAG_JSON,
   FLAG_ORG,
@@ -28,6 +28,7 @@ import constants, {
   SOCKET_CLI_PACKAGE_NAME,
   VITEST,
   YARN,
+  constants,
   getCliVersion,
 } from '../../src/constants.mts'
 

@@ -113,6 +113,7 @@ export async function convertGradleToMaven({
     if (isTextMode) {
       logger.success('Executed gradle successfully')
       logger.log('Reported exports:')
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- callback uses expression body
       files.forEach(fn => logger.log('- ', fn))
       logger.log('')
       logger.log(

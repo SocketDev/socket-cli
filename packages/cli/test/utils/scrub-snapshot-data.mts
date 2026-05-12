@@ -121,6 +121,7 @@ export function scrubSnapshotData(
   }
 
   // Phase 7: Custom patterns.
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { pattern, replacement } of custom) {
     scrubbed = scrubbed.replace(pattern, replacement)
   }

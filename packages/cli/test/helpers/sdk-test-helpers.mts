@@ -77,7 +77,10 @@ export async function setupSdkMockError(
  * @param mockData - The data to return in the success response
  * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk references
  */
-export async function setupSdkMockSuccess(sdkMethod: string, mockData: unknown) {
+export async function setupSdkMockSuccess(
+  sdkMethod: string,
+  mockData: unknown,
+) {
   const mockSdk = createMockSdk({
     [sdkMethod]: vi.fn().mockResolvedValue({ success: true, data: mockData }),
   })

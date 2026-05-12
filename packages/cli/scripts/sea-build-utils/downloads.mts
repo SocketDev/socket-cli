@@ -136,6 +136,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 
   // Populate TOOL_REPOS from bundle-tools.json.
   // Filter by release === 'asset' to include all GitHub-released tools.
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
     if (toolConfig.release === 'asset') {
       const repoPath = toolConfig.repository.replace(/^[^:]+:/, '')
@@ -168,6 +169,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 
   // Download and extract each tool.
   const toolNames = []
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, assetName] of Object.entries(toolsForPlatform)) {
     const config = TOOL_REPOS[toolName]
 
@@ -330,7 +332,8 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       if (!isPlatWin) {
         const binDir = path.join(toolsDir, 'python', 'bin')
         const binFiles = await fs.readdir(binDir)
-        for (const file of binFiles) {
+        for (let i = 0, { length } = binFiles; i < length; i += 1) {
+          const file = binFiles[i]
           const filePath = path.join(binDir, file)
           const stats = await fs.lstat(filePath)
           if (stats.isFile()) {

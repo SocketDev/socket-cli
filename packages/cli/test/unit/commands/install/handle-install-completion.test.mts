@@ -94,7 +94,8 @@ describe('handleInstallCompletion', () => {
 
     const shells = ['bash', 'zsh', 'fish', 'powershell']
 
-    for (const shell of shells) {
+    for (let i = 0, { length } = shells; i < length; i += 1) {
+      const shell = shells[i]
       vi.mocked(setupTabCompletion).mockResolvedValue({
         ok: true,
         value: `Completion for ${shell} installed`,

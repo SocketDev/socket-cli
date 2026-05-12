@@ -52,12 +52,15 @@ export function formatDataOrg(
   const totalTopAlerts: Record<string, number> = {}
 
   const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
-  for (const metric of METRICS) {
+  for (let i = 0, { length } = METRICS; i < length; i += 1) {
+    const metric = METRICS[i]
     formattedData[metric] = {}
   }
 
-  for (const entry of data) {
+  for (let i = 0, { length } = data; i < length; i += 1) {
+    const entry = data[i]
     const topFiveAlertTypes = entry.top_five_alert_types
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
       if (totalTopAlerts[type]) {
@@ -68,9 +71,11 @@ export function formatDataOrg(
     }
   }
 
-  for (const metric of METRICS) {
+  for (let i = 0, { length } = METRICS; i < length; i += 1) {
+    const metric = METRICS[i]
     const formatted = formattedData[metric]
-    for (const entry of data) {
+    for (let i = 0, { length } = data; i < length; i += 1) {
+      const entry = data[i]
       const date = formatDate(entry.created_at)
       if (formatted[date]) {
         formatted[date] += entry[metric]!
@@ -83,6 +88,7 @@ export function formatDataOrg(
   const topFiveAlertEntries = Object.entries(totalTopAlerts)
     .sort(([_keya, a], [_keyb, b]) => b - a)
     .slice(0, 5)
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of topFiveAlertEntries) {
     sortedTopFiveAlerts[key] = value
   }
@@ -100,13 +106,16 @@ export function formatDataRepo(
   const totalTopAlerts: Record<string, number> = {}
 
   const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
-  for (const metric of METRICS) {
+  for (let i = 0, { length } = METRICS; i < length; i += 1) {
+    const metric = METRICS[i]
     formattedData[metric] = {}
   }
 
   // Aggregate alert counts: sum across time entries (consistent with formatDataOrg).
-  for (const entry of data) {
+  for (let i = 0, { length } = data; i < length; i += 1) {
+    const entry = data[i]
     const topFiveAlertTypes = entry.top_five_alert_types
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
       if (totalTopAlerts[type]) {
@@ -116,8 +125,10 @@ export function formatDataRepo(
       }
     }
   }
-  for (const entry of data) {
-    for (const metric of METRICS) {
+  for (let i = 0, { length } = data; i < length; i += 1) {
+    const entry = data[i]
+    for (let i = 0, { length } = METRICS; i < length; i += 1) {
+      const metric = METRICS[i]
       formattedData[metric]![formatDate(entry.created_at)] = entry[metric]
     }
   }
@@ -125,6 +136,7 @@ export function formatDataRepo(
   const topFiveAlertEntries = Object.entries(totalTopAlerts)
     .sort(([_keya, a], [_keyb, b]) => b - a)
     .slice(0, 5)
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of topFiveAlertEntries) {
     sortedTopFiveAlerts[key] = value
   }

@@ -81,7 +81,9 @@ describe('organization utilities', () => {
     })
 
     it('handles single organization', () => {
-      const result = getOrgSlugs([{ slug: 'single-org', plan: 'pro' }] as unknown)
+      const result = getOrgSlugs([
+        { slug: 'single-org', plan: 'pro' },
+      ] as unknown)
 
       expect(result).toEqual(['single-org'])
     })

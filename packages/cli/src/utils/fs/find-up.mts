@@ -49,7 +49,8 @@ export async function findUp(
   // Use do-while to check current directory before continuing up the tree.
   // This ensures root directory is checked when cwd is root.
   do {
-    for (const name of names) {
+    for (let i = 0, { length } = names; i < length; i += 1) {
+      const name = names[i]
       if (signal?.aborted) {
         return undefined
       }

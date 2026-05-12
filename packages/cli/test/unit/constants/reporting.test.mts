@@ -61,7 +61,8 @@ describe('reporting constants', () => {
         REPORT_LEVEL_MONITOR,
         REPORT_LEVEL_WARN,
       ]
-      for (const level of levels) {
+      for (let i = 0, { length } = levels; i < length; i += 1) {
+        const level = levels[i]
         expect(level).toBe(level.toLowerCase())
       }
     })

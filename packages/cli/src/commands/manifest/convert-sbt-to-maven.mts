@@ -107,6 +107,7 @@ export async function convertSbtToMaven({
         logger.error('')
         logger.fail(message)
         logger.error('')
+        // oxlint-disable-next-line socket/prefer-cached-for-loop -- callback uses expression body
         poms.forEach(fn => logger.info('-', fn))
         if (poms.length > 10) {
           logger.error('')
@@ -122,6 +123,7 @@ export async function convertSbtToMaven({
       }
     } else if (isTextMode) {
       logger.success(`Generated ${poms.length} pom files`)
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- callback uses expression body
       poms.forEach(fn => logger.log('-', fn))
       logger.success('OK')
     }

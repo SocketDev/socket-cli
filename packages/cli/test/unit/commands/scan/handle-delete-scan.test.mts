@@ -100,7 +100,8 @@ describe('handleDeleteScan', () => {
       'scan_with_underscore',
     ]
 
-    for (const scanId of scanIds) {
+    for (let i = 0, { length } = scanIds; i < length; i += 1) {
+      const scanId = scanIds[i]
       // eslint-disable-next-line no-await-in-loop
       await handleDeleteScan('test-org', scanId, 'json')
       expect(mockFetch).toHaveBeenCalledWith('test-org', scanId, {

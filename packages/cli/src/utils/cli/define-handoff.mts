@@ -131,7 +131,8 @@ export function buildHelp(
     )
 
     if (helpNotes && helpNotes.length) {
-      for (const note of helpNotes) {
+      for (let i = 0, { length } = helpNotes; i < length; i += 1) {
+        const note = helpNotes[i]
         lines.push(`          ${note}`)
       }
     }
@@ -145,7 +146,8 @@ export function buildHelp(
 
     if (examples.length) {
       lines.push('', '    Examples')
-      for (const example of examples) {
+      for (let i = 0, { length } = examples; i < length; i += 1) {
+        const example = examples[i]
         // Trim trailing whitespace so a bare-command example renders as
         // `$ socket npm` (no trailing space) instead of `$ socket npm `.
         lines.push(`      $ ${command} ${example}`.trimEnd())

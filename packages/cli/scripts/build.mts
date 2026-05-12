@@ -57,7 +57,8 @@ export async function fixNodeGypStrings(dir, options = {}) {
   // Find all .js files in build directory.
   const files = await fs.readdir(dir, { withFileTypes: true })
 
-  for (const file of files) {
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const file = files[i]
     const filePath = path.join(dir, file.name)
 
     if (file.isDirectory()) {
@@ -169,7 +170,8 @@ async function main() {
       }).then(result => ({ name: 'Download Assets', result })),
     ])
 
-    for (const settled of parallelPrep) {
+    for (let i = 0, { length } = parallelPrep; i < length; i += 1) {
+      const settled = parallelPrep[i]
       if (settled.status === 'rejected') {
         if (!quiet) {
           logger.error(`Parallel preparation failed: ${settled.reason}`)
@@ -274,7 +276,8 @@ async function main() {
 
     const postFailed = postResults.filter(r => r.status === 'rejected')
     if (postFailed.length > 0) {
-      for (const r of postFailed) {
+      for (let i = 0, { length } = postFailed; i < length; i += 1) {
+        const r = postFailed[i]
         logger.error(`Post-processing failed: ${r.reason?.message ?? r.reason}`)
       }
       throw new Error('Post-processing step(s) failed')

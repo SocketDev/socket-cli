@@ -84,6 +84,7 @@ export function outputPaginatedList<T>(
 
       const formattedRows = rows.map(row => {
         const formatted: Record<string, unknown> = {}
+        // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
         for (const col of tableOptions.columns) {
           const value = row[col.field]
           formatted[col.field] = col.transform ? col.transform(value) : value
@@ -178,6 +179,7 @@ export function simpleOutput<T>(
 
         const formattedRows = rows.map(row => {
           const formatted: Record<string, unknown> = {}
+          // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
           for (const col of table.columns) {
             const value = row[col.field]
             formatted[col.field] = col.transform ? col.transform(value) : value

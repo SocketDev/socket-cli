@@ -61,6 +61,7 @@ export function getSupportedFilePatterns(
   supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): string[] {
   const patterns: string[] = []
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const key of Object.keys(supportedFiles)) {
     const supported = supportedFiles[key]
     if (supported) {
@@ -123,7 +124,8 @@ export async function globWithGitIgnore(
       path.join(cwd, '.gitignore'),
       cwd,
     )
-    for (const pattern of ignorePatterns) {
+    for (let i = 0, { length } = ignorePatterns; i < length; i += 1) {
+      const pattern = ignorePatterns[i]
       ignores.add(pattern)
     }
   }
@@ -144,7 +146,8 @@ export async function globWithGitIgnore(
       ),
     { concurrency: 8 },
   )) {
-    for (const p of ignorePatterns) {
+    for (let i = 0, { length } = ignorePatterns; i < length; i += 1) {
+      const p = ignorePatterns[i]
       ignores.add(p)
     }
   }

@@ -121,7 +121,8 @@ describe('fetchQuota', () => {
       'org123numbers',
     ]
 
-    for (const _orgSlug of orgSlugs) {
+    for (let i = 0, { length } = orgSlugs; i < length; i += 1) {
+      const _orgSlug = orgSlugs[i]
       // eslint-disable-next-line no-await-in-loop
       await fetchQuota()
       expect(mockSdk.getQuota).toHaveBeenCalledWith()

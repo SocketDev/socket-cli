@@ -294,6 +294,7 @@ describe('convertPurlToGhsas', () => {
       return { data: [] }
     })
 
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { github, purl } of ecosystemMappings) {
       mockGetPurlObject.mockReturnValue({
         name: 'test-package',

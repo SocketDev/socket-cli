@@ -203,7 +203,8 @@ describe('cmd-login', () => {
           'https://staging.example.com',
         ]
 
-        for (const url of validUrls) {
+        for (let i = 0, { length } = validUrls; i < length; i += 1) {
+          const url = validUrls[i]
           mockAttemptLogin.mockClear()
           await cmdLogin.run([`--api-base-url=${url}`], importMeta, context)
           expect(mockAttemptLogin).toHaveBeenCalledWith(url, '')
@@ -217,7 +218,8 @@ describe('cmd-login', () => {
           'socks5://127.0.0.1:9050',
         ]
 
-        for (const proxy of validProxies) {
+        for (let i = 0, { length } = validProxies; i < length; i += 1) {
+          const proxy = validProxies[i]
           mockAttemptLogin.mockClear()
           await cmdLogin.run([`--api-proxy=${proxy}`], importMeta, context)
           expect(mockAttemptLogin).toHaveBeenCalledWith('', proxy)

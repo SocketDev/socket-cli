@@ -235,7 +235,8 @@ export function createScrubber(options: ScrubberOptions = {}): Transform {
   function flushLines(rest: string): string {
     const lines = rest.split('\n')
     const tail = lines.pop() ?? ''
-    for (const raw of lines) {
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const raw = lines[i]
       processOneLine(raw)
     }
     return tail

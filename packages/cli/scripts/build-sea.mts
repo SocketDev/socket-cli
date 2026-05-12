@@ -137,7 +137,8 @@ async function main() {
   logger.log(
     `Building ${targets.length} target${targets.length > 1 ? 's' : ''}:`,
   )
-  for (const target of targets) {
+  for (let i = 0, { length } = targets; i < length; i += 1) {
+    const target = targets[i]
     logger.log(`  - ${target.platform}-${target.arch}`)
   }
   logger.log('')

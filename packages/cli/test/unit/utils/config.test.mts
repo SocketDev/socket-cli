@@ -376,13 +376,19 @@ describe('utils/config', () => {
 
     it('handles skipAskToPersistDefaultOrg with string "true"', () => {
       resetConfigForTesting()
-      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'true' as unknown)
+      const r = updateConfigValue(
+        'skipAskToPersistDefaultOrg',
+        'true' as unknown,
+      )
       expect(r.ok).toBe(true)
     })
 
     it('handles skipAskToPersistDefaultOrg with string "false"', () => {
       resetConfigForTesting()
-      const r = updateConfigValue('skipAskToPersistDefaultOrg', 'false' as unknown)
+      const r = updateConfigValue(
+        'skipAskToPersistDefaultOrg',
+        'false' as unknown,
+      )
       expect(r.ok).toBe(true)
     })
 
@@ -404,7 +410,8 @@ describe('utils/config', () => {
       const entries = getSupportedConfigEntries()
       expect(Array.isArray(entries)).toBe(true)
       expect(entries.length).toBeGreaterThan(0)
-      for (const entry of entries) {
+      for (let i = 0, { length } = entries; i < length; i += 1) {
+        const entry = entries[i]
         expect(Array.isArray(entry)).toBe(true)
         expect(entry).toHaveLength(2)
       }

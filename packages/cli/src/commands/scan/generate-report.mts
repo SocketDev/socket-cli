@@ -178,7 +178,8 @@ export function generateReport(
   const securityRules = securityPolicy.securityPolicyRules
   if (securityRules) {
     // Note: reportLevel: error > warn > monitor > ignore > defer
-    scan.forEach(artifact => {
+    for (let i = 0, { length } = scan; i < length; i += 1) {
+      const artifact = scan[i]
       const {
         alerts,
         name: pkgName = UNKNOWN_VALUE,
@@ -186,6 +187,7 @@ export function generateReport(
         version = UNKNOWN_VALUE,
       } = artifact
 
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
       alerts?.forEach(
         (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
           const alertName = alert.type as keyof typeof securityRules // => policy[type]
@@ -287,7 +289,7 @@ export function generateReport(
           }
         },
       )
-    })
+    }
   }
 
   spinner?.successAndStop(`Generated reported in ${Date.now() - now} ms`)

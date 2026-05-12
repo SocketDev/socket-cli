@@ -152,7 +152,8 @@ async function downloadAssets(assetNames, parallel = true) {
     )
     if (failed.length > 0) {
       logger.error(`\n${failed.length} asset(s) failed:`)
-      for (const r of failed) {
+      for (let i = 0, { length } = failed; i < length; i += 1) {
+        const r = failed[i]
         logger.error(
           `  - ${r.status === 'rejected' ? (r.reason?.message ?? r.reason) : r.value.name}`,
         )
@@ -160,7 +161,8 @@ async function downloadAssets(assetNames, parallel = true) {
       process.exitCode = 1
     }
   } else {
-    for (const name of assetNames) {
+    for (let i = 0, { length } = assetNames; i < length; i += 1) {
+      const name = assetNames[i]
       const result = await downloadAsset(ASSETS[name])
       if (!result.ok && !result.skipped) {
         process.exitCode = 1
@@ -247,7 +249,8 @@ async function main() {
   const assetNames = assetArgs.length > 0 ? assetArgs : Object.keys(ASSETS)
 
   // Validate asset names.
-  for (const name of assetNames) {
+  for (let i = 0, { length } = assetNames; i < length; i += 1) {
+    const name = assetNames[i]
     if (!(name in ASSETS)) {
       logger.error(`Unknown asset: ${name}`)
       logger.error(`Available assets: ${Object.keys(ASSETS).join(', ')}`)

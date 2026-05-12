@@ -139,11 +139,12 @@ export function displayAuditLogWithIocraft({
     logger.warn('Falling back to plain text output')
     logger.log(`Organization: ${orgSlug}`)
     logger.log(`Entries: ${results.length}`)
-    results.slice(0, 10).forEach((entry, i) => {
+    for (let i = 0, { length } = results.slice(0, 10); i < length; i += 1) {
+      const entry = results.slice(0, 10)[i]
       logger.log(
         `[${i + 1}] ${entry.event_id || 'N/A'} - ${entry.type || 'N/A'} - ${entry.formatted_created_at || 'N/A'}`,
       )
-    })
+    }
     if (results.length > 10) {
       logger.log(`... and ${results.length - 10} more entries`)
     }

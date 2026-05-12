@@ -293,6 +293,7 @@ describe('fetchCreateOrgFullScan', () => {
       ['org123', 'repo.with.dots'],
     ]
 
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [org, repo] of testCases) {
       const config = {
         branchName: 'main',
@@ -333,7 +334,11 @@ describe('fetchCreateOrgFullScan', () => {
       // No repoName, no scanType, no workspace.
     }
 
-    await fetchCreateOrgFullScan(['/p/package.json'], 'my-org', config as unknown)
+    await fetchCreateOrgFullScan(
+      ['/p/package.json'],
+      'my-org',
+      config as unknown,
+    )
 
     // Confirm the SDK was called WITHOUT those keys.
     const callArgs = mockSdk.createFullScan.mock.calls[0]![2]
@@ -360,7 +365,11 @@ describe('fetchCreateOrgFullScan', () => {
       workspace: 'workspace-1',
     }
 
-    await fetchCreateOrgFullScan(['/p/package.json'], 'my-org', config as unknown)
+    await fetchCreateOrgFullScan(
+      ['/p/package.json'],
+      'my-org',
+      config as unknown,
+    )
 
     const callArgs = mockSdk.createFullScan.mock.calls[0]![2]
     expect(callArgs.scan_type).toBe('tier1')

@@ -151,7 +151,8 @@ describe('handleScanView', () => {
 
     const statuses = ['pending', 'in_progress', 'completed', 'failed']
 
-    for (const status of statuses) {
+    for (let i = 0, { length } = statuses; i < length; i += 1) {
+      const status = statuses[i]
       mockFetchScan.mockResolvedValue({
         ok: true,
         data: { id: 'scan-test', status },

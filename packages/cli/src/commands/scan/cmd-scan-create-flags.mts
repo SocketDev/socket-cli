@@ -6,7 +6,7 @@
  * lets the main command file focus on the run() orchestration logic.
  */
 
-import constants from '../../constants.mts'
+import { constants } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 
 import type { MeowFlags } from '../../flags.mts'

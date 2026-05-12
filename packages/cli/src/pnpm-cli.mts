@@ -6,7 +6,7 @@ import { spawnSfw } from './utils/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 
-export default async function runPnpmCli() {
+export async function runPnpmCli() {
   process.exitCode = 1
 
   // Forward to sfw (Socket Firewall).

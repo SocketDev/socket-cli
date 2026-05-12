@@ -173,7 +173,8 @@ export function mdTable<T extends Array<Record<string, string>>>(
   // Max col width required to fit all data in that column
   const cws = cols.map(col => col.length)
 
-  for (const log of logs) {
+  for (let i = 0, { length } = logs; i < length; i += 1) {
+    const log = logs[i]
     for (let i = 0, { length } = cols; i < length; i += 1) {
       const val: unknown = log[cols[i] ?? ''] ?? ''
       cws[i] = Math.max(
@@ -185,7 +186,8 @@ export function mdTable<T extends Array<Record<string, string>>>(
   }
 
   let div = '|'
-  for (const cw of cws) {
+  for (let i = 0, { length } = cws; i < length; i += 1) {
+    const cw = cws[i]
     div += ` ${'-'.repeat(cw)} |`
   }
 
@@ -195,7 +197,8 @@ export function mdTable<T extends Array<Record<string, string>>>(
   }
 
   let body = ''
-  for (const log of logs) {
+  for (let i = 0, { length } = logs; i < length; i += 1) {
+    const log = logs[i]
     body += '|'
     for (let i = 0, { length } = cols; i < length; i += 1) {
       const val: unknown = log[cols[i] ?? ''] ?? ''
@@ -216,13 +219,15 @@ export function mdTableOfPairs(
   // Max col width required to fit all data in that column
   const cws = cols.map(col => col.length)
 
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [key, val] of arr) {
     cws[0] = Math.max(cws[0] ?? 0, String(key).length)
     cws[1] = Math.max(cws[1] ?? 0, String(val ?? '').length)
   }
 
   let div = '|'
-  for (const cw of cws) {
+  for (let i = 0, { length } = cws; i < length; i += 1) {
+    const cw = cws[i]
     div += ` ${'-'.repeat(cw)} |`
   }
 
@@ -232,6 +237,7 @@ export function mdTableOfPairs(
   }
 
   let body = ''
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [key, val] of arr) {
     body += '|'
     body += ` ${String(key).padEnd(cws[0] ?? 0, ' ')} |`
@@ -253,6 +259,7 @@ export function mdTableStringNumber(
   // | Paragraph   |     18 |
   let mw1 = title1.length
   let mw2 = title2.length
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of Object.entries(obj)) {
     mw1 = Math.max(mw1, key.length)
     mw2 = Math.max(mw2, String(value ?? '').length)
@@ -261,6 +268,7 @@ export function mdTableStringNumber(
   const lines = []
   lines.push(`| ${title1.padEnd(mw1, ' ')} | ${title2.padEnd(mw2)} |`)
   lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of Object.entries(obj)) {
     lines.push(
       `| ${key.padEnd(mw1, ' ')} | ${String(value ?? '').padStart(mw2, ' ')} |`,

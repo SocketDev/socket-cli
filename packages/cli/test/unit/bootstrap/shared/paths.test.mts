@@ -35,14 +35,16 @@ describe('bootstrap/shared/paths', () => {
 
   beforeEach(() => {
     saved = Object.create(null)
-    for (const key of SAVED_KEYS) {
+    for (let i = 0, { length } = SAVED_KEYS; i < length; i += 1) {
+      const key = SAVED_KEYS[i]
       saved[key] = process.env[key]
       delete process.env[key]
     }
   })
 
   afterEach(() => {
-    for (const key of SAVED_KEYS) {
+    for (let i = 0, { length } = SAVED_KEYS; i < length; i += 1) {
+      const key = SAVED_KEYS[i]
       if (saved[key] !== undefined) {
         process.env[key] = saved[key]
       } else {

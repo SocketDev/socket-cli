@@ -24,7 +24,8 @@ export async function outputConfigList({
   if (outputKind === 'json') {
     let failed = false
     const obj: Record<string, unknown> = {}
-    for (const key of supportedConfigKeys) {
+    for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
+      const key = supportedConfigKeys[i]
       const result = getConfigValue(key)
       let value = result.data
       if (!result.ok) {
@@ -72,7 +73,8 @@ export async function outputConfigList({
     logger.log('')
     logger.log(`This is the local CLI config (full=${!!full}):`)
     logger.log('')
-    for (const key of supportedConfigKeys) {
+    for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
+      const key = supportedConfigKeys[i]
       const result = getConfigValue(key)
       if (!result.ok) {
         logger.log(`- ${key}: failed to read: ${result.message}`)

@@ -28,6 +28,7 @@ export function cleanupQueryStdout(stdout: string): string {
     return ''
   }
   const names = new Set<string>()
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { _id, name, pkgid } of pkgs) {
     // `npm query` results may not have a "name" property, in which case we
     // fallback to "_id" and then "pkgid".

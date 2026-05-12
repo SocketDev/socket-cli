@@ -47,9 +47,9 @@ const mockResolveRealBinSync = vi.hoisted(() => vi.fn((p: string) => p))
 
 // Mock dependencies for new tests.
 vi.mock('@socketsecurity/lib/bin', async () => {
-  const actual = await vi.importActual<
-    typeof BinModule
-  >('@socketsecurity/lib/bin')
+  const actual = await vi.importActual<typeof BinModule>(
+    '@socketsecurity/lib/bin',
+  )
   return {
     ...actual,
     resolveRealBinSync: mockResolveRealBinSync,

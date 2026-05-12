@@ -65,7 +65,7 @@ vi.mock('../../../../src/utils/home-cache-time.mts', () => ({
 }))
 
 vi.mock('../../../../src/constants.mts', () => ({
-  default: {
+  constants: {
     blessedOptions: {},
     spinner: {
       isSpinning: false,

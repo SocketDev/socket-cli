@@ -153,7 +153,8 @@ describe('handlePurlDeepScore', () => {
       'pkg:npm/package@latest',
     ]
 
-    for (const purl of purls) {
+    for (let i = 0, { length } = purls; i < length; i += 1) {
+      const purl = purls[i]
       mockFetchPurlDeepScore.mockResolvedValue({
         ok: true,
         data: { name: 'test', version: '1.0.0', score: 85 },

@@ -182,7 +182,11 @@ export async function combineVfsArchives(
  * await downloadNpmPackage('synp@1.9.14', '/tmp/synp', 'sha512-xxx')
  * // Creates: /tmp/synp/node_modules/synp/ with full dependency tree
  */
-export async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
+export async function downloadNpmPackage(
+  packageSpec,
+  targetDir,
+  expectedIntegrity,
+) {
   logger.substep(`Downloading ${packageSpec} with dependencies`)
 
   // Ensure target directory exists.
@@ -306,6 +310,7 @@ export async function downloadNpmPackages() {
 
   // Collect npm packages from bundle-tools.json.
   const npmPackages = []
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
     if (toolConfig.packageManager === 'npm') {
       npmPackages.push({
@@ -333,7 +338,8 @@ export async function downloadNpmPackages() {
 
   try {
     // Download all npm packages with dependencies using Arborist.
-    for (const pkg of npmPackages) {
+    for (let i = 0, { length } = npmPackages; i < length; i += 1) {
+      const pkg = npmPackages[i]
       const packageSpec = `${pkg.package}@${pkg.version}`
       await downloadNpmPackage(packageSpec, tempDir, pkg.integrity)
     }

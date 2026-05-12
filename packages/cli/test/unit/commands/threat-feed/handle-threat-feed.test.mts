@@ -190,7 +190,8 @@ describe('handleThreatFeed', () => {
 
     const ecosystems = ['npm', 'pypi', 'rubygems', 'maven', 'nuget']
 
-    for (const ecosystem of ecosystems) {
+    for (let i = 0, { length } = ecosystems; i < length; i += 1) {
+      const ecosystem = ecosystems[i]
       vi.mocked(fetchThreatFeed).mockResolvedValue({
         ok: true,
         data: [],
@@ -221,7 +222,8 @@ describe('handleThreatFeed', () => {
 
     const filters = ['malware', 'vulnerability', 'typosquat', 'supply-chain']
 
-    for (const filter of filters) {
+    for (let i = 0, { length } = filters; i < length; i += 1) {
+      const filter = filters[i]
       vi.mocked(fetchThreatFeed).mockResolvedValue({
         ok: true,
         data: [],

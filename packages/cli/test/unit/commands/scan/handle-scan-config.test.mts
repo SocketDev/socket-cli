@@ -106,7 +106,8 @@ describe('handleScanConfig', () => {
 
     const cwds = ['/root', '/home/user/project', './relative/path', '.']
 
-    for (const cwd of cwds) {
+    for (let i = 0, { length } = cwds; i < length; i += 1) {
+      const cwd = cwds[i]
       mockSetup.mockResolvedValue(createSuccessResult({}))
       // eslint-disable-next-line no-await-in-loop
       await handleScanConfig(cwd, false)

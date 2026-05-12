@@ -228,6 +228,7 @@ describe('sea/boot', () => {
         const msg = {
           [SOCKET_IPC_HANDSHAKE]: { subprocess: true, parent_pid: 12345 },
         }
+        // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
         for (const handler of handlers['message'] ?? []) {
           handler(msg)
         }
@@ -298,6 +299,7 @@ describe('sea/boot', () => {
         const promise = waitForBootstrapHandshake(50)
         await new Promise(resolve => setImmediate(resolve))
         // Send a few non-handshake messages to exercise early-returns.
+        // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
         for (const handler of handlers['message'] ?? []) {
           handler(undefined)
           handler('string')

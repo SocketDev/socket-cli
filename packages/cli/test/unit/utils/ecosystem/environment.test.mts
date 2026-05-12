@@ -19,7 +19,6 @@
  * - utils/ecosystem/environment.mts (implementation)
  */
 
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

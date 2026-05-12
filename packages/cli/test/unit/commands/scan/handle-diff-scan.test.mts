@@ -153,7 +153,8 @@ describe('handleDiffScan', () => {
 
     const depths = [0, 1, 5, 10, 100]
 
-    for (const depth of depths) {
+    for (let i = 0, { length } = depths; i < length; i += 1) {
+      const depth = depths[i]
       // eslint-disable-next-line no-await-in-loop
       await handleDiffScan({
         depth,

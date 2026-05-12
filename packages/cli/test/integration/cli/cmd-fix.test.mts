@@ -60,7 +60,7 @@ import {
   FLAG_JSON,
   FLAG_MARKDOWN,
 } from '../../../src/constants/cli.mts'
-import ENV from '../../../src/constants/env.mts'
+import { ENV } from '../../../src/constants/env.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
 import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { withTempFixture } from '../../helpers/test-fixtures.mts'

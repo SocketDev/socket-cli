@@ -214,7 +214,8 @@ export function formatErrorForTerminal(
   const recovery = getRecoverySuggestions(error)
   if (recovery.length > 0) {
     lines.push('', colors.cyan('Suggested actions:'))
-    for (const suggestion of recovery) {
+    for (let i = 0, { length } = recovery; i < length; i += 1) {
+      const suggestion = recovery[i]
       lines.push(`  ${colors.dim('•')} ${suggestion}`)
     }
   }

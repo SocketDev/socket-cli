@@ -161,6 +161,7 @@ export function groupCommandsByBucket(
   buckets: CliBuckets,
 ): Map<CliBucket, string[]> {
   const grouped = new Map<CliBucket, string[]>()
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [cmdName, cmd] of Object.entries(subcommands)) {
     if (cmd.hidden) {
       continue
@@ -176,6 +177,7 @@ export function groupCommandsByBucket(
     }
     bucketNames.push(cmdName)
   }
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const names of grouped.values()) {
     names.sort(naturalCompare)
   }
@@ -249,6 +251,7 @@ export function pushRootBucketedLayout(
 
   lines.push('Note: All commands have their own --help', '')
 
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { heading, bucket } of BUCKET_SECTIONS) {
     const names = grouped.get(bucket) ?? []
     if (names.length === 0 && !hasHeroRows(bucket)) {
@@ -265,7 +268,8 @@ export function pushRootBucketedLayout(
         '  socket npm/lodash@4.17.21   Request the Socket score of a package',
       )
     }
-    for (const cmdName of names) {
+    for (let i = 0, { length } = names; i < length; i += 1) {
+      const cmdName = names[i]
       // Skip commands already covered by hero rows in `main`.
       if (bucket === 'main' && cmdName === 'login') {
         continue

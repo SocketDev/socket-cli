@@ -77,6 +77,7 @@ export function generateCommandHelp(command: CommandDefinition): string {
     lines.push('Options:')
     const flagEntries = Object.entries(command.flags)
 
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [name, def] of flagEntries) {
       const flagLine = formatFlag(name, def)
       lines.push(`  ${flagLine}`)
@@ -87,6 +88,7 @@ export function generateCommandHelp(command: CommandDefinition): string {
   // Examples
   if (command.examples && command.examples.length > 0) {
     lines.push('Examples:')
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const example of command.examples) {
       lines.push(`  ${example}`)
     }
@@ -119,13 +121,15 @@ export function generateGlobalHelp(registry: CommandRegistry): string {
 
   if (visibleTopLevel.length > 0) {
     lines.push('Commands:')
-    for (const cmd of visibleTopLevel) {
+    for (let i = 0, { length } = visibleTopLevel; i < length; i += 1) {
+      const cmd = visibleTopLevel[i]
       const cmdLine = `  ${cmd.name.padEnd(20)} ${cmd.description}`
       lines.push(cmdLine)
 
       // Show subcommands
       const subcommands = registry.list(cmd.name)
-      for (const sub of subcommands) {
+      for (let i = 0, { length } = subcommands; i < length; i += 1) {
+        const sub = subcommands[i]
         if (!sub.hidden) {
           const subLine = `    ${sub.name.padEnd(18)} ${sub.description}`
           lines.push(subLine)

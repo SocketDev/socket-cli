@@ -13,7 +13,6 @@
  * - constants/agents.mts (implementation)
  */
 
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies using hoisted mocks.

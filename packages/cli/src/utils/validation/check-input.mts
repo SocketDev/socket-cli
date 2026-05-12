@@ -24,7 +24,8 @@ export function checkCommandInput(
   }
 
   const msg = ['Please review the input requirements and try again', '']
-  for (const d of checks) {
+  for (let i = 0, { length } = checks; i < length; i += 1) {
+    const d = checks[i]
     // If nook, then ignore when test is ok
     if (d.nook && d.test) {
       continue

@@ -42,6 +42,7 @@ export async function buildBlob(configPath) {
 export async function displayToolInfo(toolPaths) {
   logger.log('External tools to bundle:')
   let totalToolSize = 0
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
     if (existsSync(toolPath)) {
       const stats = await fs.stat(toolPath)
@@ -58,7 +59,12 @@ export async function displayToolInfo(toolPaths) {
 /**
  * Generate SEA configuration.
  */
-export async function generateSeaConfig(entryPoint, outputPath, toolPaths, mode) {
+export async function generateSeaConfig(
+  entryPoint,
+  outputPath,
+  toolPaths,
+  mode,
+) {
   const outputName = path.basename(outputPath, path.extname(outputPath))
   const configPath = path.join(
     path.dirname(outputPath),
@@ -432,6 +438,7 @@ export async function runWithToolsMode(platform, toolPaths) {
 
   // Build assets object with security tools.
   const assets = { __proto__: null }
+  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
     if (existsSync(toolPath)) {
       assets[`external-tools/${toolName}`] = toolPath
