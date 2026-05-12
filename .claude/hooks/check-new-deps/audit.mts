@@ -83,7 +83,9 @@ function depIdentity(dep: Dep): string {
 // Inverse of depIdentity for purposes of resolving a PURL back to a
 // `{type, namespace, name}` triple. We need this when we have to
 // surface a 404 warning and the only thing we kept around is the PURL.
-function depFromPurl(purl: string): { type: string; namespace?: string; name: string } | undefined {
+function depFromPurl(
+  purl: string,
+): { type: string; namespace?: string; name: string } | undefined {
   // PURL shape: pkg:type/[namespace/]name[@version]
   if (!purl.startsWith('pkg:')) return undefined
   const noScheme = purl.slice(4)
@@ -187,9 +189,7 @@ async function appendAuditRecords(records: AuditRecord[]): Promise<void> {
 // requested NOT_FOUND_THRESHOLD or more times. Returns the list of
 // PURLs that crossed the threshold this call — the caller writes
 // the warning to stderr.
-async function bumpNotFoundCounters(
-  notFound: Set<string>,
-): Promise<string[]> {
+async function bumpNotFoundCounters(notFound: Set<string>): Promise<string[]> {
   if (!notFound.size) return []
   const crossed: string[] = []
   let cache: TtlCache
@@ -245,23 +245,68 @@ async function bumpNotFoundCounters(
 const KNOWN_GOOD_NAMES: Record<string, string[]> = {
   __proto__: null as unknown as string[],
   npm: [
-    'react', 'react-dom', 'next', 'vite', 'webpack', 'rollup', 'esbuild',
-    'typescript', 'lodash', 'express', 'fastify', 'koa', 'axios',
-    'eslint', 'prettier', 'vitest', 'jest', 'mocha', 'chai', 'sinon',
-    'zod', 'yup', 'commander', 'yargs', 'chalk', 'debug', 'glob',
+    'react',
+    'react-dom',
+    'next',
+    'vite',
+    'webpack',
+    'rollup',
+    'esbuild',
+    'typescript',
+    'lodash',
+    'express',
+    'fastify',
+    'koa',
+    'axios',
+    'eslint',
+    'prettier',
+    'vitest',
+    'jest',
+    'mocha',
+    'chai',
+    'sinon',
+    'zod',
+    'yup',
+    'commander',
+    'yargs',
+    'chalk',
+    'debug',
+    'glob',
   ],
   pypi: [
-    'requests', 'urllib3', 'numpy', 'pandas', 'scipy', 'matplotlib',
-    'flask', 'django', 'fastapi', 'pydantic', 'sqlalchemy', 'celery',
-    'pytest', 'tox', 'black', 'ruff', 'mypy', 'click', 'rich',
+    'requests',
+    'urllib3',
+    'numpy',
+    'pandas',
+    'scipy',
+    'matplotlib',
+    'flask',
+    'django',
+    'fastapi',
+    'pydantic',
+    'sqlalchemy',
+    'celery',
+    'pytest',
+    'tox',
+    'black',
+    'ruff',
+    'mypy',
+    'click',
+    'rich',
   ],
   cargo: [
-    'serde', 'serde_json', 'tokio', 'reqwest', 'clap', 'anyhow',
-    'thiserror', 'tracing', 'rayon', 'regex',
+    'serde',
+    'serde_json',
+    'tokio',
+    'reqwest',
+    'clap',
+    'anyhow',
+    'thiserror',
+    'tracing',
+    'rayon',
+    'regex',
   ],
-  gem: [
-    'rails', 'rspec', 'sinatra', 'puma', 'rake', 'devise', 'sidekiq',
-  ],
+  gem: ['rails', 'rspec', 'sinatra', 'puma', 'rake', 'devise', 'sidekiq'],
 }
 
 // Suggest the nearest known-good name for `bad` within `ecosystem`,
@@ -307,7 +352,7 @@ function levenshtein(a: string, b: string): number {
       const del = prev[j]! + 1
       const ins = curr[j - 1]! + 1
       const sub = prev[j - 1]! + cost
-      const v = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub)
+      const v = del < ins ? (del < sub ? del : sub) : ins < sub ? ins : sub
       curr[j] = v
       if (v < rowMin) rowMin = v
     }
@@ -345,10 +390,10 @@ async function recordCheckOutcome(
       const suggestion = suggestSimilarName(dep.type, dep.name)
       const hint = suggestion ? ` (did you mean "${suggestion}"?)` : ''
       process.stderr.write(
-        `[check-new-deps] warning: package "${dep.name}" `
-          + `(${dep.type}) has been requested ${NOT_FOUND_THRESHOLD}+ `
-          + `times and does not exist on the Socket.dev registry — `
-          + `possible AI-hallucinated name${hint}.\n`,
+        `[check-new-deps] warning: package "${dep.name}" ` +
+          `(${dep.type}) has been requested ${NOT_FOUND_THRESHOLD}+ ` +
+          `times and does not exist on the Socket.dev registry — ` +
+          `possible AI-hallucinated name${hint}.\n`,
       )
     }
   } catch (e) {
