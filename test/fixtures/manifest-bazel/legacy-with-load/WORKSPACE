@@ -1,0 +1,13 @@
+workspace(name = "legacy_with_load_fixture")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "rules_jvm_external",
+    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    strip_prefix = "rules_jvm_external-6.0",
+    url = "https://example.invalid/rules_jvm_external-6.0.tar.gz",
+)
+
+load("//:maven_deps.bzl", "load_maven_deps")
+load_maven_deps()

@@ -1,0 +1,14 @@
+module(name = "multi_repo_fixture", version = "0.0.0")
+
+bazel_dep(name = "rules_jvm_external", version = "6.0")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "maven",
+    artifacts = ["com.google.guava:guava:33.0.0-jre"],
+)
+maven.install(
+    name = "maven_test",
+    artifacts = ["junit:junit:4.13.2"],
+)
+use_repo(maven, "maven", "maven_test")
