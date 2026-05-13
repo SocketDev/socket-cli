@@ -263,3 +263,4 @@ strictPeerDependencies: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - undici@6.21.3
+  - 'compromise@14.15.0'
