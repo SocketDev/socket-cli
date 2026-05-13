@@ -10,7 +10,7 @@
     "test": "node --test test/*.test.mts"
   },
   "devDependencies": {
-    "@socketsecurity/lib": "catalog:",
+    "@socketsecurity/lib-stable": "npm:@socketsecurity/lib@5.28.0",
     "@types/node": "catalog:"
   }
 }

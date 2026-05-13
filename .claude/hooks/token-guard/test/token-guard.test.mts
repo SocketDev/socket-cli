@@ -10,8 +10,8 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { whichSync } from '@socketsecurity/lib/bin'
-import { spawnSync } from '@socketsecurity/lib/spawn'
+import { whichSync } from '@socketsecurity/lib-stable/bin'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 
 const hookScript = new URL('../index.mts', import.meta.url).pathname
 const nodeBin = whichSync('node')

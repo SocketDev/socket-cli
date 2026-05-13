@@ -7,7 +7,7 @@
     ".": "./index.mts"
   },
   "dependencies": {
-    "@socketsecurity/lib": "catalog:"
+    "@socketsecurity/lib-stable": "npm:@socketsecurity/lib@5.28.0"
   },
   "devDependencies": {
     "@types/node": "catalog:"

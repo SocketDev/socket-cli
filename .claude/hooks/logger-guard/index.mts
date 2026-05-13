@@ -41,6 +41,7 @@
 import process from 'node:process'
 
 import { lineIsSuppressed } from '../_shared/markers.mts'
+import { readStdin } from '../_shared/transcript.mts'
 
 // Files exempt from the rule. Comments explain why each is excluded.
 const EXEMPT_PATH_PATTERNS: RegExp[] = [
@@ -179,15 +180,6 @@ function isInScope(filePath: string): boolean {
     }
   }
   return true
-}
-
-function readStdin(): Promise<string> {
-  return new Promise(resolve => {
-    let buf = ''
-    process.stdin.setEncoding('utf8')
-    process.stdin.on('data', chunk => (buf += chunk))
-    process.stdin.on('end', () => resolve(buf))
-  })
 }
 
 interface ToolInput {

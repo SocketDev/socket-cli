@@ -4,17 +4,17 @@ Reverting tracked changes or bypassing the fleet's hook chain requires the user 
 
 The phrase format is `Allow <X> bypass` — case-sensitive, exact match.
 
-| Operation                                                                                                                                                                                                   | Phrase                        |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| Revert (any of: `git checkout -- <files>`, `git checkout <ref> -- <files>`, `git restore <files>` without `--staged`, `git reset --hard`, `git stash drop` / `pop` / `clear`, `git clean -f`, `git rm -rf`) | `Allow revert bypass`         |
-| `git --no-verify` (skips husky hooks)                                                                                                                                                                       | `Allow no-verify bypass`      |
-| `git --no-gpg-sign` / `-c commit.gpgsign=false`                                                                                                                                                             | `Allow gpg bypass`            |
-| `DISABLE_PRECOMMIT_LINT=1` (skips lint step)                                                                                                                                                                | `Allow lint bypass`           |
-| `DISABLE_PRECOMMIT_TEST=1` (skips test step)                                                                                                                                                                | `Allow test bypass`           |
-| `SKIP_ASSET_DOWNLOAD=1` (skips release-asset fetch in build — degraded-mode flag; becomes a bypass when used to push past rate-limited pre-commit)                                                          | `Allow asset-download bypass` |
-| `git stash` (any form: bare, `push`, `save`, `--keep-index`) in primary checkout — shared stash store, another Claude session can pop yours. Use a worktree instead.                                        | `Allow stash bypass`          |
+| Operation                                                                                                                                                                                                                       | Phrase                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Revert (any of: `git checkout -- <files>`, `git checkout <ref> -- <files>`, `git restore <files>` without `--staged`, `git reset --hard`, `git stash drop` / `pop` / `clear`, `git clean -f`, `git rm -rf`)                     | `Allow revert bypass`         |
+| `git --no-verify` (skips husky hooks)                                                                                                                                                                                           | `Allow no-verify bypass`      |
+| `git --no-gpg-sign` / `-c commit.gpgsign=false`                                                                                                                                                                                 | `Allow gpg bypass`            |
+| `DISABLE_PRECOMMIT_LINT=1` (skips lint step)                                                                                                                                                                                    | `Allow lint bypass`           |
+| `DISABLE_PRECOMMIT_TEST=1` (skips test step)                                                                                                                                                                                    | `Allow test bypass`           |
+| `SKIP_ASSET_DOWNLOAD=1` (skips release-asset fetch in build — degraded-mode flag; becomes a bypass when used to push past rate-limited pre-commit)                                                                              | `Allow asset-download bypass` |
+| `git stash` (any form: bare, `push`, `save`, `--keep-index`) in primary checkout — shared stash store, another Claude session can pop yours. Use a worktree instead.                                                            | `Allow stash bypass`          |
 | Bash file-write (`python -c '...write...'`, `sed -i`, heredoc `cat << EOF > file`, `tee <source-file>`, `dd of=…`) — typically used to dodge an Edit/Write hook block. Move file / refactor / get original-hook bypass instead. | `Allow bash-write bypass`     |
-| `git push --force` / `-f`                                                                                                                                                                                   | `Allow force-push bypass`     |
+| `git push --force` / `-f`                                                                                                                                                                                                       | `Allow force-push bypass`     |
 
 ## Scope
 

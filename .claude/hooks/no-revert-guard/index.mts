@@ -35,8 +35,9 @@
 //
 // Fails open on hook bugs (exit 0 + stderr log).
 
-import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
+
+import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
   tool_input?: { command?: string } | undefined
@@ -156,93 +157,6 @@ const CHECKS: readonly GuardCheck[] = [
   },
 ]
 
-function readStdin(): Promise<string> {
-  return new Promise(resolve => {
-    let buf = ''
-    process.stdin.setEncoding('utf8')
-    process.stdin.on('data', chunk => {
-      buf += chunk
-    })
-    process.stdin.on('end', () => resolve(buf))
-  })
-}
-
-/**
- * Read user-text content from the transcript JSONL. Each line is a
- * JSON event; user messages have `role: "user"` (or
- * `type: "user"`/`message.role: "user"` depending on the harness
- * version). Concatenate all user-text content into a single string
- * for phrase matching.
- *
- * Fails silently to empty string on parse errors so the hook stays
- * fail-open per the contract.
- */
-function readUserTurns(transcriptPath: string | undefined): string {
-  if (!transcriptPath || !existsSync(transcriptPath)) {
-    return ''
-  }
-  let raw: string
-  try {
-    raw = readFileSync(transcriptPath, 'utf8')
-  } catch {
-    return ''
-  }
-  const out: string[] = []
-  for (const line of raw.split('\n')) {
-    if (!line) {
-      continue
-    }
-    let evt: unknown
-    try {
-      evt = JSON.parse(line)
-    } catch {
-      continue
-    }
-    if (!evt || typeof evt !== 'object') {
-      continue
-    }
-    const e = evt as Record<string, unknown>
-    // Variants seen across harness versions:
-    //   { role: 'user', content: '...' }
-    //   { type: 'user', message: { content: '...' } }
-    //   { type: 'user', message: { content: [{ type: 'text', text: '...' }] } }
-    const role =
-      typeof e['role'] === 'string'
-        ? e['role']
-        : typeof e['type'] === 'string'
-          ? e['type']
-          : undefined
-    if (role !== 'user') {
-      continue
-    }
-    const message = e['message']
-    let content: unknown =
-      e['content'] ??
-      (message && typeof message === 'object'
-        ? (message as Record<string, unknown>)['content']
-        : undefined)
-    if (typeof content === 'string') {
-      out.push(content)
-      continue
-    }
-    if (Array.isArray(content)) {
-      for (const block of content) {
-        if (block && typeof block === 'object') {
-          const b = block as Record<string, unknown>
-          if (typeof b['text'] === 'string') {
-            out.push(b['text'] as string)
-          } else if (typeof b['content'] === 'string') {
-            out.push(b['content'] as string)
-          }
-        } else if (typeof block === 'string') {
-          out.push(block)
-        }
-      }
-    }
-  }
-  return out.join('\n')
-}
-
 function emitBlock(
   command: string,
   match: GuardCheck,
@@ -303,8 +217,7 @@ async function main(): Promise<void> {
 
   // Look for the canonical bypass phrase in user turns. The match is
   // case-sensitive and substring-based — a paraphrase doesn't count.
-  const userText = readUserTurns(payload.transcript_path)
-  if (userText.includes(triggered.check.bypassPhrase)) {
+  if (bypassPhrasePresent(payload.transcript_path, triggered.check.bypassPhrase)) {
     return
   }
 

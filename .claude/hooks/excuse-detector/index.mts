@@ -33,8 +33,9 @@
 //
 // Disabled via SOCKET_EXCUSE_DETECTOR_DISABLED env var.
 
-import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
+
+import { readLastAssistantText, readStdin } from '../_shared/transcript.mts'
 
 interface StopPayload {
   readonly transcript_path?: string | undefined
@@ -84,12 +85,8 @@ const EXCUSE_PATTERNS: readonly ExcusePattern[] = [
   },
 ]
 
-let payloadRaw = ''
-process.stdin.setEncoding('utf8')
-process.stdin.on('data', chunk => {
-  payloadRaw += chunk
-})
-process.stdin.on('end', () => {
+async function main(): Promise<void> {
+  const payloadRaw = await readStdin()
   if (process.env['SOCKET_EXCUSE_DETECTOR_DISABLED']) {
     process.exit(0)
   }
@@ -100,11 +97,7 @@ process.stdin.on('end', () => {
     process.exit(0)
   }
 
-  const transcriptPath = payload.transcript_path
-  if (!transcriptPath || !existsSync(transcriptPath)) {
-    process.exit(0)
-  }
-  const text = readLastAssistantTurn(transcriptPath)
+  const text = readLastAssistantText(payload.transcript_path)
   if (!text) {
     process.exit(0)
   }
@@ -143,88 +136,12 @@ process.stdin.on('end', () => {
     ].join('\n'),
   )
   process.exit(0)
+}
+
+main().catch(() => {
+  // Fail-open on hook bugs.
+  process.exit(0)
 })
-
-/**
- * Walk the transcript backward, return the text content of the most
- * recent assistant turn. Empty string when not found.
- */
-function readLastAssistantTurn(transcriptPath: string): string {
-  let raw: string
-  try {
-    raw = readFileSync(transcriptPath, 'utf8')
-  } catch {
-    return ''
-  }
-  const lines = raw.split('\n')
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const line = lines[i]
-    if (!line) {
-      continue
-    }
-    let evt: unknown
-    try {
-      evt = JSON.parse(line)
-    } catch {
-      continue
-    }
-    if (!evt || typeof evt !== 'object') {
-      continue
-    }
-    const e = evt as Record<string, unknown>
-    const role =
-      typeof e['role'] === 'string'
-        ? e['role']
-        : typeof e['type'] === 'string'
-          ? e['type']
-          : undefined
-    if (role !== 'assistant') {
-      continue
-    }
-    const message = e['message']
-    const content: unknown =
-      e['content'] ??
-      (message && typeof message === 'object'
-        ? (message as Record<string, unknown>)['content']
-        : undefined)
-    return extractTextContent(content)
-  }
-  return ''
-}
-
-/**
- * Normalize the content field into a single text string. Supports
- * the three shapes the harness emits: plain string, array of blocks,
- * object with `text`.
- */
-function extractTextContent(content: unknown): string {
-  if (typeof content === 'string') {
-    return content
-  }
-  if (Array.isArray(content)) {
-    const parts: string[] = []
-    for (const block of content) {
-      if (typeof block === 'string') {
-        parts.push(block)
-        continue
-      }
-      if (block && typeof block === 'object') {
-        const b = block as Record<string, unknown>
-        if (b['type'] === 'text' && typeof b['text'] === 'string') {
-          parts.push(b['text'])
-        }
-      }
-    }
-    return parts.join('\n')
-  }
-  if (content && typeof content === 'object') {
-    const text = (content as Record<string, unknown>)['text']
-    if (typeof text === 'string') {
-      return text
-    }
-  }
-  return ''
-}
 
 /**
  * Pull a ~80-char snippet around the match for the warning message.

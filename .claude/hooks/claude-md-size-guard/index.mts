@@ -42,6 +42,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
+import { readStdin } from '../_shared/transcript.mts'
+
 const DEFAULT_CAP_BYTES = 40 * 1024
 const FLEET_BEGIN_MARKER = '<!-- BEGIN FLEET-CANONICAL'
 const FLEET_END_MARKER = '<!-- END FLEET-CANONICAL'
@@ -56,17 +58,6 @@ type ToolInput = {
       }
     | undefined
   tool_name?: string | undefined
-}
-
-function readStdin(): Promise<string> {
-  return new Promise(resolve => {
-    let buf = ''
-    process.stdin.setEncoding('utf8')
-    process.stdin.on('data', chunk => {
-      buf += chunk
-    })
-    process.stdin.on('end', () => resolve(buf))
-  })
 }
 
 function isClaudeMd(filePath: string | undefined): boolean {

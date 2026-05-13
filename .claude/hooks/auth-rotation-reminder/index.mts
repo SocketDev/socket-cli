@@ -53,9 +53,9 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { safeDelete } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { DEFAULT_SKIP_IDS, SERVICES } from './services.mts'
 import type { Service } from './services.mts'

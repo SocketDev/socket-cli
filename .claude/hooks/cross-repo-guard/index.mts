@@ -40,7 +40,9 @@
 
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+
+import { readStdin } from '../_shared/transcript.mts'
 
 const logger = getDefaultLogger()
 
@@ -150,15 +152,6 @@ function scan(source: string, currentRepoName?: string): Hit[] {
     hits.push({ lineNumber: i + 1, line, matched })
   }
   return hits
-}
-
-function readStdin(): Promise<string> {
-  return new Promise(resolve => {
-    let buf = ''
-    process.stdin.setEncoding('utf8')
-    process.stdin.on('data', chunk => (buf += chunk))
-    process.stdin.on('end', () => resolve(buf))
-  })
 }
 
 interface ToolInput {
