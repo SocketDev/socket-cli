@@ -1,0 +1,18 @@
+{
+  "name": "hook-judgment-reminder",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": {
+    ".": "./index.mts"
+  },
+  "dependencies": {
+    "compromise": "14.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  }
+}

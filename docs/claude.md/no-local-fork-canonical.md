@@ -7,12 +7,11 @@ Fleet-canonical files (anything tracked by `socket-wheelhouse/scripts/sync-scaff
 These directories and files cascade fleet-wide. They are **not** repo-local:
 
 - `.config/oxlint-plugin/` — plugin index + rules
-- `.git-hooks/` — commit-msg / pre-commit / pre-push hooks + helpers
+- `.git-hooks/` — commit-msg / pre-commit / pre-push entry shims + .mts helpers (git invokes the shims when `core.hooksPath` is set to this directory; wired by `scripts/install-git-hooks.mts` at `pnpm install` time)
 - `.claude/hooks/` — PreToolUse / PostToolUse hooks
 - `.claude/skills/_shared/` — shared skill helpers
 - `CLAUDE.md` fleet block (between `BEGIN/END FLEET-CANONICAL` markers)
 - `docs/claude.md/` — CLAUDE.md offshoot references (this file lives here)
-- `.husky/` — Husky entry shims
 - Anything else listed in the sync manifest
 
 If unsure, check `socket-wheelhouse/scripts/sync-scaffolding/manifest.mts`. Tracked = canonical.

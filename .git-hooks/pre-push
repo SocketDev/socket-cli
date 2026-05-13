@@ -1,0 +1,5 @@
+#!/bin/sh
+# Git pre-push hook entry point. Invoked by git when core.hooksPath
+# points at this directory (set by `node scripts/install-git-hooks.mts`
+# at `pnpm install` time). Defers to the .mts implementation.
+exec node "$(dirname "$0")/pre-push.mts" "$@"

@@ -2,8 +2,9 @@
 // Claude Code PreToolUse hook — no-revert-guard.
 //
 // Blocks Bash commands that would revert tracked changes, bypass the
-// git/husky hook chain, or otherwise destroy work in flight, unless
-// the conversation has authorized the bypass via the canonical phrase
+// git-hook chain (.git-hooks/ wired in via `core.hooksPath`), or
+// otherwise destroy work in flight, unless the conversation has
+// authorized the bypass via the canonical phrase
 // `Allow <X> bypass` (case-sensitive, exact match).
 //
 // The bypass-phrase contract:
@@ -66,7 +67,7 @@ const CHECKS: readonly GuardCheck[] = [
   },
   {
     bypassPhrase: 'Allow no-verify bypass',
-    label: 'git --no-verify (skips husky hooks)',
+    label: 'git --no-verify (skips .git-hooks/ chain)',
     pattern: /(?:^|\s)--no-verify\b/,
   },
   {
@@ -76,12 +77,12 @@ const CHECKS: readonly GuardCheck[] = [
   },
   {
     bypassPhrase: 'Allow lint bypass',
-    label: 'DISABLE_PRECOMMIT_LINT=1 (skips lint step in husky)',
+    label: 'DISABLE_PRECOMMIT_LINT=1 (skips lint step in pre-commit hook)',
     pattern: /\bDISABLE_PRECOMMIT_LINT\s*=\s*[1-9]/,
   },
   {
     bypassPhrase: 'Allow test bypass',
-    label: 'DISABLE_PRECOMMIT_TEST=1 (skips test step in husky)',
+    label: 'DISABLE_PRECOMMIT_TEST=1 (skips test step in pre-commit hook)',
     pattern: /\bDISABLE_PRECOMMIT_TEST\s*=\s*[1-9]/,
   },
   {

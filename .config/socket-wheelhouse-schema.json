@@ -59,15 +59,15 @@
       "type": "object",
       "properties": {
         "enablePrePush": {
-          "description": "Wire `.husky/pre-push` → `.git-hooks/pre-push.mts`. Mandatory security gate; default true.",
+          "description": "Wire `.git-hooks/pre-push` (shell shim) → `.git-hooks/pre-push.mts`. Mandatory security gate; default true.",
           "type": "boolean"
         },
         "enableCommitMsg": {
-          "description": "Wire `.husky/commit-msg` → `.git-hooks/commit-msg.mts`. Strips AI attribution; default true.",
+          "description": "Wire `.git-hooks/commit-msg` (shell shim) → `.git-hooks/commit-msg.mts`. Strips AI attribution; default true.",
           "type": "boolean"
         },
         "enablePreCommit": {
-          "description": "Wire `.husky/pre-commit` → `.git-hooks/pre-commit.mts`. Lint + secret scan on staged files; default true.",
+          "description": "Wire `.git-hooks/pre-commit` (shell shim) → `.git-hooks/pre-commit.mts`. Lint + secret scan on staged files; default true.",
           "type": "boolean"
         },
         "preCommitVariant": {

@@ -8,8 +8,11 @@
 //   2. Auto-strip AI attribution lines from the commit message before
 //      git records the commit.
 //
-// Wired via .husky/commit-msg, which invokes this with the path to the
-// commit message file as argv[2] (after the script path itself).
+// Wired via .git-hooks/commit-msg (the sibling shell shim), which git
+// invokes when `core.hooksPath` points at .git-hooks/ — set by
+// `node scripts/install-git-hooks.mts` at `pnpm install` time. The
+// shim execs this .mts file with the path to the commit message file
+// as argv[2] (after the script path itself).
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 

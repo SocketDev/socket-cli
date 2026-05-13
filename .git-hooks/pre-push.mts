@@ -5,7 +5,8 @@
 // being pushed for AI attribution, secrets, and personal-path leaks.
 //
 // Architecture:
-//   .husky/pre-push (thin wrapper) → node .git-hooks/pre-push.mts
+//   .git-hooks/pre-push (shell shim, invoked by git when
+//   `core.hooksPath = .git-hooks`) → node .git-hooks/pre-push.mts
 //
 // Range logic:
 //   New branch:  remote/<default_branch>..<local_sha>  (only new commits)

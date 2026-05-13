@@ -685,9 +685,10 @@ export const scanLinearRefs = (text: string, limit = 5): string[] => {
 
 // ── File classification ────────────────────────────────────────────
 
-// Files we never scan: hooks themselves, husky shims, test fixtures.
+// Files we never scan: hooks themselves (both the .mts files and the
+// shell shims under .git-hooks/), test fixtures, vendored lockfiles.
 const SKIP_FILE_RE =
-  /\.(test|spec)\.(m?[jt]s|tsx?|cts|mts)$|\.example$|\/test\/|\/tests\/|fixtures\/|\.git-hooks\/|\.husky\/|node_modules\/|pnpm-lock\.yaml/
+  /\.(test|spec)\.(m?[jt]s|tsx?|cts|mts)$|\.example$|\/test\/|\/tests\/|fixtures\/|\.git-hooks\/|node_modules\/|pnpm-lock\.yaml/
 
 export const shouldSkipFile = (filePath: string): boolean =>
   SKIP_FILE_RE.test(filePath)

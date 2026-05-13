@@ -26,19 +26,12 @@
 
 import process from 'node:process'
 
+import { SENSITIVE_NAME_FRAGMENTS } from '../_shared/token-patterns.mts'
+
 // Name fragments matched case-insensitively against the command.
-const SENSITIVE_ENV_NAMES = [
-  'TOKEN',
-  'SECRET',
-  'PASSWORD',
-  'PASS',
-  'API_KEY',
-  'APIKEY',
-  'SIGNING_KEY',
-  'PRIVATE_KEY',
-  'AUTH',
-  'CREDENTIAL',
-]
+// Sourced from the shared catalog in `_shared/token-patterns.mts` so
+// every hook that scans for secret-bearing names uses one list.
+const SENSITIVE_ENV_NAMES = SENSITIVE_NAME_FRAGMENTS
 
 // Pipelines that "launder" earlier-stage secrets into safe output.
 // The first two patterns match `sed 's/.../redact.../'` and

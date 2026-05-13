@@ -66,19 +66,19 @@ const HooksSchema = Type.Object(
     enablePrePush: Type.Optional(
       Type.Boolean({
         description:
-          'Wire `.husky/pre-push` → `.git-hooks/pre-push.mts`. Mandatory security gate; default true.',
+          'Wire `.git-hooks/pre-push` (shell shim) → `.git-hooks/pre-push.mts`. Mandatory security gate; default true.',
       }),
     ),
     enableCommitMsg: Type.Optional(
       Type.Boolean({
         description:
-          'Wire `.husky/commit-msg` → `.git-hooks/commit-msg.mts`. Strips AI attribution; default true.',
+          'Wire `.git-hooks/commit-msg` (shell shim) → `.git-hooks/commit-msg.mts`. Strips AI attribution; default true.',
       }),
     ),
     enablePreCommit: Type.Optional(
       Type.Boolean({
         description:
-          'Wire `.husky/pre-commit` → `.git-hooks/pre-commit.mts`. Lint + secret scan on staged files; default true.',
+          'Wire `.git-hooks/pre-commit` (shell shim) → `.git-hooks/pre-commit.mts`. Lint + secret scan on staged files; default true.',
       }),
     ),
     preCommitVariant: Type.Optional(

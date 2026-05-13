@@ -1,0 +1,52 @@
+#!/bin/sh
+# Git pre-commit hook entry point. Invoked by git when core.hooksPath
+# points at this directory (set by `node scripts/install-git-hooks.mts`
+# at `pnpm install` time).
+#
+# Optional checks — can be bypassed with --no-verify for fast local
+# commits. Mandatory security checks ALSO run in pre-push hook.
+#
+# Use --no-verify for:
+# - History operations (squash, rebase, amend)
+# - Emergency hotfixes
+# - When tests require binaries that haven't been built yet
+#
+# Use environment variables to selectively disable:
+# - DISABLE_PRECOMMIT_LINT=1 to skip linting
+# - DISABLE_PRECOMMIT_TEST=1 to skip testing
+
+# Run Socket security pre-commit checks (API keys, .DS_Store, etc.).
+node "$(dirname "$0")/pre-commit.mts"
+
+# Check if pnpm is available.
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "Error: pnpm not found. Install pnpm to run git hooks."
+  echo "Visit: https://pnpm.io/installation"
+  exit 1
+fi
+
+if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
+  pnpm lint --staged
+else
+  echo "Skipping lint due to DISABLE_PRECOMMIT_LINT env var"
+fi
+
+if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
+  # Each repo's `pnpm test` script wraps a runner that understands
+  # `--staged` (e.g. scripts/test.mts forwards staged-filtering to
+  # vitest, or filters the staged set in a pre-pass). When
+  # DISABLE_PRECOMMIT_LINT is set, also pass --fast so the test
+  # runner skips its embedded format/lint check (otherwise lint
+  # bypass leaks through this path and re-blocks the commit).
+  #
+  # Repos whose `pnpm test` is bare vitest without a wrapper need a
+  # local override that pre-filters with `git diff --cached --name-only`
+  # then runs `pnpm test`.
+  if [ -n "${DISABLE_PRECOMMIT_LINT}" ]; then
+    pnpm test --staged --fast
+  else
+    pnpm test --staged
+  fi
+else
+  echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"
+fi

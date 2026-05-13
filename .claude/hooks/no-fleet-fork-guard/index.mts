@@ -20,7 +20,6 @@
 //        - .claude/hooks/
 //        - .claude/skills/_shared/
 //        - docs/claude.md/
-//        - .husky/
 //      → block.
 //
 // The bypass phrase: `Allow fleet-fork bypass`. Reading the recent
@@ -75,7 +74,6 @@ const CANONICAL_PREFIXES = [
   '.claude/hooks/',
   '.claude/skills/_shared/',
   'docs/claude.md/',
-  '.husky/',
 ]
 
 // Fleet-canonical individual files (not under one of the prefix

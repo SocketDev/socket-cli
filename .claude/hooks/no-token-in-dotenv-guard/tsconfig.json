@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "declarationMap": false,
+    "erasableSyntaxOnly": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noEmit": true,
+    "rewriteRelativeImportExtensions": true,
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "strict": true,
+    "target": "esnext",
+    "verbatimModuleSyntax": true
+  }
+}
