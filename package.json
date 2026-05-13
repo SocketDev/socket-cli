@@ -114,7 +114,6 @@
     "esbuild": "catalog:",
     "fast-glob": "catalog:",
     "hpagent": "catalog:",
-    "husky": "catalog:",
     "ignore": "catalog:",
     "js-yaml": "catalog:",
     "lint-staged": "catalog:",
