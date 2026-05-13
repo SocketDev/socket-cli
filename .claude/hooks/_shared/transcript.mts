@@ -191,15 +191,144 @@ export function readLastAssistantText(
 }
 
 /**
- * Convenience predicate: is the canonical bypass phrase present in
- * any recent user turn? Substring match, case-sensitive (intentional —
- * `allow X bypass` lowercase doesn't count, matches the fleet rule
- * stated in docs/claude.md/bypass-phrases.md).
+ * Is any canonical bypass phrase present in a recent user turn?
+ * Substring match, case-sensitive (intentional — `allow X bypass`
+ * lowercase doesn't count, matches the fleet rule stated in
+ * docs/claude.md/bypass-phrases.md).
+ *
+ * Accepts a string or string[] so callers with a single canonical
+ * spelling and callers with equivalent spellings (e.g. "soaktime" /
+ * "soak time" / "soak-time") share the same helper. The transcript
+ * is read once; each phrase substring-checks against the same text.
  */
 export function bypassPhrasePresent(
   transcriptPath: string | undefined,
-  phrase: string,
+  phrases: string | readonly string[],
   lookbackUserTurns?: number | undefined,
 ): boolean {
-  return readUserText(transcriptPath, lookbackUserTurns).includes(phrase)
+  const list = typeof phrases === 'string' ? [phrases] : phrases
+  const { length } = list
+  if (length === 0) {
+    return false
+  }
+  const text = readUserText(transcriptPath, lookbackUserTurns)
+  if (!text) {
+    return false
+  }
+  for (let i = 0; i < length; i += 1) {
+    if (text.includes(list[i]!)) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Strip fenced code blocks (```…```) and inline code (`…`) from a text
+ * snapshot before pattern-matching. Assistant prose frequently quotes
+ * phrases as code examples (`` `out of scope` ``) which would otherwise
+ * false-positive phrase detectors. Cheap to run: two regex passes,
+ * O(n) over the input.
+ */
+export function stripCodeFences(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`[^`\n]*`/g, ' ')
+}
+
+/**
+ * Inverse of `stripCodeFences`: extract the contents of fenced code
+ * blocks. Returns each block's body (the lines between the opening
+ * and closing fence) as a separate string. The leading language tag
+ * (e.g. ```` ```ts ````) is stripped — only the code lines are kept.
+ *
+ * Used by hooks (error-message-quality-reminder) that need to inspect
+ * the code the assistant wrote rather than the prose around it.
+ */
+export function extractCodeFences(text: string): string[] {
+  const out: string[] = []
+  // Match ```optional-lang\n...code...\n```
+  // The lang tag is optional; the content is anything (non-greedy) up
+  // to the closing fence. We're permissive — bad markdown still gets
+  // captured as a block.
+  const re = /```[a-zA-Z0-9_+-]*\n?([\s\S]*?)```/g
+  let match: RegExpExecArray | null
+  while ((match = re.exec(text)) !== null) {
+    const body = match[1]
+    if (body !== undefined) {
+      out.push(body)
+    }
+  }
+  return out
+}
+
+/**
+ * Shape of a tool-use event extracted from an assistant turn. The
+ * harness emits these as content blocks with `type: 'tool_use'`,
+ * carrying the tool name (e.g. 'Write', 'Edit', 'Bash') and the
+ * structured `input` object passed to that tool.
+ *
+ * Inputs are intentionally typed `Record<string, unknown>` because
+ * each tool has its own schema and we don't want to enumerate them
+ * here. Callers narrow on `name` and inspect the fields they care
+ * about (e.g. `input.file_path` for Write/Edit).
+ */
+export interface ToolUseEvent {
+  readonly name: string
+  readonly input: Record<string, unknown>
+}
+
+/**
+ * Extract tool-use blocks from a single turn's content array. Skips
+ * non-tool-use blocks (text, etc.) and ignores malformed entries.
+ */
+function extractToolUseBlocks(content: unknown): ToolUseEvent[] {
+  if (!Array.isArray(content)) {
+    return []
+  }
+  const out: ToolUseEvent[] = []
+  for (let i = 0, { length } = content; i < length; i += 1) {
+    const block = content[i]
+    if (!block || typeof block !== 'object') {
+      continue
+    }
+    const b = block as Record<string, unknown>
+    if (b['type'] !== 'tool_use') {
+      continue
+    }
+    const name = typeof b['name'] === 'string' ? b['name'] : undefined
+    const input = b['input']
+    if (!name || !input || typeof input !== 'object') {
+      continue
+    }
+    out.push({ name, input: input as Record<string, unknown> })
+  }
+  return out
+}
+
+/**
+ * Walk the transcript newest → oldest, return every tool-use event
+ * from the most recent assistant turn. Returns an empty array if the
+ * transcript is missing or the most recent assistant turn has no
+ * tool uses. Used by hooks that gate on what the assistant just did
+ * (e.g. file-size-reminder reading Write/Edit events).
+ */
+export function readLastAssistantToolUses(
+  transcriptPath: string | undefined,
+): readonly ToolUseEvent[] {
+  const lines = readLines(transcriptPath)
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    let evt: unknown
+    try {
+      evt = JSON.parse(lines[i]!)
+    } catch {
+      continue
+    }
+    const r = resolveRoleAndContent(evt)
+    if (!r || r.role !== 'assistant') {
+      continue
+    }
+    return extractToolUseBlocks(r.content)
+  }
+  return []
 }

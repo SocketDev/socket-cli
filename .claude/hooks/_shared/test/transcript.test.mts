@@ -193,6 +193,53 @@ test('bypassPhrasePresent: missing transcript returns false', () => {
   )
 })
 
+test('bypassPhrasePresent: array of equivalent spellings — any matches', () => {
+  const variants = [
+    'Allow soaktime bypass',
+    'Allow soak time bypass',
+    'Allow soak-time bypass',
+  ]
+  for (const present of variants) {
+    const f = writeTranscript(
+      JSON.stringify({ role: 'user', content: `please ${present} now` }),
+    )
+    try {
+      assert.equal(bypassPhrasePresent(f, variants), true)
+    } finally {
+      cleanup(f)
+    }
+  }
+})
+
+test('bypassPhrasePresent: array — none matches', () => {
+  const f = writeTranscript(
+    JSON.stringify({ role: 'user', content: 'please bypass the soak rule' }),
+  )
+  try {
+    assert.equal(
+      bypassPhrasePresent(f, [
+        'Allow soaktime bypass',
+        'Allow soak time bypass',
+        'Allow soak-time bypass',
+      ]),
+      false,
+    )
+  } finally {
+    cleanup(f)
+  }
+})
+
+test('bypassPhrasePresent: empty array returns false', () => {
+  const f = writeTranscript(
+    JSON.stringify({ role: 'user', content: 'Allow anything bypass' }),
+  )
+  try {
+    assert.equal(bypassPhrasePresent(f, []), false)
+  } finally {
+    cleanup(f)
+  }
+})
+
 test('readLastAssistantText: returns most-recent assistant turn', () => {
   const f = writeTranscript(
     [

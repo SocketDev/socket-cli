@@ -83,6 +83,36 @@ const EXCUSE_PATTERNS: readonly ExcusePattern[] = [
     regex: /\bnot my (issue|problem|bug)\b/i,
     why: 'CLAUDE.md "Unrelated issues are critical": same as "unrelated".',
   },
+  {
+    label: 'which direction do you want',
+    regex: /\bwhich direction do you want\b/i,
+    why: 'CLAUDE.md "Fix > defer": don\'t offer fix-vs-defer as a binary choice. Pick the fix path and execute.',
+  },
+  {
+    label: 'should I implement … or accept',
+    regex: /\bshould (i|we) (implement|fix|do|build) [^.?!\n]+(or|,)\s+(accept|defer|document|skip|leave|treat)\b/i,
+    why: 'CLAUDE.md "Fix > defer": this is a choice-architecture masquerading as a question. Fix it.',
+  },
+  {
+    label: 'accept … as (a) (known )?gap',
+    regex: /\baccept (this|it|that|[^.?!\n]{1,40}) as (a |an )?(known |documented |expected )?(gap|drift|limitation)\b/i,
+    why: 'CLAUDE.md "Fix > defer": gap-acceptance is the rationalization branch. The fix is the answer unless the user explicitly asked for the trade-off.',
+  },
+  {
+    label: 'two paths/options: fix … or',
+    regex: /\b(two|three) (paths|options|choices)[^.?!\n]{0,40}(fix|implement)[^.?!\n]{0,80}(or|,)\s+(accept|defer|document|skip|leave|treat)\b/i,
+    why: 'CLAUDE.md "Fix > defer": collapsing the menu — pick the fix path, start the first sub-step.',
+  },
+  {
+    label: 'document(ed)? (it )?as a known (gap|drift|limitation)',
+    regex: /\bdocument(ed)?\b[^.?!\n]{0,40}\bas a known (gap|drift|limitation)\b/i,
+    why: 'CLAUDE.md "Fix > defer": "document as known gap" is the deferral euphemism. Fix it instead.',
+  },
+  {
+    label: 'want me to fix … or',
+    regex: /\bwant me to (fix|implement|do|build|address) [^.?!\n]+(or|,)\s+(skip|defer|document|treat|accept|leave|move on)\b/i,
+    why: 'CLAUDE.md "Fix > defer": same pattern — re-litigating the fix decision. The user already said yes by virtue of asking.',
+  },
 ]
 
 async function main(): Promise<void> {

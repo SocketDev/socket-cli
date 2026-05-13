@@ -22,6 +22,16 @@ The phrases that precede those deferrals are predictable: "pre-existing", "not r
 | `separate concern` | Same. |
 | `leave it for later` | Deferral marker. CLAUDE.md "Completion" bans deferrals. |
 | `not my issue` / `not my problem` | Scoping out. |
+| `which direction do you want` | Fix-vs-defer choice menu. Pick the fix path. |
+| `should I implement … or accept` | Same — choice-architecture masquerading as a question. |
+| `accept … as (a known) gap/drift/limitation` | Gap-acceptance is the rationalization branch. Fix it. |
+| `two/three paths/options: fix … or …` | Collapsing the menu — pick fix, start the first sub-step. |
+| `document(ed) as a known gap/drift/limitation` | Deferral euphemism. Fix instead. |
+| `want me to fix … or skip/defer/document/treat/leave` | Re-litigating a fix the user already said yes to. |
+
+**Codewords that override gap-acceptance:** "fix it", "build it", "do it all", "100%", "keep going", "implement X", "make it work". When any appears in a recent user turn, the only legitimate response to a failure is another fix attempt.
+
+**Legitimate exceptions:** the user introduced the dichotomy themselves, or the fix requires off-machine action (publish, infra, creds). Name the off-machine step concretely; don't frame it as "accept the gap."
 
 ## Why it doesn't block
 
