@@ -40,10 +40,10 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawnSync } from '@socketsecurity/lib/spawn'
-import { validateSchema } from '@socketsecurity/lib/schema/validate'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { validateSchema } from '@socketsecurity/lib-stable/schema/validate'
 
 import {
   LockstepManifestSchema,

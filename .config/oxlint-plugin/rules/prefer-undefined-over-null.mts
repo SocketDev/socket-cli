@@ -140,11 +140,25 @@ const rule = {
     ])
 
     function isAssertionLibraryArg(node) {
-      const parent = unwrapTsCast(node)
-      if (!parent || parent.type !== 'CallExpression') {
+      // Walk up through TS casts and any container literals (array
+      // literals, object literals, spread elements, properties) so
+      // `expect(x).toEqual([1, null])` and `.toEqual({ k: null })`
+      // also count — the `null` is still the asserted shape, just
+      // nested inside the matcher arg.
+      let cur = unwrapTsCast(node)
+      while (
+        cur &&
+        (cur.type === 'ArrayExpression' ||
+          cur.type === 'ObjectExpression' ||
+          cur.type === 'Property' ||
+          cur.type === 'SpreadElement')
+      ) {
+        cur = unwrapTsCast(cur)
+      }
+      if (!cur || cur.type !== 'CallExpression') {
         return false
       }
-      const callee = parent.callee
+      const callee = cur.callee
       if (
         callee.type !== 'MemberExpression' ||
         callee.property.type !== 'Identifier'
@@ -198,7 +212,10 @@ const rule = {
     }
 
     function isJsonStringifyReplacer(node) {
-      // JSON.stringify(value, replacer, space) — `replacer` is conventionally null.
+      // JSON.stringify(value, replacer, space) — `replacer` is
+      // conventionally null. Also matches the primordial alias
+      // `JSONStringify(value, null, space)` (= `JSON.stringify`)
+      // used across the fleet's `primordials/json` module.
       const parent = unwrapTsCast(node)
       if (
         !parent ||
@@ -208,6 +225,13 @@ const rule = {
         return false
       }
       const callee = parent.callee
+      // Bare-identifier callee: `JSONStringify(value, null, 2)` —
+      // the primordials alias for `JSON.stringify`. Detect by name
+      // (`JSONStringify`) rather than by import-resolution, which
+      // an oxlint AST rule can't do cheaply.
+      if (callee.type === 'Identifier' && callee.name === 'JSONStringify') {
+        return true
+      }
       if (callee.type !== 'MemberExpression') {
         return false
       }

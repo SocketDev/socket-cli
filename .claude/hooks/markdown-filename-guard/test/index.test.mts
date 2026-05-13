@@ -228,3 +228,68 @@ test('.MD extension is blocked', async () => {
   assert.strictEqual(result.code, 2)
   assert.match(result.stderr, /\.md/)
 })
+
+test('<source-filename>.md (code-file hint) is allowed under docs/', async () => {
+  const result = await runHook({
+    tool_input: {
+      content: 'doc',
+      file_path:
+        '/Users/x/projects/foo/docs/additions/lib/smol-ffi.js.md',
+    },
+    tool_name: 'Write',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('<source-filename>.md works for .mts / .cc / .py too', async () => {
+  for (const filename of ['parser.mts.md', 'binding.cc.md', 'tool.py.md']) {
+    const result = await runHook({
+      tool_input: {
+        content: 'doc',
+        file_path: `/Users/x/projects/foo/docs/${filename}`,
+      },
+      tool_name: 'Write',
+    })
+    assert.strictEqual(
+      result.code,
+      0,
+      `${filename} should be allowed (got code ${result.code}: ${result.stderr})`,
+    )
+  }
+})
+
+test('<source-filename>.md with non-hyphenated stem is still blocked', async () => {
+  // `bad_name.js.md` strips to `bad_name`, which is not lowercase-hyphenated.
+  const result = await runHook({
+    tool_input: {
+      content: 'doc',
+      file_path: '/Users/x/projects/foo/docs/bad_name.js.md',
+    },
+    tool_name: 'Write',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /lowercase-with-hyphens/)
+})
+
+test('anything under .claude/ at any depth bypasses the rules', async () => {
+  for (const filename of [
+    // Auto-memory: snake_case + outside the repo (under $HOME).
+    '/Users/x/.claude/projects/-Users-x-projects-foo/memory/user_role.md',
+    '/Users/x/.claude/projects/-Users-x-projects-foo/memory/MEMORY.md',
+    // Skill / hook subdirs inside a repo's .claude/ — any name works.
+    '/Users/x/projects/foo/.claude/skills/some_skill/SOMETHING.md',
+    '/Users/x/projects/foo/.claude/hooks/foo/notes_in_camelCase.md',
+    '/Users/x/projects/foo/.claude/whateverYouWant.md',
+  ]) {
+    const result = await runHook({
+      tool_input: { content: 'doc', file_path: filename },
+      tool_name: 'Write',
+    })
+    assert.strictEqual(
+      result.code,
+      0,
+      `${filename} should be allowed under .claude/ (got code ${result.code}: ${result.stderr})`,
+    )
+  }
+})
+

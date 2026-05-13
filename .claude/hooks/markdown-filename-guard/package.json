@@ -6,6 +6,9 @@
   "exports": {
     ".": "./index.mts"
   },
+  "dependencies": {
+    "@socketsecurity/lib-stable": "npm:@socketsecurity/lib@5.28.0"
+  },
   "devDependencies": {
     "@types/node": "catalog:"
   },

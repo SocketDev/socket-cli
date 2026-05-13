@@ -36,6 +36,10 @@
 import path from 'node:path'
 import process from 'node:process'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
+import { readStdin } from '../_shared/transcript.mts'
+
 type ToolInput = {
   tool_input?:
     | {
@@ -67,17 +71,6 @@ const ALLOWED_SCREAMING_CASE: ReadonlySet<string> = new Set([
   'SUPPORT',
   'TRADEMARK',
 ])
-
-function readStdin(): Promise<string> {
-  return new Promise(resolve => {
-    let buf = ''
-    process.stdin.setEncoding('utf8')
-    process.stdin.on('data', chunk => {
-      buf += chunk
-    })
-    process.stdin.on('end', () => resolve(buf))
-  })
-}
 
 /**
  * Strip a leading repo-absolute prefix (anything up through and
@@ -129,6 +122,22 @@ function isAtAllowedRegularLocation(relPath: string): boolean {
   )
 }
 
+/**
+ * Strip a single trailing "source-file extension" hint from a
+ * doc-filename stem. Canonical fleet pattern for docs describing a
+ * specific code file is `<source>.md` (e.g. `smol-ffi.js.md` describes
+ * `smol-ffi.js`). Without this strip, `smol-ffi.js.md` is parsed as
+ * stem `smol-ffi.js` which fails `isLowercaseHyphenated` on the
+ * embedded `.`. The accepted hint extensions match the language set
+ * the fleet documents code in.
+ */
+function stripCodeFileHintExt(stem: string): string {
+  return stem.replace(
+    /\.(?:[cm]?[jt]sx?|json|ya?ml|toml|sh|py|rs|go|cc|cpp|h|hpp)$/,
+    '',
+  )
+}
+
 type Verdict = {
   ok: boolean
   message?: string
@@ -141,8 +150,31 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     return { ok: true }
   }
 
-  const relPath = toRepoRelative(absPath).split(path.sep).join('/')
-  const nameWithoutExt = filename.replace(/\.(md|MD|markdown)$/, '')
+  // Anything under a `.claude/` segment is off-limits to doc-filename
+  // rules: that tree is owned by Claude Code (auto-memory, skills,
+  // hooks, settings) and each tool inside picks its own filename
+  // convention. The hook's job is to keep human-facing docs canonical,
+  // not police runtime/tooling artifacts.
+  //
+  // Cheap-substring pre-check: if the path doesn't even contain the
+  // literal `.claude` token, skip the normalize call. Saves the
+  // normalization on the overwhelmingly-common non-`.claude` path.
+  if (absPath.includes('.claude')) {
+    const normalized = normalizePath(absPath)
+    if (
+      normalized.includes('/.claude/') ||
+      normalized.endsWith('/.claude')
+    ) {
+      return { ok: true }
+    }
+  }
+
+  const relPath = normalizePath(toRepoRelative(absPath))
+  // For docs that describe a specific code file (e.g. `smol-ffi.js.md`),
+  // strip the source-file hint before validating the stem.
+  const nameWithoutExt = stripCodeFileHintExt(
+    filename.replace(/\.(md|MD|markdown)$/, ''),
+  )
 
   // README / LICENSE — anywhere.
   if (nameWithoutExt === 'README' || nameWithoutExt === 'LICENSE') {

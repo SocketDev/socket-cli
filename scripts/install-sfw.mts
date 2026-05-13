@@ -27,11 +27,11 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
-import { WIN32, getArch } from '@socketsecurity/lib/constants/platform'
-import { downloadBinary } from '@socketsecurity/lib/dlx/binary'
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { safeDelete } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { WIN32, getArch } from '@socketsecurity/lib-stable/constants/platform'
+import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 const logger = getDefaultLogger()
 
