@@ -15,6 +15,7 @@ The phrase format is `Allow <X> bypass` — case-sensitive, exact match.
 | `git stash` (any form: bare, `push`, `save`, `--keep-index`) in primary checkout — shared stash store, another Claude session can pop yours. Use a worktree instead.                                                            | `Allow stash bypass`          |
 | Bash file-write (`python -c '...write...'`, `sed -i`, heredoc `cat << EOF > file`, `tee <source-file>`, `dd of=…`) — typically used to dodge an Edit/Write hook block. Move file / refactor / get original-hook bypass instead. | `Allow bash-write bypass`     |
 | `git push --force` / `-f`                                                                                                                                                                                                       | `Allow force-push bypass`     |
+| External GitHub issue/PR reference in a commit message or PR/issue body (`<owner>/<repo>#<num>` or full URL to a non-SocketDev repo) — would auto-link a backref into the upstream maintainer's issue                            | `Allow external-issue-ref bypass` |
 
 ## Scope
 
