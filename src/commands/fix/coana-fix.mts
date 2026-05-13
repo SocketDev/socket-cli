@@ -27,6 +27,7 @@ import {
   GQL_PR_STATE_OPEN,
 } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
+import { findSocketYmlSync } from '../../utils/config.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { getErrorCause } from '../../utils/errors.mts'
 import {
@@ -44,7 +45,6 @@ import {
   fetchGhsaDetails,
   setGitRemoteGithubRepoUrl,
 } from '../../utils/github.mts'
-import { findSocketYmlSync } from '../../utils/config.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
