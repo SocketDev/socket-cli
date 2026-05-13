@@ -78,6 +78,7 @@
     "**/scripts/fix.mts",
     "**/scripts/install-git-hooks.mts",
     "**/scripts/install-sfw.mts",
+    "**/scripts/lint-github-settings.mts",
     "**/scripts/lockstep-emit-schema.mts",
     "**/scripts/lockstep-schema.mts",
     "**/scripts/lockstep.mts",

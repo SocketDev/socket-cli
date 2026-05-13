@@ -265,6 +265,7 @@
 .config/oxlint-plugin/rules/no-inline-logger.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-npx-dlx.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-placeholders.mts linguist-generated=true
+.config/oxlint-plugin/rules/no-process-cwd-in-scripts-hooks.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-promise-race-in-loop.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-promise-race.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-status-emoji.mts linguist-generated=true
@@ -275,6 +276,7 @@
 .config/oxlint-plugin/rules/prefer-exists-sync.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-function-declaration.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-node-builtin-imports.mts linguist-generated=true
+.config/oxlint-plugin/rules/prefer-node-modules-dot-cache.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-safe-delete.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-separate-type-import.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-undefined-over-null.mts linguist-generated=true
@@ -348,6 +350,7 @@ scripts/check-paths/walk.mts linguist-generated=true
 scripts/fix.mts linguist-generated=true
 scripts/install-git-hooks.mts linguist-generated=true
 scripts/install-sfw.mts linguist-generated=true
+scripts/lint-github-settings.mts linguist-generated=true
 scripts/lockstep-emit-schema.mts linguist-generated=true
 scripts/lockstep-schema.mts linguist-generated=true
 scripts/lockstep.mts linguist-generated=true
