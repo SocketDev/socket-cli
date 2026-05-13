@@ -116,7 +116,7 @@ export async function convertSbtToMaven({
       // typically gitignored. Copy them out to a sibling of `target/` so
       // downstream SBOM/scan steps see them.
       const copied: string[] = []
-      const outBasename = path.basename(out) || 'socket.pom.xml'
+      const outBasename = path.basename(out) || 'pom.xml'
       for (const pomPath of poms) {
         let destPath: string
         if (poms.length === 1 && out !== outBasename) {

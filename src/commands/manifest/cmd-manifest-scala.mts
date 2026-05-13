@@ -59,8 +59,10 @@ const config: CliCommandConfig = {
 
     There are some caveats with \`build.sbt\` to \`pom.xml\` conversion:
 
-    - the xml is exported as socket.pom.xml as to not confuse existing build tools
-      but it will first hit your /target/sbt<version> folder (as a different name)
+    - the xml is exported as pom.xml at the project root so Socket scan picks
+      it up; sbt itself first writes it inside your /target/sbt<version> folder
+      (as a different name). Use --out to override if you already have a
+      hand-authored pom.xml at the project root.
 
     - the pom.xml format (standard by Scala) does not support certain sbt features
       - \`excludeAll()\`, \`dependencyOverrides\`, \`force()\`, \`relativePath\`
@@ -148,7 +150,7 @@ async function run(
       out = sockJson.defaults?.manifest?.sbt?.outfile
       logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
     } else {
-      out = './socket.pom.xml'
+      out = './pom.xml'
     }
   }
   if (!sbtOpts) {
