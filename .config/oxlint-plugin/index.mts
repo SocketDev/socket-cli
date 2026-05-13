@@ -26,6 +26,7 @@ import noPlaceholders from './rules/no-placeholders.mts'
 import noPromiseRace from './rules/no-promise-race.mts'
 import noPromiseRaceInLoop from './rules/no-promise-race-in-loop.mts'
 import noStatusEmoji from './rules/no-status-emoji.mts'
+import optionalExplicitUndefined from './rules/optional-explicit-undefined.mts'
 import personalPathPlaceholders from './rules/personal-path-placeholders.mts'
 import preferAsyncSpawn from './rules/prefer-async-spawn.mts'
 import preferCachedForLoop from './rules/prefer-cached-for-loop.mts'
@@ -62,6 +63,7 @@ const plugin = {
     'no-promise-race': noPromiseRace,
     'no-promise-race-in-loop': noPromiseRaceInLoop,
     'no-status-emoji': noStatusEmoji,
+    'optional-explicit-undefined': optionalExplicitUndefined,
     'personal-path-placeholders': personalPathPlaceholders,
     'prefer-async-spawn': preferAsyncSpawn,
     'prefer-cached-for-loop': preferCachedForLoop,
