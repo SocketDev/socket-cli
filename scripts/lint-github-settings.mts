@@ -63,19 +63,20 @@ function findRepoRoot(): string {
 const REPO_ROOT = findRepoRoot()
 
 interface RepoApiPayload {
-  default_branch?: string
-  has_wiki?: boolean
-  has_discussions?: boolean
-  has_projects?: boolean
-  allow_forking?: boolean
-  allow_squash_merge?: boolean
-  allow_merge_commit?: boolean
-  allow_rebase_merge?: boolean
-  allow_auto_merge?: boolean
-  allow_update_branch?: boolean
-  delete_branch_on_merge?: boolean
-  pull_request_creation_policy?: string
-  full_name?: string
+  default_branch?: string | undefined
+  has_wiki?: boolean | undefined
+  has_discussions?: boolean | undefined
+  has_projects?: boolean | undefined
+  allow_forking?: boolean | undefined
+  allow_squash_merge?: boolean | undefined
+  allow_merge_commit?: boolean | undefined
+  allow_rebase_merge?: boolean | undefined
+  allow_auto_merge?: boolean | undefined
+  allow_update_branch?: boolean | undefined
+  delete_branch_on_merge?: boolean | undefined
+  pull_request_creation_policy?: string | undefined
+  full_name?: string | undefined
+  fork?: boolean | undefined
 }
 
 interface BranchProtectionPayload {
@@ -169,27 +170,15 @@ function writeCache(entry: CacheEntry): void {
 }
 
 /**
- * Resolve `<owner>/<repo>` by asking `gh repo view` (which knows the
- * current dir's git remote). Falls back to `git config remote.origin.url`
- * + manual parse if `gh` is missing.
+ * Resolve `<owner>/<repo>` by parsing the `origin` git remote. We
+ * deliberately use `origin` instead of `gh repo view` because in a
+ * fork checkout (e.g. socket-packageurl-js, a fork of
+ * package-url/packageurl-js), `gh repo view` returns the UPSTREAM
+ * parent, not the SocketDev fork. The audit needs to inspect the
+ * SocketDev fork's settings, not upstream's. The git remote is the
+ * source of truth for "which repo does this checkout push to."
  */
 function resolveRepo(): string | undefined {
-  // Try gh first. cwd=REPO_ROOT so gh resolves the repo from this
-  // checkout's git remote rather than whatever shell dir the user
-  // invoked node from.
-  const gh = spawnSync('gh', ['repo', 'view', '--json', 'nameWithOwner'], {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-  })
-  if (gh.status === 0) {
-    try {
-      const obj = JSON.parse(gh.stdout) as { nameWithOwner?: string }
-      if (obj.nameWithOwner) return obj.nameWithOwner
-    } catch {
-      // fall through
-    }
-  }
-  // Fallback: parse origin URL. Same cwd-pinning rationale.
   const remote = spawnSync(
     'git',
     ['config', '--get', 'remote.origin.url'],
@@ -256,36 +245,43 @@ function ghApi<T>(
  */
 const REQUIRED_APP_SLUGS = ['cursor', 'socket-security', 'socket-trufflehog'] as const
 
-interface CheckRunsPayload {
-  check_runs?: Array<{
-    name?: string
+interface CheckSuitesPayload {
+  check_suites?: Array<{
     app?: { slug?: string }
   }>
 }
 
 /**
- * Probe app presence by listing check-runs on main HEAD. Returns the
- * set of app slugs observed (across the most recent commit's check
- * runs — plus a 5-commit lookback if HEAD has nothing).
+ * Probe app presence by listing check-SUITES (not check-runs) on
+ * recent commits. Why suites and not runs:
+ *   - Check-runs are only created when an app posts a finding.
+ *     Apps like socket-trufflehog that only report on secrets-found
+ *     don't post check-runs on clean commits — listing check-runs
+ *     would false-negative.
+ *   - Check-suites are created whenever an app receives the commit
+ *     webhook, regardless of whether it ultimately posted a run.
+ *     This is the broader signal — "did this app see the event."
+ *
+ * Walks the most recent 10 commits on the repo's default branch
+ * (resolved at call time so forks with `main` work the same as
+ * `master`-only legacy repos). Returns the union of app slugs
+ * observed.
  */
-function detectInstalledApps(repo: string): Set<string> {
+function detectInstalledApps(repo: string, defaultBranch: string): Set<string> {
   const seen = new Set<string>()
-  // Primary: HEAD commit's check-runs.
-  const head = ghApi<CheckRunsPayload>(`repos/${repo}/commits/main/check-runs?per_page=100`)
-  for (const run of head?.check_runs ?? []) {
-    if (run.app?.slug) seen.add(run.app.slug)
-  }
-  if (seen.size > 0) return seen
-  // Fallback: walk back 5 commits in case HEAD is a no-PR direct
-  // push that didn't trigger app checks.
-  const commits = ghApi<Array<{ sha?: string }>>(`repos/${repo}/commits/main?per_page=5`)
+  // List of commits, not a single commit — `/commits` (plural) with
+  // `sha` query for the branch ref. The singular `/commits/{ref}`
+  // endpoint returns ONE commit, which is the bug shape this fixes.
+  const commits = ghApi<Array<{ sha?: string }>>(
+    `repos/${repo}/commits?sha=${encodeURIComponent(defaultBranch)}&per_page=10`,
+  )
   for (const c of commits ?? []) {
     if (!c.sha) continue
-    const runs = ghApi<CheckRunsPayload>(
-      `repos/${repo}/commits/${c.sha}/check-runs?per_page=100`,
+    const suites = ghApi<CheckSuitesPayload>(
+      `repos/${repo}/commits/${c.sha}/check-suites?per_page=100`,
     )
-    for (const run of runs?.check_runs ?? []) {
-      if (run.app?.slug) seen.add(run.app.slug)
+    for (const s of suites?.check_suites ?? []) {
+      if (s.app?.slug) seen.add(s.app.slug)
     }
     if (seen.size >= REQUIRED_APP_SLUGS.length) break
   }
@@ -412,7 +408,11 @@ function evaluate(
   check('has_wiki must be false', apiRepo.has_wiki, false, `${settingsUrl}#features`, { has_wiki: false })
   check('has_discussions must be false', apiRepo.has_discussions, false, `${settingsUrl}#features`, { has_discussions: false })
   check('has_projects must be false', apiRepo.has_projects, false, `${settingsUrl}#features`, { has_projects: false })
-  check('allow_forking must be false', apiRepo.allow_forking, false, `${settingsUrl}#features`, { allow_forking: false })
+  // Note: `allow_forking` is intentionally NOT checked. The actual
+  // "no outside-contributor PRs" gate is `pull_request_creation_
+  // policy: collaborators_only` (checked below). Letting people fork
+  // for read access / personal-use is the open-source default and
+  // doesn't bypass PR review.
   check('allow_squash_merge must be true', apiRepo.allow_squash_merge, true, `${settingsUrl}#pull-requests`, { allow_squash_merge: true })
   check('allow_merge_commit must be false', apiRepo.allow_merge_commit, false, `${settingsUrl}#pull-requests`, { allow_merge_commit: false })
   check('allow_rebase_merge must be false', apiRepo.allow_rebase_merge, false, `${settingsUrl}#pull-requests`, { allow_rebase_merge: false })
@@ -572,10 +572,15 @@ function main(): number {
     return 1
   }
 
+  // Branch protection lookup must use the repo's actual default
+  // branch — a fork on a legacy `master` default would never have
+  // protection on `main`. Default to 'main' when the API doesn't
+  // expose it (rare).
+  const defaultBranch = apiRepo.default_branch ?? 'main'
   const apiProtection = ghApi<BranchProtectionPayload>(
-    `repos/${repo}/branches/main/protection`,
+    `repos/${repo}/branches/${defaultBranch}/protection`,
   )
-  const installedApps = detectInstalledApps(repo)
+  const installedApps = detectInstalledApps(repo, defaultBranch)
   const localShadows = detectLocalShadows(repo)
 
   let findings = evaluate(
