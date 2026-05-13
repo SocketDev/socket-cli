@@ -2,10 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 
+import type { HandleCreateNewScanConfig } from './handle-create-new-scan.mts'
+
 const {
   mockFetchCreateOrgFullScan,
   mockFetchSupportedScanFileNames,
   mockFindSocketYmlSync,
+  mockGenerateAutoManifest,
   mockGetPackageFilesForScan,
   mockPerformReachabilityAnalysis,
   mockReadOrDefaultSocketJson,
@@ -13,6 +16,7 @@ const {
   mockFetchCreateOrgFullScan: vi.fn(),
   mockFetchSupportedScanFileNames: vi.fn(),
   mockFindSocketYmlSync: vi.fn(),
+  mockGenerateAutoManifest: vi.fn(),
   mockGetPackageFilesForScan: vi.fn(),
   mockPerformReachabilityAnalysis: vi.fn(),
   mockReadOrDefaultSocketJson: vi.fn(),
@@ -59,8 +63,56 @@ vi.mock('../manifest/detect-manifest-actions.mts', () => ({
 }))
 
 vi.mock('../manifest/generate_auto_manifest.mts', () => ({
-  generateAutoManifest: vi.fn(),
+  generateAutoManifest: mockGenerateAutoManifest,
 }))
+
+function createConfig(
+  overrides: Partial<HandleCreateNewScanConfig> = {},
+): HandleCreateNewScanConfig {
+  return {
+    autoManifest: false,
+    branchName: 'main',
+    commitHash: '',
+    commitMessage: '',
+    committers: '',
+    cwd: '/repo',
+    defaultBranch: false,
+    interactive: false,
+    orgSlug: 'fakeOrg',
+    outputKind: 'text',
+    pendingHead: false,
+    pullRequest: 0,
+    reach: {
+      excludePaths: [],
+      reachAnalysisMemoryLimit: 8192,
+      reachAnalysisTimeout: 0,
+      reachConcurrency: 1,
+      reachContinueOnAnalysisErrors: false,
+      reachContinueOnInstallErrors: false,
+      reachContinueOnMissingLockFiles: false,
+      reachContinueOnNoSourceFiles: false,
+      reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
+      reachDisableAnalytics: false,
+      reachDisableExternalToolChecks: false,
+      reachEcosystems: [],
+      reachEnableAnalysisSplitting: false,
+      reachExcludePaths: [],
+      reachLazyMode: false,
+      reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
+      reachVersion: undefined,
+      runReachabilityAnalysis: false,
+    },
+    readOnly: false,
+    repoName: 'repo',
+    report: false,
+    reportLevel: 'error',
+    targets: ['/repo'],
+    tmp: false,
+    ...overrides,
+  }
+}
 
 describe('handleCreateNewScan excludePaths', () => {
   beforeEach(() => {
@@ -78,6 +130,7 @@ describe('handleCreateNewScan excludePaths', () => {
       data: { parsed: { projectIgnorePaths: ['fixtures/**'] } },
       ok: true,
     })
+    mockGenerateAutoManifest.mockResolvedValue({ generatedFiles: [] })
     mockGetPackageFilesForScan.mockResolvedValue(['package.json'])
     mockPerformReachabilityAnalysis.mockResolvedValue({
       data: {
@@ -87,6 +140,43 @@ describe('handleCreateNewScan excludePaths', () => {
       ok: true,
     })
     mockReadOrDefaultSocketJson.mockReturnValue({})
+  })
+
+  it('includes generated auto-manifest files in SCA discovery targets', async () => {
+    mockGenerateAutoManifest.mockResolvedValueOnce({
+      generatedFiles: ['/repo/.socket-auto-manifest/maven_install.json'],
+    })
+
+    await handleCreateNewScan(
+      createConfig({
+        autoManifest: true,
+        targets: ['/repo/apps/api'],
+      }),
+    )
+
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      ['/repo/apps/api', '/repo/.socket-auto-manifest/maven_install.json'],
+      { size: 1 },
+      {
+        additionalIgnores: [],
+        config: { projectIgnorePaths: ['fixtures/**'] },
+        cwd: '/repo',
+      },
+    )
+    expect(mockFetchCreateOrgFullScan).toHaveBeenCalled()
+  })
+
+  it('aborts before scan creation when auto-manifest generation fails', async () => {
+    mockGenerateAutoManifest.mockRejectedValueOnce(
+      new Error('Bazel auto-manifest generation failed'),
+    )
+
+    await expect(
+      handleCreateNewScan(createConfig({ autoManifest: true })),
+    ).rejects.toThrow('Bazel auto-manifest generation failed')
+
+    expect(mockFetchSupportedScanFileNames).not.toHaveBeenCalled()
+    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
   })
 
   it('adds excludePaths to manifest discovery and reachability excludes', async () => {
