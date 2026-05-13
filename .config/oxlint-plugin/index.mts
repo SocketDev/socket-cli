@@ -23,6 +23,7 @@ import noFetchPreferHttpRequest from './rules/no-fetch-prefer-http-request.mts'
 import noInlineLogger from './rules/no-inline-logger.mts'
 import noNpxDlx from './rules/no-npx-dlx.mts'
 import noPlaceholders from './rules/no-placeholders.mts'
+import noProcessCwdInScriptsHooks from './rules/no-process-cwd-in-scripts-hooks.mts'
 import noPromiseRace from './rules/no-promise-race.mts'
 import noPromiseRaceInLoop from './rules/no-promise-race-in-loop.mts'
 import noStatusEmoji from './rules/no-status-emoji.mts'
@@ -33,6 +34,7 @@ import preferCachedForLoop from './rules/prefer-cached-for-loop.mts'
 import preferExistsSync from './rules/prefer-exists-sync.mts'
 import preferFunctionDeclaration from './rules/prefer-function-declaration.mts'
 import preferNodeBuiltinImports from './rules/prefer-node-builtin-imports.mts'
+import preferNodeModulesDotCache from './rules/prefer-node-modules-dot-cache.mts'
 import preferSafeDelete from './rules/prefer-safe-delete.mts'
 import preferSeparateTypeImport from './rules/prefer-separate-type-import.mts'
 import preferUndefinedOverNull from './rules/prefer-undefined-over-null.mts'
@@ -60,6 +62,7 @@ const plugin = {
     'no-inline-logger': noInlineLogger,
     'no-npx-dlx': noNpxDlx,
     'no-placeholders': noPlaceholders,
+    'no-process-cwd-in-scripts-hooks': noProcessCwdInScriptsHooks,
     'no-promise-race': noPromiseRace,
     'no-promise-race-in-loop': noPromiseRaceInLoop,
     'no-status-emoji': noStatusEmoji,
@@ -70,6 +73,7 @@ const plugin = {
     'prefer-exists-sync': preferExistsSync,
     'prefer-function-declaration': preferFunctionDeclaration,
     'prefer-node-builtin-imports': preferNodeBuiltinImports,
+    'prefer-node-modules-dot-cache': preferNodeModulesDotCache,
     'prefer-safe-delete': preferSafeDelete,
     'prefer-separate-type-import': preferSeparateTypeImport,
     'prefer-undefined-over-null': preferUndefinedOverNull,
