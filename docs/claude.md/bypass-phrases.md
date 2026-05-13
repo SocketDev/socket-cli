@@ -16,6 +16,7 @@ The phrase format is `Allow <X> bypass` — case-sensitive, exact match.
 | Bash file-write (`python -c '...write...'`, `sed -i`, heredoc `cat << EOF > file`, `tee <source-file>`, `dd of=…`) — typically used to dodge an Edit/Write hook block. Move file / refactor / get original-hook bypass instead. | `Allow bash-write bypass`     |
 | `git push --force` / `-f`                                                                                                                                                                                                       | `Allow force-push bypass`     |
 | External GitHub issue/PR reference in a commit message or PR/issue body (`<owner>/<repo>#<num>` or full URL to a non-SocketDev repo) — would auto-link a backref into the upstream maintainer's issue                            | `Allow external-issue-ref bypass` |
+| Sub-package `scripts/paths.mts` that doesn't `export *` from the nearest ancestor paths.mts (re-derives REPO_ROOT etc. — drift risk)                                                                                            | `Allow paths-mts-inherit bypass` |
 
 ## Scope
 

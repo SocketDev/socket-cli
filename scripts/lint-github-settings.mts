@@ -34,33 +34,12 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
-/**
- * Walk up from this script's own location to find the repo root —
- * the nearest ancestor that has a `package.json`. `process.cwd()` is
- * wrong here because the user might invoke `node scripts/foo.mts`
- * from any subdirectory; we want the repo, not the invocation
- * directory.
- */
-function findRepoRoot(): string {
-  let cur = path.dirname(fileURLToPath(import.meta.url))
-  const root = path.parse(cur).root
-  while (cur && cur !== root) {
-    if (existsSync(path.join(cur, 'package.json'))) {
-      return cur
-    }
-    const parent = path.dirname(cur)
-    if (parent === cur) break
-    cur = parent
-  }
-  throw new Error(
-    `Could not resolve repo root from ${fileURLToPath(import.meta.url)} ` +
-      '(no ancestor has package.json).',
-  )
-}
-
-const REPO_ROOT = findRepoRoot()
+import {
+  loadSocketWheelhouseConfig,
+  NODE_MODULES_CACHE_DIR,
+  REPO_ROOT,
+} from './paths.mts'
 
 interface RepoApiPayload {
   default_branch?: string | undefined
@@ -80,11 +59,39 @@ interface RepoApiPayload {
 }
 
 interface BranchProtectionPayload {
-  required_signatures?: { enabled?: boolean }
+  required_signatures?: { enabled?: boolean | undefined } | undefined
 }
+
+/**
+ * GitHub custom-property values for the repo, shaped as the API
+ * returns: an array of `{ property_name, value }` pairs. We
+ * normalize to `Record<string, string | null>` at read time.
+ *
+ * Recognized fleet properties:
+ *   - `disable-github-actions-security` ('true' | 'false')
+ *     When 'true', the fleet's branch-protection-must-require-signed-
+ *     commits rule downgrades from error → warn. Rationale: the
+ *     shared socket-registry setup/install action IS the security
+ *     gate; per-repo branch protection is belt-and-suspenders.
+ *   - `doesnt-touch-customers` ('true' | 'false')
+ *     Public repos default 'false' (they DO touch customers; full
+ *     fleet rules apply). Private repos not published to npm can
+ *     set 'true' to opt out of customer-facing rules.
+ *   - `temporarily-doesnt-touch-customers` ('true' | 'false')
+ *     Escape hatch for repos mid-remediation. Always downgrades
+ *     customer-facing rules to warn. Should be removed once the
+ *     remediation lands.
+ */
+interface CustomPropertyValue {
+  property_name?: string | undefined
+  value?: string | null | undefined
+}
+
+type Severity = 'error' | 'warn'
 
 interface Finding {
   rule: string
+  severity: Severity
   current: unknown
   expected: unknown
   fixUrl: string
@@ -107,12 +114,11 @@ interface CacheEntry {
 // build-tool state (vitest, etc.) and the only `.cache/` flavor
 // that's auto-ignored everywhere (via pnpm/npm's gitignore + the
 // fleet's `**/.cache/` rule). Path constructed once.
-const CACHE_DIR = path.join(REPO_ROOT, 'node_modules', '.cache')
 // Cache file name mirrors the script name (`lint-github-settings`)
 // + the `socket-wheelhouse-` fleet prefix so it doesn't collide with
 // any other tool's cache file under node_modules/.cache/.
 const CACHE_FILE = path.join(
-  CACHE_DIR,
+  NODE_MODULES_CACHE_DIR,
   'socket-wheelhouse-lint-github-settings.json',
 )
 // 7 days in ms. Mirrors the fleet's npm catalog soak window
@@ -163,8 +169,8 @@ function readCache(repo: string): CacheEntry | undefined {
 }
 
 function writeCache(entry: CacheEntry): void {
-  if (!existsSync(CACHE_DIR)) {
-    mkdirSync(CACHE_DIR, { recursive: true })
+  if (!existsSync(NODE_MODULES_CACHE_DIR)) {
+    mkdirSync(NODE_MODULES_CACHE_DIR, { recursive: true })
   }
   writeFileSync(CACHE_FILE, JSON.stringify(entry, null, 2) + '\n')
 }
@@ -267,6 +273,60 @@ interface CheckSuitesPayload {
  * `master`-only legacy repos). Returns the union of app slugs
  * observed.
  */
+/**
+ * Load the repo's custom-property values. Returns
+ * `{ <name>: <value or null> }`. Empty object when the API isn't
+ * available or the call fails — equivalent to "no opt-outs."
+ */
+function loadCustomProperties(repo: string): Record<string, string | null> {
+  const props = ghApi<CustomPropertyValue[]>(`repos/${repo}/properties/values`)
+  if (!Array.isArray(props)) return {}
+  const out: Record<string, string | null> = {}
+  for (const p of props) {
+    if (typeof p.property_name === 'string') {
+      out[p.property_name] =
+        p.value === null || typeof p.value === 'string' ? p.value : null
+    }
+  }
+  return out
+}
+
+/**
+ * Read the declared GitHub apps from this checkout's
+ * `.config/socket-wheelhouse.json` (the fleet-config canon —
+ * sibling of `claude`, `workspace`, `hooks` blocks). Schema:
+ *
+ *   {
+ *     "github": {
+ *       "apps": ["cursor", "socket-security", "socket-trufflehog"]
+ *     }
+ *   }
+ *
+ * Used for apps whose installation can't be reliably inferred from
+ * check-suites — socket-trufflehog being the canonical example (it
+ * only posts a check-suite when a secret is found, so a clean repo
+ * with the app installed would false-negative under check-suites
+ * detection alone).
+ *
+ * Audit treats apps listed here as installed (trust the manifest).
+ * The maintainer's signed statement IS the install record — trust +
+ * verify-once-via-eyeballs > unreliable automation.
+ */
+function readDeclaredApps(): Set<string> {
+  const declared = new Set<string>()
+  const loaded = loadSocketWheelhouseConfig(REPO_ROOT)
+  if (!loaded) return declared
+  const github = loaded.value['github']
+  if (typeof github !== 'object' || github === null) return declared
+  const apps = (github as Record<string, unknown>)['apps']
+  if (Array.isArray(apps)) {
+    for (const a of apps) {
+      if (typeof a === 'string') declared.add(a)
+    }
+  }
+  return declared
+}
+
 function detectInstalledApps(repo: string, defaultBranch: string): Set<string> {
   const seen = new Set<string>()
   // List of commits, not a single commit — `/commits` (plural) with
@@ -290,23 +350,29 @@ function detectInstalledApps(repo: string, defaultBranch: string): Set<string> {
 
 interface WorkflowsPayload {
   workflows?: Array<{
-    name?: string
-    path?: string
-    state?: string
-  }>
+    name?: string | undefined
+    path?: string | undefined
+    state?: string | undefined
+  }> | undefined
 }
 
 /**
  * Names of canonical shared workflows hosted in socket-registry.
  * When a fleet repo has a local workflow file whose path basename
  * matches one of these AND the workflow body doesn't `uses:` the
- * shared variant, that's drift — the repo is duplicating fleet
- * logic instead of inheriting it.
+ * shared variant AND doesn't carry the explicit opt-out marker,
+ * that's drift.
  *
- * `_local_*` prefixed workflows are intentional local overrides
- * (the convention socket-registry itself uses for its own
- * developer-only workflows that consume its own shared actions).
- * They're exempt from the audit.
+ * Two exemption shapes:
+ *   1. `_local-not-for-reuse-*` filename prefix — the
+ *      socket-registry convention for local triggers that consume a
+ *      shared workflow. The file IS the right shape.
+ *   2. `# socket-wheelhouse-shadow-allow: <reason>` header line —
+ *      maintainer's explicit, audit-able commitment that the local
+ *      workflow inlines logic by design (e.g. socket-cli's
+ *      provenance.yml does CLI-specific multi-package release
+ *      orchestration that doesn't fit the generic shared shape).
+ *      The comment text serves as the documented reason.
  */
 const SHARED_WORKFLOW_BASENAMES = [
   'build.yml',
@@ -318,11 +384,6 @@ const SHARED_WORKFLOW_BASENAMES = [
   'test.yml',
 ] as const
 
-/**
- * For each canonical shared-workflow basename, return true if the
- * fleet repo has a local file with that basename that does NOT
- * delegate to the shared workflow.
- */
 function detectLocalShadows(
   repo: string,
 ): Array<{ basename: string; localPath: string }> {
@@ -332,10 +393,8 @@ function detectLocalShadows(
   for (const w of wf.workflows) {
     if (!w.path || !w.path.startsWith('.github/workflows/')) continue
     const basename = w.path.slice('.github/workflows/'.length)
-    if (basename.startsWith('_local_')) continue
+    if (basename.startsWith('_local-not-for-reuse-')) continue
     if (!SHARED_WORKFLOW_BASENAMES.includes(basename as typeof SHARED_WORKFLOW_BASENAMES[number])) continue
-    // The repo HAS a workflow with a canonical shared-workflow
-    // basename. Check whether its body uses the shared variant.
     const r = spawnSync(
       'gh',
       ['api', `repos/${repo}/contents/${w.path}`],
@@ -350,9 +409,17 @@ function detectLocalShadows(
     } catch {
       continue
     }
+    // Exemption 1: delegates to the shared workflow via `uses:`.
     if (/uses:\s*SocketDev\/socket-registry\/\.github\/workflows\//.test(bodyRaw)) {
-      // It IS delegating to the shared workflow — that's the right
-      // shape, not a shadow.
+      continue
+    }
+    // Exemption 2: explicit opt-out comment. Single unified fleet
+    // marker `socket-bypass: <name>` (one prefix for hooks, custom
+    // lints, audits — fewer prefixes to remember).
+    //   # socket-bypass: workflow-shadow -- <reason>
+    // Free-text reason after `--` is encouraged but not parsed;
+    // maintainer accountability via git blame.
+    if (/^#\s*socket-bypass:\s*workflow-shadow\b/m.test(bodyRaw)) {
       continue
     }
     out.push({ basename, localPath: w.path })
@@ -366,12 +433,65 @@ function detectLocalShadows(
  * /repos/{owner}/{repo} when --fix is given (undefined = manual fix
  * required, no API endpoint yet).
  */
+/**
+ * Custom-property opt-out knobs that downgrade specific rules from
+ * 'error' to 'warn'. Reading the property values is one API call per
+ * audit (see `loadCustomProperties`).
+ *
+ * Why warn-not-skip: a maintainer marking a repo
+ * `temporarily-doesnt-touch-customers: true` should still see a
+ * reminder of what's deferred — silencing the finding entirely
+ * would mean the eventual lift forgets the reminder existed. Warn
+ * = visible-but-not-CI-blocking.
+ */
+function severityOverride(
+  ruleKey: string,
+  props: Record<string, string | null>,
+): Severity {
+  const disableGhAS = props['disable-github-actions-security'] === 'true'
+  const doesntTouchCustomers = props['doesnt-touch-customers'] === 'true'
+  const tempDoesntTouchCustomers =
+    props['temporarily-doesnt-touch-customers'] === 'true'
+
+  // The shared socket-registry setup/install IS the security gate;
+  // per-repo branch protection is belt-and-suspenders. When the
+  // maintainer has explicitly opted out of redundant GH Actions
+  // security, downgrade branch-protection findings to warn.
+  if (
+    disableGhAS &&
+    (ruleKey === 'branch-protection-exists' ||
+      ruleKey === 'branch-protection-required-signatures')
+  ) {
+    return 'warn'
+  }
+
+  // Customer-facing rules: only enforce on repos that DO touch
+  // customers. Private/unpublished or in-remediation repos get
+  // warnings instead of errors so the maintainer sees the reminder
+  // without CI red.
+  const customerFacingRules = new Set([
+    'has_wiki must be false',
+    'has_discussions must be false',
+    'has_projects must be false',
+    'pull_request_creation_policy must be collaborators_only',
+  ])
+  if (
+    (doesntTouchCustomers || tempDoesntTouchCustomers) &&
+    customerFacingRules.has(ruleKey)
+  ) {
+    return 'warn'
+  }
+
+  return 'error'
+}
+
 function evaluate(
   repo: string,
   apiRepo: RepoApiPayload,
   apiProtection: BranchProtectionPayload | undefined,
   installedApps: Set<string>,
   localShadows: ReadonlyArray<{ basename: string; localPath: string }>,
+  customProps: Record<string, string | null>,
 ): Finding[] {
   const findings: Finding[] = []
   const settingsUrl = `https://github.com/${repo}/settings`
@@ -387,6 +507,7 @@ function evaluate(
     if (current === expected) return
     findings.push({
       rule,
+      severity: severityOverride(rule, customProps),
       current,
       expected,
       fixUrl,
@@ -431,6 +552,7 @@ function evaluate(
   if (!apiProtection) {
     findings.push({
       rule: 'main branch protection must exist',
+      severity: severityOverride('branch-protection-exists', customProps),
       current: undefined,
       expected: '{ required_signatures: { enabled: true } }',
       fixUrl: branchesUrl,
@@ -439,6 +561,7 @@ function evaluate(
   } else if (apiProtection.required_signatures?.enabled !== true) {
     findings.push({
       rule: 'main branch protection: required_signatures must be enabled',
+      severity: severityOverride('branch-protection-required-signatures', customProps),
       current: apiProtection.required_signatures?.enabled ?? false,
       expected: true,
       fixUrl: branchesUrl,
@@ -455,24 +578,32 @@ function evaluate(
     if (!installedApps.has(slug)) {
       findings.push({
         rule: `GitHub App must be installed: ${slug}`,
-        current: 'not detected on recent check-runs',
-        expected: 'installed + posting checks',
+        // App findings stay 'error' regardless of custom properties —
+        // app installation is universal. (Could be made overridable
+        // per-property if a use case emerges.)
+        severity: 'error',
+        current: 'not detected on recent check-suites or declared in .github/required-apps.yml',
+        expected: 'installed + declared',
         fixUrl: `https://github.com/apps/${slug}`,
         fixable: false,
       })
     }
   }
 
-  // Local shadows of shared workflows. Each shadow file is one finding
-  // pointing at the local path; the fix is to either delete the local
-  // file (and let the shared one run) or `uses:` the shared workflow.
+  // Local shadows of shared workflows. Either delete the local file
+  // (and `uses:` the shared one), or add the explicit opt-out header
+  // `# socket-wheelhouse-shadow-allow: <reason>` documenting why the
+  // local version is intentional.
   for (const shadow of localShadows) {
     findings.push({
       rule: `Local workflow shadows a shared one: ${shadow.basename}`,
+      severity: 'error',
       current: shadow.localPath,
       expected:
-        `uses: SocketDev/socket-registry/.github/workflows/${shadow.basename}@<sha>`,
-      fixUrl: `https://github.com/${repo}/blob/main/${shadow.localPath}`,
+        `uses: SocketDev/socket-registry/.github/workflows/${shadow.basename}@<sha> ` +
+        `OR add a header comment '# socket-bypass: workflow-shadow -- <reason>' ` +
+        `to document why this local workflow is intentional`,
+      fixUrl: `https://github.com/${repo}/blob/${apiRepo.default_branch ?? 'main'}/${shadow.localPath}`,
       fixable: false,
     })
   }
@@ -514,9 +645,16 @@ function printReport(findings: readonly Finding[], repo: string, json: boolean):
     process.stdout.write(`✓ GitHub settings audit passed for ${repo}.\n`)
     return
   }
-  process.stdout.write(`\n${findings.length} finding(s) for ${repo}:\n\n`)
-  for (const f of findings) {
-    process.stdout.write(`  ✗ ${f.rule}\n`)
+  const errors = findings.filter(f => f.severity === 'error')
+  const warns = findings.filter(f => f.severity === 'warn')
+  process.stdout.write(
+    `\n${repo}: ${errors.length} error(s), ${warns.length} warning(s)\n\n`,
+  )
+  // Errors first, then warnings — operator should fix errors before
+  // worrying about warnings.
+  for (const f of [...errors, ...warns]) {
+    const marker = f.severity === 'error' ? '✗' : '⚠'
+    process.stdout.write(`  ${marker} [${f.severity}] ${f.rule}\n`)
     process.stdout.write(`      current: ${JSON.stringify(f.current)}\n`)
     process.stdout.write(`      expected: ${JSON.stringify(f.expected)}\n`)
     process.stdout.write(`      fix: ${f.fixUrl}\n`)
@@ -580,8 +718,15 @@ function main(): number {
   const apiProtection = ghApi<BranchProtectionPayload>(
     `repos/${repo}/branches/${defaultBranch}/protection`,
   )
-  const installedApps = detectInstalledApps(repo, defaultBranch)
+  // Union of apps actually-observed via check-suites + apps
+  // declared in .github/required-apps.yml. Declared-apps are how
+  // socket-trufflehog (which only posts on findings) gets credit.
+  const installedApps = new Set<string>([
+    ...detectInstalledApps(repo, defaultBranch),
+    ...readDeclaredApps(),
+  ])
   const localShadows = detectLocalShadows(repo)
+  const customProps = loadCustomProperties(repo)
 
   let findings = evaluate(
     repo,
@@ -589,6 +734,7 @@ function main(): number {
     apiProtection,
     installedApps,
     localShadows,
+    customProps,
   )
 
   if (flags.fix && findings.length > 0) {
@@ -604,6 +750,7 @@ function main(): number {
           apiProtection,
           installedApps,
           localShadows,
+          customProps,
         )
       }
     }
@@ -611,9 +758,13 @@ function main(): number {
 
   printReport(findings, repo, flags.json)
 
-  // Cache only when there's nothing left unresolved — a partial pass
-  // shouldn't suppress next-week's re-check.
-  const pass = findings.length === 0
+  // Exit-status policy: only error-severity findings fail the run.
+  // Warnings (custom-property downgrades, mid-remediation flags) are
+  // informational — they show in the report but don't block CI or
+  // the maintainer's local `pnpm run` chain. Cache the result either
+  // way so the 7-day TTL is honored; the next run will re-check.
+  const errors = findings.filter(f => f.severity === 'error')
+  const pass = errors.length === 0
   writeCache({
     verifiedAt: new Date().toISOString(),
     repo,
