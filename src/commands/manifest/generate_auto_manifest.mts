@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
@@ -10,6 +11,10 @@ import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
 import type { OutputKind } from '../../types.mts'
+
+export type GenerateAutoManifestResult = {
+  generatedFiles: string[]
+}
 
 export async function generateAutoManifest({
   cwd,
@@ -21,8 +26,9 @@ export async function generateAutoManifest({
   cwd: string
   outputKind: OutputKind
   verbose: boolean
-}) {
+}): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
+  const generatedFiles: string[] = []
 
   if (verbose) {
     logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
@@ -77,4 +83,32 @@ export async function generateAutoManifest({
       verbose: Boolean(sockJson.defaults?.manifest?.conda?.verbose),
     })
   }
+
+  if (!sockJson?.defaults?.manifest?.bazel?.disabled && detected.bazel) {
+    const bazelConfig = sockJson?.defaults?.manifest?.bazel
+    logger.log(
+      'Detected a Bazel workspace, extracting Maven dependencies via bazel query...',
+    )
+    const bazelResult = await extractBazelToMaven({
+      bazelFlags: bazelConfig?.bazelFlags,
+      bazelOutputBase: bazelConfig?.bazelOutputBase,
+      bazelRc: bazelConfig?.bazelRc,
+      bin: bazelConfig?.bazel ?? bazelConfig?.bin,
+      cwd,
+      // Auto-manifest writes into a sibling directory instead of the repo root
+      // so scan discovery can pick it up without colliding with a checked-in
+      // rules_jvm_external lockfile or repo-root gitignore patterns.
+      out: bazelConfig?.out ?? cwd,
+      outLayout: 'flat',
+      verbose: Boolean(bazelConfig?.verbose) || verbose,
+    })
+    if (!bazelResult.ok) {
+      throw new Error('Bazel auto-manifest generation failed')
+    }
+    if (bazelResult.manifestPath) {
+      generatedFiles.push(bazelResult.manifestPath)
+    }
+  }
+
+  return { generatedFiles }
 }

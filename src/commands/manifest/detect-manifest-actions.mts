@@ -15,6 +15,7 @@ import {
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 export interface GeneratableManifests {
+  bazel: boolean
   cdxgen: boolean
   count: number
   conda: boolean
@@ -29,11 +30,27 @@ export async function detectManifestActions(
   cwd = process.cwd(),
 ): Promise<GeneratableManifests> {
   const output = {
+    bazel: false,
     cdxgen: false, // TODO
     count: 0,
     conda: false,
     gradle: false,
     sbt: false,
+  }
+
+  if (sockJson?.defaults?.manifest?.bazel?.disabled) {
+    debugLog(
+      'notice',
+      `[DEBUG] - bazel auto-detection is disabled in ${SOCKET_JSON}`,
+    )
+  } else if (
+    existsSync(path.join(cwd, 'MODULE.bazel')) ||
+    existsSync(path.join(cwd, 'WORKSPACE')) ||
+    existsSync(path.join(cwd, 'WORKSPACE.bazel'))
+  ) {
+    debugLog('notice', '[DEBUG] - Detected a Bazel workspace')
+    output.bazel = true
+    output.count += 1
   }
 
   if (sockJson?.defaults?.manifest?.sbt?.disabled) {
