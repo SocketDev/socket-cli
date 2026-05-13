@@ -1,13 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "unicorn",
-    "import"
-  ],
-  "jsPlugins": [
-    "./oxlint-plugin/index.mts"
-  ],
+  "plugins": ["typescript", "unicorn", "import"],
+  "jsPlugins": ["./oxlint-plugin/index.mts"],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -51,6 +45,7 @@
     "socket/no-promise-race": "error",
     "socket/no-promise-race-in-loop": "error",
     "socket/no-status-emoji": "error",
+    "socket/optional-explicit-undefined": "error",
     "socket/personal-path-placeholders": "error",
     "socket/prefer-async-spawn": "error",
     "socket/prefer-cached-for-loop": "error",

@@ -17,6 +17,7 @@
 .claude/hooks/_shared/test/transcript.test.mts linguist-generated=true
 .claude/hooks/_shared/token-patterns.mts linguist-generated=true
 .claude/hooks/_shared/transcript.mts linguist-generated=true
+.claude/hooks/_shared/wheelhouse-root.mts linguist-generated=true
 .claude/hooks/auth-rotation-reminder/README.md linguist-generated=true
 .claude/hooks/auth-rotation-reminder/index.mts linguist-generated=true
 .claude/hooks/auth-rotation-reminder/package.json linguist-generated=true
@@ -91,6 +92,7 @@
 .claude/hooks/gitmodules-comment-guard/README.md linguist-generated=true
 .claude/hooks/gitmodules-comment-guard/index.mts linguist-generated=true
 .claude/hooks/gitmodules-comment-guard/package.json linguist-generated=true
+.claude/hooks/gitmodules-comment-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/gitmodules-comment-guard/tsconfig.json linguist-generated=true
 .claude/hooks/identifying-users-reminder/README.md linguist-generated=true
 .claude/hooks/identifying-users-reminder/index.mts linguist-generated=true
@@ -122,6 +124,11 @@
 .claude/hooks/no-experimental-strip-types-guard/package.json linguist-generated=true
 .claude/hooks/no-experimental-strip-types-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/no-experimental-strip-types-guard/tsconfig.json linguist-generated=true
+.claude/hooks/no-external-issue-ref-guard/README.md linguist-generated=true
+.claude/hooks/no-external-issue-ref-guard/index.mts linguist-generated=true
+.claude/hooks/no-external-issue-ref-guard/package.json linguist-generated=true
+.claude/hooks/no-external-issue-ref-guard/test/index.test.mts linguist-generated=true
+.claude/hooks/no-external-issue-ref-guard/tsconfig.json linguist-generated=true
 .claude/hooks/no-fleet-fork-guard/README.md linguist-generated=true
 .claude/hooks/no-fleet-fork-guard/index.mts linguist-generated=true
 .claude/hooks/no-fleet-fork-guard/package.json linguist-generated=true
@@ -261,6 +268,7 @@
 .config/oxlint-plugin/rules/no-promise-race-in-loop.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-promise-race.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-status-emoji.mts linguist-generated=true
+.config/oxlint-plugin/rules/optional-explicit-undefined.mts linguist-generated=true
 .config/oxlint-plugin/rules/personal-path-placeholders.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-async-spawn.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-cached-for-loop.mts linguist-generated=true

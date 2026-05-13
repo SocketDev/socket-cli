@@ -58,6 +58,7 @@ catalog:
   '@types/adm-zip': 0.5.7
   '@types/cmd-shim': 5.0.2
   '@types/js-yaml': 4.0.9
+  '@types/mdast': 4.0.4
   '@types/micromatch': 4.0.9
   '@types/mock-fs': 4.13.4
   '@types/node': 24.9.2
@@ -69,6 +70,7 @@ catalog:
   '@types/semver': 7.7.1
   '@types/which': 3.0.4
   '@types/yargs-parser': 21.0.3
+  '@typescript/native-preview': 7.0.0-dev.20260415.1
   '@vitest/coverage-v8': 4.0.3
   '@yao-pkg/pkg': 6.8.0
   '@yarnpkg/parsers': 3.0.3
@@ -110,6 +112,8 @@ catalog:
   lint-staged: 16.1.6
   lodash: 4.17.21
   magic-string: 0.30.19
+  'mdast-util-from-markdown': 2.0.3
+  'micromark': 4.0.2
   micromatch: 4.0.8
   mock-fs: 5.5.0
   nanotar: 0.2.1
