@@ -32,10 +32,12 @@ vi.mock('@socketsecurity/lib/env/ci', () => ({
   getCI: mockGetCI,
 }))
 
-const mockGetSocketCliApiToken = vi.hoisted(() => vi.fn(() => ''))
+const mockGetSocketApiToken = vi.hoisted(() => vi.fn(() => ''))
 const mockGetSocketCliNoApiToken = vi.hoisted(() => vi.fn(() => false))
+vi.mock('@socketsecurity/lib/env/socket', () => ({
+  getSocketApiToken: mockGetSocketApiToken,
+}))
 vi.mock('@socketsecurity/lib/env/socket-cli', () => ({
-  getSocketCliApiToken: mockGetSocketCliApiToken,
   getSocketCliNoApiToken: mockGetSocketCliNoApiToken,
 }))
 
@@ -100,7 +102,7 @@ describe('ascii-header-banner', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetCI.mockReturnValue(false)
-    mockGetSocketCliApiToken.mockReturnValue('')
+    mockGetSocketApiToken.mockReturnValue('')
     mockGetSocketCliNoApiToken.mockReturnValue(false)
     mockGetConfigValueOrUndef.mockReturnValue(undefined)
     mockGetVisibleTokenPrefix.mockReturnValue('')
@@ -134,7 +136,7 @@ describe('ascii-header-banner', () => {
       it('shows token prefix in compact mode', () => {
         mockGetCI.mockReturnValue(true)
         mockGetVisibleTokenPrefix.mockReturnValue('sk_live_')
-        mockGetSocketCliApiToken.mockReturnValue('sk_live_xxxxx')
+        mockGetSocketApiToken.mockReturnValue('sk_live_xxxxx')
 
         const header = getAsciiHeader('scan create', undefined, true)
 
@@ -193,7 +195,7 @@ describe('ascii-header-banner', () => {
 
       it('shows token with env origin', () => {
         mockGetCI.mockReturnValue(true)
-        mockGetSocketCliApiToken.mockReturnValue('sk_live_test')
+        mockGetSocketApiToken.mockReturnValue('sk_live_test')
         mockGetVisibleTokenPrefix.mockReturnValue('sk_live_')
 
         const header = getAsciiHeader('scan', undefined, false)

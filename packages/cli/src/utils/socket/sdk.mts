@@ -33,11 +33,11 @@ import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 import { debug as debugLib } from '@socketsecurity/lib/debug'
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
+import { getSocketApiToken } from '@socketsecurity/lib/env/socket'
 import {
   getSocketCliApiBaseUrl,
   getSocketCliApiProxy,
   getSocketCliApiTimeout,
-  getSocketCliApiToken,
   getSocketCliNoApiToken,
 } from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -95,7 +95,7 @@ export function getDefaultApiToken(): string | undefined {
   }
 
   const key =
-    getSocketCliApiToken() ||
+    getSocketApiToken() ||
     getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
     _defaultToken
 
@@ -146,7 +146,7 @@ export function getExtraCaCerts(): string[] | undefined {
 
 export function getPublicApiToken(): string {
   return (
-    getDefaultApiToken() || getSocketCliApiToken() || SOCKET_PUBLIC_API_TOKEN
+    getDefaultApiToken() || getSocketApiToken() || SOCKET_PUBLIC_API_TOKEN
   )
 }
 

@@ -31,13 +31,15 @@ vi.mock('../../../../src/utils/config.mts', () => ({
 // Mock environment getters from @socketsecurity/lib.
 const mockGetSocketCliApiBaseUrl = vi.hoisted(() => vi.fn())
 const mockGetSocketCliApiProxy = vi.hoisted(() => vi.fn())
-const mockGetSocketCliApiToken = vi.hoisted(() => vi.fn())
+const mockGetSocketApiToken = vi.hoisted(() => vi.fn())
 const mockGetSocketCliNoApiToken = vi.hoisted(() => vi.fn())
 const mockGetSocketCliApiTimeout = vi.hoisted(() => vi.fn())
+vi.mock('@socketsecurity/lib/env/socket', () => ({
+  getSocketApiToken: mockGetSocketApiToken,
+}))
 vi.mock('@socketsecurity/lib/env/socket-cli', () => ({
   getSocketCliApiBaseUrl: mockGetSocketCliApiBaseUrl,
   getSocketCliApiProxy: mockGetSocketCliApiProxy,
-  getSocketCliApiToken: mockGetSocketCliApiToken,
   getSocketCliNoApiToken: mockGetSocketCliNoApiToken,
   getSocketCliApiTimeout: mockGetSocketCliApiTimeout,
 }))
@@ -100,7 +102,7 @@ describe('SDK Utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetSocketCliNoApiToken.mockReturnValue(false)
-    mockGetSocketCliApiToken.mockReturnValue(undefined)
+    mockGetSocketApiToken.mockReturnValue(undefined)
     mockGetSocketCliApiBaseUrl.mockReturnValue(undefined)
     mockGetSocketCliApiProxy.mockReturnValue(undefined)
     mockGetSocketCliApiTimeout.mockReturnValue(undefined)
@@ -159,7 +161,7 @@ describe('SDK Utilities', () => {
     })
 
     it('returns token from environment variable', () => {
-      mockGetSocketCliApiToken.mockReturnValue('mock-env-value-12345')
+      mockGetSocketApiToken.mockReturnValue('mock-env-value-12345')
       const token = getDefaultApiToken()
       expect(token).toBe('mock-env-value-12345')
     })
@@ -179,7 +181,7 @@ describe('SDK Utilities', () => {
     })
 
     it('returns default token when set', () => {
-      mockGetSocketCliApiToken.mockReturnValue('mock-custom-value-12345')
+      mockGetSocketApiToken.mockReturnValue('mock-custom-value-12345')
       const token = getPublicApiToken()
       expect(token).toBe('mock-custom-value-12345')
     })
@@ -194,7 +196,7 @@ describe('SDK Utilities', () => {
 
     it('returns visible prefix when token is set', () => {
       // Token must be long enough to have a prefix.
-      mockGetSocketCliApiToken.mockReturnValue('sk_sec12345678901234567890')
+      mockGetSocketApiToken.mockReturnValue('sk_sec12345678901234567890')
       const prefix = getVisibleTokenPrefix()
       expect(typeof prefix).toBe('string')
     })
@@ -208,7 +210,7 @@ describe('SDK Utilities', () => {
     })
 
     it('returns true when token is set', () => {
-      mockGetSocketCliApiToken.mockReturnValue('mock-value-for-test')
+      mockGetSocketApiToken.mockReturnValue('mock-value-for-test')
       const hasToken = hasDefaultApiToken()
       expect(hasToken).toBe(true)
     })
@@ -216,12 +218,12 @@ describe('SDK Utilities', () => {
 
   describe('invalidateDefaultApiToken', () => {
     it('clears the cached default token', () => {
-      mockGetSocketCliApiToken.mockReturnValue('cached-token')
+      mockGetSocketApiToken.mockReturnValue('cached-token')
       // Populate the cache.
       expect(getDefaultApiToken()).toBe('cached-token')
       // Now invalidate — and have the underlying source return undefined.
       invalidateDefaultApiToken()
-      mockGetSocketCliApiToken.mockReturnValue(undefined)
+      mockGetSocketApiToken.mockReturnValue(undefined)
       mockGetConfigValueOrUndef.mockReturnValue(undefined)
       expect(getDefaultApiToken()).toBeUndefined()
     })

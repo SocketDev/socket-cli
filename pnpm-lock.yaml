@@ -630,7 +630,37 @@ importers:
         specifier: 'catalog:'
         version: 24.9.2
 
+  .claude/hooks/commit-author-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/commit-pr-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/cross-repo-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/default-branch-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/dont-stop-mid-queue-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/drift-check-reminder:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -651,6 +681,10 @@ importers:
         version: 24.9.2
 
   .claude/hooks/markdown-filename-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@5.28.0
+        version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -672,6 +706,12 @@ importers:
         specifier: 'catalog:'
         version: 24.9.2
 
+  .claude/hooks/no-meta-comments-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/no-revert-guard:
     devDependencies:
       '@types/node':
@@ -679,6 +719,18 @@ importers:
         version: 24.9.2
 
   .claude/hooks/path-guard: {}
+
+  .claude/hooks/plan-review-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/prefer-rebase-over-revert-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
 
   .claude/hooks/private-name-guard:
     devDependencies:
@@ -724,6 +776,12 @@ importers:
         version: 5.28.0(typescript@5.9.3)
       '@types/node':
         specifier: 24.9.2
+        version: 24.9.2
+
+  .claude/hooks/version-bump-order-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
         version: 24.9.2
 
   packages/build-infra:

@@ -455,11 +455,11 @@ describe('meow-with-subcommands', () => {
       }
     })
 
-    it('returns "(env)" when SOCKET_CLI_API_TOKEN is set (line 52)', () => {
+    it('returns "(env)" when SOCKET_API_TOKEN is set (line 52)', () => {
       const originalNo = process.env['SOCKET_CLI_NO_API_TOKEN']
-      const original = process.env['SOCKET_CLI_API_TOKEN']
+      const original = process.env['SOCKET_API_TOKEN']
       delete process.env['SOCKET_CLI_NO_API_TOKEN']
-      process.env['SOCKET_CLI_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx'
+      process.env['SOCKET_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx'
       try {
         const result = getTokenOrigin()
         expect(result).toBe('(env)')
@@ -468,17 +468,19 @@ describe('meow-with-subcommands', () => {
           process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNo
         }
         if (original === undefined) {
-          delete process.env['SOCKET_CLI_API_TOKEN']
+          delete process.env['SOCKET_API_TOKEN']
         } else {
-          process.env['SOCKET_CLI_API_TOKEN'] = original
+          process.env['SOCKET_API_TOKEN'] = original
         }
       }
     })
 
     it('returns "(--config flag)" when token from config-from-flag (line 56)', () => {
       const originalNo = process.env['SOCKET_CLI_NO_API_TOKEN']
-      const original = process.env['SOCKET_CLI_API_TOKEN']
+      const original = process.env['SOCKET_API_TOKEN']
+      const originalCli = process.env['SOCKET_CLI_API_TOKEN']
       delete process.env['SOCKET_CLI_NO_API_TOKEN']
+      delete process.env['SOCKET_API_TOKEN']
       delete process.env['SOCKET_CLI_API_TOKEN']
       try {
         // Mock config returns a token AND isConfigFromFlag returns true.
@@ -493,15 +495,20 @@ describe('meow-with-subcommands', () => {
           process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNo
         }
         if (original !== undefined) {
-          process.env['SOCKET_CLI_API_TOKEN'] = original
+          process.env['SOCKET_API_TOKEN'] = original
+        }
+        if (originalCli !== undefined) {
+          process.env['SOCKET_CLI_API_TOKEN'] = originalCli
         }
       }
     })
 
     it('returns "(config)" when token from persisted config (line 56)', () => {
       const originalNo = process.env['SOCKET_CLI_NO_API_TOKEN']
-      const original = process.env['SOCKET_CLI_API_TOKEN']
+      const original = process.env['SOCKET_API_TOKEN']
+      const originalCli = process.env['SOCKET_CLI_API_TOKEN']
       delete process.env['SOCKET_CLI_NO_API_TOKEN']
+      delete process.env['SOCKET_API_TOKEN']
       delete process.env['SOCKET_CLI_API_TOKEN']
       try {
         mockGetConfigValueOrUndef.mockReturnValueOnce(
@@ -515,7 +522,10 @@ describe('meow-with-subcommands', () => {
           process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNo
         }
         if (original !== undefined) {
-          process.env['SOCKET_CLI_API_TOKEN'] = original
+          process.env['SOCKET_API_TOKEN'] = original
+        }
+        if (originalCli !== undefined) {
+          process.env['SOCKET_CLI_API_TOKEN'] = originalCli
         }
       }
     })
@@ -1068,11 +1078,11 @@ describe('meow-with-subcommands', () => {
       }
     })
 
-    it('applies SOCKET_CLI_API_TOKEN override (line 362)', async () => {
+    it('applies SOCKET_API_TOKEN override (line 362)', async () => {
       const originalNoToken = process.env['SOCKET_CLI_NO_API_TOKEN']
-      const originalToken = process.env['SOCKET_CLI_API_TOKEN']
+      const originalToken = process.env['SOCKET_API_TOKEN']
       delete process.env['SOCKET_CLI_NO_API_TOKEN']
-      process.env['SOCKET_CLI_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx'
+      process.env['SOCKET_API_TOKEN'] = 'sktsec_test_xxxxxxxxxxxx'
       const runSpy = vi.fn(async () => undefined)
       const subcommands = {
         scan: {
@@ -1096,9 +1106,9 @@ describe('meow-with-subcommands', () => {
           process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNoToken
         }
         if (originalToken === undefined) {
-          delete process.env['SOCKET_CLI_API_TOKEN']
+          delete process.env['SOCKET_API_TOKEN']
         } else {
-          process.env['SOCKET_CLI_API_TOKEN'] = originalToken
+          process.env['SOCKET_API_TOKEN'] = originalToken
         }
       }
     })

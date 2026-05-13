@@ -12,10 +12,8 @@
 import colors from 'yoctocolors-cjs'
 
 import { getCI } from '@socketsecurity/lib/env/ci'
-import {
-  getSocketCliApiToken,
-  getSocketCliNoApiToken,
-} from '@socketsecurity/lib/env/socket-cli'
+import { getSocketApiToken } from '@socketsecurity/lib/env/socket'
+import { getSocketCliNoApiToken } from '@socketsecurity/lib/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
@@ -179,7 +177,7 @@ export function getTokenOrigin(): string {
   if (getSocketCliNoApiToken()) {
     return ''
   }
-  if (getSocketCliApiToken()) {
+  if (getSocketApiToken()) {
     return '(env)'
   }
   const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)

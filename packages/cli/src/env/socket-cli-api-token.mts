@@ -1,5 +1,5 @@
 /** @fileoverview SOCKET_CLI_API_TOKEN environment variable. */
 
-import { getSocketCliApiToken } from '@socketsecurity/lib/env/socket-cli'
+import { getSocketApiToken } from '@socketsecurity/lib/env/socket'
 
-export const SOCKET_CLI_API_TOKEN = getSocketCliApiToken()
+export const SOCKET_CLI_API_TOKEN = getSocketApiToken()

@@ -1,7 +1,7 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 import { getCI } from '@socketsecurity/lib/env/ci'
+import { getSocketApiToken } from '@socketsecurity/lib/env/socket'
 import {
-  getSocketCliApiToken,
   getSocketCliConfig,
   getSocketCliNoApiToken,
 } from '@socketsecurity/lib/env/socket-cli'
@@ -505,7 +505,7 @@ export async function meowWithSubcommands(
     // The config will be marked as readOnly to prevent persisting it.
     overrideConfigApiToken(undefined)
   } else {
-    const tokenOverride = getSocketCliApiToken()
+    const tokenOverride = getSocketApiToken()
     if (tokenOverride) {
       // This will set the token (even if there was a config override) and
       // set it to readOnly, making sure the temp token won't be persisted.

@@ -52,7 +52,7 @@
     "// Setup": "",
     "setup": "node scripts/setup.mts",
     "postinstall": "node scripts/setup.mts --install --quiet",
-    "prepare": "husky",
+    "prepare": "node scripts/install-git-hooks.mts",
     "pretest": "pnpm run build:cli"
   },
   "devDependencies": {
