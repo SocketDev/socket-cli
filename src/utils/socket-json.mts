@@ -39,6 +39,16 @@ export interface SocketJson {
 
   defaults?: {
     manifest?: {
+      bazel?: {
+        bazel?: string | undefined
+        bazelFlags?: string | undefined
+        bazelOutputBase?: string | undefined
+        bazelRc?: string | undefined
+        bin?: string | undefined
+        disabled?: boolean | undefined
+        out?: string | undefined
+        verbose?: boolean | undefined
+      }
       conda?: {
         disabled?: boolean | undefined
         infile?: string | undefined

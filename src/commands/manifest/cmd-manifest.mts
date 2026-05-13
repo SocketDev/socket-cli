@@ -1,3 +1,4 @@
+import { cmdManifestBazel } from './bazel/cmd-manifest-bazel.mts'
 import { cmdManifestAuto } from './cmd-manifest-auto.mts'
 import { cmdManifestCdxgen } from './cmd-manifest-cdxgen.mts'
 import { cmdManifestConda } from './cmd-manifest-conda.mts'
@@ -37,8 +38,8 @@ const config: CliCommandConfig = {
     configurations available. See \`manifest <language> --help\` for usage details
     per language.
 
-    Currently supported language: scala [beta], gradle [beta], kotlin (through
-    gradle) [beta].
+    Currently supported language: bazel [beta], gradle [beta], kotlin (through
+    gradle) [beta], scala [beta].
 
     Examples
 
@@ -68,6 +69,7 @@ async function run(
       importMeta,
       subcommands: {
         auto: cmdManifestAuto,
+        bazel: cmdManifestBazel,
         cdxgen: cmdManifestCdxgen,
         conda: cmdManifestConda,
         gradle: cmdManifestGradle,
