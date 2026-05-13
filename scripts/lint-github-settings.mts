@@ -247,6 +247,124 @@ function ghApi<T>(
 }
 
 /**
+ * Required GitHub Apps. We can't list installations directly without
+ * `admin:org` scope, so we infer presence from recent check-run
+ * activity on main HEAD. An app that's installed but inactive on
+ * main may false-negative; for the fleet's hot repos this is rare.
+ *
+ * Alphabetical order.
+ */
+const REQUIRED_APP_SLUGS = ['cursor', 'socket-security', 'socket-trufflehog'] as const
+
+interface CheckRunsPayload {
+  check_runs?: Array<{
+    name?: string
+    app?: { slug?: string }
+  }>
+}
+
+/**
+ * Probe app presence by listing check-runs on main HEAD. Returns the
+ * set of app slugs observed (across the most recent commit's check
+ * runs — plus a 5-commit lookback if HEAD has nothing).
+ */
+function detectInstalledApps(repo: string): Set<string> {
+  const seen = new Set<string>()
+  // Primary: HEAD commit's check-runs.
+  const head = ghApi<CheckRunsPayload>(`repos/${repo}/commits/main/check-runs?per_page=100`)
+  for (const run of head?.check_runs ?? []) {
+    if (run.app?.slug) seen.add(run.app.slug)
+  }
+  if (seen.size > 0) return seen
+  // Fallback: walk back 5 commits in case HEAD is a no-PR direct
+  // push that didn't trigger app checks.
+  const commits = ghApi<Array<{ sha?: string }>>(`repos/${repo}/commits/main?per_page=5`)
+  for (const c of commits ?? []) {
+    if (!c.sha) continue
+    const runs = ghApi<CheckRunsPayload>(
+      `repos/${repo}/commits/${c.sha}/check-runs?per_page=100`,
+    )
+    for (const run of runs?.check_runs ?? []) {
+      if (run.app?.slug) seen.add(run.app.slug)
+    }
+    if (seen.size >= REQUIRED_APP_SLUGS.length) break
+  }
+  return seen
+}
+
+interface WorkflowsPayload {
+  workflows?: Array<{
+    name?: string
+    path?: string
+    state?: string
+  }>
+}
+
+/**
+ * Names of canonical shared workflows hosted in socket-registry.
+ * When a fleet repo has a local workflow file whose path basename
+ * matches one of these AND the workflow body doesn't `uses:` the
+ * shared variant, that's drift — the repo is duplicating fleet
+ * logic instead of inheriting it.
+ *
+ * `_local_*` prefixed workflows are intentional local overrides
+ * (the convention socket-registry itself uses for its own
+ * developer-only workflows that consume its own shared actions).
+ * They're exempt from the audit.
+ */
+const SHARED_WORKFLOW_BASENAMES = [
+  'build.yml',
+  'install.yml',
+  'lint.yml',
+  'provenance.yml',
+  'release.yml',
+  'setup.yml',
+  'test.yml',
+] as const
+
+/**
+ * For each canonical shared-workflow basename, return true if the
+ * fleet repo has a local file with that basename that does NOT
+ * delegate to the shared workflow.
+ */
+function detectLocalShadows(
+  repo: string,
+): Array<{ basename: string; localPath: string }> {
+  const out: Array<{ basename: string; localPath: string }> = []
+  const wf = ghApi<WorkflowsPayload>(`repos/${repo}/actions/workflows?per_page=100`)
+  if (!wf?.workflows) return out
+  for (const w of wf.workflows) {
+    if (!w.path || !w.path.startsWith('.github/workflows/')) continue
+    const basename = w.path.slice('.github/workflows/'.length)
+    if (basename.startsWith('_local_')) continue
+    if (!SHARED_WORKFLOW_BASENAMES.includes(basename as typeof SHARED_WORKFLOW_BASENAMES[number])) continue
+    // The repo HAS a workflow with a canonical shared-workflow
+    // basename. Check whether its body uses the shared variant.
+    const r = spawnSync(
+      'gh',
+      ['api', `repos/${repo}/contents/${w.path}`],
+      { cwd: REPO_ROOT, encoding: 'utf8' },
+    )
+    if (r.status !== 0) continue
+    let bodyRaw: string
+    try {
+      const obj = JSON.parse(r.stdout) as { content?: string; encoding?: string }
+      if (obj.encoding !== 'base64' || !obj.content) continue
+      bodyRaw = Buffer.from(obj.content, 'base64').toString('utf8')
+    } catch {
+      continue
+    }
+    if (/uses:\s*SocketDev\/socket-registry\/\.github\/workflows\//.test(bodyRaw)) {
+      // It IS delegating to the shared workflow — that's the right
+      // shape, not a shadow.
+      continue
+    }
+    out.push({ basename, localPath: w.path })
+  }
+  return out
+}
+
+/**
  * Canonical fleet config. Each rule names the API field, expected
  * value, and the fix URL. `fixPatch` is the body to send to PATCH
  * /repos/{owner}/{repo} when --fix is given (undefined = manual fix
@@ -256,6 +374,8 @@ function evaluate(
   repo: string,
   apiRepo: RepoApiPayload,
   apiProtection: BranchProtectionPayload | undefined,
+  installedApps: Set<string>,
+  localShadows: ReadonlyArray<{ basename: string; localPath: string }>,
 ): Finding[] {
   const findings: Finding[] = []
   const settingsUrl = `https://github.com/${repo}/settings`
@@ -326,6 +446,33 @@ function evaluate(
       // is the endpoint; this script's --fix doesn't auto-apply it
       // because rewriting branch protection rules can clobber custom
       // status-check requirements set by the maintainer. Manual.
+      fixable: false,
+    })
+  }
+
+  // Required apps. Each missing app gets one finding with the install URL.
+  for (const slug of REQUIRED_APP_SLUGS) {
+    if (!installedApps.has(slug)) {
+      findings.push({
+        rule: `GitHub App must be installed: ${slug}`,
+        current: 'not detected on recent check-runs',
+        expected: 'installed + posting checks',
+        fixUrl: `https://github.com/apps/${slug}`,
+        fixable: false,
+      })
+    }
+  }
+
+  // Local shadows of shared workflows. Each shadow file is one finding
+  // pointing at the local path; the fix is to either delete the local
+  // file (and let the shared one run) or `uses:` the shared workflow.
+  for (const shadow of localShadows) {
+    findings.push({
+      rule: `Local workflow shadows a shared one: ${shadow.basename}`,
+      current: shadow.localPath,
+      expected:
+        `uses: SocketDev/socket-registry/.github/workflows/${shadow.basename}@<sha>`,
+      fixUrl: `https://github.com/${repo}/blob/main/${shadow.localPath}`,
       fixable: false,
     })
   }
@@ -428,8 +575,16 @@ function main(): number {
   const apiProtection = ghApi<BranchProtectionPayload>(
     `repos/${repo}/branches/main/protection`,
   )
+  const installedApps = detectInstalledApps(repo)
+  const localShadows = detectLocalShadows(repo)
 
-  let findings = evaluate(repo, apiRepo, apiProtection)
+  let findings = evaluate(
+    repo,
+    apiRepo,
+    apiProtection,
+    installedApps,
+    localShadows,
+  )
 
   if (flags.fix && findings.length > 0) {
     const fixedCount = applyFixes(repo, findings)
@@ -438,7 +593,13 @@ function main(): number {
       // state. Cheap (one extra GET).
       const apiRepoAfter = ghApi<RepoApiPayload>(`repos/${repo}`)
       if (apiRepoAfter) {
-        findings = evaluate(repo, apiRepoAfter, apiProtection)
+        findings = evaluate(
+          repo,
+          apiRepoAfter,
+          apiProtection,
+          installedApps,
+          localShadows,
+        )
       }
     }
   }

@@ -31,13 +31,71 @@
 // Fails open on every error (exit 0 + stderr log). The hook must
 // not block the conversation on its own bugs.
 
+import { spawnSync } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 interface Finding {
-  readonly kind: 'broken-shim' | 'edition-mismatch'
+  readonly kind: 'broken-shim' | 'edition-mismatch' | 'auto-repaired'
   readonly message: string
+}
+
+/**
+ * Silently auto-repair an empty/missing SFW shims directory when the
+ * SFW binary + the regenerate script are both present. This handles
+ * the common failure shape where shims got renamed/moved
+ * (`shims.broken-backup/`) and the operator forgot to re-run the
+ * regenerator. Returns a single 'auto-repaired' finding on success
+ * (so the user sees one tidy notice instead of nothing) — or nothing
+ * if the repair conditions weren't met / the script failed.
+ */
+function repairShims(home: string): Finding[] {
+  const sfwDir = path.join(home, '.socket', 'sfw')
+  const shimsDir = path.join(sfwDir, 'shims')
+  const sfwBin = path.join(sfwDir, 'bin', 'sfw')
+  const regen = path.join(sfwDir, 'regenerate-shims.sh')
+
+  // Both the binary and the regen script must exist. If either is
+  // missing the repair can't run; the diagnostic path will surface
+  // the install command instead.
+  if (!existsSync(sfwBin) || !existsSync(regen)) {
+    return []
+  }
+
+  // Repair triggers when shims/ is missing OR empty. A populated
+  // shims/ dir is handled by checkShims() (which reports broken
+  // individual shims).
+  let isEmpty = true
+  if (existsSync(shimsDir)) {
+    try {
+      const entries = require('node:fs').readdirSync(shimsDir) as string[]
+      isEmpty = entries.length === 0
+    } catch {
+      // Unreadable dir — treat as broken; let regen recreate it.
+      isEmpty = true
+    }
+  }
+  if (!isEmpty) {
+    return []
+  }
+
+  const r = spawnSync('bash', [regen], { encoding: 'utf8' })
+  if (r.status !== 0) {
+    // Failed — fall through to checkShims() which will report the
+    // missing/broken state and the install command. Don't double-
+    // report here.
+    return []
+  }
+
+  return [
+    {
+      kind: 'auto-repaired',
+      message:
+        'SFW shims were missing/empty — auto-repaired via ' +
+        `${regen}. ${r.stdout.trim().split('\n').pop() ?? ''}`.trim(),
+    },
+  ]
 }
 
 async function checkShims(): Promise<Finding[]> {
@@ -148,13 +206,24 @@ async function main(): Promise<void> {
   })
 
   const findings: Finding[] = []
+
+  // Auto-repair pass first. If shims/ is empty AND we have the binary
+  // + regen script, rebuild silently — this covers the common "moved
+  // to .broken-backup/" failure shape. After repair, checkShims()
+  // sees a populated shims/ dir and stays quiet, so the operator
+  // gets one notice line instead of a wall of diagnostics.
+  const home = process.env['HOME']
+  if (home) {
+    findings.push(...repairShims(home))
+  }
+
   findings.push(...(await checkShims()))
   findings.push(...checkEdition())
 
   if (findings.length === 0) {
     return
   }
-  process.stderr.write('[setup-security-tools] Health check found issues:\n')
+  process.stderr.write('[setup-security-tools] Health check:\n')
   for (const f of findings) {
     process.stderr.write(`  • ${f.message}\n`)
   }
