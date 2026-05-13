@@ -233,8 +233,7 @@ test('<source-filename>.md (code-file hint) is allowed under docs/', async () =>
   const result = await runHook({
     tool_input: {
       content: 'doc',
-      file_path:
-        '/Users/x/projects/foo/docs/additions/lib/smol-ffi.js.md',
+      file_path: '/Users/x/projects/foo/docs/additions/lib/smol-ffi.js.md',
     },
     tool_name: 'Write',
   })
@@ -292,4 +291,3 @@ test('anything under .claude/ at any depth bypasses the rules', async () => {
     )
   }
 })
-

@@ -222,7 +222,7 @@ async function main(): Promise<number> {
       `Fix path:`,
       `  1. Edit socket-wheelhouse/template/${relToRepo}`,
       `  2. Commit + push template`,
-      `  3. Cascade with: node scripts/sync-scaffolding/main.mts \\`,
+      `  3. Cascade with: node scripts/sync-scaffolding/cli.mts \\`,
       `       --target ${repoRoot} --fix`,
       ``,
       `If you genuinely need to bypass (e.g. emergency hotfix that`,

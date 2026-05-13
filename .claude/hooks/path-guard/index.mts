@@ -69,8 +69,11 @@ const EXEMPT_FILE_PATTERNS: RegExp[] = [
   // Any paths.mts is the canonical constructor.
   /(^|\/)paths\.(mts|cts)$/,
   // The gate itself and this hook — both enumerate the patterns to
-  // detect them.
+  // detect them. The gate was split into a `check-paths/` directory of
+  // helper modules; every file under that dir legitimately enumerates
+  // stage / build-root / mode tokens for scanning purposes.
   /scripts\/check-paths\.mts$/,
+  /scripts\/check-paths\//,
   /\.claude\/hooks\/path-guard\/index\.(mts|cts)$/,
   /\.claude\/hooks\/path-guard\/test\//,
   // Existing path-scanning gates that intentionally enumerate.

@@ -23,7 +23,7 @@ If a downstream repo needs a behavior change in one of these files:
 
 1. Edit the file in `socket-wheelhouse/template/...`.
 2. Commit the template change.
-3. Run `node scripts/sync-scaffolding/main.mts --target <downstream-repo> --fix` to cascade.
+3. Run `node scripts/sync-scaffolding/cli.mts --target <downstream-repo> --fix` to cascade.
 
 Do NOT edit the local copy in the downstream repo and rely on cascades to "preserve" your edits via `git checkout HEAD --` workarounds. That creates drift the sync mechanism then has to dance around, blocking other improvements from reaching that file in that repo.
 

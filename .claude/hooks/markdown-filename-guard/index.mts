@@ -161,10 +161,7 @@ export function classifyMarkdownPath(absPath: string): Verdict {
   // normalization on the overwhelmingly-common non-`.claude` path.
   if (absPath.includes('.claude')) {
     const normalized = normalizePath(absPath)
-    if (
-      normalized.includes('/.claude/') ||
-      normalized.endsWith('/.claude')
-    ) {
+    if (normalized.includes('/.claude/') || normalized.endsWith('/.claude')) {
       return { ok: true }
     }
   }
