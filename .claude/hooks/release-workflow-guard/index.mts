@@ -76,6 +76,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { buildQuoteMask } from '../_shared/bash-quote-mask.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 type ToolInput = {
   tool_input?:
@@ -84,7 +85,24 @@ type ToolInput = {
       }
     | undefined
   tool_name?: string | undefined
+  transcript_path?: string | undefined
 }
+
+// Bypass phrase: `Allow workflow-dispatch bypass`. Authorizes one
+// dispatch when the user types this verbatim in a recent turn.
+// Scoped to the active conversation — phrase is matched against the
+// last `BYPASS_LOOKBACK_USER_TURNS` user turns from the transcript.
+//
+// Use cases that need the bypass (the dry-run path doesn't cover):
+//   - Workflows that don't accept a `dry-run` input by design
+//     (e.g. node-smol's main build, which has 30-minute side effects
+//     but no inverse).
+//   - One-off recovery dispatches after a stuck job.
+//   - Re-dispatches after a transient infra failure (cache miss,
+//     runner timeout) where the user has already verified the
+//     previous run's intent.
+const BYPASS_PHRASE = 'Allow workflow-dispatch bypass'
+const BYPASS_LOOKBACK_USER_TURNS = 8
 
 // `gh workflow run <id-or-file>` / `gh workflow dispatch <id-or-file>`.
 // The captured workflow argument is reported back so the user can
@@ -488,10 +506,25 @@ function main(): void {
       // Transparently log the bypass so the user sees why the guard
       // let it through. Stderr only — no exit-code change, hook
       // behaves as if it never fired.
-      process.stderr.write(
+      process.stderr.write( // socket-hook: allow console
         `[release-workflow-guard] ALLOWED: ${shape} on ${workflow ?? '<unknown>'} — ${allowedReason}\n`,
       )
     }
+    return
+  }
+
+  // Phrase-based bypass. The user types `Allow workflow-dispatch
+  // bypass` verbatim in a recent turn → the hook authorizes one
+  // dispatch. Transparently logged so the audit trail names the
+  // workflow that was allowed.
+  if (bypassPhrasePresent(
+    input.transcript_path,
+    BYPASS_PHRASE,
+    BYPASS_LOOKBACK_USER_TURNS,
+  )) {
+    process.stderr.write( // socket-hook: allow console
+      `[release-workflow-guard] ALLOWED: ${shape} on ${workflow ?? '<unknown>'} — bypass phrase "${BYPASS_PHRASE}" found in transcript\n`,
+    )
     return
   }
 
@@ -504,18 +537,23 @@ function main(): void {
     '    - Build/Release workflows create GitHub releases pinned by SHA.',
     '    - Container workflows push immutable image tags.',
     '',
-    '  Allowed bypass — verifiable dry-run:',
-    '    - Pass `-f dry-run=true` explicitly, AND',
-    '    - The workflow YAML must declare a `dry-run:` input under',
-    '      its workflow_dispatch.inputs block.',
-    '    - No force-prod overrides may be set',
-    '      (e.g. -f release=true / -f publish=true).',
+    '  Bypass options:',
+    '    (a) Verifiable dry-run:',
+    '        - Pass `-f dry-run=true` explicitly, AND',
+    '        - The workflow YAML must declare a `dry-run:` input under',
+    '          its workflow_dispatch.inputs block.',
+    '        - No force-prod overrides may be set',
+    '          (e.g. -f release=true / -f publish=true).',
+    `    (b) Explicit phrase bypass: the user types \`${BYPASS_PHRASE}\``,
+    '        verbatim in a recent message. Use this for workflows that',
+    '        don\'t accept a dry-run input (e.g. node-smol build) or',
+    '        for one-off recovery dispatches.',
     '',
-    '  Without that bypass, the user runs workflow_dispatch jobs',
+    '  Without a bypass, the user runs workflow_dispatch jobs',
     '  manually. Tell the user to run the command in their own',
     '  terminal (or via the GitHub Actions UI), then resume.',
   ]
-  process.stderr.write(lines.join('\n') + '\n')
+  process.stderr.write(lines.join('\n') + '\n') // socket-hook: allow console
   process.exitCode = 2
 }
 

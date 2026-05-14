@@ -29,12 +29,37 @@ async function runHook(
   toolName = 'Bash',
   env?: Record<string, string>,
   cwd?: string,
+  transcriptPath?: string,
 ): Promise<{ code: number | null; stdout: string; stderr: string }> {
   const payload = JSON.stringify({
     tool_name: toolName,
     tool_input: { command },
+    ...(transcriptPath ? { transcript_path: transcriptPath } : {}),
   })
   return runChild(payload, env, cwd)
+}
+
+/**
+ * Make a tmp transcript file containing one user-turn message with
+ * the given text. Used to exercise the phrase-bypass path.
+ */
+async function makeTranscript(text: string): Promise<{
+  transcriptPath: string
+  cleanup: () => Promise<void>
+}> {
+  const dir = await fs.mkdtemp(path.join(tmpdir(), 'rwg-transcript-'))
+  const transcriptPath = path.join(dir, 'session.jsonl')
+  const turn = JSON.stringify({
+    type: 'user',
+    message: { role: 'user', content: text },
+  })
+  await fs.writeFile(transcriptPath, turn + '\n', 'utf8')
+  return {
+    transcriptPath,
+    cleanup: async () => {
+      await safeDelete(dir, { force: true })
+    },
+  }
 }
 
 /**
@@ -681,6 +706,162 @@ describe('release-workflow-guard hook', () => {
       )
       assert.equal(r.code, 0)
       assert.match(r.stderr, /GitHub-release-only/)
+    })
+  })
+
+  describe('workflow-dispatch phrase bypass', () => {
+    let cleanups: Array<() => Promise<void>> = []
+
+    afterEach(async () => {
+      for (const cleanup of cleanups) {
+        await cleanup()
+      }
+      cleanups = []
+    })
+
+    it('blocks dispatch when transcript lacks the bypass phrase', async () => {
+      // Sanity check: without a transcript, the canonical block path
+      // still fires for a workflow that has neither dry-run nor a
+      // GH-release-only shape.
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'publish.yml',
+        ['name: publish', 'on: { workflow_dispatch: {} }', 'jobs:',
+         '  publish:', '    steps:', '      - run: npm publish', '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
+        'just a regular message with no bypass phrase here',
+      )
+      cleanups.push(cleanupTranscript)
+      const r = await runHook(
+        'gh workflow run publish.yml',
+        'Bash',
+        { CLAUDE_PROJECT_DIR: projectDir },
+        undefined,
+        transcriptPath,
+      )
+      assert.equal(r.code, 2, `Expected 2 but got ${r.code}: ${r.stderr}`)
+      assert.match(r.stderr, /BLOCKED/)
+    })
+
+    it('allows dispatch when transcript contains the bypass phrase', async () => {
+      // The classic node-smol case: workflow has no dry-run input,
+      // isn't a pure GH-release shape, but the user has typed the
+      // canonical phrase in a recent turn — bypass authorizes one
+      // dispatch.
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'build.yml',
+        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
+         '  build:', '    steps:', '      - run: ./scripts/build.sh', '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
+        'Allow workflow-dispatch bypass — kicking off the smol build',
+      )
+      cleanups.push(cleanupTranscript)
+      const r = await runHook(
+        'gh workflow run build.yml',
+        'Bash',
+        { CLAUDE_PROJECT_DIR: projectDir },
+        undefined,
+        transcriptPath,
+      )
+      assert.equal(r.code, 0, `Expected 0 but got ${r.code}: ${r.stderr}`)
+      assert.match(r.stderr, /ALLOWED/)
+      assert.match(r.stderr, /bypass phrase/)
+    })
+
+    it('phrase match is case-sensitive (lowercased phrase does NOT bypass)', async () => {
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'build.yml',
+        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
+         '  build:', '    steps:', '      - run: ./scripts/build.sh', '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
+        'allow workflow-dispatch bypass — wrong case',
+      )
+      cleanups.push(cleanupTranscript)
+      const r = await runHook(
+        'gh workflow run build.yml',
+        'Bash',
+        { CLAUDE_PROJECT_DIR: projectDir },
+        undefined,
+        transcriptPath,
+      )
+      assert.equal(r.code, 2, `Expected 2 but got ${r.code}: ${r.stderr}`)
+    })
+
+    it('paraphrased intent does NOT bypass', async () => {
+      // Per fleet rule: only the exact phrase counts; "go ahead" or
+      // "ship it" inferring intent must not unlock the dispatch.
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'build.yml',
+        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
+         '  build:', '    steps:', '      - run: ./scripts/build.sh', '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
+        'go ahead and dispatch the workflow, skip the guard',
+      )
+      cleanups.push(cleanupTranscript)
+      const r = await runHook(
+        'gh workflow run build.yml',
+        'Bash',
+        { CLAUDE_PROJECT_DIR: projectDir },
+        undefined,
+        transcriptPath,
+      )
+      assert.equal(r.code, 2, `Expected 2 but got ${r.code}: ${r.stderr}`)
+    })
+
+    it('phrase also bypasses `gh api .../dispatches` shape', async () => {
+      // The dry-run bypass intentionally doesn't apply to gh-api, but
+      // the explicit phrase bypass does — it's the operator's audited
+      // override for the harder-to-verify shape.
+      const { transcriptPath, cleanup } = await makeTranscript(
+        'Allow workflow-dispatch bypass',
+      )
+      cleanups.push(cleanup)
+      const r = await runHook(
+        'gh api repos/foo/bar/actions/workflows/42/dispatches -X POST',
+        'Bash',
+        undefined,
+        undefined,
+        transcriptPath,
+      )
+      assert.equal(r.code, 0, `Expected 0 but got ${r.code}: ${r.stderr}`)
+      assert.match(r.stderr, /ALLOWED/)
+    })
+
+    it('phrase on its own line in a multi-line user message bypasses', async () => {
+      // The fleet rule explicitly allows the phrase to appear on its
+      // own line in a multi-line message — the transcript helper
+      // matches by substring on the concatenated user turns.
+      const { projectDir, cleanup } = await makeWorkflowFixture(
+        'build.yml',
+        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
+         '  build:', '    steps:', '      - run: ./build', '',
+        ].join('\n'),
+      )
+      cleanups.push(cleanup)
+      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
+        'here is some preamble\nAllow workflow-dispatch bypass\nand some trailing text',
+      )
+      cleanups.push(cleanupTranscript)
+      const r = await runHook(
+        'gh workflow run build.yml',
+        'Bash',
+        { CLAUDE_PROJECT_DIR: projectDir },
+        undefined,
+        transcriptPath,
+      )
+      assert.equal(r.code, 0, `Expected 0 but got ${r.code}: ${r.stderr}`)
+      assert.match(r.stderr, /ALLOWED/)
     })
   })
 
