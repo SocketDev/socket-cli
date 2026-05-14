@@ -12,34 +12,7 @@ Identify users by git credentials and use their actual name. Use "you/your" when
 
 ### Parallel Claude sessions
 
-This repo may have multiple Claude sessions running concurrently against the same checkout, against parallel git worktrees, or against sibling clones. Several common git operations are hostile to that.
-
-**Forbidden in the primary checkout:**
-
-- `git stash` — shared store; another session can `pop` yours
-- `git add -A` / `git add .` — sweeps files from other sessions
-- `git checkout <branch>` / `git switch <branch>` — yanks the working tree out from under another session
-- `git reset --hard` against a non-HEAD ref — discards another session's commits
-
-**Required for branch work:** spawn a worktree.
-
-```bash
-BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo main)
-git worktree add -b <task-branch> ../<repo>-<task> "$BASE"
-cd ../<repo>-<task>
-# edit / commit / push from here; primary checkout is untouched
-git worktree remove ../<repo>-<task>
-```
-
-The `BASE` lookup resolves the remote's default branch — usually `main`, but legacy repos still use `master`. Never hard-code one; use `git symbolic-ref refs/remotes/origin/HEAD` (or fall back to `main` if the remote isn't set). See [Default branch fallback](#default-branch-fallback) below.
-
-**Required for staging:** surgical `git add <specific-file>`. Never `-A` / `.` (enforced by `.claude/hooks/overeager-staging-guard/`; bypass: `Allow add-all bypass`).
-
-**Never revert files you didn't touch.** If `git status` shows unfamiliar changes, leave them — they belong to another session, an upstream pull, or a hook side-effect.
-
-**Never reach into a sibling fleet repo's path.** Imports cross via `@socketsecurity/lib/...` / `@socketregistry/...` only, never `../<sibling-repo>/...` (enforced by `.claude/hooks/cross-repo-guard/`).
-
-The umbrella rule: never run a git command that mutates state belonging to a path other than the file you just edited.
+🚨 Multiple Claude sessions may target the same checkout (parallel agents, terminals, or worktrees on the same `.git/`). **The umbrella rule:** never run a git command that mutates state belonging to a path other than the file you just edited. Forbidden in the primary checkout: `git stash`, `git add -A` / `git add .` (enforced by `.claude/hooks/overeager-staging-guard/`; bypass: `Allow add-all bypass`), `git checkout/switch <branch>`, `git reset --hard <non-HEAD>`. Branch work goes in a `git worktree`. Cross-repo imports via `@socketsecurity/lib/...` only, never `../<sibling-repo>/...` (enforced by `.claude/hooks/cross-repo-guard/`). Full prohibition list + worktree recipe in [`docs/claude.md/fleet/parallel-claude-sessions.md`](docs/claude.md/fleet/parallel-claude-sessions.md).
 
 ### Default branch fallback
 
@@ -78,25 +51,7 @@ Apply in: worktree creation, base-ref resolution for `git diff`/`git rev-list`, 
 
 ### Version bumps
 
-🚨 When the user asks for a version bump (`bump to vX.Y.Z`, `tag X.Y.Z`, `release X`, etc.), follow this sequence exactly. Order matters — skipping or reordering steps produces broken releases.
-
-1. **Pre-bump prep, in this order** (each must finish clean before the next):
-   - `pnpm run update`
-   - `pnpm i`
-   - `pnpm run fix --all`
-   - `pnpm run check --all`
-
-   If any step surfaces failures, fix them before continuing. Don't bump a broken tree.
-
-2. **CHANGELOG entry — public-facing only.** The new `## [X.Y.Z]` block describes what a downstream consumer needs to know to upgrade. Include: new exports, removed exports, renamed exports, signature changes, behavioral changes, perf characteristics they will measure, migration recipes. **Exclude** internal refactors, file moves, test reorg, primordials cleanup, lint passes, `chore(sync)` cascades, build-script tweaks — these are noise to the consumer. Use Keep-a-Changelog sections (Added / Changed / Removed / Renamed / Fixed / Performance / Migration). Source the raw list with `git log <prev-tag>..HEAD --pretty="%s"` and filter to consumer-visible commits only.
-
-3. **The bump commit is the LAST commit on the release.** If a session has other unrelated work to commit, those land first; the `chore: bump version to X.Y.Z` (carrying both `package.json` and `CHANGELOG.md`) is the tip of the branch when tagging. If a version-bump commit already exists earlier in history, rebase it forward so it ends up at the tip.
-
-4. **Tag at the end:** `git tag vX.Y.Z` at the bump commit, then push the tag (enforced by `.claude/hooks/version-bump-order-guard/`).
-
-5. **Do NOT dispatch the publish workflow.** Per the _Public-surface hygiene_ rule, releases are user-triggered. Stop after the tag push; the user runs the publish workflow manually.
-
-**Why:** Bisecting from `main` past the tag must not land on a temporarily-broken state. `git describe` is cleaner when the bump is the tip. The pre-bump prep wave catches dependency drift, formatting drift, and type drift that consumers would otherwise hit on first install. The public-facing-only filter is the difference between a changelog people read and a changelog people skip.
+🚨 When the user asks for a version bump (`bump to vX.Y.Z`, `tag X.Y.Z`, `release X`, etc.), the sequence is exactly: (1) pre-bump prep wave `pnpm run update` → `pnpm i` → `pnpm run fix --all` → `pnpm run check --all` (each must finish clean); (2) CHANGELOG entry, **public-facing only** — new exports / signature changes / migration recipes, NOT internal refactors or `chore(sync)` cascades; (3) `chore: bump version to X.Y.Z` is the LAST commit on the release; (4) `git tag vX.Y.Z` at that commit (enforced by `.claude/hooks/version-bump-order-guard/`); (5) do NOT dispatch the publish workflow — user-triggered. Full sequence + rationale in [`docs/claude.md/fleet/version-bumps.md`](docs/claude.md/fleet/version-bumps.md).
 
 ### Programmatic Claude calls
 
@@ -163,26 +118,7 @@ For non-trivial work (multi-file refactor, new feature, migration), the plan its
 
 ### Drift watch
 
-🚨 **Drift across fleet repos is a defect, not a feature.** When you see two socket-\* repos pinning different versions of the same shared resource — a tool in `external-tools.json`, a workflow SHA, a CLAUDE.md fleet block, an action in `.github/actions/`, an upstream submodule SHA, a hook in `.claude/hooks/` — **opt for the latest**. The repo with the newer version is the source of truth; older repos catch up.
-
-Where drift commonly hides:
-
-- `external-tools.json` — pnpm/zizmor/sfw versions + per-platform sha256s
-- `socket-registry/.github/actions/*` — composite-action SHAs pinned in consumer workflows
-- `template/CLAUDE.md` `<!-- BEGIN FLEET-CANONICAL -->` block — must be byte-identical across the fleet
-- `template/.claude/hooks/*` — same hook, same code
-- lockstep.json `pinned_sha` rows — upstream submodules tracked by socket-btm
-- `.gitmodules` `# name-version` annotations (enforced by `.claude/hooks/gitmodules-comment-guard/`)
-- pnpm/Node `packageManager`/`engines` fields
-
-How to check:
-
-1. If you're editing one of these in repo A, grep the same thing in repos B/C/D. If A is older, bump A first; if A is newer, plan a sync to B/C/D.
-2. `socket-registry`'s `setup-and-install` action is the canonical source for tool SHAs. Diverging from it is drift.
-3. `socket-wheelhouse`'s `template/` tree is the canonical source for `.claude/`, CLAUDE.md fleet block, and hook code. Diverging is drift.
-4. Run `pnpm run sync-scaffolding` (in repos that have it) to surface drift programmatically.
-
-Never silently let drift sit. Either reconcile in the same PR or open a follow-up PR titled `chore(sync): cascade <thing> from <newer-repo>` and link it (enforced by `.claude/hooks/drift-check-reminder/`).
+🚨 **Drift across fleet repos is a defect, not a feature.** When two socket-\* repos pin different versions of the same shared resource (a tool in `external-tools.json`, a workflow SHA, a CLAUDE.md fleet block, a hook in `.claude/hooks/`, an upstream submodule, `.gitmodules` `# name-version` annotations enforced by `.claude/hooks/gitmodules-comment-guard/`, pnpm/Node `packageManager`/`engines`), **opt for the latest**. Canonical sources: `socket-registry`'s `setup-and-install` action for tool SHAs; `socket-wheelhouse`'s `template/` tree for `.claude/`, CLAUDE.md fleet block, hooks. Either reconcile in the same PR or open `chore(sync): cascade <thing> from <newer-repo>` and link it (enforced by `.claude/hooks/drift-check-reminder/`). Full drift-surface list + cascade-PR convention in [`docs/claude.md/fleet/drift-watch.md`](docs/claude.md/fleet/drift-watch.md).
 
 ### Never fork fleet-canonical files locally
 
@@ -190,19 +126,7 @@ Never silently let drift sit. Either reconcile in the same PR or open a follow-u
 
 ### Code style
 
-- **Comments** — default to none. When you do write one, audience is a junior dev: explain the constraint, the hidden invariant, the "why this and not the obvious thing." No teacher-tone. No `// Plan:` / `// Task:` / `// As requested ...` meta-labels and no `// removed X` / `// previously Y` references — that's commit-message territory (enforced by `.claude/hooks/no-meta-comments-guard/`).
-- **Parser comments — exception to "default to none."** Parsers that mirror an upstream reference (test262, eco lockfile parsers, smol-manifest, acorn) get step-by-step prose + upstream-pinned source links so the dual-impl invariant stays verifiable across forks. Full convention in [`docs/claude.md/fleet/parser-comments.md`](docs/claude.md/fleet/parser-comments.md).
-- **Pointer comments** — `// see X` / `// see X for details` / `// full rationale in Y` is acceptable when BOTH (a) the destination actually carries the load-bearing explanation, AND (b) the inline form carries the one-line claim so a reader who never follows the pointer still walks away with the *why*. A pointer with neither is dead weight; a pointer with only (a) fails CLAUDE.md's "the reader should fix the problem from the comment alone" test (enforced by `.claude/hooks/pointer-comment-guard/`).
-- **Completion** — never leave `TODO` / `FIXME` / `XXX` / shims / stubs / placeholders. Finish 100%.
-- **`null` vs `undefined`** — use `undefined`. `null` only for `__proto__: null` or external APIs.
-- **HTTP** — never `fetch()`. Use `httpJson` / `httpText` / `httpRequest` from `@socketsecurity/lib/http-request`.
-- **File deletion** — `safeDelete()` / `safeDeleteSync()` from `@socketsecurity/lib/fs`. Never `fs.rm` / `fs.unlink` / `rm -rf` directly.
-- **Edits** — Edit tool, never `sed` / `awk`.
-- **CI detection** — `'CI' in process.env` (presence check), never `process.env.CI` (truthy). Ecosystem convention — handles `CI=` / `CI=0` / `CI=false` setups correctly while the truthy form mis-classifies them.
-- **`node:os` imports** — `import os from 'node:os'` + `os.tmpdir()` / `os.platform()` etc., never `import { tmpdir } from 'node:os'`. Keeps callsites grep-able and avoids per-export rename drift.
-- **Logger** — `getDefaultLogger()` from `@socketsecurity/lib/logger`, never `process.std{err,out}.write` or `console.*` in source (enforced by `.claude/hooks/logger-guard/`).
-- **Doc filenames** — `lowercase-with-hyphens.md` in `docs/` or `.claude/`; SCREAMING_CASE only for the GitHub-rendered set (README, CHANGELOG, CONTRIBUTING, …) at repo root. `<source>.<ext>.md` allowed for docs describing a code file (enforced by `.claude/hooks/markdown-filename-guard/`).
-- Full ruleset (object literals, imports, subprocesses, file existence, generated reports, sorting, Promise.race, Safe suffix, `node:smol-*` modules, inclusive language) in [`docs/claude.md/fleet/code-style.md`](docs/claude.md/fleet/code-style.md). See also [`docs/claude.md/fleet/sorting.md`](docs/claude.md/fleet/sorting.md) and [`docs/claude.md/fleet/inclusive-language.md`](docs/claude.md/fleet/inclusive-language.md).
+Default to no comments (enforced by `.claude/hooks/no-meta-comments-guard/` for meta-labels + removed-code refs); when written, write for a junior reader. Parsers mirroring an upstream get the exception ([`docs/claude.md/fleet/parser-comments.md`](docs/claude.md/fleet/parser-comments.md)). Pointer comments (`// see X`) need both the destination and an inline one-line claim (enforced by `.claude/hooks/pointer-comment-guard/`). Heaviest invariants: no `TODO`/`FIXME`/stubs; `undefined` over `null`; `httpJson`/`httpText` from `@socketsecurity/lib/http-request` over `fetch()`; `safeDelete()` from `@socketsecurity/lib/fs` over `fs.rm`; Edit tool over `sed`/`awk`; `'CI' in process.env` presence check over truthy; `import os from 'node:os'` over named imports; `getDefaultLogger()` over `console.*` (enforced by `.claude/hooks/logger-guard/`); doc filenames `lowercase-with-hyphens.md` under `docs/` or `.claude/` (enforced by `.claude/hooks/markdown-filename-guard/`). Full ruleset (object literals, imports, subprocesses, file existence, generated reports, sorting, Promise.race, Safe suffix, `node:smol-*`, inclusive language) in [`docs/claude.md/fleet/code-style.md`](docs/claude.md/fleet/code-style.md). See also [`docs/claude.md/fleet/sorting.md`](docs/claude.md/fleet/sorting.md) and [`docs/claude.md/fleet/inclusive-language.md`](docs/claude.md/fleet/inclusive-language.md).
 
 ### File size
 
@@ -230,6 +154,10 @@ A path is constructed exactly once. Everywhere else references the constructed v
 - **Canonical layout**: build outputs live at `<package-root>/build/<mode>/<platform-arch>/out/Final/<artifact>`, where `mode ∈ {dev, prod}` and `platform-arch` is the Node-style `<process.platform>-<process.arch>` (e.g. `darwin-arm64`, `linux-x64`). socket-btm is the worked example; ultrathink follows it; smaller TS-only repos that don't fork by platform may use `'any'` as the platform-arch sentinel but keep the same nesting. Each package's `scripts/paths.mts` exports `PACKAGE_ROOT`, `BUILD_ROOT`, and `getBuildPaths(mode, platformArch)` returning at minimum `outputFinalDir` + `outputFinalFile`/`outputFinalBinary`.
 
 Three-level enforcement: `.claude/hooks/path-guard/` blocks build-path construction outside `paths.mts` at edit time; `.claude/hooks/paths-mts-inherit-guard/` blocks sub-package `paths.mts` files that don't inherit from the nearest ancestor; `scripts/check-paths.mts` is the whole-repo gate run by `pnpm check`; `/guarding-paths` is the audit-and-fix skill. Find the canonical owner and import from it.
+
+### Cross-platform path matching
+
+When a regex matches against a path string, **normalize the path first** with `normalizePath` (or `toUnixPath`) from `@socketsecurity/lib/paths/normalize` and write the regex against `/` only. Don't write dual-separator patterns like `[/\\]` — they're easy to miss in some branches, slower to read, and they multiply when you add `\\\\` for escaped Windows separators. `normalizePath` is the same helper the fleet uses everywhere; relying on it gives one path representation across `darwin` / `linux` / `win32` (enforced by `.claude/hooks/path-regex-normalize-reminder/`). Bypass: `Allow path-regex-normalize bypass`.
 
 ### Background Bash
 

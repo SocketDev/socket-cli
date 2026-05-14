@@ -59,14 +59,12 @@ import process from 'node:process'
 
 import { readStdin } from '../_shared/transcript.mts'
 
-// Default cap: 20 body lines. Chosen to accommodate the longest
-// current fleet sections (~19 lines) without breaking the build,
-// while still catching the failure mode where a single section grows
-// to 30+ lines. Aspirational target is closer to 8 — sections above
-// that have a long-form companion under docs/claude.md/fleet/, and
-// the inline body is 1-2 sentences plus a link. Tighten the cap as
-// long sections get outsourced.
-const DEFAULT_MAX_BODY_LINES = 20
+// Default cap: 8 body lines. Sections above this should have a
+// long-form companion under docs/claude.md/fleet/ and the inline body
+// should shrink to 1-2 sentences plus a link. Catches the failure
+// mode where a single section grows to 30+ lines while leaving room
+// for short rules to stay self-contained.
+const DEFAULT_MAX_BODY_LINES = 8
 const FLEET_BEGIN_MARKER = '<!-- BEGIN FLEET-CANONICAL'
 const FLEET_END_MARKER = '<!-- END FLEET-CANONICAL'
 

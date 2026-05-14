@@ -4,9 +4,9 @@ PreToolUse hook that caps the body length of individual `### ` sections inside t
 
 ## What it does
 
-Complements `claude-md-size-guard` (40KB byte cap on the whole block) by enforcing a per-section line cap inside the block. Each `### Section heading` inside the `<!-- BEGIN/END FLEET-CANONICAL -->` markers gets at most **20 body lines** (configurable via `CLAUDE_MD_FLEET_SECTION_MAX_LINES`).
+Complements `claude-md-size-guard` (40KB byte cap on the whole block) by enforcing a per-section line cap inside the block. Each `### Section heading` inside the `<!-- BEGIN/END FLEET-CANONICAL -->` markers gets at most **8 body lines** (configurable via `CLAUDE_MD_FLEET_SECTION_MAX_LINES`).
 
-The 20-line cap is the current accommodation; the aspirational target is closer to 8. Sections that exceed 8 lines should have a long-form companion at `docs/claude.md/fleet/<topic>.md` and the inline body should shrink to 1-2 sentences plus a link.
+Sections that exceed 8 lines should have a long-form companion at `docs/claude.md/fleet/<topic>.md` and the inline body should shrink to 1-2 sentences plus a link. The cap was 20 initially (during the bootstrap when several fleet sections were 12-19 lines); it tightened to 8 once those sections were outsourced.
 
 Blank lines don't count. Code-fence content does count.
 

@@ -73,8 +73,8 @@ test('allows short sections under the default cap', async () => {
   assert.strictEqual(result.code, 0)
 })
 
-test('blocks a section that exceeds the default 20-line cap', async () => {
-  const longBody = Array(25).fill('one detail line').join('\n')
+test('blocks a section that exceeds the default 8-line cap', async () => {
+  const longBody = Array(12).fill('one detail line').join('\n')
   const content = buildClaudeMd([
     { heading: 'Long rule', body: longBody },
   ])
@@ -84,13 +84,13 @@ test('blocks a section that exceeds the default 20-line cap', async () => {
   })
   assert.strictEqual(result.code, 2)
   assert.match(result.stderr, /Long rule/)
-  assert.match(result.stderr, /25 body lines/)
+  assert.match(result.stderr, /12 body lines/)
 })
 
 test('blank lines do not count toward the cap', async () => {
-  // 20 non-blank lines with blanks between — exactly at cap, should pass.
+  // 8 non-blank lines with blanks between — exactly at cap, should pass.
   const lines: string[] = []
-  for (let i = 1; i <= 20; i++) {
+  for (let i = 1; i <= 8; i++) {
     lines.push(`line ${i}`)
     lines.push('')
   }
@@ -104,10 +104,10 @@ test('blank lines do not count toward the cap', async () => {
 })
 
 test('code-fence lines do count toward the cap', async () => {
-  // 1 prose + 25 code lines = 26 non-blank > 20 cap. Should block.
+  // 1 prose + 9 code lines = 10 non-blank > 8 cap. Should block.
   const codeLines: string[] = []
   codeLines.push('```ts')
-  for (let i = 0; i < 23; i++) {
+  for (let i = 0; i < 7; i++) {
     codeLines.push(`const v${i} = ${i}`)
   }
   codeLines.push('```')
