@@ -11,7 +11,9 @@ These directories and files cascade fleet-wide. They are **not** repo-local:
 - `.claude/hooks/` — PreToolUse / PostToolUse hooks
 - `.claude/skills/_shared/` — shared skill helpers
 - `CLAUDE.md` fleet block (between `BEGIN/END FLEET-CANONICAL` markers)
-- `docs/claude.md/` — CLAUDE.md offshoot references (this file lives here)
+- `docs/claude.md/fleet/` — fleet-canonical CLAUDE.md offshoot references (applies to every socket-* repo)
+- `docs/claude.md/wheelhouse/` — docs about the wheelhouse cascade mechanism itself (this file lives here)
+- Downstream repos may add their own `docs/claude.md/<repo>/` subdirectory for repo-specific docs — those are NOT fleet-canonical.
 - Anything else listed in the sync manifest
 
 If unsure, check `socket-wheelhouse/scripts/sync-scaffolding/manifest.mts`. Tracked = canonical.
