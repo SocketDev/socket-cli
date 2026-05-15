@@ -46,15 +46,11 @@ catalog:
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
-  '@socketregistry/packageurl-js': 1.4.2
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 5.28.0
   '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@5.28.0'
-  '@socketsecurity/registry': 2.0.2
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
-  '@socketsecurity/sdk': 4.0.1
   '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.0.1'
   '@types/adm-zip': 0.5.7
   '@types/cmd-shim': 5.0.2
@@ -198,7 +194,7 @@ overrides:
   '@octokit/graphql': 'catalog:'
   '@octokit/request-error': 'catalog:'
   '@sigstore/sign': '4.1.0'
-  '@socketsecurity/lib': 'catalog:'
+  '@socketsecurity/lib': 'npm:@socketsecurity/lib@5.28.0'
   aggregate-error: 'catalog:'
   ansi-regex: 'catalog:'
   brace-expansion: 'catalog:'
