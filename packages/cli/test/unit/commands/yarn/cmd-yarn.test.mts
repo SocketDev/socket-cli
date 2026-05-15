@@ -52,7 +52,7 @@ vi.mock('../../../../src/utils/telemetry/integration.mts', () => ({
 
 // Import after mocks.
 const { cmdYarn } = await import('../../../../src/commands/yarn/cmd-yarn.mts')
-const { YARN } = await import('@socketsecurity/lib/constants/agents')
+const { YARN } = await import('@socketsecurity/lib-stable/constants/agents')
 
 describe('cmd-yarn', () => {
   interface MockChildProcess extends Partial<EventEmitter> {

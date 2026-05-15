@@ -7,7 +7,7 @@
  * the orchestration code expects.
  */
 
-import { confirm, select } from '@socketsecurity/lib/stdio/prompts'
+import { confirm, select } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import type { CResult } from '../../types.mts'
 

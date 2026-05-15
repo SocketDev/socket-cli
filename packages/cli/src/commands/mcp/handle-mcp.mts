@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { getDefaultApiToken } from '../../utils/socket/sdk.mts'
 import { runHttpTransport } from './transport-http.mts'

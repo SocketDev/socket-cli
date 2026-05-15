@@ -51,7 +51,7 @@ vi.mock('../../../../src/utils/telemetry/integration.mts', () => ({
 
 // Import after mocks.
 const { cmdNpx } = await import('../../../../src/commands/npx/cmd-npx.mts')
-const { NPX } = await import('@socketsecurity/lib/constants/agents')
+const { NPX } = await import('@socketsecurity/lib-stable/constants/agents')
 
 describe('cmd-npx', () => {
   interface MockChildProcess extends Partial<EventEmitter> {

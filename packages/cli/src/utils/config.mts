@@ -25,11 +25,11 @@ import { statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
-import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import { safeMkdirSync, safeReadFileSync } from '@socketsecurity/lib/fs'
-import { getEditableJsonClass } from '@socketsecurity/lib/json/edit'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { naturalCompare } from '@socketsecurity/lib/sorts'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
+import { safeMkdirSync, safeReadFileSync } from '@socketsecurity/lib-stable/fs'
+import { getEditableJsonClass } from '@socketsecurity/lib-stable/json/edit'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts'
 
 import { debugConfig } from './debug.mts'
 import {

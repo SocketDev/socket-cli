@@ -6,7 +6,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { whichReal } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib-stable/bin'
 import {
   BUN,
   NPM,
@@ -16,7 +16,7 @@ import {
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib/constants/agents'
+} from '@socketsecurity/lib-stable/constants/agents'
 
 import type { Agent } from '../utils/ecosystem/environment.mjs'
 

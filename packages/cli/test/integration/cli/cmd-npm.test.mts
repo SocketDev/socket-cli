@@ -29,7 +29,7 @@
 
 import { describe, expect } from 'vitest'
 
-import { NPM } from '@socketsecurity/lib/constants/agents'
+import { NPM } from '@socketsecurity/lib-stable/constants/agents'
 
 import {
   FLAG_CONFIG,

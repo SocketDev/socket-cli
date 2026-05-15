@@ -12,7 +12,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
 /**
  * Given a bin path that might be an extensionless shim, return the matching

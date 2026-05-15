@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // Set global Socket theme for consistent CLI branding.
-import { isError } from '@socketsecurity/lib/errors'
-import { setTheme } from '@socketsecurity/lib/themes/context'
+import { isError } from '@socketsecurity/lib-stable/errors'
+import { setTheme } from '@socketsecurity/lib-stable/themes/context'
 setTheme('socket')
 
 import { promises as fs } from 'node:fs'
@@ -36,14 +36,14 @@ import {
   debug as debugNs,
   debugDir,
   debugDirNs,
-} from '@socketsecurity/lib/debug'
-import { getCI } from '@socketsecurity/lib/env/ci'
+} from '@socketsecurity/lib-stable/debug'
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
 import {
   getSocketCliBootstrapCacheDir,
   getSocketCliBootstrapSpec,
-} from '@socketsecurity/lib/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
+} from '@socketsecurity/lib-stable/env/socket-cli'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
 
 import { rootAliases, rootCommandBuckets, rootCommands } from './commands.mts'
 import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'
@@ -70,7 +70,7 @@ import {
 } from './utils/telemetry/integration.mts'
 import { scheduleUpdateCheck } from './utils/update/manager.mts'
 
-import { dlxManifest } from '@socketsecurity/lib/dlx/manifest'
+import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'
 
 const logger = getDefaultLogger()
 

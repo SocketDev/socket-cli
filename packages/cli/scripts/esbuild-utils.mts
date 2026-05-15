@@ -9,7 +9,7 @@ import type { BuildOptions, BuildResult, PluginBuild } from 'esbuild'
 
 import { build } from 'esbuild'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { EnvironmentVariables } from './environment-variables.mts'
 

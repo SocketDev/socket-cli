@@ -11,7 +11,7 @@
  * permission set the API was expecting.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import {
   HTTP_STATUS_BAD_REQUEST,

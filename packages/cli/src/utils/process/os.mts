@@ -29,9 +29,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { chmod } from 'node:fs/promises'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 const logger = getDefaultLogger()
 

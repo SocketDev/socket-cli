@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib/logger'
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({

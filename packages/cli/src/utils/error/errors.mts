@@ -24,11 +24,11 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import {
   UNKNOWN_ERROR,
   kInternalsSymbol,
-} from '@socketsecurity/lib/constants/core'
-import { debugNs } from '@socketsecurity/lib/debug'
+} from '@socketsecurity/lib-stable/constants/core'
+import { debugNs } from '@socketsecurity/lib-stable/debug'
 
-import { isErrnoException, isError } from '@socketsecurity/lib/errors'
-export { isErrnoException } from '@socketsecurity/lib/errors'
+import { isErrnoException, isError } from '@socketsecurity/lib-stable/errors'
+export { isErrnoException } from '@socketsecurity/lib-stable/errors'
 import {
   SOCKET_DASHBOARD_URL,
   SOCKET_PRICING_URL,

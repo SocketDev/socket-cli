@@ -50,7 +50,7 @@ import path from 'node:path'
 
 import { afterEach, describe, expect } from 'vitest'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
   FLAG_CONFIG,

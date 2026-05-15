@@ -25,10 +25,10 @@
  * - Background update monitoring (npm installs only)
  */
 
-import { dlxManifest } from '@socketsecurity/lib/dlx/manifest'
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
 
 import { checkForUpdates as performUpdateCheck } from './checker.mts'
 import {
@@ -39,7 +39,7 @@ import { UPDATE_CHECK_TTL } from '../../constants/cache.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 
 import type { AuthInfo, UpdateCheckResult } from './checker.mts'
-import type { StoreRecord } from '@socketsecurity/lib/dlx/manifest'
+import type { StoreRecord } from '@socketsecurity/lib-stable/dlx/manifest'
 
 const logger = getDefaultLogger()
 

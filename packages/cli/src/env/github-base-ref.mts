@@ -1,5 +1,5 @@
 /** @fileoverview GITHUB_BASE_REF environment variable. */
 
-import { getGithubBaseRef } from '@socketsecurity/lib/env/github'
+import { getGithubBaseRef } from '@socketsecurity/lib-stable/env/github'
 
 export const GITHUB_BASE_REF = getGithubBaseRef()

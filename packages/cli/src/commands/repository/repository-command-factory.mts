@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'

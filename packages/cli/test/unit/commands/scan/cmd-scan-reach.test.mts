@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib/logger'
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
 import type * as SdkModule from '../../../../src/utils/socket/sdk.mts'
 
 // Mock the logger.

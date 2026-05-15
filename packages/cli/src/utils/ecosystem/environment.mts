@@ -31,7 +31,7 @@ import path from 'node:path'
 import browserslist from 'browserslist'
 import semver from 'semver'
 
-import { whichReal } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib-stable/bin'
 import {
   BUN,
   NPM,
@@ -40,17 +40,17 @@ import {
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib/constants/agents'
-import { getMaintainedNodeVersions } from '@socketsecurity/lib/constants/node'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
+} from '@socketsecurity/lib-stable/constants/agents'
+import { getMaintainedNodeVersions } from '@socketsecurity/lib-stable/constants/node'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
 import {
   readPackageJson,
   toEditablePackageJson,
-} from '@socketsecurity/lib/packages'
-import { naturalCompare } from '@socketsecurity/lib/sorts'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
+} from '@socketsecurity/lib-stable/packages'
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
 
 import {
   getMinimumVersionByAgent,
@@ -68,9 +68,9 @@ import { findUp } from '../fs/find-up.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
 
 import type { CResult } from '../../types.mjs'
-import type { Logger } from '@socketsecurity/lib/logger'
-import type { Remap } from '@socketsecurity/lib/objects'
-import type { EditablePackageJson } from '@socketsecurity/lib/packages'
+import type { Logger } from '@socketsecurity/lib-stable/logger'
+import type { Remap } from '@socketsecurity/lib-stable/objects'
+import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages'
 import type { SemVer } from 'semver'
 
 const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'

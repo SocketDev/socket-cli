@@ -1,7 +1,7 @@
 import path from 'node:path'
 
-import { debugDirNs } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { debugDirNs } from '@socketsecurity/lib-stable/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'

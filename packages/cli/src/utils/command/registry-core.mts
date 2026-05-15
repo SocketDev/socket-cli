@@ -9,7 +9,7 @@ import type {
   MiddlewareFn,
 } from './registry-types.mjs'
 import type { CResult } from '../../types.mts'
-import { errorMessage, errorStack } from '@socketsecurity/lib/errors'
+import { errorMessage, errorStack } from '@socketsecurity/lib-stable/errors'
 /**
  * Central registry for CLI commands.
  * Handles registration, discovery, execution, and middleware.

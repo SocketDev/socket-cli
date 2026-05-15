@@ -6,15 +6,15 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib/constants/agents'
-import { hasKeys, isObject } from '@socketsecurity/lib/objects'
+} from '@socketsecurity/lib-stable/constants/agents'
+import { hasKeys, isObject } from '@socketsecurity/lib-stable/objects'
 
 import { updatePnpmWorkspaceYamlOverrides } from './update-pnpm-workspace-yaml.mts'
 
 import type { Overrides } from './types.mts'
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
 import type { Agent } from '../../utils/ecosystem/environment.mjs'
-import type { EditablePackageJson } from '@socketsecurity/lib/packages'
+import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages'
 
 const depFields = [
   'dependencies',

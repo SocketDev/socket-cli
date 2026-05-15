@@ -94,7 +94,7 @@ import {
   getFixEnv,
 } from '../../../../src/commands/fix/env-helpers.mts'
 
-import type * as SocketCliModule from '@socketsecurity/lib/env/socket-cli'
+import type * as SocketCliModule from '@socketsecurity/lib-stable/env/socket-cli'
 
 describe('env-helpers', () => {
   beforeEach(() => {

@@ -7,7 +7,7 @@
  * imports between with-subcommands.mts and with-subcommands-help.mts.
  */
 
-import { indentString } from '@socketsecurity/lib/strings'
+import { indentString } from '@socketsecurity/lib-stable/strings'
 
 import type { Options } from '../../meow.mts'
 

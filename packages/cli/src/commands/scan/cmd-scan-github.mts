@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
+import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
 
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
 import { outputScanGithub } from './output-scan-github.mts'

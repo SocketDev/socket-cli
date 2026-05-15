@@ -11,7 +11,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PackagesModule from '@socketsecurity/lib/packages'
+import type * as PackagesModule from '@socketsecurity/lib-stable/packages'
 
 const mockLogger = {
   fail: vi.fn(),

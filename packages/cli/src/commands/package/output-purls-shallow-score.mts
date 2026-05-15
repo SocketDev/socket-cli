@@ -1,8 +1,8 @@
 import colors from 'yoctocolors-cjs'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { debug } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { debug } from '@socketsecurity/lib-stable/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/output/result-json.mjs'

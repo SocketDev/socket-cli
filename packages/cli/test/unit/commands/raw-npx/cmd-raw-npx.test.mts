@@ -26,7 +26,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib/logger'
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
 import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mjs'
 
 // Mock the logger.

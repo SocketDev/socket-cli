@@ -2,9 +2,9 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugDirNs } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { input, select } from '@socketsecurity/lib/stdio/prompts'
+import { debugDirNs } from '@socketsecurity/lib-stable/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { input, select } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'

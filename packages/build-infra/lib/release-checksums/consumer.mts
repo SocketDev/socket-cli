@@ -17,12 +17,12 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { safeMkdir } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getLatestRelease } from '@socketsecurity/lib/releases/github-api'
-import { downloadReleaseAsset } from '@socketsecurity/lib/releases/github-downloads'
-import type { RepoConfig } from '@socketsecurity/lib/releases/github-types'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { safeMkdir } from '@socketsecurity/lib-stable/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getLatestRelease } from '@socketsecurity/lib-stable/releases/github-api'
+import { downloadReleaseAsset } from '@socketsecurity/lib-stable/releases/github-downloads'
+import type { RepoConfig } from '@socketsecurity/lib-stable/releases/github-types'
 
 import { getEmbeddedChecksums, parseChecksums } from './core.mts'
 

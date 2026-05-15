@@ -1,4 +1,4 @@
-import { debug } from '@socketsecurity/lib/debug'
+import { debug } from '@socketsecurity/lib-stable/debug'
 
 import { SOCKET_CLI_ORG_SLUG } from '../../env/socket-cli-org-slug.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'

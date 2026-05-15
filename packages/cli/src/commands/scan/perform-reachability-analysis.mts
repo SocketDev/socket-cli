@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { HTTP_STATUS_UNAUTHORIZED } from '../../constants/http.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
@@ -19,7 +19,7 @@ import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
 import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 
 export type ReachabilityOptions = {
   excludePaths: string[]

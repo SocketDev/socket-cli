@@ -11,7 +11,7 @@
  * - Validates boolean and array values
  */
 
-import { isObject } from '@socketsecurity/lib/objects'
+import { isObject } from '@socketsecurity/lib-stable/objects'
 
 export type FilterConfig = {
   [key: string]: boolean | string[]

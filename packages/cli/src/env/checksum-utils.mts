@@ -6,7 +6,7 @@
  * This module provides shared parsing and validation logic.
  */
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays'
 
 export type Checksums = Record<string, string>
 

@@ -11,7 +11,7 @@ import { promises as fsp, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { whichSync } from '@socketsecurity/lib/bin'
+import { whichSync } from '@socketsecurity/lib-stable/bin'
 
 import {
   buildAuditRecords,

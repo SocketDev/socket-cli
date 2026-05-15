@@ -1,9 +1,9 @@
 import colors from 'yoctocolors-cjs'
 
-import { getCI } from '@socketsecurity/lib/env/ci'
-import { getSocketApiToken } from '@socketsecurity/lib/env/socket'
-import { getSocketCliNoApiToken } from '@socketsecurity/lib/env/socket-cli'
-import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
+import { getSocketCliNoApiToken } from '@socketsecurity/lib-stable/env/socket-cli'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { FLAG_ORG, REDACTED } from '../../constants/cli.mts'
 import {

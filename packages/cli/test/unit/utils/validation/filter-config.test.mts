@@ -104,7 +104,7 @@ describe('filter-config utilities', () => {
 
     it('returns empty object for non-object input', async () => {
       const { isObject } = vi.mocked(
-        await import('@socketsecurity/lib/objects'),
+        await import('@socketsecurity/lib-stable/objects'),
       )
 
       isObject.mockReturnValue(false)
@@ -119,7 +119,7 @@ describe('filter-config utilities', () => {
 
     it('returns empty object for empty input object', async () => {
       const { isObject } = vi.mocked(
-        await import('@socketsecurity/lib/objects'),
+        await import('@socketsecurity/lib-stable/objects'),
       )
       isObject.mockReturnValue(true)
 

@@ -1,5 +1,5 @@
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
 
 import { runAgentInstall } from './agent-installer.mts'
 import { NPM_BUGGY_OVERRIDES_PATCHED_VERSION } from '../../constants/packages.mts'
@@ -7,8 +7,8 @@ import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
 
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-import type { Logger } from '@socketsecurity/lib/logger'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Logger } from '@socketsecurity/lib-stable/logger'
+import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 
 export type UpdateDependenciesOptions = {
   cmdName?: string | undefined

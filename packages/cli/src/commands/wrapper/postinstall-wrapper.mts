@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs'
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'

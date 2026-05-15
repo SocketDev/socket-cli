@@ -11,9 +11,9 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { safeMkdir } from '@socketsecurity/lib/fs'
-import { normalizePath } from '@socketsecurity/lib/paths/normalize'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { safeMkdir } from '@socketsecurity/lib-stable/fs'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 import {
   detectMusl,

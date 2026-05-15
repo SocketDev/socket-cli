@@ -13,11 +13,11 @@
  * ensuring proper bootstrap delegation for SEA binaries.
  */
 
-import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
+import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib-stable/constants/socket'
 
 import { isSeaBinary } from './detect.mts'
 
-import type { SpawnOptions } from '@socketsecurity/lib/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
 
 /**
  * Find system Node.js binary in PATH (excluding the current SEA binary).

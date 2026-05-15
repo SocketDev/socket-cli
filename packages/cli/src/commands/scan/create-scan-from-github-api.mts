@@ -7,8 +7,8 @@
  * error messages for empty repos / missing default branch.
  */
 
-import { debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { debugDir } from '@socketsecurity/lib-stable/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { getOctokit, withGitHubRetry } from '../../utils/git/github.mts'
 

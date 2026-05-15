@@ -24,10 +24,10 @@
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
-import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
-import { getOwn, hasOwn } from '@socketsecurity/lib/objects'
-import { resolvePackageName } from '@socketsecurity/lib/packages'
-import { naturalCompare } from '@socketsecurity/lib/sorts'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
+import { getOwn, hasOwn } from '@socketsecurity/lib-stable/objects'
+import { resolvePackageName } from '@socketsecurity/lib-stable/packages'
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts'
 import { getManifestData } from '@socketsecurity/registry'
 
 import { getSocketDevPackageOverviewUrl } from './url.mts'
@@ -50,7 +50,7 @@ import type {
 } from '../alert/artifact.mts'
 import type { PURL_Type } from '../ecosystem/types.mjs'
 import type { SocketYml } from '@socketsecurity/config'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 
 export const ALERT_SEVERITY_COLOR = createEnum({
   critical: 'magenta',

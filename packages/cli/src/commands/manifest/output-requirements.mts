@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'

@@ -130,7 +130,7 @@ describe('checkCommandInput', () => {
 
   describe('when some checks fail', () => {
     it('returns false and sets exit code to 2', async () => {
-      vi.mocked(await import('@socketsecurity/lib/logger'))
+      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
       const { failMsgWithBadge } = vi.mocked(
         await import('../../../../src/utils/error/fail-msg-with-badge.mts'),
       )
@@ -164,7 +164,7 @@ describe('checkCommandInput', () => {
     })
 
     it('handles json output kind', async () => {
-      vi.mocked(await import('@socketsecurity/lib/logger'))
+      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
       const { serializeResultJson } = vi.mocked(
         await import('../../../../src/utils/output/result-json.mts'),
       )
@@ -351,7 +351,7 @@ describe('checkCommandInput', () => {
 
     it('strips ANSI codes for JSON output', async () => {
       const { stripAnsi } = vi.mocked(
-        await import('@socketsecurity/lib/strings'),
+        await import('@socketsecurity/lib-stable/strings'),
       )
       const { serializeResultJson } = vi.mocked(
         await import('../../../../src/utils/output/result-json.mts'),

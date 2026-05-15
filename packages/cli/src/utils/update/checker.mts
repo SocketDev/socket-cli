@@ -23,12 +23,12 @@ import https from 'node:https'
 
 import semver from 'semver'
 
-import { NPM_REGISTRY_URL } from '@socketsecurity/lib/constants/agents'
-import { debug } from '@socketsecurity/lib/debug'
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { onExit } from '@socketsecurity/lib/signal-exit'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
+import { debug } from '@socketsecurity/lib-stable/debug'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { onExit } from '@socketsecurity/lib-stable/signal-exit'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
 
 import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'
 

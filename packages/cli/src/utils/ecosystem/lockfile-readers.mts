@@ -13,9 +13,9 @@ import path from 'node:path'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib/fs'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib-stable/fs'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 import {
   BUN,
@@ -31,7 +31,7 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
   YARN_LOCK,
-} from '@socketsecurity/lib/constants/agents'
+} from '@socketsecurity/lib-stable/constants/agents'
 import { EXT_LOCK, EXT_LOCKB, NODE_MODULES } from '../../constants/packages.mts'
 
 // `.package-lock.json` is the npm "hidden lockfile" name. Defined locally

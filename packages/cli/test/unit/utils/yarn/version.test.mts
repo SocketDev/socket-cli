@@ -34,7 +34,7 @@ describe('yarn version utilities', () => {
 
   beforeEach(async () => {
     vi.resetModules()
-    const spawnModule = await import('@socketsecurity/lib/spawn')
+    const spawnModule = await import('@socketsecurity/lib-stable/spawn')
     const pathsModule = await import('../../../../src/utils/yarn/paths.mts')
     spawnSyncMock = spawnModule.spawnSync as ReturnType<typeof vi.fn>
     getYarnBinPathMock = pathsModule.getYarnBinPath as ReturnType<typeof vi.fn>

@@ -1,8 +1,8 @@
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { debug, isDebug } from '@socketsecurity/lib/debug'
-import { getCI } from '@socketsecurity/lib/env/ci'
-import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { debug, isDebug } from '@socketsecurity/lib-stable/debug'
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { getSocketFixPrs } from './pull-request.mts'
 import { GITHUB_REPOSITORY } from '../../env/github-repository.mts'

@@ -25,7 +25,7 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { safeDelete } from '@socketsecurity/lib/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { findUp } from '../../../../src/utils/fs/find-up.mts'

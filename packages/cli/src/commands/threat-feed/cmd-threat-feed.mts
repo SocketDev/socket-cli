@@ -1,6 +1,6 @@
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { NPM } from '@socketsecurity/lib/constants/agents'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { handleThreatFeed } from './handle-threat-feed.mts'
 import { outputDryRunFetch } from '../../utils/dry-run/output.mts'

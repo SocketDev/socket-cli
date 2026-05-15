@@ -18,7 +18,7 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { createBrotliCompress } from 'node:zlib'
 
-import { safeDelete } from '@socketsecurity/lib/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
 
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
 

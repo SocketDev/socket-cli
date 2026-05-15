@@ -8,8 +8,8 @@
  * - spawnCoana: auto-detect SEA vs npm-CLI mode and dispatch.
  */
 
-import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 import { spawnDlx, spawnToolVfs } from './spawn.mts'
 import { resolveCoana } from './resolve-binary.mjs'
@@ -23,7 +23,7 @@ import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 import type { CoanaDlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { CResult } from '../../types.mjs'
 import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib/spawn'
+import type { SpawnExtra } from '@socketsecurity/lib-stable/spawn'
 
 /**
  * Spawn Coana CLI.

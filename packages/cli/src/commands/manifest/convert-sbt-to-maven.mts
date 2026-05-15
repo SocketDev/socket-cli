@@ -1,8 +1,8 @@
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { safeReadFile } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { safeReadFile } from '@socketsecurity/lib-stable/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
 
 import type { ManifestResult } from './output-manifest.mts'
 import type { CResult, OutputKind } from '../../types.mts'

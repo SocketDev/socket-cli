@@ -6,9 +6,9 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 

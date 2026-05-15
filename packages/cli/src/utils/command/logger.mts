@@ -2,7 +2,7 @@
 
 import { LRUCache } from 'lru-cache'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 const logger = getDefaultLogger()
 
