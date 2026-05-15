@@ -32,7 +32,7 @@ const CONSOLE_TO_LOGGER = {
 }
 
 const LOGGER_IMPORT_LINE =
-  "import { getDefaultLogger } from '@socketsecurity/lib/logger'"
+  "import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'"
 const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -66,7 +66,7 @@ const rule = {
       }
       summary = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib/logger',
+        '@socketsecurity/lib-stable/logger',
         'getDefaultLogger',
         'logger',
       )

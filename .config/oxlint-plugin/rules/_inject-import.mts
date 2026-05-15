@@ -75,15 +75,36 @@ export function summarizeImportTarget(
       }
       continue
     }
-    if (localName && stmt.type === 'VariableDeclaration') {
-      for (const decl of stmt.declarations) {
-        if (
-          decl.id &&
-          decl.id.type === 'Identifier' &&
-          decl.id.name === localName
-        ) {
-          hasLocal = true
-        }
+    if (!localName) {
+      continue
+    }
+    // A top-level `const localName = ...` (with or without `export`).
+    // The legacy walk only looked at bare `VariableDeclaration`; an
+    // `export const logger = ...` is an `ExportNamedDeclaration`
+    // whose `.declaration` is the VariableDeclaration. Missing that
+    // branch caused the autofix to inject a duplicate
+    // `const logger = ...` hoist into files that already exported
+    // their own `logger` (see scripts/cascade-tooling/logger.mts
+    // pre-fix — `export const logger = {...}` got an extra
+    // `const logger = getDefaultLogger()` hoisted above it).
+    const varDecl =
+      stmt.type === 'VariableDeclaration'
+        ? stmt
+        : stmt.type === 'ExportNamedDeclaration' &&
+            stmt.declaration &&
+            stmt.declaration.type === 'VariableDeclaration'
+          ? stmt.declaration
+          : undefined
+    if (!varDecl) {
+      continue
+    }
+    for (const decl of varDecl.declarations) {
+      if (
+        decl.id &&
+        decl.id.type === 'Identifier' &&
+        decl.id.name === localName
+      ) {
+        hasLocal = true
       }
     }
   }

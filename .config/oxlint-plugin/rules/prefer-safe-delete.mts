@@ -84,7 +84,7 @@ const rule = {
       }
       s = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib/fs',
+        '@socketsecurity/lib-stable/fs',
         importName,
       )
       summaryCache.set(importName, s)
@@ -190,7 +190,7 @@ const rule = {
               ...appendImportFixes(
                 s,
                 fixer,
-                `import { ${replacement} } from '@socketsecurity/lib/fs'`,
+                `import { ${replacement} } from '@socketsecurity/lib-stable/fs'`,
                 undefined,
               ),
             ]

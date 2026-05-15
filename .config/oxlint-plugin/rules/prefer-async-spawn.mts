@@ -15,23 +15,19 @@
  *   - `spawn` from `node:child_process` — recommend the lib instead.
  *     Even the async core spawn lacks the lib's SpawnError shape.
  *
- * Autofix scope (deterministic; no AI required):
- *   - **Imports**: rewrites the import statement to pull from
- *     `@socketsecurity/lib/spawn`. `spawnSync` becomes `spawn` and
- *     callers see the imported binding rename. Skipped when:
- *       a) the import has multiple violating names (would need a
- *          merged import statement),
- *       b) the file already has another import from the lib that
- *          would clash,
- *       c) any non-banned named import (e.g. `exec`, `execSync`)
- *          shares the same statement — the lib doesn't re-export
- *          those, so we can't safely rewrite the whole line.
- *   - **Calls**: `await child_process.spawnSync(args)` inside an
- *     async function body becomes `await spawn(args)` (assuming the
- *     spawn import is also rewritten). We require the call to be the
- *     argument of an `await` already, OR the surrounding function to
- *     be async — that's the marker for "the caller is ready for a
- *     promise."
+ * Autofix scope (deterministic; no AI required) — sync-aware:
+ *   The lib re-exports BOTH `spawn` and `spawnSync`. The autofix only
+ *   ever rewrites the import source (`node:child_process` →
+ *   `@socketsecurity/lib/spawn`); it never changes the imported name,
+ *   never collapses `spawnSync` into `spawn`, and never touches call
+ *   sites. Converting sync → async is a semantic change (callers must
+ *   `await`, return types change from objects to promises) and that's
+ *   a human-eyes job, not an autofix.
+ *
+ *   Skipped when:
+ *     a) any non-spawn named import (e.g. `exec`, `execSync`,
+ *        `ChildProcess`) shares the same statement — the lib doesn't
+ *        re-export those, so we can't safely rewrite the whole line.
  *
  * Allowed exceptions:
  *   - Adjacent comment with `prefer-async-spawn: sync-required` —
@@ -49,7 +45,7 @@ const CHILD_PROCESS_SPECIFIERS = new Set([
   'child_process',
 ])
 
-const LIB_SPECIFIER = '@socketsecurity/lib/spawn'
+const LIB_SPECIFIER = '@socketsecurity/lib-stable/spawn'
 
 const BANNED_NAMES = new Set(['spawnSync', 'spawn'])
 
@@ -92,49 +88,21 @@ const rule = {
     }
 
     /**
-     * Walk up the AST until we find an enclosing function or the
-     * Program root. Returns true when an `async` function or top-level
-     * module is reached (top-level await is allowed in ES modules).
-     */
-    function isInAsyncContext(node: AstNode) {
-      let cur = node.parent
-      while (cur) {
-        if (
-          cur.type === 'FunctionDeclaration' ||
-          cur.type === 'FunctionExpression' ||
-          cur.type === 'ArrowFunctionExpression'
-        ) {
-          return Boolean(cur.async)
-        }
-        if (cur.type === 'Program') {
-          // Top-level: ESM allows top-level await, so async context is
-          // available. CommonJS doesn't, but we can't reliably tell
-          // from the AST alone — `sourceType: 'module'` is the signal.
-          return cur.sourceType === 'module'
-        }
-        cur = cur.parent
-      }
-      return false
-    }
-
-    /**
-     * Build a fixer for an import declaration. Conservatively skip
-     * when other (non-banned) named imports share the line — those
-     * may not be re-exported by the lib spawn module.
+     * Build a fixer that swaps the import SOURCE without changing the
+     * imported NAMES. The lib re-exports both `spawn` and `spawnSync`
+     * (and a `Spawn`-typed namespace under them), so consumers who
+     * imported `spawnSync` keep using `spawnSync` from the lib and
+     * their call sites stay correct.
      *
-     * Successful rewrite: replaces the whole import statement with
-     * `import { spawn } from '@socketsecurity/lib/spawn'`.
+     * The original rule collapsed `spawnSync` → `spawn` and left the
+     * call sites untouched, producing files that called `spawnSync(...)`
+     * with no `spawnSync` symbol in scope. Sync-aware: never rename.
+     *
+     * Conservatively skip when other (non-banned) named imports share
+     * the line — `exec`, `ChildProcess`, etc. aren't re-exported, so
+     * the whole-line rewrite would break those references.
      */
     function fixImport(fixer: RuleFixer, node: AstNode) {
-      const banned = node.specifiers.filter(
-        (s: AstNode) =>
-          s.type === 'ImportSpecifier' &&
-          s.imported &&
-          BANNED_NAMES.has(s.imported.name),
-      )
-      if (banned.length === 0) {
-        return null
-      }
       const others = node.specifiers.filter(
         (s: AstNode) =>
           s.type !== 'ImportSpecifier' ||
@@ -146,11 +114,11 @@ const rule = {
         // the non-banned import.
         return null
       }
-      // The lib re-exports `spawn` (and the user can wire `as
-      // spawnSync` themselves if they really need a name). For the
-      // common case (single `spawnSync` import), rewrite to `spawn`
-      // and let the call sites get separately handled.
-      return fixer.replaceText(node, `import { spawn } from '${LIB_SPECIFIER}'`)
+      // Replace only the source-string token. node.source covers the
+      // quoted specifier (incl. the quotes); replacing just that keeps
+      // every original `{ ... }` binding intact, including `as` clauses
+      // and the choice between `spawn` and `spawnSync`.
+      return fixer.replaceText(node.source, `'${LIB_SPECIFIER}'`)
     }
 
     return {
@@ -223,47 +191,17 @@ const rule = {
           return
         }
 
-        // Autofix only when we're confident the rewrite is safe:
-        //   - Surrounding scope is async (or top-level ESM).
-        //   - The call is not used as a value-bearing return (we
-        //     can't tell what the caller does with `{ stdout, stderr,
-        //     code }` — async spawn returns a thenable, not a sync
-        //     object). Detect: parent is an ExpressionStatement OR an
-        //     AwaitExpression. Anything else (assignment, return,
-        //     property access) needs human eyes.
-        const parent = node.parent
-        const looksAwaitable =
-          parent &&
-          (parent.type === 'AwaitExpression' ||
-            parent.type === 'ExpressionStatement')
-        const fixable = looksAwaitable && isInAsyncContext(node)
-
-        if (!fixable) {
-          context.report({
-            node,
-            messageId: 'callBanned',
-            data: { name: callee.property.name },
-          })
-          return
-        }
-
+        // Report — but NO autofix. Converting `<obj>.spawnSync(...)` to
+        // `await spawn(...)` is a semantic change: the return value
+        // shape flips from a synchronous `{ status, stdout, stderr }`
+        // object to an awaited Promise of a different shape (`.code`,
+        // not `.status`). Callers using `r.status` would silently break.
+        // Imports get auto-fixed (source rewrite only); call sites
+        // need human eyes to decide if sync semantics were load-bearing.
         context.report({
           node,
           messageId: 'callBanned',
           data: { name: callee.property.name },
-          fix(fixer: RuleFixer) {
-            const argText = node.arguments
-              .map((a: AstNode) => sourceCode.getText(a))
-              .join(', ')
-            // If parent is already an AwaitExpression we keep the
-            // await — replace the inner CallExpression. If parent is
-            // an ExpressionStatement, prepend `await` so the promise
-            // chain is awaited.
-            if (parent.type === 'AwaitExpression') {
-              return fixer.replaceText(node, `spawn(${argText})`)
-            }
-            return fixer.replaceText(node, `await spawn(${argText})`)
-          },
         })
       },
     }

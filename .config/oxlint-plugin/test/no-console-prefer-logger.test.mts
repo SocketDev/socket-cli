@@ -12,8 +12,12 @@ describe('socket/no-console-prefer-logger', () => {
     new RuleTester().run('no-console-prefer-logger', rule, {
       valid: [
         {
-          name: 'logger.log',
-          code: 'import { getDefaultLogger } from "@socketsecurity/lib/logger"\nconst logger = getDefaultLogger()\nlogger.log("ok")\n',
+          name: 'logger.log with hoisted const',
+          code: 'import { getDefaultLogger } from "@socketsecurity/lib-stable/logger"\nconst logger = getDefaultLogger()\nlogger.log("ok")\n',
+        },
+        {
+          name: 'logger.log with exported const (regression: hasLocal must see ExportNamedDeclaration)',
+          code: 'export const logger = { log: () => {} }\nlogger.log("ok")\n',
         },
         { name: 'no console at all', code: 'export const x = 1\n' },
       ],
