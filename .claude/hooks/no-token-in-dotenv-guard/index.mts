@@ -45,7 +45,7 @@ import {
   GENERIC_TOKEN_SUFFIX_RE,
   isTokenKey,
 } from '../_shared/token-patterns.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 interface ToolInput {
   readonly tool_input?:

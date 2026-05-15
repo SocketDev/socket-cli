@@ -22,6 +22,8 @@
  *     socket-cli configuration setting, not an API token alias.
  */
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const LEGACY_ALIASES = new Set([
   'SOCKET_API_KEY',
   'SOCKET_SECURITY_API_TOKEN',
@@ -50,12 +52,12 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
-    function hasBypassComment(node) {
+    function hasBypassComment(node: AstNode) {
       const before = sourceCode.getCommentsBefore(node)
       const after = sourceCode.getCommentsAfter(node)
       for (const c of [...before, ...after]) {
@@ -66,7 +68,7 @@ const rule = {
       return false
     }
 
-    function checkStringValue(node, value) {
+    function checkStringValue(node: AstNode, value: string): void {
       // Match exactly; we don't want partial substrings.
       if (!LEGACY_ALIASES.has(value)) {
         return
@@ -78,7 +80,7 @@ const rule = {
         node,
         messageId: 'legacy',
         data: { name: value },
-        fix(fixer) {
+        fix(fixer: RuleFixer) {
           const raw = sourceCode.getText(node)
           const quote = raw[0]
           if (quote === '`') {
@@ -90,20 +92,20 @@ const rule = {
     }
 
     return {
-      Literal(node) {
+      Literal(node: AstNode) {
         if (typeof node.value !== 'string') {
           return
         }
         checkStringValue(node, node.value)
       },
-      TemplateLiteral(node) {
+      TemplateLiteral(node: AstNode) {
         if (node.expressions.length !== 0) {
           return
         }
         checkStringValue(node, node.quasis[0].value.cooked)
       },
       // Also catch `process.env.SOCKET_API_KEY` (member expression).
-      MemberExpression(node) {
+      MemberExpression(node: AstNode) {
         if (node.computed) {
           return
         }
@@ -134,7 +136,7 @@ const rule = {
           node: node.property,
           messageId: 'legacy',
           data: { name: node.property.name },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             return fixer.replaceText(node.property, CANONICAL)
           },
         })

@@ -44,6 +44,8 @@
  *     — only the top-level (Program body) shape is rewritten.
  */
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const SKIP_TYPE_ANNOTATION = true
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -66,13 +68,13 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
     return {
-      VariableDeclaration(node) {
+      VariableDeclaration(node: AstNode) {
         // Only top-level: Program body, or `export const ...` whose
         // parent is the Program body.
         const parent = node.parent
@@ -147,10 +149,10 @@ const rule = {
           node: decl.id,
           messageId: 'preferFunctionDeclaration',
           data: { name },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             const asyncPrefix = init.async ? 'async ' : ''
             const params = init.params
-              .map(p => sourceCode.getText(p))
+              .map((p: AstNode) => sourceCode.getText(p))
               .join(', ')
             let body
             if (init.body.type === 'BlockStatement') {
@@ -187,7 +189,7 @@ const rule = {
  * based seen-set still de-cycles for safety, this time without
  * paying the cost of stringification.
  */
-function referencesThis(node) {
+function referencesThis(node: AstNode) {
   if (!node.body) {
     return false
   }

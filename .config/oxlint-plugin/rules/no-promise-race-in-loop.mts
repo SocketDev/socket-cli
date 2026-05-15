@@ -20,6 +20,8 @@
  * Reporting only.
  */
 
+import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+
 const RACE_METHODS = new Set(['race', 'any'])
 
 const LOOP_TYPES = new Set([
@@ -30,7 +32,7 @@ const LOOP_TYPES = new Set([
   'DoWhileStatement',
 ])
 
-function isInsideLoop(node) {
+function isInsideLoop(node: AstNode) {
   let current = node.parent
   while (current) {
     if (LOOP_TYPES.has(current.type)) {
@@ -67,9 +69,9 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     return {
-      CallExpression(node) {
+      CallExpression(node: AstNode) {
         const callee = node.callee
         if (callee.type !== 'MemberExpression') {
           return

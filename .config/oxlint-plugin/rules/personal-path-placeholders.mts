@@ -44,7 +44,7 @@
  * and tracing back to the build config for #2.
  */
 
-const PLACEHOLDER_RE = /<([^>]+)>/
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const PATTERNS = [
   {
@@ -96,38 +96,52 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
-    function checkText(textNode, text, isComment) {
+    interface DriftReport {
+      actual: string
+      canonical: string
+      path: string
+      label: string
+    }
+
+    function checkText(
+      textNode: AstNode,
+      text: string,
+      isComment: boolean,
+    ): void {
       // First pass: drift detection — replace non-canonical
       // placeholders with the canonical form.
       let mutated = false
       let next = text
-      let firstReport
+      let firstReport: DriftReport | undefined
       for (const p of PATTERNS) {
         const reAll = new RegExp(p.re.source, 'g')
-        next = next.replace(reAll, (whole, prefix, slug, suffix) => {
-          if (slug === p.canonical) {
-            return whole
-          }
-          // Skip env-var forms — already canonical.
-          if (/^\$|^%/.test(slug)) {
-            return whole
-          }
-          if (!firstReport) {
-            firstReport = {
-              actual: slug,
-              canonical: p.canonical,
-              path: whole,
-              label: p.label,
+        next = next.replace(
+          reAll,
+          (whole: string, prefix: string, slug: string, suffix: string) => {
+            if (slug === p.canonical) {
+              return whole
             }
-          }
-          mutated = true
-          return `${prefix}<${p.canonical}>${suffix}`
-        })
+            // Skip env-var forms — already canonical.
+            if (/^\$|^%/.test(slug)) {
+              return whole
+            }
+            if (!firstReport) {
+              firstReport = {
+                actual: slug,
+                canonical: p.canonical,
+                path: whole,
+                label: p.label,
+              }
+            }
+            mutated = true
+            return `${prefix}<${p.canonical}>${suffix}`
+          },
+        )
       }
 
       if (mutated && firstReport) {
@@ -135,7 +149,7 @@ const rule = {
           node: textNode,
           messageId: 'drift',
           data: firstReport,
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             if (isComment) {
               const prefix = textNode.type === 'Line' ? '//' : '/*'
               const suffix = textNode.type === 'Line' ? '' : '*/'
@@ -151,7 +165,7 @@ const rule = {
             }
             const escaped = next.replace(
               new RegExp(`\\\\|${quote}`, 'g'),
-              ch => '\\' + ch,
+              (ch: string) => '\\' + ch,
             )
             return fixer.replaceText(textNode, quote + escaped + quote)
           },
@@ -187,13 +201,13 @@ const rule = {
     }
 
     return {
-      Literal(node) {
+      Literal(node: AstNode) {
         if (typeof node.value !== 'string') {
           return
         }
         checkText(node, node.value, false)
       },
-      TemplateLiteral(node) {
+      TemplateLiteral(node: AstNode) {
         if (node.expressions.length !== 0) {
           // Mixed template — only inspect the static parts.
           for (const q of node.quasis) {

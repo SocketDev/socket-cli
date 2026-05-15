@@ -8,7 +8,7 @@ drift hides, how to check, and the cascade-PR convention.
 
 > Drift across fleet repos is a defect, not a feature.
 
-When two socket-* repos pin different versions of the same shared
+When two socket-\* repos pin different versions of the same shared
 resource, the divergence is a bug. The repo with the **newer version
 is the source of truth**; older repos catch up.
 
@@ -24,7 +24,7 @@ Node release, a pnpm pin).
 - **`socket-registry/.github/actions/*`** — composite-action SHAs
   pinned in consumer workflows.
 - **`template/CLAUDE.md` fleet block** (between `BEGIN/END
-  FLEET-CANONICAL` markers) — must be byte-identical across the
+FLEET-CANONICAL` markers) — must be byte-identical across the
   fleet.
 - **`template/.claude/hooks/*`** — same hook code in every repo;
   diverged hook code is drift.
@@ -45,8 +45,8 @@ Node release, a pnpm pin).
 3. **`socket-wheelhouse`'s `template/` tree** is the canonical
    source for `.claude/`, CLAUDE.md fleet block, and hook code.
    Diverging is drift.
-4. **`pnpm run sync-scaffolding`** (in repos that have it) surfaces
-   drift programmatically.
+4. **`node scripts/sync-scaffolding/cli.mts --all`** (in socket-wheelhouse)
+   surfaces drift programmatically.
 
 ## Never silently let drift sit
 
@@ -63,9 +63,9 @@ Examples:
 
 - `chore(sync): cascade Node 26.1.0 from socket-wheelhouse@87eb704`
 - `chore(sync): cascade plan-location-guard from
-  socket-wheelhouse@d846d1c`
+socket-wheelhouse@d846d1c`
 - `chore(sync): cascade pnpm 11.0.8 + Node 26.1.0 from
-  socket-registry@abc1234`
+socket-registry@abc1234`
 
 The body should list affected files + the upstream commit. The
 sync-scaffolding tool produces this body automatically when run with

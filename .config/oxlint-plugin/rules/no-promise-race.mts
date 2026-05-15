@@ -46,6 +46,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'suggestion',
@@ -63,9 +66,9 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     return {
-      CallExpression(node) {
+      CallExpression(node: AstNode) {
         const callee = node.callee
         if (callee.type !== 'MemberExpression') {
           return

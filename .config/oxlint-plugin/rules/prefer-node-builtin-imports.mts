@@ -47,6 +47,8 @@
  *          in the file.
  */
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const PREFER_DEFAULT = ['node:path', 'node:os', 'node:url', 'node:crypto']
 const DEFAULT_LOCAL = {
   'node:path': 'path',
@@ -82,7 +84,7 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
@@ -92,7 +94,10 @@ const rule = {
      * already in use (any binding form). If so, autofixing to a
      * default import would shadow it.
      */
-    function localBindingExists(programBody, localName) {
+    function localBindingExists(
+      programBody: AstNode[],
+      localName: string,
+    ): boolean {
       for (const stmt of programBody) {
         if (stmt.type === 'ImportDeclaration') {
           for (const spec of stmt.specifiers) {
@@ -125,7 +130,7 @@ const rule = {
     }
 
     return {
-      ImportDeclaration(node) {
+      ImportDeclaration(node: AstNode) {
         const specifier = node.source.value
         if (typeof specifier !== 'string') {
           return
@@ -174,11 +179,11 @@ const rule = {
             return
           }
 
-          const accessed = new Set()
-          const memberRefs = []
+          const accessed = new Set<string>()
+          const memberRefs: AstNode[] = []
           let unsafe = false
 
-          function visit(s, visited) {
+          function visit(s: AstNode, visited: Set<AstNode>): void {
             if (visited.has(s)) {
               return
             }
@@ -242,7 +247,7 @@ const rule = {
           context.report({
             node,
             messageId,
-            fix(fixer) {
+            fix(fixer: RuleFixer) {
               const fixes = [fixer.replaceText(node, newImport)]
               for (const ref of memberRefs) {
                 // Replace `fs.X` with bare `X`. We need the entire
@@ -265,22 +270,26 @@ const rule = {
         // mix-ins (`import path, { sep } from 'node:path'`) are
         // unusual but tolerated.
         const hasDefault = node.specifiers.some(
-          s => s.type === 'ImportDefaultSpecifier',
+          (s: AstNode) => s.type === 'ImportDefaultSpecifier',
         )
         if (hasDefault) {
           return
         }
 
-        const named = node.specifiers.filter(s => s.type === 'ImportSpecifier')
+        const named = node.specifiers.filter(
+          (s: AstNode) => s.type === 'ImportSpecifier',
+        )
         if (named.length === 0) {
           return
         }
 
         // Allow documented exceptions (e.g. `fileURLToPath`).
-        const exceptions = NAMED_EXCEPTIONS[specifier]
+        const exceptions = (NAMED_EXCEPTIONS as Record<string, Set<string>>)[
+          specifier
+        ]
         const violatingNames = exceptions
           ? named.filter(
-              s =>
+              (s: AstNode) =>
                 s.imported &&
                 s.imported.name &&
                 !exceptions.has(s.imported.name),
@@ -290,9 +299,9 @@ const rule = {
           return
         }
 
-        const local = DEFAULT_LOCAL[specifier]
+        const local = (DEFAULT_LOCAL as Record<string, string>)[specifier]!
         const violatingNameList = violatingNames
-          .map(s => s.imported.name)
+          .map((s: AstNode) => s.imported.name)
           .join(', ')
 
         // Skip autofix if the local binding (`path`, `os`, etc.)
@@ -306,7 +315,7 @@ const rule = {
               names: `{ ${violatingNameList} }`,
               specifier,
               local,
-              first: violatingNames[0].imported.name,
+              first: violatingNames[0]!.imported.name,
             },
           })
           return
@@ -319,15 +328,15 @@ const rule = {
             names: `{ ${violatingNameList} }`,
             specifier,
             local,
-            first: violatingNames[0].imported.name,
+            first: violatingNames[0]!.imported.name,
           },
-          fix(fixer) {
-            const fixes = []
+          fix(fixer: RuleFixer) {
+            const fixes: AstNode[] = []
 
             // Rewrite the import statement.
             const keptNamed = exceptions
               ? named.filter(
-                  s =>
+                  (s: AstNode) =>
                     s.imported &&
                     s.imported.name &&
                     exceptions.has(s.imported.name),
@@ -337,7 +346,7 @@ const rule = {
             let newImport
             if (keptNamed.length > 0) {
               const keptText = keptNamed
-                .map(s => sourceCode.getText(s))
+                .map((s: AstNode) => sourceCode.getText(s))
                 .join(', ')
               newImport = `import ${local}, { ${keptText} } from '${specifier}'`
             } else {
@@ -354,12 +363,14 @@ const rule = {
             //
             // Cheap heuristic: use scope analysis if available.
             const scope = context.getScope ? context.getScope() : undefined
-            const targetNames = new Set(violatingNames.map(s => s.local.name))
+            const targetNames = new Set(
+              violatingNames.map((s: AstNode) => s.local.name),
+            )
 
             if (scope) {
-              const visited = new Set()
+              const visited = new Set<AstNode>()
 
-              function visitScope(s) {
+              function visitScope(s: AstNode): void {
                 if (visited.has(s)) {
                   return
                 }

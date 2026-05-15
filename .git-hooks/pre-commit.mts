@@ -235,6 +235,12 @@ const main = (): number => {
       file.startsWith('.claude/hooks/') ||
       file.startsWith('.git-hooks/') ||
       file.startsWith('scripts/') ||
+      // template/ is the canonical source for code that cascades to
+      // .claude/hooks/, .git-hooks/, and scripts/. Apply the same
+      // exemption at the source.
+      file.startsWith('template/.claude/hooks/') ||
+      file.startsWith('template/.git-hooks/') ||
+      file.startsWith('template/scripts/') ||
       file.includes('/external/') ||
       file.includes('/vendor/') ||
       file.includes('/upstream/')
@@ -280,12 +286,13 @@ const main = (): number => {
       continue
     }
     // Don't scan the hook source itself (it lists fleet repo names by
-    // necessity), the canonical CLAUDE.md fleet block (which documents
-    // fleet repos), or vendored upstream sources.
+    // necessity), markdown docs (which legitimately show cross-repo
+    // command examples like `--target ../socket-lib`), or vendored
+    // upstream sources.
     if (
       file.startsWith('.git-hooks/') ||
       file.startsWith('.claude/hooks/') ||
-      file.endsWith('CLAUDE.md') ||
+      file.endsWith('.md') ||
       file.includes('/external/') ||
       file.includes('/vendor/') ||
       file.includes('/upstream/') ||

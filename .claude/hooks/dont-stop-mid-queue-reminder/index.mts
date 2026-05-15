@@ -53,6 +53,24 @@ const STOP_PATTERNS: readonly { label: string; regex: RegExp }[] = [
     regex: /\b(pausing\s+here|i'?m\s+pausing)\b/i,
   },
   {
+    label: 'holding here / holding for / holding off',
+    // "Holding here." / "Holding for next direction." / "Holding pending
+    // your call." — the queue equivalent of "I'll wait for you to say
+    // what's next." Pick the next item instead.
+    regex:
+      /\b(holding\s+(here|off|for|pending|until)|i'?m\s+holding|i'?ll\s+hold|will\s+hold)\b/i,
+  },
+  {
+    label: 'waiting for direction / next direction',
+    regex:
+      /\b(waiting\s+(for|on)\s+(your|the|next)\s+(direction|call|input|decision|word|go-ahead|signal)|wait(ing)?\s+for\s+(you|your)\s+to\s+(decide|pick|choose|say|tell|direct))\b/i,
+  },
+  {
+    label: 'ready when you (are) / let me know when',
+    regex:
+      /\b(ready\s+when\s+you('re|\s+are)|let\s+me\s+know\s+when|standing\s+by)\b/i,
+  },
+  {
     label: 'want me to continue / should I keep going',
     regex: /\b(want\s+me\s+to\s+continue|should\s+i\s+keep\s+going|shall\s+i\s+continue)\??/i,
   },

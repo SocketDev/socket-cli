@@ -21,6 +21,7 @@ import noDefaultExport from './rules/no-default-export.mts'
 import noDynamicImportOutsideBundle from './rules/no-dynamic-import-outside-bundle.mts'
 import noFetchPreferHttpRequest from './rules/no-fetch-prefer-http-request.mts'
 import noInlineLogger from './rules/no-inline-logger.mts'
+import noLoggerNewlineLiteral from './rules/no-logger-newline-literal.mts'
 import noNpxDlx from './rules/no-npx-dlx.mts'
 import noPlaceholders from './rules/no-placeholders.mts'
 import noProcessCwdInScriptsHooks from './rules/no-process-cwd-in-scripts-hooks.mts'
@@ -37,6 +38,7 @@ import preferNodeBuiltinImports from './rules/prefer-node-builtin-imports.mts'
 import preferNodeModulesDotCache from './rules/prefer-node-modules-dot-cache.mts'
 import preferSafeDelete from './rules/prefer-safe-delete.mts'
 import preferSeparateTypeImport from './rules/prefer-separate-type-import.mts'
+import preferStaticTypeImport from './rules/prefer-static-type-import.mts'
 import preferUndefinedOverNull from './rules/prefer-undefined-over-null.mts'
 import socketApiTokenEnv from './rules/socket-api-token-env.mts'
 import sortEqualityDisjunctions from './rules/sort-equality-disjunctions.mts'
@@ -60,6 +62,7 @@ const plugin = {
     'no-dynamic-import-outside-bundle': noDynamicImportOutsideBundle,
     'no-fetch-prefer-http-request': noFetchPreferHttpRequest,
     'no-inline-logger': noInlineLogger,
+    'no-logger-newline-literal': noLoggerNewlineLiteral,
     'no-npx-dlx': noNpxDlx,
     'no-placeholders': noPlaceholders,
     'no-process-cwd-in-scripts-hooks': noProcessCwdInScriptsHooks,
@@ -76,6 +79,7 @@ const plugin = {
     'prefer-node-modules-dot-cache': preferNodeModulesDotCache,
     'prefer-safe-delete': preferSafeDelete,
     'prefer-separate-type-import': preferSeparateTypeImport,
+    'prefer-static-type-import': preferStaticTypeImport,
     'prefer-undefined-over-null': preferUndefinedOverNull,
     'socket-api-token-env': socketApiTokenEnv,
     'sort-equality-disjunctions': sortEqualityDisjunctions,

@@ -41,6 +41,9 @@
 // [legacyStem, replacementStem]. The detector matches the stem
 // case-insensitively and word-boundary anchored. Replacement preserves
 // case shape.
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const SUBSTITUTIONS = [
   ['whitelist', 'allowlist'],
   ['blacklist', 'denylist'],
@@ -84,19 +87,22 @@ const DETECTOR_RE = buildDetectorRegex()
  * the new stem. Returns undefined when there's no autofix-able
  * substitution (master/slave).
  */
-function rewriteHit(match) {
+function rewriteHit(match: string): string | undefined {
   const lower = match.toLowerCase()
   for (const [legacy, replacement] of SUBSTITUTIONS) {
+    if (!legacy || !replacement) {
+      continue
+    }
     if (!lower.startsWith(legacy)) {
       continue
     }
     const tail = match.slice(legacy.length)
     const original = match.slice(0, legacy.length)
-    let rebuilt
+    let rebuilt: string
     if (original === original.toUpperCase()) {
       rebuilt = replacement.toUpperCase()
-    } else if (original[0] === original[0].toUpperCase()) {
-      rebuilt = replacement[0].toUpperCase() + replacement.slice(1)
+    } else if (original[0] === original[0]!.toUpperCase()) {
+      rebuilt = replacement[0]!.toUpperCase() + replacement.slice(1)
     } else {
       rebuilt = replacement
     }
@@ -105,12 +111,19 @@ function rewriteHit(match) {
   return undefined
 }
 
-function findHits(text) {
-  const hits = []
+interface Hit {
+  start: number
+  end: number
+  match: string
+  stem: string
+}
+
+function findHits(text: string): Hit[] {
+  const hits: Hit[] = []
   DETECTOR_RE.lastIndex = 0
   let m
   while ((m = DETECTOR_RE.exec(text)) !== null) {
-    const stem = m[1].toLowerCase()
+    const stem = m[1]!.toLowerCase()
     hits.push({
       start: m.index,
       end: m.index + m[0].length,
@@ -143,12 +156,12 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
-    function hasBypassComment(node) {
+    function hasBypassComment(node: AstNode) {
       const before = sourceCode.getCommentsBefore(node)
       const after = sourceCode.getCommentsAfter(node)
       for (const c of [...before, ...after]) {
@@ -170,30 +183,7 @@ const rule = {
       return false
     }
 
-    function reportHit(node, hit, replaceFn) {
-      let messageId = 'legacy'
-      if (hit.stem === 'master') {
-        messageId = 'legacyMaster'
-      } else if (hit.stem === 'slave') {
-        messageId = 'legacySlave'
-      }
-      const isReportOnly = REPORT_ONLY.has(hit.stem)
-      const replacement = isReportOnly ? undefined : rewriteHit(hit.match)
-      if (!replacement) {
-        context.report({ node, messageId, data: { match: hit.match } })
-        return
-      }
-      context.report({
-        node,
-        messageId,
-        data: { match: hit.match },
-        fix(fixer) {
-          return replaceFn(fixer, hit, replacement)
-        },
-      })
-    }
-
-    function checkIdentifier(node) {
+    function checkIdentifier(node: AstNode) {
       if (!node.name) {
         return
       }
@@ -209,7 +199,6 @@ const rule = {
       let rebuilt = ''
       let cursor = 0
       let mutated = false
-      let allReportOnly = true
       for (const h of hits) {
         rebuilt += node.name.slice(cursor, h.start)
         const replacement = REPORT_ONLY.has(h.stem)
@@ -218,7 +207,6 @@ const rule = {
         if (replacement) {
           rebuilt += replacement
           mutated = true
-          allReportOnly = false
         } else {
           rebuilt += h.match
         }
@@ -242,7 +230,7 @@ const rule = {
       }
 
       // Emit one report per hit but a single combined fix.
-      const firstHit = hits[0]
+      const firstHit = hits[0]!
       let messageId = 'legacy'
       if (firstHit.stem === 'master') {
         messageId = 'legacyMaster'
@@ -253,7 +241,7 @@ const rule = {
         node,
         messageId,
         data: { match: firstHit.match },
-        fix(fixer) {
+        fix(fixer: RuleFixer) {
           return fixer.replaceText(node, rebuilt)
         },
       })
@@ -262,7 +250,7 @@ const rule = {
     return {
       Identifier: checkIdentifier,
 
-      Literal(node) {
+      Literal(node: AstNode) {
         if (typeof node.value !== 'string') {
           return
         }
@@ -305,7 +293,7 @@ const rule = {
           return
         }
 
-        const firstHit = hits[0]
+        const firstHit = hits[0]!
         let messageId = 'legacy'
         if (firstHit.stem === 'master') {
           messageId = 'legacyMaster'
@@ -316,15 +304,15 @@ const rule = {
           node,
           messageId,
           data: { match: firstHit.match },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             const raw = sourceCode.getText(node)
-            const quote = raw[0]
+            const quote = raw[0]!
             if (quote === '`') {
               return fixer.replaceText(node, '`' + rebuilt + '`')
             }
             const escaped = rebuilt.replace(
               new RegExp(`\\\\|${quote}`, 'g'),
-              ch => '\\' + ch,
+              (ch: string) => '\\' + ch,
             )
             return fixer.replaceText(node, quote + escaped + quote)
           },
@@ -381,7 +369,7 @@ const rule = {
             continue
           }
 
-          const firstHit = hits[0]
+          const firstHit = hits[0]!
           let messageId = 'legacy'
           if (firstHit.stem === 'master') {
             messageId = 'legacyMaster'
@@ -392,7 +380,7 @@ const rule = {
             node: comment,
             messageId,
             data: { match: firstHit.match },
-            fix(fixer) {
+            fix(fixer: RuleFixer) {
               const prefix = comment.type === 'Line' ? '//' : '/*'
               const suffix = comment.type === 'Line' ? '' : '*/'
               return fixer.replaceTextRange(

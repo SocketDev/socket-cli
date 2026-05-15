@@ -1,8 +1,7 @@
-// @ts-expect-error - node:test types via @types/node@catalog work at runtime
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -172,6 +171,97 @@ test('FLAGS "remaining queue:" with bulleted list', () => {
   const { stderr, exitCode } = runHook(transcriptPath)
   assert.equal(exitCode, 0)
   assert.match(stderr, /remaining queue/i)
+})
+
+test('FLAGS "Holding here." trailing turn', () => {
+  const transcriptPath = makeTranscript([
+    { role: 'user', text: 'continue through the queue' },
+    {
+      role: 'assistant',
+      text: 'Hook 4 landed and tests pass. Holding here.',
+    },
+  ])
+  const { stderr, exitCode } = runHook(transcriptPath)
+  assert.equal(exitCode, 0)
+  assert.match(stderr, /holding/i)
+})
+
+test('FLAGS "Holding for next direction."', () => {
+  const transcriptPath = makeTranscript([
+    { role: 'user', text: 'work the list' },
+    {
+      role: 'assistant',
+      text: 'Item complete. Holding for next direction.',
+    },
+  ])
+  const { stderr, exitCode } = runHook(transcriptPath)
+  assert.equal(exitCode, 0)
+  assert.match(stderr, /holding/i)
+})
+
+test('FLAGS "I\'ll hold pending your call"', () => {
+  const transcriptPath = makeTranscript([
+    { role: 'user', text: 'do them all' },
+    {
+      role: 'assistant',
+      text: 'Tier 2 work complete. I\'ll hold pending your call on which one is next.',
+    },
+  ])
+  const { stderr, exitCode } = runHook(transcriptPath)
+  assert.equal(exitCode, 0)
+  assert.match(stderr, /holding|hold/i)
+})
+
+test('FLAGS "Waiting for your direction"', () => {
+  const transcriptPath = makeTranscript([
+    { role: 'user', text: 'hammer through' },
+    {
+      role: 'assistant',
+      text: 'Done with patch 17. Waiting for your direction on the next item.',
+    },
+  ])
+  const { stderr, exitCode } = runHook(transcriptPath)
+  assert.equal(exitCode, 0)
+  assert.match(stderr, /waiting.*direction/i)
+})
+
+test('FLAGS "Ready when you are."', () => {
+  const transcriptPath = makeTranscript([
+    { role: 'user', text: 'complete each one' },
+    {
+      role: 'assistant',
+      text: 'All three hooks landed. Ready when you are.',
+    },
+  ])
+  const { stderr, exitCode } = runHook(transcriptPath)
+  assert.equal(exitCode, 0)
+  assert.match(stderr, /ready when you/i)
+})
+
+test('FLAGS "standing by"', () => {
+  const transcriptPath = makeTranscript([
+    { role: 'user', text: '100% complete' },
+    {
+      role: 'assistant',
+      text: 'Phase landed. Standing by.',
+    },
+  ])
+  const { stderr, exitCode } = runHook(transcriptPath)
+  assert.equal(exitCode, 0)
+  assert.match(stderr, /standing by/i)
+})
+
+test('does NOT fire on technical "holding the lock"', () => {
+  const transcriptPath = makeTranscript([
+    { role: 'user', text: 'explain how this mutex works' },
+    {
+      role: 'assistant',
+      text: 'The worker is holding the lock during write, releasing on drop.',
+    },
+  ])
+  const { stderr, exitCode } = runHook(transcriptPath)
+  assert.equal(exitCode, 0)
+  assert.equal(stderr, '')
 })
 
 test('SKIPS when user said "stop" in recent turn', () => {

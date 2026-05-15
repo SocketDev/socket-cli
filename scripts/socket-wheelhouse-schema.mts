@@ -214,13 +214,13 @@ const WorkspaceSchema = Type.Object(
       Type.Integer({
         minimum: 0,
         description:
-          'Soak window in minutes before installing freshly-published packages. Fleet default 10080 (= 7 days).',
+          'Soak time in minutes before installing freshly-published packages. Fleet default 10080 (= 7 days).',
       }),
     ),
     minimumReleaseAgeExclude: Type.Optional(
       Type.Array(Type.String(), {
         description:
-          'Scopes / package patterns exempt from the soak window. Socket-owned scopes typically listed here.',
+          'Scopes / package patterns exempt from the soak time. Socket-owned scopes typically listed here.',
       }),
     ),
     resolutionMode: Type.Optional(
@@ -237,6 +237,69 @@ const WorkspaceSchema = Type.Object(
   {
     description:
       'pnpm-workspace.yaml setting hints. The runner reads from the YAML; this block exists for repos that prefer to declare intent in JSON.',
+  },
+)
+
+// ---------------------------------------------------------------------------
+// GitHub-related config. Lives in our own JSON file (not .github/*.yml)
+// because the fleet rule is "JSON not YAML for configs we own."
+// ---------------------------------------------------------------------------
+
+const GithubSchema = Type.Object(
+  {
+    apps: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'GitHub App slugs that must be installed on the repo (e.g. `cursor`, `socket-security`, `socket-trufflehog`). Audited by `scripts/lint-github-settings.mts` — apps whose installation cannot be reliably detected via check-suites are trusted via this manifest.',
+      }),
+    ),
+  },
+  {
+    description: 'GitHub-related fleet config.',
+  },
+)
+
+// ---------------------------------------------------------------------------
+// pathsAllowlist — exemptions for the path-hygiene gate
+// (scripts/check-paths.mts). Migrated from `.github/paths-allowlist.yml`
+// per the "JSON not YAML for our own configs" rule.
+// ---------------------------------------------------------------------------
+
+const PathsAllowlistEntrySchema = Type.Object(
+  {
+    rule: Type.Optional(
+      Type.String({
+        description:
+          'Rule letter (A, B, C, D, F, G). Omit to match any rule.',
+      }),
+    ),
+    file: Type.Optional(
+      Type.String({
+        description: 'Substring match against the relative file path.',
+      }),
+    ),
+    pattern: Type.Optional(
+      Type.String({
+        description: 'Substring match against the offending snippet.',
+      }),
+    ),
+    line: Type.Optional(
+      Type.Number({
+        description: 'Exact line number. Strict — no fuzz tolerance.',
+      }),
+    ),
+    snippet_hash: Type.Optional(
+      Type.String({
+        description:
+          '12-char SHA-256 prefix of the normalized snippet (whitespace collapsed). Drift-resistant: keeps matching after reformatting that doesn\'t change the offending construction. Get via `node scripts/check-paths.mts --show-hashes`.',
+      }),
+    ),
+    reason: Type.String({
+      description: 'Why this site is genuinely exempt. Required.',
+    }),
+  },
+  {
+    description: 'One exemption for the path-hygiene gate.',
   },
 )
 
@@ -269,6 +332,13 @@ export const SocketWheelhouseConfigSchema = Type.Object(
     workflows: Type.Optional(WorkflowsSchema),
     claude: Type.Optional(ClaudeSchema),
     workspace: Type.Optional(WorkspaceSchema),
+    github: Type.Optional(GithubSchema),
+    pathsAllowlist: Type.Optional(
+      Type.Array(PathsAllowlistEntrySchema, {
+        description:
+          'Exemptions for the path-hygiene gate (scripts/check-paths.mts). Migrated from `.github/paths-allowlist.yml`. Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.',
+      }),
+    ),
   },
   {
     description:

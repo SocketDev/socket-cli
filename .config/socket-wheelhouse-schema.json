@@ -4,7 +4,12 @@
   "title": "socket-wheelhouse per-repo config",
   "description": "Per-repo socket-wheelhouse config. Two valid locations: `.config/socket-wheelhouse.json` (primary) or `.socket-wheelhouse.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
   "type": "object",
-  "required": ["schemaVersion", "repoName", "layout", "native"],
+  "required": [
+    "schemaVersion",
+    "repoName",
+    "layout",
+    "native"
+  ],
   "properties": {
     "$schema": {
       "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-wheelhouse-schema.json` — both the config and its schema live side-by-side in `.config/`.",
@@ -192,11 +197,11 @@
         },
         "minimumReleaseAge": {
           "minimum": 0,
-          "description": "Soak window in minutes before installing freshly-published packages. Fleet default 10080 (= 7 days).",
+          "description": "Soak time in minutes before installing freshly-published packages. Fleet default 10080 (= 7 days).",
           "type": "integer"
         },
         "minimumReleaseAgeExclude": {
-          "description": "Scopes / package patterns exempt from the soak window. Socket-owned scopes typically listed here.",
+          "description": "Scopes / package patterns exempt from the soak time. Socket-owned scopes typically listed here.",
           "type": "array",
           "items": {
             "type": "string"
@@ -227,6 +232,56 @@
               "type": "string"
             }
           ]
+        }
+      }
+    },
+    "github": {
+      "description": "GitHub-related fleet config.",
+      "type": "object",
+      "properties": {
+        "apps": {
+          "description": "GitHub App slugs that must be installed on the repo (e.g. `cursor`, `socket-security`, `socket-trufflehog`). Audited by `scripts/lint-github-settings.mts` — apps whose installation cannot be reliably detected via check-suites are trusted via this manifest.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pathsAllowlist": {
+      "description": "Exemptions for the path-hygiene gate (scripts/check-paths.mts). Migrated from `.github/paths-allowlist.yml`. Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.",
+      "type": "array",
+      "items": {
+        "description": "One exemption for the path-hygiene gate.",
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "rule": {
+            "description": "Rule letter (A, B, C, D, F, G). Omit to match any rule.",
+            "type": "string"
+          },
+          "file": {
+            "description": "Substring match against the relative file path.",
+            "type": "string"
+          },
+          "pattern": {
+            "description": "Substring match against the offending snippet.",
+            "type": "string"
+          },
+          "line": {
+            "description": "Exact line number. Strict — no fuzz tolerance.",
+            "type": "number"
+          },
+          "snippet_hash": {
+            "description": "12-char SHA-256 prefix of the normalized snippet (whitespace collapsed). Drift-resistant: keeps matching after reformatting that doesn't change the offending construction. Get via `node scripts/check-paths.mts --show-hashes`.",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Why this site is genuinely exempt. Required.",
+            "type": "string"
+          }
         }
       }
     }

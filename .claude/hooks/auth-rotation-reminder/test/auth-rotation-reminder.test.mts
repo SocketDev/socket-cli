@@ -106,7 +106,7 @@ test('auto-cleans expired project-local snooze and proceeds', async () => {
   try {
     const expiry = new Date(Date.now() - 60 * 60 * 1000).toISOString()
     writeFileSync(snoozeFile, expiry)
-    const { code, stderr } = await runHook({
+    const { code } = await runHook({
       cwd: repo,
       // Force CI so the hook short-circuits AFTER snooze handling
       // (which is what we're testing).

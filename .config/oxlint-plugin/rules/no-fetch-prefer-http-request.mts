@@ -14,6 +14,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'problem',
@@ -30,9 +33,9 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     return {
-      CallExpression(node) {
+      CallExpression(node: AstNode) {
         const callee = node.callee
         // Only flag direct `fetch(...)` calls (Identifier callee).
         if (callee.type !== 'Identifier' || callee.name !== 'fetch') {
@@ -44,7 +47,7 @@ const rule = {
         const scope = context.getScope ? context.getScope() : undefined
         if (scope) {
           const variable = scope.references.find(
-            ref => ref.identifier === callee,
+            (ref: AstNode) => ref.identifier === callee,
           )?.resolved
           if (variable && variable.scope.type !== 'global') {
             return

@@ -110,7 +110,7 @@ const extractors: Record<string, Extractor> = {
   '.csproj': extract(
     // .NET: <PackageReference Include="Newtonsoft.Json" Version="13.0" />
     /PackageReference\s+Include="([^"]+)"/g,
-    (m): Dep => ({ type: 'nuget', name: m[1] }),
+    (m): Dep => ({ type: 'nuget', name: m[1]! }),
   ),
   '.tf': extractTerraform,
   Brewfile: extractBrewfile,
@@ -119,7 +119,7 @@ const extractors: Record<string, Extractor> = {
   'Cargo.lock': extract(
     // Rust lockfile: [[package]]\nname = "serde"\nversion = "1.0.0"
     /name\s*=\s*"([\w][\w-]*)"/gm,
-    (m): Dep => ({ type: 'cargo', name: m[1] }),
+    (m): Dep => ({ type: 'cargo', name: m[1]! }),
   ),
   'Cargo.toml': (content: string): Dep[] => {
     // Rust: extract crate names from dep lines.
@@ -148,7 +148,7 @@ const extractors: Record<string, Extractor> = {
     const push = (section: string) => {
       let m
       while ((m = lineRe.exec(section)) !== null) {
-        deps.push({ type: 'cargo', name: m[1] })
+        deps.push({ type: 'cargo', name: m[1]! })
       }
       lineRe.lastIndex = 0
     }
@@ -174,8 +174,8 @@ const extractors: Record<string, Extractor> = {
     /"name":\s*"([a-z][\w-]*)\/([a-z][\w-]*)"/g,
     (m): Dep => ({
       type: 'composer',
-      namespace: m[1],
-      name: m[2],
+      namespace: m[1]!,
+      name: m[2]!,
     }),
   ),
   'composer.json': extract(
@@ -183,26 +183,26 @@ const extractors: Record<string, Extractor> = {
     /"([a-z][\w-]*)\/([a-z][\w-]*)":\s*"/g,
     (m): Dep => ({
       type: 'composer',
-      namespace: m[1],
-      name: m[2],
+      namespace: m[1]!,
+      name: m[2]!,
     }),
   ),
   'flake.nix': extractNixFlake,
   'Gemfile.lock': extract(
     // Ruby lockfile: indented gem names under GEM > specs
     /^\s{4}(\w[\w-]*)\s+\(/gm,
-    (m): Dep => ({ type: 'gem', name: m[1] }),
+    (m): Dep => ({ type: 'gem', name: m[1]! }),
   ),
   Gemfile: extract(
     // Ruby: gem 'rails', '~> 7.0'
     /gem\s+['"]([^'"]+)['"]/g,
-    (m): Dep => ({ type: 'gem', name: m[1] }),
+    (m): Dep => ({ type: 'gem', name: m[1]! }),
   ),
   'go.sum': extract(
     // Go checksum file: module/path v1.2.3 h1:hash=
     /([\w./-]+)\s+v[\d.]+/gm,
     (m): Dep => {
-      const parts = m[1].split('/')
+      const parts = m[1]!.split('/')
       return {
         type: 'golang',
         name: parts.pop()!,
@@ -214,7 +214,7 @@ const extractors: Record<string, Extractor> = {
     // Go: github.com/gin-gonic/gin v1.9.1
     /([\w./-]+)\s+v[\d.]+/gm,
     (m): Dep => {
-      const parts = m[1].split('/')
+      const parts = m[1]!.split('/')
       return {
         type: 'golang',
         name: parts.pop()!,
@@ -225,7 +225,7 @@ const extractors: Record<string, Extractor> = {
   'mix.exs': extract(
     // Elixir: {:phoenix, "~> 1.7"}
     /\{:(\w+),/g,
-    (m): Dep => ({ type: 'hex', name: m[1] }),
+    (m): Dep => ({ type: 'hex', name: m[1]! }),
   ),
   'package-lock.json': extractNpmLockfile,
   'package.json': extractNpm,
@@ -234,9 +234,9 @@ const extractors: Record<string, Extractor> = {
     /\.package\s*\(\s*url:\s*"https:\/\/github\.com\/([^/]+)\/([^"]+)".*?from:\s*"([^"]+)"/gs,
     (m): Dep => ({
       type: 'swift',
-      namespace: `github.com/${m[1]}`,
-      name: m[2].replace(/\.git$/, ''),
-      version: m[3],
+      namespace: `github.com/${m[1]!}`,
+      name: m[2]!.replace(/\.git$/, ''),
+      version: m[3]!,
     }),
   ),
   'Pipfile.lock': extractPipfileLock,
@@ -244,23 +244,23 @@ const extractors: Record<string, Extractor> = {
   'poetry.lock': extract(
     // Python poetry lockfile: [[package]]\nname = "flask"
     /name\s*=\s*"([a-zA-Z][\w.-]*)"/gm,
-    (m): Dep => ({ type: 'pypi', name: m[1] }),
+    (m): Dep => ({ type: 'pypi', name: m[1]! }),
   ),
   'pom.xml': extractMaven,
   'Project.toml': extract(
     // Julia: JSON3 = "uuid-string"
     /^(\w[\w.-]*)\s*=\s*"/gm,
-    (m): Dep => ({ type: 'julia', name: m[1] }),
+    (m): Dep => ({ type: 'julia', name: m[1]! }),
   ),
   'pubspec.lock': extract(
     // Dart lockfile: top-level package names at column 2
     /^  (\w[\w_-]*):/gm,
-    (m): Dep => ({ type: 'pub', name: m[1] }),
+    (m): Dep => ({ type: 'pub', name: m[1]! }),
   ),
   'pubspec.yaml': extract(
     // Dart: flutter_bloc: ^8.1.3 (2-space indented under dependencies:)
     /^\s{2}(\w[\w_-]*):\s/gm,
-    (m): Dep => ({ type: 'pub', name: m[1] }),
+    (m): Dep => ({ type: 'pub', name: m[1]! }),
   ),
   'pyproject.toml': extractPypi,
   'requirements.txt': extractPypi,
@@ -444,7 +444,7 @@ function extractBrewfile(content: string): Dep[] {
   const deps: Dep[] = []
   // brew "git", cask "firefox", tap "homebrew/cask"
   for (const m of content.matchAll(/(?:brew|cask)\s+['"]([^'"]+)['"]/g)) {
-    deps.push({ type: 'brew', name: m[1] })
+    deps.push({ type: 'brew', name: m[1]! })
   }
   return deps
 }
@@ -454,7 +454,7 @@ function extractBrewfile(content: string): Dep[] {
 function extractConan(content: string): Dep[] {
   const deps: Dep[] = []
   for (const m of content.matchAll(/([a-z][\w.-]+)\/[\d.]+/gm)) {
-    deps.push({ type: 'conan', name: m[1] })
+    deps.push({ type: 'conan', name: m[1]! })
   }
   return deps
 }
@@ -464,11 +464,11 @@ function extractConan(content: string): Dep[] {
 function extractGitHubActions(content: string): Dep[] {
   const deps: Dep[] = []
   for (const m of content.matchAll(/uses:\s*['"]?([^@\s'"]+)@([^\s'"]+)/g)) {
-    const parts = m[1].split('/')
+    const parts = m[1]!.split('/')
     if (parts.length >= 2) {
       deps.push({
         type: 'github',
-        namespace: parts[0],
+        namespace: parts[0]!,
         name: parts.slice(1).join('/'),
       })
     }
@@ -487,8 +487,8 @@ function extractMaven(content: string): Dep[] {
   )) {
     deps.push({
       type: 'maven',
-      namespace: m[1],
-      name: m[2],
+      namespace: m[1]!,
+      name: m[2]!,
     })
   }
   // Gradle shorthand: implementation/api/compile 'group:artifact:ver'
@@ -497,8 +497,8 @@ function extractMaven(content: string): Dep[] {
   )) {
     deps.push({
       type: 'maven',
-      namespace: m[1],
-      name: m[2],
+      namespace: m[1]!,
+      name: m[2]!,
     })
   }
   return deps
@@ -522,8 +522,8 @@ function extractNixFlake(content: string): Dep[] {
   for (const m of content.matchAll(/github:([^/\s"]+)\/([^/\s"]+)/g)) {
     deps.push({
       type: 'github',
-      namespace: m[1],
-      name: m[2].replace(/\/.*$/, ''),
+      namespace: m[1]!,
+      name: m[2]!.replace(/\/.*$/, ''),
     })
   }
   return deps
@@ -542,12 +542,12 @@ function extractNpmLockfile(content: string): Dep[] {
   for (const m of content.matchAll(
     /node_modules\/((?:@[\w.-]+\/)?[\w][\w.-]*)/g,
   )) {
-    addNpmDep(m[1], deps, seen)
+    addNpmDep(m[1]!, deps, seen)
   }
   // pnpm-lock.yaml: '/name@ver' or '/@scope/name@ver'
   // yarn.lock: "name@ver" or "@scope/name@ver"
   for (const m of content.matchAll(/['"/]((?:@[\w.-]+\/)?[\w][\w.-]*)@/gm)) {
-    addNpmDep(m[1], deps, seen)
+    addNpmDep(m[1]!, deps, seen)
   }
   return deps
 }
@@ -569,8 +569,8 @@ function addNpmDep(raw: string, deps: Dep[], seen: Set<string>): void {
 function extractNpm(content: string): Dep[] {
   const deps: Dep[] = []
   for (const m of content.matchAll(/"(@?[^"]+)":\s*"([^"]*)"/g)) {
-    const raw = m[1]
-    const val = m[2]
+    const raw = m[1]!
+    const val = m[2]!
     // Skip builtins, relative, and absolute paths.
     if (raw.startsWith('node:') || raw.startsWith('.') || raw.startsWith('/'))
       continue
@@ -633,7 +633,7 @@ function extractPipfileLock(content: string): Dep[] {
     // JSON.parse fails on partial content (e.g. Edit new_string fragments).
     // Fall back to regex matching package name keys in Pipfile.lock JSON.
     for (const m of content.matchAll(/"([a-zA-Z][\w.-]*)"\s*:\s*\{/g)) {
-      deps.push({ type: 'pypi', name: m[1] })
+      deps.push({ type: 'pypi', name: m[1]! })
     }
   }
   return deps
@@ -649,18 +649,18 @@ function extractPypi(content: string): Dep[] {
   // requirements.txt style: package name at line start, followed by
   // version specifier, extras bracket, or end of line.
   for (const m of content.matchAll(/^([a-zA-Z][\w.-]+)\s*(?:[>=<!~\[;]|$)/gm)) {
-    const name = m[1].toLowerCase()
+    const name = m[1]!.toLowerCase()
     if (!seen.has(name)) {
       seen.add(name)
-      deps.push({ type: 'pypi', name: m[1] })
+      deps.push({ type: 'pypi', name: m[1]! })
     }
   }
   // Quoted strings with version specifiers (pyproject.toml, setup.py).
   for (const m of content.matchAll(/["']([a-zA-Z][\w.-]+)\s*[>=<!~\[]/g)) {
-    const name = m[1].toLowerCase()
+    const name = m[1]!.toLowerCase()
     if (!seen.has(name)) {
       seen.add(name)
-      deps.push({ type: 'pypi', name: m[1] })
+      deps.push({ type: 'pypi', name: m[1]! })
     }
   }
   return deps
@@ -677,8 +677,8 @@ function extractTerraform(content: string): Dep[] {
   )) {
     deps.push({
       type: 'terraform',
-      namespace: m[1],
-      name: m[2],
+      namespace: m[1]!,
+      name: m[2]!,
     })
   }
   return deps
@@ -713,7 +713,7 @@ export {
 // PACKAGE_JSON_METADATA_KEYS). Placing main last guarantees every
 // module-level declaration is initialized before main runs.
 
-if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '')) {
   // Fail OPEN on any internal bug — per CLAUDE.md, hooks must not
   // brick the session if they hit their own crash. Malformed stdin,
   // unexpected SDK throws, or any other error here exits 0 with a

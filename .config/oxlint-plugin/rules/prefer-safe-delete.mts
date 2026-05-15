@@ -33,6 +33,8 @@
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const DELETE_METHODS = new Set([
   'rm',
   'rmSync',
@@ -62,7 +64,7 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
@@ -70,9 +72,12 @@ const rule = {
     // One summary per replacement target — async (safeDelete) and
     // sync (safeDeleteSync) are separate import names from the same
     // specifier, so each gets its own summary cache.
-    const summaryCache = new Map()
+    const summaryCache = new Map<
+      string,
+      ReturnType<typeof summarizeImportTarget>
+    >()
 
-    function ensureSummary(importName) {
+    function ensureSummary(importName: string) {
       let s = summaryCache.get(importName)
       if (s) {
         return s
@@ -99,7 +104,7 @@ const rule = {
      *   - 2nd arg is a function expression (callback-style)
      *   - any spread argument (...args; can't reason about arity)
      */
-    function isFixable(node) {
+    function isFixable(node: AstNode) {
       const args = node.arguments
       if (args.length === 0 || args.length > 2) {
         return false
@@ -122,7 +127,7 @@ const rule = {
     }
 
     return {
-      CallExpression(node) {
+      CallExpression(node: AstNode) {
         const callee = node.callee
         if (callee.type !== 'MemberExpression') {
           return
@@ -179,7 +184,7 @@ const rule = {
           node,
           messageId: 'banned',
           data: { method },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             return [
               fixer.replaceText(node, `${replacement}(${pathText})`),
               ...appendImportFixes(

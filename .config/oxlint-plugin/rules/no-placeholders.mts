@@ -33,6 +33,8 @@
  *     stub detector requires a marker comment in the body.
  */
 
+import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+
 const COMMENT_MARKER_RE = /\b(TODO|FIXME|XXX|HACK|TBD|STUB|WIP|UNIMPLEMENTED)\b/
 
 const STUB_BODY_MARKER_RE =
@@ -64,7 +66,7 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
@@ -75,7 +77,7 @@ const rule = {
      * escape hatch for callbacks that genuinely do nothing
      * (e.g. event-handler defaults, test spies).
      */
-    function isExplicitNoop(fnNode) {
+    function isExplicitNoop(fnNode: AstNode): boolean {
       const leading = sourceCode.getCommentsBefore(fnNode)
       for (const c of leading) {
         if (/@noop\b/.test(c.value)) {
@@ -100,7 +102,7 @@ const rule = {
       return false
     }
 
-    function functionDisplayName(fnNode) {
+    function functionDisplayName(fnNode: AstNode): string {
       if (fnNode.id && fnNode.id.name) {
         return fnNode.id.name
       }
@@ -132,7 +134,7 @@ const rule = {
       return '<anonymous>'
     }
 
-    function bodyMarkerComment(blockNode) {
+    function bodyMarkerComment(blockNode: AstNode): AstNode | undefined {
       const inner = sourceCode.getCommentsInside
         ? sourceCode.getCommentsInside(blockNode)
         : []
@@ -144,7 +146,7 @@ const rule = {
       return undefined
     }
 
-    function checkFunctionBody(fnNode) {
+    function checkFunctionBody(fnNode: AstNode): void {
       // Arrow expressions like `() => 42` have a non-block body —
       // they're not stubs.
       if (!fnNode.body || fnNode.body.type !== 'BlockStatement') {
@@ -213,7 +215,7 @@ const rule = {
         }
       },
 
-      ThrowStatement(node) {
+      ThrowStatement(node: AstNode) {
         // Match `throw new Error(<string>)` where the string mentions
         // a placeholder phrase. We skip non-Error throws and
         // template-literal throws with interpolations (those usually

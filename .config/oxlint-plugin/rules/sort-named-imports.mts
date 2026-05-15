@@ -22,6 +22,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'suggestion',
@@ -39,12 +42,12 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
-    function specSortKey(spec) {
+    function specSortKey(spec: AstNode): string {
       // ImportSpecifier — sort by `imported.name`.
       // Default / namespace specifiers don't appear in the named list.
       if (spec.imported && spec.imported.name) {
@@ -56,9 +59,9 @@ const rule = {
       return spec.local && spec.local.name ? spec.local.name : ''
     }
 
-    function isAlreadySorted(names) {
+    function isAlreadySorted(names: string[]): boolean {
       for (let i = 1; i < names.length; i++) {
-        if (names[i - 1] > names[i]) {
+        if (names[i - 1]! > names[i]!) {
           return false
         }
       }
@@ -66,9 +69,11 @@ const rule = {
     }
 
     return {
-      ImportDeclaration(node) {
+      ImportDeclaration(node: AstNode) {
         // Pull only the named-imports (skip default + namespace).
-        const named = node.specifiers.filter(s => s.type === 'ImportSpecifier')
+        const named = node.specifiers.filter(
+          (s: AstNode) => s.type === 'ImportSpecifier',
+        )
         if (named.length < 2) {
           return
         }
@@ -94,7 +99,7 @@ const rule = {
           ? sourceCode
               .getCommentsInside(node)
               .filter(
-                c =>
+                (c: AstNode) =>
                   c.range[0] >= first.range[0] && c.range[1] <= last.range[1],
               )
           : []
@@ -118,17 +123,15 @@ const rule = {
             actual: keys.join(', '),
             expected: sortedKeys.join(', '),
           },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             // Detect single-line vs multi-line by looking at the
             // first-token-after-`{` and last-token-before-`}`.
-            const firstText = sourceCode.getText(first)
-            const lastText = sourceCode.getText(last)
             // The slice between { and } — preserves `,` newline padding.
             const openBrace = sourceCode.getTokenBefore(first, {
-              filter: t => t.value === '{',
+              filter: (t: AstNode) => t.value === '{',
             })
             const closeBrace = sourceCode.getTokenAfter(last, {
-              filter: t => t.value === '}',
+              filter: (t: AstNode) => t.value === '}',
             })
             if (!openBrace || !closeBrace) {
               return null

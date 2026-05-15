@@ -24,6 +24,8 @@
  * or rely on declaration order, so we don't reshuffle around them.
  */
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const SCRIPT_ENTRY_NAMES = new Set(['main'])
 
 /**
@@ -31,7 +33,7 @@ const SCRIPT_ENTRY_NAMES = new Set(['main'])
  * sit above. Reordering them is safe because they're erased at compile
  * time (no runtime side effects, no declaration-order semantics).
  */
-function isTypeOnlyStatement(node) {
+function isTypeOnlyStatement(node: AstNode) {
   if (!node) {
     return false
   }
@@ -61,7 +63,7 @@ function isTypeOnlyStatement(node) {
   return false
 }
 
-function declVisibility(node) {
+function declVisibility(node: AstNode) {
   // ExportNamedDeclaration wrapping a FunctionDeclaration.
   if (
     node.type === 'ExportNamedDeclaration' &&
@@ -89,7 +91,16 @@ function declVisibility(node) {
  * before exports; within each group, alphanumerical by name. The
  * script entrypoint (`main`) is pinned to the end regardless of group.
  */
-function sortKey(entry) {
+interface FunctionEntry {
+  isEntrypoint: boolean
+  name: string
+  visibility: 'private' | 'export'
+  node: AstNode
+  start: number
+  end: number
+}
+
+function sortKey(entry: FunctionEntry): string {
   if (entry.isEntrypoint) {
     // '~' (0x7E) is the highest printable ASCII char, so this sort key
     // pins the entrypoint to the end of any group.
@@ -105,7 +116,7 @@ function sortKey(entry) {
  * comment and stays put). Falls back to the node's own start when
  * there are no leading comments.
  */
-function leadingCommentStart(sourceCode, node) {
+function leadingCommentStart(sourceCode: AstNode, node: AstNode): number {
   const comments = sourceCode.getCommentsBefore
     ? sourceCode.getCommentsBefore(node)
     : []
@@ -137,7 +148,11 @@ function leadingCommentStart(sourceCode, node) {
  * c8-ignore-stop markers that pair with a start above the function
  * — those need to travel with the function when reordered.
  */
-function trailingCommentEnd(sourceCode, node, nextNodeStart) {
+function trailingCommentEnd(
+  sourceCode: AstNode,
+  node: AstNode,
+  nextNodeStart: number | undefined,
+): number {
   const tokenText = sourceCode.text
   const comments = sourceCode.getCommentsAfter
     ? sourceCode.getCommentsAfter(node)
@@ -181,15 +196,15 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
     return {
-      Program(programNode) {
+      Program(programNode: AstNode) {
         // First pass: collect entries + detect violations.
-        const entries = []
+        const entries: FunctionEntry[] = []
         let lastVisibilityRank = -1
         let lastNameInGroup = null
         let currentVisibility = null
@@ -231,7 +246,7 @@ const rule = {
           entries.push({
             node,
             name,
-            visibility: info.visibility,
+            visibility: info.visibility as 'private' | 'export',
             isEntrypoint,
             start,
             end,
@@ -294,8 +309,8 @@ const rule = {
           .slice()
           .sort((a, b) => a.start - b.start)
         const sourceText = sourceCode.text
-        const rangeStart = orderedByPosition[0].start
-        const rangeEnd = orderedByPosition[orderedByPosition.length - 1].end
+        const rangeStart = orderedByPosition[0]!.start
+        const rangeEnd = orderedByPosition[orderedByPosition.length - 1]!.end
 
         // Bail if any runtime statement lives between the first and
         // last function — re-ordering would skip over them and lose
@@ -329,7 +344,7 @@ const rule = {
           if (!fixerAttached) {
             context.report({
               ...v,
-              fix(fixer) {
+              fix(fixer: RuleFixer) {
                 return fixer.replaceTextRange(
                   [rangeStart, rangeEnd],
                   replacement,

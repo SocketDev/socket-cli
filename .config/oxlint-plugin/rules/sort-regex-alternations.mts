@@ -26,12 +26,33 @@
  * reports without autofix.
  */
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
+interface AltRange {
+  start: number
+  end: number
+}
+
+interface StackEntry {
+  start: number
+  prefixEnd: number
+  alts: AltRange[]
+  altStart: number
+}
+
+interface AlternationGroup {
+  altsRanges: AltRange[]
+  end: number
+  prefixEnd: number
+  start: number
+}
+
 const SOCKET_HOOK_MARKER_RE =
   /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
 
 const SIMPLE_ALT_ELEMENT_RE = /^[\w\-:./]+$/
 
-function isLineMarkered(line) {
+function isLineMarkered(line: string): boolean {
   const m = line.match(SOCKET_HOOK_MARKER_RE)
   if (!m) {
     return false
@@ -45,10 +66,10 @@ function isLineMarkered(line) {
  * Walks the pattern character by character to handle nested groups +
  * character classes correctly.
  */
-function findAlternationGroups(pattern) {
-  const groups = []
+function findAlternationGroups(pattern: string): AlternationGroup[] {
+  const groups: AlternationGroup[] = []
   // Stack entries: { start: idx of '(' in original, alts: [{start, end}], altStart: idx }
-  const stack = []
+  const stack: StackEntry[] = []
   let inClass = false
   let i = 0
   while (i < pattern.length) {
@@ -106,7 +127,7 @@ function findAlternationGroups(pattern) {
       continue
     }
     if (c === '|' && stack.length > 0) {
-      const top = stack[stack.length - 1]
+      const top = stack[stack.length - 1]!
       top.alts.push({ start: top.altStart, end: i })
       top.altStart = i + 1
       i++
@@ -137,14 +158,19 @@ function findAlternationGroups(pattern) {
  * Sort an alternation in alphanumeric order. Returns null if any
  * element isn't a simple literal (caller should report-only).
  */
-function sortAlternativesIfSimple(pattern, group) {
-  const alts = group.altsRanges.map(r => pattern.slice(r.start, r.end))
-  const allSimple = alts.every(a => SIMPLE_ALT_ELEMENT_RE.test(a))
+function sortAlternativesIfSimple(
+  pattern: string,
+  group: AlternationGroup,
+): { actual: string[]; sorted: string[] } | null {
+  const alts = group.altsRanges.map((r: AltRange) =>
+    pattern.slice(r.start, r.end),
+  )
+  const allSimple = alts.every((a: string) => SIMPLE_ALT_ELEMENT_RE.test(a))
   if (!allSimple) {
     return null
   }
   const sorted = [...alts].sort()
-  if (alts.every((a, i) => a === sorted[i])) {
+  if (alts.every((a: string, i: number) => a === sorted[i])) {
     return null
   }
   return { actual: alts, sorted }
@@ -170,8 +196,8 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
-    function checkLiteral(node) {
+  create(context: RuleContext) {
+    function checkLiteral(node: AstNode) {
       if (!node.regex) {
         return
       }
@@ -188,9 +214,11 @@ const rule = {
         const result = sortAlternativesIfSimple(pattern, group)
         if (!result) {
           // Not simple: still flag if alternation is unsorted (caller picks).
-          const alts = group.altsRanges.map(r => pattern.slice(r.start, r.end))
+          const alts = group.altsRanges.map((r: AltRange) =>
+            pattern.slice(r.start, r.end),
+          )
           const sortedRaw = [...alts].sort()
-          if (alts.every((a, i) => a === sortedRaw[i])) {
+          if (alts.every((a: string, i: number) => a === sortedRaw[i])) {
             continue
           }
           context.report({
@@ -216,7 +244,7 @@ const rule = {
             actual: result.actual.join('|'),
             sorted: result.sorted.join('|'),
           },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             const flags = node.regex.flags || ''
             return fixer.replaceText(node, `/${newPattern}/${flags}`)
           },
@@ -225,7 +253,7 @@ const rule = {
     }
 
     return {
-      Literal(node) {
+      Literal(node: AstNode) {
         checkLiteral(node)
       },
     }

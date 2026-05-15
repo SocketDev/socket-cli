@@ -20,13 +20,15 @@
  * Allowed exceptions (skipped):
  *   - The literal `npx` inside a comment with `socket-hook: allow npx`
  *     — the canonical bypass marker, used by the lockdown skill spec.
- *   - The literal `pnpm dlx` inside a comment justifying a soak-window
+ *   - The literal `pnpm dlx` inside a comment justifying a soak-time
  *     bypass (rare; case-by-case).
  *   - The CLAUDE.md fleet block reference itself — string literals
  *     like `'`pnpm dlx`'` documenting the rule. Heuristic: skip when
  *     the literal is inside a backtick-wrapped phrase in the source
  *     text (i.e. the literal value starts and ends with a backtick).
  */
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const PATTERNS = [
   // Order matters — longest-prefix first so `pnpm dlx` is matched
@@ -53,12 +55,12 @@ const rule = {
     fixable: 'code',
     messages: {
       banned:
-        '`{{label}}` — use `pnpm exec` instead. CLAUDE.md "Tooling" rule bans dlx-style commands; they bypass the soak window and fetch packages without lockfile verification.',
+        '`{{label}}` — use `pnpm exec` instead. CLAUDE.md "Tooling" rule bans dlx-style commands; they bypass the soak time and fetch packages without lockfile verification.',
     },
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
@@ -69,13 +71,18 @@ const rule = {
      * undefined when none match. Anchors at word boundaries — `pnxx`
      * doesn't match `pnx`.
      */
-    function findBannedPrefix(value) {
+    function findBannedPrefix(
+      value: string,
+    ): [string, string, string, number] | undefined {
       for (const [match, repl, label] of PATTERNS) {
+        if (!match || !repl || !label) {
+          continue
+        }
         // Word-boundary check: either the match is at the start, or
         // the preceding char is non-alphanum (whitespace, punctuation).
         let idx = 0
         while ((idx = value.indexOf(match, idx)) !== -1) {
-          const before = idx === 0 ? ' ' : value[idx - 1]
+          const before = idx === 0 ? ' ' : value[idx - 1]!
           if (!/[A-Za-z0-9_-]/.test(before)) {
             return [match, repl, label, idx]
           }
@@ -90,7 +97,7 @@ const rule = {
      * comment (`socket-hook: allow npx`) on the same or an adjacent
      * line.
      */
-    function hasBypassComment(node) {
+    function hasBypassComment(node: AstNode) {
       const before = sourceCode.getCommentsBefore(node)
       const after = sourceCode.getCommentsAfter(node)
       for (const c of [...before, ...after]) {
@@ -101,7 +108,7 @@ const rule = {
       return false
     }
 
-    function checkLiteral(node, value) {
+    function checkLiteral(node: AstNode, value: string): void {
       const found = findBannedPrefix(value)
       if (!found) {
         return
@@ -109,26 +116,29 @@ const rule = {
       if (hasBypassComment(node)) {
         return
       }
-      const [match, repl, label] = found
+      const label = found[2]
 
       context.report({
         node,
         messageId: 'banned',
         data: { label },
-        fix(fixer) {
+        fix(fixer: RuleFixer) {
           // Replace every occurrence in the literal — the literal may
           // be a shell pipeline like `npx foo && npx bar`.
           let next = value
           for (const [m, r] of PATTERNS) {
+            if (!m || !r) {
+              continue
+            }
             // Word-boundary aware replace-all.
             const parts = next.split(m)
             if (parts.length === 1) {
               continue
             }
             // Rejoin only at boundaries; leave embedded matches alone.
-            let out = parts[0]
+            let out = parts[0]!
             for (let i = 1; i < parts.length; i++) {
-              const prevChar = out.length === 0 ? ' ' : out[out.length - 1]
+              const prevChar = out.length === 0 ? ' ' : out[out.length - 1]!
               const replacement = /[A-Za-z0-9_-]/.test(prevChar) ? m : r
               out += replacement + parts[i]
             }
@@ -141,7 +151,7 @@ const rule = {
           }
           // Preserve the original quote style.
           const raw = sourceCode.getText(node)
-          const quote = raw[0]
+          const quote = raw[0]!
           if (quote === '`') {
             // Template literal — only safe to fix if no expressions.
             return fixer.replaceText(node, '`' + next + '`')
@@ -149,7 +159,7 @@ const rule = {
           // Plain string — escape the quote char if it appears.
           const escaped = next.replace(
             new RegExp(`\\\\|${quote}`, 'g'),
-            ch => '\\' + ch,
+            (ch: string) => '\\' + ch,
           )
           return fixer.replaceText(node, quote + escaped + quote)
         },
@@ -157,13 +167,13 @@ const rule = {
     }
 
     return {
-      Literal(node) {
+      Literal(node: AstNode) {
         if (typeof node.value !== 'string') {
           return
         }
         checkLiteral(node, node.value)
       },
-      TemplateLiteral(node) {
+      TemplateLiteral(node: AstNode) {
         // Only fix template literals with no expressions — interpolated
         // strings can't be safely rewritten by string replace.
         if (node.expressions.length !== 0) {

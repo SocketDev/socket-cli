@@ -30,6 +30,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'suggestion',
@@ -49,7 +52,7 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     /**
      * Walk up through TS type-cast wrappers (`x as T`, `x as const`,
      * `<T>x`) so that `null as never` inside `{ __proto__: null as never }`
@@ -58,7 +61,7 @@ const rule = {
      * breaks the null-prototype object semantics — `Object.create(null)`
      * vs `Object.create(undefined)` are very different.
      */
-    function unwrapTsCast(node) {
+    function unwrapTsCast(node: AstNode) {
       let cur = node.parent
       while (
         cur &&
@@ -69,7 +72,7 @@ const rule = {
       return cur
     }
 
-    function isProtoNull(node) {
+    function isProtoNull(node: AstNode) {
       // Find the nearest non-cast ancestor; for `null as never` this
       // skips the TSAsExpression and lands on the Property.
       const parent = unwrapTsCast(node)
@@ -92,7 +95,7 @@ const rule = {
       return false
     }
 
-    function isComparisonOperand(node) {
+    function isComparisonOperand(node: AstNode) {
       const parent = node.parent
       if (!parent) {
         return false
@@ -139,7 +142,7 @@ const rule = {
       'toStrictEqual',
     ])
 
-    function isAssertionLibraryArg(node) {
+    function isAssertionLibraryArg(node: AstNode) {
       // Walk up through TS casts and any container literals (array
       // literals, object literals, spread elements, properties) so
       // `expect(x).toEqual([1, null])` and `.toEqual({ k: null })`
@@ -187,7 +190,7 @@ const rule = {
      * babel/typescript-eslint AST, so the regex is the most resilient
      * detector across plugin host versions.
      */
-    function isNullableTypeInitializer(node) {
+    function isNullableTypeInitializer(node: AstNode) {
       const parent = node.parent
       if (!parent || parent.type !== 'VariableDeclarator') {
         return false
@@ -211,7 +214,7 @@ const rule = {
       return /:[^=]*\bnull\b[^=]*=/.test(text)
     }
 
-    function isJsonStringifyReplacer(node) {
+    function isJsonStringifyReplacer(node: AstNode) {
       // JSON.stringify(value, replacer, space) — `replacer` is
       // conventionally null. Also matches the primordial alias
       // `JSONStringify(value, null, space)` (= `JSON.stringify`)
@@ -262,7 +265,7 @@ const rule = {
       ['Reflect', 'setPrototypeOf', 1],
     ]
 
-    function isPrototypeAwareNull(node) {
+    function isPrototypeAwareNull(node: AstNode) {
       const parent = unwrapTsCast(node)
       if (!parent || parent.type !== 'CallExpression') {
         return false
@@ -280,6 +283,9 @@ const rule = {
       const objectName = callee.object.name
       const methodName = callee.property.name
       for (const [obj, method, argIndex] of PROTOTYPE_NULL_CALLSITES) {
+        if (argIndex === undefined) {
+          continue
+        }
         if (
           obj === objectName &&
           method === methodName &&
@@ -302,7 +308,7 @@ const rule = {
      * Cheap shortcut: stringify the typeAnnotation subtree and look for
      * a 'null' token. Avoids a full type-system traversal.
      */
-    function hasNullTypeAnnotation(node) {
+    function hasNullTypeAnnotation(node: AstNode) {
       const sourceCode = context.getSourceCode
         ? context.getSourceCode()
         : context.sourceCode
@@ -378,7 +384,7 @@ const rule = {
     }
 
     return {
-      Literal(node) {
+      Literal(node: AstNode) {
         if (node.value !== null || node.raw !== 'null') {
           return
         }
@@ -415,7 +421,7 @@ const rule = {
         context.report({
           node,
           messageId: 'preferUndefined',
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             return fixer.replaceText(node, 'undefined')
           },
         })

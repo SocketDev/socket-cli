@@ -136,6 +136,73 @@ test('// no longer needed because X is blocked', async () => {
   assert.strictEqual(result.code, 2)
 })
 
+test('// Tier 1 implementation. is blocked (phase marker)', async () => {
+  const result = await runHook({
+    tool_input: {
+      file_path: '/x/src/foo.cc',
+      new_string: '// Tier 1 implementation. Mirrors upstream X.\nint x = 1;',
+    },
+    tool_name: 'Edit',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Tier 1/)
+})
+
+test('// Tier 2 surface — mirrors ... is blocked', async () => {
+  const result = await runHook({
+    tool_input: {
+      file_path: '/x/src/foo.hpp',
+      new_string: '// Tier 2 surface — mirrors OpenTUI.\nclass Foo {};',
+    },
+    tool_name: 'Edit',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('// Phase 10a: temporal_rs shim ... is blocked', async () => {
+  const result = await runHook({
+    tool_input: {
+      file_path: '/x/src/foo.ts',
+      new_string: '// Phase 10a: temporal_rs shim Instant\nconst x = 1',
+    },
+    tool_name: 'Edit',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('// Step 3 - parser rejection is blocked', async () => {
+  const result = await runHook({
+    tool_input: {
+      file_path: '/x/src/foo.go',
+      new_string: '// Step 3 - parser rejection\nx := 1',
+    },
+    tool_name: 'Edit',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('// Milestone V achievable is blocked (Roman numeral phase)', async () => {
+  const result = await runHook({
+    tool_input: {
+      file_path: '/x/src/foo.ts',
+      new_string: '// Milestone V achievable now\nconst x = 1',
+    },
+    tool_name: 'Edit',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('// "tier" inside content (not a phase marker) passes through', async () => {
+  const result = await runHook({
+    tool_input: {
+      file_path: '/x/src/foo.ts',
+      new_string: '// Cache tier selection happens in resolveTier()\nconst t = 0',
+    },
+    tool_name: 'Edit',
+  })
+  assert.strictEqual(result.code, 0, `stderr: ${result.stderr}`)
+})
+
 test('normal explanatory comments pass through', async () => {
   for (const text of [
     '// Use the cache to avoid re-resolving on every call.\nconst cache = new Map()',

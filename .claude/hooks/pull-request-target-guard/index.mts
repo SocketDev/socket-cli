@@ -45,7 +45,7 @@
 import path from 'node:path'
 import process from 'node:process'
 
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 interface ToolInput {
   readonly tool_input?:

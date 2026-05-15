@@ -20,6 +20,8 @@
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const CONSOLE_TO_LOGGER = {
   debug: 'log',
   error: 'fail',
@@ -51,12 +53,12 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
-    let summary
+    let summary: ReturnType<typeof summarizeImportTarget> | undefined
 
     function ensureSummary() {
       if (summary) {
@@ -72,7 +74,7 @@ const rule = {
     }
 
     return {
-      MemberExpression(node) {
+      MemberExpression(node: AstNode) {
         if (
           node.object.type !== 'Identifier' ||
           node.object.name !== 'console' ||
@@ -81,7 +83,9 @@ const rule = {
           return
         }
         const method = node.property.name
-        const loggerMethod = CONSOLE_TO_LOGGER[method]
+        const loggerMethod = (CONSOLE_TO_LOGGER as Record<string, string>)[
+          method
+        ]
         if (!loggerMethod) {
           return
         }
@@ -103,7 +107,7 @@ const rule = {
           node,
           messageId: 'banned',
           data: { method, loggerMethod },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             return [
               fixer.replaceText(node, `logger.${loggerMethod}`),
               ...appendImportFixes(

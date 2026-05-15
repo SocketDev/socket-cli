@@ -10,9 +10,11 @@
  * but not auto-fixed (sorting computed values would change behavior).
  */
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const SET_NAMES = new Set(['Set', 'SafeSet'])
 
-function isSortableElement(node) {
+function isSortableElement(node: AstNode) {
   return (
     node !== null &&
     node.type === 'Literal' &&
@@ -20,7 +22,7 @@ function isSortableElement(node) {
   )
 }
 
-function compareSortable(a, b) {
+function compareSortable(a: AstNode, b: AstNode): number {
   const aVal = String(a.value)
   const bVal = String(b.value)
   if (aVal < bVal) {
@@ -52,9 +54,9 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     return {
-      NewExpression(node) {
+      NewExpression(node: AstNode) {
         const callee = node.callee
         if (callee.type !== 'Identifier' || !SET_NAMES.has(callee.name)) {
           return
@@ -74,9 +76,9 @@ const rule = {
         const allSortable = els.every(isSortableElement)
         if (!allSortable) {
           // Check if it's already sorted by raw text — if so, no report.
-          const raws = els.map(e => (e ? e.raw || '' : ''))
+          const raws = els.map((e: AstNode) => (e ? e.raw || '' : ''))
           const sortedRaws = [...raws].sort()
-          if (raws.every((r, i) => r === sortedRaws[i])) {
+          if (raws.every((r: string, i: number) => r === sortedRaws[i])) {
             return
           }
           context.report({
@@ -102,7 +104,7 @@ const rule = {
           node: arg,
           messageId: 'unsorted',
           data: { name: callee.name, expected },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             const newText = `[${expected}]`
             return fixer.replaceText(arg, newText)
           },

@@ -33,7 +33,7 @@ When the fleet repo already has an upstream pin (in `xport.json`, `lockstep.json
 
 ## 4. Deviations get a paragraph, not a line
 
-When the local impl diverges from upstream (faster path, different error shape, missing edge case), write a short paragraph explaining *why* the divergence is intentional. One-line `// differs from upstream` notes get stripped during cleanups; paragraphs survive because they carry the load-bearing _why_.
+When the local impl diverges from upstream (faster path, different error shape, missing edge case), write a short paragraph explaining _why_ the divergence is intentional. One-line `// differs from upstream` notes get stripped during cleanups; paragraphs survive because they carry the load-bearing _why_.
 
 ## Scope
 

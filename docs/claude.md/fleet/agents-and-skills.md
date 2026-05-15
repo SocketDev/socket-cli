@@ -28,7 +28,8 @@ Audit the current classification with `node socket-wheelhouse/scripts/run-skill-
 `scripts/run-skill-fleet.mts` (in `socket-wheelhouse`) spawns one headless `claude --print` agent per fleet repo, in parallel (concurrency 4 by default), with the four lockdown flags set per the _Programmatic Claude calls_ rule above. Per-skill profile table maps known skills to sensible tool/allow/disallow lists; override with `--tools` / `--allow` / `--disallow`. Per-repo logs land in `.cache/fleet-skill/<timestamp>-<skill>/<repo>.log`. Use `Promise.allSettled` semantics — one repo's failure doesn't abort the rest.
 
 ```bash
-pnpm run fleet-skill updating                       # update every fleet repo
-pnpm run fleet-skill scanning-quality --concurrency 2 # slower, more conservative
-pnpm run fleet-skill --list-skills                  # classify skills fleet/partial/unique
+# Run from inside socket-wheelhouse:
+pnpm --filter socket-wheelhouse run fleet-skill updating                          # update every fleet repo
+pnpm --filter socket-wheelhouse run fleet-skill scanning-quality --concurrency 2  # slower, more conservative
+pnpm --filter socket-wheelhouse run fleet-skill --list-skills                     # classify skills fleet/partial/unique
 ```

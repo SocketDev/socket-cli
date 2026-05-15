@@ -38,6 +38,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'suggestion',
@@ -55,7 +58,7 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
@@ -66,7 +69,7 @@ const rule = {
      * to [a, b, c]. We require the chain operator to be uniform
      * (caller checks).
      */
-    function flatten(node, op, out) {
+    function flatten(node: AstNode, op: string, out: AstNode[]): void {
       if (node.type === 'LogicalExpression' && node.operator === op) {
         flatten(node.left, op, out)
         flatten(node.right, op, out)
@@ -79,7 +82,7 @@ const rule = {
      * For a binary-equality leaf, return `{ left, right, operator }`
      * if it's the shape we sort. Returns undefined otherwise.
      */
-    function asEqualityClause(node) {
+    function asEqualityClause(node: AstNode) {
       if (node.type !== 'BinaryExpression') {
         return undefined
       }
@@ -114,12 +117,12 @@ const rule = {
      * last leaf of the chain. Comment-aware skipping prevents the
      * autofix from silently relocating attribution.
      */
-    function hasInteriorComment(leaves) {
+    function hasInteriorComment(leaves: AstNode[]): boolean {
       if (!sourceCode.getCommentsInside) {
         return false
       }
-      const first = leaves[0]
-      const last = leaves[leaves.length - 1]
+      const first = leaves[0]!
+      const last = leaves[leaves.length - 1]!
       const all = sourceCode.getCommentsInside({
         range: [first.range[0], last.range[1]],
         loc: { start: first.loc.start, end: last.loc.end },
@@ -128,7 +131,7 @@ const rule = {
       return all.length > 0
     }
 
-    function checkChain(rootNode) {
+    function checkChain(rootNode: AstNode): void {
       // Top-level filter: only check the OUTERMOST `||` or `&&` of a
       // chain, not its sub-expressions. We detect "outermost" by the
       // parent being either non-LogicalExpression or a different
@@ -148,13 +151,19 @@ const rule = {
         return
       }
 
-      const leaves = []
+      const leaves: AstNode[] = []
       flatten(rootNode, op, leaves)
       if (leaves.length < 2) {
         return
       }
 
-      const clauses = []
+      type Clause = {
+        leftText: string
+        operator: string
+        right: AstNode
+        rightValue: string
+      }
+      const clauses: Clause[] = []
       for (const leaf of leaves) {
         const c = asEqualityClause(leaf)
         if (!c) {
@@ -169,12 +178,12 @@ const rule = {
       // chains the natural shape is `===`; for `&&` chains it's `!==`
       // (De Morgan). Mixed → skip (rare and the rewrite would change
       // semantics).
-      const firstLeft = clauses[0].leftText
-      const firstOp = clauses[0].operator
+      const firstLeft = clauses[0]!.leftText
+      const firstOp = clauses[0]!.operator
       for (let i = 1; i < clauses.length; i++) {
         if (
-          clauses[i].leftText !== firstLeft ||
-          clauses[i].operator !== firstOp
+          clauses[i]!.leftText !== firstLeft ||
+          clauses[i]!.operator !== firstOp
         ) {
           return
         }
@@ -222,20 +231,20 @@ const rule = {
         node: rootNode,
         messageId: 'unsorted',
         data: { actual: actualOrder, expected: expectedOrder },
-        fix(fixer) {
+        fix(fixer: RuleFixer) {
           // Replace each leaf's right-string-literal with the
           // sorted-position counterpart. Because the chain is
           // homogeneous (same left, same op), the rewrite is safe
           // semantically — only the comparand strings reorder.
-          const fixes = []
+          const fixes: AstNode[] = []
           for (let i = 0; i < leaves.length; i++) {
-            const leaf = leaves[i]
-            const targetRight = sortedClauses[i].right
+            const leaf = leaves[i]!
+            const targetRight = sortedClauses[i]!.right
             // The leaf's right node is what we rewrite.
             // BinaryExpression.right's range covers just the literal.
             const rawTarget = sourceCode.getText(targetRight)
             fixes.push(
-              fixer.replaceText(asEqualityClause(leaf).right, rawTarget),
+              fixer.replaceText(asEqualityClause(leaf)!.right, rawTarget),
             )
           }
           return fixes

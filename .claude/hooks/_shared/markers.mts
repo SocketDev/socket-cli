@@ -36,7 +36,7 @@ export const RULE_ALIASES: Readonly<Record<string, string>> = Object.freeze({
   // entered scope. Keep the alias one cycle so existing markers in
   // downstream repos don't have to migrate atomically.
   logger: 'console',
-} as Record<string, string>)
+} as unknown as Record<string, string>)
 
 /**
  * True when `marker` and `rule` name the same logical rule, either

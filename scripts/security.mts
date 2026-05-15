@@ -10,9 +10,11 @@
  *      (unpinned actions, secret exposure, template injection,
  *      permission issues).
  *
- * Either tool missing prints a "run pnpm run setup" hint (which
- * downloads + verifies the pinned binary via the setup-security-tools
- * hook) and skips that scan rather than failing the entire run.
+ * Either tool missing prints a "run pnpm run setup-security-tools"
+ * hint (which downloads + verifies the pinned binary via the
+ * setup-security-tools hook + prompts for a Socket API token if
+ * none is stored) and skips that scan rather than failing the
+ * entire run.
  *
  * Cross-platform: uses `which` from `@socketsecurity/lib/bin` for
  * binary discovery (handles Windows .exe/.cmd resolution; returns null
@@ -60,7 +62,7 @@ async function runTool(command: string, args: string[]): Promise<number> {
 
 async function main(): Promise<void> {
   if (!(await hasExecutable('agentshield'))) {
-    logger.info('agentshield not installed; run "pnpm run setup" to install')
+    logger.info('agentshield not installed; run "pnpm run setup-security-tools" to install')
   } else {
     const agentshieldCode = await runTool('agentshield', ['scan'])
     if (agentshieldCode !== 0) {
@@ -70,7 +72,7 @@ async function main(): Promise<void> {
   }
 
   if (!(await hasExecutable('zizmor'))) {
-    logger.info('zizmor not installed; run "pnpm run setup" to install')
+    logger.info('zizmor not installed; run "pnpm run setup-security-tools" to install')
     return
   }
 

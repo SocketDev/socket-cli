@@ -8,8 +8,8 @@
 export interface Dep {
   type: string
   name: string
-  namespace?: string
-  version?: string
+  namespace?: string | undefined
+  version?: string | undefined
 }
 
 // Shape of the JSON blob Claude Code pipes to the hook via stdin.

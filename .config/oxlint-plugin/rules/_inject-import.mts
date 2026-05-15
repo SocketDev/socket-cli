@@ -12,6 +12,16 @@
  * insertion safely — only one survives.
  */
 
+import type { AstNode, RuleFixer } from '../lib/rule-types.mts'
+
+export interface ImportSummary {
+  hasImport: boolean
+  hasLocal: boolean
+  lastImport: AstNode | undefined
+}
+
+export type FixerOp = unknown
+
 /**
  * Walk a Program node body once and figure out:
  *   - the last top-level ImportDeclaration node (or undefined)
@@ -32,13 +42,13 @@
  * inject if the import were missing).
  */
 export function summarizeImportTarget(
-  program,
+  program: AstNode,
   // eslint-disable-next-line no-unused-vars
-  specifier,
-  importName,
-  localName,
-) {
-  let lastImport
+  _specifier: string,
+  importName: string,
+  localName?: string,
+): ImportSummary {
+  let lastImport: AstNode | undefined
   let hasImport = false
   let hasLocal = false
   for (const stmt of program.body) {
@@ -90,8 +100,13 @@ export function summarizeImportTarget(
  *   importLine    — the literal `import { ... } from '...'` text
  *   hoistLine     — optional; the literal `const x = ...()` text
  */
-export function appendImportFixes(summary, fixer, importLine, hoistLine) {
-  const ops = []
+export function appendImportFixes(
+  summary: ImportSummary,
+  fixer: RuleFixer,
+  importLine: string,
+  hoistLine?: string,
+): FixerOp[] {
+  const ops: FixerOp[] = []
   if (!summary.hasImport) {
     if (summary.lastImport) {
       ops.push(fixer.insertTextAfter(summary.lastImport, `\n${importLine}`))

@@ -20,6 +20,8 @@
  * collapse to the inline `export function`).
  */
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const SCRIPT_ENTRY_NAMES = new Set(['main'])
 
 /**
@@ -33,8 +35,8 @@ const SCRIPT_ENTRY_NAMES = new Set(['main'])
  * declarations only via `Program > FunctionDeclaration`; an
  * `ExportNamedDeclaration` wraps them in a different shape).
  */
-function collectExportedNames(program) {
-  const exported = new Set()
+function collectExportedNames(program: AstNode): Set<string> {
+  const exported = new Set<string>()
   for (const stmt of program.body) {
     if (stmt.type === 'ExportNamedDeclaration' && !stmt.declaration) {
       // `export { foo, bar as baz }` — count the local name.
@@ -75,14 +77,14 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
-    let exportedNames
+    let exportedNames: Set<string> | undefined
 
     return {
-      'Program > FunctionDeclaration'(node) {
+      'Program > FunctionDeclaration'(node: AstNode) {
         if (!node.id || node.id.type !== 'Identifier') {
           return
         }
@@ -108,7 +110,7 @@ const rule = {
           node: node.id,
           messageId: 'missing',
           data: { name },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             // Insert `export ` at the function's start. Handles both
             // `function name(...)` and `async function name(...)`.
             return fixer.insertTextBefore(node, 'export ')

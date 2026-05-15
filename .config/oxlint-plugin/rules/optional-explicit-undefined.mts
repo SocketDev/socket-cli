@@ -33,6 +33,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'suggestion',
@@ -50,7 +53,7 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     // Plugin runs against all extensions; we only enforce on TS files.
     const filename = context.filename ?? context.getFilename?.() ?? ''
     if (!/\.(?:ts|cts|mts)$/.test(filename)) {
@@ -62,7 +65,7 @@ const rule = {
      * in its top-level union. Recursive into TSUnionType so
      * `T | (U | undefined)` (rare) still passes.
      */
-    function hasUndefined(typeAnnotation) {
+    function hasUndefined(typeAnnotation: AstNode | undefined): boolean {
       if (!typeAnnotation) {
         return false
       }
@@ -85,7 +88,7 @@ const rule = {
      * Identifier keys (`foo?:`), Literal keys (`'foo'?:`), and
      * computed keys (skipped via "unknown").
      */
-    function keyName(node) {
+    function keyName(node: AstNode) {
       const k = node.key
       if (!k) return 'property'
       if (k.type === 'Identifier') return k.name
@@ -97,7 +100,7 @@ const rule = {
      * Source-text snippet of the type annotation for the error message
      * + the fix. Tolerant of missing source ranges.
      */
-    function typeText(node) {
+    function typeText(node: AstNode) {
       const ann = node.typeAnnotation?.typeAnnotation
       if (!ann || !ann.range) return 'T'
       const src = context.sourceCode ?? context.getSourceCode?.()
@@ -105,7 +108,7 @@ const rule = {
       return src.text.slice(ann.range[0], ann.range[1])
     }
 
-    function check(node) {
+    function check(node: AstNode) {
       // Only optional members.
       if (!node.optional) {
         return
@@ -126,7 +129,7 @@ const rule = {
         node: ann,
         messageId: 'missingUndefined',
         data: { name, type },
-        fix(fixer) {
+        fix(fixer: RuleFixer) {
           // Append ` | undefined` after the existing annotation text.
           return fixer.insertTextAfter(ann, ' | undefined')
         },

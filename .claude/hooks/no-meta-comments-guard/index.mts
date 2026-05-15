@@ -86,6 +86,16 @@ const TASK_PATTERNS: ReadonlyArray<{
   {
     re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:TODO|FIXME|XXX)\s+(?:from|per)\s+(?:the\s+)?(?:plan|task|brief|spec|user|request)\b/i,
   },
+  // Phase / tier / step markers — `// Tier 1 ...`, `// Phase 10a:
+  // ...`, `// Step 3 - ...`. These leak the roadmap shape into source
+  // and rot when the roadmap shifts. Catch as bare labels (followed
+  // by whitespace + number) OR as `Phase NNN:` / `Step NNN -` colon /
+  // dash labels.
+  {
+    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:tier|phase|step|milestone|sprint|iteration)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
+    stripPrefix:
+      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:tier|phase|step|milestone|sprint|iteration)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i,
+  },
 ]
 
 // Removed-code references.

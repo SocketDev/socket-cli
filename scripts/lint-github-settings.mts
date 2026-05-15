@@ -35,11 +35,57 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import {
-  loadSocketWheelhouseConfig,
-  NODE_MODULES_CACHE_DIR,
+import { REPO_ROOT } from './paths.mts'
+
+// Inline path + config-loader equivalents of the wheelhouse template's
+// paths.mts helpers. `lint-github-settings.mts` cascades into fleet
+// repos whose per-package `paths.mts` is intentionally minimal
+// (`socket-cli`, `ultrathink`, etc. only export REPO_ROOT +
+// package-specific build paths). Importing `NODE_MODULES_CACHE_DIR` /
+// `loadSocketWheelhouseConfig` from `./paths.mts` would force every
+// consumer to widen their paths.mts surface — wrong direction. Keep
+// the per-package paths.mts narrow; carry the standalone helpers here.
+const NODE_MODULES_CACHE_DIR = path.join(
   REPO_ROOT,
-} from './paths.mts'
+  'node_modules',
+  '.cache',
+)
+
+const SOCKET_WHEELHOUSE_CONFIG_PRIMARY_REL = '.config/socket-wheelhouse.json'
+const SOCKET_WHEELHOUSE_CONFIG_LEGACY_REL = '.socket-wheelhouse.json'
+
+interface LoadedSocketWheelhouseConfig {
+  readonly value: Record<string, unknown>
+}
+
+function loadSocketWheelhouseConfig(
+  repoRoot: string,
+): LoadedSocketWheelhouseConfig | undefined {
+  const primary = path.join(repoRoot, SOCKET_WHEELHOUSE_CONFIG_PRIMARY_REL)
+  const legacy = path.join(repoRoot, SOCKET_WHEELHOUSE_CONFIG_LEGACY_REL)
+  const target = existsSync(primary)
+    ? primary
+    : existsSync(legacy)
+      ? legacy
+      : undefined
+  if (!target) return undefined
+  let raw: string
+  try {
+    raw = readFileSync(target, 'utf8')
+  } catch {
+    return undefined
+  }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return undefined
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return undefined
+  }
+  return { value: parsed as Record<string, unknown> }
+}
 
 interface RepoApiPayload {
   default_branch?: string | undefined
@@ -121,7 +167,7 @@ const CACHE_FILE = path.join(
   NODE_MODULES_CACHE_DIR,
   'socket-wheelhouse-lint-github-settings.json',
 )
-// 7 days in ms. Mirrors the fleet's npm catalog soak window
+// 7 days in ms. Mirrors the fleet's npm catalog soak time
 // (minimumReleaseAge: 10080 minutes), which is the same governing
 // timeframe for "things we don't need to re-verify constantly."
 const TTL_MS = 7 * 24 * 60 * 60 * 1000

@@ -60,7 +60,7 @@ Only update the current repository. Continue even if update fails.
 
 ### Phase 3: Install zizmor
 
-Install zizmor for GitHub Actions security scanning, respecting the soak window — pnpm-workspace.yaml `minimumReleaseAge` in minutes, default 10080 (= 7 days). Query GitHub releases, find the latest stable release older than the threshold, and install via pipx/uvx. Skip the security scan if no release meets the soak requirement.
+Install zizmor for GitHub Actions security scanning, respecting the soak time — pnpm-workspace.yaml `minimumReleaseAge` in minutes, default 10080 (= 7 days). Query GitHub releases, find the latest stable release older than the threshold, and install via pipx/uvx. Skip the security scan if no release meets the soak requirement.
 
 ### Phase 4: Repository Cleanup
 

@@ -95,6 +95,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'suggestion',
@@ -114,13 +117,13 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
     return {
-      CallExpression(node) {
+      CallExpression(node: AstNode) {
         // Match `<iter>.forEach(cb)` patterns.
         const callee = node.callee
         if (callee.type !== 'MemberExpression') {
@@ -270,7 +273,7 @@ const rule = {
           node,
           messageId: 'preferCachedFor',
           data: { iter: iterText, shape: '.forEach' },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             const bodyInner = sourceCode.text.slice(
               cb.body.range[0] + 1,
               cb.body.range[1] - 1,
@@ -283,7 +286,7 @@ const rule = {
         })
       },
 
-      ForOfStatement(node) {
+      ForOfStatement(node: AstNode) {
         // for await ... — leave alone.
         if (node.await) {
           return
@@ -348,7 +351,7 @@ const rule = {
           node,
           messageId: 'preferCachedFor',
           data: { iter: iterText, shape: 'for...of' },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             const bodyInner = sourceCode.text.slice(
               node.body.range[0] + 1,
               node.body.range[1] - 1,
@@ -369,7 +372,7 @@ const rule = {
  * variable. Defaults to `i`, falls back to `i2`, `i3`, ... if the
  * item is itself named `i` (rare but defensive).
  */
-function pickCounterName(itemName) {
+function pickCounterName(itemName: string): string {
   if (itemName !== 'i') {
     return 'i'
   }
@@ -387,7 +390,11 @@ function pickCounterName(itemName) {
  * doesn't expose a uniform visitor for body subtrees here; the
  * regex catches every reassignment shape that compiles today.
  */
-function reassignsInBody(sourceCode, bodyNode, name) {
+function reassignsInBody(
+  sourceCode: AstNode,
+  bodyNode: AstNode,
+  name: string,
+): boolean {
   if (!bodyNode) {
     return false
   }
@@ -420,14 +427,14 @@ function reassignsInBody(sourceCode, bodyNode, name) {
  * the rewritten block can re-indent its contents consistently with
  * the surrounding code.
  */
-function leadingIndent(sourceCode, node) {
+function leadingIndent(sourceCode: AstNode, node: AstNode): string {
   const text = sourceCode.text
   const start = node.range[0]
   const lineStart = text.lastIndexOf('\n', start - 1) + 1
   const indent = text.slice(lineStart, start)
   // Strip non-whitespace (in case the line has content before this
   // statement). Indent is the leading-whitespace prefix only.
-  return /^\s*/.exec(indent)[0]
+  return /^\s*/.exec(indent)?.[0] ?? ''
 }
 
 export default rule

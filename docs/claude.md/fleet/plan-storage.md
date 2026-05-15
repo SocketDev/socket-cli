@@ -1,6 +1,6 @@
 # Plan storage
 
-Companion to the *Plan storage* fleet rule in `template/CLAUDE.md`. The
+Companion to the _Plan storage_ fleet rule in `template/CLAUDE.md`. The
 inline rule is intentionally one sentence; this doc carries the rationale,
 the migration guidance for legacy `docs/plans/` content, and the
 per-repo extension pattern.
@@ -23,7 +23,7 @@ What is **not** a plan (and belongs elsewhere):
 - API reference → JSDoc / TSDoc / Rustdoc / README.
 - Onboarding / contributor docs → `CONTRIBUTING.md` (tracked).
 - Incident post-mortems → if the lesson is worth keeping, it goes into
-  CLAUDE.md as a rule with a `**Why:**` line per the *Compound lessons*
+  CLAUDE.md as a rule with a `**Why:**` line per the _Compound lessons_
   rule. The post-mortem itself can stay in `.claude/plans/` as scratch.
 
 ## The canonical location
@@ -31,6 +31,7 @@ What is **not** a plan (and belongs elsewhere):
 `<repo-root>/.claude/plans/<lowercase-hyphenated>.md`.
 
 One location per repo. Never:
+
 - `docs/plans/` — that's tracked, defeats the rule.
 - `<pkg>/docs/plans/` — tracked + duplicates the convention per-package.
 - `<pkg>/.claude/plans/` — sub-package `.claude/` is a fleet-convention
@@ -60,6 +61,7 @@ explicit allowlist:
 is therefore untracked by default.
 
 Do NOT:
+
 - Add `!/.claude/plans/` to the gitignore allowlist.
 - `git add .claude/plans/<file>.md`.
 - Use `git add -A` / `git add .` (which would sweep the plan in — but the

@@ -178,7 +178,7 @@ async function checkZizmorVersion(binPath: string): Promise<boolean> {
     const output = typeof result.stdout === 'string'
       ? result.stdout.trim()
       : result.stdout.toString().trim()
-    return output.includes(ZIZMOR.version)
+    return ZIZMOR.version ? output.includes(ZIZMOR.version) : false
   } catch {
     return false
   }

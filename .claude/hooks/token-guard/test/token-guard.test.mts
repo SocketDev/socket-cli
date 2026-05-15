@@ -11,13 +11,14 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { whichSync } from '@socketsecurity/lib-stable/bin'
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from 'node:child_process'
 
 const hookScript = new URL('../index.mts', import.meta.url).pathname
-const nodeBin = whichSync('node')
-if (!nodeBin) {
+const nodeBinRaw = whichSync('node')
+if (!nodeBinRaw || typeof nodeBinRaw !== 'string') {
   throw new Error('"node" not found on PATH')
 }
+const nodeBin: string = nodeBinRaw
 
 function runHook(command: string, toolName = 'Bash'): {
   code: number | null

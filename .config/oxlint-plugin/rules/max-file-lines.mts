@@ -24,6 +24,8 @@
  *     ignorePatterns to keep generated files out of scope.
  */
 
+import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+
 const SOFT_CAP = 500
 const HARD_CAP = 1000
 
@@ -47,13 +49,13 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
     return {
-      Program(node) {
+      Program(node: AstNode) {
         // Trust the parser's location info — `loc.end.line` is the
         // 1-indexed line of the last token. Empty trailing lines are
         // counted as part of the source per the line-counting
@@ -69,7 +71,7 @@ const rule = {
         // the file level.
         const leadingComments = sourceCode
           .getAllComments()
-          .filter(c => c.loc.start.line <= 5)
+          .filter((c: AstNode) => c.loc.start.line <= 5)
         for (const c of leadingComments) {
           if (BYPASS_RE.test(c.value)) {
             return

@@ -1,6 +1,6 @@
 # socket-bypass: in-file marker registry
 
-Some fleet audits + custom lints recognize an explicit opt-out comment that lives inside the affected file. This is distinct from user-typed bypass *phrases* (see [bypass-phrases.md](./bypass-phrases.md)), which gate one-time tool invocations from the active conversation.
+Some fleet audits + custom lints recognize an explicit opt-out comment that lives inside the affected file. This is distinct from user-typed bypass _phrases_ (see [bypass-phrases.md](./bypass-phrases.md)), which gate one-time tool invocations from the active conversation.
 
 The marker shape is:
 
@@ -22,9 +22,9 @@ Conventions:
 
 ## Registered marker names
 
-| Name              | Enforcer                                       | Effect                                                                                                                                                                                                                                                                                                |
-| ----------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `workflow-shadow` | `scripts/lint-github-settings.mts`             | Suppress the "Local workflow shadows a shared one" finding for the file. Document `<reason>` (e.g. "CLI-specific multi-package publish; does not fit generic shared shape"). Marker must appear as a `#`-comment line in the workflow YAML body — typically near the top, alongside the `name:` line. |
+| Name              | Enforcer                           | Effect                                                                                                                                                                                                                                                                                                |
+| ----------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workflow-shadow` | `scripts/lint-github-settings.mts` | Suppress the "Local workflow shadows a shared one" finding for the file. Document `<reason>` (e.g. "CLI-specific multi-package publish; does not fit generic shared shape"). Marker must appear as a `#`-comment line in the workflow YAML body — typically near the top, alongside the `name:` line. |
 
 ## When to add a new marker
 
@@ -36,8 +36,8 @@ When a new audit / custom lint needs an opt-out mechanism:
 
 ## Why a separate registry from `bypass-phrases.md`
 
-`bypass-phrases.md` documents user-typed phrases (`Allow revert bypass`) that the *active conversation* must contain for a hook to let a one-time tool-call proceed. Those phrases gate behavior at *invocation time*.
+`bypass-phrases.md` documents user-typed phrases (`Allow revert bypass`) that the _active conversation_ must contain for a hook to let a one-time tool-call proceed. Those phrases gate behavior at _invocation time_.
 
-`socket-bypass:` markers gate behavior at *audit time* and live inline with the file they exempt. The file's git blame is the accountability trail; the maintainer is committing to the exemption.
+`socket-bypass:` markers gate behavior at _audit time_ and live inline with the file they exempt. The file's git blame is the accountability trail; the maintainer is committing to the exemption.
 
 Different lifetimes, different audiences, different review patterns. Two registries.

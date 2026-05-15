@@ -32,6 +32,8 @@
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const ACCESS_METHODS = new Set(['access', 'accessSync'])
 const STAT_METHODS = new Set(['stat', 'statSync', 'lstat', 'lstatSync'])
 const WRAPPER_NAMES = new Set(['fileExists', 'pathExists', 'isFile', 'isDir'])
@@ -59,12 +61,12 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
-    let summary
+    let summary: ReturnType<typeof summarizeImportTarget> | undefined
 
     function ensureSummary() {
       if (summary) {
@@ -74,7 +76,7 @@ const rule = {
       return summary
     }
 
-    function calleeMethodName(callee) {
+    function calleeMethodName(callee: AstNode): string | undefined {
       if (callee.type !== 'MemberExpression') {
         return undefined
       }
@@ -94,7 +96,7 @@ const rule = {
      * intended rewrite; existsSync is sync and the surrounding `await`
      * collapses to a no-op on a non-promise value.
      */
-    function isFixableWrapperCall(node) {
+    function isFixableWrapperCall(node: AstNode) {
       if (node.arguments.length !== 1) {
         return false
       }
@@ -105,7 +107,7 @@ const rule = {
     }
 
     return {
-      CallExpression(node) {
+      CallExpression(node: AstNode) {
         const method = calleeMethodName(node.callee)
         if (!method) {
           // Direct call: `await fileExists(p)` — flag known wrapper
@@ -131,7 +133,7 @@ const rule = {
               node,
               messageId: 'fileExists',
               data: { name },
-              fix(fixer) {
+              fix(fixer: RuleFixer) {
                 // Replace just the callee identifier — preserve
                 // arg text + parens. `await` (if present) becomes a
                 // no-op against a sync boolean return; safe to leave.

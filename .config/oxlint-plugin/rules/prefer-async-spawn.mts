@@ -42,6 +42,8 @@
  *     core APIs. Handled at the .config/oxlintrc.json ignorePatterns level.
  */
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const CHILD_PROCESS_SPECIFIERS = new Set([
   'node:child_process',
   'child_process',
@@ -73,12 +75,12 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
-    function hasBypassComment(node) {
+    function hasBypassComment(node: AstNode) {
       const before = sourceCode.getCommentsBefore(node)
       const after = sourceCode.getCommentsAfter(node)
       for (const c of [...before, ...after]) {
@@ -94,7 +96,7 @@ const rule = {
      * Program root. Returns true when an `async` function or top-level
      * module is reached (top-level await is allowed in ES modules).
      */
-    function isInAsyncContext(node) {
+    function isInAsyncContext(node: AstNode) {
       let cur = node.parent
       while (cur) {
         if (
@@ -123,9 +125,9 @@ const rule = {
      * Successful rewrite: replaces the whole import statement with
      * `import { spawn } from '@socketsecurity/lib/spawn'`.
      */
-    function fixImport(fixer, node) {
+    function fixImport(fixer: RuleFixer, node: AstNode) {
       const banned = node.specifiers.filter(
-        s =>
+        (s: AstNode) =>
           s.type === 'ImportSpecifier' &&
           s.imported &&
           BANNED_NAMES.has(s.imported.name),
@@ -134,7 +136,7 @@ const rule = {
         return null
       }
       const others = node.specifiers.filter(
-        s =>
+        (s: AstNode) =>
           s.type !== 'ImportSpecifier' ||
           !s.imported ||
           !BANNED_NAMES.has(s.imported.name),
@@ -152,7 +154,7 @@ const rule = {
     }
 
     return {
-      ImportDeclaration(node) {
+      ImportDeclaration(node: AstNode) {
         const specifier = node.source.value
         if (!CHILD_PROCESS_SPECIFIERS.has(specifier)) {
           return
@@ -161,7 +163,7 @@ const rule = {
           return
         }
         const banned = node.specifiers.filter(
-          s =>
+          (s: AstNode) =>
             s.type === 'ImportSpecifier' &&
             s.imported &&
             BANNED_NAMES.has(s.imported.name),
@@ -180,7 +182,7 @@ const rule = {
             },
             // Only the first banned-import on the line emits the fix;
             // ESLint dedupes overlapping inserts so this is safe.
-            fix(fixer) {
+            fix(fixer: RuleFixer) {
               return fixImport(fixer, node)
             },
           })
@@ -189,7 +191,7 @@ const rule = {
 
       // child_process.spawnSync(...) — covers `require('child_process').spawnSync(...)`
       // and `cp.spawnSync(...)` when the local binding is named cp.
-      CallExpression(node) {
+      CallExpression(node: AstNode) {
         const callee = node.callee
         if (callee.type !== 'MemberExpression') {
           return
@@ -249,9 +251,9 @@ const rule = {
           node,
           messageId: 'callBanned',
           data: { name: callee.property.name },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             const argText = node.arguments
-              .map(a => sourceCode.getText(a))
+              .map((a: AstNode) => sourceCode.getText(a))
               .join(', ')
             // If parent is already an AwaitExpression we keep the
             // await — replace the inner CallExpression. If parent is

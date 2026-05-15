@@ -29,6 +29,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'suggestion',
@@ -46,13 +49,13 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
     return {
-      ImportDeclaration(node) {
+      ImportDeclaration(node: AstNode) {
         // `import type { ... }` at the statement level — already
         // correct, no inline specifiers to surface.
         if (node.importKind === 'type') {
@@ -62,10 +65,10 @@ const rule = {
           return
         }
 
-        const typeSpecifiers = []
-        const valueSpecifiers = []
-        let defaultSpec
-        let namespaceSpec
+        const typeSpecifiers: AstNode[] = []
+        const valueSpecifiers: AstNode[] = []
+        let defaultSpec: AstNode | undefined
+        let namespaceSpec: AstNode | undefined
         for (const spec of node.specifiers) {
           if (spec.type === 'ImportDefaultSpecifier') {
             defaultSpec = spec
@@ -100,7 +103,7 @@ const rule = {
         })()
 
         const typeNames = typeSpecifiers
-          .map(s => specifierText(sourceCode, s, true))
+          .map((s: AstNode) => specifierText(sourceCode, s, true))
           .join(', ')
 
         let fixerAttached = false
@@ -109,13 +112,18 @@ const rule = {
             spec.imported && spec.imported.name
               ? spec.imported.name
               : '<unknown>'
-          const report = {
+          const report: {
+            node: AstNode
+            messageId: string
+            data: { name: string; source: string }
+            fix?: (fixer: RuleFixer) => unknown
+          } = {
             node: spec,
             messageId: 'preferSeparateTypeImport',
             data: { name, source: String(source) },
           }
           if (!fixerAttached) {
-            report.fix = function (fixer) {
+            report.fix = function (fixer: RuleFixer) {
               // Case A: every specifier is a type specifier and there's
               // no default/namespace import — convert the whole line.
               if (
@@ -134,7 +142,7 @@ const rule = {
               // Case B: mixed — keep value/default/namespace
               // specifiers on the original line, append a new
               // `import type { ... } from 'src'` below.
-              const remainingParts = []
+              const remainingParts: string[] = []
               if (defaultSpec) {
                 remainingParts.push(sourceCode.getText(defaultSpec))
               }
@@ -143,7 +151,7 @@ const rule = {
               }
               if (valueSpecifiers.length > 0) {
                 const valueText = valueSpecifiers
-                  .map(s => specifierText(sourceCode, s, false))
+                  .map((s: AstNode) => specifierText(sourceCode, s, false))
                   .join(', ')
                 remainingParts.push(`{ ${valueText} }`)
               }
@@ -167,7 +175,12 @@ const rule = {
  * is being moved into a statement-level `import type` block, where
  * per-specifier `type` would be redundant).
  */
-function specifierText(sourceCode, spec, stripType) {
+function specifierText(
+  sourceCode: unknown,
+  spec: AstNode,
+  stripType: boolean,
+): string {
+  void sourceCode
   const imported = spec.imported
   const local = spec.local
   const importedName =

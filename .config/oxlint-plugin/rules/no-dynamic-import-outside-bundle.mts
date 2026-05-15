@@ -17,6 +17,8 @@
 
 import path from 'node:path'
 
+import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+
 const DEFAULT_BUNDLED_ROOTS = ['src/', '.config/', 'packages/']
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -49,21 +51,23 @@ const rule = {
     ],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const options = context.options[0] || {}
     const bundledRoots = options.bundledRoots || DEFAULT_BUNDLED_ROOTS
     const filename = context.physicalFilename || context.filename
     const cwd = context.cwd || process.cwd()
     const relative = path.relative(cwd, filename).split(path.sep).join('/')
 
-    const inBundled = bundledRoots.some(root => relative.startsWith(root))
+    const inBundled = bundledRoots.some((root: string) =>
+      relative.startsWith(root),
+    )
 
     if (inBundled) {
       return {}
     }
 
     return {
-      ImportExpression(node) {
+      ImportExpression(node: AstNode) {
         context.report({
           node,
           messageId: 'dynamic',

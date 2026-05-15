@@ -15,6 +15,9 @@
  */
 
 /* oxlint-disable socket/no-status-emoji -- this rule defines the emoji table it bans. */
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const EMOJI_TO_METHOD = {
   '✓': 'success',
   '✔': 'success',
@@ -54,11 +57,11 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     /**
      * Find any banned emoji in a string. Returns the first match.
      */
-    function findEmoji(value) {
+    function findEmoji(value: string): string | undefined {
       for (const emoji of EMOJI) {
         if (value.includes(emoji)) {
           return emoji
@@ -72,13 +75,18 @@ const rule = {
      * return { emoji, restAfter } where restAfter is the string with
      * the leading emoji+spaces stripped. Otherwise null.
      */
-    function leadingEmoji(value) {
+    interface LeadInfo {
+      emoji: string
+      restAfter: string
+    }
+
+    function leadingEmoji(value: string): LeadInfo | undefined {
       const match = EMOJI_LEAD_RE.exec(value)
       if (!match) {
         return undefined
       }
       return {
-        emoji: match[1],
+        emoji: match[1]!,
         restAfter: value.slice(match[0].length),
       }
     }
@@ -87,8 +95,12 @@ const rule = {
      * Try to autofix by rewriting `console.log('✓ Done')` →
      * `logger.success('Done')`. Returns a fixer function or null.
      */
-    function tryFix(node, literalNode, leadInfo) {
-      const method = EMOJI_TO_METHOD[leadInfo.emoji]
+    function tryFix(
+      node: AstNode,
+      literalNode: AstNode,
+      leadInfo: LeadInfo,
+    ): ((fixer: RuleFixer) => unknown) | undefined {
+      const method = (EMOJI_TO_METHOD as Record<string, string>)[leadInfo.emoji]
       if (!method) {
         return undefined
       }
@@ -130,13 +142,13 @@ const rule = {
       const quote = literalNode.raw[0]
       const newLiteral = `${quote}${leadInfo.restAfter.replace(new RegExp(quote, 'g'), '\\' + quote)}${quote}`
 
-      return fixer => [
+      return (fixer: RuleFixer) => [
         fixer.replaceText(callee, `logger.${method}`),
         fixer.replaceText(literalNode, newLiteral),
       ]
     }
 
-    function reportLiteral(node) {
+    function reportLiteral(node: AstNode) {
       const value = typeof node.value === 'string' ? node.value : undefined
       if (!value) {
         return
@@ -148,7 +160,9 @@ const rule = {
       }
 
       const leadInfo = leadingEmoji(value)
-      const method = leadInfo ? EMOJI_TO_METHOD[leadInfo.emoji] : undefined
+      const method = leadInfo
+        ? (EMOJI_TO_METHOD as Record<string, string>)[leadInfo.emoji]
+        : undefined
 
       if (leadInfo && method) {
         const fix = tryFix(node, node, leadInfo)
@@ -168,10 +182,10 @@ const rule = {
     }
 
     return {
-      Literal(node) {
+      Literal(node: AstNode) {
         reportLiteral(node)
       },
-      TemplateElement(node) {
+      TemplateElement(node: AstNode) {
         if (node.value && typeof node.value.cooked === 'string') {
           // Treat template-string segments like literals for detection only.
           reportLiteral({ ...node, value: node.value.cooked })

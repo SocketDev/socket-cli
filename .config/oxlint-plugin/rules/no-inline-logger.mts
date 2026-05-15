@@ -25,6 +25,8 @@
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const LOGGER_IMPORT_LINE =
   "import { getDefaultLogger } from '@socketsecurity/lib/logger'"
 const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
@@ -47,12 +49,12 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
-    let summary
+    let summary: ReturnType<typeof summarizeImportTarget> | undefined
 
     function ensureSummary() {
       if (summary) {
@@ -68,7 +70,7 @@ const rule = {
     }
 
     return {
-      MemberExpression(node) {
+      MemberExpression(node: AstNode) {
         // Match: getDefaultLogger().<method>
         if (node.property.type !== 'Identifier') {
           return
@@ -89,7 +91,7 @@ const rule = {
           node,
           messageId: 'inline',
           data: { method: node.property.name },
-          fix(fixer) {
+          fix(fixer: RuleFixer) {
             // Replace `getDefaultLogger()` (the CallExpression) with
             // `logger`. Leaves `.method(...)` intact, so the result is
             // `logger.method(...)`.

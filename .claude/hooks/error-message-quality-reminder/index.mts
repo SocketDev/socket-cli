@@ -36,6 +36,7 @@ import {
   readLastAssistantText,
   readStdin,
 } from '../_shared/transcript.mts'
+import type { CodeFence } from '../_shared/transcript.mts'
 
 interface StopPayload {
   readonly transcript_path?: string | undefined
@@ -109,10 +110,10 @@ interface MessageFinding {
   readonly hint: string
 }
 
-function gradeMessages(codeBlocks: readonly string[]): MessageFinding[] {
+function gradeMessages(codeBlocks: readonly CodeFence[]): MessageFinding[] {
   const findings: MessageFinding[] = []
   for (let bi = 0, { length: blocksLen } = codeBlocks; bi < blocksLen; bi += 1) {
-    const block = codeBlocks[bi]!
+    const block = codeBlocks[bi]!.body
     // Reset the regex's lastIndex each block (global flag preserves it).
     THROW_NEW_ERROR_RE.lastIndex = 0
     let match: RegExpExecArray | null

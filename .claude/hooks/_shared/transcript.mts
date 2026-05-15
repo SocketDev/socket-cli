@@ -245,18 +245,23 @@ export function stripCodeFences(text: string): string {
  * Used by hooks (error-message-quality-reminder) that need to inspect
  * the code the assistant wrote rather than the prose around it.
  */
-export function extractCodeFences(text: string): string[] {
-  const out: string[] = []
+export interface CodeFence {
+  lang: string
+  body: string
+}
+
+export function extractCodeFences(text: string): CodeFence[] {
+  const out: CodeFence[] = []
   // Match ```optional-lang\n...code...\n```
   // The lang tag is optional; the content is anything (non-greedy) up
   // to the closing fence. We're permissive — bad markdown still gets
   // captured as a block.
-  const re = /```[a-zA-Z0-9_+-]*\n?([\s\S]*?)```/g
+  const re = /```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/g
   let match: RegExpExecArray | null
   while ((match = re.exec(text)) !== null) {
-    const body = match[1]
+    const body = match[2]
     if (body !== undefined) {
-      out.push(body)
+      out.push({ lang: match[1] ?? '', body })
     }
   }
   return out

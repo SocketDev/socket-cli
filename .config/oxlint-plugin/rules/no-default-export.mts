@@ -27,6 +27,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'suggestion',
@@ -46,13 +49,13 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
 
     return {
-      ExportDefaultDeclaration(node) {
+      ExportDefaultDeclaration(node: AstNode) {
         const decl = node.declaration
         if (!decl) {
           return
@@ -70,7 +73,7 @@ const rule = {
           context.report({
             node,
             messageId: 'noDefaultExport',
-            fix(fixer) {
+            fix(fixer: RuleFixer) {
               const declText = sourceCode.getText(decl)
               return fixer.replaceText(node, `export ${declText}`)
             },
@@ -87,7 +90,7 @@ const rule = {
           context.report({
             node,
             messageId: 'noDefaultExport',
-            fix(fixer) {
+            fix(fixer: RuleFixer) {
               return fixer.replaceText(node, `export { ${decl.name} }`)
             },
           })

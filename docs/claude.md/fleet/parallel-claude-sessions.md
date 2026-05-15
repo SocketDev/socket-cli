@@ -7,7 +7,7 @@ rule.
 
 ## The problem
 
-A single socket-* checkout may have multiple Claude sessions running
+A single socket-\* checkout may have multiple Claude sessions running
 concurrently — driven by parallel agents, parallel terminals, or git
 worktrees mapped onto the same `.git/`. The session you're in **is not
 the only writer**. Several common git operations are hostile to that.

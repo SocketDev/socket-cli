@@ -37,6 +37,9 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
+
+import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+
 const rule = {
   meta: {
     type: 'problem',
@@ -54,7 +57,7 @@ const rule = {
     schema: [],
   },
 
-  create(context) {
+  create(context: RuleContext) {
     const filename = context.filename ?? context.getFilename?.() ?? ''
     // Only enforce on scripts/ + .claude/hooks/ paths.
     if (
@@ -67,7 +70,7 @@ const rule = {
     }
 
     return {
-      CallExpression(node) {
+      CallExpression(node: AstNode) {
         const callee = node.callee
         if (
           callee.type !== 'MemberExpression' ||
