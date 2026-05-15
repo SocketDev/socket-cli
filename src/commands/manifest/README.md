@@ -37,7 +37,7 @@ socket manifest bazel [options] [DIR=.]
 - `--bazel-flags <str>` — flags forwarded to every bazel invocation (single quoted string).
 - `--bazel-output-base <dir>` — Bazel `--output_base` for read-only-cache CI environments.
 - `--out <dir>` — output directory; default `./.socket/bazel-manifests/`.
-- `--dry-run`, `--verbose`, `--json`, `--markdown` — standard diagnostic flags.
+- `--dry-run`, `--verbose` — standard diagnostic flags.
 
 > **Upload**: This subcommand only generates manifests. To generate and
 > upload in one step, use `socket scan create --auto-manifest .` — it

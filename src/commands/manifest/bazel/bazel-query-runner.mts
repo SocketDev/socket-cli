@@ -22,6 +22,10 @@ export type BazelQueryResult = {
   code: number
 }
 
+// Default per-invocation timeout for bazel queries. Bazel cold-cache starts
+// can take several minutes; 10 minutes is generous while still bounding CI hangs.
+const BAZEL_QUERY_TIMEOUT_MS = 600_000
+
 // Splits the user-supplied --bazel-flags string on whitespace.
 // Empty / undefined returns []. No shell parsing — quoted args with embedded
 // whitespace are not supported (documented limitation; same trust model as
@@ -118,6 +122,7 @@ export async function runBazelQuery(
     spinner.start(`Running bazel query (${queryStr.slice(0, 80)})...`)
     const output = await spawn(opts.bin, argv, {
       cwd: opts.cwd,
+      timeout: BAZEL_QUERY_TIMEOUT_MS,
       ...(opts.env ? { env: opts.env } : {}),
     })
     const { code, stderr, stdout } = output
@@ -151,6 +156,7 @@ export async function runBazelModShowVisibleRepos(
   try {
     const output = await spawn(opts.bin, argv, {
       cwd: opts.cwd,
+      timeout: BAZEL_QUERY_TIMEOUT_MS,
       ...(opts.env ? { env: opts.env } : {}),
     })
     const { code, stderr, stdout } = output

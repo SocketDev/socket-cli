@@ -26,10 +26,22 @@ export type ExtractedArtifact = {
 // backtracking on hostile input.
 const RULE_RE = /^(jvm_import|aar_import)\(([\s\S]{0,8192}?)^\)/gm
 
+// Cache for per-attribute regexes — avoids recompiling the same pattern on
+// every rule block. Keyed by attr name; all attr names are safe alphanumeric
+// identifiers so no escaping is needed beyond the bounded character class.
+const ATTR_RE_CACHE = new Map<string, RegExp>()
+
+// Cache for per-tag-key regexes used by extractTagValue.
+const TAG_RE_CACHE = new Map<string, RegExp>()
+
 function extractAttr(body: string, attr: string): string | undefined {
   // Match `<attr> = "VALUE"` — quoted-string attrs only.
   // Quoted value capped at 4 KiB; canonical Maven URLs are ~150 bytes.
-  const re = new RegExp(`\\b${attr}\\s*=\\s*"([^"\\n]{0,4096})"`)
+  let re = ATTR_RE_CACHE.get(attr)
+  if (!re) {
+    re = new RegExp(`\\b${attr}\\s*=\\s*"([^"\\n]{0,4096})"`)
+    ATTR_RE_CACHE.set(attr, re)
+  }
   const m = re.exec(body)
   return m?.[1]
 }
@@ -47,7 +59,11 @@ function extractTagValue(body: string, tagKey: string): string | undefined {
   const tagsBlob = tagsM[1] as string
   // Within the blob, look for "<tagKey>=<value>" inside a quoted string.
   // Bounded at 512 bytes per tag entry (sha256 hex is 64 chars; URLs ~150).
-  const tagRe = new RegExp(`"${tagKey}=([^"\\n]{0,512})"`)
+  let tagRe = TAG_RE_CACHE.get(tagKey)
+  if (!tagRe) {
+    tagRe = new RegExp(`"${tagKey}=([^"\\n]{0,512})"`)
+    TAG_RE_CACHE.set(tagKey, tagRe)
+  }
   const m = tagRe.exec(tagsBlob)
   return m?.[1]
 }
