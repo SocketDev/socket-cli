@@ -595,7 +595,7 @@ importers:
   .claude/hooks/auth-rotation-reminder:
     dependencies:
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@5.28.0
+        specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
     devDependencies:
       '@types/node':
@@ -605,14 +605,24 @@ importers:
   .claude/hooks/check-new-deps:
     dependencies:
       '@socketregistry/packageurl-js-stable':
-        specifier: npm:@socketregistry/packageurl-js@1.4.2
+        specifier: 'catalog:'
         version: '@socketregistry/packageurl-js@1.4.2'
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@5.28.0
+        specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
       '@socketsecurity/sdk-stable':
-        specifier: npm:@socketsecurity/sdk@4.0.1
+        specifier: 'catalog:'
         version: '@socketsecurity/sdk@4.0.1'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/claude-md-section-size-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: 'catalog:'
+        version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -649,6 +659,10 @@ importers:
         version: 24.9.2
 
   .claude/hooks/cross-repo-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: 'catalog:'
+        version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -717,7 +731,7 @@ importers:
   .claude/hooks/markdown-filename-guard:
     dependencies:
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@5.28.0
+        specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
     devDependencies:
       '@types/node':
@@ -749,7 +763,7 @@ importers:
   .claude/hooks/no-fleet-fork-guard:
     dependencies:
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@5.28.0
+        specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
     devDependencies:
       '@types/node':
@@ -757,6 +771,12 @@ importers:
         version: 24.9.2
 
   .claude/hooks/no-meta-comments-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/no-orphaned-staging:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -776,13 +796,45 @@ importers:
 
   .claude/hooks/path-guard: {}
 
+  .claude/hooks/path-regex-normalize-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/paths-mts-inherit-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: 'catalog:'
+        version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/perfectionist-reminder:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 24.9.2
 
+  .claude/hooks/plan-location-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: 'catalog:'
+        version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/plan-review-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/pointer-comment-guard:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -815,7 +867,7 @@ importers:
   .claude/hooks/release-workflow-guard:
     devDependencies:
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@5.28.0
+        specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
       '@types/node':
         specifier: 'catalog:'
@@ -827,10 +879,10 @@ importers:
         specifier: 'catalog:'
         version: 0.34.49
       '@socketregistry/packageurl-js-stable':
-        specifier: npm:@socketregistry/packageurl-js@1.4.2
+        specifier: 'catalog:'
         version: '@socketregistry/packageurl-js@1.4.2'
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@5.28.0
+        specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
 
   .claude/hooks/stale-process-sweeper: {}

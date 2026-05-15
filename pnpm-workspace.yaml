@@ -72,6 +72,7 @@ catalog:
   '@types/yargs-parser': 21.0.3
   '@typescript/native-preview': 7.0.0-dev.20260415.1
   '@vitest/coverage-v8': 4.0.3
+  '@vitest/ui': 4.1.6
   '@yao-pkg/pkg': 6.8.0
   '@yarnpkg/parsers': 3.0.3
   adm-zip: 0.5.16
