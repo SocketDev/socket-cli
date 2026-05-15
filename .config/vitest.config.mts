@@ -35,21 +35,10 @@ export default defineConfig({
         singleThread: false,
         maxThreads: isCoverageEnabled ? 1 : 16,
         minThreads: isCoverageEnabled ? 1 : 4,
-        // IMPORTANT: isolate: false for performance and test compatibility
-        //
-        // Tradeoff Analysis:
-        // - isolate: true  = Full isolation, slower, breaks nock/module mocking
-        // - isolate: false = Shared worker context, faster, mocking works
-        //
-        // We choose isolate: false because:
-        // 1. Significant performance improvement (faster test runs)
-        // 2. Nock HTTP mocking works correctly across all test files
-        // 3. Vi.mock() module mocking functions properly
-        // 4. Test state pollution is prevented through proper beforeEach/afterEach
-        // 5. Our tests are designed to clean up after themselves
-        //
-        // Updated: Using isolate: true for consistency with CLI package config
-        // and to ensure reliability in CI environments.
+        // isolate: true for consistency with packages/cli/vitest.config.mts
+        // and CI reliability. The tradeoff is slower runs and nock/vi.mock
+        // friction, but those concerns turned out to be solvable with
+        // per-test setup/teardown discipline.
         isolate: true,
         // Use worker threads for better performance
         useAtomics: true,
