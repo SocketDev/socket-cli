@@ -306,7 +306,8 @@ async function main() {
   )
 
   logger.error('')
-  logger.info('--- Validation Results ---\n')
+  logger.info('--- Validation Results ---')
+  logger.error('')
   const { errors, infos, warnings } = formatResults(results)
 
   logger.error('')

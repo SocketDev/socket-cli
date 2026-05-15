@@ -70,7 +70,8 @@ export async function buildWasm() {
 
   // Step 2: Build unified WASM bundle.
   logger.error('')
-  logger.info('Step 2: Building unified WASM bundle...\n')
+  logger.info('Step 2: Building unified WASM bundle...')
+  logger.error('')
   try {
     const buildArgs = [buildScript]
     if (isDev) {

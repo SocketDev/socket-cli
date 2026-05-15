@@ -34,8 +34,8 @@ type ConfigCommandSpec = {
     test: boolean
     message: string
     fail: string
-    nook?: boolean
-    pass?: string
+    nook?: boolean | undefined
+    pass?: string | undefined
   }>) | undefined
   handler: (params: {
     key: keyof LocalConfig

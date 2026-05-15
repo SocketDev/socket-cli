@@ -48,10 +48,6 @@ export class SocketValidationError extends Error {
   }
 }
 
-export function asBoolean(value: unknown): boolean | undefined {
-  return typeof value === 'boolean' ? value : undefined
-}
-
 function asBooleanRecord(value: unknown): { [k: string]: boolean } {
   if (!isPlainObject(value)) {
     return {}
@@ -147,6 +143,10 @@ function migrateV1(content: SocketYmlV1Shape): SocketYml {
     projectIgnorePaths: content.ignore ?? [],
     version: 2,
   }
+}
+
+export function asBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined
 }
 
 export function getDefaultConfig(): SocketYml {

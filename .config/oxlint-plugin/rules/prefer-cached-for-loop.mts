@@ -20,7 +20,7 @@
  * Canonical shape emitted by the autofix:
  *
  *   for (let i = 0, { length } = arr; i < length; i += 1) {
- *     const item = arr[i]
+ *     const item = arr[i]!
  *     <body>
  *   }
  *
@@ -32,6 +32,11 @@
  *     so the test `i < length` doesn't re-read `arr.length` per
  *     iteration. Equivalent to `const len = arr.length` but pairs
  *     with `let i = 0` in a single `let` head.
+ *   - `arr[i]!` non-null assertion — under `noUncheckedIndexedAccess`
+ *     the lookup type is `T | undefined`, and the bound `i` is
+ *     provably in `[0, length)`. The assertion suppresses TS18048
+ *     at every read of `item` downstream. No-op for tsconfigs
+ *     without the strict flag.
  *
  * Autofix scope (deterministic only):
  *
@@ -280,7 +285,13 @@ const rule = {
             )
             const indent = leadingIndent(sourceCode, parent)
             const innerIndent = `${indent}  `
-            const replacement = `for (let ${indexName} = 0, { length } = ${iterText}; ${indexName} < length; ${indexName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${indexName}]${bodyInner}\n${indent}}`
+            // `!` non-null assertion on the indexed access — under
+            // `noUncheckedIndexedAccess` the lookup returns `T |
+            // undefined`, and every read of `${itemName}` downstream
+            // would trip TS18048. The assertion is a no-op for
+            // tsconfigs that don't enable the strict flag, so it's
+            // safe to emit unconditionally.
+            const replacement = `for (let ${indexName} = 0, { length } = ${iterText}; ${indexName} < length; ${indexName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${indexName}]!${bodyInner}\n${indent}}`
             return fixer.replaceText(parent, replacement)
           },
         })
@@ -358,7 +369,9 @@ const rule = {
             )
             const indent = leadingIndent(sourceCode, node)
             const innerIndent = `${indent}  `
-            const replacement = `for (let ${counterName} = 0, { length } = ${iterText}; ${counterName} < length; ${counterName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${counterName}]${bodyInner}\n${indent}}`
+            // `!` non-null assertion on the indexed access — see the
+            // sibling .forEach branch for the rationale.
+            const replacement = `for (let ${counterName} = 0, { length } = ${iterText}; ${counterName} < length; ${counterName} += 1) {\n${innerIndent}${itemKind} ${itemName} = ${iterText}[${counterName}]!${bodyInner}\n${indent}}`
             return fixer.replaceText(node, replacement)
           },
         })
