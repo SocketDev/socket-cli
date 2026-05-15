@@ -48,7 +48,6 @@ catalog:
   '@socketregistry/is-interactive': 1.0.6
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
   '@socketregistry/yocto-spinner': 1.0.25
-  '@socketsecurity/config': 3.0.1
   '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@5.28.0'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.0.1'

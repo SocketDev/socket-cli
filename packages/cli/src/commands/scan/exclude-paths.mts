@@ -3,7 +3,7 @@ import path from 'node:path'
 import { InputError } from '../../utils/error/errors.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
-import type { SocketYml } from '@socketsecurity/config'
+import type { SocketYml } from '../../utils/socket-yaml.mts'
 
 type ApplyFullExcludePathsOptions = {
   cwd: string

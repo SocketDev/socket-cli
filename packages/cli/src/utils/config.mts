@@ -24,7 +24,6 @@
 import { statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
-import config from '@socketsecurity/config'
 import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
 import { safeMkdirSync, safeReadFileSync } from '@socketsecurity/lib-stable/fs'
 import { getEditableJsonClass } from '@socketsecurity/lib-stable/json/edit'
@@ -32,6 +31,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { naturalCompare } from '@socketsecurity/lib-stable/sorts'
 
 import { debugConfig } from './debug.mts'
+import { parseSocketConfig } from './socket-yaml.mts'
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -45,7 +45,7 @@ import { SOCKET_YAML, SOCKET_YML } from '../constants/socket.mts'
 import { getErrorCause } from './error/errors.mts'
 
 import type { CResult } from '../types.mts'
-import type { SocketYml } from '@socketsecurity/config'
+import type { SocketYml } from './socket-yaml.mts'
 
 const logger = getDefaultLogger()
 
@@ -134,7 +134,7 @@ export function findSocketYmlSync(
           ok: true,
           data: {
             path: ymlPath,
-            parsed: config.parseSocketConfig(ymlString),
+            parsed: parseSocketConfig(ymlString),
           },
         }
       } catch (e) {

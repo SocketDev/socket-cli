@@ -13,7 +13,7 @@ import {
 } from './glob.mts'
 import { NODE_MODULES } from '../../constants/packages.mts'
 
-import type { SocketYml } from '@socketsecurity/config'
+import type { SocketYml } from '../socket-yaml.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export function findBinPathDetailsSync(binName: string): {

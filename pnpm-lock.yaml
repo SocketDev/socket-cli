@@ -93,9 +93,6 @@ catalogs:
     '@socketregistry/yocto-spinner':
       specifier: 1.0.25
       version: 1.0.25
-    '@socketsecurity/config':
-      specifier: 3.0.1
-      version: 3.0.1
     '@socketsecurity/lib-stable':
       specifier: npm:@socketsecurity/lib@5.28.0
       version: 5.28.0
@@ -402,9 +399,6 @@ importers:
       '@socketregistry/yocto-spinner':
         specifier: 'catalog:'
         version: 1.0.25
-      '@socketsecurity/config':
-        specifier: 'catalog:'
-        version: 3.0.1
       '@socketsecurity/lib-stable':
         specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
@@ -969,9 +963,6 @@ importers:
       '@socketregistry/yocto-spinner':
         specifier: 'catalog:'
         version: 1.0.25
-      '@socketsecurity/config':
-        specifier: 'catalog:'
-        version: 3.0.1
       '@socketsecurity/lib-stable':
         specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
@@ -2542,10 +2533,6 @@ packages:
   '@socketregistry/yocto-spinner@1.0.25':
     resolution: {integrity: sha512-f8AqJMH1+BL15G6bHDzb1jyY+wW4gOYQs5JumSxmnE/H/+KgqbIZgaPwDdRwoeciDGojoSVrRHiTZjbe7n7dJA==}
     engines: {node: '>=18'}
-
-  '@socketsecurity/config@3.0.1':
-    resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
-    engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
   '@socketsecurity/lib@5.28.0':
     resolution: {integrity: sha512-SVVq+ODU3H6KAQXwaANnnq2sNHj+JgHM67R0ww93V8J38upiSUlUR8Mxx3P5mo922B+gY6WNFU0zSJfEOjbKew==}
@@ -4233,10 +4220,6 @@ packages:
 
   pnpm-workspace-yaml@1.6.0:
     resolution: {integrity: sha512-uUy4dK3E11sp7nK+hnT7uAWfkBMe00KaUw8OG3NuNlYQoTk4sc9pcdIy1+XIP85v9Tvr02mK3JPaNNrP0QyRaw==}
-
-  pony-cause@2.1.11:
-    resolution: {integrity: sha512-M7LhCsdNbNgiLYiP4WjsfLUuFmCfnjdF6jKe2R9NKl4WFN+HZPGHJZ9lnLP7f9ZnKe3U9nuWD0szirmj+migUg==}
-    engines: {node: '>=12.0.0'}
 
   postcss-selector-parser@7.1.1:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
@@ -6254,12 +6237,6 @@ snapshots:
     dependencies:
       yoctocolors-cjs: 2.1.3
 
-  '@socketsecurity/config@3.0.1':
-    dependencies:
-      ajv: 8.18.0
-      pony-cause: 2.1.11
-      yaml: 2.8.1
-
   '@socketsecurity/lib@5.28.0(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
@@ -8013,8 +7990,6 @@ snapshots:
   pnpm-workspace-yaml@1.6.0:
     dependencies:
       yaml: 2.8.1
-
-  pony-cause@2.1.11: {}
 
   postcss-selector-parser@7.1.1:
     dependencies:

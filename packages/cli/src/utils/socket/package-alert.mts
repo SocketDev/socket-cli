@@ -49,7 +49,7 @@ import type {
   CveProps,
 } from '../alert/artifact.mts'
 import type { PURL_Type } from '../ecosystem/types.mjs'
-import type { SocketYml } from '@socketsecurity/config'
+import type { SocketYml } from '../socket-yaml.mts'
 import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 
 export const ALERT_SEVERITY_COLOR = createEnum({

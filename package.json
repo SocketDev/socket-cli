@@ -83,7 +83,6 @@
     "@socketregistry/is-interactive": "catalog:",
     "@socketregistry/packageurl-js-stable": "catalog:",
     "@socketregistry/yocto-spinner": "catalog:",
-    "@socketsecurity/config": "catalog:",
     "@socketsecurity/lib-stable": "catalog:",
     "@socketsecurity/registry-stable": "catalog:",
     "@socketsecurity/sdk-stable": "catalog:",

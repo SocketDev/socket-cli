@@ -15,7 +15,7 @@ import { homePath } from '../../constants/paths.mts'
 import { NODE_MODULES, PNPM } from '../../constants.mts'
 
 import type { Agent } from '../ecosystem/environment.mts'
-import type { SocketYml } from '@socketsecurity/config'
+import type { SocketYml } from '../socket-yaml.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 import type { Options as GlobOptions } from 'fast-glob'
 
