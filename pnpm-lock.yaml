@@ -87,9 +87,6 @@ catalogs:
     '@socketregistry/is-interactive':
       specifier: 1.0.6
       version: 1.0.6
-    '@socketregistry/packageurl-js':
-      specifier: 1.4.2
-      version: 1.4.2
     '@socketregistry/packageurl-js-stable':
       specifier: npm:@socketregistry/packageurl-js@1.4.2
       version: 1.4.2
@@ -102,12 +99,9 @@ catalogs:
     '@socketsecurity/lib-stable':
       specifier: npm:@socketsecurity/lib@5.28.0
       version: 5.28.0
-    '@socketsecurity/registry':
-      specifier: 2.0.2
+    '@socketsecurity/registry-stable':
+      specifier: npm:@socketsecurity/registry@2.0.2
       version: 2.0.2
-    '@socketsecurity/sdk':
-      specifier: 4.0.1
-      version: 4.0.1
     '@socketsecurity/sdk-stable':
       specifier: npm:@socketsecurity/sdk@4.0.1
       version: 4.0.1
@@ -402,9 +396,6 @@ importers:
       '@socketregistry/is-interactive':
         specifier: 'catalog:'
         version: 1.0.6
-      '@socketregistry/packageurl-js':
-        specifier: 'catalog:'
-        version: 1.4.2
       '@socketregistry/packageurl-js-stable':
         specifier: 'catalog:'
         version: '@socketregistry/packageurl-js@1.4.2'
@@ -414,18 +405,12 @@ importers:
       '@socketsecurity/config':
         specifier: 'catalog:'
         version: 3.0.1
-      '@socketsecurity/lib':
-        specifier: 5.28.0
-        version: 5.28.0(typescript@5.9.3)
       '@socketsecurity/lib-stable':
         specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
-      '@socketsecurity/registry':
+      '@socketsecurity/registry-stable':
         specifier: 'catalog:'
-        version: 2.0.2(typescript@5.9.3)
-      '@socketsecurity/sdk':
-        specifier: 'catalog:'
-        version: 4.0.1
+        version: '@socketsecurity/registry@2.0.2(typescript@5.9.3)'
       '@socketsecurity/sdk-stable':
         specifier: 'catalog:'
         version: '@socketsecurity/sdk@4.0.1'
@@ -794,6 +779,12 @@ importers:
         specifier: 'catalog:'
         version: 24.9.2
 
+  .claude/hooks/overeager-staging-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/path-guard: {}
 
   .claude/hooks/path-regex-normalize-reminder:
@@ -972,24 +963,24 @@ importers:
       '@socketregistry/is-interactive':
         specifier: 'catalog:'
         version: 1.0.6
-      '@socketregistry/packageurl-js':
+      '@socketregistry/packageurl-js-stable':
         specifier: 'catalog:'
-        version: 1.4.2
+        version: '@socketregistry/packageurl-js@1.4.2'
       '@socketregistry/yocto-spinner':
         specifier: 'catalog:'
         version: 1.0.25
       '@socketsecurity/config':
         specifier: 'catalog:'
         version: 3.0.1
-      '@socketsecurity/lib':
-        specifier: 5.28.0
-        version: 5.28.0(typescript@5.9.3)
-      '@socketsecurity/registry':
+      '@socketsecurity/lib-stable':
         specifier: 'catalog:'
-        version: 2.0.2(typescript@5.9.3)
-      '@socketsecurity/sdk':
+        version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
+      '@socketsecurity/registry-stable':
         specifier: 'catalog:'
-        version: 4.0.1
+        version: '@socketsecurity/registry@2.0.2(typescript@5.9.3)'
+      '@socketsecurity/sdk-stable':
+        specifier: 'catalog:'
+        version: '@socketsecurity/sdk@4.0.1'
       '@types/adm-zip':
         specifier: 'catalog:'
         version: 0.5.7

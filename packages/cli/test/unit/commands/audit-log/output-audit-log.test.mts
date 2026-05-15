@@ -35,7 +35,7 @@ import {
 } from '../../../../src/commands/audit-log/output-audit-log.mts'
 import { createSuccessResult } from '../../../helpers/mocks.mts'
 
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type AuditLogs = SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results']
 

@@ -15,7 +15,7 @@ import type {
   CompactSocketArtifactAlert,
   SocketArtifact,
   SocketArtifactAlert,
-} from '@socketsecurity/sdk'
+} from '@socketsecurity/sdk-stable'
 
 export type {
   ALERT_ACTION,

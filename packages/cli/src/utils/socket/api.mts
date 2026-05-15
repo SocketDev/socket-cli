@@ -50,7 +50,7 @@ import type {
   SocketSdkErrorResult,
   SocketSdkOperations,
   SocketSdkSuccessResult,
-} from '@socketsecurity/sdk'
+} from '@socketsecurity/sdk-stable'
 
 const logger = getDefaultLogger()
 

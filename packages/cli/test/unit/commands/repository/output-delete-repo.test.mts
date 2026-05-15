@@ -25,7 +25,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { outputDeleteRepo } from '../../../../src/commands/repository/output-delete-repo.mts'
 
 import type { CResult } from '../../../../src/commands/repository/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({

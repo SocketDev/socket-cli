@@ -7,7 +7,7 @@ import { deduplicateArtifacts } from './lib/artifacts.mts'
 import { buildPurl } from './lib/purl.mts'
 
 import type { ArtifactData } from './lib/artifacts.mts'
-import type { SocketSdk } from '@socketsecurity/sdk'
+import type { SocketSdk } from '@socketsecurity/sdk-stable'
 import type { Static } from '@sinclair/typebox'
 
 const logger = getDefaultLogger()

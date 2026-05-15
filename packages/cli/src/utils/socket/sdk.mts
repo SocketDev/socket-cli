@@ -45,7 +45,7 @@ import { password } from '@socketsecurity/lib-stable/stdio/prompts'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
 import { isUrl } from '@socketsecurity/lib-stable/url'
 import { pluralize } from '@socketsecurity/lib-stable/words'
-import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
+import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk-stable'
 
 import {
   CONFIG_KEY_API_BASE_URL,
@@ -66,7 +66,7 @@ import type {
   FileValidationResult,
   RequestInfo,
   ResponseInfo,
-} from '@socketsecurity/sdk'
+} from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 const TOKEN_VISIBLE_LENGTH = 5

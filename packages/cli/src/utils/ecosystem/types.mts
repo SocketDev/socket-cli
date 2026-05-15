@@ -23,7 +23,7 @@
 
 import { NPM } from '@socketsecurity/lib-stable/constants/agents'
 
-import type { components } from '@socketsecurity/sdk/types/api'
+import type { components } from '@socketsecurity/sdk-stable/types/api'
 
 export type PURL_Type = components['schemas']['SocketPURL_Type']
 

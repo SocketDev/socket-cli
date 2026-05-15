@@ -4,7 +4,7 @@ import { handleApiCall } from './api.mts'
 import { setupSdk } from './sdk.mts'
 
 import type { BaseFetchOptions, CResult } from '../../types.mts'
-import type { SocketSdk } from '@socketsecurity/sdk'
+import type { SocketSdk } from '@socketsecurity/sdk-stable'
 
 /**
  * Generic API call wrapper that eliminates the need for separate fetch-*.mts files

@@ -16,7 +16,7 @@ import { NODE_MODULES, PNPM } from '../../constants.mts'
 
 import type { Agent } from '../ecosystem/environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 import type { Options as GlobOptions } from 'fast-glob'
 
 const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(

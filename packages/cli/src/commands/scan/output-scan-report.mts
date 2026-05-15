@@ -21,7 +21,7 @@ import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export type OutputScanReportConfig = {

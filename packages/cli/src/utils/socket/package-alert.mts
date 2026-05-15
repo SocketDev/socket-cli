@@ -28,7 +28,7 @@ import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
 import { getOwn, hasOwn } from '@socketsecurity/lib-stable/objects'
 import { resolvePackageName } from '@socketsecurity/lib-stable/packages'
 import { naturalCompare } from '@socketsecurity/lib-stable/sorts'
-import { getManifestData } from '@socketsecurity/registry'
+import { getManifestData } from '@socketsecurity/registry-stable'
 
 import { getSocketDevPackageOverviewUrl } from './url.mts'
 import { isArtifactAlertCve } from '../alert/artifact.mts'

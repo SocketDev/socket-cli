@@ -8,7 +8,7 @@ import { serializeResultJson } from '../../utils/output/result-json.mts'
 
 import type { Direction } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export async function outputListRepos(

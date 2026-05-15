@@ -34,7 +34,7 @@ import {
 } from '../../../../test/helpers/index.mts'
 
 import type { CResult } from '../../../../src/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 describe('outputDependencies', () => {
   beforeEach(async () => {

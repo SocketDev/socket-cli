@@ -43,7 +43,7 @@ import {
   pathsToGlobPatterns,
 } from '../../../../src/utils/fs/glob.mts'
 
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock supported files data.
 const mockSupportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'] =

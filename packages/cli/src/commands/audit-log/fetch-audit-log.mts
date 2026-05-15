@@ -3,7 +3,7 @@ import { setupSdk } from '../../utils/socket/sdk.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type FetchAuditLogsConfig = {
   logType: string

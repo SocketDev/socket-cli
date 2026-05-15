@@ -27,7 +27,7 @@ import {
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 
 import type { ScanReport } from '../../../../src/commands/scan/generate-report.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // biome-ignore lint/correctness/noUnusedVariables: Destructuring import for test setup
 type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']

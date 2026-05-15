@@ -24,7 +24,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { outputCreateNewScan } from '../../../../src/commands/scan/output-create-new-scan.mts'
 
 import type { CResult } from '../../../../src/commands/scan/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
