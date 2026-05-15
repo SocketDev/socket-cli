@@ -584,7 +584,7 @@ export function logAlertsMap(
       const info = (
         translations.alerts as Record<
           string,
-          { title?: string; description?: string } | undefined
+          { title?: string | undefined; description?: string | undefined } | undefined
         >
       )[type]
       const title = info?.title ?? type

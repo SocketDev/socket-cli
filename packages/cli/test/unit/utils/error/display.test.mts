@@ -165,8 +165,8 @@ describe('error/display', () => {
     it('terminates on cyclic cause chains', () => {
       const a = new Error('a')
       const b = new Error('b')
-      ;(a as Error & { cause?: unknown }).cause = b
-      ;(b as Error & { cause?: unknown }).cause = a
+      ;(a as Error & { cause?: unknown | undefined }).cause = b
+      ;(b as Error & { cause?: unknown | undefined }).cause = a
 
       const result = formatErrorForDisplay(a)
 

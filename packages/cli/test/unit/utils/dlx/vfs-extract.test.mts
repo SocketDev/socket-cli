@@ -69,7 +69,7 @@ import {
   isNpmPackageExtracted,
 } from '../../../../src/utils/dlx/vfs-extract.mts'
 
-const realProcessSmol = (process as unknown as { smol?: unknown }).smol
+const realProcessSmol = (process as unknown as { smol?: unknown | undefined }).smol
 
 function withMountReturning(mountFn: (vfsPath: string) => Promise<string>) {
   ;(process as unknown as { smol: unknown }).smol = { mount: mountFn }
@@ -86,12 +86,12 @@ describe('utils/dlx/vfs-extract', () => {
     mockFsChmod.mockResolvedValue(undefined)
     mockSafeDelete.mockResolvedValue(undefined)
     mockSafeMkdir.mockResolvedValue(undefined)
-    delete (process as unknown as { smol?: unknown }).smol
+    delete (process as unknown as { smol?: unknown | undefined }).smol
   })
 
   afterEach(() => {
     if (realProcessSmol === undefined) {
-      delete (process as unknown as { smol?: unknown }).smol
+      delete (process as unknown as { smol?: unknown | undefined }).smol
     } else {
       ;(process as unknown as { smol: unknown }).smol = realProcessSmol
     }

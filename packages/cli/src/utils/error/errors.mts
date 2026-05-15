@@ -544,7 +544,7 @@ export function hasRecoverySuggestions(
   return (
     isError(error) &&
     'recovery' in error &&
-    Array.isArray((error as { recovery?: unknown }).recovery)
+    Array.isArray((error as { recovery?: unknown | undefined }).recovery)
   )
 }
 

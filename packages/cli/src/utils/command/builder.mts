@@ -19,19 +19,19 @@ const logger = getDefaultLogger()
 export interface CommandBuilderOptions {
   name: string
   description: string
-  hidden?: boolean
-  args?: string
-  flags?: MeowFlags
-  includeCommonFlags?: boolean
-  includeOutputFlags?: boolean
+  hidden?: boolean | undefined
+  args?: string | undefined
+  flags?: MeowFlags | undefined
+  includeCommonFlags?: boolean | undefined
+  includeOutputFlags?: boolean | undefined
   handler: (args: {
     input: string[]
     flags: Record<string, unknown>
     cli: unknown
   }) => Promise<void>
-  examples?: Array<{ command: string; description?: string }>
-  usage?: string
-  helpText?: string
+  examples?: Array<{ command: string; description?: string | undefined }> | undefined
+  usage?: string | undefined
+  helpText?: string | undefined
 }
 
 /**
@@ -65,7 +65,7 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
     async run(
       argv: readonly string[],
       importMeta: ImportMeta,
-      context: { parentName: string; rawArgv?: readonly string[] },
+      context: { parentName: string; rawArgv?: readonly string[] | undefined },
     ) {
       const config: CliCommandConfig = {
         commandName,
@@ -137,16 +137,16 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
 export interface ParentCommandOptions {
   name: string
   description: string
-  hidden?: boolean
+  hidden?: boolean | undefined
   subcommands: Record<string, CliSubcommand>
-  defaultSubcommand?: string
+  defaultSubcommand?: string | undefined
 }
 
 export function buildParentCommand(
   options: ParentCommandOptions,
 ): CliSubcommand & {
   subcommands: Record<string, CliSubcommand>
-  defaultSubcommand?: string
+  defaultSubcommand?: string | undefined
 } {
   const {
     defaultSubcommand,
@@ -164,7 +164,7 @@ export function buildParentCommand(
     async run(
       _argv: readonly string[],
       _importMeta: ImportMeta,
-      _context: { parentName: string; rawArgv?: readonly string[] },
+      _context: { parentName: string; rawArgv?: readonly string[] | undefined },
     ) {
       // This is typically handled by meowWithSubcommands
       // but we can provide a fallback
@@ -271,7 +271,7 @@ export const errorHandlers = {
     logger.error(`Failed to ${operation}`)
     const message =
       error && typeof error === 'object' && 'message' in error
-        ? (error as { message?: unknown }).message
+        ? (error as { message?: unknown | undefined }).message
         : undefined
     if (message) {
       logger.error(String(message))

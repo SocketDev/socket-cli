@@ -179,7 +179,7 @@ export function formatErrorForDisplay(
 export function formatErrorForJson(
   error: unknown,
   options?: ErrorDisplayOptions | undefined,
-): CResult<never> & { recovery?: string[] } {
+): CResult<never> & { recovery?: string[] | undefined } {
   const { body, message, title } = formatErrorForDisplay(error, {
     ...options,
     showStack: false,

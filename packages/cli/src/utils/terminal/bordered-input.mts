@@ -56,11 +56,11 @@ export class BorderedOutput {
 
   constructor(
     options: {
-      width?: number
-      height?: number
-      style?: keyof typeof borderStyles
-      color?: (text: string) => string
-      title?: string
+      width?: number | undefined
+      height?: number | undefined
+      style?: keyof typeof borderStyles | undefined
+      color?: ((text: string) => string) | undefined
+      title?: string | undefined
     } = {},
   ) {
     this.width = options.width || 60
@@ -163,10 +163,10 @@ export class BorderedOutput {
 export async function borderedInput(
   prompt: string,
   options: {
-    width?: number
-    style?: keyof typeof borderStyles
-    color?: (text: string) => string
-    placeholder?: string
+    width?: number | undefined
+    style?: keyof typeof borderStyles | undefined
+    color?: ((text: string) => string) | undefined
+    placeholder?: string | undefined
   } = {},
 ): Promise<string> {
   const {

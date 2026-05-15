@@ -104,7 +104,7 @@ export class ResultAssertion<T> {
    */
   hasCause(message?: string): this {
     this.isFailure(message)
-    expect((this.result as { cause?: string }).cause, message).toBeDefined()
+    expect((this.result as { cause?: string | undefined }).cause, message).toBeDefined()
     return this
   }
 
@@ -113,7 +113,7 @@ export class ResultAssertion<T> {
    */
   causeContains(expected: string | RegExp, message?: string): this {
     this.isFailure(message)
-    const cause = (this.result as { cause?: string }).cause
+    const cause = (this.result as { cause?: string | undefined }).cause
     expect(cause, message).toBeDefined()
     if (typeof expected === 'string') {
       expect(cause, message).toContain(expected)
@@ -139,15 +139,15 @@ export class ResultAssertion<T> {
   withError(
     callback: (error: {
       message: string
-      code?: number
-      cause?: string
+      code?: number | undefined
+      cause?: string | undefined
     }) => void,
   ): this {
     if (!this.result.ok) {
       const error = this.result as {
         message: string
-        code?: number
-        cause?: string
+        code?: number | undefined
+        cause?: string | undefined
       }
       callback(error)
     }
@@ -213,7 +213,7 @@ export function expectErrorCodeOneOf<T>(
   expectedCodes: number[],
 ): void {
   expect(result.ok).toBe(false)
-  const code = (result as { code?: number }).code
+  const code = (result as { code?: number | undefined }).code
   expect(code).toBeDefined()
   expect(expectedCodes).toContain(code)
 }
@@ -233,14 +233,14 @@ export function expectErrorCodeOneOf<T>(
  * ```
  */
 export function expectFailure<T>(result: CResult<T>): {
-  code?: number
-  cause?: string
+  code?: number | undefined
+  cause?: string | undefined
   message: string
 } {
   if (result.ok) {
     throw new Error('Expected failed result but got success')
   }
-  return result as { code?: number; cause?: string; message: string }
+  return result as { code?: number | undefined; cause?: string | undefined; message: string }
 }
 
 /**
@@ -261,7 +261,7 @@ export function expectFailureWithMessage<T>(
   expectedCode?: number | undefined,
 ): void {
   expect(result.ok).toBe(false)
-  const error = result as { code?: number; message: string }
+  const error = result as { code?: number | undefined; message: string }
 
   if (typeof expectedMessage === 'string') {
     expect(error.message).toContain(expectedMessage)

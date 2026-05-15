@@ -109,8 +109,8 @@ describe('getForwardedHeaderValue', () => {
 })
 
 export function makeReq(opts: {
-  headers?: Record<string, string | string[] | undefined>
-  encrypted?: boolean
+  headers?: Record<string, string | string[] | undefined> | undefined
+  encrypted?: boolean | undefined
 }): IncomingMessage {
   return {
     headers: opts.headers ?? {},
@@ -471,8 +471,8 @@ describe('isLocalhostOrigin', () => {
 describe('destroySessionEntry', () => {
   function fakeSession(
     opts: {
-      transportClose?: () => void
-      serverClose?: () => Promise<unknown>
+      transportClose?: (() => void) | undefined
+      serverClose?: (() => Promise<unknown>) | undefined
     } = {},
   ): SessionLike {
     return {

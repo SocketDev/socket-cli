@@ -91,10 +91,10 @@ vi.mock('@socketsecurity/lib/http-request', () => ({
 
 // Helper to create httpRequest-style response objects (synchronous .text()/.json()).
 export function createHttpResponse(opts: {
-  body?: string
-  ok?: boolean
-  status?: number
-  statusText?: string
+  body?: string | undefined
+  ok?: boolean | undefined
+  status?: number | undefined
+  statusText?: string | undefined
 }) {
   const bodyStr = opts.body ?? ''
   const bodyBuffer = Buffer.from(bodyStr)

@@ -49,8 +49,8 @@ const SCOPES = ['packages:list'] as const
 
 export function fakeResponse(opts: {
   status: number
-  body?: unknown
-  text?: string
+  body?: unknown | undefined
+  text?: string | undefined
 }) {
   const text =
     opts.text ?? (opts.body !== undefined ? JSON.stringify(opts.body) : '')
@@ -585,7 +585,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
       expect(result.authInfo.token).toBe('some-token')
       expect(result.authInfo.scopes).toContain('packages:list')
     }
-    expect((req as unknown as { auth?: { token: string } }).auth?.token).toBe(
+    expect((req as unknown as { auth?: { token: string } | undefined }).auth?.token).toBe(
       'some-token',
     )
   })

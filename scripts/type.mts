@@ -78,13 +78,17 @@ async function main(): Promise<void> {
     // Show help if requested.
     if (values.help) {
       logger.log('Monorepo Type Checker')
-      logger.log('\nUsage: pnpm type [options]')
-      logger.log('\nOptions:')
+      logger.log('')
+      logger.log('Usage: pnpm type [options]')
+      logger.log('')
+      logger.log('Options:')
       logger.log('  --help         Show this help message')
       logger.log('  --quiet, --silent  Suppress progress messages')
-      logger.log('\nExamples:')
+      logger.log('')
+      logger.log('Examples:')
       logger.log('  pnpm type      # Type check all packages')
-      logger.log('\nNote: Type checking always runs on all packages due to')
+      logger.log('')
+      logger.log('Note: Type checking always runs on all packages due to')
       logger.log('      cross-package TypeScript dependencies.')
       process.exitCode = 0
       return

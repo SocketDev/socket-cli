@@ -29,7 +29,7 @@ export interface IpcHandshake extends IpcMessage<{
  */
 export function createIpcHandshake(options: {
   version: string
-  apiToken?: string
+  apiToken?: string | undefined
   appName: string
 }): IpcHandshake {
   return createIpcMessage('handshake', {

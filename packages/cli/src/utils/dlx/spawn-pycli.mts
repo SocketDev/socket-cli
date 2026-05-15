@@ -108,7 +108,7 @@ export async function downloadPyPiWheel(
       )
     }
     const data = response.json() as {
-      urls?: Array<{ filename: string; url: string }>
+      urls?: Array<{ filename: string; url: string }> | undefined
     }
 
     // Find the wheel URL (prefer py3-none-any wheel).

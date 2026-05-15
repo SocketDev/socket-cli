@@ -33,7 +33,7 @@ const logger = getDefaultLogger()
 const SESSION_TTL_MS = 30 * 60 * 1000
 const SESSION_REAP_INTERVAL_MS = 60_000
 
-type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo }
+type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo | undefined }
 
 interface Session {
   lastActivity: number

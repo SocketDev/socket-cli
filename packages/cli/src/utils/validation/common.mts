@@ -102,11 +102,11 @@ export const validations = {
  * Standard validation workflow
  */
 export interface ValidationOptions {
-  requireAuth?: boolean
+  requireAuth?: boolean | undefined
   requireOrg?: string | undefined
-  dryRun?: boolean
+  dryRun?: boolean | undefined
   outputKind: OutputKind
-  validations?: Array<() => boolean>
+  validations?: Array<() => boolean> | undefined
 }
 
 export function runStandardValidations(options: ValidationOptions): boolean {

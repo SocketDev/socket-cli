@@ -836,7 +836,7 @@ describe('runHttpTransport — OAuth enabled', () => {
     introspectionResponse:
       | Record<string, unknown>
       | (() => Record<string, unknown>)
-    introspectionStatus?: number
+    introspectionStatus?: number | undefined
   }): Promise<{ url: string; close: () => Promise<void> }> {
     const { createServer } = require('node:http') as typeof HttpModule
     const issuerPort = freshIssuerPort()

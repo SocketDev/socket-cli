@@ -14,7 +14,8 @@ if (process.argv[1] === process.execPath) {
   // Running as SEA, check VFS assets.
   import('node:sea')
     .then(({ getAsset }) => {
-      logger.log('\nChecking VFS assets:')
+      logger.log('')
+      logger.log('Checking VFS assets:')
 
       const tools = ['trivy', 'trufflehog', 'opengrep']
       for (let i = 0, { length } = tools; i < length; i += 1) {
@@ -29,8 +30,10 @@ if (process.argv[1] === process.execPath) {
       }
     })
     .catch(e => {
-      logger.log(`\nFailed to check VFS assets: ${e.message}`)
+      logger.log('')
+      logger.log(`Failed to check VFS assets: ${e.message}`)
     })
 } else {
-  logger.log('\nNot running in SEA mode (running as script)')
+  logger.log('')
+  logger.log('Not running in SEA mode (running as script)')
 }

@@ -52,7 +52,8 @@ export async function createPatch(patchDef) {
   const { description, files, packageName, transform, version } = patchDef
   const packageSpec = `${packageName}@${version}`
 
-  logger.log(`\n=== Creating patch: ${packageName} ===`)
+  logger.log('')
+  logger.log(`=== Creating patch: ${packageName} ===`)
   logger.log(`Description: ${description}`)
 
   let patchPath
@@ -185,7 +186,8 @@ export async function startPatch(packageSpec) {
     const existingPatchDir = match ? match[1] : undefined
 
     if (existingPatchDir) {
-      logger.log(`\nExisting patch directory found: ${existingPatchDir}`)
+      logger.log('')
+      logger.log(`Existing patch directory found: ${existingPatchDir}`)
       const shouldOverwrite = await promptYesNo(
         'Overwrite existing patch directory?',
         false,

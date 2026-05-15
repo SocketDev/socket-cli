@@ -109,9 +109,9 @@ export function mdKeyValue(
 export function mdList(
   items: string[],
   options?: {
-    ordered?: boolean
-    indent?: number
-    truncateAt?: number
+    ordered?: boolean | undefined
+    indent?: number | undefined
+    truncateAt?: number | undefined
   },
 ): string {
   const { indent = 0, ordered = false, truncateAt } = { ...options }

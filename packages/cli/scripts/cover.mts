@@ -29,9 +29,11 @@ export function printError(message) {
 }
 
 export function printHeader(message) {
-  logger.error('\n═══════════════════════════════════════════════════════')
+  logger.error('')
+  logger.error('═══════════════════════════════════════════════════════')
   logger.error(`  ${message}`)
-  logger.error('═══════════════════════════════════════════════════════\n')
+  logger.error('═══════════════════════════════════════════════════════')
+  logger.error('')
 }
 
 export function printSuccess(message) {
@@ -174,7 +176,8 @@ async function main() {
           logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
           logger.log('')
         } else if (exitCode !== 0) {
-          logger.log('\n--- Output ---')
+          logger.log('')
+          logger.log('--- Output ---')
           logger.log(output)
         }
       }
@@ -287,7 +290,8 @@ async function main() {
         printError('Coverage failed')
         // Show relevant output on failure for debugging
         if (!testSummaryMatch && !coverageHeaderMatch) {
-          logger.log('\n--- Output ---')
+          logger.log('')
+          logger.log('--- Output ---')
           logger.log(output)
         }
       }

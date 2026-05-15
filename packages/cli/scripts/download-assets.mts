@@ -151,7 +151,8 @@ async function downloadAssets(assetNames, parallel = true) {
       r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok),
     )
     if (failed.length > 0) {
-      logger.error(`\n${failed.length} asset(s) failed:`)
+      logger.error('')
+      logger.error(`${failed.length} asset(s) failed:`)
       for (let i = 0, { length } = failed; i < length; i += 1) {
         const r = failed[i]
         logger.error(

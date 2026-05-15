@@ -80,7 +80,7 @@ const NetworkUtils = {
     url: string,
     options: FetchOptions = {},
     timeoutMs = UPDATE_NOTIFIER_TIMEOUT,
-  ): Promise<{ version?: string }> {
+  ): Promise<{ version?: string | undefined }> {
     if (!isNonEmptyString(url)) {
       throw new Error(
         `NetworkUtils.fetch(url) requires a non-empty string (got: ${typeof url === 'string' ? '""' : typeof url}); pass a valid registry URL like https://registry.npmjs.org/<package>`,
@@ -148,7 +148,7 @@ const NetworkUtils = {
                 return
               }
 
-              resolve(json as { version?: string })
+              resolve(json as { version?: string | undefined })
               /* c8 ignore start - JSON parse failure path; tests inject pre-parsed mock responses */
             } catch (parseError) {
               const contentType = res.headers['content-type']

@@ -59,7 +59,7 @@ const baseSpec = {
 const importMeta = { url: 'file:///test/config.mts' } as ImportMeta
 const context = { parentName: 'socket config' }
 
-const setMeow = (overrides: { input?: string[]; flags?: unknown } = {}) => {
+const setMeow = (overrides: { input?: string[] | undefined; flags?: unknown | undefined } = {}) => {
   mockMeowOrExit.mockReturnValueOnce({
     flags: { json: false, markdown: false, dryRun: false, ...overrides.flags },
     input: overrides.input ?? ['apiToken', 'token-value'],

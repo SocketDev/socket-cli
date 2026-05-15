@@ -50,23 +50,27 @@ export async function buildWasm() {
   } else {
     logger.info('║   Building WASM Bundle from Source               ║')
   }
-  logger.info('╚═══════════════════════════════════════════════════╝\n')
+  logger.info('╚═══════════════════════════════════════════════════╝')
+  logger.error('')
 
   const convertScript = path.join(__dirname, 'wasm', 'convert-codet5.mts')
   const buildScript = path.join(__dirname, 'wasm', 'build-unified-wasm.mts')
 
   // Step 1: Convert CodeT5 models to INT4.
-  logger.info('Step 1: Converting CodeT5 models to ONNX INT4...\n')
+  logger.info('Step 1: Converting CodeT5 models to ONNX INT4...')
+  logger.error('')
   try {
     await exec('node', [convertScript], { stdio: 'inherit' })
   } catch (e) {
-    logger.error('\n❌ CodeT5 conversion failed')
+    logger.error('')
+    logger.fail('❌ CodeT5 conversion failed')
     logger.error(`Error: ${e.message}`)
     throw new Error('CodeT5 conversion failed')
   }
 
   // Step 2: Build unified WASM bundle.
-  logger.info('\nStep 2: Building unified WASM bundle...\n')
+  logger.error('')
+  logger.info('Step 2: Building unified WASM bundle...\n')
   try {
     const buildArgs = [buildScript]
     if (isDev) {
@@ -74,24 +78,29 @@ export async function buildWasm() {
     }
     await exec('node', buildArgs, { stdio: 'inherit' })
   } catch (e) {
-    logger.error('\n❌ WASM bundle build failed')
+    logger.error('')
+    logger.fail('❌ WASM bundle build failed')
     logger.error(`Error: ${e.message}`)
     throw new Error('WASM bundle build failed')
   }
 
   // Verify output file exists.
   if (!existsSync(outputFile)) {
-    logger.error(`\n❌ Output file not found: ${outputFile}`)
+    logger.error('')
+    logger.fail(`❌ Output file not found: ${outputFile}`)
     throw new Error(`Output file not found: ${outputFile}`)
   }
 
   const stats = await fs.stat(outputFile)
-  logger.info('\n╔═══════════════════════════════════════════════════╗')
+  logger.error('')
+  logger.info('╔═══════════════════════════════════════════════════╗')
   logger.info('║   Build Complete                                  ║')
-  logger.info('╚═══════════════════════════════════════════════════╝\n')
+  logger.info('╚═══════════════════════════════════════════════════╝')
+  logger.error('')
   logger.done(' WASM bundle built successfully')
   logger.info(`✓ Output: ${outputFile}`)
-  logger.info(`✓ Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB\n`)
+  logger.info(`✓ Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.error('')
 }
 
 /**
@@ -115,7 +124,8 @@ export function checkNodeVersion() {
 export async function downloadFile(url, outputPath, expectedSize) {
   logger.progress(' Downloading from GitHub...')
   logger.substep(`URL: ${url}`)
-  logger.substep(`Size: ${(expectedSize / 1024 / 1024).toFixed(2)} MB\n`)
+  logger.substep(`Size: ${(expectedSize / 1024 / 1024).toFixed(2)} MB`)
+  logger.error('')
 
   try {
     // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- needs response.arrayBuffer() to write binary WASM bundle; helpers only return decoded string/json.
@@ -135,12 +145,15 @@ export async function downloadFile(url, outputPath, expectedSize) {
 
     const stats = await fs.stat(outputPath)
     logger.info(`✓ Downloaded ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
-    logger.info(`✓ Saved to ${outputPath}\n`)
+    logger.info(`✓ Saved to ${outputPath}`)
+    logger.error('')
   } catch (e) {
     logger.error(' Download failed')
     logger.error(`Error: ${e.message}`)
-    logger.error('\nTry building from source instead:')
-    logger.error('node scripts/wasm.mts --build\n')
+    logger.error('')
+    logger.error('Try building from source instead:')
+    logger.error('node scripts/wasm.mts --build')
+    logger.error('')
     throw new Error('Download failed')
   }
 }
@@ -151,14 +164,16 @@ export async function downloadFile(url, outputPath, expectedSize) {
 export async function downloadWasm() {
   logger.info('╔═══════════════════════════════════════════════════╗')
   logger.info('║   Downloading Pre-built WASM Bundle               ║')
-  logger.info('╚═══════════════════════════════════════════════════╝\n')
+  logger.info('╚═══════════════════════════════════════════════════╝')
+  logger.error('')
 
   // Check if output file already exists.
   if (existsSync(outputFile)) {
     const stats = await fs.stat(outputFile)
     logger.warn(' WASM bundle already exists:')
     logger.substep(`${outputFile}`)
-    logger.substep(`Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB\n`)
+    logger.substep(`Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
+    logger.error('')
 
     // Ask user if they want to overwrite (simple y/n).
     logger.info('Overwrite? (y/N): ')
@@ -179,7 +194,8 @@ export async function downloadWasm() {
   // Get latest release info.
   const release = await getLatestWasmRelease()
   logger.info(`✓ Found release: ${release.name}`)
-  logger.substep(`Tag: ${release.tagName}\n`)
+  logger.substep(`Tag: ${release.tagName}`)
+  logger.error('')
 
   // Ensure output directory exists.
   await fs.mkdir(externalDir, { recursive: true })
@@ -189,9 +205,11 @@ export async function downloadWasm() {
 
   logger.info('╔═══════════════════════════════════════════════════╗')
   logger.info('║   Download Complete                               ║')
-  logger.info('╚═══════════════════════════════════════════════════╝\n')
+  logger.info('╚═══════════════════════════════════════════════════╝')
+  logger.error('')
   logger.done(' WASM bundle downloaded successfully')
-  logger.info(`✓ Output: ${outputFile}\n`)
+  logger.info(`✓ Output: ${outputFile}`)
+  logger.error('')
 }
 
 /**
@@ -220,7 +238,8 @@ export async function exec(command, args, options = {}) {
  * Get latest WASM build release from GitHub.
  */
 export async function getLatestWasmRelease() {
-  logger.info('📡 Fetching latest WASM build from GitHub...\n')
+  logger.info('📡 Fetching latest WASM build from GitHub...')
+  logger.error('')
 
   try {
     const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/releases`
@@ -286,8 +305,10 @@ export async function getLatestWasmRelease() {
   } catch (e) {
     logger.error(' Failed to fetch release information')
     logger.error(`Error: ${e.message}`)
-    logger.error('\nTry building from source instead:')
-    logger.error('node scripts/wasm.mts --build\n')
+    logger.error('')
+    logger.error('Try building from source instead:')
+    logger.error('node scripts/wasm.mts --build')
+    logger.error('')
     throw new Error('Failed to fetch release information')
   }
 }
@@ -373,7 +394,8 @@ async function main() {
     return
   }
 
-  logger.error(' Unknown command\n')
+  logger.error(' Unknown command')
+  logger.error('')
   showHelp()
   throw new Error('Unknown command')
 }

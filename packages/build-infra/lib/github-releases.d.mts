@@ -9,8 +9,8 @@ export function getLatestRelease(
   owner: string,
   repo: string,
   options?: {
-    prefix?: string
-    quiet?: boolean
+    prefix?: string | undefined
+    quiet?: boolean | undefined
   },
 ): Promise<string | null>
 
@@ -22,7 +22,7 @@ export function getReleaseAssetUrl(
   repo: string,
   tag: string,
   assetName: string,
-  options?: { quiet?: boolean },
+  options?: { quiet?: boolean | undefined },
 ): Promise<string | null>
 
 /**
@@ -34,5 +34,5 @@ export function downloadReleaseAsset(
   tag: string,
   assetName: string,
   outputPath: string,
-  options?: { quiet?: boolean },
+  options?: { quiet?: boolean | undefined },
 ): Promise<void>

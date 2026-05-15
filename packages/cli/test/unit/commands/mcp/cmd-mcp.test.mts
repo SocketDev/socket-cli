@@ -310,7 +310,7 @@ describe('cmdMcp — help text', () => {
     // The help: (command) => `…` callback is normally invoked by meow
     // when --help is passed. Capture the config we hand to meowOrExit
     // and invoke the help fn directly to exercise that branch.
-    let capturedConfig: { help?: (cmd: string) => string } | undefined
+    let capturedConfig: { help?: ((cmd: string) => string) | undefined } | undefined
     mockMeowOrExit.mockImplementationOnce(input => {
       capturedConfig = (input as { config: typeof capturedConfig }).config
       return {

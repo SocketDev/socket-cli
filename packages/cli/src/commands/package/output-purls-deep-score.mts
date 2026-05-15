@@ -204,7 +204,8 @@ export async function outputPurlsDeepScore(
 
   if (outputKind === 'markdown') {
     const md = createMarkdownReport(result.data)
-    logger.success(`Score report for "${result.data.purl}" ("${purl}"):\n`)
+    logger.success(`Score report for "${result.data.purl}" ("${purl}"):`)
+    logger.error('')
     logger.log(md)
     return
   }

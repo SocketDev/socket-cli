@@ -49,7 +49,7 @@ const BASICS_TOOL_VFS_PATHS: Record<(typeof BASICS_TOOLS)[number], string> = {
  */
 export function areBasicsToolsAvailable(): boolean {
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => Promise<string> }
+    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
   }
 
   // Check if running in SEA mode with process.smol.mount available.
@@ -89,7 +89,7 @@ export async function extractBasicsTools(
 
   // Check if process.smol.mount is available.
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => Promise<string> }
+    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
   }
 
   if (typeof processWithSmol.smol?.mount !== 'function') {
@@ -254,7 +254,7 @@ export function getNodeSmolBasePath(): string {
   try {
     // Try to get hash from process.smol API (if available in future node-smol).
     const processWithSmol = process as unknown as {
-      smol?: { getHash?: () => string }
+      smol?: { getHash?: (() => string) | undefined } | undefined
     }
     if (typeof processWithSmol.smol?.getHash === 'function') {
       nodeSmolHash = processWithSmol.smol.getHash()

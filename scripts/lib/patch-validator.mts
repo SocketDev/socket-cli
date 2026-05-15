@@ -21,7 +21,7 @@ interface CompatibilityResult {
 
 interface ValidationResult {
   valid: boolean
-  reason?: string | null
+  reason?: string | null | undefined
   metadata: PatchMetadata | null
 }
 
@@ -38,16 +38,16 @@ interface PatchInfo {
 
 interface PatchConflict {
   type: string
-  file?: string
+  file?: string | undefined
   patches: string[]
   message: string
-  severity?: string
+  severity?: string | undefined
 }
 
 interface PatchApplicationResult {
   canApply: boolean
   reason: string | null
-  stderr?: string | Buffer
+  stderr?: string | Buffer | undefined
 }
 
 /**

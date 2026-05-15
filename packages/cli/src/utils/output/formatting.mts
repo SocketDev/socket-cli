@@ -60,7 +60,7 @@ export function getFlagApiRequirementsOutput(
   const data = (
     requirements.api as Record<
       string,
-      { quota?: number; permissions?: string[] } | undefined
+      { quota?: number | undefined; permissions?: string[] | undefined } | undefined
     >
   )[key]
   let result = ''

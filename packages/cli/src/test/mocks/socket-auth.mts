@@ -14,19 +14,19 @@ export const MOCK_ORG_ID = 'org_123456'
  */
 export interface MockAuthResponse {
   success: boolean
-  token?: string
-  error?: string
+  token?: string | undefined
+  error?: string | undefined
   org?: {
     id: string
     name: string
-  }
+  } | undefined
 }
 
 /**
  * Mock API client with authentication.
  */
 export function mockAuthenticatedApiClient(options?: {
-  isAuthenticated?: boolean
+  isAuthenticated?: boolean | undefined
 }) {
   const { isAuthenticated = true } = options || {}
 
@@ -79,7 +79,7 @@ export function mockConfigStorage() {
  * Mock the interactive login flow.
  * Simulates opening browser, polling for auth completion.
  */
-export function mockInteractiveLogin(options?: { shouldSucceed?: boolean }) {
+export function mockInteractiveLogin(options?: { shouldSucceed?: boolean | undefined }) {
   const { shouldSucceed = true } = options || {}
 
   return vi.fn().mockImplementation(async () => {
@@ -103,8 +103,8 @@ export function mockInteractiveLogin(options?: { shouldSucceed?: boolean }) {
  * Mock OAuth polling mechanism.
  */
 export function mockOAuthPoller(options?: {
-  shouldSucceed?: boolean
-  pollCount?: number
+  shouldSucceed?: boolean | undefined
+  pollCount?: number | undefined
 }) {
   const { pollCount = 3, shouldSucceed = true } = options || {}
   let currentPoll = 0
@@ -132,8 +132,8 @@ export function mockOAuthPoller(options?: {
  * Complete mock setup for login command testing.
  */
 export function setupLoginMocks(options?: {
-  authenticated?: boolean
-  loginShouldSucceed?: boolean
+  authenticated?: boolean | undefined
+  loginShouldSucceed?: boolean | undefined
 }) {
   const { authenticated = false, loginShouldSucceed = true } = options || {}
 

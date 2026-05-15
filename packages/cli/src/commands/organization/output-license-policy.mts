@@ -36,7 +36,7 @@ export async function outputLicensePolicy(
     ({ 0: key, 1: value }) =>
       [
         key,
-        (value as { allowed?: boolean } | undefined)?.allowed ? ' yes' : ' no',
+        (value as { allowed?: boolean | undefined } | undefined)?.allowed ? ' yes' : ' no',
       ] as const,
   )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))

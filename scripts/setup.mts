@@ -81,9 +81,9 @@ interface VersionInfo {
 
 interface PrerequisiteOptions {
   command: string
-  minVersion?: VersionInfo
+  minVersion?: VersionInfo | undefined
   name: string
-  required?: boolean
+  required?: boolean | undefined
 }
 
 /**

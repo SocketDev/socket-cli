@@ -154,7 +154,7 @@ export type PrAutoMergeState = {
 export type SocketPrsOptions = {
   author?: string | undefined
   ghsaId?: string | undefined
-  states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[]
+  states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[] | undefined
 }
 
 export async function getSocketFixPrs(
@@ -170,7 +170,7 @@ export async function getSocketFixPrs(
 type GqlPrNode = {
   author?: {
     login: string
-  }
+  } | undefined
   baseRefName: string
   headRefName: string
   mergeStateStatus: GQL_MERGE_STATE_STATUS
@@ -415,15 +415,15 @@ export async function openSocketFixPr(
 
     // Handle RequestError from Octokit/provider.
     if (e instanceof RequestError) {
-      const errors = (e.response?.data as { errors?: unknown } | undefined)
+      const errors = (e.response?.data as { errors?: unknown | undefined } | undefined)
         ?.errors
       const errorMessages = Array.isArray(errors)
         ? errors.map(
             (d: {
-              message?: string
-              resource?: string
-              field?: string
-              code?: string
+              message?: string | undefined
+              resource?: string | undefined
+              field?: string | undefined
+              code?: string | undefined
             }) => d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
           )
         : []

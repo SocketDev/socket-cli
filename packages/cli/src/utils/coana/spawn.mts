@@ -117,7 +117,7 @@ export async function spawnCoana(
       data: output.stdout?.toString() ?? '',
     }
   } catch (e) {
-    const stderr = (e as { stderr?: unknown })?.stderr
+    const stderr = (e as { stderr?: unknown | undefined })?.stderr
     const cause = getErrorCause(e)
     const message = stderr ? String(stderr) : cause
     return {

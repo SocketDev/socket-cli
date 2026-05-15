@@ -16,10 +16,10 @@ declare global {
 export interface TestSetupOptions {
   commandPath: string
   commandName: string
-  parentCommand?: string
-  mockSdk?: boolean
-  mockConfig?: Record<string, unknown>
-  env?: Record<string, string>
+  parentCommand?: string | undefined
+  mockSdk?: boolean | undefined
+  mockConfig?: Record<string, unknown> | undefined
+  env?: Record<string, string> | undefined
 }
 
 export interface TestStubs {
@@ -93,12 +93,12 @@ export function setupCommandTest(options: TestSetupOptions): TestStubs {
 export interface CommandTestCase {
   name: string
   args: string[]
-  flags?: Record<string, unknown>
-  expectedExitCode?: number
-  expectedOutput?: string | RegExp | string[]
-  expectedError?: string | RegExp
-  setup?: () => void | Promise<void>
-  validate?: (stubs: TestStubs) => void | Promise<void>
+  flags?: Record<string, unknown> | undefined
+  expectedExitCode?: number | undefined
+  expectedOutput?: string | RegExp | string[] | undefined
+  expectedError?: string | RegExp | undefined
+  setup?: (() => void | Promise<void>) | undefined
+  validate?: ((stubs: TestStubs) => void | Promise<void>) | undefined
 }
 
 export function buildCommandTests(

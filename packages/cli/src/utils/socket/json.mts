@@ -49,13 +49,13 @@ export interface SocketJson {
         stdout?: boolean | undefined
         target?: string | undefined
         verbose?: boolean | undefined
-      }
+      } | undefined
       gradle?: {
         disabled?: boolean | undefined
         bin?: string | undefined
         gradleOpts?: string | undefined
         verbose?: boolean | undefined
-      }
+      } | undefined
       sbt?: {
         disabled?: boolean | undefined
         infile?: string | undefined
@@ -65,8 +65,8 @@ export interface SocketJson {
         sbtOpts?: string | undefined
         stdout?: boolean | undefined
         verbose?: boolean | undefined
-      }
-    }
+      } | undefined
+    } | undefined
     scan?: {
       create?: {
         autoManifest?: boolean | undefined
@@ -74,15 +74,15 @@ export interface SocketJson {
         repo?: string | undefined
         report?: boolean | undefined
         workspace?: string | undefined
-      }
+      } | undefined
       github?: {
         all?: boolean | undefined
         githubApiUrl?: string | undefined
         orgGithub?: string | undefined
         repos?: string | undefined
-      }
-    }
-  }
+      } | undefined
+    } | undefined
+  } | undefined
 }
 
 export async function findSocketJsonUp(

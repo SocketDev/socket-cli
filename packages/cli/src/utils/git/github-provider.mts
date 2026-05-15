@@ -30,7 +30,7 @@ import type {
 type GqlPrNode = {
   author?: {
     login: string
-  }
+  } | undefined
   baseRefName: string
   headRefName: string
   mergeStateStatus:

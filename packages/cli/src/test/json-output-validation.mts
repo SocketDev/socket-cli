@@ -10,15 +10,15 @@
 export type SocketJsonSuccess<T = unknown> = {
   ok: true
   data: T
-  message?: string
+  message?: string | undefined
 }
 
 export type SocketJsonError = {
   ok: false
-  data?: unknown
+  data?: unknown | undefined
   message: string
-  cause?: string
-  code?: number
+  cause?: string | undefined
+  code?: number | undefined
 }
 
 export type SocketJsonResponse<T = unknown> =
@@ -50,11 +50,11 @@ export function isSocketJsonSuccess<T = unknown>(
  * @returns Parsed JSON if valid, throws if invalid
  */
 type RawSocketJson = {
-  ok?: unknown
-  data?: unknown
-  message?: unknown
-  cause?: unknown
-  code?: unknown
+  ok?: unknown | undefined
+  data?: unknown | undefined
+  message?: unknown | undefined
+  cause?: unknown | undefined
+  code?: unknown | undefined
 }
 
 function isRecord(value: unknown): value is RawSocketJson {

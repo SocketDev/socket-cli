@@ -108,6 +108,25 @@ const rule = {
       return src.text.slice(ann.range[0], ann.range[1])
     }
 
+    /**
+     * True when appending ` | undefined` after the annotation would
+     * bind to a sub-expression instead of the whole type. Affected
+     * shapes (need parens before union):
+     *   - `() => void`             (TSFunctionType)
+     *   - `new () => Foo`          (TSConstructorType)
+     *   - `Foo | Bar`              (TSUnionType — would technically
+     *     work but parens make it explicit; non-issue here since
+     *     hasUndefined already catches `| undefined`)
+     *   - `Foo & Bar`              (TSIntersectionType)
+     */
+    function needsParens(ann: AstNode): boolean {
+      return (
+        ann.type === 'TSFunctionType' ||
+        ann.type === 'TSConstructorType' ||
+        ann.type === 'TSIntersectionType'
+      )
+    }
+
     function check(node: AstNode) {
       // Only optional members.
       if (!node.optional) {
@@ -123,6 +142,16 @@ const rule = {
       if (hasUndefined(ann)) {
         return
       }
+      // Also skip when the annotation is a function/arrow-return that
+      // already ends with `| undefined`. `hasUndefined` only checks
+      // the outer union; for `(...) => Foo | undefined` we want to
+      // accept that as already-correct.
+      if (
+        (ann.type === 'TSFunctionType' || ann.type === 'TSConstructorType') &&
+        hasUndefined(ann.returnType?.typeAnnotation)
+      ) {
+        return
+      }
       const name = keyName(node)
       const type = typeText(node)
       context.report({
@@ -130,7 +159,15 @@ const rule = {
         messageId: 'missingUndefined',
         data: { name, type },
         fix(fixer: RuleFixer) {
-          // Append ` | undefined` after the existing annotation text.
+          // For function/constructor/intersection types we need parens
+          // around the existing annotation so ` | undefined` binds to
+          // the whole thing, not to the return type / last factor.
+          if (needsParens(ann)) {
+            return [
+              fixer.insertTextBefore(ann, '('),
+              fixer.insertTextAfter(ann, ') | undefined'),
+            ]
+          }
           return fixer.insertTextAfter(ann, ' | undefined')
         },
       })

@@ -12,12 +12,12 @@
 import { parse as yamlParse } from 'yaml'
 
 export type SocketYmlGitHub = {
-  authenticatedProjectReports?: boolean
-  dependencyOverviewEnabled?: boolean
-  enabled?: boolean
-  ignoreUsers?: string[]
-  projectReportsEnabled?: boolean
-  pullRequestAlertsEnabled?: boolean
+  authenticatedProjectReports?: boolean | undefined
+  dependencyOverviewEnabled?: boolean | undefined
+  enabled?: boolean | undefined
+  ignoreUsers?: string[] | undefined
+  projectReportsEnabled?: boolean | undefined
+  pullRequestAlertsEnabled?: boolean | undefined
 }
 
 export type SocketYml = {
@@ -28,12 +28,12 @@ export type SocketYml = {
 }
 
 type SocketYmlV1Shape = {
-  beta?: boolean
-  enabled?: boolean
-  ignore?: string[]
-  issues?: { [issueName: string]: boolean }
-  projectReportsEnabled?: boolean
-  pullRequestAlertsEnabled?: boolean
+  beta?: boolean | undefined
+  enabled?: boolean | undefined
+  ignore?: string[] | undefined
+  issues?: { [issueName: string]: boolean } | undefined
+  projectReportsEnabled?: boolean | undefined
+  pullRequestAlertsEnabled?: boolean | undefined
 }
 
 export class SocketValidationError extends Error {
@@ -48,15 +48,8 @@ export class SocketValidationError extends Error {
   }
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function asStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value.filter((v): v is string => typeof v === 'string')
+export function asBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined
 }
 
 function asBooleanRecord(value: unknown): { [k: string]: boolean } {
@@ -72,49 +65,11 @@ function asBooleanRecord(value: unknown): { [k: string]: boolean } {
   return out
 }
 
-function asBoolean(value: unknown): boolean | undefined {
-  return typeof value === 'boolean' ? value : undefined
-}
-
-function migrateV1(content: SocketYmlV1Shape): SocketYml {
-  const github: SocketYmlGitHub = {}
-  if ('enabled' in content && typeof content.enabled === 'boolean') {
-    github.enabled = content.enabled
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
   }
-  if (
-    'pullRequestAlertsEnabled' in content &&
-    typeof content.pullRequestAlertsEnabled === 'boolean'
-  ) {
-    github.pullRequestAlertsEnabled = content.pullRequestAlertsEnabled
-  }
-  if (
-    'projectReportsEnabled' in content &&
-    typeof content.projectReportsEnabled === 'boolean'
-  ) {
-    github.projectReportsEnabled = content.projectReportsEnabled
-  }
-  return {
-    githubApp: github,
-    issueRules: content.issues ?? {},
-    projectIgnorePaths: content.ignore ?? [],
-    version: 2,
-  }
-}
-
-function looksLikeV1(content: Record<string, unknown>): boolean {
-  // V1 had no `version` field. If `version` is present, treat as v2+.
-  if ('version' in content) {
-    return false
-  }
-  // V1 distinguishing keys.
-  return (
-    'ignore' in content ||
-    'issues' in content ||
-    'beta' in content ||
-    'enabled' in content ||
-    'projectReportsEnabled' in content ||
-    'pullRequestAlertsEnabled' in content
-  )
+  return value.filter((v): v is string => typeof v === 'string')
 }
 
 function buildGithub(value: unknown): SocketYmlGitHub {
@@ -147,6 +102,60 @@ function buildGithub(value: unknown): SocketYmlGitHub {
     out.pullRequestAlertsEnabled = pra
   }
   return out
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function looksLikeV1(content: Record<string, unknown>): boolean {
+  // V1 had no `version` field. If `version` is present, treat as v2+.
+  if ('version' in content) {
+    return false
+  }
+  // V1 distinguishing keys.
+  return (
+    'ignore' in content ||
+    'issues' in content ||
+    'beta' in content ||
+    'enabled' in content ||
+    'projectReportsEnabled' in content ||
+    'pullRequestAlertsEnabled' in content
+  )
+}
+
+function migrateV1(content: SocketYmlV1Shape): SocketYml {
+  const github: SocketYmlGitHub = {}
+  if ('enabled' in content && typeof content.enabled === 'boolean') {
+    github.enabled = content.enabled
+  }
+  if (
+    'pullRequestAlertsEnabled' in content &&
+    typeof content.pullRequestAlertsEnabled === 'boolean'
+  ) {
+    github.pullRequestAlertsEnabled = content.pullRequestAlertsEnabled
+  }
+  if (
+    'projectReportsEnabled' in content &&
+    typeof content.projectReportsEnabled === 'boolean'
+  ) {
+    github.projectReportsEnabled = content.projectReportsEnabled
+  }
+  return {
+    githubApp: github,
+    issueRules: content.issues ?? {},
+    projectIgnorePaths: content.ignore ?? [],
+    version: 2,
+  }
+}
+
+export function getDefaultConfig(): SocketYml {
+  return {
+    githubApp: {},
+    issueRules: {},
+    projectIgnorePaths: [],
+    version: 2,
+  }
 }
 
 /**
@@ -188,15 +197,6 @@ export function parseSocketConfig(fileContent: string): SocketYml {
     githubApp: buildGithub(parsed['githubApp']),
     issueRules: asBooleanRecord(parsed['issueRules']),
     projectIgnorePaths: asStringArray(parsed['projectIgnorePaths']),
-    version: 2,
-  }
-}
-
-export function getDefaultConfig(): SocketYml {
-  return {
-    githubApp: {},
-    issueRules: {},
-    projectIgnorePaths: [],
     version: 2,
   }
 }

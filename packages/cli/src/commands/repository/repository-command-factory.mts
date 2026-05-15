@@ -31,17 +31,17 @@ const logger = getDefaultLogger()
 type RepositoryCommandSpec = {
   commandName: string
   description: string
-  extraFlags?: MeowFlags
+  extraFlags?: MeowFlags | undefined
   handler: (params: {
     orgSlug: string
     repoName: string
     outputKind: OutputKind
     flags: Record<string, unknown>
   }) => Promise<void>
-  helpDescription?: string
+  helpDescription?: string | undefined
   helpExamples: string[]
-  hidden?: boolean
-  needsRepoName?: boolean
+  hidden?: boolean | undefined
+  needsRepoName?: boolean | undefined
 }
 
 export function createRepositoryCommand(spec: RepositoryCommandSpec) {

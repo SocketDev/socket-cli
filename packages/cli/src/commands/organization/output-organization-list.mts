@@ -33,9 +33,8 @@ export async function outputOrganizationList(
   const visibleTokenPrefix = getVisibleTokenPrefix()
 
   if (outputKind !== 'markdown') {
-    logger.log(
-      `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
-    )
+    logger.log(`List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}`)
+    logger.log('')
     // Just dump.
     for (let i = 0, { length } = organizations; i < length; i += 1) {
       const o = organizations[i]!
@@ -59,10 +58,10 @@ export async function outputOrganizationList(
     mw2 = Math.max(mw2, o.id.length)
     mw3 = Math.max(mw3, o.plan.length)
   }
-  logger.log(`${mdHeader('Organizations')}\n`)
-  logger.log(
-    `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
-  )
+  logger.log(`${mdHeader('Organizations')}`)
+  logger.log('')
+  logger.log(`List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}`)
+  logger.log('')
   logger.log(
     `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`,
   )

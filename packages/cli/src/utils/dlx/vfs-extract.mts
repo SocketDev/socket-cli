@@ -170,7 +170,7 @@ const MAX_EXTRACTION_DEPTH = 5
  */
 export function areExternalToolsAvailable(): boolean {
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => Promise<string> }
+    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
   }
 
   // Check if running in SEA mode with process.smol.mount available.
@@ -194,7 +194,7 @@ export async function extractExternalTools(
   }
 
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => Promise<string> }
+    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
   }
 
   if (!isSeaBinary() || !processWithSmol.smol?.mount) {
@@ -477,7 +477,7 @@ export async function extractExternalTools(
 export async function extractTool(tool: ExternalTool): Promise<string> {
   // Check if process.smol.mount is available.
   const processWithSmol = process as unknown as {
-    smol?: { mount?: (vfsPath: string) => Promise<string> }
+    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
   }
 
   if (!processWithSmol.smol?.mount) {
@@ -592,7 +592,7 @@ export function getNodeSmolBasePath(): string {
   try {
     // Try to get hash from process.smol API (if available in future node-smol).
     const processWithSmol = process as unknown as {
-      smol?: { getHash?: () => string }
+      smol?: { getHash?: (() => string) | undefined } | undefined
     }
     if (typeof processWithSmol.smol?.getHash === 'function') {
       nodeSmolHash = processWithSmol.smol.getHash()

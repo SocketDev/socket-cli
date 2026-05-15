@@ -82,7 +82,7 @@ import { outputDiffScan } from '../../../../src/commands/scan/output-diff-scan.m
 // Helper to create error result.
 export function createErrorResult(
   message: string,
-  options: { code?: number; cause?: string } = {},
+  options: { code?: number | undefined; cause?: string | undefined } = {},
 ): CResult<never> {
   return { ok: false, message, ...options }
 }

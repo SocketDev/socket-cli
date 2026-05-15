@@ -213,9 +213,9 @@ export async function downloadManifestFile({
   }
 
   const fileData = result.data as {
-    type?: string
-    size?: number
-    download_url?: string | null
+    type?: string | undefined
+    size?: number | undefined
+    download_url?: string | null | undefined
   }
   debug('complete: request')
   debugDir({

@@ -1,12 +1,12 @@
 export interface ArtifactData {
-  __proto__?: null
-  _type?: string
-  name?: string
-  namespace?: string
-  release?: string
-  score?: Record<string, unknown>
-  type?: string
-  version?: string
+  __proto__?: null | undefined
+  _type?: string | undefined
+  name?: string | undefined
+  namespace?: string | undefined
+  release?: string | undefined
+  score?: Record<string, unknown> | undefined
+  type?: string | undefined
+  version?: string | undefined
   [key: string]: unknown
 }
 

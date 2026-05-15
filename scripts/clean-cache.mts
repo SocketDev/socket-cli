@@ -155,9 +155,8 @@ async function main(): Promise<void> {
     return
   }
 
-  logger.log(
-    `Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? 'y' : 'ies'}:\n`,
-  )
+  logger.log(`Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? 'y' : 'ies'}:`)
+  logger.log('')
 
   let totalDeleted = 0
   let totalSize = 0
@@ -244,7 +243,8 @@ async function main(): Promise<void> {
   }
 
   if (dryRun) {
-    logger.log('\nRun without --dry-run to actually delete.')
+    logger.log('')
+    logger.log('Run without --dry-run to actually delete.')
   }
 }
 

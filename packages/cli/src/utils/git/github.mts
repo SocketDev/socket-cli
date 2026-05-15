@@ -154,8 +154,8 @@ export async function enablePrAutoMerge({
       gqlResp as
         | {
             enablePullRequestAutoMerge?: {
-              pullRequest?: { number?: number }
-            }
+              pullRequest?: { number?: number | undefined } | undefined
+            } | undefined
           }
         | undefined
     )?.enablePullRequestAutoMerge?.pullRequest?.number

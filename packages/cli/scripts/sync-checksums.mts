@@ -240,9 +240,8 @@ async function main() {
     githubTools.push(...filtered)
   }
 
-  logger.log(
-    `Syncing checksums for ${githubTools.length} GitHub release tool(s)...\n`,
-  )
+  logger.log(`Syncing checksums for ${githubTools.length} GitHub release tool(s)...`)
+  logger.log('')
 
   let updated = 0
   let unchanged = 0
@@ -262,7 +261,8 @@ async function main() {
       )
 
       if (Object.keys(newChecksums).length === 0) {
-        logger.log(`  Skipped: No checksums found\n`)
+        logger.log(`  Skipped: No checksums found`)
+        logger.log('')
         unchanged++
         continue
       }
@@ -273,9 +273,8 @@ async function main() {
         JSON.stringify(newChecksums) !== JSON.stringify(oldChecksums)
 
       if (!force && !checksumChanged) {
-        logger.log(
-          `  Unchanged: ${Object.keys(newChecksums).length} checksums\n`,
-        )
+        logger.log(`  Unchanged: ${Object.keys(newChecksums).length} checksums`)
+        logger.log('')
         unchanged++
         continue
       }
@@ -285,10 +284,12 @@ async function main() {
 
       const oldCount = Object.keys(oldChecksums).length
       const newCount = Object.keys(newChecksums).length
-      logger.log(`  Updated: ${oldCount} -> ${newCount} checksums\n`)
+      logger.log(`  Updated: ${oldCount} -> ${newCount} checksums`)
+      logger.log('')
       updated++
     } catch (e) {
-      logger.log(`  Error: ${e.message}\n`)
+      logger.log(`  Error: ${e.message}`)
+      logger.log('')
       failed++
     }
   }
@@ -306,9 +307,8 @@ async function main() {
   }
 
   // Summary.
-  logger.log(
-    `\nSummary: ${updated} updated, ${unchanged} unchanged, ${failed} failed`,
-  )
+  logger.log('')
+  logger.log(`Summary: ${updated} updated, ${unchanged} unchanged, ${failed} failed`)
 
   if (failed > 0) {
     process.exitCode = 1

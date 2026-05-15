@@ -128,8 +128,8 @@ describe('createConfiguredServer — tools/list handler', () => {
       tools: Array<{
         name: string
         description: string
-        title?: string
-        annotations?: { readOnlyHint?: boolean }
+        title?: string | undefined
+        annotations?: { readOnlyHint?: boolean | undefined } | undefined
         inputSchema: Record<string, unknown>
       }>
     }
@@ -176,7 +176,7 @@ describe('createConfiguredServer — tools/call handler', () => {
         },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean }
+    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
     expect(mockRunDepscore).toHaveBeenCalledTimes(1)
     expect(mockRunDepscore.mock.calls[0]![0]).toEqual({
       packages: [{ depname: 'lodash' }],
@@ -197,7 +197,7 @@ describe('createConfiguredServer — tools/call handler', () => {
         },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean }
+    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
     expect(result.content[0]!.text).toContain('Unknown tool: unknown-tool')
@@ -212,7 +212,7 @@ describe('createConfiguredServer — tools/call handler', () => {
         params: { name: 'depscore', arguments: {} },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean }
+    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
     expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
@@ -227,7 +227,7 @@ describe('createConfiguredServer — tools/call handler', () => {
         params: { name: 'depscore', arguments: { packages: 'not-an-array' } },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean }
+    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
     expect(result.isError).toBe(true)
     expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
   })
@@ -285,7 +285,7 @@ describe('createConfiguredServer — tools/call handler', () => {
         },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean }
+    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
     expect(result.content[0]!.text).toContain('Authentication is required')

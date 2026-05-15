@@ -58,7 +58,7 @@ interface FixFlags {
   rangeStyle: RangeStyle
   showAffectedDirectDependencies: boolean
   silence: boolean
-  unknownFlags?: string[]
+  unknownFlags?: string[] | undefined
 }
 
 export const CMD_NAME = 'fix'

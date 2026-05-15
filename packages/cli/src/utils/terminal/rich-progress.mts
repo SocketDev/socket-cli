@@ -11,9 +11,9 @@ import type { Writable } from 'node:stream'
 const MAX_CONCURRENT_TASKS = 100
 
 interface MultiProgressOptions {
-  stream?: Writable
-  format?: string
-  hideCursor?: boolean
+  stream?: Writable | undefined
+  format?: string | undefined
+  hideCursor?: boolean | undefined
 }
 
 interface TaskProgress {
@@ -22,8 +22,8 @@ interface TaskProgress {
   current: number
   total: number
   status: 'pending' | 'running' | 'done' | 'failed'
-  startTime?: number
-  tokens?: Record<string, string>
+  startTime?: number | undefined
+  tokens?: Record<string, string> | undefined
 }
 
 /**

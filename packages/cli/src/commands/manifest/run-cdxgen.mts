@@ -234,7 +234,7 @@ export async function warnIfEmptyComponents(
   } catch {
     return
   }
-  let bom: { components?: unknown } | undefined
+  let bom: { components?: unknown | undefined } | undefined
   try {
     bom = JSON.parse(raw)
   } catch {

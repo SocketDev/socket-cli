@@ -15,7 +15,7 @@ export type GhsaFixRecord = {
   branch: string
   fixedAt: string // ISO 8601
   ghsaId: string
-  prNumber?: number
+  prNumber?: number | undefined
 }
 
 export type GhsaTracker = {

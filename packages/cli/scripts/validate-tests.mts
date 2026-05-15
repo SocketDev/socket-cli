@@ -275,7 +275,8 @@ export async function validateTestStructure(testFile) {
  * Main validation flow.
  */
 async function main() {
-  logger.info('Starting test validation...\n')
+  logger.info('Starting test validation...')
+  logger.error('')
 
   // Validate build artifacts first.
   const buildIssues = await validateBuildArtifacts()
@@ -284,15 +285,15 @@ async function main() {
       const issue = buildIssues[i]
       logger.fail(issue.message)
     }
-    logger.fail(
-      '\nBuild artifacts validation failed. Run build before testing.',
-    )
+    logger.error('')
+    logger.fail('Build artifacts validation failed. Run build before testing.')
     process.exitCode = 1
     return
   }
 
   const testFiles = await getTestFiles()
-  logger.info(`Found ${testFiles.length} test files to validate\n`)
+  logger.info(`Found ${testFiles.length} test files to validate`)
+  logger.error('')
 
   const results = []
   await pEach(
@@ -304,10 +305,12 @@ async function main() {
     { concurrency: 10 },
   )
 
-  logger.info('\n--- Validation Results ---\n')
+  logger.error('')
+  logger.info('--- Validation Results ---\n')
   const { errors, infos, warnings } = formatResults(results)
 
-  logger.info('\n--- Summary ---')
+  logger.error('')
+  logger.info('--- Summary ---')
   logger.info(`Total test files: ${testFiles.length}`)
   logger.info(`Passed: ${results.filter(r => r.issues.length === 0).length}`)
   logger.info(
@@ -316,15 +319,18 @@ async function main() {
   logger.info(`With errors: ${results.filter(r => r.hasErrors).length}`)
 
   if (errors.length > 0) {
-    logger.fail(`\n${errors.length} error(s) found`)
+    logger.error('')
+    logger.fail(`${errors.length} error(s) found`)
     process.exitCode = 1
   } else if (warnings.length > 0) {
-    logger.warn(`\n${warnings.length} warning(s) found`)
+    logger.error('')
+    logger.warn(`${warnings.length} warning(s) found`)
     if (infos.length > 0) {
       logger.info(`${infos.length} info message(s)`)
     }
   } else {
-    logger.success('\nAll tests validated successfully!')
+    logger.error('')
+    logger.success('All tests validated successfully!')
     if (infos.length > 0) {
       logger.info(`${infos.length} info message(s)`)
     }

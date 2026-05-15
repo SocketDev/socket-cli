@@ -242,7 +242,7 @@ export async function spawnSocketCli(
   error?: {
     message: string
     stack: string
-  }
+  } | undefined
   status: boolean
   stdout: string
   stderr: string
@@ -303,11 +303,11 @@ export async function spawnSocketCli(
     }
   } catch (e: unknown) {
     const error = e as {
-      code?: number
-      message?: string
-      stack?: string
-      stdout?: Buffer | string
-      stderr?: Buffer | string
+      code?: number | undefined
+      message?: string | undefined
+      stack?: string | undefined
+      stdout?: Buffer | string | undefined
+      stderr?: Buffer | string | undefined
     }
     return {
       status: false,

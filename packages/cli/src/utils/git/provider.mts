@@ -25,7 +25,7 @@ export interface CreatePrOptions {
   head: string
   base: string
   body: string
-  retries?: number
+  retries?: number | undefined
 }
 
 export interface UpdatePrOptions {
@@ -46,9 +46,9 @@ export interface AddCommentOptions {
 export interface ListPrsOptions {
   owner: string
   repo: string
-  author?: string
-  states?: 'all' | 'open' | 'closed'
-  ghsaId?: string
+  author?: string | undefined
+  states?: 'all' | 'open' | 'closed' | undefined
+  ghsaId?: string | undefined
 }
 
 export interface PrResponse {

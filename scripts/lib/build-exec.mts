@@ -16,9 +16,9 @@ import { saveBuildLog } from './build-helpers.mts'
 const logger = getDefaultLogger()
 
 interface ExecOptions {
-  buildDir?: string
-  cwd?: string
-  env?: NodeJS.ProcessEnv
+  buildDir?: string | undefined
+  cwd?: string | undefined
+  env?: NodeJS.ProcessEnv | undefined
 }
 
 interface ExecSilentResult {
@@ -28,9 +28,9 @@ interface ExecSilentResult {
 }
 
 interface DownloadOptions {
-  buildDir?: string
-  maxRetries?: number
-  verifyIntegrity?: boolean
+  buildDir?: string | undefined
+  maxRetries?: number | undefined
+  verifyIntegrity?: boolean | undefined
 }
 
 /**

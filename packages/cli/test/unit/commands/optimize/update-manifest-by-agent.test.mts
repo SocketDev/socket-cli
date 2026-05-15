@@ -362,7 +362,7 @@ describe('update-manifest-by-agent', () => {
         // member (or the whole pnpm field should be undefined).
         const lastPnpm = pnpmCalls.at(-1)![0].pnpm as
           | undefined
-          | { overrides?: unknown }
+          | { overrides?: unknown | undefined }
         expect(
           lastPnpm === undefined ||
             lastPnpm === null ||

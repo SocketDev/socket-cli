@@ -239,7 +239,7 @@ export async function addOverrides(
                     ) !== major
                   ) {
                     const manifest = await fetchPackageManifest(thisSpec)
-                    const otherVersion = (manifest as { version?: string })
+                    const otherVersion = (manifest as { version?: string | undefined })
                       ?.version
                     if (otherVersion && otherVersion !== version) {
                       const otherMajor = getMajor(otherVersion)

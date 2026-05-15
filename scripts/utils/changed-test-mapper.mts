@@ -28,14 +28,14 @@ const CORE_FILES: string[] = [
 ]
 
 interface GetTestsOptions {
-  staged?: boolean
-  all?: boolean
+  staged?: boolean | undefined
+  all?: boolean | undefined
 }
 
 interface GetTestsResult {
   tests: string[] | 'all' | null
-  reason?: string
-  mode?: string
+  reason?: string | undefined
+  mode?: string | undefined
 }
 
 /**

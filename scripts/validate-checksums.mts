@@ -36,7 +36,8 @@ export function validateChecksums(): boolean {
   const errors: string[] = []
   const warnings: string[] = []
 
-  logger.info('Validating SHA-256 checksums for external tools...\n')
+  logger.info('Validating SHA-256 checksums for external tools...')
+  logger.error('')
 
   // Track all unique assets that need checksums.
   const requiredAssets = new Map<string, Set<string>>()
@@ -139,7 +140,8 @@ export function validateChecksums(): boolean {
     return false
   }
 
-  logger.success('\nAll required checksums are present.')
+  logger.error('')
+  logger.success('All required checksums are present.')
   return true
 }
 

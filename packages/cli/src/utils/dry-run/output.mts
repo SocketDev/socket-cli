@@ -95,14 +95,14 @@ export interface DryRunAction {
     | 'upload'
     | 'write'
   description: string
-  target?: string
-  details?: Record<string, unknown>
+  target?: string | undefined
+  details?: Record<string, unknown> | undefined
 }
 
 export interface DryRunPreview {
   summary: string
   actions: DryRunAction[]
-  wouldSucceed?: boolean
+  wouldSucceed?: boolean | undefined
 }
 
 /**

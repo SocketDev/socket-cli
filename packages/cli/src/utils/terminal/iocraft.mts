@@ -323,19 +323,19 @@ export type TextWrap = 'wrap' | 'nowrap'
  */
 export interface TextStyle {
   /** Apply bold styling to text */
-  bold?: boolean
+  bold?: boolean | undefined
   /** Set text color (named colors like 'red', hex like '#FF0000', or ANSI 256 codes like 'ansi:123' or '196') */
-  color?: string
+  color?: string | undefined
   /** Apply dim/faded styling to text (maps to light weight) */
-  dimColor?: boolean
+  dimColor?: boolean | undefined
   /** Apply italic styling to text */
-  italic?: boolean
+  italic?: boolean | undefined
   /** Apply strikethrough decoration to text */
-  strikethrough?: boolean
+  strikethrough?: boolean | undefined
   /** Apply underline decoration to text */
-  underline?: boolean
+  underline?: boolean | undefined
   /** Set text weight (overrides bold if specified) */
-  weight?: TextWeight
+  weight?: TextWeight | undefined
 }
 
 /**
@@ -383,13 +383,13 @@ export type OverflowType = 'visible' | 'hidden'
  */
 export interface BorderEdges {
   /** Show border on bottom edge */
-  bottom?: boolean
+  bottom?: boolean | undefined
   /** Show border on left edge */
-  left?: boolean
+  left?: boolean | undefined
   /** Show border on right edge */
-  right?: boolean
+  right?: boolean | undefined
   /** Show border on top edge */
-  top?: boolean
+  top?: boolean | undefined
 }
 
 /**
@@ -470,15 +470,15 @@ export type BorderStyle =
  */
 export interface MixedTextContentSection {
   /** Text color (named colors, hex, or ANSI codes) */
-  color?: string
+  color?: string | undefined
   /** Text decoration (underline, strikethrough, or none) */
-  decoration?: 'underline' | 'strikethrough' | 'none'
+  decoration?: 'underline' | 'strikethrough' | 'none' | undefined
   /** Apply italic styling */
-  italic?: boolean
+  italic?: boolean | undefined
   /** The text content for this section */
   text: string
   /** Text weight (normal, bold, or light) */
-  weight?: TextWeight
+  weight?: TextWeight | undefined
 }
 
 /**
@@ -518,104 +518,104 @@ export interface BoxProps {
     | 'center'
     | 'stretch'
     | 'space-between'
-    | 'space-around'
+    | 'space-around' | undefined
   /** Align items on the cross axis */
-  alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch'
+  alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | undefined
   /** Background color (named colors or hex) */
-  backgroundColor?: string
+  backgroundColor?: string | undefined
   /** Border color (named colors, hex, or ANSI codes like 'ansi:123' or '196') */
-  borderColor?: string
+  borderColor?: string | undefined
   /** Configure which border edges to render */
-  borderEdges?: BorderEdges
+  borderEdges?: BorderEdges | undefined
   /** Border style (supports all variants including double-left-right, double-top-bottom, classic) */
-  borderStyle?: BorderStyle
+  borderStyle?: BorderStyle | undefined
   /** Bottom inset for absolute positioning (can be negative) */
-  bottom?: number
+  bottom?: number | undefined
   /** Custom border characters (when using custom border style) */
-  customBorderChars?: CustomBorderChars
+  customBorderChars?: CustomBorderChars | undefined
   /** Child elements to render inside this box */
-  children?: Element | Element[]
+  children?: Element | Element[] | undefined
   /** Gap between columns in flex layout */
-  columnGap?: number
+  columnGap?: number | undefined
   /** Display type (flex or none) */
-  display?: DisplayType
+  display?: DisplayType | undefined
   /** Initial size on the main axis (number, 'auto', or percentage string) */
-  flexBasis?: number | string
+  flexBasis?: number | string | undefined
   /** Main axis direction (row or column) */
-  flexDirection?: 'row' | 'column'
+  flexDirection?: 'row' | 'column' | undefined
   /** Flex grow factor (how much to grow relative to siblings) */
-  flexGrow?: number
+  flexGrow?: number | undefined
   /** Flex shrink factor (how much to shrink relative to siblings) */
-  flexShrink?: number
+  flexShrink?: number | undefined
   /** Flex wrap behavior (wrap or nowrap) */
-  flexWrap?: 'wrap' | 'nowrap'
+  flexWrap?: 'wrap' | 'nowrap' | undefined
   /** Gap between children (shorthand for rowGap and columnGap) */
-  gap?: number
+  gap?: number | undefined
   /** Height in characters */
-  height?: number
+  height?: number | undefined
   /** Inset for all sides (shorthand for top/right/bottom/left) */
-  inset?: number
+  inset?: number | undefined
   /** Align items on the main axis */
   justifyContent?:
     | 'flex-start'
     | 'flex-end'
     | 'center'
     | 'space-between'
-    | 'space-around'
+    | 'space-around' | undefined
   /** Left inset for absolute positioning (can be negative) */
-  left?: number
+  left?: number | undefined
   /** Margin on all sides */
-  margin?: number
+  margin?: number | undefined
   /** Margin on bottom */
-  marginBottom?: number
+  marginBottom?: number | undefined
   /** Margin on left */
-  marginLeft?: number
+  marginLeft?: number | undefined
   /** Margin on right */
-  marginRight?: number
+  marginRight?: number | undefined
   /** Margin on top */
-  marginTop?: number
+  marginTop?: number | undefined
   /** Margin on left and right */
-  marginX?: number
+  marginX?: number | undefined
   /** Margin on top and bottom */
-  marginY?: number
+  marginY?: number | undefined
   /** Maximum height constraint */
-  maxHeight?: number
+  maxHeight?: number | undefined
   /** Maximum width constraint */
-  maxWidth?: number
+  maxWidth?: number | undefined
   /** Minimum height constraint */
-  minHeight?: number
+  minHeight?: number | undefined
   /** Minimum width constraint */
-  minWidth?: number
+  minWidth?: number | undefined
   /** Overflow behavior for both axes (shorthand) */
-  overflow?: OverflowType
+  overflow?: OverflowType | undefined
   /** Overflow behavior on horizontal axis */
-  overflowX?: OverflowType
+  overflowX?: OverflowType | undefined
   /** Overflow behavior on vertical axis */
-  overflowY?: OverflowType
+  overflowY?: OverflowType | undefined
   /** Padding on all sides */
-  padding?: number
+  padding?: number | undefined
   /** Padding on bottom */
-  paddingBottom?: number
+  paddingBottom?: number | undefined
   /** Padding on left */
-  paddingLeft?: number
+  paddingLeft?: number | undefined
   /** Padding on right */
-  paddingRight?: number
+  paddingRight?: number | undefined
   /** Padding on top */
-  paddingTop?: number
+  paddingTop?: number | undefined
   /** Padding on left and right */
-  paddingX?: number
+  paddingX?: number | undefined
   /** Padding on top and bottom */
-  paddingY?: number
+  paddingY?: number | undefined
   /** Position type (relative or absolute) */
-  position?: PositionType
+  position?: PositionType | undefined
   /** Right inset for absolute positioning (can be negative) */
-  right?: number
+  right?: number | undefined
   /** Gap between rows in flex layout */
-  rowGap?: number
+  rowGap?: number | undefined
   /** Top inset for absolute positioning (can be negative) */
-  top?: number
+  top?: number | undefined
   /** Width in characters */
-  width?: number
+  width?: number | undefined
 }
 
 /**
@@ -644,11 +644,11 @@ export interface BoxProps {
  */
 export interface TextProps extends TextStyle {
   /** Horizontal text alignment (left, center, right) */
-  align?: TextAlign
+  align?: TextAlign | undefined
   /** Text content to display (string or array of strings) */
-  children?: string | string[]
+  children?: string | string[] | undefined
   /** Text wrapping behavior (wrap or nowrap) */
-  wrap?: TextWrap
+  wrap?: TextWrap | undefined
 }
 
 /**
@@ -666,11 +666,11 @@ export interface TextProps extends TextStyle {
  */
 export interface MixedTextProps {
   /** Horizontal text alignment */
-  align?: TextAlign
+  align?: TextAlign | undefined
   /** Array of text sections with individual styling */
   contents: MixedTextContentSection[]
   /** Text wrapping behavior */
-  wrap?: TextWrap
+  wrap?: TextWrap | undefined
 }
 
 /**
@@ -698,81 +698,81 @@ export interface FragmentProps {
  */
 export interface Element {
   type: 'Text' | 'View' | 'MixedText' | 'Fragment'
-  children?: Element[]
+  children?: Element[] | undefined
 
   // Text properties
-  content?: string
-  align?: string
-  bold?: boolean
-  color?: string
-  dim_color?: boolean
-  italic?: boolean
-  strikethrough?: boolean
-  underline?: boolean
-  weight?: string
-  wrap?: string
+  content?: string | undefined
+  align?: string | undefined
+  bold?: boolean | undefined
+  color?: string | undefined
+  dim_color?: boolean | undefined
+  italic?: boolean | undefined
+  strikethrough?: boolean | undefined
+  underline?: boolean | undefined
+  weight?: string | undefined
+  wrap?: string | undefined
 
   // View properties
-  display?: string
-  position?: string
-  bottom?: number
-  inset?: number
-  left?: number
-  right?: number
-  top?: number
+  display?: string | undefined
+  position?: string | undefined
+  bottom?: number | undefined
+  inset?: number | undefined
+  left?: number | undefined
+  right?: number | undefined
+  top?: number | undefined
 
   // Flex layout
-  align_content?: string
-  align_items?: string
-  column_gap?: number
-  flex_basis?: number | string
-  flex_direction?: string
-  flex_grow?: number
-  flex_shrink?: number
-  flex_wrap?: string
-  gap?: number
-  justify_content?: string
-  row_gap?: number
+  align_content?: string | undefined
+  align_items?: string | undefined
+  column_gap?: number | undefined
+  flex_basis?: number | string | undefined
+  flex_direction?: string | undefined
+  flex_grow?: number | undefined
+  flex_shrink?: number | undefined
+  flex_wrap?: string | undefined
+  gap?: number | undefined
+  justify_content?: string | undefined
+  row_gap?: number | undefined
 
   // Dimensions
-  height?: number
-  max_height?: number
-  max_width?: number
-  min_height?: number
-  min_width?: number
-  width?: number
+  height?: number | undefined
+  max_height?: number | undefined
+  max_width?: number | undefined
+  min_height?: number | undefined
+  min_width?: number | undefined
+  width?: number | undefined
 
   // Overflow
-  overflow_x?: string
-  overflow_y?: string
+  overflow_x?: string | undefined
+  overflow_y?: string | undefined
 
   // Padding
-  padding?: number
-  padding_x?: number
-  padding_y?: number
-  padding_top?: number
-  padding_right?: number
-  padding_bottom?: number
-  padding_left?: number
+  padding?: number | undefined
+  padding_x?: number | undefined
+  padding_y?: number | undefined
+  padding_top?: number | undefined
+  padding_right?: number | undefined
+  padding_bottom?: number | undefined
+  padding_left?: number | undefined
 
   // Margin
-  margin?: number
-  margin_x?: number
-  margin_y?: number
-  margin_top?: number
-  margin_right?: number
-  margin_bottom?: number
-  margin_left?: number
+  margin?: number | undefined
+  margin_x?: number | undefined
+  margin_y?: number | undefined
+  margin_top?: number | undefined
+  margin_right?: number | undefined
+  margin_bottom?: number | undefined
+  margin_left?: number | undefined
 
   // Border
-  border_color?: string
+  border_color?: string | undefined
   border_edges?: {
-    top?: boolean
-    right?: boolean
-    bottom?: boolean
-    left?: boolean
-  }
-  border_style?: string
+    top?: boolean | undefined
+    right?: boolean | undefined
+    bottom?: boolean | undefined
+    left?: boolean | undefined
+  } | undefined
+  border_style?: string | undefined
   custom_border_chars?: {
     top_left: string
     top_right: string
@@ -782,10 +782,10 @@ export interface Element {
     bottom: string
     left: string
     right: string
-  }
+  } | undefined
 
   // Background
-  background_color?: string
+  background_color?: string | undefined
 
   // MixedText
   mixed_text_contents?: Array<{
@@ -794,7 +794,7 @@ export interface Element {
     weight?: string | undefined
     decoration?: string | undefined
     italic?: boolean | undefined
-  }>
+  }> | undefined
 }
 
 /**

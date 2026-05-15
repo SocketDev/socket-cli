@@ -22,10 +22,10 @@ import {
 const logger = getDefaultLogger()
 
 interface LintOptions {
-  all?: boolean
-  changed?: boolean
-  fix?: boolean
-  staged?: boolean
+  all?: boolean | undefined
+  changed?: boolean | undefined
+  fix?: boolean | undefined
+  staged?: boolean | undefined
 }
 
 interface FilesToLintResult {
@@ -106,15 +106,18 @@ async function main(): Promise<void> {
     // Show help if requested.
     if (values.help) {
       logger.log('Monorepo Lint Runner')
-      logger.log('\nUsage: pnpm lint [options]')
-      logger.log('\nOptions:')
+      logger.log('')
+      logger.log('Usage: pnpm lint [options]')
+      logger.log('')
+      logger.log('Options:')
       logger.log('  --help         Show this help message')
       logger.log('  --fix          Automatically fix problems')
       logger.log('  --all          Lint all packages')
       logger.log('  --changed      Lint packages with changed files (default)')
       logger.log('  --staged       Lint packages with staged files')
       logger.log('  --quiet, --silent  Suppress progress messages')
-      logger.log('\nExamples:')
+      logger.log('')
+      logger.log('Examples:')
       logger.log('  pnpm lint                # Lint changed packages (default)')
       logger.log('  pnpm lint --fix          # Fix issues in changed packages')
       logger.log('  pnpm lint --all          # Lint all packages')

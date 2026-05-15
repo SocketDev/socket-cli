@@ -21,13 +21,13 @@ import type { LocalConfig } from '../../utils/config.mts'
 type ConfigCommandSpec = {
   commandName: string
   description: string
-  hidden?: boolean
-  flags?: MeowFlags
-  needsValue?: boolean
+  hidden?: boolean | undefined
+  flags?: MeowFlags | undefined
+  needsValue?: boolean | undefined
   helpUsage: string
   helpDescription: string
   helpExamples: string[]
-  validate?: (cli: {
+  validate?: ((cli: {
     input: readonly string[]
     flags: Record<string, unknown>
   }) => Array<{
@@ -36,10 +36,10 @@ type ConfigCommandSpec = {
     fail: string
     nook?: boolean
     pass?: string
-  }>
+  }>) | undefined
   handler: (params: {
     key: keyof LocalConfig
-    value?: string
+    value?: string | undefined
     outputKind: OutputKind
   }) => Promise<void>
 }

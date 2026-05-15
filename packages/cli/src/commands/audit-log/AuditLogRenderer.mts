@@ -16,7 +16,7 @@ export interface AuditLogEntry {
   event_id: string
   formatted_created_at: string
   ip_address: string
-  payload?: Record<string, unknown>
+  payload?: Record<string, unknown> | undefined
   type: string
   user_agent: string
   user_email: string

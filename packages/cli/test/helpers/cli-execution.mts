@@ -23,7 +23,7 @@ export interface CliExecutionResult {
   error?: {
     message: string
     stack: string
-  }
+  } | undefined
 }
 
 /**

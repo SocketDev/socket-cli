@@ -145,7 +145,7 @@ export async function coanaFix(
       description: 'upload manifests',
       spinner,
     },
-  )) as CResult<{ tarHash?: string }>
+  )) as CResult<{ tarHash?: string | undefined }>
 
   if (!uploadCResult.ok) {
     return uploadCResult

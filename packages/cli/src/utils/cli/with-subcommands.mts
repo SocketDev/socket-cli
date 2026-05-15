@@ -55,8 +55,8 @@ export interface CliCommandConfig<F extends MeowFlags = MeowFlags> {
 
 export interface CliCommandContext {
   parentName: string
-  rawArgv?: string[] | readonly string[]
-  invokedAs?: string
+  rawArgv?: string[] | readonly string[] | undefined
+  invokedAs?: string | undefined
 }
 
 export interface MeowConfig {

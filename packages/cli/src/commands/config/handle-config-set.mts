@@ -13,7 +13,7 @@ export async function handleConfigSet({
   value,
 }: {
   key: keyof LocalConfig
-  value?: string
+  value?: string | undefined
   outputKind: OutputKind
 }) {
   if (value === undefined) {

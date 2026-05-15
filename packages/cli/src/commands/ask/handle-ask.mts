@@ -41,10 +41,10 @@ export interface ParsedIntent {
   command: string[]
   confidence: number
   explanation: string
-  packageName?: string
-  severity?: string
-  environment?: string
-  isDryRun?: boolean
+  packageName?: string | undefined
+  severity?: string | undefined
+  environment?: string | undefined
+  isDryRun?: boolean | undefined
 }
 
 /**
@@ -144,8 +144,8 @@ const ENVIRONMENT_KEYWORDS = {
  */
 export async function getProjectContext(cwd: string): Promise<{
   hasPackageJson: boolean
-  dependencies?: Record<string, string>
-  devDependencies?: Record<string, string>
+  dependencies?: Record<string, string> | undefined
+  devDependencies?: Record<string, string> | undefined
 }> {
   try {
     const pkgPath = path.join(cwd, 'package.json')

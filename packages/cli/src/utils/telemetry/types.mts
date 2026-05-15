@@ -36,7 +36,7 @@ export interface TelemetryEvent {
   event_sender_created_at: string
   event_type: string
   context: TelemetryContext
-  session_id?: string
-  metadata?: Record<string, unknown>
+  session_id?: string | undefined
+  metadata?: Record<string, unknown> | undefined
   error?: TelemetryEventError | undefined
 }

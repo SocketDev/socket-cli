@@ -40,16 +40,16 @@ const baseEnv = (overrides: Record<string, unknown> = {}) => ({
 export async function loadAddOverrides(opts: {
   manifestEntries: Array<[string, unknown]>
   getMajor?: (v: string) => number | undefined
-  safeNpa?: (s: string) => unknown
-  fetchPackageManifest?: (s: string) => Promise<unknown>
-  globWorkspace?: () => Promise<string[]>
-  getDependencyEntries?: (env: unknown) => unknown
-  getOverridesData?: (env: unknown) => unknown
-  getOverridesDataNpm?: (env: unknown) => unknown
-  getOverridesDataYarnClassic?: (env: unknown) => unknown
-  lockSrcIncludes?: (...args: unknown[]) => boolean
-  lsStdoutIncludes?: (...args: unknown[]) => boolean
-  listPackages?: (...args: unknown[]) => Promise<string>
+  safeNpa?: ((s: string) => unknown) | undefined
+  fetchPackageManifest?: ((s: string) => Promise<unknown>) | undefined
+  globWorkspace?: (() => Promise<string[]>) | undefined
+  getDependencyEntries?: ((env: unknown) => unknown) | undefined
+  getOverridesData?: ((env: unknown) => unknown) | undefined
+  getOverridesDataNpm?: ((env: unknown) => unknown) | undefined
+  getOverridesDataYarnClassic?: ((env: unknown) => unknown) | undefined
+  lockSrcIncludes?: ((...args: unknown[]) => boolean) | undefined
+  lsStdoutIncludes?: ((...args: unknown[]) => boolean) | undefined
+  listPackages?: ((...args: unknown[]) => Promise<string>) | undefined
 }) {
   const { manifestEntries } = opts
   vi.doMock('@socketsecurity/registry', () => ({

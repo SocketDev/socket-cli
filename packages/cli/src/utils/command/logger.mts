@@ -92,12 +92,12 @@ export function createCommandLogger(
      * Whether to include the command name prefix in logs
      * @default true
      */
-    includePrefix?: boolean
+    includePrefix?: boolean | undefined
     /**
      * Custom prefix format function
      * @default (name) => `[${name}]`
      */
-    formatPrefix?: (commandName: string) => string
+    formatPrefix?: ((commandName: string) => string) | undefined
   } = {},
 ): CommandLogger {
   const { formatPrefix = name => `[${name}]`, includePrefix = true } = options

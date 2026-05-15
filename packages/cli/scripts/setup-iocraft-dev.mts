@@ -27,7 +27,8 @@ const packages = {
   'socketaddon-iocraft-win-x64': '@socketaddon/iocraft-win-x64',
 }
 
-logger.log('Setting up iocraft dev build in node_modules...\n')
+logger.log('Setting up iocraft dev build in node_modules...')
+logger.log('')
 
 // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
 for (const [sourceDir, targetName] of Object.entries(packages)) {
@@ -159,6 +160,5 @@ for (const [sourceDir, targetName] of Object.entries(packages)) {
 }
 
 logger.success('iocraft dev build installed successfully!')
-logger.log(
-  '\nYou can now run manual tests:\n  node src/commands/analytics/test-analytics-renderer.mts',
-)
+logger.log('')
+logger.log('You can now run manual tests:\n  node src/commands/analytics/test-analytics-renderer.mts')

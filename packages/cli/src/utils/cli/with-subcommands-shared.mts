@@ -22,7 +22,7 @@ export type CliAliases = Record<string, CliAlias>
 export type CliSubcommandRun = (
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  context: { parentName: string; rawArgv?: readonly string[] },
+  context: { parentName: string; rawArgv?: readonly string[] | undefined },
 ) => Promise<void> | void
 
 export interface CliSubcommand {

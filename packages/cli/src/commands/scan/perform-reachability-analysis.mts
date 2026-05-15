@@ -84,7 +84,7 @@ export async function performReachabilityAnalysis(
   // Check if user has enterprise plan for reachability analysis.
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
-    const httpCode = (orgsCResult as { data?: { code?: number } }).data?.code
+    const httpCode = (orgsCResult as { data?: { code?: number | undefined } | undefined }).data?.code
     if (httpCode === HTTP_STATUS_UNAUTHORIZED) {
       return {
         ok: false,
@@ -141,7 +141,7 @@ export async function performReachabilityAnalysis(
         description: 'upload manifests',
         spinner,
       },
-    )) as CResult<{ tarHash?: string }>
+    )) as CResult<{ tarHash?: string | undefined }>
 
     spinner?.stop()
 
@@ -154,7 +154,7 @@ export async function performReachabilityAnalysis(
       return uploadCResult
     }
 
-    tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
+    tarHash = (uploadCResult.data as { tarHash?: string | undefined })?.tarHash
     if (!tarHash) {
       /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {

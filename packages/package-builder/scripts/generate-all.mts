@@ -21,7 +21,8 @@ const logger = getDefaultLogger()
  * Run a script and report results.
  */
 export async function runScript(scriptName, description) {
-  logger.log(`\n▶ ${description}...`)
+  logger.log('')
+  logger.log(`▶ ${description}...`)
   logger.log('─'.repeat(50))
 
   const result = await spawn('node', [path.join(__dirname, scriptName)], {

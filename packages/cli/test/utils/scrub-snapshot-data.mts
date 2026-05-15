@@ -8,19 +8,19 @@
 
 export interface ScrubOptions {
   /** Scrub absolute file paths (default: true). */
-  paths?: boolean
+  paths?: boolean | undefined
   /** Scrub timestamps and dates (default: true). */
-  timestamps?: boolean
+  timestamps?: boolean | undefined
   /** Scrub UUIDs and scan IDs (default: true). */
-  ids?: boolean
+  ids?: boolean | undefined
   /** Scrub version numbers (default: false - usually stable in mocks). */
-  versions?: boolean
+  versions?: boolean | undefined
   /** Scrub IP addresses (default: true). */
-  ipAddresses?: boolean
+  ipAddresses?: boolean | undefined
   /** Scrub email addresses (default: false - usually stable in mocks). */
-  emails?: boolean
+  emails?: boolean | undefined
   /** Additional custom scrubbing patterns. */
-  custom?: Array<{ pattern: RegExp; replacement: string }>
+  custom?: Array<{ pattern: RegExp; replacement: string }> | undefined
 }
 
 /**

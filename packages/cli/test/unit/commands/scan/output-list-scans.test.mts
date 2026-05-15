@@ -68,7 +68,7 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 // Helper to create error result.
 export function createErrorResult(
   message: string,
-  options: { code?: number; cause?: string } = {},
+  options: { code?: number | undefined; cause?: string | undefined } = {},
 ): CResult<never> {
   return { ok: false, message, ...options }
 }

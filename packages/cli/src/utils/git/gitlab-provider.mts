@@ -79,7 +79,7 @@ export class GitLabProvider implements PrProvider {
           typeof e.cause === 'object' &&
           'response' in e.cause
         ) {
-          const response = (e.cause as { response?: { status?: number } })
+          const response = (e.cause as { response?: { status?: number | undefined } | undefined })
             .response
           if (response?.status === 400) {
             break

@@ -35,12 +35,16 @@
  *     → logger.log(`build/${mode}/out`)
  *     → logger.log('')          // .log goes to stdout
  *
- * The rule does NOT autofix because (a) the original string may
- * carry other meaningful chars between the emoji and the rest of
- * the message, and (b) extra-argument shape (label + payload) makes
- * a generic rewrite fragile. The warning text names both the right
- * blank-line method (stream-matched) and the right semantic method
- * (emoji-matched).
+ * Autofix scope:
+ *   - Single-string-argument calls with leading or trailing `\n`
+ *     (the dominant shape in scripts): autofix splits into two
+ *     statements with the correct blank-line + semantic methods.
+ *   - Multi-argument calls (label + payload) and embedded `\n`
+ *     mid-string: no autofix. The fix needs author judgment because
+ *     the original string may carry meaningful chars between the
+ *     emoji and the rest, and the extra args change the rewrite
+ *     shape. The warning text names both the stream-matched blank-
+ *     line method and the emoji-matched semantic method.
  */
 
 // stderr-bound methods (per Logger#getTargetStream). `log` is the
@@ -48,7 +52,7 @@
 // stderr. Blank lines for these use `logger.error('')` so the
 // blank-line + message land on the same stream.
 
-import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const STDERR_METHODS = new Set([
   'error',
@@ -220,7 +224,7 @@ const rule = {
       category: 'Best Practices',
       recommended: true,
     },
-    fixable: undefined,
+    fixable: 'code',
     messages: {
       leadingNewline:
         "String literal passed to logger.{{origMethod}}() starts with \\n. Replace with {{blankCall}} then logger.{{semanticMethod}}('...') (emoji {{emoji}} → .{{semanticMethod}}).",
@@ -237,6 +241,68 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    const sourceCode = context.getSourceCode
+      ? context.getSourceCode()
+      : context.sourceCode
+
+    /**
+     * Walk up from a node to its enclosing ExpressionStatement.
+     * Returns undefined if the call isn't a top-level statement
+     * (e.g. it's inside a conditional expression or assignment) —
+     * those shapes are too contextual to autofix.
+     */
+    function enclosingStatement(node: AstNode): AstNode | undefined {
+      let cur = node.parent
+      while (cur) {
+        if (cur.type === 'ExpressionStatement') {
+          return cur
+        }
+        if (
+          cur.type === 'BlockStatement' ||
+          cur.type === 'Program' ||
+          cur.type === 'FunctionDeclaration' ||
+          cur.type === 'ArrowFunctionExpression' ||
+          cur.type === 'FunctionExpression'
+        ) {
+          return undefined
+        }
+        cur = cur.parent
+      }
+      return undefined
+    }
+
+    /**
+     * Find the indentation (leading whitespace on its line) of `node`.
+     */
+    function indentOf(node: AstNode): string {
+      const text = sourceCode.getText()
+      const start = node.range?.[0] ?? node.start
+      if (typeof start !== 'number') {
+        return ''
+      }
+      let lineStart = start
+      while (lineStart > 0 && text[lineStart - 1] !== '\n') {
+        lineStart -= 1
+      }
+      let i = lineStart
+      while (i < start && (text[i] === ' ' || text[i] === '\t')) {
+        i += 1
+      }
+      return text.slice(lineStart, i)
+    }
+
+    /**
+     * Quote a string for source output. Uses single quotes by
+     * default; if the value contains a single quote, falls back to
+     * double quotes.
+     */
+    function quoteString(value: string): string {
+      if (!value.includes("'")) {
+        return `'${value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n')}'`
+      }
+      return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`
+    }
+
     /**
      * If `node` is an argument of a call to `logger.<method>(...)`,
      * return that method name. Otherwise return undefined.
@@ -281,7 +347,11 @@ const rule = {
 
     /**
      * Build the report payload for a literal value bound to a
-     * logger.<origMethod>(...) call.
+     * logger.<origMethod>(...) call. Emits an autofix only when the
+     * call is `logger.X('<value>')` with exactly one Literal arg,
+     * lives in a plain ExpressionStatement, and the newline placement
+     * is leading or trailing (not embedded). Multi-arg + embedded
+     * shapes stay unfixed — the rewrite needs author judgment.
      */
     function reportFor(node: AstNode, value: string, origMethod: string): void {
       const placement = classifyNewline(value)
@@ -309,6 +379,38 @@ const rule = {
       const messageIdSuffix = semanticMethod ? 'Newline' : 'NewlineNoEmoji'
       const messageId = `${placement}${messageIdSuffix}`
 
+      // Build an autofix when the shape is safe to rewrite mechanically.
+      // Requires: node is a plain string Literal (not a template quasi),
+      // parent is a CallExpression with exactly one argument (this one),
+      // and the call is the entire statement.
+      let fixFn: ((fixer: RuleFixer) => unknown) | undefined
+      const call = node.parent
+      const stmt = call ? enclosingStatement(call) : undefined
+      const isPlainStringLiteral =
+        node.type === 'Literal' && typeof node.value === 'string'
+      if (
+        isPlainStringLiteral &&
+        call &&
+        call.type === 'CallExpression' &&
+        call.arguments.length === 1 &&
+        call.arguments[0] === node &&
+        stmt
+      ) {
+        const stripped =
+          placement === 'leading'
+            ? value.replace(/^\n+/, '')
+            : value.replace(/\n+$/, '')
+        const indent = indentOf(stmt)
+        const messageCall = `logger.${messageMethod}(${quoteString(stripped)})`
+        const replacement =
+          placement === 'leading'
+            ? `${blankCall}\n${indent}${messageCall}`
+            : `${messageCall}\n${indent}${blankCall}`
+        // Replace the call itself (not the surrounding ExpressionStatement)
+        // so any trailing `;` or comment stays put.
+        fixFn = (fixer: RuleFixer) => fixer.replaceText(call, replacement)
+      }
+
       context.report({
         node,
         messageId,
@@ -318,6 +420,7 @@ const rule = {
           emoji: emoji ?? '',
           blankCall,
         },
+        ...(fixFn ? { fix: fixFn } : {}),
       })
     }
 
@@ -338,13 +441,129 @@ const rule = {
         if (!origMethod) {
           return
         }
+        // Identify the first quasi with a newline + classify it.
+        // Autofix only applies when:
+        //   - It's the FIRST quasi with leading-\n, OR the LAST quasi
+        //     with trailing-\n
+        //   - The call has exactly one argument (this template)
+        //   - The template lives in a plain ExpressionStatement
+        // Mixed shapes (embedded \n, multiple newlines, non-edge
+        // quasi) get reported without an autofix.
+        const firstQuasi = node.quasis[0]
+        const lastQuasi = node.quasis[node.quasis.length - 1]
+        const firstCooked = firstQuasi?.value?.cooked
+        const lastCooked = lastQuasi?.value?.cooked
+        const call = node.parent
+        const stmt = call ? enclosingStatement(call) : undefined
+        const isSingleArgCall =
+          call &&
+          call.type === 'CallExpression' &&
+          call.arguments.length === 1 &&
+          call.arguments[0] === node &&
+          stmt
+        let handled = false
+        if (
+          isSingleArgCall &&
+          typeof firstCooked === 'string' &&
+          firstCooked.startsWith('\n') &&
+          // No other newlines anywhere else.
+          node.quasis.every((q: AstNode, i: number) => {
+            const c = q.value?.cooked
+            if (typeof c !== 'string') return false
+            if (i === 0) return c.lastIndexOf('\n') === 0
+            return !c.includes('\n')
+          })
+        ) {
+          handled = true
+          // Compute fix: replace the call. Rebuild the template body.
+          const indent = indentOf(stmt)
+          const newFirst = firstCooked.replace(/^\n+/, '')
+          const src = sourceCode.getText()
+          const start = node.range?.[0] ?? node.start
+          const end = node.range?.[1] ?? node.end
+          if (typeof start === 'number' && typeof end === 'number') {
+            const originalTpl = src.slice(start, end)
+            // The original template starts with backtick then the
+            // raw first-quasi content. Strip the leading newline(s)
+            // from the source representation to keep escape parity.
+            const newTpl = '`' + originalTpl.slice(1).replace(/^\\?n+/, '').replace(/^\n+/, '')
+            const found = findStatusEmoji(firstCooked)
+            const semanticMethod = found?.method ?? origMethod
+            const blankCall = blankCallFor(semanticMethod)
+            const newCall = `logger.${semanticMethod}(${newTpl})`
+            const replacement = `${blankCall}\n${indent}${newCall}`
+            context.report({
+              node: firstQuasi,
+              messageId: found ? 'leadingNewline' : 'leadingNewlineNoEmoji',
+              data: {
+                origMethod,
+                semanticMethod,
+                emoji: found?.emoji ?? '',
+                blankCall,
+              },
+              fix(fixer: RuleFixer) {
+                return fixer.replaceText(call, replacement)
+              },
+            })
+            return
+          }
+        }
+        if (
+          isSingleArgCall &&
+          !handled &&
+          typeof lastCooked === 'string' &&
+          lastCooked.endsWith('\n') &&
+          node.quasis.every((q: AstNode, i: number, arr: AstNode[]) => {
+            const c = q.value?.cooked
+            if (typeof c !== 'string') return false
+            if (i === arr.length - 1) {
+              // Last quasi: only the trailing-\n run is allowed.
+              const trimmed = c.replace(/\n+$/, '')
+              return !trimmed.includes('\n')
+            }
+            return !c.includes('\n')
+          })
+        ) {
+          handled = true
+          const indent = indentOf(stmt)
+          const src = sourceCode.getText()
+          const start = node.range?.[0] ?? node.start
+          const end = node.range?.[1] ?? node.end
+          if (typeof start === 'number' && typeof end === 'number') {
+            const originalTpl = src.slice(start, end)
+            // Strip trailing-newline from the source rep before the
+            // closing backtick.
+            const newTpl =
+              originalTpl.slice(0, -1).replace(/(?:\\n|\n)+$/, '') + '`'
+            const found = findStatusEmoji(lastCooked)
+            const semanticMethod = found?.method ?? origMethod
+            const blankCall = blankCallFor(semanticMethod)
+            const newCall = `logger.${semanticMethod}(${newTpl})`
+            const replacement = `${newCall}\n${indent}${blankCall}`
+            context.report({
+              node: lastQuasi,
+              messageId: found ? 'trailingNewline' : 'trailingNewlineNoEmoji',
+              data: {
+                origMethod,
+                semanticMethod,
+                emoji: found?.emoji ?? '',
+                blankCall,
+              },
+              fix(fixer: RuleFixer) {
+                return fixer.replaceText(call, replacement)
+              },
+            })
+            return
+          }
+        }
+        // Fallback: report without fix for shapes we can't safely
+        // mechanically rewrite (embedded \n, mid-template \n, etc.).
         for (const quasi of node.quasis) {
           const cooked = quasi.value?.cooked
           if (typeof cooked !== 'string' || !cooked.includes('\n')) {
             continue
           }
           reportFor(quasi, cooked, origMethod)
-          // One report per template is enough; the human sees the issue.
           return
         }
       },

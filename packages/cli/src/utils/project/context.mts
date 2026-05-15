@@ -6,11 +6,11 @@ import path from 'node:path'
 interface ProjectContext {
   type: 'npm' | 'yarn' | 'pnpm' | 'unknown'
   root: string
-  packageManager?: string
+  packageManager?: string | undefined
   hasLockFile: boolean
-  framework?: string
+  framework?: string | undefined
   isMonorepo: boolean
-  workspaces?: string[]
+  workspaces?: string[] | undefined
 }
 
 /**

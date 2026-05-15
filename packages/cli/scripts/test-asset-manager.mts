@@ -71,7 +71,8 @@ export async function testAssetManagerCore() {
   }
   logger.success('Cache validation works (non-existent file)')
 
-  logger.success('All AssetManager core tests passed!\n')
+  logger.success('All AssetManager core tests passed!')
+  logger.error('')
 }
 
 /**
@@ -94,7 +95,8 @@ export async function testBackwardCompatibility() {
   // Test that wrappers can be called (without actually downloading).
   // We'll use a try-catch since we're not providing real versions.
   logger.log('Wrapper functions have correct signatures')
-  logger.success('All backward-compatibility tests passed!\n')
+  logger.success('All backward-compatibility tests passed!')
+  logger.error('')
 }
 
 /**
@@ -115,7 +117,8 @@ export async function testLocalOverride() {
   // Clean up.
   delete process.env['SOCKET_CLI_LOCAL_NODE_SMOL']
 
-  logger.success('All local override tests passed!\n')
+  logger.success('All local override tests passed!')
+  logger.error('')
 }
 
 /**

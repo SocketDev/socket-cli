@@ -131,7 +131,7 @@ export type DetectAndValidateOptions = {
 
 export type DetectOptions = {
   cwd?: string | undefined
-  onUnknown?: (pkgManager: string | undefined) => void
+  onUnknown?: ((pkgManager: string | undefined) => void) | undefined
 }
 
 export type PartialEnvDetails = Readonly<

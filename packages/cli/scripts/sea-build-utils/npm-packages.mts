@@ -156,9 +156,8 @@ export async function combineVfsArchives(
     }
 
     const tarStats = await fs.stat(combinedTarGz)
-    logger.success(
-      `Combined VFS archive: ${(tarStats.size / 1_024 / 1_024).toFixed(2)} MB\n`,
-    )
+    logger.success(`Combined VFS archive: ${(tarStats.size / 1_024 / 1_024).toFixed(2)} MB`)
+    logger.error('')
 
     return combinedTarGz
   } finally {
@@ -242,7 +241,8 @@ export async function downloadNpmPackage(
     )
   }
 
-  logger.success(`${packageSpec} installed with dependencies\n`)
+  logger.success(`${packageSpec} installed with dependencies`)
+  logger.error('')
   return targetDir
 }
 
@@ -365,9 +365,8 @@ export async function downloadNpmPackages() {
     }
 
     const tarStats = await fs.stat(tarGzPath)
-    logger.success(
-      `npm packages packaged: ${(tarStats.size / 1_024 / 1_024).toFixed(2)} MB\n`,
-    )
+    logger.success(`npm packages packaged: ${(tarStats.size / 1_024 / 1_024).toFixed(2)} MB`)
+    logger.error('')
 
     return tarGzPath
   } finally {

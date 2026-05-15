@@ -102,7 +102,7 @@ describe('convertCondaToRequirements (file)', () => {
 
 describe('convertCondaToRequirements (stdin)', () => {
   let originalStdin: NodeJS.ReadStream
-  let stdinFake: EventEmitter & { off?: (...args: unknown[]) => void }
+  let stdinFake: EventEmitter & { off?: ((...args: unknown[]) => void) | undefined }
 
   beforeEach(() => {
     vi.clearAllMocks()

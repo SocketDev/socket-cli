@@ -52,13 +52,13 @@ export function outputPaginatedList<T>(
     page: number
     perPage: number
     nextPage: number | null
-    sort?: string
-    direction?: string
+    sort?: string | undefined
+    direction?: string | undefined
   },
   tableOptions: {
     columns: TableColumn[]
     getRows: (data: T) => Array<Record<string, unknown>>
-    emptyMessage?: string
+    emptyMessage?: string | undefined
   },
 ): void {
   simpleOutput(result, outputKind, {
@@ -96,7 +96,8 @@ export function outputPaginatedList<T>(
 
       // Show next page hint
       if (nextPage !== null) {
-        logger.log(`\nNext page: ${nextPage}`)
+        logger.log('')
+        logger.log(`Next page: ${nextPage}`)
       }
     },
   })
@@ -126,21 +127,21 @@ export function outputResult<T>(
 export interface TableColumn {
   field: string
   name: string
-  transform?: (value: unknown) => string
+  transform?: ((value: unknown) => string) | undefined
 }
 
 /**
  * Options for simple output formatting
  */
 export interface SimpleOutputOptions<T> {
-  json?: (data: T) => unknown
+  json?: ((data: T) => unknown) | undefined
   table?: {
     columns: TableColumn[]
     rows: (data: T) => Array<Record<string, unknown>>
-  }
-  text?: (data: T) => void
-  title?: string
-  emptyMessage?: string
+  } | undefined
+  text?: ((data: T) => void) | undefined
+  title?: string | undefined
+  emptyMessage?: string | undefined
 }
 
 /**

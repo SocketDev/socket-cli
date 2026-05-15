@@ -39,7 +39,7 @@ import type {
  * The typeof-on-a-property guard can't flow to the parent object, so
  * we need an explicit assertion function.
  */
-export function assertHasSend<T extends { send?: unknown }>(
+export function assertHasSend<T extends { send?: unknown | undefined }>(
   proc: T,
 ): asserts proc is T & { send: (message: unknown) => void } {
   if (typeof proc.send !== 'function') {

@@ -14,7 +14,7 @@ export class PromiseQueue {
   private running = 0
 
   private readonly maxConcurrency: number
-  private readonly maxQueueLength?: number
+  private readonly maxQueueLength?: number | undefined
 
   /**
    * Creates a new PromiseQueue

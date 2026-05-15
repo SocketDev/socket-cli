@@ -39,7 +39,7 @@ if (isSentryBuild()) {
   const internals = (
     global as unknown as Record<
       symbol,
-      { setSentry?: (s: typeof Sentry) => void } | undefined
+      { setSentry?: ((s: typeof Sentry) => void) | undefined } | undefined
     >
   )[kInternalsSymbol]
   if (internals?.setSentry) {

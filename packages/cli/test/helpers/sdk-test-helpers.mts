@@ -135,7 +135,7 @@ export async function setupSdkMockWithCustomSdk(
  */
 export async function setupSdkSetupFailure(
   message: string,
-  options?: { code?: number; cause?: string },
+  options?: { code?: number | undefined; cause?: string | undefined },
 ) {
   const setupSdk = await getMockSetupSdk()
   setupSdk.mockResolvedValue(createErrorResult(message, options))

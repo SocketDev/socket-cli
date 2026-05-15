@@ -12,15 +12,15 @@ interface OutputAskCommandOptions {
     command: string[]
     confidence: number
     explanation: string
-    packageName?: string
-    severity?: string
-    environment?: string
-    isDryRun?: boolean
+    packageName?: string | undefined
+    severity?: string | undefined
+    environment?: string | undefined
+    isDryRun?: boolean | undefined
   }
   context: {
     hasPackageJson: boolean
-    dependencies?: Record<string, string>
-    devDependencies?: Record<string, string>
+    dependencies?: Record<string, string> | undefined
+    devDependencies?: Record<string, string> | undefined
   }
   explain: boolean
 }
@@ -31,9 +31,9 @@ interface OutputAskCommandOptions {
 export function explainCommand(intent: {
   action: string
   command: string[]
-  severity?: string
-  environment?: string
-  isDryRun?: boolean
+  severity?: string | undefined
+  environment?: string | undefined
+  isDryRun?: boolean | undefined
 }): string {
   const parts = []
 

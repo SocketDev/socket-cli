@@ -67,7 +67,8 @@ if (!platform || !arch) {
     logger.log(`  Version: ${version}`)
     logger.log(`  Build method: ${buildMethod}`)
     logger.log(`  Binary: ${binaryPath}`)
-    logger.log(`\nPackage ready for publishing at: ${packageDir}`)
+    logger.log('')
+    logger.log(`Package ready for publishing at: ${packageDir}`)
     logger.log(
       `\nTo publish:\n  cd ${packageDir}\n  npm publish --provenance --access public`,
     )

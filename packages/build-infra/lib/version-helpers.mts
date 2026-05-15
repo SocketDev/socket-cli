@@ -39,7 +39,7 @@ export async function getToolVersion(
     })
   }
   let data:
-    | { tools?: Record<string, { version?: string } | undefined> }
+    | { tools?: Record<string, { version?: string | undefined } | undefined> | undefined }
     | undefined
   try {
     data = JSON.parse(raw)

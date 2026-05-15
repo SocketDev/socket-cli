@@ -16,7 +16,7 @@ export const OAUTH_WELL_KNOWN_PATH = '/.well-known/oauth-authorization-server'
 export const OAUTH_PROTECTED_RESOURCE_METADATA_PATH =
   '/.well-known/oauth-protected-resource'
 
-type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo }
+type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo | undefined }
 
 export class OAuthIntrospector {
   private metadataPromise: Promise<OAuthMetadata> | undefined
@@ -275,7 +275,7 @@ export function getRequestBaseUrl(
     forwardedHost ||
     getRequestHeaderValue(req.headers.host).trim() ||
     `localhost:${fallbackPort}`
-  const socketWithTls = req.socket as { encrypted?: boolean }
+  const socketWithTls = req.socket as { encrypted?: boolean | undefined }
   const protocol =
     forwardedProto === 'http' || forwardedProto === 'https'
       ? forwardedProto

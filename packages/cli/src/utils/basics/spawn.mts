@@ -69,10 +69,10 @@ export async function isSocketPyCliInstalled(
  * @returns Object with finding counts by category, or error if parsing failed.
  */
 export async function parseSocketFacts(factsPath: string): Promise<{
-  containers?: number
-  error?: string
-  sast?: number
-  secrets?: number
+  containers?: number | undefined
+  error?: string | undefined
+  sast?: number | undefined
+  secrets?: number | undefined
 }> {
   try {
     const factsContent = await fs.readFile(factsPath, 'utf8')
@@ -86,10 +86,10 @@ export async function parseSocketFacts(factsPath: string): Promise<{
 
     let facts: {
       findings?: {
-        containers?: unknown[]
-        sast?: unknown[]
-        secrets?: unknown[]
-      }
+        containers?: unknown[] | undefined
+        sast?: unknown[] | undefined
+        secrets?: unknown[] | undefined
+      } | undefined
     }
     try {
       facts = JSON.parse(factsContent)
@@ -116,24 +116,24 @@ export async function parseSocketFacts(factsPath: string): Promise<{
 }
 
 export type SocketBasicsOptions = {
-  cacheDir?: string
+  cacheDir?: string | undefined
   cwd: string
-  languages?: string[]
+  languages?: string[] | undefined
   orgSlug: string
-  outputPath?: string
+  outputPath?: string | undefined
   repoName: string
-  scanContainers?: boolean
-  scanSecrets?: boolean
-  spinner?: Spinner
-  timeout?: number
+  scanContainers?: boolean | undefined
+  scanSecrets?: boolean | undefined
+  spinner?: Spinner | undefined
+  timeout?: number | undefined
 }
 
 export type SocketBasicsResult = {
   factsPath: string | null
   findings: {
-    containers?: number
-    sast?: number
-    secrets?: number
+    containers?: number | undefined
+    sast?: number | undefined
+    secrets?: number | undefined
   }
 }
 

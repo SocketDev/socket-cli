@@ -53,7 +53,7 @@ export function getCommandRequirements(
   const key = getRequirementsKey(cmdPath)
   return (
     ((requirements.api as Record<string, unknown>)[key] as
-      | { quota?: number; permissions?: string[] }
+      | { quota?: number | undefined; permissions?: string[] | undefined }
       | undefined) || undefined
   )
 }

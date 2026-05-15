@@ -14,10 +14,10 @@ export type FlagType = 'string' | 'boolean' | 'number' | 'array'
 export interface FlagDefinition {
   type: FlagType
   description: string
-  alias?: string
-  default?: unknown
-  isRequired?: boolean
-  choices?: readonly string[]
+  alias?: string | undefined
+  default?: unknown | undefined
+  isRequired?: boolean | undefined
+  choices?: readonly string[] | undefined
 }
 
 /**
@@ -30,7 +30,7 @@ export type FlagValues = Record<string, unknown>
  */
 export interface ValidationResult {
   ok: boolean
-  errors?: string[]
+  errors?: string[] | undefined
 }
 
 /**
@@ -40,8 +40,8 @@ export interface CommandContext {
   command: CommandDefinition
   flags: FlagValues
   args: string[]
-  spinner?: Spinner
-  outputKind?: string
+  spinner?: Spinner | undefined
+  outputKind?: string | undefined
 }
 
 /**
@@ -68,31 +68,31 @@ export interface CommandDefinition {
   description: string
 
   /** Parent command for subcommands (e.g., 'repository' for 'repository:create') */
-  parent?: string
+  parent?: string | undefined
 
   /** Command aliases */
-  aliases?: string[]
+  aliases?: string[] | undefined
 
   /** Hide from help output */
-  hidden?: boolean
+  hidden?: boolean | undefined
 
   /** Flag definitions */
-  flags?: Record<string, FlagDefinition>
+  flags?: Record<string, FlagDefinition> | undefined
 
   /** Main command handler */
   handler: (context: CommandContext) => Promise<CResult<unknown>>
 
   /** Pre-execution hook */
-  before?: HookFn
+  before?: HookFn | undefined
 
   /** Post-execution hook */
-  after?: HookFn
+  after?: HookFn | undefined
 
   /** Custom validation logic */
-  validate?: (flags: FlagValues) => ValidationResult | Promise<ValidationResult>
+  validate?: ((flags: FlagValues) => ValidationResult | Promise<ValidationResult>) | undefined
 
   /** Examples for help text */
-  examples?: string[]
+  examples?: string[] | undefined
 }
 
 /**

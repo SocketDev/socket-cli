@@ -35,7 +35,8 @@ export async function handleJson(
     logger.info(dashboardMessage)
   } else {
     // only .log goes to stdout
-    logger.info('\n Diff scan result: \n')
+    logger.error('')
+    logger.info(' Diff scan result: \n')
     logger.log(json)
     logger.info(dashboardMessage)
   }
@@ -219,8 +220,7 @@ export async function outputDiffScan(
       maxArrayLength: undefined,
     }),
   )
-  logger.info(
-    '\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n',
-  )
+  logger.error('')
+  logger.info(' 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n')
   logger.info(dashboardMessage)
 }

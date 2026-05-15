@@ -77,7 +77,7 @@ const MILLISECONDS_30_DAYS = Date.now() + 30 * 24 * 60 * 60 * 1000
  */
 export async function mockApiTokenAuth(
   options?: MockTokenOptions,
-): Promise<CResult<{ valid: boolean; user?: unknown }>> {
+): Promise<CResult<{ valid: boolean; user?: unknown | undefined }>> {
   const {
     delay = 50,
     errorMessage = 'Invalid token',
@@ -119,7 +119,7 @@ export async function mockApiTokenAuth(
  * Mock API key generation.
  */
 export async function mockGenerateApiKey(
-  options?: MockAuthOptions & { keyName?: string; scopes?: string[] },
+  options?: MockAuthOptions & { keyName?: string | undefined; scopes?: string[] | undefined },
 ): Promise<CResult<{ apiKey: string; keyId: string }>> {
   const {
     delay = 150,
@@ -129,7 +129,7 @@ export async function mockGenerateApiKey(
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions & { keyName?: string; scopes?: string[] }
+  } as MockAuthOptions & { keyName?: string | undefined; scopes?: string[] | undefined }
 
   await simulateDelay(delay)
 
@@ -154,7 +154,7 @@ export async function mockGenerateApiKey(
  * Mock GitHub OAuth authentication flow.
  */
 export async function mockGitHubAuth(
-  options?: MockAuthOptions & { code?: string },
+  options?: MockAuthOptions & { code?: string | undefined },
 ): Promise<CResult<{ accessToken: string; user: unknown }>> {
   const {
     code = 'github-auth-code-123',
@@ -164,7 +164,7 @@ export async function mockGitHubAuth(
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions & { code?: string }
+  } as MockAuthOptions & { code?: string | undefined }
 
   await simulateDelay(delay)
 
@@ -358,7 +358,7 @@ export async function mockRefreshToken(
  * Mock SSO authentication flow.
  */
 export async function mockSsoAuth(
-  options?: MockAuthOptions & { ssoProvider?: string; ssoOrgSlug?: string },
+  options?: MockAuthOptions & { ssoProvider?: string | undefined; ssoOrgSlug?: string | undefined },
 ): Promise<CResult<{ apiToken: string; user: unknown }>> {
   const {
     delay = 300,
@@ -369,7 +369,7 @@ export async function mockSsoAuth(
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions & { ssoProvider?: string; ssoOrgSlug?: string }
+  } as MockAuthOptions & { ssoProvider?: string | undefined; ssoOrgSlug?: string | undefined }
 
   await simulateDelay(delay)
 

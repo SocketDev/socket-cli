@@ -48,7 +48,7 @@ vi.mock('@socketsecurity/lib/debug', () => ({
 
 // Helper to create a GraphqlResponseError.
 export function createGraphqlError(
-  errors: Array<{ type?: string; message: string }>,
+  errors: Array<{ type?: string | undefined; message: string }>,
 ): GraphqlResponseError<unknown> {
   return new GraphqlResponseError(
     { method: 'POST', url: 'https://api.github.com/graphql' },

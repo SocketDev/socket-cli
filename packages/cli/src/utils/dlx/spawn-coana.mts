@@ -147,7 +147,7 @@ export async function spawnCoanaDlx(
       data: output.stdout?.toString() ?? '',
     }
   } catch (e) {
-    const stderr = (e as { stderr?: string } | undefined)?.stderr
+    const stderr = (e as { stderr?: string | undefined } | undefined)?.stderr
     const cause = getErrorCause(e)
     const message = stderr || cause
     return {
@@ -211,7 +211,7 @@ export async function spawnCoanaVfs(
       data: output.stdout?.toString() ?? '',
     }
   } catch (e) {
-    const stderr = (e as { stderr?: string } | undefined)?.stderr
+    const stderr = (e as { stderr?: string | undefined } | undefined)?.stderr
     const cause = getErrorCause(e)
     const message = stderr || cause
     return {

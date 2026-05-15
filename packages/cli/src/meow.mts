@@ -15,15 +15,15 @@ import type {
 const logger = getDefaultLogger()
 
 export interface MeowFlag {
-  readonly type?: 'string' | 'boolean' | 'number'
-  readonly shortFlag?: string
-  readonly alias?: string | readonly string[]
-  readonly aliases?: readonly string[]
-  readonly default?: unknown
+  readonly type?: 'string' | 'boolean' | 'number' | undefined
+  readonly shortFlag?: string | undefined
+  readonly alias?: string | readonly string[] | undefined
+  readonly aliases?: readonly string[] | undefined
+  readonly default?: unknown | undefined
   readonly isRequired?:
     | boolean
-    | ((flags: Record<string, unknown>, input: readonly string[]) => boolean)
-  readonly isMultiple?: boolean
+    | ((flags: Record<string, unknown>, input: readonly string[]) => boolean) | undefined
+  readonly isMultiple?: boolean | undefined
 }
 
 export type MeowFlags = Record<string, MeowFlag>
@@ -93,25 +93,25 @@ export type InferFlagValues<F extends MeowFlags> = {
 }
 
 export interface MeowOptions<F extends MeowFlags = MeowFlags> {
-  readonly argv?: readonly string[]
-  readonly description?: string | false
-  readonly help?: string
-  readonly flags?: F
-  readonly importMeta?: ImportMeta
-  readonly autoHelp?: boolean
-  readonly autoVersion?: boolean
-  readonly allowUnknownFlags?: boolean
-  readonly collectUnknownFlags?: boolean
+  readonly argv?: readonly string[] | undefined
+  readonly description?: string | false | undefined
+  readonly help?: string | undefined
+  readonly flags?: F | undefined
+  readonly importMeta?: ImportMeta | undefined
+  readonly autoHelp?: boolean | undefined
+  readonly autoVersion?: boolean | undefined
+  readonly allowUnknownFlags?: boolean | undefined
+  readonly collectUnknownFlags?: boolean | undefined
   readonly booleanDefault?: boolean | null | undefined
-  readonly hardRejection?: boolean
-  readonly helpIndent?: number
+  readonly hardRejection?: boolean | undefined
+  readonly helpIndent?: number | undefined
 }
 
 export interface MeowResult<F extends MeowFlags = MeowFlags> {
   readonly input: readonly string[]
   readonly flags: InferFlagValues<F>
   readonly unknownFlags: readonly string[]
-  readonly unnormalizedFlags?: InferFlagValues<F>
+  readonly unnormalizedFlags?: InferFlagValues<F> | undefined
   readonly pkg: Record<string, unknown>
   readonly help: string
   showHelp: (exitCode?: number) => void

@@ -16,11 +16,13 @@ const io = iocraft.default || iocraft
 
 io.init()
 
-logger.log('Testing iocraft layout engine\n')
+logger.log('Testing iocraft layout engine')
+logger.log('')
 logger.log('='.repeat(60))
 
 // Test 1: Column layout.
-logger.log('\n1. Column Layout Test')
+logger.log('')
+logger.log('1. Column Layout Test')
 logger.log('-'.repeat(60))
 const columnBox = io.view([
   io.text('Line 1'),
@@ -35,7 +37,8 @@ io.printComponent(columnBox)
 logger.log('\nComponent tree:', JSON.stringify(columnBox, null, 2))
 
 // Test 2: Border rendering.
-logger.log('\n2. Border Test')
+logger.log('')
+logger.log('2. Border Test')
 logger.log('-'.repeat(60))
 const borderBox = io.view([io.text('Content')])
 borderBox.border_style = 'single'
@@ -47,7 +50,8 @@ io.printComponent(borderBox)
 logger.log('\nComponent tree:', JSON.stringify(borderBox, null, 2))
 
 // Test 3: Gap spacing.
-logger.log('\n3. Gap Test')
+logger.log('')
+logger.log('3. Gap Test')
 logger.log('-'.repeat(60))
 const gapBox = io.view([io.text('A'), io.text('B'), io.text('C')])
 gapBox.flex_direction = 'column'
@@ -58,10 +62,10 @@ logger.log('Actual output:')
 io.printComponent(gapBox)
 
 logger.log('\n' + '='.repeat(60))
-logger.log('\nSUMMARY:')
+logger.log('')
+logger.log('SUMMARY:')
 logger.log('- flex_direction: "column" → NOT WORKING (items render in row)')
 logger.log('- border_style: "single" → NOT WORKING (no border drawn)')
 logger.log('- gap → PARTIALLY WORKING (adds space in row layout)')
-logger.log(
-  '\nThe layout engine does not appear to be processing flexbox properties.',
-)
+logger.log('')
+logger.log('The layout engine does not appear to be processing flexbox properties.')

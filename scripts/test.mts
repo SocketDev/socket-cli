@@ -27,9 +27,9 @@ import {
 const logger = getDefaultLogger()
 
 interface TestOptions {
-  all?: boolean
-  changed?: boolean
-  staged?: boolean
+  all?: boolean | undefined
+  changed?: boolean | undefined
+  staged?: boolean | undefined
 }
 
 interface PackagesToTestResult {
@@ -177,14 +177,17 @@ async function main(): Promise<void> {
     // Show help if requested.
     if (values.help) {
       logger.log('Monorepo Test Runner')
-      logger.log('\nUsage: pnpm test [options] [test-args...]')
-      logger.log('\nOptions:')
+      logger.log('')
+      logger.log('Usage: pnpm test [options] [test-args...]')
+      logger.log('')
+      logger.log('Options:')
       logger.log('  --help         Show this help message')
       logger.log('  --all          Test all packages')
       logger.log('  --changed      Test packages with changed files (default)')
       logger.log('  --staged       Test packages with staged files')
       logger.log('  --quiet, --silent  Suppress progress messages')
-      logger.log('\nExamples:')
+      logger.log('')
+      logger.log('Examples:')
       logger.log('  pnpm test                # Test changed packages (default)')
       logger.log('  pnpm test --all          # Test all packages')
       logger.log('  pnpm test --staged       # Test staged packages')

@@ -27,8 +27,10 @@ export async function outputScanMetadata(
   }
 
   if (outputKind === 'markdown') {
-    logger.log(`${mdHeader('Scan meta data')}\n`)
-    logger.log(`${mdKeyValue('Scan ID', scanId)}\n`)
+    logger.log(`${mdHeader('Scan meta data')}`)
+    logger.log('')
+    logger.log(`${mdKeyValue('Scan ID', scanId)}`)
+    logger.log('')
     // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (
@@ -49,7 +51,8 @@ export async function outputScanMetadata(
       `\nYou can view this report at: [${result.data.html_report_url}](${result.data.html_report_url})\n`,
     )
   } else {
-    logger.log(`Scan ID: ${scanId}\n`)
+    logger.log(`Scan ID: ${scanId}`)
+    logger.log('')
     // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (

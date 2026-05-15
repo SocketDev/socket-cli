@@ -31,10 +31,10 @@ const logger = getDefaultLogger()
 import type { PackageInfo } from './utils/monorepo-helper.mts'
 
 interface CheckOptions {
-  all?: boolean
-  changed?: boolean
-  staged?: boolean
-  quiet?: boolean
+  all?: boolean | undefined
+  changed?: boolean | undefined
+  staged?: boolean | undefined
+  quiet?: boolean | undefined
 }
 
 interface FilesToCheckResult {
@@ -128,7 +128,7 @@ export async function runOxlintCheck(
  * Run TypeScript type check across all packages with type script.
  */
 export async function runTypeCheck(
-  options: { quiet?: boolean } = {},
+  options: { quiet?: boolean | undefined } = {},
 ): Promise<number> {
   const { quiet = false } = options
 
@@ -173,8 +173,10 @@ async function main(): Promise<void> {
     // Show help if requested.
     if (values.help) {
       logger.log('Monorepo Check Runner')
-      logger.log('\nUsage: pnpm check [options]')
-      logger.log('\nOptions:')
+      logger.log('')
+      logger.log('Usage: pnpm check [options]')
+      logger.log('')
+      logger.log('Options:')
       logger.log('  --help         Show this help message')
       logger.log('  --lint         Run Oxlint check only')
       logger.log('  --types        Run TypeScript check only')
@@ -182,7 +184,8 @@ async function main(): Promise<void> {
       logger.log('  --staged       Check packages with staged files')
       logger.log('  --changed      Check packages with changed files')
       logger.log('  --quiet, --silent  Suppress progress messages')
-      logger.log('\nExamples:')
+      logger.log('')
+      logger.log('Examples:')
       logger.log(
         '  pnpm check             # Run all checks on changed packages',
       )
