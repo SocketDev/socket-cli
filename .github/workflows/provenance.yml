@@ -43,11 +43,11 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@75964f14e0682ae4aa846119e2fc9a710d970056 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@75964f14e0682ae4aa846119e2fc9a710d970056 # main (2026-05-15)
         with:
           checkout: 'false'
 
@@ -83,11 +83,11 @@ jobs:
       matrix: ${{ fromJson(needs.build-cli.outputs.matrix) }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@75964f14e0682ae4aa846119e2fc9a710d970056 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@75964f14e0682ae4aa846119e2fc9a710d970056 # main (2026-05-15)
         with:
           checkout: 'false'
           registry-url: 'https://registry.npmjs.org'
@@ -133,11 +133,11 @@ jobs:
       id-token: write # NPM trusted publishing via OIDC
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@75964f14e0682ae4aa846119e2fc9a710d970056 # main
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@75964f14e0682ae4aa846119e2fc9a710d970056 # main (2026-05-15)
         with:
           checkout: 'false'
           registry-url: 'https://registry.npmjs.org'
