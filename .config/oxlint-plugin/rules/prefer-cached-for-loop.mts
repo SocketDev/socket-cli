@@ -86,17 +86,27 @@
  *     `for` loop changes that to sequential awaits, which IS what
  *     the user wants here but only if they say so — flag instead).
  *   - `for...of` over an iterator that isn't a bare Identifier
- *     (`for (const x of getThings())`) — we'd need to hoist the
- *     iterable to a `const` first; skip and flag.
+ *     (`for (const x of getThings())`, `for (const x of obj.list)`)
+ *     — we'd need to hoist the iterable to a `const` first; skip
+ *     SILENTLY. The rewrite is doable in many cases but the human
+ *     review is cleaner, and the rule's user experience is bad if
+ *     it reports an unfixable warning for every member-access loop.
+ *   - `for...of` whose loop variable is destructured
+ *     (`for (const [k, v] of m)`, `for (const { x } of arr)`)
+ *     — the typical source is a Map / Set / `.entries()` iteration
+ *     where there's no equivalent cached-for-loop shape (Maps aren't
+ *     integer-indexable). Skip SILENTLY.
  *   - `for...of` whose body uses `continue`/`break` labels matching
  *     `i` or `length` (extremely rare; skip to be safe).
  *   - `for...await...of` — semantically distinct, do not touch.
- *   - `for...of` over non-array iterables (Map, Set, generators)
- *     — we can't tell statically, but the rule only fires when the
- *     iterable looks like an array-typed identifier. To stay
- *     deterministic we accept some false negatives and only autofix
- *     the bare-Identifier-array shape; the reporter still flags
- *     other shapes so the human can convert manually.
+ *
+ * The earlier revision of this rule reported `preferCachedForNoFix`
+ * for the two skip-silently cases above. That surfaced as a lint
+ * error per location with no autofix path — the user had no way to
+ * resolve the finding short of hand-rewriting (often impossible:
+ * Maps don't have an indexed form). Now the rule only emits findings
+ * when an autofix is available; the cases above are skipped without
+ * a report at all.
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -312,29 +322,18 @@ const rule = {
         }
         const declarator = left.declarations[0]
         if (!declarator.id || declarator.id.type !== 'Identifier') {
-          context.report({
-            node,
-            messageId: 'preferCachedForNoFix',
-            data: {
-              shape: 'for...of',
-              reason: 'loop variable is destructured',
-            },
-          })
+          // Destructured loop var — typically Map/Set/.entries()
+          // iteration where there's no cached-for-loop equivalent.
+          // Skip silently rather than emit an unfixable warning.
           return
         }
         // Iterable must be a bare Identifier — otherwise we don't
-        // know if it's a (cheap) array indexing target.
+        // know if it's a (cheap) array indexing target. The rewrite
+        // for a MemberExpression / CallExpression iterable IS doable
+        // (hoist to a local), but the human review is cleaner.
+        // Skip silently rather than nag.
         const iter = node.right
         if (iter.type !== 'Identifier') {
-          context.report({
-            node,
-            messageId: 'preferCachedForNoFix',
-            data: {
-              shape: 'for...of',
-              reason:
-                'iterable is not a bare identifier (could be Map/Set/Generator/expression)',
-            },
-          })
           return
         }
         if (node.body.type !== 'BlockStatement') {
