@@ -17,15 +17,24 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 const HOOKS_DIR = '.git-hooks'
 
+// Anchor on the script's own location instead of process.cwd(). The
+// `prepare` hook normally runs from the package root, but some
+// invocations (e.g. `pnpm --filter <pkg> install` from a parent
+// dir, or workspace `prepare` chains) execute with a cwd that
+// differs from the script's repo root. `scripts/install-git-hooks.mts`
+// is always at `<repo-root>/scripts/install-git-hooks.mts`, so the
+// parent of __dirname is the repo root.
+const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+
 function main(): void {
-  const cwd = process.cwd()
-  if (!existsSync(path.join(cwd, '.git'))) {
+  if (!existsSync(path.join(REPO_ROOT, '.git'))) {
     return
   }
-  if (!existsSync(path.join(cwd, HOOKS_DIR))) {
+  if (!existsSync(path.join(REPO_ROOT, HOOKS_DIR))) {
     return
   }
 
@@ -33,6 +42,7 @@ function main(): void {
     'git',
     ['config', '--local', '--get', 'core.hooksPath'],
     {
+      cwd: REPO_ROOT,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     },
@@ -45,6 +55,7 @@ function main(): void {
     'git',
     ['config', '--local', 'core.hooksPath', HOOKS_DIR],
     {
+      cwd: REPO_ROOT,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     },
