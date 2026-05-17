@@ -11,7 +11,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { PLATFORM_CONFIGS } from 'build-infra/lib/platform-targets'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import {
   SOCKETADDON_MAIN_TEMPLATE_DIR,

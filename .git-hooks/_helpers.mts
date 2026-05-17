@@ -1,14 +1,14 @@
 // Shared helpers for git hooks — API-key allowlist + content scanners
 // + tiny string utilities (color wrappers, marker-syntax picker, path
 // normalize). Each hook imports `getDefaultLogger` from
-// `@socketsecurity/lib/logger` directly for output; this module stays
+// `@socketsecurity/lib-stable/logger` directly for output; this module stays
 // import-light so the cost of `import './_helpers.mts'` is bounded.
 //
 // Requires Node 25+ for stable .mts type-stripping (no flag needed).
 // Earlier Node versions either lacked --experimental-strip-types or
 // shipped it under a flag, both unacceptable for hook ergonomics.
 //
-// Hooks run *after* `pnpm install`, so `@socketsecurity/lib` is on the
+// Hooks run *after* `pnpm install`, so `@socketsecurity/lib-stable` is on the
 // resolution path for any caller that imports it.
 
 import { spawnSync } from 'node:child_process'
@@ -23,7 +23,7 @@ const nodeMajor = Number.parseInt(
   10,
 )
 if (nodeMajor < NODE_MIN_MAJOR) {
-  // @socketsecurity/lib requires Node >= 25; the canonical logger
+  // @socketsecurity/lib-stable requires Node >= 25; the canonical logger
   // isn't importable here. Use raw process.stderr with ASCII (no
   // status-emoji glyph) so the no-status-emoji lint rule stays clean
   // — the lint rule's recommendation (use logger.fail()) doesn't
@@ -48,7 +48,7 @@ export const ALLOWED_PUBLIC_KEY =
   'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api'
 
 // Substring marker used in test fixtures (see
-// socket-lib/test/unit/util/fake-tokens.ts). Lines containing this
+// socket-lib/test/unit/utils/fake-tokens.ts). Lines containing this
 // are treated as test fixtures.
 export const FAKE_TOKEN_MARKER = 'socket-test-fake-token'
 
@@ -75,7 +75,7 @@ export const SOCKET_SECURITY_ENV = SOCKET_TOKEN_ENV_NAMES[0]!
 
 // ── Output ──────────────────────────────────────────────────────────
 //
-// Hooks call `getDefaultLogger()` from `@socketsecurity/lib/logger`
+// Hooks call `getDefaultLogger()` from `@socketsecurity/lib-stable/logger`
 // directly. Color comes from the logger's semantic methods —
 // `.fail()` is red ✖, `.success()` is green ✔, `.warn()` is yellow ⚠,
 // `.info()` is blue ℹ, `.error()` is plain. ANSI constants and
@@ -445,7 +445,7 @@ export const scanNpxDlx = (text: string): LineHit[] =>
 // ── Logger leak scanner ────────────────────────────────────────────
 //
 // The fleet rule: source code uses `getDefaultLogger()` from
-// `@socketsecurity/lib/logger`. Direct calls to `process.stderr.write`,
+// `@socketsecurity/lib-stable/logger`. Direct calls to `process.stderr.write`,
 // `process.stdout.write`, `console.log`, `console.error`, `console.warn`,
 // `console.info`, `console.debug` are blocked. Doc-context lines are
 // exempt; lines carrying `// socket-hook: allow console` (or `#` in
@@ -490,7 +490,7 @@ export const scanLoggerLeaks = (text: string): LineHit[] =>
 //      because it uses a placeholder like `${HOME}`).
 //
 // The right way is to import from the published npm package
-// (`@socketsecurity/lib/...`, `@socketsecurity/registry/...`).
+// (`@socketsecurity/lib-stable/...`, `@socketsecurity/registry-stable/...`).
 // Scanner detects both shapes; suppress with the canonical marker
 // `<comment-prefix> socket-hook: allow cross-repo`.
 

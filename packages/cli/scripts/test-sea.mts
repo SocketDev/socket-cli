@@ -11,7 +11,7 @@
 
 // oxlint-disable socket/prefer-exists-sync -- all fs.stat() calls here read .size for size reporting; not existence checks.
 
-import { spawn } from '@socketsecurity/lib/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -412,7 +412,7 @@ export async function runWithToolsMode(platform, toolPaths) {
   logger.log('')
 
   // Dynamic import Socket modules.
-  const { getDefaultLogger } = await import('@socketsecurity/lib/logger')
+  const { getDefaultLogger } = await import('@socketsecurity/lib-stable/logger')
   const { injectSeaBlob } = await import('./sea-build-util/builder.mts')
   const { downloadNodeBinary } = await import('./sea-build-util/downloads.mts')
 

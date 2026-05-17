@@ -9,13 +9,13 @@ import type { PackageInfo } from './util/monorepo-helper.mts'
 
 import colors from 'yoctocolors-cjs'
 
-import { isQuiet } from '@socketsecurity/lib/argv/flags'
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { printFooter } from '@socketsecurity/lib/stdio/footer'
-import { printHeader } from '@socketsecurity/lib/stdio/header'
+import { isQuiet } from '@socketsecurity/lib-stable/argv/flags'
+import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { printFooter } from '@socketsecurity/lib-stable/stdio/footer'
+import { printHeader } from '@socketsecurity/lib-stable/stdio/header'
 
 import { getPackagesWithScript } from './util/monorepo-helper.mts'
 

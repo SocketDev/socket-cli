@@ -5,7 +5,7 @@
 
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-package.mts'
 

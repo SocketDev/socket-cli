@@ -16,11 +16,11 @@
  *   --summary    Show only coverage summary (hide detailed output)
  */
 
-import { isQuiet, isVerbose } from '@socketsecurity/lib/argv/flags'
-import { parseArgs } from '@socketsecurity/lib/argv/parse'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { isQuiet, isVerbose } from '@socketsecurity/lib-stable/argv/flags'
+import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 import { PACKAGE_ROOT } from './paths.mts'
 

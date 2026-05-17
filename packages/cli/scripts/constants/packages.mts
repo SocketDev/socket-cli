@@ -26,7 +26,7 @@ export const GITIGNORE = '.gitignore'
 export const NODE_MODULES = 'node_modules'
 export const PACKAGE_JSON = 'package.json'
 export const PNPM_LOCK_YAML = 'pnpm-lock.yaml'
-export const SOCKET_REGISTRY_PACKAGE_NAME = '@socketsecurity/registry'
+export const SOCKET_REGISTRY_PACKAGE_NAME = '@socketsecurity/registry-stable'
 
 // Path separators.
 export const SLASH_NODE_MODULES_SLASH = '/node_modules/'

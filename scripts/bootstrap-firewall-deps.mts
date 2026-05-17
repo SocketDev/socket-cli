@@ -5,7 +5,7 @@
  * before `pnpm install` runs, with Socket Firewall verification on each
  * pinned tarball before extraction.
  *
- * Why: setup.mts (and downstream tooling) imports `@socketsecurity/lib`
+ * Why: setup.mts (and downstream tooling) imports `@socketsecurity/lib-stable`
  * and other zero-dep Socket helpers at module-load time. On a fresh
  * clone, `pnpm install` itself runs scripts that import these — but
  * pnpm install hasn't completed yet, so the imports fail with
@@ -21,25 +21,25 @@
  *
  * --- Repo-convention exceptions ---
  *
- * This script intentionally CANNOT depend on `@socketsecurity/lib`
+ * This script intentionally CANNOT depend on `@socketsecurity/lib-stable`
  * because it is the script that bootstraps that very package. The
  * usual repo conventions therefore do not apply here:
  *
  *   - `fetch()` is used directly instead of `httpJson` from
- *     `@socketsecurity/lib/http-request`.
+ *     `@socketsecurity/lib-stable/http-request`.
  *   - `rmSync` is used directly instead of `safeDelete` from
- *     `@socketsecurity/lib/fs`.
+ *     `@socketsecurity/lib-stable/fs`.
  *   - Caught errors use the inline `e instanceof Error ? e.message
  *     : String(e)` pattern instead of `errorMessage()` from
- *     `@socketsecurity/lib/errors`.
+ *     `@socketsecurity/lib-stable/errors`.
  *
  * These exceptions are intentional, narrow, and self-contained. Do
  * not add other repo-convention violations here without documenting
- * the reason in this header. Once `@socketsecurity/lib` is on disk
+ * the reason in this header. Once `@socketsecurity/lib-stable` is on disk
  * (post-bootstrap), other scripts must use the helpers as normal.
  */
 
-import { spawnSync } from '@socketsecurity/lib/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 
 import os from 'node:os'
@@ -59,8 +59,8 @@ const REPO_ROOT = path.resolve(__dirname, '..')
 //      pnpm install completes — otherwise normal install handles it.
 const BOOTSTRAP_PACKAGES = [
   '@sinclair/typebox',
-  '@socketregistry/packageurl-js',
-  '@socketsecurity/lib',
+  '@socketregistry/packageurl-js-stable',
+  '@socketsecurity/lib-stable',
 ]
 
 // Socket Firewall API — verifies a package isn't malware before we

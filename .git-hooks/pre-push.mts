@@ -22,8 +22,8 @@ import { existsSync, statSync } from 'node:fs'
 import { basename } from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import {
   containsAiAttribution,
@@ -342,7 +342,7 @@ const scanFilesInRange = (range: string): number => {
           }
         }
         logger.info(
-          'Use `getDefaultLogger()` from `@socketsecurity/lib/logger`. ' +
+          'Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger`. ' +
             'For documentation lines that need the literal call, append ' +
             `the marker \`${socketHookMarkerFor(file, 'logger')}\`.`,
         )
@@ -355,7 +355,7 @@ const scanFilesInRange = (range: string): number => {
     //
     // Markdown is exempt: docs legitimately show cross-repo command
     // examples (e.g. `node scripts/foo.mts --target ../socket-lib`)
-    // and re-emitting them with `@socketsecurity/lib/…` would break
+    // and re-emitting them with `@socketsecurity/lib-stable/…` would break
     // the example's runnability. The codepath rule still applies to
     // actual source files.
     if (
@@ -376,7 +376,7 @@ const scanFilesInRange = (range: string): number => {
         }
         logger.info(
           'Cross-repo paths are forbidden — import via the published npm ' +
-            'package (`@socketsecurity/lib/<subpath>`) instead. For doc ' +
+            'package (`@socketsecurity/lib-stable/<subpath>`) instead. For doc ' +
             `lines, append \`${socketHookMarkerFor(file, 'cross-repo')}\`.`,
         )
         errors++

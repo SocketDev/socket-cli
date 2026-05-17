@@ -11,7 +11,7 @@
 import { basename } from 'node:path'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import {
   gitLines,
@@ -219,7 +219,7 @@ const main = (): number => {
 
   // Direct stream writes (process.stderr.write, process.stdout.write,
   // console.*) in source files. Source code uses getDefaultLogger()
-  // from @socketsecurity/lib/logger; the logger-guard PreToolUse hook
+  // from @socketsecurity/lib-stable/logger; the logger-guard PreToolUse hook
   // catches these at edit time, this gate catches them at commit time
   // for edits made outside Claude.
   logger.info('Checking for direct stream writes...')
@@ -264,7 +264,7 @@ const main = (): number => {
         }
       }
       logger.info(
-        'Use `getDefaultLogger()` from `@socketsecurity/lib/logger`. ' +
+        'Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger`. ' +
           'For documentation lines that need the literal call, append ' +
           `the marker \`${socketHookMarkerFor(file, 'logger')}\`.`,
       )
@@ -314,8 +314,8 @@ const main = (): number => {
       logger.info(
         'Cross-repo paths (`../<fleet-repo>/…` or absolute `…/projects/<fleet-repo>/…`) ' +
           'are forbidden — they assume sibling-clone layout and break in CI / fresh clones. ' +
-          'Import via the published npm package instead (`@socketsecurity/lib/<subpath>`, ' +
-          `\`@socketsecurity/registry/<subpath>\`). For documentation lines that need the ` +
+          'Import via the published npm package instead (`@socketsecurity/lib-stable/<subpath>`, ' +
+          `\`@socketsecurity/registry-stable/<subpath>\`). For documentation lines that need the ` +
           `literal path, append the marker \`${socketHookMarkerFor(file, 'cross-repo')}\`.`,
       )
       errors++

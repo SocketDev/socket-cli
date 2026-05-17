@@ -119,7 +119,7 @@ const config: BuildOptions = {
         build.onResolve(
           { filter: socketLibExternalPathRegExp },
           (args: OnResolveArgs) => {
-            if (!args.importer.includes('@socketsecurity/lib/dist/')) {
+            if (!args.importer.includes('@socketsecurity/lib-stable/dist/')) {
               return undefined
             }
             const socketLibPath = findSocketLibPath(args.importer)

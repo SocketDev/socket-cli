@@ -10,7 +10,7 @@
 
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import type { BuildOptions } from 'esbuild'
 

@@ -1,7 +1,7 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
-  "packageManager": "pnpm@11.1.2",
+  "packageManager": "pnpm@11.0.8",
   "private": true,
   "engines": {
     "node": ">=26.0.0",
@@ -53,7 +53,8 @@
     "setup": "node scripts/setup.mts",
     "postinstall": "node scripts/setup.mts --install --quiet",
     "prepare": "node scripts/install-git-hooks.mts",
-    "pretest": "pnpm run build:cli"
+    "pretest": "pnpm run build:cli",
+    "setup-security-tools": "node .claude/hooks/setup-security-tools/install.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
@@ -82,10 +83,14 @@
     "@socketregistry/indent-string": "catalog:",
     "@socketregistry/is-interactive": "catalog:",
     "@socketregistry/packageurl-js": "catalog:",
+    "@socketregistry/packageurl-js-stable": "catalog:",
     "@socketregistry/yocto-spinner": "catalog:",
     "@socketsecurity/lib": "catalog:",
+    "@socketsecurity/lib-stable": "catalog:",
     "@socketsecurity/registry": "catalog:",
+    "@socketsecurity/registry-stable": "catalog:",
     "@socketsecurity/sdk": "catalog:",
+    "@socketsecurity/sdk-stable": "catalog:",
     "@types/cmd-shim": "catalog:",
     "@types/js-yaml": "catalog:",
     "@types/micromatch": "catalog:",
