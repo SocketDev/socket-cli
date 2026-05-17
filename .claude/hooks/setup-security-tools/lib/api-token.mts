@@ -55,11 +55,16 @@ export function findApiToken(): TokenLookup {
   // 1. Env (canonical first, then legacy alias).
   const envCanonical = process.env[CANONICAL]
   if (envCanonical) {
+    // Mirror to the legacy slot if it's empty — keeps spawned children
+    // that resolve the legacy name working without their own keychain
+    // round-trip. See the keychain branch below for the same shape.
+    propagateToEnv(envCanonical)
     cached = { token: envCanonical, source: 'env-canonical' }
     return cached
   }
   const envLegacy = process.env[LEGACY]
   if (envLegacy) {
+    propagateToEnv(envLegacy)
     cached = { token: envLegacy, source: 'env-legacy' }
     return cached
   }
@@ -67,16 +72,34 @@ export function findApiToken(): TokenLookup {
   // 2. OS keychain.
   const fromKeychain = readTokenFromKeychain()
   if (fromKeychain) {
-    // Propagate to env so spawned children inherit it. Cheap; same
-    // process owns the env, no race. Skips the keychain prompt for
-    // any child that re-imports this module or calls security(1).
-    process.env[CANONICAL] = fromKeychain
+    propagateToEnv(fromKeychain)
     cached = { token: fromKeychain, source: 'keychain' }
     return cached
   }
 
   cached = null
   return { token: undefined, source: undefined }
+}
+
+/**
+ * Populate BOTH `SOCKET_API_TOKEN` and `SOCKET_API_KEY` in
+ * `process.env` so any spawned child — whether it resolves the
+ * canonical or the legacy name — inherits the value and skips its
+ * own keychain read. Mirrors the WRITE_SLOTS behavior in
+ * token-storage.mts: writes paint both slots, reads only the
+ * canonical one. The keychain-side legacy slot stays untouched here;
+ * this is purely an in-process env mirror.
+ *
+ * Idempotent — already-set values are left alone (so the user's
+ * explicit env value isn't clobbered by a keychain read).
+ */
+function propagateToEnv(token: string): void {
+  if (!process.env[CANONICAL]) {
+    process.env[CANONICAL] = token
+  }
+  if (!process.env[LEGACY]) {
+    process.env[LEGACY] = token
+  }
 }
 
 /**
