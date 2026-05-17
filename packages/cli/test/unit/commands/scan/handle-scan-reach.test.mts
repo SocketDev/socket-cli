@@ -84,11 +84,11 @@ vi.mock(
   }),
 )
 
-vi.mock('../../../../src/utils/validation/check-input.mts', () => ({
+vi.mock('../../../../src/util/validation/check-input.mts', () => ({
   checkCommandInput: mockCheckCommandInput,
 }))
 
-vi.mock('../../../../src/utils/fs/path-resolve.mjs', () => ({
+vi.mock('../../../../src/util/fs/path-resolve.mjs', () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
 

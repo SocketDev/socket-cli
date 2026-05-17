@@ -21,7 +21,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 
 const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/cli/with-subcommands.mts', () => ({
+vi.mock('../../../../src/util/cli/with-subcommands.mts', () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
 }))
 

@@ -12,7 +12,7 @@
  *
  * Related Files:
  * - src/commands/manifest/cmd-manifest.mts - Command implementation
- * - src/utils/cli/with-subcommands.mjs - Subcommand handling utility
+ * - src/util/cli/with-subcommands.mjs - Subcommand handling utility
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -34,7 +34,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 // Mock meowWithSubcommands.
 const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/cli/with-subcommands.mjs', () => ({
+vi.mock('../../../../src/util/cli/with-subcommands.mjs', () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
 }))
 

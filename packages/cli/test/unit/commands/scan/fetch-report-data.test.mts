@@ -71,16 +71,16 @@ describe('fetchScanData', () => {
       getDefaultSpinner: () => mockSpinner,
     }))
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/api.mjs', () => ({
       handleApiCallNoSpinner: mockHandleApiCallNoSpinner,
       queryApiSafeText: mockQueryApiSafeText,
     }))
 
-    vi.doMock('../../../../src/utils/socket/sdk.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/sdk.mjs', () => ({
       setupSdk: mockSetupSdk,
     }))
 
-    vi.doMock('../../../../src/utils/error/errors.mjs', () => ({
+    vi.doMock('../../../../src/util/error/errors.mjs', () => ({
       formatErrorWithDetail: mockFormatErrorWithDetail,
     }))
   })

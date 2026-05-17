@@ -1,6 +1,6 @@
 import type { OutputKind } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem/types.mts'
-import type { RangeStyle } from '../../utils/semver.mts'
+import type { PURL_Type } from '../../util/ecosystem/types.mts'
+import type { RangeStyle } from '../../util/semver.mts'
 import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 
 export type FixConfig = {

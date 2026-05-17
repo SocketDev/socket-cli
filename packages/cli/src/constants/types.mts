@@ -8,7 +8,7 @@ import type { ENV } from './env.mts'
 export { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 export type { Remap } from '@socketsecurity/lib-stable/objects'
 export type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
-export type { Agent } from '../utils/ecosystem/environment.mjs'
+export type { Agent } from '../util/ecosystem/environment.mjs'
 
 export type RegistryEnv = typeof ENV
 

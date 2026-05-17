@@ -6,9 +6,9 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as ConfigModule from '../../../../src/utils/config.mts'
+import type * as ConfigModule from '../../../../src/util/config.mts'
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mjs'
+import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -32,7 +32,7 @@ vi.mock('@socketsecurity/lib/logger', async importOriginal => {
 const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
 const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(() => false))
 
-vi.mock('../../../../src/utils/config.mts', async importOriginal => {
+vi.mock('../../../../src/util/config.mts', async importOriginal => {
   const actual = await importOriginal<typeof ConfigModule>()
   return {
     ...actual,
@@ -44,7 +44,7 @@ vi.mock('../../../../src/utils/config.mts', async importOriginal => {
 // Mock dry-run output.
 const mockOutputDryRunDelete = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
+vi.mock('../../../../src/util/dry-run/output.mts', () => ({
   outputDryRunDelete: mockOutputDryRunDelete,
 }))
 
@@ -82,7 +82,7 @@ const mockMeowOrExit = vi.hoisted(() =>
 )
 
 vi.mock(
-  '../../../../src/utils/cli/with-subcommands.mjs',
+  '../../../../src/util/cli/with-subcommands.mjs',
   async importOriginal => {
     const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {

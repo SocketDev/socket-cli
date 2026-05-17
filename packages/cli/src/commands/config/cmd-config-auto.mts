@@ -1,19 +1,19 @@
 import { handleConfigAuto } from './handle-config-auto.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
-import { outputDryRunWrite } from '../../utils/dry-run/output.mts'
+import { outputDryRunWrite } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getSupportedConfigEntries,
   isSupportedConfigKey,
-} from '../../utils/config.mts'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/config.mts'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
-import type { LocalConfig } from '../../utils/config.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { LocalConfig } from '../../util/config.mts'
 import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.

@@ -113,7 +113,7 @@ export async function getEmbeddingPipeline() {
     // Load our custom MiniLM inference engine.
     // This uses direct ONNX Runtime + embedded WASM (no transformers.js).
     // Note: model is optional — pattern matching works fine without it.
-    // const { MiniLMInference } = await import('../../utils/minilm-inference.mts')
+    // const { MiniLMInference } = await import('../../util/minilm-inference.mts')
     // embeddingPipeline = await MiniLMInference.create()
     // return embeddingPipeline
 

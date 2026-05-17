@@ -14,25 +14,25 @@ import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
 import * as constants from '../../constants.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { outputDryRunPreview } from '../../utils/dry-run/output.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunPreview } from '../../util/dry-run/output.mts'
+import { getEcosystemChoicesForMeow } from '../../util/ecosystem/types.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
-import { RangeStyles } from '../../utils/semver.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
+import { RangeStyles } from '../../util/semver.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
-import type { DryRunAction } from '../../utils/dry-run/output.mts'
+import type { DryRunAction } from '../../util/dry-run/output.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
-import type { PURL_Type } from '../../utils/ecosystem/types.mts'
-import type { RangeStyle } from '../../utils/semver.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { PURL_Type } from '../../util/ecosystem/types.mts'
+import type { RangeStyle } from '../../util/semver.mts'
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.

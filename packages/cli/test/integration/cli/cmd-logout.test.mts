@@ -23,7 +23,7 @@
  * Related Files:
  * - src/commands/logout/cmd-logout.mts - Command definition
  * - src/commands/logout/handle-logout.mts - Logout logic
- * - src/utils/config.mts - Config management utilities
+ * - src/util/config.mts - Config management utilities
  */
 
 import { describe, expect } from 'vitest'

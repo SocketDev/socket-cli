@@ -14,11 +14,11 @@ import {
   PNPM_LOCK_YAML,
   YARN_LOCK,
 } from '../../constants/paths.mts'
-import { spawnCdxgenDlx, spawnSynpDlx } from '../../utils/dlx/spawn.mjs'
-import { findUp } from '../../utils/fs/find-up.mjs'
-import { isYarnBerry } from '../../utils/yarn/version.mts'
+import { spawnCdxgenDlx, spawnSynpDlx } from '../../util/dlx/spawn.mjs'
+import { findUp } from '../../util/fs/find-up.mjs'
+import { isYarnBerry } from '../../util/yarn/version.mts'
 
-import type { DlxOptions, DlxSpawnResult } from '../../utils/dlx/spawn.mjs'
+import type { DlxOptions, DlxSpawnResult } from '../../util/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 

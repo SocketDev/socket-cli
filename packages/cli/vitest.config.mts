@@ -190,7 +190,7 @@ export default defineConfig({
         // files are excluded — the surrounding output-*.mts files
         // contain non-iocraft logic (markdown / JSON formatters)
         // that's still tested directly.
-        'src/utils/terminal/iocraft.mts',
+        'src/util/terminal/iocraft.mts',
         'src/commands/analytics/AnalyticsRenderer.mts',
         'src/commands/audit-log/AuditLogRenderer.mts',
         'src/commands/threat-feed/ThreatFeedRenderer.mts',

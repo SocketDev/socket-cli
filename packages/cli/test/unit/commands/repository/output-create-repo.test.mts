@@ -42,11 +42,11 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
@@ -58,7 +58,7 @@ describe('outputCreateRepo', () => {
 
   it('outputs JSON format for successful result', async () => {
     const { serializeResultJson } = await vi.importMock(
-      '../../../../src/utils/output/result-json.mjs',
+      '../../../../src/util/output/result-json.mjs',
     )
     const mockSerialize = vi.mocked(serializeResultJson)
 
@@ -128,7 +128,7 @@ describe('outputCreateRepo', () => {
 
   it('outputs error in text format', async () => {
     const { failMsgWithBadge } = await vi.importMock(
-      '../../../../src/utils/error/fail-msg-with-badge.mts',
+      '../../../../src/util/error/fail-msg-with-badge.mts',
     )
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 

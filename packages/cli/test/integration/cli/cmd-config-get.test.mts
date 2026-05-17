@@ -34,7 +34,7 @@
  * Related Files:
  * - src/commands/config/cmd-config-get.mts - Command definition
  * - src/commands/config/handle-config-get.mts - Config retrieval logic
- * - src/utils/config.mts - Config management utilities
+ * - src/util/config.mts - Config management utilities
  */
 
 import semver from 'semver'

@@ -3,11 +3,11 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()

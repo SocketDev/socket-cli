@@ -51,7 +51,7 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -103,7 +103,7 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -145,7 +145,7 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -179,7 +179,7 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -289,7 +289,7 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
@@ -467,7 +467,7 @@ describe('outputListRepos', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mts', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mts', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 

@@ -21,7 +21,7 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 const mockGlobWorkspace = vi.hoisted(() => vi.fn(async () => []))
-vi.mock('../../../../src/utils/fs/glob.mts', () => ({
+vi.mock('../../../../src/util/fs/glob.mts', () => ({
   globWorkspace: mockGlobWorkspace,
   isReportSupportedFile: vi.fn(),
 }))
@@ -69,16 +69,16 @@ vi.mock(
 )
 
 const mockSafeNpa = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/npm/package-arg.mts', () => ({
+vi.mock('../../../../src/util/npm/package-arg.mts', () => ({
   safeNpa: mockSafeNpa,
 }))
 
-vi.mock('../../../../src/utils/process/cmd.mts', () => ({
+vi.mock('../../../../src/util/process/cmd.mts', () => ({
   cmdPrefixMessage: (name: string, msg: string) => `[${name}] ${msg}`,
 }))
 
 const mockGetMajor = vi.hoisted(() => vi.fn((v: string) => parseInt(v, 10)))
-vi.mock('../../../../src/utils/semver.mts', () => ({
+vi.mock('../../../../src/util/semver.mts', () => ({
   getMajor: mockGetMajor,
 }))
 

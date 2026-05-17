@@ -1,12 +1,12 @@
 /**
  * Socket npm command — forwards npm operations to Socket Firewall (sfw).
  *
- * Defined via `defineHandoffCommand`. See utils/cli/define-handoff.mts.
+ * Defined via `defineHandoffCommand`. See util/cli/define-handoff.mts.
  */
 
 import { NPM } from '@socketsecurity/lib-stable/constants/agents'
 
-import { defineHandoffCommand } from '../../utils/cli/define-handoff.mts'
+import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 
 export const CMD_NAME = NPM
 

@@ -11,7 +11,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import {
   gitDeleteBranch,
   gitDeleteRemoteBranch,
-} from '../../utils/git/operations.mjs'
+} from '../../util/git/operations.mjs'
 
 const logger = getDefaultLogger()
 

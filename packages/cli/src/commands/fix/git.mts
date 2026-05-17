@@ -2,7 +2,7 @@ import { joinAnd } from '@socketsecurity/lib-stable/arrays'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 
-import type { GhsaDetails } from '../../utils/git/github.mts'
+import type { GhsaDetails } from '../../util/git/github.mts'
 
 const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
 

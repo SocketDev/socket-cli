@@ -15,7 +15,7 @@ import {
   pathRelativeToTarget,
   projectIgnorePathsToReachExcludePaths,
 } from '../../../../src/commands/scan/exclude-paths.mts'
-import { InputError } from '../../../../src/utils/error/errors.mts'
+import { InputError } from '../../../../src/util/error/errors.mts'
 
 describe('exclude-paths', () => {
   describe('assertNoNegationPatterns', () => {

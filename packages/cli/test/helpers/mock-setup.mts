@@ -21,7 +21,7 @@
  *   },
  * }))
  *
- * vi.mock('../../utils/socket/api.mjs', () => ({
+ * vi.mock('../../util/socket/api.mjs', () => ({
  *   queryApiSafeJson: vi.fn(),
  * }))
  *
@@ -36,7 +36,7 @@
  *
  *     // Use vi.importMock for mocked dependencies
  *     const { logger } = await vi.importMock('@socketsecurity/lib/logger')
- *     const { queryApiSafeJson } = await vi.importMock('../../utils/socket/api.mjs')
+ *     const { queryApiSafeJson } = await vi.importMock('../../util/socket/api.mjs')
  *
  *     const mockLog = vi.mocked(getDefaultLogger().log)
  *     const mockQueryApi = vi.mocked(queryApiSafeJson)

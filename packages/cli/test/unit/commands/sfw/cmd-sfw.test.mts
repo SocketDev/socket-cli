@@ -17,7 +17,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 // Mock spawnSfw.
 const mockSpawnSfw = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dlx/spawn.mts', () => ({
+vi.mock('../../../../src/util/dlx/spawn.mts', () => ({
   spawnSfw: mockSpawnSfw,
 }))
 

@@ -61,14 +61,14 @@ export function setupCommandTest(options: TestSetupOptions): TestStubs {
 
     // Mock SDK if needed
     if (mockSdk) {
-      vi.mock('../../utils/socket/sdk.mjs', () => ({
+      vi.mock('../../util/socket/sdk.mjs', () => ({
         hasDefaultApiToken: vi.fn(() => true),
         setupSdk: vi.fn(() => ({ ok: true, data: stubs.sdk })),
       }))
     }
 
     // Mock config
-    vi.mock('../../utils/config.mts', () => ({
+    vi.mock('../../util/config.mts', () => ({
       getConfigValueOrUndef: vi.fn((key: string) => mockConfig[key]),
     }))
   })
@@ -236,7 +236,7 @@ export const commonTests = {
     args: [],
     setup: () => {
       vi.mocked(
-        require('../../utils/socket/sdk.mjs').hasDefaultApiToken,
+        require('../../util/socket/sdk.mjs').hasDefaultApiToken,
       ).mockReturnValue(false)
     },
     expectedError: /login/,

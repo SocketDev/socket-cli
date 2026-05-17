@@ -16,7 +16,7 @@
  *
  * Related Files:
  * - src/commands/uninstall/teardown-tab-completion.mts - Implementation
- * - src/utils/cli/completion.mts - getBashrcDetails / COMPLETION_CMD_PREFIX
+ * - src/util/cli/completion.mts - getBashrcDetails / COMPLETION_CMD_PREFIX
  * - src/constants/paths.mts - homePath
  */
 
@@ -45,7 +45,7 @@ const { mockGetBashrcDetails } = vi.hoisted(() => ({
   mockGetBashrcDetails: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/cli/completion.mts', () => ({
+vi.mock('../../../../src/util/cli/completion.mts', () => ({
   COMPLETION_CMD_PREFIX: 'source <(socket install completion ',
   getBashrcDetails: mockGetBashrcDetails,
 }))

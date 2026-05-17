@@ -45,7 +45,7 @@ vi.mock('../../../../src/commands/manifest/output-manifest.mts', () => ({
   outputManifest: mockOutputManifest,
 }))
 
-vi.mock('../../../../src/utils/socket/json.mts', () => ({
+vi.mock('../../../../src/util/socket/json.mts', () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
 

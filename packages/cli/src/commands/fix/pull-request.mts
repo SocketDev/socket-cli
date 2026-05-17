@@ -16,7 +16,7 @@ import {
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
 } from '../../constants/github.mts'
-import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
+import { formatErrorWithDetail } from '../../util/error/errors.mjs'
 import {
   cacheFetch,
   getOctokit,
@@ -24,9 +24,9 @@ import {
   handleGraphqlError,
   withGitHubRetry,
   writeCache,
-} from '../../utils/git/github.mts'
-import type { GhsaDetails, Pr } from '../../utils/git/github.mts'
-import { createPrProvider } from '../../utils/git/provider-factory.mts'
+} from '../../util/git/github.mts'
+import type { GhsaDetails, Pr } from '../../util/git/github.mts'
+import { createPrProvider } from '../../util/git/provider-factory.mts'
 
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/lib-stable/fs'

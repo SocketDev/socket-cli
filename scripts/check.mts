@@ -21,14 +21,14 @@ import {
   getAffectedPackages,
   getPackagesWithScript,
   runAcrossPackages,
-} from './utils/monorepo-helper.mts'
+} from './util/monorepo-helper.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const scriptsDir = __dirname
 
 const logger = getDefaultLogger()
 
-import type { PackageInfo } from './utils/monorepo-helper.mts'
+import type { PackageInfo } from './util/monorepo-helper.mts'
 
 interface CheckOptions {
   all?: boolean | undefined

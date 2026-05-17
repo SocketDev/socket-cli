@@ -24,23 +24,23 @@ const mockIsSupportedConfigKey = vi.hoisted(() =>
 )
 const mockGetFlagListOutput = vi.hoisted(() => vi.fn(() => 'flag-list'))
 
-vi.mock('../../../../src/utils/cli/with-subcommands.mts', () => ({
+vi.mock('../../../../src/util/cli/with-subcommands.mts', () => ({
   meowOrExit: mockMeowOrExit,
 }))
-vi.mock('../../../../src/utils/output/mode.mts', () => ({
+vi.mock('../../../../src/util/output/mode.mts', () => ({
   getOutputKind: mockGetOutputKind,
 }))
-vi.mock('../../../../src/utils/validation/check-input.mts', () => ({
+vi.mock('../../../../src/util/validation/check-input.mts', () => ({
   checkCommandInput: mockCheckCommandInput,
 }))
-vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
+vi.mock('../../../../src/util/dry-run/output.mts', () => ({
   outputDryRunWrite: mockOutputDryRunWrite,
 }))
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   getSupportedConfigEntries: mockGetSupportedConfigEntries,
   isSupportedConfigKey: mockIsSupportedConfigKey,
 }))
-vi.mock('../../../../src/utils/output/formatting.mts', () => ({
+vi.mock('../../../../src/util/output/formatting.mts', () => ({
   getFlagListOutput: mockGetFlagListOutput,
 }))
 

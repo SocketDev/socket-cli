@@ -18,7 +18,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock dependencies.
 const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   updateConfigValue: mockUpdateConfigValue,
 }))
 

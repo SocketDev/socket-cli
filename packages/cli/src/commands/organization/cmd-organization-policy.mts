@@ -1,8 +1,8 @@
 import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
 import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
+import { meowWithSubcommands } from '../../util/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import type { CliSubcommand } from '../../util/cli/with-subcommands.mjs'
 
 const description = 'Organization policy details'
 

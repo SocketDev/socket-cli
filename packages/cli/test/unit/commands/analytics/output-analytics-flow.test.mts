@@ -31,7 +31,7 @@ vi.mock('node:fs/promises', () => ({
 vi.mock('../../../../src/commands/analytics/AnalyticsRenderer.mts', () => ({
   displayAnalyticsWithIocraft: mockDisplayAnalyticsWithIocraft,
 }))
-vi.mock('../../../../src/utils/debug.mts', () => ({
+vi.mock('../../../../src/util/debug.mts', () => ({
   debugFileOp: mockDebugFileOp,
 }))
 

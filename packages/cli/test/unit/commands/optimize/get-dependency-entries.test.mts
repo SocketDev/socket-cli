@@ -17,7 +17,7 @@ import { describe, expect, it } from 'vitest'
 
 import { getDependencyEntries } from '../../../../src/commands/optimize/get-dependency-entries.mts'
 
-import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 describe('get-dependency-entries', () => {
   describe('getDependencyEntries', () => {

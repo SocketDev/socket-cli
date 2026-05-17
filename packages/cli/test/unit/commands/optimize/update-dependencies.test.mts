@@ -61,14 +61,14 @@ vi.mock('../../../../src/constants/packages.mts', () => ({
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION: '10.9.0',
 }))
 
-vi.mock('../../../../src/utils/process/cmd.mts', () => ({
+vi.mock('../../../../src/util/process/cmd.mts', () => ({
   cmdPrefixMessage: (cmd: string, msg: string) =>
     cmd ? `${cmd}: ${msg}` : msg,
 }))
 
 import { updateDependencies } from '../../../../src/commands/optimize/update-dependencies.mts'
 
-import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 describe('update-dependencies', () => {
   const mockEnvDetails = {

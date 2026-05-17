@@ -26,7 +26,7 @@
  * Related Files:
  * - src/commands/config/cmd-config-set.mts - Command definition
  * - src/commands/config/handle-config-set.mts - Config update logic
- * - src/utils/config.mts - Config management utilities
+ * - src/util/config.mts - Config management utilities
  */
 
 import { describe, expect } from 'vitest'

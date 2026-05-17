@@ -2,10 +2,10 @@ import colors from 'yoctocolors-cjs'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdHeader } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { getVisibleTokenPrefix } from '../../utils/socket/sdk.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { getVisibleTokenPrefix } from '../../util/socket/sdk.mjs'
 
 import type { OrganizationsCResult } from './fetch-organization-list.mts'
 import type { OutputKind } from '../../types.mts'

@@ -11,14 +11,14 @@ import {
   getRepoName,
   getRepoOwner,
   gitBranch,
-} from '../../utils/git/operations.mjs'
+} from '../../util/git/operations.mjs'
 import {
   readSocketJsonSync,
   writeSocketJson,
-} from '../../utils/socket/json.mts'
+} from '../../util/socket/json.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socket/json.mts'
+import type { SocketJson } from '../../util/socket/json.mts'
 const logger = getDefaultLogger()
 
 export function canceledByUser(): CResult<{ canceled: boolean }> {

@@ -10,7 +10,7 @@
 import { debugDir } from '@socketsecurity/lib-stable/debug'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { getOctokit, withGitHubRetry } from '../../utils/git/github.mts'
+import { getOctokit, withGitHubRetry } from '../../util/git/github.mts'
 
 import type { CResult } from '../../types.mts'
 

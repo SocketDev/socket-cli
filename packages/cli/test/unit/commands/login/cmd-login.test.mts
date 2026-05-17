@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { InputError } from '../../../../src/utils/error/errors.mjs'
+import type { InputError } from '../../../../src/util/error/errors.mjs'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -40,7 +40,7 @@ vi.mock('../../../../src/commands/login/attempt-login.mts', () => ({
 // Mock outputDryRunWrite.
 const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
+vi.mock('../../../../src/util/dry-run/output.mts', () => ({
   outputDryRunWrite: mockOutputDryRunWrite,
 }))
 

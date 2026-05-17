@@ -4,7 +4,7 @@ import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.
 import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
 import { cmdOrganizationPolicy } from './cmd-organization-policy.mts'
 import { cmdOrganizationQuota } from './cmd-organization-quota.mts'
-import { defineSubcommandGroup } from '../../utils/cli/define-subcommand-group.mts'
+import { defineSubcommandGroup } from '../../util/cli/define-subcommand-group.mts'
 
 export const cmdOrganization = defineSubcommandGroup({
   name: 'organization',

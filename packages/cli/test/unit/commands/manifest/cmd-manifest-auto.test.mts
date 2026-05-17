@@ -46,7 +46,7 @@ vi.mock('../../../../src/commands/manifest/generate_auto_manifest.mts', () => ({
   generateAutoManifest: mockGenerateAutoManifest,
 }))
 
-vi.mock('../../../../src/utils/socket/json.mts', () => ({
+vi.mock('../../../../src/util/socket/json.mts', () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
 

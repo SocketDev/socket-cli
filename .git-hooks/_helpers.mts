@@ -48,7 +48,7 @@ export const ALLOWED_PUBLIC_KEY =
   'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api'
 
 // Substring marker used in test fixtures (see
-// socket-lib/test/unit/utils/fake-tokens.ts). Lines containing this
+// socket-lib/test/unit/util/fake-tokens.ts). Lines containing this
 // are treated as test fixtures.
 export const FAKE_TOKEN_MARKER = 'socket-test-fake-token'
 

@@ -1,4 +1,3 @@
-/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
  * Build Socket SEA (Single Executable Application) binaries.
@@ -25,11 +24,11 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { parsePlatformArgs } from 'build-infra/lib/platform-targets'
 import { getSocketbinBinaryPath } from 'package-builder/scripts/paths.mts'
 
-import { buildTarget } from './sea-build-utils/orchestration.mts'
+import { buildTarget } from './sea-build-util/orchestration.mts'
 import {
   getBuildTargets,
   getDefaultNodeVersion,
-} from './sea-build-utils/targets.mts'
+} from './sea-build-util/targets.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')

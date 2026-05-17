@@ -19,7 +19,7 @@ import {
   detectMusl,
   downloadBinject,
   getLatestBinjectVersion,
-} from '../utils/asset-manager-compat.mts'
+} from '../util/asset-manager-compat.mts'
 import { getRootPath, logger } from './downloads.mts'
 import { SOCKET_CLI_SEA_BUILD_DIR } from '../constants/paths.mts'
 

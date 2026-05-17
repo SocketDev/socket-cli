@@ -13,7 +13,7 @@
  *
  * Related Files:
  * - src/commands/sfw/cmd-sfw.mts - sfw command implementation
- * - src/utils/dlx/spawn.mts - DLX spawning for sfw
+ * - src/util/dlx/spawn.mts - DLX spawning for sfw
  */
 
 import { describe, expect } from 'vitest'

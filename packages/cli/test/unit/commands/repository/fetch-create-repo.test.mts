@@ -22,8 +22,8 @@
  * Related Files:
  * - src/commands/repository/fetch-create-repo.mts (implementation)
  * - src/commands/repository/handle-create-repo.mts (handler)
- * - src/utils/socket/api.mts (API utilities)
- * - src/utils/socket/sdk.mts (SDK setup)
+ * - src/util/socket/api.mts (API utilities)
+ * - src/util/socket/sdk.mts (SDK setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -36,11 +36,11 @@ import {
 } from '../../../helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../src/utils/socket/api.mts', () => ({
+vi.mock('../../../../src/util/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 

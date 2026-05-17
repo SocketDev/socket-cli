@@ -5,13 +5,13 @@
     "packages/cli/src/npm-cli.test.mts",
     "packages/cli/src/npx-cli.test.mts",
     "packages/cli/src/pnpm-cli.test.mts",
-    "packages/cli/src/utils/alert/translations.test.mts",
-    "packages/cli/src/utils/dlx/detection.test.mts",
-    "packages/cli/src/utils/git/github.test.mts",
-    "packages/cli/src/utils/npm/paths.test.mts",
-    "packages/cli/src/utils/pnpm/paths.test.mts",
-    "packages/cli/src/utils/yarn/paths.test.mts",
-    "packages/cli/src/utils/yarn/version.test.mts",
+    "packages/cli/src/util/alert/translations.test.mts",
+    "packages/cli/src/util/dlx/detection.test.mts",
+    "packages/cli/src/util/git/github.test.mts",
+    "packages/cli/src/util/npm/paths.test.mts",
+    "packages/cli/src/util/pnpm/paths.test.mts",
+    "packages/cli/src/util/yarn/paths.test.mts",
+    "packages/cli/src/util/yarn/version.test.mts",
     "packages/cli/src/yarn-cli.test.mts"
   ]
 }

@@ -45,7 +45,7 @@ const mockReadSocketJsonSync = vi.hoisted(() =>
 const mockWriteSocketJson = vi.hoisted(() =>
   vi.fn(async () => ({ ok: true, data: undefined })),
 )
-vi.mock('../../../../src/utils/socket/json.mts', () => ({
+vi.mock('../../../../src/util/socket/json.mts', () => ({
   readSocketJsonSync: mockReadSocketJsonSync,
   writeSocketJson: mockWriteSocketJson,
 }))
@@ -54,7 +54,7 @@ const mockGetRepoName = vi.hoisted(() => vi.fn(async () => 'my-repo'))
 const mockGetRepoOwner = vi.hoisted(() => vi.fn(async () => 'my-org'))
 const mockGitBranch = vi.hoisted(() => vi.fn(async () => 'main'))
 const mockDetectDefaultBranch = vi.hoisted(() => vi.fn(async () => 'main'))
-vi.mock('../../../../src/utils/git/operations.mjs', () => ({
+vi.mock('../../../../src/util/git/operations.mjs', () => ({
   getRepoName: mockGetRepoName,
   getRepoOwner: mockGetRepoOwner,
   gitBranch: mockGitBranch,

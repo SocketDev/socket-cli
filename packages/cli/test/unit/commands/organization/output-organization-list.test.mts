@@ -39,21 +39,21 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 // Mock utilities.
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: (msg: string, cause?: string) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
 
-vi.mock('../../../../src/utils/output/markdown.mts', () => ({
+vi.mock('../../../../src/util/output/markdown.mts', () => ({
   mdHeader: (text: string) => `# ${text}`,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
 }))
 
 const mockGetVisibleTokenPrefix = vi.hoisted(() => vi.fn(() => 'sk_live_'))
-vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock('../../../../src/util/socket/sdk.mjs', () => ({
   getVisibleTokenPrefix: mockGetVisibleTokenPrefix,
 }))
 

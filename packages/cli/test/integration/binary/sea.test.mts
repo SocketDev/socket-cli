@@ -8,7 +8,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { ROOT_DIR, logger, prepareBinary } from './helpers.mts'
 import type { BinaryConfig } from './helpers.mts'
 import { ENV } from '../../../src/constants/env.mts'
-import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
+import { getDefaultApiToken } from '../../../src/util/socket/sdk.mts'
 import { executeCliCommand } from '../../helpers/cli-execution.mts'
 
 const BINARY: BinaryConfig = {

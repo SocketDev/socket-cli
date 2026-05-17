@@ -20,8 +20,8 @@
  *
  * Related Files:
  * - src/commands/nuget/cmd-nuget.mts - NuGet wrapper command implementation
- * - src/utils/dlx/spawn.mts - DLX spawn utilities
- * - src/utils/process/cmd.mts - Flag filtering utilities
+ * - src/util/dlx/spawn.mts - DLX spawn utilities
+ * - src/util/process/cmd.mts - Flag filtering utilities
  */
 
 import EventEmitter from 'node:events'
@@ -34,15 +34,15 @@ const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
 const mockMeowOrExit = vi.hoisted(() => vi.fn())
 const mockFilterFlags = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dlx/spawn.mts', () => ({
+vi.mock('../../../../src/util/dlx/spawn.mts', () => ({
   spawnSfwDlx: mockSpawnSfwDlx,
 }))
 
-vi.mock('../../../../src/utils/cli/with-subcommands.mjs', () => ({
+vi.mock('../../../../src/util/cli/with-subcommands.mjs', () => ({
   meowOrExit: mockMeowOrExit,
 }))
 
-vi.mock('../../../../src/utils/process/cmd.mts', () => ({
+vi.mock('../../../../src/util/process/cmd.mts', () => ({
   filterFlags: mockFilterFlags,
 }))
 

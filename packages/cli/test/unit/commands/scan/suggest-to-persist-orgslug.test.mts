@@ -38,7 +38,7 @@ vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
 // Mock config.
 const mockGetConfigValue = vi.hoisted(() => vi.fn())
 const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   getConfigValue: mockGetConfigValue,
   updateConfigValue: mockUpdateConfigValue,
 }))

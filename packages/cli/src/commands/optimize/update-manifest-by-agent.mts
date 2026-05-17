@@ -12,8 +12,8 @@ import { hasKeys, isObject } from '@socketsecurity/lib-stable/objects'
 import { updatePnpmWorkspaceYamlOverrides } from './update-pnpm-workspace-yaml.mts'
 
 import type { Overrides } from './types.mts'
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-import type { Agent } from '../../utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
+import type { Agent } from '../../util/ecosystem/environment.mjs'
 import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages'
 
 const depFields = [

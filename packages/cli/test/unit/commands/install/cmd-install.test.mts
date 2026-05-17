@@ -7,13 +7,13 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mjs'
+import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
 // Mock meowWithSubcommands.
 const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  '../../../../src/utils/cli/with-subcommands.mjs',
+  '../../../../src/util/cli/with-subcommands.mjs',
   async importOriginal => {
     const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {

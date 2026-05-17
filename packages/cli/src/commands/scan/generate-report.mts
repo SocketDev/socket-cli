@@ -12,11 +12,11 @@ import {
   REPORT_LEVEL_MONITOR,
   REPORT_LEVEL_WARN,
 } from '../../constants/reporting.mts'
-import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket/url.mts'
+import { getSocketDevPackageOverviewUrlFromPurl } from '../../util/socket/url.mts'
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
 import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 

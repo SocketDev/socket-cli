@@ -27,7 +27,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mjs'
+import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -63,7 +63,7 @@ const mockGetRepoName = vi.hoisted(() =>
   vi.fn(() => Promise.resolve('my-repo')),
 )
 
-vi.mock('../../../../src/utils/git/operations.mjs', () => ({
+vi.mock('../../../../src/util/git/operations.mjs', () => ({
   detectDefaultBranch: mockDetectDefaultBranch,
   getRepoName: mockGetRepoName,
   gitBranch: mockGitBranch,
@@ -81,7 +81,7 @@ vi.mock('../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
 // Mock dry-run output.
 const mockOutputDryRunUpload = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
+vi.mock('../../../../src/util/dry-run/output.mts', () => ({
   outputDryRunUpload: mockOutputDryRunUpload,
 }))
 
@@ -114,7 +114,7 @@ const mockMeowOrExit = vi.hoisted(() =>
 )
 
 vi.mock(
-  '../../../../src/utils/cli/with-subcommands.mjs',
+  '../../../../src/util/cli/with-subcommands.mjs',
   async importOriginal => {
     const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {

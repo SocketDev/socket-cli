@@ -95,13 +95,13 @@ vi.mock('../../../../src/constants.mts', () => ({
   },
 }))
 
-vi.mock('../../../../src/utils/git/operations.mjs', () => ({
+vi.mock('../../../../src/util/git/operations.mjs', () => ({
   detectDefaultBranch: mockDetectDefaultBranch,
   getRepoName: mockGetRepoName,
   gitBranch: mockGitBranch,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: mockSerializeResultJson,
 }))
 

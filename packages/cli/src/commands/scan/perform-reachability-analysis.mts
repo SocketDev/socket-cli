@@ -8,17 +8,17 @@ import {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
 } from '../../constants/socket.mts'
-import { extractTier1ReachabilityScanId } from '../../utils/coana/extract-scan-id.mjs'
-import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
-import { getMachineOutputMode } from '../../utils/output/ambient-mode.mts'
-import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
-import { socketDevLink } from '../../utils/terminal/link.mts'
+import { extractTier1ReachabilityScanId } from '../../util/coana/extract-scan-id.mjs'
+import { spawnCoanaDlx } from '../../util/dlx/spawn.mjs'
+import { getMachineOutputMode } from '../../util/output/ambient-mode.mts'
+import { hasEnterpriseOrgPlan } from '../../util/organization.mts'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
+import { socketDevLink } from '../../util/terminal/link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
+import type { PURL_Type } from '../../util/ecosystem/types.mjs'
 import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 
 export type ReachabilityOptions = {

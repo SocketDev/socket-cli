@@ -19,7 +19,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock socket URL utility.
-vi.mock('../../../../src/utils/socket/url.mts', () => ({
+vi.mock('../../../../src/util/socket/url.mts', () => ({
   getSocketDevPackageOverviewUrlFromPurl: (art: { name: string }) =>
     `https://socket.dev/pkg/${art.name}`,
 }))
@@ -39,7 +39,7 @@ import {
   REPORT_LEVEL_WARN,
 } from '../../../../src/constants/reporting.mts'
 
-import type { SocketArtifact } from '../../../../src/utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../../../src/util/alert/artifact.mts'
 
 describe('generate-report', () => {
   beforeEach(() => {

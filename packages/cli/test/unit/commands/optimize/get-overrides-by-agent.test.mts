@@ -28,7 +28,7 @@ import {
   getOverridesDataYarnClassic,
 } from '../../../../src/commands/optimize/get-overrides-by-agent.mts'
 
-import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 describe('get-overrides-by-agent', () => {
   const createEnvDetails = (

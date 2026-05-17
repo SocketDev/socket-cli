@@ -169,11 +169,11 @@ Environment variables for development/testing:
 | File                               | Purpose                               |
 | ---------------------------------- | ------------------------------------- |
 | `bundle-tools.json`                | Tool definitions, versions, checksums |
-| `src/utils/dlx/resolve-binary.mts` | Binary resolution logic               |
-| `src/utils/dlx/spawn.mts`          | Tool spawning (VFS + dlx)             |
-| `src/utils/dlx/vfs-extract.mts`    | VFS extraction utilities              |
-| `src/utils/basics/spawn.mts`       | Python-based tools (basics)           |
-| `src/utils/basics/vfs-extract.mts` | Basics tools VFS extraction           |
+| `src/util/dlx/resolve-binary.mts` | Binary resolution logic               |
+| `src/util/dlx/spawn.mts`          | Tool spawning (VFS + dlx)             |
+| `src/util/dlx/vfs-extract.mts`    | VFS extraction utilities              |
+| `src/util/basics/spawn.mts`       | Python-based tools (basics)           |
+| `src/util/basics/vfs-extract.mts` | Basics tools VFS extraction           |
 | `src/env/*-version.mts`            | Version getters (esbuild inlined)     |
 | `src/env/*-checksums.mts`          | Checksum getters (esbuild inlined)    |
 
@@ -184,8 +184,8 @@ Environment variables for development/testing:
 1. Add entry to `bundle-tools.json` with version and checksums
 2. Create `src/env/{tool}-version.mts` version getter
 3. Create `src/env/{tool}-checksums.mts` checksum getter (if applicable)
-4. Add resolve function in `src/utils/dlx/resolve-binary.mts`
-5. Add spawn functions in `src/utils/dlx/spawn.mts`:
+4. Add resolve function in `src/util/dlx/resolve-binary.mts`
+5. Add spawn functions in `src/util/dlx/spawn.mts`:
    - `spawn{Tool}Vfs()` - VFS extraction path
    - `spawn{Tool}Dlx()` - Download path
    - `spawn{Tool}()` - Auto-detect wrapper

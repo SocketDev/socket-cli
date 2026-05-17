@@ -20,7 +20,7 @@ You are a critical bug detector specializing in TypeScript CLI applications. You
 <context>
 **Repository**: socket-cli (TypeScript CLI tool using meow framework)
 **Primary scan target**: packages/cli/src/
-**Conventions**: `@socketsecurity/lib/*` imports, `InputError`/`AuthError` types from `src/utils/errors.mts`
+**Conventions**: `@socketsecurity/lib/*` imports, `InputError`/`AuthError` types from `src/util/errors.mts`
 </context>
 
 <task>
@@ -465,7 +465,7 @@ Fix: [Add invalidation / expiration / atomic writes]
 Impact: [Stale data, auth failures, corruption]
 ```
 
-Focus on persistent caches (survive process exit). Ignore in-memory caches. Check src/utils/config.mts and src/utils/auth.mts primarily.
+Focus on persistent caches (survive process exit). Ignore in-memory caches. Check src/util/config.mts and src/util/auth.mts primarily.
 </output>
 ```
 
@@ -745,7 +745,7 @@ Fix: [Use env vars, pin SHAs, scope secrets, restrict cache]
 Impact: [Remote code execution, credential theft, supply chain compromise]
 ```
 
-Scan `.github/workflows/*.yml` and `src/utils/auth.mts`, `src/utils/api.mts` for credential handling. Focus on user-controlled inputs (PR metadata, issue bodies, workflow inputs).
+Scan `.github/workflows/*.yml` and `src/util/auth.mts`, `src/util/api.mts` for credential handling. Focus on user-controlled inputs (PR metadata, issue bodies, workflow inputs).
 </output>
 ```
 

@@ -39,7 +39,7 @@ vi.mock('@socketsecurity/lib/debug', () => ({
 }))
 
 const mockGetBashrcDetails = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/cli/completion.mts', () => ({
+vi.mock('../../../../src/util/cli/completion.mts', () => ({
   getBashrcDetails: mockGetBashrcDetails,
 }))
 

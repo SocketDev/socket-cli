@@ -4,9 +4,9 @@ import { handleCmdJson } from './handle-cmd-json.mts'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 const config = {
   commandName: 'json',

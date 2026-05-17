@@ -21,7 +21,7 @@ import {
   matchQueryCmdStdout,
 } from '../../../../src/commands/optimize/deps-includes-by-agent.mts'
 
-import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 describe('deps-includes-by-agent', () => {
   describe('matchLsCmdViewHumanStdout', () => {

@@ -70,31 +70,31 @@ vi.mock(
   }),
 )
 
-vi.mock('../../../../src/utils/coana/extract-scan-id.mjs', () => ({
+vi.mock('../../../../src/util/coana/extract-scan-id.mjs', () => ({
   extractTier1ReachabilityScanId: mockExtractTier1ReachabilityScanId,
 }))
 
-vi.mock('../../../../src/utils/dlx/spawn.mjs', () => ({
+vi.mock('../../../../src/util/dlx/spawn.mjs', () => ({
   spawnCoanaDlx: mockSpawnCoanaDlx,
 }))
 
-vi.mock('../../../../src/utils/output/ambient-mode.mts', () => ({
+vi.mock('../../../../src/util/output/ambient-mode.mts', () => ({
   getMachineOutputMode: mockGetMachineOutputMode,
 }))
 
-vi.mock('../../../../src/utils/organization.mts', () => ({
+vi.mock('../../../../src/util/organization.mts', () => ({
   hasEnterpriseOrgPlan: mockHasEnterpriseOrgPlan,
 }))
 
-vi.mock('../../../../src/utils/socket/api.mjs', () => ({
+vi.mock('../../../../src/util/socket/api.mjs', () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock('../../../../src/util/socket/sdk.mjs', () => ({
   setupSdk: mockSetupSdk,
 }))
 
-vi.mock('../../../../src/utils/terminal/link.mts', () => ({
+vi.mock('../../../../src/util/terminal/link.mts', () => ({
   socketDevLink: mockSocketDevLink,
 }))
 

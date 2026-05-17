@@ -3,13 +3,13 @@ import fs from 'node:fs/promises'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTable } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { fileLink } from '../../utils/terminal/link.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { fileLink } from '../../util/terminal/link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
 const logger = getDefaultLogger()
 
 export async function outputScanView(

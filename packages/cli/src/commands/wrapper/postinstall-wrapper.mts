@@ -7,8 +7,8 @@ import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import { getBashRcPath, getZshRcPath } from '../../constants/paths.mts'
-import { getBashrcDetails } from '../../utils/cli/completion.mts'
-import { FileSystemError, getErrorCause } from '../../utils/error/errors.mjs'
+import { getBashrcDetails } from '../../util/cli/completion.mts'
+import { FileSystemError, getErrorCause } from '../../util/error/errors.mjs'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
 const logger = getDefaultLogger()
 

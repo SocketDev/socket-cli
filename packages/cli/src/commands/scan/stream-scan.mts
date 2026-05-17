@@ -1,9 +1,9 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 
 const logger = getDefaultLogger()
 

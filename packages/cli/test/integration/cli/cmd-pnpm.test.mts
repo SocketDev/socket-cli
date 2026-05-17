@@ -20,7 +20,7 @@
  * Related Files:
  * - src/commands/pnpm/cmd-pnpm.mts - pnpm command implementation
  * - src/pnpm-cli.mts - pnpm CLI entry point
- * - src/utils/dlx/resolve-binary.mjs - sfw resolution
+ * - src/util/dlx/resolve-binary.mjs - sfw resolution
  * - test/integration/cli/cmd-pnpm-malware.test.mts - Malware tests
  */
 

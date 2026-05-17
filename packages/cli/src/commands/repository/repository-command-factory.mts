@@ -6,25 +6,25 @@ import {
   outputDryRunDelete,
   outputDryRunFetch,
   outputDryRunUpload,
-} from '../../utils/dry-run/output.mts'
+} from '../../util/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { webLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { webLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 import type { OutputKind } from '../../types.mjs'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+} from '../../util/cli/with-subcommands.mjs'
 
 const logger = getDefaultLogger()
 

@@ -14,11 +14,11 @@ import {
   getConfigValueOrUndef,
   isConfigFromFlag,
   updateConfigValue,
-} from '../../utils/config.mts'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { getEnterpriseOrgs, getOrgSlugs } from '../../utils/organization.mts'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
-import { socketDocsLink } from '../../utils/terminal/link.mts'
+} from '../../util/config.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { getEnterpriseOrgs, getOrgSlugs } from '../../util/organization.mts'
+import { setupSdk } from '../../util/socket/sdk.mjs'
+import { socketDocsLink } from '../../util/terminal/link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 

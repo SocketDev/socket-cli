@@ -8,7 +8,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as SdkModule from '../../../../src/utils/socket/sdk.mjs'
+import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 import type * as SocketCliModule from '@socketsecurity/lib-stable/env/socket-cli'
 
 // Mock the logger.
@@ -64,11 +64,11 @@ vi.mock('../../../../src/commands/scan/suggest-org-slug.mts', () => ({
   suggestOrgSlug: mockSuggestOrgSlug,
 }))
 
-vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
+vi.mock('../../../../src/util/socket/org-slug.mjs', () => ({
   determineOrgSlug: mockDetermineOrgSlug,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
+vi.mock('../../../../src/util/socket/sdk.mjs', async importOriginal => {
   const actual = await importOriginal<typeof SdkModule>()
   return {
     ...actual,
@@ -76,12 +76,12 @@ vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
   }
 })
 
-vi.mock('../../../../src/utils/socket/json.mts', () => ({
+vi.mock('../../../../src/util/socket/json.mts', () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
 
 const mockOutputDryRunUpload = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
+vi.mock('../../../../src/util/dry-run/output.mts', () => ({
   outputDryRunUpload: mockOutputDryRunUpload,
 }))
 

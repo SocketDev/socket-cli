@@ -20,7 +20,7 @@
  *
  * Related Files:
  * - src/commands/optimize/agent-installer.mts - Implementation
- * - src/utils/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities
+ * - src/util/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities
  * - test/integration/cli/cmd-optimize.test.mts - Integration tests for full optimize flow
  */
 
@@ -40,7 +40,7 @@ vi.mock('@socketsecurity/lib/spinner', () => ({
   })),
 }))
 
-vi.mock('../../../../../src/utils/process/cmd.mts', () => ({
+vi.mock('../../../../../src/util/process/cmd.mts', () => ({
   cmdFlagsToString: vi.fn(flags =>
     Object.entries(flags || {})
       .map(([k, v]) => `--${k}=${v}`)

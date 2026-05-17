@@ -22,13 +22,13 @@
  * Related Files:
  * - src/commands/mcp/cmd-mcp.mts - Implementation
  * - src/commands/mcp/handle-mcp.mts - Dispatcher (mocked)
- * - src/utils/cli/with-subcommands.mts - meowOrExit (mocked)
+ * - src/util/cli/with-subcommands.mts - meowOrExit (mocked)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mjs'
+import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -98,7 +98,7 @@ vi.mock('../../../../src/commands/mcp/handle-mcp.mts', () => ({
 }))
 
 vi.mock(
-  '../../../../src/utils/cli/with-subcommands.mjs',
+  '../../../../src/util/cli/with-subcommands.mjs',
   async importOriginal => {
     const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {

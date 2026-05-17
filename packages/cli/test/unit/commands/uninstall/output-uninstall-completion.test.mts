@@ -30,7 +30,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 // Mock utilities.
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: (msg: string, cause?: string) =>
     cause ? `${msg}: ${cause}` : msg,
 }))

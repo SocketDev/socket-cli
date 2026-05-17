@@ -34,11 +34,11 @@ import {
 import { fetchOrganization } from '../../../../src/src/commands/../../../../src/commands/organization/fetch-organization-list.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({
+vi.mock('../../../../../src/commands/../util/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../utils/socket/sdk.mts', () => ({
+vi.mock('../../../../../src/commands/../util/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -115,7 +115,7 @@ describe('fetchOrganizationList', () => {
 
   it('uses provided SDK instance', async () => {
     const { handleApiCall } =
-      await import('../../../../../src/commands/../../../../src/utils/socket/api.mts')
+      await import('../../../../../src/commands/../../../../src/util/socket/api.mts')
     const { createSuccessResult } =
       await import('../../../../../src/commands/../../test/helpers/mocks.mts')
 

@@ -17,7 +17,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 // Mock spawnSocketPyCli.
 const mockSpawnSocketPyCli = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/python/standalone.mts', () => ({
+vi.mock('../../../../src/util/python/standalone.mts', () => ({
   spawnSocketPyCli: mockSpawnSocketPyCli,
 }))
 

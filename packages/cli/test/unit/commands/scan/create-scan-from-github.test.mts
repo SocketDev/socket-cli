@@ -19,7 +19,7 @@
  *
  * Related Files:
  * - src/commands/scan/create-scan-from-github.mts (implementation)
- * - src/utils/git/github.mts (GitHub utilities)
+ * - src/util/git/github.mts (GitHub utilities)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -51,7 +51,7 @@ const mockWithGitHubRetry = vi.hoisted(() =>
 )
 
 // Mock dependencies.
-vi.mock('../../../../src/utils/git/github.mts', () => ({
+vi.mock('../../../../src/util/git/github.mts', () => ({
   GITHUB_ERR_ABUSE_DETECTION: 'GitHub abuse detection triggered',
   GITHUB_ERR_AUTH_FAILED: 'GitHub authentication failed',
   GITHUB_ERR_GRAPHQL_RATE_LIMIT: 'GitHub GraphQL rate limit exceeded',

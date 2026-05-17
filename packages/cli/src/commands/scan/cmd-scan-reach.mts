@@ -7,25 +7,25 @@ import { handleScanReach } from './handle-scan-reach.mts'
 import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
-import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
-import { InputError } from '../../utils/error/errors.mts'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
+import { InputError } from '../../util/error/errors.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mts'
+import { getEcosystemChoicesForMeow } from '../../util/ecosystem/types.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mts'
-import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mts'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mts'
+import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
+import { determineOrgSlug } from '../../util/socket/org-slug.mts'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { MeowFlags } from '../../flags.mts'
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mts'
-import type { PURL_Type } from '../../utils/ecosystem/types.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
+import type { PURL_Type } from '../../util/ecosystem/types.mts'
 
 // Flags interface for type safety.
 interface ScanReachFlags {

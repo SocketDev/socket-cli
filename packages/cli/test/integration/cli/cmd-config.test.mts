@@ -27,7 +27,7 @@
  * Related Files:
  * - src/commands/config/cmd-config.mts - Root command definition
  * - src/commands/config/cmd-config-*.mts - Subcommand definitions
- * - src/utils/config.mts - Config management utilities
+ * - src/util/config.mts - Config management utilities
  */
 
 import { describe, expect } from 'vitest'

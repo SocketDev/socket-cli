@@ -8,7 +8,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as SdkModule from '../../../../src/utils/socket/sdk.mjs'
+import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -39,11 +39,11 @@ vi.mock('../../../../src/commands/scan/handle-list-scans.mts', () => ({
   handleListScans: mockHandleListScans,
 }))
 
-vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
+vi.mock('../../../../src/util/socket/org-slug.mjs', () => ({
   determineOrgSlug: mockDetermineOrgSlug,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
+vi.mock('../../../../src/util/socket/sdk.mjs', async importOriginal => {
   const actual = await importOriginal<typeof SdkModule>()
   return {
     ...actual,

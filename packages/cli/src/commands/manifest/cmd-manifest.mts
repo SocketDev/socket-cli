@@ -5,7 +5,7 @@ import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
 import { cmdManifestScala } from './cmd-manifest-scala.mts'
 import { cmdManifestSetup } from './cmd-manifest-setup.mts'
-import { defineSubcommandGroup } from '../../utils/cli/define-subcommand-group.mts'
+import { defineSubcommandGroup } from '../../util/cli/define-subcommand-group.mts'
 
 const description = 'Generate a dependency manifest for certain ecosystems'
 

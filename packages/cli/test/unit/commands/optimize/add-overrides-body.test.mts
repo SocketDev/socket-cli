@@ -64,7 +64,7 @@ export async function loadAddOverrides(opts: {
       }
     },
   }))
-  vi.doMock('../../../../src/utils/fs/glob.mts', () => ({
+  vi.doMock('../../../../src/util/fs/glob.mts', () => ({
     globWorkspace: opts.globWorkspace ?? vi.fn(async () => []),
     isReportSupportedFile: vi.fn(),
   }))
@@ -108,13 +108,13 @@ export async function loadAddOverrides(opts: {
       updateManifest: vi.fn(),
     }),
   )
-  vi.doMock('../../../../src/utils/npm/package-arg.mts', () => ({
+  vi.doMock('../../../../src/util/npm/package-arg.mts', () => ({
     safeNpa: opts.safeNpa ?? vi.fn(() => undefined),
   }))
-  vi.doMock('../../../../src/utils/process/cmd.mts', () => ({
+  vi.doMock('../../../../src/util/process/cmd.mts', () => ({
     cmdPrefixMessage: (name: string, msg: string) => `[${name}] ${msg}`,
   }))
-  vi.doMock('../../../../src/utils/semver.mts', () => ({
+  vi.doMock('../../../../src/util/semver.mts', () => ({
     getMajor: opts.getMajor ?? vi.fn((v: string) => parseInt(v, 10)),
   }))
   if (opts.fetchPackageManifest) {

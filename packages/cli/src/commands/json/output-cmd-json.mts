@@ -7,7 +7,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { REDACTED } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'
 import { SOCKET_JSON } from '../../constants/socket.mts'
-import { tildify } from '../../utils/fs/home-path.mjs'
+import { tildify } from '../../util/fs/home-path.mjs'
 const logger = getDefaultLogger()
 
 export async function outputCmdJson(cwd: string) {

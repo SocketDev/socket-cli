@@ -3,10 +3,10 @@
  *
  * Defined via `defineHandoffCommand`, which collapses the standard
  * parse-flags / filter-flags / spawn-sfw / forward-exit pattern into a
- * single declarative spec. See `utils/cli/define-handoff.mts`.
+ * single declarative spec. See `util/cli/define-handoff.mts`.
  */
 
-import { defineHandoffCommand } from '../../utils/cli/define-handoff.mts'
+import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 
 export const cmdCargo = defineHandoffCommand({
   name: 'cargo',

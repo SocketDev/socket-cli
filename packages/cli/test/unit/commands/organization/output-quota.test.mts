@@ -58,7 +58,7 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -95,7 +95,7 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -450,7 +450,7 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
@@ -490,7 +490,7 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
     }))
 
@@ -607,7 +607,7 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -637,7 +637,7 @@ describe('outputQuota', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/emit-payload.mts', () => ({
+    vi.doMock('../../../../src/util/output/emit-payload.mts', () => ({
       emitPayload: vi.fn(),
     }))
 

@@ -13,7 +13,7 @@
  *
  * Related Files:
  * - src/commands/gem/cmd-gem.mts - gem command implementation
- * - src/utils/dlx/resolve-binary.mts - sfw resolution
+ * - src/util/dlx/resolve-binary.mts - sfw resolution
  */
 
 import { describe, expect } from 'vitest'

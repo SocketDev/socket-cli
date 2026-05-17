@@ -12,7 +12,7 @@
  *
  * Related Files:
  * - src/commands/pycli/cmd-pycli.mts - pycli command implementation
- * - src/utils/python/standalone.mts - Python CLI spawning
+ * - src/util/python/standalone.mts - Python CLI spawning
  */
 
 import { describe, expect } from 'vitest'

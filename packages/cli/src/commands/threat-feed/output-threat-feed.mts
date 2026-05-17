@@ -1,8 +1,8 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { getPurlObject } from '../../utils/purl/parse.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { getPurlObject } from '../../util/purl/parse.mts'
 import { displayThreatFeedWithIocraft } from './ThreatFeedRenderer.mts'
 
 import type { ThreadFeedResponse } from './types.mts'

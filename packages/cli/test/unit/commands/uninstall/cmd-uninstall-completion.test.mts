@@ -33,7 +33,7 @@ vi.mock(
   }),
 )
 
-vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
+vi.mock('../../../../src/util/dry-run/output.mts', () => ({
   outputDryRunDelete: mockOutputDryRunDelete,
 }))
 

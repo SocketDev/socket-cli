@@ -57,7 +57,7 @@ vi.mock('../../../../src/commands/optimize/shared.mts', () => ({
 
 import { applyOptimization } from '../../../../src/commands/optimize/apply-optimization.mts'
 
-import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 describe('apply-optimization', () => {
   const mockEnvDetails = {

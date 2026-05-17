@@ -1,9 +1,9 @@
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mjs'
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 

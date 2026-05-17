@@ -21,7 +21,7 @@ import {
   SCAN_TYPE_SOCKET,
   SCAN_TYPE_SOCKET_TIER1,
 } from '../../constants.mts'
-import { runSocketBasics } from '../../utils/basics/spawn.mts'
+import { runSocketBasics } from '../../util/basics/spawn.mts'
 
 /**
  * Filter out .socket.facts.json files from scan paths to avoid duplicates.
@@ -32,12 +32,12 @@ import { runSocketBasics } from '../../utils/basics/spawn.mts'
 export function excludeFactsJson(paths: string[]): string[] {
   return paths.filter(p => path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON)
 }
-import { compressSocketFactsForUpload } from '../../utils/coana/compress-facts.mts'
-import { findSocketYmlSync } from '../../utils/config.mts'
-import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
-import { socketDocsLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+import { compressSocketFactsForUpload } from '../../util/coana/compress-facts.mts'
+import { findSocketYmlSync } from '../../util/config.mts'
+import { getPackageFilesForScan } from '../../util/fs/path-resolve.mts'
+import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
+import { socketDocsLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 

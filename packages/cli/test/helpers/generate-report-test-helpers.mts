@@ -1,4 +1,4 @@
-import type { SocketArtifact } from '../../src/utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../src/util/alert/artifact.mts'
 
 /**
  * Helper function to create a scan with environment variable alerts.

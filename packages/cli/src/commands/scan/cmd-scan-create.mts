@@ -14,32 +14,32 @@ import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
-import { outputDryRunUpload } from '../../utils/dry-run/output.mts'
-import { InputError } from '../../utils/error/errors.mts'
+import { outputDryRunUpload } from '../../util/dry-run/output.mts'
+import { InputError } from '../../util/error/errors.mts'
 import { defineFlags } from '../../meow.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mts'
+import { getEcosystemChoicesForMeow } from '../../util/ecosystem/types.mts'
 import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git/operations.mts'
+} from '../../util/git/operations.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mts'
-import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
-import { readOrDefaultSocketJsonUp } from '../../utils/socket/json.mts'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mts'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mts'
-import { socketDashboardLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mts'
+import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
+import { readOrDefaultSocketJsonUp } from '../../util/socket/json.mts'
+import { determineOrgSlug } from '../../util/socket/org-slug.mts'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mts'
+import { socketDashboardLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { REPORT_LEVEL } from './types.mts'
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mts'
-import type { PURL_Type } from '../../utils/ecosystem/types.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
+import type { PURL_Type } from '../../util/ecosystem/types.mts'
 
 // Flags interface for type safety.
 interface ScanCreateFlags {

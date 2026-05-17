@@ -1,4 +1,4 @@
-import { queryApiSafeJson } from '../../utils/socket/api.mjs'
+import { queryApiSafeJson } from '../../util/socket/api.mjs'
 
 import type { ThreadFeedResponse } from './types.mts'
 import type { CResult } from '../../types.mts'

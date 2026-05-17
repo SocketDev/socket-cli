@@ -9,7 +9,7 @@ import { debugLog } from '@socketsecurity/lib-stable/debug'
 import { ENVIRONMENT_YAML, ENVIRONMENT_YML } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 
-import type { SocketJson } from '../../utils/socket/json.mts'
+import type { SocketJson } from '../../util/socket/json.mts'
 
 export interface GeneratableManifests {
   cdxgen: boolean

@@ -68,11 +68,11 @@ const mockReadFile = vi.hoisted(() => vi.fn())
 const mockWriteFile = vi.hoisted(() => vi.fn())
 const mockLogPrEvent = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dlx/spawn.mjs', () => ({
+vi.mock('../../../../src/util/dlx/spawn.mjs', () => ({
   spawnCoanaDlx: mockSpawnCoanaDlx,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock('../../../../src/util/socket/sdk.mjs', () => ({
   setupSdk: mockSetupSdk,
 }))
 
@@ -83,11 +83,11 @@ vi.mock(
   }),
 )
 
-vi.mock('../../../../src/utils/fs/path-resolve.mjs', () => ({
+vi.mock('../../../../src/util/fs/path-resolve.mjs', () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
 
-vi.mock('../../../../src/utils/socket/api.mjs', () => ({
+vi.mock('../../../../src/util/socket/api.mjs', () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
@@ -103,14 +103,14 @@ vi.mock('../../../../src/commands/fix/pull-request.mts', () => ({
   openSocketFixPr: mockOpenSocketFixPr,
 }))
 
-vi.mock('../../../../src/utils/git/github.mts', () => ({
+vi.mock('../../../../src/util/git/github.mts', () => ({
   enablePrAutoMerge: mockEnablePrAutoMerge,
   fetchGhsaDetails: mockFetchGhsaDetails,
   getOctokit: mockGetOctokit,
   setGitRemoteGithubRepoUrl: mockSetGitRemoteGithubRepoUrl,
 }))
 
-vi.mock('../../../../src/utils/git/operations.mjs', () => ({
+vi.mock('../../../../src/util/git/operations.mjs', () => ({
   gitCheckoutBranch: mockGitCheckoutBranch,
   gitCommit: mockGitCommit,
   gitCreateBranch: mockGitCreateBranch,

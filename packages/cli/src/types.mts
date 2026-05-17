@@ -1,4 +1,4 @@
-import type { SetupSdkOptions } from './utils/socket/sdk.mjs'
+import type { SetupSdkOptions } from './util/socket/sdk.mjs'
 
 export type StringKeyValueObject = { [key: string]: string }
 

@@ -24,8 +24,8 @@
  * Related Files:
  * - src/commands/login/cmd-login.mts - Command definition
  * - src/commands/login/handle-login.mts - Authentication logic
- * - src/utils/config.mts - Config storage utilities
- * - src/utils/api.mts - Socket API client
+ * - src/util/config.mts - Config storage utilities
+ * - src/util/api.mts - Socket API client
  */
 
 import { describe, expect } from 'vitest'

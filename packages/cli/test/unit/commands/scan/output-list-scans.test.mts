@@ -42,7 +42,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 const mockFailMsgWithBadge = vi.hoisted(() =>
   vi.fn((msg, cause) => `${msg}: ${cause}`),
 )
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: mockFailMsgWithBadge,
 }))
 
@@ -50,7 +50,7 @@ vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
 const mockSerializeResultJson = vi.hoisted(() =>
   vi.fn(result => JSON.stringify(result)),
 )
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: mockSerializeResultJson,
 }))
 

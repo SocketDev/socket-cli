@@ -7,7 +7,7 @@
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { Box, Text, print } from '../../utils/terminal/iocraft.mts'
+import { Box, Text, print } from '../../util/terminal/iocraft.mts'
 
 const logger = getDefaultLogger()
 

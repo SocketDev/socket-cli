@@ -4,8 +4,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
-import { convertCveToGhsa } from '../../utils/cve-to-ghsa.mts'
-import { convertPurlToGhsas } from '../../utils/purl/to-ghsa.mts'
+import { convertCveToGhsa } from '../../util/cve-to-ghsa.mts'
+import { convertPurlToGhsas } from '../../util/purl/to-ghsa.mts'
 
 import type { FixConfig } from './types.mts'
 import type { OutputKind } from '../../types.mts'

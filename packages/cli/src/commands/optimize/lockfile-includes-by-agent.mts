@@ -8,7 +8,7 @@ import {
 import { EXT_LOCK } from '@socketsecurity/lib-stable/paths/exts'
 import { escapeRegExp } from '@socketsecurity/lib-stable/regexps'
 
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
 export function bunLockSrcIncludes(
   lockSrc: string,

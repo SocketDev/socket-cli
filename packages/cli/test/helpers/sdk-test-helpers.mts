@@ -8,8 +8,8 @@ import {
   createSuccessResult,
 } from './mocks.mts'
 
-import type * as ApiModule from '../../src/utils/socket/api.mts'
-import type * as SdkModule from '../../src/utils/socket/sdk.mts'
+import type * as ApiModule from '../../src/util/socket/api.mts'
+import type * as SdkModule from '../../src/util/socket/sdk.mts'
 import type { Mock } from 'vitest'
 
 /**
@@ -20,7 +20,7 @@ import type { Mock } from 'vitest'
  */
 export async function getMockHandleApiCall(): Promise<Mock> {
   const module = await vi.importMock<typeof ApiModule>(
-    '../../src/utils/socket/api.mts',
+    '../../src/util/socket/api.mts',
   )
   return vi.mocked(module.handleApiCall)
 }
@@ -33,7 +33,7 @@ export async function getMockHandleApiCall(): Promise<Mock> {
  */
 export async function getMockSetupSdk(): Promise<Mock> {
   const module = await vi.importMock<typeof SdkModule>(
-    '../../src/utils/socket/sdk.mts',
+    '../../src/util/socket/sdk.mts',
   )
   return vi.mocked(module.setupSdk)
 }

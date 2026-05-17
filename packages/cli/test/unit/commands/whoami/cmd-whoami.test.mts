@@ -14,23 +14,23 @@
  * Testing Approach:
  * - Mock logger to capture output
  * - Mock meowOrExit to control flag values and prevent process.exit
- * - Mock getDefaultApiToken from utils/socket/sdk.mts
- * - Mock getVisibleTokenPrefix from utils/socket/sdk.mts
+ * - Mock getDefaultApiToken from util/socket/sdk.mts
+ * - Mock getVisibleTokenPrefix from util/socket/sdk.mts
  * - Mock SOCKET_CLI_API_TOKEN environment variable
- * - Mock getConfigValueOrUndef from utils/config.mts
+ * - Mock getConfigValueOrUndef from util/config.mts
  * - Test output format for authenticated/unauthenticated states
  * - Verify token display masking (TOKEN_PREFIX + visible prefix + ...)
  *
  * Related Files:
  * - src/commands/whoami/cmd-whoami.mts - Implementation
- * - src/utils/socket/sdk.mts - Token utilities
- * - src/utils/config.mts - Config file utilities
+ * - src/util/socket/sdk.mts - Token utilities
+ * - src/util/config.mts - Config file utilities
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mjs'
+import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -103,12 +103,12 @@ vi.mock('../../../../src/env/socket-cli-api-token.mts', () => ({
 }))
 
 // Mock config utilities.
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   getConfigValueOrUndef: mockGetConfigValueOrUndef,
 }))
 
 // Mock SDK utilities.
-vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock('../../../../src/util/socket/sdk.mjs', () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
   getVisibleTokenPrefix: mockGetVisibleTokenPrefix,
   hasDefaultApiToken: vi.fn(() => false),
@@ -123,7 +123,7 @@ vi.mock('../../../../src/constants/socket.mjs', () => ({
 
 // Mock meowOrExit to prevent actual CLI parsing and process.exit.
 vi.mock(
-  '../../../../src/utils/cli/with-subcommands.mjs',
+  '../../../../src/util/cli/with-subcommands.mjs',
   async importOriginal => {
     const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {

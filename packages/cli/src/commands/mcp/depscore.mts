@@ -2,7 +2,7 @@ import { Type } from '@sinclair/typebox'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { setupSdk } from '../../utils/socket/sdk.mts'
+import { setupSdk } from '../../util/socket/sdk.mts'
 import { deduplicateArtifacts } from './lib/artifacts.mts'
 import { buildPurl } from './lib/purl.mts'
 

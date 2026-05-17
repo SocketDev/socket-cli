@@ -15,8 +15,8 @@
  *
  * Testing Approach:
  * - Mock Socket SDK using setupSdkMockSuccess/Error/SetupFailure helpers
- * - Mock handleApiCall from utils/socket/api.mts
- * - Mock setupSdk from utils/socket/sdk.mts
+ * - Mock handleApiCall from util/socket/api.mts
+ * - Mock setupSdk from util/socket/sdk.mts
  * - Verify SDK method calls with correct repository and time parameters
  * - Test CResult pattern (ok/error states)
  *
@@ -36,11 +36,11 @@ import {
 import { fetchRepoAnalyticsData } from '../../../../src/src/commands/../../../../src/commands/analytics/fetch-repo-analytics.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({
+vi.mock('../../../../../src/commands/../util/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../utils/socket/sdk.mts', () => ({
+vi.mock('../../../../../src/commands/../util/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 

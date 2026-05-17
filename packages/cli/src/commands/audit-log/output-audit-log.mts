@@ -8,9 +8,9 @@ import {
   REDACTED,
 } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTable } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 import { displayAuditLogWithIocraft } from './AuditLogRenderer.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'

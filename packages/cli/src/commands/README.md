@@ -209,7 +209,7 @@ export const rootCommands = {
 Parent commands register subcommands using `meowWithSubcommands()`:
 
 ```typescript
-import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import type { CliSubcommand } from '../../util/cli/with-subcommands.mjs'
 
 export const cmdScan: CliSubcommand = {
   description: 'Manage Socket scans',
@@ -275,7 +275,7 @@ mkdir -p src/commands/mycommand
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+} from '../../util/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'mycommand'
 const description = 'My command description'

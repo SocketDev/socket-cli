@@ -12,7 +12,7 @@
  * - API call failures during organization fetch
  *
  * Testing Approach:
- * - Mock getConfigValueOrUndef from utils/config.mts
+ * - Mock getConfigValueOrUndef from util/config.mts
  * - Mock fetchOrganization from organization/fetch-organization-list.mts
  * - Mock env.SOCKET_CLI_ORG_SLUG environment variable
  * - Test priority order and fallback chain
@@ -21,7 +21,7 @@
  * Related Files:
  * - src/commands/ci/fetch-default-org-slug.mts - Implementation
  * - src/commands/ci/handle-ci.mts - CI command handler that uses this
- * - src/utils/config.mts - Config file utilities
+ * - src/util/config.mts - Config file utilities
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -39,7 +39,7 @@ const { mockOrgSlug, mockFetchOrganization, mockGetConfigValueOrUndef } =
   })
 
 // Mock the dependencies.
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   getConfigValueOrUndef: mockGetConfigValueOrUndef,
 }))
 

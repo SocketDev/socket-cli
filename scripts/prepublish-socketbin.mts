@@ -13,7 +13,7 @@ import {
   getSocketbinBinaryPath,
   getSocketbinPackageDir,
 } from 'package-builder/scripts/paths.mts'
-import { preparePackageForPublish } from 'package-builder/scripts/utils/prepare-package.mts'
+import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-package.mts'
 
 const logger = getDefaultLogger()
 

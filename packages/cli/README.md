@@ -31,7 +31,7 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 - [Documentation](#documentation)
 - [Module Reference](#module-reference)
   - [Command Modules (src/commands/)](#command-modules-srccommands)
-  - [Utility Modules (src/utils/)](#utility-modules-srcutils)
+  - [Utility Modules (src/util/)](#utility-modules-srcutils)
 - [Constants (src/constants/)](#constants-srcconstants)
 - [Installation](#installation)
 - [License](#license)
@@ -254,7 +254,7 @@ Dual update system based on installation method:
 ## Utility Modules
 
 ```
-src/utils/
+src/util/
 ├── alert/               Alert translations and formatting
 ├── cli/                 CLI framework (meow integration)
 ├── coana/               Coana reachability analysis
@@ -288,7 +288,7 @@ src/utils/
 Structured error types with recovery suggestions:
 
 ```typescript
-// Error types in src/utils/error/errors.mts
+// Error types in src/util/error/errors.mts
 AuthError          401/403 API authentication failures
 InputError         User input validation failures
 NetworkError       Network connectivity issues
@@ -420,7 +420,7 @@ pnpm dev:npx cowsay hello         # Test npx with Socket Firewall
 Socket SDK integration:
 
 ```typescript
-// src/utils/socket/api.mts
+// src/util/socket/api.mts
 import { SocketSdkClient } from '@socketsecurity/sdk'
 
 // Automatic error handling with spinners
@@ -504,7 +504,7 @@ Features:
 - `json/` - JSON utilities
 - `oops/` - Error recovery
 
-### Utility Modules (src/utils/)
+### Utility Modules (src/util/)
 
 **API & Network**
 

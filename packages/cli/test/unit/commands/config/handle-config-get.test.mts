@@ -12,7 +12,7 @@
  * - Output function integration
  *
  * Testing Approach:
- * - Mock getConfigValue from utils/config.mts
+ * - Mock getConfigValue from util/config.mts
  * - Mock outputConfigGet for output verification
  * - Mock logger for error/success messages
  * - Use createSuccessResult/createErrorResult helpers
@@ -20,7 +20,7 @@
  *
  * Related Files:
  * - src/commands/config/handle-config-get.mts - Implementation
- * - src/utils/config.mts - Config file utilities
+ * - src/util/config.mts - Config file utilities
  * - src/commands/config/output-config-get.mts - Output formatter
  */
 
@@ -52,7 +52,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 vi.mock('../../../../src/commands/config/output-config-get.mts', () => ({
   outputConfigGet: mockOutputConfigGet,
 }))
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   getConfigValue: mockGetConfigValue,
 }))
 
@@ -62,7 +62,7 @@ describe('handleConfigGet', () => {
   })
 
   it('gets config value successfully', async () => {
-    const { getConfigValue } = await import('../../../../src/utils/config.mts')
+    const { getConfigValue } = await import('../../../../src/util/config.mts')
     const { outputConfigGet } =
       await import('../../../../src/commands/config/output-config-get.mts')
 
@@ -79,7 +79,7 @@ describe('handleConfigGet', () => {
   })
 
   it('handles missing config value', async () => {
-    const { getConfigValue } = await import('../../../../src/utils/config.mts')
+    const { getConfigValue } = await import('../../../../src/util/config.mts')
     const { outputConfigGet } =
       await import('../../../../src/commands/config/output-config-get.mts')
 
@@ -96,7 +96,7 @@ describe('handleConfigGet', () => {
   })
 
   it('handles markdown output', async () => {
-    const { getConfigValue } = await import('../../../../src/utils/config.mts')
+    const { getConfigValue } = await import('../../../../src/util/config.mts')
     const { outputConfigGet } =
       await import('../../../../src/commands/config/output-config-get.mts')
 
@@ -117,7 +117,7 @@ describe('handleConfigGet', () => {
   })
 
   it('handles different config keys', async () => {
-    const { getConfigValue } = await import('../../../../src/utils/config.mts')
+    const { getConfigValue } = await import('../../../../src/util/config.mts')
     const { outputConfigGet } =
       await import('../../../../src/commands/config/output-config-get.mts')
 

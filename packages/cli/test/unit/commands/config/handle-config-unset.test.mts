@@ -12,7 +12,7 @@
  * - Output function integration
  *
  * Testing Approach:
- * - Mock unsetConfigValue from utils/config.mts
+ * - Mock unsetConfigValue from util/config.mts
  * - Mock outputConfigUnset for output verification
  * - Mock logger for error/success messages
  * - Use createSuccessResult/createErrorResult helpers
@@ -20,7 +20,7 @@
  *
  * Related Files:
  * - src/commands/config/handle-config-unset.mts - Implementation
- * - src/utils/config.mts - Config file utilities
+ * - src/util/config.mts - Config file utilities
  * - src/commands/config/output-config-unset.mts - Output formatter
  */
 
@@ -52,7 +52,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 vi.mock('../../../../src/commands/config/output-config-unset.mts', () => ({
   outputConfigUnset: mockOutputConfigUnset,
 }))
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   updateConfigValue: mockUpdateConfigValue,
 }))
 
@@ -63,7 +63,7 @@ describe('handleConfigUnset', () => {
 
   it('unsets config value successfully', async () => {
     const { updateConfigValue } =
-      await import('../../../../src/utils/config.mts')
+      await import('../../../../src/util/config.mts')
     const { outputConfigUnset } =
       await import('../../../../src/commands/config/output-config-unset.mts')
 
@@ -81,7 +81,7 @@ describe('handleConfigUnset', () => {
 
   it('handles unset failure', async () => {
     const { updateConfigValue } =
-      await import('../../../../src/utils/config.mts')
+      await import('../../../../src/util/config.mts')
     const { outputConfigUnset } =
       await import('../../../../src/commands/config/output-config-unset.mts')
 
@@ -99,7 +99,7 @@ describe('handleConfigUnset', () => {
 
   it('handles markdown output', async () => {
     const { updateConfigValue } =
-      await import('../../../../src/utils/config.mts')
+      await import('../../../../src/util/config.mts')
     const { outputConfigUnset } =
       await import('../../../../src/commands/config/output-config-unset.mts')
 
@@ -117,7 +117,7 @@ describe('handleConfigUnset', () => {
 
   it('handles different config keys', async () => {
     const { updateConfigValue } =
-      await import('../../../../src/utils/config.mts')
+      await import('../../../../src/util/config.mts')
     const { outputConfigUnset } =
       await import('../../../../src/commands/config/output-config-unset.mts')
 
@@ -156,7 +156,7 @@ describe('handleConfigUnset', () => {
 
   it('handles already unset config value', async () => {
     const { updateConfigValue } =
-      await import('../../../../src/utils/config.mts')
+      await import('../../../../src/util/config.mts')
     const { outputConfigUnset } =
       await import('../../../../src/commands/config/output-config-unset.mts')
 

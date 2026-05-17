@@ -14,7 +14,7 @@
     "../src/commands/threat-feed/output-threat-feed.mts",
     "../src/**/*.test.mts",
     "../src/test/**/*.mts",
-    "../src/utils/test-mocks.mts",
+    "../src/util/test-mocks.mts",
     "../test/**/*.mts"
   ]
 }

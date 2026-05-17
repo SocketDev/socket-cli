@@ -11,7 +11,7 @@ import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 import { FLAG_PROD } from '../../constants/cli.mts'
 
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
 export function cleanupQueryStdout(stdout: string): string {
   if (stdout === '') {

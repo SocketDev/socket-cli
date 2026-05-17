@@ -9,9 +9,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mjs'
-import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
-import { socketHttpRequest } from '../../utils/socket/api.mjs'
-import { isReportSupportedFile } from '../../utils/fs/glob.mts'
+import { formatErrorWithDetail } from '../../util/error/errors.mjs'
+import { socketHttpRequest } from '../../util/socket/api.mjs'
+import { isReportSupportedFile } from '../../util/fs/glob.mts'
 import {
   GITHUB_ERR_ABUSE_DETECTION,
   GITHUB_ERR_AUTH_FAILED,
@@ -19,7 +19,7 @@ import {
   GITHUB_ERR_RATE_LIMIT,
   getOctokit,
   withGitHubRetry,
-} from '../../utils/git/github.mts'
+} from '../../util/git/github.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'

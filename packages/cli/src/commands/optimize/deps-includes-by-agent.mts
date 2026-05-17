@@ -4,7 +4,7 @@ import {
   YARN_CLASSIC,
 } from '@socketsecurity/lib-stable/constants/agents'
 
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
 export function lsStdoutIncludes(
   pkgEnvDetails: EnvDetails,

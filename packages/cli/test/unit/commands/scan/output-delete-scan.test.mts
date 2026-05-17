@@ -26,12 +26,12 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: (message: string, cause?: string) =>
     cause ? `${message}: ${cause}` : message,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result),
 }))
 

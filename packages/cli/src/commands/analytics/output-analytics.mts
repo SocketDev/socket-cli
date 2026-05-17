@@ -2,11 +2,11 @@ import fs from 'node:fs/promises'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { debugFileOp } from '../../utils/debug.mts'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTableStringNumber } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { fileLink } from '../../utils/terminal/link.mts'
+import { debugFileOp } from '../../util/debug.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTableStringNumber } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { fileLink } from '../../util/terminal/link.mts'
 import { displayAnalyticsWithIocraft } from './AnalyticsRenderer.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'

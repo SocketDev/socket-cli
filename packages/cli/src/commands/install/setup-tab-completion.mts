@@ -13,7 +13,7 @@ import { safeMkdirSync } from '@socketsecurity/lib-stable/fs'
 
 import { getCliVersionHash } from '../../env/cli-version-hash.mts'
 import { homePath } from '../../constants/paths.mts'
-import { getBashrcDetails } from '../../utils/cli/completion.mts'
+import { getBashrcDetails } from '../../util/cli/completion.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

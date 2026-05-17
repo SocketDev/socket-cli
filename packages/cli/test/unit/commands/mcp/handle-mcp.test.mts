@@ -26,7 +26,7 @@
  * - src/commands/mcp/handle-mcp.mts - Implementation
  * - src/commands/mcp/transport-stdio.mts - Stdio runner (mocked)
  * - src/commands/mcp/transport-http.mts - HTTP runner (mocked)
- * - src/utils/socket/sdk.mts - getDefaultApiToken (mocked)
+ * - src/util/socket/sdk.mts - getDefaultApiToken (mocked)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -51,7 +51,7 @@ const { mockGetDefaultApiToken } = vi.hoisted(() => ({
   mockGetDefaultApiToken: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
 }))
 

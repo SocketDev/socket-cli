@@ -1,13 +1,13 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { select } from '@socketsecurity/lib-stable/stdio/prompts'
 
-import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdHeader } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { isConfigFromFlag, updateConfigValue } from '../../util/config.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { LocalConfig } from '../../utils/config.mts'
+import type { LocalConfig } from '../../util/config.mts'
 const logger = getDefaultLogger()
 
 export async function outputConfigAuto(

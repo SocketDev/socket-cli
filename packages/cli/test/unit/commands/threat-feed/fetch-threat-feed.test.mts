@@ -37,7 +37,7 @@ describe('fetchThreatFeed', () => {
   it('fetches threat feed successfully', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/api.mjs', () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -91,7 +91,7 @@ describe('fetchThreatFeed', () => {
   it('handles SDK setup failure', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/api.mjs', () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -121,7 +121,7 @@ describe('fetchThreatFeed', () => {
   it('handles API call failure', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/api.mjs', () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -150,7 +150,7 @@ describe('fetchThreatFeed', () => {
   it('passes custom SDK options', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/api.mjs', () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -179,7 +179,7 @@ describe('fetchThreatFeed', () => {
   it('handles filtering by severity levels', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/api.mjs', () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -208,7 +208,7 @@ describe('fetchThreatFeed', () => {
   it('handles pagination parameters', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/api.mjs', () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -237,7 +237,7 @@ describe('fetchThreatFeed', () => {
   it('handles date range filtering', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/api.mjs', () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -266,7 +266,7 @@ describe('fetchThreatFeed', () => {
   it('uses null prototype for options', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock('../../../../src/util/socket/api.mjs', () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 

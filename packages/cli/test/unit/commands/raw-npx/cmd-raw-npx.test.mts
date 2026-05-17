@@ -27,7 +27,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mjs'
+import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -80,14 +80,14 @@ vi.mock('@socketsecurity/lib/constants/platform', () => ({
 // Mock npx path utilities.
 const mockGetNpxBinPath = vi.hoisted(() => vi.fn(() => '/usr/bin/npx'))
 
-vi.mock('../../../../src/utils/npm/paths.mts', () => ({
+vi.mock('../../../../src/util/npm/paths.mts', () => ({
   getNpxBinPath: mockGetNpxBinPath,
 }))
 
 // Mock dry-run output.
 const mockOutputDryRunExecute = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dry-run/output.mts', () => ({
+vi.mock('../../../../src/util/dry-run/output.mts', () => ({
   outputDryRunExecute: mockOutputDryRunExecute,
 }))
 
@@ -119,7 +119,7 @@ const mockMeowOrExit = vi.hoisted(() =>
 )
 
 vi.mock(
-  '../../../../src/utils/cli/with-subcommands.mjs',
+  '../../../../src/util/cli/with-subcommands.mjs',
   async importOriginal => {
     const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {

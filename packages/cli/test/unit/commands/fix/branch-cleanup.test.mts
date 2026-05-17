@@ -31,7 +31,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 // Mock git operations.
 const mockGitDeleteBranch = vi.hoisted(() => vi.fn())
 const mockGitDeleteRemoteBranch = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/git/operations.mjs', () => ({
+vi.mock('../../../../src/util/git/operations.mjs', () => ({
   gitDeleteBranch: mockGitDeleteBranch,
   gitDeleteRemoteBranch: mockGitDeleteRemoteBranch,
 }))

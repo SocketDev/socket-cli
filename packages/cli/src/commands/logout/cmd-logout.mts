@@ -1,6 +1,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { outputDryRunDelete } from '../../utils/dry-run/output.mts'
+import { outputDryRunDelete } from '../../util/dry-run/output.mts'
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -9,11 +9,11 @@ import {
 } from '../../constants/config.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { isConfigFromFlag, updateConfigValue } from '../../utils/config.mts'
-import { invalidateDefaultApiToken } from '../../utils/socket/sdk.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { isConfigFromFlag, updateConfigValue } from '../../util/config.mts'
+import { invalidateDefaultApiToken } from '../../util/socket/sdk.mts'
 
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()

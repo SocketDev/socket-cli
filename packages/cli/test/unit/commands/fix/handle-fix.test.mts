@@ -22,8 +22,8 @@
  *
  * Related Files:
  * - src/commands/fix/handle-fix.mts - Main fix command handler
- * - src/utils/cve-to-ghsa.mts - CVE ID conversion utility
- * - src/utils/purl/to-ghsa.mts - PURL to GHSA conversion
+ * - src/util/cve-to-ghsa.mts - CVE ID conversion utility
+ * - src/util/purl/to-ghsa.mts - PURL to GHSA conversion
  * - src/commands/fix/coana-fix.mts - Coana API integration for applying fixes
  */
 
@@ -62,10 +62,10 @@ vi.mock('../../../../src/commands/fix/coana-fix.mts', () => ({
 vi.mock('../../../../src/commands/fix/output-fix-result.mts', () => ({
   outputFixResult: mockOutputFixResult,
 }))
-vi.mock('../../../../src/utils/cve-to-ghsa.mts', () => ({
+vi.mock('../../../../src/util/cve-to-ghsa.mts', () => ({
   convertCveToGhsa: mockConvertCveToGhsa,
 }))
-vi.mock('../../../../src/utils/purl/to-ghsa.mts', () => ({
+vi.mock('../../../../src/util/purl/to-ghsa.mts', () => ({
   convertPurlToGhsas: mockConvertPurlToGhsas,
 }))
 

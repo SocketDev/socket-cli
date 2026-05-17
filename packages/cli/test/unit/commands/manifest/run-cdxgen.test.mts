@@ -34,16 +34,16 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-vi.mock('../../../../src/utils/fs/find-up.mts', () => ({
+vi.mock('../../../../src/util/fs/find-up.mts', () => ({
   findUp: mockFindUp,
 }))
 
-vi.mock('../../../../src/utils/dlx/spawn.mts', () => ({
+vi.mock('../../../../src/util/dlx/spawn.mts', () => ({
   spawnCdxgenDlx: mockSpawnCdxgenDlx,
   spawnSynpDlx: mockSpawnSynpDlx,
 }))
 
-vi.mock('../../../../src/utils/yarn/version.mts', () => ({
+vi.mock('../../../../src/util/yarn/version.mts', () => ({
   isYarnBerry: mockIsYarnBerry,
 }))
 

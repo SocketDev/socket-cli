@@ -1,8 +1,8 @@
 import { outputConfigGet } from './output-config-get.mts'
-import { getConfigValue } from '../../utils/config.mts'
+import { getConfigValue } from '../../util/config.mts'
 
 import type { OutputKind } from '../../types.mts'
-import type { LocalConfig } from '../../utils/config.mts'
+import type { LocalConfig } from '../../util/config.mts'
 
 export async function handleConfigGet({
   key,

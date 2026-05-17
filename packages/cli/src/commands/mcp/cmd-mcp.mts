@@ -8,10 +8,10 @@ import { getSocketOauthRequiredScopes } from '../../env/socket-oauth-required-sc
 import { getTrustProxy } from '../../env/trust-proxy.mts'
 import { commonFlags } from '../../flags.mts'
 import { defineFlags } from '../../meow.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
 
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'mcp'
 

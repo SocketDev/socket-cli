@@ -27,7 +27,7 @@ import {
   yarnLockSrcIncludes,
 } from '../../../../src/commands/optimize/lockfile-includes-by-agent.mts'
 
-import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 describe('lockfile-includes-by-agent', () => {
   describe('npmLockSrcIncludes', () => {

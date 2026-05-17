@@ -12,10 +12,10 @@ import { SOCKET_JSON } from '../../constants/socket.mts'
 import {
   readSocketJsonSync,
   writeSocketJson,
-} from '../../utils/socket/json.mts'
+} from '../../util/socket/json.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socket/json.mts'
+import type { SocketJson } from '../../util/socket/json.mts'
 const logger = getDefaultLogger()
 
 export async function askForBin(defaultName = ''): Promise<string | undefined> {

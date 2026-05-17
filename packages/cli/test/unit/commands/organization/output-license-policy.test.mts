@@ -54,7 +54,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -95,7 +95,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -132,7 +132,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
     }))
@@ -183,7 +183,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
@@ -224,7 +224,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
     }))
@@ -265,7 +265,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
     }))
@@ -304,7 +304,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
       mdHeader: vi.fn(title => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
     }))
@@ -343,7 +343,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -374,7 +374,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -413,7 +413,7 @@ describe('outputLicensePolicy', () => {
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/markdown.mts', () => ({
+    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
     }))

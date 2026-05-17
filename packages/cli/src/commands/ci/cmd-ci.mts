@@ -2,16 +2,16 @@ import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { handleCi } from './handle-ci.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { outputDryRunUpload } from '../../utils/dry-run/output.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunUpload } from '../../util/dry-run/output.mts'
 import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git/operations.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
+} from '../../util/git/operations.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
 
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
 
 const config = {

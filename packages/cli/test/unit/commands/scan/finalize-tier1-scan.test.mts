@@ -17,7 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock dependencies.
 const mockSendApiRequest = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/socket/api.mjs', () => ({
+vi.mock('../../../../src/util/socket/api.mjs', () => ({
   sendApiRequest: mockSendApiRequest,
 }))
 

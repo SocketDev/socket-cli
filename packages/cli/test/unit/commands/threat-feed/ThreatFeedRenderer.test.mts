@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { renderToString } from '../../../../src/utils/terminal/iocraft.mts'
-import { Box, Text } from '../../../../src/utils/terminal/iocraft.mts'
+import { renderToString } from '../../../../src/util/terminal/iocraft.mts'
+import { Box, Text } from '../../../../src/util/terminal/iocraft.mts'
 
 import type { ParsedThreatResult } from '../../../../src/commands/threat-feed/ThreatFeedRenderer.mts'
 

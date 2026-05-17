@@ -20,7 +20,7 @@
  * Related Files:
  * - src/commands/yarn/cmd-yarn.mts - yarn command implementation
  * - src/yarn-cli.mts - yarn CLI entry point
- * - src/utils/dlx/resolve-binary.mjs - sfw resolution
+ * - src/util/dlx/resolve-binary.mjs - sfw resolution
  * - test/integration/cli/cmd-yarn-malware.test.mts - Malware tests
  */
 

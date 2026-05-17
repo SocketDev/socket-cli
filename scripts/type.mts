@@ -5,7 +5,7 @@
  * Runs type checking across packages with pretty UI.
  */
 
-import type { PackageInfo } from './utils/monorepo-helper.mts'
+import type { PackageInfo } from './util/monorepo-helper.mts'
 
 import colors from 'yoctocolors-cjs'
 
@@ -17,7 +17,7 @@ import { spawn } from '@socketsecurity/lib-stable/spawn'
 import { printFooter } from '@socketsecurity/lib-stable/stdio/footer'
 import { printHeader } from '@socketsecurity/lib-stable/stdio/header'
 
-import { getPackagesWithScript } from './utils/monorepo-helper.mts'
+import { getPackagesWithScript } from './util/monorepo-helper.mts'
 
 const logger = getDefaultLogger()
 /**

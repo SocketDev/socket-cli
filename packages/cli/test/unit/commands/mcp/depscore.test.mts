@@ -62,7 +62,7 @@ const { mockBatchPackageFetch, mockSetupSdk } = vi.hoisted(() => ({
   mockSetupSdk: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
   getDefaultApiToken: vi.fn(() => 'test_fake_token'),
 }))

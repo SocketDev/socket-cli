@@ -1,6 +1,6 @@
 import { cmdPackageScore } from './cmd-package-score.mts'
 import { cmdPackageShallow } from './cmd-package-shallow.mts'
-import { defineSubcommandGroup } from '../../utils/cli/define-subcommand-group.mts'
+import { defineSubcommandGroup } from '../../util/cli/define-subcommand-group.mts'
 
 const description = 'Look up published package details'
 

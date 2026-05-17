@@ -39,10 +39,10 @@ vi.mock('../../../../src/commands/optimize/output-optimize-result.mts', () => ({
 vi.mock('../../../../src/commands/optimize/shared.mts', () => ({
   CMD_NAME: 'optimize',
 }))
-vi.mock('../../../../src/utils/process/cmd.mts', () => ({
+vi.mock('../../../../src/util/process/cmd.mts', () => ({
   cmdPrefixMessage: vi.fn((cmd, msg) => `${cmd}: ${msg}`),
 }))
-vi.mock('../../../../src/utils/ecosystem/environment.mts', () => ({
+vi.mock('../../../../src/util/ecosystem/environment.mts', () => ({
   detectAndValidatePackageEnvironment: vi.fn(),
 }))
 
@@ -60,7 +60,7 @@ describe('handleOptimize', () => {
 
   it('optimizes packages successfully', async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/utils/ecosystem/environment.mts')
+      await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
       await import('../../../../src/commands/optimize/apply-optimization.mts')
     const { outputOptimizeResult } =
@@ -113,7 +113,7 @@ describe('handleOptimize', () => {
 
   it('handles package environment validation failure', async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/utils/ecosystem/environment.mts')
+      await import('../../../../src/util/ecosystem/environment.mts')
     const { outputOptimizeResult } =
       await import('../../../../src/commands/optimize/output-optimize-result.mts')
     const { applyOptimization } =
@@ -142,7 +142,7 @@ describe('handleOptimize', () => {
 
   it('handles missing package environment details', async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/utils/ecosystem/environment.mts')
+      await import('../../../../src/util/ecosystem/environment.mts')
     const { outputOptimizeResult } =
       await import('../../../../src/commands/optimize/output-optimize-result.mts')
 
@@ -172,7 +172,7 @@ describe('handleOptimize', () => {
 
   it('handles unsupported vlt package manager', async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/utils/ecosystem/environment.mts')
+      await import('../../../../src/util/ecosystem/environment.mts')
     const { outputOptimizeResult } =
       await import('../../../../src/commands/optimize/output-optimize-result.mts')
     const { applyOptimization } =
@@ -209,7 +209,7 @@ describe('handleOptimize', () => {
 
   it('handles optimization failure', async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/utils/ecosystem/environment.mts')
+      await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
       await import('../../../../src/commands/optimize/apply-optimization.mts')
     const { outputOptimizeResult } =
@@ -250,7 +250,7 @@ describe('handleOptimize', () => {
 
   it('handles pnpm package manager', async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/utils/ecosystem/environment.mts')
+      await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
       await import('../../../../src/commands/optimize/apply-optimization.mts')
 
@@ -287,7 +287,7 @@ describe('handleOptimize', () => {
   it('logs debug information', async () => {
     const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug')
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/utils/ecosystem/environment.mts')
+      await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
       await import('../../../../src/commands/optimize/apply-optimization.mts')
 
@@ -328,7 +328,7 @@ describe('handleOptimize', () => {
 
   it('falls back to exitCode 1 when pkgEnv result has no code', async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/utils/ecosystem/environment.mts')
+      await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
       await import('../../../../src/commands/optimize/apply-optimization.mts')
 
@@ -351,7 +351,7 @@ describe('handleOptimize', () => {
 
   it('falls back to exitCode 1 when applyOptimization result has no code', async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/utils/ecosystem/environment.mts')
+      await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =
       await import('../../../../src/commands/optimize/apply-optimization.mts')
 

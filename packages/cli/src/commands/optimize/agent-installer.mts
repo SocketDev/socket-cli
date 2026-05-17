@@ -26,9 +26,9 @@ import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getOwn } from '@socketsecurity/lib-stable/objects'
 import { spawn } from '@socketsecurity/lib-stable/spawn'
 
-import { cmdFlagsToString } from '../../utils/process/cmd.mts'
+import { cmdFlagsToString } from '../../util/process/cmd.mts'
 
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>

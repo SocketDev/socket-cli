@@ -18,8 +18,8 @@
  *
  * Related Files:
  * - src/commands/config/discover-config-value.mts - Implementation
- * - src/utils/config.mts - isSupportedConfigKey (mocked)
- * - src/utils/socket/sdk.mts - hasDefaultApiToken (mocked)
+ * - src/util/config.mts - isSupportedConfigKey (mocked)
+ * - src/util/socket/sdk.mts - hasDefaultApiToken (mocked)
  * - src/commands/organization/fetch-organization-list.mts - fetchOrganization (mocked)
  */
 
@@ -35,11 +35,11 @@ const {
   mockIsSupportedConfigKey: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   isSupportedConfigKey: mockIsSupportedConfigKey,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock('../../../../src/util/socket/sdk.mjs', () => ({
   hasDefaultApiToken: mockHasDefaultApiToken,
 }))
 

@@ -36,7 +36,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 // Mock spawnSfw.
 const mockSpawnSfw = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dlx/spawn.mts', () => ({
+vi.mock('../../../../src/util/dlx/spawn.mts', () => ({
   spawnSfw: mockSpawnSfw,
 }))
 
@@ -44,7 +44,7 @@ vi.mock('../../../../src/utils/dlx/spawn.mts', () => ({
 const mockTrackSubprocessExit = vi.hoisted(() => vi.fn())
 const mockTrackSubprocessStart = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/telemetry/integration.mts', () => ({
+vi.mock('../../../../src/util/telemetry/integration.mts', () => ({
   trackSubprocessExit: mockTrackSubprocessExit,
   trackSubprocessStart: mockTrackSubprocessStart,
 }))

@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as WithSubcommandsModule from '../../../../src/utils/cli/with-subcommands.mts'
+import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mts'
 
 // Mock meowOrExit.
 const mockMeowOrExit = vi.hoisted(() => vi.fn().mockReturnValue({ flags: {} }))
@@ -20,7 +20,7 @@ const mockSpawnSocketPatchDlx = vi.hoisted(() =>
 )
 
 vi.mock(
-  '../../../../src/utils/cli/with-subcommands.mts',
+  '../../../../src/util/cli/with-subcommands.mts',
   async importOriginal => {
     const actual = await importOriginal<typeof WithSubcommandsModule>()
     return {
@@ -30,7 +30,7 @@ vi.mock(
   },
 )
 
-vi.mock('../../../../src/utils/dlx/spawn.mjs', () => ({
+vi.mock('../../../../src/util/dlx/spawn.mjs', () => ({
   spawnSocketPatchDlx: mockSpawnSocketPatchDlx,
 }))
 

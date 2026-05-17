@@ -38,7 +38,7 @@ vi.mock('../../../../src/commands/manifest/handle-manifest-conda.mts', () => ({
   handleManifestConda: mockHandleManifestConda,
 }))
 
-vi.mock('../../../../src/utils/socket/json.mts', () => ({
+vi.mock('../../../../src/util/socket/json.mts', () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
 

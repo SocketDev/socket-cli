@@ -11,8 +11,8 @@ import { stripAnsi } from '@socketsecurity/lib-stable/strings'
 
 import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
 
-import { scrubSnapshotData } from './utils/scrub-snapshot-data.mts'
-import type { ScrubOptions } from './utils/scrub-snapshot-data.mts'
+import { scrubSnapshotData } from './util/scrub-snapshot-data.mts'
+import type { ScrubOptions } from './util/scrub-snapshot-data.mts'
 import { FLAG_HELP, FLAG_VERSION } from '../src/constants/cli.mts'
 import { execPath } from '../src/constants/paths.mts'
 

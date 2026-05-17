@@ -47,7 +47,7 @@ import {
   lsYarnClassic,
 } from '../../../../src/commands/optimize/ls-by-agent.mts'
 
-import type { EnvDetails } from '../../../../src/utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 export function createMockEnvDetails(
   agent: string,

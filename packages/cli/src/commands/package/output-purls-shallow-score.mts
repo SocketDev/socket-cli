@@ -4,11 +4,11 @@ import { joinAnd } from '@socketsecurity/lib-stable/arrays'
 import { debug } from '@socketsecurity/lib-stable/debug'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
 const logger = getDefaultLogger()
 
 export function formatReportCard(

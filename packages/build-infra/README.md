@@ -414,7 +414,7 @@ Assets are cached per tag to avoid re-downloading across builds.
 
 - `packages/cli/.config/esbuild.cli.mjs` - Main CLI bundle config
 - `packages/cli/scripts/download-assets.mjs` - Unified asset downloader
-- `packages/cli/scripts/sea-build-utils/builder.mjs` - SEA binary builder
+- `packages/cli/scripts/sea-build-util/builder.mjs` - SEA binary builder
 
 **Dependencies:**
 

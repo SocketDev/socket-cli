@@ -1,11 +1,11 @@
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
 
 import { outputConfigSet } from './output-config-set.mts'
-import { updateConfigValue } from '../../utils/config.mts'
-import { InputError } from '../../utils/error/errors.mts'
+import { updateConfigValue } from '../../util/config.mts'
+import { InputError } from '../../util/error/errors.mts'
 
 import type { OutputKind } from '../../types.mts'
-import type { LocalConfig } from '../../utils/config.mts'
+import type { LocalConfig } from '../../util/config.mts'
 
 export async function handleConfigSet({
   key,

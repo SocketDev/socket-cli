@@ -42,18 +42,18 @@ const mockIsSensitiveConfigKey = vi.hoisted(() =>
   vi.fn((key: string) => key === 'apiToken'),
 )
 
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   getConfigValue: mockGetConfigValue,
   getSupportedConfigKeys: mockGetSupportedConfigKeys,
   isConfigFromFlag: mockIsConfigFromFlag,
   isSensitiveConfigKey: mockIsSensitiveConfigKey,
 }))
 
-vi.mock('../../../../src/utils/output/markdown.mts', () => ({
+vi.mock('../../../../src/util/output/markdown.mts', () => ({
   mdHeader: (text: string) => `# ${text}`,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
 }))
 

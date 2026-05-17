@@ -4,17 +4,17 @@ import { handleOptimize } from './handle-optimize.mts'
 import { CMD_NAME as CMD_NAME_FULL } from './shared.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { outputDryRunPreview } from '../../utils/dry-run/output.mts'
-import { detectAndValidatePackageEnvironment } from '../../utils/ecosystem/environment.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunPreview } from '../../util/dry-run/output.mts'
+import { detectAndValidatePackageEnvironment } from '../../util/ecosystem/environment.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
 
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
-import type { DryRunAction } from '../../utils/dry-run/output.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { DryRunAction } from '../../util/dry-run/output.mts'
 import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'optimize'

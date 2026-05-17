@@ -11,16 +11,16 @@ import {
   OUTPUT_TEXT,
 } from '../../constants/cli.mts'
 import { REPORT_LEVEL_DEFER } from '../../constants/reporting.mts'
-import { mapToObject } from '../../utils/data/map-to-object.mjs'
-import { walkNestedMap } from '../../utils/data/walk-nested-map.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTable } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { mapToObject } from '../../util/data/map-to-object.mjs'
+import { walkNestedMap } from '../../util/data/walk-nested-map.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 

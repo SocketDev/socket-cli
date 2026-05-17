@@ -33,7 +33,7 @@ const mockReadSocketJsonSync = vi.hoisted(() =>
 const mockWriteSocketJson = vi.hoisted(() =>
   vi.fn(async () => ({ ok: true, data: undefined })),
 )
-vi.mock('../../../../src/utils/socket/json.mts', () => ({
+vi.mock('../../../../src/util/socket/json.mts', () => ({
   readSocketJsonSync: mockReadSocketJsonSync,
   writeSocketJson: mockWriteSocketJson,
 }))

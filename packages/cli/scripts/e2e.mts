@@ -16,7 +16,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 import { EnvironmentVariables } from './environment-variables.mts'
-import { loadEnvFile } from './utils/load-env.mts'
+import { loadEnvFile } from './util/load-env.mts'
 
 const logger = getDefaultLogger()
 

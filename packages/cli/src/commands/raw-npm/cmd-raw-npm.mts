@@ -4,11 +4,11 @@ import { spawn } from '@socketsecurity/lib-stable/spawn'
 import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { outputDryRunExecute } from '../../utils/dry-run/output.mts'
-import { getNpmBinPath } from '../../utils/npm/paths.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
+import { getNpmBinPath } from '../../util/npm/paths.mts'
 
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'raw-npm'
 

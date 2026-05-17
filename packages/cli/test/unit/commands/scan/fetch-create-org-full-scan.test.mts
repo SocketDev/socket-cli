@@ -34,11 +34,11 @@ import {
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/utils/socket/api.mts', () => ({
+vi.mock('../../../../../src/util/socket/api.mts', () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 

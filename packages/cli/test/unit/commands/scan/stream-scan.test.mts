@@ -31,13 +31,13 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 
 // Mock SDK setup.
 const mockSetupSdk = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock('../../../../src/util/socket/sdk.mjs', () => ({
   setupSdk: mockSetupSdk,
 }))
 
 // Mock API handler.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/socket/api.mjs', () => ({
+vi.mock('../../../../src/util/socket/api.mjs', () => ({
   handleApiCall: mockHandleApiCall,
 }))
 

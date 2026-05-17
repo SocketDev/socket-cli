@@ -8,10 +8,10 @@ import { getSocketFixPrs } from './pull-request.mts'
 import { GITHUB_REPOSITORY } from '../../env/github-repository.mts'
 import { SOCKET_CLI_GIT_USER_EMAIL } from '../../env/socket-cli-git-user-email.mts'
 import { SOCKET_CLI_GIT_USER_NAME } from '../../env/socket-cli-git-user-name.mts'
-import { getBaseBranch, getRepoInfo } from '../../utils/git/operations.mjs'
+import { getBaseBranch, getRepoInfo } from '../../util/git/operations.mjs'
 
 import type { PrMatch } from './pull-request.mts'
-import type { RepoInfo } from '../../utils/git/operations.mjs'
+import type { RepoInfo } from '../../util/git/operations.mjs'
 
 /**
  * Check which required CI environment variables are missing.

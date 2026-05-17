@@ -18,7 +18,7 @@ import {
   YARN_CLASSIC,
 } from '@socketsecurity/lib-stable/constants/agents'
 
-import type { Agent } from '../utils/ecosystem/environment.mjs'
+import type { Agent } from '../util/ecosystem/environment.mjs'
 
 // Re-export agent constants for backward compatibility.
 export { BUN, NPM, NPX, PNPM, VLT, YARN, YARN_BERRY, YARN_CLASSIC }

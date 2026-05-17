@@ -8,7 +8,7 @@ import { cmdScanReach } from './cmd-scan-reach.mts'
 import { cmdScanReport } from './cmd-scan-report.mts'
 import { cmdScanSetup } from './cmd-scan-setup.mts'
 import { cmdScanView } from './cmd-scan-view.mts'
-import { defineSubcommandGroup } from '../../utils/cli/define-subcommand-group.mts'
+import { defineSubcommandGroup } from '../../util/cli/define-subcommand-group.mts'
 
 export const cmdScan = defineSubcommandGroup({
   name: 'scan',

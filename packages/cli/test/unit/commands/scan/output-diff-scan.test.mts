@@ -47,7 +47,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 const mockFailMsgWithBadge = vi.hoisted(() =>
   vi.fn((msg, cause) => `${msg}: ${cause}`),
 )
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: mockFailMsgWithBadge,
 }))
 
@@ -55,17 +55,17 @@ vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
 const mockSerializeResultJson = vi.hoisted(() =>
   vi.fn(result => JSON.stringify(result)),
 )
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: mockSerializeResultJson,
 }))
 
 // Mock markdown utilities.
-vi.mock('../../../../src/utils/output/markdown.mts', () => ({
+vi.mock('../../../../src/util/output/markdown.mts', () => ({
   mdHeader: vi.fn((text, level = 1) => `${'#'.repeat(level)} ${text}`),
 }))
 
 // Mock terminal link.
-vi.mock('../../../../src/utils/terminal/link.mts', () => ({
+vi.mock('../../../../src/util/terminal/link.mts', () => ({
   fileLink: vi.fn(path => path),
 }))
 

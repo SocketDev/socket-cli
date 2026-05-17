@@ -7,7 +7,7 @@ import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
+import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
 import type { OutputKind } from '../../types.mts'

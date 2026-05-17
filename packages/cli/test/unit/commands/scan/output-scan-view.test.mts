@@ -39,28 +39,28 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 }))
 
 // Mock utilities.
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: (msg: string, cause?: string) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
 
-vi.mock('../../../../src/utils/output/markdown.mts', () => ({
+vi.mock('../../../../src/util/output/markdown.mts', () => ({
   mdTable: <T,>(data: T[], _columns: string[]) =>
     `| Table with ${(data as T[]).length} rows |`,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
 }))
 
-vi.mock('../../../../src/utils/terminal/link.mts', () => ({
+vi.mock('../../../../src/util/terminal/link.mts', () => ({
   fileLink: (path: string) => path,
 }))
 
 import { outputScanView } from '../../../../src/commands/scan/output-scan-view.mts'
 
 import type { CResult } from '../../../../src/types.mts'
-import type { SocketArtifact } from '../../../../src/utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../../../src/util/alert/artifact.mts'
 
 describe('output-scan-view', () => {
   beforeEach(() => {

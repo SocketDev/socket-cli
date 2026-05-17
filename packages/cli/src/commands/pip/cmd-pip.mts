@@ -5,12 +5,12 @@
  * (pip ↔ pip3 with auto-fallback when one is missing) is wired through
  * the factory's `binaryPicker` hook.
  *
- * See utils/cli/define-handoff.mts.
+ * See util/cli/define-handoff.mts.
  */
 
 import { whichReal } from '@socketsecurity/lib-stable/bin'
 
-import { defineHandoffCommand } from '../../utils/cli/define-handoff.mts'
+import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 
 /**
  * Determine the pip binary name to use based on invocation and availability.

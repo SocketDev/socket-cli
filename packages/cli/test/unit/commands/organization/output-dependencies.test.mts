@@ -56,7 +56,7 @@ describe('outputDependencies', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -106,7 +106,7 @@ describe('outputDependencies', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
@@ -226,7 +226,7 @@ describe('outputDependencies', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+    vi.doMock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
     }))
 
@@ -384,7 +384,7 @@ describe('outputDependencies', () => {
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 

@@ -32,19 +32,19 @@ vi.mock('@socketsecurity/lib/words', () => ({
     options.count === 1 ? word : `${word}s`,
 }))
 
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: (message: string, cause?: string) =>
     cause ? `${message}: ${cause}` : message,
 }))
 
-vi.mock('../../../../src/utils/output/markdown.mts', () => ({
+vi.mock('../../../../src/util/output/markdown.mts', () => ({
   mdError: (message: string, cause?: string) =>
     cause ? `## Error\n${message}: ${cause}` : `## Error\n${message}`,
   mdHeader: (title: string) => `# ${title}`,
   mdList: (items: string[]) => items.map(i => `- ${i}`).join('\n'),
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result),
 }))
 

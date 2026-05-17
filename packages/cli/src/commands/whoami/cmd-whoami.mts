@@ -5,17 +5,17 @@ import { SOCKET_CLI_API_TOKEN } from '../../env/socket-cli-api-token.mts'
 import { TOKEN_PREFIX } from '../../constants/socket.mjs'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getConfigValueOrUndef } from '../../utils/config.mts'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getConfigValueOrUndef } from '../../util/config.mts'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 import {
   getDefaultApiToken,
   getVisibleTokenPrefix,
-} from '../../utils/socket/sdk.mjs'
+} from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type { CliCommandContext } from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()

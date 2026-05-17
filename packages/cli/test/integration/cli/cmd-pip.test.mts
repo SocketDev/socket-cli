@@ -19,7 +19,7 @@
  *
  * Related Files:
  * - src/commands/pip/cmd-pip.mts - pip command implementation
- * - src/utils/dlx/resolve-binary.mjs - sfw resolution
+ * - src/util/dlx/resolve-binary.mjs - sfw resolution
  * - test/integration/cli/cmd-pip-malware.test.mts - Malware tests
  */
 

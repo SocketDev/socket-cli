@@ -7,8 +7,8 @@ import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git/operations.mjs'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+} from '../../util/git/operations.mjs'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
 const logger = getDefaultLogger()

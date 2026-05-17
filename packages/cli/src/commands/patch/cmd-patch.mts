@@ -1,10 +1,10 @@
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { spawnSocketPatchDlx } from '../../utils/dlx/spawn.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { spawnSocketPatchDlx } from '../../util/dlx/spawn.mjs'
 
 import type {
   CliCommandContext,
   CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
+} from '../../util/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'patch'
 

@@ -15,7 +15,7 @@ const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/socket/api.mts', () => ({
+vi.mock('../../../../src/util/socket/api.mts', () => ({
   queryApiSafeJson: mockQueryApiSafeJson,
 }))
 vi.mock('@socketsecurity/lib/logger', () => ({

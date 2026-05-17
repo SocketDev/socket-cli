@@ -56,7 +56,7 @@ const mockGetBaseBranch = vi.hoisted(() => vi.fn().mockResolvedValue('main'))
 const mockGetRepoInfo = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ owner: 'test-owner', repo: 'test-repo' }),
 )
-vi.mock('../../../../src/utils/git/operations.mts', () => ({
+vi.mock('../../../../src/util/git/operations.mts', () => ({
   getBaseBranch: mockGetBaseBranch,
   getRepoInfo: mockGetRepoInfo,
 }))

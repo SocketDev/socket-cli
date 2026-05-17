@@ -2,16 +2,16 @@ import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
 
-import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
+import { formatErrorWithDetail } from '../../util/error/errors.mjs'
 import {
   handleApiCallNoSpinner,
   queryApiSafeText,
-} from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+} from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 const logger = getDefaultLogger()

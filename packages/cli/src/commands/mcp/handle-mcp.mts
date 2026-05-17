@@ -1,6 +1,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { getDefaultApiToken } from '../../utils/socket/sdk.mts'
+import { getDefaultApiToken } from '../../util/socket/sdk.mts'
 import { runHttpTransport } from './transport-http.mts'
 import { runStdioTransport } from './transport-stdio.mts'
 import { constants } from '../../constants.mts'

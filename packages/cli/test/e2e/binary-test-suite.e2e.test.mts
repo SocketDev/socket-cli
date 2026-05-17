@@ -38,7 +38,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 import { ENV } from '../../src/constants/env.mts'
-import { getDefaultApiToken } from '../../src/utils/socket/sdk.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
 import { executeCliCommand } from '../helpers/cli-execution.mts'
 
 const logger = getDefaultLogger()

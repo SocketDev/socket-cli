@@ -24,8 +24,8 @@
  * Related Files:
  * - src/commands/fix/pull-request.mts - PR creation and retry logic
  * - src/commands/fix/git.mts - PR title and body generation
- * - src/utils/git/github.mts - Octokit client factory
- * - src/utils/git/provider-factory.mts - Provider abstraction factory
+ * - src/util/git/github.mts - Octokit client factory
+ * - src/util/git/provider-factory.mts - Provider abstraction factory
  * - src/commands/fix/handle-fix.mts - Main fix command orchestrating PR workflow
  */
 
@@ -87,7 +87,7 @@ const mockHandleGraphqlError = vi.hoisted(() =>
   vi.fn(() => ({ ok: false, message: 'GraphQL error' })),
 )
 
-vi.mock('../../../../src/utils/git/github.mts', () => ({
+vi.mock('../../../../src/util/git/github.mts', () => ({
   cacheFetch: mockCacheFetch,
   getOctokit: mockGetOctokit,
   getOctokitGraphql: mockGetOctokitGraphql,
@@ -101,7 +101,7 @@ vi.mock('../../../../src/utils/git/github.mts', () => ({
   writeCache: mockWriteCache,
 }))
 
-vi.mock('../../../../src/utils/git/provider-factory.mts', () => ({
+vi.mock('../../../../src/util/git/provider-factory.mts', () => ({
   createPrProvider: mockCreatePrProvider,
 }))
 

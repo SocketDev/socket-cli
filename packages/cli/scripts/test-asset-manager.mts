@@ -12,11 +12,11 @@
  */
 
 import { existsSync } from 'node:fs'
-import { AssetManager } from './utils/asset-manager.mts'
+import { AssetManager } from './util/asset-manager.mts'
 import {
   downloadBinject,
   downloadNodeBinary,
-} from './utils/asset-manager-compat.mts'
+} from './util/asset-manager-compat.mts'
 
 const logger = {
   error: (...args) => logger.fail('❌', ...args),

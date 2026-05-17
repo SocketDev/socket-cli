@@ -5,7 +5,7 @@ import process from 'node:process'
  * Runs linting across affected packages based on changed files.
  */
 
-import type { PackageInfo } from './utils/monorepo-helper.mts'
+import type { PackageInfo } from './util/monorepo-helper.mts'
 
 import { isQuiet } from '@socketsecurity/lib-stable/argv/flags'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
@@ -17,7 +17,7 @@ import {
   getAffectedPackages,
   getPackagesWithScript,
   runAcrossPackages,
-} from './utils/monorepo-helper.mts'
+} from './util/monorepo-helper.mts'
 
 const logger = getDefaultLogger()
 

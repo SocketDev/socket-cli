@@ -10,7 +10,7 @@ import {
 } from '@socketsecurity/lib-stable/constants/agents'
 
 import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
-import type { Agent, EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { Agent, EnvDetails } from '../../util/ecosystem/environment.mjs'
 import type { PackageJson } from '@socketsecurity/lib-stable/packages'
 
 export type GetOverrides = (

@@ -7,7 +7,7 @@ import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { preparePackageForPublish } from 'package-builder/scripts/utils/prepare-package.mts'
+import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-package.mts'
 
 const logger = getDefaultLogger()
 

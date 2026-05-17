@@ -44,11 +44,11 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/utils/socket/api.mjs', () => ({
+vi.mock('../../../../src/util/socket/api.mjs', () => ({
   queryApiSafeJson: mockQueryApiSafeJson,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
 }))
 

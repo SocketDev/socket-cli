@@ -2,7 +2,7 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { spawnSfw } from './utils/dlx/spawn.mjs'
+import { spawnSfw } from './util/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 

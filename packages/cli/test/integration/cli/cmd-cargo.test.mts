@@ -18,7 +18,7 @@
  *
  * Related Files:
  * - src/commands/cargo/cmd-cargo.mts - cargo command implementation
- * - src/utils/dlx/resolve-binary.mjs - sfw resolution
+ * - src/util/dlx/resolve-binary.mjs - sfw resolution
  * - test/integration/cli/cmd-cargo-malware.test.mts - Malware tests
  */
 

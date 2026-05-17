@@ -28,7 +28,7 @@ const mockOctokit = vi.hoisted(() => ({
 const mockGetOctokit = vi.hoisted(() => vi.fn(() => mockOctokit))
 const mockWithGitHubRetry = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/git/github.mts', () => ({
+vi.mock('../../../../src/util/git/github.mts', () => ({
   GITHUB_ERR_ABUSE_DETECTION: 'GitHub abuse detection triggered',
   GITHUB_ERR_AUTH_FAILED: 'GitHub authentication failed',
   GITHUB_ERR_GRAPHQL_RATE_LIMIT: 'GitHub GraphQL rate limit exceeded',
@@ -62,7 +62,7 @@ vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
 }))
 
 const mockSocketHttpRequest = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/socket/api.mjs', () => ({
+vi.mock('../../../../src/util/socket/api.mjs', () => ({
   socketHttpRequest: mockSocketHttpRequest,
 }))
 

@@ -18,7 +18,7 @@
  *
  * Related Files:
  * - src/commands/uv/cmd-uv.mts - uv command implementation
- * - src/utils/dlx/resolve-binary.mjs - sfw resolution
+ * - src/util/dlx/resolve-binary.mjs - sfw resolution
  * - test/integration/cli/cmd-uv-malware.test.mts - Malware tests
  */
 

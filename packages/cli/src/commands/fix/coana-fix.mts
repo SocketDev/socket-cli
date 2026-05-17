@@ -31,16 +31,16 @@ import {
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
-import { findSocketYmlSync } from '../../utils/config.mts'
-import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
-import { getErrorCause } from '../../utils/error/errors.mjs'
-import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
+import { findSocketYmlSync } from '../../util/config.mts'
+import { spawnCoanaDlx } from '../../util/dlx/spawn.mjs'
+import { getErrorCause } from '../../util/error/errors.mjs'
+import { getPackageFilesForScan } from '../../util/fs/path-resolve.mjs'
 import {
   enablePrAutoMerge,
   fetchGhsaDetails,
   getOctokit,
   setGitRemoteGithubRepoUrl,
-} from '../../utils/git/github.mts'
+} from '../../util/git/github.mts'
 import {
   gitCheckoutBranch,
   gitCommit,
@@ -49,9 +49,9 @@ import {
   gitRemoteBranchExists,
   gitResetAndClean,
   gitUnstagedModifiedFiles,
-} from '../../utils/git/operations.mjs'
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+} from '../../util/git/operations.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { FixConfig } from './types.mts'

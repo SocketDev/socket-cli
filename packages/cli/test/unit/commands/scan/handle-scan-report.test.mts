@@ -39,7 +39,7 @@ vi.mock('../../../../src/commands/scan/output-scan-report.mts', () => ({
   outputScanReport: mockOutputScanReport,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 

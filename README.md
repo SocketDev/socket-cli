@@ -62,7 +62,7 @@ socket-cli/
 │   ├── cli/                    # Main CLI package (@socketsecurity/cli)
 │   │   ├── src/
 │   │   │   ├── commands/       # Command implementations
-│   │   │   ├── utils/          # Shared utilities
+│   │   │   ├── util/          # Shared utilities
 │   │   │   └── cli.mts         # Entry point
 │   │   └── dist/               # Built output
 │   ├── build-infra/            # Build system and tooling

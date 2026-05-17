@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { FileSystemError, getErrorCause } from '../../utils/error/errors.mts'
+import { FileSystemError, getErrorCause } from '../../util/error/errors.mts'
 
 const logger = getDefaultLogger()
 

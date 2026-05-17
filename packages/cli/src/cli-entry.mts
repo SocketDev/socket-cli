@@ -52,23 +52,23 @@ import { getCliVersion } from './env/cli-version.mts'
 import { SOCKET_CLI_SKIP_UPDATE_CHECK } from './env/socket-cli-skip-update-check.mts'
 import { VITEST } from './env/vitest.mts'
 import { meow } from './meow.mts'
-import { meowWithSubcommands } from './utils/cli/with-subcommands.mts'
+import { meowWithSubcommands } from './util/cli/with-subcommands.mts'
 import {
   formatErrorForJson,
   formatErrorForTerminal,
-} from './utils/error/display.mts'
-import { captureException } from './utils/error/errors.mts'
-import { serializeResultJson } from './utils/output/result-json.mts'
-import { runPreflightDownloads } from './utils/preflight/downloads.mts'
-import { isSeaBinary } from './utils/sea/detect.mts'
+} from './util/error/display.mts'
+import { captureException } from './util/error/errors.mts'
+import { serializeResultJson } from './util/output/result-json.mts'
+import { runPreflightDownloads } from './util/preflight/downloads.mts'
+import { isSeaBinary } from './util/sea/detect.mts'
 import {
   finalizeTelemetry,
   setupTelemetryExitHandlers,
   trackCliComplete,
   trackCliError,
   trackCliStart,
-} from './utils/telemetry/integration.mts'
-import { scheduleUpdateCheck } from './utils/update/manager.mts'
+} from './util/telemetry/integration.mts'
+import { scheduleUpdateCheck } from './util/update/manager.mts'
 
 import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'
 

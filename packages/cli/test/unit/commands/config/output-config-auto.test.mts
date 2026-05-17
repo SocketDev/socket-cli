@@ -43,21 +43,21 @@ const mockUpdateConfigValue = vi.hoisted(() =>
   vi.fn(() => ({ ok: true, message: 'Updated' })),
 )
 
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   isConfigFromFlag: mockIsConfigFromFlag,
   updateConfigValue: mockUpdateConfigValue,
 }))
 
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: (msg: string, cause?: string) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
 
-vi.mock('../../../../src/utils/output/markdown.mts', () => ({
+vi.mock('../../../../src/util/output/markdown.mts', () => ({
   mdHeader: (text: string) => `# ${text}`,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock('../../../../src/util/output/result-json.mjs', () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
 }))
 

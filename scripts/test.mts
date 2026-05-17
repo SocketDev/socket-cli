@@ -5,7 +5,7 @@
  * Runs tests across affected packages based on changed files.
  */
 
-import type { PackageInfo } from './utils/monorepo-helper.mts'
+import type { PackageInfo } from './util/monorepo-helper.mts'
 
 import colors from 'yoctocolors-cjs'
 
@@ -22,7 +22,7 @@ import { ProgressBar } from '@socketsecurity/lib-stable/stdio/progress'
 import {
   getAffectedPackages,
   getPackagesWithScript,
-} from './utils/monorepo-helper.mts'
+} from './util/monorepo-helper.mts'
 
 const logger = getDefaultLogger()
 

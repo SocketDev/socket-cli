@@ -1,6 +1,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()

@@ -1,4 +1,4 @@
-import { sendApiRequest } from '../../utils/socket/api.mjs'
+import { sendApiRequest } from '../../util/socket/api.mjs'
 
 import type { CResult } from '../../types.mts'
 

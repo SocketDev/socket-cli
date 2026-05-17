@@ -28,7 +28,7 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { SocketJson } from '../../../../src/utils/socket/json.mts'
+import type { SocketJson } from '../../../../src/util/socket/json.mts'
 
 // Source-of-truth constants/paths.mts evaluates the bundle-tools.json
 // version table at import time, which fails outside of a build (where

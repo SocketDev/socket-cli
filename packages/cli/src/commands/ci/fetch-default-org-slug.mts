@@ -1,7 +1,7 @@
 import { debug } from '@socketsecurity/lib-stable/debug'
 
 import { SOCKET_CLI_ORG_SLUG } from '../../env/socket-cli-org-slug.mts'
-import { getConfigValueOrUndef } from '../../utils/config.mts'
+import { getConfigValueOrUndef } from '../../util/config.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'

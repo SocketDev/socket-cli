@@ -33,14 +33,14 @@ vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
 const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
 const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
 const mockIsConfigFromFlag = vi.hoisted(() => vi.fn().mockReturnValue(false))
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   getConfigValueOrUndef: mockGetConfigValueOrUndef,
   isConfigFromFlag: mockIsConfigFromFlag,
   updateConfigValue: mockUpdateConfigValue,
 }))
 
 const mockSetupSdk = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock('../../../../src/util/socket/sdk.mjs', () => ({
   setupSdk: mockSetupSdk,
 }))
 
@@ -54,7 +54,7 @@ vi.mock(
 
 const mockGetEnterpriseOrgs = vi.hoisted(() => vi.fn())
 const mockGetOrgSlugs = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/utils/organization.mts', () => ({
+vi.mock('../../../../src/util/organization.mts', () => ({
   getEnterpriseOrgs: mockGetEnterpriseOrgs,
   getOrgSlugs: mockGetOrgSlugs,
 }))
@@ -70,14 +70,14 @@ vi.mock('../../../../src/commands/install/setup-tab-completion.mts', () => ({
 }))
 
 const mockSocketDocsLink = vi.hoisted(() => vi.fn(() => 'docs-link'))
-vi.mock('../../../../src/utils/terminal/link.mts', () => ({
+vi.mock('../../../../src/util/terminal/link.mts', () => ({
   socketDocsLink: mockSocketDocsLink,
 }))
 
 const mockFailMsgWithBadge = vi.hoisted(() =>
   vi.fn((msg, cause) => `[fail] ${msg}: ${cause}`),
 )
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: mockFailMsgWithBadge,
 }))
 

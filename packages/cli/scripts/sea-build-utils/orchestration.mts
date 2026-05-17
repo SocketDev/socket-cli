@@ -10,7 +10,7 @@ import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { generateSeaConfig, injectSeaBlob } from './builder.mts'
-import { downloadNodeBinary } from '../utils/asset-manager-compat.mts'
+import { downloadNodeBinary } from '../util/asset-manager-compat.mts'
 import { downloadExternalTools, logger } from './downloads.mts'
 
 /**

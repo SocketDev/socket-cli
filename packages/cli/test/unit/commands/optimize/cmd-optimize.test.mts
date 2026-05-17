@@ -43,7 +43,7 @@ vi.mock('../../../../src/commands/optimize/handle-optimize.mts', () => ({
   handleOptimize: mockHandleOptimize,
 }))
 
-vi.mock('../../../../src/utils/ecosystem/environment.mjs', () => ({
+vi.mock('../../../../src/util/ecosystem/environment.mjs', () => ({
   detectAndValidatePackageEnvironment: mockDetectAndValidatePackageEnvironment,
 }))
 

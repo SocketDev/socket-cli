@@ -12,7 +12,7 @@
  * - Output function integration
  *
  * Testing Approach:
- * - Mock setConfigValue from utils/config.mts
+ * - Mock setConfigValue from util/config.mts
  * - Mock outputConfigSet for output verification
  * - Mock logger for error/success messages
  * - Use createSuccessResult/createErrorResult helpers
@@ -20,7 +20,7 @@
  *
  * Related Files:
  * - src/commands/config/handle-config-set.mts - Implementation
- * - src/utils/config.mts - Config file utilities
+ * - src/util/config.mts - Config file utilities
  * - src/commands/config/output-config-set.mts - Output formatter
  */
 
@@ -55,7 +55,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 vi.mock('../../../../src/commands/config/output-config-set.mts', () => ({
   outputConfigSet: mockOutputConfigSet,
 }))
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock('../../../../src/util/config.mts', () => ({
   updateConfigValue: mockUpdateConfigValue,
 }))
 vi.mock('@socketsecurity/lib/debug', () => ({
@@ -71,7 +71,7 @@ describe('handleConfigSet', () => {
 
   it('sets config value successfully', async () => {
     const { updateConfigValue } =
-      await import('../../../../src/utils/config.mts')
+      await import('../../../../src/util/config.mts')
     const { outputConfigSet } =
       await import('../../../../src/commands/config/output-config-set.mts')
 
@@ -93,7 +93,7 @@ describe('handleConfigSet', () => {
 
   it('handles config update failure', async () => {
     const { updateConfigValue } =
-      await import('../../../../src/utils/config.mts')
+      await import('../../../../src/util/config.mts')
     const { outputConfigSet } =
       await import('../../../../src/commands/config/output-config-set.mts')
 
@@ -112,7 +112,7 @@ describe('handleConfigSet', () => {
 
   it('handles markdown output', async () => {
     const { updateConfigValue } =
-      await import('../../../../src/utils/config.mts')
+      await import('../../../../src/util/config.mts')
     const { outputConfigSet } =
       await import('../../../../src/commands/config/output-config-set.mts')
 
@@ -179,7 +179,7 @@ describe('handleConfigSet', () => {
 
   it('handles different config keys', async () => {
     const { updateConfigValue } =
-      await import('../../../../src/utils/config.mts')
+      await import('../../../../src/util/config.mts')
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 

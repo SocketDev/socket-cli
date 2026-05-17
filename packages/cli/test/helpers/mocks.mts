@@ -107,8 +107,8 @@ export async function setupApiCallFailure(
   error: Error | string,
   code = 404,
 ): Promise<void> {
-  const { handleApiCall } = await import('../../src/utils/socket/api.mts')
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
+  const { handleApiCall } = await import('../../src/util/socket/api.mts')
+  const { setupSdk } = await import('../../src/util/socket/sdk.mts')
 
   const errorObj = typeof error === 'string' ? new Error(error) : error
   const mockSdk = createMockSdk({
@@ -144,11 +144,11 @@ export function setupOutputModuleMocks() {
     },
   }))
 
-  vi.mock('../../src/utils/error/fail-msg-with-badge.mts', () => ({
+  vi.mock('../../src/util/error/fail-msg-with-badge.mts', () => ({
     failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
   }))
 
-  vi.mock('../../src/utils/output/result-json.mts', () => ({
+  vi.mock('../../src/util/output/result-json.mts', () => ({
     serializeResultJson: vi.fn(result => JSON.stringify(result)),
   }))
 }
@@ -157,11 +157,11 @@ export function setupOutputModuleMocks() {
  * Setup common module mocks for SDK operations
  */
 export function setupSdkModuleMocks() {
-  vi.mock('../../src/utils/socket/api.mts', () => ({
+  vi.mock('../../src/util/socket/api.mts', () => ({
     handleApiCall: vi.fn(),
   }))
 
-  vi.mock('../../src/utils/socket/sdk.mts', () => ({
+  vi.mock('../../src/util/socket/sdk.mts', () => ({
     setupSdk: vi.fn(),
     withSdk: vi.fn(),
   }))
@@ -174,7 +174,7 @@ export async function setupSdkSetupFailure(
   message: string,
   cause?: string | undefined,
 ): Promise<void> {
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
+  const { setupSdk } = await import('../../src/util/socket/sdk.mts')
   const options: ErrorOptions = cause !== undefined ? { cause } : {}
   vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options))
 }
@@ -186,8 +186,8 @@ export async function setupSuccessfulSdkChain(
   sdkMethod: string,
   mockData: unknown,
 ): Promise<void> {
-  const { handleApiCall } = await import('../../src/utils/socket/api.mts')
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
+  const { handleApiCall } = await import('../../src/util/socket/api.mts')
+  const { setupSdk } = await import('../../src/util/socket/sdk.mts')
 
   const mockSdk = createMockSdk({
     [sdkMethod]: vi.fn().mockResolvedValue({

@@ -27,11 +27,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { setupSdkMockSuccess } from '../../../../../test/helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/utils/socket/api.mts', () => ({
+vi.mock('../../../../../src/util/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 

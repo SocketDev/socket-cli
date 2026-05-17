@@ -5,9 +5,9 @@ import {
   getSupportedConfigKeys,
   isConfigFromFlag,
   isSensitiveConfigKey,
-} from '../../utils/config.mts'
-import { mdHeader } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+} from '../../util/config.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()

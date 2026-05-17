@@ -22,9 +22,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { outputThreatFeed } from '../../../../src/commands/threat-feed/output-threat-feed.mts'
-import { failMsgWithBadge } from '../../../../src/utils/error/fail-msg-with-badge.mts'
-import { msAtHome } from '../../../../src/utils/home-cache-time.mts'
-import { serializeResultJson } from '../../../../src/utils/output/result-json.mts'
+import { failMsgWithBadge } from '../../../../src/util/error/fail-msg-with-badge.mts'
+import { msAtHome } from '../../../../src/util/home-cache-time.mts'
+import { serializeResultJson } from '../../../../src/util/output/result-json.mts'
 
 import type {
   CResult,
@@ -52,15 +52,15 @@ vi.mock('@socketsecurity/lib/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mts', () => ({
+vi.mock('../../../../src/util/output/result-json.mts', () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
-vi.mock('../../../../src/utils/home-cache-time.mts', () => ({
+vi.mock('../../../../src/util/home-cache-time.mts', () => ({
   msAtHome: vi.fn(() => '2 days ago'),
 }))
 

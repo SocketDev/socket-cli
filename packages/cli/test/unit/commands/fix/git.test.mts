@@ -30,7 +30,7 @@ import {
   getUniquePackages,
 } from '../../../../src/commands/fix/git.mts'
 
-import type { GhsaDetails } from '../../../../src/utils/git/github.mts'
+import type { GhsaDetails } from '../../../../src/util/git/github.mts'
 
 describe('fix/git utilities', () => {
   describe('getUniquePackages', () => {

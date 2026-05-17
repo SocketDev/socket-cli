@@ -3,9 +3,9 @@ import { writeFileSync } from 'node:fs'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdHeader } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()

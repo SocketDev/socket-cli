@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { ENV } from '../../src/constants/env.mts'
-import { getDefaultApiToken } from '../../src/utils/socket/sdk.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
 import { executeCliCommand } from '../helpers/cli-execution.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

@@ -5,8 +5,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { applyOptimization } from './apply-optimization.mts'
 import { outputOptimizeResult } from './output-optimize-result.mts'
 import { CMD_NAME } from './shared.mts'
-import { detectAndValidatePackageEnvironment } from '../../utils/ecosystem/environment.mjs'
-import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
+import { detectAndValidatePackageEnvironment } from '../../util/ecosystem/environment.mjs'
+import { cmdPrefixMessage } from '../../util/process/cmd.mts'
 
 import type { OutputKind } from '../../types.mts'
 

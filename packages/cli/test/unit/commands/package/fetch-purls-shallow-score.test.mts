@@ -23,8 +23,8 @@
  * Related Files:
  * - src/commands/package/fetch-purls-shallow-score.mts (implementation)
  * - src/commands/package/handle-purls-shallow-score.mts (handler)
- * - src/utils/socket/api.mts (API utilities)
- * - src/utils/socket/sdk.mts (SDK setup)
+ * - src/util/socket/api.mts (API utilities)
+ * - src/util/socket/sdk.mts (SDK setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -46,11 +46,11 @@ const mockGetDefaultLogger = vi.hoisted(() =>
   })),
 )
 
-vi.mock('../../../../src/utils/socket/api.mts', () => ({
+vi.mock('../../../../src/util/socket/api.mts', () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 
