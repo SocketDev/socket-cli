@@ -94,8 +94,18 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       const value = rest.join(' ')
       const outputKind = getOutputKind(json, markdown)
 
-      // Build validation checks.
-      const validations = [
+      // Build validation checks. The shape matches `checkCommandInput`'s
+      // param exactly so spec.validate() output (which may include
+      // `pass?`) appends cleanly without the inferred discriminated-union
+      // narrowing kicking in.
+      type Validation = {
+        test: boolean
+        message: string
+        fail: string
+        nook?: boolean | undefined
+        pass?: string | undefined
+      }
+      const validations: Validation[] = [
         {
           test: key === 'test' || isSupportedConfigKey(key),
           message: 'Config key should be the first arg',
