@@ -47,10 +47,21 @@ catalog:
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
   '@socketregistry/packageurl-js': 'npm:@socketregistry/packageurl-js@1.4.2'
+  # -stable aliases: pnpm `overrides:` can't redirect a package's own
+  # name from inside the same package — Node ESM resolves it as a
+  # self-reference. The 4 Socket-published packages each need a
+  # SECOND name (`<canonical>-stable`) so build/script/hook/config
+  # code resolves to the published catalog version regardless of where
+  # the importing file lives. See socket-wheelhouse@92cd3e3 for the
+  # full rationale.
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/lib': 'npm:@socketsecurity/lib@5.28.0'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@5.28.0'
   '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.2'
+  '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.0.1'
+  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.0.1'
   '@types/adm-zip': 0.5.7
   '@types/cmd-shim': 5.0.2
   '@types/js-yaml': 4.0.9
