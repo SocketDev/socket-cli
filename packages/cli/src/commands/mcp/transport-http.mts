@@ -33,12 +33,17 @@ const logger = getDefaultLogger()
 const SESSION_TTL_MS = 30 * 60 * 1000
 const SESSION_REAP_INTERVAL_MS = 60_000
 
-// `auth?: AuthInfo` (NOT `AuthInfo | undefined`) matches the MCP
-// transport's `IncomingMessage & { auth?: AuthInfo }` parameter type.
-// Adding `| undefined` here would make the property explicitly-undefinable,
-// which trips exactOptionalPropertyTypes when handing the request to
-// transport.handleRequest().
-type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo }
+// Our internal type accepts `auth: undefined` explicitly so callers can
+// pass an undefined-stamped request without ceremony (spread, conditional
+// assignment, etc.).
+type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo | undefined }
+
+// MCP's `transport.handleRequest()` parameter is the stricter
+// `auth?: AuthInfo` (no `| undefined`) under our
+// exactOptionalPropertyTypes. Cast our internal type to this at the
+// call boundary when handing off; that's the narrow constraint, not
+// our internal shape.
+type McpHandleRequest = IncomingMessage & { auth?: AuthInfo }
 
 interface Session {
   lastActivity: number
@@ -303,7 +308,11 @@ export async function runHttpTransport(
             }
           }
 
-          await transport.handleRequest(authenticatedReq, res, jsonData)
+          await transport.handleRequest(
+            authenticatedReq as McpHandleRequest,
+            res,
+            jsonData,
+          )
         }),
       )
       return
@@ -326,7 +335,10 @@ export async function runHttpTransport(
       }
       await handleRequestSafely('GET', res, logger, async () => {
         session.lastActivity = Date.now()
-        await session.transport.handleRequest(authenticatedReq, res)
+        await session.transport.handleRequest(
+          authenticatedReq as McpHandleRequest,
+          res,
+        )
       })
       return
     }
@@ -349,7 +361,10 @@ export async function runHttpTransport(
         return
       }
       await handleRequestSafely('DELETE', res, logger, async () => {
-        await transport.handleRequest(authenticatedReq, res)
+        await transport.handleRequest(
+          authenticatedReq as McpHandleRequest,
+          res,
+        )
       })
       return
     }
