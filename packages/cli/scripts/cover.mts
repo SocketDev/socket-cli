@@ -22,6 +22,8 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { spawn } from '@socketsecurity/lib/spawn'
 
+import { PACKAGE_ROOT } from './paths.mts'
+
 const logger = getDefaultLogger()
 
 export function printError(message) {
@@ -81,7 +83,7 @@ async function main() {
     // Handle --type-only flag
     if (values['type-only']) {
       typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
-        cwd: process.cwd(),
+        cwd: PACKAGE_ROOT,
         encoding: 'utf8',
         shell: WIN32,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -123,7 +125,7 @@ async function main() {
     // Handle --code-only flag
     if (values['code-only']) {
       codeCoverageResult = await spawn('pnpm', vitestArgs, {
-        cwd: process.cwd(),
+        cwd: PACKAGE_ROOT,
         encoding: 'utf8',
         shell: WIN32,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -197,7 +199,7 @@ async function main() {
 
     // Default: run both code and type coverage
     codeCoverageResult = await spawn('pnpm', vitestArgs, {
-      cwd: process.cwd(),
+      cwd: PACKAGE_ROOT,
       encoding: 'utf8',
       shell: WIN32,
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -206,7 +208,7 @@ async function main() {
 
     // Run type coverage
     typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
-      cwd: process.cwd(),
+      cwd: PACKAGE_ROOT,
       encoding: 'utf8',
       shell: WIN32,
       stdio: ['pipe', 'pipe', 'pipe'],

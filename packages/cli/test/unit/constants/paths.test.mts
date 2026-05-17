@@ -315,6 +315,7 @@ describe('paths constants', () => {
         const { getSocketCachePath: getPathFresh } =
           await import('../../../src/constants/paths.mts')
         const result = getPathFresh()
+        // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- test asserts XDG cache resolution to `~/.cache/socket`, the canonical Linux user-cache path; not a fleet cache location.
         expect(result).toContain('.cache/socket')
       } finally {
         Object.defineProperty(process, 'platform', { value: originalPlatform })

@@ -12,7 +12,9 @@ import {
 } from '@socketsecurity/lib/git'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
-const rootPath = path.resolve(process.cwd())
+import { PACKAGE_ROOT } from '../paths.mts'
+
+const rootPath = PACKAGE_ROOT
 
 /**
  * Core files that require running all tests when changed.

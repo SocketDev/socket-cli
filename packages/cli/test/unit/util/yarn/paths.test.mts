@@ -126,11 +126,13 @@ describe('yarn-paths utilities', () => {
 
     it('handles yarn installed via corepack', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
+        // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- test fixture: corepack's own canonical install location.
         path: '/home/user/.cache/corepack/yarn/1.22.0/bin/yarn',
       })
 
       const result = getYarnBinPath()
 
+      // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- test fixture: corepack's own canonical install location.
       expect(result).toBe('/home/user/.cache/corepack/yarn/1.22.0/bin/yarn')
     })
   })

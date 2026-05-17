@@ -186,7 +186,7 @@ export async function hashFiles(globPattern, cwd) {
  * Download and extract cache from GitHub Actions.
  */
 export async function restoreCache(repo, cacheKey) {
-  const tempDir = path.join(packageRoot, '.cache', 'restore')
+  const tempDir = path.join(packageRoot, 'node_modules', '.cache', 'restore')
   await fs.mkdir(tempDir, { recursive: true })
 
   try {

@@ -9,6 +9,8 @@ import path from 'node:path'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
+import { PACKAGE_ROOT } from '../paths.mts'
+
 import { generateSeaConfig, injectSeaBlob } from './builder.mts'
 import { downloadNodeBinary } from '../util/asset-manager-compat.mts'
 import { downloadExternalTools, logger } from './downloads.mts'
@@ -56,7 +58,7 @@ export async function buildTarget(target, entryPoint, options) {
   if (providedOutputPath) {
     outputPath = normalizePath(providedOutputPath)
   } else {
-    const dir = outputDir || normalizePath(path.join(process.cwd(), 'dist/sea'))
+    const dir = outputDir || normalizePath(path.join(PACKAGE_ROOT, 'dist/sea'))
     outputPath = normalizePath(path.join(dir, target.outputName))
   }
 

@@ -126,11 +126,13 @@ describe('pnpm-paths utilities', () => {
 
     it('handles pnpm installed via corepack', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
+        // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- test fixture: corepack's own canonical install location.
         path: '/home/user/.cache/corepack/pnpm/9.0.0/bin/pnpm',
       })
 
       const result = getPnpmBinPath()
 
+      // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- test fixture: corepack's own canonical install location.
       expect(result).toBe('/home/user/.cache/corepack/pnpm/9.0.0/bin/pnpm')
     })
   })

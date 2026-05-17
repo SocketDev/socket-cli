@@ -9,6 +9,7 @@ import path from 'node:path'
  */
 function findUpSync(name, options) {
   const opts = { __proto__: null, ...options }
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- caller-overridable default; callers always pass a script-anchored cwd or accept the cwd they invoke from.
   const { cwd = process.cwd() } = opts
   let { onlyDirectories = false, onlyFiles = true } = opts
   if (onlyDirectories) {

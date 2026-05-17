@@ -1,3 +1,4 @@
+/* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
 /* oxlint-disable socket/sort-source-methods -- `arrayToLower` / `toLower` helpers are kept together at the top (alphabetical anchor for the cdxgen flag mapping below); `run` is the command entry point and lives near its config + cmdManifestCdxgen export, not interleaved with helpers. */
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
