@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../util/output/markdown.mts'

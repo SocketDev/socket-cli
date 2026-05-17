@@ -29,7 +29,7 @@ import {
 } from '../../../../test/helpers/index.mts'
 
 import type { CResult } from '../../../../src/commands/repository/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 describe('outputListRepos', () => {
   beforeEach(async () => {

@@ -25,8 +25,8 @@ import {
   debugNs,
   isDebug,
   isDebugNs,
-} from '@socketsecurity/lib-stable/debug'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+} from '@socketsecurity/lib/debug'
+import { errorMessage } from '@socketsecurity/lib/errors'
 export type ApiRequestDebugInfo = {
   durationMs?: number | undefined
   headers?: Record<string, string> | undefined

@@ -14,7 +14,7 @@
  * Learned from ultrathink xlang-harness.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import type { Report } from './types.mts'
 

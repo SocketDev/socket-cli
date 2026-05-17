@@ -7,14 +7,14 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { configToSpec, frameColors } from '@socketsecurity/lib-stable/effects/shimmer'
-import { colorsToAnsi } from '@socketsecurity/lib-stable/effects/shimmer-terminal'
+import { configToSpec, frameColors } from '@socketsecurity/lib/effects/shimmer'
+import { colorsToAnsi } from '@socketsecurity/lib/effects/shimmer-terminal'
 
 import type {
   Palette,
   RGB,
   ShimmerSpec,
-} from '@socketsecurity/lib-stable/effects/shimmer'
+} from '@socketsecurity/lib/effects/shimmer'
 
 /**
  * Color themes for header styling.

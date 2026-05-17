@@ -6,7 +6,7 @@
  */
 
 import crypto from 'node:crypto'
-import type { IpcStub } from '@socketsecurity/lib-stable/ipc'
+import type { IpcStub } from '@socketsecurity/lib/ipc'
 
 export interface IpcMessage<T = unknown> {
   data: T

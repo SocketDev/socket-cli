@@ -6,8 +6,8 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
 import { generateSeaConfig, injectSeaBlob } from './builder.mts'
 import { downloadNodeBinary } from '../util/asset-manager-compat.mts'

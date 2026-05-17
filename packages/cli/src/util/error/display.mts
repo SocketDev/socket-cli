@@ -2,9 +2,9 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { isError, messageWithCauses } from '@socketsecurity/lib-stable/errors'
-import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger'
-import { stripAnsi } from '@socketsecurity/lib-stable/strings'
+import { isError, messageWithCauses } from '@socketsecurity/lib/errors'
+import { LOG_SYMBOLS } from '@socketsecurity/lib/logger'
+import { stripAnsi } from '@socketsecurity/lib/strings'
 
 import { debugDirNs, debugNs, isDebugNs } from '../debug.mts'
 import {

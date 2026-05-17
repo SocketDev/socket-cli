@@ -27,7 +27,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as LoggerModule from '@socketsecurity/lib/logger'
 import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
 
 const mockLogger = vi.hoisted(() => ({

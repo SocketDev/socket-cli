@@ -21,7 +21,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { PackageURL } from '@socketregistry/packageurl-js-stable'
+import { PackageURL } from '@socketregistry/packageurl-js'
 
 import {
   createPurlObject,

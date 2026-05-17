@@ -47,8 +47,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { safeDeleteSync } from '@socketsecurity/lib-stable/fs'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { safeDeleteSync } from '@socketsecurity/lib/fs'
 
 const logger = getDefaultLogger()
 

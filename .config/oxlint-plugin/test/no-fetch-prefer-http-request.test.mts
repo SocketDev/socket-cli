@@ -13,7 +13,7 @@ describe('socket/no-fetch-prefer-http-request', () => {
       valid: [
         {
           name: 'httpJson import',
-          code: 'import { httpJson } from "@socketsecurity/lib-stable/http-request"\nawait httpJson("https://x")\n',
+          code: 'import { httpJson } from "@socketsecurity/lib/http-request"\nawait httpJson("https://x")\n',
         },
         { name: 'no fetch call', code: 'const x = 1\n' },
       ],

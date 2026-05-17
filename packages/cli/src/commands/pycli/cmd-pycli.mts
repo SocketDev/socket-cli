@@ -15,7 +15,7 @@
  * - --save-manifest-tar: Archive manifests for audit trail
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'

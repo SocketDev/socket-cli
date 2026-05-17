@@ -1,13 +1,13 @@
 import { Type } from '@sinclair/typebox'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { setupSdk } from '../../util/socket/sdk.mts'
 import { deduplicateArtifacts } from './lib/artifacts.mts'
 import { buildPurl } from './lib/purl.mts'
 
 import type { ArtifactData } from './lib/artifacts.mts'
-import type { SocketSdk } from '@socketsecurity/sdk-stable'
+import type { SocketSdk } from '@socketsecurity/sdk'
 import type { Static } from '@sinclair/typebox'
 
 const logger = getDefaultLogger()

@@ -3,7 +3,7 @@ import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
-import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchOrganizationOptions = {
   commandPath?: string | undefined

@@ -1,8 +1,8 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 const logger = getDefaultLogger()
 

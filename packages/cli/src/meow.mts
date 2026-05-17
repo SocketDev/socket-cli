@@ -3,14 +3,14 @@
  * Uses socket-registry's parseArgs for argument parsing.
  */
 
-import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { readPackageJsonSync } from '@socketsecurity/lib-stable/packages'
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { readPackageJsonSync } from '@socketsecurity/lib/packages'
 
 import type {
   ParseArgsConfig,
   ParseArgsOptionsConfig,
-} from '@socketsecurity/lib-stable/argv/parse'
+} from '@socketsecurity/lib/argv/parse'
 
 const logger = getDefaultLogger()
 

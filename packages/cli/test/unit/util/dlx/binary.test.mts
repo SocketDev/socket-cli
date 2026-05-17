@@ -20,9 +20,9 @@ import {
   cleanDlxCache,
   getDlxCachePath,
   listDlxCache,
-} from '@socketsecurity/lib-stable/dlx/binary'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { getSocketHomePath } from '@socketsecurity/lib-stable/paths/socket'
+} from '@socketsecurity/lib/dlx/binary'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { getSocketHomePath } from '@socketsecurity/lib/paths/socket'
 
 describe('binary', () => {
   describe('getSocketHomePath', () => {

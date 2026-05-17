@@ -1,12 +1,12 @@
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { handleApiCall } from '../../util/socket/api.mjs'
 import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchPurlsShallowScoreOptions = {
   commandPath?: string | undefined

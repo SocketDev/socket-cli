@@ -22,8 +22,8 @@ import { existsSync, statSync } from 'node:fs'
 import { basename } from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { errorMessage } from '@socketsecurity/lib/errors'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
   containsAiAttribution,

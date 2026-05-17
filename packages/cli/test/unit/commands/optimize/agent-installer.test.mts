@@ -83,7 +83,7 @@ describe('agent installer utilities', () => {
     // prevented proper interception. The 6 tests below cover pnpm/yarn/unknown agents.
 
     it('uses spawn for npm agent with --no-audit --no-fund', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/lib-stable/spawn'))
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
@@ -105,7 +105,7 @@ describe('agent installer utilities', () => {
     })
 
     it('uses spawn for pnpm agent', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/lib-stable/spawn'))
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
@@ -134,7 +134,7 @@ describe('agent installer utilities', () => {
     })
 
     it('uses spawn for yarn agent', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/lib-stable/spawn'))
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
@@ -155,7 +155,7 @@ describe('agent installer utilities', () => {
     })
 
     it('passes args to the agent command', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/lib-stable/spawn'))
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
@@ -176,7 +176,7 @@ describe('agent installer utilities', () => {
     })
 
     it('uses spinner when provided', async () => {
-      const { Spinner } = vi.mocked(await import('@socketsecurity/lib-stable/spinner'))
+      const { Spinner } = vi.mocked(await import('@socketsecurity/lib/spinner'))
       const mockSpinner = {
         start: vi.fn(),
         stop: vi.fn(),
@@ -195,7 +195,7 @@ describe('agent installer utilities', () => {
       })
 
       // Spinner would be passed through to spawn.
-      const { spawn } = vi.mocked(await import('@socketsecurity/lib-stable/spawn'))
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       expect(spawn).toHaveBeenCalledWith(
         '/usr/bin/pnpm',
         [
@@ -210,7 +210,7 @@ describe('agent installer utilities', () => {
     })
 
     it('handles unknown agent', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/lib-stable/spawn'))
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {
@@ -229,7 +229,7 @@ describe('agent installer utilities', () => {
     })
 
     it('merges options correctly', async () => {
-      const { spawn } = vi.mocked(await import('@socketsecurity/lib-stable/spawn'))
+      const { spawn } = vi.mocked(await import('@socketsecurity/lib/spawn'))
       spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
 
       const pkgEnvDetails = {

@@ -491,7 +491,7 @@ describe('clearQuarantine', () => {
 
   it('should do nothing on non-macOS platforms', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('linux')
-    const spawnModule = await import('@socketsecurity/lib-stable/spawn')
+    const spawnModule = await import('@socketsecurity/lib/spawn')
     const spawnMock = vi.mocked(spawnModule.spawn)
 
     await clearQuarantine('/path/to/file')
@@ -501,7 +501,7 @@ describe('clearQuarantine', () => {
 
   it('should do nothing on Windows', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
-    const spawnModule = await import('@socketsecurity/lib-stable/spawn')
+    const spawnModule = await import('@socketsecurity/lib/spawn')
     const spawnMock = vi.mocked(spawnModule.spawn)
 
     await clearQuarantine('/path/to/file')
@@ -511,7 +511,7 @@ describe('clearQuarantine', () => {
 
   it('should call xattr on macOS', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
-    const spawnModule = await import('@socketsecurity/lib-stable/spawn')
+    const spawnModule = await import('@socketsecurity/lib/spawn')
     const spawnMock = vi.mocked(spawnModule.spawn)
     spawnMock.mockResolvedValue({ exitCode: 0 } as never)
 
@@ -526,7 +526,7 @@ describe('clearQuarantine', () => {
 
   it('should handle xattr failure gracefully', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
-    const spawnModule = await import('@socketsecurity/lib-stable/spawn')
+    const spawnModule = await import('@socketsecurity/lib/spawn')
     const spawnMock = vi.mocked(spawnModule.spawn)
     spawnMock.mockRejectedValue(new Error('xattr not found'))
 

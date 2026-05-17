@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { emitPayload } from '../../util/output/emit-payload.mts'
@@ -6,7 +6,7 @@ import { mdHeader } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
 type QuotaData = SocketSdkSuccessResult<'getQuota'>['data']

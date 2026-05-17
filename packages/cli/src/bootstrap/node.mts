@@ -17,9 +17,9 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { getNodeDisableSigusr1Flags } from './shared/node-flags.mjs'
 import {

@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { getGithubApiUrl } from '@socketsecurity/lib-stable/env/github'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { input, select } from '@socketsecurity/lib-stable/stdio/prompts'
+import { getGithubApiUrl } from '@socketsecurity/lib/env/github'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { input, select } from '@socketsecurity/lib/stdio/prompts'
 
 import { SOCKET_JSON } from '../../constants/paths.mts'
 import {

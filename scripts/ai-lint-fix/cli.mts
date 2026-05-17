@@ -45,8 +45,8 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { isSpawnError, spawn } from '@socketsecurity/lib-stable/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 import { AI_HANDLED_RULES, RULE_GUIDANCE } from './rule-guidance.mts'
 

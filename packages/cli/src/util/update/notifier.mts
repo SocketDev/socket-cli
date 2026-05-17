@@ -24,10 +24,10 @@ import process from 'node:process'
 
 import colors from 'yoctocolors-cjs'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { onExit } from '@socketsecurity/lib-stable/signal-exit'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
+import { errorMessage } from '@socketsecurity/lib/errors'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { onExit } from '@socketsecurity/lib/signal-exit'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { SEA_UPDATE_COMMAND } from '../../constants/cli.mts'
 import { getSeaBinaryPath } from '../sea/detect.mts'

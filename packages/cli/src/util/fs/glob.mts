@@ -5,18 +5,18 @@ import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
-import { isDirSync, safeReadFile } from '@socketsecurity/lib-stable/fs'
-import { defaultIgnore } from '@socketsecurity/lib-stable/globs'
-import { readPackageJson } from '@socketsecurity/lib-stable/packages'
-import { transform } from '@socketsecurity/lib-stable/streams'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
+import { isDirSync, safeReadFile } from '@socketsecurity/lib/fs'
+import { defaultIgnore } from '@socketsecurity/lib/globs'
+import { readPackageJson } from '@socketsecurity/lib/packages'
+import { transform } from '@socketsecurity/lib/streams'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { homePath } from '../../constants/paths.mts'
 import { NODE_MODULES, PNPM } from '../../constants.mts'
 
 import type { Agent } from '../ecosystem/environment.mts'
 import type { SocketYml } from '../socket-yaml.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import type { Options as GlobOptions } from 'fast-glob'
 
 const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(

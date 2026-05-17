@@ -1,6 +1,6 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { formatErrorWithDetail } from '../../util/error/errors.mjs'
 import {
@@ -12,7 +12,7 @@ import { setupSdk } from '../../util/socket/sdk.mjs'
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../util/alert/artifact.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 const logger = getDefaultLogger()
 const spinner = getDefaultSpinner()

@@ -30,22 +30,22 @@ import { rootCertificates } from 'node:tls'
 
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
-import { debug as debugLib } from '@socketsecurity/lib-stable/debug'
+import { debug as debugLib } from '@socketsecurity/lib/debug'
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-stable/constants/socket'
-import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
+import { getSocketApiToken } from '@socketsecurity/lib/env/socket'
 import {
   getSocketCliApiBaseUrl,
   getSocketCliApiProxy,
   getSocketCliApiTimeout,
   getSocketCliNoApiToken,
-} from '@socketsecurity/lib-stable/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { password } from '@socketsecurity/lib-stable/stdio/prompts'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
-import { isUrl } from '@socketsecurity/lib-stable/url'
-import { pluralize } from '@socketsecurity/lib-stable/words'
-import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk-stable'
+} from '@socketsecurity/lib/env/socket-cli'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { password } from '@socketsecurity/lib/stdio/prompts'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { isUrl } from '@socketsecurity/lib/url'
+import { pluralize } from '@socketsecurity/lib/words'
+import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import {
   CONFIG_KEY_API_BASE_URL,
@@ -66,7 +66,7 @@ import type {
   FileValidationResult,
   RequestInfo,
   ResponseInfo,
-} from '@socketsecurity/sdk-stable'
+} from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
 const TOKEN_VISIBLE_LENGTH = 5

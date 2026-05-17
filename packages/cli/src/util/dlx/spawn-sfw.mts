@@ -11,8 +11,8 @@
  * both apply); Vfs + auto-dispatch use the shared helpers.
  */
 
-import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
 import { spawnDlx } from './spawn.mts'
@@ -24,7 +24,7 @@ import {
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 /**
  * Helper to spawn Socket Firewall (sfw) with dlx.

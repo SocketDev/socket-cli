@@ -22,8 +22,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'

@@ -13,11 +13,11 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib-stable/dlx/binary'
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
-import { whichReal } from '@socketsecurity/lib-stable/bin'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib/dlx/binary'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
+import { spawn } from '@socketsecurity/lib/spawn'
+import { whichReal } from '@socketsecurity/lib/bin'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import { resolvePyCli } from './resolve-binary.mjs'
 import {

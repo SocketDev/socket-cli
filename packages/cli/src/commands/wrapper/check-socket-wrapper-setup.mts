@@ -2,7 +2,7 @@
 
 import { readFileSync } from 'node:fs'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
 export function checkSocketWrapperSetup(file: string): boolean {

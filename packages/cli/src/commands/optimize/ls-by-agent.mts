@@ -5,9 +5,9 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+} from '@socketsecurity/lib/constants/agents'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { FLAG_PROD } from '../../constants/cli.mts'
 

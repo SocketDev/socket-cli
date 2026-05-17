@@ -1,6 +1,6 @@
 /** @fileoverview Coana CLI spawn utilities for Socket CLI. */
 
-import { dlxPackage } from '@socketsecurity/lib-stable/dlx/package'
+import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 
 import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mts'
 import { getCliVersion } from '../../env/cli-version.mts'
@@ -13,7 +13,7 @@ import { spawnNode } from '../spawn/spawn-node.mjs'
 import type { IpcObject } from '../ipc.mts'
 import type { CResult } from '../../types.mjs'
 import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib/spawn'
 
 export type CoanaSpawnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

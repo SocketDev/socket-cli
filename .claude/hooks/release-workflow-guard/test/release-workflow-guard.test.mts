@@ -19,8 +19,8 @@ import process, { execPath } from 'node:process'
 import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { safeDelete } from '@socketsecurity/lib-stable/fs'
-import { isSpawnError, spawn } from '@socketsecurity/lib-stable/spawn'
+import { safeDelete } from '@socketsecurity/lib/fs'
+import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 const hookScript = new URL('../index.mts', import.meta.url).pathname
 

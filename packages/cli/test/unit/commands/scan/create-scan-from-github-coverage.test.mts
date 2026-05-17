@@ -18,7 +18,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as FsLibType from '@socketsecurity/lib-stable/fs'
+import type * as FsLibType from '@socketsecurity/lib/fs'
 import type * as CreateScanFromGithub from '../../../../src/commands/scan/create-scan-from-github.mts'
 
 const mockOctokit = vi.hoisted(() => ({

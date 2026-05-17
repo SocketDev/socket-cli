@@ -48,6 +48,10 @@ export class SocketValidationError extends Error {
   }
 }
 
+export function asBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined
+}
+
 export function asBooleanRecord(value: unknown): { [k: string]: boolean } {
   if (!isPlainObject(value)) {
     return {}
@@ -100,6 +104,15 @@ export function buildGithub(value: unknown): SocketYmlGitHub {
   return out
 }
 
+export function getDefaultConfig(): SocketYml {
+  return {
+    githubApp: {},
+    issueRules: {},
+    projectIgnorePaths: [],
+    version: 2,
+  }
+}
+
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -141,19 +154,6 @@ export function migrateV1(content: SocketYmlV1Shape): SocketYml {
     githubApp: github,
     issueRules: content.issues ?? {},
     projectIgnorePaths: content.ignore ?? [],
-    version: 2,
-  }
-}
-
-export function asBoolean(value: unknown): boolean | undefined {
-  return typeof value === 'boolean' ? value : undefined
-}
-
-export function getDefaultConfig(): SocketYml {
-  return {
-    githubApp: {},
-    issueRules: {},
-    projectIgnorePaths: [],
     version: 2,
   }
 }

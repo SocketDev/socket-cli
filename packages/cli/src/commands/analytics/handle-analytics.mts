@@ -3,7 +3,7 @@ import { fetchRepoAnalyticsData } from './fetch-repo-analytics.mts'
 import { outputAnalytics } from './output-analytics.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type HandleAnalyticsConfig = {
   filepath: string

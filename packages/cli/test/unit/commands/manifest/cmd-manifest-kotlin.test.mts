@@ -8,7 +8,7 @@ import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as LoggerModule from '@socketsecurity/lib/logger'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({

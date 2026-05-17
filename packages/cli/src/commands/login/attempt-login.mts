@@ -1,7 +1,7 @@
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-stable/constants/socket'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { confirm, password, select } from '@socketsecurity/lib-stable/stdio/prompts'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { confirm, password, select } from '@socketsecurity/lib/stdio/prompts'
 
 import { applyLogin } from './apply-login.mts'
 import {
@@ -22,7 +22,7 @@ import { socketDocsLink } from '../../util/terminal/link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
-import type { Choice } from '@socketsecurity/lib-stable/stdio/prompts'
+import type { Choice } from '@socketsecurity/lib/stdio/prompts'
 const logger = getDefaultLogger()
 
 type OrgChoice = Choice<string>

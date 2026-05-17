@@ -22,7 +22,7 @@ vi.mock('../../../../src/util/cli/with-subcommands.mjs', () => ({
 
 // Import modules after mocks are set up.
 const { cmdPip } = await import('../../../../src/commands/pip/cmd-pip.mts')
-const binModule = await import('@socketsecurity/lib-stable/bin')
+const binModule = await import('@socketsecurity/lib/bin')
 const spawnModule = await import('../../../../src/util/dlx/spawn.mts')
 const cmdModule = await import('../../../../src/util/process/cmd.mts')
 const meowModule =

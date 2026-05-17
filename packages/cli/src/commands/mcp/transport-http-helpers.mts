@@ -1,6 +1,6 @@
-import { httpRequest } from '@socketsecurity/lib-stable/http-request'
+import { httpRequest } from '@socketsecurity/lib/http-request'
 
-import type { HttpResponse } from '@socketsecurity/lib-stable/http-request'
+import type { HttpResponse } from '@socketsecurity/lib/http-request'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 

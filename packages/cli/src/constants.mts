@@ -5,11 +5,11 @@
  */
 
 // Import everything we need to re-export.
-import { UTF8 } from '@socketsecurity/lib-stable/constants/encoding'
+import { UTF8 } from '@socketsecurity/lib/constants/encoding'
 import {
   SOCKET_IPC_HANDSHAKE,
   SOCKET_PUBLIC_API_TOKEN,
-} from '@socketsecurity/lib-stable/constants/socket'
+} from '@socketsecurity/lib/constants/socket'
 
 import {
   BUN,

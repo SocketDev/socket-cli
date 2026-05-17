@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
 
 import { generateReport } from './generate-report.mts'
 import {
@@ -21,7 +21,7 @@ import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../util/alert/artifact.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
 export type OutputScanReportConfig = {

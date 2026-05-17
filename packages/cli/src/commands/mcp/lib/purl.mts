@@ -1,4 +1,4 @@
-import { PackageURL } from '@socketregistry/packageurl-js-stable'
+import { PackageURL } from '@socketregistry/packageurl-js'
 
 /**
  * Build a PURL using packageurl-js for correct encoding across all ecosystems.

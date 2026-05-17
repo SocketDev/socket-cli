@@ -11,7 +11,7 @@ import crypto from 'node:crypto'
 import { existsSync, mkdirSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 /**
  * Compute SHA256 hash of source file(s).

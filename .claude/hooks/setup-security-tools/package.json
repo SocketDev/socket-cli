@@ -5,7 +5,7 @@
   "main": "./index.mts",
   "dependencies": {
     "@sinclair/typebox": "catalog:",
-    "@socketregistry/packageurl-js-stable": "catalog:",
-    "@socketsecurity/lib-stable": "catalog:"
+    "@socketregistry/packageurl-js": "catalog:",
+    "@socketsecurity/lib": "catalog:"
   }
 }

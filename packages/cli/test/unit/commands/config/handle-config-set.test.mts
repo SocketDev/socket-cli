@@ -130,7 +130,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
 
     mockUpdateConfigValue.mockReturnValue(createSuccessResult('debug-value'))
 
@@ -152,7 +152,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debug } = await import('@socketsecurity/lib-stable/debug')
+    const { debug } = await import('@socketsecurity/lib/debug')
 
     mockUpdateConfigValue.mockReturnValue(createErrorResult('Failed'))
 

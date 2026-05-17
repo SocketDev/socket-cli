@@ -22,7 +22,7 @@ import { describe, expect, it } from 'vitest'
 
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
 

@@ -285,7 +285,7 @@ describe('handleOptimize', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
     const { detectAndValidatePackageEnvironment } =
       await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { debugFileOp } from '../../util/debug.mts'
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
@@ -10,7 +10,7 @@ import { fileLink } from '../../util/terminal/link.mts'
 import { displayAnalyticsWithIocraft } from './AnalyticsRenderer.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 const logger = getDefaultLogger()
 

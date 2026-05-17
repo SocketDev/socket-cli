@@ -9,8 +9,8 @@
  * npm fallback). Vfs + auto-dispatch use the shared helpers.
  */
 
-import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
 import { downloadGitHubReleaseBinary, spawnDlx } from './spawn.mts'
@@ -18,7 +18,7 @@ import { resolveSocketPatch } from './resolve-binary.mjs'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 /**
  * Spawn socket-patch via dlx (npm CLI mode).

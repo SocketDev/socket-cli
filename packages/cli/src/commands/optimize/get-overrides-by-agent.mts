@@ -7,11 +7,11 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
+} from '@socketsecurity/lib/constants/agents'
 
 import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
 import type { Agent, EnvDetails } from '../../util/ecosystem/environment.mjs'
-import type { PackageJson } from '@socketsecurity/lib-stable/packages'
+import type { PackageJson } from '@socketsecurity/lib/packages'
 
 export type GetOverrides = (
   pkgEnvDetails: EnvDetails,

@@ -40,8 +40,8 @@
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
-import { getNodeVersion } from '@socketsecurity/lib-stable/constants/node'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { getNodeVersion } from '@socketsecurity/lib/constants/node'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import {
   FLAG_CONFIG,

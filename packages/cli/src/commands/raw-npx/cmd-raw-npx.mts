@@ -1,7 +1,7 @@
 /* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
 import { defineFlags } from '../../meow.mts'

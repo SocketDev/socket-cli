@@ -2,7 +2,7 @@ import {
   BUN,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
+} from '@socketsecurity/lib/constants/agents'
 
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 

@@ -1,8 +1,8 @@
 import { RequestError } from '@octokit/request-error'
 
-import { UNKNOWN_VALUE } from '@socketsecurity/lib-stable/constants/core'
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import {
   getSocketFixBranchPattern,
@@ -29,7 +29,7 @@ import type { GhsaDetails, Pr } from '../../util/git/github.mts'
 import { createPrProvider } from '../../util/git/provider-factory.mts'
 
 import type { OctokitResponse } from '@octokit/types'
-import type { JsonContent } from '@socketsecurity/lib-stable/fs'
+import type { JsonContent } from '@socketsecurity/lib/fs'
 
 export type GQL_MERGE_STATE_STATUS =
   | 'BEHIND'

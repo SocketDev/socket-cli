@@ -4,8 +4,8 @@ import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchSupportedScanFileNamesOptions = {
   orgSlug?: string | undefined

@@ -16,7 +16,7 @@
  * network calls + interactive flows mid-conversation.
  *
  * Skips the interactive prompt path when:
- *   - Running in CI (`getCI()` from @socketsecurity/lib-stable/env/ci).
+ *   - Running in CI (`getCI()` from @socketsecurity/lib/env/ci).
  *   - Stdin isn't a TTY (`!process.stdin.isTTY`).
  *
  * In those skip cases, the script falls back to sfw-free (the auth-
@@ -36,8 +36,8 @@ import process from 'node:process'
 import readline from 'node:readline'
 import { fileURLToPath } from 'node:url'
 
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getCI } from '@socketsecurity/lib/env/ci'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { findApiToken } from './lib/api-token.mts'
 import {

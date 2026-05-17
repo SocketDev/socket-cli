@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib/arrays'
 
 import { assertNoNegationPatterns } from './exclude-paths.mts'
 import { handleScanReach } from './handle-scan-reach.mts'

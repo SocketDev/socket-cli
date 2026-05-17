@@ -13,11 +13,11 @@ describe('socket/prefer-async-spawn', () => {
       valid: [
         {
           name: 'async spawn import from lib',
-          code: 'import { spawn } from "@socketsecurity/lib-stable/spawn"\nawait spawn("ls")\n',
+          code: 'import { spawn } from "@socketsecurity/lib/spawn"\nawait spawn("ls")\n',
         },
         {
           name: 'spawnSync import from lib (sync-aware)',
-          code: 'import { spawnSync } from "@socketsecurity/lib-stable/spawn"\nspawnSync("ls")\n',
+          code: 'import { spawnSync } from "@socketsecurity/lib/spawn"\nspawnSync("ls")\n',
         },
         {
           name: 'bypass comment on import',
@@ -38,7 +38,7 @@ describe('socket/prefer-async-spawn', () => {
           name: 'spawnSync import from node:child_process — source rewritten, name preserved',
           code: 'import { spawnSync } from "node:child_process"\nspawnSync("ls")\n',
           output:
-            'import { spawnSync } from "@socketsecurity/lib-stable/spawn"\nspawnSync("ls")\n',
+            'import { spawnSync } from "@socketsecurity/lib/spawn"\nspawnSync("ls")\n',
           errors: [{ messageId: 'importBanned' }],
         },
         {

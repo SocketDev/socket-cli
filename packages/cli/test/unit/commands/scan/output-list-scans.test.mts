@@ -63,7 +63,7 @@ vi.mock('chalk-table', () => ({
 import { outputListScans } from '../../../../src/commands/scan/output-list-scans.mts'
 
 import type { CResult } from '../../../../src/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 // Helper to create error result.
 export function createErrorResult(

@@ -26,15 +26,15 @@
  * - gitBranch: Get current branch or commit hash
  */
 
-import { whichReal } from '@socketsecurity/lib-stable/bin'
-import { debug, debugDir, isDebug } from '@socketsecurity/lib-stable/debug'
+import { whichReal } from '@socketsecurity/lib/bin'
+import { debug, debugDir, isDebug } from '@socketsecurity/lib/debug'
 import {
   getGithubBaseRef,
   getGithubRefName,
   getGithubRefType,
-} from '@socketsecurity/lib-stable/env/github'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { isSpawnError, spawn } from '@socketsecurity/lib-stable/spawn'
+} from '@socketsecurity/lib/env/github'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 import { FLAG_QUIET } from '../../constants/cli.mts'
 import { SOCKET_CLI_GIT_USER_EMAIL } from '../../env/socket-cli-git-user-email.mts'
@@ -47,7 +47,7 @@ import { debugGit } from '../debug.mts'
 import { extractName, extractOwner } from '../sanitize-names.mts'
 
 import type { CResult } from '../../types.mjs'
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 // Cache git executable path
 let _gitPath: string | undefined = undefined

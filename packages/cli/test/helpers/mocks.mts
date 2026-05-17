@@ -3,7 +3,7 @@
 import { vi } from 'vitest'
 
 import type { CResult } from '../../src/types.mts'
-import type { SocketSdk } from '@socketsecurity/sdk-stable'
+import type { SocketSdk } from '@socketsecurity/sdk'
 
 /**
  * Error options for creating error results

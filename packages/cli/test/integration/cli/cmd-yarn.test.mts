@@ -26,7 +26,7 @@
 
 import { describe, expect } from 'vitest'
 
-import { YARN } from '@socketsecurity/lib-stable/constants/agents'
+import { YARN } from '@socketsecurity/lib/constants/agents'
 
 import {
   FLAG_CONFIG,

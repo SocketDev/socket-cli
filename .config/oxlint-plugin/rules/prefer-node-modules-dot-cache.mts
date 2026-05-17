@@ -36,7 +36,7 @@
  * Scope: .ts / .cts / .mts / .js / .cjs / .mjs.
  */
 
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 
 // Match `.cache` only as a path segment inside a larger path, never as
 // a bare standalone string. A bare `.cache` is conventionally a

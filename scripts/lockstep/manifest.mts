@@ -17,9 +17,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { validateSchema } from '@socketsecurity/lib-stable/schema/validate'
+import { errorMessage } from '@socketsecurity/lib/errors'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { validateSchema } from '@socketsecurity/lib/schema/validate'
 
 import {
   LockstepManifestSchema,

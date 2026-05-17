@@ -20,10 +20,10 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { which } from '@socketsecurity/lib-stable/bin'
-import { safeDelete } from '@socketsecurity/lib-stable/fs'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { isSpawnError, spawn } from '@socketsecurity/lib-stable/spawn'
+import { which } from '@socketsecurity/lib/bin'
+import { safeDelete } from '@socketsecurity/lib/fs'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
 
 const logger = getDefaultLogger()
 

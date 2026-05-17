@@ -29,7 +29,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   mockErrorResponse,
   mockSuccessResponse,
-} from '@socketsecurity/sdk-stable/testing'
+} from '@socketsecurity/sdk/testing'
 
 // Mock dependencies first.
 const mockSpinner = vi.hoisted(() => vi.fn())

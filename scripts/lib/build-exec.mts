@@ -6,10 +6,10 @@
  * Centralized command execution for build script.
  */
 
-import type { SpawnStdioResult } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnStdioResult } from '@socketsecurity/lib/spawn'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { spawn } from '@socketsecurity/lib/spawn'
 
 import { saveBuildLog } from './build-helpers.mts'
 

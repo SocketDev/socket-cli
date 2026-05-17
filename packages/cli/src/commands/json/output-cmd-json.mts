@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { safeReadFileSync, safeStatsSync } from '@socketsecurity/lib-stable/fs'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { safeReadFileSync, safeStatsSync } from '@socketsecurity/lib/fs'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { REDACTED } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'

@@ -1,7 +1,7 @@
 /** Unit tests for repository create command (creates a repo in an organization). */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as LoggerModule from '@socketsecurity/lib/logger'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
 // Mock the logger.

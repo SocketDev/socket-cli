@@ -1,6 +1,6 @@
-import { UNKNOWN_VALUE } from '@socketsecurity/lib-stable/constants/core'
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import {
   cacheFetch,

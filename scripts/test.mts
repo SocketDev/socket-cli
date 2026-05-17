@@ -9,15 +9,15 @@ import type { PackageInfo } from './util/monorepo-helper.mts'
 
 import colors from 'yoctocolors-cjs'
 
-import { isQuiet } from '@socketsecurity/lib-stable/argv/flags'
-import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib-stable/git'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { onExit } from '@socketsecurity/lib-stable/signal-exit'
-import { isSpawnError, spawn } from '@socketsecurity/lib-stable/spawn'
-import { printHeader } from '@socketsecurity/lib-stable/stdio/header'
-import { ProgressBar } from '@socketsecurity/lib-stable/stdio/progress'
+import { isQuiet } from '@socketsecurity/lib/argv/flags'
+import { parseArgs } from '@socketsecurity/lib/argv/parse'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib/git'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { onExit } from '@socketsecurity/lib/signal-exit'
+import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
+import { printHeader } from '@socketsecurity/lib/stdio/header'
+import { ProgressBar } from '@socketsecurity/lib/stdio/progress'
 
 import {
   getAffectedPackages,

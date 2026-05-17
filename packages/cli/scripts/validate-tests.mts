@@ -4,8 +4,8 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { pEach } from '@socketsecurity/lib-stable/promises'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { pEach } from '@socketsecurity/lib/promises'
 
 const logger = getDefaultLogger()
 

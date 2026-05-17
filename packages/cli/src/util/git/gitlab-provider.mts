@@ -1,8 +1,8 @@
 import { Gitlab } from '@gitbeaker/rest'
 
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
-import { isError } from '@socketsecurity/lib-stable/errors'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { isError } from '@socketsecurity/lib/errors'
+import { isNonEmptyString } from '@socketsecurity/lib/strings'
 
 import { formatErrorWithDetail } from '../error/errors.mts'
 

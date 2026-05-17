@@ -1,13 +1,13 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
-import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
+import { getCI } from '@socketsecurity/lib/env/ci'
+import { getSocketApiToken } from '@socketsecurity/lib/env/socket'
 import {
   getSocketCliConfig,
   getSocketCliNoApiToken,
-} from '@socketsecurity/lib-stable/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getOwn, hasOwn } from '@socketsecurity/lib-stable/objects'
-import { indentString, trimNewlines } from '@socketsecurity/lib-stable/strings'
+} from '@socketsecurity/lib/env/socket-cli'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getOwn, hasOwn } from '@socketsecurity/lib/objects'
+import { indentString, trimNewlines } from '@socketsecurity/lib/strings'
 
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'

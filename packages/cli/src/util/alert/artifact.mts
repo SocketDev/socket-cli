@@ -7,7 +7,7 @@ import {
   ALERT_TYPE_MILD_CVE,
 } from '../../constants/alerts.mts'
 
-import type { Remap } from '@socketsecurity/lib-stable/objects'
+import type { Remap } from '@socketsecurity/lib/objects'
 import type {
   ALERT_ACTION,
   ALERT_TYPE,
@@ -15,7 +15,7 @@ import type {
   CompactSocketArtifactAlert,
   SocketArtifact,
   SocketArtifactAlert,
-} from '@socketsecurity/sdk-stable'
+} from '@socketsecurity/sdk'
 
 export type {
   ALERT_ACTION,

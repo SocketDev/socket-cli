@@ -4,8 +4,8 @@
  * Non-interactive renderer for threat feed data using iocraft native bindings.
  */
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { errorMessage } from '@socketsecurity/lib/errors'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { Box, Text, print } from '../../util/terminal/iocraft.mts'
 

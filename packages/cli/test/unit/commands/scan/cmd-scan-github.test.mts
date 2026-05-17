@@ -7,9 +7,9 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as LoggerModule from '@socketsecurity/lib/logger'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
-import type * as SocketCliModule from '@socketsecurity/lib-stable/env/socket-cli'
+import type * as SocketCliModule from '@socketsecurity/lib/env/socket-cli'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({

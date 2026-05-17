@@ -26,7 +26,7 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { safeDelete, safeMkdirSync } from '@socketsecurity/lib-stable/fs'
+import { safeDelete, safeMkdirSync } from '@socketsecurity/lib/fs'
 
 import {
   findSocketYmlSync,

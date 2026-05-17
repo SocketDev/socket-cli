@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
-import { UNKNOWN_ERROR } from '@socketsecurity/lib-stable/constants/core'
+import { UNKNOWN_ERROR } from '@socketsecurity/lib/constants/core'
 
 import {
   AuthError,

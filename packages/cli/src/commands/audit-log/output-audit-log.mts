@@ -1,5 +1,5 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import {
   FLAG_JSON,
@@ -14,7 +14,7 @@ import { serializeResultJson } from '../../util/output/result-json.mjs'
 import { displayAuditLogWithIocraft } from './AuditLogRenderer.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const logger = getDefaultLogger()
 
 type AuditLogEvent =

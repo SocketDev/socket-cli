@@ -2,8 +2,8 @@ import { existsSync } from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
 
-import { NPM } from '@socketsecurity/lib-stable/constants/agents'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { NPM } from '@socketsecurity/lib/constants/agents'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { SOCKET_CLI_NPM_PATH } from '../../env/socket-cli-npm-path.mts'
 import { NODE_MODULES } from '../../constants/packages.mts'

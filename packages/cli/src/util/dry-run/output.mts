@@ -9,7 +9,7 @@
  * still goes to the terminal).
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 

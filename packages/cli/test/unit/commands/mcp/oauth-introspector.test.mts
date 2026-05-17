@@ -25,7 +25,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ServerResponse } from 'node:http'
 import type { IncomingMessage } from 'node:http'
 
-import type * as HttpRequestModule from '@socketsecurity/lib-stable/http-request'
+import type * as HttpRequestModule from '@socketsecurity/lib/http-request'
 
 const { mockHttpRequest } = vi.hoisted(() => ({
   mockHttpRequest: vi.fn(),

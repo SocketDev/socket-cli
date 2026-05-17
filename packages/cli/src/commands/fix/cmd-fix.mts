@@ -4,9 +4,9 @@ import path from 'node:path'
 
 import terminalLink from 'terminal-link'
 
-import { arrayUnique, joinAnd, joinOr } from '@socketsecurity/lib-stable/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { pluralize } from '@socketsecurity/lib-stable/words'
+import { arrayUnique, joinAnd, joinOr } from '@socketsecurity/lib/arrays'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { pluralize } from '@socketsecurity/lib/words'
 
 import { handleFix } from './handle-fix.mts'
 import { FLAG_ID } from '../../constants/cli.mts'

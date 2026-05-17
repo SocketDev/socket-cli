@@ -12,9 +12,9 @@
 
 import { setTimeout as sleep } from 'node:timers/promises'
 
-import { downloadPackage } from '@socketsecurity/lib-stable/dlx/package'
+import { downloadPackage } from '@socketsecurity/lib/dlx/package'
 
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { getCI } from '@socketsecurity/lib/env/ci'
 
 import { getCoanaVersion } from '../../env/coana-version.mts'
 import { getCdxgenVersion } from '../../env/cdxgen-version.mts'

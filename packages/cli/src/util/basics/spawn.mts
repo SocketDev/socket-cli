@@ -8,12 +8,12 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { debug } from '@socketsecurity/lib-stable/debug'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { debug } from '@socketsecurity/lib/debug'
+import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { errorMessage } from '@socketsecurity/lib/errors'
+import { spawn } from '@socketsecurity/lib/spawn'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 import {
   areBasicsToolsAvailable,
@@ -25,7 +25,7 @@ import { getPyCliVersion } from '../../env/pycli-version.mts'
 
 import type { CResult } from '../../types.mts'
 
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { Spinner } from '@socketsecurity/lib/spinner'
 
 /**
  * Check if socket_basics is installed in the Python environment.

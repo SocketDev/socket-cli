@@ -1,6 +1,6 @@
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { joinAnd } from '@socketsecurity/lib/arrays'
+import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
@@ -9,7 +9,7 @@ import { convertPurlToGhsas } from '../../util/purl/to-ghsa.mts'
 
 import type { FixConfig } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Remap } from '@socketsecurity/lib-stable/objects'
+import type { Remap } from '@socketsecurity/lib/objects'
 const logger = getDefaultLogger()
 
 const GHSA_FORMAT_REGEXP = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/

@@ -1,5 +1,5 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { select } from '@socketsecurity/lib-stable/stdio/prompts'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { select } from '@socketsecurity/lib/stdio/prompts'
 
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 

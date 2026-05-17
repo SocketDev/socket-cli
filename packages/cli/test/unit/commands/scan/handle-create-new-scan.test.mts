@@ -27,7 +27,7 @@ import {
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
 import { handleCreateNewScan } from '../../../../src/commands/scan/handle-create-new-scan.mts'
-import { safeDeleteSync } from '@socketsecurity/lib-stable/fs'
+import { safeDeleteSync } from '@socketsecurity/lib/fs'
 
 // Mock all the dependencies.
 const mockLogger = vi.hoisted(() => ({

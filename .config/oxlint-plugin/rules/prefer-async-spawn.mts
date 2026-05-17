@@ -45,7 +45,7 @@ const CHILD_PROCESS_SPECIFIERS = new Set([
   'child_process',
 ])
 
-const LIB_SPECIFIER = '@socketsecurity/lib-stable/spawn'
+const LIB_SPECIFIER = '@socketsecurity/lib/spawn'
 
 const BANNED_NAMES = new Set(['spawnSync', 'spawn'])
 

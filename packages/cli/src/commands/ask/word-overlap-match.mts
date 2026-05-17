@@ -16,7 +16,7 @@ import path from 'node:path'
 
 import nlp from 'compromise'
 
-import { getHome } from '@socketsecurity/lib-stable/env/home'
+import { getHome } from '@socketsecurity/lib/env/home'
 
 // Minimum Jaccard similarity for word-overlap matching to win.
 export const WORD_OVERLAP_THRESHOLD = 0.3

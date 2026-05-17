@@ -4,7 +4,7 @@ import { createServer } from 'node:http'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { createConfiguredServer } from './server.mts'
 import {
@@ -43,7 +43,7 @@ type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo | undefined }
 // exactOptionalPropertyTypes. Cast our internal type to this at the
 // call boundary when handing off; that's the narrow constraint, not
 // our internal shape.
-type McpHandleRequest = IncomingMessage & { auth?: AuthInfo }
+type McpHandleRequest = IncomingMessage & { auth?: AuthInfo | undefined }
 
 interface Session {
   lastActivity: number
