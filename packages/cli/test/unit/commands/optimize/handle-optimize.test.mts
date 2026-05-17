@@ -276,7 +276,7 @@ describe('handleOptimize', () => {
     })
 
     expect(mockLogger.info).toHaveBeenCalledWith(
-      'Optimizing packages for pnpm v8.0.0.\n',
+      'Optimizing packages for pnpm v8.0.0.',
     )
     expect(applyOptimization).toHaveBeenCalledWith(
       expect.objectContaining({ agent: 'pnpm' }),
