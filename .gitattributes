@@ -5,6 +5,8 @@
 # edit upstream and re-cascade via sync-scaffolding. Marked
 # linguist-generated so GitHub PR diffs collapse them by default.
 .claude/agents/security-reviewer.md linguist-generated=true
+.claude/commands/audit-gha-settings.md linguist-generated=true
+.claude/commands/green-ci.md linguist-generated=true
 .claude/commands/quality-loop.md linguist-generated=true
 .claude/commands/security-scan.md linguist-generated=true
 .claude/commands/setup-security-tools.md linguist-generated=true
@@ -159,6 +161,10 @@
 .claude/hooks/no-token-in-dotenv-guard/package.json linguist-generated=true
 .claude/hooks/no-token-in-dotenv-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/no-token-in-dotenv-guard/tsconfig.json linguist-generated=true
+.claude/hooks/overeager-staging-guard/index.mts linguist-generated=true
+.claude/hooks/overeager-staging-guard/package.json linguist-generated=true
+.claude/hooks/overeager-staging-guard/test/index.test.mts linguist-generated=true
+.claude/hooks/overeager-staging-guard/tsconfig.json linguist-generated=true
 .claude/hooks/path-guard/README.md linguist-generated=true
 .claude/hooks/path-guard/index.mts linguist-generated=true
 .claude/hooks/path-guard/package.json linguist-generated=true
@@ -200,7 +206,15 @@
 .claude/hooks/prefer-rebase-over-revert-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/prefer-rebase-over-revert-guard/tsconfig.json linguist-generated=true
 .claude/hooks/private-name-guard/README.md linguist-generated=true
+.claude/hooks/private-name-guard/index.mts linguist-generated=true
+.claude/hooks/private-name-guard/package.json linguist-generated=true
+.claude/hooks/private-name-guard/test/private-name-guard.test.mts linguist-generated=true
+.claude/hooks/private-name-guard/tsconfig.json linguist-generated=true
 .claude/hooks/public-surface-reminder/README.md linguist-generated=true
+.claude/hooks/public-surface-reminder/index.mts linguist-generated=true
+.claude/hooks/public-surface-reminder/package.json linguist-generated=true
+.claude/hooks/public-surface-reminder/test/public-surface-reminder.test.mts linguist-generated=true
+.claude/hooks/public-surface-reminder/tsconfig.json linguist-generated=true
 .claude/hooks/pull-request-target-guard/README.md linguist-generated=true
 .claude/hooks/pull-request-target-guard/index.mts linguist-generated=true
 .claude/hooks/pull-request-target-guard/package.json linguist-generated=true
@@ -217,9 +231,11 @@
 .claude/hooks/setup-security-tools/install.mts linguist-generated=true
 .claude/hooks/setup-security-tools/lib/api-token.mts linguist-generated=true
 .claude/hooks/setup-security-tools/lib/installers.mts linguist-generated=true
+.claude/hooks/setup-security-tools/lib/shell-rc-bridge.mts linguist-generated=true
 .claude/hooks/setup-security-tools/lib/token-storage.mts linguist-generated=true
 .claude/hooks/setup-security-tools/package.json linguist-generated=true
 .claude/hooks/setup-security-tools/test/setup-security-tools.test.mts linguist-generated=true
+.claude/hooks/setup-security-tools/test/shell-rc-bridge.test.mts linguist-generated=true
 .claude/hooks/setup-security-tools/tsconfig.json linguist-generated=true
 .claude/hooks/stale-process-sweeper/README.md linguist-generated=true
 .claude/hooks/stale-process-sweeper/index.mts linguist-generated=true
@@ -254,8 +270,12 @@
 .claude/skills/_shared/skill-authoring.md linguist-generated=true
 .claude/skills/_shared/variant-analysis.md linguist-generated=true
 .claude/skills/_shared/verify-build.md linguist-generated=true
+.claude/skills/auditing-gha-settings/SKILL.md linguist-generated=true
+.claude/skills/auditing-gha-settings/run.mts linguist-generated=true
 .claude/skills/driving-cursor-bugbot/SKILL.md linguist-generated=true
 .claude/skills/driving-cursor-bugbot/reference.md linguist-generated=true
+.claude/skills/greening-ci/SKILL.md linguist-generated=true
+.claude/skills/greening-ci/run.mts linguist-generated=true
 .claude/skills/guarding-paths/SKILL.md linguist-generated=true
 .claude/skills/guarding-paths/reference.md linguist-generated=true
 .claude/skills/guarding-paths/templates/check-paths.mts.tmpl linguist-generated=true
@@ -353,6 +373,8 @@
 .config/oxlint-plugin/test/sort-set-args.test.mts linguist-generated=true
 .config/oxlint-plugin/test/sort-source-methods.test.mts linguist-generated=true
 .config/rolldown/lib-stub.mts linguist-generated=true
+.config/sfw-bypass-list.txt linguist-generated=true
+.config/socket-registry-pins.json linguist-generated=true
 .config/socket-wheelhouse-schema.json linguist-generated=true
 .config/taze.config.mts linguist-generated=true
 .config/tsconfig.base.json linguist-generated=true
@@ -426,6 +448,7 @@ scripts/check-paths/scan-workflow.mts linguist-generated=true
 scripts/check-paths/state.mts linguist-generated=true
 scripts/check-paths/types.mts linguist-generated=true
 scripts/check-paths/walk.mts linguist-generated=true
+scripts/check-prompt-less-setup.mts linguist-generated=true
 scripts/fix.mts linguist-generated=true
 scripts/install-git-hooks.mts linguist-generated=true
 scripts/install-sfw.mts linguist-generated=true

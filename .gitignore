@@ -140,3 +140,37 @@ packages/socket/*.png
 !packages/package-builder/templates/**/*.d.ts
 !src/types/**/*.d.ts
 !packages/*/src/types/**/*.d.ts
+
+# ─── BEGIN fleet-canonical (managed by socket-wheelhouse sync) ──
+# Managed by socket-wheelhouse. Don't edit locally — edit upstream
+# in scripts/sync-scaffolding/checks/gitignore-fleet-block.mts and
+# re-cascade via `pnpm run sync`. Project-specific ignores stay
+# OUTSIDE this block; the fixer preserves them.
+# Per-machine Claude Code permission config + log dirs stay ignored;
+# the cascaded subdirs (agents, commands, hooks, settings.json, skills)
+# are explicitly re-included so the wheelhouse cascade can ship them.
+/.claude/*
+!/.claude/agents/
+!/.claude/commands/
+!/.claude/hooks/
+!/.claude/settings.json
+!/.claude/skills/
+
+# OS noise
+.DS_Store
+._.DS_Store
+Thumbs.db
+
+# Build outputs — universal across the fleet. Project-specific
+# variants (e.g. a non-standard dist path) go OUTSIDE this block.
+**/build/
+**/coverage/
+**/dist/
+**/.cache/
+
+# Node
+node_modules/
+npm-debug.log
+pnpm-debug.log
+*.tgz
+# ─── END fleet-canonical ────────────────────────────────────────
