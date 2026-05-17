@@ -13,7 +13,9 @@
 .claude/commands/squash-history.md linguist-generated=true
 .claude/hooks/_shared/README.md linguist-generated=true
 .claude/hooks/_shared/bash-quote-mask.mts linguist-generated=true
+.claude/hooks/_shared/hook-env.mts linguist-generated=true
 .claude/hooks/_shared/markers.mts linguist-generated=true
+.claude/hooks/_shared/payload.mts linguist-generated=true
 .claude/hooks/_shared/stop-reminder.mts linguist-generated=true
 .claude/hooks/_shared/test/bash-quote-mask.test.mts linguist-generated=true
 .claude/hooks/_shared/test/transcript.test.mts linguist-generated=true
@@ -257,6 +259,11 @@
 .claude/hooks/version-bump-order-guard/package.json linguist-generated=true
 .claude/hooks/version-bump-order-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/version-bump-order-guard/tsconfig.json linguist-generated=true
+.claude/hooks/workflow-uses-comment-guard/README.md linguist-generated=true
+.claude/hooks/workflow-uses-comment-guard/index.mts linguist-generated=true
+.claude/hooks/workflow-uses-comment-guard/package.json linguist-generated=true
+.claude/hooks/workflow-uses-comment-guard/test/index.test.mts linguist-generated=true
+.claude/hooks/workflow-uses-comment-guard/tsconfig.json linguist-generated=true
 .claude/settings.json linguist-generated=true
 .claude/skills/_shared/compound-lessons.md linguist-generated=true
 .claude/skills/_shared/env-check.md linguist-generated=true

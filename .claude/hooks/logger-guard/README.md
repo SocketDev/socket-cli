@@ -15,7 +15,7 @@ code that's supposed to use a logger.
 ## Why a logger and not console.log
 
 Source code in this fleet uses `getDefaultLogger()` from
-`@socketsecurity/lib/logger` for all output. That logger handles:
+`@socketsecurity/lib-stable/logger` for all output. That logger handles:
 
 - **Color and theme.** Terminal colors honor the user's environment
   (no-color, light/dark, etc.). Direct `console.log` doesn't.

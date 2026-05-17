@@ -1,7 +1,7 @@
 /**
  * @fileoverview Per CLAUDE.md "File deletion" rule: route every delete
  * through `safeDelete()` / `safeDeleteSync()` from
- * `@socketsecurity/lib/fs`. Never `fs.rm` / `fs.unlink` / `fs.rmdir` /
+ * `@socketsecurity/lib-stable/fs`. Never `fs.rm` / `fs.unlink` / `fs.rmdir` /
  * `rm -rf` directly — even for one known file.
  *
  * Detects:
@@ -10,7 +10,7 @@
  *   - `fs.rmdir(...)` / `fs.rmdirSync(...)`
  *
  * Autofix: rewrites the call to `safeDelete(path)` / `safeDeleteSync(path)`
- * AND injects `import { safeDelete } from '@socketsecurity/lib/fs'`
+ * AND injects `import { safeDelete } from '@socketsecurity/lib-stable/fs'`
  * (or `safeDeleteSync`) when missing.
  *
  * The autofix is conservative — it only fires when the call shape is
@@ -52,14 +52,14 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Route every delete through safeDelete / safeDeleteSync from @socketsecurity/lib/fs.',
+        'Route every delete through safeDelete / safeDeleteSync from @socketsecurity/lib-stable/fs.',
       category: 'Best Practices',
       recommended: true,
     },
     fixable: 'code',
     messages: {
       banned:
-        'fs.{{method}}() — use safeDelete / safeDeleteSync from @socketsecurity/lib/fs. The lib wrapper handles ENOENT, retries on EBUSY, and integrates with the rest of the fleet.',
+        'fs.{{method}}() — use safeDelete / safeDeleteSync from @socketsecurity/lib-stable/fs. The lib wrapper handles ENOENT, retries on EBUSY, and integrates with the rest of the fleet.',
     },
     schema: [],
   },
@@ -84,7 +84,7 @@ const rule = {
       }
       s = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib/fs',
+        '@socketsecurity/lib-stable/fs',
         importName,
       )
       summaryCache.set(importName, s)
@@ -190,7 +190,7 @@ const rule = {
               ...appendImportFixes(
                 s,
                 fixer,
-                `import { ${replacement} } from '@socketsecurity/lib/fs'`,
+                `import { ${replacement} } from '@socketsecurity/lib-stable/fs'`,
                 undefined,
               ),
             ]

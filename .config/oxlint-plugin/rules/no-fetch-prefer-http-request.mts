@@ -1,6 +1,6 @@
 /**
  * @fileoverview Per CLAUDE.md "HTTP — never `fetch()`. Use httpJson /
- * httpText / httpRequest from @socketsecurity/lib/http-request."
+ * httpText / httpRequest from @socketsecurity/lib-stable/http-request."
  *
  * Reports any `fetch(...)` call (global fetch). Does NOT auto-fix
  * because the right replacement (`httpJson` vs `httpText` vs
@@ -22,13 +22,13 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Use httpJson / httpText / httpRequest from @socketsecurity/lib/http-request instead of global fetch().',
+        'Use httpJson / httpText / httpRequest from @socketsecurity/lib-stable/http-request instead of global fetch().',
       category: 'Best Practices',
       recommended: true,
     },
     messages: {
       banned:
-        'global fetch() — use httpJson / httpText / httpRequest from @socketsecurity/lib/http-request. The right replacement depends on what you do with the response; the lib helpers ship consistent error shapes (HttpError) and JSON/text decoding.',
+        'global fetch() — use httpJson / httpText / httpRequest from @socketsecurity/lib-stable/http-request. The right replacement depends on what you do with the response; the lib helpers ship consistent error shapes (HttpError) and JSON/text decoding.',
     },
     schema: [],
   },

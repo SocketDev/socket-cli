@@ -12,7 +12,7 @@
  * Autofix: rewrites `getDefaultLogger().<method>` → `logger.<method>`
  * AND inserts the missing pieces in one go:
  *
- *   1. `import { getDefaultLogger } from '@socketsecurity/lib/logger'`
+ *   1. `import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'`
  *      — appended after the last existing top-level import (or at the
  *      top of the file if there are none).
  *   2. `const logger = getDefaultLogger()` — appended after the import
@@ -28,7 +28,7 @@ import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const LOGGER_IMPORT_LINE =
-  "import { getDefaultLogger } from '@socketsecurity/lib/logger'"
+  "import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'"
 const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -62,7 +62,7 @@ const rule = {
       }
       summary = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib/logger',
+        '@socketsecurity/lib-stable/logger',
         'getDefaultLogger',
         'logger',
       )

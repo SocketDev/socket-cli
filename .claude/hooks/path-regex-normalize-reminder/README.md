@@ -6,7 +6,7 @@ inline — patterns like `[/\\]`, `[\\\\/]`, or `\\\\` in a regex that also
 mentions path-flavored segments (`.cache`, `node_modules`, `build`, etc.).
 
 Suggests normalizing the path first with `normalizePath` (or `toUnixPath`)
-from `@socketsecurity/lib/paths/normalize`, then writing the regex against
+from `@socketsecurity/lib-stable/paths/normalize`, then writing the regex against
 `/` only.
 
 ## Why

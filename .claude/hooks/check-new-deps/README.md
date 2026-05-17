@@ -150,9 +150,9 @@ The hook is registered in `.claude/settings.json`:
 All dependencies use `catalog:` references from the workspace root
 (`pnpm-workspace.yaml`):
 
-- `@socketsecurity/sdk` — Socket.dev SDK v4, exposes `checkMalware()`.
-- `@socketsecurity/lib` — shared constants and path utilities.
-- `@socketregistry/packageurl-js` — Package URL (PURL) parsing.
+- `@socketsecurity/sdk-stable` — Socket.dev SDK v4, exposes `checkMalware()`.
+- `@socketsecurity/lib-stable` — shared constants and path utilities.
+- `@socketregistry/packageurl-js-stable` — Package URL (PURL) parsing.
 
 ## Exit codes
 

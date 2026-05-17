@@ -57,12 +57,12 @@ test('blocks /Users/<user>/projects/<fleet-repo>/ absolute reference', async () 
   assert.ok(stderr.includes('/projects/socket-lib'))
 })
 
-test('does not block @socketsecurity/lib package import', async () => {
+test('does not block @socketsecurity/lib-stable package import', async () => {
   const { code } = await runHook({
     tool_name: 'Write',
     tool_input: {
       file_path: 'src/foo.ts',
-      content: `import { applyShimmer } from '@socketsecurity/lib/effects/shimmer'`,
+      content: `import { applyShimmer } from '@socketsecurity/lib-stable/effects/shimmer'`,
     },
   })
   assert.equal(code, 0)

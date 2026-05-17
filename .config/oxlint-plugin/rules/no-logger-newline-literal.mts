@@ -82,7 +82,7 @@ const LOGGER_METHODS = new Set([
 ])
 
 /* oxlint-disable socket/no-status-emoji -- this rule defines the emoji→method table it scans for. */
-// Mirrors @socketsecurity/lib/logger's LOG_SYMBOLS (the table built
+// Mirrors @socketsecurity/lib-stable/logger's LOG_SYMBOLS (the table built
 // by `symbols-builder.ts`). Each logger method has TWO render
 // shapes — the Unicode form (used on terminals with unicode support)
 // and the ASCII fallback (used otherwise). Authors hand-rolling a

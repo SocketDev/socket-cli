@@ -36,7 +36,7 @@
  * Scope: .ts / .cts / .mts / .js / .cjs / .mjs.
  */
 
-import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // Match `.cache` only as a path segment inside a larger path, never as
 // a bare standalone string. A bare `.cache` is conventionally a
@@ -44,7 +44,7 @@ import { normalizePath } from '@socketsecurity/lib/paths/normalize'
 // can apply the user-home-dir exemption. Detecting bare `.cache` here
 // double-flags every `path.join(home, '.cache', app)` from XDG helpers.
 //
-// Inputs are normalized through @socketsecurity/lib's `normalizePath`
+// Inputs are normalized through @socketsecurity/lib-stable's `normalizePath`
 // before this regex runs, so we only have to match the `/` form.
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'

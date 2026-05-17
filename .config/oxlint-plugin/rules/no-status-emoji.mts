@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Ban status-symbol emoji literals (✓ ✔ ❌ ✗ ⚠ ⚠️ ❗ ✅
- * ❎ ☑) inside string literals. The `@socketsecurity/lib/logger`
+ * ❎ ☑) inside string literals. The `@socketsecurity/lib-stable/logger`
  * package owns the visual prefix via `logger.success()` /
  * `logger.fail()` / `logger.warn()` etc. Hand-rolling the symbols
  * fragments the visual style and bypasses theme-aware color.
@@ -50,7 +50,7 @@ const rule = {
     fixable: 'code',
     messages: {
       banned:
-        'Status-symbol emoji "{{emoji}}" — use logger.{{method}}() from @socketsecurity/lib/logger.',
+        'Status-symbol emoji "{{emoji}}" — use logger.{{method}}() from @socketsecurity/lib-stable/logger.',
       bannedAmbiguous:
         'Status-symbol emoji "{{emoji}}" — use a logger method (success/fail/warn/info) instead of an inline symbol.',
     },

@@ -1,8 +1,8 @@
 /**
- * @fileoverview rolldown plugin: stub heavy `@socketsecurity/lib`
+ * @fileoverview rolldown plugin: stub heavy `@socketsecurity/lib-stable`
  * internals that runtime code never reaches.
  *
- * Why: `@socketsecurity/lib` is the canonical fleet utility surface, but
+ * Why: `@socketsecurity/lib-stable` is the canonical fleet utility surface, but
  * its module graph statically pulls in heavyweight files (e.g. globs.js
  * → picomatch ~260KB, sorts.js → semver + npm-pack ~2.5MB) along import
  * paths that real consumers never traverse. Tree-shaking can't drop

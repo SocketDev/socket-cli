@@ -13,7 +13,7 @@ describe('socket/prefer-safe-delete', () => {
       valid: [
         {
           name: 'safeDelete from lib',
-          code: 'import { safeDelete } from "@socketsecurity/lib/fs"\nawait safeDelete("/x")\n',
+          code: 'import { safeDelete } from "@socketsecurity/lib-stable/fs"\nawait safeDelete("/x")\n',
         },
       ],
       invalid: [

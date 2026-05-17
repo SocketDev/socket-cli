@@ -19,8 +19,8 @@ import process, { execPath } from 'node:process'
 import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { safeDelete } from '@socketsecurity/lib/fs'
-import { isSpawnError, spawn } from '@socketsecurity/lib/spawn'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { isSpawnError, spawn } from '@socketsecurity/lib-stable/spawn'
 
 const hookScript = new URL('../index.mts', import.meta.url).pathname
 
@@ -105,7 +105,7 @@ async function makeWorkflowFixture(
   }
 }
 
-// Async @socketsecurity/lib/spawn — preferred over child_process
+// Async @socketsecurity/lib-stable/spawn — preferred over child_process
 // spawnSync (see CLAUDE.md "Async spawn preferred"). Hooks are
 // small, but async tests run in parallel under node --test, so
 // even short subprocess waits compound when sync. spawn returns

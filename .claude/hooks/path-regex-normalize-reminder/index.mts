@@ -4,7 +4,7 @@
 // Spots regex patterns that try to match both path separators inline
 // (`[/\\]`, `[\\\\/]`, escaped backslashes inside a path-flavored regex)
 // and reminds the author to use `normalizePath` from
-// `@socketsecurity/lib/paths/normalize` instead, then write the regex
+// `@socketsecurity/lib-stable/paths/normalize` instead, then write the regex
 // against `/` only.
 //
 // Why: cross-platform path matching is the canonical use case for
@@ -109,7 +109,7 @@ function findDualSeparatorRegexes(code: string): Finding[] {
     findings.push({
       pattern: match[0]!,
       reason:
-        'Dual path-separator regex. Normalize the input with `normalizePath` from `@socketsecurity/lib/paths/normalize` first, then match `/` only.',
+        'Dual path-separator regex. Normalize the input with `normalizePath` from `@socketsecurity/lib-stable/paths/normalize` first, then match `/` only.',
     })
   }
 
@@ -190,7 +190,7 @@ async function main(): Promise<void> {
     lines.push('')
   }
   lines.push(
-    "  Use `import { normalizePath } from '@socketsecurity/lib/paths/normalize'`,",
+    "  Use `import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'`,",
   )
   lines.push(
     '  then write a single-separator regex against `normalizePath(input)`.',

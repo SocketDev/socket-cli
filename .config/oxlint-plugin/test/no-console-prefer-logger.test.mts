@@ -13,7 +13,7 @@ describe('socket/no-console-prefer-logger', () => {
       valid: [
         {
           name: 'logger.log with hoisted const',
-          code: 'import { getDefaultLogger } from "@socketsecurity/lib/logger"\nconst logger = getDefaultLogger()\nlogger.log("ok")\n',
+          code: 'import { getDefaultLogger } from "@socketsecurity/lib-stable/logger"\nconst logger = getDefaultLogger()\nlogger.log("ok")\n',
         },
         {
           name: 'logger.log with exported const (regression: hasLocal must see ExportNamedDeclaration)',

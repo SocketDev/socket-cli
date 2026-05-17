@@ -60,7 +60,7 @@ import { scanWorkflowFile } from './scan-workflow.mts'
 import { getFindings } from './state.mts'
 import { walk } from './walk.mts'
 
-// Plain stderr/stdout output — no @socketsecurity/lib dependency so
+// Plain stderr/stdout output — no @socketsecurity/lib-stable dependency so
 // the gate is self-contained and works in socket-lib itself (which
 // would otherwise import itself).
 const logger = {

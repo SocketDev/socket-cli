@@ -1,5 +1,5 @@
 {
-  "name": "hook-release-workflow-guard",
+  "name": "hook-workflow-uses-comment-guard",
   "private": true,
   "type": "module",
   "main": "./index.mts",
@@ -8,9 +8,5 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mts"
-  },
-  "devDependencies": {
-    "@socketsecurity/lib-stable": "catalog:",
-    "@types/node": "catalog:"
   }
 }

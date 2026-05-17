@@ -33,7 +33,7 @@
 // Reads a Claude Code PreToolUse JSON payload from stdin:
 //   { "tool_name": "Bash", "tool_input": { "command": "..." } }
 
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 
 import {
   bypassPhrasePresent,

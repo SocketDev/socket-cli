@@ -32,7 +32,7 @@ export type FixerOp = unknown
  * Import detection ignores the specifier path: a file inside the lib
  * package itself imports `getDefaultLogger` from `'../logger'`, while
  * a downstream repo imports the same name from
- * `'@socketsecurity/lib/logger'`. Both resolve to the same identifier;
+ * `'@socketsecurity/lib-stable/logger'`. Both resolve to the same identifier;
  * either should count as "already imported" so the autofix doesn't
  * inject a duplicate (and broken — see issue #64).
  *

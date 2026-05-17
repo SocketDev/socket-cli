@@ -37,7 +37,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { spawnSync } from '@socketsecurity/lib/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 
 const logger = console
 

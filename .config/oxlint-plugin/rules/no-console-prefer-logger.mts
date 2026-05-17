@@ -1,13 +1,13 @@
 /**
  * @fileoverview Ban `console.log` / `console.error` / `console.warn`
  * / `console.info` / `console.debug` / `console.trace`. The fleet uses
- * `getDefaultLogger()` from `@socketsecurity/lib/logger` — those
+ * `getDefaultLogger()` from `@socketsecurity/lib-stable/logger` — those
  * methods emit theme-aware coloring + canonical symbols.
  *
  * Autofix: rewrites `console.<method>(...)` → `logger.<loggerMethod>(...)`
  * AND inserts the missing pieces in one go:
  *
- *   1. `import { getDefaultLogger } from '@socketsecurity/lib/logger'`
+ *   1. `import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'`
  *      — appended after the last existing top-level import (or at the
  *      top of the file if there are none).
  *   2. `const logger = getDefaultLogger()` — appended after the import
@@ -32,7 +32,7 @@ const CONSOLE_TO_LOGGER = {
 }
 
 const LOGGER_IMPORT_LINE =
-  "import { getDefaultLogger } from '@socketsecurity/lib/logger'"
+  "import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'"
 const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
 
 /** @type {import('eslint').Rule.RuleModule} */
@@ -41,14 +41,14 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Ban console.* calls; use logger from @socketsecurity/lib/logger.',
+        'Ban console.* calls; use logger from @socketsecurity/lib-stable/logger.',
       category: 'Best Practices',
       recommended: true,
     },
     fixable: 'code',
     messages: {
       banned:
-        'console.{{method}}() — use logger.{{loggerMethod}}() from @socketsecurity/lib/logger.',
+        'console.{{method}}() — use logger.{{loggerMethod}}() from @socketsecurity/lib-stable/logger.',
     },
     schema: [],
   },
@@ -66,7 +66,7 @@ const rule = {
       }
       summary = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib/logger',
+        '@socketsecurity/lib-stable/logger',
         'getDefaultLogger',
         'logger',
       )

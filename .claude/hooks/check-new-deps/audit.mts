@@ -27,11 +27,11 @@ import { promises as fsp } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { stringify } from '@socketregistry/packageurl-js'
-import type { PackageURL } from '@socketregistry/packageurl-js'
-import { createTtlCache } from '@socketsecurity/lib/cache-with-ttl'
-import type { TtlCache } from '@socketsecurity/lib/cache-with-ttl'
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { stringify } from '@socketregistry/packageurl-js-stable'
+import type { PackageURL } from '@socketregistry/packageurl-js-stable'
+import { createTtlCache } from '@socketsecurity/lib-stable/cache-with-ttl'
+import type { TtlCache } from '@socketsecurity/lib-stable/cache-with-ttl'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 
 import type {
   AuditRecord,

@@ -362,7 +362,7 @@ function deleteWindows(account: string): void {
   const filePath = getWindowsDpapiFilePath()
   if (existsSync(filePath)) {
     try {
-      // Don't import @socketsecurity/lib here — token-storage is
+      // Don't import @socketsecurity/lib-stable here — token-storage is
       // intentionally self-contained for the install bootstrap.
       // `fs.rmSync` is the dependency-free option.
       const { rmSync } = require('node:fs') as typeof import('node:fs')

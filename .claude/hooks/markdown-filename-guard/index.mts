@@ -36,7 +36,7 @@
 import path from 'node:path'
 import process from 'node:process'
 
-import { normalizePath } from '@socketsecurity/lib/paths/normalize'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { readStdin } from '../_shared/transcript.mts'
 

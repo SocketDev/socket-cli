@@ -135,7 +135,7 @@ Other hooks can adopt the same `.snooze` pattern. The convention:
 - Format: ISO 8601 expiry on line 1. Optional further lines ignored.
 - `.gitignore`: `.claude/*.snooze`.
 - Cleanup: hook auto-deletes expired files via `safeDelete` from
-  `@socketsecurity/lib/fs`.
+  `@socketsecurity/lib-stable/fs`.
 - The `checkSnoozes` helper in `index.mts` is easy to copy into a
   sibling hook.
 

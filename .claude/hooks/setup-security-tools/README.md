@@ -113,7 +113,7 @@ add it to a new Socket repo:
 1. Copy `.claude/hooks/setup-security-tools/` and
    `.claude/commands/setup-security-tools.md`.
 2. Make sure the consumer repo's catalog (or `dependencies`) provides
-   `@socketsecurity/lib`, `@socketregistry/packageurl-js`, and
+   `@socketsecurity/lib-stable`, `@socketregistry/packageurl-js-stable`, and
    `@sinclair/typebox`.
 3. Make sure `.claude/hooks/` isn't gitignored — add
    `!/.claude/hooks/` to `.gitignore` if needed.

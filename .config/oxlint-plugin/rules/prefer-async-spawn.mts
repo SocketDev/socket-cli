@@ -1,7 +1,7 @@
 /**
  * @fileoverview Per CLAUDE.md "Subprocesses" rule:
  *
- *   Prefer async `spawn` from `@socketsecurity/lib/spawn` over
+ *   Prefer async `spawn` from `@socketsecurity/lib-stable/spawn` over
  *   `spawnSync` from `node:child_process`. Async unblocks parallel
  *   tests / event-loop work; the sync version freezes the runner for
  *   the duration of the child. Use `spawnSync` only when you genuinely
@@ -18,7 +18,7 @@
  * Autofix scope (deterministic; no AI required) — sync-aware:
  *   The lib re-exports BOTH `spawn` and `spawnSync`. The autofix only
  *   ever rewrites the import source (`node:child_process` →
- *   `@socketsecurity/lib/spawn`); it never changes the imported name,
+ *   `@socketsecurity/lib-stable/spawn`); it never changes the imported name,
  *   never collapses `spawnSync` into `spawn`, and never touches call
  *   sites. Converting sync → async is a semantic change (callers must
  *   `await`, return types change from objects to promises) and that's
@@ -34,7 +34,7 @@
  *     for top-level scripts whose entire flow is sync (per CLAUDE.md
  *     "Reserve `spawnSync` for top-level scripts whose entire flow is
  *     sync").
- *   - Files inside `@socketsecurity/lib/spawn` itself — they wrap the
+ *   - Files inside `@socketsecurity/lib-stable/spawn` itself — they wrap the
  *     core APIs. Handled at the .config/oxlintrc.json ignorePatterns level.
  */
 
@@ -45,7 +45,7 @@ const CHILD_PROCESS_SPECIFIERS = new Set([
   'child_process',
 ])
 
-const LIB_SPECIFIER = '@socketsecurity/lib/spawn'
+const LIB_SPECIFIER = '@socketsecurity/lib-stable/spawn'
 
 const BANNED_NAMES = new Set(['spawnSync', 'spawn'])
 
@@ -57,16 +57,16 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Use `spawn` from @socketsecurity/lib/spawn instead of `spawnSync` / core `spawn` from node:child_process.',
+        'Use `spawn` from @socketsecurity/lib-stable/spawn instead of `spawnSync` / core `spawn` from node:child_process.',
       category: 'Best Practices',
       recommended: true,
     },
     fixable: 'code',
     messages: {
       importBanned:
-        'Importing `{{name}}` from {{specifier}} — use `spawn` from @socketsecurity/lib/spawn. Async unblocks parallel work and the lib ships consistent error shapes (SpawnError).',
+        'Importing `{{name}}` from {{specifier}} — use `spawn` from @socketsecurity/lib-stable/spawn. Async unblocks parallel work and the lib ships consistent error shapes (SpawnError).',
       callBanned:
-        'Calling `child_process.{{name}}(...)` — use `spawn` from @socketsecurity/lib/spawn instead.',
+        'Calling `child_process.{{name}}(...)` — use `spawn` from @socketsecurity/lib-stable/spawn instead.',
     },
     schema: [],
   },

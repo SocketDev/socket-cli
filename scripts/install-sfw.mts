@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @fileoverview Install Socket Firewall (sfw) into the Socket _dlx cache
- * via @socketsecurity/lib's downloadBinary helper.
+ * via @socketsecurity/lib-stable's downloadBinary helper.
  *
  * Matches the CI install path: same version source, same binary
  * integrity check (SHA-256 inline), same on-disk layout
@@ -27,11 +27,11 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
-import { WIN32, getArch } from '@socketsecurity/lib/constants/platform'
-import { downloadBinary } from '@socketsecurity/lib/dlx/binary'
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { safeDelete } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { WIN32, getArch } from '@socketsecurity/lib-stable/constants/platform'
+import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 const logger = getDefaultLogger()
 

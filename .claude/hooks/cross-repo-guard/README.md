@@ -32,7 +32,7 @@ import { applyShimmer } from '../../socket-lib/dist/effects/text-shimmer.js'
 import { applyShimmer } from '/Users/<user>/projects/socket-lib/dist/effects/text-shimmer.js'
 
 // ✓ RIGHT
-import { applyShimmer } from '@socketsecurity/lib/effects/text-shimmer'
+import { applyShimmer } from '@socketsecurity/lib-stable/effects/text-shimmer'
 ```
 
 If the package isn't published or the version mismatches, vendor the

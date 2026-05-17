@@ -47,8 +47,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { safeDeleteSync } from '@socketsecurity/lib/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs'
 
 const logger = getDefaultLogger()
 
@@ -313,7 +313,7 @@ export class RuleTester {
         }
       }
     } finally {
-      // Fleet rule: safeDeleteSync from @socketsecurity/lib/fs, never
+      // Fleet rule: safeDeleteSync from @socketsecurity/lib-stable/fs, never
       // fs.rm / fs.unlink / rm -rf. The Sync flavor matches the
       // tester's sync-style API + lets a thrown assertion still trigger
       // cleanup via the finally block.

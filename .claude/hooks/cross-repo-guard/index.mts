@@ -17,7 +17,7 @@
 //                                    layout into source.
 //
 // The right form is to import via the published npm package:
-// `@socketsecurity/lib/<subpath>`, `@socketsecurity/registry/<subpath>`,
+// `@socketsecurity/lib-stable/<subpath>`, `@socketsecurity/registry-stable/<subpath>`,
 // etc. Workspace deps are real, declared, and work regardless of clone
 // layout.
 //
@@ -40,7 +40,7 @@
 
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { readStdin } from '../_shared/transcript.mts'
 
@@ -167,7 +167,7 @@ function emitBlock(filePath: string, hits: Hit[]): void {
   const lines: string[] = []
   lines.push('[cross-repo-guard] Blocked: cross-repo path reference found')
   lines.push(
-    '  Use `@socketsecurity/lib/<subpath>` or `@socketsecurity/registry/<subpath>`',
+    '  Use `@socketsecurity/lib-stable/<subpath>` or `@socketsecurity/registry-stable/<subpath>`',
   )
   lines.push(
     '  imports instead. Path-based references break in CI / fresh clones.',

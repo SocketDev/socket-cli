@@ -53,9 +53,14 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
-import { safeDelete } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+
+import {
+  readLastAssistantText,
+  stripCodeFences,
+} from '../_shared/transcript.mts'
 
 import { DEFAULT_SKIP_IDS, SERVICES } from './services.mts'
 import type { Service } from './services.mts'
@@ -159,6 +164,74 @@ function loadSkipIds(): Set<string> {
     }
   }
   return skipIds
+}
+
+// ── Leak detection ──────────────────────────────────────────────────
+
+// Patterns that signal the assistant just announced a token leak in
+// its own output. Bypass the throttle when any of these fire so the
+// rotation happens immediately, not in the next 1h tick.
+//
+// The patterns target the WARNING text (i.e., what the assistant
+// said about a leak), not the token value itself. token-guard handles
+// pre-leak blocking; this is "the leak happened, surface it now."
+const LEAK_WARNING_PATTERNS: ReadonlyArray<RegExp> = [
+  /\brotate the token\b/i,
+  /\brotate (?:the )?(?:api )?key\b/i,
+  /\bleaked into (?:the )?transcript\b/i,
+  /\btoken (?:value )?(?:was )?(?:briefly )?visible (?:to me )?(?:at one point )?(?:in )?(?:the )?(?:tool output|transcript|context)\b/i,
+  // Bright-red rotation banner shape the security-incident block uses.
+  /[⚠️!]+\s*Rotate the token\b/i,
+  // "appears in transcript" / "in conversation transcript"
+  /\b(?:appeared|present|exposed) in (?:the )?(?:conversation )?transcript\b/i,
+  // "security incident notice" — used by my Token-Hygiene memory
+  // template when surfacing a leak.
+  /\bsecurity incident notice\b/i,
+]
+
+interface LeakDetection {
+  triggered: boolean
+  matchedPattern: string | undefined
+}
+
+/**
+ * Scan the most-recent assistant turn (from the Stop-hook JSON
+ * payload's transcript_path) for a leak-warning marker. Returns
+ * `triggered: true` when any pattern hits — caller bypasses the
+ * throttle and runs rotation immediately.
+ *
+ * Caller passes in the raw stdin payload because `main()` already
+ * captured it (Node's stdin is single-use).
+ */
+function detectLeakWarning(stdinPayload: string): LeakDetection {
+  if (!stdinPayload) {
+    return { triggered: false, matchedPattern: undefined }
+  }
+  let payload: { transcript_path?: string }
+  try {
+    payload = JSON.parse(stdinPayload) as { transcript_path?: string }
+  } catch {
+    return { triggered: false, matchedPattern: undefined }
+  }
+  let text: string
+  try {
+    text = readLastAssistantText(payload.transcript_path) ?? ''
+  } catch {
+    return { triggered: false, matchedPattern: undefined }
+  }
+  if (!text) {
+    return { triggered: false, matchedPattern: undefined }
+  }
+  // Strip code fences so a regex matching inside an example block
+  // doesn't fire (those are docs / show-don't-tell, not incidents).
+  const stripped = stripCodeFences(text)
+  for (const pat of LEAK_WARNING_PATTERNS) {
+    const m = stripped.match(pat)
+    if (m) {
+      return { triggered: true, matchedPattern: m[0] }
+    }
+  }
+  return { triggered: false, matchedPattern: undefined }
 }
 
 // ── Throttle ────────────────────────────────────────────────────────
@@ -307,7 +380,7 @@ function reportRotation(result: RotationResult): void {
 
 // ── Main ────────────────────────────────────────────────────────────
 
-async function run(): Promise<void> {
+async function run(stdinPayload: string): Promise<void> {
   if (process.env['CI']) {
     return
   }
@@ -319,7 +392,16 @@ async function run(): Promise<void> {
   if (snooze.active) {
     return
   }
-  if (withinThrottle()) {
+  // Inspect the most-recent assistant turn for a leak-warning marker.
+  // When the assistant just said "rotate the token" / "leaked into
+  // transcript", bypass the throttle so rotation runs immediately
+  // instead of waiting for the next 1h tick.
+  const leak = detectLeakWarning(stdinPayload)
+  if (leak.triggered) {
+    logger.error(
+      `${PREFIX} leak warning detected in assistant output ("${leak.matchedPattern}"); bypassing throttle`,
+    )
+  } else if (withinThrottle()) {
     return
   }
   const skipIds = loadSkipIds()
@@ -329,12 +411,16 @@ async function run(): Promise<void> {
 }
 
 function main(): void {
-  // Drain stdin so Node doesn't keep us alive waiting on the Stop hook's
-  // JSON payload (we don't read its contents).
-  process.stdin.resume()
-  process.stdin.on('data', () => {})
+  // Capture stdin so detectLeakWarning() can scan the Stop-hook
+  // payload (JSON with transcript_path). We previously drained
+  // without reading; now we accumulate and pass to run().
+  let stdinPayload = ''
+  process.stdin.setEncoding('utf8')
+  process.stdin.on('data', chunk => {
+    stdinPayload += chunk
+  })
   process.stdin.on('end', () => {
-    run()
+    run(stdinPayload)
       .catch(e => {
         logger.error(`${PREFIX} unexpected error: ${errorMessage(e)}`)
       })
@@ -343,7 +429,7 @@ function main(): void {
       })
   })
   if (process.stdin.readable === false) {
-    run()
+    run('')
       .catch(e => {
         logger.error(`${PREFIX} unexpected error: ${errorMessage(e)}`)
       })

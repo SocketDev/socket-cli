@@ -16,10 +16,10 @@
  * none is stored) and skips that scan rather than failing the
  * entire run.
  *
- * Cross-platform: uses `which` from `@socketsecurity/lib/bin` for
+ * Cross-platform: uses `which` from `@socketsecurity/lib-stable/bin` for
  * binary discovery (handles Windows .exe/.cmd resolution; returns null
  * rather than throwing on miss) and `spawn` from
- * `@socketsecurity/lib/spawn` for proper async lifecycle.
+ * `@socketsecurity/lib-stable/spawn` for proper async lifecycle.
  *
  * Wired in via `package.json`:
  *
@@ -31,10 +31,10 @@
 
 import process from 'node:process'
 
-import { which } from '@socketsecurity/lib/bin'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { which } from '@socketsecurity/lib-stable/bin'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 const logger = getDefaultLogger()
 

@@ -7,7 +7,7 @@
  *     TypeBox schema, emitted by scripts/lockstep/emit-schema.mts
  *   - Runtime validation at harness startup via
  *     `validateSchema(LockstepManifestSchema, ...)` from
- *     `@socketsecurity/lib/validation/validate-schema`
+ *     `@socketsecurity/lib-stable/validation/validate-schema`
  *
  * Byte-identical across sdxgen / socket-btm / socket-registry /
  * socket-wheelhouse / stuie / ultrathink via sync-scaffolding.mts.
