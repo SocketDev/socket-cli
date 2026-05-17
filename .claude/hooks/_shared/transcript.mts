@@ -200,6 +200,12 @@ export function readLastAssistantText(
  * spelling and callers with equivalent spellings (e.g. "soaktime" /
  * "soak time" / "soak-time") share the same helper. The transcript
  * is read once; each phrase substring-checks against the same text.
+ *
+ * Use this when the bypass is **broad** — one phrase authorizes any
+ * matching action for the rest of the conversation window. For
+ * **per-trigger** authorization (one phrase = one action), use
+ * `bypassPhraseRemaining` instead so a single phrase doesn't open
+ * the door for a follow-up action of the same shape later.
  */
 export function bypassPhrasePresent(
   transcriptPath: string | undefined,
@@ -221,6 +227,111 @@ export function bypassPhrasePresent(
     }
   }
   return false
+}
+
+/**
+ * Count the number of bypass-phrase occurrences in recent user
+ * turns. Each occurrence is a separate authorization slot — the
+ * user typing the phrase twice authorizes two actions, not one.
+ *
+ * Substring-counted, non-overlapping (each match consumes its own
+ * span of characters), case-sensitive. Multiple accepted spellings
+ * (`phrases: string[]`) each contribute their own count.
+ *
+ * Use with `bypassPhraseRemaining(...) > 0` to gate one-time
+ * bypasses where the hook also tracks prior consumption (e.g.
+ * count of prior workflow_dispatch invocations of the same
+ * workflow in the assistant tool-use history).
+ */
+export function countBypassPhrases(
+  transcriptPath: string | undefined,
+  phrases: string | readonly string[],
+  lookbackUserTurns?: number | undefined,
+): number {
+  const list = typeof phrases === 'string' ? [phrases] : phrases
+  const { length } = list
+  if (length === 0) {
+    return 0
+  }
+  const text = readUserText(transcriptPath, lookbackUserTurns)
+  if (!text) {
+    return 0
+  }
+  // Track which `[start, end)` spans were already counted by a prior
+  // phrase so a shorter phrase that's a substring of a longer one
+  // doesn't double-count (e.g. `Allow workflow-dispatch bypass: build`
+  // shouldn't match again inside `Allow workflow-dispatch bypass:
+  // build.yml`). Sort longest-first so the more specific phrase
+  // claims the span first.
+  const sorted = [...list].filter(p => p).sort((a, b) => b.length - a.length)
+  const claimed: Array<[number, number]> = []
+  let total = 0
+  for (let i = 0, sortedLen = sorted.length; i < sortedLen; i += 1) {
+    const phrase = sorted[i]!
+    let idx = 0
+    while ((idx = text.indexOf(phrase, idx)) !== -1) {
+      const start = idx
+      const end = idx + phrase.length
+      const overlaps = claimed.some(
+        ([cs, ce]) => start < ce && end > cs,
+      )
+      if (!overlaps) {
+        // Word-boundary check on the trailing edge: the char right
+        // after `end` must not be an identifier char (alnum / . / -),
+        // otherwise we matched a prefix of a longer token (e.g.
+        // "build" inside "build.yml" without the longer phrase
+        // having claimed it for whatever reason).
+        const next = text.charCodeAt(end)
+        // 0–9 (48–57), A–Z (65–90), a–z (97–122), `-` (45), `.` (46), `_` (95)
+        const isIdentChar =
+          (next >= 48 && next <= 57) ||
+          (next >= 65 && next <= 90) ||
+          (next >= 97 && next <= 122) ||
+          next === 45 ||
+          next === 46 ||
+          next === 95
+        if (!isIdentChar) {
+          total += 1
+          claimed.push([start, end])
+        }
+      }
+      idx = end
+    }
+  }
+  return total
+}
+
+/**
+ * Returns the count of bypass phrases NOT YET CONSUMED by prior
+ * actions. The caller supplies `priorActionCount` — usually a
+ * count of past tool-use invocations that would have consumed a
+ * phrase if it had been present. The phrase budget is replenished
+ * by every fresh user-typed occurrence.
+ *
+ *   remaining = phraseCount - priorActionCount
+ *   remaining > 0  → caller may proceed (one slot consumed by this action)
+ *   remaining <= 0 → caller must block; phrase budget exhausted
+ *
+ * Per-trigger semantics: a single `Allow X bypass` authorizes
+ * exactly one action of the gated shape. To do a second, the user
+ * types the phrase again.
+ *
+ * For workflow_dispatch and similar "name the target" bypasses,
+ * the phrase format is `Allow <action> bypass: <target>` and the
+ * caller passes only target-matching phrases.
+ */
+export function bypassPhraseRemaining(
+  transcriptPath: string | undefined,
+  phrases: string | readonly string[],
+  priorActionCount: number,
+  lookbackUserTurns?: number | undefined,
+): number {
+  const phraseCount = countBypassPhrases(
+    transcriptPath,
+    phrases,
+    lookbackUserTurns,
+  )
+  return phraseCount - priorActionCount
 }
 
 /**

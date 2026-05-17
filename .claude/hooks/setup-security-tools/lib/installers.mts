@@ -57,7 +57,18 @@ const configSchema = Type.Object({
 })
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const configPath = path.join(__dirname, 'external-tools.json')
+// external-tools.json lives one level up at the hook root
+// (.claude/hooks/setup-security-tools/external-tools.json) — keep it
+// out of `lib/` so it's discoverable as a top-level config file rather
+// than buried as an implementation detail. Fall back to a sibling path
+// so an early-installed copy in lib/ still resolves during onboarding.
+const configPath = (() => {
+  const parentPath = path.join(__dirname, '..', 'external-tools.json')
+  if (existsSync(parentPath)) {
+    return parentPath
+  }
+  return path.join(__dirname, 'external-tools.json')
+})()
 const rawConfig = JSON.parse(readFileSync(configPath, 'utf8'))
 const config = parseSchema(configSchema, rawConfig)
 
@@ -109,7 +120,7 @@ function findApiToken(): string | undefined {
 
 // ── AgentShield ──
 
-async function setupAgentShield(): Promise<boolean> {
+export async function setupAgentShield(): Promise<boolean> {
   logger.log('=== AgentShield ===')
   const purl = PackageURL.fromString(AGENTSHIELD.purl!)
   if (purl.type !== 'npm') {
@@ -184,7 +195,7 @@ async function checkZizmorVersion(binPath: string): Promise<boolean> {
   }
 }
 
-async function setupZizmor(): Promise<boolean> {
+export async function setupZizmor(): Promise<boolean> {
   logger.log('=== Zizmor ===')
 
   // Check PATH first (e.g. brew install).
@@ -255,7 +266,9 @@ async function setupZizmor(): Promise<boolean> {
 
 // ── SFW ──
 
-async function setupSfw(apiToken: string | undefined): Promise<boolean> {
+export async function setupSfw(
+  apiToken: string | undefined,
+): Promise<boolean> {
   const isEnterprise = !!apiToken
   const sfwConfig = isEnterprise ? SFW_ENTERPRISE : SFW_FREE
   logger.log(`=== Socket Firewall (${isEnterprise ? 'enterprise' : 'free'}) ===`)

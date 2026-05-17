@@ -76,7 +76,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { buildQuoteMask } from '../_shared/bash-quote-mask.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { bypassPhraseRemaining } from '../_shared/transcript.mts'
 
 type ToolInput = {
   tool_input?:
@@ -88,10 +88,24 @@ type ToolInput = {
   transcript_path?: string | undefined
 }
 
-// Bypass phrase: `Allow workflow-dispatch bypass`. Authorizes one
-// dispatch when the user types this verbatim in a recent turn.
-// Scoped to the active conversation — phrase is matched against the
-// last `BYPASS_LOOKBACK_USER_TURNS` user turns from the transcript.
+// Bypass phrase: `Allow workflow-dispatch bypass: <workflow>`.
+// Authorizes EXACTLY ONE dispatch of the named workflow when the
+// user types the phrase verbatim in a recent turn. Re-dispatching
+// the same workflow needs a fresh phrase. Dispatching a different
+// workflow needs its own phrase.
+//
+// Why per-workflow + per-trigger: an earlier shape just matched the
+// bare string `Allow workflow-dispatch bypass`, which authorized
+// every dispatch in the next 8 user turns. That was too permissive
+// — one phrase shouldn't open the door for an unrelated workflow
+// later in the session. The colon-suffix form names the workflow
+// being authorized so each phrase consumes one specific dispatch.
+//
+// `<workflow>` is the literal token passed to `gh workflow run` —
+// either the workflow filename (`publish.yml`), the basename
+// (`publish`), or the workflow ID (`12345`). The matcher accepts
+// any of those three shapes for the same workflow because the user
+// might write whichever feels natural.
 //
 // Use cases that need the bypass (the dry-run path doesn't cover):
 //   - Workflows that don't accept a `dry-run` input by design
@@ -101,8 +115,110 @@ type ToolInput = {
 //   - Re-dispatches after a transient infra failure (cache miss,
 //     runner timeout) where the user has already verified the
 //     previous run's intent.
-const BYPASS_PHRASE = 'Allow workflow-dispatch bypass'
+//
+// Once-and-done: once the hook authorizes a dispatch against a
+// phrase, that exact phrase doesn't authorize a second dispatch.
+// Implementation note: we don't write to disk to track consumption —
+// instead the test "is this phrase present AFTER my last dispatch
+// of this workflow" answers it. See `findUnclaimedBypassPhrase`.
+const BYPASS_PHRASE_PREFIX = 'Allow workflow-dispatch bypass:'
 const BYPASS_LOOKBACK_USER_TURNS = 8
+
+/**
+ * Build the canonical phrase variants that authorize ONE dispatch
+ * of `workflow`. The user can name the workflow in any of three
+ * shapes — the filename, the basename (drop `.yml` / `.yaml`), or
+ * the numeric workflow id — and any of them counts.
+ */
+function buildAcceptedPhrases(workflow: string): readonly string[] {
+  const stripped = workflow.replace(/\.(?:yml|yaml)$/i, '')
+  // De-duplicate when filename and basename collapse to the same
+  // string (the workflow target was already stripped).
+  const tokens = stripped === workflow ? [workflow] : [workflow, stripped]
+  return tokens.map(token => `${BYPASS_PHRASE_PREFIX} ${token}`)
+}
+
+/**
+ * Count past `gh workflow run/dispatch` invocations targeting
+ * `workflow` in the assistant tool-use history. Each prior
+ * dispatch consumes one bypass phrase, so the per-trigger guard
+ * requires `phraseCount > priorDispatchCount`.
+ *
+ * Walks the transcript JSONL directly — `_shared/transcript.mts`
+ * exposes `readLastAssistantToolUses` for the most-recent turn
+ * only, but here we need the full history. Best-effort: malformed
+ * lines are skipped silently.
+ */
+function countPriorDispatches(
+  transcriptPath: string | undefined,
+  workflow: string,
+): number {
+  if (!transcriptPath || !workflow) {
+    return 0
+  }
+  let raw: string
+  try {
+    raw = readFileSync(transcriptPath, 'utf8')
+  } catch {
+    return 0
+  }
+  const accepted = new Set([
+    workflow,
+    workflow.replace(/\.(?:yml|yaml)$/i, ''),
+  ])
+  let count = 0
+  const lines = raw.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    if (!line) {
+      continue
+    }
+    let evt: unknown
+    try {
+      evt = JSON.parse(line)
+    } catch {
+      continue
+    }
+    // Look at assistant tool-use blocks only — the user's Bash
+    // calls (if any) don't count, and our own future calls are
+    // not yet in the transcript when this hook runs.
+    if (
+      !evt ||
+      typeof evt !== 'object' ||
+      (evt as Record<string, unknown>)['type'] !== 'assistant'
+    ) {
+      continue
+    }
+    const message = (evt as Record<string, unknown>)['message']
+    if (!message || typeof message !== 'object') {
+      continue
+    }
+    const content = (message as Record<string, unknown>)['content']
+    if (!Array.isArray(content)) {
+      continue
+    }
+    for (let j = 0, blocksLen = content.length; j < blocksLen; j += 1) {
+      const block = content[j]
+      if (!block || typeof block !== 'object') {
+        continue
+      }
+      const b = block as Record<string, unknown>
+      if (b['type'] !== 'tool_use' || b['name'] !== 'Bash') {
+        continue
+      }
+      const cmd =
+        (b['input'] as Record<string, unknown> | undefined)?.['command']
+      if (typeof cmd !== 'string') {
+        continue
+      }
+      const dispatch = detectDispatch(cmd)
+      if (dispatch.workflow && accepted.has(dispatch.workflow)) {
+        count += 1
+      }
+    }
+  }
+  return count
+}
 
 // `gh workflow run <id-or-file>` / `gh workflow dispatch <id-or-file>`.
 // The captured workflow argument is reported back so the user can
@@ -513,21 +629,38 @@ function main(): void {
     return
   }
 
-  // Phrase-based bypass. The user types `Allow workflow-dispatch
-  // bypass` verbatim in a recent turn → the hook authorizes one
-  // dispatch. Transparently logged so the audit trail names the
-  // workflow that was allowed.
-  if (bypassPhrasePresent(
-    input.transcript_path,
-    BYPASS_PHRASE,
-    BYPASS_LOOKBACK_USER_TURNS,
-  )) {
-    process.stderr.write( // socket-hook: allow console
-      `[release-workflow-guard] ALLOWED: ${shape} on ${workflow ?? '<unknown>'} — bypass phrase "${BYPASS_PHRASE}" found in transcript\n`,
+  // Per-trigger phrase bypass. The user types
+  // `Allow workflow-dispatch bypass: <workflow>` verbatim — one
+  // phrase authorizes exactly one dispatch of that workflow. A
+  // second dispatch of the same workflow needs a fresh phrase.
+  //
+  // Implementation: count the matching phrases the user has typed
+  // and subtract the number of prior dispatches against the same
+  // workflow already in the transcript. If anything's left, this
+  // dispatch consumes one slot and is allowed.
+  if (workflow) {
+    const acceptedPhrases = buildAcceptedPhrases(workflow)
+    const priorDispatches = countPriorDispatches(
+      input.transcript_path,
+      workflow,
     )
-    return
+    const remaining = bypassPhraseRemaining(
+      input.transcript_path,
+      acceptedPhrases,
+      priorDispatches,
+      BYPASS_LOOKBACK_USER_TURNS,
+    )
+    if (remaining > 0) {
+      process.stderr.write( // socket-hook: allow console
+        `[release-workflow-guard] ALLOWED: ${shape} on ${workflow} — bypass phrase consumed (${remaining - 1} remaining for this workflow)\n`,
+      )
+      return
+    }
   }
 
+  const phraseExample = workflow
+    ? `${BYPASS_PHRASE_PREFIX} ${workflow.replace(/\.(?:yml|yaml)$/i, '')}`
+    : `${BYPASS_PHRASE_PREFIX} <workflow>`
   const lines = [
     '[release-workflow-guard] BLOCKED: this command would dispatch a',
     `  GitHub Actions workflow (${shape}, target: ${workflow ?? '<unknown>'}).`,
@@ -544,10 +677,11 @@ function main(): void {
     '          its workflow_dispatch.inputs block.',
     '        - No force-prod overrides may be set',
     '          (e.g. -f release=true / -f publish=true).',
-    `    (b) Explicit phrase bypass: the user types \`${BYPASS_PHRASE}\``,
-    '        verbatim in a recent message. Use this for workflows that',
-    '        don\'t accept a dry-run input (e.g. node-smol build) or',
-    '        for one-off recovery dispatches.',
+    `    (b) Per-trigger phrase bypass: the user types`,
+    `        \`${phraseExample}\``,
+    '        verbatim in a recent message. ONE phrase authorizes ONE',
+    '        dispatch of that exact workflow. A second dispatch (or a',
+    '        different workflow) needs its own phrase.',
     '',
     '  Without a bypass, the user runs workflow_dispatch jobs',
     '  manually. Tell the user to run the command in their own',

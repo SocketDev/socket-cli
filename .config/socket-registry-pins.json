@@ -1,0 +1,26 @@
+{
+  "$schema": "./socket-registry-pins.schema.json",
+  "_comment": [
+    "Wheelhouse-tracked SocketDev/socket-registry SHAs that fleet consumers pin against.",
+    "",
+    "Why: socket-registry ships shared GitHub Actions + reusable workflows + a fleet-canonical",
+    ".config/sfw-bypass-list.txt that ALL fleet repos consume. Per the cascade discipline in",
+    "socket-registry/.claude/skills/updating-workflows/reference.md, every consumer pins to the",
+    "Layer 3 'propagation SHA' — the merge SHA of the most recent ci.yml / provenance.yml /",
+    "weekly-update.yml update. Tracking that SHA here means each fleet repo's own pin docs +",
+    "scripts can read a single source of truth instead of independently scraping GitHub.",
+    "",
+    "Cascade flow (after any socket-registry action / workflow / .config/ change merges):",
+    "  1. Run socket-registry's L1 -> L2a -> L2b -> L3 cascade per its updating-workflows skill.",
+    "  2. The Layer 3 merge SHA becomes the new propagation SHA.",
+    "  3. Update propagationSha below + commit + push wheelhouse.",
+    "  4. sync-scaffolding propagates the new SHA into every fleet repo's pin sites.",
+    "",
+    "Do NOT bump propagationSha to a SHA that hasn't completed the L1-L3 cascade in",
+    "socket-registry — Layer 4 (_local-not-for-reuse-*.yml) SHAs are not valid pins for",
+    "external consumers."
+  ],
+  "propagationSha": "c357feae7c1b4399281c7155cd9cbebbf4d465e3",
+  "propagationShaUpdatedAt": "2026-05-17",
+  "propagationShaCommitSubject": "chore(ci): cascade pins to dea9b15a (.github/workflows/ci.yml (+2 more))"
+}

@@ -21,6 +21,13 @@
 //      aren't getting. The reverse — no token but enterprise shim —
 //      is rarer but equally inconsistent.
 //
+//   3. Stale / expired token detection. Reads the last assistant turn
+//      from the Stop payload's transcript_path and looks for the
+//      Socket API "SOCKET_API_KEY validation got status of 401" error
+//      surfaced by sfw / agentshield / the SDK. When it fires, the
+//      remediation is `install.mts --rotate` (overwrites the keychain
+//      entry with a fresh token), not the plain `install.mts` invocation.
+//
 // Output: stderr lines starting with `[setup-security-tools]`. Each
 // finding ends with the exact remediation command:
 //
@@ -37,9 +44,34 @@ import path from 'node:path'
 import process from 'node:process'
 
 interface Finding {
-  readonly kind: 'broken-shim' | 'edition-mismatch' | 'auto-repaired'
+  readonly kind:
+    | 'broken-shim'
+    | 'edition-mismatch'
+    | 'auto-repaired'
+    | 'token-401'
   readonly message: string
 }
+
+/**
+ * Regex for the Socket API 401-validation error message. The exact
+ * text is emitted by every Socket-tool client (sfw, agentshield,
+ * socket-cli, the JS SDK) when the configured token is rejected at
+ * upstream. We match a loose shape so a future variant of the
+ * sentence (newline-wrapped, prefixed with file-path, etc.) still
+ * trips the rule.
+ *
+ * Why: the SDK + sfw render this same error to stderr / stdout, but
+ * the operator usually scrolls past it and the next tool call also
+ * 401s. The right remediation is to rotate the token, not to retry.
+ *
+ * Recognized today:
+ *   - "SOCKET_API_KEY validation got status of 401 from the Socket API"
+ *   - "SOCKET_API_TOKEN validation got status of 401 from the Socket API"
+ *     (forward-looking, in case the fleet env-var rename reaches the
+ *      upstream SDK error path)
+ */
+const TOKEN_401_RE =
+  /SOCKET_API_(?:KEY|TOKEN) validation got status of 401 from the Socket API/
 
 /**
  * Silently auto-repair an empty/missing SFW shims directory when the
@@ -187,23 +219,100 @@ function checkEdition(): Finding[] {
   return []
 }
 
+/**
+ * Scan the most recent assistant turn for the Socket API 401-
+ * validation error. The transcript path comes from the Stop payload
+ * piped to the hook; if it's missing or unreadable we return no
+ * findings — never throw, never block.
+ *
+ * Reads the whole JSONL one line at a time (the transcript is
+ * usually < 1 MB but can grow); we walk in reverse so we stop at the
+ * last assistant turn instead of dragging through old context.
+ */
+async function checkToken401(transcriptPath: string): Promise<Finding[]> {
+  if (!existsSync(transcriptPath)) {
+    return []
+  }
+  let raw: string
+  try {
+    raw = await fs.readFile(transcriptPath, 'utf8')
+  } catch {
+    return []
+  }
+  const lines = raw.split('\n')
+  // Walk backwards — only the most recent assistant turn matters.
+  // Stop at the *second* assistant boundary so prior 401s don't
+  // re-trigger after a successful rotation.
+  let assistantTurnsSeen = 0
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const line = lines[i]
+    if (!line) {
+      continue
+    }
+    let entry: { type?: string; message?: { content?: unknown } }
+    try {
+      entry = JSON.parse(line)
+    } catch {
+      continue
+    }
+    if (entry.type !== 'assistant') {
+      continue
+    }
+    assistantTurnsSeen += 1
+    if (assistantTurnsSeen > 1) {
+      break
+    }
+    // The `message.content` field is an array of blocks; the text
+    // blocks have `{ type: 'text', text: '...' }`. Tool-use blocks
+    // carry the actual error string in their `text` rendering, so
+    // stringify the whole content and grep — cheaper than walking
+    // the schema and catches every shape upstream might use.
+    const haystack = JSON.stringify(entry.message?.content ?? '')
+    if (TOKEN_401_RE.test(haystack)) {
+      return [
+        {
+          kind: 'token-401',
+          message:
+            'Socket API returned 401 — the configured SOCKET_API_TOKEN ' +
+            'is invalid, expired, or lacks the required permissions. ' +
+            'Run `node .claude/hooks/setup-security-tools/install.mts ' +
+            '--rotate` to re-prompt and overwrite the keychain entry.',
+        },
+      ]
+    }
+  }
+  return []
+}
+
 async function main(): Promise<void> {
   if (process.env['SOCKET_SETUP_SECURITY_TOOLS_DISABLED']) {
     return
   }
-  // Drain stdin so the harness's Stop payload doesn't pipe-buffer-stall.
-  // Stop payloads carry transcript_path; this hook doesn't need it.
+  // Read the Stop payload from stdin. We use `transcript_path` to
+  // scan the most recent assistant turn for the 401 error signature.
+  // Drain even if we can't parse so the pipe doesn't buffer-stall.
+  let payloadRaw = ''
   await new Promise<void>(resolve => {
-    let chunks = ''
     process.stdin.on('data', d => {
-      chunks += d.toString('utf8')
+      payloadRaw += d.toString('utf8')
     })
     process.stdin.on('end', () => resolve())
     process.stdin.on('error', () => resolve())
     // Short timeout so we don't hang on stdin that never closes.
     setTimeout(() => resolve(), 200)
-    void chunks
   })
+  let transcriptPath: string | undefined
+  if (payloadRaw) {
+    try {
+      const payload = JSON.parse(payloadRaw) as { transcript_path?: string }
+      if (typeof payload.transcript_path === 'string') {
+        transcriptPath = payload.transcript_path
+      }
+    } catch {
+      // Malformed payload — skip the 401 scan but still run the
+      // shim/edition checks.
+    }
+  }
 
   const findings: Finding[] = []
 
@@ -219,6 +328,9 @@ async function main(): Promise<void> {
 
   findings.push(...(await checkShims()))
   findings.push(...checkEdition())
+  if (transcriptPath) {
+    findings.push(...(await checkToken401(transcriptPath)))
+  }
 
   if (findings.length === 0) {
     return

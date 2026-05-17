@@ -31,7 +31,36 @@ import { homedir, platform } from 'node:os'
 import path from 'node:path'
 
 const SERVICE = 'socket-cli'
-const ACCOUNT = 'SOCKET_API_TOKEN'
+
+// Canonical fleet slot. Listed first so reads find this entry before
+// the legacy alias, and writes overwrite this entry primarily. The
+// string is the exact account label stored in the platform keychain
+// (`security`'s `-a`, secret-tool's `user`, CredentialManager's
+// account/UserName) AND the env-var name fleet code looks for.
+const SOCKET_API_TOKEN = 'SOCKET_API_TOKEN'
+
+// Legacy alias slot. The on-disk string stays `SOCKET_API_KEY` so sfw
+// (and earlier socket-cli builds) reading the legacy env-var name still
+// resolve a stored value. Writing both slots keeps unmigrated consumers
+// working without a wrapper script. The TS identifier name calls out
+// that this is the legacy form — fleet code should reach for
+// SOCKET_API_TOKEN, never this slot directly.
+const LEGACY_SOCKET_KEY = 'SOCKET_API_KEY'
+
+// Writes loop in this order so the canonical slot lands first and
+// the legacy alias mirrors it.
+const WRITE_SLOTS = [SOCKET_API_TOKEN, LEGACY_SOCKET_KEY] as const
+
+// Reads ONLY hit the canonical slot. The legacy slot is a write-only
+// compatibility mirror — consumers that still resolve `SOCKET_API_KEY`
+// via env get the value from `SOCKET_API_KEY` directly (or from the
+// `LEGACY_SOCKET_KEY` write that happens alongside the canonical one
+// at install time). Reading both on every lookup doubles the number
+// of macOS Keychain ACL prompts for no benefit — when the canonical
+// slot is populated (which install.mts guarantees), the legacy slot
+// is just a duplicate of the same value, and when the canonical
+// slot is empty the legacy slot is empty too (writes always pair).
+const READ_SLOTS = [SOCKET_API_TOKEN] as const
 
 type Platform = 'darwin' | 'linux' | 'win32' | 'other'
 
@@ -48,75 +77,108 @@ function detectPlatform(): Platform {
  * when the entry doesn't exist OR when the underlying tool isn't on
  * PATH — read paths never throw, so callers can fall through to the
  * next source (env, .env, prompt) cleanly.
+ *
+ * Tries the canonical account name first, then the legacy alias. The
+ * fall-through means an existing keychain entry under SOCKET_API_KEY
+ * (from a manual `security add` or a pre-migration install) keeps
+ * working until the next write rebuilds both entries.
  */
 export function readTokenFromKeychain(): string | undefined {
-  switch (detectPlatform()) {
-    case 'darwin':
-      return readMacOS()
-    case 'linux':
-      return readLinux()
-    case 'win32':
-      return readWindows()
-    default:
-      return undefined
+  const platform_ = detectPlatform()
+  for (const slot of READ_SLOTS) {
+    let value: string | undefined
+    switch (platform_) {
+      case 'darwin':
+        value = readMacOS(slot)
+        break
+      case 'linux':
+        value = readLinux(slot)
+        break
+      case 'win32':
+        value = readWindows(slot)
+        break
+      default:
+        return undefined
+    }
+    if (value) {
+      return value
+    }
   }
+  return undefined
 }
 
 /**
  * Persist the token to the platform's secure store. Throws on write
  * failure — the caller is in a user-initiated setup flow and should
  * see why persistence failed, not silently continue.
+ *
+ * Writes the token under BOTH the canonical account
+ * (`SOCKET_API_TOKEN`) and the legacy alias (`SOCKET_API_KEY`) so
+ * consumers that still read the legacy env-var name (sfw, older
+ * socket-cli builds) find it without a wrapper script. The two
+ * entries always hold the same value.
  */
 export function writeTokenToKeychain(token: string): void {
   if (!token || typeof token !== 'string') {
     throw new TypeError('writeTokenToKeychain: token must be a non-empty string')
   }
-  switch (detectPlatform()) {
-    case 'darwin':
-      writeMacOS(token)
-      return
-    case 'linux':
-      writeLinux(token)
-      return
-    case 'win32':
-      writeWindows(token)
-      return
-    default:
-      throw new Error(
-        `Unsupported platform: ${platform()}. ` +
-          'Token storage requires macOS, Linux, or Windows.',
-      )
+  const platform_ = detectPlatform()
+  if (platform_ === 'other') {
+    throw new Error(
+      `Unsupported platform: ${platform()}. ` +
+        'Token storage requires macOS, Linux, or Windows.',
+    )
+  }
+  for (const slot of WRITE_SLOTS) {
+    switch (platform_) {
+      case 'darwin':
+        writeMacOS(token, slot)
+        break
+      case 'linux':
+        writeLinux(token, slot)
+        break
+      case 'win32':
+        writeWindows(token, slot)
+        break
+    }
   }
 }
 
 /**
  * Remove the token from the platform's secure store. Idempotent —
- * succeeds whether the entry exists or not.
+ * succeeds whether the entry exists or not. Clears both the canonical
+ * account and the legacy alias.
  */
 export function deleteTokenFromKeychain(): void {
-  switch (detectPlatform()) {
-    case 'darwin':
-      deleteMacOS()
-      return
-    case 'linux':
-      deleteLinux()
-      return
-    case 'win32':
-      deleteWindows()
-      return
-    default:
-      return
+  const platform_ = detectPlatform()
+  // Delete loops through BOTH slots so a rotate/wipe clears the
+  // legacy mirror too (otherwise the legacy entry would persist
+  // until something overwrites it).
+  for (const slot of WRITE_SLOTS) {
+    switch (platform_) {
+      case 'darwin':
+        deleteMacOS(slot)
+        break
+      case 'linux':
+        deleteLinux(slot)
+        break
+      case 'win32':
+        deleteWindows(slot)
+        break
+      default:
+        return
+    }
   }
 }
 
 // ── macOS ────────────────────────────────────────────────────────────
 
-function readMacOS(): string | undefined {
+function readMacOS(account: string): string | undefined {
   // `-s service -a account -w` prints the password to stdout.
   // Non-zero exit when the entry doesn't exist.
   const r = spawnSync(
     'security',
-    ['find-generic-password', '-s', SERVICE, '-a', ACCOUNT, '-w'],
+    ['find-generic-password', '-s', SERVICE, '-a', account, '-w'],
     { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (r.status !== 0) {
@@ -126,7 +188,7 @@ function readMacOS(): string | undefined {
   return out || undefined
 }
 
-function writeMacOS(token: string): void {
+function writeMacOS(token: string, account: string): void {
   // `-U` updates the entry if it already exists; without -U a second
   // `add-generic-password` call would error.
   const r = spawnSync(
@@ -137,7 +199,7 @@ function writeMacOS(token: string): void {
       '-s',
       SERVICE,
       '-a',
-      ACCOUNT,
+      account,
       '-w',
       token,
       '-T',
@@ -151,28 +213,28 @@ function writeMacOS(token: string): void {
   )
   if (r.status !== 0) {
     throw new Error(
-      `security(1) add-generic-password failed (exit ${r.status}): ${r.stderr.trim()}`,
+      `security(1) add-generic-password failed (exit ${r.status}, account=${account}): ${r.stderr.trim()}`,
     )
   }
 }
 
-function deleteMacOS(): void {
+function deleteMacOS(account: string): void {
   // Exit code 44 = entry not found, which is fine. Any other non-
   // zero is an error worth surfacing — but since delete is best-
   // effort we swallow it (a stale entry is annoying but not blocking).
   spawnSync(
     'security',
-    ['delete-generic-password', '-s', SERVICE, '-a', ACCOUNT],
+    ['delete-generic-password', '-s', SERVICE, '-a', account],
     { stdio: 'ignore' },
   )
 }
 
 // ── Linux (libsecret via secret-tool) ───────────────────────────────
 
-function readLinux(): string | undefined {
+function readLinux(account: string): string | undefined {
   const r = spawnSync(
     'secret-tool',
-    ['lookup', 'service', SERVICE, 'user', ACCOUNT],
+    ['lookup', 'service', SERVICE, 'user', account],
     { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (r.status !== 0) {
@@ -185,7 +247,7 @@ function readLinux(): string | undefined {
   return out || undefined
 }
 
-function writeLinux(token: string): void {
+function writeLinux(token: string, account: string): void {
   // secret-tool reads the token from stdin so it never appears in
   // `ps` / `/proc/<pid>/cmdline`.
   const r = spawnSync(
@@ -196,7 +258,7 @@ function writeLinux(token: string): void {
       'service',
       SERVICE,
       'user',
-      ACCOUNT,
+      account,
     ],
     {
       encoding: 'utf8',
@@ -206,24 +268,24 @@ function writeLinux(token: string): void {
   )
   if (r.status !== 0) {
     throw new Error(
-      `secret-tool store failed (exit ${r.status}): ${r.stderr.trim()}. ` +
+      `secret-tool store failed (exit ${r.status}, user=${account}): ${r.stderr.trim()}. ` +
         'Install libsecret-tools (apt install libsecret-tools / dnf install libsecret) ' +
         'or ensure a Secret Service provider (gnome-keyring, kwallet) is running.',
     )
   }
 }
 
-function deleteLinux(): void {
+function deleteLinux(account: string): void {
   spawnSync(
     'secret-tool',
-    ['clear', 'service', SERVICE, 'user', ACCOUNT],
+    ['clear', 'service', SERVICE, 'user', account],
     { stdio: 'ignore' },
   )
 }
 
 // ── Windows ──────────────────────────────────────────────────────────
 
-function readWindows(): string | undefined {
+function readWindows(account: string): string | undefined {
   // Try the CredentialManager PowerShell module first (clean
   // structured read). Falls back to the DPAPI file if the module
   // isn't installed.
@@ -232,7 +294,7 @@ function readWindows(): string | undefined {
     [
       '-NoProfile',
       '-Command',
-      `try { (Get-StoredCredential -Target '${SERVICE}:${ACCOUNT}').Password | ConvertFrom-SecureString -AsPlainText } catch { exit 1 }`,
+      `try { (Get-StoredCredential -Target '${SERVICE}:${account}').Password | ConvertFrom-SecureString -AsPlainText } catch { exit 1 }`,
     ],
     { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   )
@@ -244,10 +306,13 @@ function readWindows(): string | undefined {
   }
   // Fallback: DPAPI-encrypted file (encrypted under the current
   // user's machine key — readable only by this user on this machine).
+  // The DPAPI file uses one filename regardless of slot; we only fall
+  // back when the CredentialManager read missed entirely, so a single
+  // file is enough.
   return readWindowsDpapiFile()
 }
 
-function writeWindows(token: string): void {
+function writeWindows(token: string, account: string): void {
   // Prefer CredentialManager PowerShell module — most idiomatic.
   // The token is passed via stdin to avoid leaking into command
   // history / ps output.
@@ -256,7 +321,7 @@ function writeWindows(token: string): void {
     $token = $token.Trim()
     $secure = ConvertTo-SecureString $token -AsPlainText -Force
     try {
-      New-StoredCredential -Target '${SERVICE}:${ACCOUNT}' -UserName '${ACCOUNT}' -SecurePassword $secure -Persist LocalMachine | Out-Null
+      New-StoredCredential -Target '${SERVICE}:${account}' -UserName '${account}' -SecurePassword $secure -Persist LocalMachine | Out-Null
       exit 0
     } catch { exit 1 }
   `
@@ -274,18 +339,22 @@ function writeWindows(token: string): void {
   }
   // Fallback: DPAPI-encrypted file. Used when the CredentialManager
   // module isn't installed (common on bare Windows; `Install-Module
-  // CredentialManager` requires admin or a user-scope install).
+  // CredentialManager` requires admin or a user-scope install). The
+  // file is written once on the canonical slot's pass; the legacy
+  // slot's pass also calls this but writeWindowsDpapiFile rewrites
+  // the same file with the same value, so the second call is a no-op
+  // in effect.
   writeWindowsDpapiFile(token)
 }
 
-function deleteWindows(): void {
+function deleteWindows(account: string): void {
   // Try the PowerShell removal first, ignore failures.
   spawnSync(
     'powershell',
     [
       '-NoProfile',
       '-Command',
-      `try { Remove-StoredCredential -Target '${SERVICE}:${ACCOUNT}' } catch {}`,
+      `try { Remove-StoredCredential -Target '${SERVICE}:${account}' } catch {}`,
     ],
     { stdio: 'ignore' },
   )

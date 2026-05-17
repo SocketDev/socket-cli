@@ -7,6 +7,6 @@
     ".": "./index.mts"
   },
   "devDependencies": {
-    "@types/node": "24.9.2"
+    "@types/node": "catalog:"
   }
 }

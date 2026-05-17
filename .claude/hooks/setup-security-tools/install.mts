@@ -24,6 +24,14 @@
  *
  * Invocation:
  *   node .claude/hooks/setup-security-tools/install.mts
+ *   node .claude/hooks/setup-security-tools/install.mts --rotate
+ *
+ * Flags:
+ *   --rotate           Re-prompt for SOCKET_API_TOKEN and overwrite the
+ *                      keychain entry, ignoring env/.env/keychain lookup.
+ *                      Use to rotate a leaked or expired token without
+ *                      manually clearing the keychain first.
+ *   --update-token     Alias for --rotate.
  *
  * Exit codes:
  *   0 — all tools installed + verified.
@@ -40,6 +48,8 @@ import { getCI } from '@socketsecurity/lib/env/ci'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
 import { findApiToken } from './lib/api-token.mts'
+import { installShellRcBridge } from './lib/shell-rc-bridge.mts'
+import type { BridgeWriteResult } from './lib/shell-rc-bridge.mts'
 import {
   keychainAvailable,
   writeTokenToKeychain,
@@ -124,7 +134,14 @@ async function findBrokenShims(): Promise<string[]> {
   return broken
 }
 
-async function offerTokenPrompt(): Promise<string | undefined> {
+/**
+ * Shared prompt-and-persist body used by both the "no token found" and
+ * the explicit `--rotate` paths. The `reason` strings differ but the
+ * gating + the prompt + the keychain write are identical.
+ */
+async function promptAndPersist(
+  reason: 'missing' | 'rotate',
+): Promise<string | undefined> {
   if (getCI()) {
     logger.log(
       'CI environment detected — skipping the SOCKET_API_TOKEN prompt. ' +
@@ -151,22 +168,39 @@ async function offerTokenPrompt(): Promise<string | undefined> {
     return undefined
   }
   logger.log('')
-  logger.log('Socket API token not found in env, .env, or the OS keychain.')
+  if (reason === 'rotate') {
+    logger.log(
+      `Rotating SOCKET_API_TOKEN — the keychain entry will be overwritten ` +
+        `via ${kc.toolName}.`,
+    )
+  } else {
+    logger.log('Socket API token not found in env, .env, or the OS keychain.')
+    logger.log(
+      'A token unlocks sfw-enterprise (org-aware malware scanning). ' +
+        `It will be stored securely via ${kc.toolName}.`,
+    )
+  }
   logger.log(
-    'A token unlocks sfw-enterprise (org-aware malware scanning). ' +
-      `It will be stored securely via ${kc.toolName}.`,
-  )
-  logger.log(
-    "Get a token at https://socket.dev/dashboard or press Enter to skip and use sfw-free.",
+    "Get a token at https://socket.dev/dashboard or press Enter to skip" +
+      (reason === 'rotate'
+        ? ' (the existing keychain entry stays in place).'
+        : ' and use sfw-free.'),
   )
   logger.log('')
   const answer = await promptSecret('SOCKET_API_TOKEN (input hidden): ')
   if (!answer) {
-    logger.log('No token entered. Falling back to sfw-free.')
+    if (reason === 'rotate') {
+      logger.log('No token entered. Keychain unchanged.')
+    } else {
+      logger.log('No token entered. Falling back to sfw-free.')
+    }
     return undefined
   }
   try {
     writeTokenToKeychain(answer)
+    if (reason === 'rotate') {
+      logger.success(`SOCKET_API_TOKEN rotated and persisted via ${kc.toolName}.`)
+    }
   } catch (e) {
     logger.error(
       `Failed to persist token to keychain: ${(e as Error).message}. ` +
@@ -177,16 +211,132 @@ async function offerTokenPrompt(): Promise<string | undefined> {
   return answer
 }
 
+/**
+ * Write (or refresh) the keychain → shell-env bridge block in the
+ * user's shell rc. Idempotent: re-running install.mts on an already-
+ * wired rc is a no-op. Called from main() on every invocation so the
+ * bridge gets installed whether or not the user just entered a fresh
+ * token via the prompt — keychain hits from env/.env/keychain still
+ * need the bridge to actually reach the shell of every NEW session.
+ */
+function wireBridgeIntoShellRc(token: string): void {
+  try {
+    const bridge = installShellRcBridge(token)
+    reportBridgeOutcome(bridge)
+  } catch (e) {
+    logger.warn(
+      `Failed to write the shell-rc env block: ${(e as Error).message}. ` +
+        'You will need to export SOCKET_API_KEY manually for sfw to pick it up.',
+    )
+  }
+}
+
+/**
+ * Print a one-paragraph summary of what the shell-rc bridge did (or
+ * didn't do), with a copy-pasteable next step. Splitting this out
+ * keeps `promptAndPersist` readable and gives the rotate path the
+ * same instruction without duplicating the prose.
+ */
+function reportBridgeOutcome(bridge: BridgeWriteResult | undefined): void {
+  if (!bridge) {
+    // Non-macOS or no rc detectable — fall through to a manual line
+    // the user can paste. We hand the user a literal-export template
+    // (not a keychain-read) because re-reading the keychain on every
+    // shell triggers an auth prompt on macOS.
+    logger.log('')
+    logger.log(
+      'Add this to your shell rc / .zshenv so SOCKET_API_KEY/TOKEN ' +
+        'are exported each session (sfw + older socket-cli builds ' +
+        'read SOCKET_API_KEY):',
+    )
+    logger.log("  export SOCKET_API_TOKEN='<your-token>'")
+    logger.log('  export SOCKET_API_KEY="$SOCKET_API_TOKEN"')
+    return
+  }
+  if (bridge.outcome === 'unchanged') {
+    logger.log(
+      `Shell-rc env block already canonical at ${bridge.rcPath} — no change.`,
+    )
+  } else if (bridge.outcome === 'updated') {
+    logger.success(
+      `Updated the shell-rc env block at ${bridge.rcPath}. ` +
+        'Run `source ' +
+        bridge.rcPath +
+        '` (or open a new shell) so SOCKET_API_KEY/TOKEN get exported.',
+    )
+  } else {
+    logger.success(
+      `Wrote the shell-rc env block to ${bridge.rcPath}. ` +
+        'Run `source ' +
+        bridge.rcPath +
+        '` (or open a new shell) so SOCKET_API_KEY/TOKEN get exported.',
+    )
+  }
+}
+
+async function offerTokenPrompt(): Promise<string | undefined> {
+  return promptAndPersist('missing')
+}
+
+interface CliArgs {
+  rotate: boolean
+}
+
+function parseArgs(argv: readonly string[]): CliArgs {
+  let rotate = false
+  for (const arg of argv) {
+    if (arg === '--rotate' || arg === '--update-token') {
+      rotate = true
+    }
+  }
+  return { rotate }
+}
+
 async function main(): Promise<void> {
+  const args = parseArgs(process.argv.slice(2))
   logger.log('Socket security tools — install / verify\n')
 
-  // Existing token state — env > .env > keychain.
-  const lookup = findApiToken()
-  let apiToken = lookup.token
-  if (apiToken && lookup.source) {
-    logger.log(`SOCKET_API_TOKEN: found via ${lookup.source}.`)
+  let apiToken: string | undefined
+  if (args.rotate) {
+    // Rotation path: skip the lookup so a stale env/.env doesn't
+    // short-circuit the re-prompt, and overwrite the keychain entry
+    // unconditionally. If the user presses Enter without typing, the
+    // existing keychain value stays in place — we fall through to the
+    // normal lookup below so downstream installers still get the
+    // pre-rotation token.
+    const fresh = await promptAndPersist('rotate')
+    if (fresh) {
+      apiToken = fresh
+    } else {
+      const lookup = findApiToken()
+      apiToken = lookup.token
+      if (apiToken && lookup.source) {
+        logger.log(`Keeping existing SOCKET_API_TOKEN (via ${lookup.source}).`)
+      }
+    }
   } else {
-    apiToken = await offerTokenPrompt()
+    // Existing token state — env > .env > keychain.
+    const lookup = findApiToken()
+    apiToken = lookup.token
+    if (apiToken && lookup.source) {
+      logger.log(`SOCKET_API_TOKEN: found via ${lookup.source}.`)
+    } else {
+      apiToken = await offerTokenPrompt()
+    }
+  }
+
+  // Wire the literal token into the shell rc unconditionally. The
+  // token may have come from env/.env/keychain (no prompt fired) —
+  // without this block, every NEW shell session launches with an
+  // empty SOCKET_API_KEY and the sfw shim returns 401. We embed the
+  // token VALUE directly in the rc instead of calling `security
+  // find-generic-password` from the shell, because the latter
+  // triggers a macOS Keychain auth prompt on every new shell
+  // (Claude Code's Bash tool spawns one per command — see the
+  // 2026-05-15 incident memory). Idempotent: same-value re-run is
+  // outcome=unchanged. Rotate writes a fresh block.
+  if (apiToken) {
+    wireBridgeIntoShellRc(apiToken)
   }
 
   // Broken-shim detection. When the dlx cache rotates (cleanup, manifest

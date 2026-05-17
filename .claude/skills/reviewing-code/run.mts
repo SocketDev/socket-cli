@@ -149,13 +149,24 @@ type RoleSpec = {
   readonly buildPrompt: (ctx: ReviewContext) => string
   readonly headingForVerify?: string
   readonly preferenceOrder: readonly BackendName[]
+  // Wall-clock cap per spawn for this role. Heavyweight investigation
+  // passes (discovery, discovery-secondary, remediation) cap at 15min
+  // per docs/claude.md/fleet/agent-delegation.md — rescue-tier work.
+  // Verify is a sanity check on an already-written report, so 5min.
+  // Spawn rejects on timeout; the catch in runBackend logs cleanly.
+  readonly timeoutMs: number
 }
+
+const TIMEOUT_HEAVY_MS = 15 * 60 * 1000
+const TIMEOUT_VERIFY_MS = 5 * 60 * 1000
 
 const ROLES: Readonly<Record<Role, RoleSpec>> = {
   __proto__: null,
   discovery: {
     preferenceOrder: ['codex', 'kimi', 'claude'],
-    buildPrompt: ctx => `Take a look at the current branch and give me a full and thorough review. This is a big one, so take your time.
+    timeoutMs: TIMEOUT_HEAVY_MS,
+    buildPrompt:
+      ctx => `Take a look at the current branch and give me a full and thorough review. This is a big one, so take your time.
 
 Scope:
 - current branch: ${ctx.branch}
@@ -206,7 +217,9 @@ Impact
   },
   'discovery-secondary': {
     preferenceOrder: ['codex', 'kimi', 'claude'],
-    buildPrompt: ctx => `Take another look at the current branch and search for additional high-confidence findings that are not already documented in \`${ctx.outputPath}\`.
+    timeoutMs: TIMEOUT_HEAVY_MS,
+    buildPrompt:
+      ctx => `Take another look at the current branch and search for additional high-confidence findings that are not already documented in \`${ctx.outputPath}\`.
 
 Scope:
 - current branch: ${ctx.branch}
@@ -229,7 +242,9 @@ Instructions:
   },
   remediation: {
     preferenceOrder: ['codex', 'kimi', 'claude'],
-    buildPrompt: ctx => `Read the existing review report at \`${ctx.outputPath}\` and augment it with concrete fix suggestions and regression tests for every finding.
+    timeoutMs: TIMEOUT_HEAVY_MS,
+    buildPrompt:
+      ctx => `Read the existing review report at \`${ctx.outputPath}\` and augment it with concrete fix suggestions and regression tests for every finding.
 
 Scope:
 - current branch: ${ctx.branch}
@@ -256,7 +271,9 @@ Instructions:
   verify: {
     preferenceOrder: ['claude', 'kimi', 'codex'],
     headingForVerify: 'Verification',
-    buildPrompt: ctx => `Review the saved markdown findings report at \`${ctx.outputPath}\` for accuracy.
+    timeoutMs: TIMEOUT_VERIFY_MS,
+    buildPrompt:
+      ctx => `Review the saved markdown findings report at \`${ctx.outputPath}\` for accuracy.
 
 Scope:
 - current branch: ${ctx.branch}
@@ -465,6 +482,7 @@ async function runBackend(
   tempDir: string,
   passLabel: string,
   cwd: string,
+  timeoutMs: number,
 ): Promise<{ ok: boolean; output: string; logPath: string }> {
   const desc = BACKENDS[backend]
   const promptFile = path.join(tempDir, `${passLabel}.prompt.txt`)
@@ -479,6 +497,7 @@ async function runBackend(
       cwd,
       stdio: 'pipe',
       stdioString: true,
+      timeout: timeoutMs,
     })
     child.stdin?.end(promptText)
     const result = await child
@@ -493,7 +512,7 @@ async function runBackend(
     }
     await fs.writeFile(
       logFile,
-      `# backend: ${backend}\n# argv: ${argv.join(' ')}\n# error\n\n${stderrParts.join('\n')}\n\n=== STDOUT ===\n${stdout}\n`,
+      `# backend: ${backend}\n# argv: ${argv.join(' ')}\n# timeoutMs: ${timeoutMs}\n# error\n\n${stderrParts.join('\n')}\n\n=== STDOUT ===\n${stdout}\n`,
     )
     return { ok: false, output: '', logPath: logFile }
   }
@@ -525,9 +544,7 @@ function normalizeMarkdown(text: string): string {
   }
   const firstStartsWithUpdated = /^Updated\s+\[/.test(lines[0] ?? '')
   const thirdIsCodeFence =
-    lines[2] === '```markdown' ||
-    lines[2] === '```md' ||
-    lines[2] === '```'
+    lines[2] === '```markdown' || lines[2] === '```md' || lines[2] === '```'
   let lastNonEmpty = lines.length - 1
   while (lastNonEmpty >= 0 && lines[lastNonEmpty]!.trim() === '') {
     lastNonEmpty--
@@ -567,12 +584,11 @@ async function appendSkipNote(
   role: Role,
   reason: string,
 ): Promise<void> {
-  const existing = existsSync(reportPath) ? await fs.readFile(reportPath, 'utf8') : ''
+  const existing = existsSync(reportPath)
+    ? await fs.readFile(reportPath, 'utf8')
+    : ''
   const note = `> Skipped pass: **${role}** — ${reason}`
-  await fs.writeFile(
-    reportPath,
-    `${existing.trimEnd()}\n\n${note}\n`,
-  )
+  await fs.writeFile(reportPath, `${existing.trimEnd()}\n\n${note}\n`)
 }
 
 async function main(): Promise<void> {
@@ -591,7 +607,7 @@ async function main(): Promise<void> {
   const branch =
     branchRaw.length > 0
       ? branchRaw
-      : `detached-${(await git(['rev-parse', '--short', 'HEAD'], repoRoot))}`
+      : `detached-${await git(['rev-parse', '--short', 'HEAD'], repoRoot)}`
   const baseRef = await resolveBaseRef(args.baseRef, repoRoot)
   const mergeBase = await git(['merge-base', baseRef, 'HEAD'], repoRoot)
   const range = `${mergeBase}..HEAD`
@@ -621,9 +637,7 @@ async function main(): Promise<void> {
   }
 
   const available = await detectAvailableBackends()
-  logger.info(
-    `Available backends: ${[...available].join(', ') || '(none)'}`,
-  )
+  logger.info(`Available backends: ${[...available].join(', ') || '(none)'}`)
   logger.info(`Logs and prompts kept under: ${tempDir}`)
 
   const rolesToRun = ALL_ROLES.filter(r => {
@@ -644,14 +658,18 @@ async function main(): Promise<void> {
       await appendSkipNote(outputPath, role, 'no available backend')
       continue
     }
-    logger.info(`${passLabel}: running on ${backend}`)
-    const promptText = ROLES[role].buildPrompt(ctx)
+    const roleSpec = ROLES[role]
+    logger.info(
+      `${passLabel}: running on ${backend} (timeout ${Math.round(roleSpec.timeoutMs / 60000)}m)`,
+    )
+    const promptText = roleSpec.buildPrompt(ctx)
     const result = await runBackend(
       backend,
       promptText,
       tempDir,
       passLabel,
       repoRoot,
+      roleSpec.timeoutMs,
     )
     if (!result.ok) {
       logger.error(`${passLabel}: failed; see ${result.logPath}`)
@@ -667,13 +685,13 @@ async function main(): Promise<void> {
     } else if (role === 'discovery-secondary') {
       // Only overwrite if the secondary pass actually returned a
       // different document (caller asked for "no diff = no change").
-      const before = existsSync(outputPath) ? await fs.readFile(outputPath, 'utf8') : ''
+      const before = existsSync(outputPath)
+        ? await fs.readFile(outputPath, 'utf8')
+        : ''
       if (before.trim() !== result.output.trim()) {
         await fs.writeFile(outputPath, result.output)
       } else {
-        logger.info(
-          `${passLabel}: no additional findings; report unchanged`,
-        )
+        logger.info(`${passLabel}: no additional findings; report unchanged`)
       }
     } else {
       await fs.writeFile(outputPath, result.output)
@@ -705,12 +723,7 @@ async function resolveBaseRef(
   // Default-branch fallback per CLAUDE.md: symbolic-ref → origin/main → origin/master.
   try {
     const headRef = await git(
-      [
-        'symbolic-ref',
-        '--quiet',
-        '--short',
-        'refs/remotes/origin/HEAD',
-      ],
+      ['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD'],
       cwd,
     )
     if (headRef.length > 0) {

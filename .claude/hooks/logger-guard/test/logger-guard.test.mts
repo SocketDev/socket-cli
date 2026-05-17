@@ -51,7 +51,7 @@ test('blocks process.stderr.write in src/ .mts files', async () => {
   const { code, stderr } = await runHook({
     tool_name: 'Edit',
     tool_input: {
-      file_path: 'src/util/output.mts',
+      file_path: 'src/utils/output.mts',
       new_string: 'process.stderr.write("oops\\n")',
     },
   })
@@ -85,7 +85,7 @@ test('allows tests to use console.log', async () => {
   const { code } = await runHook({
     tool_name: 'Edit',
     tool_input: {
-      file_path: 'src/util/foo.test.mts',
+      file_path: 'src/utils/foo.test.mts',
       new_string: 'console.log("debug")',
     },
   })

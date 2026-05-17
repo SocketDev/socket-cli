@@ -83,8 +83,44 @@ export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
     'Rewrite `fs.access` / `fs.stat` existence-checks to `existsSync(p)` from `node:fs`. Common shapes: `try { await fs.access(p); return true } catch { return false }` → `return existsSync(p)`. `await fs.access(p).then(() => true).catch(() => false)` → `existsSync(p)`. `if (await fs.stat(p))` → `if (existsSync(p))`. When the stat result is destructured for metadata (`s.size`, `s.mtime`, `s.isDirectory()`), KEEP the stat call and add a one-line comment stating intent — that is not an existence check. Trace back through callers: if the caller awaited a Promise<boolean>, the rewrite collapses to a sync boolean and the await becomes a no-op (safe).',
   'socket/prefer-node-builtin-imports':
     "Rewrite `import fs from 'node:fs'` / `import * as fs from 'node:fs'` to `import { … } from 'node:fs'` with the names actually used in the file. Change every `fs.X` reference to bare `X`. If `fs` is passed as a value (e.g. `someApi(fs)`), keep the namespace import and add a `// prefer-node-builtin-imports: passed-as-value` comment.",
-  'socket/prefer-async-spawn':
-    "Replace `node:child_process`'s `spawnSync` with one of two `@socketsecurity/lib/spawn` exports — preferred first: (a) async `spawn` (returns a thenable yielding `{ code, stdout, stderr }`; await it), or (b) `spawnSync` from the same lib module when the caller is genuinely sync. Both replacements drop the `node:child_process` import. Decision per callsite: if the enclosing function is `async` or can be made async without breaking its sync callers, use (a); otherwise use (b). Process: (1) inspect every `spawnSync(` callsite in the file, (2) pick (a) or (b) per callsite, (3) update the import to `import { spawn } from '@socketsecurity/lib/spawn'` (or `import { spawnSync } from '@socketsecurity/lib/spawn'`) — the lib's `spawnSync` is a drop-in replacement signature-wise (same args, same return shape) so callsite bodies don't change when using (b). CRITICAL: never end the rewrite with the `node:child_process` import swapped but a callsite still referencing the old `spawnSync` — that produces an undefined-symbol crash at runtime. If you use (a) for some callsites and (b) for others, import both: `import { spawn, spawnSync } from '@socketsecurity/lib/spawn'`.",
+  'socket/prefer-async-spawn': `Replace \`node:child_process\` spawn calls with their \`@socketsecurity/lib/spawn\` equivalents. The lib re-exports BOTH names so a sync caller keeps using \`spawnSync\` and only the import source changes; only convert sync → async when the enclosing function is already async (or can be safely made async) AND every caller of that function is async-ready.
+
+<process>
+  1. List every spawn-family callsite in the file: \`spawnSync(\`, \`spawn(\`, \`child_process.spawnSync(\`, \`cp.spawnSync(\`. Note which names are actually used.
+  2. For each callsite, decide: (a) keep sync semantics — use \`spawnSync\` from the lib (drop-in, same args, same return shape \`{ status, stdout, stderr }\`); or (b) convert to async — use \`spawn\` from the lib (returns a Promise of \`{ code, stdout, stderr }\`, requires \`await\`, requires async enclosing context, return shape uses \`.code\` not \`.status\`). Default to (a) unless you can verify (b) is safe — sync → async is a contract change.
+  3. Update the import line. If every callsite stays sync: \`import { spawnSync } from '@socketsecurity/lib/spawn'\`. If every callsite becomes async: \`import { spawn } from '@socketsecurity/lib/spawn'\`. If mixed: \`import { spawn, spawnSync } from '@socketsecurity/lib/spawn'\`.
+  4. Self-verify before stopping: re-read the file. Confirm EVERY \`spawnSync(\` callsite is satisfied by the new import (either the name is in the import list OR you converted that callsite to \`await spawn(\`). A file with \`import { spawn } from '@socketsecurity/lib/spawn'\` and a body containing \`spawnSync(\` is broken — fix it before you declare done.
+</process>
+
+<good-fix description="Sync caller; safest path is keeping sync semantics by importing spawnSync from the lib.">
+- import { spawnSync } from 'node:child_process'
++ import { spawnSync } from '@socketsecurity/lib/spawn'
+
+  function run(cmd) {
+    const r = spawnSync(cmd, [], { encoding: 'utf8' })
+    return r.status === 0
+  }
+</good-fix>
+
+<bad-fix description="What you must NOT do: rename the import without updating callsites.">
+- import { spawnSync } from 'node:child_process'
++ import { spawn } from '@socketsecurity/lib/spawn'
+
+  function run(cmd) {
+    const r = spawnSync(cmd, [], { encoding: 'utf8' })  // ❌ spawnSync is no longer imported — runtime ReferenceError
+    return r.status === 0
+  }
+</bad-fix>
+
+<good-fix description="Async caller; can switch to lib's async spawn AND update return-shape access.">
+- import { spawnSync } from 'node:child_process'
++ import { spawn } from '@socketsecurity/lib/spawn'
+
+  async function run(cmd) {
+    const r = await spawn(cmd, [], { stdio: 'pipe' })
+    return r.code === 0  // .code, not .status
+  }
+</good-fix>`,
   'socket/prefer-undefined-over-null':
     'In the target file, flip BOTH the value and the surrounding type annotation in lockstep: `let x: string | null = null` → `let x: string | undefined = undefined`. Apply to function-parameter annotations, return-type annotations, generic-parameter constraints, interface / type-alias members. For tight-equality checks in the same file: `x === null` → `x === undefined` (loose `x == null` already covers both — leave loose-equality alone). DO NOT edit other files; if a caller in another file depends on the type, the lint rule will fire there on the next run and a separate AI-fix subprocess will pick it up. Skip the finding if the type is a third-party API contract you cannot change (e.g. a return type from a library).',
   'socket/max-file-lines':
