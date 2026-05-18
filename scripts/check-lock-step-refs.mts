@@ -1,36 +1,58 @@
 #!/usr/bin/env node
 /**
- * @file Lock-step reference hygiene gate. Mantra: comments that name a path are
- *   claims about file layout; stale claims rot silently. This gate greps every
- *   `Lock-step with <Lang>:` / `Lock-step from <Lang>:` / inline `// Lock-step
- *   with <Lang>: <path>:<lines>` comment in tracked source files, resolves each
- *   path against the per-lang impl root declared in
- *   `.config/lock-step-refs.json`, and fails CI when the path no longer exists.
- *   Line ranges are advisory and can drift; path existence is enforceable and
- *   that is what we enforce. The gate is opt-in per repo: if
- *   `.config/lock-step-refs.json` is absent, it exits 0 immediately. Repos that
- *   don't ship cross-language ports pay nothing. Config shape
- *   (`.config/lock-step-refs.json`): { "roots": { "Rust":
- *   ["packages/acorn/lang/rust/crates"], "Go": ["packages/acorn/lang/go/src"],
- *   "C++": ["packages/acorn/lang/cpp/src"], "TS":
- *   ["packages/acorn/lang/typescript/src"] }, "scan": ["packages/acorn/lang"],
- *   "extensions": [".rs", ".go", ".cpp", ".hpp", ".ts", ".py", ".zig"] }
+ * @file Lock-step reference hygiene gate. Mantra: comments that name a path
+ *   are claims about file layout; stale claims rot silently. This gate greps
+ *   every `Lock-step with <Lang>:` / `Lock-step from <Lang>:` / inline
+ *   `// Lock-step with <Lang>: <path>:<lines>` comment in tracked source
+ *   files, resolves each path against the per-lang impl root declared in
+ *   `.config/lock-step-refs.json`, and fails CI when the path no longer
+ *   exists. Line ranges are advisory and can drift; path existence is
+ *   enforceable and that is what we enforce.
+ *
+ *   The gate is opt-in per repo: if `.config/lock-step-refs.json` is absent,
+ *   it exits 0 immediately. Repos that don't ship cross-language ports pay
+ *   nothing.
+ *
+ *   Config shape (`.config/lock-step-refs.json`):
+ *
+ *     {
+ *       "roots": {
+ *         "Rust":   ["packages/acorn/lang/rust/crates"],
+ *         "Go":     ["packages/acorn/lang/go/src"],
+ *         "C++":    ["packages/acorn/lang/cpp/src"],
+ *         "TS":     ["packages/acorn/lang/typescript/src"]
+ *       },
+ *       "scan": ["packages/acorn/lang"],
+ *       "extensions": [".rs", ".go", ".cpp", ".hpp", ".ts", ".py", ".zig"]
+ *     }
+ *
  *   `roots` maps the `<Lang>` token in the comment to one or more directories
  *   the path is resolved against. The first root that contains the file wins.
  *   `scan` lists directories the gate walks looking for comments. `extensions`
- *   filters which files are inspected. Comment shapes recognized (all four are
- *   documented in `docs/claude.md/fleet/parser-comments.md` §5): //! Lock-step
- *   with Go: src/parser/class.go //! Lock-step from Rust:
- *   crates/parser/src/class.rs // Lock-step with Go: parser.go:6450-6457 //
- *   Lock-step note: <freeform — not validated, by design> Only forms that carry
- *   a `<path>` are validated; `Lock-step note:` is a rationale shape and
- *   intentionally has no enforced target. Usage: node
- *   scripts/check-lock-step-refs.mts # report + fail on rot node
- *   scripts/check-lock-step-refs.mts --json # machine-readable node
- *   scripts/check-lock-step-refs.mts --quiet # silent on clean Exit codes: 0 —
- *   clean, or repo has no `.config/lock-step-refs.json` (opt-in absent) 1 — at
- *   least one stale reference found 2 — gate itself crashed (malformed config,
- *   walker failure)
+ *   filters which files are inspected.
+ *
+ *   Comment shapes recognized (all four are documented in
+ *   `docs/claude.md/fleet/parser-comments.md` §5):
+ *
+ *     //! Lock-step with Go: src/parser/class.go
+ *     //! Lock-step from Rust: crates/parser/src/class.rs
+ *     // Lock-step with Go: parser.go:6450-6457
+ *     // Lock-step note: <freeform — not validated, by design>
+ *
+ *   Only forms that carry a `<path>` are validated; `Lock-step note:` is a
+ *   rationale shape and intentionally has no enforced target.
+ *
+ *   Usage:
+ *
+ *     node scripts/check-lock-step-refs.mts          # report + fail on rot
+ *     node scripts/check-lock-step-refs.mts --json   # machine-readable
+ *     node scripts/check-lock-step-refs.mts --quiet  # silent on clean
+ *
+ *   Exit codes:
+ *
+ *     0 — clean, or repo has no `.config/lock-step-refs.json` (opt-in absent)
+ *     1 — at least one stale reference found
+ *     2 — gate itself crashed (malformed config, walker failure)
  */
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
@@ -206,10 +228,7 @@ function scanFile(
   return findings
 }
 
-function formatFindings(
-  findings: readonly Finding[],
-  repoRoot: string,
-): string {
+function formatFindings(findings: readonly Finding[], repoRoot: string): string {
   const grouped = new Map<string, Finding[]>()
   for (const f of findings) {
     const key = f.file
