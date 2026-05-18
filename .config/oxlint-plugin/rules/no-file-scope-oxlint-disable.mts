@@ -26,22 +26,16 @@
  *     rule).
  */
 
+// Path-recognition helpers shared with sibling rules. See
+// `../lib/fleet-paths.mts` for the rationale behind each exemption.
+import {
+  isPathsModule,
+  isPluginInternalPath,
+} from '../lib/fleet-paths.mts'
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 const FILE_SCOPE_DISABLE_RE =
   /^\s*(?:\/\*|\/\/)\s*oxlint-disable(?!-next-line)\s+/
-
-// Plugin-internal rule files are allowed to file-scope-disable their
-// own rule (the banned shape is lookup-table data in the rule
-// definition). Match by suffix on the path.
-const PLUGIN_RULE_DIR = '.config/oxlint-plugin/rules/'
-const PLUGIN_TEST_DIR = '.config/oxlint-plugin/test/'
-
-function isPluginInternalPath(filename: string): boolean {
-  return (
-    filename.includes(PLUGIN_RULE_DIR) || filename.includes(PLUGIN_TEST_DIR)
-  )
-}
 
 const rule = {
   meta: {
@@ -62,7 +56,7 @@ const rule = {
 
   create(context: RuleContext) {
     const filename = context.filename ?? context.getFilename?.() ?? ''
-    if (isPluginInternalPath(filename)) {
+    if (isPluginInternalPath(filename) || isPathsModule(filename)) {
       return {}
     }
     const sourceCode = context.getSourceCode
