@@ -56,9 +56,9 @@ const VALID_JSON = JSON.stringify(
 
 const VALID_README = `# marketplace
 
-| plugin | version | sha                                      | date       | by      |
-|--------|---------|------------------------------------------|------------|---------|
-| codex  | v1.0.1  | ${SHA} | 2026-05-18 | jdalton |
+| plugin | version | sha                                      | date       | notes |
+|--------|---------|------------------------------------------|------------|-------|
+| codex  | v1.0.1  | ${SHA} | 2026-05-18 | test  |
 `
 
 test('SKIPS non-marketplace paths', () => {
@@ -142,8 +142,8 @@ test('BLOCKS Write of marketplace.json when README version is stale', () => {
 test('BLOCKS Write of marketplace.json when README has no row for a plugin', () => {
   const noRowReadme = `# marketplace
 
-| plugin | version | sha | date | by |
-|--------|---------|-----|------|-----|
+| plugin | version | sha | date | notes |
+|--------|---------|-----|------|-------|
 `
   const { dir, jsonPath } = makeFixture(null, noRowReadme)
   try {
@@ -207,7 +207,7 @@ test('BLOCKS Edit of README that removes a plugin row', () => {
       tool_name: 'Edit',
       tool_input: {
         file_path: readmePath,
-        old_string: `| codex  | v1.0.1  | ${SHA} | 2026-05-18 | jdalton |\n`,
+        old_string: `| codex  | v1.0.1  | ${SHA} | 2026-05-18 | test  |\n`,
         new_string: '',
       },
     })
@@ -230,8 +230,8 @@ test('ALLOWS Edit of README that bumps a row in sync with a JSON bump (simulated
         file_path: readmePath,
         // No-op edit (replacing a string with itself) — content stays
         // consistent with on-disk JSON.
-        old_string: 'jdalton',
-        new_string: 'jdalton',
+        old_string: 'test',
+        new_string: 'test',
       },
     })
     assert.equal(exitCode, 0)

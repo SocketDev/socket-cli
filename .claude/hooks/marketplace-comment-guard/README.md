@@ -41,14 +41,16 @@ against — opaque pins look fine and stay broken for months.
 
 ```markdown
 <!-- .claude-plugin/README.md -->
-| plugin | version | sha                                      | date       | by      |
-|--------|---------|------------------------------------------|------------|---------|
-| codex  | v1.0.1  | 9cb4fe4099195b2587c402117a3efce6ab5aac78 | 2026-05-18 | jdalton |
+| plugin | version | sha                                      | date       | notes                            |
+|--------|---------|------------------------------------------|------------|----------------------------------|
+| codex  | v1.0.1  | 9cb4fe4099195b2587c402117a3efce6ab5aac78 | 2026-05-18 | upstream openai/codex-plugin-cc  |
 ```
 
-The first four columns are required and inspected. Extra columns (`by`,
-free-form `notes`) are accepted but not validated — those are human
-metadata.
+The first four columns are required and inspected. Any trailing column
+(e.g. free-form `notes`) is accepted but not validated. `git blame` is the
+authoritative record of *who* bumped a pin, so a `by` column is deliberately
+absent — duplicating personal identifiers into fleet-canonical files is a
+public-surface-hygiene mistake.
 
 ## What's enforced
 
@@ -64,7 +66,7 @@ metadata.
 
 - The accuracy of `date` — that's a human-review concern (same as the
   GHA `uses:` rule).
-- The `by` / `notes` columns — free-form metadata.
+- Any trailing `notes` column — free-form metadata.
 - Source types other than `git-subdir` carrying a `ref` field — if you
   add a new source type that doesn't have `ref`, the guard skips that
   entry rather than blocking. Add explicit support if the new type
