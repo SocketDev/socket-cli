@@ -309,6 +309,7 @@
 .claude/skills/worktree-management/SKILL.md linguist-generated=true
 .config/lockstep.schema.json linguist-generated=true
 .config/oxlint-plugin/index.mts linguist-generated=true
+.config/oxlint-plugin/lib/iterable-kind.mts linguist-generated=true
 .config/oxlint-plugin/lib/rule-tester.mts linguist-generated=true
 .config/oxlint-plugin/lib/rule-types.mts linguist-generated=true
 .config/oxlint-plugin/package.json linguist-generated=true
@@ -316,6 +317,7 @@
 .config/oxlint-plugin/rules/export-top-level-functions.mts linguist-generated=true
 .config/oxlint-plugin/rules/inclusive-language.mts linguist-generated=true
 .config/oxlint-plugin/rules/max-file-lines.mts linguist-generated=true
+.config/oxlint-plugin/rules/no-cached-for-on-iterable.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-console-prefer-logger.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-default-export.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-dynamic-import-outside-bundle.mts linguist-generated=true
@@ -349,6 +351,7 @@
 .config/oxlint-plugin/test/export-top-level-functions.test.mts linguist-generated=true
 .config/oxlint-plugin/test/inclusive-language.test.mts linguist-generated=true
 .config/oxlint-plugin/test/max-file-lines.test.mts linguist-generated=true
+.config/oxlint-plugin/test/no-cached-for-on-iterable.test.mts linguist-generated=true
 .config/oxlint-plugin/test/no-console-prefer-logger.test.mts linguist-generated=true
 .config/oxlint-plugin/test/no-default-export.test.mts linguist-generated=true
 .config/oxlint-plugin/test/no-dynamic-import-outside-bundle.test.mts linguist-generated=true
