@@ -3,15 +3,12 @@
  *
  * Tests updating repository settings and configurations.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Settings modification
- * - Branch protection rules
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Settings modification - Branch protection rules.
  *
- * Related Files:
- * - src/commands/repository/cmd-repository-update.mts - Command definition
- * - src/commands/repository/handle-repository-update.mts - Update logic
+ * Related Files: - src/commands/repository/cmd-repository-update.mts - Command
+ * definition - src/commands/repository/handle-repository-update.mts - Update
+ * logic.
  */
 
 import { describe, expect } from 'vitest'

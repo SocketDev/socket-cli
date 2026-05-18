@@ -1,21 +1,14 @@
 /**
  * Unit tests for error display utilities.
  *
- * Purpose:
- * Tests the error formatting and display utilities.
+ * Purpose: Tests the error formatting and display utilities.
  *
- * Test Coverage:
- * - formatErrorForDisplay function
- * - formatErrorCompact function
- * - formatErrorForTerminal function
- * - formatErrorForJson function
- * - formatExternalCliError function
- * - formatWarning function
- * - formatSuccess function
- * - formatInfo function
+ * Test Coverage: - formatErrorForDisplay function - formatErrorCompact function
+ * - formatErrorForTerminal function - formatErrorForJson function -
+ * formatExternalCliError function - formatWarning function - formatSuccess
+ * function - formatInfo function.
  *
- * Related Files:
- * - src/util/error/display.mts (implementation)
+ * Related Files: - src/util/error/display.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'

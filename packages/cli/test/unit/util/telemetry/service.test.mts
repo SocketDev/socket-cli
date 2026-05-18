@@ -2,17 +2,12 @@
 /**
  * Unit tests for Telemetry service.
  *
- * Purpose:
- * Tests the TelemetryService class for event tracking and batching.
+ * Purpose: Tests the TelemetryService class for event tracking and batching.
  *
- * Test Coverage:
- * - Singleton pattern
- * - Event tracking
- * - Event batching and flushing
- * - Destroy functionality
+ * Test Coverage: - Singleton pattern - Event tracking - Event batching and
+ * flushing - Destroy functionality.
  *
- * Related Files:
- * - util/telemetry/service.mts (implementation)
+ * Related Files: - util/telemetry/service.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

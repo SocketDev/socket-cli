@@ -1,6 +1,6 @@
 /**
- * Mock utilities for Socket authentication and login flow.
- * Provides test doubles for authentication-related functionality.
+ * Mock utilities for Socket authentication and login flow. Provides test
+ * doubles for authentication-related functionality.
  */
 
 import { expect, vi } from 'vitest'
@@ -16,10 +16,12 @@ export interface MockAuthResponse {
   success: boolean
   token?: string | undefined
   error?: string | undefined
-  org?: {
-    id: string
-    name: string
-  } | undefined
+  org?:
+    | {
+        id: string
+        name: string
+      }
+    | undefined
 }
 
 /**
@@ -76,10 +78,12 @@ export function mockConfigStorage() {
 }
 
 /**
- * Mock the interactive login flow.
- * Simulates opening browser, polling for auth completion.
+ * Mock the interactive login flow. Simulates opening browser, polling for auth
+ * completion.
  */
-export function mockInteractiveLogin(options?: { shouldSucceed?: boolean | undefined }) {
+export function mockInteractiveLogin(options?: {
+  shouldSucceed?: boolean | undefined
+}) {
   const { shouldSucceed = true } = options || {}
 
   return vi.fn().mockImplementation(async () => {

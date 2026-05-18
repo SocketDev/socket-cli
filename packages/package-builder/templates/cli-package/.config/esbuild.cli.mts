@@ -1,6 +1,6 @@
 /**
- * esbuild configuration for building Socket CLI.
- * Extends the base CLI build configuration.
+ * Esbuild configuration for building Socket CLI. Extends the base CLI build
+ * configuration.
  */
 
 import path from 'node:path'

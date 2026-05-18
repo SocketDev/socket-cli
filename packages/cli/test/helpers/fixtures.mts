@@ -1,14 +1,17 @@
-/** @fileoverview Test fixtures and data configurations for Socket CLI. Provides standard test data for common entities like repositories, organizations, and scans. */
+/**
+ * @file Test fixtures and data configurations for Socket CLI. Provides standard
+ *   test data for common entities like repositories, organizations, and scans.
+ */
 
 import type { CResult, OutputKind } from '../../src/types.mts'
 
 /**
- * Standard output kinds for testing
+ * Standard output kinds for testing.
  */
 export const OUTPUT_KINDS: OutputKind[] = ['json', 'markdown', 'text']
 
 /**
- * Test repository configurations
+ * Test repository configurations.
  */
 export const TEST_REPOS = {
   default: {
@@ -34,7 +37,7 @@ export const TEST_REPOS = {
 }
 
 /**
- * Test organization configurations
+ * Test organization configurations.
  */
 export const TEST_ORGS = {
   default: {
@@ -50,7 +53,7 @@ export const TEST_ORGS = {
 }
 
 /**
- * Test scan configurations
+ * Test scan configurations.
  */
 export const TEST_SCANS = {
   default: {
@@ -72,7 +75,7 @@ export const TEST_SCANS = {
 }
 
 /**
- * Test SDK options configurations
+ * Test SDK options configurations.
  */
 export const TEST_SDK_OPTIONS = {
   default: {
@@ -90,7 +93,7 @@ export const TEST_SDK_OPTIONS = {
 }
 
 /**
- * Test quota data
+ * Test quota data.
  */
 export const TEST_QUOTA = {
   full: { quota: 1000 },
@@ -100,7 +103,7 @@ export const TEST_QUOTA = {
 }
 
 /**
- * Test analytics data
+ * Test analytics data.
  */
 export const TEST_ANALYTICS = {
   org: {
@@ -116,7 +119,7 @@ export const TEST_ANALYTICS = {
 }
 
 /**
- * Common error configurations
+ * Common error configurations.
  */
 export const TEST_ERRORS = {
   unauthorized: {
@@ -147,7 +150,7 @@ export const TEST_ERRORS = {
 }
 
 /**
- * Create a test CResult with error
+ * Create a test CResult with error.
  */
 export function createTestErrorResult(
   errorKey: keyof typeof TEST_ERRORS,
@@ -162,7 +165,7 @@ export function createTestErrorResult(
 }
 
 /**
- * Create a test CResult with success data
+ * Create a test CResult with success data.
  */
 export function createTestSuccessResult<T>(data: T): CResult<T> {
   return {

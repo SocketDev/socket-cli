@@ -1,7 +1,8 @@
 /**
  * Unit tests for manifest scala command.
  *
- * Tests the command that uses SBT to generate pom.xml manifest files for Scala projects.
+ * Tests the command that uses SBT to generate pom.xml manifest files for Scala
+ * projects.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

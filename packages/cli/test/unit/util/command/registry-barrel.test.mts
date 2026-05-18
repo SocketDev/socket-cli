@@ -1,15 +1,11 @@
 /**
  * Unit tests for command registry barrel file.
  *
- * Purpose:
- * Tests the command registry barrel exports.
+ * Purpose: Tests the command registry barrel exports.
  *
- * Test Coverage:
- * - Named exports
- * - Type exports (runtime verification)
+ * Test Coverage: - Named exports - Type exports (runtime verification)
  *
- * Related Files:
- * - src/util/command/registry.mts (implementation)
+ * Related Files: - src/util/command/registry.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

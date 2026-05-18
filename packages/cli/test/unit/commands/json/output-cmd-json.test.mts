@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for json command output.
+ * @file Unit tests for json command output.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,11 +1,13 @@
-/** @fileoverview Minimal .env file parser for build and test scripts. */
+/**
+ * @file Minimal .env file parser for build and test scripts.
+ */
 
 import { readFileSync } from 'node:fs'
 
 /**
- * Parse a .env file and return key-value pairs.
- * Supports comments (#), blank lines, KEY=value, KEY="value", KEY='value'.
- * Returns an empty object if the file does not exist.
+ * Parse a .env file and return key-value pairs. Supports comments (#), blank
+ * lines, KEY=value, KEY="value", KEY='value'. Returns an empty object if the
+ * file does not exist.
  */
 export function loadEnvFile(filePath: string): Record<string, string> {
   const env: Record<string, string> = { __proto__: null } as Record<

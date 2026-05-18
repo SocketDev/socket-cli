@@ -1,35 +1,31 @@
 /**
- * @fileoverview Babel plugin to inline process.env values.
- * Replaces process.env.X with literal values, enabling dead code elimination.
- *
- * After this plugin runs, Rollup's tree-shaking can eliminate unreachable branches:
- *   if (process.env.NODE_ENV === 'production') { prodCode() }
- *   else { devCode() }
- *
- * Becomes:
- *   if ('production' === 'production') { prodCode() }
- *   else { devCode() }
- *
- * Then Rollup removes the dead else branch, leaving just: prodCode()
+ * @file Babel plugin to inline process.env values. Replaces process.env.X with
+ *   literal values, enabling dead code elimination. After this plugin runs,
+ *   Rollup's tree-shaking can eliminate unreachable branches: if
+ *   (process.env.NODE_ENV === 'production') { prodCode() } else { devCode() }
+ *   Becomes: if ('production' === 'production') { prodCode() } else { devCode()
+ *   } Then Rollup removes the dead else branch, leaving just: prodCode()
  */
 
 /**
  * Babel plugin to inline process.env.
  *
- * Replaces process.env.VAR_NAME with the actual value from process.env.
- * Use options.env to provide custom environment values.
- *
- * @param {object} babel - Babel API object
- * @param {object} options - Plugin options
- * @param {Record<string, string>} [options.env] - Environment variables to inline
- * @param {string[]} [options.include] - Only inline these env vars (allowlist)
- * @param {string[]} [options.exclude] - Never inline these env vars (denylist)
- * @returns {object} Babel plugin object
+ * Replaces process.env.VAR_NAME with the actual value from process.env. Use
+ * options.env to provide custom environment values.
  *
  * @example
- * // With options: { env: { NODE_ENV: 'production' } }
- * process.env.NODE_ENV // → 'production'
- * process.env.DEBUG // → unchanged (not in env)
+ *   // With options: { env: { NODE_ENV: 'production' } }
+ *   process.env.NODE_ENV // → 'production'
+ *   process.env.DEBUG // → unchanged (not in env)
+ *
+ * @param {object} babel - Babel API object.
+ * @param {object} options - Plugin options.
+ * @param {Record<string, string>} [options.env] - Environment variables to
+ *   inline.
+ * @param {string[]} [options.include] - Only inline these env vars (allowlist)
+ * @param {string[]} [options.exclude] - Never inline these env vars (denylist)
+ *
+ * @returns {object} Babel plugin object
  */
 export default function inlineProcessEnv(babel, options = {}) {
   const { types: t } = babel

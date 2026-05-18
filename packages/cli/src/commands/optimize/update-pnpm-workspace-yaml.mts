@@ -1,16 +1,12 @@
 /**
- * @fileoverview Update overrides in pnpm-workspace.yaml (pnpm 11+).
- *
- * pnpm 11+ reads `overrides:` from `pnpm-workspace.yaml` only —
- * `package.json`'s `pnpm.overrides` is ignored. socket-cli's optimize
- * command historically wrote to package.json; this helper provides
- * the YAML-write path used when the host repo declares pnpm@11+ in
- * its `packageManager` field.
- *
- * Comment preservation: uses the `yaml` package's Document API so
- * existing `pnpm-workspace.yaml` formatting (comments, ordering,
- * non-overrides keys) survives merges. The `overrides:` block is
- * created when missing.
+ * @file Update overrides in pnpm-workspace.yaml (pnpm 11+). pnpm 11+ reads
+ *   `overrides:` from `pnpm-workspace.yaml` only — `package.json`'s
+ *   `pnpm.overrides` is ignored. socket-cli's optimize command historically
+ *   wrote to package.json; this helper provides the YAML-write path used when
+ *   the host repo declares pnpm@11+ in its `packageManager` field. Comment
+ *   preservation: uses the `yaml` package's Document API so existing
+ *   `pnpm-workspace.yaml` formatting (comments, ordering, non-overrides keys)
+ *   survives merges. The `overrides:` block is created when missing.
  */
 
 import { existsSync, writeFileSync } from 'node:fs'
@@ -23,15 +19,15 @@ import type { Document, YAMLMap } from 'yaml'
 import type { Overrides } from './types.mts'
 
 /**
- * Merge `overrides` into `pnpm-workspace.yaml` at `<repoRoot>/pnpm-workspace.yaml`.
+ * Merge `overrides` into `pnpm-workspace.yaml` at
+ * `<repoRoot>/pnpm-workspace.yaml`.
  *
- * - Existing `overrides:` block is updated in-place (entries with the
- *   same key are overwritten with the new value; new entries are
- *   appended).
+ * - Existing `overrides:` block is updated in-place (entries with the same key
+ *   are overwritten with the new value; new entries are appended).
  * - When the file lacks an `overrides:` block, one is added.
  * - When the file is missing entirely, a minimal one is created.
- * - Comments and other keys (catalog, packages, minimumReleaseAge,
- *   etc.) are preserved.
+ * - Comments and other keys (catalog, packages, minimumReleaseAge, etc.) are
+ *   preserved.
  */
 export async function updatePnpmWorkspaceYamlOverrides(
   repoRoot: string,

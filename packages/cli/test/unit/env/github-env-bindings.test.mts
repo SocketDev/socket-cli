@@ -2,11 +2,12 @@
  * Unit tests for GITHUB_* env-binding modules.
  *
  * Each module simply re-exports the value from @socketsecurity/lib/env/github
- * at module-load time. These tests verify the wrappers exist and propagate
- * the value through.
+ * at module-load time. These tests verify the wrappers exist and propagate the
+ * value through.
  *
  * Related Files:
- * - src/env/github-*.mts
+ *
+ * - Src/env/github-*.mts
  */
 
 import { describe, expect, it } from 'vitest'

@@ -1,12 +1,11 @@
 /**
  * Unit tests for shared checksum utilities.
  *
- * Covers parseChecksums (dev fallback / parse / malformed) and
- * requireChecksum (dev fallback / hit / miss). The tool-specific modules
- * (python-, opengrep-, sfw-, …) all delegate to these.
+ * Covers parseChecksums (dev fallback / parse / malformed) and requireChecksum
+ * (dev fallback / hit / miss). The tool-specific modules (python-, opengrep-,
+ * sfw-, …) all delegate to these.
  *
- * Related Files:
- * - src/env/checksum-utils.mts
+ * Related Files: - src/env/checksum-utils.mts.
  */
 
 import { describe, expect, it } from 'vitest'

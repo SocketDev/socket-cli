@@ -1,10 +1,9 @@
 /**
- * Generate socketbin package directories from template.
- * Creates package directories for each platform/arch combination
- * that will be used for binary distribution via npm.
+ * Generate socketbin package directories from template. Creates package
+ * directories for each platform/arch combination that will be used for binary
+ * distribution via npm.
  *
- * Usage:
- *   node scripts/generate-socketbin-packages.mts
+ * Usage: node scripts/generate-socketbin-packages.mts.
  */
 
 import { existsSync, promises as fs } from 'node:fs'

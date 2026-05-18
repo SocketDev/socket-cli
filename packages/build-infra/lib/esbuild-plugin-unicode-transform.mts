@@ -1,15 +1,14 @@
 /**
- * @fileoverview Shared esbuild plugin for Unicode property escape transformations.
- *
- * This plugin applies Unicode property escape transformations to esbuild output
- * for --with-intl=none compatibility. Used by both CLI and bootstrap builds.
+ * @file Shared esbuild plugin for Unicode property escape transformations. This
+ *   plugin applies Unicode property escape transformations to esbuild output
+ *   for --with-intl=none compatibility. Used by both CLI and bootstrap builds.
  *
  * @example
- * import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
+ *   import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
  *
- * export default {
- *   plugins: [unicodeTransformPlugin()],
- * }
+ *   export default {
+ *     plugins: [unicodeTransformPlugin()],
+ *   }
  */
 
 import type { BuildResult, PluginBuild } from 'esbuild'
@@ -19,7 +18,7 @@ import { transformUnicodePropertyEscapes } from './unicode-property-escape-trans
 /**
  * Create esbuild plugin for Unicode property escape transformations.
  *
- * @returns {import('esbuild').Plugin} esbuild plugin
+ * @returns {import('esbuild').Plugin} Esbuild plugin
  */
 export function unicodeTransformPlugin() {
   return {

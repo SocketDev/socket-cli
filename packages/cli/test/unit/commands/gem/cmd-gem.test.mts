@@ -2,15 +2,12 @@
  * Unit tests for gem wrapper command.
  *
  * Tests the command entry point that wraps gem with Socket Firewall security.
- * The wrapper intercepts gem commands and forwards them to Socket Firewall (sfw)
- * for real-time security scanning.
+ * The wrapper intercepts gem commands and forwards them to Socket Firewall
+ * (sfw) for real-time security scanning.
  *
- * Test Coverage:
- * - Command metadata (description, visibility)
- * - Help text display
- * - Flag filtering (Socket CLI vs gem flags)
- * - Exit code handling with process.exit()
- * - Signal propagation with process.kill()
+ * Test Coverage: - Command metadata (description, visibility) - Help text
+ * display - Flag filtering (Socket CLI vs gem flags) - Exit code handling with
+ * process.exit() - Signal propagation with process.kill()
  */
 
 import EventEmitter from 'node:events'

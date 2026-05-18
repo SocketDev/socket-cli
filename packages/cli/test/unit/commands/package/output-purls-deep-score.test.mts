@@ -2,14 +2,14 @@
 /**
  * Unit tests for output-purls-deep-score markdown generation.
  *
- * Purpose:
- * Tests markdown report generation for deep package security scores across multiple
- * ecosystems. Deep scores include package + transitive dependencies. Uses snapshot
- * testing to ensure consistent report formatting across npm, Go, Ruby, NuGet, Maven,
- * and Python ecosystems.
+ * Purpose: Tests markdown report generation for deep package security scores
+ * across multiple ecosystems. Deep scores include package + transitive
+ * dependencies. Uses snapshot testing to ensure consistent report formatting
+ * across npm, Go, Ruby, NuGet, Maven, and Python ecosystems.
  *
  * Test Coverage:
- * - npm package deep score markdown formatting
+ *
+ * - Npm package deep score markdown formatting
  * - Go package deep score markdown formatting
  * - Ruby package deep score markdown formatting
  * - NuGet package deep score markdown formatting
@@ -20,13 +20,14 @@
  * - Alert severity grouping and formatting
  * - Transitive package results section
  *
- * Testing Approach:
- * Uses fixture JSON files from real Socket API responses and snapshot testing to
- * validate comprehensive markdown report structure across all supported ecosystems.
+ * Testing Approach: Uses fixture JSON files from real Socket API responses and
+ * snapshot testing to validate comprehensive markdown report structure across
+ * all supported ecosystems.
  *
  * Related Files:
- * - src/commands/package/output-purls-deep-score.mts (implementation)
- * - src/commands/package/fixtures/*.json (test fixtures)
+ *
+ * - Src/commands/package/output-purls-deep-score.mts (implementation)
+ * - Src/commands/package/fixtures/*.json (test fixtures)
  */
 
 import { describe, expect, it } from 'vitest'

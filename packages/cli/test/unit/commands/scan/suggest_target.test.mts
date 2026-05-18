@@ -1,16 +1,17 @@
 /**
  * Unit tests for target suggestion utility.
  *
- * Purpose:
- * Tests the target directory suggestion prompt.
+ * Purpose: Tests the target directory suggestion prompt.
  *
  * Test Coverage:
- * - suggestTarget function
+ *
+ * - SuggestTarget function
  * - User accepts current directory
  * - User rejects current directory
  *
  * Related Files:
- * - src/commands/scan/suggest_target.mts (implementation)
+ *
+ * - Src/commands/scan/suggest_target.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

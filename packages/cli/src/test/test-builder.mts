@@ -1,4 +1,6 @@
-/** @fileoverview Test builder utilities to DRY out repetitive test patterns */
+/**
+ * @file Test builder utilities to DRY out repetitive test patterns
+ */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -11,7 +13,7 @@ declare global {
 }
 
 /**
- * Common test setup for CLI commands
+ * Common test setup for CLI commands.
  */
 export interface TestSetupOptions {
   commandPath: string
@@ -88,7 +90,7 @@ export function setupCommandTest(options: TestSetupOptions): TestStubs {
 }
 
 /**
- * Test builder for CLI commands
+ * Test builder for CLI commands.
  */
 export interface CommandTestCase {
   name: string
@@ -188,11 +190,11 @@ export function buildCommandTests(
 }
 
 /**
- * Common test patterns
+ * Common test patterns.
  */
 export const commonTests = {
   /**
-   * Test help output
+   * Test help output.
    */
   help: (commandName: string): CommandTestCase => ({
     name: 'should show help',
@@ -202,7 +204,7 @@ export const commonTests = {
   }),
 
   /**
-   * Test JSON output
+   * Test JSON output.
    */
   jsonOutput: (): CommandTestCase => ({
     name: 'should output JSON',
@@ -218,7 +220,7 @@ export const commonTests = {
   }),
 
   /**
-   * Test dry-run
+   * Test dry-run.
    */
   dryRun: (): CommandTestCase => ({
     name: 'should handle dry-run',
@@ -229,7 +231,7 @@ export const commonTests = {
   }),
 
   /**
-   * Test missing auth
+   * Test missing auth.
    */
   missingAuth: (): CommandTestCase => ({
     name: 'should fail without auth',
@@ -244,7 +246,7 @@ export const commonTests = {
   }),
 
   /**
-   * Test missing required argument
+   * Test missing required argument.
    */
   missingArg: (argName: string): CommandTestCase => ({
     name: `should fail without ${argName}`,
@@ -255,7 +257,7 @@ export const commonTests = {
 }
 
 /**
- * Mock API responses
+ * Mock API responses.
  */
 export function mockApiResponse<T>(
   sdk: Record<string, unknown>,

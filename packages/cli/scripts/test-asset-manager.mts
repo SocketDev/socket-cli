@@ -1,14 +1,13 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
- * @fileoverview Test script for AssetManager in isolation.
- * Validates core functionality before Phase 2 migration.
+ * @file Test script for AssetManager in isolation. Validates core functionality
+ *   before Phase 2 migration. Tests:
  *
- * Tests:
- * - AssetManager class instantiation
- * - Platform/arch mapping
- * - Cache validation
- * - Backward-compatible wrappers
+ *   - AssetManager class instantiation
+ *   - Platform/arch mapping
+ *   - Cache validation
+ *   - Backward-compatible wrappers
  */
 
 import { existsSync } from 'node:fs'

@@ -1,28 +1,25 @@
 /**
  * Update manager for Socket CLI (npm/pnpm/yarn installations only).
- * Orchestrates update checking, caching, and user notifications for package manager installs.
+ * Orchestrates update checking, caching, and user notifications for package
+ * manager installs.
  *
- * Note: SEA binaries use node-smol's built-in update checker (via --update-config).
- * This manager only handles npm registry update checks for non-SEA installations.
+ * Note: SEA binaries use node-smol's built-in update checker (via
+ * --update-config). This manager only handles npm registry update checks for
+ * non-SEA installations.
  *
- * Key Functions:
- * - checkForUpdates: Complete update check flow with caching (npm only)
- * - scheduleUpdateCheck: Non-blocking update check with notifications (npm only)
+ * Key Functions: - checkForUpdates: Complete update check flow with caching
+ * (npm only) - scheduleUpdateCheck: Non-blocking update check with
+ * notifications (npm only)
  *
- * Features:
- * - TTL-based caching to avoid excessive registry requests
- * - Error-resistant implementation
- * - Rate limiting and network timeout handling
+ * Features: - TTL-based caching to avoid excessive registry requests -
+ * Error-resistant implementation - Rate limiting and network timeout handling.
  *
- * Architecture:
- * - Uses checker for npm registry lookups
- * - Uses store for persistent caching
- * - Uses notifier for user messaging
- * - Skips entirely for SEA binaries (node-smol handles it)
+ * Architecture: - Uses checker for npm registry lookups - Uses store for
+ * persistent caching - Uses notifier for user messaging - Skips entirely for
+ * SEA binaries (node-smol handles it)
  *
- * Usage:
- * - CLI startup update checks (npm installs only)
- * - Background update monitoring (npm installs only)
+ * Usage: - CLI startup update checks (npm installs only) - Background update
+ * monitoring (npm installs only)
  */
 
 import { dlxManifest } from '@socketsecurity/lib/dlx/manifest'
@@ -59,8 +56,8 @@ export interface UpdateManagerOptions {
 }
 
 /**
- * Perform complete update check flow with caching and notifications.
- * This is the main function that orchestrates the entire update process.
+ * Perform complete update check flow with caching and notifications. This is
+ * the main function that orchestrates the entire update process.
  */
 export async function checkForUpdates(
   options: UpdateManagerOptions,
@@ -277,11 +274,11 @@ export async function checkForUpdates(
 }
 
 /**
- * Schedule a non-blocking update check.
- * This is the recommended way to check for updates during CLI startup.
+ * Schedule a non-blocking update check. This is the recommended way to check
+ * for updates during CLI startup.
  *
- * Note: Only runs for npm/pnpm/yarn installations. SEA binaries use
- * node-smol's built-in update checker (embedded via --update-config).
+ * Note: Only runs for npm/pnpm/yarn installations. SEA binaries use node-smol's
+ * built-in update checker (embedded via --update-config).
  */
 export async function scheduleUpdateCheck(
   options: UpdateManagerOptions,

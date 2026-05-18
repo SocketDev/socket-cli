@@ -1,24 +1,19 @@
 /**
  * Unit tests for filesystem utilities.
  *
- * Purpose:
- * Tests safe filesystem utilities. Validates safeDelete, directory operations, and path handling.
+ * Purpose: Tests safe filesystem utilities. Validates safeDelete, directory
+ * operations, and path handling.
  *
- * Test Coverage:
- * - Safe delete operations (safeDelete/safeDeleteSync)
- * - Directory creation
- * - File existence checks
- * - Path sanitization
- * - Cross-platform path handling
+ * Test Coverage: - Safe delete operations (safeDelete/safeDeleteSync) -
+ * Directory creation - File existence checks - Path sanitization -
+ * Cross-platform path handling.
  *
- * Special Notes:
- * Uses safeDelete from @socketsecurity/lib/fs - NEVER fs.rm/rmSync
+ * Special Notes: Uses safeDelete from @socketsecurity/lib/fs - NEVER
+ * fs.rm/rmSync.
  *
- * Testing Approach:
- * Uses temporary directories for safe filesystem testing.
+ * Testing Approach: Uses temporary directories for safe filesystem testing.
  *
- * Related Files:
- * - util/fs/fs.mts (implementation)
+ * Related Files: - util/fs/fs.mts (implementation)
  */
 
 import { promises as fs } from 'node:fs'

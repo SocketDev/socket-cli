@@ -1,16 +1,17 @@
 /**
  * Unit tests for CLI completion utilities.
  *
- * Purpose:
- * Tests the bash completion script generation and configuration.
+ * Purpose: Tests the bash completion script generation and configuration.
  *
  * Test Coverage:
+ *
  * - COMPLETION_CMD_PREFIX constant
- * - getCompletionSourcingCommand function
- * - getBashrcDetails function
+ * - GetCompletionSourcingCommand function
+ * - GetBashrcDetails function
  *
  * Related Files:
- * - util/cli/completion.mts (implementation)
+ *
+ * - Util/cli/completion.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,8 +1,8 @@
 /**
- * @fileoverview Transform Unicode property escapes for --with-intl=none compatibility.
- *
- * This module provides transformations to convert Unicode property escapes
- * (\p{Property}) into basic character class equivalents that work without ICU support.
+ * @file Transform Unicode property escapes for --with-intl=none compatibility.
+ *   This module provides transformations to convert Unicode property escapes
+ *   (\p{Property}) into basic character class equivalents that work without ICU
+ *   support.
  */
 
 import { parse } from '@babel/parser'
@@ -18,11 +18,11 @@ const traverse =
     : (traverseImport as unknown as { default: typeof traverseImport }).default
 
 /**
- * Map of Unicode property escapes to explicit character ranges.
- * These are used when Node.js is built without ICU support (--with-intl=none).
- * Based on ECMAScript Unicode property escapes specification:
+ * Map of Unicode property escapes to explicit character ranges. These are used
+ * when Node.js is built without ICU support (--with-intl=none). Based on
+ * ECMAScript Unicode property escapes specification:
  * https://tc39.es/ecma262/#table-binary-unicode-properties
- * https://tc39.es/ecma262/#table-binary-unicode-properties-of-strings
+ * https://tc39.es/ecma262/#table-binary-unicode-properties-of-strings.
  */
 export const unicodePropertyMap = {
   __proto__: null,
@@ -140,8 +140,8 @@ export const unicodePropertyMap = {
 }
 
 /**
- * Escape a string for insertion into JavaScript string literal context.
- * When we get a pattern from Babel's StringLiteral.value, backslashes are interpreted.
+ * Escape a string for insertion into JavaScript string literal context. When we
+ * get a pattern from Babel's StringLiteral.value, backslashes are interpreted.
  * But when writing back into source code, we need to re-escape them.
  */
 export function escapeForStringLiteral(str: string) {
@@ -191,11 +191,14 @@ export function transformRegexPattern(pattern: string) {
 }
 
 /**
- * Transform Unicode property escapes in regex patterns for ICU-free environments.
+ * Transform Unicode property escapes in regex patterns for ICU-free
+ * environments.
  *
- * Uses Babel AST parsing to properly identify regex literals and transform them.
+ * Uses Babel AST parsing to properly identify regex literals and transform
+ * them.
  *
- * @param {string} content - Source code to transform
+ * @param {string} content - Source code to transform.
+ *
  * @returns {string} Transformed source code
  */
 export function transformUnicodePropertyEscapes(content: string) {

@@ -3,16 +3,12 @@
  *
  * Tests listing all registered repositories for an organization.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Repository listing
- * - Output format support (JSON, markdown)
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Repository listing - Output format support (JSON, markdown)
  *
- * Related Files:
- * - src/commands/repository/cmd-repository-list.mts - Command definition
- * - src/commands/repository/handle-repository-list.mts - Listing logic
- * - src/commands/repository/output-repository-list.mts - Formatting
+ * Related Files: - src/commands/repository/cmd-repository-list.mts - Command
+ * definition - src/commands/repository/handle-repository-list.mts - Listing
+ * logic - src/commands/repository/output-repository-list.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'

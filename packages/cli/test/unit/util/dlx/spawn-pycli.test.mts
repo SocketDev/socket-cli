@@ -1,9 +1,9 @@
 /**
- * max-file-lines: legitimate — comprehensive single-module test suite.
- * Covers 13 entry points of src/util/dlx/spawn-pycli.mts (helpers +
- * ensure* state machines + spawn* dispatchers). Splitting would
- * duplicate the ~130 lines of vi.mock setup that every describe
- * relies on; the mock contract IS the test-file's cohesion.
+ * Max-file-lines: legitimate — comprehensive single-module test suite. Covers
+ * 13 entry points of src/util/dlx/spawn-pycli.mts (helpers + ensure* state
+ * machines + spawn* dispatchers). Splitting would duplicate the ~130 lines of
+ * vi.mock setup that every describe relies on; the mock contract IS the
+ * test-file's cohesion.
  *
  * Unit tests for util/dlx/spawn-pycli.
  *
@@ -13,7 +13,8 @@
  * spawnSocketPyCli, spawnSocketPyCliDlx, and spawnSocketPyCliVfs.
  *
  * Related Files:
- * - src/util/dlx/spawn-pycli.mts
+ *
+ * - Src/util/dlx/spawn-pycli.mts
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -44,9 +45,7 @@ const mockGetPyCliVersion = vi.hoisted(() => vi.fn(() => '2.3.4'))
 const mockGetPyCliChecksums = vi.hoisted(() => vi.fn(() => ({})))
 const mockGetPythonVersion = vi.hoisted(() => vi.fn(() => '3.12.0'))
 const mockGetPythonBuildTag = vi.hoisted(() => vi.fn(() => '20240101'))
-const mockRequirePythonChecksum = vi.hoisted(() =>
-  vi.fn(() => 'sha256-abc'),
-)
+const mockRequirePythonChecksum = vi.hoisted(() => vi.fn(() => 'sha256-abc'))
 
 let mockSocketCliPythonPath: string | undefined = undefined
 vi.mock('../../../../src/env/socket-cli-python-path.mts', () => ({
@@ -153,9 +152,7 @@ import {
 
 const realSetTimeout = globalThis.setTimeout
 function stubFastTimers() {
-  ;(globalThis as { setTimeout: unknown }).setTimeout = ((
-    cb: () => void,
-  ) => {
+  ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
     cb()
     return 0 as never
   }) as never
@@ -395,16 +392,16 @@ describe('downloadPyPiWheel', () => {
       status: 404,
       json: () => ({}),
     })
-    await expect(
-      downloadPyPiWheel('pkg', '1.0.0', 'sha'),
-    ).rejects.toThrow(/could not fetch PyPI metadata/)
+    await expect(downloadPyPiWheel('pkg', '1.0.0', 'sha')).rejects.toThrow(
+      /could not fetch PyPI metadata/,
+    )
   })
 
   it('throws InputError when network request fails', async () => {
     mockSocketHttpRequest.mockRejectedValue(new Error('ECONNRESET'))
-    await expect(
-      downloadPyPiWheel('pkg', '1.0.0', 'sha'),
-    ).rejects.toThrow(/could not fetch PyPI metadata/)
+    await expect(downloadPyPiWheel('pkg', '1.0.0', 'sha')).rejects.toThrow(
+      /could not fetch PyPI metadata/,
+    )
   })
 
   it('throws when no py3-none-any wheel is available', async () => {
@@ -413,9 +410,9 @@ describe('downloadPyPiWheel', () => {
       status: 200,
       json: () => ({ urls: [{ filename: 'pkg.tar.gz', url: 'http://x' }] }),
     })
-    await expect(
-      downloadPyPiWheel('pkg', '1.0.0', 'sha'),
-    ).rejects.toThrow(/has no py3-none-any wheel/)
+    await expect(downloadPyPiWheel('pkg', '1.0.0', 'sha')).rejects.toThrow(
+      /has no py3-none-any wheel/,
+    )
   })
 
   it('downloads, verifies, and copies wheel to cache', async () => {
@@ -465,16 +462,12 @@ describe('downloadPython', () => {
 
   it('throws when tar is not on PATH', async () => {
     mockWhichReal.mockResolvedValue(undefined)
-    await expect(downloadPython('/dest')).rejects.toThrow(
-      /tar is required/,
-    )
+    await expect(downloadPython('/dest')).rejects.toThrow(/tar is required/)
   })
 
   it('throws when whichReal returns array (multiple match)', async () => {
     mockWhichReal.mockResolvedValue(['/a', '/b'] as never)
-    await expect(downloadPython('/dest')).rejects.toThrow(
-      /tar is required/,
-    )
+    await expect(downloadPython('/dest')).rejects.toThrow(/tar is required/)
   })
 
   it('downloads and extracts python', async () => {
@@ -590,9 +583,7 @@ describe('ensurePythonDlx', () => {
 
   it('throws when extracted python binary missing', async () => {
     mockExistsSync.mockReturnValue(false)
-    await expect(ensurePythonDlx()).rejects.toThrow(
-      /does not exist/,
-    )
+    await expect(ensurePythonDlx()).rejects.toThrow(/does not exist/)
   })
 
   it('throws when MAX_RETRIES exceeded', async () => {

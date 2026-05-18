@@ -1,21 +1,21 @@
 /**
- * @fileoverview CLI Process Pool for optimized test execution.
+ * @file CLI Process Pool for optimized test execution. Maintains a pool of
+ *   reusable CLI processes to reduce subprocess spawn overhead. Converts 51
+ *   sequential spawns (~48s) to shared process reuse (~16s). Benefits:
  *
- * Maintains a pool of reusable CLI processes to reduce subprocess spawn overhead.
- * Converts 51 sequential spawns (~48s) to shared process reuse (~16s).
+ *   - 3x faster test execution
+ *   - Reduced system resource usage
+ *   - Better CI performance Usage:
  *
- * Benefits:
- * - 3x faster test execution
- * - Reduced system resource usage
- * - Better CI performance
- *
- * Usage:
- * ```typescript
- * import { getProcessPool } from '../helpers/cli-process-pool.mts'
- *
- * const pool = getProcessPool()
- * const result = await pool.execute(binCliPath, ['scan', 'reach', '--help'])
- * ```
+ *   ```typescript
+ *   import { getProcessPool } from '../helpers/cli-process-pool.mts'
+ *   const pool = getProcessPool()
+ *   const result = await pool.execute(binCliPath, [
+ *     'scan',
+ *     'reach',
+ *     '--help',
+ *   ])
+ *   ```
  */
 
 import { createEnvProxy } from '@socketsecurity/lib/env'
@@ -32,10 +32,12 @@ interface PooledProcess {
 
 interface ExecuteResult {
   code: number
-  error?: {
-    message: string
-    stack: string
-  } | undefined
+  error?:
+    | {
+        message: string
+        stack: string
+      }
+    | undefined
   status: boolean
   stdout: string
   stderr: string
@@ -52,8 +54,8 @@ class CliProcessPool {
   }
 
   /**
-   * Execute CLI command using pooled process.
-   * Falls back to direct spawn if pooling fails.
+   * Execute CLI command using pooled process. Falls back to direct spawn if
+   * pooling fails.
    */
   async execute(
     entryPath: string,
@@ -164,8 +166,7 @@ class CliProcessPool {
   }
 
   /**
-   * Cleanup all pooled processes.
-   * Call this in afterAll() hooks.
+   * Cleanup all pooled processes. Call this in afterAll() hooks.
    */
   async cleanup(): Promise<void> {
     // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
@@ -211,8 +212,8 @@ export async function cleanupProcessPool(): Promise<void> {
 }
 
 /**
- * Get or create the global process pool.
- * Use this in tests instead of direct spawn.
+ * Get or create the global process pool. Use this in tests instead of direct
+ * spawn.
  */
 export function getProcessPool(): CliProcessPool {
   if (!globalPool) {

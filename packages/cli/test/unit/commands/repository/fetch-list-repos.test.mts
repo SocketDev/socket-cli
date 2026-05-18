@@ -1,11 +1,12 @@
 /**
  * Unit tests for fetchListRepos.
  *
- * Purpose:
- * Tests fetching a single page of repositories for an organization. Validates
- * pagination configuration, sorting options, and parameter transformation.
+ * Purpose: Tests fetching a single page of repositories for an organization.
+ * Validates pagination configuration, sorting options, and parameter
+ * transformation.
  *
  * Test Coverage:
+ *
  * - Successful paginated repository listing
  * - SDK setup failure handling
  * - API call errors (400 invalid page)
@@ -15,15 +16,15 @@
  * - Empty results on specific page
  * - Null prototype usage for security
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Validates pagination
- * parameters and various sorting configurations.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Validates pagination parameters and various sorting configurations.
  *
  * Related Files:
- * - src/commands/repository/fetch-list-repos.mts (implementation)
- * - src/commands/repository/handle-list-repos.mts (handler)
- * - src/util/socket/api.mts (API utilities)
- * - src/util/socket/sdk.mts (SDK setup)
+ *
+ * - Src/commands/repository/fetch-list-repos.mts (implementation)
+ * - Src/commands/repository/handle-list-repos.mts (handler)
+ * - Src/util/socket/api.mts (API utilities)
+ * - Src/util/socket/sdk.mts (SDK setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'

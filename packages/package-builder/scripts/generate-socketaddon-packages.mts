@@ -1,10 +1,9 @@
 /**
- * Generate socketaddon package directories from template.
- * Creates package directories for each platform/arch combination
- * that will be used for native addon distribution via npm.
+ * Generate socketaddon package directories from template. Creates package
+ * directories for each platform/arch combination that will be used for native
+ * addon distribution via npm.
  *
- * Usage:
- *   node scripts/generate-socketaddon-packages.mts
+ * Usage: node scripts/generate-socketaddon-packages.mts.
  */
 
 import { existsSync, promises as fs } from 'node:fs'

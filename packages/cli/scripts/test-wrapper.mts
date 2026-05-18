@@ -1,12 +1,13 @@
 /**
- * @fileoverview Test wrapper for the project.
- * Handles test execution with Vitest, including:
- * - Glob pattern expansion for test file selection
- * - Memory optimization for RegExp-heavy tests
- * - Cross-platform compatibility (Windows/Unix)
- * - Build validation before running tests
- * - Environment variable loading from .env.test (via loadEnvFile)
- * - Inlined variable injection from bundle-tools.json
+ * @file Test wrapper for the project. Handles test execution with Vitest,
+ *   including:
+ *
+ *   - Glob pattern expansion for test file selection
+ *   - Memory optimization for RegExp-heavy tests
+ *   - Cross-platform compatibility (Windows/Unix)
+ *   - Build validation before running tests
+ *   - Environment variable loading from .env.test (via loadEnvFile)
+ *   - Inlined variable injection from bundle-tools.json
  */
 
 import { existsSync } from 'node:fs'

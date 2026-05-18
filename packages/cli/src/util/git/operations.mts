@@ -1,29 +1,25 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
- * Git utilities for Socket CLI.
- * Provides git operations for repository management, branch handling, and commits.
+ * Git utilities for Socket CLI. Provides git operations for repository
+ * management, branch handling, and commits.
  *
- * Branch Operations:
- * - gitCheckoutBranch: Switch to branch
- * - gitCreateBranch: Create new local branch
- * - gitDeleteBranch: Delete local branch
- * - gitDeleteRemoteBranch: Delete remote branch
- * - gitPushBranch: Push branch to remote with --force
+ * Branch Operations: - gitCheckoutBranch: Switch to branch - gitCreateBranch:
+ * Create new local branch - gitDeleteBranch: Delete local branch -
+ * gitDeleteRemoteBranch: Delete remote branch - gitPushBranch: Push branch to
+ * remote with --force.
  *
- * Commit Operations:
- * - gitCleanFdx: Remove untracked files
- * - gitCommit: Stage files and create commit
- * - gitEnsureIdentity: Configure git user.name/email
- * - gitResetHard: Reset to branch/commit
+ * Commit Operations: - gitCleanFdx: Remove untracked files - gitCommit: Stage
+ * files and create commit - gitEnsureIdentity: Configure git user.name/email -
+ * gitResetHard: Reset to branch/commit.
  *
- * Remote URL Parsing:
- * - parseGitRemoteUrl: Extract owner/repo from SSH or HTTPS URLs
+ * Remote URL Parsing: - parseGitRemoteUrl: Extract owner/repo from SSH or HTTPS
+ * URLs.
  *
- * Repository Information:
- * - detectDefaultBranch: Find default branch (main/master/develop/etc — inclusive-language: external-api)
- * - getBaseBranch: Determine base branch (respects GitHub Actions env)
- * - getRepoInfo: Extract owner/repo from git remote URL
- * - gitBranch: Get current branch or commit hash
+ * Repository Information: - detectDefaultBranch: Find default branch
+ * (main/master/develop/etc — inclusive-language: external-api) - getBaseBranch:
+ * Determine base branch (respects GitHub Actions env) - getRepoInfo: Extract
+ * owner/repo from git remote URL - gitBranch: Get current branch or commit
+ * hash.
  */
 
 import { whichReal } from '@socketsecurity/lib/bin'
@@ -69,8 +65,8 @@ const COMMON_DEFAULT_BRANCH_NAMES = [
 const parsedGitRemoteUrlCache = new Map<string, RepoInfo | undefined>()
 
 /**
- * Try to detect the default branch name by checking common patterns.
- * Returns the first branch that exists in the repository.
+ * Try to detect the default branch name by checking common patterns. Returns
+ * the first branch that exists in the repository.
  */
 export async function detectDefaultBranch(
   cwd = process.cwd(),

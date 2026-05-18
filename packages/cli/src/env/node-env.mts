@@ -1,4 +1,6 @@
-/** @fileoverview NODE_ENV environment variable. */
+/**
+ * @file NODE_ENV environment variable.
+ */
 
 import { env } from 'node:process'
 

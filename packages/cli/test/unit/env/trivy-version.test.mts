@@ -1,8 +1,7 @@
 /**
  * Unit tests for Trivy version getter.
  *
- * Related Files:
- * - src/env/trivy-version.mts
+ * Related Files: - src/env/trivy-version.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

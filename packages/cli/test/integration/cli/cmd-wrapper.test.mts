@@ -3,20 +3,16 @@
  *
  * Tests enabling/disabling Socket npm/npx wrappers globally.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Wrapper activation (on)
- * - Wrapper deactivation (off)
- * - Status checking
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Wrapper activation (on) - Wrapper deactivation (off) - Status
+ * checking.
  *
- * Wrapper Feature:
- * When enabled, aliases `npm` and `npx` commands to `socket npm` and
- * `socket npx` in the shell, applying security scanning to all package operations.
+ * Wrapper Feature: When enabled, aliases `npm` and `npx` commands to `socket
+ * npm` and `socket npx` in the shell, applying security scanning to all package
+ * operations.
  *
- * Related Files:
- * - src/commands/wrapper/cmd-wrapper.mts - Command definition
- * - src/commands/wrapper/handle-wrapper.mts - Wrapper management logic
+ * Related Files: - src/commands/wrapper/cmd-wrapper.mts - Command definition -
+ * src/commands/wrapper/handle-wrapper.mts - Wrapper management logic.
  */
 
 import { describe, expect } from 'vitest'

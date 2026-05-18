@@ -1,15 +1,15 @@
 /**
  * Integration tests for `socket patch get` command.
  *
- * Tests retrieving and applying security patches via socket-patch v2.0.0 binary.
+ * Tests retrieving and applying security patches via socket-patch v2.0.0
+ * binary.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Getting patches by identifier (UUID, CVE, GHSA, PURL, package name)
- * - Error handling for missing identifiers
+ * Test Coverage: - Help text display and usage examples - Getting patches by
+ * identifier (UUID, CVE, GHSA, PURL, package name) - Error handling for missing
+ * identifiers.
  *
- * Related Files:
- * - src/commands/patch/cmd-patch.mts - Root command that forwards to socket-patch
+ * Related Files: - src/commands/patch/cmd-patch.mts - Root command that
+ * forwards to socket-patch.
  */
 
 import path from 'node:path'

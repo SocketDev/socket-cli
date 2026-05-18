@@ -1,18 +1,13 @@
 /**
  * Unit tests for Update checker utilities.
  *
- * Purpose:
- * Tests the update checking functionality for Socket CLI.
+ * Purpose: Tests the update checking functionality for Socket CLI.
  *
- * Test Coverage:
- * - isUpdateAvailable function
- * - checkForUpdates function
- * - NetworkUtils.fetch function
- * - NetworkUtils.getLatestVersion function
- * - Error handling and retries
+ * Test Coverage: - isUpdateAvailable function - checkForUpdates function -
+ * NetworkUtils.fetch function - NetworkUtils.getLatestVersion function - Error
+ * handling and retries.
  *
- * Related Files:
- * - util/update/checker.mts (implementation)
+ * Related Files: - util/update/checker.mts (implementation)
  */
 
 import { EventEmitter } from 'node:events'

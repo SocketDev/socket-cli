@@ -1,16 +1,14 @@
 /**
  * Unit tests for deps-includes-by-agent.
  *
- * Purpose:
- * Tests the functions that check if a package name exists in ls/query output.
+ * Purpose: Tests the functions that check if a package name exists in ls/query
+ * output.
  *
- * Test Coverage:
- * - matchLsCmdViewHumanStdout
- * - matchQueryCmdStdout
- * - lsStdoutIncludes
+ * Test Coverage: - matchLsCmdViewHumanStdout - matchQueryCmdStdout -
+ * lsStdoutIncludes.
  *
- * Related Files:
- * - commands/optimize/deps-includes-by-agent.mts (implementation)
+ * Related Files: - commands/optimize/deps-includes-by-agent.mts
+ * (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

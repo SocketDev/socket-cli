@@ -1,4 +1,6 @@
-/** @fileoverview Error display utilities with polished formatting. */
+/**
+ * @file Error display utilities with polished formatting.
+ */
 
 import colors from 'yoctocolors-cjs'
 
@@ -27,10 +29,10 @@ export type ErrorDisplayOptions = {
 }
 
 /**
- * Append the `.cause` chain to a decorated base message. Typed errors
- * build their message with suffixes (e.g. ` (HTTP 500)`) before this
- * is called, so we can't just `messageWithCauses(error)` — we decorate
- * first, then delegate cause walking to socket-lib.
+ * Append the `.cause` chain to a decorated base message. Typed errors build
+ * their message with suffixes (e.g. ` (HTTP 500)`) before this is called, so we
+ * can't just `messageWithCauses(error)` — we decorate first, then delegate
+ * cause walking to socket-lib.
  */
 export function appendCauseChain(baseMessage: string, cause: unknown): string {
   if (!cause) {
@@ -41,8 +43,8 @@ export function appendCauseChain(baseMessage: string, cause: unknown): string {
 }
 
 /**
- * Format error as compact single-line summary.
- * Perfect for inline error display without overwhelming output.
+ * Format error as compact single-line summary. Perfect for inline error display
+ * without overwhelming output.
  */
 export function formatErrorCompact(error: unknown): string {
   if (isError(error)) {
@@ -55,8 +57,8 @@ export function formatErrorCompact(error: unknown): string {
 }
 
 /**
- * Format an error for display with polish and clarity.
- * Uses LOG_SYMBOLS and colors for visual hierarchy.
+ * Format an error for display with polish and clarity. Uses LOG_SYMBOLS and
+ * colors for visual hierarchy.
  */
 export function formatErrorForDisplay(
   error: unknown,
@@ -173,8 +175,8 @@ export function formatErrorForDisplay(
 }
 
 /**
- * Format error for JSON output.
- * Provides structured error data for machine consumption.
+ * Format error for JSON output. Provides structured error data for machine
+ * consumption.
  */
 export function formatErrorForJson(
   error: unknown,
@@ -196,8 +198,8 @@ export function formatErrorForJson(
 }
 
 /**
- * Format error for terminal display with visual hierarchy.
- * Returns formatted string ready to log to stderr.
+ * Format error for terminal display with visual hierarchy. Returns formatted
+ * string ready to log to stderr.
  */
 export function formatErrorForTerminal(
   error: unknown,
@@ -236,8 +238,8 @@ export function formatErrorForTerminal(
 }
 
 /**
- * Format external CLI error with normalized output.
- * Handles errors from cdxgen, coana, and other external tools.
+ * Format external CLI error with normalized output. Handles errors from cdxgen,
+ * coana, and other external tools.
  */
 export function formatExternalCliError(
   command: string,

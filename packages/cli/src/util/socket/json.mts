@@ -1,21 +1,16 @@
 /**
- * Socket JSON utilities for Socket CLI.
- * Manages .socket/socket.json configuration and scan metadata.
+ * Socket JSON utilities for Socket CLI. Manages .socket/socket.json
+ * configuration and scan metadata.
  *
- * Key Functions:
- * - loadDotSocketDirectory: Load .socket directory configuration
- * - saveSocketJson: Persist scan configuration to .socket/socket.json
- * - validateSocketJson: Validate socket.json structure
+ * Key Functions: - loadDotSocketDirectory: Load .socket directory configuration
+ * - saveSocketJson: Persist scan configuration to .socket/socket.json -
+ * validateSocketJson: Validate socket.json structure.
  *
- * File Structure:
- * - Contains scan metadata and configuration
- * - Stores scan IDs and repository information
- * - Tracks CLI version and scan timestamps
+ * File Structure: - Contains scan metadata and configuration - Stores scan IDs
+ * and repository information - Tracks CLI version and scan timestamps.
  *
- * Directory Management:
- * - Creates .socket directory as needed
- * - Handles nested directory structures
- * - Supports both read and write operations
+ * Directory Management: - Creates .socket directory as needed - Handles nested
+ * directory structures - Supports both read and write operations.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -39,50 +34,66 @@ export interface SocketJson {
   '|_____|___|___|_,_|___|_|.dev': string
   version: number
 
-  defaults?: {
-    manifest?: {
-      conda?: {
-        disabled?: boolean | undefined
-        infile?: string | undefined
-        outfile?: string | undefined
-        stdin?: boolean | undefined
-        stdout?: boolean | undefined
-        target?: string | undefined
-        verbose?: boolean | undefined
-      } | undefined
-      gradle?: {
-        disabled?: boolean | undefined
-        bin?: string | undefined
-        gradleOpts?: string | undefined
-        verbose?: boolean | undefined
-      } | undefined
-      sbt?: {
-        disabled?: boolean | undefined
-        infile?: string | undefined
-        stdin?: boolean | undefined
-        bin?: string | undefined
-        outfile?: string | undefined
-        sbtOpts?: string | undefined
-        stdout?: boolean | undefined
-        verbose?: boolean | undefined
-      } | undefined
-    } | undefined
-    scan?: {
-      create?: {
-        autoManifest?: boolean | undefined
-        branch?: string | undefined
-        repo?: string | undefined
-        report?: boolean | undefined
-        workspace?: string | undefined
-      } | undefined
-      github?: {
-        all?: boolean | undefined
-        githubApiUrl?: string | undefined
-        orgGithub?: string | undefined
-        repos?: string | undefined
-      } | undefined
-    } | undefined
-  } | undefined
+  defaults?:
+    | {
+        manifest?:
+          | {
+              conda?:
+                | {
+                    disabled?: boolean | undefined
+                    infile?: string | undefined
+                    outfile?: string | undefined
+                    stdin?: boolean | undefined
+                    stdout?: boolean | undefined
+                    target?: string | undefined
+                    verbose?: boolean | undefined
+                  }
+                | undefined
+              gradle?:
+                | {
+                    disabled?: boolean | undefined
+                    bin?: string | undefined
+                    gradleOpts?: string | undefined
+                    verbose?: boolean | undefined
+                  }
+                | undefined
+              sbt?:
+                | {
+                    disabled?: boolean | undefined
+                    infile?: string | undefined
+                    stdin?: boolean | undefined
+                    bin?: string | undefined
+                    outfile?: string | undefined
+                    sbtOpts?: string | undefined
+                    stdout?: boolean | undefined
+                    verbose?: boolean | undefined
+                  }
+                | undefined
+            }
+          | undefined
+        scan?:
+          | {
+              create?:
+                | {
+                    autoManifest?: boolean | undefined
+                    branch?: string | undefined
+                    repo?: string | undefined
+                    report?: boolean | undefined
+                    workspace?: string | undefined
+                  }
+                | undefined
+              github?:
+                | {
+                    all?: boolean | undefined
+                    githubApiUrl?: string | undefined
+                    orgGithub?: string | undefined
+                    repos?: string | undefined
+                  }
+                | undefined
+            }
+          | undefined
+      }
+    | undefined
 }
 
 export async function findSocketJsonUp(

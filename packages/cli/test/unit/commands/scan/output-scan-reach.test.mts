@@ -1,18 +1,12 @@
 /**
  * Unit tests for reachability scan output formatting.
  *
- * Purpose:
- * Tests the output formatting for reachability analysis results.
+ * Purpose: Tests the output formatting for reachability analysis results.
  *
- * Test Coverage:
- * - outputScanReach function
- * - JSON output format
- * - Text output format
- * - Output path handling
- * - Exit code handling
+ * Test Coverage: - outputScanReach function - JSON output format - Text output
+ * format - Output path handling - Exit code handling.
  *
- * Related Files:
- * - src/commands/scan/output-scan-reach.mts (implementation)
+ * Related Files: - src/commands/scan/output-scan-reach.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

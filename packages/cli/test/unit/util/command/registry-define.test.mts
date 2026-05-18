@@ -1,15 +1,11 @@
 /**
  * Unit tests for command definition utilities.
  *
- * Purpose:
- * Tests the defineCommand helper for registering CLI commands.
+ * Purpose: Tests the defineCommand helper for registering CLI commands.
  *
- * Test Coverage:
- * - Command registration
- * - Definition passthrough
+ * Test Coverage: - Command registration - Definition passthrough.
  *
- * Related Files:
- * - util/command/registry-define.mts (implementation)
+ * Related Files: - util/command/registry-define.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

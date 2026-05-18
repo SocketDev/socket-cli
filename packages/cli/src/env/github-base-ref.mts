@@ -1,4 +1,6 @@
-/** @fileoverview GITHUB_BASE_REF environment variable. */
+/**
+ * @file GITHUB_BASE_REF environment variable.
+ */
 
 import { getGithubBaseRef } from '@socketsecurity/lib/env/github'
 

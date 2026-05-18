@@ -1,9 +1,9 @@
 /**
  * Socket cargo command — forwards cargo operations to Socket Firewall (sfw).
  *
- * Defined via `defineHandoffCommand`, which collapses the standard
- * parse-flags / filter-flags / spawn-sfw / forward-exit pattern into a
- * single declarative spec. See `util/cli/define-handoff.mts`.
+ * Defined via `defineHandoffCommand`, which collapses the standard parse-flags
+ * / filter-flags / spawn-sfw / forward-exit pattern into a single declarative
+ * spec. See `util/cli/define-handoff.mts`.
  */
 
 import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'

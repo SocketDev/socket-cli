@@ -1,12 +1,11 @@
 /**
  * Unit tests for the outputAuditLog dispatcher.
  *
- * The format helpers (outputAsJson / outputAsMarkdown) have their own
- * snapshot tests; this suite covers the outer outputAuditLog() entry
- * point: error path, JSON / markdown / text mode dispatch, exit code.
+ * The format helpers (outputAsJson / outputAsMarkdown) have their own snapshot
+ * tests; this suite covers the outer outputAuditLog() entry point: error path,
+ * JSON / markdown / text mode dispatch, exit code.
  *
- * Related Files:
- * - src/commands/audit-log/output-audit-log.mts
+ * Related Files: - src/commands/audit-log/output-audit-log.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

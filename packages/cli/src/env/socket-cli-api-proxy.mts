@@ -1,4 +1,6 @@
-/** @fileoverview SOCKET_CLI_API_PROXY environment variable. */
+/**
+ * @file SOCKET_CLI_API_PROXY environment variable.
+ */
 
 import { getSocketCliApiProxy } from '@socketsecurity/lib/env/socket-cli'
 

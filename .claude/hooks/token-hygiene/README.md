@@ -4,13 +4,13 @@ Claude Code `PreToolUse` hook that refuses Bash tool calls that would leak secre
 
 ## What it blocks
 
-| Rule | Example | Fix |
-|------|---------|-----|
-| Literal token in command | `echo vtwn_abc123…` | Rotate the exposed token; read tokens from `.env.local` at spawn time, never inline them |
-| `env`/`printenv`/`export -p`/`set` dumping everything | `env \| grep FOO` (unredacted) | `env \| sed 's/=.*/=<redacted>/'` or filter specific keys |
-| `.env*` read without redactor | `cat .env.local` | `sed 's/=.*/=<redacted>/' .env.local` or `grep -v '^#' .env.local \| cut -d= -f1` |
-| `curl -H "Authorization:"` with unfiltered stdout | `curl -H "Authorization: Bearer $TOKEN" api.example.com` | Redirect to file/`/dev/null`, or pipe to `jq`/`grep`/`head`/`wc`/`cut`/`awk` |
-| References sensitive env var name writing unredacted to stdout | `echo $API_KEY` | Same as above |
+| Rule                                                           | Example                                                  | Fix                                                                                      |
+| -------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Literal token in command                                       | `echo vtwn_abc123…`                                      | Rotate the exposed token; read tokens from `.env.local` at spawn time, never inline them |
+| `env`/`printenv`/`export -p`/`set` dumping everything          | `env \| grep FOO` (unredacted)                           | `env \| sed 's/=.*/=<redacted>/'` or filter specific keys                                |
+| `.env*` read without redactor                                  | `cat .env.local`                                         | `sed 's/=.*/=<redacted>/' .env.local` or `grep -v '^#' .env.local \| cut -d= -f1`        |
+| `curl -H "Authorization:"` with unfiltered stdout              | `curl -H "Authorization: Bearer $TOKEN" api.example.com` | Redirect to file/`/dev/null`, or pipe to `jq`/`grep`/`head`/`wc`/`cut`/`awk`             |
+| References sensitive env var name writing unredacted to stdout | `echo $API_KEY`                                          | Same as above                                                                            |
 
 ## What it allows
 

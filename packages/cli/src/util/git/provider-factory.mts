@@ -8,8 +8,8 @@ import type { PrProvider } from './provider.mts'
 /**
  * Creates a PR provider instance based on the git remote URL.
  *
- * Auto-detects GitHub vs GitLab based on the remote origin URL.
- * Falls back to GitHub for backward compatibility.
+ * Auto-detects GitHub vs GitLab based on the remote origin URL. Falls back to
+ * GitHub for backward compatibility.
  */
 export function createPrProvider(): PrProvider {
   const remoteUrl = getGitRemoteUrlSync()
@@ -30,8 +30,8 @@ export function createPrProvider(): PrProvider {
 /**
  * Gets the git remote origin URL synchronously.
  *
- * Uses `git config` to read the remote.origin.url setting.
- * Exported for testing purposes.
+ * Uses `git config` to read the remote.origin.url setting. Exported for testing
+ * purposes.
  */
 export function getGitRemoteUrlSync(): string {
   try {

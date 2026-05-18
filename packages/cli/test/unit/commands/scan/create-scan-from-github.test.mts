@@ -2,24 +2,20 @@
 /**
  * Unit tests for GitHub scan internal functions.
  *
- * Purpose:
- * Tests the internal functions that interact with GitHub API during scans.
- * Validates proper error handling, rate limit detection, and data extraction
- * from GitHub API responses.
+ * Purpose: Tests the internal functions that interact with GitHub API during
+ * scans. Validates proper error handling, rate limit detection, and data
+ * extraction from GitHub API responses.
  *
- * Test Coverage:
- * - getRepoDetails: fetching repository metadata
- * - getRepoBranchTree: fetching file tree
- * - getLastCommitDetails: fetching latest commit SHA
- * - Error handling for rate limits and API failures
+ * Test Coverage: - getRepoDetails: fetching repository metadata -
+ * getRepoBranchTree: fetching file tree - getLastCommitDetails: fetching latest
+ * commit SHA - Error handling for rate limits and API failures.
  *
- * Testing Approach:
- * Mocks Octokit to test the scan functions without actual GitHub API calls.
- * Tests verify proper error propagation and user-friendly error messages.
+ * Testing Approach: Mocks Octokit to test the scan functions without actual
+ * GitHub API calls. Tests verify proper error propagation and user-friendly
+ * error messages.
  *
- * Related Files:
- * - src/commands/scan/create-scan-from-github.mts (implementation)
- * - src/util/git/github.mts (GitHub utilities)
+ * Related Files: - src/commands/scan/create-scan-from-github.mts
+ * (implementation) - src/util/git/github.mts (GitHub utilities)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

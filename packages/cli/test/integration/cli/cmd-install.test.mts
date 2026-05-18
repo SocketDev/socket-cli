@@ -4,18 +4,15 @@
  * Tests the installation utilities root command which provides access to
  * subcommands for installing optional Socket CLI features like tab completion.
  *
- * Test Coverage:
- * - Help text display and subcommand listing
- * - Dry-run behavior validation
- * - Subcommand routing
+ * Test Coverage: - Help text display and subcommand listing - Dry-run behavior
+ * validation - Subcommand routing.
  *
- * Available Subcommands:
- * - completion: Install bash completion for Socket CLI
+ * Available Subcommands: - completion: Install bash completion for Socket CLI.
  *
- * Related Files:
- * - src/commands/install/cmd-install.mts - Root command definition
- * - src/commands/install/cmd-install-completion.mts - Completion installation
- * - test/integration/cli/cmd-install-completion.test.mts - Completion tests
+ * Related Files: - src/commands/install/cmd-install.mts - Root command
+ * definition - src/commands/install/cmd-install-completion.mts - Completion
+ * installation - test/integration/cli/cmd-install-completion.test.mts -
+ * Completion tests.
  */
 
 import { describe, expect } from 'vitest'

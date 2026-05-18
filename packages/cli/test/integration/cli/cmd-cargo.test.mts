@@ -1,25 +1,20 @@
 /**
  * Integration tests for `socket cargo` wrapper command.
  *
- * Tests the cargo package manager wrapper that adds Socket security scanning
- * to Rust package operations via Socket Firewall (sfw). Commands are forwarded to
+ * Tests the cargo package manager wrapper that adds Socket security scanning to
+ * Rust package operations via Socket Firewall (sfw). Commands are forwarded to
  * sfw which provides security scanning before installation.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - cargo operations with scanning
- * - Config flag variants
- * - Issue rules configuration
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - cargo operations with scanning - Config flag variants - Issue
+ * rules configuration.
  *
- * Security Features:
- * - Pre-installation security scanning via Socket Firewall
- * - Malware detection integration
+ * Security Features: - Pre-installation security scanning via Socket Firewall -
+ * Malware detection integration.
  *
- * Related Files:
- * - src/commands/cargo/cmd-cargo.mts - cargo command implementation
- * - src/util/dlx/resolve-binary.mjs - sfw resolution
- * - test/integration/cli/cmd-cargo-malware.test.mts - Malware tests
+ * Related Files: - src/commands/cargo/cmd-cargo.mts - cargo command
+ * implementation - src/util/dlx/resolve-binary.mjs - sfw resolution -
+ * test/integration/cli/cmd-cargo-malware.test.mts - Malware tests.
  */
 
 import { describe, expect } from 'vitest'

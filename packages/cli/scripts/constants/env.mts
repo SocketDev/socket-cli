@@ -1,4 +1,6 @@
-/** @fileoverview Environment variable constants for Socket CLI build. */
+/**
+ * @file Environment variable constants for Socket CLI build.
+ */
 
 // Build metadata environment variable names.
 export const INLINED_COANA_VERSION = 'INLINED_COANA_VERSION'

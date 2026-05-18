@@ -1,6 +1,6 @@
 /**
- * Shared esbuild utilities for Socket CLI builds.
- * Contains helpers for environment variable inlining and build metadata.
+ * Shared esbuild utilities for Socket CLI builds. Contains helpers for
+ * environment variable inlining and build metadata.
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -18,10 +18,10 @@ const logger = getDefaultLogger()
 /**
  * Settings every Socket CLI esbuild config shares.
  *
- * Kept in one place so the target Node version, module format, minify
- * default, etc. can't drift between the index loader and the main CLI
- * bundle. Callers spread this and add variant-specific fields
- * (entry points, output, banner, plugins, extra defines).
+ * Kept in one place so the target Node version, module format, minify default,
+ * etc. can't drift between the index loader and the main CLI bundle. Callers
+ * spread this and add variant-specific fields (entry points, output, banner,
+ * plugins, extra defines).
  */
 export function createBaseConfig(
   inlinedEnvVars: Record<string, string>,
@@ -45,8 +45,8 @@ export function createBaseConfig(
 }
 
 /**
- * Helper to create both dot and bracket notation define keys.
- * This ensures esbuild can replace both forms of process.env access.
+ * Helper to create both dot and bracket notation define keys. This ensures
+ * esbuild can replace both forms of process.env access.
  */
 export function createDefineEntries(envVars: Record<string, string>) {
   const entries: Record<string, string> = {}
@@ -84,8 +84,9 @@ export function createIndexConfig({
 }
 
 /**
- * esbuild plugin to replace env vars after bundling (handles mangled identifiers).
- * This is necessary because esbuild's define doesn't catch all forms after minification.
+ * Esbuild plugin to replace env vars after bundling (handles mangled
+ * identifiers). This is necessary because esbuild's define doesn't catch all
+ * forms after minification.
  */
 export function envVarReplacementPlugin(envVars: Record<string, string>) {
   return {
@@ -126,10 +127,11 @@ export function envVarReplacementPlugin(envVars: Record<string, string>) {
 }
 
 /**
- * Get all inlined environment variables with their values.
- * This reads package.json metadata and computes derived values.
+ * Get all inlined environment variables with their values. This reads
+ * package.json metadata and computes derived values.
  *
- * @returns {Record<string, string>} Object with env var names as keys and JSON-stringified values
+ * @returns {Record<string, string>} Object with env var names as keys and
+ *   JSON-stringified values.
  */
 export function getInlinedEnvVars() {
   // Delegate to unified EnvironmentVariables module.
@@ -139,8 +141,8 @@ export function getInlinedEnvVars() {
 /**
  * Run an esbuild config, writing output files if write: false.
  *
- * @param {Object} config - esbuild configuration object
- * @param {string} [description] - Description logged before/after build
+ * @param {Object} config - Esbuild configuration object.
+ * @param {string} [description] - Description logged before/after build.
  */
 export async function runBuild(config: BuildOptions, description = 'Build') {
   try {

@@ -1,7 +1,7 @@
 /**
- * @fileoverview Prepares @socketbin/* binary packages for publishing.
- * Updates package.json with version and buildMethod, removes private field.
- * Binary is already in place from SEA build (following biome convention).
+ * @file Prepares @socketbin/* binary packages for publishing. Updates
+ *   package.json with version and buildMethod, removes private field. Binary is
+ *   already in place from SEA build (following biome convention).
  */
 
 import { existsSync } from 'node:fs'

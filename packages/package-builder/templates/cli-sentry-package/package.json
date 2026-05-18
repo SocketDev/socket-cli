@@ -1,9 +1,27 @@
 {
   "name": "@socketsecurity/cli-with-sentry",
   "version": "2.1.0",
-  "description": "Socket CLI with Sentry telemetry for enhanced error reporting",
   "private": true,
+  "description": "Socket CLI with Sentry telemetry for enhanced error reporting",
+  "keywords": [
+    "cli",
+    "security",
+    "sentry",
+    "socket",
+    "telemetry"
+  ],
+  "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git",
+    "directory": "packages/cli-with-sentry"
+  },
   "bin": {
     "socket": "bin/cli.js",
     "socket-npm": "bin/npm-cli.js",
@@ -21,6 +39,10 @@
     "logo-dark.png",
     "logo-light.png"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "node scripts/build.mts",
     "clean:dist": "del-cli 'dist'",
@@ -37,27 +59,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SocketDev/socket-cli.git",
-    "directory": "packages/cli-with-sentry"
-  },
-  "author": {
-    "name": "Socket Inc",
-    "email": "eng@socket.dev",
-    "url": "https://socket.dev"
-  },
-  "homepage": "https://github.com/SocketDev/socket-cli",
-  "keywords": [
-    "socket",
-    "security",
-    "cli",
-    "sentry",
-    "telemetry"
-  ],
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
   }
 }

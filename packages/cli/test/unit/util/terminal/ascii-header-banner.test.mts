@@ -1,18 +1,12 @@
 /**
  * Unit tests for ASCII header banner utility.
  *
- * Purpose:
- * Tests the ASCII header banner generation for CLI commands.
+ * Purpose: Tests the ASCII header banner generation for CLI commands.
  *
- * Test Coverage:
- * - getAsciiHeader function
- * - Compact mode output
- * - Token display
- * - Org display
- * - Version display
+ * Test Coverage: - getAsciiHeader function - Compact mode output - Token
+ * display - Org display - Version display.
  *
- * Related Files:
- * - src/util/terminal/ascii-header-banner.mts (implementation)
+ * Related Files: - src/util/terminal/ascii-header-banner.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

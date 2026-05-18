@@ -2,11 +2,10 @@
  * Unit tests for the outputAnalytics dispatcher.
  *
  * The format/render helpers have their own tests; this suite covers the
- * top-level outputAnalytics() function: error handling, JSON/markdown
- * file write paths, and iocraft fallback for text mode.
+ * top-level outputAnalytics() function: error handling, JSON/markdown file
+ * write paths, and iocraft fallback for text mode.
  *
- * Related Files:
- * - src/commands/analytics/output-analytics.mts
+ * Related Files: - src/commands/analytics/output-analytics.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

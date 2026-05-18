@@ -1,5 +1,5 @@
 /**
- * esbuild configuration for building Socket CLI with Sentry integration.
+ * Esbuild configuration for building Socket CLI with Sentry integration.
  * Extends the base CLI build configuration with Sentry-specific settings.
  */
 

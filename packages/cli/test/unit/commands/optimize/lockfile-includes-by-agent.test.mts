@@ -1,19 +1,15 @@
 /**
  * Unit tests for lockfile-includes-by-agent.
  *
- * Purpose:
- * Tests the functions that check if a package name exists in different lockfile formats.
+ * Purpose: Tests the functions that check if a package name exists in different
+ * lockfile formats.
  *
- * Test Coverage:
- * - npmLockSrcIncludes
- * - pnpmLockSrcIncludes
- * - yarnLockSrcIncludes
- * - bunLockSrcIncludes
- * - vltLockSrcIncludes
- * - lockSrcIncludes
+ * Test Coverage: - npmLockSrcIncludes - pnpmLockSrcIncludes -
+ * yarnLockSrcIncludes - bunLockSrcIncludes - vltLockSrcIncludes -
+ * lockSrcIncludes.
  *
- * Related Files:
- * - commands/optimize/lockfile-includes-by-agent.mts (implementation)
+ * Related Files: - commands/optimize/lockfile-includes-by-agent.mts
+ * (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

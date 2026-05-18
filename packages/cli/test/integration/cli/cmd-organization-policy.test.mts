@@ -4,17 +4,20 @@
  * Tests the policy management root command for organization security policies.
  *
  * Test Coverage:
+ *
  * - Help text display and subcommand listing
  * - Dry-run behavior validation
  * - Subcommand routing
  *
  * Available Subcommands:
- * - license: Manage license policies
- * - security: Manage security policies
+ *
+ * - License: Manage license policies
+ * - Security: Manage security policies
  *
  * Related Files:
- * - src/commands/organization/cmd-organization-policy.mts - Root command
- * - src/commands/organization/cmd-organization-policy-*.mts - Subcommands
+ *
+ * - Src/commands/organization/cmd-organization-policy.mts - Root command
+ * - Src/commands/organization/cmd-organization-policy-*.mts - Subcommands
  */
 
 import { describe, expect } from 'vitest'

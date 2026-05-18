@@ -3,15 +3,12 @@
  *
  * Tests Scala/SBT project manifest generation.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - build.sbt parsing
- * - Multi-project build support
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - build.sbt parsing - Multi-project build support.
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest-scala.mts - Command definition
- * - src/commands/manifest/handle-manifest-scala.mts - Scala/SBT manifest logic
+ * Related Files: - src/commands/manifest/cmd-manifest-scala.mts - Command
+ * definition - src/commands/manifest/handle-manifest-scala.mts - Scala/SBT
+ * manifest logic.
  */
 
 import { describe, expect } from 'vitest'

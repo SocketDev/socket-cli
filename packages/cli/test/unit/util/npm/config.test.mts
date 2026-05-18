@@ -1,21 +1,16 @@
 /**
  * Unit tests for npm configuration.
  *
- * Purpose:
- * Tests npm configuration parsing. Validates .npmrc and npm config handling.
+ * Purpose: Tests npm configuration parsing. Validates .npmrc and npm config
+ * handling.
  *
- * Test Coverage:
- * - .npmrc parsing
- * - npm config get
- * - Registry URL extraction
- * - Auth token handling
- * - Scope-specific configs
+ * Test Coverage: - .npmrc parsing - npm config get - Registry URL extraction -
+ * Auth token handling - Scope-specific configs.
  *
- * Testing Approach:
- * Uses temporary .npmrc files for testing npm config operations.
+ * Testing Approach: Uses temporary .npmrc files for testing npm config
+ * operations.
  *
- * Related Files:
- * - util/npm/config.mts (implementation)
+ * Related Files: - util/npm/config.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

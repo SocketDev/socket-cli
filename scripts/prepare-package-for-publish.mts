@@ -1,6 +1,6 @@
 /**
- * @fileoverview Helper script to prepare package.json for publishing.
- * Handles removing private field and optionally setting version.
+ * @file Helper script to prepare package.json for publishing. Handles removing
+ *   private field and optionally setting version.
  */
 
 import path from 'node:path'

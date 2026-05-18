@@ -1,8 +1,8 @@
 import process from 'node:process'
 
 /**
- * @fileoverview Monorepo-aware lint runner with smart file detection.
- * Runs linting across affected packages based on changed files.
+ * @file Monorepo-aware lint runner with smart file detection. Runs linting
+ *   across affected packages based on changed files.
  */
 
 import type { PackageInfo } from './util/monorepo-helper.mts'

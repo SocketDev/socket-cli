@@ -1,6 +1,6 @@
 /**
- * Generate template-based packages required for CLI build.
- * Runs the package generation scripts from package-builder.
+ * Generate template-based packages required for CLI build. Runs the package
+ * generation scripts from package-builder.
  */
 
 import path from 'node:path'

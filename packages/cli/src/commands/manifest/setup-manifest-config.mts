@@ -9,10 +9,7 @@ import { input, select } from '@socketsecurity/lib/stdio/prompts'
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
-import {
-  readSocketJsonSync,
-  writeSocketJson,
-} from '../../util/socket/json.mts'
+import { readSocketJsonSync, writeSocketJson } from '../../util/socket/json.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../util/socket/json.mts'

@@ -1,17 +1,12 @@
 /**
  * Unit tests for simple output utilities.
  *
- * Purpose:
- * Tests the simplified output formatter utility.
+ * Purpose: Tests the simplified output formatter utility.
  *
- * Test Coverage:
- * - simpleOutput function
- * - outputPaginatedList function
- * - commonColumns helpers
- * - JSON, table, and text output modes
+ * Test Coverage: - simpleOutput function - outputPaginatedList function -
+ * commonColumns helpers - JSON, table, and text output modes.
  *
- * Related Files:
- * - src/util/terminal/simple-output.mts (implementation)
+ * Related Files: - src/util/terminal/simple-output.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

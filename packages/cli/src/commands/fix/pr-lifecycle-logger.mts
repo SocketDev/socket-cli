@@ -16,10 +16,10 @@ export type PrLifecycleEvent =
 /**
  * Log PR lifecycle events with consistent formatting and color-coding.
  *
- * @param event - The lifecycle event type
- * @param prNumber - The pull request number
- * @param ghsaId - The GHSA ID associated with the PR
- * @param details - Optional additional details to include in the log message
+ * @param event - The lifecycle event type.
+ * @param prNumber - The pull request number.
+ * @param ghsaId - The GHSA ID associated with the PR.
+ * @param details - Optional additional details to include in the log message.
  */
 export function logPrEvent(
   event: PrLifecycleEvent,

@@ -1,8 +1,7 @@
 /**
  * Unit tests for Socket Patch checksums getter.
  *
- * Related Files:
- * - src/env/socket-patch-checksums.mts
+ * Related Files: - src/env/socket-patch-checksums.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

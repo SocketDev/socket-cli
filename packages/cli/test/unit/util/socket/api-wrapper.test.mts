@@ -1,12 +1,11 @@
 /**
  * Unit tests for the SDK API wrapper.
  *
- * Verifies the generic apiCall helper (SDK setup failure / success) and
- * each of the convenience namespaces (repoApi, orgApi, packageApi,
- * scanApi). All SDK methods are mocked.
+ * Verifies the generic apiCall helper (SDK setup failure / success) and each of
+ * the convenience namespaces (repoApi, orgApi, packageApi, scanApi). All SDK
+ * methods are mocked.
  *
- * Related Files:
- * - src/util/socket/api-wrapper.mts
+ * Related Files: - src/util/socket/api-wrapper.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

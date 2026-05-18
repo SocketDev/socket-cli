@@ -1,7 +1,7 @@
 /* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
 
 /**
- * @fileoverview Unit tests for checkSocketWrapperSetup.
+ * @file Unit tests for checkSocketWrapperSetup.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

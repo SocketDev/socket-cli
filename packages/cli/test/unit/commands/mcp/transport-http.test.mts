@@ -2,19 +2,19 @@
 /**
  * Unit tests for the MCP Streamable HTTP transport.
  *
- * Tests runHttpTransport(config) by booting a real HTTP server on an
- * ephemeral port and hitting it with @socketsecurity/lib/http-request.
- * This exercises the full request pipeline (origin/host validation,
- * CORS, OAuth introspection, well-known endpoints, session map,
- * StreamableHTTPServerTransport hand-off) without poking at private
- * internals.
+ * Tests runHttpTransport(config) by booting a real HTTP server on an ephemeral
+ * port and hitting it with @socketsecurity/lib/http-request. This exercises the
+ * full request pipeline (origin/host validation, CORS, OAuth introspection,
+ * well-known endpoints, session map, StreamableHTTPServerTransport hand-off)
+ * without poking at private internals.
  *
  * Test Coverage:
+ *
  * - GET /health bypasses Origin validation and returns service info
  * - Invalid Origin → 403 with JSON-RPC error envelope
- * - Allowed origins (mcp.socket.dev, mcp.socket-staging.dev,
- *   localhost variants) → request proceeds
- * - localhost subdomain spoof rejected (Host strict-match)
+ * - Allowed origins (mcp.socket.dev, mcp.socket-staging.dev, localhost variants)
+ *   → request proceeds
+ * - Localhost subdomain spoof rejected (Host strict-match)
  * - CORS headers set on origin-bearing requests
  * - OPTIONS preflight returns 200
  * - Unknown URL path → 404
@@ -22,8 +22,8 @@
  * - GET / without sessionId → 404
  * - DELETE / without sessionId → 404
  * - POST / without sessionId and without initialize body → 400
- * - POST / initialize creates a session (Mcp-Session-Id header
- *   returned, subsequent calls routed)
+ * - POST / initialize creates a session (Mcp-Session-Id header returned,
+ *   subsequent calls routed)
  * - OAuth disabled: requests proceed without Authorization
  * - OAuth enabled: well-known/oauth-protected-resource returned
  * - OAuth enabled: missing Authorization → 401 with WWW-Authenticate
@@ -34,8 +34,9 @@
  * - OAuth enabled: token introspection error → 500
  *
  * Related Files:
- * - src/commands/mcp/transport-http.mts - Implementation
- * - src/commands/mcp/server.mts - Server factory (real)
+ *
+ * - Src/commands/mcp/transport-http.mts - Implementation
+ * - Src/commands/mcp/server.mts - Server factory (real)
  * - @modelcontextprotocol/sdk/server/streamableHttp - Transport (real)
  */
 

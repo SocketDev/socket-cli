@@ -3,8 +3,7 @@
  *
  * Covers spawnCoana, spawnCoanaDlx, and spawnCoanaVfs paths.
  *
- * Related Files:
- * - src/util/dlx/spawn-coana.mts
+ * Related Files: - src/util/dlx/spawn-coana.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -219,7 +218,9 @@ describe('spawnCoanaDlx', () => {
     const result = await spawnCoanaDlx([], 'org', undefined, undefined)
 
     expect(result.ok).toBe(false)
-    expect((result as { message?: string | undefined }).message).toBe('stderr text')
+    expect((result as { message?: string | undefined }).message).toBe(
+      'stderr text',
+    )
   })
 
   it('uses getErrorCause when no stderr present on rejection', async () => {
@@ -231,7 +232,9 @@ describe('spawnCoanaDlx', () => {
     const result = await spawnCoanaDlx([], 'org', undefined, undefined)
 
     expect(result.ok).toBe(false)
-    expect((result as { message?: string | undefined }).message).toBe('error-cause-msg')
+    expect((result as { message?: string | undefined }).message).toBe(
+      'error-cause-msg',
+    )
   })
 })
 
@@ -292,7 +295,9 @@ describe('spawnCoanaVfs', () => {
 
     const result = await spawnCoanaVfs([], undefined, undefined)
     expect(result.ok).toBe(false)
-    expect((result as { message?: string | undefined }).message).toBe('stderr-vfs')
+    expect((result as { message?: string | undefined }).message).toBe(
+      'stderr-vfs',
+    )
   })
 
   it('returns ok:false with cause when spawnToolVfs throws without stderr', async () => {
@@ -301,7 +306,9 @@ describe('spawnCoanaVfs', () => {
 
     const result = await spawnCoanaVfs([], undefined, undefined)
     expect(result.ok).toBe(false)
-    expect((result as { message?: string | undefined }).message).toBe('plain-cause')
+    expect((result as { message?: string | undefined }).message).toBe(
+      'plain-cause',
+    )
   })
 })
 

@@ -1,6 +1,6 @@
 /**
- * esbuild configuration for Socket CLI with Sentry index loader.
- * Builds the index loader that executes the CLI.
+ * Esbuild configuration for Socket CLI with Sentry index loader. Builds the
+ * index loader that executes the CLI.
  */
 
 import path from 'node:path'

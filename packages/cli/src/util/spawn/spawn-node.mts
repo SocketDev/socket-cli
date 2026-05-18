@@ -2,14 +2,16 @@
  * Node.js spawn abstraction with SEA bootstrap handling.
  *
  * Provides a `spawnNode()` function that automatically handles:
+ *
  * - System Node.js detection and delegation (when in SEA)
  * - Self-spawning with IPC handshake (when no system Node.js available)
  * - Regular process.execPath spawning (when not in SEA)
  *
- * This abstraction should be used anywhere we need to spawn Node.js,
- * replacing direct calls to spawn(process.execPath, ...) or spawn(getExecPath(), ...).
+ * This abstraction should be used anywhere we need to spawn Node.js, replacing
+ * direct calls to spawn(process.execPath, ...) or spawn(getExecPath(), ...).
  *
  * Example usage:
+ *
  * ```typescript
  * // Instead of:
  * spawn(getExecPath(), ['script.js', ...args], { stdio: 'inherit' })
@@ -34,10 +36,9 @@ import type {
 } from '@socketsecurity/lib/spawn'
 
 /**
- * Narrows a spawned process to the shape required by
- * `sendBootstrapHandshake` (i.e. `.send` is a callable, not undefined).
- * The typeof-on-a-property guard can't flow to the parent object, so
- * we need an explicit assertion function.
+ * Narrows a spawned process to the shape required by `sendBootstrapHandshake`
+ * (i.e. `.send` is a callable, not undefined). The typeof-on-a-property guard
+ * can't flow to the parent object, so we need an explicit assertion function.
  */
 export function assertHasSend<T extends { send?: unknown | undefined }>(
   proc: T,
@@ -96,9 +97,8 @@ export function findSystemNodejsSync(): string | undefined {
 /**
  * Get the Node.js executable path to use for spawning.
  *
- * Priority:
- * 1. System Node.js (if we're a SEA and system Node.js exists)
- * 2. Current execPath (process.execPath)
+ * Priority: 1. System Node.js (if we're a SEA and system Node.js exists) 2.
+ * Current execPath (process.execPath)
  *
  * @returns Path to Node.js executable
  */
@@ -128,19 +128,16 @@ export interface SpawnNodeOptions extends SpawnOptions {
    * This is placed in the `extra` field of the handshake message to avoid
    * collision with standard fields (subprocess, parent_pid).
    *
-   * Final handshake structure:
-   * {
-   *   subprocess: true,
-   *   parent_pid: <pid>,
-   *   extra: { ...ipc }  // Custom data goes here
-   * }
+   * Final handshake structure: { subprocess: true, parent_pid: <pid>, extra: {
+   * ...ipc } // Custom data goes here }
    *
    * Use this to pass custom configuration to the subprocess:
+   *
    * - Socket Firewall settings (API token, bin name, etc.)
    * - Custom application data
    *
-   * System Node.js will ignore the handshake message.
-   * SEA subprocess will use it to skip bootstrap.
+   * System Node.js will ignore the handshake message. SEA subprocess will use
+   * it to skip bootstrap.
    */
   ipc?: Record<string, unknown> | undefined
 }
@@ -148,14 +145,14 @@ export interface SpawnNodeOptions extends SpawnOptions {
 /**
  * Spawn Node.js with automatic SEA bootstrap handling.
  *
- * Behavior:
- * - Not a SEA: Uses process.execPath directly
- * - SEA with system Node.js: Uses system Node.js
- * - SEA without system Node.js: Spawns self with IPC handshake
+ * Behavior: - Not a SEA: Uses process.execPath directly - SEA with system
+ * Node.js: Uses system Node.js - SEA without system Node.js: Spawns self with
+ * IPC handshake.
  *
  * @param args - Arguments to pass to Node.js (script path + args)
- * @param options - Spawn options, including optional IPC data
+ * @param options - Spawn options, including optional IPC data.
  * @param extra - Extra spawn options (from @socketsecurity/lib/spawn)
+ *
  * @returns Spawn result with process handle
  */
 export function spawnNode(
@@ -206,11 +203,12 @@ export function spawnNode(
 /**
  * Synchronous version of spawnNode using spawnSync.
  *
- * Note: IPC handshake is not supported in synchronous mode,
- * so this should only be used when IPC is not required.
+ * Note: IPC handshake is not supported in synchronous mode, so this should only
+ * be used when IPC is not required.
  *
- * @param args - Arguments to pass to Node.js
+ * @param args - Arguments to pass to Node.js.
  * @param options - Spawn options (ipc field is ignored)
+ *
  * @returns Spawn sync result
  */
 export function spawnNodeSync(

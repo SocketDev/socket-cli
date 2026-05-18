@@ -3,16 +3,14 @@
  *
  * Tests removing patches from the manifest via socket-patch v2.0.0 binary.
  *
- * Note: In socket-patch v2.0.0, the command is `remove` (not `rm`).
- * The `remove` command rolls back files first and then removes from manifest.
+ * Note: In socket-patch v2.0.0, the command is `remove` (not `rm`). The
+ * `remove` command rolls back files first and then removes from manifest.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Removing patches by PURL or UUID
- * - Error handling for missing identifiers
+ * Test Coverage: - Help text display and usage examples - Removing patches by
+ * PURL or UUID - Error handling for missing identifiers.
  *
- * Related Files:
- * - src/commands/patch/cmd-patch.mts - Root command that forwards to socket-patch
+ * Related Files: - src/commands/patch/cmd-patch.mts - Root command that
+ * forwards to socket-patch.
  */
 
 import path from 'node:path'

@@ -1,6 +1,7 @@
 /**
- * @fileoverview Bundle validation tests to ensure build output quality.
- * Verifies that dist files don't contain absolute paths or unexpected bundled dependencies.
+ * @file Bundle validation tests to ensure build output quality. Verifies that
+ *   dist files don't contain absolute paths or unexpected bundled
+ *   dependencies.
  */
 
 import { promises as fs } from 'node:fs'
@@ -14,8 +15,8 @@ const packagePath = path.resolve(__dirname, '..', '..')
 const buildPath = path.join(packagePath, 'build')
 
 /**
- * Check if bundle contains inlined dependencies.
- * Reads package.json dependencies and ensures they are NOT bundled inline.
+ * Check if bundle contains inlined dependencies. Reads package.json
+ * dependencies and ensures they are NOT bundled inline.
  */
 export async function checkBundledDependencies(content: string): Promise<{
   bundledDeps: string[]
@@ -76,8 +77,8 @@ export async function checkBundledDependencies(content: string): Promise<{
 }
 
 /**
- * Check if content contains absolute paths.
- * Detects paths like /Users/, C:\, /home/, etc.
+ * Check if content contains absolute paths. Detects paths like /Users/, C:,
+ * /home/, etc.
  */
 export function hasAbsolutePaths(content: string): {
   hasIssue: boolean

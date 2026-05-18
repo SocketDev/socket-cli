@@ -1,8 +1,8 @@
 /**
- * @fileoverview Utilities for detecting and reporting GitHub infrastructure errors.
- *
- * This module provides helpers to identify transient GitHub errors (502, 503, etc.)
- * and fetch GitHub status to help users understand if the issue is temporary.
+ * @file Utilities for detecting and reporting GitHub infrastructure errors.
+ *   This module provides helpers to identify transient GitHub errors (502, 503,
+ *   etc.) and fetch GitHub status to help users understand if the issue is
+ *   temporary.
  */
 
 import { httpRequest } from '@socketsecurity/lib/http-request'
@@ -11,8 +11,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
 /**
- * Error patterns that indicate transient network/infrastructure issues.
- * These typically resolve on retry.
+ * Error patterns that indicate transient network/infrastructure issues. These
+ * typically resolve on retry.
  */
 const TRANSIENT_ERROR_PATTERNS = [
   /HTTP\s+(?:408|429|5\d{2})/i,
@@ -27,7 +27,10 @@ const TRANSIENT_ERROR_PATTERNS = [
 
 /**
  * Fetch GitHub status and return a human-readable summary.
- * @returns {Promise<{status: string, description: string, url: string}|undefined>}
+ *
+ * @returns {Promise<
+ *   { status: string; description: string; url: string } | undefined
+ * >}
  */
 export async function checkGitHubStatus() {
   try {
@@ -51,7 +54,9 @@ export async function checkGitHubStatus() {
 
 /**
  * Extract error message from various error types.
- * @param {Error|string|unknown} error - The error to extract message from.
+ *
+ * @param {Error | string | unknown} error - The error to extract message from.
+ *
  * @returns {string} The error message.
  */
 export function getErrorMessage(error) {
@@ -66,7 +71,9 @@ export function getErrorMessage(error) {
 
 /**
  * Check if an error indicates a transient GitHub/network issue.
- * @param {Error|string|unknown} error - The error to check.
+ *
+ * @param {Error | string | unknown} error - The error to check.
+ *
  * @returns {boolean} True if the error appears to be transient.
  */
 export function isTransientError(error) {
@@ -75,12 +82,13 @@ export function isTransientError(error) {
 }
 
 /**
- * Log helpful messages about a transient GitHub error.
- * Call this when a GitHub download fails to provide user-friendly guidance.
+ * Log helpful messages about a transient GitHub error. Call this when a GitHub
+ * download fails to provide user-friendly guidance.
  *
  * @param {Error} error - The original error.
  * @param {object} [options] - Options.
  * @param {boolean} [options.checkStatus=true] - Whether to check GitHub status.
+ *
  * @returns {Promise<void>}
  */
 export async function logTransientErrorHelp(

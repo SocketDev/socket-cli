@@ -1,6 +1,6 @@
 /**
- * Build-time inlined constant names for Socket CLI.
- * These are environment variable names that get inlined during build.
+ * Build-time inlined constant names for Socket CLI. These are environment
+ * variable names that get inlined during build.
  */
 
 export const INLINED_COANA_VERSION = 'INLINED_COANA_VERSION'

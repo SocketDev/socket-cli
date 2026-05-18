@@ -50,17 +50,18 @@ export function getLowestEntryIndex(
 }
 
 /**
- * Apply overrides to the host repo's manifest, picking the correct
- * destination based on agent + version:
- *   - pnpm 11+ → pnpm-workspace.yaml `overrides:` block (async write,
- *               preserves comments via the `yaml` package's Document API).
- *   - pnpm < 11 → package.json `pnpm.overrides`.
- *   - bun / yarn-classic / yarn-berry → package.json `resolutions`.
- *   - vlt / npm / fallback → package.json `overrides`.
+ * Apply overrides to the host repo's manifest, picking the correct destination
+ * based on agent + version:
  *
- * The `pkgEnvDetails` parameter carries `agentVersion` (a SemVer
- * instance) needed to disambiguate pnpm versions. Callers reach this
- * via `applyOptimization()` which already has the env in scope.
+ * - Pnpm 11+ → pnpm-workspace.yaml `overrides:` block (async write, preserves
+ *   comments via the `yaml` package's Document API).
+ * - Pnpm < 11 → package.json `pnpm.overrides`.
+ * - Bun / yarn-classic / yarn-berry → package.json `resolutions`.
+ * - Vlt / npm / fallback → package.json `overrides`.
+ *
+ * The `pkgEnvDetails` parameter carries `agentVersion` (a SemVer instance)
+ * needed to disambiguate pnpm versions. Callers reach this via
+ * `applyOptimization()` which already has the env in scope.
  */
 export async function updateManifest(
   agent: Agent,
@@ -210,10 +211,10 @@ export function updateResolutionsField(
 }
 
 /**
- * pnpm 11+ reads `overrides:` from `pnpm-workspace.yaml`. The
- * `pnpm.overrides` block in package.json is silently ignored. Returns
- * true when the host repo's `packageManager` field declares pnpm 11+,
- * meaning we should write to the YAML file instead of package.json.
+ * Pnpm 11+ reads `overrides:` from `pnpm-workspace.yaml`. The `pnpm.overrides`
+ * block in package.json is silently ignored. Returns true when the host repo's
+ * `packageManager` field declares pnpm 11+, meaning we should write to the YAML
+ * file instead of package.json.
  */
 export function usesPnpmWorkspaceOverrides(
   pkgEnvDetails: Pick<EnvDetails, 'agent' | 'agentVersion'>,

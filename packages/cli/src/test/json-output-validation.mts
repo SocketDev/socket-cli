@@ -1,10 +1,10 @@
 /**
- * JSON output validation utilities for testing CLI commands.
- * Ensures JSON outputs match expected Socket CLI response format.
+ * JSON output validation utilities for testing CLI commands. Ensures JSON
+ * outputs match expected Socket CLI response format.
  *
- * Expected formats:
- * - Success: { ok: true, data: unknown, message?: string }
- * - Failure: { ok: false, data?: unknown, message: string, cause?: string, code?: number }
+ * Expected formats: - Success: { ok: true, data: unknown, message?: string } -
+ * Failure: { ok: false, data?: unknown, message: string, cause?: string, code?:
+ * number }
  */
 
 export type SocketJsonSuccess<T = unknown> = {
@@ -44,9 +44,13 @@ export function isSocketJsonSuccess<T = unknown>(
 }
 
 /**
- * Validates that a string contains valid JSON matching Socket CLI response format.
- * @param jsonString - The JSON string to validate
- * @param expectedExitCode - Expected exit code (0 for success, non-zero for failure)
+ * Validates that a string contains valid JSON matching Socket CLI response
+ * format.
+ *
+ * @param jsonString - The JSON string to validate.
+ * @param expectedExitCode - Expected exit code (0 for success, non-zero for
+ *   failure)
+ *
  * @returns Parsed JSON if valid, throws if invalid
  */
 type RawSocketJson = {

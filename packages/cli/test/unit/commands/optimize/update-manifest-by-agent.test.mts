@@ -2,17 +2,14 @@
 /**
  * Unit tests for update-manifest-by-agent.
  *
- * Purpose:
- * Tests the functions that update package.json overrides for different package managers.
+ * Purpose: Tests the functions that update package.json overrides for different
+ * package managers.
  *
- * Test Coverage:
- * - updateOverridesField
- * - updateResolutionsField
- * - updatePnpmField
- * - updateManifest
+ * Test Coverage: - updateOverridesField - updateResolutionsField -
+ * updatePnpmField - updateManifest.
  *
- * Related Files:
- * - commands/optimize/update-manifest-by-agent.mts (implementation)
+ * Related Files: - commands/optimize/update-manifest-by-agent.mts
+ * (implementation)
  */
 
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'

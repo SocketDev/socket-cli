@@ -2,8 +2,7 @@
  * Direct tests for the now-exported mergeEnv helper from
  * util/spawn/machine-mode.mts.
  *
- * Related Files:
- * - src/util/spawn/machine-mode.mts
+ * Related Files: - src/util/spawn/machine-mode.mts.
  */
 
 import { describe, expect, it } from 'vitest'

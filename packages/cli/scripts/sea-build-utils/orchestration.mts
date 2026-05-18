@@ -1,6 +1,6 @@
 /**
- * @fileoverview High-level SEA build orchestration.
- * Coordinates all SEA build steps for a single platform target.
+ * @file High-level SEA build orchestration. Coordinates all SEA build steps for
+ *   a single platform target.
  */
 
 import { promises as fs } from 'node:fs'
@@ -16,12 +16,22 @@ import { downloadNodeBinary } from '../util/asset-manager-compat.mts'
 import { downloadExternalTools, logger } from './downloads.mts'
 
 /**
- * Build a single SEA target for a specific platform.
- * Orchestrates the complete SEA build process:
- * 1. Downloads node-smol binary for target platform.
- * 2. Downloads and packages security tools (if available).
- * 3. Generates SEA configuration.
- * 4. Injects blob and VFS into binary using binject.
+ * Build a single SEA target for a specific platform. Orchestrates the complete
+ * SEA build process: 1. Downloads node-smol binary for target platform. 2.
+ * Downloads and packages security tools (if available). 3. Generates SEA
+ * configuration. 4. Injects blob and VFS into binary using binject.
+ *
+ * @example
+ *   const target = {
+ *     platform: 'darwin',
+ *     arch: 'arm64',
+ *     outputName: 'socket-darwin-arm64',
+ *     nodeVersion: '20251213-7cf90d2',
+ *   }
+ *   const outputPath = await buildTarget(target, 'dist/cli.js', {
+ *     outputPath:
+ *       'packages/package-builder/build/dev/out/socketbin-cli-darwin-arm64/socket',
+ *   })
  *
  * @param {object} target - Build target configuration.
  * @param {string} target.platform - Platform identifier (darwin, linux, win32).
@@ -32,19 +42,10 @@ import { downloadExternalTools, logger } from './downloads.mts'
  * @param {string} entryPoint - Absolute path to CLI entry point file.
  * @param {object} [options] - Build options.
  * @param {string} [options.outputPath] - Full output path for SEA binary.
- * @param {string} [options.outputDir] - Output directory (deprecated, use outputPath).
- * @returns Promise resolving to absolute path of built SEA binary.
+ * @param {string} [options.outputDir] - Output directory (deprecated, use
+ *   outputPath).
  *
- * @example
- * const target = {
- *   platform: 'darwin',
- *   arch: 'arm64',
- *   outputName: 'socket-darwin-arm64',
- *   nodeVersion: '20251213-7cf90d2'
- * }
- * const outputPath = await buildTarget(target, 'dist/cli.js', {
- *   outputPath: 'packages/package-builder/build/dev/out/socketbin-cli-darwin-arm64/socket'
- * })
+ * @returns Promise resolving to absolute path of built SEA binary.
  */
 // c8 ignore start - Requires downloading binaries, building blobs, and binary injection.
 export async function buildTarget(target, entryPoint, options) {

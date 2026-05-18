@@ -1,7 +1,8 @@
 /**
  * Unit tests for package shallow command.
  *
- * Tests the command that looks up shallow scores for one or more packages without their transitives.
+ * Tests the command that looks up shallow scores for one or more packages
+ * without their transitives.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

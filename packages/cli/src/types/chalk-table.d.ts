@@ -1,5 +1,5 @@
 /**
- * @fileoverview Type declarations for chalk-table module.
+ * @file Type declarations for chalk-table module.
  */
 
 declare module 'chalk-table' {

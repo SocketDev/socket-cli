@@ -4,7 +4,8 @@ import process from 'node:process'
  * Shared platform and architecture mappings for GitHub release assets.
  *
  * Maps Node.js platform/architecture names to release asset naming conventions.
- * Used consistently across all download and build scripts to avoid duplication.
+ * Used consistently across all download and build scripts to avoid
+ * duplication.
  */
 
 import { existsSync } from 'node:fs'
@@ -41,13 +42,17 @@ export const RELEASE_ARCH_MAP = Object.freeze({
 })
 
 /**
- * Get platform-arch string for GitHub release asset naming.
- * Uses shortened platform names (win instead of win32).
+ * Get platform-arch string for GitHub release asset naming. Uses shortened
+ * platform names (win instead of win32).
  *
  * @param {string} platform - Node.js platform (darwin, linux, win32).
  * @param {string} arch - Node.js architecture (arm64, x64, ia32).
- * @param {string|undefined} [libc] - C library variant (musl, glibc) - Linux only.
- * @returns {string} Platform-arch string for assets (e.g., 'win-x64', 'linux-x64-musl').
+ * @param {string | undefined} [libc] - C library variant (musl, glibc) - Linux
+ *   only.
+ *
+ * @returns {string} Platform-arch string for assets (e.g., 'win-x64',
+ *   'linux-x64-musl').
+ *
  * @throws {Error} If platform/arch is unsupported.
  */
 export function getAssetPlatformArch(platform, arch, libc) {
@@ -87,13 +92,15 @@ export function getAssetPlatformArch(platform, arch, libc) {
  * Get platform-arch string for the current platform using shared mapping.
  *
  * Resolution order:
- *   1. `PLATFORM_ARCH` env — the explicit value the workflow/Dockerfile injected
- *      (set by .github/workflows/*.yml build-args and every Dockerfile).
- *   2. Cross-compile env (`TARGET_ARCH`, `LIBC`) applied on top of the host's
- *      platform/arch.
- *   3. Full auto-detect via `isMusl()` + `process.arch` + `process.platform`.
  *
- * @returns {Promise<string>} Platform-arch string (e.g., 'win-x64', 'linux-x64-musl').
+ * 1. `PLATFORM_ARCH` env — the explicit value the workflow/Dockerfile injected
+ *    (set by .github/workflows/*.yml build-args and every Dockerfile).
+ * 2. Cross-compile env (`TARGET_ARCH`, `LIBC`) applied on top of the host's
+ *    platform/arch.
+ * 3. Full auto-detect via `isMusl()` + `process.arch` + `process.platform`.
+ *
+ * @returns {Promise<string>} Platform-arch string (e.g., 'win-x64',
+ *   'linux-x64-musl').
  */
 export async function getCurrentPlatformArch() {
   // If the workflow or Dockerfile set PLATFORM_ARCH explicitly, trust it.
@@ -114,8 +121,11 @@ export async function getCurrentPlatformArch() {
  *
  * @param {string} platform - Node.js platform (darwin, linux, win32).
  * @param {string} arch - Node.js architecture (arm64, x64, ia32).
- * @param {string|undefined} [libc] - C library variant (musl, glibc) - Linux only.
+ * @param {string | undefined} [libc] - C library variant (musl, glibc) - Linux
+ *   only.
+ *
  * @returns {string} Platform-arch string (e.g., 'win32-x64', 'linux-x64-musl').
+ *
  * @throws {Error} If platform/arch is unsupported.
  */
 export function getPlatformArch(platform, arch, libc) {
@@ -147,8 +157,8 @@ export function getPlatformArch(platform, arch, libc) {
 /**
  * Read the requested glibc floor from the GLIBC_FLOOR env var.
  *
- * Returned value is a string like "2.17" or "2.28", or undefined when unset.
- * No behavior change today — this is groundwork for threading a glibc floor
+ * Returned value is a string like "2.17" or "2.28", or undefined when unset. No
+ * behavior change today — this is groundwork for threading a glibc floor
  * dimension through cache keys and Docker image selection when we lower the
  * floor. See packages/node-smol-builder/docs/plans/glibc-floor-lowering.md.
  *
@@ -199,7 +209,8 @@ export async function isMusl() {
 }
 
 /**
- * Check if tar supports --no-absolute-names (GNU tar has it, busybox tar doesn't).
+ * Check if tar supports --no-absolute-names (GNU tar has it, busybox tar
+ * doesn't).
  *
  * @returns {Promise<boolean>} True if tar supports --no-absolute-names.
  */

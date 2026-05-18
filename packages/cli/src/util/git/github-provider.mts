@@ -28,9 +28,11 @@ import type {
 } from './provider.mts'
 
 type GqlPrNode = {
-  author?: {
-    login: string
-  } | undefined
+  author?:
+    | {
+        login: string
+      }
+    | undefined
   baseRefName: string
   headRefName: string
   mergeStateStatus:
@@ -62,7 +64,8 @@ type GqlPullRequestsResponse = {
 /**
  * GitHub provider for Pull Request operations.
  *
- * Implements the PrProvider interface using GitHub's REST and GraphQL APIs via Octokit.
+ * Implements the PrProvider interface using GitHub's REST and GraphQL APIs via
+ * Octokit.
  */
 export class GitHubProvider implements PrProvider {
   async createPr(options: CreatePrOptions): Promise<PrResponse> {

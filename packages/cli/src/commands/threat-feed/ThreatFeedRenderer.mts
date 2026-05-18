@@ -1,7 +1,6 @@
 /**
- * @fileoverview iocraft-based threat feed renderer.
- *
- * Non-interactive renderer for threat feed data using iocraft native bindings.
+ * @file Iocraft-based threat feed renderer. Non-interactive renderer for threat
+ *   feed data using iocraft native bindings.
  */
 
 import { errorMessage } from '@socketsecurity/lib/errors'

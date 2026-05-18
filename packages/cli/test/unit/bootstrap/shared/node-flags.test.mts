@@ -1,11 +1,10 @@
 /**
  * Unit tests for bootstrap node-flags.
  *
- * Selects --disable-sigusr1 vs --no-inspect based on the running Node
- * version. Tests stub process.version to validate every branch.
+ * Selects --disable-sigusr1 vs --no-inspect based on the running Node version.
+ * Tests stub process.version to validate every branch.
  *
- * Related Files:
- * - src/bootstrap/shared/node-flags.mts
+ * Related Files: - src/bootstrap/shared/node-flags.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

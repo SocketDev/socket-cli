@@ -2,19 +2,20 @@
 /**
  * Unit tests for performReachabilityAnalysis.
  *
- * Orchestrates: org-plan check → optional manifest upload → spawn
- * Coana via dlx → extract scan-id from output. Heavy on conditionals
- * (every reachability flag becomes a Coana CLI arg).
+ * Orchestrates: org-plan check → optional manifest upload → spawn Coana via dlx
+ * → extract scan-id from output. Heavy on conditionals (every reachability flag
+ * becomes a Coana CLI arg).
  *
  * Test Coverage:
+ *
  * - 401 from fetchOrganization → "Authentication failed"
  * - Other fetchOrganization failure → "Unable to verify plan permissions"
  * - Non-enterprise plan → "requires an enterprise plan"
  * - Enterprise plan → proceeds
  * - Absolute target normalized to relative cwd-relative path
  * - Empty target relative-resolves to '.'
- * - uploadManifests=false skips the manifest upload
- * - uploadManifests=true with orgSlug+packagePaths runs upload
+ * - UploadManifests=false skips the manifest upload
+ * - UploadManifests=true with orgSlug+packagePaths runs upload
  * - .socket.facts.json filtered out of upload list
  * - SDK setup failure short-circuits with the SDK error
  * - Upload failure surfaces the upload error
@@ -30,7 +31,8 @@
  * - Custom outputPath wins over DOT_SOCKET_DOT_FACTS_JSON
  *
  * Related Files:
- * - src/commands/scan/perform-reachability-analysis.mts - Implementation
+ *
+ * - Src/commands/scan/perform-reachability-analysis.mts - Implementation
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

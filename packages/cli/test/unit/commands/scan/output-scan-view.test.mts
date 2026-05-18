@@ -1,18 +1,12 @@
 /**
  * Unit tests for scan view output formatting.
  *
- * Purpose:
- * Tests the output formatting for scan view results.
+ * Purpose: Tests the output formatting for scan view results.
  *
- * Test Coverage:
- * - outputScanView function
- * - JSON output format
- * - Markdown/Text output format
- * - File writing
- * - Error handling
+ * Test Coverage: - outputScanView function - JSON output format - Markdown/Text
+ * output format - File writing - Error handling.
  *
- * Related Files:
- * - src/commands/scan/output-scan-view.mts (implementation)
+ * Related Files: - src/commands/scan/output-scan-view.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

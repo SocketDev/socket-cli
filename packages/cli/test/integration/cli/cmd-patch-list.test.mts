@@ -1,15 +1,14 @@
 /**
  * Integration tests for `socket patch list` command.
  *
- * Tests listing all patches in the local manifest via socket-patch v2.0.0 binary.
+ * Tests listing all patches in the local manifest via socket-patch v2.0.0
+ * binary.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Listing patches from manifest
- * - JSON output format
+ * Test Coverage: - Help text display and usage examples - Listing patches from
+ * manifest - JSON output format.
  *
- * Related Files:
- * - src/commands/patch/cmd-patch.mts - Root command that forwards to socket-patch
+ * Related Files: - src/commands/patch/cmd-patch.mts - Root command that
+ * forwards to socket-patch.
  */
 
 import path from 'node:path'

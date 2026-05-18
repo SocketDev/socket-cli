@@ -1,7 +1,7 @@
 {
   "name": "vulnerable-deps-test-npm",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
   "description": "Test fixture with vulnerable dependencies (npm)",
   "main": "index.js",
   "dependencies": {

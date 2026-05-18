@@ -1,8 +1,8 @@
 {
   "name": "monorepo-test-npm",
   "version": "1.0.0",
-  "description": "Test monorepo fixture (npm)",
   "private": true,
+  "description": "Test monorepo fixture (npm)",
   "workspaces": [
     "packages/*"
   ],

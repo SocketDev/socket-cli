@@ -2,16 +2,14 @@
 /**
  * Coverage tests for coana-fix.
  *
- * Purpose:
- * Drives the previously-uncovered branches in coana-fix.mts that the
- * sibling handle-fix-limit.test.mts does not exercise. The limit tests
- * cover the happy local-mode path and the early-error returns; this
- * file covers the PR-creation, branch-cleanup, outputFile, discovery
- * parse-error, and per-GHSA failure branches.
+ * Purpose: Drives the previously-uncovered branches in coana-fix.mts that the
+ * sibling handle-fix-limit.test.mts does not exercise. The limit tests cover
+ * the happy local-mode path and the early-error returns; this file covers the
+ * PR-creation, branch-cleanup, outputFile, discovery parse-error, and per-GHSA
+ * failure branches.
  *
- * Related Files:
- * - src/commands/fix/coana-fix.mts (implementation)
- * - test/unit/commands/fix/handle-fix-limit.test.mts (sibling)
+ * Related Files: - src/commands/fix/coana-fix.mts (implementation) -
+ * test/unit/commands/fix/handle-fix-limit.test.mts (sibling)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

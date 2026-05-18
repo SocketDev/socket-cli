@@ -5,8 +5,7 @@
  * outputPurlsShallowScore() entry points: error handling, JSON / markdown /
  * text mode dispatch, and exit code propagation.
  *
- * Related Files:
- * - src/commands/package/output-purls-shallow-score.mts
+ * Related Files: - src/commands/package/output-purls-shallow-score.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,18 +1,16 @@
-
 /**
- * Build Socket SEA (Single Executable Application) binaries.
- * Uses pre-compiled Node.js smol binaries from socket-btm releases.
+ * Build Socket SEA (Single Executable Application) binaries. Uses pre-compiled
+ * Node.js smol binaries from socket-btm releases.
  *
- * Options:
- *   --target=<target>    - Build for specific target (darwin-arm64, linux-x64-musl, etc.)
- *   --platform=<platform> - Build for specific platform (darwin, linux, win32)
- *   --arch=<arch>        - Build for specific architecture (x64, arm64)
- *   --libc=<libc>        - Build for specific libc (musl, glibc) - Linux only
- *   --all                - Build for all platforms (default if no options)
+ * Options: --target=<target> - Build for specific target (darwin-arm64,
+ * linux-x64-musl, etc.) --platform=<platform> - Build for specific platform
+ * (darwin, linux, win32) --arch=<arch> - Build for specific architecture (x64,
+ * arm64) --libc=<libc> - Build for specific libc (musl, glibc) - Linux only
+ * --all - Build for all platforms (default if no options)
  *
- * Environment:
- *   SOCKET_CLI_SEA_NODE_VERSION - Node.js version to use (default: latest Current)
- *   PREBUILT_NODE_DOWNLOAD_URL  - Binary source (default: 'socket-btm')
+ * Environment: SOCKET_CLI_SEA_NODE_VERSION - Node.js version to use (default:
+ * latest Current) PREBUILT_NODE_DOWNLOAD_URL - Binary source (default:
+ * 'socket-btm')
  */
 
 import { existsSync } from 'node:fs'

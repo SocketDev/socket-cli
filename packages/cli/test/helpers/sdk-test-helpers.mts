@@ -1,4 +1,7 @@
-/** @fileoverview SDK test helpers for Socket CLI. Provides utilities for setting up SDK mocks with common success/error patterns. */
+/**
+ * @file SDK test helpers for Socket CLI. Provides utilities for setting up SDK
+ *   mocks with common success/error patterns.
+ */
 
 import { vi } from 'vitest'
 
@@ -13,8 +16,8 @@ import type * as SdkModule from '../../src/util/socket/sdk.mts'
 import type { Mock } from 'vitest'
 
 /**
- * Get the mocked handleApiCall function.
- * This must be called after vi.mock() has been executed in the test file.
+ * Get the mocked handleApiCall function. This must be called after vi.mock()
+ * has been executed in the test file.
  *
  * @returns The mocked handleApiCall function
  */
@@ -26,8 +29,8 @@ export async function getMockHandleApiCall(): Promise<Mock> {
 }
 
 /**
- * Get the mocked setupSdk function.
- * This must be called after vi.mock() has been executed in the test file.
+ * Get the mocked setupSdk function. This must be called after vi.mock() has
+ * been executed in the test file.
  *
  * @returns The mocked setupSdk function
  */
@@ -39,12 +42,13 @@ export async function getMockSetupSdk(): Promise<Mock> {
 }
 
 /**
- * Setup SDK mock for API call error.
- * Note: Test files must call vi.mock() for the SDK modules before using this helper.
+ * Setup SDK mock for API call error. Note: Test files must call vi.mock() for
+ * the SDK modules before using this helper.
  *
- * @param sdkMethod - The SDK method to mock
- * @param error - Error message or Error object
+ * @param sdkMethod - The SDK method to mock.
+ * @param error - Error message or Error object.
  * @param code - HTTP status code (default: 404)
+ *
  * @returns Object with mockSdk and mockHandleApi references
  */
 export async function setupSdkMockError(
@@ -70,11 +74,12 @@ export async function setupSdkMockError(
 }
 
 /**
- * Setup SDK mock for successful API call.
- * Note: Test files must call vi.mock() for the SDK modules before using this helper.
+ * Setup SDK mock for successful API call. Note: Test files must call vi.mock()
+ * for the SDK modules before using this helper.
  *
  * @param sdkMethod - The SDK method to mock (e.g., 'getOrgQuotaOverview')
- * @param mockData - The data to return in the success response
+ * @param mockData - The data to return in the success response.
+ *
  * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk references
  */
 export async function setupSdkMockSuccess(
@@ -99,12 +104,13 @@ export async function setupSdkMockSuccess(
 }
 
 /**
- * Setup SDK mock with custom SDK object.
- * For tests that need fine-grained control over SDK methods.
- * Note: Test files must call vi.mock() for the SDK modules before using this helper.
+ * Setup SDK mock with custom SDK object. For tests that need fine-grained
+ * control over SDK methods. Note: Test files must call vi.mock() for the SDK
+ * modules before using this helper.
  *
- * @param mockSdkMethods - Object with SDK methods to mock
- * @param mockApiData - Data to return from handleApiCall
+ * @param mockSdkMethods - Object with SDK methods to mock.
+ * @param mockApiData - Data to return from handleApiCall.
+ *
  * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk
  */
 export async function setupSdkMockWithCustomSdk(
@@ -127,10 +133,10 @@ export async function setupSdkMockWithCustomSdk(
 }
 
 /**
- * Setup SDK setup failure (before API call).
- * Note: Test files must call vi.mock() for the SDK modules before using this helper.
+ * Setup SDK setup failure (before API call). Note: Test files must call
+ * vi.mock() for the SDK modules before using this helper.
  *
- * @param message - Error message
+ * @param message - Error message.
  * @param options - Error options (code, cause)
  */
 export async function setupSdkSetupFailure(
@@ -142,12 +148,13 @@ export async function setupSdkSetupFailure(
 }
 
 /**
- * Setup SDK mock for withSdk pattern.
- * For tests using the withSdk utility instead of setupSdk.
- * Note: Test files must call vi.mock() for the SDK modules before using this helper.
+ * Setup SDK mock for withSdk pattern. For tests using the withSdk utility
+ * instead of setupSdk. Note: Test files must call vi.mock() for the SDK modules
+ * before using this helper.
  *
- * @param callback - The function to execute with the SDK
- * @param mockSdkMethods - Object with SDK methods to mock
+ * @param callback - The function to execute with the SDK.
+ * @param mockSdkMethods - Object with SDK methods to mock.
+ *
  * @returns Mock SDK object
  */
 // c8 ignore start - Dead code: withSdk not yet implemented in sdk.mts.

@@ -1,14 +1,13 @@
 /**
  * Pipe-safety integration tests.
  *
- * Simulates the full machine-mode pipeline: a command emits a payload
- * via emitPayload() (block-sentinel-wrapped under --json), that
- * output + arbitrary child chatter is piped through the scrubber.
- * Asserts that what reaches stdout is exactly the payload — nothing
- * more, nothing less.
+ * Simulates the full machine-mode pipeline: a command emits a payload via
+ * emitPayload() (block-sentinel-wrapped under --json), that output + arbitrary
+ * child chatter is piped through the scrubber. Asserts that what reaches stdout
+ * is exactly the payload — nothing more, nothing less.
  *
- * This is what `socket <cmd> --json | jq` actually needs: no trailing
- * text, no ANSI, no prefix, valid JSON.
+ * This is what `socket <cmd> --json | jq` actually needs: no trailing text, no
+ * ANSI, no prefix, valid JSON.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -46,9 +45,9 @@ class Sink extends Writable {
 }
 
 /**
- * Take the captured stdoutLines (what emitPayload wrote) plus any
- * extra child-stdout chatter, concatenate as lines, pipe through the
- * scrubber, and return the scrubbed stdout / stderr.
+ * Take the captured stdoutLines (what emitPayload wrote) plus any extra
+ * child-stdout chatter, concatenate as lines, pipe through the scrubber, and
+ * return the scrubbed stdout / stderr.
  */
 export async function scrubCapturedOutput(
   childChatterBefore: string[] = [],

@@ -1,16 +1,12 @@
 /**
  * Unit tests for organization slug suggestion utility.
  *
- * Purpose:
- * Tests the organization slug suggestion prompt.
+ * Purpose: Tests the organization slug suggestion prompt.
  *
- * Test Coverage:
- * - suggestOrgSlug function
- * - API failure handling
- * - User selection
+ * Test Coverage: - suggestOrgSlug function - API failure handling - User
+ * selection.
  *
- * Related Files:
- * - src/commands/scan/suggest-org-slug.mts (implementation)
+ * Related Files: - src/commands/scan/suggest-org-slug.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

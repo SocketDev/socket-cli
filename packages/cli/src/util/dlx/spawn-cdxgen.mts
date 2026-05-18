@@ -1,13 +1,13 @@
 /**
  * Spawn cdxgen (CycloneDX SBOM generator).
  *
- * - spawnCdxgenDlx: local override > Socket dlx download.
- * - spawnCdxgenVfs: extract from SEA bundle, then exec.
- * - spawnCdxgen: auto-detect SEA vs npm-CLI mode and dispatch.
+ * - SpawnCdxgenDlx: local override > Socket dlx download.
+ * - SpawnCdxgenVfs: extract from SEA bundle, then exec.
+ * - SpawnCdxgen: auto-detect SEA vs npm-CLI mode and dispatch.
  *
- * The local-override path is bespoke (cdxgen is a JS file when local), so
- * Dlx stays hand-rolled here. Vfs + auto-dispatch use the shared helpers
- * from define-tool-spawn.
+ * The local-override path is bespoke (cdxgen is a JS file when local), so Dlx
+ * stays hand-rolled here. Vfs + auto-dispatch use the shared helpers from
+ * define-tool-spawn.
  */
 
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
@@ -22,9 +22,9 @@ import type { StdioOptions } from 'node:child_process'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 /**
- * Helper to spawn cdxgen with dlx.
- * If SOCKET_CLI_CDXGEN_LOCAL_PATH environment variable is set, uses the local
- * cdxgen binary at that path instead of downloading from npm.
+ * Helper to spawn cdxgen with dlx. If SOCKET_CLI_CDXGEN_LOCAL_PATH environment
+ * variable is set, uses the local cdxgen binary at that path instead of
+ * downloading from npm.
  */
 export async function spawnCdxgenDlx(
   args: string[] | readonly string[],

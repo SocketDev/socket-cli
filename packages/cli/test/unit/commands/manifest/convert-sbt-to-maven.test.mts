@@ -3,11 +3,12 @@
  *
  * Spawns sbt makePom; collects "Wrote <path>.pom" lines from stdout to
  * determine the produced pom files. Tests cover stderr handling, no-pom
- * detection, single/multi-file stdout output, --verbose logging, and
- * exception handling.
+ * detection, single/multi-file stdout output, --verbose logging, and exception
+ * handling.
  *
  * Related Files:
- * - src/commands/manifest/convert-sbt-to-maven.mts
+ *
+ * - Src/commands/manifest/convert-sbt-to-maven.mts
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

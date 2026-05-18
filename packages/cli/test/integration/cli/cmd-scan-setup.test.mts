@@ -3,15 +3,11 @@
  *
  * Tests configuring scan settings for projects.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Socket.json creation/modification
- * - Scan configuration options
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Socket.json creation/modification - Scan configuration options.
  *
- * Related Files:
- * - src/commands/scan/cmd-scan-setup.mts - Command definition
- * - src/commands/scan/handle-scan-setup.mts - Setup logic
+ * Related Files: - src/commands/scan/cmd-scan-setup.mts - Command definition -
+ * src/commands/scan/handle-scan-setup.mts - Setup logic.
  */
 
 import { describe, expect } from 'vitest'

@@ -1,9 +1,19 @@
 {
   "name": "socket",
   "version": "2.1.0",
-  "description": "Socket CLI for Socket.dev",
   "private": true,
+  "description": "Socket CLI for Socket.dev",
+  "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
   "bin": {
     "socket": "./bin/socket.js"
   },
@@ -14,6 +24,10 @@
     "logo-dark.png",
     "logo-light.png"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "optionalDependencies": {
     "@socketbin/cli-darwin-arm64": "0.0.0-replaced-by-publish",
     "@socketbin/cli-darwin-x64": "0.0.0-replaced-by-publish",
@@ -26,19 +40,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SocketDev/socket-cli.git"
-  },
-  "author": {
-    "name": "Socket Inc",
-    "email": "eng@socket.dev",
-    "url": "https://socket.dev"
-  },
-  "homepage": "https://github.com/SocketDev/socket-cli",
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
   }
 }

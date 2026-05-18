@@ -1,8 +1,9 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
- * @fileoverview Utilities for creating pnpm patches using Babel AST + MagicString.
- * Provides helpers for transforming node_modules files and generating patch files.
+ * @file Utilities for creating pnpm patches using Babel AST + MagicString.
+ *   Provides helpers for transforming node_modules files and generating patch
+ *   files.
  */
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -46,6 +47,7 @@ export async function commitPatch(patchPath, packageName) {
  * @param {string} patchDef.description - Description of what the patch does.
  * @param {string[]} patchDef.files - Array of file paths to transform.
  * @param {Function} patchDef.transform - Transform function.
+ *
  * @returns {Promise<void>}
  */
 export async function createPatch(patchDef) {
@@ -109,6 +111,7 @@ export async function createPatch(patchDef) {
  *
  * @param {string} code - Source code to parse.
  * @param {object} [options] - Babel parser options.
+ *
  * @returns {object} Babel AST.
  */
 export function parseCode(code, options = {}) {
@@ -123,7 +126,9 @@ export function parseCode(code, options = {}) {
  * Prompt user for yes/no confirmation.
  *
  * @param {string} question - Question to ask the user.
- * @param {boolean} [defaultAnswer=false] - Default answer if user just presses enter.
+ * @param {boolean} [defaultAnswer=false] - Default answer if user just presses
+ *   enter.
+ *
  * @returns {Promise<boolean>} True if user answered yes, false otherwise.
  */
 export async function promptYesNo(question, defaultAnswer = false) {
@@ -152,6 +157,7 @@ export async function promptYesNo(question, defaultAnswer = false) {
  *
  * @param {string} packagePath - Path to package directory.
  * @param {string} filePath - Relative file path within package.
+ *
  * @returns {string} File contents.
  */
 export function readPatchFile(packagePath, filePath) {
@@ -166,6 +172,7 @@ export function readPatchFile(packagePath, filePath) {
  * Run pnpm patch command to prepare package for editing.
  *
  * @param {string} packageSpec - Package name and version (e.g., 'debug@4.4.3').
+ *
  * @returns {Promise<string>} Path to temporary patch directory.
  */
 export async function startPatch(packageSpec) {

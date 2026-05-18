@@ -1,16 +1,12 @@
 /**
  * Unit tests for CLI message constants.
  *
- * Purpose:
- * Tests the message templates used throughout the CLI.
+ * Purpose: Tests the message templates used throughout the CLI.
  *
- * Test Coverage:
- * - Static message values
- * - Message template functions
- * - All message categories
+ * Test Coverage: - Static message values - Message template functions - All
+ * message categories.
  *
- * Related Files:
- * - util/cli/messages.mts (implementation)
+ * Related Files: - util/cli/messages.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

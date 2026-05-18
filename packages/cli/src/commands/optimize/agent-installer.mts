@@ -1,19 +1,15 @@
 /**
- * Package manager agent installation utilities for optimize command.
- * Manages package installation via different package managers during optimization.
+ * Package manager agent installation utilities for optimize command. Manages
+ * package installation via different package managers during optimization.
  *
- * Key Functions:
- * - runAgentInstall: Execute package installation with detected agent
+ * Key Functions: - runAgentInstall: Execute package installation with detected
+ * agent.
  *
- * Supported Agents:
- * - npm: Node Package Manager
- * - pnpm: Fast, disk space efficient package manager
- * - yarn: Alternative package manager
+ * Supported Agents: - npm: Node Package Manager - pnpm: Fast, disk space
+ * efficient package manager - yarn: Alternative package manager.
  *
- * Features:
- * - Automatic agent detection
- * - Spinner support for progress indication
- * - CI-mode configuration for non-interactive execution
+ * Features: - Automatic agent detection - Spinner support for progress
+ * indication - CI-mode configuration for non-interactive execution.
  */
 
 import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
@@ -41,8 +37,8 @@ export interface AgentInstallOptions extends SpawnOption {
 export type AgentSpawnResult = ReturnType<typeof spawn>
 
 /**
- * Execute package installation with the detected package manager agent.
- * Handles different package managers with appropriate configuration for optimization.
+ * Execute package installation with the detected package manager agent. Handles
+ * different package managers with appropriate configuration for optimization.
  */
 export function runAgentInstall(
   pkgEnvDetails: EnvDetails,

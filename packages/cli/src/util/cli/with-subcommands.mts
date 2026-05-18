@@ -170,13 +170,16 @@ export type MeowOrExitOptions = {
 /**
  * Create meow CLI instance or exit with help/error (meow will exit immediately
  * if it calls .showHelp()).
- * @param config Configuration object with argv, config, parentName, and importMeta.
- * @param options Optional settings like allowUnknownFlags.
+ *
  * @example
- * meowOrExit(
- *   { argv, config, parentName, importMeta },
- *   { allowUnknownFlags: false }
- * )
+ *   meowOrExit(
+ *     { argv, config, parentName, importMeta },
+ *     { allowUnknownFlags: false },
+ *   )
+ *
+ * @param config Configuration object with argv, config, parentName, and
+ *   importMeta.
+ * @param options Optional settings like allowUnknownFlags.
  */
 export function meowOrExit<const F extends MeowFlags = MeowFlags>(
   config: MeowOrExitConfig<F>,
@@ -312,13 +315,16 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
 
 /**
  * Main function for handling CLI with subcommands using meow.
- * @param config Configuration object with name, argv, importMeta, and subcommands.
- * @param options Optional settings like aliases and defaultSub.
+ *
  * @example
- * meowWithSubcommands(
- *   { name, argv, importMeta, subcommands },
- *   { aliases, defaultSub }
- * )
+ *   meowWithSubcommands(
+ *     { name, argv, importMeta, subcommands },
+ *     { aliases, defaultSub },
+ *   )
+ *
+ * @param config Configuration object with name, argv, importMeta, and
+ *   subcommands.
+ * @param options Optional settings like aliases and defaultSub.
  */
 export async function meowWithSubcommands(
   config: MeowConfig,

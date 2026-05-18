@@ -1,10 +1,10 @@
 /**
  * Version helpers used by the build-pipeline orchestrator.
  *
- * The socket-btm version of this file also fetches Node.js release
- * checksums and extracts submodule SHAs for its native-binary builders;
- * ultrathink's lang wasm pipelines don't need any of that. Keep only
- * getNodeVersion and getToolVersion (the two the orchestrator imports).
+ * The socket-btm version of this file also fetches Node.js release checksums
+ * and extracts submodule SHAs for its native-binary builders; ultrathink's lang
+ * wasm pipelines don't need any of that. Keep only getNodeVersion and
+ * getToolVersion (the two the orchestrator imports).
  */
 
 import { promises as fs } from 'node:fs'
@@ -23,7 +23,7 @@ export function getNodeVersion(): string {
 /**
  * Read a pinned tool version from the package's external-tools.json.
  *
- * @throws when the file is missing or the tool has no version recorded.
+ * @throws When the file is missing or the tool has no version recorded.
  */
 export async function getToolVersion(
   packageRoot: string,
@@ -39,7 +39,11 @@ export async function getToolVersion(
     })
   }
   let data:
-    | { tools?: Record<string, { version?: string | undefined } | undefined> | undefined }
+    | {
+        tools?:
+          | Record<string, { version?: string | undefined } | undefined>
+          | undefined
+      }
     | undefined
   try {
     data = JSON.parse(raw)

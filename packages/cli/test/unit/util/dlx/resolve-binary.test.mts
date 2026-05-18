@@ -2,19 +2,14 @@
 /**
  * Unit tests for binary path resolution utilities.
  *
- * Purpose:
- * Tests the binary resolution logic for external tools like Coana, cdxgen, sfw, etc.
+ * Purpose: Tests the binary resolution logic for external tools like Coana,
+ * cdxgen, sfw, etc.
  *
- * Test Coverage:
- * - resolveCoana function
- * - resolveCdxgen function
- * - resolvePyCli function
- * - resolveSfw function
- * - resolveSocketPatch function
- * - resolveSynp function
+ * Test Coverage: - resolveCoana function - resolveCdxgen function -
+ * resolvePyCli function - resolveSfw function - resolveSocketPatch function -
+ * resolveSynp function.
  *
- * Related Files:
- * - src/util/dlx/resolve-binary.mts (implementation)
+ * Related Files: - src/util/dlx/resolve-binary.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

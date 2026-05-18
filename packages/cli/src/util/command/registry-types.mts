@@ -1,4 +1,8 @@
-/** @fileoverview Core types for Socket CLI command registry system. Defines command definitions, flags, validation, middleware, and execution context interfaces. */
+/**
+ * @file Core types for Socket CLI command registry system. Defines command
+ *   definitions, flags, validation, middleware, and execution context
+ *   interfaces.
+ */
 
 import type { CResult } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/lib/spinner'
@@ -61,37 +65,61 @@ export type HookFn = (context: CommandContext) => Promise<void>
  * Complete command definition.
  */
 export interface CommandDefinition {
-  /** Command name (e.g., 'scan', 'repository:create') */
+  /**
+   * Command name (e.g., 'scan', 'repository:create')
+   */
   name: string
 
-  /** Human-readable description */
+  /**
+   * Human-readable description.
+   */
   description: string
 
-  /** Parent command for subcommands (e.g., 'repository' for 'repository:create') */
+  /**
+   * Parent command for subcommands (e.g., 'repository' for 'repository:create')
+   */
   parent?: string | undefined
 
-  /** Command aliases */
+  /**
+   * Command aliases.
+   */
   aliases?: string[] | undefined
 
-  /** Hide from help output */
+  /**
+   * Hide from help output.
+   */
   hidden?: boolean | undefined
 
-  /** Flag definitions */
+  /**
+   * Flag definitions.
+   */
   flags?: Record<string, FlagDefinition> | undefined
 
-  /** Main command handler */
+  /**
+   * Main command handler.
+   */
   handler: (context: CommandContext) => Promise<CResult<unknown>>
 
-  /** Pre-execution hook */
+  /**
+   * Pre-execution hook.
+   */
   before?: HookFn | undefined
 
-  /** Post-execution hook */
+  /**
+   * Post-execution hook.
+   */
   after?: HookFn | undefined
 
-  /** Custom validation logic */
-  validate?: ((flags: FlagValues) => ValidationResult | Promise<ValidationResult>) | undefined
+  /**
+   * Custom validation logic.
+   */
+  validate?:
+    | ((flags: FlagValues) => ValidationResult | Promise<ValidationResult>)
+    | undefined
 
-  /** Examples for help text */
+  /**
+   * Examples for help text.
+   */
   examples?: string[] | undefined
 }
 

@@ -1,8 +1,8 @@
 {
   "name": "package-builder",
   "version": "1.0.0",
-  "description": "Template-based package generation system for Socket CLI distribution",
   "private": true,
+  "description": "Template-based package generation system for Socket CLI distribution",
   "type": "module",
   "exports": {
     "./scripts/*": "./scripts/*"

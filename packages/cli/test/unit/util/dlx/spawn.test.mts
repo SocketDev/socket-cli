@@ -1,17 +1,15 @@
 /**
- * max-file-lines: legitimate — comprehensive single-module test suite.
- * Covers TOCTOU lock handling, zip-slip protection, tar.gz extraction,
- * error wrapping; vi.mock setup is shared so splitting would duplicate
- * boilerplate.
+ * Max-file-lines: legitimate — comprehensive single-module test suite. Covers
+ * TOCTOU lock handling, zip-slip protection, tar.gz extraction, error wrapping;
+ * vi.mock setup is shared so splitting would duplicate boilerplate.
  *
  * Unit tests for util/dlx/spawn.
  *
  * Covers validatePackageName, spawnDlx, spawnToolVfs, and
- * downloadGitHubReleaseBinary (including TOCTOU lock handling,
- * zip-slip protection, tar.gz extraction, and error wrapping).
+ * downloadGitHubReleaseBinary (including TOCTOU lock handling, zip-slip
+ * protection, tar.gz extraction, and error wrapping).
  *
- * Related Files:
- * - src/util/dlx/spawn.mts
+ * Related Files: - src/util/dlx/spawn.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -153,10 +151,9 @@ describe('spawnDlx', () => {
   it('forwards to dlxPackage with default force=false', async () => {
     mockDlxPackage.mockResolvedValue({ spawnPromise: 'p' })
 
-    const result = await spawnDlx(
-      { name: 'lodash', version: '4.17.21' },
-      ['--help'],
-    )
+    const result = await spawnDlx({ name: 'lodash', version: '4.17.21' }, [
+      '--help',
+    ])
 
     expect(mockDlxPackage).toHaveBeenCalledWith(
       ['--help'],
@@ -369,9 +366,7 @@ describe('downloadGitHubReleaseBinary', () => {
 
   it('rejects zip-slip path traversal entries', async () => {
     mockExistsSync.mockReturnValue(false)
-    mockAdmZipGetEntries.mockReturnValue([
-      { entryName: '../../etc/passwd' },
-    ])
+    mockAdmZipGetEntries.mockReturnValue([{ entryName: '../../etc/passwd' }])
 
     await expect(
       downloadGitHubReleaseBinary({
@@ -421,9 +416,7 @@ describe('downloadGitHubReleaseBinary', () => {
     })
     // setTimeout: bypass the actual 1s wait.
     const realSetTimeout = globalThis.setTimeout
-    ;(globalThis as { setTimeout: unknown }).setTimeout = ((
-      cb: () => void,
-    ) => {
+    ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
       cb()
       return 0 as never
     }) as never
@@ -462,9 +455,7 @@ describe('downloadGitHubReleaseBinary', () => {
       return existsCount >= 10
     })
     const realSetTimeout = globalThis.setTimeout
-    ;(globalThis as { setTimeout: unknown }).setTimeout = ((
-      cb: () => void,
-    ) => {
+    ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
       cb()
       return 0 as never
     }) as never
@@ -512,9 +503,7 @@ describe('downloadGitHubReleaseBinary', () => {
       return '99999'
     })
     const realSetTimeout = globalThis.setTimeout
-    ;(globalThis as { setTimeout: unknown }).setTimeout = ((
-      cb: () => void,
-    ) => {
+    ;(globalThis as { setTimeout: unknown }).setTimeout = ((cb: () => void) => {
       cb()
       return 0 as never
     }) as never

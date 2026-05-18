@@ -57,7 +57,8 @@ export function getScanWithEnvVars(): SocketArtifact[] {
 }
 
 /**
- * Helper function to create a scan with multiple packages and alerts for testing folding.
+ * Helper function to create a scan with multiple packages and alerts for
+ * testing folding.
  */
 export function getScanWithMultiplePackages(): SocketArtifact[] {
   return [

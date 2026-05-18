@@ -1,14 +1,13 @@
 /**
  * Validation helpers for `socket scan create`.
  *
- * Extracted from cmd-scan-create.mts to keep that file under the
- * 1000-line File-size hard cap. These helpers detect common
- * mistakes around the `--default-branch` / `--make-default-branch`
- * flag pair, where the legacy flag was a *boolean* but users often
- * tried to pass a value (e.g. `--default-branch=main` or
- * `--default-branch main`). The handler emits a friendly error
- * pointing at the right flag (`--branch <name>`) when one of these
- * misuses is detected.
+ * Extracted from cmd-scan-create.mts to keep that file under the 1000-line
+ * File-size hard cap. These helpers detect common mistakes around the
+ * `--default-branch` / `--make-default-branch` flag pair, where the legacy flag
+ * was a _boolean_ but users often tried to pass a value (e.g.
+ * `--default-branch=main` or `--default-branch main`). The handler emits a
+ * friendly error pointing at the right flag (`--branch <name>`) when one of
+ * these misuses is detected.
  */
 
 const LEGACY_DEFAULT_BRANCH_FLAGS = ['--default-branch', '--defaultBranch']

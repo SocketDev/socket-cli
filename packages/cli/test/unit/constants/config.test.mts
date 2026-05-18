@@ -1,15 +1,11 @@
 /**
  * Unit tests for config constants.
  *
- * Purpose:
- * Tests the configuration key constants for Socket CLI settings.
+ * Purpose: Tests the configuration key constants for Socket CLI settings.
  *
- * Test Coverage:
- * - Config key constant values
- * - Config key naming conventions
+ * Test Coverage: - Config key constant values - Config key naming conventions.
  *
- * Related Files:
- * - constants/config.mts (implementation)
+ * Related Files: - constants/config.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

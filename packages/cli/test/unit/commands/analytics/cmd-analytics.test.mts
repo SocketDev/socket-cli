@@ -3,26 +3,18 @@
  *
  * Tests the command that displays Socket analytics data.
  *
- * Test Coverage:
- * - Command metadata (description, hidden flag)
- * - API token requirement validation
- * - Scope arguments: org vs repo
- * - Time filter validation (7, 30, 90 days)
- * - Repository name when scope=repo
- * - Output modes: text, JSON, markdown
- * - File output flag validation
- * - Dry-run mode
- * - Legacy flag detection
+ * Test Coverage: - Command metadata (description, hidden flag) - API token
+ * requirement validation - Scope arguments: org vs repo - Time filter
+ * validation (7, 30, 90 days) - Repository name when scope=repo - Output modes:
+ * text, JSON, markdown - File output flag validation - Dry-run mode - Legacy
+ * flag detection.
  *
- * Testing Approach:
- * - Mock logger to capture output
- * - Mock handleAnalytics to verify handler invocation
- * - Mock hasDefaultApiToken for authentication checks
- * - Test argument combinations and defaults
+ * Testing Approach: - Mock logger to capture output - Mock handleAnalytics to
+ * verify handler invocation - Mock hasDefaultApiToken for authentication checks
+ * - Test argument combinations and defaults.
  *
- * Related Files:
- * - src/commands/analytics/cmd-analytics.mts - Implementation
- * - src/commands/analytics/handle-analytics.mts - Handler
+ * Related Files: - src/commands/analytics/cmd-analytics.mts - Implementation -
+ * src/commands/analytics/handle-analytics.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -219,10 +219,10 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<DlxSpawnResult> {
 }
 
 /**
- * Read a generated CycloneDX BOM and warn when its `components` array is
- * empty. An empty components array parses as valid CycloneDX but carries no
- * dependency data, so the Socket dashboard cannot surface alerts for it. This
- * catches configurations we did not hard-gate (non-default lifecycle, custom
+ * Read a generated CycloneDX BOM and warn when its `components` array is empty.
+ * An empty components array parses as valid CycloneDX but carries no dependency
+ * data, so the Socket dashboard cannot surface alerts for it. This catches
+ * configurations we did not hard-gate (non-default lifecycle, custom
  * `--filter`/`--only` wiping all components, ecosystem mismatch, etc.).
  */
 export async function warnIfEmptyComponents(

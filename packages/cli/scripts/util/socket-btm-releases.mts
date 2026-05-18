@@ -1,6 +1,7 @@
 /**
  * Shared utilities for socket-cli build scripts that extract socket-btm assets.
- * Contains socket-cli-specific utilities for header generation and file hashing.
+ * Contains socket-cli-specific utilities for header generation and file
+ * hashing.
  */
 
 import crypto from 'node:crypto'
@@ -9,7 +10,8 @@ import { readFile } from 'node:fs/promises'
 /**
  * Compute SHA256 hash of file content.
  *
- * @param {string} filePath - Path to file
+ * @param {string} filePath - Path to file.
+ *
  * @returns {Promise<string>} - Hex-encoded SHA256 hash
  */
 export async function computeFileHash(filePath) {
@@ -20,11 +22,12 @@ export async function computeFileHash(filePath) {
 /**
  * Generate file header with metadata.
  *
- * @param {object} options - Header options
- * @param {string} options.scriptName - Name of generating script
- * @param {string} options.tag - Release tag
- * @param {string} options.assetName - Asset filename
- * @param {string} [options.sourceHash] - Optional source hash
+ * @param {object} options - Header options.
+ * @param {string} options.scriptName - Name of generating script.
+ * @param {string} options.tag - Release tag.
+ * @param {string} options.assetName - Asset filename.
+ * @param {string} [options.sourceHash] - Optional source hash.
+ *
  * @returns {string} - File header comment
  */
 export function generateHeader({ assetName, scriptName, sourceHash, tag }) {

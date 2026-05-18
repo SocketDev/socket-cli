@@ -1,17 +1,12 @@
 /**
  * Unit tests for environment constants module.
  *
- * Purpose:
- * Tests environment variable re-exports and the ENV proxy behavior.
+ * Purpose: Tests environment variable re-exports and the ENV proxy behavior.
  *
- * Test Coverage:
- * - Environment variable re-exports
- * - ENV proxy behavior in VITEST mode
- * - processEnv export
- * - Build metadata getters
+ * Test Coverage: - Environment variable re-exports - ENV proxy behavior in
+ * VITEST mode - processEnv export - Build metadata getters.
  *
- * Related Files:
- * - src/constants/env.mts (implementation)
+ * Related Files: - src/constants/env.mts (implementation)
  */
 
 import process from 'node:process'

@@ -2,12 +2,11 @@
  * Unit tests for createConfigCommand.
  *
  * Factory that wires meowOrExit + validation + dry-run into a config
- * subcommand. Tests verify each branch of the constructed `run`:
- * key parsing, value parsing, --json/--markdown conflict, --dry-run
- * preview, custom validation, and final handler dispatch.
+ * subcommand. Tests verify each branch of the constructed `run`: key parsing,
+ * value parsing, --json/--markdown conflict, --dry-run preview, custom
+ * validation, and final handler dispatch.
  *
- * Related Files:
- * - src/commands/config/config-command-factory.mts
+ * Related Files: - src/commands/config/config-command-factory.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -59,7 +58,9 @@ const baseSpec = {
 const importMeta = { url: 'file:///test/config.mts' } as ImportMeta
 const context = { parentName: 'socket config' }
 
-const setMeow = (overrides: { input?: string[] | undefined; flags?: unknown | undefined } = {}) => {
+const setMeow = (
+  overrides: { input?: string[] | undefined; flags?: unknown | undefined } = {},
+) => {
   mockMeowOrExit.mockReturnValueOnce({
     flags: { json: false, markdown: false, dryRun: false, ...overrides.flags },
     input: overrides.input ?? ['apiToken', 'token-value'],

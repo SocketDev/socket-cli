@@ -1,8 +1,7 @@
 /**
  * Unit tests for PyCLI version getter.
  *
- * Related Files:
- * - src/env/pycli-version.mts
+ * Related Files: - src/env/pycli-version.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

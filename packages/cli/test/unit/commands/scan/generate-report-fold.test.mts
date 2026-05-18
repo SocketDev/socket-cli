@@ -1,21 +1,16 @@
 /**
  * Unit tests for generateReportFold.
  *
- * Purpose:
- * Tests folded/collapsed scan report generation. Validates compact report formatting with expandable sections.
+ * Purpose: Tests folded/collapsed scan report generation. Validates compact
+ * report formatting with expandable sections.
  *
- * Test Coverage:
- * - Core functionality validation
- * - Edge case handling
- * - Error scenarios
- * - Input validation
+ * Test Coverage: - Core functionality validation - Edge case handling - Error
+ * scenarios - Input validation.
  *
- * Testing Approach:
- * Comprehensive unit testing of module functionality with mocked dependencies
- * where appropriate.
+ * Testing Approach: Comprehensive unit testing of module functionality with
+ * mocked dependencies where appropriate.
  *
- * Related Files:
- * - src/generateReportFold.mts (implementation)
+ * Related Files: - src/generateReportFold.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

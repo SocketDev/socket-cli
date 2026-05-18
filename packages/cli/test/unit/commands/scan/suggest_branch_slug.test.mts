@@ -1,17 +1,18 @@
 /**
  * Unit tests for branch slug suggestion utility.
  *
- * Purpose:
- * Tests the branch slug suggestion prompt for scan commands.
+ * Purpose: Tests the branch slug suggestion prompt for scan commands.
  *
  * Test Coverage:
- * - suggestBranchSlug function
+ *
+ * - SuggestBranchSlug function
  * - Git branch detection
  * - User selection handling
  * - Default branch fallback
  *
  * Related Files:
- * - src/commands/scan/suggest_branch_slug.mts (implementation)
+ *
+ * - Src/commands/scan/suggest_branch_slug.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

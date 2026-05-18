@@ -1,19 +1,13 @@
 /**
  * Unit tests for config auto output formatting.
  *
- * Purpose:
- * Tests the output formatting for config auto-discovery results.
+ * Purpose: Tests the output formatting for config auto-discovery results.
  *
- * Test Coverage:
- * - outputConfigAuto function
- * - JSON output format
- * - Text output format
- * - Markdown output format
- * - Interactive prompts for defaultOrg
- * - Read-only mode handling
+ * Test Coverage: - outputConfigAuto function - JSON output format - Text output
+ * format - Markdown output format - Interactive prompts for defaultOrg -
+ * Read-only mode handling.
  *
- * Related Files:
- * - src/commands/config/output-config-auto.mts (implementation)
+ * Related Files: - src/commands/config/output-config-auto.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

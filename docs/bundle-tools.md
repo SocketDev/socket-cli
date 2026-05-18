@@ -166,16 +166,16 @@ Environment variables for development/testing:
 
 ## Implementation Files
 
-| File                               | Purpose                               |
-| ---------------------------------- | ------------------------------------- |
-| `bundle-tools.json`                | Tool definitions, versions, checksums |
+| File                              | Purpose                               |
+| --------------------------------- | ------------------------------------- |
+| `bundle-tools.json`               | Tool definitions, versions, checksums |
 | `src/util/dlx/resolve-binary.mts` | Binary resolution logic               |
 | `src/util/dlx/spawn.mts`          | Tool spawning (VFS + dlx)             |
 | `src/util/dlx/vfs-extract.mts`    | VFS extraction utilities              |
 | `src/util/basics/spawn.mts`       | Python-based tools (basics)           |
 | `src/util/basics/vfs-extract.mts` | Basics tools VFS extraction           |
-| `src/env/*-version.mts`            | Version getters (esbuild inlined)     |
-| `src/env/*-checksums.mts`          | Checksum getters (esbuild inlined)    |
+| `src/env/*-version.mts`           | Version getters (esbuild inlined)     |
+| `src/env/*-checksums.mts`         | Checksum getters (esbuild inlined)    |
 
 ---
 

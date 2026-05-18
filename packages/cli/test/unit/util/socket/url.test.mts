@@ -1,21 +1,15 @@
 /**
  * Unit tests for Socket URL utilities.
  *
- * Purpose:
- * Tests Socket URL construction. Validates URL generation for Socket web UI and API.
+ * Purpose: Tests Socket URL construction. Validates URL generation for Socket
+ * web UI and API.
  *
- * Test Coverage:
- * - Web UI URL generation
- * - API URL construction
- * - Report URL generation
- * - Package URL generation
- * - Query parameter handling
+ * Test Coverage: - Web UI URL generation - API URL construction - Report URL
+ * generation - Package URL generation - Query parameter handling.
  *
- * Testing Approach:
- * Tests URL utilities for Socket service integration.
+ * Testing Approach: Tests URL utilities for Socket service integration.
  *
- * Related Files:
- * - util/socket/url.mts (implementation)
+ * Related Files: - util/socket/url.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'

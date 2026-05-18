@@ -1,9 +1,9 @@
 /**
  * Unit tests for the bespoke `spawnCdxgenDlx` flow.
  *
- * The Vfs / auto-dispatch code is tested via define-tool-spawn.test.mts.
- * This file targets the cdxgen-specific paths: local-override execution
- * (binary or JS via node) and the `spawnDlx` fallback for the npm dlx route.
+ * The Vfs / auto-dispatch code is tested via define-tool-spawn.test.mts. This
+ * file targets the cdxgen-specific paths: local-override execution (binary or
+ * JS via node) and the `spawnDlx` fallback for the npm dlx route.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

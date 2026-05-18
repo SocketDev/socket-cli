@@ -4,16 +4,13 @@
  * Tests the CycloneDX SBOM generation command that wraps @cyclonedx/cdxgen.
  * This command generates Software Bill of Materials for projects.
  *
- * Test Coverage:
- * - Help text display via --help flag
- * - Dry-run behavior (--dry-run flag)
- * - cdxgen alias routing (socket cdxgen)
- * - Unknown argument error handling
- * - Banner and exit code validation
+ * Test Coverage: - Help text display via --help flag - Dry-run behavior
+ * (--dry-run flag) - cdxgen alias routing (socket cdxgen) - Unknown argument
+ * error handling - Banner and exit code validation.
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest-cdxgen.mts - cdxgen command implementation
- * - src/commands/manifest/run-cdxgen.mts - cdxgen spawning logic
+ * Related Files: - src/commands/manifest/cmd-manifest-cdxgen.mts - cdxgen
+ * command implementation - src/commands/manifest/run-cdxgen.mts - cdxgen
+ * spawning logic.
  */
 
 import { describe, expect } from 'vitest'

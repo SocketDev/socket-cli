@@ -1,27 +1,23 @@
 /**
- * Unit Tests: Socket Go Command
+ * Unit Tests: Socket Go Command.
  *
- * Purpose:
- * Tests the go wrapper command that forwards go operations to Socket Firewall (sfw).
- * Validates argument forwarding, flag filtering, exit code handling, and signal propagation.
+ * Purpose: Tests the go wrapper command that forwards go operations to Socket
+ * Firewall (sfw). Validates argument forwarding, flag filtering, exit code
+ * handling, and signal propagation.
  *
- * Test Coverage:
- * - Command metadata (description, hidden status)
- * - Argument forwarding to sfw via spawnSfwDlx
- * - Socket CLI flag filtering (removes --config, --org, etc.)
- * - Exit code defaults and handling
- * - Signal propagation from child process
- * - Integration with meowOrExit for --help handling
+ * Test Coverage: - Command metadata (description, hidden status) - Argument
+ * forwarding to sfw via spawnSfwDlx - Socket CLI flag filtering (removes
+ * --config, --org, etc.) - Exit code defaults and handling - Signal propagation
+ * from child process - Integration with meowOrExit for --help handling.
  *
- * Testing Approach:
- * Mocks spawnSfwDlx to simulate child process behavior without actual execution.
- * Uses EventEmitter to simulate process exit events and signal handling.
- * Validates that Socket CLI flags are filtered out before forwarding to sfw.
+ * Testing Approach: Mocks spawnSfwDlx to simulate child process behavior
+ * without actual execution. Uses EventEmitter to simulate process exit events
+ * and signal handling. Validates that Socket CLI flags are filtered out before
+ * forwarding to sfw.
  *
- * Related Files:
- * - src/commands/go/cmd-go.mts - Go wrapper command implementation
- * - src/util/dlx/spawn.mts - DLX spawn utilities
- * - src/util/process/cmd.mts - Flag filtering utilities
+ * Related Files: - src/commands/go/cmd-go.mts - Go wrapper command
+ * implementation - src/util/dlx/spawn.mts - DLX spawn utilities -
+ * src/util/process/cmd.mts - Flag filtering utilities.
  */
 
 import EventEmitter from 'node:events'

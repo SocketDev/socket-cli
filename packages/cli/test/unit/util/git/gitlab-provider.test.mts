@@ -2,22 +2,13 @@
 /**
  * Unit tests for GitLab provider.
  *
- * Purpose:
- * Tests the GitLab merge request provider implementation.
+ * Purpose: Tests the GitLab merge request provider implementation.
  *
- * Test Coverage:
- * - GitLabProvider class
- * - createPr method
- * - updatePr method
- * - listPrs method
- * - deleteBranch method
- * - addComment method
- * - getProviderName method
- * - supportsGraphQL method
- * - State mapping functions
+ * Test Coverage: - GitLabProvider class - createPr method - updatePr method -
+ * listPrs method - deleteBranch method - addComment method - getProviderName
+ * method - supportsGraphQL method - State mapping functions.
  *
- * Related Files:
- * - util/git/gitlab-provider.mts (implementation)
+ * Related Files: - util/git/gitlab-provider.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

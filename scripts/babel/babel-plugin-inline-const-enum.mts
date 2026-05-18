@@ -1,9 +1,8 @@
 /**
- * @fileoverview Babel plugin to inline TypeScript const enum member access.
- * Replaces enum member access with literal values when enum definition is available.
- *
- * Note: TypeScript normally handles this during compilation. This plugin is useful
- * for post-processing compiled code or handling external modules.
+ * @file Babel plugin to inline TypeScript const enum member access. Replaces
+ *   enum member access with literal values when enum definition is available.
+ *   Note: TypeScript normally handles this during compilation. This plugin is
+ *   useful for post-processing compiled code or handling external modules.
  */
 
 /**
@@ -53,23 +52,20 @@ export function valueToLiteral(t, value) {
 /**
  * Babel plugin to inline const enum values.
  *
- * Transforms:
- *   MyEnum.Value → 42 (if MyEnum.Value = 42 in the enum definition)
+ * Transforms: MyEnum.Value → 42 (if MyEnum.Value = 42 in the enum definition)
  *
- * Usage:
- *   Pass enum definitions via options.enums:
- *   {
- *     enums: {
- *       MyEnum: { Value1: 0, Value2: 1 }
- *     }
- *   }
+ * Usage: Pass enum definitions via options.enums: { enums: { MyEnum: { Value1:
+ * 0, Value2: 1 } } }
  *
  * Or let the plugin scan the code for enum declarations (limited support).
  *
- * @param {object} babel - Babel API object
- * @param {object} options - Plugin options
- * @param {Record<string, Record<string, any>>} [options.enums] - Enum definitions
- * @param {boolean} [options.scanDeclarations=false] - Auto-detect enum declarations
+ * @param {object} babel - Babel API object.
+ * @param {object} options - Plugin options.
+ * @param {Record<string, Record<string, any>>} [options.enums] - Enum
+ *   definitions.
+ * @param {boolean} [options.scanDeclarations=false] - Auto-detect enum
+ *   declarations.
+ *
  * @returns {object} Babel plugin object
  */
 export default function inlineConstEnum(babel, options = {}) {

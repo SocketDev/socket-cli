@@ -1,12 +1,11 @@
 /**
  * Unit tests for attemptLogin handler.
  *
- * Drives the interactive login flow: prompts for API token, verifies it
- * against the SDK, prompts for enforced org / tab-completion, and persists
- * via applyLogin. All prompts and SDK calls are mocked.
+ * Drives the interactive login flow: prompts for API token, verifies it against
+ * the SDK, prompts for enforced org / tab-completion, and persists via
+ * applyLogin. All prompts and SDK calls are mocked.
  *
- * Related Files:
- * - src/commands/login/attempt-login.mts (implementation)
+ * Related Files: - src/commands/login/attempt-login.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,9 +1,10 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
- * Telemetry integration helpers for Socket CLI.
- * Provides utilities for tracking common CLI events and subprocess executions.
+ * Telemetry integration helpers for Socket CLI. Provides utilities for tracking
+ * common CLI events and subprocess executions.
  *
  * Usage:
+ *
  * ```typescript
  * import {
  *   setupTelemetryExitHandlers,
@@ -15,7 +16,7 @@
  *   trackCliError,
  *   trackSubprocessStart,
  *   trackSubprocessComplete,
- *   trackSubprocessError
+ *   trackSubprocessError,
  * } from './util/telemetry/integration.mts'
  *
  * // Set up exit handlers once during CLI initialization.
@@ -30,14 +31,16 @@
  *
  * // Track subprocess/forked CLI execution.
  * const subStart = await trackSubprocessStart('npm', { cwd: '/path' })
- * await trackSubprocessComplete('npm', subStart, 0, { stdout_length: 1234 })
+ * await trackSubprocessComplete('npm', subStart, 0, {
+ *   stdout_length: 1234,
+ * })
  *
  * // On subprocess error.
  * await trackSubprocessError('npm', subStart, error, 1)
  *
  * // Manual finalization (usually not needed if exit handlers are set up).
  * await finalizeTelemetry() // Async version.
- * finalizeTelemetrySync()    // Sync version (best-effort).
+ * finalizeTelemetrySync() // Sync version (best-effort).
  * ```
  */
 import os from 'node:os'
@@ -65,9 +68,11 @@ const API_TOKEN_FLAGS = new Set(['--api-token', '--token', '-t'])
 /**
  * Build context for the current telemetry entry.
  *
- * The context contains the current execution context, in which all CLI invocation should have access to.
+ * The context contains the current execution context, in which all CLI
+ * invocation should have access to.
  *
  * @param argv Command line arguments.
+ *
  * @returns Telemetry context object.
  */
 export function buildContext(argv: string[]): TelemetryContext {
@@ -84,6 +89,7 @@ export function buildContext(argv: string[]): TelemetryContext {
  * Calculate duration from start timestamp.
  *
  * @param startTime - Start timestamp from Date.now().
+ *
  * @returns Duration in milliseconds.
  */
 export function calculateDuration(startTime: number): number {
@@ -97,11 +103,10 @@ export function debug(message: string): void {
   debugNs('socket:telemetry:integration', message)
 }
 
-
 /**
- * Finalize telemetry and clean up resources (async version).
- * This should be called before process.exit to ensure telemetry is sent and resources are cleaned up.
- * Use this in async contexts like beforeExit handlers.
+ * Finalize telemetry and clean up resources (async version). This should be
+ * called before process.exit to ensure telemetry is sent and resources are
+ * cleaned up. Use this in async contexts like beforeExit handlers.
  *
  * @returns Promise that resolves when finalization completes.
  */
@@ -114,12 +119,13 @@ export async function finalizeTelemetry(): Promise<void> {
 }
 
 /**
- * Finalize telemetry synchronously (best-effort).
- * This triggers a flush without awaiting it.
- * Use this in synchronous contexts like signal handlers where async operations are not possible.
+ * Finalize telemetry synchronously (best-effort). This triggers a flush without
+ * awaiting it. Use this in synchronous contexts like signal handlers where
+ * async operations are not possible.
  *
- * Note: This is best-effort only. Events may be lost if the process exits before flush completes.
- * Prefer finalizeTelemetry() (async version) when possible.
+ * Note: This is best-effort only. Events may be lost if the process exits
+ * before flush completes. Prefer finalizeTelemetry() (async version) when
+ * possible.
  */
 export function finalizeTelemetrySync(): void {
   const instance = TelemetryService.getCurrentInstance()
@@ -133,6 +139,7 @@ export function finalizeTelemetrySync(): void {
  * Normalize error to Error object.
  *
  * @param error - Unknown error value.
+ *
  * @returns Error object.
  */
 export function normalizeError(error: unknown): Error {
@@ -144,6 +151,7 @@ export function normalizeError(error: unknown): Error {
  *
  * @param exitCode - Exit code (may be string, number, null, or undefined).
  * @param defaultValue - Default value if exitCode is not a number.
+ *
  * @returns Normalized exit code.
  */
 export function normalizeExitCode(
@@ -154,16 +162,18 @@ export function normalizeExitCode(
 }
 
 /**
- * Sanitize argv to remove sensitive information.
- * Removes API tokens, file paths with usernames, and other PII.
- * Also strips arguments after wrapper CLIs to avoid leaking package names.
- *
- * @param argv Raw command line arguments (full process.argv including execPath and script).
- * @returns Sanitized argv array.
+ * Sanitize argv to remove sensitive information. Removes API tokens, file paths
+ * with usernames, and other PII. Also strips arguments after wrapper CLIs to
+ * avoid leaking package names.
  *
  * @example
- * // Input: ['node', 'socket', 'npm', 'install', '@my/private-package', '--token', 'fake-token']
- * // Output: ['npm', 'install']
+ *   // Input: ['node', 'socket', 'npm', 'install', '@my/private-package', '--token', 'fake-token']
+ *   // Output: ['npm', 'install']
+ *
+ * @param argv Raw command line arguments (full process.argv including execPath
+ *   and script).
+ *
+ * @returns Sanitized argv array.
  */
 export function sanitizeArgv(argv: string[]): string[] {
   // Strip the first two values to drop the execPath and script.
@@ -207,10 +217,11 @@ export function sanitizeArgv(argv: string[]): string[] {
 }
 
 /**
- * Sanitize error attribute to remove user specific paths.
- * Replaces user home directory and other sensitive paths.
+ * Sanitize error attribute to remove user specific paths. Replaces user home
+ * directory and other sensitive paths.
  *
  * @param input Raw input.
+ *
  * @returns Sanitized input.
  */
 export function sanitizeErrorAttribute(
@@ -230,23 +241,22 @@ export function sanitizeErrorAttribute(
 }
 
 /**
- * Set up exit handlers for telemetry finalization.
- * This registers handlers for both normal exits (beforeExit) and common fatal signals.
+ * Set up exit handlers for telemetry finalization. This registers handlers for
+ * both normal exits (beforeExit) and common fatal signals.
  *
- * Flushing strategy:
- * - Batch-based: Auto-flush when queue reaches 10 events.
- * - beforeExit: Async handler for clean shutdowns (when event loop empties).
- * - Fatal signals (SIGINT, SIGTERM, SIGHUP): Best-effort sync flush.
- * - Accepts that forced exits (SIGKILL, process.exit()) may lose final events.
+ * Flushing strategy: - Batch-based: Auto-flush when queue reaches 10 events. -
+ * beforeExit: Async handler for clean shutdowns (when event loop empties). -
+ * Fatal signals (SIGINT, SIGTERM, SIGHUP): Best-effort sync flush. - Accepts
+ * that forced exits (SIGKILL, process.exit()) may lose final events.
  *
- * Call this once during CLI initialization to ensure telemetry is flushed on exit.
- * Safe to call multiple times - only registers handlers once.
+ * Call this once during CLI initialization to ensure telemetry is flushed on
+ * exit. Safe to call multiple times - only registers handlers once.
  *
  * @example
- * ```typescript
- * // In src/cli.mts
- * setupTelemetryExitHandlers()
- * ```
+ *   ```typescript
+ *   // In src/cli.mts
+ *   setupTelemetryExitHandlers()
+ *   ```
  */
 export function setupTelemetryExitHandlers(): void {
   // Prevent duplicate handler registration.
@@ -291,9 +301,8 @@ export function setupTelemetryExitHandlers(): void {
 }
 
 /**
- * Track CLI completion event.
- * Should be called on successful CLI exit.
- * Flushes immediately since this is typically the last event before process exit.
+ * Track CLI completion event. Should be called on successful CLI exit. Flushes
+ * immediately since this is typically the last event before process exit.
  *
  * @param argv
  * @param startTime Start timestamp from trackCliStart.
@@ -320,9 +329,8 @@ export async function trackCliComplete(
 }
 
 /**
- * Track CLI error event.
- * Should be called when CLI exits with an error.
- * Flushes immediately since this is typically the last event before process exit.
+ * Track CLI error event. Should be called when CLI exits with an error. Flushes
+ * immediately since this is typically the last event before process exit.
  *
  * @param argv
  * @param startTime Start timestamp from trackCliStart.
@@ -352,8 +360,8 @@ export async function trackCliError(
 }
 
 /**
- * Track a generic CLI event with optional metadata.
- * Use this for tracking custom events during CLI execution.
+ * Track a generic CLI event with optional metadata. Use this for tracking
+ * custom events during CLI execution.
  *
  * @param eventType Type of event to track.
  * @param argv Command line arguments (process.argv).
@@ -370,10 +378,11 @@ export async function trackCliEvent(
 }
 
 /**
- * Track CLI initialization event.
- * Should be called at the start of CLI execution.
+ * Track CLI initialization event. Should be called at the start of CLI
+ * execution.
  *
  * @param argv Command line arguments (process.argv).
+ *
  * @returns Start timestamp for duration calculation.
  */
 export async function trackCliStart(argv: string[]): Promise<number> {
@@ -387,16 +396,17 @@ export async function trackCliStart(argv: string[]): Promise<number> {
 }
 
 /**
- * Generic event tracking function.
- * Tracks any telemetry event with optional error details and explicit flush.
+ * Generic event tracking function. Tracks any telemetry event with optional
+ * error details and explicit flush.
  *
- * Events are automatically flushed via batch size or exit handlers.
- * Use the flush option only when immediate submission is required.
+ * Events are automatically flushed via batch size or exit handlers. Use the
+ * flush option only when immediate submission is required.
  *
  * @param eventType Type of event to track.
  * @param context Event context.
  * @param metadata Event metadata.
  * @param options Optional configuration.
+ *
  * @returns Promise that resolves when tracking completes.
  */
 export async function trackEvent(
@@ -455,7 +465,8 @@ export async function trackEvent(
  * @param command Command that was executed.
  * @param startTime Start timestamp from trackSubprocessStart.
  * @param exitCode Process exit code.
- * @param metadata Optional additional metadata (e.g., stdout length, stderr length).
+ * @param metadata Optional additional metadata (e.g., stdout length, stderr
+ *   length).
  */
 export async function trackSubprocessComplete(
   command: string,
@@ -509,22 +520,23 @@ export async function trackSubprocessError(
 }
 
 /**
- * Track subprocess exit and finalize telemetry.
- * This is a convenience function that tracks completion/error based on exit code
- * and ensures telemetry is flushed before returning.
+ * Track subprocess exit and finalize telemetry. This is a convenience function
+ * that tracks completion/error based on exit code and ensures telemetry is
+ * flushed before returning.
  *
- * Note: Only tracks subprocess-level events. CLI-level events (cli_complete, cli_error)
- * are tracked by the main CLI entry point in src/cli.mts.
+ * Note: Only tracks subprocess-level events. CLI-level events (cli_complete,
+ * cli_error) are tracked by the main CLI entry point in src/cli.mts.
+ *
+ * @example
+ *   ```typescript
+ *   await trackSubprocessExit(NPM, subprocessStartTime, code)
+ *   ```
  *
  * @param command - Command name (e.g., 'npm', 'pip').
  * @param startTime - Start timestamp from trackSubprocessStart.
  * @param exitCode - Process exit code (null treated as error).
- * @returns Promise that resolves when tracking and flush complete.
  *
- * @example
- * ```typescript
- * await trackSubprocessExit(NPM, subprocessStartTime, code)
- * ```
+ * @returns Promise that resolves when tracking and flush complete.
  */
 export async function trackSubprocessExit(
   command: string,
@@ -550,6 +562,7 @@ export async function trackSubprocessExit(
  *
  * @param command Command being executed (e.g., 'npm', 'npx', 'coana').
  * @param metadata Optional additional metadata (e.g., cwd, purpose).
+ *
  * @returns Start timestamp for duration calculation.
  */
 export async function trackSubprocessStart(

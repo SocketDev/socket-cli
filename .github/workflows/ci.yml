@@ -35,7 +35,6 @@ on:
 
 permissions: {}
 
-
 jobs:
   versions:
     name: Load Tool Versions

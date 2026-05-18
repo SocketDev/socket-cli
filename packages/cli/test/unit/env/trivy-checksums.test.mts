@@ -1,8 +1,7 @@
 /**
  * Unit tests for Trivy checksums getter.
  *
- * Related Files:
- * - src/env/trivy-checksums.mts
+ * Related Files: - src/env/trivy-checksums.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

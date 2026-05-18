@@ -2,21 +2,15 @@
 /**
  * Unit tests for Socket package alert utilities.
  *
- * Purpose:
- * Tests Socket package alert utilities. Validates alert data extraction and formatting.
+ * Purpose: Tests Socket package alert utilities. Validates alert data
+ * extraction and formatting.
  *
- * Test Coverage:
- * - Alert extraction from package data
- * - Alert severity mapping
- * - Alert type categorization
- * - Alert deduplication
- * - Alert sorting
+ * Test Coverage: - Alert extraction from package data - Alert severity mapping
+ * - Alert type categorization - Alert deduplication - Alert sorting.
  *
- * Testing Approach:
- * Tests package-specific alert utilities.
+ * Testing Approach: Tests package-specific alert utilities.
  *
- * Related Files:
- * - util/socket/package-alert.mts (implementation)
+ * Related Files: - util/socket/package-alert.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

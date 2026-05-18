@@ -1,11 +1,14 @@
-/** @fileoverview Output assertion helpers for Socket CLI tests. Provides fluent assertion API for validating CLI output, error messages, and exit codes. */
+/**
+ * @file Output assertion helpers for Socket CLI tests. Provides fluent
+ *   assertion API for validating CLI output, error messages, and exit codes.
+ */
 
 import { expect } from 'vitest'
 
 import type { CliExecutionResult } from './cli-execution.mts'
 
 /**
- * Fluent assertion builder for CLI output validation
+ * Fluent assertion builder for CLI output validation.
  */
 export class OutputAssertion {
   private readonly result: CliExecutionResult
@@ -15,7 +18,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stdout contains expected text
+   * Assert stdout contains expected text.
    */
   stdoutContains(expected: string | RegExp, message?: string): this {
     if (typeof expected === 'string') {
@@ -27,7 +30,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stdout does not contain text
+   * Assert stdout does not contain text.
    */
   stdoutNotContains(notExpected: string | RegExp, message?: string): this {
     if (typeof notExpected === 'string') {
@@ -39,7 +42,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stdout equals exact text
+   * Assert stdout equals exact text.
    */
   stdoutEquals(expected: string, message?: string): this {
     expect(this.result.stdout, message).toBe(expected)
@@ -47,7 +50,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stdout is empty
+   * Assert stdout is empty.
    */
   stdoutEmpty(message?: string): this {
     expect(this.result.stdout, message).toBe('')
@@ -55,7 +58,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stderr contains expected text
+   * Assert stderr contains expected text.
    */
   stderrContains(expected: string | RegExp, message?: string): this {
     if (typeof expected === 'string') {
@@ -67,7 +70,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stderr does not contain text
+   * Assert stderr does not contain text.
    */
   stderrNotContains(notExpected: string | RegExp, message?: string): this {
     if (typeof notExpected === 'string') {
@@ -79,7 +82,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stderr equals exact text
+   * Assert stderr equals exact text.
    */
   stderrEquals(expected: string, message?: string): this {
     expect(this.result.stderr, message).toBe(expected)
@@ -87,7 +90,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stderr is empty
+   * Assert stderr is empty.
    */
   stderrEmpty(message?: string): this {
     expect(this.result.stderr, message).toBe('')
@@ -95,7 +98,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert combined output (stdout + stderr) contains text
+   * Assert combined output (stdout + stderr) contains text.
    */
   outputContains(expected: string | RegExp, message?: string): this {
     if (typeof expected === 'string') {
@@ -107,7 +110,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert exit code equals expected value
+   * Assert exit code equals expected value.
    */
   exitCode(expected: number, message?: string): this {
     expect(this.result.code, message).toBe(expected)
@@ -133,7 +136,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert error was thrown
+   * Assert error was thrown.
    */
   hasError(message?: string): this {
     expect(this.result.error, message).toBeDefined()
@@ -141,7 +144,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert error message contains text
+   * Assert error message contains text.
    */
   errorContains(expected: string | RegExp, message?: string): this {
     expect(this.result.error, message).toBeDefined()
@@ -154,7 +157,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert output matches snapshot
+   * Assert output matches snapshot.
    */
   matchesSnapshot(snapshotName?: string): this {
     if (snapshotName) {
@@ -166,7 +169,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stdout matches snapshot
+   * Assert stdout matches snapshot.
    */
   stdoutMatchesSnapshot(snapshotName?: string): this {
     if (snapshotName) {
@@ -178,7 +181,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert stderr matches snapshot
+   * Assert stderr matches snapshot.
    */
   stderrMatchesSnapshot(snapshotName?: string): this {
     if (snapshotName) {
@@ -190,7 +193,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Get the raw result for custom assertions
+   * Get the raw result for custom assertions.
    */
   get raw(): CliExecutionResult {
     return this.result
@@ -198,21 +201,21 @@ export class OutputAssertion {
 }
 
 /**
- * Validate dry-run test output to prevent flipped snapshots.
- * Dry-run tests should ALWAYS have output starting with "[DryRun]:"
- * If the snapshot gets flipped (expected="" received="[DryRun]:..."), this will catch it.
- *
- * @param output - CLI output string
- * @param snapshotValue - The value from toMatchInlineSnapshot
- *
- * @throws Error if snapshot appears to be flipped
+ * Validate dry-run test output to prevent flipped snapshots. Dry-run tests
+ * should ALWAYS have output starting with "[DryRun]:" If the snapshot gets
+ * flipped (expected="" received="[DryRun]:..."), this will catch it.
  *
  * @example
- * ```typescript
- * const { stdout } = await spawnSocketCli(binCliPath, ['scan', '--dry-run'])
- * expectDryRunOutput(stdout)
- * expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
- * ```
+ *   ```typescript
+ *   const { stdout } = await spawnSocketCli(binCliPath, ['scan', '--dry-run'])
+ *   expectDryRunOutput(stdout)
+ *   expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+ *   ```
+ *
+ * @param output - CLI output string.
+ * @param snapshotValue - The value from toMatchInlineSnapshot.
+ *
+ * @throws Error if snapshot appears to be flipped
  */
 export function expectDryRunOutput(
   output: string,
@@ -267,13 +270,13 @@ export function expectDryRunOutput(
 /**
  * Assert exit code is one of the expected codes.
  *
- * @param result - CLI execution result
- * @param expectedCodes - Array of valid exit codes
- *
  * @example
- * ```typescript
- * expectExitCodeOneOf(result, [0, 1]) // Success or specific error
- * ```
+ *   ```typescript
+ *   expectExitCodeOneOf(result, [0, 1]) // Success or specific error
+ *   ```
+ *
+ * @param result - CLI execution result.
+ * @param expectedCodes - Array of valid exit codes.
  */
 export function expectExitCodeOneOf(
   result: CliExecutionResult,
@@ -285,13 +288,13 @@ export function expectExitCodeOneOf(
 /**
  * Assert output matches expected line count.
  *
- * @param output - CLI output string
- * @param expectedLines - Expected number of lines
- *
  * @example
- * ```typescript
- * expectLineCount(result.stdout, 5)
- * ```
+ *   ```typescript
+ *   expectLineCount(result.stdout, 5)
+ *   ```
+ *
+ * @param output - CLI output string.
+ * @param expectedLines - Expected number of lines.
  */
 export function expectLineCount(output: string, expectedLines: number): void {
   const lines = output.split('\n')
@@ -301,13 +304,13 @@ export function expectLineCount(output: string, expectedLines: number): void {
 /**
  * Assert output has maximum line count.
  *
- * @param output - CLI output string
- * @param maxLines - Maximum number of lines
- *
  * @example
- * ```typescript
- * expectMaxLineCount(result.stdout, 10)
- * ```
+ *   ```typescript
+ *   expectMaxLineCount(result.stdout, 10)
+ *   ```
+ *
+ * @param output - CLI output string.
+ * @param maxLines - Maximum number of lines.
  */
 export function expectMaxLineCount(output: string, maxLines: number): void {
   const lines = output.split('\n')
@@ -317,13 +320,13 @@ export function expectMaxLineCount(output: string, maxLines: number): void {
 /**
  * Assert output has minimum line count.
  *
- * @param output - CLI output string
- * @param minLines - Minimum number of lines
- *
  * @example
- * ```typescript
- * expectMinLineCount(result.stdout, 3)
- * ```
+ *   ```typescript
+ *   expectMinLineCount(result.stdout, 3)
+ *   ```
+ *
+ * @param output - CLI output string.
+ * @param minLines - Minimum number of lines.
  */
 export function expectMinLineCount(output: string, minLines: number): void {
   const lines = output.split('\n')
@@ -333,12 +336,12 @@ export function expectMinLineCount(output: string, minLines: number): void {
 /**
  * Assert output contains no ANSI color codes (is plain text).
  *
- * @param output - CLI output string
- *
  * @example
- * ```typescript
- * expectNoAnsiCodes(result.stdout)
- * ```
+ *   ```typescript
+ *   expectNoAnsiCodes(result.stdout)
+ *   ```
+ *
+ * @param output - CLI output string.
  */
 export function expectNoAnsiCodes(output: string): void {
   const ansiPattern = /\x1B\[\d+m/
@@ -348,17 +351,17 @@ export function expectNoAnsiCodes(output: string): void {
 /**
  * Assert output contains expected patterns in order.
  *
- * @param output - CLI output string
- * @param patterns - Array of strings/regexes that should appear in order
- *
  * @example
- * ```typescript
- * expectOrderedPatterns(result.stdout, [
- *   'Starting scan',
- *   'Analyzing dependencies',
- *   'Scan complete'
- * ])
- * ```
+ *   ```typescript
+ *   expectOrderedPatterns(result.stdout, [
+ *     'Starting scan',
+ *     'Analyzing dependencies',
+ *     'Scan complete',
+ *   ])
+ *   ```
+ *
+ * @param output - CLI output string.
+ * @param patterns - Array of strings/regexes that should appear in order.
  */
 export function expectOrderedPatterns(
   output: string,
@@ -384,18 +387,19 @@ export function expectOrderedPatterns(
 /**
  * Create fluent assertion builder for CLI output validation.
  *
- * @param result - CLI execution result
- * @returns Fluent assertion builder
- *
  * @example
- * ```typescript
- * const result = await executeCliCommand(['scan', '--help'])
- * expectOutput(result)
- *   .succeeded()
- *   .stdoutContains('Usage')
- *   .stdoutContains('Options')
- *   .stderrEmpty()
- * ```
+ *   ```typescript
+ *   const result = await executeCliCommand(['scan', '--help'])
+ *   expectOutput(result)
+ *     .succeeded()
+ *     .stdoutContains('Usage')
+ *     .stdoutContains('Options')
+ *     .stderrEmpty()
+ *   ```
+ *
+ * @param result - CLI execution result.
+ *
+ * @returns Fluent assertion builder
  */
 export function expectOutput(result: CliExecutionResult): OutputAssertion {
   return new OutputAssertion(result)
@@ -404,13 +408,13 @@ export function expectOutput(result: CliExecutionResult): OutputAssertion {
 /**
  * Assert stdout contains all expected strings.
  *
- * @param output - CLI output string
- * @param expected - Array of expected strings
- *
  * @example
- * ```typescript
- * expectStdoutContainsAll(result.stdout, ['scan', 'repository', 'success'])
- * ```
+ *   ```typescript
+ *   expectStdoutContainsAll(result.stdout, ['scan', 'repository', 'success'])
+ *   ```
+ *
+ * @param output - CLI output string.
+ * @param expected - Array of expected strings.
  */
 export function expectStdoutContainsAll(
   output: string,
@@ -425,13 +429,13 @@ export function expectStdoutContainsAll(
 /**
  * Assert stdout contains at least one of the expected strings.
  *
- * @param output - CLI output string
- * @param expected - Array of expected strings
- *
  * @example
- * ```typescript
- * expectStdoutContainsAny(result.stdout, ['success', 'completed', 'done'])
- * ```
+ *   ```typescript
+ *   expectStdoutContainsAny(result.stdout, ['success', 'completed', 'done'])
+ *   ```
+ *
+ * @param output - CLI output string.
+ * @param expected - Array of expected strings.
  */
 export function expectStdoutContainsAny(
   output: string,
@@ -447,12 +451,12 @@ export function expectStdoutContainsAny(
 /**
  * Assert output contains table-like structure (aligned columns).
  *
- * @param output - CLI output string
- *
  * @example
- * ```typescript
- * expectTableStructure(result.stdout)
- * ```
+ *   ```typescript
+ *   expectTableStructure(result.stdout)
+ *   ```
+ *
+ * @param output - CLI output string.
  */
 export function expectTableStructure(output: string): void {
   const lines = output.split('\n').filter(line => line.trim())
@@ -474,14 +478,15 @@ export function expectTableStructure(output: string): void {
 /**
  * Assert output is valid JSON.
  *
- * @param output - CLI output string
- * @returns Parsed JSON object
- *
  * @example
- * ```typescript
- * const json = expectValidJson(result.stdout)
- * expect(json.status).toBe('success')
- * ```
+ *   ```typescript
+ *   const json = expectValidJson(result.stdout)
+ *   expect(json.status).toBe('success')
+ *   ```
+ *
+ * @param output - CLI output string.
+ *
+ * @returns Parsed JSON object
  */
 export function expectValidJson<T = unknown>(output: string): T {
   try {

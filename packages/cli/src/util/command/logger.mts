@@ -1,4 +1,7 @@
-/** @fileoverview Command-scoped logger for Socket CLI. Provides logging with automatic command context for better debugging and filtering. */
+/**
+ * @file Command-scoped logger for Socket CLI. Provides logging with automatic
+ *   command context for better debugging and filtering.
+ */
 
 import { LRUCache } from 'lru-cache'
 
@@ -7,41 +10,41 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
 const logger = getDefaultLogger()
 
 /**
- * Logger with command context
+ * Logger with command context.
  */
 export interface CommandLogger {
   /**
-   * Log an informational message
+   * Log an informational message.
    */
   log: (...args: unknown[]) => void
 
   /**
-   * Log an info message
+   * Log an info message.
    */
   info: (...args: unknown[]) => void
 
   /**
-   * Log a warning message
+   * Log a warning message.
    */
   warn: (...args: unknown[]) => void
 
   /**
-   * Log an error message
+   * Log an error message.
    */
   error: (...args: unknown[]) => void
 
   /**
-   * Log a failure message with badge
+   * Log a failure message with badge.
    */
   fail: (...args: unknown[]) => void
 
   /**
-   * Log a success message with badge
+   * Log a success message with badge.
    */
   success: (...args: unknown[]) => void
 
   /**
-   * Get the command name
+   * Get the command name.
    */
   readonly commandName: string
 }
@@ -52,14 +55,14 @@ export interface CommandLogger {
 export { getDefaultLogger }
 
 /**
- * Logger factory with LRU cache to prevent unbounded growth.
- * Limits to 100 command loggers in memory.
+ * Logger factory with LRU cache to prevent unbounded growth. Limits to 100
+ * command loggers in memory.
  */
 const instances = new LRUCache<string, CommandLogger>({ max: 100 })
 
 /**
- * Clear all loggers from the cache.
- * Useful for cleanup in long-running processes.
+ * Clear all loggers from the cache. Useful for cleanup in long-running
+ * processes.
  */
 export function clearAllLoggers(): void {
   instances.clear()
@@ -68,33 +71,38 @@ export function clearAllLoggers(): void {
 /**
  * Clear a specific logger from the cache.
  *
- * @param commandName - The command name to clear
+ * @param commandName - The command name to clear.
  */
 export function clearLogger(commandName: string): void {
   instances.delete(commandName)
 }
 
 /**
- * Creates a command-scoped logger that prefixes all messages with the command name
- *
- * @param commandName - The name of the command (e.g., 'scan:create', 'repository:delete')
- * @param options - Optional configuration
- * @returns A logger instance with command context
+ * Creates a command-scoped logger that prefixes all messages with the command
+ * name.
  *
  * @example
- * const log = createCommandLogger('repository:delete')
- * log.info('Deleting repository...') // Logs: [repository:delete] Deleting repository...
+ *   const log = createCommandLogger('repository:delete')
+ *   log.info('Deleting repository...') // Logs: [repository:delete] Deleting repository...
+ *
+ * @param commandName - The name of the command (e.g., 'scan:create',
+ *   'repository:delete')
+ * @param options - Optional configuration.
+ *
+ * @returns A logger instance with command context
  */
 export function createCommandLogger(
   commandName: string,
   options: {
     /**
-     * Whether to include the command name prefix in logs
+     * Whether to include the command name prefix in logs.
+     *
      * @default true
      */
     includePrefix?: boolean | undefined
     /**
-     * Custom prefix format function
+     * Custom prefix format function.
+     *
      * @default (name) => `[${name}]`
      */
     formatPrefix?: ((commandName: string) => string) | undefined
@@ -123,15 +131,16 @@ export function createCommandLogger(
 }
 
 /**
- * Create a logger for debugging purposes
- * Only logs when DEBUG environment variable matches the namespace
- *
- * @param namespace - Debug namespace (e.g., 'socket:cli:scan')
- * @returns A debug logger function
+ * Create a logger for debugging purposes Only logs when DEBUG environment
+ * variable matches the namespace.
  *
  * @example
- * const debug = createDebugLogger('socket:cli:scan')
- * debug('Scanning directory...') // Only logs if DEBUG=socket:cli:scan
+ *   const debug = createDebugLogger('socket:cli:scan')
+ *   debug('Scanning directory...') // Only logs if DEBUG=socket:cli:scan
+ *
+ * @param namespace - Debug namespace (e.g., 'socket:cli:scan')
+ *
+ * @returns A debug logger function
  */
 export function createDebugLogger(
   namespace: string,
@@ -154,16 +163,18 @@ export function createDebugLogger(
 }
 
 /**
- * Creates a scoped logger for a specific operation within a command
- *
- * @param commandLogger - The command logger to scope
- * @param operationName - The operation name (e.g., 'fetch', 'validate', 'output')
- * @returns A logger with operation context
+ * Creates a scoped logger for a specific operation within a command.
  *
  * @example
- * const log = createCommandLogger('scan:create')
- * const fetchLog = createOperationLogger(log, 'fetch')
- * fetchLog.info('Fetching scan data...') // Logs: [scan:create] [fetch] Fetching scan data...
+ *   const log = createCommandLogger('scan:create')
+ *   const fetchLog = createOperationLogger(log, 'fetch')
+ *   fetchLog.info('Fetching scan data...') // Logs: [scan:create] [fetch] Fetching scan data...
+ *
+ * @param commandLogger - The command logger to scope.
+ * @param operationName - The operation name (e.g., 'fetch', 'validate',
+ *   'output')
+ *
+ * @returns A logger with operation context
  */
 export function createOperationLogger(
   commandLogger: CommandLogger,
@@ -177,7 +188,8 @@ export function createOperationLogger(
 /**
  * Get or create a command logger.
  *
- * @param commandName - The command name
+ * @param commandName - The command name.
+ *
  * @returns A cached or new command logger
  */
 export function getLogger(commandName: string): CommandLogger {

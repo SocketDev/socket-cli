@@ -1,15 +1,12 @@
 /**
  * Unit tests for Socket artifact and alert type utilities.
  *
- * Purpose:
- * Tests type guards for artifact alerts. Validates CVE alert detection.
+ * Purpose: Tests type guards for artifact alerts. Validates CVE alert
+ * detection.
  *
- * Test Coverage:
- * - isArtifactAlertCve type guard
- * - CVE alert type detection
+ * Test Coverage: - isArtifactAlertCve type guard - CVE alert type detection.
  *
- * Related Files:
- * - util/alert/artifact.mts (implementation)
+ * Related Files: - util/alert/artifact.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

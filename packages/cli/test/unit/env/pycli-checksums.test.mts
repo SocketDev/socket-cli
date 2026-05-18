@@ -1,8 +1,7 @@
 /**
  * Unit tests for PyCli checksums getter.
  *
- * Related Files:
- * - src/env/pycli-checksums.mts
+ * Related Files: - src/env/pycli-checksums.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

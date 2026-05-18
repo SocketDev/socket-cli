@@ -1,9 +1,9 @@
 /**
  * Spawn TruffleHog for secret-scanning runs.
  *
- * - spawnTrufflehogDlx: download from GitHub releases, then exec.
- * - spawnTrufflehogVfs: extract from SEA bundle, then exec.
- * - spawnTrufflehog: auto-detect SEA vs npm-CLI mode and dispatch.
+ * - SpawnTrufflehogDlx: download from GitHub releases, then exec.
+ * - SpawnTrufflehogVfs: extract from SEA bundle, then exec.
+ * - SpawnTrufflehog: auto-detect SEA vs npm-CLI mode and dispatch.
  *
  * Defined via `defineToolSpawn`. See util/dlx/define-tool-spawn.mts.
  */

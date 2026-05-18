@@ -1,4 +1,6 @@
-/** @fileoverview Validates test infrastructure to catch issues early before CI. */
+/**
+ * @file Validates test infrastructure to catch issues early before CI.
+ */
 
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'

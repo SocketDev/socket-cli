@@ -8,9 +8,9 @@ export type FinalizeTier1ScanOptions = {
 }
 
 /**
- * Finalize a tier1 reachability scan.
- *  - Associates the tier1 reachability scan metadata with the full scan.
- *  - Sets the tier1 reachability scan to "finalized" state.
+ * Finalize a tier1 reachability scan. - Associates the tier1 reachability scan
+ * metadata with the full scan. - Sets the tier1 reachability scan to
+ * "finalized" state.
  */
 export async function finalizeTier1Scan(
   tier1ReachabilityScanId: string,

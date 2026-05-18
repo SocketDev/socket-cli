@@ -222,7 +222,9 @@ export async function outputDiffScan(
     }),
   )
   logger.error('')
-  logger.info(' 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.')
+  logger.info(
+    ' 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.',
+  )
   logger.error('')
   logger.info(dashboardMessage)
 }

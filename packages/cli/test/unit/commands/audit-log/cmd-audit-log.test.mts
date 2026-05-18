@@ -3,26 +3,18 @@
  *
  * Tests the command that displays organization audit logs.
  *
- * Test Coverage:
- * - Command metadata (description, hidden flag)
- * - API token requirement validation
- * - Organization slug handling
- * - Type filter argument parsing
- * - Pagination flags: page, per-page
- * - Output modes: text, JSON, markdown
- * - Dry-run mode
- * - Legacy flag detection
+ * Test Coverage: - Command metadata (description, hidden flag) - API token
+ * requirement validation - Organization slug handling - Type filter argument
+ * parsing - Pagination flags: page, per-page - Output modes: text, JSON,
+ * markdown - Dry-run mode - Legacy flag detection.
  *
- * Testing Approach:
- * - Mock logger to capture output
- * - Mock handleAuditLog to verify handler invocation
- * - Mock determineOrgSlug for organization handling
- * - Mock hasDefaultApiToken for authentication checks
- * - Test flag combinations and defaults
+ * Testing Approach: - Mock logger to capture output - Mock handleAuditLog to
+ * verify handler invocation - Mock determineOrgSlug for organization handling -
+ * Mock hasDefaultApiToken for authentication checks - Test flag combinations
+ * and defaults.
  *
- * Related Files:
- * - src/commands/audit-log/cmd-audit-log.mts - Implementation
- * - src/commands/audit-log/handle-audit-log.mts - Handler
+ * Related Files: - src/commands/audit-log/cmd-audit-log.mts - Implementation -
+ * src/commands/audit-log/handle-audit-log.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

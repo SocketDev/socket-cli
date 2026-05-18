@@ -19,18 +19,19 @@ export async function copyDirectory(src, dest) {
 /**
  * Process template file with Handlebars.
  *
- * Reads a template file and compiles it with Handlebars, replacing
- * {{VARIABLE}} placeholders with values from the context object.
+ * Reads a template file and compiles it with Handlebars, replacing {{VARIABLE}}
+ * placeholders with values from the context object.
+ *
+ * @example
+ *   const content = await processTemplate('template.json', {
+ *     PLATFORM: 'darwin',
+ *     ARCH: 'arm64',
+ *   })
  *
  * @param {string} templatePath - Path to template file.
  * @param {Record<string, string>} context - Variables to inject into template.
- * @returns {Promise<string>} Rendered template content.
  *
- * @example
- * const content = await processTemplate('template.json', {
- *   PLATFORM: 'darwin',
- *   ARCH: 'arm64'
- * })
+ * @returns {Promise<string>} Rendered template content.
  */
 export async function processTemplate(templatePath, context) {
   const content = await fs.readFile(templatePath, 'utf-8')

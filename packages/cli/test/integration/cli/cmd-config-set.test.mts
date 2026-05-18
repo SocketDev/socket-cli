@@ -1,32 +1,25 @@
 /**
  * Integration tests for `socket config set` command.
  *
- * Tests updating local CLI configuration values. This command provides a
- * simple key-value store interface for modifying config settings.
+ * Tests updating local CLI configuration values. This command provides a simple
+ * key-value store interface for modifying config settings.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Key and value argument validation
- * - Dry-run behavior validation
- * - Error handling (missing arguments)
+ * Test Coverage: - Help text display and usage examples - Key and value
+ * argument validation - Dry-run behavior validation - Error handling (missing
+ * arguments)
  *
- * Important Notes:
- * - No validation is performed on values (validation happens at API time)
- * - Use `socket config unset` to restore defaults
- * - Setting a key to "undefined" does NOT restore defaults
+ * Important Notes: - No validation is performed on values (validation happens
+ * at API time) - Use `socket config unset` to restore defaults - Setting a key
+ * to "undefined" does NOT restore defaults.
  *
- * Available Config Keys:
- * - apiBaseUrl: Socket API base URL
- * - apiProxy: Proxy for API requests
- * - apiToken: Authentication token
- * - defaultOrg: Default organization slug
- * - enforcedOrgs: Organizations with enforced policies
- * - skipAskToPersistDefaultOrg: Skip org persistence prompt
+ * Available Config Keys: - apiBaseUrl: Socket API base URL - apiProxy: Proxy
+ * for API requests - apiToken: Authentication token - defaultOrg: Default
+ * organization slug - enforcedOrgs: Organizations with enforced policies -
+ * skipAskToPersistDefaultOrg: Skip org persistence prompt.
  *
- * Related Files:
- * - src/commands/config/cmd-config-set.mts - Command definition
- * - src/commands/config/handle-config-set.mts - Config update logic
- * - src/util/config.mts - Config management utilities
+ * Related Files: - src/commands/config/cmd-config-set.mts - Command definition
+ * - src/commands/config/handle-config-set.mts - Config update logic -
+ * src/util/config.mts - Config management utilities.
  */
 
 import { describe, expect } from 'vitest'

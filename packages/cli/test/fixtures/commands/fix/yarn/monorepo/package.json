@@ -1,8 +1,8 @@
 {
   "name": "monorepo-test-yarn",
   "version": "1.0.0",
-  "description": "Test monorepo fixture (yarn)",
   "private": true,
+  "description": "Test monorepo fixture (yarn)",
   "workspaces": [
     "packages/*"
   ],

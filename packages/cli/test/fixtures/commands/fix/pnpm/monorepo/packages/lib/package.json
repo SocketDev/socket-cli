@@ -1,7 +1,7 @@
 {
   "name": "@monorepo/lib",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
   "description": "Lib package in monorepo",
   "main": "index.js",
   "dependencies": {

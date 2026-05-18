@@ -1,8 +1,8 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
- * @fileoverview Validates that no package.json files contain link: dependencies.
- * Link dependencies are prohibited - use workspace: or catalog: instead.
+ * @file Validates that no package.json files contain link: dependencies. Link
+ *   dependencies are prohibited - use workspace: or catalog: instead.
  */
 
 import { promises as fs } from 'node:fs'

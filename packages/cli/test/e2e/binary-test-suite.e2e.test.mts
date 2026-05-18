@@ -1,31 +1,35 @@
 /* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
- * @fileoverview Comprehensive E2E test suite for all Socket CLI binary types.
+ * @file Comprehensive E2E test suite for all Socket CLI binary types. Tests ALL
+ *   73 CLI commands across 3 binary types:
  *
- * Tests ALL 73 CLI commands across 3 binary types:
- * - JS binary (npm CLI) - Always tested
- * - SEA binary (Single Executable Application) - Optional via TEST_SEA_BINARY=1
- * - Smol binary - Optional via TEST_SMOL_BINARY=1
- *
- * Auto-build feature:
- * - Missing binaries are automatically built without prompting (CI and local)
- * - All builds use prebuilt binaries from socket-btm + binject (fast)
- *
- * Coverage:
- * - Core commands (15): analytics, ask, audit-log, ci, console, fix, json, login, logout, oops, optimize, patch, threat-feed, whoami, wrapper
- * - Config commands (6): config, config auto, config get, config list, config set, config unset
- * - Install commands (4): install, install completion, uninstall, uninstall completion
- * - Manifest commands (8): manifest, manifest auto, manifest cdxgen, manifest conda, manifest gradle, manifest kotlin, manifest scala, manifest setup
- * - Organization commands (7): organization, organization dependencies, organization list, organization policy, organization policy license, organization policy security, organization quota
- * - Package commands (3): package, package score, package shallow
- * - Package manager wrappers (13): bundler, cargo, gem, go, npm, npx, nuget, pip, pnpm, raw-npm, raw-npx, uv, yarn
- * - Repository commands (6): repository, repository create, repository del, repository list, repository update, repository view
- * - Scan commands (11): scan, scan create, scan del, scan diff, scan github, scan list, scan metadata, scan reach, scan report, scan setup, scan view
- *
- * Test strategy:
- * - Minimum test per command: --help (validates command loads without auth)
- * - Auth-required commands: Basic execution test (with Socket API token)
- * - Performance validation: Help commands execute within 5 seconds
+ *   - JS binary (npm CLI) - Always tested
+ *   - SEA binary (Single Executable Application) - Optional via TEST_SEA_BINARY=1
+ *   - Smol binary - Optional via TEST_SMOL_BINARY=1 Auto-build feature:
+ *   - Missing binaries are automatically built without prompting (CI and local)
+ *   - All builds use prebuilt binaries from socket-btm + binject (fast) Coverage:
+ *   - Core commands (15): analytics, ask, audit-log, ci, console, fix, json,
+ *     login, logout, oops, optimize, patch, threat-feed, whoami, wrapper
+ *   - Config commands (6): config, config auto, config get, config list, config
+ *     set, config unset
+ *   - Install commands (4): install, install completion, uninstall, uninstall
+ *     completion
+ *   - Manifest commands (8): manifest, manifest auto, manifest cdxgen, manifest
+ *     conda, manifest gradle, manifest kotlin, manifest scala, manifest setup
+ *   - Organization commands (7): organization, organization dependencies,
+ *     organization list, organization policy, organization policy license,
+ *     organization policy security, organization quota
+ *   - Package commands (3): package, package score, package shallow
+ *   - Package manager wrappers (13): bundler, cargo, gem, go, npm, npx, nuget,
+ *     pip, pnpm, raw-npm, raw-npx, uv, yarn
+ *   - Repository commands (6): repository, repository create, repository del,
+ *     repository list, repository update, repository view
+ *   - Scan commands (11): scan, scan create, scan del, scan diff, scan github,
+ *     scan list, scan metadata, scan reach, scan report, scan setup, scan view
+ *     Test strategy:
+ *   - Minimum test per command: --help (validates command loads without auth)
+ *   - Auth-required commands: Basic execution test (with Socket API token)
+ *   - Performance validation: Help commands execute within 5 seconds
  */
 
 import { existsSync } from 'node:fs'

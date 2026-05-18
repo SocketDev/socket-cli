@@ -1,4 +1,7 @@
-/** @fileoverview Help text generation for Socket CLI commands. Automatically generates formatted help output from CommandDefinition metadata. */
+/**
+ * @file Help text generation for Socket CLI commands. Automatically generates
+ *   formatted help output from CommandDefinition metadata.
+ */
 
 import type { CommandDefinition, FlagDefinition } from './registry-types.mjs'
 import type { CommandRegistry } from './registry.mts'
@@ -6,8 +9,9 @@ import type { CommandRegistry } from './registry.mts'
 /**
  * Format a flag definition for help output.
  *
- * @param name - Flag name
- * @param def - Flag definition
+ * @param name - Flag name.
+ * @param def - Flag definition.
+ *
  * @returns Formatted flag line
  */
 export function formatFlag(name: string, def: FlagDefinition): string {
@@ -47,7 +51,8 @@ export function formatFlag(name: string, def: FlagDefinition): string {
 /**
  * Generate help text for a command.
  *
- * @param command - Command definition to generate help for
+ * @param command - Command definition to generate help for.
+ *
  * @returns Formatted help text string
  */
 export function generateCommandHelp(command: CommandDefinition): string {
@@ -101,7 +106,8 @@ export function generateCommandHelp(command: CommandDefinition): string {
 /**
  * Generate help text listing all available commands.
  *
- * @param registry - Command registry instance
+ * @param registry - Command registry instance.
+ *
  * @returns Formatted help text for all commands
  */
 export function generateGlobalHelp(registry: CommandRegistry): string {
@@ -148,7 +154,8 @@ export function generateGlobalHelp(registry: CommandRegistry): string {
 /**
  * Get type indicator for flag definition.
  *
- * @param def - Flag definition
+ * @param def - Flag definition.
+ *
  * @returns Type indicator string or undefined
  */
 export function getTypeIndicator(def: FlagDefinition): string | undefined {
@@ -170,7 +177,8 @@ export function getTypeIndicator(def: FlagDefinition): string | undefined {
 /**
  * Check if help was requested for a command.
  *
- * @param args - Command-line arguments
+ * @param args - Command-line arguments.
+ *
  * @returns True if help flag is present
  */
 export function isHelpRequested(args: string[]): boolean {

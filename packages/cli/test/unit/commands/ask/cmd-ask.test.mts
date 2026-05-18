@@ -1,8 +1,8 @@
 /**
  * Unit tests for ask command.
  *
- * Tests the command entry point that parses natural language queries
- * and translates them into Socket CLI commands.
+ * Tests the command entry point that parses natural language queries and
+ * translates them into Socket CLI commands.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

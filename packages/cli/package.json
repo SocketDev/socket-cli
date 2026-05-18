@@ -1,9 +1,19 @@
 {
   "name": "@socketsecurity/cli",
   "version": "0.0.0",
-  "description": "CLI for Socket.dev",
   "private": true,
+  "description": "CLI for Socket.dev",
+  "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
   "bin": {
     "socket": "dist/index.js",
     "socket-npm": "dist/index.js",
@@ -126,16 +136,6 @@
     "yoctocolors-cjs": "catalog:",
     "zod": "catalog:"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SocketDev/socket-cli.git"
-  },
-  "author": {
-    "name": "Socket Inc",
-    "email": "eng@socket.dev",
-    "url": "https://socket.dev"
-  },
-  "homepage": "https://github.com/SocketDev/socket-cli",
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
       "oxfmt --write"

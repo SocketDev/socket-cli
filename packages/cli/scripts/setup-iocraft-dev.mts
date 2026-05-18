@@ -3,10 +3,10 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
- * @fileoverview Setup script to install iocraft dev build into node_modules for local testing.
- *
- * This simulates `npm install` of unpublished @socketaddon/iocraft packages.
- * Run before testing TUI renderers locally: node scripts/setup-iocraft-dev.mts
+ * @file Setup script to install iocraft dev build into node_modules for local
+ *   testing. This simulates `npm install` of unpublished @socketaddon/iocraft
+ *   packages. Run before testing TUI renderers locally: node
+ *   scripts/setup-iocraft-dev.mts.
  */
 
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
@@ -162,4 +162,6 @@ for (const [sourceDir, targetName] of Object.entries(packages)) {
 
 logger.success('iocraft dev build installed successfully!')
 logger.log('')
-logger.log('You can now run manual tests:\n  node src/commands/analytics/test-analytics-renderer.mts')
+logger.log(
+  'You can now run manual tests:\n  node src/commands/analytics/test-analytics-renderer.mts',
+)

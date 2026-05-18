@@ -1,8 +1,7 @@
 /**
- * @fileoverview iocraft-based analytics renderer.
- *
- * Non-interactive renderer for analytics data using iocraft native bindings.
- * This is a proof-of-concept implementation for the hybrid Ink/iocraft approach.
+ * @file Iocraft-based analytics renderer. Non-interactive renderer for
+ *   analytics data using iocraft native bindings. This is a proof-of-concept
+ *   implementation for the hybrid Ink/iocraft approach.
  */
 
 import { errorMessage } from '@socketsecurity/lib/errors'

@@ -2,8 +2,8 @@ import { PackageURL } from '@socketregistry/packageurl-js'
 
 /**
  * Build a PURL using packageurl-js for correct encoding across all ecosystems.
- * Handles namespace/name splitting per ecosystem (npm scoped @scope/name,
- * maven groupId:artifactId, golang module/path).
+ * Handles namespace/name splitting per ecosystem (npm scoped @scope/name, maven
+ * groupId:artifactId, golang module/path).
  */
 export function buildPurl(
   ecosystem: string,

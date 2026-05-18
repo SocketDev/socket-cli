@@ -1,8 +1,7 @@
 /**
  * Unit tests for TruffleHog version getter.
  *
- * Related Files:
- * - src/env/trufflehog-version.mts
+ * Related Files: - src/env/trufflehog-version.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

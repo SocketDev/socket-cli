@@ -1,7 +1,6 @@
 /**
- * @fileoverview iocraft-based audit log renderer.
- *
- * Non-interactive renderer for audit log data using iocraft native bindings.
+ * @file Iocraft-based audit log renderer. Non-interactive renderer for audit
+ *   log data using iocraft native bindings.
  */
 
 import { errorMessage } from '@socketsecurity/lib/errors'

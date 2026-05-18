@@ -1,19 +1,16 @@
 /**
  * Integration tests for `socket gem` wrapper command.
  *
- * Tests the gem package manager wrapper that adds Socket security scanning
- * to Ruby package operations via Socket Firewall (sfw). Commands are forwarded to
+ * Tests the gem package manager wrapper that adds Socket security scanning to
+ * Ruby package operations via Socket Firewall (sfw). Commands are forwarded to
  * sfw which provides security scanning before installation.
  *
- * Test Coverage:
- * - Help text display and usage examples
+ * Test Coverage: - Help text display and usage examples.
  *
- * Security Features:
- * - Pre-installation security scanning via Socket Firewall
+ * Security Features: - Pre-installation security scanning via Socket Firewall.
  *
- * Related Files:
- * - src/commands/gem/cmd-gem.mts - gem command implementation
- * - src/util/dlx/resolve-binary.mts - sfw resolution
+ * Related Files: - src/commands/gem/cmd-gem.mts - gem command implementation -
+ * src/util/dlx/resolve-binary.mts - sfw resolution.
  */
 
 import { describe, expect } from 'vitest'

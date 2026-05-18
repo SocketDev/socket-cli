@@ -1,17 +1,13 @@
 /**
  * Unit tests for update-dependencies.
  *
- * Purpose:
- * Tests the updateDependencies function that runs package manager install.
+ * Purpose: Tests the updateDependencies function that runs package manager
+ * install.
  *
- * Test Coverage:
- * - Successful install
- * - Install failure
- * - npm buggy overrides logging
- * - Spinner behavior
+ * Test Coverage: - Successful install - Install failure - npm buggy overrides
+ * logging - Spinner behavior.
  *
- * Related Files:
- * - commands/optimize/update-dependencies.mts (implementation)
+ * Related Files: - commands/optimize/update-dependencies.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,14 +1,11 @@
 /**
- * String manipulation utilities for Socket CLI.
- * Provides common string transformations and formatting.
+ * String manipulation utilities for Socket CLI. Provides common string
+ * transformations and formatting.
  *
- * Key Functions:
- * - camelToKebab: Convert camelCase to kebab-case
+ * Key Functions: - camelToKebab: Convert camelCase to kebab-case.
  *
- * Usage:
- * - Command name transformations
- * - Flag name conversions
- * - Consistent string formatting
+ * Usage: - Command name transformations - Flag name conversions - Consistent
+ * string formatting.
  */
 
 export function camelToKebab(str: string): string {

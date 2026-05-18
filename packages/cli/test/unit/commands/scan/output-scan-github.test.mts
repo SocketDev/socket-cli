@@ -1,17 +1,12 @@
 /**
  * Unit tests for GitHub scan output formatting.
  *
- * Purpose:
- * Tests the output formatting for GitHub scan results.
+ * Purpose: Tests the output formatting for GitHub scan results.
  *
- * Test Coverage:
- * - outputScanGithub function
- * - JSON output format
- * - Text output format
- * - Success and error handling
+ * Test Coverage: - outputScanGithub function - JSON output format - Text output
+ * format - Success and error handling.
  *
- * Related Files:
- * - src/commands/scan/output-scan-github.mts (implementation)
+ * Related Files: - src/commands/scan/output-scan-github.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

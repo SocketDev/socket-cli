@@ -1,8 +1,8 @@
 /**
  * Centralized path resolution for package-builder.
  *
- * This is the source of truth for all build output paths.
- * Follows ultrathink pattern: build/{mode}/out/{package}
+ * This is the source of truth for all build output paths. Follows ultrathink
+ * pattern: build/{mode}/out/{package}
  */
 
 import path from 'node:path'
@@ -39,6 +39,7 @@ export const SOCKETBIN_TEMPLATE_DIR = path.join(
  * Get build mode (dev/prod).
  *
  * Priority:
+ *
  * 1. --dev or --prod CLI args
  * 2. BUILD_MODE env var
  * 3. CI env var (prod in CI, dev locally)
@@ -64,7 +65,9 @@ export function getBuildMode() {
 /**
  * Get the build output root for a given mode.
  *
- * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
  * @returns {string} Path to build output root.
  */
 export function getBuildOutDir(mode = getBuildMode()) {
@@ -74,8 +77,11 @@ export function getBuildOutDir(mode = getBuildMode()) {
 /**
  * Get the output directory for a specific package.
  *
- * @param {string} packageName - Package directory name (e.g., 'cli', 'socketbin-cli-darwin-arm64').
- * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
+ * @param {string} packageName - Package directory name (e.g., 'cli',
+ *   'socketbin-cli-darwin-arm64').
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
  * @returns {string} Path to package output directory.
  */
 export function getPackageOutDir(packageName: string, mode = getBuildMode()) {
@@ -83,13 +89,16 @@ export function getPackageOutDir(packageName: string, mode = getBuildMode()) {
 }
 
 /**
- * Get the output path for a socketaddon package.
- * Uses release platform naming (win instead of win32).
+ * Get the output path for a socketaddon package. Uses release platform naming
+ * (win instead of win32).
  *
- * @param {string} platform - Platform identifier (darwin, linux, win, or win32).
+ * @param {string} platform - Platform identifier (darwin, linux, win, or
+ *   win32).
  * @param {string} arch - Architecture identifier (arm64, x64).
  * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
- * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
  * @returns {string} Path to socketaddon package directory.
  */
 export function getSocketaddonPackageDir(
@@ -108,10 +117,13 @@ export function getSocketaddonPackageDir(
 /**
  * Get the binary path within a socketbin package.
  *
- * @param {string} platform - Platform identifier (darwin, linux, win, or win32).
+ * @param {string} platform - Platform identifier (darwin, linux, win, or
+ *   win32).
  * @param {string} arch - Architecture identifier (arm64, x64).
  * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
- * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
  * @returns {string} Path to the socket binary.
  */
 export function getSocketbinBinaryPath(
@@ -130,13 +142,16 @@ export function getSocketbinBinaryPath(
 }
 
 /**
- * Get the output path for a socketbin package.
- * Uses release platform naming (win instead of win32).
+ * Get the output path for a socketbin package. Uses release platform naming
+ * (win instead of win32).
  *
- * @param {string} platform - Platform identifier (darwin, linux, win, or win32).
+ * @param {string} platform - Platform identifier (darwin, linux, win, or
+ *   win32).
  * @param {string} arch - Architecture identifier (arm64, x64).
  * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
- * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI detection.
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
  * @returns {string} Path to socketbin package directory.
  */
 export function getSocketbinPackageDir(

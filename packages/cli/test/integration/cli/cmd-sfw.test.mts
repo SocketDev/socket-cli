@@ -1,19 +1,15 @@
 /**
  * Integration tests for `socket sfw` and `socket firewall` commands.
  *
- * Tests the Socket Firewall (sfw) command that provides direct access to
- * the Socket Firewall tool for intercepting package manager commands.
+ * Tests the Socket Firewall (sfw) command that provides direct access to the
+ * Socket Firewall tool for intercepting package manager commands.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior (--dry-run flag)
- * - Firewall alias routing
- * - Error handling for missing package manager
- * - Banner and exit code validation
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * (--dry-run flag) - Firewall alias routing - Error handling for missing
+ * package manager - Banner and exit code validation.
  *
- * Related Files:
- * - src/commands/sfw/cmd-sfw.mts - sfw command implementation
- * - src/util/dlx/spawn.mts - DLX spawning for sfw
+ * Related Files: - src/commands/sfw/cmd-sfw.mts - sfw command implementation -
+ * src/util/dlx/spawn.mts - DLX spawning for sfw.
  */
 
 import { describe, expect } from 'vitest'

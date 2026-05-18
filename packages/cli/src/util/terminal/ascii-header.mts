@@ -1,8 +1,8 @@
 /**
- * @fileoverview Animated ASCII header utilities with shimmer effects.
- *
- * Provides themable, animated Socket CLI ASCII art headers with gradient shimmer effects.
- * Supports both static (fast) rendering and animated (shimmer) rendering modes.
+ * @file Animated ASCII header utilities with shimmer effects. Provides
+ *   themable, animated Socket CLI ASCII art headers with gradient shimmer
+ *   effects. Supports both static (fast) rendering and animated (shimmer)
+ *   rendering modes.
  */
 
 import colors from 'yoctocolors-cjs'
@@ -96,11 +96,11 @@ export function applyHexColor(text: string, hexColor: string): string {
 }
 
 /**
- * Pick the brighter of two RGB colors. Used to compose two shimmer
- * waves into one frame: each wave's `frameColors[i]` is computed
- * independently, then merged so the brighter highlight wins per char.
- * Treats luminance as the simple sum of channels — fine here because
- * both waves share base + highlight palettes.
+ * Pick the brighter of two RGB colors. Used to compose two shimmer waves into
+ * one frame: each wave's `frameColors[i]` is computed independently, then
+ * merged so the brighter highlight wins per char. Treats luminance as the
+ * simple sum of channels — fine here because both waves share base + highlight
+ * palettes.
  */
 export function brighterRgb(a: RGB, b: RGB): RGB {
   return a[0] + a[1] + a[2] >= b[0] + b[1] + b[2] ? a : b
@@ -148,12 +148,11 @@ export function renderLogoWithFallback(
 /**
  * Render ASCII logo with shimmer effect for given frame.
  *
- * Uses socket-lib's @socketsecurity/lib/effects/shimmer engine
- * (5.26.1+). Builds two ShimmerSpecs per line — primary + secondary
- * offset by 35 frames — and merges their per-char colors with
- * `brighterRgb` so the dual-wave look is preserved. Each line gets a
- * `slantOffset = i * 4` added to the frame counter, producing a
- * diagonal wave across the logo. Applies bold via ANSI before the
+ * Uses socket-lib's @socketsecurity/lib/effects/shimmer engine (5.26.1+).
+ * Builds two ShimmerSpecs per line — primary + secondary offset by 35 frames —
+ * and merges their per-char colors with `brighterRgb` so the dual-wave look is
+ * preserved. Each line gets a `slantOffset = i * 4` added to the frame counter,
+ * producing a diagonal wave across the logo. Applies bold via ANSI before the
  * shimmer's truecolor escape so terminals render the highlight bold.
  */
 export function renderShimmerFrame(

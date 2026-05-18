@@ -1,4 +1,7 @@
-/** @fileoverview Test mock helpers for Socket CLI. Provides utilities for mocking SDK, API, logger, and output functions consistently across test files. */
+/**
+ * @file Test mock helpers for Socket CLI. Provides utilities for mocking SDK,
+ *   API, logger, and output functions consistently across test files.
+ */
 
 import { vi } from 'vitest'
 
@@ -6,7 +9,7 @@ import type { CResult } from '../../src/types.mts'
 import type { SocketSdk } from '@socketsecurity/sdk'
 
 /**
- * Error options for creating error results
+ * Error options for creating error results.
  */
 export type ErrorOptions = {
   code?: number | undefined
@@ -14,7 +17,7 @@ export type ErrorOptions = {
 }
 
 /**
- * Creates a failed CResult
+ * Creates a failed CResult.
  */
 export function createErrorResult(
   message: string,
@@ -30,7 +33,7 @@ export function createErrorResult(
 }
 
 /**
- * Creates mock logger functions
+ * Creates mock logger functions.
  */
 export function createLoggerMocks() {
   return {
@@ -44,7 +47,7 @@ export function createLoggerMocks() {
 }
 
 /**
- * Creates a mock Socket SDK with common methods
+ * Creates a mock Socket SDK with common methods.
  */
 export function createMockSdk(overrides: Partial<SocketSdk> = {}): SocketSdk {
   // Tests substitute a vitest-mock-shaped object for the real SocketSdk; this
@@ -69,7 +72,7 @@ export function createMockSdk(overrides: Partial<SocketSdk> = {}): SocketSdk {
 }
 
 /**
- * Creates mock output utility functions
+ * Creates mock output utility functions.
  */
 export function createOutputMocks() {
   return {
@@ -79,7 +82,7 @@ export function createOutputMocks() {
 }
 
 /**
- * Creates mock functions for SDK and API utilities
+ * Creates mock functions for SDK and API utilities.
  */
 export function createSdkMocks() {
   return {
@@ -90,7 +93,7 @@ export function createSdkMocks() {
 }
 
 /**
- * Creates a successful CResult
+ * Creates a successful CResult.
  */
 export function createSuccessResult<T>(data: T): CResult<T> {
   return {
@@ -100,7 +103,7 @@ export function createSuccessResult<T>(data: T): CResult<T> {
 }
 
 /**
- * Setup API call failure mock
+ * Setup API call failure mock.
  */
 export async function setupApiCallFailure(
   sdkMethod: string,
@@ -122,7 +125,7 @@ export async function setupApiCallFailure(
 }
 
 /**
- * Setup common module mocks for output operations
+ * Setup common module mocks for output operations.
  */
 export function setupOutputModuleMocks() {
   vi.mock('@socketsecurity/lib/logger', () => ({
@@ -154,7 +157,7 @@ export function setupOutputModuleMocks() {
 }
 
 /**
- * Setup common module mocks for SDK operations
+ * Setup common module mocks for SDK operations.
  */
 export function setupSdkModuleMocks() {
   vi.mock('../../src/util/socket/api.mts', () => ({
@@ -168,7 +171,7 @@ export function setupSdkModuleMocks() {
 }
 
 /**
- * Setup SDK setup failure mock
+ * Setup SDK setup failure mock.
  */
 export async function setupSdkSetupFailure(
   message: string,
@@ -180,7 +183,7 @@ export async function setupSdkSetupFailure(
 }
 
 /**
- * Setup successful SDK mock chain
+ * Setup successful SDK mock chain.
  */
 export async function setupSuccessfulSdkChain(
   sdkMethod: string,

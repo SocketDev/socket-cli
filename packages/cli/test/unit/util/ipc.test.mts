@@ -1,16 +1,12 @@
 /**
  * Unit tests for IPC data handling.
  *
- * Purpose:
- * Tests the IPC data handling for subprocess communication.
+ * Purpose: Tests the IPC data handling for subprocess communication.
  *
- * Test Coverage:
- * - getIpcExtra function
- * - getBootstrapBinaryPath function
- * - initializeIpc function
+ * Test Coverage: - getIpcExtra function - getBootstrapBinaryPath function -
+ * initializeIpc function.
  *
- * Related Files:
- * - src/util/ipc.mts (implementation)
+ * Related Files: - src/util/ipc.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

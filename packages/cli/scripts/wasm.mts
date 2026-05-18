@@ -3,22 +3,20 @@
 /* oxlint-disable socket/prefer-exists-sync -- fs.stat() calls read .size for WASM bundle size reporting; not existence checks. */
 
 /**
- * Socket CLI WASM Bundle Manager
+ * Socket CLI WASM Bundle Manager.
  *
  * Unified script for building and downloading the unified WASM bundle
- * containing all AI models (MiniLM, CodeT5 encoder/decoder, ONNX Runtime, Yoga).
+ * containing all AI models (MiniLM, CodeT5 encoder/decoder, ONNX Runtime,
+ * Yoga).
  *
- * COMMANDS:
- * - --build:    Build WASM bundle from source (requires Python, Rust, wasm-pack)
- * - --dev:      Fast dev build (3-5x faster, use with --build)
- * - --download: Download pre-built WASM bundle from GitHub releases
- * - --help:     Show this help message
+ * COMMANDS: - --build: Build WASM bundle from source (requires Python, Rust,
+ * wasm-pack) - --dev: Fast dev build (3-5x faster, use with --build) -
+ * --download: Download pre-built WASM bundle from GitHub releases - --help:
+ * Show this help message.
  *
- * USAGE:
- *   node scripts/wasm.mts --build                 # Production build
- *   node scripts/wasm.mts --build --dev           # Fast dev build
- *   node scripts/wasm.mts --download
- *   node scripts/wasm.mts --help
+ * USAGE: node scripts/wasm.mts --build # Production build node scripts/wasm.mts
+ * --build --dev # Fast dev build node scripts/wasm.mts --download node
+ * scripts/wasm.mts --help.
  */
 
 import { existsSync, promises as fs } from 'node:fs'

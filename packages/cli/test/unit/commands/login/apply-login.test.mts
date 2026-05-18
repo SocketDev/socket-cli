@@ -1,16 +1,11 @@
 /**
  * Unit tests for login apply utilities.
  *
- * Purpose:
- * Tests the applyLogin function that updates CLI configuration.
+ * Purpose: Tests the applyLogin function that updates CLI configuration.
  *
- * Test Coverage:
- * - Config value updates
- * - Token storage
- * - Enforced orgs storage
+ * Test Coverage: - Config value updates - Token storage - Enforced orgs storage.
  *
- * Related Files:
- * - commands/login/apply-login.mts (implementation)
+ * Related Files: - commands/login/apply-login.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

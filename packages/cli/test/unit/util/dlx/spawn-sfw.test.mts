@@ -1,9 +1,9 @@
 /**
  * Unit tests for the bespoke `spawnSfwDlx` flow.
  *
- * The Vfs / auto-dispatch code is tested via define-tool-spawn.test.mts.
- * This file targets the sfw-specific paths: machine-mode application,
- * local-override execution, and the dlx fallback.
+ * The Vfs / auto-dispatch code is tested via define-tool-spawn.test.mts. This
+ * file targets the sfw-specific paths: machine-mode application, local-override
+ * execution, and the dlx fallback.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

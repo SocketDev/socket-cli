@@ -1,16 +1,12 @@
 /**
  * Unit tests for path constants.
  *
- * Purpose:
- * Tests the path utility functions and constants.
+ * Purpose: Tests the path utility functions and constants.
  *
- * Test Coverage:
- * - Static path constants
- * - Lazy path getters
- * - Path resolution functions
+ * Test Coverage: - Static path constants - Lazy path getters - Path resolution
+ * functions.
  *
- * Related Files:
- * - constants/paths.mts (implementation)
+ * Related Files: - constants/paths.mts (implementation)
  */
 
 import path from 'node:path'

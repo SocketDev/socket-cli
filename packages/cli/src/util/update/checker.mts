@@ -1,22 +1,17 @@
 /**
- * Update checking utilities for Socket CLI.
- * Handles version comparison and registry lookups for available updates.
+ * Update checking utilities for Socket CLI. Handles version comparison and
+ * registry lookups for available updates.
  *
- * Key Functions:
- * - checkForUpdates: Check registry for available updates
- * - isUpdateAvailable: Compare current vs latest versions
- * - fetchLatestVersion: Get latest version from npm registry
+ * Key Functions: - checkForUpdates: Check registry for available updates -
+ * isUpdateAvailable: Compare current vs latest versions - fetchLatestVersion:
+ * Get latest version from npm registry.
  *
- * Features:
- * - Robust version comparison using semver
- * - Network error handling and timeouts
- * - Registry authentication support
- * - Retry mechanism with exponential backoff
+ * Features: - Robust version comparison using semver - Network error handling
+ * and timeouts - Registry authentication support - Retry mechanism with
+ * exponential backoff.
  *
- * Usage:
- * - CLI update checking
- * - Automated update notifications
- * - Version compatibility checks
+ * Usage: - CLI update checking - Automated update notifications - Version
+ * compatibility checks.
  */
 
 import https from 'node:https'
@@ -72,9 +67,9 @@ interface GetLatestVersionOptions {
  */
 const NetworkUtils = {
   /**
-   * Fetch package information from npm registry using https.request().
-   * Uses Node.js built-in https module to avoid keep-alive connection pooling
-   * that causes 30-second delays in process exit.
+   * Fetch package information from npm registry using https.request(). Uses
+   * Node.js built-in https module to avoid keep-alive connection pooling that
+   * causes 30-second delays in process exit.
    */
   async fetch(
     url: string,
@@ -266,8 +261,8 @@ const NetworkUtils = {
 }
 
 /**
- * Check for available updates for a package.
- * Fetches latest version from registry and compares with current.
+ * Check for available updates for a package. Fetches latest version from
+ * registry and compares with current.
  */
 export async function checkForUpdates(
   options: UpdateCheckOptions,

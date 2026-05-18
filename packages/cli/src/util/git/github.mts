@@ -1,25 +1,29 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
- * GitHub utilities for Socket CLI.
- * Provides GitHub API integration for repository operations and GHSA vulnerability data.
+ * GitHub utilities for Socket CLI. Provides GitHub API integration for
+ * repository operations and GHSA vulnerability data.
  *
  * Authentication:
- * - getGitHubToken: Retrieve GitHub token from env/git config
- * - getOctokit: Get authenticated Octokit instance
- * - getOctokitGraphql: Get authenticated GraphQL client
+ *
+ * - GetGitHubToken: Retrieve GitHub token from env/git config
+ * - GetOctokit: Get authenticated Octokit instance
+ * - GetOctokitGraphql: Get authenticated GraphQL client
  *
  * Caching:
+ *
  * - 5-minute TTL for API responses
  * - Automatic cache invalidation
  * - Persistent cache in node_modules/.cache
  *
  * GHSA Operations:
- * - cacheFetch: Cache API responses with TTL
- * - fetchGhsaDetails: Fetch GitHub Security Advisory details
- * - getGhsaUrl: Generate GHSA advisory URL
- * - readCache/writeCache: Persistent cache operations
+ *
+ * - CacheFetch: Cache API responses with TTL
+ * - FetchGhsaDetails: Fetch GitHub Security Advisory details
+ * - GetGhsaUrl: Generate GHSA advisory URL
+ * - ReadCache/writeCache: Persistent cache operations
  *
  * Repository Operations:
+ *
  * - GraphQL queries for complex operations
  * - Integration with Octokit REST API
  * - Support for GitHub Actions environment variables
@@ -153,9 +157,11 @@ export async function enablePrAutoMerge({
     const respPrNumber = (
       gqlResp as
         | {
-            enablePullRequestAutoMerge?: {
-              pullRequest?: { number?: number | undefined } | undefined
-            } | undefined
+            enablePullRequestAutoMerge?:
+              | {
+                  pullRequest?: { number?: number | undefined } | undefined
+                }
+              | undefined
           }
         | undefined
     )?.enablePullRequestAutoMerge?.pullRequest?.number
@@ -295,8 +301,8 @@ export function getOctokitGraphql(): typeof OctokitGraphql {
 }
 
 /**
- * Convert GitHub API errors to user-friendly CResult failures.
- * Handles rate limits, authentication, and network errors with actionable messages.
+ * Convert GitHub API errors to user-friendly CResult failures. Handles rate
+ * limits, authentication, and network errors with actionable messages.
  */
 export function handleGitHubApiError(
   e: unknown,
@@ -456,8 +462,8 @@ export function handleGitHubApiError(
 }
 
 /**
- * Convert GraphQL errors to user-friendly CResult failures.
- * Handles rate limits and authentication errors with actionable messages.
+ * Convert GraphQL errors to user-friendly CResult failures. Handles rate limits
+ * and authentication errors with actionable messages.
  */
 export function handleGraphqlError(
   e: unknown,
@@ -603,8 +609,8 @@ export async function setGitRemoteGithubRepoUrl(
 }
 
 /**
- * Execute a GitHub API call with retry logic for transient failures.
- * Retries on 5xx errors and network failures with exponential backoff.
+ * Execute a GitHub API call with retry logic for transient failures. Retries on
+ * 5xx errors and network failures with exponential backoff.
  */
 export async function withGitHubRetry<T>(
   operation: () => Promise<T>,

@@ -2,21 +2,15 @@
 /**
  * Unit tests for custom error classes.
  *
- * Purpose:
- * Tests custom error classes (InputError, AuthError, etc.). Validates error construction and properties.
+ * Purpose: Tests custom error classes (InputError, AuthError, etc.). Validates
+ * error construction and properties.
  *
- * Test Coverage:
- * - InputError construction
- * - AuthError construction
- * - Error message formatting
- * - Error codes
- * - Stack trace preservation
+ * Test Coverage: - InputError construction - AuthError construction - Error
+ * message formatting - Error codes - Stack trace preservation.
  *
- * Testing Approach:
- * Tests custom error class inheritance and behavior.
+ * Testing Approach: Tests custom error class inheritance and behavior.
  *
- * Related Files:
- * - util/error/errors.mts (implementation)
+ * Related Files: - util/error/errors.mts (implementation)
  */
 
 import { readFileSync } from 'node:fs'

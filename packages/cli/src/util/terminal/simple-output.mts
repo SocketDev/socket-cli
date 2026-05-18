@@ -1,6 +1,8 @@
 /* oxlint-disable socket/no-status-emoji -- TUI / custom output formatter; emojis are part of the visual contract. */
 
-/** @fileoverview Simplified output formatter to DRY out repetitive output-*.mts files */
+/**
+ * @file Simplified output formatter to DRY out repetitive output-*.mts files
+ */
 
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
@@ -13,7 +15,7 @@ import type { CResult, OutputKind } from '../../types.mjs'
 const logger = getDefaultLogger()
 
 /**
- * Common table column definitions
+ * Common table column definitions.
  */
 export const commonColumns = {
   id: { field: 'id', name: colors.magenta('ID') },
@@ -43,7 +45,7 @@ export const commonColumns = {
 }
 
 /**
- * Pagination helper for list outputs
+ * Pagination helper for list outputs.
  */
 export function outputPaginatedList<T>(
   result: CResult<T>,
@@ -122,7 +124,7 @@ export function outputResult<T>(
 }
 
 /**
- * Table column definition for formatted output
+ * Table column definition for formatted output.
  */
 export interface TableColumn {
   field: string
@@ -131,21 +133,23 @@ export interface TableColumn {
 }
 
 /**
- * Options for simple output formatting
+ * Options for simple output formatting.
  */
 export interface SimpleOutputOptions<T> {
   json?: ((data: T) => unknown) | undefined
-  table?: {
-    columns: TableColumn[]
-    rows: (data: T) => Array<Record<string, unknown>>
-  } | undefined
+  table?:
+    | {
+        columns: TableColumn[]
+        rows: (data: T) => Array<Record<string, unknown>>
+      }
+    | undefined
   text?: ((data: T) => void) | undefined
   title?: string | undefined
   emptyMessage?: string | undefined
 }
 
 /**
- * Generic output formatter that eliminates repetitive output-*.mts files
+ * Generic output formatter that eliminates repetitive output-*.mts files.
  */
 export function simpleOutput<T>(
   result: CResult<T>,

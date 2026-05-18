@@ -1,17 +1,13 @@
 /**
  * Unit tests for apply-optimization.
  *
- * Purpose:
- * Tests the applyOptimization function that applies Socket registry overrides.
+ * Purpose: Tests the applyOptimization function that applies Socket registry
+ * overrides.
  *
- * Test Coverage:
- * - Successful optimization
- * - Update dependencies failure
- * - npm buggy overrides handling
- * - Spinner behavior
+ * Test Coverage: - Successful optimization - Update dependencies failure - npm
+ * buggy overrides handling - Spinner behavior.
  *
- * Related Files:
- * - commands/optimize/apply-optimization.mts (implementation)
+ * Related Files: - commands/optimize/apply-optimization.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

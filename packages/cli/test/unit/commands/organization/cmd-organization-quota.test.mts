@@ -1,8 +1,8 @@
 /**
  * Unit tests for organization quota command.
  *
- * Tests the command that lists organizations associated with the Socket API token
- * and displays quota information.
+ * Tests the command that lists organizations associated with the Socket API
+ * token and displays quota information.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

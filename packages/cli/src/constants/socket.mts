@@ -1,5 +1,6 @@
 /**
- * Socket.dev specific constants for the CLI (extends registry socket constants).
+ * Socket.dev specific constants for the CLI (extends registry socket
+ * constants).
  */
 
 // Re-export NPM registry URL from registry for backward compatibility.

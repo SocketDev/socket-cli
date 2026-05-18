@@ -1,17 +1,13 @@
 /**
  * Unit tests for organization slug persistence suggestion.
  *
- * Purpose:
- * Tests the prompt for persisting organization slug as default.
+ * Purpose: Tests the prompt for persisting organization slug as default.
  *
- * Test Coverage:
- * - suggestToPersistOrgSlug function
- * - Config reading
- * - User selection handling
- * - Config update handling
+ * Test Coverage: - suggestToPersistOrgSlug function - Config reading - User
+ * selection handling - Config update handling.
  *
- * Related Files:
- * - src/commands/scan/suggest-to-persist-orgslug.mts (implementation)
+ * Related Files: - src/commands/scan/suggest-to-persist-orgslug.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

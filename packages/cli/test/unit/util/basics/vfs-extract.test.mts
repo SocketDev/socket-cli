@@ -1,13 +1,12 @@
 /**
  * Unit tests for basics VFS extraction.
  *
- * Tests SEA-time extraction of bundled basics tools (Python, Trivy,
- * TruffleHog, OpenGrep) via process.smol.mount(). Behavior is gated on
- * SEA mode and the smol API; both must be present for extraction to
- * proceed. All FS / spawn calls are mocked.
+ * Tests SEA-time extraction of bundled basics tools (Python, Trivy, TruffleHog,
+ * OpenGrep) via process.smol.mount(). Behavior is gated on SEA mode and the
+ * smol API; both must be present for extraction to proceed. All FS / spawn
+ * calls are mocked.
  *
- * Related Files:
- * - src/util/basics/vfs-extract.mts
+ * Related Files: - src/util/basics/vfs-extract.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

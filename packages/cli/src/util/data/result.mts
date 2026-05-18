@@ -1,9 +1,12 @@
-/** @fileoverview Result validation utilities for Socket CLI. Provides helpers for working with CResult type including validation and unwrapping. */
+/**
+ * @file Result validation utilities for Socket CLI. Provides helpers for
+ *   working with CResult type including validation and unwrapping.
+ */
 
 import type { CResult } from '../../types.mjs'
 
 /**
- * Error options for ResultError
+ * Error options for ResultError.
  */
 export type ResultErrorOptions = {
   code?: number | undefined
@@ -11,7 +14,7 @@ export type ResultErrorOptions = {
 }
 
 /**
- * Result validation error thrown when a CResult is not ok
+ * Result validation error thrown when a CResult is not ok.
  */
 export class ResultError extends Error {
   code?: number | undefined
@@ -31,17 +34,18 @@ export class ResultError extends Error {
 }
 
 /**
- * Chains CResult operations, passing through errors
- *
- * @param result - The CResult to chain from
- * @param fn - Function that returns a new CResult
- * @returns The result of fn if input is ok, otherwise the error
+ * Chains CResult operations, passing through errors.
  *
  * @example
- * const result = await chainResult(
- *   await fetchRepo(orgSlug, repoName),
- *   async (repo) => await updateRepo(repo.id, updates)
- * )
+ *   const result = await chainResult(
+ *     await fetchRepo(orgSlug, repoName),
+ *     async repo => await updateRepo(repo.id, updates),
+ *   )
+ *
+ * @param result - The CResult to chain from.
+ * @param fn - Function that returns a new CResult.
+ *
+ * @returns The result of fn if input is ok, otherwise the error
  */
 export async function chainResult<T, U>(
   result: CResult<T>,
@@ -54,10 +58,11 @@ export async function chainResult<T, U>(
 }
 
 /**
- * Checks if a CResult is an error
+ * Checks if a CResult is an error.
  *
- * @param result - The CResult to check
- * @returns true if result is an error, false otherwise
+ * @param result - The CResult to check.
+ *
+ * @returns True if result is an error, false otherwise
  */
 export function isError<T>(
   result: CResult<T>,
@@ -66,10 +71,11 @@ export function isError<T>(
 }
 
 /**
- * Checks if a CResult is ok
+ * Checks if a CResult is ok.
  *
- * @param result - The CResult to check
- * @returns true if result is ok, false otherwise
+ * @param result - The CResult to check.
+ *
+ * @returns True if result is ok, false otherwise
  */
 export function isOk<T>(
   result: CResult<T>,
@@ -78,17 +84,17 @@ export function isOk<T>(
 }
 
 /**
- * Maps the data of a successful CResult, or passes through an error
- *
- * @param result - The CResult to map
- * @param fn - Function to transform the data
- * @returns A new CResult with mapped data or the original error
+ * Maps the data of a successful CResult, or passes through an error.
  *
  * @example
- * const repoNames = mapResult(
- *   await fetchListRepos(orgSlug),
- *   (repos) => repos.map(r => r.name)
- * )
+ *   const repoNames = mapResult(await fetchListRepos(orgSlug), repos =>
+ *     repos.map(r => r.name),
+ *   )
+ *
+ * @param result - The CResult to map.
+ * @param fn - Function to transform the data.
+ *
+ * @returns A new CResult with mapped data or the original error
  */
 export function mapResult<T, U>(
   result: CResult<T>,
@@ -105,18 +111,20 @@ export function mapResult<T, U>(
 }
 
 /**
- * Requires a CResult to be ok, otherwise throws a ResultError
- *
- * @param result - The CResult to validate
- * @param context - Context string describing the operation
- * @returns The unwrapped data if result is ok
- * @throws {ResultError} If result is not ok
+ * Requires a CResult to be ok, otherwise throws a ResultError.
  *
  * @example
- * const repos = requireOk(
- *   await fetchListRepos(orgSlug),
- *   'fetch repositories'
- * )
+ *   const repos = requireOk(
+ *     await fetchListRepos(orgSlug),
+ *     'fetch repositories',
+ *   )
+ *
+ * @param result - The CResult to validate.
+ * @param context - Context string describing the operation.
+ *
+ * @returns The unwrapped data if result is ok
+ *
+ * @throws {ResultError} If result is not ok
  */
 export function requireOk<T>(result: CResult<T>, context: string): T {
   if (!result.ok) {
@@ -133,9 +141,10 @@ export function requireOk<T>(result: CResult<T>, context: string): T {
 }
 
 /**
- * Converts a CResult to a Result<T, Error> pattern
+ * Converts a CResult to a Result<T, Error> pattern.
  *
- * @param result - The CResult to convert
+ * @param result - The CResult to convert.
+ *
  * @returns An object with either data or error property
  */
 export function toResultPattern<T>(
@@ -152,9 +161,10 @@ export function toResultPattern<T>(
 }
 
 /**
- * Unwraps a CResult, returning the data or undefined if error
+ * Unwraps a CResult, returning the data or undefined if error.
  *
- * @param result - The CResult to unwrap
+ * @param result - The CResult to unwrap.
+ *
  * @returns The data if ok, undefined otherwise
  */
 export function unwrapOr<T>(result: CResult<T>, defaultValue: T): T {
@@ -162,9 +172,10 @@ export function unwrapOr<T>(result: CResult<T>, defaultValue: T): T {
 }
 
 /**
- * Unwraps a CResult, returning the data or undefined if error
+ * Unwraps a CResult, returning the data or undefined if error.
  *
- * @param result - The CResult to unwrap
+ * @param result - The CResult to unwrap.
+ *
  * @returns The data if ok, undefined otherwise
  */
 export function unwrapOrUndefined<T>(result: CResult<T>): T | undefined {

@@ -1,12 +1,12 @@
 /**
  * Unit tests for buildHelpLines (with-subcommands-help.mts).
  *
- * Covers the bucketed root-help layout, sub-command flat-list path,
- * and the --help-full environment-variable expansion.
+ * Covers the bucketed root-help layout, sub-command flat-list path, and the
+ * --help-full environment-variable expansion.
  *
- * The bucket layout is driven by the `buckets` option (a map from
- * subcommand name → CliBucket). Adding a command to a bucket = one
- * map entry; no parallel hand-maintained list to drift.
+ * The bucket layout is driven by the `buckets` option (a map from subcommand
+ * name → CliBucket). Adding a command to a bucket = one map entry; no parallel
+ * hand-maintained list to drift.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -51,8 +51,8 @@ const FLAGS: MeowFlags = {
 }
 
 /**
- * A representative subcommand registry covering all bucket
- * categories, used by most root-help tests.
+ * A representative subcommand registry covering all bucket categories, used by
+ * most root-help tests.
  */
 export function rootSubcommands(): Record<string, CliSubcommand> {
   const names = [
@@ -100,8 +100,8 @@ export function rootSubcommands(): Record<string, CliSubcommand> {
 }
 
 /**
- * Bucket assignments mirroring `rootCommandBuckets` in
- * src/commands.mts. Tests pass this through `buildHelpLines`.
+ * Bucket assignments mirroring `rootCommandBuckets` in src/commands.mts. Tests
+ * pass this through `buildHelpLines`.
  */
 const ROOT_BUCKETS: CliBuckets = {
   // main.

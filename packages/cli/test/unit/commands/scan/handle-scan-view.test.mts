@@ -1,22 +1,17 @@
 /**
  * Unit tests for handleScanView.
  *
- * Purpose:
- * Tests the handler that displays scan results. Validates scan data presentation and formatting.
+ * Purpose: Tests the handler that displays scan results. Validates scan data
+ * presentation and formatting.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleScanView.mts (implementation)
+ * Related Files: - src/commands/handleScanView.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

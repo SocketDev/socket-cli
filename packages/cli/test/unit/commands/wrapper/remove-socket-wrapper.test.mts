@@ -1,21 +1,16 @@
 /**
  * Unit tests for removeSocketWrapper.
  *
- * Purpose:
- * Tests removing Socket wrapper scripts from package managers. Validates clean wrapper uninstallation.
+ * Purpose: Tests removing Socket wrapper scripts from package managers.
+ * Validates clean wrapper uninstallation.
  *
- * Test Coverage:
- * - Core functionality validation
- * - Edge case handling
- * - Error scenarios
- * - Input validation
+ * Test Coverage: - Core functionality validation - Edge case handling - Error
+ * scenarios - Input validation.
  *
- * Testing Approach:
- * Comprehensive unit testing of module functionality with mocked dependencies
- * where appropriate.
+ * Testing Approach: Comprehensive unit testing of module functionality with
+ * mocked dependencies where appropriate.
  *
- * Related Files:
- * - src/removeSocketWrapper.mts (implementation)
+ * Related Files: - src/removeSocketWrapper.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

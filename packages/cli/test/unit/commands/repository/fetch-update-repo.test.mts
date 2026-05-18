@@ -1,27 +1,20 @@
 /**
  * Unit tests for fetchUpdateRepo.
  *
- * Purpose:
- * Tests repository update via the Socket API. Validates SDK integration, parameter
- * transformation, and partial update handling.
+ * Purpose: Tests repository update via the Socket API. Validates SDK
+ * integration, parameter transformation, and partial update handling.
  *
- * Test Coverage:
- * - Successful repository update
- * - SDK setup failure handling
- * - API call errors (404 not found, 403 forbidden)
- * - Custom SDK options
- * - Partial updates (only changed fields)
- * - Null prototype usage for security
+ * Test Coverage: - Successful repository update - SDK setup failure handling -
+ * API call errors (404 not found, 403 forbidden) - Custom SDK options - Partial
+ * updates (only changed fields) - Null prototype usage for security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Validates parameter
- * transformation and update workflows.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Validates parameter transformation and update workflows.
  *
- * Related Files:
- * - src/commands/repository/fetch-update-repo.mts (implementation)
- * - src/commands/repository/handle-update-repo.mts (handler)
- * - src/util/socket/api.mts (API utilities)
- * - src/util/socket/sdk.mts (SDK setup)
+ * Related Files: - src/commands/repository/fetch-update-repo.mts
+ * (implementation) - src/commands/repository/handle-update-repo.mts (handler) -
+ * src/util/socket/api.mts (API utilities) - src/util/socket/sdk.mts (SDK
+ * setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'

@@ -1,4 +1,6 @@
-/** @fileoverview Path constants for Socket CLI build scripts. */
+/**
+ * @file Path constants for Socket CLI build scripts.
+ */
 
 import os from 'node:os'
 import path from 'node:path'

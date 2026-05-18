@@ -1,16 +1,11 @@
 /**
  * Unit tests for delete scan output.
  *
- * Purpose:
- * Tests the outputDeleteScan function for different output formats.
+ * Purpose: Tests the outputDeleteScan function for different output formats.
  *
- * Test Coverage:
- * - JSON output format
- * - Text output format
- * - Error handling
+ * Test Coverage: - JSON output format - Text output format - Error handling.
  *
- * Related Files:
- * - commands/scan/output-delete-scan.mts (implementation)
+ * Related Files: - commands/scan/output-delete-scan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

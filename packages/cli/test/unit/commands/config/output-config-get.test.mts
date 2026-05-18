@@ -1,18 +1,12 @@
 /**
  * Unit tests for config get output formatting.
  *
- * Purpose:
- * Tests the output formatting for config get results.
+ * Purpose: Tests the output formatting for config get results.
  *
- * Test Coverage:
- * - outputConfigGet function
- * - JSON output format
- * - Text output format
- * - Markdown output format
- * - Error handling
+ * Test Coverage: - outputConfigGet function - JSON output format - Text output
+ * format - Markdown output format - Error handling.
  *
- * Related Files:
- * - src/commands/config/output-config-get.mts (implementation)
+ * Related Files: - src/commands/config/output-config-get.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

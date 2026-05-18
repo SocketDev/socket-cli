@@ -1,18 +1,15 @@
 /**
  * Unit tests for requirements output formatting.
  *
- * Purpose:
- * Tests the output formatting for Conda to requirements.txt conversion results.
+ * Purpose: Tests the output formatting for Conda to requirements.txt conversion
+ * results.
  *
- * Test Coverage:
- * - outputRequirements function
- * - JSON output format with file and stdout
- * - Markdown output format with file and stdout
- * - Text output format with file and stdout
- * - Error handling
+ * Test Coverage: - outputRequirements function - JSON output format with file
+ * and stdout - Markdown output format with file and stdout - Text output format
+ * with file and stdout - Error handling.
  *
- * Related Files:
- * - src/commands/manifest/output-requirements.mts (implementation)
+ * Related Files: - src/commands/manifest/output-requirements.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

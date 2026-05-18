@@ -1,8 +1,9 @@
 /**
- * npm package specification utilities for Socket CLI.
- * Parses and handles various npm package specification formats.
+ * Npm package specification utilities for Socket CLI. Parses and handles
+ * various npm package specification formats.
  *
  * Supported Formats:
+ *
  * - Regular packages: lodash, lodash@4.17.21
  * - Scoped packages: @types/node, @types/node@20.0.0
  * - Version ranges: lodash@^4.0.0, lodash@~4.17.0
@@ -11,11 +12,13 @@
  * - Aliases: my-alias@npm:real-package@1.0.0
  *
  * Key Functions:
- * - safeNpa: Safe wrapper for npm-package-arg
- * - safeNpmSpecToPurl: Convert npm spec to PURL
- * - safeParseNpmSpec: Parse npm spec to name/version
+ *
+ * - SafeNpa: Safe wrapper for npm-package-arg
+ * - SafeNpmSpecToPurl: Convert npm spec to PURL
+ * - SafeParseNpmSpec: Parse npm spec to name/version
  *
  * Error Handling:
+ *
  * - Returns undefined for invalid specs
  * - Fallback parsing for edge cases
  * - Safe against malformed input
@@ -42,9 +45,8 @@ export type ParsedPackageSpec = {
 }
 
 /**
- * Convert npm package spec to PURL string.
- * Handles various npm spec formats and converts them to standardized PURLs.
- * Throws if conversion fails.
+ * Convert npm package spec to PURL string. Handles various npm spec formats and
+ * converts them to standardized PURLs. Throws if conversion fails.
  */
 export function npmSpecToPurl(pkgSpec: string): string {
   const purl = safeNpmSpecToPurl(pkgSpec)
@@ -57,8 +59,8 @@ export function npmSpecToPurl(pkgSpec: string): string {
 }
 
 /**
- * Safe wrapper for npm-package-arg that doesn't throw.
- * Returns undefined if parsing fails.
+ * Safe wrapper for npm-package-arg that doesn't throw. Returns undefined if
+ * parsing fails.
  */
 export function safeNpa(
   ...args: Parameters<typeof npmPackageArg>
@@ -70,9 +72,8 @@ export function safeNpa(
 }
 
 /**
- * Convert npm package spec to PURL string.
- * Handles various npm spec formats and converts them to standardized PURLs.
- * Returns undefined if conversion fails.
+ * Convert npm package spec to PURL string. Handles various npm spec formats and
+ * converts them to standardized PURLs. Returns undefined if conversion fails.
  */
 export function safeNpmSpecToPurl(pkgSpec: string): string | undefined {
   const parsed = safeParseNpmSpec(pkgSpec)
@@ -96,12 +97,10 @@ export function safeNpmSpecToPurl(pkgSpec: string): string | undefined {
 }
 
 /**
- * Parse npm package specification into name and version.
- * Uses npm-package-arg for proper handling of various spec formats:
- * - Regular packages: lodash, lodash@4.17.21
- * - Scoped packages: @types/node, @types/node@20.0.0
- * - Version ranges: lodash@^4.0.0
- * - Git URLs, file paths, etc.
+ * Parse npm package specification into name and version. Uses npm-package-arg
+ * for proper handling of various spec formats: - Regular packages: lodash,
+ * lodash@4.17.21 - Scoped packages: @types/node, @types/node@20.0.0 - Version
+ * ranges: lodash@^4.0.0 - Git URLs, file paths, etc.
  *
  * Returns undefined if parsing fails.
  */

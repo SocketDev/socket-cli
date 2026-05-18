@@ -1,23 +1,18 @@
 /**
  * Unit tests for output-update-repo.
  *
- * Purpose:
- * Tests output formatting for repository update results. Validates change summaries
- * and diff formatting for update operations.
+ * Purpose: Tests output formatting for repository update results. Validates
+ * change summaries and diff formatting for update operations.
  *
- * Test Coverage:
- * - Successful update output formatting
- * - Error message formatting
- * - Multiple output formats (text, json, markdown)
- * - Updated field highlighting
+ * Test Coverage: - Successful update output formatting - Error message
+ * formatting - Multiple output formats (text, json, markdown) - Updated field
+ * highlighting.
  *
- * Testing Approach:
- * Uses result helpers to create test data. Validates formatted output strings showing
- * what changed during updates.
+ * Testing Approach: Uses result helpers to create test data. Validates
+ * formatted output strings showing what changed during updates.
  *
- * Related Files:
- * - src/commands/repository/output-update-repo.mts (implementation)
- * - src/commands/repository/handle-update-repo.mts (handler)
+ * Related Files: - src/commands/repository/output-update-repo.mts
+ * (implementation) - src/commands/repository/handle-update-repo.mts (handler)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,17 +1,14 @@
 /**
  * Unit tests for reachability target validation.
  *
- * Purpose:
- * Tests the validateReachabilityTarget function for validating scan targets.
+ * Purpose: Tests the validateReachabilityTarget function for validating scan
+ * targets.
  *
- * Test Coverage:
- * - Single target validation
- * - Multiple targets rejection
- * - Directory vs file detection
- * - Path containment checks
+ * Test Coverage: - Single target validation - Multiple targets rejection -
+ * Directory vs file detection - Path containment checks.
  *
- * Related Files:
- * - commands/scan/validate-reachability-target.mts (implementation)
+ * Related Files: - commands/scan/validate-reachability-target.mts
+ * (implementation)
  */
 
 import os from 'node:os'

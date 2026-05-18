@@ -1,4 +1,6 @@
-/** @fileoverview Common validation patterns to DRY out repetitive checks */
+/**
+ * @file Common validation patterns to DRY out repetitive checks
+ */
 
 import { checkCommandInput } from './check-input.mts'
 import { hasDefaultApiToken } from '../socket/sdk.mjs'
@@ -6,11 +8,11 @@ import { hasDefaultApiToken } from '../socket/sdk.mjs'
 import type { OutputKind } from '../../types.mjs'
 
 /**
- * Common validation checks
+ * Common validation checks.
  */
 export const validations = {
   /**
-   * Validate that we have an organization slug
+   * Validate that we have an organization slug.
    */
   requireOrg: (orgSlug: string | undefined, outputKind: OutputKind): boolean =>
     checkCommandInput(outputKind, {
@@ -21,7 +23,7 @@ export const validations = {
     }),
 
   /**
-   * Validate API token is present
+   * Validate API token is present.
    */
   requireAuth: (outputKind: OutputKind): boolean =>
     checkCommandInput(outputKind, {
@@ -32,7 +34,7 @@ export const validations = {
     }),
 
   /**
-   * Validate mutually exclusive flags
+   * Validate mutually exclusive flags.
    */
   notBoth: (
     flag1: boolean,
@@ -49,7 +51,7 @@ export const validations = {
     }),
 
   /**
-   * Validate enum value
+   * Validate enum value.
    */
   isOneOf: <T,>(
     value: T,
@@ -65,7 +67,7 @@ export const validations = {
     }),
 
   /**
-   * Validate positive number
+   * Validate positive number.
    */
   isPositive: (value: number, name: string, outputKind: OutputKind): boolean =>
     checkCommandInput(outputKind, {
@@ -76,7 +78,7 @@ export const validations = {
     }),
 
   /**
-   * Validate non-empty string
+   * Validate non-empty string.
    */
   notEmpty: (value: string, name: string, outputKind: OutputKind): boolean =>
     checkCommandInput(outputKind, {
@@ -87,7 +89,7 @@ export const validations = {
     }),
 
   /**
-   * Validate URL format
+   * Validate URL format.
    */
   isUrl: (value: string, name: string, outputKind: OutputKind): boolean =>
     checkCommandInput(outputKind, {
@@ -99,7 +101,7 @@ export const validations = {
 }
 
 /**
- * Standard validation workflow
+ * Standard validation workflow.
  */
 export interface ValidationOptions {
   requireAuth?: boolean | undefined
@@ -150,7 +152,7 @@ export function runStandardValidations(options: ValidationOptions): boolean {
 }
 
 /**
- * Common parameter validators
+ * Common parameter validators.
  */
 export const validateParams = {
   pagination: (

@@ -1,4 +1,8 @@
-/** @fileoverview Workspace test helpers for Socket CLI. Provides utilities for creating and managing temporary test workspaces with package manifests, lockfiles, and source files. */
+/**
+ * @file Workspace test helpers for Socket CLI. Provides utilities for creating
+ *   and managing temporary test workspaces with package manifests, lockfiles,
+ *   and source files.
+ */
 
 import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
@@ -7,84 +11,121 @@ import path from 'node:path'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib/fs'
 
 /**
- * File content specification for workspace setup
+ * File content specification for workspace setup.
  */
 export interface WorkspaceFile {
-  /** File path relative to workspace root */
+  /**
+   * File path relative to workspace root.
+   */
   path: string
-  /** File content (string or JSON-serializable object) */
+  /**
+   * File content (string or JSON-serializable object)
+   */
   content: string | Record<string, unknown>
 }
 
 /**
- * Package.json configuration
+ * Package.json configuration.
  */
 export interface PackageJsonConfig {
-  /** Package name */
+  /**
+   * Package name.
+   */
   name?: string | undefined
-  /** Package version */
+  /**
+   * Package version.
+   */
   version?: string | undefined
-  /** Dependencies map */
+  /**
+   * Dependencies map.
+   */
   dependencies?: Record<string, string> | undefined
-  /** DevDependencies map */
+  /**
+   * DevDependencies map.
+   */
   devDependencies?: Record<string, string> | undefined
-  /** Scripts map */
+  /**
+   * Scripts map.
+   */
   scripts?: Record<string, string> | undefined
-  /** Additional package.json fields */
+  /**
+   * Additional package.json fields.
+   */
   [key: string]: unknown
 }
 
 /**
- * Workspace configuration
+ * Workspace configuration.
  */
 export interface WorkspaceConfig {
-  /** Workspace files to create */
+  /**
+   * Workspace files to create.
+   */
   files?: WorkspaceFile[] | undefined
-  /** Package.json configuration */
+  /**
+   * Package.json configuration.
+   */
   packageJson?: PackageJsonConfig | undefined
-  /** Whether to initialize git repository (default: false) */
+  /**
+   * Whether to initialize git repository (default: false)
+   */
   initGit?: boolean | undefined
-  /** Whether to create node_modules directory (default: false) */
+  /**
+   * Whether to create node_modules directory (default: false)
+   */
   createNodeModules?: boolean | undefined
 }
 
 /**
- * Workspace instance with cleanup capability
+ * Workspace instance with cleanup capability.
  */
 export interface Workspace {
-  /** Absolute path to workspace directory */
+  /**
+   * Absolute path to workspace directory.
+   */
   path: string
-  /** Cleanup function to remove workspace */
+  /**
+   * Cleanup function to remove workspace.
+   */
   cleanup: () => Promise<void>
-  /** Write additional file to workspace */
+  /**
+   * Write additional file to workspace.
+   */
   writeFile: (relativePath: string, content: string) => Promise<void>
-  /** Read file from workspace */
+  /**
+   * Read file from workspace.
+   */
   readFile: (relativePath: string) => Promise<string>
-  /** Check if file exists in workspace */
+  /**
+   * Check if file exists in workspace.
+   */
   fileExists: (relativePath: string) => boolean
-  /** Get absolute path for relative path in workspace */
+  /**
+   * Get absolute path for relative path in workspace.
+   */
   resolve: (...segments: string[]) => string
 }
 
 /**
  * Create workspace configured for monorepo structure.
  *
- * @param packages - Package configurations keyed by package name
- * @returns Workspace instance
- *
  * @example
- * ```typescript
- * const workspace = await createMonorepoWorkspace({
- *   'packages/app': {
- *     name: '@myorg/app',
- *     dependencies: { express: '^4.18.0' }
- *   },
- *   'packages/utils': {
- *     name: '@myorg/utils',
- *     version: '1.0.0'
- *   }
- * })
- * ```
+ *   ```typescript
+ *   const workspace = await createMonorepoWorkspace({
+ *     'packages/app': {
+ *       name: '@myorg/app',
+ *       dependencies: { express: '^4.18.0' },
+ *     },
+ *     'packages/utils': {
+ *       name: '@myorg/utils',
+ *       version: '1.0.0',
+ *     },
+ *   })
+ *   ```
+ *
+ * @param packages - Package configurations keyed by package name.
+ *
+ * @returns Workspace instance
  */
 export async function createMonorepoWorkspace(
   packages: Record<string, PackageJsonConfig>,
@@ -115,27 +156,26 @@ export async function createMonorepoWorkspace(
 /**
  * Create a temporary test workspace with specified files and configuration.
  *
- * @param config - Workspace configuration
- * @returns Workspace instance with cleanup
- *
  * @example
- * ```typescript
- * const workspace = await createTestWorkspace({
- *   packageJson: {
- *     name: 'test-project',
- *     dependencies: { express: '^4.18.0' }
- *   },
- *   files: [
- *     { path: 'index.js', content: 'console.log("hello")' }
- *   ]
- * })
+ *   ```typescript
+ *   const workspace = await createTestWorkspace({
+ *     packageJson: {
+ *       name: 'test-project',
+ *       dependencies: { express: '^4.18.0' },
+ *     },
+ *     files: [{ path: 'index.js', content: 'console.log("hello")' }],
+ *   })
  *
- * // Use workspace
- * const result = await executeCliCommand(['scan'], { cwd: workspace.path })
+ *   // Use workspace
+ *   const result = await executeCliCommand(['scan'], { cwd: workspace.path })
  *
- * // Cleanup
- * await workspace.cleanup()
- * ```
+ *   // Cleanup
+ *   await workspace.cleanup()
+ *   ```
+ *
+ * @param config - Workspace configuration.
+ *
+ * @returns Workspace instance with cleanup
  */
 export async function createTestWorkspace(
   config?: WorkspaceConfig | undefined,
@@ -238,17 +278,18 @@ export async function createTestWorkspace(
 /**
  * Create workspace with common package manager lockfiles.
  *
- * @param packageManager - Package manager type
- * @param dependencies - Dependencies to include
- * @returns Workspace instance
- *
  * @example
- * ```typescript
- * const workspace = await createWorkspaceWithLockfile('npm', {
- *   express: '^4.18.0',
- *   lodash: '^4.17.21'
- * })
- * ```
+ *   ```typescript
+ *   const workspace = await createWorkspaceWithLockfile('npm', {
+ *     express: '^4.18.0',
+ *     lodash: '^4.17.21',
+ *   })
+ *   ```
+ *
+ * @param packageManager - Package manager type.
+ * @param dependencies - Dependencies to include.
+ *
+ * @returns Workspace instance
  */
 export async function createWorkspaceWithLockfile(
   packageManager: 'npm' | 'pnpm' | 'yarn',
@@ -309,18 +350,19 @@ ${Object.entries(dependencies)
 /**
  * Create workspace with Socket.dev configuration file.
  *
- * @param socketConfig - Socket configuration object
- * @returns Workspace instance
- *
  * @example
- * ```typescript
- * const workspace = await createWorkspaceWithSocketConfig({
- *   version: 2,
- *   issueRules: {
- *     '*': { 'npm/install-scripts': 'error' }
- *   }
- * })
- * ```
+ *   ```typescript
+ *   const workspace = await createWorkspaceWithSocketConfig({
+ *     version: 2,
+ *     issueRules: {
+ *       '*': { 'npm/install-scripts': 'error' },
+ *     },
+ *   })
+ *   ```
+ *
+ * @param socketConfig - Socket configuration object.
+ *
+ * @returns Workspace instance
  */
 export async function createWorkspaceWithSocketConfig(
   socketConfig: Record<string, unknown>,
@@ -336,14 +378,18 @@ export async function createWorkspaceWithSocketConfig(
 /**
  * Setup package.json with specific dependency configuration.
  *
- * @param workspace - Workspace instance
- * @param dependencies - Dependencies to add
- * @param devDependencies - DevDependencies to add
- *
  * @example
- * ```typescript
- * await setupPackageJson(workspace, { express: '^4.18.0' }, { vitest: '^3.0.0' })
- * ```
+ *   ```typescript
+ *   await setupPackageJson(
+ *     workspace,
+ *     { express: '^4.18.0' },
+ *     { vitest: '^3.0.0' },
+ *   )
+ *   ```
+ *
+ * @param workspace - Workspace instance.
+ * @param dependencies - Dependencies to add.
+ * @param devDependencies - DevDependencies to add.
  */
 export async function setupPackageJson(
   workspace: Workspace,
@@ -380,25 +426,29 @@ export async function setupPackageJson(
 }
 
 /**
- * Execute a test function with a temporary workspace, automatically cleaning up.
- *
- * @param config - Workspace configuration
- * @param testFn - Test function to execute with workspace
- * @returns Result of test function
+ * Execute a test function with a temporary workspace, automatically cleaning
+ * up.
  *
  * @example
- * ```typescript
- * await withTestWorkspace(
- *   {
- *     packageJson: { name: 'test-app' },
- *     files: [{ path: 'index.js', content: 'module.exports = {}' }]
- *   },
- *   async (workspace) => {
- *     const result = await executeCliCommand(['scan'], { cwd: workspace.path })
- *     expect(result.status).toBe(true)
- *   }
- * )
- * ```
+ *   ```typescript
+ *   await withTestWorkspace(
+ *     {
+ *       packageJson: { name: 'test-app' },
+ *       files: [{ path: 'index.js', content: 'module.exports = {}' }],
+ *     },
+ *     async workspace => {
+ *       const result = await executeCliCommand(['scan'], {
+ *         cwd: workspace.path,
+ *       })
+ *       expect(result.status).toBe(true)
+ *     },
+ *   )
+ *   ```
+ *
+ * @param config - Workspace configuration.
+ * @param testFn - Test function to execute with workspace.
+ *
+ * @returns Result of test function
  */
 export async function withTestWorkspace<T>(
   config: WorkspaceConfig | undefined,

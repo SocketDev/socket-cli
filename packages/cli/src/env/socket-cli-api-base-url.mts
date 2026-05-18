@@ -1,4 +1,6 @@
-/** @fileoverview SOCKET_CLI_API_BASE_URL environment variable. */
+/**
+ * @file SOCKET_CLI_API_BASE_URL environment variable.
+ */
 
 import { getSocketCliApiBaseUrl } from '@socketsecurity/lib/env/socket-cli'
 

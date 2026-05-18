@@ -1,8 +1,8 @@
 /**
- * CLI loader.
- * Loads the built CLI from dist/cli.js.
+ * CLI loader. Loads the built CLI from dist/cli.js.
  *
- * Note: Written as CommonJS to avoid import.meta issues. Shebang added by esbuild banner.
+ * Note: Written as CommonJS to avoid import.meta issues. Shebang added by
+ * esbuild banner.
  */
 
 const path = require('node:path')

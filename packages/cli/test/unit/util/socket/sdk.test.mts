@@ -2,22 +2,16 @@
 /**
  * Unit tests for Socket SDK setup.
  *
- * Purpose:
- * Tests Socket SDK initialization and configuration. Validates SDK setup with various options.
+ * Purpose: Tests Socket SDK initialization and configuration. Validates SDK
+ * setup with various options.
  *
- * Test Coverage:
- * - SDK initialization
- * - API token handling
- * - Base URL configuration
- * - Proxy URL configuration
- * - User agent setup
- * - SDK error handling
+ * Test Coverage: - SDK initialization - API token handling - Base URL
+ * configuration - Proxy URL configuration - User agent setup - SDK error
+ * handling.
  *
- * Testing Approach:
- * Mocks @socketsecurity/sdk to test setup logic.
+ * Testing Approach: Mocks @socketsecurity/sdk to test setup logic.
  *
- * Related Files:
- * - util/socket/sdk.mts (implementation)
+ * Related Files: - util/socket/sdk.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

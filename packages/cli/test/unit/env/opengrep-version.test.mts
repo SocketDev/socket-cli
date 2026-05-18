@@ -1,12 +1,13 @@
 /**
  * Unit tests for OpenGrep version getter.
  *
- * The getter reads INLINED_OPENGREP_VERSION from process.env directly
- * so esbuild's define plugin can inline the value at build time. Tests
- * verify the runtime success and the missing-env throw.
+ * The getter reads INLINED_OPENGREP_VERSION from process.env directly so
+ * esbuild's define plugin can inline the value at build time. Tests verify the
+ * runtime success and the missing-env throw.
  *
  * Related Files:
- * - src/env/opengrep-version.mts
+ *
+ * - Src/env/opengrep-version.mts
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

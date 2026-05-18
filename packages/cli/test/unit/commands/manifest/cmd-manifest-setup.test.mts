@@ -1,21 +1,18 @@
 /**
  * Unit tests for manifest setup command.
  *
- * Tests the command that starts an interactive configurator to customize default
- * flag values for manifest commands in a directory. Configuration is stored in
- * socket.json for persistent settings.
+ * Tests the command that starts an interactive configurator to customize
+ * default flag values for manifest commands in a directory. Configuration is
+ * stored in socket.json for persistent settings.
  *
- * Test Coverage:
- * - Command metadata (description, hidden)
- * - Dry-run behavior with detailed output
- * - Path resolution (relative to absolute)
- * - Default path handling (current directory)
- * - Flag parsing (defaultOnReadError)
- * - Handler invocation with correct parameters
+ * Test Coverage: - Command metadata (description, hidden) - Dry-run behavior
+ * with detailed output - Path resolution (relative to absolute) - Default path
+ * handling (current directory) - Flag parsing (defaultOnReadError) - Handler
+ * invocation with correct parameters.
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest-setup.mts - Command implementation
- * - src/commands/manifest/handle-manifest-setup.mts - Setup logic
+ * Related Files: - src/commands/manifest/cmd-manifest-setup.mts - Command
+ * implementation - src/commands/manifest/handle-manifest-setup.mts - Setup
+ * logic.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,4 +1,8 @@
-/** @fileoverview CLI execution test helpers for Socket CLI. Provides high-level utilities for executing CLI commands with comprehensive output validation and assertion capabilities. */
+/**
+ * @file CLI execution test helpers for Socket CLI. Provides high-level
+ *   utilities for executing CLI commands with comprehensive output validation
+ *   and assertion capabilities.
+ */
 
 import { constants } from '../../src/constants.mts'
 import { spawnSocketCli } from '../utils.mts'
@@ -6,54 +10,78 @@ import { spawnSocketCli } from '../utils.mts'
 import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 /**
- * Result from CLI execution with enhanced utilities
+ * Result from CLI execution with enhanced utilities.
  */
 export interface CliExecutionResult {
-  /** Exit code from the CLI command */
+  /**
+   * Exit code from the CLI command.
+   */
   code: number
-  /** Whether the command succeeded (code === 0) */
+  /**
+   * Whether the command succeeded (code === 0)
+   */
   status: boolean
-  /** Cleaned stdout output */
+  /**
+   * Cleaned stdout output.
+   */
   stdout: string
-  /** Cleaned stderr output */
+  /**
+   * Cleaned stderr output.
+   */
   stderr: string
-  /** Combined stdout and stderr */
+  /**
+   * Combined stdout and stderr.
+   */
   output: string
-  /** Error details if command failed */
-  error?: {
-    message: string
-    stack: string
-  } | undefined
+  /**
+   * Error details if command failed.
+   */
+  error?:
+    | {
+        message: string
+        stack: string
+      }
+    | undefined
 }
 
 /**
- * Options for CLI execution
+ * Options for CLI execution.
  */
 export interface CliExecutionOptions extends SpawnOptions {
-  /** Whether to automatically add --config {} to isolate from user config (default: true) */
+  /**
+   * Whether to automatically add --config {} to isolate from user config
+   * (default: true)
+   */
   isolateConfig?: boolean | undefined
-  /** Custom config object to pass with --config flag */
+  /**
+   * Custom config object to pass with --config flag.
+   */
   config?: Record<string, unknown> | undefined
-  /** Expect the command to fail with specific exit code */
+  /**
+   * Expect the command to fail with specific exit code.
+   */
   expectedExitCode?: number | undefined
-  /** Timeout in milliseconds (default: 30000) */
+  /**
+   * Timeout in milliseconds (default: 30000)
+   */
   timeout?: number | undefined
 }
 
 /**
  * Batch execute multiple CLI commands in sequence.
  *
- * @param commands - Array of command argument arrays
- * @param options - Execution options applied to all commands
- * @returns Array of CLI execution results
- *
  * @example
- * ```typescript
- * const results = await executeBatchCliCommands([
- *   ['config', 'get', 'apiToken'],
- *   ['config', 'get', 'defaultOrg'],
- * ])
- * ```
+ *   ```typescript
+ *   const results = await executeBatchCliCommands([
+ *     ['config', 'get', 'apiToken'],
+ *     ['config', 'get', 'defaultOrg'],
+ *   ])
+ *   ```
+ *
+ * @param commands - Array of command argument arrays.
+ * @param options - Execution options applied to all commands.
+ *
+ * @returns Array of CLI execution results
  */
 export async function executeBatchCliCommands(
   commands: string[][],
@@ -74,16 +102,19 @@ export async function executeBatchCliCommands(
 /**
  * Execute Socket CLI command with enhanced result handling.
  *
- * @param args - Command arguments to pass to Socket CLI
- * @param options - Execution options
- * @returns Enhanced CLI execution result
- *
  * @example
- * ```typescript
- * const result = await executeCliCommand(['scan', '--json'], { isolateConfig: true })
- * expect(result.status).toBe(true)
- * expect(result.stdout).toContain('scan-id')
- * ```
+ *   ```typescript
+ *   const result = await executeCliCommand(['scan', '--json'], {
+ *     isolateConfig: true,
+ *   })
+ *   expect(result.status).toBe(true)
+ *   expect(result.stdout).toContain('scan-id')
+ *   ```
+ *
+ * @param args - Command arguments to pass to Socket CLI.
+ * @param options - Execution options.
+ *
+ * @returns Enhanced CLI execution result
  */
 export async function executeCliCommand(
   args: string[],
@@ -137,15 +168,16 @@ export async function executeCliCommand(
 /**
  * Execute Socket CLI command and parse JSON output.
  *
- * @param args - Command arguments (--json flag added automatically)
- * @param options - Execution options
- * @returns Parsed JSON data and execution result
- *
  * @example
- * ```typescript
- * const { data, result } = await executeCliJson(['scan', 'create'])
- * expect(data.id).toBeDefined()
- * ```
+ *   ```typescript
+ *   const { data, result } = await executeCliJson(['scan', 'create'])
+ *   expect(data.id).toBeDefined()
+ *   ```
+ *
+ * @param args - Command arguments (--json flag added automatically)
+ * @param options - Execution options.
+ *
+ * @returns Parsed JSON data and execution result
  */
 export async function executeCliJson<T = unknown>(
   args: string[],
@@ -166,19 +198,20 @@ export async function executeCliJson<T = unknown>(
 }
 
 /**
- * Execute Socket CLI command with multiple retry attempts.
- * Useful for commands that may have transient failures.
- *
- * @param args - Command arguments
- * @param maxRetries - Maximum number of retry attempts (default: 3)
- * @param retryDelay - Delay between retries in ms (default: 1000)
- * @param options - Execution options
- * @returns CLI execution result
+ * Execute Socket CLI command with multiple retry attempts. Useful for commands
+ * that may have transient failures.
  *
  * @example
- * ```typescript
- * const result = await executeCliWithRetry(['scan', 'create'], 3, 2000)
- * ```
+ *   ```typescript
+ *   const result = await executeCliWithRetry(['scan', 'create'], 3, 2000)
+ *   ```
+ *
+ * @param args - Command arguments.
+ * @param maxRetries - Maximum number of retry attempts (default: 3)
+ * @param retryDelay - Delay between retries in ms (default: 1000)
+ * @param options - Execution options.
+ *
+ * @returns CLI execution result
  */
 export async function executeCliWithRetry(
   args: string[],
@@ -213,15 +246,16 @@ export async function executeCliWithRetry(
 /**
  * Execute CLI command and capture timing information.
  *
- * @param args - Command arguments
- * @param options - Execution options
- * @returns Execution result with timing information
- *
  * @example
- * ```typescript
- * const { result, duration } = await executeCli WithTiming(['scan', 'create'])
- * expect(duration).toBeLessThan(5000)
- * ```
+ *   ```typescript
+ *   const { result, duration } = await executeCli WithTiming(['scan', 'create'])
+ *   expect(duration).toBeLessThan(5000)
+ *   ```
+ *
+ * @param args - Command arguments.
+ * @param options - Execution options.
+ *
+ * @returns Execution result with timing information
  */
 export async function executeCliWithTiming(
   args: string[],
@@ -248,17 +282,19 @@ export async function executeCliWithTiming(
 /**
  * Execute Socket CLI command expecting failure (non-zero exit code).
  *
- * @param args - Command arguments
- * @param expectedCode - Expected exit code (default: any non-zero)
- * @param options - Execution options
- * @returns CLI execution result
- * @throws Error if command succeeds
- *
  * @example
- * ```typescript
- * const result = await expectCliError(['scan'], 1)
- * expect(result.stderr).toContain('error')
- * ```
+ *   ```typescript
+ *   const result = await expectCliError(['scan'], 1)
+ *   expect(result.stderr).toContain('error')
+ *   ```
+ *
+ * @param args - Command arguments.
+ * @param expectedCode - Expected exit code (default: any non-zero)
+ * @param options - Execution options.
+ *
+ * @returns CLI execution result
+ *
+ * @throws Error if command succeeds
  */
 export async function expectCliError(
   args: string[],
@@ -285,16 +321,18 @@ export async function expectCliError(
 /**
  * Execute Socket CLI command expecting success (exit code 0).
  *
- * @param args - Command arguments
- * @param options - Execution options
- * @returns CLI execution result
- * @throws Error if command fails
- *
  * @example
- * ```typescript
- * const result = await expectCliSuccess(['wrapper', '--help'])
- * expect(result.stdout).toContain('Usage')
- * ```
+ *   ```typescript
+ *   const result = await expectCliSuccess(['wrapper', '--help'])
+ *   expect(result.stdout).toContain('Usage')
+ *   ```
+ *
+ * @param args - Command arguments.
+ * @param options - Execution options.
+ *
+ * @returns CLI execution result
+ *
+ * @throws Error if command fails
  */
 export async function expectCliSuccess(
   args: string[],

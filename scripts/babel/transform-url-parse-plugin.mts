@@ -1,4 +1,6 @@
-/** @fileoverview Babel plugin to transform url.parse() calls into new URL() constructor. */
+/**
+ * @file Babel plugin to transform url.parse() calls into new URL() constructor.
+ */
 
 export default function ({ types: t }) {
   return {

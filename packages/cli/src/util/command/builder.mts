@@ -1,4 +1,6 @@
-/** @fileoverview Command builder to DRY out repetitive cmd-*.mts command definitions */
+/**
+ * @file Command builder to DRY out repetitive cmd-*.mts command definitions
+ */
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 
@@ -14,7 +16,7 @@ import type {
 const logger = getDefaultLogger()
 
 /**
- * Options for building a CLI command
+ * Options for building a CLI command.
  */
 export interface CommandBuilderOptions {
   name: string
@@ -29,13 +31,15 @@ export interface CommandBuilderOptions {
     flags: Record<string, unknown>
     cli: unknown
   }) => Promise<void>
-  examples?: Array<{ command: string; description?: string | undefined }> | undefined
+  examples?:
+    | Array<{ command: string; description?: string | undefined }>
+    | undefined
   usage?: string | undefined
   helpText?: string | undefined
 }
 
 /**
- * Build a standardized CLI subcommand
+ * Build a standardized CLI subcommand.
  */
 export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
   const {
@@ -132,7 +136,7 @@ export function buildCommand(options: CommandBuilderOptions): CliSubcommand {
 }
 
 /**
- * Build a parent command with subcommands
+ * Build a parent command with subcommands.
  */
 export interface ParentCommandOptions {
   name: string
@@ -180,11 +184,11 @@ export function buildParentCommand(
 }
 
 /**
- * Common command patterns
+ * Common command patterns.
  */
 export const commandPatterns = {
   /**
-   * Build a standard list command
+   * Build a standard list command.
    */
   list: (entity: string, handler: CommandBuilderOptions['handler']) =>
     buildCommand({
@@ -199,7 +203,7 @@ export const commandPatterns = {
     }),
 
   /**
-   * Build a standard create command
+   * Build a standard create command.
    */
   create: (
     entity: string,
@@ -216,7 +220,7 @@ export const commandPatterns = {
     }),
 
   /**
-   * Build a standard delete command
+   * Build a standard delete command.
    */
   delete: (
     entity: string,
@@ -232,7 +236,7 @@ export const commandPatterns = {
     }),
 
   /**
-   * Build a standard view command
+   * Build a standard view command.
    */
   view: (
     entity: string,
@@ -250,11 +254,11 @@ export const commandPatterns = {
 }
 
 /**
- * Standard error handlers
+ * Standard error handlers.
  */
 export const errorHandlers = {
   /**
-   * Handle missing required argument
+   * Handle missing required argument.
    */
   missingArg: (argName: string, example?: string) => {
     logger.error(`Missing required argument: ${argName}`)
@@ -265,7 +269,7 @@ export const errorHandlers = {
   },
 
   /**
-   * Handle API error
+   * Handle API error.
    */
   apiError: (error: unknown, operation: string) => {
     logger.error(`Failed to ${operation}`)
@@ -280,7 +284,7 @@ export const errorHandlers = {
   },
 
   /**
-   * Handle validation error
+   * Handle validation error.
    */
   validationError: (message: string) => {
     logger.error(`Validation error: ${message}`)

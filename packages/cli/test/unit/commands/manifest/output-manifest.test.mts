@@ -1,17 +1,12 @@
 /**
  * Unit tests for manifest output formatting.
  *
- * Purpose:
- * Tests the output formatting for manifest generation results.
+ * Purpose: Tests the output formatting for manifest generation results.
  *
- * Test Coverage:
- * - outputManifest function
- * - JSON output format with file and stdout
- * - Markdown output format with file and stdout
- * - Error handling
+ * Test Coverage: - outputManifest function - JSON output format with file and
+ * stdout - Markdown output format with file and stdout - Error handling.
  *
- * Related Files:
- * - src/commands/manifest/output-manifest.mts (implementation)
+ * Related Files: - src/commands/manifest/output-manifest.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

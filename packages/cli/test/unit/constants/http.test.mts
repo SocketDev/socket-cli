@@ -1,15 +1,11 @@
 /**
  * Unit tests for HTTP constants.
  *
- * Purpose:
- * Tests the HTTP status code constants.
+ * Purpose: Tests the HTTP status code constants.
  *
- * Test Coverage:
- * - HTTP status code constants
- * - NPM registry URL
+ * Test Coverage: - HTTP status code constants - NPM registry URL.
  *
- * Related Files:
- * - constants/http.mts (implementation)
+ * Related Files: - constants/http.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

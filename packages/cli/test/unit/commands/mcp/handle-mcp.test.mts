@@ -1,32 +1,32 @@
 /**
  * Unit tests for the MCP command handler.
  *
- * Tests handleMcp(opts) — the dispatcher that picks transport (stdio
- * vs HTTP), validates the OAuth + token combination, and forwards
- * to runStdioTransport / runHttpTransport.
+ * Tests handleMcp(opts) — the dispatcher that picks transport (stdio vs HTTP),
+ * validates the OAuth + token combination, and forwards to runStdioTransport /
+ * runHttpTransport.
  *
  * Test Coverage:
- * - stdio path with token configured → calls runStdioTransport with
- *   the right ServerConfig
- * - stdio path without token → logs error, exits with code 1
- * - HTTP path with all three OAuth fields → calls runHttpTransport
- *   with the OAuth config
- * - HTTP path with token (no OAuth) → calls runHttpTransport without
- *   throwing
- * - HTTP path with partial OAuth (issuer + clientId, no secret) →
- *   logs error, exits with code 1
- * - HTTP path without OAuth and without token → logs error, exits
- *   with code 1
+ *
+ * - Stdio path with token configured → calls runStdioTransport with the right
+ *   ServerConfig
+ * - Stdio path without token → logs error, exits with code 1
+ * - HTTP path with all three OAuth fields → calls runHttpTransport with the OAuth
+ *   config
+ * - HTTP path with token (no OAuth) → calls runHttpTransport without throwing
+ * - HTTP path with partial OAuth (issuer + clientId, no secret) → logs error,
+ *   exits with code 1
+ * - HTTP path without OAuth and without token → logs error, exits with code 1
  * - Custom oauthRequiredScopes forwarded
  * - Default scopes (`packages:list`) used when caller doesn't supply
- * - Version string read from constants ENV.INLINED_VERSION (with
- *   '0.0.0' fallback)
+ * - Version string read from constants ENV.INLINED_VERSION (with '0.0.0'
+ *   fallback)
  *
  * Related Files:
- * - src/commands/mcp/handle-mcp.mts - Implementation
- * - src/commands/mcp/transport-stdio.mts - Stdio runner (mocked)
- * - src/commands/mcp/transport-http.mts - HTTP runner (mocked)
- * - src/util/socket/sdk.mts - getDefaultApiToken (mocked)
+ *
+ * - Src/commands/mcp/handle-mcp.mts - Implementation
+ * - Src/commands/mcp/transport-stdio.mts - Stdio runner (mocked)
+ * - Src/commands/mcp/transport-http.mts - HTTP runner (mocked)
+ * - Src/util/socket/sdk.mts - getDefaultApiToken (mocked)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

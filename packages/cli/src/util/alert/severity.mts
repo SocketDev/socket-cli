@@ -1,4 +1,6 @@
-/** @fileoverview Alert severity utilities for Socket CLI security scanning. */
+/**
+ * @file Alert severity utilities for Socket CLI security scanning.
+ */
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
 

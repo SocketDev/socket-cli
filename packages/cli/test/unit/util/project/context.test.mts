@@ -2,17 +2,13 @@
 /**
  * Unit tests for project context utilities.
  *
- * Purpose:
- * Tests the project context detection for package managers, frameworks, and monorepos.
+ * Purpose: Tests the project context detection for package managers,
+ * frameworks, and monorepos.
  *
- * Test Coverage:
- * - detectPackageManager function
- * - findProjectRoot function
- * - getProjectContext function
- * - getContextualSuggestions function
+ * Test Coverage: - detectPackageManager function - findProjectRoot function -
+ * getProjectContext function - getContextualSuggestions function.
  *
- * Related Files:
- * - src/util/project/context.mts (implementation)
+ * Related Files: - src/util/project/context.mts (implementation)
  */
 
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'

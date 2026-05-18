@@ -6,9 +6,9 @@ This file is the rule snippet that goes into every Socket repo's CLAUDE.md
 
 ## 1 path, 1 reference
 
-**A path is *constructed* exactly once. Everywhere else *references* the constructed value.**
+**A path is _constructed_ exactly once. Everywhere else _references_ the constructed value.**
 
-Referencing a single computed path many times is fine — that's the whole point of computing it once. What's banned is *re-constructing* the same path in multiple places, because that's where drift is born.
+Referencing a single computed path many times is fine — that's the whole point of computing it once. What's banned is _re-constructing_ the same path in multiple places, because that's where drift is born.
 
 Three concrete shapes:
 
@@ -18,7 +18,7 @@ Three concrete shapes:
 
 3. **Workflows, Dockerfiles, shell scripts** — they can't `import` TS, so they construct the string once and reference it everywhere downstream. Workflows: a "Compute paths" step exposes `steps.paths.outputs.final_dir`; later steps read `${{ steps.paths.outputs.final_dir }}`. Dockerfiles/shell: assign once to a variable / `ENV`, reference by name thereafter. Each canonical construction carries a comment naming the source-of-truth `paths.mts`. **Re-building** the same path in a second step is the violation, not referring to the constructed value many times.
 
-Comments may describe path *structure* with placeholders ("`<mode>/<arch>`" or "`${BUILD_MODE}/${PLATFORM_ARCH}`") but should not encode a complete literal path string. Code execution takes priority over docs: violations in `.mts`/`.cts`, Makefiles, Dockerfiles, workflow YAML, and shell scripts are blocking. README and doc-comment violations are advisory unless they contain a fully-qualified path with no parametric placeholders.
+Comments may describe path _structure_ with placeholders ("`<mode>/<arch>`" or "`${BUILD_MODE}/${PLATFORM_ARCH}`") but should not encode a complete literal path string. Code execution takes priority over docs: violations in `.mts`/`.cts`, Makefiles, Dockerfiles, workflow YAML, and shell scripts are blocking. README and doc-comment violations are advisory unless they contain a fully-qualified path with no parametric placeholders.
 
 ### Three-level enforcement
 

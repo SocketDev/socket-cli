@@ -1,4 +1,6 @@
-/** @fileoverview SOCKET_CLI_CONFIG environment variable. */
+/**
+ * @file SOCKET_CLI_CONFIG environment variable.
+ */
 
 import { getSocketCliConfig } from '@socketsecurity/lib/env/socket-cli'
 

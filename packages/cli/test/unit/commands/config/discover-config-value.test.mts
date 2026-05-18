@@ -1,26 +1,23 @@
 /**
  * Unit tests for discoverConfigValue.
  *
- * Per-key auto-discovery for `socket config auto`. Covers every
- * branch in the dispatcher.
+ * Per-key auto-discovery for `socket config auto`. Covers every branch in the
+ * dispatcher.
  *
- * Test Coverage:
- * - Unknown key → "Requested key is not a valid config key"
- * - apiBaseUrl / apiProxy / apiToken → returns hand-written advisory
- *   without an auto-discovery attempt
- * - defaultOrg without an API token → "No API token set" error
- * - defaultOrg with token + single org → returns that slug
- * - defaultOrg with token + multiple orgs → returns array
- * - defaultOrg with token + zero orgs → "Was unable to determine"
- * - defaultOrg with token + fetch failure → same error message
- * - enforcedOrgs same matrix
- * - test sentinel key → "congrats, you found the test key"
+ * Test Coverage: - Unknown key → "Requested key is not a valid config key" -
+ * apiBaseUrl / apiProxy / apiToken → returns hand-written advisory without an
+ * auto-discovery attempt - defaultOrg without an API token → "No API token set"
+ * error - defaultOrg with token + single org → returns that slug - defaultOrg
+ * with token + multiple orgs → returns array - defaultOrg with token + zero
+ * orgs → "Was unable to determine" - defaultOrg with token + fetch failure →
+ * same error message - enforcedOrgs same matrix - test sentinel key →
+ * "congrats, you found the test key"
  *
- * Related Files:
- * - src/commands/config/discover-config-value.mts - Implementation
- * - src/util/config.mts - isSupportedConfigKey (mocked)
- * - src/util/socket/sdk.mts - hasDefaultApiToken (mocked)
- * - src/commands/organization/fetch-organization-list.mts - fetchOrganization (mocked)
+ * Related Files: - src/commands/config/discover-config-value.mts -
+ * Implementation - src/util/config.mts - isSupportedConfigKey (mocked) -
+ * src/util/socket/sdk.mts - hasDefaultApiToken (mocked) -
+ * src/commands/organization/fetch-organization-list.mts - fetchOrganization
+ * (mocked)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

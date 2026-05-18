@@ -76,8 +76,8 @@ export function isPidAlive(pid: number): boolean {
 }
 
 /**
- * Load the GHSA tracker from the repository.
- * Creates a new tracker if the file doesn't exist.
+ * Load the GHSA tracker from the repository. Creates a new tracker if the file
+ * doesn't exist.
  */
 export async function loadGhsaTracker(cwd: string): Promise<GhsaTracker> {
   const trackerPath = path.join(cwd, TRACKER_FILE)
@@ -92,9 +92,9 @@ export async function loadGhsaTracker(cwd: string): Promise<GhsaTracker> {
 }
 
 /**
- * Mark a GHSA as fixed in the tracker.
- * Removes any existing record for the same GHSA before adding the new one.
- * Uses file locking to prevent race conditions with concurrent operations.
+ * Mark a GHSA as fixed in the tracker. Removes any existing record for the same
+ * GHSA before adding the new one. Uses file locking to prevent race conditions
+ * with concurrent operations.
  */
 export async function markGhsaFixed(
   cwd: string,
@@ -177,8 +177,8 @@ export async function markGhsaFixed(
 }
 
 /**
- * Save the GHSA tracker to the repository.
- * Creates the .socket directory if it doesn't exist.
+ * Save the GHSA tracker to the repository. Creates the .socket directory if it
+ * doesn't exist.
  */
 export async function saveGhsaTracker(
   cwd: string,

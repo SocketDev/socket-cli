@@ -1,16 +1,15 @@
 /**
- * @fileoverview Unified environment variable management for Socket CLI builds and tests.
- * Single source of truth for all inlined environment variables.
+ * @file Unified environment variable management for Socket CLI builds and
+ *   tests. Single source of truth for all inlined environment variables. This
+ *   module consolidates environment variable loading that was previously
+ *   duplicated between:
  *
- * This module consolidates environment variable loading that was previously duplicated between:
- * - esbuild-utils.mts (full build-time inlining with 18 variables)
- * - test-wrapper.mts (partial test environment with 4 variables)
- *
- * Usage:
- *   import { EnvironmentVariables } from './environment-variables.mts'
- *   const vars = EnvironmentVariables.load()
- *   const defines = EnvironmentVariables.getDefineEntries(vars)
- *   const testVars = EnvironmentVariables.getTestVariables(vars)
+ *   - esbuild-utils.mts (full build-time inlining with 18 variables)
+ *   - test-wrapper.mts (partial test environment with 4 variables) Usage: import
+ *     { EnvironmentVariables } from './environment-variables.mts' const vars =
+ *     EnvironmentVariables.load() const defines =
+ *     EnvironmentVariables.getDefineEntries(vars) const testVars =
+ *     EnvironmentVariables.getTestVariables(vars)
  */
 
 import { execSync } from 'node:child_process'
@@ -25,15 +24,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
 /**
- * Environment variables manager for Socket CLI.
- * Provides unified loading of build-time and test-time environment variables.
+ * Environment variables manager for Socket CLI. Provides unified loading of
+ * build-time and test-time environment variables.
  */
 export class EnvironmentVariables {
   /**
-   * Load all inlined environment variables with their raw values.
-   * This is the single source of truth for all environment variable data.
+   * Load all inlined environment variables with their raw values. This is the
+   * single source of truth for all environment variable data.
    *
-   * @returns {Object} Object with all environment variable values (not JSON-stringified)
+   * @returns {Object} Object with all environment variable values (not
+   *   JSON-stringified)
    */
   static load() {
     // Read package.json for metadata.
@@ -157,7 +157,8 @@ export class EnvironmentVariables {
    * Load external tool versions with error handling (for test environment).
    * This is a safe subset that won't throw if files are missing.
    *
-   * @returns {Object} Object with tool versions or empty object if loading fails
+   * @returns {Object} Object with tool versions or empty object if loading
+   *   fails.
    */
   static loadSafe() {
     try {
@@ -178,11 +179,14 @@ export class EnvironmentVariables {
   }
 
   /**
-   * Get environment variables formatted for esbuild define option.
-   * All values are JSON-stringified for esbuild compatibility.
+   * Get environment variables formatted for esbuild define option. All values
+   * are JSON-stringified for esbuild compatibility.
    *
-   * @param {Object} [vars] - Pre-loaded variables (optional, will load if not provided)
-   * @returns {Record<string, string>} Object with env var names as keys and JSON-stringified values
+   * @param {Object} [vars] - Pre-loaded variables (optional, will load if not
+   *   provided)
+   *
+   * @returns {Record<string, string>} Object with env var names as keys and
+   *   JSON-stringified values.
    */
   static getDefineEntries(vars?: Record<string, string>) {
     const envVars = vars || EnvironmentVariables.load()
@@ -197,8 +201,8 @@ export class EnvironmentVariables {
   }
 
   /**
-   * Get subset of environment variables needed for test environment.
-   * Returns only the tool versions needed by tests, with safe loading.
+   * Get subset of environment variables needed for test environment. Returns
+   * only the tool versions needed by tests, with safe loading.
    *
    * @returns {Object} Object with test environment variables
    */

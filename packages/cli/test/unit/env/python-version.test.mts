@@ -1,8 +1,7 @@
 /**
  * Unit tests for Python version getter.
  *
- * Related Files:
- * - src/env/python-version.mts
+ * Related Files: - src/env/python-version.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

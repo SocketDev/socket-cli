@@ -1,11 +1,11 @@
 /**
  * Spawn Coana CLI for reachability analysis.
  *
- * - spawnCoanaDlx: local override > Socket dlx download. Mixes Socket env
- *   vars (CLI version, API token, org slug, proxy) into the child env so
- *   Coana can call back to the Socket API.
- * - spawnCoanaVfs: extract from SEA bundle, then exec.
- * - spawnCoana: auto-detect SEA vs npm-CLI mode and dispatch.
+ * - SpawnCoanaDlx: local override > Socket dlx download. Mixes Socket env vars
+ *   (CLI version, API token, org slug, proxy) into the child env so Coana can
+ *   call back to the Socket API.
+ * - SpawnCoanaVfs: extract from SEA bundle, then exec.
+ * - SpawnCoana: auto-detect SEA vs npm-CLI mode and dispatch.
  */
 
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
@@ -26,8 +26,7 @@ import type { StdioOptions } from 'node:child_process'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 /**
- * Spawn Coana CLI.
- * Auto-detects SEA mode and uses appropriate spawn method.
+ * Spawn Coana CLI. Auto-detects SEA mode and uses appropriate spawn method.
  */
 export async function spawnCoana(
   args: string[] | readonly string[],
@@ -159,8 +158,7 @@ export async function spawnCoanaDlx(
 }
 
 /**
- * Helper to spawn Coana from VFS.
- * Used when running in SEA mode.
+ * Helper to spawn Coana from VFS. Used when running in SEA mode.
  */
 export async function spawnCoanaVfs(
   args: string[] | readonly string[],

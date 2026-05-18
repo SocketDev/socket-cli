@@ -1,11 +1,10 @@
 /**
  * Unit tests for the convertCondaToRequirements file/stdin reader.
  *
- * The pure-string converter is tested next door; this suite covers the
- * I/O wrapper: file existence, empty file, stdin reads, error handling.
+ * The pure-string converter is tested next door; this suite covers the I/O
+ * wrapper: file existence, empty file, stdin reads, error handling.
  *
- * Related Files:
- * - src/commands/manifest/convert-conda-to-requirements.mts
+ * Related Files: - src/commands/manifest/convert-conda-to-requirements.mts.
  */
 
 import { EventEmitter } from 'node:events'
@@ -102,7 +101,9 @@ describe('convertCondaToRequirements (file)', () => {
 
 describe('convertCondaToRequirements (stdin)', () => {
   let originalStdin: NodeJS.ReadStream
-  let stdinFake: EventEmitter & { off?: ((...args: unknown[]) => void) | undefined }
+  let stdinFake: EventEmitter & {
+    off?: ((...args: unknown[]) => void) | undefined
+  }
 
   beforeEach(() => {
     vi.clearAllMocks()

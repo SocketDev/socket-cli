@@ -5,21 +5,24 @@
  * ecosystem-specific SBOM (Software Bill of Materials) generation.
  *
  * Test Coverage:
+ *
  * - Help text display and subcommand listing
  * - Dry-run behavior validation
  * - Subcommand routing
  *
  * Available Subcommands:
- * - auto: Auto-detect and generate manifests
- * - conda: Generate conda environment manifests
- * - gradle: Generate Gradle project manifests
- * - kotlin: Generate Kotlin project manifests
- * - scala: Generate Scala/SBT project manifests
- * - setup: Install manifest generation tools
+ *
+ * - Auto: Auto-detect and generate manifests
+ * - Conda: Generate conda environment manifests
+ * - Gradle: Generate Gradle project manifests
+ * - Kotlin: Generate Kotlin project manifests
+ * - Scala: Generate Scala/SBT project manifests
+ * - Setup: Install manifest generation tools
  *
  * Related Files:
- * - src/commands/manifest/cmd-manifest.mts - Root command definition
- * - src/commands/manifest/cmd-manifest-*.mts - Ecosystem-specific commands
+ *
+ * - Src/commands/manifest/cmd-manifest.mts - Root command definition
+ * - Src/commands/manifest/cmd-manifest-*.mts - Ecosystem-specific commands
  */
 
 import { describe, expect } from 'vitest'

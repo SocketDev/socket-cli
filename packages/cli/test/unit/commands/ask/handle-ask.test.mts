@@ -2,8 +2,8 @@
 /**
  * Unit tests for ask command handler.
  *
- * Tests the parseIntent function that converts natural language queries
- * into Socket CLI commands.
+ * Tests the parseIntent function that converts natural language queries into
+ * Socket CLI commands.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

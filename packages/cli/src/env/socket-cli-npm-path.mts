@@ -1,6 +1,6 @@
 /**
- * SOCKET_CLI_NPM_PATH environment variable snapshot.
- * Overrides the default npm binary path.
+ * SOCKET_CLI_NPM_PATH environment variable snapshot. Overrides the default npm
+ * binary path.
  */
 
 import { env } from 'node:process'

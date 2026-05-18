@@ -1,7 +1,8 @@
 /**
  * Unit tests for manifest auto command.
  *
- * Tests the command that auto-detects build systems and generates manifest files.
+ * Tests the command that auto-detects build systems and generates manifest
+ * files.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

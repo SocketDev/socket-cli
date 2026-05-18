@@ -1,15 +1,11 @@
 /**
  * Unit tests for error constants.
  *
- * Purpose:
- * Tests the error message constants for Socket CLI.
+ * Purpose: Tests the error message constants for Socket CLI.
  *
- * Test Coverage:
- * - Error message constants
- * - Loop sentinel value
+ * Test Coverage: - Error message constants - Loop sentinel value.
  *
- * Related Files:
- * - constants/errors.mts (implementation)
+ * Related Files: - constants/errors.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

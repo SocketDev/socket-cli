@@ -1,17 +1,19 @@
 /**
- * DLX execution utilities for Socket CLI.
- * Manages package execution using Socket's own dlx implementation.
+ * DLX execution utilities for Socket CLI. Manages package execution using
+ * Socket's own dlx implementation.
  *
  * Key Functions:
- * - spawnCdxgenDlx: Execute CycloneDX generator via dlx
- * - spawnCoanaDlx: Execute Coana CLI tool via dlx
- * - spawnDlx: Execute packages using Socket's dlx
- * - spawnSfwDlx: Execute Socket Firewall via dlx
- * - spawnSocketPyCli: Execute Socket Python CLI
- * - spawnSocketPatchDlx: Execute Socket Patch via dlx
- * - spawnSynpDlx: Execute Synp converter via dlx
+ *
+ * - SpawnCdxgenDlx: Execute CycloneDX generator via dlx
+ * - SpawnCoanaDlx: Execute Coana CLI tool via dlx
+ * - SpawnDlx: Execute packages using Socket's dlx
+ * - SpawnSfwDlx: Execute Socket Firewall via dlx
+ * - SpawnSocketPyCli: Execute Socket Python CLI
+ * - SpawnSocketPatchDlx: Execute Socket Patch via dlx
+ * - SpawnSynpDlx: Execute Synp converter via dlx
  *
  * Implementation:
+ *
  * - Uses @socketsecurity/lib/dlx/package for direct package installation
  * - Installs packages to ~/.socket/_dlx directory
  * - Executes binaries directly without package manager commands
@@ -70,8 +72,8 @@ export type DlxPackageSpec = {
 }
 
 /**
- * Helper to spawn Coana with dlx.
- * Returns a CResult with stdout extraction for backward compatibility.
+ * Helper to spawn Coana with dlx. Returns a CResult with stdout extraction for
+ * backward compatibility.
  *
  * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
  * Coana CLI at that path instead of downloading from npm.
@@ -83,25 +85,26 @@ export { spawnCdxgenDlx } from './spawn-cdxgen.mts'
 export { spawnSfwDlx } from './spawn-sfw.mts'
 
 /**
- * Helper to spawn Socket Patch.
- * If SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable is set, uses the local
- * socket-patch binary at that path instead of downloading.
+ * Helper to spawn Socket Patch. If SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH
+ * environment variable is set, uses the local socket-patch binary at that path
+ * instead of downloading.
  *
- * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub releases,
- * not an npm package. This function handles both local overrides and GitHub downloads.
+ * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub
+ * releases, not an npm package. This function handles both local overrides and
+ * GitHub downloads.
  */
 export { spawnSocketPatchDlx } from './spawn-socket-patch.mts'
 
 /**
- * Download and cache a binary from GitHub releases.
- * Handles both .tar.gz and .zip archives, extracting the binary to the dlx cache.
+ * Download and cache a binary from GitHub releases. Handles both .tar.gz and
+ * .zip archives, extracting the binary to the dlx cache.
  *
- * Security:
- * - Uses lock files to prevent TOCTOU race conditions during concurrent downloads.
- * - Validates zip entries for path traversal attacks before extraction.
- * - Verifies SHA-256 checksum if provided in spec.
+ * Security: - Uses lock files to prevent TOCTOU race conditions during
+ * concurrent downloads. - Validates zip entries for path traversal attacks
+ * before extraction. - Verifies SHA-256 checksum if provided in spec.
  *
  * @param spec - GitHub release specification.
+ *
  * @returns Path to the downloaded binary.
  */
 export async function downloadGitHubReleaseBinary(
@@ -259,8 +262,8 @@ export async function downloadGitHubReleaseBinary(
 }
 
 /**
- * Spawns a package using Socket's dlx implementation.
- * Installs packages to ~/.socket/_dlx and executes them directly.
+ * Spawns a package using Socket's dlx implementation. Installs packages to
+ * ~/.socket/_dlx and executes them directly.
  */
 export async function spawnDlx(
   packageSpec: DlxPackageSpec,
@@ -293,8 +296,7 @@ export async function spawnDlx(
 }
 
 /**
- * Helper to spawn a tool from VFS extraction.
- * Used when running in SEA mode.
+ * Helper to spawn a tool from VFS extraction. Used when running in SEA mode.
  */
 export async function spawnToolVfs(
   tool: ExternalTool,
@@ -346,8 +348,8 @@ export async function spawnToolVfs(
 }
 
 /**
- * Validate package name to prevent command injection.
- * Package names must follow npm naming rules.
+ * Validate package name to prevent command injection. Package names must follow
+ * npm naming rules.
  */
 export function validatePackageName(name: string): void {
   // Basic validation: no shell metacharacters, must be valid npm package name.
@@ -378,8 +380,8 @@ export { spawnCoanaVfs } from './spawn-coana.mts'
 export { spawnSocketPatchVfs } from './spawn-socket-patch.mts'
 
 /**
- * High-level spawn functions that auto-detect SEA vs npm CLI mode.
- * These choose between VFS extraction (SEA) and dlx download (npm CLI).
+ * High-level spawn functions that auto-detect SEA vs npm CLI mode. These choose
+ * between VFS extraction (SEA) and dlx download (npm CLI).
  */
 
 export { spawnSfw } from './spawn-sfw.mts'
@@ -393,9 +395,8 @@ export { spawnSocketPatch } from './spawn-socket-patch.mts'
 export { spawnSynp, spawnSynpDlx, spawnSynpVfs } from './spawn-synp.mts'
 
 /**
- * Python CLI spawn utilities.
- * Re-exported from spawn-pycli.mts (extracted from spawn.mts to keep
- * this file under the 1000-line File size cap).
+ * Python CLI spawn utilities. Re-exported from spawn-pycli.mts (extracted from
+ * spawn.mts to keep this file under the 1000-line File size cap).
  */
 export {
   convertCaretToPipRange,
@@ -416,16 +417,16 @@ export {
 export type { SocketPyCliDlxOptions } from './spawn-pycli.mts'
 
 /**
- * Security scanning tool spawn utilities.
- * These tools are used by socket-basics for comprehensive scanning.
- * In SEA mode, they're extracted from VFS. In npm CLI mode, they're downloaded from GitHub.
+ * Security scanning tool spawn utilities. These tools are used by socket-basics
+ * for comprehensive scanning. In SEA mode, they're extracted from VFS. In npm
+ * CLI mode, they're downloaded from GitHub.
  */
 
 export { spawnTrivy, spawnTrivyDlx, spawnTrivyVfs } from './spawn-trivy.mts'
 
 /**
- * Spawn TruffleHog via GitHub download (npm CLI mode).
- * Downloads from GitHub releases (trufflesecurity/trufflehog).
+ * Spawn TruffleHog via GitHub download (npm CLI mode). Downloads from GitHub
+ * releases (trufflesecurity/trufflehog).
  */
 export {
   spawnTrufflehog,

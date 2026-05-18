@@ -1,22 +1,15 @@
 /**
  * Unit tests for output formatting utilities.
  *
- * Purpose:
- * Tests output formatting utilities. Validates table formatting, column alignment, and text wrapping.
+ * Purpose: Tests output formatting utilities. Validates table formatting,
+ * column alignment, and text wrapping.
  *
- * Test Coverage:
- * - Table formatting
- * - Column alignment
- * - Text wrapping
- * - Truncation
- * - Border styles
- * - Color coding
+ * Test Coverage: - Table formatting - Column alignment - Text wrapping -
+ * Truncation - Border styles - Color coding.
  *
- * Testing Approach:
- * Tests text formatting utilities for CLI output.
+ * Testing Approach: Tests text formatting utilities for CLI output.
  *
- * Related Files:
- * - util/output/formatting.mts (implementation)
+ * Related Files: - util/output/formatting.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

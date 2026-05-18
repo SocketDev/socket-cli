@@ -1,15 +1,12 @@
 /**
  * Unit tests for tier1 scan finalization.
  *
- * Purpose:
- * Tests the finalizeTier1Scan function for completing reachability scans.
+ * Purpose: Tests the finalizeTier1Scan function for completing reachability
+ * scans.
  *
- * Test Coverage:
- * - API request formatting
- * - Parameter passing
+ * Test Coverage: - API request formatting - Parameter passing.
  *
- * Related Files:
- * - commands/scan/finalize-tier1-scan.mts (implementation)
+ * Related Files: - commands/scan/finalize-tier1-scan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

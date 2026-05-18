@@ -1,22 +1,15 @@
 /**
  * Unit tests for markdown generation.
  *
- * Purpose:
- * Tests markdown generation utilities. Validates markdown table, list, and heading generation.
+ * Purpose: Tests markdown generation utilities. Validates markdown table, list,
+ * and heading generation.
  *
- * Test Coverage:
- * - Markdown tables
- * - Markdown lists
- * - Heading generation
- * - Code blocks
- * - Link formatting
- * - Escaping
+ * Test Coverage: - Markdown tables - Markdown lists - Heading generation - Code
+ * blocks - Link formatting - Escaping.
  *
- * Testing Approach:
- * Tests markdown generator used for markdown output mode.
+ * Testing Approach: Tests markdown generator used for markdown output mode.
  *
- * Related Files:
- * - util/output/markdown.mts (implementation)
+ * Related Files: - util/output/markdown.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

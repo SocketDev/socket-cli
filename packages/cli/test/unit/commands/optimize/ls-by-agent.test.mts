@@ -2,22 +2,14 @@
 /**
  * Unit tests for ls-by-agent module.
  *
- * Purpose:
- * Tests the package listing functions for different package managers.
+ * Purpose: Tests the package listing functions for different package managers.
  *
- * Test Coverage:
- * - cleanupQueryStdout function (via lsNpm, lsVlt)
- * - parsableToQueryStdout function (via lsPnpm)
- * - lsBun function
- * - lsNpm function
- * - lsPnpm function
- * - lsVlt function
- * - lsYarnBerry function
- * - lsYarnClassic function
- * - listPackages function
+ * Test Coverage: - cleanupQueryStdout function (via lsNpm, lsVlt) -
+ * parsableToQueryStdout function (via lsPnpm) - lsBun function - lsNpm function
+ * - lsPnpm function - lsVlt function - lsYarnBerry function - lsYarnClassic
+ * function - listPackages function.
  *
- * Related Files:
- * - commands/optimize/ls-by-agent.mts (implementation)
+ * Related Files: - commands/optimize/ls-by-agent.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

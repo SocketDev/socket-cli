@@ -1,6 +1,6 @@
 /**
- * SOCKET_CLI_MODE environment variable snapshot.
- * Controls Socket CLI operational mode.
+ * SOCKET_CLI_MODE environment variable snapshot. Controls Socket CLI
+ * operational mode.
  */
 
 import { env } from 'node:process'

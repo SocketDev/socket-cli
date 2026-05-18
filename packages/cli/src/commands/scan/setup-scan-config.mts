@@ -12,10 +12,7 @@ import {
   getRepoOwner,
   gitBranch,
 } from '../../util/git/operations.mjs'
-import {
-  readSocketJsonSync,
-  writeSocketJson,
-} from '../../util/socket/json.mts'
+import { readSocketJsonSync, writeSocketJson } from '../../util/socket/json.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../util/socket/json.mts'

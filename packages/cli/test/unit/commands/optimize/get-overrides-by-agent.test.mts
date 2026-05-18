@@ -1,19 +1,15 @@
 /**
  * Unit tests for get-overrides-by-agent.
  *
- * Purpose:
- * Tests the functions that get overrides from package.json for different package managers.
+ * Purpose: Tests the functions that get overrides from package.json for
+ * different package managers.
  *
- * Test Coverage:
- * - getOverridesData for all package managers
- * - getOverridesDataNpm
- * - getOverridesDataPnpm
- * - getOverridesDataYarn/YarnClassic
- * - getOverridesDataBun
- * - getOverridesDataVlt
+ * Test Coverage: - getOverridesData for all package managers -
+ * getOverridesDataNpm - getOverridesDataPnpm - getOverridesDataYarn/YarnClassic
+ * - getOverridesDataBun - getOverridesDataVlt.
  *
- * Related Files:
- * - commands/optimize/get-overrides-by-agent.mts (implementation)
+ * Related Files: - commands/optimize/get-overrides-by-agent.mts
+ * (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

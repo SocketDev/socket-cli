@@ -1,7 +1,7 @@
 /**
- * Scrubber adapter registry — one small module per tool with known
- * output quirks. Each adapter returns a ScrubberAdapter that the
- * scrubber consults before applying its default classifier.
+ * Scrubber adapter registry — one small module per tool with known output
+ * quirks. Each adapter returns a ScrubberAdapter that the scrubber consults
+ * before applying its default classifier.
  */
 
 import { gemAdapter } from './gem.mts'

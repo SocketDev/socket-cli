@@ -1,7 +1,10 @@
-/** @fileoverview Babel plugin to transform __proto__ assignments into Object.setPrototypeOf calls. */
+/**
+ * @file Babel plugin to transform **proto** assignments into
+ *   Object.setPrototypeOf calls.
+ */
 
 /**
- * Check if node is a __proto__ property access.
+ * Check if node is a **proto** property access.
  */
 export function isProtoAccess(node, t) {
   return (

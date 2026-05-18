@@ -1,61 +1,78 @@
 /**
- * Mock authentication utilities for Socket CLI testing.
- * Provides mock functions for authentication flows.
+ * Mock authentication utilities for Socket CLI testing. Provides mock functions
+ * for authentication flows.
  *
- * Key Functions:
- * - mockInteractiveLogin: Mock interactive login flow
- * - mockApiTokenAuth: Mock API token authentication
- * - mockGitHubAuth: Mock GitHub OAuth flow
- * - mockOrgSelection: Mock organization selection
- * - mockTokenValidation: Mock token validation
+ * Key Functions: - mockInteractiveLogin: Mock interactive login flow -
+ * mockApiTokenAuth: Mock API token authentication - mockGitHubAuth: Mock GitHub
+ * OAuth flow - mockOrgSelection: Mock organization selection -
+ * mockTokenValidation: Mock token validation.
  *
- * Features:
- * - Configurable success/failure scenarios
- * - Customizable response data
- * - Delay simulation for realistic testing
- * - Error state testing
+ * Features: - Configurable success/failure scenarios - Customizable response
+ * data - Delay simulation for realistic testing - Error state testing.
  *
- * Usage:
- * - Unit testing authentication flows
- * - Integration testing without real API calls
- * - E2E testing with controlled responses
+ * Usage: - Unit testing authentication flows - Integration testing without real
+ * API calls - E2E testing with controlled responses.
  */
 
 import type { CResult } from '../src/types.mts'
 
 export interface MockAuthOptions {
-  /** Whether the operation should succeed. */
+  /**
+   * Whether the operation should succeed.
+   */
   shouldSucceed?: boolean | undefined
-  /** Custom delay in milliseconds to simulate network latency. */
+  /**
+   * Custom delay in milliseconds to simulate network latency.
+   */
   delay?: number | undefined
-  /** Custom error message for failure scenarios. */
+  /**
+   * Custom error message for failure scenarios.
+   */
   errorMessage?: string | undefined
-  /** Custom response data for success scenarios. */
+  /**
+   * Custom response data for success scenarios.
+   */
   responseData?: unknown | undefined
 }
 
 export interface MockLoginOptions extends MockAuthOptions {
-  /** Mock email address for login. */
+  /**
+   * Mock email address for login.
+   */
   email?: string | undefined
-  /** Mock organization slug. */
+  /**
+   * Mock organization slug.
+   */
   orgSlug?: string | undefined
-  /** Mock API token to return. */
+  /**
+   * Mock API token to return.
+   */
   apiToken?: string | undefined
-  /** Whether to simulate MFA requirement. */
+  /**
+   * Whether to simulate MFA requirement.
+   */
   requireMfa?: boolean | undefined
 }
 
 export interface MockTokenOptions extends MockAuthOptions {
-  /** The token to validate. */
+  /**
+   * The token to validate.
+   */
   token?: string | undefined
-  /** Token permissions/scopes. */
+  /**
+   * Token permissions/scopes.
+   */
   scopes?: string[] | readonly string[] | undefined
-  /** Token expiration time. */
+  /**
+   * Token expiration time.
+   */
   expiresAt?: Date | undefined
 }
 
 export interface MockOrgOptions extends MockAuthOptions {
-  /** List of organizations to return. */
+  /**
+   * List of organizations to return.
+   */
   organizations?:
     | Array<{
         id: string
@@ -64,7 +81,9 @@ export interface MockOrgOptions extends MockAuthOptions {
         role: string
       }>
     | undefined
-  /** Selected organization index. */
+  /**
+   * Selected organization index.
+   */
   selectedIndex?: number | undefined
 }
 
@@ -119,7 +138,10 @@ export async function mockApiTokenAuth(
  * Mock API key generation.
  */
 export async function mockGenerateApiKey(
-  options?: MockAuthOptions & { keyName?: string | undefined; scopes?: string[] | undefined },
+  options?: MockAuthOptions & {
+    keyName?: string | undefined
+    scopes?: string[] | undefined
+  },
 ): Promise<CResult<{ apiKey: string; keyId: string }>> {
   const {
     delay = 150,
@@ -129,7 +151,10 @@ export async function mockGenerateApiKey(
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions & { keyName?: string | undefined; scopes?: string[] | undefined }
+  } as MockAuthOptions & {
+    keyName?: string | undefined
+    scopes?: string[] | undefined
+  }
 
   await simulateDelay(delay)
 
@@ -358,7 +383,10 @@ export async function mockRefreshToken(
  * Mock SSO authentication flow.
  */
 export async function mockSsoAuth(
-  options?: MockAuthOptions & { ssoProvider?: string | undefined; ssoOrgSlug?: string | undefined },
+  options?: MockAuthOptions & {
+    ssoProvider?: string | undefined
+    ssoOrgSlug?: string | undefined
+  },
 ): Promise<CResult<{ apiToken: string; user: unknown }>> {
   const {
     delay = 300,
@@ -369,7 +397,10 @@ export async function mockSsoAuth(
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions & { ssoProvider?: string | undefined; ssoOrgSlug?: string | undefined }
+  } as MockAuthOptions & {
+    ssoProvider?: string | undefined
+    ssoOrgSlug?: string | undefined
+  }
 
   await simulateDelay(delay)
 

@@ -30,8 +30,8 @@ export type HandleFixConfig = Remap<
 >
 
 /**
- * Converts mixed CVE/GHSA/PURL IDs to GHSA IDs only.
- * Filters out invalid IDs and logs conversion results.
+ * Converts mixed CVE/GHSA/PURL IDs to GHSA IDs only. Filters out invalid IDs
+ * and logs conversion results.
  */
 export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
   debug(`Converting ${ids.length} IDs to GHSA format`)

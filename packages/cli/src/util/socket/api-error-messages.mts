@@ -1,14 +1,13 @@
 /* oxlint-disable socket/no-status-emoji -- user-facing API error strings; emojis are part of the message-template contract. */
 
 /**
- * User-facing error messages + permission-requirements logging for
- * Socket API failures.
+ * User-facing error messages + permission-requirements logging for Socket API
+ * failures.
  *
- * Extracted from api.mts to keep that file under the 1000-line
- * File-size cap. These helpers turn opaque HTTP status codes into
- * actionable guidance ("here's where to update your token", "here's
- * how to check rate limits") and translate command paths into the
- * permission set the API was expecting.
+ * Extracted from api.mts to keep that file under the 1000-line File-size cap.
+ * These helpers turn opaque HTTP status codes into actionable guidance ("here's
+ * where to update your token", "here's how to check rate limits") and translate
+ * command paths into the permission set the API was expecting.
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -59,7 +58,8 @@ export function getCommandRequirements(
 }
 
 /**
- * Get user-friendly error message for HTTP status codes with actionable guidance.
+ * Get user-friendly error message for HTTP status codes with actionable
+ * guidance.
  */
 export async function getErrorMessageForHttpStatusCode(code: number) {
   if (code === HTTP_STATUS_BAD_REQUEST) {
@@ -123,9 +123,11 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
 }
 
 /**
- * Log required permissions for a command when encountering 403 errors with actionable guidance.
+ * Log required permissions for a command when encountering 403 errors with
+ * actionable guidance.
  *
- * @param cmdPath - Command path to look up requirements for (e.g., "socket fix", "socket scan:create")
+ * @param cmdPath - Command path to look up requirements for (e.g., "socket
+ *   fix", "socket scan:create")
  */
 export function logPermissionsFor403(cmdPath?: string | undefined): void {
   const requirements = getCommandRequirements(cmdPath)

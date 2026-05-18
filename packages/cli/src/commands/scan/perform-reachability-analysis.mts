@@ -84,7 +84,9 @@ export async function performReachabilityAnalysis(
   // Check if user has enterprise plan for reachability analysis.
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
-    const httpCode = (orgsCResult as { data?: { code?: number | undefined } | undefined }).data?.code
+    const httpCode = (
+      orgsCResult as { data?: { code?: number | undefined } | undefined }
+    ).data?.code
     if (httpCode === HTTP_STATUS_UNAUTHORIZED) {
       return {
         ok: false,

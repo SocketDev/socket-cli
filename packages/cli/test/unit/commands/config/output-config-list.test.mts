@@ -1,18 +1,13 @@
 /**
  * Unit tests for config list output formatting.
  *
- * Purpose:
- * Tests the output formatting for config list results.
+ * Purpose: Tests the output formatting for config list results.
  *
- * Test Coverage:
- * - outputConfigList function
- * - JSON output format with full/partial modes
- * - Text output format
- * - Sensitive key masking
- * - Read-only mode indicators
+ * Test Coverage: - outputConfigList function - JSON output format with
+ * full/partial modes - Text output format - Sensitive key masking - Read-only
+ * mode indicators.
  *
- * Related Files:
- * - src/commands/config/output-config-list.mts (implementation)
+ * Related Files: - src/commands/config/output-config-list.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -4,17 +4,13 @@
  * Tests the natural language query command that translates plain English
  * questions into Socket CLI commands.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior (--dry-run flag)
- * - Query processing and command translation
- * - Error handling for missing query
- * - Banner and exit code validation
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * (--dry-run flag) - Query processing and command translation - Error handling
+ * for missing query - Banner and exit code validation.
  *
- * Related Files:
- * - src/commands/ask/cmd-ask.mts - ask command implementation
- * - src/commands/ask/handle-ask.mts - NLP query parsing
- * - src/commands/ask/output-ask.mts - Output formatting
+ * Related Files: - src/commands/ask/cmd-ask.mts - ask command implementation -
+ * src/commands/ask/handle-ask.mts - NLP query parsing -
+ * src/commands/ask/output-ask.mts - Output formatting.
  */
 
 import { describe, expect } from 'vitest'

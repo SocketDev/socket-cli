@@ -1,7 +1,8 @@
 /**
  * Unit tests for package score command.
  *
- * Tests the command that looks up deep score for one package including its transitive dependencies.
+ * Tests the command that looks up deep score for one package including its
+ * transitive dependencies.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

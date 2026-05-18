@@ -1,11 +1,12 @@
 /**
  * Unit tests for the synp scrubber adapter.
  *
- * Drops "Created <path>" success lines and the commander "use --help"
- * footer; passes everything else through untouched.
+ * Drops "Created <path>" success lines and the commander "use --help" footer;
+ * passes everything else through untouched.
  *
  * Related Files:
- * - src/util/output/adapters/synp.mts
+ *
+ * - Src/util/output/adapters/synp.mts
  */
 
 import { describe, expect, it } from 'vitest'

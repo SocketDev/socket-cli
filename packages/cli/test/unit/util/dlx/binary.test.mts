@@ -1,13 +1,11 @@
 /**
- * @fileoverview Tests for DLX binary cache functionality.
+ * @file Tests for DLX binary cache functionality. Tests cover:
  *
- * Tests cover:
- * - Path resolution (getSocketHomePath, getDlxCachePath)
- * - Cache listing (listDlxCache)
- * - Cache cleaning (cleanDlxCache)
- *
- * Note: Full download/execution tests are in integration tests.
- * These unit tests focus on cache management operations.
+ *   - Path resolution (getSocketHomePath, getDlxCachePath)
+ *   - Cache listing (listDlxCache)
+ *   - Cache cleaning (cleanDlxCache) Note: Full download/execution tests are in
+ *     integration tests. These unit tests focus on cache management
+ *     operations.
  */
 
 import { existsSync, promises as fs } from 'node:fs'

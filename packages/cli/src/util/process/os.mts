@@ -1,29 +1,22 @@
 /**
- * Platform-specific utilities for Socket CLI.
- * Provides cross-platform file and binary handling functionality.
+ * Platform-specific utilities for Socket CLI. Provides cross-platform file and
+ * binary handling functionality.
  *
- * Key Functions:
- * - clearQuarantine: Remove macOS quarantine attributes
- * - ensureExecutable: Set executable permissions on Unix systems
- * - getExpectedAssetName: Generate platform-specific binary names
- * - getPlatformName: Map Node.js platform names to release names
- * - getArchName: Map Node.js arch names to release names
+ * Key Functions: - clearQuarantine: Remove macOS quarantine attributes -
+ * ensureExecutable: Set executable permissions on Unix systems -
+ * getExpectedAssetName: Generate platform-specific binary names -
+ * getPlatformName: Map Node.js platform names to release names - getArchName:
+ * Map Node.js arch names to release names.
  *
- * Platform Support:
- * - macOS: Quarantine handling, executable permissions
- * - Linux: Executable permissions, binary naming
- * - Windows: Special binary handling, .exe extensions
+ * Platform Support: - macOS: Quarantine handling, executable permissions -
+ * Linux: Executable permissions, binary naming - Windows: Special binary
+ * handling, .exe extensions.
  *
- * Features:
- * - Cross-platform binary management
- * - Automatic platform detection
- * - GitHub release asset naming conventions
- * - File permission management
+ * Features: - Cross-platform binary management - Automatic platform detection -
+ * GitHub release asset naming conventions - File permission management.
  *
- * Usage:
- * - SEA binary updates and replacements
- * - Cross-platform asset downloads
- * - File permission management
+ * Usage: - SEA binary updates and replacements - Cross-platform asset downloads
+ * - File permission management.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -56,8 +49,8 @@ const archNameByArch = new Map([
 ])
 
 /**
- * Platform name mappings for npm @socketbin packages.
- * Uses Node.js platform names directly (darwin, linux, win32).
+ * Platform name mappings for npm @socketbin packages. Uses Node.js platform
+ * names directly (darwin, linux, win32).
  */
 const npmPlatformByOs = new Map([
   ['darwin', 'darwin'],
@@ -66,8 +59,8 @@ const npmPlatformByOs = new Map([
 ])
 
 /**
- * Architecture name mappings for npm @socketbin packages.
- * Uses Node.js arch names directly (arm64, x64).
+ * Architecture name mappings for npm @socketbin packages. Uses Node.js arch
+ * names directly (arm64, x64).
  */
 const npmArchByArch = new Map([
   ['arm64', 'arm64'],
@@ -75,8 +68,8 @@ const npmArchByArch = new Map([
 ])
 
 /**
- * Clear macOS quarantine attribute from a file.
- * This prevents macOS from blocking execution of downloaded binaries.
+ * Clear macOS quarantine attribute from a file. This prevents macOS from
+ * blocking execution of downloaded binaries.
  */
 export async function clearQuarantine(filePath: string): Promise<void> {
   if (process.platform !== 'darwin') {
@@ -94,8 +87,8 @@ export async function clearQuarantine(filePath: string): Promise<void> {
 }
 
 /**
- * Detect if running on musl libc (Alpine Linux, etc.).
- * Uses multiple detection methods for reliability.
+ * Detect if running on musl libc (Alpine Linux, etc.). Uses multiple detection
+ * methods for reliability.
  */
 export function detectMusl(): boolean {
   // Only check on Linux.
@@ -152,8 +145,8 @@ export function detectMusl(): boolean {
 }
 
 /**
- * Ensure file is executable on Unix systems.
- * Sets 0o755 permissions (rwxr-xr-x) for proper binary execution.
+ * Ensure file is executable on Unix systems. Sets 0o755 permissions (rwxr-xr-x)
+ * for proper binary execution.
  */
 export async function ensureExecutable(filePath: string): Promise<void> {
   if (process.platform === 'win32') {
@@ -177,24 +170,24 @@ export function getArchName(): string {
 }
 
 /**
- * Get the binary name for the current platform.
- * Returns "socket" on Unix, "socket.exe" on Windows.
+ * Get the binary name for the current platform. Returns "socket" on Unix,
+ * "socket.exe" on Windows.
  */
 export function getBinaryName(): string {
   return process.platform === 'win32' ? 'socket.exe' : 'socket'
 }
 
 /**
- * Get the relative path to the binary within @socketbin package.
- * Returns "bin/socket" or "bin/socket.exe".
+ * Get the relative path to the binary within @socketbin package. Returns
+ * "bin/socket" or "bin/socket.exe".
  */
 export function getBinaryRelativePath(): string {
   return `bin/${getBinaryName()}`
 }
 
 /**
- * Generate the expected asset name for the current platform.
- * Used for downloading platform-specific binaries from GitHub releases.
+ * Generate the expected asset name for the current platform. Used for
+ * downloading platform-specific binaries from GitHub releases.
  */
 export function getExpectedAssetName(): string {
   const platformName = getPlatformName()
@@ -204,16 +197,16 @@ export function getExpectedAssetName(): string {
 }
 
 /**
- * Get the libc suffix for package names.
- * Returns "-musl" on musl systems, empty string otherwise.
+ * Get the libc suffix for package names. Returns "-musl" on musl systems, empty
+ * string otherwise.
  */
 export function getLibcSuffix(): string {
   return detectMusl() ? '-musl' : ''
 }
 
 /**
- * Get npm arch name for @socketbin packages.
- * Uses Node.js arch names (arm64, x64).
+ * Get npm arch name for @socketbin packages. Uses Node.js arch names (arm64,
+ * x64).
  */
 export function getNpmArch(): string {
   const arch = process.arch
@@ -221,8 +214,8 @@ export function getNpmArch(): string {
 }
 
 /**
- * Get npm platform name for @socketbin packages.
- * Uses Node.js platform names (darwin, linux, win32).
+ * Get npm platform name for @socketbin packages. Uses Node.js platform names
+ * (darwin, linux, win32).
  */
 export function getNpmPlatform(): string {
   const platform = process.platform
@@ -238,9 +231,9 @@ export function getPlatformName(): string {
 }
 
 /**
- * Get the @socketbin package name for the current platform.
- * Returns package name like "@socketbin/cli-darwin-arm64" or
- * "@socketbin/cli-linux-x64-musl" on Alpine.
+ * Get the @socketbin package name for the current platform. Returns package
+ * name like "@socketbin/cli-darwin-arm64" or "@socketbin/cli-linux-x64-musl" on
+ * Alpine.
  */
 export function getSocketbinPackageName(): string {
   const platform = getNpmPlatform()
@@ -250,8 +243,8 @@ export function getSocketbinPackageName(): string {
 }
 
 /**
- * Check if the current platform/architecture combination is supported.
- * Based on available GitHub release assets.
+ * Check if the current platform/architecture combination is supported. Based on
+ * available GitHub release assets.
  */
 export function isPlatformSupported(): boolean {
   const platformName = getPlatformName()
@@ -278,8 +271,8 @@ export function isPlatformSupported(): boolean {
 }
 
 /**
- * Reset the libc detection cache.
- * This is primarily for testing purposes to allow re-detection.
+ * Reset the libc detection cache. This is primarily for testing purposes to
+ * allow re-detection.
  */
 export function resetLibcCache(): void {
   cachedLibc = undefined

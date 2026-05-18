@@ -12,7 +12,9 @@ const require = createRequire(import.meta.url)
 
 /**
  * Detect the current platform and architecture.
- * @returns {string} Platform identifier (e.g., 'darwin-arm64', 'linux-x64-musl')
+ *
+ * @returns {string} Platform identifier (e.g., 'darwin-arm64',
+ *   'linux-x64-musl')
  */
 export function getPlatformIdentifier() {
   const platformName = platform()
@@ -68,6 +70,7 @@ export function getPlatformIdentifier() {
 
 /**
  * Load the native addon for the current platform.
+ *
  * @returns {object} The loaded iocraft native module
  */
 export function loadNativeAddon() {

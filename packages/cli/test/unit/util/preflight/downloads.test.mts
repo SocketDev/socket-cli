@@ -1,16 +1,12 @@
 /**
  * Unit tests for preflight downloads.
  *
- * Purpose:
- * Tests the background preflight downloads functionality.
+ * Purpose: Tests the background preflight downloads functionality.
  *
- * Test Coverage:
- * - runPreflightDownloads function
- * - Single run behavior
- * - CI/Test environment detection
+ * Test Coverage: - runPreflightDownloads function - Single run behavior -
+ * CI/Test environment detection.
  *
- * Related Files:
- * - src/util/preflight/downloads.mts (implementation)
+ * Related Files: - src/util/preflight/downloads.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

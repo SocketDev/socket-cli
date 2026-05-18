@@ -5,20 +5,20 @@
  * Comprehensive build script with intelligent caching.
  *
  * Builds packages in the correct order:
+ *
  * 1. CLI package (TypeScript compilation and bundling)
  * 2. SEA binary for current platform (only with --force)
  *
- * Note: Yoga WASM and node-smol binaries are downloaded from socket-btm during CLI build.
+ * Note: Yoga WASM and node-smol binaries are downloaded from socket-btm during
+ * CLI build.
  *
- * Usage:
- *   pnpm run build                           # Smart build (skips unchanged)
- *   pnpm run build --force                   # Force rebuild all + SEA for current platform
- *   pnpm run build:sea                       # Build SEA binaries for all platforms
- *   pnpm run build --target <name>           # Build specific target
- *   pnpm run build --targets <t1,t2,...>     # Build multiple targets
- *   pnpm run build --platforms               # Build all platform binaries
- *   pnpm run build --platforms --parallel    # Build platforms in parallel
- *   pnpm run build --help                    # Show this help
+ * Usage: pnpm run build # Smart build (skips unchanged) pnpm run build --force
+ * # Force rebuild all + SEA for current platform pnpm run build:sea # Build SEA
+ * binaries for all platforms pnpm run build --target <name> # Build specific
+ * target pnpm run build --targets <t1,t2,...> # Build multiple targets pnpm run
+ * build --platforms # Build all platform binaries pnpm run build --platforms
+ * --parallel # Build platforms in parallel pnpm run build --help # Show this
+ * help.
  */
 
 import crypto from 'node:crypto'
@@ -64,8 +64,8 @@ interface BuildPackageConfig {
   outputCheck: string
   /**
    * Glob patterns (repo-relative) whose file contents contribute to the build
-   * signature. A change to any matching file invalidates the cache and forces
-   * a rebuild.
+   * signature. A change to any matching file invalidates the cache and forces a
+   * rebuild.
    */
   inputs: string[]
 }
@@ -355,14 +355,11 @@ export function computeBuildSignature(pkg: BuildPackageConfig): string {
 }
 
 /**
- * Check if a package needs to be built.
- * Returns true if build is needed, false if can skip.
+ * Check if a package needs to be built. Returns true if build is needed, false
+ * if can skip.
  *
- * Rebuild triggers:
- *   1. --force
- *   2. Missing build output
- *   3. Missing signature sidecar
- *   4. Current input signature differs from the recorded one
+ * Rebuild triggers: 1. --force 2. Missing build output 3. Missing signature
+ * sidecar 4. Current input signature differs from the recorded one.
  */
 export function needsBuild(pkg: BuildPackageConfig, force: boolean): boolean {
   if (force) {
@@ -598,16 +595,14 @@ export async function runSequentialBuilds(
 }
 
 /**
- * Run the default smart build — now orchestrated via the shared
- * build-pipeline (same system socket-btm/ultrathink/socket-tui/sdxgen use).
+ * Run the default smart build — now orchestrated via the shared build-pipeline
+ * (same system socket-btm/ultrathink/socket-tui/sdxgen use).
  *
- * Stages:
- *   CLI        build @socketsecurity/cli via pnpm --filter (the existing
- *              buildPackage helper handles signature check + skip-on-cached
- *              inside the workspace; the orchestrator's shouldRun layer
- *              complements with a content-hashed cache key)
- *   SEA        build SEA binary for current platform (only when --force/--prod)
- *   FINALIZED  verify expected outputs exist
+ * Stages: CLI build @socketsecurity/cli via pnpm --filter (the existing
+ * buildPackage helper handles signature check + skip-on-cached inside the
+ * workspace; the orchestrator's shouldRun layer complements with a
+ * content-hashed cache key) SEA build SEA binary for current platform (only
+ * when --force/--prod) FINALIZED verify expected outputs exist.
  *
  * Inherits CLI flags from runPipelineCli: --force, --clean, --clean-stage,
  * --from-stage, --cache-key, --prod, --dev.

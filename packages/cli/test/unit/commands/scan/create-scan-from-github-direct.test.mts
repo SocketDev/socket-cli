@@ -2,18 +2,17 @@
 /**
  * Direct unit tests for create-scan-from-github helpers.
  *
- * Purpose:
- * Tests that import + execute the real source functions (not mocks of them).
- * The companion file `create-scan-from-github.test.mts` only exercises the
- * Octokit mock surface, which leaves the actual source untouched at runtime.
+ * Purpose: Tests that import + execute the real source functions (not mocks of
+ * them). The companion file `create-scan-from-github.test.mts` only exercises
+ * the Octokit mock surface, which leaves the actual source untouched at
+ * runtime.
  *
- * Test Coverage:
- * - getRepoDetails / getRepoBranchTree / getLastCommitDetails
- * - selectFocus / makeSure (interactive prompt wrappers)
- * - streamDownloadWithFetch error path
+ * Test Coverage: - getRepoDetails / getRepoBranchTree / getLastCommitDetails -
+ * selectFocus / makeSure (interactive prompt wrappers) -
+ * streamDownloadWithFetch error path.
  *
- * Related Files:
- * - src/commands/scan/create-scan-from-github.mts (implementation)
+ * Related Files: - src/commands/scan/create-scan-from-github.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

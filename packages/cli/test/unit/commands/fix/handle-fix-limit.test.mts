@@ -1,28 +1,23 @@
 /* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
- * Unit Tests: Fix Command Handler - Limit Behavior
+ * Unit Tests: Fix Command Handler - Limit Behavior.
  *
- * Purpose:
- * Tests the --limit flag behavior to ensure it correctly limits the number of
- * vulnerabilities processed by the fix command. Validates that the limit is
- * properly applied in both local mode and PR mode.
+ * Purpose: Tests the --limit flag behavior to ensure it correctly limits the
+ * number of vulnerabilities processed by the fix command. Validates that the
+ * limit is properly applied in both local mode and PR mode.
  *
- * Test Coverage:
- * - Local mode: Verify --limit N processes only N GHSAs
- * - Local mode: Verify --limit 0 processes no GHSAs
- * - Local mode: Verify limit exceeding GHSA count processes all
- * - PR mode: Verify --limit N with adjusted limit based on open PRs
- * - PR mode: Verify limit 0 when existing PRs exceed limit
- * - --id filtering: Verify limit applies to filtered IDs
+ * Test Coverage: - Local mode: Verify --limit N processes only N GHSAs - Local
+ * mode: Verify --limit 0 processes no GHSAs - Local mode: Verify limit
+ * exceeding GHSA count processes all - PR mode: Verify --limit N with adjusted
+ * limit based on open PRs - PR mode: Verify limit 0 when existing PRs exceed
+ * limit - --id filtering: Verify limit applies to filtered IDs.
  *
- * Testing Approach:
- * Uses mocks and spies to verify the actual arguments passed to coana CLI,
- * ensuring the business logic correctly applies the limit without making
- * real API calls or creating actual PRs.
+ * Testing Approach: Uses mocks and spies to verify the actual arguments passed
+ * to coana CLI, ensuring the business logic correctly applies the limit without
+ * making real API calls or creating actual PRs.
  *
- * Related Files:
- * - src/commands/fix/coana-fix.mts - Main fix implementation
- * - src/commands/fix/handle-fix.mts - Fix command handler
+ * Related Files: - src/commands/fix/coana-fix.mts - Main fix implementation -
+ * src/commands/fix/handle-fix.mts - Fix command handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

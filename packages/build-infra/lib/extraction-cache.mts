@@ -18,7 +18,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger'
  *
  * For multiple sources, concatenates content and hashes together.
  *
- * @param {string[]} sourcePaths - Source file paths to hash
+ * @param {string[]} sourcePaths - Source file paths to hash.
+ *
  * @returns {Promise<string>} SHA256 hash (hex)
  */
 export async function computeSourceHash(sourcePaths) {
@@ -36,7 +37,7 @@ export async function computeSourceHash(sourcePaths) {
 /**
  * Ensure output directory exists.
  *
- * @param {string} outputPath - Output file path
+ * @param {string} outputPath - Output file path.
  */
 export function ensureOutputDir(outputPath) {
   mkdirSync(path.dirname(outputPath), { recursive: true })
@@ -45,7 +46,8 @@ export function ensureOutputDir(outputPath) {
 /**
  * Generate source hash comment for embedding in output.
  *
- * @param {string|string[]} sourcePaths - Source file path(s)
+ * @param {string | string[]} sourcePaths - Source file path(s)
+ *
  * @returns {Promise<string>} Comment with hash (e.g., "Source hash: abc123...")
  */
 export async function generateHashComment(sourcePaths) {
@@ -57,14 +59,17 @@ export async function generateHashComment(sourcePaths) {
 /**
  * Check if extraction is needed based on source content hash.
  *
- * Compares the SHA256 hash of the source file(s) against the hash
- * stored in the output file. Returns true if extraction is needed.
+ * Compares the SHA256 hash of the source file(s) against the hash stored in the
+ * output file. Returns true if extraction is needed.
  *
- * @param {object} options - Extraction cache options
- * @param {string|string[]} options.sourcePaths - Source file path(s) to hash
- * @param {string} options.outputPath - Output file path to check
- * @param {RegExp} options.hashPattern - Pattern to extract hash from output (default: /Source hash: ([a-f0-9]{64})/)
- * @param {function} [options.validateOutput] - Optional function to validate output content
+ * @param {object} options - Extraction cache options.
+ * @param {string | string[]} options.sourcePaths - Source file path(s) to hash.
+ * @param {string} options.outputPath - Output file path to check.
+ * @param {RegExp} options.hashPattern - Pattern to extract hash from output
+ *   (default: /Source hash: ([a-f0-9]{64})/)
+ * @param {function} [options.validateOutput] - Optional function to validate
+ *   output content.
+ *
  * @returns {Promise<boolean>} True if extraction needed, false if cached
  */
 export async function shouldExtract({

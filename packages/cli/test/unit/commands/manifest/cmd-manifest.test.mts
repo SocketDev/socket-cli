@@ -1,18 +1,17 @@
 /**
  * Unit tests for manifest parent command.
  *
- * Tests the parent command that manages manifest generation for various ecosystems.
- * This command uses meowWithSubcommands to delegate to specific ecosystem commands.
+ * Tests the parent command that manages manifest generation for various
+ * ecosystems. This command uses meowWithSubcommands to delegate to specific
+ * ecosystem commands.
  *
- * Test Coverage:
- * - Command metadata (description, hidden)
- * - Subcommand registration and routing
- * - Hidden alias (yolo -> auto)
- * - Flag passthrough to subcommands
+ * Test Coverage: - Command metadata (description, hidden) - Subcommand
+ * registration and routing - Hidden alias (yolo -> auto) - Flag passthrough to
+ * subcommands.
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest.mts - Command implementation
- * - src/util/cli/with-subcommands.mjs - Subcommand handling utility
+ * Related Files: - src/commands/manifest/cmd-manifest.mts - Command
+ * implementation - src/util/cli/with-subcommands.mjs - Subcommand handling
+ * utility.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

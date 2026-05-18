@@ -2,25 +2,21 @@
  * Factory for "ecosystem hand-off" commands like `socket npm`, `socket pip`,
  * `socket cargo`, etc. These commands all share the same shape:
  *
- *   1. Parse Socket CLI flags with meow (mostly to handle `--help`).
- *   2. Filter Socket-only flags out of argv.
- *   3. Optionally render dry-run output and bail.
- *   4. Optionally start a telemetry span for the subprocess.
- *   5. Spawn Socket Firewall (sfw) with the forwarded args.
- *   6. Forward the child's exit code / signal.
- *   7. Optionally end the telemetry span before exiting.
+ * 1. Parse Socket CLI flags with meow (mostly to handle `--help`).
+ * 2. Filter Socket-only flags out of argv.
+ * 3. Optionally render dry-run output and bail.
+ * 4. Optionally start a telemetry span for the subprocess.
+ * 5. Spawn Socket Firewall (sfw) with the forwarded args.
+ * 6. Forward the child's exit code / signal.
+ * 7. Optionally end the telemetry span before exiting.
  *
- * Defining each wrapper through this helper kills ~100 lines of copy-paste
- * per ecosystem and makes future improvements (signal handling, telemetry,
- * dry-run formatting) ship to every wrapper at once.
+ * Defining each wrapper through this helper kills ~100 lines of copy-paste per
+ * ecosystem and makes future improvements (signal handling, telemetry, dry-run
+ * formatting) ship to every wrapper at once.
  *
- * Usage:
- *   export const cmdCargo = defineHandoffCommand({
- *     name: 'cargo',
- *     description: 'Run cargo with Socket Firewall security',
- *     spawnMode: 'dlx',
- *     examples: ['install ripgrep', 'build', 'add serde'],
- *   })
+ * Usage: export const cmdCargo = defineHandoffCommand({ name: 'cargo',
+ * description: 'Run cargo with Socket Firewall security', spawnMode: 'dlx',
+ * examples: ['install ripgrep', 'build', 'add serde'], })
  */
 
 import { defineFlags } from '../../meow.mts'
@@ -53,11 +49,10 @@ export interface DefineHandoffCommandOptions {
    */
   hidden?: boolean | undefined
   /**
-   * Spawn strategy:
-   *   - 'auto' (= spawnSfw): VFS-extract in SEA mode, dlx-download otherwise.
-   *     Used by npm/npx because those binaries are bundled in the SEA.
-   *   - 'dlx' (= spawnSfwDlx): always pnpm-dlx-download. Used by yarn / pip /
-   *     cargo / go / etc. where the SEA doesn't bundle the binary.
+   * Spawn strategy: - 'auto' (= spawnSfw): VFS-extract in SEA mode,
+   * dlx-download otherwise. Used by npm/npx because those binaries are bundled
+   * in the SEA. - 'dlx' (= spawnSfwDlx): always pnpm-dlx-download. Used by yarn
+   * / pip / cargo / go / etc. where the SEA doesn't bundle the binary.
    */
   spawnMode: 'auto' | 'dlx'
   /**
@@ -74,13 +69,13 @@ export interface DefineHandoffCommandOptions {
     | ((context: CliCommandContext) => Promise<string> | string)
     | undefined
   /**
-   * Extra free-form notes appended after the standard "Note: Everything
-   * after X is forwarded…" line. Each entry becomes one indented line.
+   * Extra free-form notes appended after the standard "Note: Everything after X
+   * is forwarded…" line. Each entry becomes one indented line.
    */
   helpNotes?: readonly string[] | undefined
   /**
-   * If true, emit the "API Token Requirements" section in help by looking
-   * up the cmdPath `<parent>:<name>` in the requirements registry.
+   * If true, emit the "API Token Requirements" section in help by looking up
+   * the cmdPath `<parent>:<name>` in the requirements registry.
    */
   showApiRequirements?: boolean | undefined
   /**
@@ -89,7 +84,8 @@ export interface DefineHandoffCommandOptions {
    */
   wrapperHint?: boolean | undefined
   /**
-   * If true, support `--dry-run` (renders sfw invocation and bails). Default true.
+   * If true, support `--dry-run` (renders sfw invocation and bails). Default
+   * true.
    */
   supportDryRun?: boolean | undefined
   /**

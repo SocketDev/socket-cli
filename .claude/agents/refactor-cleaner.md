@@ -17,6 +17,7 @@ Apply these rules from CLAUDE.md exactly:
 5. **Verify nothing broke**: Run `pnpm run check` and `pnpm test` after each phase
 
 **What to look for:**
+
 - Unused exports (exported but never imported elsewhere)
 - Dead imports (imported but never used)
 - Unreachable code paths

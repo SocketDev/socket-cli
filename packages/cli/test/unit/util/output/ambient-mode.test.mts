@@ -4,8 +4,7 @@
  * Module-scoped let updated by meow at argv-parse time. Tests verify
  * set/get/reset and the delegation to isMachineOutputMode.
  *
- * Related Files:
- * - src/util/output/ambient-mode.mts
+ * Related Files: - src/util/output/ambient-mode.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

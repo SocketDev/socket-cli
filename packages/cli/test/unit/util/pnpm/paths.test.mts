@@ -1,19 +1,15 @@
 /**
  * Unit tests for pnpm path utilities.
  *
- * Purpose:
- * Tests pnpm-specific path utilities. Validates pnpm bin path resolution.
+ * Purpose: Tests pnpm-specific path utilities. Validates pnpm bin path
+ * resolution.
  *
- * Test Coverage:
- * - pnpm bin path resolution
- * - Path caching
- * - Error handling when pnpm not found
+ * Test Coverage: - pnpm bin path resolution - Path caching - Error handling
+ * when pnpm not found.
  *
- * Testing Approach:
- * Tests pnpm path conventions and resolution logic.
+ * Testing Approach: Tests pnpm path conventions and resolution logic.
  *
- * Related Files:
- * - util/pnpm/paths.mts (implementation)
+ * Related Files: - util/pnpm/paths.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

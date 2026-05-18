@@ -1,10 +1,8 @@
 /**
- * @fileoverview Backward-compatible wrappers for AssetManager.
- * Maintains existing API signatures from sea-build-util/downloads.mts
- * while using the unified AssetManager internally.
- *
- * Phase 1 of AssetManager migration - provides drop-in replacements
- * without modifying existing code.
+ * @file Backward-compatible wrappers for AssetManager. Maintains existing API
+ *   signatures from sea-build-util/downloads.mts while using the unified
+ *   AssetManager internally. Phase 1 of AssetManager migration - provides
+ *   drop-in replacements without modifying existing code.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -15,8 +13,8 @@ import { AssetManager } from './asset-manager.mts'
 let cachedLibc
 
 /**
- * Detect if running on musl libc (Alpine Linux, etc.).
- * Uses multiple detection methods for reliability.
+ * Detect if running on musl libc (Alpine Linux, etc.). Uses multiple detection
+ * methods for reliability.
  *
  * @returns {boolean} True if running on musl libc.
  */
@@ -75,8 +73,8 @@ export function detectMusl() {
 }
 
 /**
- * Shared AssetManager instance for all wrapper functions.
- * Uses default configuration matching downloads.mts behavior.
+ * Shared AssetManager instance for all wrapper functions. Uses default
+ * configuration matching downloads.mts behavior.
  */
 const assetManager = new AssetManager({
   cacheEnabled: true,
@@ -84,18 +82,21 @@ const assetManager = new AssetManager({
 })
 
 /**
- * Download Node.js binary for a specific platform (backward-compatible wrapper).
- * Maintains exact API signature from sea-build-util/downloads.mts.
- *
- * @param {string} version - Node.js version tag suffix (e.g., "20251213-7cf90d2").
- * @param {string} platform - Platform identifier (darwin, linux, win32).
- * @param {string} arch - Architecture identifier (arm64, x64).
- * @param {string} [libc] - Linux libc variant ('musl' for Alpine, undefined for glibc).
- * @returns {Promise<string>} Absolute path to downloaded node binary.
+ * Download Node.js binary for a specific platform (backward-compatible
+ * wrapper). Maintains exact API signature from sea-build-util/downloads.mts.
  *
  * @example
- * const nodePath = await downloadNodeBinary('20251213-7cf90d2', 'darwin', 'arm64')
- * // Returns: /path/to/build-infra/build/downloaded/node-smol/darwin-arm64/node
+ *   const nodePath = await downloadNodeBinary('20251213-7cf90d2', 'darwin', 'arm64')
+ *   // Returns: /path/to/build-infra/build/downloaded/node-smol/darwin-arm64/node
+ *
+ * @param {string} version - Node.js version tag suffix (e.g.,
+ *   "20251213-7cf90d2").
+ * @param {string} platform - Platform identifier (darwin, linux, win32).
+ * @param {string} arch - Architecture identifier (arm64, x64).
+ * @param {string} [libc] - Linux libc variant ('musl' for Alpine, undefined for
+ *   glibc).
+ *
+ * @returns {Promise<string>} Absolute path to downloaded node binary.
  */
 export async function downloadNodeBinary(version, platform, arch, libc) {
   return assetManager.downloadBinary({
@@ -109,15 +110,16 @@ export async function downloadNodeBinary(version, platform, arch, libc) {
 }
 
 /**
- * Download binject binary for the current platform (backward-compatible wrapper).
- * Maintains exact API signature from sea-build-util/downloads.mts.
- *
- * @param {string} version - Binject version (e.g., "1.0.0").
- * @returns {Promise<string>} Absolute path to downloaded binject binary.
+ * Download binject binary for the current platform (backward-compatible
+ * wrapper). Maintains exact API signature from sea-build-util/downloads.mts.
  *
  * @example
- * const binjectPath = await downloadBinject('1.0.0')
- * // Returns: /path/to/build-infra/build/downloaded/binject/darwin-arm64/binject
+ *   const binjectPath = await downloadBinject('1.0.0')
+ *   // Returns: /path/to/build-infra/build/downloaded/binject/darwin-arm64/binject
+ *
+ * @param {string} version - Binject version (e.g., "1.0.0").
+ *
+ * @returns {Promise<string>} Absolute path to downloaded binject binary.
  */
 export async function downloadBinject(version) {
   const platform = process.platform
@@ -136,18 +138,19 @@ export async function downloadBinject(version) {
 }
 
 /**
- * Get the latest binject release version from socket-btm.
- * Returns the version string (e.g., "1.0.0").
+ * Get the latest binject release version from socket-btm. Returns the version
+ * string (e.g., "1.0.0").
  *
- * Note: This function currently delegates to the original implementation
- * in sea-build-util/downloads.mts. Future enhancement: move to AssetManager.
- *
- * @returns {Promise<string>} Binject version string.
- * @throws {Error} When socket-btm releases cannot be fetched.
+ * Note: This function currently delegates to the original implementation in
+ * sea-build-util/downloads.mts. Future enhancement: move to AssetManager.
  *
  * @example
- * const version = await getLatestBinjectVersion()
- * // "1.0.0"
+ *   const version = await getLatestBinjectVersion()
+ *   // "1.0.0"
+ *
+ * @returns {Promise<string>} Binject version string.
+ *
+ * @throws {Error} When socket-btm releases cannot be fetched.
  */
 export async function getLatestBinjectVersion() {
   // Delegate to original implementation for now.

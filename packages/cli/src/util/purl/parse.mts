@@ -1,26 +1,18 @@
 /**
- * Package URL (PURL) utilities for Socket CLI.
- * Implements the PURL specification for universal package identification.
+ * Package URL (PURL) utilities for Socket CLI. Implements the PURL
+ * specification for universal package identification.
  *
- * PURL Format:
- * pkg:type/namespace/name@version?qualifiers#subpath
+ * PURL Format: pkg:type/namespace/name@version?qualifiers#subpath.
  *
- * Key Functions:
- * - createPurlObject: Create PURL from components
- * - isPurl: Check if string is valid PURL
- * - normalizePurl: Normalize PURL format
- * - parsePurl: Parse PURL string to object
- * - purlToString: Convert PURL object to string
+ * Key Functions: - createPurlObject: Create PURL from components - isPurl:
+ * Check if string is valid PURL - normalizePurl: Normalize PURL format -
+ * parsePurl: Parse PURL string to object - purlToString: Convert PURL object to
+ * string.
  *
- * Supported Types:
- * - cargo: Rust packages
- * - gem: Ruby packages
- * - go: Go modules
- * - maven: Java packages
- * - npm: Node.js packages
- * - pypi: Python packages
+ * Supported Types: - cargo: Rust packages - gem: Ruby packages - go: Go modules
+ * - maven: Java packages - npm: Node.js packages - pypi: Python packages.
  *
- * See: https://github.com/package-url/purl-spec
+ * See: https://github.com/package-url/purl-spec.
  */
 
 import { PackageURL } from '@socketregistry/packageurl-js'

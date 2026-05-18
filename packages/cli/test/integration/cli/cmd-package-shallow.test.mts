@@ -1,19 +1,16 @@
 /**
  * Integration tests for `socket package shallow` command.
  *
- * Tests shallow package analysis which provides quick security insights
- * without deep dependency traversal.
+ * Tests shallow package analysis which provides quick security insights without
+ * deep dependency traversal.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Shallow analysis retrieval
- * - Output format support (JSON, markdown)
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Shallow analysis retrieval - Output format support (JSON,
+ * markdown)
  *
- * Related Files:
- * - src/commands/package/cmd-package-shallow.mts - Command definition
- * - src/commands/package/handle-package-shallow.mts - Analysis logic
- * - src/commands/package/output-package-shallow.mts - Formatting
+ * Related Files: - src/commands/package/cmd-package-shallow.mts - Command
+ * definition - src/commands/package/handle-package-shallow.mts - Analysis logic
+ * - src/commands/package/output-package-shallow.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'

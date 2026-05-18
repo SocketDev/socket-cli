@@ -1,4 +1,6 @@
-/** @fileoverview Package naming constants for Socket CLI. */
+/**
+ * @file Package naming constants for Socket CLI.
+ */
 
 // CLI package names.
 export const SOCKET_CLI_LEGACY_PACKAGE_NAME = '@socketsecurity/cli'

@@ -1,18 +1,15 @@
 /**
- * PNPM path resolution utilities for Socket CLI.
- * Locates and caches PNPM binary paths.
+ * PNPM path resolution utilities for Socket CLI. Locates and caches PNPM binary
+ * paths.
  *
- * Key Functions:
- * - getPnpmBinPath: Get cached PNPM binary path
- * - getPnpmBinPathDetails: Get detailed PNPM path information
+ * Key Functions: - getPnpmBinPath: Get cached PNPM binary path -
+ * getPnpmBinPathDetails: Get detailed PNPM path information.
  *
- * Error Handling:
- * - Exits with code 127 if PNPM not found
- * - Provides clear error messages for missing binaries
+ * Error Handling: - Exits with code 127 if PNPM not found - Provides clear
+ * error messages for missing binaries.
  *
- * Caching:
- * - Caches binary path lookups for performance
- * - Prevents repeated PATH searches
+ * Caching: - Caches binary path lookups for performance - Prevents repeated
+ * PATH searches.
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'

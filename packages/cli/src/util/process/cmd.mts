@@ -1,22 +1,18 @@
 /**
- * Command-line utilities for Socket CLI.
- * Handles argument parsing, flag processing, and command formatting.
+ * Command-line utilities for Socket CLI. Handles argument parsing, flag
+ * processing, and command formatting.
  *
- * Argument Handling:
- * - Handles both long (--flag) and short (-f) formats
- * - Preserves special characters and escaping
- * - Properly quotes arguments containing spaces
+ * Argument Handling: - Handles both long (--flag) and short (-f) formats -
+ * Preserves special characters and escaping - Properly quotes arguments
+ * containing spaces.
  *
- * Command Names:
- * - commandNameFromCamel: Convert camelCase to kebab-case command names
- * - commandNameFromKebab: Convert kebab-case to camelCase
+ * Command Names: - commandNameFromCamel: Convert camelCase to kebab-case
+ * command names - commandNameFromKebab: Convert kebab-case to camelCase.
  *
- * Flag Processing:
- * - cmdFlagsToString: Format arguments for display with proper escaping
- * - cmdPrefixMessage: Generate command prefix message
- * - stripConfigFlags: Remove --config flags from argument list
- * - stripDebugFlags: Remove debug-related flags
- * - stripHelpFlags: Remove help flags (-h, --help)
+ * Flag Processing: - cmdFlagsToString: Format arguments for display with proper
+ * escaping - cmdPrefixMessage: Generate command prefix message -
+ * stripConfigFlags: Remove --config flags from argument list - stripDebugFlags:
+ * Remove debug-related flags - stripHelpFlags: Remove help flags (-h, --help)
  */
 
 import { FLAG_CONFIG, FLAG_HELP } from '../../constants/cli.mjs'
@@ -79,7 +75,10 @@ export function cmdPrefixMessage(cmdName: string, text: string): string {
  */
 export function filterFlags(
   argv: readonly string[],
-  flagsToFilter: Record<string, { shortFlag?: string | undefined; type?: string | undefined }>,
+  flagsToFilter: Record<
+    string,
+    { shortFlag?: string | undefined; type?: string | undefined }
+  >,
   exceptions?: string[] | undefined,
 ): string[] {
   const filtered: string[] = []
@@ -169,9 +168,8 @@ export function getConfigFlag(
 }
 
 /**
- * Check if command is an add command (adds new dependencies).
- * Supported by: pnpm, yarn.
- * Note: npm uses 'install' with package names instead of 'add'.
+ * Check if command is an add command (adds new dependencies). Supported by:
+ * pnpm, yarn. Note: npm uses 'install' with package names instead of 'add'.
  */
 export function isAddCommand(command: string): boolean {
   return command === 'add'
@@ -192,16 +190,15 @@ export function isHelpFlag(cmdArg: string): boolean {
 }
 
 /**
- * Check if npm command requires lockfile scanning.
- * npm uses: install, i, update
+ * Check if npm command requires lockfile scanning. npm uses: install, i, update.
  */
 export function isNpmLockfileScanCommand(command: string): boolean {
   return command === 'i' || command === 'install' || command === 'update'
 }
 
 /**
- * Check if pnpm command requires lockfile scanning.
- * pnpm uses: install, i, update, up
+ * Check if pnpm command requires lockfile scanning. pnpm uses: install, i,
+ * update, up.
  */
 export function isPnpmLockfileScanCommand(command: string): boolean {
   return (
@@ -213,8 +210,8 @@ export function isPnpmLockfileScanCommand(command: string): boolean {
 }
 
 /**
- * Check if yarn command requires lockfile scanning.
- * yarn uses: install, up, upgrade, upgrade-interactive
+ * Check if yarn command requires lockfile scanning. yarn uses: install, up,
+ * upgrade, upgrade-interactive.
  */
 export function isYarnLockfileScanCommand(command: string): boolean {
   return (

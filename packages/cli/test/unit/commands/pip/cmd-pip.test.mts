@@ -25,8 +25,7 @@ const { cmdPip } = await import('../../../../src/commands/pip/cmd-pip.mts')
 const binModule = await import('@socketsecurity/lib/bin')
 const spawnModule = await import('../../../../src/util/dlx/spawn.mts')
 const cmdModule = await import('../../../../src/util/process/cmd.mts')
-const meowModule =
-  await import('../../../../src/util/cli/with-subcommands.mjs')
+const meowModule = await import('../../../../src/util/cli/with-subcommands.mjs')
 
 const mockWhichReal = vi.mocked(binModule.whichReal)
 const mockSpawnSfwDlx = vi.mocked(spawnModule.spawnSfwDlx)

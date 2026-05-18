@@ -1,18 +1,13 @@
 /**
  * Unit tests for CLI constants.
  *
- * Purpose:
- * Tests the CLI interface constants including flags, output formats, and labels.
+ * Purpose: Tests the CLI interface constants including flags, output formats,
+ * and labels.
  *
- * Test Coverage:
- * - CLI flag constants
- * - Output format constants
- * - Fold setting constants
- * - Dry run labels
- * - Command constants
+ * Test Coverage: - CLI flag constants - Output format constants - Fold setting
+ * constants - Dry run labels - Command constants.
  *
- * Related Files:
- * - constants/cli.mts (implementation)
+ * Related Files: - constants/cli.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

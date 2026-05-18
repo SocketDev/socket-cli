@@ -1,8 +1,8 @@
 /**
  * Socket-basics spawning utilities for comprehensive security scanning.
  *
- * Spawns socket-basics (Python orchestration tool) with extracted security tools
- * to perform SAST, secret detection, and container scanning.
+ * Spawns socket-basics (Python orchestration tool) with extracted security
+ * tools to perform SAST, secret detection, and container scanning.
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -66,6 +66,7 @@ export async function isSocketPyCliInstalled(
  * Parse .socket.facts.json to extract finding counts.
  *
  * @param factsPath - Path to .socket.facts.json file.
+ *
  * @returns Object with finding counts by category, or error if parsing failed.
  */
 export async function parseSocketFacts(factsPath: string): Promise<{
@@ -85,11 +86,13 @@ export async function parseSocketFacts(factsPath: string): Promise<{
     }
 
     let facts: {
-      findings?: {
-        containers?: unknown[] | undefined
-        sast?: unknown[] | undefined
-        secrets?: unknown[] | undefined
-      } | undefined
+      findings?:
+        | {
+            containers?: unknown[] | undefined
+            sast?: unknown[] | undefined
+            secrets?: unknown[] | undefined
+          }
+        | undefined
     }
     try {
       facts = JSON.parse(factsContent)
@@ -141,32 +144,35 @@ export type SocketBasicsResult = {
  * Run socket-basics comprehensive security scanning.
  *
  * Spawns socket-basics (Python tool) to perform:
+ *
  * - SAST (Static Application Security Testing) via OpenGrep
  * - Secret detection via TruffleHog
  * - Container scanning via Trivy (if images are specified)
  *
  * Environment Variables Set:
+ *
  * - SKIP_SOCKET_REACH=1 - Skip reachability analysis (handled separately by CLI)
  * - SKIP_SOCKET_SUBMISSION=1 - Skip socket-basics submitting to Socket API
  * - PATH - Updated to include extracted tool directories
  *
- * @param options - Socket-basics configuration options.
- * @returns Result with path to .socket.facts.json and finding counts.
- *
  * @example
- * const result = await runSocketBasics({
- *   cwd: '/path/to/project',
- *   orgSlug: 'my-org',
- *   repoName: 'my-repo',
- *   languages: ['python', 'javascript'],
- *   scanSecrets: true,
- * })
+ *   const result = await runSocketBasics({
+ *     cwd: '/path/to/project',
+ *     orgSlug: 'my-org',
+ *     repoName: 'my-repo',
+ *     languages: ['python', 'javascript'],
+ *     scanSecrets: true,
+ *   })
  *
- * if (result.ok && result.data.factsPath) {
- *   logger.log('Socket facts:', result.data.factsPath)
- *   logger.log('SAST findings:', result.data.findings.sast)
- *   logger.log('Secrets found:', result.data.findings.secrets)
- * }
+ *   if (result.ok && result.data.factsPath) {
+ *     logger.log('Socket facts:', result.data.factsPath)
+ *     logger.log('SAST findings:', result.data.findings.sast)
+ *     logger.log('Secrets found:', result.data.findings.secrets)
+ *   }
+ *
+ * @param options - Socket-basics configuration options.
+ *
+ * @returns Result with path to .socket.facts.json and finding counts.
  */
 export async function runSocketBasics(
   options: SocketBasicsOptions,

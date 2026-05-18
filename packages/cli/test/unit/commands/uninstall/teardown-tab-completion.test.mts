@@ -1,23 +1,25 @@
 /**
  * Unit tests for teardownTabCompletion.
  *
- * Removes Socket CLI tab-completion lines from the user's ~/.bashrc.
- * Mocks node:fs so tests don't touch the real filesystem.
+ * Removes Socket CLI tab-completion lines from the user's ~/.bashrc. Mocks
+ * node:fs so tests don't touch the real filesystem.
  *
  * Test Coverage:
- * - getBashrcDetails error pass-through
+ *
+ * - GetBashrcDetails error pass-through
  * - .bashrc absent → "not found" action
  * - .bashrc present without our block → "missing" action
  * - .bashrc present with our block → removes the full block
- * - .bashrc present where the block was edited → falls back to
- *   removing sourcingCommand / completionCommand individually
- * - findRemainingCompletionSetups discovers other targets
- * - homePath unset edge case (skip the bashrc lookup entirely)
+ * - .bashrc present where the block was edited → falls back to removing
+ *   sourcingCommand / completionCommand individually
+ * - FindRemainingCompletionSetups discovers other targets
+ * - HomePath unset edge case (skip the bashrc lookup entirely)
  *
  * Related Files:
- * - src/commands/uninstall/teardown-tab-completion.mts - Implementation
- * - src/util/cli/completion.mts - getBashrcDetails / COMPLETION_CMD_PREFIX
- * - src/constants/paths.mts - homePath
+ *
+ * - Src/commands/uninstall/teardown-tab-completion.mts - Implementation
+ * - Src/util/cli/completion.mts - getBashrcDetails / COMPLETION_CMD_PREFIX
+ * - Src/constants/paths.mts - homePath
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

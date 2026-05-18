@@ -1,21 +1,14 @@
 /**
  * Unit tests for meow CLI helper.
  *
- * Purpose:
- * Tests the simplified meow-like CLI argument parsing helper.
+ * Purpose: Tests the simplified meow-like CLI argument parsing helper.
  *
- * Test Coverage:
- * - Basic argument parsing
- * - Flag parsing (boolean, string, number types)
- * - Short flags and aliases
- * - Default values
- * - Boolean defaults
- * - Unknown flag collection
- * - Help text generation
- * - Package.json reading from importMeta
+ * Test Coverage: - Basic argument parsing - Flag parsing (boolean, string,
+ * number types) - Short flags and aliases - Default values - Boolean defaults -
+ * Unknown flag collection - Help text generation - Package.json reading from
+ * importMeta.
  *
- * Related Files:
- * - src/meow.mts (implementation)
+ * Related Files: - src/meow.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,23 +1,18 @@
 /**
- * Update notification utilities for Socket CLI.
- * Handles displaying update notifications to users with appropriate messaging
- * for both SEA binaries and npm installations.
+ * Update notification utilities for Socket CLI. Handles displaying update
+ * notifications to users with appropriate messaging for both SEA binaries and
+ * npm installations.
  *
- * Key Functions:
- * - showUpdateNotification: Display update available message
- * - scheduleExitNotification: Show notification when process exits
- * - formatUpdateMessage: Create user-friendly update messages
+ * Key Functions: - showUpdateNotification: Display update available message -
+ * scheduleExitNotification: Show notification when process exits -
+ * formatUpdateMessage: Create user-friendly update messages.
  *
- * Features:
- * - SEA vs npm aware messaging
- * - Terminal link generation for changelogs
- * - Process exit notifications
- * - Graceful fallbacks for non-TTY environments
+ * Features: - SEA vs npm aware messaging - Terminal link generation for
+ * changelogs - Process exit notifications - Graceful fallbacks for non-TTY
+ * environments.
  *
- * Usage:
- * - CLI update notifications
- * - Integration with update checker
- * - User experience messaging
+ * Usage: - CLI update notifications - Integration with update checker - User
+ * experience messaging.
  */
 
 import process from 'node:process'
@@ -85,8 +80,8 @@ export function formatUpdateMessage(options: UpdateNotificationOptions): {
 }
 
 /**
- * Schedule update notification to show on process exit.
- * This ensures the notification doesn't interfere with command output.
+ * Schedule update notification to show on process exit. This ensures the
+ * notification doesn't interfere with command output.
  */
 export function scheduleExitNotification(
   options: UpdateNotificationOptions,

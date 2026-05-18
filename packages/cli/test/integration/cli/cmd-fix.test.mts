@@ -2,10 +2,12 @@
 /**
  * Integration tests for `socket fix` command.
  *
- * Tests the CVE fixing command that automatically upgrades vulnerable dependencies
- * to secure versions. Supports local fixes and automated CI/PR workflows.
+ * Tests the CVE fixing command that automatically upgrades vulnerable
+ * dependencies to secure versions. Supports local fixes and automated CI/PR
+ * workflows.
  *
  * Test Coverage:
+ *
  * - Help text display and usage examples
  * - Dry-run behavior (validation without applying fixes)
  * - Vulnerability identification (GHSA IDs, CVE IDs, PURLs)
@@ -16,34 +18,40 @@
  * - Direct dependency impact analysis (--show-affected-direct-dependencies)
  * - Minimum release age filtering (--minimum-release-age)
  * - Output formats (JSON, markdown, text)
- * - CI environment variable handling (GITHUB_TOKEN, GIT_USER_NAME, GIT_USER_EMAIL)
+ * - CI environment variable handling (GITHUB_TOKEN, GIT_USER_NAME,
+ *   GIT_USER_EMAIL)
  * - Fixture testing (monorepos, vulnerable-deps projects)
  * - Error handling (invalid IDs, missing tokens, non-existent paths)
  *
  * CI/PR Workflow Features:
+ *
  * - Automatic PR creation for vulnerability fixes
  * - Auto-merge support via GitHub's auto-merge feature
  * - Git commit configuration via environment variables
  * - Multiple fixes batching with --limit
  *
  * Version Range Styles:
- * - pin: Use exact versions (e.g., 1.2.3)
- * - preserve: Retain existing range style (e.g., ^1.2.3)
+ *
+ * - Pin: Use exact versions (e.g., 1.2.3)
+ * - Preserve: Retain existing range style (e.g., ^1.2.3)
  *
  * Vulnerability ID Formats:
+ *
  * - GHSA IDs (e.g., GHSA-xxxx-xxxx-xxxx)
  * - CVE IDs (e.g., CVE-2021-23337) - auto-converted to GHSA
  * - PURLs (e.g., pkg:npm/package@1.0.0) - auto-converted to GHSA
  * - Comma-separated or multiple --id flags supported
  *
  * Platform-Specific Behavior:
+ *
  * - Extended test timeouts on Windows and CI (60s vs 30s)
  *
  * Related Files:
- * - src/commands/fix/cmd-fix.mts - Command definition
- * - src/commands/fix/handle-fix.mts - Fix computation and application logic
- * - src/commands/fix/output-fix.mts - Output formatting
- * - test/fixtures/commands/fix/ - Test fixtures (monorepo, vulnerable-deps)
+ *
+ * - Src/commands/fix/cmd-fix.mts - Command definition
+ * - Src/commands/fix/handle-fix.mts - Fix computation and application logic
+ * - Src/commands/fix/output-fix.mts - Output formatting
+ * - Test/fixtures/commands/fix/ - Test fixtures (monorepo, vulnerable-deps)
  */
 
 import path from 'node:path'

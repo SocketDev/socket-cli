@@ -1,15 +1,14 @@
 /**
  * Ambient machine-output mode context.
  *
- * meowOrExit / meowWithSubcommands set this once at argv-parse time so
- * spawn wrappers and output helpers can consult the current mode
- * without threading flags through every function signature.
+ * MeowOrExit / meowWithSubcommands set this once at argv-parse time so spawn
+ * wrappers and output helpers can consult the current mode without threading
+ * flags through every function signature.
  *
- * This is a single module-scoped let (not a Proxy, not AsyncLocalStorage)
- * — the CLI is a one-shot process with a single root invocation, so
- * module-scoped state is the simplest correct model. Tests that run
- * multiple invocations in sequence should call resetMachineOutputMode()
- * in their setup.
+ * This is a single module-scoped let (not a Proxy, not AsyncLocalStorage) — the
+ * CLI is a one-shot process with a single root invocation, so module-scoped
+ * state is the simplest correct model. Tests that run multiple invocations in
+ * sequence should call resetMachineOutputMode() in their setup.
  */
 
 import { isMachineOutputMode } from './mode.mts'

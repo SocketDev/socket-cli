@@ -1,6 +1,6 @@
 /**
- * SOCKET_CLI_SEA_NODE_VERSION environment variable snapshot.
- * Specifies the Node.js version to use for Single Executable Application (SEA) builds.
+ * SOCKET_CLI_SEA_NODE_VERSION environment variable snapshot. Specifies the
+ * Node.js version to use for Single Executable Application (SEA) builds.
  */
 
 import { env } from 'node:process'

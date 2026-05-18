@@ -1,19 +1,16 @@
 /**
  * Integration tests for `socket nuget` wrapper command.
  *
- * Tests the nuget package manager wrapper that adds Socket security scanning
- * to .NET package operations via Socket Firewall (sfw). Commands are forwarded to
+ * Tests the nuget package manager wrapper that adds Socket security scanning to
+ * .NET package operations via Socket Firewall (sfw). Commands are forwarded to
  * sfw which provides security scanning before installation.
  *
- * Test Coverage:
- * - Help text display and usage examples
+ * Test Coverage: - Help text display and usage examples.
  *
- * Security Features:
- * - Pre-installation security scanning via Socket Firewall
+ * Security Features: - Pre-installation security scanning via Socket Firewall.
  *
- * Related Files:
- * - src/commands/nuget/cmd-nuget.mts - nuget command implementation
- * - src/util/dlx/resolve-binary.mts - sfw resolution
+ * Related Files: - src/commands/nuget/cmd-nuget.mts - nuget command
+ * implementation - src/util/dlx/resolve-binary.mts - sfw resolution.
  */
 
 import { describe, expect } from 'vitest'

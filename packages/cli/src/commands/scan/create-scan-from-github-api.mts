@@ -1,10 +1,10 @@
 /**
  * GitHub API helpers for `socket scan github`.
  *
- * Extracted from create-scan-from-github.mts to keep that file under
- * the 1000-line File-size cap. These wrap octokit.repos.* / .git.* /
- * .repos.listCommits with the project's CResult contract and friendly
- * error messages for empty repos / missing default branch.
+ * Extracted from create-scan-from-github.mts to keep that file under the
+ * 1000-line File-size cap. These wrap octokit.repos.* / .git.* /
+ * .repos.listCommits with the project's CResult contract and friendly error
+ * messages for empty repos / missing default branch.
  */
 
 import { debugDir } from '@socketsecurity/lib/debug'
@@ -95,7 +95,8 @@ export async function getLastCommitDetails({
 }
 
 /**
- * Fetch the recursive file tree of a branch — returns a flat list of blob paths.
+ * Fetch the recursive file tree of a branch — returns a flat list of blob
+ * paths.
  *
  * Treats a `GitHub resource not found` error as an empty repo (returns []),
  * since the most common cause is a freshly-created repo with no commits.

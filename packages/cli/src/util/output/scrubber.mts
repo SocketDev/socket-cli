@@ -3,43 +3,39 @@
 /**
  * Stdout scrubber for mixed child-process output under machine mode.
  *
- * Child processes we spawn — coana, sfw-wrapped package managers, synp,
- * zpm, cdxgen, and friends — produce streams that interleave payload
- * bytes with progress bars, status lines, ANSI escapes, and other
- * chatter. This Transform stream splits its input on newlines, cleans
- * each line, and routes it via a two-state machine:
+ * Child processes we spawn — coana, sfw-wrapped package managers, synp, zpm,
+ * cdxgen, and friends — produce streams that interleave payload bytes with
+ * progress bars, status lines, ANSI escapes, and other chatter. This Transform
+ * stream splits its input on newlines, cleans each line, and routes it via a
+ * two-state machine:
  *
- *   Outside a payload block (default):
- *     1. If the line is exactly SENTINEL_BEGIN → enter payload block.
- *     2. If the adapter (if any) has a verdict → honor it.
- *     3. Empty line → drop.
- *     4. Known noise pattern → stderr.
- *     5. Valid JSON (tried via JSON.parse) → stdout.
- *     6. Otherwise → stderr (safe default; stdout stays payload-only).
+ * Outside a payload block (default): 1. If the line is exactly SENTINEL_BEGIN →
+ * enter payload block. 2. If the adapter (if any) has a verdict → honor it. 3.
+ * Empty line → drop. 4. Known noise pattern → stderr. 5. Valid JSON (tried via
+ * JSON.parse) → stdout. 6. Otherwise → stderr (safe default; stdout stays
+ * payload-only).
  *
- *   Inside a payload block:
- *     1. If the line is exactly SENTINEL_END → exit payload block.
- *     2. Otherwise → stdout verbatim (preserves multi-line payloads
- *        like pretty-printed JSON or Markdown).
+ * Inside a payload block: 1. If the line is exactly SENTINEL_END → exit payload
+ * block. 2. Otherwise → stdout verbatim (preserves multi-line payloads like
+ * pretty-printed JSON or Markdown).
  *
- * SENTINEL_BEGIN / SENTINEL_END each start and end with a literal NUL
- * (U+0000) byte — see mode.mts. A NUL byte does not appear in JSON,
- * Markdown, or plain text our formatters emit, so a cooperating child
- * tool cannot accidentally produce a line that matches one.
+ * SENTINEL_BEGIN / SENTINEL_END each start and end with a literal NUL (U+0000)
+ * byte — see mode.mts. A NUL byte does not appear in JSON, Markdown, or plain
+ * text our formatters emit, so a cooperating child tool cannot accidentally
+ * produce a line that matches one.
  *
- * Every line has BOM, trailing \r, and every ANSI escape (SGR, CSI
- * cursor moves, OSC hyperlinks) stripped before classification.
+ * Every line has BOM, trailing \r, and every ANSI escape (SGR, CSI cursor
+ * moves, OSC hyperlinks) stripped before classification.
  *
- * Tracing: set SOCKET_SCRUB_TRACE=1 to write per-line classification
- * decisions to process.stderr (a dedicated channel, not the configured
- * stderr sink — so trace output doesn't mingle with the routed noise
- * stream). Useful when debugging "why did my JSON lose a line?".
+ * Tracing: set SOCKET_SCRUB_TRACE=1 to write per-line classification decisions
+ * to process.stderr (a dedicated channel, not the configured stderr sink — so
+ * trace output doesn't mingle with the routed noise stream). Useful when
+ * debugging "why did my JSON lose a line?".
  *
- * Architecture note: inspired by jc (github.com/kellyjonbrazil/jc).
- * Each tool with known quirks gets a small adapter (util/output/
- * adapters/) that plugs into the classifier — no heuristic engine, no
- * framework. Unlike jc, runs in real time on mixed streams rather than
- * post-hoc on a captured blob.
+ * Architecture note: inspired by jc (github.com/kellyjonbrazil/jc). Each tool
+ * with known quirks gets a small adapter (util/output/ adapters/) that plugs
+ * into the classifier — no heuristic engine, no framework. Unlike jc, runs in
+ * real time on mixed streams rather than post-hoc on a captured blob.
  */
 
 import { Transform } from 'node:stream'
@@ -51,18 +47,17 @@ import { SENTINEL_BEGIN, SENTINEL_END } from './mode.mts'
 import type { TransformCallback } from 'node:stream'
 
 /**
- * Memoized ansi regex. Built once at module load; re-used per line.
- * ansiRegex() from @socketsecurity/lib constructs a fresh regex on
- * every call, and cleanLine runs on every incoming line — so caching
- * here matters.
+ * Memoized ansi regex. Built once at module load; re-used per line. ansiRegex()
+ * from @socketsecurity/lib constructs a fresh regex on every call, and
+ * cleanLine runs on every incoming line — so caching here matters.
  */
 const ANSI_RE = ansiRegex()
 
 /**
- * Per-line regex for common chatter we always send to stderr.
- * Matches log-level prefixes, status markers, cargo/rust tool chatter,
- * ISO-8601 timestamps at start of line, and progress/spinner glyphs.
- * Lowercase variants included (cargo uses `warning:` / `error:`).
+ * Per-line regex for common chatter we always send to stderr. Matches log-level
+ * prefixes, status markers, cargo/rust tool chatter, ISO-8601 timestamps at
+ * start of line, and progress/spinner glyphs. Lowercase variants included
+ * (cargo uses `warning:` / `error:`).
  */
 const KNOWN_NOISE_RE = new RegExp(
   [
@@ -95,10 +90,10 @@ export interface ScrubberAdapter {
    */
   name: string
   /**
-   * Invoked before the default classifier while the scrubber is
-   * outside a payload block. Return 'payload' to route to stdout,
-   * 'drop' to discard, 'noise' to route to stderr, or undefined to
-   * defer to the default classifier.
+   * Invoked before the default classifier while the scrubber is outside a
+   * payload block. Return 'payload' to route to stdout, 'drop' to discard,
+   * 'noise' to route to stderr, or undefined to defer to the default
+   * classifier.
    */
   classify?(line: string): 'payload' | 'drop' | 'noise' | undefined
 }
@@ -106,10 +101,10 @@ export interface ScrubberAdapter {
 export interface ScrubberOptions {
   adapter?: ScrubberAdapter | undefined
   /**
-   * Soft cap on internal buffer size, measured in UTF-16 code units
-   * (string .length). When exceeded, a one-time warning is written to
-   * the stderr sink. The scrubber continues to buffer — callers
-   * concerned about memory must cap the upstream stream themselves.
+   * Soft cap on internal buffer size, measured in UTF-16 code units (string
+   * .length). When exceeded, a one-time warning is written to the stderr sink.
+   * The scrubber continues to buffer — callers concerned about memory must cap
+   * the upstream stream themselves.
    */
   maxBufferChars?: number | undefined
   /**
@@ -154,12 +149,13 @@ export function classifyLine(
 
 /**
  * Clean a single line:
- *   1. Strip leading BOM.
- *   2. Strip a single trailing \r (CRLF line terminator artifact).
- *   3. If the remaining line still contains \r bytes (progress-bar
- *      same-line overwrite: "\rline1\rline2"), keep only the segment
- *      after the last \r — that's the final rendered state.
- *   4. Strip every ANSI escape (SGR, CSI cursor moves, OSC hyperlinks).
+ *
+ * 1. Strip leading BOM.
+ * 2. Strip a single trailing \r (CRLF line terminator artifact).
+ * 3. If the remaining line still contains \r bytes (progress-bar same-line
+ *    overwrite: "\rline1\rline2"), keep only the segment after the last \r —
+ *    that's the final rendered state.
+ * 4. Strip every ANSI escape (SGR, CSI cursor moves, OSC hyperlinks).
  */
 export function cleanLine(line: string): string {
   let cleaned = line
@@ -178,11 +174,10 @@ export function cleanLine(line: string): string {
 }
 
 /**
- * Build a Transform stream that splits its input on newlines, cleans
- * each line, and routes via the outside/inside state machine. Feed
- * child-process stdout in; the stream emits nothing (writes happen
- * to the configured sinks). On stream end, any unterminated trailing
- * line is processed the same way.
+ * Build a Transform stream that splits its input on newlines, cleans each line,
+ * and routes via the outside/inside state machine. Feed child-process stdout
+ * in; the stream emits nothing (writes happen to the configured sinks). On
+ * stream end, any unterminated trailing line is processed the same way.
  */
 export function createScrubber(options: ScrubberOptions = {}): Transform {
   const {
@@ -284,10 +279,10 @@ export function isTraceEnabled(): boolean {
 }
 
 /**
- * Trace writes go to process.stderr directly (not through the
- * scrubber's configured stderr sink) so trace lines don't interleave
- * with the routed noise stream. This matters when a caller pipes the
- * scrubber's stderr into a buffer for later inspection.
+ * Trace writes go to process.stderr directly (not through the scrubber's
+ * configured stderr sink) so trace lines don't interleave with the routed noise
+ * stream. This matters when a caller pipes the scrubber's stderr into a buffer
+ * for later inspection.
  */
 export function trace(
   adapterName: string | undefined,

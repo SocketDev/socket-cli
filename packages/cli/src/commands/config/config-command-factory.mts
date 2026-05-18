@@ -27,16 +27,18 @@ type ConfigCommandSpec = {
   helpUsage: string
   helpDescription: string
   helpExamples: string[]
-  validate?: ((cli: {
-    input: readonly string[]
-    flags: Record<string, unknown>
-  }) => Array<{
-    test: boolean
-    message: string
-    fail: string
-    nook?: boolean | undefined
-    pass?: string | undefined
-  }>) | undefined
+  validate?:
+    | ((cli: {
+        input: readonly string[]
+        flags: Record<string, unknown>
+      }) => Array<{
+        test: boolean
+        message: string
+        fail: string
+        nook?: boolean | undefined
+        pass?: string | undefined
+      }>)
+    | undefined
   handler: (params: {
     key: keyof LocalConfig
     value?: string | undefined

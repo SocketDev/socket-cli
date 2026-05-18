@@ -18,9 +18,9 @@ type ApplyFullExcludePathsResult = {
 }
 
 /**
- * Applies --exclude-paths consistently to SCA manifest discovery and Coana.
- * SCA exclusion always applies when paths are provided. The reachability
- * options are merged unconditionally; callers decide whether to actually run
+ * Applies --exclude-paths consistently to SCA manifest discovery and Coana. SCA
+ * exclusion always applies when paths are provided. The reachability options
+ * are merged unconditionally; callers decide whether to actually run
  * reachability and consume them.
  */
 export function applyFullExcludePaths({

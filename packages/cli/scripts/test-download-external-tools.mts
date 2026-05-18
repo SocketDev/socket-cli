@@ -58,7 +58,8 @@ const TOOL_REPOS = {
 }
 
 /**
- * Download a file from GitHub releases using curl (simpler than handling streams).
+ * Download a file from GitHub releases using curl (simpler than handling
+ * streams).
  */
 export async function downloadFile(url, destPath) {
   logger.log(`Downloading: ${url}`)
@@ -178,8 +179,8 @@ export async function extractFromTarGz(archivePath, outputPath, binaryName) {
 }
 
 /**
- * Get current platform identifier (normalized for release naming).
- * Uses 'win' instead of 'win32' for Windows.
+ * Get current platform identifier (normalized for release naming). Uses 'win'
+ * instead of 'win32' for Windows.
  */
 export function getCurrentPlatform() {
   const platform = process.platform === 'win32' ? 'win' : process.platform

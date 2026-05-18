@@ -4,17 +4,14 @@
  * they delegate to a static map of child subcommands and optional aliases.
  *
  * Pre-factory the four router files used three subtly different shapes — one
- * declared a top-level `config` object whose flags were never consumed,
- * another inlined the meow call, the third had a `hidden: false` field that
- * only existed to satisfy the CliSubcommand type. This helper unifies the
- * shape into a single declarative spec:
+ * declared a top-level `config` object whose flags were never consumed, another
+ * inlined the meow call, the third had a `hidden: false` field that only
+ * existed to satisfy the CliSubcommand type. This helper unifies the shape into
+ * a single declarative spec:
  *
- *   export const cmdScan = defineSubcommandGroup({
- *     name: 'scan',
- *     description: 'Manage Socket scans',
- *     subcommands: { create: cmdScanCreate, … },
- *     aliases: { meta: { argv: ['metadata'], hidden: true, … } },
- *   })
+ * Export const cmdScan = defineSubcommandGroup({ name: 'scan', description:
+ * 'Manage Socket scans', subcommands: { create: cmdScanCreate, … }, aliases: {
+ * meta: { argv: ['metadata'], hidden: true, … } }, })
  */
 
 import { commonFlags } from '../../flags.mts'
@@ -31,8 +28,8 @@ export interface DefineSubcommandGroupOptions {
    */
   name: string
   /**
-   * One-line description for the parent command's help bucket and the
-   * `socket --help` listing.
+   * One-line description for the parent command's help bucket and the `socket
+   * --help` listing.
    */
   description: string
   /**
@@ -45,20 +42,20 @@ export interface DefineSubcommandGroupOptions {
    */
   subcommands: Record<string, CliSubcommand>
   /**
-   * Optional aliases. Each key is an alternative name for the group; its
-   * `argv` is the canonical command tokens to invoke (e.g.
-   * `aliases: { deps: { argv: ['dependencies'], … } }`).
+   * Optional aliases. Each key is an alternative name for the group; its `argv`
+   * is the canonical command tokens to invoke (e.g. `aliases: { deps: { argv:
+   * ['dependencies'], … } }`).
    */
   aliases?: CliAliases | undefined
   /**
    * If true, pass the standard `commonFlags` (--dry-run, --help, --json,
-   * --markdown, etc.) to meowWithSubcommands so the group's `--help` page
-   * lists them. Defaults to false (no flags surface).
+   * --markdown, etc.) to meowWithSubcommands so the group's `--help` page lists
+   * them. Defaults to false (no flags surface).
    *
    * Routers that previously declared `config = { flags: defineFlags({
-   * ...commonFlags }) }` should pass `passCommonFlags: true` to preserve
-   * the existing help output and any test assertions that inspect the
-   * outgoing `config.flags`.
+   * ...commonFlags }) }` should pass `passCommonFlags: true` to preserve the
+   * existing help output and any test assertions that inspect the outgoing
+   * `config.flags`.
    */
   passCommonFlags?: boolean | undefined
   /**
@@ -70,13 +67,13 @@ export interface DefineSubcommandGroupOptions {
 }
 
 /**
- * Define a subcommand-group router. Returns a CliSubcommand-shaped object
- * ready to plug into the parent meow router.
+ * Define a subcommand-group router. Returns a CliSubcommand-shaped object ready
+ * to plug into the parent meow router.
  *
- * The returned object only includes a `hidden` field when the caller
- * explicitly passes one — this preserves the shape of the pre-refactor
- * routers (which never had a `hidden` field at all) and keeps existing
- * test assertions about object identity / strict shape working.
+ * The returned object only includes a `hidden` field when the caller explicitly
+ * passes one — this preserves the shape of the pre-refactor routers (which
+ * never had a `hidden` field at all) and keeps existing test assertions about
+ * object identity / strict shape working.
  */
 export function defineSubcommandGroup(
   opts: DefineSubcommandGroupOptions,

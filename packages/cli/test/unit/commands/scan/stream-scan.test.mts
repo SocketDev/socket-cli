@@ -1,17 +1,12 @@
 /**
  * Unit tests for stream scan functionality.
  *
- * Purpose:
- * Tests the scan streaming to file/stdout.
+ * Purpose: Tests the scan streaming to file/stdout.
  *
- * Test Coverage:
- * - streamScan function
- * - SDK setup handling
- * - API call handling
- * - File output options
+ * Test Coverage: - streamScan function - SDK setup handling - API call handling
+ * - File output options.
  *
- * Related Files:
- * - src/commands/scan/stream-scan.mts (implementation)
+ * Related Files: - src/commands/scan/stream-scan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,6 +1,6 @@
 /**
- * Simplified meow-like CLI helper for Socket CLI.
- * Uses socket-registry's parseArgs for argument parsing.
+ * Simplified meow-like CLI helper for Socket CLI. Uses socket-registry's
+ * parseArgs for argument parsing.
  */
 
 import { parseArgs } from '@socketsecurity/lib/argv/parse'
@@ -22,7 +22,8 @@ export interface MeowFlag {
   readonly default?: unknown | undefined
   readonly isRequired?:
     | boolean
-    | ((flags: Record<string, unknown>, input: readonly string[]) => boolean) | undefined
+    | ((flags: Record<string, unknown>, input: readonly string[]) => boolean)
+    | undefined
   readonly isMultiple?: boolean | undefined
 }
 

@@ -168,9 +168,11 @@ export async function getSocketFixPrs(
 }
 
 type GqlPrNode = {
-  author?: {
-    login: string
-  } | undefined
+  author?:
+    | {
+        login: string
+      }
+    | undefined
   baseRefName: string
   headRefName: string
   mergeStateStatus: GQL_MERGE_STATE_STATUS
@@ -415,8 +417,9 @@ export async function openSocketFixPr(
 
     // Handle RequestError from Octokit/provider.
     if (e instanceof RequestError) {
-      const errors = (e.response?.data as { errors?: unknown | undefined } | undefined)
-        ?.errors
+      const errors = (
+        e.response?.data as { errors?: unknown | undefined } | undefined
+      )?.errors
       const errorMessages = Array.isArray(errors)
         ? errors.map(
             (d: {

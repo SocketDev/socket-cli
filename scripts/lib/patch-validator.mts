@@ -1,7 +1,6 @@
 /**
- * @fileoverview Patch validation and compatibility checking
- *
- * Validates patches before applying to prevent build failures.
+ * @file Patch validation and compatibility checking Validates patches before
+ *   applying to prevent build failures.
  */
 import { promises as fs } from 'node:fs'
 

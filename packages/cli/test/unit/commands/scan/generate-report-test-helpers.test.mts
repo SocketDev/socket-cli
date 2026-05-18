@@ -1,16 +1,13 @@
 /**
  * Unit tests for scan report generation test helpers.
  *
- * Purpose:
- * Tests the helper functions for creating test scan data.
+ * Purpose: Tests the helper functions for creating test scan data.
  *
- * Test Coverage:
- * - getSimpleCleanScan function
- * - getScanWithEnvVars function
- * - getScanWithMultiplePackages function
+ * Test Coverage: - getSimpleCleanScan function - getScanWithEnvVars function -
+ * getScanWithMultiplePackages function.
  *
- * Related Files:
- * - test/helpers/generate-report-test-helpers.mts (implementation)
+ * Related Files: - test/helpers/generate-report-test-helpers.mts
+ * (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

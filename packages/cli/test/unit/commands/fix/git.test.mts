@@ -1,20 +1,14 @@
 /**
  * Unit tests for fix command git utilities.
  *
- * Purpose:
- * Tests git-related utilities for the fix command including
- * branch naming, commit messages, and PR body generation.
+ * Purpose: Tests git-related utilities for the fix command including branch
+ * naming, commit messages, and PR body generation.
  *
- * Test Coverage:
- * - createSocketFixBranchParser
- * - getSocketFixBranchName
- * - getSocketFixBranchPattern
- * - getSocketFixCommitMessage
- * - getSocketFixPullRequestBody
- * - getSocketFixPullRequestTitle
+ * Test Coverage: - createSocketFixBranchParser - getSocketFixBranchName -
+ * getSocketFixBranchPattern - getSocketFixCommitMessage -
+ * getSocketFixPullRequestBody - getSocketFixPullRequestTitle.
  *
- * Related Files:
- * - commands/fix/git.mts (implementation)
+ * Related Files: - commands/fix/git.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

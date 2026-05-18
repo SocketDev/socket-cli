@@ -2,11 +2,10 @@
  * Unit tests for add-overrides.
  *
  * Tests the addOverrides function that applies Socket Registry overrides to
- * package.json files. Most paths require complex pkgEnvDetails fixtures,
- * so this file mocks all collaborators and exercises the orchestration paths.
+ * package.json files. Most paths require complex pkgEnvDetails fixtures, so
+ * this file mocks all collaborators and exercises the orchestration paths.
  *
- * Related Files:
- * - src/commands/optimize/add-overrides.mts (implementation)
+ * Related Files: - src/commands/optimize/add-overrides.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

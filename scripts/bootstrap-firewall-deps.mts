@@ -1,42 +1,34 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
- * @fileoverview Bootstrap zero-dep Socket packages into node_modules/
- * before `pnpm install` runs, with Socket Firewall verification on each
- * pinned tarball before extraction.
- *
- * Why: setup.mts (and downstream tooling) imports `@socketsecurity/lib-stable`
- * and other zero-dep Socket helpers at module-load time. On a fresh
- * clone, `pnpm install` itself runs scripts that import these — but
- * pnpm install hasn't completed yet, so the imports fail with
- * `ERR_MODULE_NOT_FOUND`. Bootstrap solves this by fetching the
- * pinned tarball from the npm registry, running it through Socket
- * Firewall (refuse-on-alert), and extracting the verified tarball
- * into node_modules/<scope>/<name>/. Subsequent pnpm install will
- * see the directory and either keep it (if version matches) or
- * replace it with the workspace-resolved version.
- *
- * Pinned versions come from `pnpm-workspace.yaml`'s `catalog:` —
- * single source of truth.
- *
- * --- Repo-convention exceptions ---
- *
- * This script intentionally CANNOT depend on `@socketsecurity/lib-stable`
- * because it is the script that bootstraps that very package. The
- * usual repo conventions therefore do not apply here:
+ * @file Bootstrap zero-dep Socket packages into node_modules/ before `pnpm
+ *   install` runs, with Socket Firewall verification on each pinned tarball
+ *   before extraction. Why: setup.mts (and downstream tooling) imports
+ *   `@socketsecurity/lib-stable` and other zero-dep Socket helpers at
+ *   module-load time. On a fresh clone, `pnpm install` itself runs scripts that
+ *   import these — but pnpm install hasn't completed yet, so the imports fail
+ *   with `ERR_MODULE_NOT_FOUND`. Bootstrap solves this by fetching the pinned
+ *   tarball from the npm registry, running it through Socket Firewall
+ *   (refuse-on-alert), and extracting the verified tarball into
+ *   node_modules/<scope>/<name>/. Subsequent pnpm install will see the
+ *   directory and either keep it (if version matches) or replace it with the
+ *   workspace-resolved version. Pinned versions come from
+ *   `pnpm-workspace.yaml`'s `catalog:` — single source of truth. ---
+ *   Repo-convention exceptions --- This script intentionally CANNOT depend on
+ *   `@socketsecurity/lib-stable` because it is the script that bootstraps that
+ *   very package. The usual repo conventions therefore do not apply here:
  *
  *   - `fetch()` is used directly instead of `httpJson` from
  *     `@socketsecurity/lib-stable/http-request`.
  *   - `rmSync` is used directly instead of `safeDelete` from
  *     `@socketsecurity/lib-stable/fs`.
- *   - Caught errors use the inline `e instanceof Error ? e.message
- *     : String(e)` pattern instead of `errorMessage()` from
- *     `@socketsecurity/lib-stable/errors`.
- *
- * These exceptions are intentional, narrow, and self-contained. Do
- * not add other repo-convention violations here without documenting
- * the reason in this header. Once `@socketsecurity/lib-stable` is on disk
- * (post-bootstrap), other scripts must use the helpers as normal.
+ *   - Caught errors use the inline `e instanceof Error ? e.message : String(e)`
+ *     pattern instead of `errorMessage()` from
+ *     `@socketsecurity/lib-stable/errors`. These exceptions are intentional,
+ *     narrow, and self-contained. Do not add other repo-convention violations
+ *     here without documenting the reason in this header. Once
+ *     `@socketsecurity/lib-stable` is on disk (post-bootstrap), other scripts
+ *     must use the helpers as normal.
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/spawn'
@@ -140,13 +132,14 @@ const err = (msg: string): void => {
 
 /**
  * Read the pinned version of a package, checking (in order):
- *   1. `pnpm-workspace.yaml` `catalog:` entries
- *   2. Root `package.json` `dependencies` / `devDependencies` (skip
- *      "catalog:" / "workspace:" / "*" / "" — those need (1)).
  *
- * Avoids a dep on a YAML parser by hand-parsing the catalog block —
- * this script must itself be zero-dep so it can run before
- * `pnpm install` brings any tooling in.
+ * 1. `pnpm-workspace.yaml` `catalog:` entries
+ * 2. Root `package.json` `dependencies` / `devDependencies` (skip "catalog:" /
+ *    "workspace:" / "*" / "" — those need (1)).
+ *
+ * Avoids a dep on a YAML parser by hand-parsing the catalog block — this script
+ * must itself be zero-dep so it can run before `pnpm install` brings any
+ * tooling in.
  */
 
 // Strip range prefixes (^, ~, >=, <=, etc.) so the registry tarball
@@ -211,11 +204,11 @@ const readPinnedVersion = (pkgName: string): string => {
 }
 
 /**
- * Download a npm registry tarball for `<pkg>@<version>` and extract
- * it into `node_modules/<pkg>/`. Skips if the destination already
- * has a package.json with the matching version. Firewall-checks the
- * version against firewall-api.socket.dev before downloading; refuses
- * to install if the firewall returned any alerts.
+ * Download a npm registry tarball for `<pkg>@<version>` and extract it into
+ * `node_modules/<pkg>/`. Skips if the destination already has a package.json
+ * with the matching version. Firewall-checks the version against
+ * firewall-api.socket.dev before downloading; refuses to install if the
+ * firewall returned any alerts.
  */
 const bootstrapPackage = async (pkgName: string): Promise<void> => {
   const version = readPinnedVersion(pkgName)

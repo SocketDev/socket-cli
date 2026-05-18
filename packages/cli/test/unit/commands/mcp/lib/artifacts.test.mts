@@ -1,31 +1,24 @@
 /**
  * Unit tests for the MCP command's artifact deduplicator.
  *
- * Tests deduplicateArtifacts(artifacts, platform?) — collapses
- * multiple build artifacts of the same package (different wheels,
- * platform binaries) into one representative per (type, namespace,
- * name, version) tuple. Uses a priority cascade:
- *   1. Platform-matching artifact (when `platform` hint is given)
- *   2. Source distribution
- *   3. Universal wheel
- *   4. First artifact in the group
+ * Tests deduplicateArtifacts(artifacts, platform?) — collapses multiple build
+ * artifacts of the same package (different wheels, platform binaries) into one
+ * representative per (type, namespace, name, version) tuple. Uses a priority
+ * cascade: 1. Platform-matching artifact (when `platform` hint is given) 2.
+ * Source distribution 3. Universal wheel 4. First artifact in the group.
  *
- * Test Coverage:
- * - Single-artifact groups pass through untouched
- * - Multiple artifacts of the same package collapse to one
- * - Different packages stay separate (group key includes type/ns/name/version)
- * - Platform hint selects the matching artifact across all six pairs
- *   (darwin-{arm64,x64}, linux-{arm64,x64}, win32-{ia32,x64}) plus
- *   substring fallback for unknown platforms
- * - Source distribution preferred when no platform hint
- * - Universal wheel preferred when no sdist
- * - First artifact wins as final fallback
- * - Missing namespace handled (key uses empty string)
- * - Empty input returns empty output
+ * Test Coverage: - Single-artifact groups pass through untouched - Multiple
+ * artifacts of the same package collapse to one - Different packages stay
+ * separate (group key includes type/ns/name/version) - Platform hint selects
+ * the matching artifact across all six pairs (darwin-{arm64,x64},
+ * linux-{arm64,x64}, win32-{ia32,x64}) plus substring fallback for unknown
+ * platforms - Source distribution preferred when no platform hint - Universal
+ * wheel preferred when no sdist - First artifact wins as final fallback -
+ * Missing namespace handled (key uses empty string) - Empty input returns empty
+ * output.
  *
- * Related Files:
- * - src/commands/mcp/lib/artifacts.mts - Implementation
- * - src/commands/mcp/depscore.mts - Caller (NDJSON response dedup)
+ * Related Files: - src/commands/mcp/lib/artifacts.mts - Implementation -
+ * src/commands/mcp/depscore.mts - Caller (NDJSON response dedup)
  */
 
 import { describe, expect, it } from 'vitest'

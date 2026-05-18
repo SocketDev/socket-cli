@@ -2,21 +2,21 @@
  * WASM build pipeline orchestrator.
  *
  * Declarative orchestrator for wasm-shipping packages. Given a manifest of
- * ordered stages, it drives the canonical sequence:
- *   clone source → configure → compile → release → (optimize) → sync → finalize
+ * ordered stages, it drives the canonical sequence: clone source → configure →
+ * compile → release → (optimize) → sync → finalize.
  *
  * The orchestrator owns every moving part that today lives in each package's
  * 340-line build.mts:
  *
  * - Build mode + platform-arch detection (uses centralized helpers).
  * - Loading external-tools.json + package.json `sources` metadata.
- * - Deriving a unified cache key from: node version, platform, arch, build
- *   mode, pinned tool versions, and source refs. Tool bump or source SHA bump
+ * - Deriving a unified cache key from: node version, platform, arch, build mode,
+ *   pinned tool versions, and source refs. Tool bump or source SHA bump
  *   invalidates the cache automatically — no hand-wired busting.
- * - Per-stage shouldRun() / createCheckpoint() wrapping. Stages become pure
- *   work functions; they do not implement skip-if-cached themselves.
- * - Common CLI flags: --prod / --dev / --force / --clean /
- *   --clean-stage=<name> / --from-stage=<name> / --cache-key.
+ * - Per-stage shouldRun() / createCheckpoint() wrapping. Stages become pure work
+ *   functions; they do not implement skip-if-cached themselves.
+ * - Common CLI flags: --prod / --dev / --force / --clean / --clean-stage=<name> /
+ *   --from-stage=<name> / --cache-key.
  *
  * A stage is `(ctx, params) => Promise<void>`. `ctx` carries derived values
  * shared by every stage (paths, mode, logger, tool versions, source meta).
@@ -49,79 +49,88 @@ const logger = getDefaultLogger()
 
 /**
  * @typedef {object} StageResult
- * @property {() => Promise<void> | void} [smokeTest]
- *   Post-run validation. Runs before the checkpoint is committed.
- * @property {string} [artifactPath]
- *   Absolute path archived into the checkpoint tarball.
- * @property {string} [binaryPath]
- *   Relative path (from buildDir) to a binary to codesign on macOS.
- * @property {string | number} [binarySize]
- *   Optional size metadata surfaced in checkpoint data.
+ *
+ * @property {() => Promise<void> | void} [smokeTest] Post-run validation. Runs
+ *   before the checkpoint is committed.
+ * @property {string} [artifactPath] Absolute path archived into the checkpoint
+ *   tarball.
+ * @property {string} [binaryPath] Relative path (from buildDir) to a binary to
+ *   codesign on macOS.
+ * @property {string | number} [binarySize] Optional size metadata surfaced in
+ *   checkpoint data.
  */
 
 /**
  * @typedef {object} PipelineStage
+ *
  * @property {string} name - Checkpoint name (must appear in CHECKPOINTS).
- * @property {(ctx: PipelineContext, params?: object) => Promise<StageResult | void>} run
+ * @property {(
+ *   ctx: PipelineContext,
+ *   params?: object,
+ * ) => Promise<StageResult | void>} run
  *   Stage worker. Receives the shared context and optional per-stage params.
  *   Should perform the build work only — no shouldRun / createCheckpoint calls.
  *   Return a StageResult to configure the checkpoint (smoke test + artifact).
- * @property {string[]} [sourcePaths]
- *   Extra file paths whose content contributes to this stage's cache hash. The
- *   orchestrator always includes package-wide inputs (external-tools.json,
- *   package.json); list stage-specific inputs here (e.g. an optimization
- *   flags module).
- * @property {boolean} [skipInDev]
- *   Skip this stage entirely when buildMode === 'dev' (e.g. wasm-optimized).
- * @property {(ctx: PipelineContext) => boolean} [skip]
- *   Dynamic skip predicate. Runs before shouldRun(). When it returns true,
- *   the stage is skipped without being recorded as cached. Use when the
- *   skip condition depends on runtime context beyond buildMode (e.g.
- *   socket-cli's SEA stage, which only runs when --force is present).
- * @property {boolean} [shared]
- *   Checkpoint lives at the shared build dir instead of per-platform (e.g.
- *   source-cloned, which is platform-agnostic).
+ * @property {string[]} [sourcePaths] Extra file paths whose content contributes
+ *   to this stage's cache hash. The orchestrator always includes package-wide
+ *   inputs (external-tools.json, package.json); list stage-specific inputs here
+ *   (e.g. an optimization flags module).
+ * @property {boolean} [skipInDev] Skip this stage entirely when buildMode ===
+ *   'dev' (e.g. wasm-optimized).
+ * @property {(ctx: PipelineContext) => boolean} [skip] Dynamic skip predicate.
+ *   Runs before shouldRun(). When it returns true, the stage is skipped without
+ *   being recorded as cached. Use when the skip condition depends on runtime
+ *   context beyond buildMode (e.g. socket-cli's SEA stage, which only runs when
+ *   --force is present).
+ * @property {boolean} [shared] Checkpoint lives at the shared build dir instead
+ *   of per-platform (e.g. source-cloned, which is platform-agnostic).
  */
 
 /**
  * @typedef {object} PipelineContext
+ *
  * @property {string} packageRoot - Package root (absolute).
  * @property {string} packageName - Friendly name used in logs.
  * @property {string} buildMode - 'dev' or 'prod'.
  * @property {string} platformArch - Canonical platform-arch string.
  * @property {string} nodeVersion - Node version running the build.
  * @property {boolean} forceRebuild - Global --force flag.
- * @property {Record<string, string>} toolVersions - Map of tool name -> pinned version.
- * @property {Record<string, object>} sources - Contents of package.json `sources`.
- * @property {object} paths - Result of the package's getBuildPaths(mode, platformArch).
- * @property {object} sharedPaths - Result of the package's getSharedBuildPaths(), if any.
+ * @property {Record<string, string>} toolVersions - Map of tool name -> pinned
+ *   version.
+ * @property {Record<string, object>} sources - Contents of package.json
+ *   `sources`.
+ * @property {object} paths - Result of the package's getBuildPaths(mode,
+ *   platformArch).
+ * @property {object} sharedPaths - Result of the package's
+ *   getSharedBuildPaths(), if any.
  * @property {string} cacheKey - Unified cache key for GH Actions.
  * @property {typeof logger} logger
  */
 
 /**
  * @typedef {object} RunPipelineOptions
+ *
  * @property {string} packageRoot - Absolute path to the package directory.
  * @property {string} packageName - Short name used in logs (e.g. 'yoga').
  * @property {PipelineStage[]} stages - Stages in execution order.
  * @property {(mode: string, platformArch: string) => object} getBuildPaths
  *   Package's path resolver for mode + platformArch.
- * @property {() => object} [getSharedBuildPaths]
- *   Optional shared-path resolver (for source-cloned tarballs).
- * @property {() => Promise<void>} [preflight]
- *   Optional pre-build check (tool probing, disk space). Runs once before
- *   the first stage. Throws to abort the build.
- * @property {(paths: object) => string[]} [getOutputFiles]
- *   Returns absolute paths to the artifacts the build is expected to emit.
- *   Missing files trigger a full-checkpoint clean to force a rebuild.
- * @property {string[]} [extraCacheInputs]
- *   Extra file paths whose content is mixed into the cache key. Package-wide
- *   inputs (external-tools.json + package.json) are already included.
- * @property {() => Promise<string>} [resolvePlatformArch]
- *   Override platform-arch resolution. Default calls getCurrentPlatformArch()
- *   from platform-mappings (returns e.g. 'darwin-arm64'). Platform-agnostic
- *   builds (e.g. JS bundling in socket-tui) should return a fixed string
- *   like 'universal' so the cache key stays stable across host OSes.
+ * @property {() => object} [getSharedBuildPaths] Optional shared-path resolver
+ *   (for source-cloned tarballs).
+ * @property {() => Promise<void>} [preflight] Optional pre-build check (tool
+ *   probing, disk space). Runs once before the first stage. Throws to abort the
+ *   build.
+ * @property {(paths: object) => string[]} [getOutputFiles] Returns absolute
+ *   paths to the artifacts the build is expected to emit. Missing files trigger
+ *   a full-checkpoint clean to force a rebuild.
+ * @property {string[]} [extraCacheInputs] Extra file paths whose content is
+ *   mixed into the cache key. Package-wide inputs (external-tools.json +
+ *   package.json) are already included.
+ * @property {() => Promise<string>} [resolvePlatformArch] Override
+ *   platform-arch resolution. Default calls getCurrentPlatformArch() from
+ *   platform-mappings (returns e.g. 'darwin-arm64'). Platform-agnostic builds
+ *   (e.g. JS bundling in socket-tui) should return a fixed string like
+ *   'universal' so the cache key stays stable across host OSes.
  */
 
 export function buildCacheKey({
@@ -258,6 +267,7 @@ export function resolveCheckpointBuildDir(stage, ctx) {
  *
  * @param {RunPipelineOptions} options
  * @param {object} [cliOverrides] - Pre-parsed flags (for programmatic use).
+ *
  * @returns {Promise<PipelineContext>}
  */
 export async function runPipeline(options, cliOverrides) {
@@ -304,7 +314,9 @@ export async function runPipeline(options, cliOverrides) {
 
   if (flags.printCacheKey) {
     process.stdout.write(`${cacheKey}\n`) // socket-hook: allow console
-    return /** @type {any} */ (undefined)
+    return /**
+     * @type {any}
+     */ (undefined)
   }
 
   const paths = getBuildPaths(buildMode, platformArch)
@@ -416,6 +428,7 @@ export async function runPipeline(options, cliOverrides) {
 
 /**
  * CLI entry-point helper. Wraps runPipeline with a top-level error handler.
+ *
  * @param {RunPipelineOptions} options
  */
 export async function runPipelineCli(options) {

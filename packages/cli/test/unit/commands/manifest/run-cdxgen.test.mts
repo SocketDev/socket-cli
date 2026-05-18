@@ -1,9 +1,8 @@
 /**
  * Unit tests for run-cdxgen helpers.
  *
- * Covers the lockfile/node_modules probe and Node.js type detection that
- * gate the default `socket cdxgen` path against shipping empty-components
- * SBOMs.
+ * Covers the lockfile/node_modules probe and Node.js type detection that gate
+ * the default `socket cdxgen` path against shipping empty-components SBOMs.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

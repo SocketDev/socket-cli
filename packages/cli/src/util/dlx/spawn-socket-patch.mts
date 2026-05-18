@@ -1,9 +1,10 @@
 /**
  * Spawn socket-patch (Rust binary) for applying Socket-managed patches.
  *
- * - spawnSocketPatchDlx: local override > GitHub release download > legacy npm dlx fallback.
- * - spawnSocketPatchVfs: extract from SEA bundle, then exec.
- * - spawnSocketPatch: auto-detect SEA vs npm-CLI mode and dispatch.
+ * - SpawnSocketPatchDlx: local override > GitHub release download > legacy npm
+ *   dlx fallback.
+ * - SpawnSocketPatchVfs: extract from SEA bundle, then exec.
+ * - SpawnSocketPatch: auto-detect SEA vs npm-CLI mode and dispatch.
  *
  * The Dlx flow is bespoke (three-way dispatch local / GitHub-release / legacy
  * npm fallback). Vfs + auto-dispatch use the shared helpers.
@@ -26,8 +27,9 @@ import type { SpawnExtra } from '@socketsecurity/lib/spawn'
  * If SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH is set in the environment, runs the
  * socket-patch binary at that path instead of downloading.
  *
- * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub releases,
- * not an npm package. This function handles both local overrides and GitHub downloads.
+ * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub
+ * releases, not an npm package. This function handles both local overrides and
+ * GitHub downloads.
  */
 export async function spawnSocketPatchDlx(
   args: string[] | readonly string[],

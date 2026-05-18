@@ -21,7 +21,8 @@ import type { MergeRequestSchema } from '@gitbeaker/rest'
 /**
  * GitLab provider for Merge Request operations.
  *
- * Implements the PrProvider interface using GitLab's REST API via @gitbeaker/rest.
+ * Implements the PrProvider interface using GitLab's REST API via
+ * @gitbeaker/rest.
  */
 export class GitLabProvider implements PrProvider {
   private gitlab: InstanceType<typeof Gitlab>
@@ -79,8 +80,11 @@ export class GitLabProvider implements PrProvider {
           typeof e.cause === 'object' &&
           'response' in e.cause
         ) {
-          const response = (e.cause as { response?: { status?: number | undefined } | undefined })
-            .response
+          const response = (
+            e.cause as {
+              response?: { status?: number | undefined } | undefined
+            }
+          ).response
           if (response?.status === 400) {
             break
           }
@@ -253,8 +257,9 @@ export class GitLabProvider implements PrProvider {
  * Gets the GitLab API token from environment or git config.
  *
  * Priority:
+ *
  * 1. GITLAB_TOKEN environment variable
- * 2. git config gitlab.token
+ * 2. Git config gitlab.token
  * 3. Error if not found
  */
 export function getGitLabToken(): string {

@@ -2,16 +2,13 @@
 /**
  * Unit tests for bundler wrapper command.
  *
- * Tests the command entry point that wraps bundler with Socket Firewall security.
- * The wrapper intercepts bundler commands and forwards them to Socket Firewall (sfw)
- * for real-time security scanning.
+ * Tests the command entry point that wraps bundler with Socket Firewall
+ * security. The wrapper intercepts bundler commands and forwards them to Socket
+ * Firewall (sfw) for real-time security scanning.
  *
- * Test Coverage:
- * - Command metadata (description, visibility)
- * - Help text display
- * - Flag filtering (Socket CLI vs bundler flags)
- * - Exit code handling with process.exit()
- * - Signal propagation with process.kill()
+ * Test Coverage: - Command metadata (description, visibility) - Help text
+ * display - Flag filtering (Socket CLI vs bundler flags) - Exit code handling
+ * with process.exit() - Signal propagation with process.kill()
  */
 
 import EventEmitter from 'node:events'

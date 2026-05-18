@@ -1,9 +1,10 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
- * Python CLI spawn utilities.
- * These use bundled Python from SEA VFS or download portable Python via DLX.
+ * Python CLI spawn utilities. These use bundled Python from SEA VFS or download
+ * portable Python via DLX.
  *
  * Resolution order for both Python and socketcli:
+ *
  * 1. SOCKET_CLI_PYTHON_PATH / SOCKET_CLI_PYCLI_LOCAL_PATH env vars (local dev).
  * 2. Bundled Python from SEA VFS (SEA binary installations).
  * 3. Portable Python download via DLX (npm/pnpm/yarn installations).
@@ -71,12 +72,13 @@ export function convertCaretToPipRange(caretRange: string): string {
 }
 
 /**
- * Download a PyPI wheel with SHA-256 verification.
- * Fetches the wheel URL from PyPI JSON API and downloads with integrity check.
+ * Download a PyPI wheel with SHA-256 verification. Fetches the wheel URL from
+ * PyPI JSON API and downloads with integrity check.
  *
  * @param packageName - PyPI package name (e.g., 'socketsecurity').
  * @param version - Exact version to download.
  * @param sha256 - Expected SHA-256 checksum (hex string).
+ *
  * @returns Path to the downloaded wheel file, or null if download fails.
  */
 export async function downloadPyPiWheel(
@@ -147,7 +149,8 @@ export async function downloadPyPiWheel(
 }
 
 /**
- * Download and extract Python from python-build-standalone using downloadBinary.
+ * Download and extract Python from python-build-standalone using
+ * downloadBinary.
  */
 export async function downloadPython(pythonDir: string): Promise<void> {
   const { assetName, url } = getPythonStandaloneInfo()
@@ -200,8 +203,8 @@ export async function ensurePython(): Promise<string> {
 }
 
 /**
- * Ensure Python is available via DLX download.
- * Uses a lock file to prevent concurrent downloads (TOCTOU protection).
+ * Ensure Python is available via DLX download. Uses a lock file to prevent
+ * concurrent downloads (TOCTOU protection).
  *
  * @param retryCount Internal retry counter to prevent unbounded recursion.
  */
@@ -299,8 +302,8 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 }
 
 /**
- * Install socketsecurity package into the Python environment.
- * Uses a lock file to prevent races when multiple processes install concurrently.
+ * Install socketsecurity package into the Python environment. Uses a lock file
+ * to prevent races when multiple processes install concurrently.
  *
  * @param pythonBin Path to Python executable.
  * @param retryCount Internal retry counter to prevent unbounded recursion.
@@ -479,7 +482,8 @@ export function getPythonCachePath(): string {
 }
 
 /**
- * Get the download URL and asset name for python-build-standalone based on platform and architecture.
+ * Get the download URL and asset name for python-build-standalone based on
+ * platform and architecture.
  */
 export function getPythonStandaloneInfo(): { assetName: string; url: string } {
   const version = getPythonVersion()
@@ -535,8 +539,8 @@ export async function isSocketPyCliInstalled(
 }
 
 /**
- * Spawn socketcli (Socket Python CLI).
- * Ensures Python is available (SEA bundled or DLX downloaded) before spawning.
+ * Spawn socketcli (Socket Python CLI). Ensures Python is available (SEA bundled
+ * or DLX downloaded) before spawning.
  */
 export async function spawnSocketPyCli(
   args: string[] | readonly string[],
@@ -616,8 +620,8 @@ export async function spawnSocketPyCli(
 }
 
 /**
- * Spawn socketcli via DLX-downloaded Python.
- * Downloads portable Python from python-build-standalone and installs socketsecurity.
+ * Spawn socketcli via DLX-downloaded Python. Downloads portable Python from
+ * python-build-standalone and installs socketsecurity.
  */
 export async function spawnSocketPyCliDlx(
   args: string[] | readonly string[],
@@ -690,8 +694,8 @@ export async function spawnSocketPyCliDlx(
 export type SocketPyCliDlxOptions = DlxOptions
 
 /**
- * Spawn socketcli via bundled Python from SEA VFS.
- * Uses the same Python as socket-basics for consistency.
+ * Spawn socketcli via bundled Python from SEA VFS. Uses the same Python as
+ * socket-basics for consistency.
  */
 export async function spawnSocketPyCliVfs(
   args: string[] | readonly string[],

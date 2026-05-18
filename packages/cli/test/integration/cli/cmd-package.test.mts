@@ -5,18 +5,21 @@
  * package-specific security and metadata operations.
  *
  * Test Coverage:
+ *
  * - Help text display and subcommand listing
  * - Dry-run behavior validation
  * - Package spec parsing (npm/lodash@4.17.21)
  * - Subcommand routing
  *
  * Available Subcommands:
- * - score: Get package security score
- * - shallow: Get shallow package analysis
+ *
+ * - Score: Get package security score
+ * - Shallow: Get shallow package analysis
  *
  * Related Files:
- * - src/commands/package/cmd-package.mts - Root command definition
- * - src/commands/package/cmd-package-*.mts - Subcommands
+ *
+ * - Src/commands/package/cmd-package.mts - Root command definition
+ * - Src/commands/package/cmd-package-*.mts - Subcommands
  */
 
 import { describe, expect } from 'vitest'

@@ -1,16 +1,13 @@
 /**
  * Unit tests for install completion output formatting.
  *
- * Purpose:
- * Tests the output formatting for tab completion installation results.
+ * Purpose: Tests the output formatting for tab completion installation results.
  *
- * Test Coverage:
- * - outputInstallCompletion function
- * - Success output with actions and instructions
- * - Error handling
+ * Test Coverage: - outputInstallCompletion function - Success output with
+ * actions and instructions - Error handling.
  *
- * Related Files:
- * - src/commands/install/output-install-completion.mts (implementation)
+ * Related Files: - src/commands/install/output-install-completion.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

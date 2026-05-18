@@ -1,5 +1,5 @@
 /**
- * @fileoverview Helper functions for build script.
+ * @file Helper functions for build script.
  */
 
 import { promises as fs } from 'node:fs'

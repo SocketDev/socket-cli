@@ -10,18 +10,18 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 const logger = getDefaultLogger()
 
 /**
- * Prepares a package.json for publishing.
- * - Removes private field
- * - Sets version if provided
- * - Sets buildMethod if provided
- * - Updates optionalDependencies versions (for lockstep publishing)
+ * Prepares a package.json for publishing. - Removes private field - Sets
+ * version if provided - Sets buildMethod if provided - Updates
+ * optionalDependencies versions (for lockstep publishing)
  *
- * @param {string} packageDir - Path to the package directory
- * @param {object} [options] - Options
- * @param {string} [options.version] - Version to set
- * @param {string} [options.buildMethod] - Build method to set (for socketbin packages)
- * @param {boolean} [options.quiet] - Suppress success logging
- * @returns {{ name: string, version: string }} Package info
+ * @param {string} packageDir - Path to the package directory.
+ * @param {object} [options] - Options.
+ * @param {string} [options.version] - Version to set.
+ * @param {string} [options.buildMethod] - Build method to set (for socketbin
+ *   packages)
+ * @param {boolean} [options.quiet] - Suppress success logging.
+ *
+ * @returns {{ name: string; version: string }} Package info
  */
 export function preparePackageForPublish(packageDir, options = {}) {
   const { buildMethod, quiet, version } = options

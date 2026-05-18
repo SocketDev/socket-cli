@@ -2,24 +2,17 @@
 /**
  * Unit tests for outputDiffScan.
  *
- * Purpose:
- * Tests output formatting for scan diff operations.
- * Validates JSON, markdown, and text output modes.
+ * Purpose: Tests output formatting for scan diff operations. Validates JSON,
+ * markdown, and text output modes.
  *
- * Test Coverage:
- * - JSON output mode with file writing
- * - Markdown output formatting
- * - Text output with inspect
- * - Error handling
- * - File write operations
- * - Exit code setting
+ * Test Coverage: - JSON output mode with file writing - Markdown output
+ * formatting - Text output with inspect - Error handling - File write
+ * operations - Exit code setting.
  *
- * Testing Approach:
- * Uses mocked logger and fs to capture output.
- * Tests different output modes and edge cases.
+ * Testing Approach: Uses mocked logger and fs to capture output. Tests
+ * different output modes and edge cases.
  *
- * Related Files:
- * - src/commands/scan/output-diff-scan.mts (implementation)
+ * Related Files: - src/commands/scan/output-diff-scan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

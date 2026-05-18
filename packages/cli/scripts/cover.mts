@@ -1,19 +1,13 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
- * @fileoverview Unified coverage script - runs tests with coverage reporting.
- * Standardized across all socket-* repositories.
- *
- * Usage:
- *   node scripts/cover.mts [options]
- *
- * Options:
- *   --quiet      Suppress progress output
- *   --verbose    Show detailed output
- *   --open       Open coverage report in browser
- *   --code-only  Run only code coverage (skip type coverage)
- *   --type-only  Run only type coverage (skip code coverage)
- *   --summary    Show only coverage summary (hide detailed output)
+ * @file Unified coverage script - runs tests with coverage reporting.
+ *   Standardized across all socket-* repositories. Usage: node
+ *   scripts/cover.mts [options] Options: --quiet Suppress progress output
+ *   --verbose Show detailed output --open Open coverage report in browser
+ *   --code-only Run only code coverage (skip type coverage) --type-only Run
+ *   only type coverage (skip code coverage) --summary Show only coverage
+ *   summary (hide detailed output)
  */
 
 import { isQuiet, isVerbose } from '@socketsecurity/lib-stable/argv/flags'

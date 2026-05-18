@@ -3,10 +3,10 @@
  *
  * Extracted from `environment.mts` to keep that file under the 1000-line
  * File-size cap. The `LOCKS` map names every lockfile filename Socket knows
- * about and the agent that owns it; `readLockFileByAgent` maps an Agent to
- * a reader that returns the lockfile contents (binary or utf8) — bun gets
- * a special reader that handles `.lockb` via the parser or shells out to
- * `bun bun.lockb` as a last resort.
+ * about and the agent that owns it; `readLockFileByAgent` maps an Agent to a
+ * reader that returns the lockfile contents (binary or utf8) — bun gets a
+ * special reader that handles `.lockb` via the parser or shells out to `bun
+ * bun.lockb` as a last resort.
  */
 
 import path from 'node:path'
@@ -54,8 +54,8 @@ export type ReadLockFile =
 
 /**
  * Per-agent reader Map. Wraps each reader so any thrown error becomes
- * `undefined` — the caller treats that as "couldn't read this lockfile,
- * fall through" rather than aborting detection.
+ * `undefined` — the caller treats that as "couldn't read this lockfile, fall
+ * through" rather than aborting detection.
  */
 export const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   function wrapReader<T extends (...args: never[]) => Promise<unknown>>(

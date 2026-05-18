@@ -1,20 +1,14 @@
 /**
  * Unit tests for result validation utilities.
  *
- * Purpose:
- * Tests the CResult type helpers including validation, unwrapping, and mapping.
+ * Purpose: Tests the CResult type helpers including validation, unwrapping, and
+ * mapping.
  *
- * Test Coverage:
- * - ResultError class
- * - requireOk function
- * - isOk and isError functions
- * - mapResult function
- * - chainResult function
- * - unwrapOr, unwrapOrUndefined functions
- * - toResultPattern function
+ * Test Coverage: - ResultError class - requireOk function - isOk and isError
+ * functions - mapResult function - chainResult function - unwrapOr,
+ * unwrapOrUndefined functions - toResultPattern function.
  *
- * Related Files:
- * - src/util/data/result.mts (implementation)
+ * Related Files: - src/util/data/result.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

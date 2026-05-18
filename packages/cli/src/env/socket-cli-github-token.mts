@@ -1,7 +1,7 @@
 /**
- * SOCKET_CLI_GITHUB_TOKEN environment variable snapshot.
- * Overrides GitHub token for Socket CLI operations.
- * Falls back to GITHUB_TOKEN, then GH_TOKEN if not set.
+ * SOCKET_CLI_GITHUB_TOKEN environment variable snapshot. Overrides GitHub token
+ * for Socket CLI operations. Falls back to GITHUB_TOKEN, then GH_TOKEN if not
+ * set.
  */
 
 import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'

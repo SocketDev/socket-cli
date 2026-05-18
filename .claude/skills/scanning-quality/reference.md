@@ -12,7 +12,7 @@ This file contains detailed agent prompts for each quality scan type in socket-c
 
 ### Agent Prompt
 
-```markdown
+````markdown
 <role>
 You are a critical bug detector specializing in TypeScript CLI applications. Your goal is identifying issues that cause process crashes, security breaches, or data corruption.
 </role>
@@ -36,6 +36,7 @@ Report only issues that can actually trigger in production, not theoretical conc
 <patterns>
 
 ### Pattern: null_undefined_access
+
 Property access without optional chaining crashes when intermediate values are null/undefined. CLI tools often receive incomplete user input or API responses, making this a common crash vector.
 
 ```typescript
@@ -45,12 +46,14 @@ const name = user.profile.name
 // Safe - returns undefined instead of crashing
 const name = user?.profile?.name
 ```
+````
 
 **Severity**: Critical (crashes process)
 
 ---
 
 ### Pattern: unhandled_promises
+
 Unhandled promise rejections crash Node.js processes by default. Async calls without `await` or `.catch()` create floating promises that terminate the CLI unexpectedly.
 
 ```typescript
@@ -70,6 +73,7 @@ async function run() {
 ---
 
 ### Pattern: race_conditions
+
 Concurrent modifications to shared state cause data corruption. `forEach` with async callbacks doesn't await, creating races. Array mutations during parallel operations lose data.
 
 ```typescript
@@ -88,6 +92,7 @@ const results = await Promise.all(items.map(processItem))
 ---
 
 ### Pattern: auth_token_exposure
+
 Logged tokens leak into CI logs, error tracking systems, and terminal histories. This enables credential theft from Sentry traces, GitHub Actions logs, or local shell history.
 
 ```typescript
@@ -103,6 +108,7 @@ logger.debug({ hasToken: !!token })
 ---
 
 ### Pattern: type_coercion_bugs
+
 Implicit coercion (`==`) treats `0`, `"0"`, `""`, and `false` as equivalent. User input arrives as strings; comparing with `==` causes logic errors.
 
 ```typescript
@@ -118,6 +124,7 @@ if (count === 0)
 ---
 
 ### Pattern: cross_platform_paths
+
 Hardcoded `/` separators fail on Windows (uses `\`). String concatenation breaks with paths containing spaces or special characters.
 
 ```typescript
@@ -134,6 +141,7 @@ const configPath = join(dir, 'config.json')
 ---
 
 ### Pattern: process_exit_without_cleanup
+
 Direct `process.exit()` bypasses CLI error handling framework, preventing proper error messages and cleanup. Exit codes lose meaning when sprinkled throughout code instead of centralized.
 
 ```typescript
@@ -149,6 +157,7 @@ if (!token) throw new InputError('API token required')
 ---
 
 ### Pattern: unsafe_file_operations
+
 `fs.rm/rmSync` lack safety checks (`.socket` directory guard, symlink protection). Command injection via `rm -rf` + user input enables arbitrary file deletion.
 
 ```typescript
@@ -182,7 +191,8 @@ Impact: [Consequence: crashes/security breach/data corruption]
 
 Report only production-triggerable issues (ignore test files, theoretical concerns handled by TypeScript strict mode). Focus on runtime failures, not compile-time checks.
 </output>
-```
+
+````
 
 ---
 
@@ -228,13 +238,14 @@ const last = array[array.length]
 
 // Correct
 const last = array[array.length - 1]
-```
+````
 
 **Severity**: High
 
 ---
 
 ### Pattern: missing_edge_cases
+
 Package names come in multiple formats: `package`, `@scope/package`, `@scope/package/subpath`. Functions assuming scoped format crash on non-scoped names. Empty string inputs cause unexpected behavior.
 
 ```typescript
@@ -255,6 +266,7 @@ function getPackageName(fullName: string) {
 ---
 
 ### Pattern: incorrect_type_guards
+
 `typeof value === 'object'` returns true for `null`, Arrays, and Dates. Boolean coercion (`!!value`) is too broad for type guards. Incorrect guards bypass TypeScript safety, causing runtime errors.
 
 ```typescript
@@ -274,6 +286,7 @@ if (typeof value === 'object' && value !== null) {
 ---
 
 ### Pattern: regex_validation_bypass
+
 Regex without anchors (`^`, `$`) matches substrings, bypassing validation. Missing character classes allow invalid characters. Security validators MUST use anchors to prevent injection.
 
 ```typescript
@@ -289,11 +302,12 @@ const isValid = /^@[a-z0-9-]+\/[a-z0-9-]+$/.test(name)
 ---
 
 ### Pattern: sorting_comparison_errors
+
 Comparison functions must return negative, zero, or positive values. Returning `1 | -1` without `0` case creates unstable sorts. Lexical sort (`'10' < '2'`) breaks numeric ordering.
 
 ```typescript
 // Unstable - never returns 0 for equal values
-array.sort((a, b) => a > b ? 1 : -1)
+array.sort((a, b) => (a > b ? 1 : -1))
 
 // Stable numeric sort
 array.sort((a, b) => a - b)
@@ -304,6 +318,7 @@ array.sort((a, b) => a - b)
 ---
 
 ### Pattern: filter_logic_errors
+
 De Morgan's laws: `!(A && B)` ≠ `!A && !B`. Filter conditions often invert incorrectly. Double negation (`!!`) changes semantics from identity check to truthiness check.
 
 ```typescript
@@ -312,7 +327,9 @@ De Morgan's laws: `!(A && B)` ≠ `!A && !B`. Filter conditions often invert inc
 const issues = all.filter(i => i.severity !== 'low' && i.severity !== 'medium')
 
 // Correct - keeps high and critical only
-const issues = all.filter(i => i.severity === 'high' || i.severity === 'critical')
+const issues = all.filter(
+  i => i.severity === 'high' || i.severity === 'critical',
+)
 ```
 
 **Severity**: High
@@ -336,7 +353,8 @@ Impact: [Wrong results, security bypass, data loss]
 
 Test edge cases (null, undefined, empty, single-item, duplicates). Validate regex with test inputs. Verify type guards actually narrow types correctly.
 </output>
-```
+
+````
 
 ---
 
@@ -393,13 +411,14 @@ async function getConfig() {
   }
   return cached.data
 }
-```
+````
 
 **Severity**: Medium
 
 ---
 
 ### Pattern: cache_key_missing_params
+
 Cache keys must include all parameters affecting cached values. Missing package version causes returning results for wrong version. Missing environment causes dev/prod cache collisions.
 
 ```typescript
@@ -415,6 +434,7 @@ const key = `scan-${packageName}-${version}-${platform}`
 ---
 
 ### Pattern: concurrent_cache_corruption
+
 Read-modify-write sequences race when concurrent CLI invocations run. Atomic file writes (`writeFile` with `w` flag) prevent corruption better than read-modify-write patterns.
 
 ```typescript
@@ -434,6 +454,7 @@ await writeFile(cacheFile, JSON.stringify({ [key]: value }), { flag: 'w' })
 ---
 
 ### Pattern: token_cache_no_expiration
+
 Cached auth tokens expire but cache persists indefinitely. Using expired tokens causes 401 errors. Check expiration timestamp before returning cached tokens.
 
 ```typescript
@@ -467,7 +488,8 @@ Impact: [Stale data, auth failures, corruption]
 
 Focus on persistent caches (survive process exit). Ignore in-memory caches. Check src/util/config.mts and src/util/auth.mts primarily.
 </output>
-```
+
+````
 
 ---
 
@@ -514,13 +536,14 @@ Shell `&&` chains execute right side even if left fails (in some shells). Build 
 
 // Explicit exit on failure
 {"scripts": {"build": "tsc && rollup -c || exit 1"}}
-```
+````
 
 **Severity**: High
 
 ---
 
 ### Pattern: cross_platform_shell_incompatibility
+
 Unix shell commands (`rm`, `cp`, `mv`) don't exist on Windows. Cross-platform tools (`del-cli`, `cpy-cli`, `trash-cli`) work everywhere.
 
 ```json
@@ -536,6 +559,7 @@ Unix shell commands (`rm`, `cp`, `mv`) don't exist on Windows. Cross-platform to
 ---
 
 ### Pattern: import_conventions_violation
+
 CLAUDE.md mandates `@socketsecurity/lib/*` imports for spawn, fs operations. Socket Security versions add safety checks (prevent `rm -rf /`, validate spawn args). Node.js built-ins lack these protections.
 
 ```typescript
@@ -551,6 +575,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 ---
 
 ### Pattern: package_json_script_naming_violation
+
 CLAUDE.md requires `pnpm run script --flags` pattern (not `script:variant` scripts). Reducing script count improves maintainability; flags provide flexibility without script explosion.
 
 ```json
@@ -583,7 +608,8 @@ Impact: [Windows failures, masked build errors, missing security checks]
 
 Check `.github/workflows/*.yml`, `package.json` scripts, `.config/*.mjs`, and `src/**/*.mts` imports.
 </output>
-```
+
+````
 
 ---
 
@@ -616,9 +642,10 @@ zizmor .github/workflows/*.yml --format json > /tmp/zizmor-output.json
 
 # Parse findings and include in your analysis
 cat /tmp/zizmor-output.json | jq '.[] | {file: .location.path, line: .location.line, rule: .rule, severity: .severity, message: .message}'
-```
+````
 
 zizmor automatically detects:
+
 - `artipacked`: Artifact poisoning via `actions/upload-artifact`
 - `dangerous-triggers`: Workflows triggered by untrusted events
 - `excessive-permissions`: Overly broad GITHUB_TOKEN permissions
@@ -644,6 +671,7 @@ These issues enable supply chain attacks, credential theft, and code execution i
 <patterns>
 
 ### Pattern: github_actions_template_injection
+
 Attacker-controlled PR titles/bodies interpolated directly into `run:` blocks enable command injection. Use environment variables to safely pass untrusted input; shell treats env vars as data, not code.
 
 ```yaml
@@ -661,6 +689,7 @@ Attacker-controlled PR titles/bodies interpolated directly into `run:` blocks en
 ---
 
 ### Pattern: unpinned_third_party_actions
+
 Git tags are mutable; attackers with repo access can move `@v4` tag to malicious commit. Pinning to commit SHA (immutable) prevents tag replacement attacks.
 
 ```yaml
@@ -676,6 +705,7 @@ Git tags are mutable; attackers with repo access can move `@v4` tag to malicious
 ---
 
 ### Pattern: credential_exposure_in_logs
+
 Logged tokens appear in GitHub Actions logs, Sentry traces, local terminal histories. These logs are often world-readable (public repos) or accessible to large teams.
 
 ```typescript
@@ -691,6 +721,7 @@ console.log('Token:', apiToken ? '***' : 'none')
 ---
 
 ### Pattern: secrets_in_global_env
+
 Job-level `env:` exposes secrets to ALL steps, including third-party actions. Malicious actions can exfiltrate credentials. Step-level `env:` limits exposure to specific commands.
 
 ```yaml
@@ -700,7 +731,7 @@ jobs:
     env:
       API_TOKEN: ${{ secrets.SOCKET_API_TOKEN }}
 
-# Only specific step sees API_TOKEN
+    # Only specific step sees API_TOKEN
     steps:
       - name: Scan
         env:
@@ -713,6 +744,7 @@ jobs:
 ---
 
 ### Pattern: cache_poisoning_risk
+
 PR from fork can write malicious code to cache, then main branch restores poisoned cache. Restrict caching to trusted workflows (same repo) to prevent supply chain attacks.
 
 ```yaml
@@ -747,7 +779,8 @@ Impact: [Remote code execution, credential theft, supply chain compromise]
 
 Scan `.github/workflows/*.yml` and `src/util/auth.mts`, `src/util/api.mts` for credential handling. Focus on user-controlled inputs (PR metadata, issue bodies, workflow inputs).
 </output>
-```
+
+````
 
 ---
 
@@ -796,13 +829,14 @@ socket scan --format table
 
 # Correct example
 socket scan --format json
-```
+````
 
 **Severity**: Medium
 
 ---
 
 ### Pattern: undocumented_flags
+
 Users discover flags through `--help` output. Undocumented flags remain hidden; users duplicate functionality or request features that already exist. IDE autocomplete relies on description text.
 
 ```typescript
@@ -825,6 +859,7 @@ const flags = {
 ---
 
 ### Pattern: missing_jsdoc_for_exports
+
 VSCode/IDE autocomplete shows JSDoc on hover. Exported utility functions without JSDoc force users to read implementation. Good JSDoc enables understanding without source diving.
 
 ```typescript
@@ -848,6 +883,7 @@ export function validatePackageName(name: string): boolean {
 ---
 
 ### Pattern: outdated_api_examples
+
 API endpoints change during development. Comments referencing old endpoints mislead developers making changes. Maintaining correct API documentation prevents support issues.
 
 ```typescript
@@ -863,13 +899,16 @@ API endpoints change during development. Comments referencing old endpoints misl
 ---
 
 ### Pattern: incorrect_file_paths
+
 Documentation pointing to wrong paths wastes developer time. After refactoring, path references in docs/comments must update. Dead links frustrate contributors.
 
 ```markdown
 # Wrong - confuses contributors
+
 See `src/commands/scan.mts`
 
 # Correct path after refactoring
+
 See `src/commands/scan/cmd-scan.mts`
 ```
 
@@ -878,6 +917,7 @@ See `src/commands/scan/cmd-scan.mts`
 ---
 
 ### Pattern: missing_flag_help
+
 Required flags without descriptions cause confusion. Users don't know format expectations (URL? File path? Token?). Environment variable alternatives should be documented in help text.
 
 ```typescript
@@ -917,6 +957,7 @@ Impact: [User frustration, support burden, missed features]
 
 Compare README examples against actual CLI implementation. Verify all flags have `description` field. Check file paths in comments exist. Focus on exported functions for JSDoc (ignore internal/private).
 </output>
+
 ```
 
 ---
@@ -960,3 +1001,4 @@ All findings follow this structure:
 ---
 
 **Version**: 1.1.0 (2026-03-24)
+```

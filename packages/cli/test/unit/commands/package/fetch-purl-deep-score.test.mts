@@ -1,11 +1,10 @@
 /**
  * Unit tests for fetchPurlDeepScore.
  *
- * Thin wrapper around queryApiSafeJson — verifies URL encoding, info
- * logging, and that the query result is returned unchanged.
+ * Thin wrapper around queryApiSafeJson — verifies URL encoding, info logging,
+ * and that the query result is returned unchanged.
  *
- * Related Files:
- * - src/commands/package/fetch-purl-deep-score.mts
+ * Related Files: - src/commands/package/fetch-purl-deep-score.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

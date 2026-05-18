@@ -1,9 +1,9 @@
 /**
  * IPC data handling for subprocess communication.
  *
- * Provides access to IPC data passed via bootstrap handshake.
- * The handshake includes configuration like fix/optimize modes
- * and other settings needed by spawned processes.
+ * Provides access to IPC data passed via bootstrap handshake. The handshake
+ * includes configuration like fix/optimize modes and other settings needed by
+ * spawned processes.
  */
 
 import { waitForBootstrapHandshake } from './sea/boot.mjs'
@@ -21,25 +21,25 @@ let ipcExtra: IpcObject | undefined
 let bootstrapBinaryPath: string | undefined
 
 /**
- * Get bootstrap binary path from handshake.
- * Returns the path to the bootstrap wrapper that launched this CLI instance.
- * Only available when CLI was launched via a bootstrap wrapper (e.g., npx socket).
+ * Get bootstrap binary path from handshake. Returns the path to the bootstrap
+ * wrapper that launched this CLI instance. Only available when CLI was launched
+ * via a bootstrap wrapper (e.g., npx socket).
  */
 export function getBootstrapBinaryPath(): string | undefined {
   return bootstrapBinaryPath
 }
 
 /**
- * Get IPC extra data from handshake.
- * Returns the extra field from the bootstrap handshake.
+ * Get IPC extra data from handshake. Returns the extra field from the bootstrap
+ * handshake.
  */
 export function getIpcExtra(): IpcObject | undefined {
   return ipcExtra
 }
 
 /**
- * Initialize IPC data handling.
- * Waits for the bootstrap handshake and extracts the extra field.
+ * Initialize IPC data handling. Waits for the bootstrap handshake and extracts
+ * the extra field.
  */
 export async function initializeIpc(): Promise<void> {
   try {

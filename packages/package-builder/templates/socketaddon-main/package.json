@@ -2,7 +2,23 @@
   "name": "@socketaddon/iocraft",
   "version": "1.0.0-pre.0",
   "description": "Node.js bindings for iocraft - a Rust-based TUI library",
+  "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "index.d.ts",
+    "index.mjs"
+  ],
   "type": "module",
   "main": "./index.mjs",
   "types": "./index.d.ts",
@@ -12,12 +28,10 @@
       "default": "./index.mjs"
     }
   },
-  "files": [
-    "LICENSE",
-    "README.md",
-    "index.d.ts",
-    "index.mjs"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "optionalDependencies": {
     "@socketaddon/iocraft-darwin-arm64": "1.0.0-pre.0",
     "@socketaddon/iocraft-darwin-x64": "1.0.0-pre.0",
@@ -30,19 +44,5 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SocketDev/socket-cli.git"
-  },
-  "author": {
-    "name": "Socket Inc",
-    "email": "eng@socket.dev",
-    "url": "https://socket.dev"
-  },
-  "homepage": "https://github.com/SocketDev/socket-cli",
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
   }
 }

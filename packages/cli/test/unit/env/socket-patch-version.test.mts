@@ -1,8 +1,7 @@
 /**
  * Unit tests for Socket Patch version getter.
  *
- * Related Files:
- * - src/env/socket-patch-version.mts
+ * Related Files: - src/env/socket-patch-version.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

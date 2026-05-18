@@ -1,4 +1,6 @@
-/** @fileoverview Vitest setup file for test utilities. */
+/**
+ * @file Vitest setup file for test utilities.
+ */
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'

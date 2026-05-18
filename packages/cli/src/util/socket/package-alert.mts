@@ -1,24 +1,18 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
- * Socket package alert utilities for Socket CLI.
- * Handles security alerts, vulnerabilities, and package risk assessment.
+ * Socket package alert utilities for Socket CLI. Handles security alerts,
+ * vulnerabilities, and package risk assessment.
  *
- * Key Functions:
- * - addArtifactToAlertsMap: Add security alert to package map
- * - logAlertsMap: Display alerts in formatted output
- * - shouldSkipPackageAlert: Filter alerts based on criteria
+ * Key Functions: - addArtifactToAlertsMap: Add security alert to package map -
+ * logAlertsMap: Display alerts in formatted output - shouldSkipPackageAlert:
+ * Filter alerts based on criteria.
  *
- * Alert Types:
- * - CVE: Common Vulnerabilities and Exposures
- * - GHSA: GitHub Security Advisories
- * - Package quality issues
- * - Supply chain risks
+ * Alert Types: - CVE: Common Vulnerabilities and Exposures - GHSA: GitHub
+ * Security Advisories - Package quality issues - Supply chain risks.
  *
- * Features:
- * - Alert severity classification (critical/high/medium/low)
- * - Fix type detection (major/minor/patch/none)
- * - Alert filtering and suppression
- * - Colorized terminal output
+ * Features: - Alert severity classification (critical/high/medium/low) - Fix
+ * type detection (major/minor/patch/none) - Alert filtering and suppression -
+ * Colorized terminal output.
  */
 
 import semver from 'semver'
@@ -584,7 +578,8 @@ export function logAlertsMap(
       const info = (
         translations.alerts as Record<
           string,
-          { title?: string | undefined; description?: string | undefined } | undefined
+          | { title?: string | undefined; description?: string | undefined }
+          | undefined
         >
       )[type]
       const title = info?.title ?? type

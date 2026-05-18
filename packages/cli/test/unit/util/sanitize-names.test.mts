@@ -1,29 +1,20 @@
 /**
  * Unit tests for name sanitization.
  *
- * Purpose:
- * Tests package and file name sanitization. Validates safe name transformations.
+ * Purpose: Tests package and file name sanitization. Validates safe name
+ * transformations.
  *
- * Test Coverage:
- * - Package name sanitization
- * - File name sanitization
- * - Special character handling
- * - Path traversal prevention
- * - Unicode normalization
+ * Test Coverage: - Package name sanitization - File name sanitization - Special
+ * character handling - Path traversal prevention - Unicode normalization.
  *
- * Testing Approach:
- * Tests input sanitization for security.
+ * Testing Approach: Tests input sanitization for security.
  *
- * Related Files:
- * - util/sanitize-names.mts (implementation)
+ * Related Files: - util/sanitize-names.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  extractName,
-  extractOwner,
-} from '../../../src/util/sanitize-names.mts'
+import { extractName, extractOwner } from '../../../src/util/sanitize-names.mts'
 
 describe('extract-names utilities', () => {
   describe('extractName', () => {

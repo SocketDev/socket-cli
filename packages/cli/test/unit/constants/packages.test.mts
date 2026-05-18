@@ -1,18 +1,12 @@
 /**
  * Unit tests for package constants.
  *
- * Purpose:
- * Tests the package and binary name constants for Socket CLI.
+ * Purpose: Tests the package and binary name constants for Socket CLI.
  *
- * Test Coverage:
- * - Package manifest file constants
- * - Directory name constants
- * - File extension constants
- * - Package name constants
- * - Binary name constants
+ * Test Coverage: - Package manifest file constants - Directory name constants -
+ * File extension constants - Package name constants - Binary name constants.
  *
- * Related Files:
- * - constants/packages.mts (implementation)
+ * Related Files: - constants/packages.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

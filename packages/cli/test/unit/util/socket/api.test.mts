@@ -2,26 +2,18 @@
 /**
  * Unit tests for Socket API utilities.
  *
- * Purpose:
- * Tests Socket API interaction utilities. Validates API error handling and response parsing.
+ * Purpose: Tests Socket API interaction utilities. Validates API error handling
+ * and response parsing.
  *
- * Test Coverage:
- * - API call wrapper (handleApiCall)
- * - Error response parsing
- * - Rate limit handling
- * - Retry logic
- * - Timeout handling
- * - queryApi function
- * - queryApiSafeText function
- * - queryApiSafeJson function
- * - sendApiRequest function
+ * Test Coverage: - API call wrapper (handleApiCall) - Error response parsing -
+ * Rate limit handling - Retry logic - Timeout handling - queryApi function -
+ * queryApiSafeText function - queryApiSafeJson function - sendApiRequest
+ * function.
  *
- * Testing Approach:
- * Mocks fetch/axios to test API utilities.
- * Uses @socketsecurity/sdk testing utilities for mock responses.
+ * Testing Approach: Mocks fetch/axios to test API utilities. Uses
+ * @socketsecurity/sdk testing utilities for mock responses.
  *
- * Related Files:
- * - util/socket/api.mts (implementation)
+ * Related Files: - util/socket/api.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

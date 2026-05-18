@@ -1,6 +1,6 @@
 /**
- * Binary path resolution utilities for external tools.
- * Determines whether to use local path overrides, download from npm, or GitHub releases.
+ * Binary path resolution utilities for external tools. Determines whether to
+ * use local path overrides, download from npm, or GitHub releases.
  */
 
 import os from 'node:os'
@@ -36,18 +36,17 @@ export type GitHubReleaseSpec = {
   owner: string
   repo: string
   /**
-   * Optional SHA-256 hex checksum for integrity verification.
-   * If provided, downloads will be verified against this checksum.
+   * Optional SHA-256 hex checksum for integrity verification. If provided,
+   * downloads will be verified against this checksum.
    */
   sha256?: string | undefined
   version: string
 }
 
 /**
- * Result of binary resolution.
- * - local: Use a local path override (environment variable).
- * - dlx: Download from npm registry via dlx.
- * - github-release: Download from GitHub releases.
+ * Result of binary resolution. - local: Use a local path override (environment
+ * variable). - dlx: Download from npm registry via dlx. - github-release:
+ * Download from GitHub releases.
  */
 export type BinaryResolution =
   | { type: 'local'; path: string }
@@ -55,16 +54,18 @@ export type BinaryResolution =
   | { type: 'github-release'; details: GitHubReleaseSpec }
 
 /**
- * Platform-specific asset names for socket-patch GitHub releases.
- * Maps Node.js platform/arch to GitHub release asset names.
+ * Platform-specific asset names for socket-patch GitHub releases. Maps Node.js
+ * platform/arch to GitHub release asset names.
  *
  * Socket-Patch v2.0.0+ Platform Coverage:
- * - darwin-arm64: socket-patch-aarch64-apple-darwin.tar.gz
- * - darwin-x64: socket-patch-x86_64-apple-darwin.tar.gz
- * - linux-arm64: socket-patch-aarch64-unknown-linux-gnu.tar.gz
- * - linux-x64: socket-patch-x86_64-unknown-linux-musl.tar.gz (musl works on glibc)
- * - win32-arm64: socket-patch-aarch64-pc-windows-msvc.zip
- * - win32-x64: socket-patch-x86_64-pc-windows-msvc.zip
+ *
+ * - Darwin-arm64: socket-patch-aarch64-apple-darwin.tar.gz
+ * - Darwin-x64: socket-patch-x86_64-apple-darwin.tar.gz
+ * - Linux-arm64: socket-patch-aarch64-unknown-linux-gnu.tar.gz
+ * - Linux-x64: socket-patch-x86_64-unknown-linux-musl.tar.gz (musl works on
+ *   glibc)
+ * - Win32-arm64: socket-patch-aarch64-pc-windows-msvc.zip
+ * - Win32-x64: socket-patch-x86_64-pc-windows-msvc.zip
  */
 const SOCKET_PATCH_ASSETS: Record<string, string> = {
   __proto__: undefined as unknown as string,
@@ -78,15 +79,16 @@ const SOCKET_PATCH_ASSETS: Record<string, string> = {
 }
 
 /**
- * Platform-specific asset name patterns for Trivy GitHub releases.
- * Maps Node.js platform/arch to GitHub release asset name generator functions.
+ * Platform-specific asset name patterns for Trivy GitHub releases. Maps Node.js
+ * platform/arch to GitHub release asset name generator functions.
  *
  * Trivy Platform Coverage:
- * - darwin-arm64: trivy_{version}_macOS-ARM64.tar.gz
- * - darwin-x64: trivy_{version}_macOS-64bit.tar.gz
- * - linux-arm64: trivy_{version}_Linux-ARM64.tar.gz
- * - linux-x64: trivy_{version}_Linux-64bit.tar.gz
- * - win32-x64: trivy_{version}_windows-64bit.zip
+ *
+ * - Darwin-arm64: trivy_{version}_macOS-ARM64.tar.gz
+ * - Darwin-x64: trivy_{version}_macOS-64bit.tar.gz
+ * - Linux-arm64: trivy_{version}_Linux-ARM64.tar.gz
+ * - Linux-x64: trivy_{version}_Linux-64bit.tar.gz
+ * - Win32-x64: trivy_{version}_windows-64bit.zip
  */
 const TRIVY_ASSET_PATTERNS: Record<string, (v: string) => string> = {
   __proto__: undefined as unknown as (v: string) => string,
@@ -98,16 +100,17 @@ const TRIVY_ASSET_PATTERNS: Record<string, (v: string) => string> = {
 }
 
 /**
- * Platform-specific asset name patterns for TruffleHog GitHub releases.
- * Maps Node.js platform/arch to GitHub release asset name generator functions.
+ * Platform-specific asset name patterns for TruffleHog GitHub releases. Maps
+ * Node.js platform/arch to GitHub release asset name generator functions.
  *
  * TruffleHog Platform Coverage:
- * - darwin-arm64: trufflehog_{version}_darwin_arm64.tar.gz
- * - darwin-x64: trufflehog_{version}_darwin_amd64.tar.gz
- * - linux-arm64: trufflehog_{version}_linux_arm64.tar.gz
- * - linux-x64: trufflehog_{version}_linux_amd64.tar.gz
- * - win32-arm64: trufflehog_{version}_windows_arm64.tar.gz
- * - win32-x64: trufflehog_{version}_windows_amd64.tar.gz
+ *
+ * - Darwin-arm64: trufflehog_{version}_darwin_arm64.tar.gz
+ * - Darwin-x64: trufflehog_{version}_darwin_amd64.tar.gz
+ * - Linux-arm64: trufflehog_{version}_linux_arm64.tar.gz
+ * - Linux-x64: trufflehog_{version}_linux_amd64.tar.gz
+ * - Win32-arm64: trufflehog_{version}_windows_arm64.tar.gz
+ * - Win32-x64: trufflehog_{version}_windows_amd64.tar.gz
  */
 const TRUFFLEHOG_ASSET_PATTERNS: Record<string, (v: string) => string> = {
   __proto__: undefined as unknown as (v: string) => string,
@@ -120,15 +123,16 @@ const TRUFFLEHOG_ASSET_PATTERNS: Record<string, (v: string) => string> = {
 }
 
 /**
- * Platform-specific asset names for OpenGrep GitHub releases.
- * Maps Node.js platform/arch to GitHub release asset names.
+ * Platform-specific asset names for OpenGrep GitHub releases. Maps Node.js
+ * platform/arch to GitHub release asset names.
  *
  * OpenGrep Platform Coverage:
- * - darwin-arm64: opengrep-core_osx_aarch64.tar.gz
- * - darwin-x64: opengrep-core_osx_x86.tar.gz
- * - linux-arm64: opengrep-core_linux_aarch64.tar.gz
- * - linux-x64: opengrep-core_linux_x86.tar.gz
- * - win32-x64: opengrep-core_windows_x86.zip
+ *
+ * - Darwin-arm64: opengrep-core_osx_aarch64.tar.gz
+ * - Darwin-x64: opengrep-core_osx_x86.tar.gz
+ * - Linux-arm64: opengrep-core_linux_aarch64.tar.gz
+ * - Linux-x64: opengrep-core_linux_x86.tar.gz
+ * - Win32-x64: opengrep-core_windows_x86.zip
  */
 const OPENGREP_ASSETS: Record<string, string> = {
   __proto__: undefined as unknown as string,
@@ -158,8 +162,8 @@ export function getTrufflehogAssetName(version: string): string | undefined {
 }
 
 /**
- * Resolve path for cdxgen binary.
- * Checks SOCKET_CLI_CDXGEN_LOCAL_PATH environment variable first.
+ * Resolve path for cdxgen binary. Checks SOCKET_CLI_CDXGEN_LOCAL_PATH
+ * environment variable first.
  */
 export function resolveCdxgen(): BinaryResolution {
   if (SOCKET_CLI_CDXGEN_LOCAL_PATH) {
@@ -177,8 +181,8 @@ export function resolveCdxgen(): BinaryResolution {
 }
 
 /**
- * Resolve path for Coana CLI binary.
- * Checks SOCKET_CLI_COANA_LOCAL_PATH environment variable first.
+ * Resolve path for Coana CLI binary. Checks SOCKET_CLI_COANA_LOCAL_PATH
+ * environment variable first.
  */
 export function resolveCoana(): BinaryResolution {
   if (SOCKET_CLI_COANA_LOCAL_PATH) {
@@ -196,8 +200,8 @@ export function resolveCoana(): BinaryResolution {
 }
 
 /**
- * Resolve path for OpenGrep binary.
- * Downloads from GitHub releases (opengrep/opengrep).
+ * Resolve path for OpenGrep binary. Downloads from GitHub releases
+ * (opengrep/opengrep).
  */
 export function resolveOpengrep(): BinaryResolution {
   const platform = os.platform()
@@ -228,8 +232,8 @@ export function resolveOpengrep(): BinaryResolution {
 }
 
 /**
- * Resolve path for Python CLI binary.
- * Checks SOCKET_CLI_PYCLI_LOCAL_PATH environment variable first.
+ * Resolve path for Python CLI binary. Checks SOCKET_CLI_PYCLI_LOCAL_PATH
+ * environment variable first.
  */
 export function resolvePyCli(): BinaryResolution | { type: 'python' } {
   if (SOCKET_CLI_PYCLI_LOCAL_PATH) {
@@ -241,11 +245,11 @@ export function resolvePyCli(): BinaryResolution | { type: 'python' } {
 }
 
 /**
- * Resolve path for Socket Firewall (sfw) binary.
- * Checks SOCKET_CLI_SFW_LOCAL_PATH environment variable first.
+ * Resolve path for Socket Firewall (sfw) binary. Checks
+ * SOCKET_CLI_SFW_LOCAL_PATH environment variable first.
  *
- * Note: This returns the npm package version for dlx usage.
- * SEA builds use the GitHub binary directly via VFS extraction.
+ * Note: This returns the npm package version for dlx usage. SEA builds use the
+ * GitHub binary directly via VFS extraction.
  */
 export function resolveSfw(): BinaryResolution {
   if (SOCKET_CLI_SFW_LOCAL_PATH) {
@@ -263,11 +267,12 @@ export function resolveSfw(): BinaryResolution {
 }
 
 /**
- * Resolve path for Socket Patch binary.
- * Checks SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable first.
+ * Resolve path for Socket Patch binary. Checks
+ * SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH environment variable first.
  *
- * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub releases,
- * not an npm package. Uses platform-specific asset names from SOCKET_PATCH_ASSETS.
+ * Note: As of v2.0.0, socket-patch is a Rust binary downloaded from GitHub
+ * releases, not an npm package. Uses platform-specific asset names from
+ * SOCKET_PATCH_ASSETS.
  */
 export function resolveSocketPatch(): BinaryResolution {
   if (SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH) {
@@ -304,8 +309,7 @@ export function resolveSocketPatch(): BinaryResolution {
 }
 
 /**
- * Resolve path for synp binary.
- * No local path override currently supported.
+ * Resolve path for synp binary. No local path override currently supported.
  */
 export function resolveSynp(): BinaryResolution {
   return {
@@ -319,8 +323,8 @@ export function resolveSynp(): BinaryResolution {
 }
 
 /**
- * Resolve path for Trivy binary.
- * Downloads from GitHub releases (aquasecurity/trivy).
+ * Resolve path for Trivy binary. Downloads from GitHub releases
+ * (aquasecurity/trivy).
  */
 export function resolveTrivy(): BinaryResolution {
   const version = getTrivyVersion()
@@ -351,8 +355,8 @@ export function resolveTrivy(): BinaryResolution {
 }
 
 /**
- * Resolve path for TruffleHog binary.
- * Downloads from GitHub releases (trufflesecurity/trufflehog).
+ * Resolve path for TruffleHog binary. Downloads from GitHub releases
+ * (trufflesecurity/trufflehog).
  */
 export function resolveTrufflehog(): BinaryResolution {
   const version = getTrufflehogVersion()

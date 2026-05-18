@@ -2,8 +2,8 @@
 /**
  * Socket CLI bootstrap loader.
  *
- * Finds and executes the appropriate @socketbin/* SEA binary
- * based on the current platform and architecture.
+ * Finds and executes the appropriate @socketbin/* SEA binary based on the
+ * current platform and architecture.
  */
 
 'use strict'

@@ -1,9 +1,9 @@
 /**
  * Spawn Trivy for image / IaC vulnerability scanning.
  *
- * - spawnTrivyDlx: download from GitHub releases, then exec.
- * - spawnTrivyVfs: extract from SEA bundle, then exec.
- * - spawnTrivy: auto-detect SEA vs npm-CLI mode and dispatch.
+ * - SpawnTrivyDlx: download from GitHub releases, then exec.
+ * - SpawnTrivyVfs: extract from SEA bundle, then exec.
+ * - SpawnTrivy: auto-detect SEA vs npm-CLI mode and dispatch.
  *
  * Defined via `defineToolSpawn`. See util/dlx/define-tool-spawn.mts.
  */

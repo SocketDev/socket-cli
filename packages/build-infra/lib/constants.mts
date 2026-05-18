@@ -3,9 +3,9 @@
  *
  * Mirrors the socket-btm/ultrathink/socket-tui/sdxgen API surface
  * (BUILD_STAGES, CHECKPOINTS, CHECKPOINT_CHAINS, validateCheckpointChain,
- * getBuildMode). socket-cli doesn't build wasm — it consumes pre-built
- * wasm + node binaries from socket-btm — so the orchestrator name
- * ('build-pipeline') is historical; the machinery is build-type-agnostic.
+ * getBuildMode). socket-cli doesn't build wasm — it consumes pre-built wasm +
+ * node binaries from socket-btm — so the orchestrator name ('build-pipeline')
+ * is historical; the machinery is build-type-agnostic.
  */
 
 import process from 'node:process'
@@ -38,8 +38,8 @@ export const CHECKPOINTS = {
 const VALID_CHECKPOINT_VALUES = new Set(Object.values(CHECKPOINTS))
 
 /**
- * Checkpoint chain for socket-cli's build pipeline.
- * Order: newest → oldest (matching socket-btm convention).
+ * Checkpoint chain for socket-cli's build pipeline. Order: newest → oldest
+ * (matching socket-btm convention).
  *
  * The SEA binary is built only for --force / --prod today; the chain is
  * declared including SEA so --clean-stage=sea works when it runs.

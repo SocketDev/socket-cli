@@ -1,11 +1,10 @@
 /**
- * esbuild build orchestrator for Socket CLI.
- * Builds all variants (CLI bundle + entry point) in parallel.
+ * Esbuild build orchestrator for Socket CLI. Builds all variants (CLI bundle +
+ * entry point) in parallel.
  *
- * Usage:
- *   node .config/esbuild.build.mts          # Build all variants
- *   node .config/esbuild.build.mts cli      # Build CLI bundle
- *   node .config/esbuild.build.mts index    # Build entry point
+ * Usage: node .config/esbuild.build.mts # Build all variants node
+ * .config/esbuild.build.mts cli # Build CLI bundle node
+ * .config/esbuild.build.mts index # Build entry point.
  */
 
 import { fileURLToPath } from 'node:url'

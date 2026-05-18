@@ -184,6 +184,7 @@ export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
 
 /**
  * Reset cached flag values for testing purposes.
+ *
  * @internal
  */
 export function resetFlagCache(): void {

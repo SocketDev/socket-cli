@@ -2,8 +2,8 @@
 /**
  * Unit tests for setup-manifest-config helpers and interactive flow.
  *
- * Related Files:
- * - src/commands/manifest/setup-manifest-config.mts (implementation)
+ * Related Files: - src/commands/manifest/setup-manifest-config.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

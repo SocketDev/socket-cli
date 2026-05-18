@@ -3,17 +3,13 @@
  *
  * Tests comparing two scans to identify security changes.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Scan comparison
- * - Diff output formatting
- * - New/resolved issue identification
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Scan comparison - Diff output formatting - New/resolved issue
+ * identification.
  *
- * Related Files:
- * - src/commands/scan/cmd-scan-diff.mts - Command definition
- * - src/commands/scan/handle-scan-diff.mts - Diff computation logic
- * - src/commands/scan/output-scan-diff.mts - Formatting
+ * Related Files: - src/commands/scan/cmd-scan-diff.mts - Command definition -
+ * src/commands/scan/handle-scan-diff.mts - Diff computation logic -
+ * src/commands/scan/output-scan-diff.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'

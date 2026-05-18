@@ -217,15 +217,14 @@ export function buildProtectedResourceMetadata(
 }
 
 /**
- * Destroy a session by id. Closes the transport (catching synchronous
- * throws) and the server (swallowing async rejections), then deletes
- * the session entry and logs.
+ * Destroy a session by id. Closes the transport (catching synchronous throws)
+ * and the server (swallowing async rejections), then deletes the session entry
+ * and logs.
  *
- * The transport-close try/catch and the server-close `.catch()` are
- * here because the SDK's close path can fault when called during an
- * already-closing connection (e.g. client disconnect mid-stream); we
- * want destroySession to be safe to call repeatedly without
- * propagating those races.
+ * The transport-close try/catch and the server-close `.catch()` are here
+ * because the SDK's close path can fault when called during an already-closing
+ * connection (e.g. client disconnect mid-stream); we want destroySession to be
+ * safe to call repeatedly without propagating those races.
  */
 export interface SessionLike {
   lastActivity: number
@@ -295,13 +294,12 @@ export function getRequestHeaderValue(
 }
 
 /**
- * Run a request handler, surfacing failures as a JSON-RPC -32603
- * (Internal server error). Used by the GET / DELETE / POST flows so
- * a transport-level exception doesn't kill the connection without a
- * client-readable response. If the response has already started
- * streaming (`res.headersSent`), nothing is written — the SDK is in
- * the middle of producing output and another writeHead would crash
- * the worker.
+ * Run a request handler, surfacing failures as a JSON-RPC -32603 (Internal
+ * server error). Used by the GET / DELETE / POST flows so a transport-level
+ * exception doesn't kill the connection without a client-readable response. If
+ * the response has already started streaming (`res.headersSent`), nothing is
+ * written — the SDK is in the middle of producing output and another writeHead
+ * would crash the worker.
  */
 export async function handleRequestSafely(
   label: string,
@@ -333,10 +331,10 @@ export function isLocalhostOrigin(originUrl: string): boolean {
 }
 
 /**
- * Build the `transport.onclose` handler that destroys the session
- * keyed by the transport's sessionId. The `if (sessionId)` guard
- * matters because onclose can fire before onsessioninitialized has
- * assigned a sessionId (e.g. SDK init failure on a brand-new transport).
+ * Build the `transport.onclose` handler that destroys the session keyed by the
+ * transport's sessionId. The `if (sessionId)` guard matters because onclose can
+ * fire before onsessioninitialized has assigned a sessionId (e.g. SDK init
+ * failure on a brand-new transport).
  */
 export function makeOnTransportClose(
   getSessionId: () => string | undefined,
@@ -368,8 +366,8 @@ export function parseJsonObject(
 }
 
 /**
- * Walk a session map and destroy entries whose lastActivity is older
- * than `ttlMs`. Used by the periodic reaper interval.
+ * Walk a session map and destroy entries whose lastActivity is older than
+ * `ttlMs`. Used by the periodic reaper interval.
  */
 export function reapIdleSessions<T extends { lastActivity: number }>(
   now: number,

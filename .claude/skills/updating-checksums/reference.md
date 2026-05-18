@@ -17,24 +17,24 @@ This document provides detailed information about external tool checksums, the s
 
 ### GitHub Release Tools (synced by this skill)
 
-| Tool | Repository | Release Tag Format | Has checksums.txt |
-|------|------------|-------------------|-------------------|
-| opengrep | opengrep/opengrep | `v*.*.*` | Yes |
-| python | astral-sh/python-build-standalone | `*.*.*` | No (computed) |
-| socket-patch | SocketDev/socket-patch | `v*.*.*` | Varies |
-| sfw | SocketDev/sfw-free | `v*.*.*` | Varies |
-| trivy | aquasecurity/trivy | `v*.*.*` | Yes |
-| trufflehog | trufflesecurity/trufflehog | `v*.*.*` | Yes |
+| Tool         | Repository                        | Release Tag Format | Has checksums.txt |
+| ------------ | --------------------------------- | ------------------ | ----------------- |
+| opengrep     | opengrep/opengrep                 | `v*.*.*`           | Yes               |
+| python       | astral-sh/python-build-standalone | `*.*.*`            | No (computed)     |
+| socket-patch | SocketDev/socket-patch            | `v*.*.*`           | Varies            |
+| sfw          | SocketDev/sfw-free                | `v*.*.*`           | Varies            |
+| trivy        | aquasecurity/trivy                | `v*.*.*`           | Yes               |
+| trufflehog   | trufflesecurity/trufflehog        | `v*.*.*`           | Yes               |
 
 ### Non-GitHub Tools (NOT synced by this skill)
 
-| Tool | Type | Integrity Method |
-|------|------|-----------------|
-| @coana-tech/cli | npm | SRI integrity hash |
-| @cyclonedx/cdxgen | npm | SRI integrity hash |
-| synp | npm | SRI integrity hash |
-| socketsecurity | pypi | SRI integrity hash |
-| socket-basics | github-source | None |
+| Tool              | Type          | Integrity Method   |
+| ----------------- | ------------- | ------------------ |
+| @coana-tech/cli   | npm           | SRI integrity hash |
+| @cyclonedx/cdxgen | npm           | SRI integrity hash |
+| synp              | npm           | SRI integrity hash |
+| socketsecurity    | pypi          | SRI integrity hash |
+| socket-basics     | github-source | None               |
 
 ---
 
@@ -99,6 +99,7 @@ Summary: X updated, Y unchanged
 Each tool has specific asset naming conventions:
 
 **opengrep:**
+
 - `opengrep-core_linux_aarch64.tar.gz`
 - `opengrep-core_linux_x86.tar.gz`
 - `opengrep-core_osx_aarch64.tar.gz`
@@ -107,10 +108,12 @@ Each tool has specific asset naming conventions:
 - Includes `checksums.txt`
 
 **python (python-build-standalone):**
+
 - `cpython-{version}+{buildTag}-{target}-{config}.tar.zst`
 - No checksums.txt — hashes computed by downloading each asset
 
 **socket-patch:**
+
 - `socket-patch-aarch64-apple-darwin.tar.gz`
 - `socket-patch-x86_64-apple-darwin.tar.gz`
 - `socket-patch-aarch64-unknown-linux-gnu.tar.gz`
@@ -119,6 +122,7 @@ Each tool has specific asset naming conventions:
 - `socket-patch-x86_64-pc-windows-msvc.zip`
 
 **sfw (sfw-free):**
+
 - `sfw-free-linux-arm64`
 - `sfw-free-linux-x86_64`
 - `sfw-free-macos-arm64`
@@ -128,6 +132,7 @@ Each tool has specific asset naming conventions:
 - `sfw-free-windows-x86_64.exe`
 
 **trivy:**
+
 - `trivy_{version}_Linux-64bit.tar.gz`
 - `trivy_{version}_Linux-ARM64.tar.gz`
 - `trivy_{version}_macOS-64bit.tar.gz`
@@ -136,6 +141,7 @@ Each tool has specific asset naming conventions:
 - Includes `trivy_{version}_checksums.txt`
 
 **trufflehog:**
+
 - `trufflehog_{version}_linux_amd64.tar.gz`
 - `trufflehog_{version}_linux_arm64.tar.gz`
 - `trufflehog_{version}_darwin_amd64.tar.gz`
@@ -197,6 +203,7 @@ The `sfw` tool has both a GitHub release binary (`SocketDev/sfw-free`) and an np
 ### python-build-standalone
 
 This tool has no checksums.txt in releases. The sync script must:
+
 1. Download each release asset
 2. Compute SHA-256 locally
 3. This is significantly slower than parsing checksums.txt
@@ -204,6 +211,7 @@ This tool has no checksums.txt in releases. The sync script must:
 ### Version Tag Variations
 
 Different tools use different tag formats:
+
 - Most use `v{version}` (e.g., `v1.16.0`)
 - python-build-standalone uses bare version (e.g., `3.11.14`)
 - The `githubRelease` field in bundle-tools.json stores the exact tag
@@ -211,6 +219,7 @@ Different tools use different tag formats:
 ### Stale Checksums After Version Bump
 
 If someone updates a tool version in bundle-tools.json but forgets to sync checksums:
+
 - SEA builds will fail integrity verification
 - Always run checksum sync after any version change
 
@@ -223,6 +232,7 @@ If someone updates a tool version in bundle-tools.json but forgets to sync check
 **Symptom:** Script fails with 403 or rate limit error.
 
 **Solution:**
+
 ```bash
 # Check current rate limit
 gh api rate_limit --jq '.rate'
@@ -240,6 +250,7 @@ Authenticated requests get 5,000 requests/hour vs 60 for unauthenticated.
 **Cause:** The `githubRelease` tag in bundle-tools.json doesn't match any release.
 
 **Solution:**
+
 ```bash
 # Verify release exists
 gh release view <tag> --repo <owner/repo>
@@ -261,6 +272,7 @@ gh release list --repo <owner/repo> --limit 5
 **Symptom:** Updated bundle-tools.json is invalid JSON.
 
 **Solution:**
+
 ```bash
 # Validate JSON
 node -e "JSON.parse(require('fs').readFileSync('packages/cli/bundle-tools.json'))"
@@ -275,6 +287,7 @@ node packages/cli/scripts/sync-checksums.mjs
 **Symptom:** python-build-standalone sync times out (large assets).
 
 **Solution:**
+
 - Sync specific tool: `--tool=python`
 - Ensure stable network connection
 - The script handles retries for individual assets

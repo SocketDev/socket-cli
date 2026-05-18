@@ -1,12 +1,10 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
- * Unified SEA test script with multiple execution modes.
- * Consolidates test-sea-standalone, test-sea-vfs, and test-sea-with-tools.
+ * Unified SEA test script with multiple execution modes. Consolidates
+ * test-sea-standalone, test-sea-vfs, and test-sea-with-tools.
  *
- * Usage:
- *   node scripts/test-sea.mts --mode=standalone
- *   node scripts/test-sea.mts --mode=vfs
- *   node scripts/test-sea.mts --mode=with-tools
+ * Usage: node scripts/test-sea.mts --mode=standalone node scripts/test-sea.mts
+ * --mode=vfs node scripts/test-sea.mts --mode=with-tools.
  */
 
 // oxlint-disable socket/prefer-exists-sync -- all fs.stat() calls here read .size for size reporting; not existence checks.
@@ -404,7 +402,8 @@ export async function runVfsMode(platform) {
 }
 
 /**
- * Mode: with-tools - Uses Socket infrastructure (downloadNodeBinary + injectSeaBlob).
+ * Mode: with-tools - Uses Socket infrastructure (downloadNodeBinary +
+ * injectSeaBlob).
  */
 export async function runWithToolsMode(platform, toolPaths) {
   logger.log('Mode: with-tools (Socket infrastructure)')

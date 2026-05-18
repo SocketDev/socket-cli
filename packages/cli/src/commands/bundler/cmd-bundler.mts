@@ -1,5 +1,6 @@
 /**
- * Socket bundler command — forwards bundler operations to Socket Firewall (sfw).
+ * Socket bundler command — forwards bundler operations to Socket Firewall
+ * (sfw).
  *
  * Defined via `defineHandoffCommand`. See util/cli/define-handoff.mts.
  */

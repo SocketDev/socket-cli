@@ -5,6 +5,7 @@
  * Tests the command that updates configuration values in the config file.
  *
  * Test Coverage:
+ *
  * - Command metadata (description, hidden flag, CMD_NAME)
  * - Config key validation (valid, invalid, missing keys)
  * - Value requirement validation (present, missing, empty)
@@ -15,6 +16,7 @@
  * - Value handling (simple strings, strings with spaces, special characters)
  *
  * Testing Approach:
+ *
  * - Mock logger to capture output
  * - Mock meowOrExit to control flag values and input parsing
  * - Mock handleConfigSet to verify handler calls
@@ -24,9 +26,10 @@
  * - Mock validation utilities
  *
  * Related Files:
- * - src/commands/config/cmd-config-set.mts - Implementation
- * - src/commands/config/handle-config-set.mts - Handler
- * - src/commands/config/config-command-factory.mts - Factory
+ *
+ * - Src/commands/config/cmd-config-set.mts - Implementation
+ * - Src/commands/config/handle-config-set.mts - Handler
+ * - Src/commands/config/config-command-factory.mts - Factory
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

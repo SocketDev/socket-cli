@@ -1,11 +1,12 @@
 /**
  * Unit tests for misc env-binding modules.
  *
- * Each module re-exports a single env-derived value at module load.
- * These tests cover the import side-effect for coverage.
+ * Each module re-exports a single env-derived value at module load. These tests
+ * cover the import side-effect for coverage.
  *
  * Related Files:
- * - src/env/socket-cli-*.mts, node-env.mts, npm-config-user-agent.mts
+ *
+ * - Src/env/socket-cli-*.mts, node-env.mts, npm-config-user-agent.mts
  */
 
 import { describe, expect, it } from 'vitest'

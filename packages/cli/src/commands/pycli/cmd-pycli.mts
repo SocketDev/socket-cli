@@ -2,17 +2,16 @@
  * Socket Python CLI (pycli) command.
  *
  * Explicit passthrough to the Socket Python CLI (socketsecurity) for features
- * not yet available in the Node.js CLI. This replaces implicit fallback behavior
- * with an explicit command that makes it clear when Python CLI is being used.
+ * not yet available in the Node.js CLI. This replaces implicit fallback
+ * behavior with an explicit command that makes it clear when Python CLI is
+ * being used.
  *
- * Features available via Python CLI:
- * - --generate-license: Generate license metadata for packages
- * - --enable-sarif: Output in SARIF format
- * - --strict-blocking: Fail on any policy violations (not just new ones)
- * - --disable-blocking: Always exit 0
- * - --enable-gitlab-security: GitLab Dependency Scanning format
- * - --slack-webhook: Send notifications to Slack
- * - --save-manifest-tar: Archive manifests for audit trail
+ * Features available via Python CLI: - --generate-license: Generate license
+ * metadata for packages - --enable-sarif: Output in SARIF format -
+ * --strict-blocking: Fail on any policy violations (not just new ones) -
+ * --disable-blocking: Always exit 0 - --enable-gitlab-security: GitLab
+ * Dependency Scanning format - --slack-webhook: Send notifications to Slack -
+ * --save-manifest-tar: Archive manifests for audit trail.
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'

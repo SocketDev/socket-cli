@@ -2,17 +2,12 @@
  * Unit tests for npx wrapper command.
  *
  * Tests the command entry point that wraps npx with Socket Firewall security.
- * The wrapper intercepts npx commands and forwards them to Socket Firewall (sfw)
- * for real-time security scanning.
+ * The wrapper intercepts npx commands and forwards them to Socket Firewall
+ * (sfw) for real-time security scanning.
  *
- * Test Coverage:
- * - Command metadata (description, visibility)
- * - Help text display
- * - Dry-run behavior
- * - Flag filtering (Socket CLI vs npx flags)
- * - Subprocess spawning and exit handling
- * - Telemetry tracking
- * - Error handling
+ * Test Coverage: - Command metadata (description, visibility) - Help text
+ * display - Dry-run behavior - Flag filtering (Socket CLI vs npx flags) -
+ * Subprocess spawning and exit handling - Telemetry tracking - Error handling.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

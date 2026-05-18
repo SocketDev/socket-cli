@@ -5,7 +5,8 @@
  * define plugin can inline the JSON at build time.
  *
  * Related Files:
- * - src/env/opengrep-checksums.mts
+ *
+ * - Src/env/opengrep-checksums.mts
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

@@ -1,9 +1,8 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
- * @fileoverview iocraft abstraction layer for terminal UI.
- *
- * Provides a React-like API for building terminal interfaces using iocraft native bindings.
- * This layer is designed to be a drop-in replacement for the Ink-based UI.
+ * @file Iocraft abstraction layer for terminal UI. Provides a React-like API
+ *   for building terminal interfaces using iocraft native bindings. This layer
+ *   is designed to be a drop-in replacement for the Ink-based UI.
  */
 
 import { createRequire } from 'node:module'
@@ -17,7 +16,8 @@ import type * as IocraftNs from '@socketaddon/iocraft'
 export type { default as IocraftNative } from '@socketaddon/iocraft'
 
 /**
- * Lazy-load iocraft to avoid import errors if the native module isn't available.
+ * Lazy-load iocraft to avoid import errors if the native module isn't
+ * available.
  */
 let iocraftInstance: typeof iocraft | undefined
 
@@ -213,15 +213,15 @@ export function Box(props: BoxProps): Element {
  * without affecting the layout hierarchy.
  *
  * @example
- * ```typescript
- * Fragment({
- *   children: [
- *     Text({ children: 'Line 1' }),
- *     Text({ children: 'Line 2' }),
- *     Text({ children: 'Line 3' })
- *   ]
- * })
- * ```
+ *   ```typescript
+ *   Fragment({
+ *     children: [
+ *       Text({ children: 'Line 1' }),
+ *       Text({ children: 'Line 2' }),
+ *       Text({ children: 'Line 3' }),
+ *     ],
+ *   })
+ *   ```
  */
 export function Fragment(props: FragmentProps): Element {
   const children = Array.isArray(props.children)
@@ -238,15 +238,15 @@ export function Fragment(props: FragmentProps): Element {
  * Create a mixed text element with multiple styled sections.
  *
  * @example
- * ```typescript
- * MixedText({
- *   contents: [
- *     { text: 'Success: ', color: 'green', weight: 'bold' },
- *     { text: 'Operation completed', color: 'white' }
- *   ],
- *   align: 'center'
- * })
- * ```
+ *   ```typescript
+ *   MixedText({
+ *     contents: [
+ *       { text: 'Success: ', color: 'green', weight: 'bold' },
+ *       { text: 'Operation completed', color: 'white' },
+ *     ],
+ *     align: 'center',
+ *   })
+ *   ```
  */
 export function MixedText(props: MixedTextProps): Element {
   const node: Element = {
@@ -274,11 +274,11 @@ export function MixedText(props: MixedTextProps): Element {
  * Text weight values for controlling font boldness.
  *
  * @example
- * ```typescript
- * Text({ children: 'Normal', weight: 'normal' })
- * Text({ children: 'Bold', weight: 'bold' })
- * Text({ children: 'Light', weight: 'light' })
- * ```
+ *   ```typescript
+ *   Text({ children: 'Normal', weight: 'normal' })
+ *   Text({ children: 'Bold', weight: 'bold' })
+ *   Text({ children: 'Light', weight: 'light' })
+ *   ```
  */
 export type TextWeight = 'normal' | 'bold' | 'light'
 
@@ -286,11 +286,11 @@ export type TextWeight = 'normal' | 'bold' | 'light'
  * Text alignment options for horizontal positioning.
  *
  * @example
- * ```typescript
- * Text({ children: 'Left aligned', align: 'left' })
- * Text({ children: 'Centered', align: 'center' })
- * Text({ children: 'Right aligned', align: 'right' })
- * ```
+ *   ```typescript
+ *   Text({ children: 'Left aligned', align: 'left' })
+ *   Text({ children: 'Centered', align: 'center' })
+ *   Text({ children: 'Right aligned', align: 'right' })
+ *   ```
  */
 export type TextAlign = 'left' | 'center' | 'right'
 
@@ -298,10 +298,10 @@ export type TextAlign = 'left' | 'center' | 'right'
  * Text wrapping behavior for long text content.
  *
  * @example
- * ```typescript
- * Text({ children: 'Wraps at width', wrap: 'wrap' })
- * Text({ children: 'No wrapping', wrap: 'nowrap' })
- * ```
+ *   ```typescript
+ *   Text({ children: 'Wraps at width', wrap: 'wrap' })
+ *   Text({ children: 'No wrapping', wrap: 'nowrap' })
+ *   ```
  */
 export type TextWrap = 'wrap' | 'nowrap'
 
@@ -309,32 +309,47 @@ export type TextWrap = 'wrap' | 'nowrap'
  * Text styling options for visual appearance.
  *
  * @example
- * ```typescript
- * // Named colors
- * Text({ children: 'Red text', color: 'red' })
+ *   ```typescript
+ *   // Named colors
+ *   Text({ children: 'Red text', color: 'red' })
  *
- * // Hex colors
- * Text({ children: 'Custom', color: '#FF5733' })
+ *   // Hex colors
+ *   Text({ children: 'Custom', color: '#FF5733' })
  *
- * // ANSI 256 colors
- * Text({ children: 'Orange', color: 'ansi:208' })
- * Text({ children: 'Pink', color: '213' }) // Bare number also works
- * ```
+ *   // ANSI 256 colors
+ *   Text({ children: 'Orange', color: 'ansi:208' })
+ *   Text({ children: 'Pink', color: '213' }) // Bare number also works
+ *   ```
  */
 export interface TextStyle {
-  /** Apply bold styling to text */
+  /**
+   * Apply bold styling to text.
+   */
   bold?: boolean | undefined
-  /** Set text color (named colors like 'red', hex like '#FF0000', or ANSI 256 codes like 'ansi:123' or '196') */
+  /**
+   * Set text color (named colors like 'red', hex like '#FF0000', or ANSI 256
+   * codes like 'ansi:123' or '196')
+   */
   color?: string | undefined
-  /** Apply dim/faded styling to text (maps to light weight) */
+  /**
+   * Apply dim/faded styling to text (maps to light weight)
+   */
   dimColor?: boolean | undefined
-  /** Apply italic styling to text */
+  /**
+   * Apply italic styling to text.
+   */
   italic?: boolean | undefined
-  /** Apply strikethrough decoration to text */
+  /**
+   * Apply strikethrough decoration to text.
+   */
   strikethrough?: boolean | undefined
-  /** Apply underline decoration to text */
+  /**
+   * Apply underline decoration to text.
+   */
   underline?: boolean | undefined
-  /** Set text weight (overrides bold if specified) */
+  /**
+   * Set text weight (overrides bold if specified)
+   */
   weight?: TextWeight | undefined
 }
 
@@ -342,10 +357,10 @@ export interface TextStyle {
  * Display type for layout positioning.
  *
  * @example
- * ```typescript
- * Box({ display: 'flex' }) // Default, enables flexbox layout
- * Box({ display: 'none' }) // Hides the element
- * ```
+ *   ```typescript
+ *   Box({ display: 'flex' }) // Default, enables flexbox layout
+ *   Box({ display: 'none' }) // Hides the element
+ *   ```
  */
 export type DisplayType = 'flex' | 'none'
 
@@ -353,10 +368,10 @@ export type DisplayType = 'flex' | 'none'
  * Position type for element positioning in layout.
  *
  * @example
- * ```typescript
- * Box({ position: 'relative' }) // Normal document flow
- * Box({ position: 'absolute', top: 0, left: 0 }) // Absolute positioning
- * ```
+ *   ```typescript
+ *   Box({ position: 'relative' }) // Normal document flow
+ *   Box({ position: 'absolute', top: 0, left: 0 }) // Absolute positioning
+ *   ```
  */
 export type PositionType = 'relative' | 'absolute'
 
@@ -364,11 +379,11 @@ export type PositionType = 'relative' | 'absolute'
  * Overflow behavior for content that exceeds container bounds.
  *
  * @example
- * ```typescript
- * Box({ overflow: 'visible' }) // Content can overflow
- * Box({ overflow: 'hidden' }) // Clip overflow content
- * Box({ overflowX: 'hidden', overflowY: 'visible' }) // Per-axis control
- * ```
+ *   ```typescript
+ *   Box({ overflow: 'visible' }) // Content can overflow
+ *   Box({ overflow: 'hidden' }) // Clip overflow content
+ *   Box({ overflowX: 'hidden', overflowY: 'visible' }) // Per-axis control
+ *   ```
  */
 export type OverflowType = 'visible' | 'hidden'
 
@@ -376,19 +391,27 @@ export type OverflowType = 'visible' | 'hidden'
  * Border edges configuration for selective border rendering.
  *
  * @example
- * ```typescript
- * Box({ borderEdges: { top: true, bottom: true } }) // Top and bottom only
- * Box({ borderEdges: { left: false, right: false } }) // Hide left/right
- * ```
+ *   ```typescript
+ *   Box({ borderEdges: { top: true, bottom: true } }) // Top and bottom only
+ *   Box({ borderEdges: { left: false, right: false } }) // Hide left/right
+ *   ```
  */
 export interface BorderEdges {
-  /** Show border on bottom edge */
+  /**
+   * Show border on bottom edge.
+   */
   bottom?: boolean | undefined
-  /** Show border on left edge */
+  /**
+   * Show border on left edge.
+   */
   left?: boolean | undefined
-  /** Show border on right edge */
+  /**
+   * Show border on right edge.
+   */
   right?: boolean | undefined
-  /** Show border on top edge */
+  /**
+   * Show border on top edge.
+   */
   top?: boolean | undefined
 }
 
@@ -396,37 +419,53 @@ export interface BorderEdges {
  * Custom border characters for completely custom border rendering.
  *
  * @example
- * ```typescript
- * Box({
- *   customBorderChars: {
- *     topLeft: '╔',
- *     topRight: '╗',
- *     bottomLeft: '╚',
- *     bottomRight: '╝',
- *     top: '═',
- *     bottom: '═',
- *     left: '║',
- *     right: '║'
- *   }
- * })
- * ```
+ *   ```typescript
+ *   Box({
+ *     customBorderChars: {
+ *       topLeft: '╔',
+ *       topRight: '╗',
+ *       bottomLeft: '╚',
+ *       bottomRight: '╝',
+ *       top: '═',
+ *       bottom: '═',
+ *       left: '║',
+ *       right: '║',
+ *     },
+ *   })
+ *   ```
  */
 export interface CustomBorderChars {
-  /** Bottom border character */
+  /**
+   * Bottom border character.
+   */
   bottom: string
-  /** Bottom-left corner character */
+  /**
+   * Bottom-left corner character.
+   */
   bottomLeft: string
-  /** Bottom-right corner character */
+  /**
+   * Bottom-right corner character.
+   */
   bottomRight: string
-  /** Left border character */
+  /**
+   * Left border character.
+   */
   left: string
-  /** Right border character */
+  /**
+   * Right border character.
+   */
   right: string
-  /** Top border character */
+  /**
+   * Top border character.
+   */
   top: string
-  /** Top-left corner character */
+  /**
+   * Top-left corner character.
+   */
   topLeft: string
-  /** Top-right corner character */
+  /**
+   * Top-right corner character.
+   */
   topRight: string
 }
 
@@ -434,15 +473,15 @@ export interface CustomBorderChars {
  * Border style for Box/View components.
  *
  * @example
- * ```typescript
- * Box({ borderStyle: 'single' }) // ┌──┐
- * Box({ borderStyle: 'double' }) // ╔══╗
- * Box({ borderStyle: 'rounded' }) // ╭──╮
- * Box({ borderStyle: 'bold' }) // ┏━━┓
- * Box({ borderStyle: 'double-left-right' }) // ╓──╖
- * Box({ borderStyle: 'double-top-bottom' }) // ╒══╕
- * Box({ borderStyle: 'classic' }) // +--+
- * ```
+ *   ```typescript
+ *   Box({ borderStyle: 'single' }) // ┌──┐
+ *   Box({ borderStyle: 'double' }) // ╔══╗
+ *   Box({ borderStyle: 'rounded' }) // ╭──╮
+ *   Box({ borderStyle: 'bold' }) // ┏━━┓
+ *   Box({ borderStyle: 'double-left-right' }) // ╓──╖
+ *   Box({ borderStyle: 'double-top-bottom' }) // ╒══╕
+ *   Box({ borderStyle: 'classic' }) // +--+
+ *   ```
  */
 export type BorderStyle =
   | 'none'
@@ -458,163 +497,271 @@ export type BorderStyle =
  * Mixed text content with individual styling per section.
  *
  * @example
- * ```typescript
- * {
- *   text: 'Error:',
- *   color: 'red',
- *   weight: 'bold',
- *   decoration: 'underline',
- *   italic: false
- * }
- * ```
+ *   ```typescript
+ *   ;({
+ *     text: 'Error:',
+ *     color: 'red',
+ *     weight: 'bold',
+ *     decoration: 'underline',
+ *     italic: false
+ *   })
+ *   ```
  */
 export interface MixedTextContentSection {
-  /** Text color (named colors, hex, or ANSI codes) */
+  /**
+   * Text color (named colors, hex, or ANSI codes)
+   */
   color?: string | undefined
-  /** Text decoration (underline, strikethrough, or none) */
+  /**
+   * Text decoration (underline, strikethrough, or none)
+   */
   decoration?: 'underline' | 'strikethrough' | 'none' | undefined
-  /** Apply italic styling */
+  /**
+   * Apply italic styling.
+   */
   italic?: boolean | undefined
-  /** The text content for this section */
+  /**
+   * The text content for this section.
+   */
   text: string
-  /** Text weight (normal, bold, or light) */
+  /**
+   * Text weight (normal, bold, or light)
+   */
   weight?: TextWeight | undefined
 }
 
 /**
  * Box/View layout properties (flexbox).
  *
- * Supports comprehensive flexbox layout with positioning, dimensions, spacing, and styling.
+ * Supports comprehensive flexbox layout with positioning, dimensions, spacing,
+ * and styling.
  *
  * @example
- * ```typescript
- * // Simple container
- * Box({ padding: 2, children: [Text({ children: 'Hello' })] })
+ *   ```typescript
+ *   // Simple container
+ *   Box({ padding: 2, children: [Text({ children: 'Hello' })] })
  *
- * // Flex layout
- * Box({
+ *   // Flex layout
+ *   Box({
  *   flexDirection: 'row',
  *   gap: 1,
  *   justifyContent: 'space-between',
  *   alignItems: 'center',
  *   children: [...]
- * })
+ *   })
  *
- * // Absolute positioning
- * Box({
+ *   // Absolute positioning
+ *   Box({
  *   position: 'absolute',
  *   top: 0,
  *   right: 0,
  *   width: 20,
  *   height: 10
- * })
- * ```
+ *   })
+ *   ```
  */
 export interface BoxProps {
-  /** Align flex lines when there's extra space on the cross axis */
+  /**
+   * Align flex lines when there's extra space on the cross axis.
+   */
   alignContent?:
     | 'flex-start'
     | 'flex-end'
     | 'center'
     | 'stretch'
     | 'space-between'
-    | 'space-around' | undefined
-  /** Align items on the cross axis */
+    | 'space-around'
+    | undefined
+  /**
+   * Align items on the cross axis.
+   */
   alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | undefined
-  /** Background color (named colors or hex) */
+  /**
+   * Background color (named colors or hex)
+   */
   backgroundColor?: string | undefined
-  /** Border color (named colors, hex, or ANSI codes like 'ansi:123' or '196') */
+  /**
+   * Border color (named colors, hex, or ANSI codes like 'ansi:123' or '196')
+   */
   borderColor?: string | undefined
-  /** Configure which border edges to render */
+  /**
+   * Configure which border edges to render.
+   */
   borderEdges?: BorderEdges | undefined
-  /** Border style (supports all variants including double-left-right, double-top-bottom, classic) */
+  /**
+   * Border style (supports all variants including double-left-right,
+   * double-top-bottom, classic)
+   */
   borderStyle?: BorderStyle | undefined
-  /** Bottom inset for absolute positioning (can be negative) */
+  /**
+   * Bottom inset for absolute positioning (can be negative)
+   */
   bottom?: number | undefined
-  /** Custom border characters (when using custom border style) */
+  /**
+   * Custom border characters (when using custom border style)
+   */
   customBorderChars?: CustomBorderChars | undefined
-  /** Child elements to render inside this box */
+  /**
+   * Child elements to render inside this box.
+   */
   children?: Element | Element[] | undefined
-  /** Gap between columns in flex layout */
+  /**
+   * Gap between columns in flex layout.
+   */
   columnGap?: number | undefined
-  /** Display type (flex or none) */
+  /**
+   * Display type (flex or none)
+   */
   display?: DisplayType | undefined
-  /** Initial size on the main axis (number, 'auto', or percentage string) */
+  /**
+   * Initial size on the main axis (number, 'auto', or percentage string)
+   */
   flexBasis?: number | string | undefined
-  /** Main axis direction (row or column) */
+  /**
+   * Main axis direction (row or column)
+   */
   flexDirection?: 'row' | 'column' | undefined
-  /** Flex grow factor (how much to grow relative to siblings) */
+  /**
+   * Flex grow factor (how much to grow relative to siblings)
+   */
   flexGrow?: number | undefined
-  /** Flex shrink factor (how much to shrink relative to siblings) */
+  /**
+   * Flex shrink factor (how much to shrink relative to siblings)
+   */
   flexShrink?: number | undefined
-  /** Flex wrap behavior (wrap or nowrap) */
+  /**
+   * Flex wrap behavior (wrap or nowrap)
+   */
   flexWrap?: 'wrap' | 'nowrap' | undefined
-  /** Gap between children (shorthand for rowGap and columnGap) */
+  /**
+   * Gap between children (shorthand for rowGap and columnGap)
+   */
   gap?: number | undefined
-  /** Height in characters */
+  /**
+   * Height in characters.
+   */
   height?: number | undefined
-  /** Inset for all sides (shorthand for top/right/bottom/left) */
+  /**
+   * Inset for all sides (shorthand for top/right/bottom/left)
+   */
   inset?: number | undefined
-  /** Align items on the main axis */
+  /**
+   * Align items on the main axis.
+   */
   justifyContent?:
     | 'flex-start'
     | 'flex-end'
     | 'center'
     | 'space-between'
-    | 'space-around' | undefined
-  /** Left inset for absolute positioning (can be negative) */
+    | 'space-around'
+    | undefined
+  /**
+   * Left inset for absolute positioning (can be negative)
+   */
   left?: number | undefined
-  /** Margin on all sides */
+  /**
+   * Margin on all sides.
+   */
   margin?: number | undefined
-  /** Margin on bottom */
+  /**
+   * Margin on bottom.
+   */
   marginBottom?: number | undefined
-  /** Margin on left */
+  /**
+   * Margin on left.
+   */
   marginLeft?: number | undefined
-  /** Margin on right */
+  /**
+   * Margin on right.
+   */
   marginRight?: number | undefined
-  /** Margin on top */
+  /**
+   * Margin on top.
+   */
   marginTop?: number | undefined
-  /** Margin on left and right */
+  /**
+   * Margin on left and right.
+   */
   marginX?: number | undefined
-  /** Margin on top and bottom */
+  /**
+   * Margin on top and bottom.
+   */
   marginY?: number | undefined
-  /** Maximum height constraint */
+  /**
+   * Maximum height constraint.
+   */
   maxHeight?: number | undefined
-  /** Maximum width constraint */
+  /**
+   * Maximum width constraint.
+   */
   maxWidth?: number | undefined
-  /** Minimum height constraint */
+  /**
+   * Minimum height constraint.
+   */
   minHeight?: number | undefined
-  /** Minimum width constraint */
+  /**
+   * Minimum width constraint.
+   */
   minWidth?: number | undefined
-  /** Overflow behavior for both axes (shorthand) */
+  /**
+   * Overflow behavior for both axes (shorthand)
+   */
   overflow?: OverflowType | undefined
-  /** Overflow behavior on horizontal axis */
+  /**
+   * Overflow behavior on horizontal axis.
+   */
   overflowX?: OverflowType | undefined
-  /** Overflow behavior on vertical axis */
+  /**
+   * Overflow behavior on vertical axis.
+   */
   overflowY?: OverflowType | undefined
-  /** Padding on all sides */
+  /**
+   * Padding on all sides.
+   */
   padding?: number | undefined
-  /** Padding on bottom */
+  /**
+   * Padding on bottom.
+   */
   paddingBottom?: number | undefined
-  /** Padding on left */
+  /**
+   * Padding on left.
+   */
   paddingLeft?: number | undefined
-  /** Padding on right */
+  /**
+   * Padding on right.
+   */
   paddingRight?: number | undefined
-  /** Padding on top */
+  /**
+   * Padding on top.
+   */
   paddingTop?: number | undefined
-  /** Padding on left and right */
+  /**
+   * Padding on left and right.
+   */
   paddingX?: number | undefined
-  /** Padding on top and bottom */
+  /**
+   * Padding on top and bottom.
+   */
   paddingY?: number | undefined
-  /** Position type (relative or absolute) */
+  /**
+   * Position type (relative or absolute)
+   */
   position?: PositionType | undefined
-  /** Right inset for absolute positioning (can be negative) */
+  /**
+   * Right inset for absolute positioning (can be negative)
+   */
   right?: number | undefined
-  /** Gap between rows in flex layout */
+  /**
+   * Gap between rows in flex layout.
+   */
   rowGap?: number | undefined
-  /** Top inset for absolute positioning (can be negative) */
+  /**
+   * Top inset for absolute positioning (can be negative)
+   */
   top?: number | undefined
-  /** Width in characters */
+  /**
+   * Width in characters.
+   */
   width?: number | undefined
 }
 
@@ -622,32 +769,38 @@ export interface BoxProps {
  * Text properties for rendering styled text content.
  *
  * @example
- * ```typescript
- * // Simple text
- * Text({ children: 'Hello, world!' })
+ *   ```typescript
+ *   // Simple text
+ *   Text({ children: 'Hello, world!' })
  *
- * // Styled text
- * Text({
- *   children: 'Important',
- *   color: 'red',
- *   weight: 'bold',
- *   align: 'center'
- * })
+ *   // Styled text
+ *   Text({
+ *     children: 'Important',
+ *     color: 'red',
+ *     weight: 'bold',
+ *     align: 'center',
+ *   })
  *
- * // Decorated text
- * Text({
- *   children: 'Completed',
- *   strikethrough: true,
- *   dimColor: true
- * })
- * ```
+ *   // Decorated text
+ *   Text({
+ *     children: 'Completed',
+ *     strikethrough: true,
+ *     dimColor: true,
+ *   })
+ *   ```
  */
 export interface TextProps extends TextStyle {
-  /** Horizontal text alignment (left, center, right) */
+  /**
+   * Horizontal text alignment (left, center, right)
+   */
   align?: TextAlign | undefined
-  /** Text content to display (string or array of strings) */
+  /**
+   * Text content to display (string or array of strings)
+   */
   children?: string | string[] | undefined
-  /** Text wrapping behavior (wrap or nowrap) */
+  /**
+   * Text wrapping behavior (wrap or nowrap)
+   */
   wrap?: TextWrap | undefined
 }
 
@@ -655,21 +808,27 @@ export interface TextProps extends TextStyle {
  * Mixed text properties for rendering text with multiple styles.
  *
  * @example
- * ```typescript
- * MixedText({
- *   contents: [
- *     { text: 'Error: ', color: 'red', weight: 'bold' },
- *     { text: 'File not found', color: 'white', italic: true }
- *   ]
- * })
- * ```
+ *   ```typescript
+ *   MixedText({
+ *     contents: [
+ *       { text: 'Error: ', color: 'red', weight: 'bold' },
+ *       { text: 'File not found', color: 'white', italic: true },
+ *     ],
+ *   })
+ *   ```
  */
 export interface MixedTextProps {
-  /** Horizontal text alignment */
+  /**
+   * Horizontal text alignment.
+   */
   align?: TextAlign | undefined
-  /** Array of text sections with individual styling */
+  /**
+   * Array of text sections with individual styling.
+   */
   contents: MixedTextContentSection[]
-  /** Text wrapping behavior */
+  /**
+   * Text wrapping behavior.
+   */
   wrap?: TextWrap | undefined
 }
 
@@ -677,24 +836,23 @@ export interface MixedTextProps {
  * Fragment properties for grouping elements without layout impact.
  *
  * @example
- * ```typescript
- * Fragment({
- *   children: [
- *     Text({ children: 'Line 1' }),
- *     Text({ children: 'Line 2' })
- *   ]
- * })
- * ```
+ *   ```typescript
+ *   Fragment({
+ *     children: [Text({ children: 'Line 1' }), Text({ children: 'Line 2' })],
+ *   })
+ *   ```
  */
 export interface FragmentProps {
-  /** Child elements to group */
+  /**
+   * Child elements to group.
+   */
   children: Element | Element[]
 }
 
 /**
- * Element type (iocraft element).
- * We define our own interface instead of using ComponentNode directly
- * because we need to support all properties when building elements.
+ * Element type (iocraft element). We define our own interface instead of using
+ * ComponentNode directly because we need to support all properties when
+ * building elements.
  */
 export interface Element {
   type: 'Text' | 'View' | 'MixedText' | 'Fragment'
@@ -766,35 +924,41 @@ export interface Element {
 
   // Border
   border_color?: string | undefined
-  border_edges?: {
-    top?: boolean | undefined
-    right?: boolean | undefined
-    bottom?: boolean | undefined
-    left?: boolean | undefined
-  } | undefined
+  border_edges?:
+    | {
+        top?: boolean | undefined
+        right?: boolean | undefined
+        bottom?: boolean | undefined
+        left?: boolean | undefined
+      }
+    | undefined
   border_style?: string | undefined
-  custom_border_chars?: {
-    top_left: string
-    top_right: string
-    bottom_left: string
-    bottom_right: string
-    top: string
-    bottom: string
-    left: string
-    right: string
-  } | undefined
+  custom_border_chars?:
+    | {
+        top_left: string
+        top_right: string
+        bottom_left: string
+        bottom_right: string
+        top: string
+        bottom: string
+        left: string
+        right: string
+      }
+    | undefined
 
   // Background
   background_color?: string | undefined
 
   // MixedText
-  mixed_text_contents?: Array<{
-    text: string
-    color?: string | undefined
-    weight?: string | undefined
-    decoration?: string | undefined
-    italic?: boolean | undefined
-  }> | undefined
+  mixed_text_contents?:
+    | Array<{
+        text: string
+        color?: string | undefined
+        weight?: string | undefined
+        decoration?: string | undefined
+        italic?: boolean | undefined
+      }>
+    | undefined
 }
 
 /**

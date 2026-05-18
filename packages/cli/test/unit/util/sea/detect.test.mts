@@ -1,20 +1,17 @@
 /**
  * Unit tests for SEA detection utilities.
  *
- * Purpose:
- * Tests the SEA (Single Executable Application) detection and related utilities.
+ * Purpose: Tests the SEA (Single Executable Application) detection and related
+ * utilities.
  *
- * Test Coverage:
- * - isSeaBinary function
- * - getSeaBinaryPath function
- * - canSelfUpdate function
+ * Test Coverage: - isSeaBinary function - getSeaBinaryPath function -
+ * canSelfUpdate function.
  *
  * Note: These tests verify behavior in a non-SEA environment since the tests
  * run in Node.js where node:sea module is not available. SEA-specific behavior
  * is tested by verifying the API surface and return types.
  *
- * Related Files:
- * - src/util/sea/detect.mts (implementation)
+ * Related Files: - src/util/sea/detect.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

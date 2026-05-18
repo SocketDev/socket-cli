@@ -1,15 +1,14 @@
 /**
- * @fileoverview Validates that there are no CDN references in the codebase.
+ * @file Validates that there are no CDN references in the codebase. This is a
+ *   preventative check to ensure no hardcoded CDN URLs are introduced. The
+ *   project deliberately avoids CDN dependencies for security and reliability.
+ *   Blocked CDN domains:
  *
- * This is a preventative check to ensure no hardcoded CDN URLs are introduced.
- * The project deliberately avoids CDN dependencies for security and reliability.
- *
- * Blocked CDN domains:
- * - unpkg.com
- * - cdn.jsdelivr.net
- * - esm.sh
- * - cdn.skypack.dev
- * - ga.jspm.io
+ *   - unpkg.com
+ *   - cdn.jsdelivr.net
+ *   - esm.sh
+ *   - cdn.skypack.dev
+ *   - ga.jspm.io
  */
 
 import { promises as fs } from 'node:fs'

@@ -1,19 +1,16 @@
 /**
  * Unit tests for the machine-mode-aware spawn helpers.
  *
- * Test Coverage:
- * - applyMachineModeIfActive returns inputs unchanged when ambient
- *   machine-mode is off (no JSON/markdown/quiet flag in flight).
- * - applyMachineModeIfActive defers to the raw applier when ambient
- *   mode is engaged.
- * - inferSubcommand returns the first non-flag token.
- * - inferSubcommand returns undefined when there's no subcommand
- *   (empty argv, all flags).
+ * Test Coverage: - applyMachineModeIfActive returns inputs unchanged when
+ * ambient machine-mode is off (no JSON/markdown/quiet flag in flight). -
+ * applyMachineModeIfActive defers to the raw applier when ambient mode is
+ * engaged. - inferSubcommand returns the first non-flag token. -
+ * inferSubcommand returns undefined when there's no subcommand (empty argv, all
+ * flags).
  *
- * Related Files:
- * - src/util/spawn/apply-machine-mode.mts - Implementation
- * - src/util/spawn/machine-mode.mts - Inner applier
- * - src/util/output/ambient-mode.mts - Mode getter/setter
+ * Related Files: - src/util/spawn/apply-machine-mode.mts - Implementation -
+ * src/util/spawn/machine-mode.mts - Inner applier -
+ * src/util/output/ambient-mode.mts - Mode getter/setter.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

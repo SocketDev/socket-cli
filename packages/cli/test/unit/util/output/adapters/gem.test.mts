@@ -1,11 +1,10 @@
 /**
  * Unit tests for the gem scrubber adapter.
  *
- * Drops dot-progress lines and routes RubyGems status lines to noise;
- * passes anything else through unchanged.
+ * Drops dot-progress lines and routes RubyGems status lines to noise; passes
+ * anything else through unchanged.
  *
- * Related Files:
- * - src/util/output/adapters/gem.mts
+ * Related Files: - src/util/output/adapters/gem.mts.
  */
 
 import { describe, expect, it } from 'vitest'

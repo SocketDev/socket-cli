@@ -3,14 +3,11 @@
  *
  * Tests installation of manifest generation tools like cdxgen.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Tool installation verification
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Tool installation verification.
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest-setup.mts - Command definition
- * - src/commands/manifest/handle-manifest-setup.mts - Setup logic
+ * Related Files: - src/commands/manifest/cmd-manifest-setup.mts - Command
+ * definition - src/commands/manifest/handle-manifest-setup.mts - Setup logic.
  */
 
 import { describe, expect } from 'vitest'

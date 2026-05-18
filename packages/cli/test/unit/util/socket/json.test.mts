@@ -1,21 +1,15 @@
 /**
  * Unit tests for Socket JSON utilities.
  *
- * Purpose:
- * Tests Socket-specific JSON parsing and formatting. Validates Socket API response handling.
+ * Purpose: Tests Socket-specific JSON parsing and formatting. Validates Socket
+ * API response handling.
  *
- * Test Coverage:
- * - JSON parsing
- * - JSON formatting
- * - Schema validation
- * - Error-tolerant parsing
- * - Large JSON handling
+ * Test Coverage: - JSON parsing - JSON formatting - Schema validation -
+ * Error-tolerant parsing - Large JSON handling.
  *
- * Testing Approach:
- * Tests JSON utilities for Socket API data.
+ * Testing Approach: Tests JSON utilities for Socket API data.
  *
- * Related Files:
- * - util/socket/json.mts (implementation)
+ * Related Files: - util/socket/json.mts (implementation)
  */
 
 import path from 'node:path'

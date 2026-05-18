@@ -1,17 +1,13 @@
 /**
  * Unit tests for Python standalone utilities.
  *
- * Purpose:
- * Tests the re-exports from the DLX spawn utilities.
+ * Purpose: Tests the re-exports from the DLX spawn utilities.
  *
- * Test Coverage:
- * - Re-export verification
- * - Type export verification
- * - Function signatures
+ * Test Coverage: - Re-export verification - Type export verification - Function
+ * signatures.
  *
- * Related Files:
- * - util/python/standalone.mts (implementation)
- * - util/dlx/spawn.mts (source module)
+ * Related Files: - util/python/standalone.mts (implementation) -
+ * util/dlx/spawn.mts (source module)
  */
 
 import { describe, expect, it } from 'vitest'

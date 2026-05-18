@@ -1,27 +1,21 @@
 /**
  * Unit tests for config set handler.
  *
- * Tests the handler that updates configuration values in the config file.
- * This command writes configuration persistently.
+ * Tests the handler that updates configuration values in the config file. This
+ * command writes configuration persistently.
  *
- * Test Coverage:
- * - Successful config value setting
- * - Set failure handling
- * - Different config keys (apiToken, orgSlug, defaultOrg, etc.)
- * - Value validation and sanitization
- * - Output function integration
+ * Test Coverage: - Successful config value setting - Set failure handling -
+ * Different config keys (apiToken, orgSlug, defaultOrg, etc.) - Value
+ * validation and sanitization - Output function integration.
  *
- * Testing Approach:
- * - Mock setConfigValue from util/config.mts
- * - Mock outputConfigSet for output verification
- * - Mock logger for error/success messages
- * - Use createSuccessResult/createErrorResult helpers
- * - Test CResult pattern flow
+ * Testing Approach: - Mock setConfigValue from util/config.mts - Mock
+ * outputConfigSet for output verification - Mock logger for error/success
+ * messages - Use createSuccessResult/createErrorResult helpers - Test CResult
+ * pattern flow.
  *
- * Related Files:
- * - src/commands/config/handle-config-set.mts - Implementation
- * - src/util/config.mts - Config file utilities
- * - src/commands/config/output-config-set.mts - Output formatter
+ * Related Files: - src/commands/config/handle-config-set.mts - Implementation -
+ * src/util/config.mts - Config file utilities -
+ * src/commands/config/output-config-set.mts - Output formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

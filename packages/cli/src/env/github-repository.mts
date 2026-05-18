@@ -1,4 +1,6 @@
-/** @fileoverview GITHUB_REPOSITORY environment variable. */
+/**
+ * @file GITHUB_REPOSITORY environment variable.
+ */
 
 import { getGithubRepository } from '@socketsecurity/lib/env/github'
 

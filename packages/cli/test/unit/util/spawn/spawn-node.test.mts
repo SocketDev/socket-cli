@@ -1,16 +1,12 @@
 /**
  * Unit tests for spawn-node utilities.
  *
- * Purpose:
- * Tests the Node.js spawn abstraction with SEA bootstrap handling.
+ * Purpose: Tests the Node.js spawn abstraction with SEA bootstrap handling.
  *
- * Test Coverage:
- * - ensureIpcInStdio function
- * - findSystemNodejsSync function
- * - getNodeExecutablePathSync function
+ * Test Coverage: - ensureIpcInStdio function - findSystemNodejsSync function -
+ * getNodeExecutablePathSync function.
  *
- * Related Files:
- * - util/spawn/spawn-node.mts (implementation)
+ * Related Files: - util/spawn/spawn-node.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

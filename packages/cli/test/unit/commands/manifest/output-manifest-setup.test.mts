@@ -1,16 +1,13 @@
 /**
  * Unit tests for manifest setup output formatting.
  *
- * Purpose:
- * Tests the output formatting for manifest setup results.
+ * Purpose: Tests the output formatting for manifest setup results.
  *
- * Test Coverage:
- * - outputManifestSetup function
- * - Success output
- * - Error handling
+ * Test Coverage: - outputManifestSetup function - Success output - Error
+ * handling.
  *
- * Related Files:
- * - src/commands/manifest/output-manifest-setup.mts (implementation)
+ * Related Files: - src/commands/manifest/output-manifest-setup.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

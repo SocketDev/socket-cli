@@ -1,17 +1,12 @@
 /**
  * Unit tests for Coana scan ID extraction.
  *
- * Purpose:
- * Tests the extractTier1ReachabilityScanId function.
+ * Purpose: Tests the extractTier1ReachabilityScanId function.
  *
- * Test Coverage:
- * - Valid scan ID extraction
- * - Missing file handling
- * - Invalid JSON handling
- * - Missing field handling
+ * Test Coverage: - Valid scan ID extraction - Missing file handling - Invalid
+ * JSON handling - Missing field handling.
  *
- * Related Files:
- * - util/coana/extract-scan-id.mts (implementation)
+ * Related Files: - util/coana/extract-scan-id.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

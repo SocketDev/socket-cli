@@ -1,6 +1,6 @@
 {
+  "private": true,
   "dependencies": {
     "bowserify": "^10.2.1"
-  },
-  "private": true
+  }
 }

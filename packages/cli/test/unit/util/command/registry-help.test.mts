@@ -1,17 +1,13 @@
 /**
  * Unit tests for command registry help generation.
  *
- * Purpose:
- * Tests help text generation for CLI commands. Validates formatting and output.
+ * Purpose: Tests help text generation for CLI commands. Validates formatting
+ * and output.
  *
- * Test Coverage:
- * - generateCommandHelp formatting
- * - generateGlobalHelp formatting
- * - isHelpRequested detection
- * - Flag formatting
+ * Test Coverage: - generateCommandHelp formatting - generateGlobalHelp
+ * formatting - isHelpRequested detection - Flag formatting.
  *
- * Related Files:
- * - util/command/registry-help.mts (implementation)
+ * Related Files: - util/command/registry-help.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'

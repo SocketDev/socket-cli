@@ -1,7 +1,8 @@
 /**
  * Unit tests for manifest kotlin command.
  *
- * Tests the command that uses Gradle to generate pom.xml manifest files for Kotlin projects.
+ * Tests the command that uses Gradle to generate pom.xml manifest files for
+ * Kotlin projects.
  */
 
 import path from 'node:path'

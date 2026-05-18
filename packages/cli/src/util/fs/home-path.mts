@@ -1,11 +1,13 @@
 /**
- * Path tildification utilities for Socket CLI.
- * Abbreviates home directory paths with tilde notation.
+ * Path tildification utilities for Socket CLI. Abbreviates home directory paths
+ * with tilde notation.
  *
  * Key Functions:
- * - tildify: Replace home directory with ~ in paths
+ *
+ * - Tildify: Replace home directory with ~ in paths
  *
  * Usage:
+ *
  * - Shortens absolute paths for display
  * - Converts absolute home paths to ~/...
  * - Common Unix convention for home directory

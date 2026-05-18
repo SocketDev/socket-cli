@@ -1,21 +1,15 @@
 /**
  * Unit tests for object utilities.
  *
- * Purpose:
- * Tests object manipulation utilities. Validates deep cloning, merging, and transformation functions.
+ * Purpose: Tests object manipulation utilities. Validates deep cloning,
+ * merging, and transformation functions.
  *
- * Test Coverage:
- * - Deep cloning
- * - Object merging
- * - Property filtering
- * - Null prototype object creation
- * - Nested property access
+ * Test Coverage: - Deep cloning - Object merging - Property filtering - Null
+ * prototype object creation - Nested property access.
  *
- * Testing Approach:
- * Tests utility functions for safe object operations.
+ * Testing Approach: Tests utility functions for safe object operations.
  *
- * Related Files:
- * - util/data/objects.mts (implementation)
+ * Related Files: - util/data/objects.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

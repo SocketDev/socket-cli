@@ -1,8 +1,8 @@
 /**
- * IPC Validation Module
+ * IPC Validation Module.
  *
- * Provides runtime validation for IPC messages in socket-cli.
- * Ensures type safety for inter-process communication.
+ * Provides runtime validation for IPC messages in socket-cli. Ensures type
+ * safety for inter-process communication.
  */
 
 import crypto from 'node:crypto'
@@ -41,8 +41,8 @@ export function createIpcHandshake(options: {
 }
 
 /**
- * Create a valid IPC message with current timestamp.
- * Uses cryptographically secure random ID generation.
+ * Create a valid IPC message with current timestamp. Uses cryptographically
+ * secure random ID generation.
  */
 export function createIpcMessage<T = unknown>(
   type: string,

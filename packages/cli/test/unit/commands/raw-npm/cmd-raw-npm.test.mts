@@ -3,25 +3,16 @@
  *
  * Tests the command that runs npm without the Socket wrapper.
  *
- * Test Coverage:
- * - Command metadata (description, hidden flag)
- * - --dry-run flag support
- * - npm binary path resolution
- * - Argument passing to npm
- * - Process spawning configuration
- * - Exit code handling
- * - Signal handling
+ * Test Coverage: - Command metadata (description, hidden flag) - --dry-run flag
+ * support - npm binary path resolution - Argument passing to npm - Process
+ * spawning configuration - Exit code handling - Signal handling.
  *
- * Testing Approach:
- * - Mock logger to capture output
- * - Mock meowOrExit to control flag values
- * - Mock spawn from @socketsecurity/lib/spawn
- * - Mock getNpmBinPath to return controlled path
- * - Mock outputDryRunExecute for dry-run testing
- * - Verify spawn configuration (shell, stdio, etc.)
+ * Testing Approach: - Mock logger to capture output - Mock meowOrExit to
+ * control flag values - Mock spawn from @socketsecurity/lib/spawn - Mock
+ * getNpmBinPath to return controlled path - Mock outputDryRunExecute for
+ * dry-run testing - Verify spawn configuration (shell, stdio, etc.)
  *
- * Related Files:
- * - src/commands/raw-npm/cmd-raw-npm.mts - Implementation
+ * Related Files: - src/commands/raw-npm/cmd-raw-npm.mts - Implementation.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

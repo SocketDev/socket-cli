@@ -1,9 +1,9 @@
 /**
- * max-file-lines: legitimate — comprehensive single-module test suite.
- * Tests the extractExternalTools state machine (cache marker, lock
- * waits, stale locks, recursion-depth guard, tool revalidation, error
- * wrapping). The vi.mock setup is shared across every describe;
- * splitting would duplicate the boilerplate that IS the cohesion.
+ * Max-file-lines: legitimate — comprehensive single-module test suite. Tests
+ * the extractExternalTools state machine (cache marker, lock waits, stale
+ * locks, recursion-depth guard, tool revalidation, error wrapping). The vi.mock
+ * setup is shared across every describe; splitting would duplicate the
+ * boilerplate that IS the cohesion.
  *
  * Unit tests for util/dlx/vfs-extract.
  *
@@ -11,8 +11,7 @@
  * full extractExternalTools state machine (cache marker, lock waits, stale
  * locks, recursion-depth guard, tool revalidation, error wrapping).
  *
- * Related Files:
- * - src/util/dlx/vfs-extract.mts
+ * Related Files: - src/util/dlx/vfs-extract.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -69,7 +68,8 @@ import {
   isNpmPackageExtracted,
 } from '../../../../src/util/dlx/vfs-extract.mts'
 
-const realProcessSmol = (process as unknown as { smol?: unknown | undefined }).smol
+const realProcessSmol = (process as unknown as { smol?: unknown | undefined })
+  .smol
 
 function withMountReturning(mountFn: (vfsPath: string) => Promise<string>) {
   ;(process as unknown as { smol: unknown }).smol = { mount: mountFn }
@@ -560,9 +560,7 @@ describe('util/dlx/vfs-extract', () => {
       // Cache marker false, tool path false -> attempts extractTool -> throws.
       mockExistsSync.mockReturnValue(false)
 
-      await expect(extractExternalTools()).rejects.toThrow(
-        /failed to extract/,
-      )
+      await expect(extractExternalTools()).rejects.toThrow(/failed to extract/)
     })
 
     it('handles safeDelete failure during cleanup gracefully', async () => {

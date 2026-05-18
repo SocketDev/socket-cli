@@ -1,22 +1,20 @@
 /**
  * Help-text rendering for `meowWithSubcommands`.
  *
- * Extracted from with-subcommands.mts to keep that file under the
- * 1000-line File-size cap. The function builds the `lines: string[]`
- * passed to meow's `help` option, with a "bucketed" layout for the
- * root socket command and a flat alphabetised list for sub-commands.
+ * Extracted from with-subcommands.mts to keep that file under the 1000-line
+ * File-size cap. The function builds the `lines: string[]` passed to meow's
+ * `help` option, with a "bucketed" layout for the root socket command and a
+ * flat alphabetised list for sub-commands.
  *
- * Buckets are read from `opts.buckets` (a per-app
- * `Record<commandName, CliBucket>` map); the help builder iterates
- * the registered `subcommands` and groups each by its bucket. There
- * is no parallel hand-maintained list — the source of truth for
- * "which bucket does X go in?" is one place: the application's bucket
- * map (e.g. `rootCommandBuckets` in `src/commands.mts`).
+ * Buckets are read from `opts.buckets` (a per-app `Record<commandName,
+ * CliBucket>` map); the help builder iterates the registered `subcommands` and
+ * groups each by its bucket. There is no parallel hand-maintained list — the
+ * source of truth for "which bucket does X go in?" is one place: the
+ * application's bucket map (e.g. `rootCommandBuckets` in `src/commands.mts`).
  *
- * Commands without a bucket assignment are valid but unsurfaced in
- * the root help (still reachable via name + still appear in
- * sub-command help). Useful for ecosystem-specific or experimental
- * commands documented elsewhere.
+ * Commands without a bucket assignment are valid but unsurfaced in the root
+ * help (still reachable via name + still appear in sub-command help). Useful
+ * for ecosystem-specific or experimental commands documented elsewhere.
  */
 
 import terminalLink from 'terminal-link'
@@ -52,8 +50,8 @@ export interface BuildHelpLinesOptions {
   aliases: Record<string, CliAliases[string]>
   argv: readonly string[]
   /**
-   * Per-subcommand bucket assignments. Only consumed for the
-   * root-command layout; ignored for sub-commands.
+   * Per-subcommand bucket assignments. Only consumed for the root-command
+   * layout; ignored for sub-commands.
    */
   buckets?: CliBuckets | undefined
   flags: MeowFlags
@@ -68,9 +66,9 @@ interface BucketSection {
 }
 
 /**
- * Display order + heading text for each bucket. Adding a new bucket
- * = (a) add the literal to `CliBucket` in with-subcommands-shared.mts,
- * (b) add an entry here. The compiler enforces both halves match.
+ * Display order + heading text for each bucket. Adding a new bucket = (a) add
+ * the literal to `CliBucket` in with-subcommands-shared.mts, (b) add an entry
+ * here. The compiler enforces both halves match.
  */
 const BUCKET_SECTIONS: readonly BucketSection[] = [
   { heading: 'Main commands', bucket: 'main' },
@@ -82,12 +80,12 @@ const BUCKET_SECTIONS: readonly BucketSection[] = [
 /**
  * Build the help-text lines passed to meow as the `help` option.
  *
- * For root `socket`: a bucketed layout (Main commands, Socket API,
- * Local tools, CLI configuration) plus optional environment-variable
- * docs gated on --help-full.
+ * For root `socket`: a bucketed layout (Main commands, Socket API, Local tools,
+ * CLI configuration) plus optional environment-variable docs gated on
+ * --help-full.
  *
- * For sub-commands (`socket scan`, `socket package`, …): a flat
- * alphabetised list of the subcommand's own children + aliases.
+ * For sub-commands (`socket scan`, `socket package`, …): a flat alphabetised
+ * list of the subcommand's own children + aliases.
  */
 export function buildHelpLines(opts: BuildHelpLinesOptions): string[] {
   const { aliases, argv, buckets, flags, isRootCommand, name, subcommands } =
@@ -150,11 +148,10 @@ export function describeOrFallback(
 }
 
 /**
- * Group registered subcommands by their bucket. Returns a Map keyed
- * by bucket → array of command names sorted naturally for display.
+ * Group registered subcommands by their bucket. Returns a Map keyed by bucket →
+ * array of command names sorted naturally for display.
  *
- * Hidden commands and commands without a bucket assignment are
- * excluded.
+ * Hidden commands and commands without a bucket assignment are excluded.
  */
 export function groupCommandsByBucket(
   subcommands: Record<string, CliSubcommand>,
@@ -238,9 +235,9 @@ export function pushEnvironmentVariables(
 }
 
 /**
- * Render the root help: header lines + each bucket section in order +
- * static "hero" rows in the Main bucket that aren't standalone commands
- * (e.g. `socket scan create`, `socket npm/<purl>`).
+ * Render the root help: header lines + each bucket section in order + static
+ * "hero" rows in the Main bucket that aren't standalone commands (e.g. `socket
+ * scan create`, `socket npm/<purl>`).
  */
 export function pushRootBucketedLayout(
   lines: string[],

@@ -1,6 +1,5 @@
 /**
- * Build script for Socket CLI.
- * Options: --quiet, --verbose, --force, --watch
+ * Build script for Socket CLI. Options: --quiet, --verbose, --force, --watch.
  */
 
 import { copyFileSync, promises as fs } from 'node:fs'
@@ -43,13 +42,13 @@ const printError = msg => {
 }
 
 /**
- * Post-process bundled files to break node-gyp require.resolve strings.
- * This prevents esbuild from trying to bundle node-gyp during the build.
+ * Post-process bundled files to break node-gyp require.resolve strings. This
+ * prevents esbuild from trying to bundle node-gyp during the build.
  *
- * @param {string} dir - Directory to process
- * @param {object} options - Options
- * @param {boolean} options.quiet - Suppress output
- * @param {boolean} options.verbose - Show detailed output
+ * @param {string} dir - Directory to process.
+ * @param {object} options - Options.
+ * @param {boolean} options.quiet - Suppress output.
+ * @param {boolean} options.verbose - Show detailed output.
  */
 export async function fixNodeGypStrings(dir, options = {}) {
   const { quiet = false, verbose = false } = options

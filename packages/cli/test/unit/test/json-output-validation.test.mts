@@ -1,12 +1,11 @@
 /**
  * Unit tests for Socket JSON output validation helpers.
  *
- * Validates that command stdout matches the {ok:boolean, ...} CResult
- * contract documented in the source. Each error path emits a specific
- * message — these tests pin every one.
+ * Validates that command stdout matches the {ok:boolean, ...} CResult contract
+ * documented in the source. Each error path emits a specific message — these
+ * tests pin every one.
  *
- * Related Files:
- * - src/test/json-output-validation.mts
+ * Related Files: - src/test/json-output-validation.mts.
  */
 
 import { describe, expect, it } from 'vitest'

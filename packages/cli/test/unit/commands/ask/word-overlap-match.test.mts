@@ -1,8 +1,8 @@
 /**
  * Unit tests for the word-overlap matcher.
  *
- * The handle-ask integration tests cover most of the public surface. This
- * file targets the edge-case branches that the integration runs don't reach.
+ * The handle-ask integration tests cover most of the public surface. This file
+ * targets the edge-case branches that the integration runs don't reach.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

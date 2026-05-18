@@ -1,8 +1,7 @@
 /**
  * Unit tests for SFW checksums getter.
  *
- * Related Files:
- * - src/env/sfw-checksums.mts
+ * Related Files: - src/env/sfw-checksums.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

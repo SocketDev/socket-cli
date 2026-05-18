@@ -91,22 +91,18 @@ export const rootCommands = {
 /**
  * Bucket assignments for the `socket --help` layout.
  *
- * Each public command can opt into one of four display buckets, or
- * stay unbucketed (registered + reachable, but not surfaced in the
- * top-level help text — useful for ecosystem-specific commands that
- * are documented elsewhere or experimental commands not yet ready
- * for prominent placement).
+ * Each public command can opt into one of four display buckets, or stay
+ * unbucketed (registered + reachable, but not surfaced in the top-level help
+ * text — useful for ecosystem-specific commands that are documented elsewhere
+ * or experimental commands not yet ready for prominent placement).
  *
- * The help builder reads this map to render the bucketed sections.
- * Adding a new public command = (a) register it in `rootCommands`,
- * (b) optionally add a bucket here. No parallel hand-maintained list
- * to drift.
+ * The help builder reads this map to render the bucketed sections. Adding a new
+ * public command = (a) register it in `rootCommands`, (b) optionally add a
+ * bucket here. No parallel hand-maintained list to drift.
  *
- * Drift is impossible-by-construction:
- *   - A command in this map but not in `rootCommands` would be a
- *     compile error (TypeScript narrows the keys).
- *   - A command in `rootCommands` but not here = unbucketed, which
- *     is a valid state.
+ * Drift is impossible-by-construction: - A command in this map but not in
+ * `rootCommands` would be a compile error (TypeScript narrows the keys). - A
+ * command in `rootCommands` but not here = unbucketed, which is a valid state.
  */
 export type RootCommandBucket = 'main' | 'api' | 'tools' | 'config'
 

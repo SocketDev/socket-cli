@@ -1,6 +1,8 @@
 /* oxlint-disable socket/no-status-emoji -- test asserts on emoji output. */
 
-/** @fileoverview Shared helpers for binary integration tests. */
+/**
+ * @file Shared helpers for binary integration tests.
+ */
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'

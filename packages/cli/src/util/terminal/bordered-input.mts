@@ -1,4 +1,6 @@
-/** @fileoverview Bordered input field for terminal UI */
+/**
+ * @file Bordered input field for terminal UI
+ */
 
 import { stdin, stdout } from 'node:process'
 import readline from 'node:readline/promises'
@@ -6,7 +8,7 @@ import readline from 'node:readline/promises'
 import colors from 'yoctocolors-cjs'
 
 /**
- * Box drawing characters for different border styles
+ * Box drawing characters for different border styles.
  */
 export const borderStyles = {
   single: {
@@ -71,7 +73,7 @@ export class BorderedOutput {
   }
 
   /**
-   * Draw the initial box
+   * Draw the initial box.
    */
   draw(): void {
     const border = borderStyles[this.style]
@@ -129,7 +131,7 @@ export class BorderedOutput {
   }
 
   /**
-   * Add a line to the output
+   * Add a line to the output.
    */
   addLine(text: string): void {
     this.lines.push(text)
@@ -140,7 +142,7 @@ export class BorderedOutput {
   }
 
   /**
-   * Clear and redraw the box
+   * Clear and redraw the box.
    */
   private redraw(): void {
     // Move cursor up to start of box
@@ -149,7 +151,7 @@ export class BorderedOutput {
   }
 
   /**
-   * Clear the box content
+   * Clear the box content.
    */
   clear(): void {
     this.lines = []
@@ -158,7 +160,7 @@ export class BorderedOutput {
 }
 
 /**
- * Create a bordered input prompt
+ * Create a bordered input prompt.
  */
 export async function borderedInput(
   prompt: string,
@@ -246,7 +248,7 @@ export async function borderedInput(
 }
 
 /**
- * Create a menu with bordered options
+ * Create a menu with bordered options.
  */
 export async function borderedMenu(
   title: string,
@@ -312,7 +314,7 @@ export async function borderedMenu(
 }
 
 /**
- * Create a bordered box around text
+ * Create a bordered box around text.
  */
 export function createBox(
   content: string,

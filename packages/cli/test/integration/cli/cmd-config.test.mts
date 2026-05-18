@@ -5,6 +5,7 @@
  * subcommands for viewing and modifying local CLI configuration settings.
  *
  * Test Coverage:
+ *
  * - Help text display and subcommand listing
  * - Dry-run behavior validation
  * - Config override parsing (JSON validation)
@@ -13,21 +14,24 @@
  * - Error handling for invalid JSON in config overrides
  *
  * Configuration Sources (in priority order):
+ *
  * 1. Environment variable (SOCKET_CLI_CONFIG)
  * 2. Command-line flag (--config)
  * 3. Local config file
  *
  * Available Subcommands:
- * - auto: Auto-discover and set config values
- * - get: Retrieve a config value
- * - list: Show all config items
- * - set: Update a config value
- * - unset: Clear a config value
+ *
+ * - Auto: Auto-discover and set config values
+ * - Get: Retrieve a config value
+ * - List: Show all config items
+ * - Set: Update a config value
+ * - Unset: Clear a config value
  *
  * Related Files:
- * - src/commands/config/cmd-config.mts - Root command definition
- * - src/commands/config/cmd-config-*.mts - Subcommand definitions
- * - src/util/config.mts - Config management utilities
+ *
+ * - Src/commands/config/cmd-config.mts - Root command definition
+ * - Src/commands/config/cmd-config-*.mts - Subcommand definitions
+ * - Src/util/config.mts - Config management utilities
  */
 
 import { describe, expect } from 'vitest'

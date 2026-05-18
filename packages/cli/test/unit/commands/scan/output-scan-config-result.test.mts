@@ -1,16 +1,13 @@
 /**
  * Unit tests for scan config result output.
  *
- * Purpose:
- * Tests the output formatting for scan configuration results.
+ * Purpose: Tests the output formatting for scan configuration results.
  *
- * Test Coverage:
- * - outputScanConfigResult function
- * - Success and error handling
- * - Exit code handling
+ * Test Coverage: - outputScanConfigResult function - Success and error handling
+ * - Exit code handling.
  *
- * Related Files:
- * - src/commands/scan/output-scan-config-result.mts (implementation)
+ * Related Files: - src/commands/scan/output-scan-config-result.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

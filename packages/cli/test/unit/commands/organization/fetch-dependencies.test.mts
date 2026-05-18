@@ -1,27 +1,24 @@
 /**
- * Unit Tests: Organization Dependencies Fetcher
+ * Unit Tests: Organization Dependencies Fetcher.
  *
- * Purpose:
- * Tests the Socket SDK integration that fetches dependency information for an organization.
- * Validates pagination support, SDK setup handling, API call error handling, and custom
- * configuration passing for the searchDependencies API endpoint.
+ * Purpose: Tests the Socket SDK integration that fetches dependency information
+ * for an organization. Validates pagination support, SDK setup handling, API
+ * call error handling, and custom configuration passing for the
+ * searchDependencies API endpoint.
  *
- * Test Coverage:
- * - Successful dependency list fetching with pagination
- * - SDK setup failure handling
- * - API call error handling
- * - Custom SDK options passing (API token, base URL)
- * - Pagination parameter validation (limit, offset)
- * - Null prototype usage for security
+ * Test Coverage: - Successful dependency list fetching with pagination - SDK
+ * setup failure handling - API call error handling - Custom SDK options passing
+ * (API token, base URL) - Pagination parameter validation (limit, offset) -
+ * Null prototype usage for security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock setupSdk and handleApiCall without actual API calls.
- * Tests verify proper parameter passing and CResult pattern usage.
+ * Testing Approach: Uses SDK test helpers to mock setupSdk and handleApiCall
+ * without actual API calls. Tests verify proper parameter passing and CResult
+ * pattern usage.
  *
- * Related Files:
- * - src/commands/organization/fetch-dependencies.mts - Dependencies fetcher
- * - src/commands/organization/handle-dependencies.mts - Command handler
- * - src/commands/organization/output-dependencies.mts - Output formatter
+ * Related Files: - src/commands/organization/fetch-dependencies.mts -
+ * Dependencies fetcher - src/commands/organization/handle-dependencies.mts -
+ * Command handler - src/commands/organization/output-dependencies.mts - Output
+ * formatter.
  */
 
 import { describe, expect, it, vi } from 'vitest'

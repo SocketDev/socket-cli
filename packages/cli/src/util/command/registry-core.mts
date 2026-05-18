@@ -1,4 +1,7 @@
-/** @fileoverview Command registry implementation for Socket CLI. Manages command registration, execution, middleware, and plugin support. */
+/**
+ * @file Command registry implementation for Socket CLI. Manages command
+ *   registration, execution, middleware, and plugin support.
+ */
 
 import type {
   CommandContext,
@@ -11,8 +14,8 @@ import type {
 import type { CResult } from '../../types.mts'
 import { errorMessage, errorStack } from '@socketsecurity/lib/errors'
 /**
- * Central registry for CLI commands.
- * Handles registration, discovery, execution, and middleware.
+ * Central registry for CLI commands. Handles registration, discovery,
+ * execution, and middleware.
  */
 export class CommandRegistry implements ICommandRegistry {
   private commands = new Map<string, CommandDefinition>()
@@ -48,8 +51,8 @@ export class CommandRegistry implements ICommandRegistry {
   }
 
   /**
-   * Unregister a command by name.
-   * Also removes any aliases associated with the command.
+   * Unregister a command by name. Also removes any aliases associated with the
+   * command.
    */
   unregister(commandName: string): boolean {
     const command = this.commands.get(commandName)
@@ -249,8 +252,8 @@ export class CommandRegistry implements ICommandRegistry {
   }
 
   /**
-   * Parse command-line arguments into flag values.
-   * Basic implementation - can be enhanced with a proper parser.
+   * Parse command-line arguments into flag values. Basic implementation - can
+   * be enhanced with a proper parser.
    */
   private async parseFlags(
     command: CommandDefinition,

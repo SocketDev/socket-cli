@@ -1,6 +1,5 @@
 /**
- * USERPROFILE environment variable.
- * User profile directory (Windows systems).
+ * USERPROFILE environment variable. User profile directory (Windows systems).
  */
 
 import { env } from 'node:process'

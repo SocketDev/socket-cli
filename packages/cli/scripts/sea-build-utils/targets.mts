@@ -1,6 +1,6 @@
 /**
- * @fileoverview Build target selection and platform configuration for SEA builds.
- * Manages the list of supported platforms and Node.js version selection.
+ * @file Build target selection and platform configuration for SEA builds.
+ *   Manages the list of supported platforms and Node.js version selection.
  */
 
 import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
@@ -10,17 +10,17 @@ import { httpRequest } from '@socketsecurity/lib-stable/http-request'
 import { getAuthHeaders } from './downloads.mts'
 
 /**
- * Generate build targets for different platforms.
- * Returns array of 8 platform targets (darwin, linux, windows × arm64/x64, musl variants).
- *
- * @returns Array of build target configurations.
+ * Generate build targets for different platforms. Returns array of 8 platform
+ * targets (darwin, linux, windows × arm64/x64, musl variants).
  *
  * @example
- * const targets = await getBuildTargets()
- * // [
- * //   { platform: 'win32', arch: 'arm64', nodeVersion: '20251213-7cf90d2', outputName: 'socket-win-arm64.exe' },
- * //   ...
- * // ]
+ *   const targets = await getBuildTargets()
+ *   // [
+ *   //   { platform: 'win32', arch: 'arm64', nodeVersion: '20251213-7cf90d2', outputName: 'socket-win-arm64.exe' },
+ *   //   ...
+ *   // ]
+ *
+ * @returns Array of build target configurations.
  */
 export async function getBuildTargets() {
   const defaultNodeVersion = await getDefaultNodeVersion()
@@ -80,15 +80,15 @@ export async function getBuildTargets() {
 }
 
 /**
- * Get the default Node.js version for SEA builds.
- * Returns the socket-btm tag suffix (e.g., "20251213-7cf90d2").
- * Prefers SOCKET_CLI_SEA_NODE_VERSION env var, falls back to latest socket-btm release.
- *
- * @returns Node.js version tag suffix.
+ * Get the default Node.js version for SEA builds. Returns the socket-btm tag
+ * suffix (e.g., "20251213-7cf90d2"). Prefers SOCKET_CLI_SEA_NODE_VERSION env
+ * var, falls back to latest socket-btm release.
  *
  * @example
- * const version = await getDefaultNodeVersion()
- * // "20251213-7cf90d2"
+ *   const version = await getDefaultNodeVersion()
+ *   // "20251213-7cf90d2"
+ *
+ * @returns Node.js version tag suffix.
  */
 export async function getDefaultNodeVersion() {
   if (process.env['SOCKET_CLI_SEA_NODE_VERSION']) {
@@ -100,15 +100,16 @@ export async function getDefaultNodeVersion() {
 }
 
 /**
- * Fetch the latest node-smol release tag from socket-btm.
- * Returns the tag suffix (e.g., "20251213-7cf90d2").
- *
- * @returns Latest node-smol version tag suffix.
- * @throws {Error} When socket-btm releases cannot be fetched.
+ * Fetch the latest node-smol release tag from socket-btm. Returns the tag
+ * suffix (e.g., "20251213-7cf90d2").
  *
  * @example
- * const version = await getLatestSocketBtmNodeRelease()
- * // "20251213-7cf90d2"
+ *   const version = await getLatestSocketBtmNodeRelease()
+ *   // "20251213-7cf90d2"
+ *
+ * @returns Latest node-smol version tag suffix.
+ *
+ * @throws {Error} When socket-btm releases cannot be fetched.
  */
 export async function getLatestSocketBtmNodeRelease() {
   try {

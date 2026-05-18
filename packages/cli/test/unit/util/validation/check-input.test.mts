@@ -3,22 +3,15 @@
 /**
  * Unit tests for input validation.
  *
- * Purpose:
- * Tests user input validation utilities. Validates input sanitization and type checking.
+ * Purpose: Tests user input validation utilities. Validates input sanitization
+ * and type checking.
  *
- * Test Coverage:
- * - Input sanitization
- * - Type validation
- * - Format checking
- * - Length limits
- * - Allowlist/denylist
- * - Error messages
+ * Test Coverage: - Input sanitization - Type validation - Format checking -
+ * Length limits - Allowlist/denylist - Error messages.
  *
- * Testing Approach:
- * Tests input validation for security and UX.
+ * Testing Approach: Tests input validation for security and UX.
  *
- * Related Files:
- * - util/validation/check-input.mts (implementation)
+ * Related Files: - util/validation/check-input.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

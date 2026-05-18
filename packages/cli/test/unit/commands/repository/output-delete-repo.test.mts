@@ -1,23 +1,18 @@
 /**
  * Unit tests for output-delete-repo.
  *
- * Purpose:
- * Tests output formatting for repository deletion results. Validates confirmation
- * messages and error formatting for deletion operations.
+ * Purpose: Tests output formatting for repository deletion results. Validates
+ * confirmation messages and error formatting for deletion operations.
  *
- * Test Coverage:
- * - Successful deletion output formatting
- * - Error message formatting
- * - Multiple output formats (text, json, markdown)
- * - Deletion confirmation messages
+ * Test Coverage: - Successful deletion output formatting - Error message
+ * formatting - Multiple output formats (text, json, markdown) - Deletion
+ * confirmation messages.
  *
- * Testing Approach:
- * Uses result helpers to create test data. Validates formatted output strings for
- * destructive operations.
+ * Testing Approach: Uses result helpers to create test data. Validates
+ * formatted output strings for destructive operations.
  *
- * Related Files:
- * - src/commands/repository/output-delete-repo.mts (implementation)
- * - src/commands/repository/handle-delete-repo.mts (handler)
+ * Related Files: - src/commands/repository/output-delete-repo.mts
+ * (implementation) - src/commands/repository/handle-delete-repo.mts (handler)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

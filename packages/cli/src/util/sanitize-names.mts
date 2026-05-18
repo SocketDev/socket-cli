@@ -3,7 +3,8 @@ import { SOCKET_DEFAULT_REPOSITORY } from '../constants/socket.mts'
 /**
  * Extracts and sanitizes a repository name.
  *
- * @param name - The repository name to extract and sanitize
+ * @param name - The repository name to extract and sanitize.
+ *
  * @returns Sanitized repository name, or default repository name if empty
  */
 export function extractName(name: string): string {
@@ -14,7 +15,8 @@ export function extractName(name: string): string {
 /**
  * Extracts and sanitizes a repository owner name.
  *
- * @param owner - The repository owner name to extract and sanitize
+ * @param owner - The repository owner name to extract and sanitize.
+ *
  * @returns Sanitized repository owner name, or undefined if input is empty
  */
 export function extractOwner(owner: string): string | undefined {
@@ -26,12 +28,14 @@ export function extractOwner(owner: string): string | undefined {
 }
 
 /**
- * Sanitizes a name to comply with repository naming constraints.
- * Constraints: 100 or less A-Za-z0-9 characters only with non-repeating,
- * non-leading or trailing ., _ or - only.
+ * Sanitizes a name to comply with repository naming constraints. Constraints:
+ * 100 or less A-Za-z0-9 characters only with non-repeating, non-leading or
+ * trailing ., _ or - only.
  *
- * @param name - The name to sanitize
- * @returns Sanitized name that complies with repository naming rules, or empty string if no valid characters
+ * @param name - The name to sanitize.
+ *
+ * @returns Sanitized name that complies with repository naming rules, or empty
+ *   string if no valid characters.
  */
 export function sanitizeName(name: string): string {
   if (!name) {

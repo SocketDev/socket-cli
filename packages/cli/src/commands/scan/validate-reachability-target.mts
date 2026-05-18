@@ -9,10 +9,12 @@ export type ReachabilityTargetValidation = {
 }
 
 /**
- * Validates that a target directory meets the requirements for reachability analysis.
+ * Validates that a target directory meets the requirements for reachability
+ * analysis.
  *
  * @param targets - Array of target paths to validate.
  * @param cwd - Current working directory.
+ *
  * @returns Validation result object with boolean flags.
  */
 export async function validateReachabilityTarget(

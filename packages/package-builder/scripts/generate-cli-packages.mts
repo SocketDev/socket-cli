@@ -1,9 +1,8 @@
 /**
- * Generate CLI package directories from templates.
- * Creates the standard CLI, CLI-with-Sentry, and socket packages.
+ * Generate CLI package directories from templates. Creates the standard CLI,
+ * CLI-with-Sentry, and socket packages.
  *
- * Usage:
- *   node scripts/generate-cli-packages.mts
+ * Usage: node scripts/generate-cli-packages.mts.
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'

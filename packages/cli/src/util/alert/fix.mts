@@ -1,4 +1,6 @@
-/** @fileoverview Alert fix type definitions. */
+/**
+ * @file Alert fix type definitions.
+ */
 
 import { createEnum } from '../data/objects.mts'
 

@@ -5,6 +5,7 @@
  * Tests the command that removes configuration values from the config file.
  *
  * Test Coverage:
+ *
  * - Command metadata (description, hidden flag, CMD_NAME)
  * - Config key validation (valid, invalid, missing keys)
  * - Flag combinations (--json, --markdown, conflicting flags)
@@ -14,6 +15,7 @@
  * - Verification that no value parameter is passed to handler
  *
  * Testing Approach:
+ *
  * - Mock logger to capture output
  * - Mock meowOrExit to control flag values and input parsing
  * - Mock handleConfigUnset to verify handler calls
@@ -23,9 +25,10 @@
  * - Mock validation utilities
  *
  * Related Files:
- * - src/commands/config/cmd-config-unset.mts - Implementation
- * - src/commands/config/handle-config-unset.mts - Handler
- * - src/commands/config/config-command-factory.mts - Factory
+ *
+ * - Src/commands/config/cmd-config-unset.mts - Implementation
+ * - Src/commands/config/handle-config-unset.mts - Handler
+ * - Src/commands/config/config-command-factory.mts - Factory
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

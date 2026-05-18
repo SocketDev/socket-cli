@@ -361,10 +361,7 @@ export async function runHttpTransport(
         return
       }
       await handleRequestSafely('DELETE', res, logger, async () => {
-        await transport.handleRequest(
-          authenticatedReq as McpHandleRequest,
-          res,
-        )
+        await transport.handleRequest(authenticatedReq as McpHandleRequest, res)
       })
       return
     }

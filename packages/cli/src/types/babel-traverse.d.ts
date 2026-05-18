@@ -1,5 +1,5 @@
 /**
- * @fileoverview Type declarations for @babel/traverse module.
+ * @file Type declarations for @babel/traverse module.
  */
 
 declare module '@babel/traverse' {

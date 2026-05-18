@@ -1,5 +1,5 @@
 /**
- * TypeScript definitions for @socketaddon/iocraft
+ * TypeScript definitions for @socketaddon/iocraft.
  *
  * Node.js bindings for iocraft TUI library.
  */
@@ -105,8 +105,7 @@ export function printComponent(tree: ComponentNode): void
 export function eprintComponent(tree: ComponentNode): void
 
 /**
- * Get the current terminal size.
- * Returns [width, height] in characters.
+ * Get the current terminal size. Returns [width, height] in characters.
  */
 export function getTerminalSize(): [number, number]
 

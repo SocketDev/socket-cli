@@ -1,16 +1,14 @@
 /**
  * Scrubber adapter for synp.
  *
- * Synp (yarn.lock ↔ package-lock.json converter) has no CLI flags for
- * quiet or machine mode. On success it emits one line to stdout —
- * "Created <path>" — and does the actual conversion via
- * fs.writeFileSync. On error it prints a colored message + commander
- * help text to stdout.
+ * Synp (yarn.lock ↔ package-lock.json converter) has no CLI flags for quiet or
+ * machine mode. On success it emits one line to stdout — "Created <path>" — and
+ * does the actual conversion via fs.writeFileSync. On error it prints a colored
+ * message + commander help text to stdout.
  *
- * We drop the success line (the converted lockfile is the artifact on
- * disk, not stdout text). We also drop commander's "use --help for
- * hints" nudge. Real error text from synp flows through normally so
- * callers can surface it.
+ * We drop the success line (the converted lockfile is the artifact on disk, not
+ * stdout text). We also drop commander's "use --help for hints" nudge. Real
+ * error text from synp flows through normally so callers can surface it.
  */
 
 import type { ScrubberAdapter } from '../scrubber.mts'

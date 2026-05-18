@@ -1,16 +1,14 @@
 /**
  * Unit tests for dependency entries extraction.
  *
- * Purpose:
- * Tests the getDependencyEntries function for extracting dependencies from package.json.
+ * Purpose: Tests the getDependencyEntries function for extracting dependencies
+ * from package.json.
  *
- * Test Coverage:
- * - Extracting all dependency types
- * - Filtering undefined dependencies
- * - Null prototype handling
+ * Test Coverage: - Extracting all dependency types - Filtering undefined
+ * dependencies - Null prototype handling.
  *
- * Related Files:
- * - commands/optimize/get-dependency-entries.mts (implementation)
+ * Related Files: - commands/optimize/get-dependency-entries.mts
+ * (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

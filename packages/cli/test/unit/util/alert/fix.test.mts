@@ -1,14 +1,15 @@
 /**
  * Unit tests for alert fix type constants.
  *
- * Purpose:
- * Tests the ALERT_FIX_TYPE enum for fix operations.
+ * Purpose: Tests the ALERT_FIX_TYPE enum for fix operations.
  *
  * Test Coverage:
+ *
  * - ALERT_FIX_TYPE enum values
  *
  * Related Files:
- * - src/util/alert/fix.mts (implementation)
+ *
+ * - Src/util/alert/fix.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

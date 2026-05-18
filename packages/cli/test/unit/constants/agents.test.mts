@@ -1,16 +1,12 @@
 /**
  * Unit tests for agent constants.
  *
- * Purpose:
- * Tests the agent-specific constants and utility functions.
+ * Purpose: Tests the agent-specific constants and utility functions.
  *
- * Test Coverage:
- * - Agent name constants
- * - Minimum version by agent
- * - Execution path functions
+ * Test Coverage: - Agent name constants - Minimum version by agent - Execution
+ * path functions.
  *
- * Related Files:
- * - constants/agents.mts (implementation)
+ * Related Files: - constants/agents.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

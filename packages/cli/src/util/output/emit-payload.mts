@@ -1,18 +1,17 @@
 /**
  * Payload emission for socket-cli commands.
  *
- * Under machine-output mode (--json, --markdown, or --quiet) the
- * payload is emitted as three log calls — SENTINEL_BEGIN on its own
- * line, the payload body, SENTINEL_END on its own line. This block
- * structure lets the scrubber extract multi-line payloads (pretty-
- * printed JSON, Markdown reports) unambiguously: once it sees BEGIN,
- * every subsequent line is payload verbatim until END.
+ * Under machine-output mode (--json, --markdown, or --quiet) the payload is
+ * emitted as three log calls — SENTINEL_BEGIN on its own line, the payload
+ * body, SENTINEL_END on its own line. This block structure lets the scrubber
+ * extract multi-line payloads (pretty- printed JSON, Markdown reports)
+ * unambiguously: once it sees BEGIN, every subsequent line is payload verbatim
+ * until END.
  *
  * In human mode, the payload writes via logger.log with no wrapping.
  *
- * Use emitPayload() / emitJsonPayload() at the end of output-*
- * functions instead of calling logger.log(JSON.stringify(...))
- * directly.
+ * Use emitPayload() / emitJsonPayload() at the end of output-* functions
+ * instead of calling logger.log(JSON.stringify(...)) directly.
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'

@@ -2,18 +2,13 @@
 /**
  * Unit tests for scan report generation.
  *
- * Purpose:
- * Tests the report generation from scan artifacts.
+ * Purpose: Tests the report generation from scan artifacts.
  *
- * Test Coverage:
- * - generateReport function
- * - Policy action handling (error, warn, monitor, ignore, defer)
- * - Fold settings (pkg, version, file)
- * - Report level filtering
- * - Health status determination
+ * Test Coverage: - generateReport function - Policy action handling (error,
+ * warn, monitor, ignore, defer) - Fold settings (pkg, version, file) - Report
+ * level filtering - Health status determination.
  *
- * Related Files:
- * - src/commands/scan/generate-report.mts (implementation)
+ * Related Files: - src/commands/scan/generate-report.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

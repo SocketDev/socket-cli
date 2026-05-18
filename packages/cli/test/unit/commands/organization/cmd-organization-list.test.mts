@@ -1,7 +1,8 @@
 /**
  * Unit tests for organization list command.
  *
- * Tests the command that lists organizations associated with the Socket API token.
+ * Tests the command that lists organizations associated with the Socket API
+ * token.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

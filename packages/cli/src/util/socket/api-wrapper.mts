@@ -1,4 +1,6 @@
-/** @fileoverview Simplified API wrapper to DRY out repetitive fetch-*.mts files */
+/**
+ * @file Simplified API wrapper to DRY out repetitive fetch-*.mts files
+ */
 
 import { handleApiCall } from './api.mts'
 import { setupSdk } from './sdk.mts'
@@ -7,8 +9,8 @@ import type { BaseFetchOptions, CResult } from '../../types.mts'
 import type { SocketSdk } from '@socketsecurity/sdk'
 
 /**
- * Generic API call wrapper that eliminates the need for separate fetch-*.mts files
- * for simple SDK method calls.
+ * Generic API call wrapper that eliminates the need for separate fetch-*.mts
+ * files for simple SDK method calls.
  */
 export async function apiCall<T extends keyof SocketSdk>(
   method: T,
@@ -32,7 +34,7 @@ type SdkArg<T extends keyof SocketSdk, I extends number> = Parameters<
 >[I]
 
 /**
- * Simplified repository API calls
+ * Simplified repository API calls.
  */
 export const repoApi = {
   list: (
@@ -85,7 +87,7 @@ export const repoApi = {
 }
 
 /**
- * Simplified organization API calls
+ * Simplified organization API calls.
  */
 export const orgApi = {
   list: (options?: BaseFetchOptions) =>
@@ -108,7 +110,7 @@ export const orgApi = {
 }
 
 /**
- * Simplified package API calls
+ * Simplified package API calls.
  */
 export const packageApi = {
   score: (
@@ -139,7 +141,7 @@ export const packageApi = {
 }
 
 /**
- * Simplified scan API calls
+ * Simplified scan API calls.
  */
 export const scanApi = {
   create: (orgSlug: string, params: unknown, options?: BaseFetchOptions) =>

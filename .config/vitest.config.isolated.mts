@@ -1,8 +1,8 @@
 /**
- * @fileoverview Vitest configuration for tests requiring full isolation.
- * Used for tests that need vi.doMock() or other module-level mocking that
- * requires true module isolation. Use this config when tests need to mock
- * modules differently in the same file or when isolate: false causes issues.
+ * @file Vitest configuration for tests requiring full isolation. Used for tests
+ *   that need vi.doMock() or other module-level mocking that requires true
+ *   module isolation. Use this config when tests need to mock modules
+ *   differently in the same file or when isolate: false causes issues.
  */
 import { defineConfig } from 'vitest/config'
 

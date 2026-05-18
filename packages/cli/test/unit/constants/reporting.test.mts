@@ -1,15 +1,11 @@
 /**
  * Unit tests for reporting constants.
  *
- * Purpose:
- * Tests the report level constants for security issue severity.
+ * Purpose: Tests the report level constants for security issue severity.
  *
- * Test Coverage:
- * - Fold setting constants
- * - Report level constants
+ * Test Coverage: - Fold setting constants - Report level constants.
  *
- * Related Files:
- * - constants/reporting.mts (implementation)
+ * Related Files: - constants/reporting.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

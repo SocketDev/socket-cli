@@ -1,21 +1,16 @@
 /**
  * Unit tests for ecosystem requirements validation.
  *
- * Purpose:
- * Tests ecosystem requirements checking. Validates minimum version requirements and compatibility.
+ * Purpose: Tests ecosystem requirements checking. Validates minimum version
+ * requirements and compatibility.
  *
- * Test Coverage:
- * - Version requirement parsing
- * - Compatibility checking
- * - Minimum version validation
- * - Range support (semver)
- * - Error messaging for incompatible versions
+ * Test Coverage: - Version requirement parsing - Compatibility checking -
+ * Minimum version validation - Range support (semver) - Error messaging for
+ * incompatible versions.
  *
- * Testing Approach:
- * Tests semver-based requirement validation logic.
+ * Testing Approach: Tests semver-based requirement validation logic.
  *
- * Related Files:
- * - util/ecosystem/requirements.mts (implementation)
+ * Related Files: - util/ecosystem/requirements.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'

@@ -1,6 +1,6 @@
 /**
- * File path and directory constants for Socket CLI.
- * Consolidates both static paths and lazy-loaded path computations.
+ * File path and directory constants for Socket CLI. Consolidates both static
+ * paths and lazy-loaded path computations.
  */
 
 import { realpathSync } from 'node:fs'

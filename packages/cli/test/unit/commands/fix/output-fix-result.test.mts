@@ -1,18 +1,12 @@
 /**
  * Unit tests for fix result output formatting.
  *
- * Purpose:
- * Tests the output formatting for fix command results.
+ * Purpose: Tests the output formatting for fix command results.
  *
- * Test Coverage:
- * - outputFixResult function
- * - JSON output format
- * - Markdown output format
- * - Text output format
- * - Success and error handling
+ * Test Coverage: - outputFixResult function - JSON output format - Markdown
+ * output format - Text output format - Success and error handling.
  *
- * Related Files:
- * - src/commands/fix/output-fix-result.mts (implementation)
+ * Related Files: - src/commands/fix/output-fix-result.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

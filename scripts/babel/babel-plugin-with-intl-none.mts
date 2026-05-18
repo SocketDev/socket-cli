@@ -1,28 +1,25 @@
 /**
- * @fileoverview Babel plugin for --with-intl=none compatibility
+ * @file Babel plugin for --with-intl=none compatibility This plugin transforms
+ *   ICU-dependent JavaScript features into ICU-free alternatives, enabling
+ *   Node.js builds with --with-intl=none to save ~6-8MB. Note: --without-intl
+ *   is deprecated, use --with-intl=none instead. Transformations:
  *
- * This plugin transforms ICU-dependent JavaScript features into ICU-free alternatives,
- * enabling Node.js builds with --with-intl=none to save ~6-8MB.
- *
- * Note: --without-intl is deprecated, use --with-intl=none instead.
- *
- * Transformations:
- * 1. `.toLocaleString()` → Simple formatting with commas/basic date strings
- * 2. `Intl.*` APIs → Polyfills or basic implementations
- * 3. Unicode regex `\p{...}` → Character class alternatives (shared transform)
- * 4. Unicode regex `/v` flag → Downgrade to `/u` or remove
- * 5. `.localeCompare()` → Basic string comparison
+ *   1. `.toLocaleString()` → Simple formatting with commas/basic date strings
+ *   2. `Intl.*` APIs → Polyfills or basic implementations
+ *   3. Unicode regex `\p{...}` → Character class alternatives (shared transform)
+ *   4. Unicode regex `/v` flag → Downgrade to `/u` or remove
+ *   5. `.localeCompare()` → Basic string comparison
  *
  * @example
- * // Before:
- * const formatted = count.toLocaleString()
- * const date = new Date().toLocaleDateString()
- * const regex = /[\p{Letter}\p{Number}]+/v
+ *   // Before:
+ *   const formatted = count.toLocaleString()
+ *   const date = new Date().toLocaleDateString()
+ *   const regex = /[\p{Letter}\p{Number}]+/v
  *
- * // After:
- * const formatted = count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
- * const date = new Date().toISOString().split('T')[0]
- * const regex = /[a-zA-Z0-9]+/
+ *   // After:
+ *   const formatted = count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+ *   const date = new Date().toISOString().split('T')[0]
+ *   const regex = /[a-zA-Z0-9]+/
  */
 
 import { unicodePropertyMap } from 'build-infra/lib/unicode-property-escape-transform'
@@ -31,9 +28,8 @@ import { unicodePropertyMap } from 'build-infra/lib/unicode-property-escape-tran
  * Helper Functions (injected at runtime via Babel template.ast):
  *
  * __formatNumber(num) - Format with comma thousands separators
- * __formatDate(date) - Format in YYYY-MM-DD
- * __formatDateTime(date) - Format with time
- * __simpleCompare(a, b) - Basic string comparison
+ * __formatDate(date) - Format in YYYY-MM-DD __formatDateTime(date) - Format
+ * with time __simpleCompare(a, b) - Basic string comparison.
  */
 
 export default function babelPluginWithIntlNone({ template, types: t }) {
@@ -101,18 +97,17 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
 
     visitor: {
       /**
-       * Transform number.toLocaleString() calls
+       * Transform number.toLocaleString() calls.
        *
        * @example
-       * // Input:
-       * count.toLocaleString()
-       * (1234567).toLocaleString()
-       * num.toLocaleString('en-US', { minimumFractionDigits: 2 })
+       *   // Input:
+       *   count.toLocaleString()(1234567).toLocaleString()
+       *   num.toLocaleString('en-US', { minimumFractionDigits: 2 })
        *
-       * // Output:
-       * __formatNumber(count)
-       * __formatNumber(1234567)
-       * __formatNumber(num)
+       *   // Output:
+       *   __formatNumber(count)
+       *   __formatNumber(1234567)
+       *   __formatNumber(num)
        */
       CallExpression(path) {
         const { node } = path
@@ -328,18 +323,18 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
       },
 
       /**
-       * Transform Unicode property escapes in regex and handle /v flag
+       * Transform Unicode property escapes in regex and handle /v flag.
        *
        * @example
-       * // Input:
-       * /\p{Letter}/u
-       * /[\p{Alpha}0-9_]/u
-       * /[\p{Letter}\p{Number}]+/v
+       *   // Input:
+       *   /\p{Letter}/u
+       *   /[\p{Alpha}0-9_]/u
+       *   /[\p{Letter}\p{Number}]+/v
        *
-       * // Output:
-       * /[a-zA-Z]/
-       * /[a-zA-Z0-9_]/
-       * /[a-zA-Z0-9]+/
+       *   // Output:
+       *   /[a-zA-Z]/
+       *   /[a-zA-Z0-9_]/
+       *   /[a-zA-Z0-9]+/
        */
       RegExpLiteral(path) {
         const { node } = path
@@ -448,7 +443,7 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
       },
 
       /**
-       * Add stats comment at the end of the file
+       * Add stats comment at the end of the file.
        */
       Program: {
         exit(path) {

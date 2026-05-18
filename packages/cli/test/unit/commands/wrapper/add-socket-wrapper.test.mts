@@ -1,21 +1,16 @@
 /**
  * Unit tests for addSocketWrapper.
  *
- * Purpose:
- * Tests adding Socket wrapper scripts to package managers. Validates wrapper installation for npm, pnpm, and yarn.
+ * Purpose: Tests adding Socket wrapper scripts to package managers. Validates
+ * wrapper installation for npm, pnpm, and yarn.
  *
- * Test Coverage:
- * - Core functionality validation
- * - Edge case handling
- * - Error scenarios
- * - Input validation
+ * Test Coverage: - Core functionality validation - Edge case handling - Error
+ * scenarios - Input validation.
  *
- * Testing Approach:
- * Comprehensive unit testing of module functionality with mocked dependencies
- * where appropriate.
+ * Testing Approach: Comprehensive unit testing of module functionality with
+ * mocked dependencies where appropriate.
  *
- * Related Files:
- * - src/addSocketWrapper.mts (implementation)
+ * Related Files: - src/addSocketWrapper.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

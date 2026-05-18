@@ -3,17 +3,16 @@
  * Sync checksums from GitHub releases to bundle-tools.json.
  *
  * For each GitHub-released tool, this script:
+ *
  * 1. Fetches checksums.txt from the release (if available)
  * 2. Or downloads each asset and computes SHA-256 checksums
  * 3. Updates bundle-tools.json with the new checksums
  *
- * Usage:
- *   node scripts/sync-checksums.mts [--tool=<tool>] [--force] [--dry-run]
+ * Usage: node scripts/sync-checksums.mts [--tool=<tool>] [--force] [--dry-run]
  *
- * Options:
- *   --tool=<name>  Only sync specific tool
- *   --force        Force update even if checksums haven't changed
- *   --dry-run      Show what would be updated without writing
+ * Options: --tool=<name> Only sync specific tool --force Force update even if
+ * checksums haven't changed --dry-run Show what would be updated without
+ * writing.
  */
 
 import crypto from 'node:crypto'
@@ -75,8 +74,8 @@ export async function downloadFile(url, destPath) {
 }
 
 /**
- * Fetch checksums for a GitHub release.
- * First tries checksums.txt, then falls back to downloading assets.
+ * Fetch checksums for a GitHub release. First tries checksums.txt, then falls
+ * back to downloading assets.
  */
 export async function fetchGitHubReleaseChecksums(
   repo,
@@ -240,7 +239,9 @@ async function main() {
     githubTools.push(...filtered)
   }
 
-  logger.log(`Syncing checksums for ${githubTools.length} GitHub release tool(s)...`)
+  logger.log(
+    `Syncing checksums for ${githubTools.length} GitHub release tool(s)...`,
+  )
   logger.log('')
 
   let updated = 0
@@ -308,7 +309,9 @@ async function main() {
 
   // Summary.
   logger.log('')
-  logger.log(`Summary: ${updated} updated, ${unchanged} unchanged, ${failed} failed`)
+  logger.log(
+    `Summary: ${updated} updated, ${unchanged} unchanged, ${failed} failed`,
+  )
 
   if (failed > 0) {
     process.exitCode = 1

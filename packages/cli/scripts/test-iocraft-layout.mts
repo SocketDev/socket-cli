@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
 /**
- * @fileoverview Minimal test case to demonstrate iocraft layout bug.
- *
- * ISSUE: Layout properties (flex_direction, border_style, etc.) are not being
- * applied during rendering.
- *
- * Run: node scripts/test-iocraft-layout.mts
+ * @file Minimal test case to demonstrate iocraft layout bug. ISSUE: Layout
+ *   properties (flex_direction, border_style, etc.) are not being applied
+ *   during rendering. Run: node scripts/test-iocraft-layout.mts.
  */
 
 import { createRequire } from 'node:module'
@@ -69,4 +66,6 @@ logger.log('- flex_direction: "column" → NOT WORKING (items render in row)')
 logger.log('- border_style: "single" → NOT WORKING (no border drawn)')
 logger.log('- gap → PARTIALLY WORKING (adds space in row layout)')
 logger.log('')
-logger.log('The layout engine does not appear to be processing flexbox properties.')
+logger.log(
+  'The layout engine does not appear to be processing flexbox properties.',
+)

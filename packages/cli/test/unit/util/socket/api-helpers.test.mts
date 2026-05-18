@@ -1,8 +1,7 @@
 /**
  * Direct tests for the now-exported helpers in util/socket/api.mts.
  *
- * Related Files:
- * - src/util/socket/api.mts
+ * Related Files: - src/util/socket/api.mts.
  */
 
 import { describe, expect, it } from 'vitest'

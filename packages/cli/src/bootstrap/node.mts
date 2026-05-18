@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
- * Node.js Internal Bootstrap
+ * Node.js Internal Bootstrap.
  *
  * This file is loaded by the custom Node.js binary at startup via
  * internal/bootstrap/socketsecurity module.
  *
  * Responsibilities:
+ *
  * - Check if @socketsecurity/cli is installed in ~/.socket/_dlx/cli/
  * - If not installed: download and extract from npm
  * - Spawn the CLI with current arguments
  *
- * Size target: <2KB after minification + brotli compression
- * Build output: dist/bootstrap/node.js (copied to Node.js source)
+ * Size target: <2KB after minification + brotli compression Build output:
+ * dist/bootstrap/node.js (copied to Node.js source)
  */
 
 import { existsSync } from 'node:fs'
@@ -32,8 +33,8 @@ import {
 const logger = getDefaultLogger()
 
 /**
- * Download CLI using npm pack command.
- * This delegates to npm which handles downloading and extracting the latest version.
+ * Download CLI using npm pack command. This delegates to npm which handles
+ * downloading and extracting the latest version.
  */
 export async function downloadCli(): Promise<void> {
   const packageName = getCliPackageName()

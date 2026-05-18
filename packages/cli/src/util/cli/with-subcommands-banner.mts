@@ -1,12 +1,11 @@
 /**
  * ASCII banner rendering for the Socket CLI top-of-command output.
  *
- * Extracted from with-subcommands.mts to keep that file under the
- * 1000-line File size hard cap. The banner functions are a cohesive
- * unit: getAsciiHeader composes the logo + info lines, emitBanner
- * writes the result to stderr, shouldAnimateHeader / getHeaderTheme /
- * getTokenOrigin / shouldSuppressBanner are read-only helpers that
- * feed into it.
+ * Extracted from with-subcommands.mts to keep that file under the 1000-line
+ * File size hard cap. The banner functions are a cohesive unit: getAsciiHeader
+ * composes the logo + info lines, emitBanner writes the result to stderr,
+ * shouldAnimateHeader / getHeaderTheme / getTokenOrigin / shouldSuppressBanner
+ * are read-only helpers that feed into it.
  */
 
 import colors from 'yoctocolors-cjs'
@@ -170,8 +169,9 @@ export function getHeaderTheme(flags?: Record<string, unknown>): HeaderTheme {
 }
 
 /**
- * Determine the origin of the API token (env var, config, --config flag, or none).
- * Used in the banner to show the user where the active token is coming from.
+ * Determine the origin of the API token (env var, config, --config flag, or
+ * none). Used in the banner to show the user where the active token is coming
+ * from.
  */
 export function getTokenOrigin(): string {
   if (getSocketCliNoApiToken()) {

@@ -2,13 +2,13 @@
 /**
  * Unit tests for the MCP `depscore` tool implementation.
  *
- * Tests runDepscore(input, opts) — the worker behind the only MCP tool
- * `socket mcp` exposes. Covers SDK setup caching, payload shaping
- * (PURL conversion, version cleanup), response parsing, formatting,
- * and the error paths Socket API returns (401/403/non-200, empty,
- * malformed).
+ * Tests runDepscore(input, opts) — the worker behind the only MCP tool `socket
+ * mcp` exposes. Covers SDK setup caching, payload shaping (PURL conversion,
+ * version cleanup), response parsing, formatting, and the error paths Socket
+ * API returns (401/403/non-200, empty, malformed).
  *
  * Test Coverage:
+ *
  * - Input schema (TypeBox shape) is exported and validates correctly
  * - Tool name + description constants exposed for the MCP wire
  * - SDK is constructed once per token and reused
@@ -31,9 +31,10 @@
  * - Platform hint forwarded to deduplicateArtifacts
  *
  * Related Files:
- * - src/commands/mcp/depscore.mts - Implementation
- * - src/commands/mcp/lib/purl.mts - PURL helper
- * - src/commands/mcp/lib/artifacts.mts - Dedup helper
+ *
+ * - Src/commands/mcp/depscore.mts - Implementation
+ * - Src/commands/mcp/lib/purl.mts - PURL helper
+ * - Src/commands/mcp/lib/artifacts.mts - Dedup helper
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

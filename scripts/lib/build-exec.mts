@@ -1,9 +1,8 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
- * @fileoverview Build execution utilities
- *
- * Centralized command execution for build script.
+ * @file Build execution utilities Centralized command execution for build
+ *   script.
  */
 
 import type { SpawnStdioResult } from '@socketsecurity/lib-stable/spawn'

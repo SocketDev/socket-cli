@@ -1,25 +1,40 @@
 /**
- * Comprehensive snapshot data scrubbing for consistent cross-environment testing.
+ * Comprehensive snapshot data scrubbing for consistent cross-environment
+ * testing.
  *
- * This utility ensures snapshots don't contain machine-specific, time-dependent,
- * or environment-specific data that would cause test failures across different
- * systems or time periods.
+ * This utility ensures snapshots don't contain machine-specific,
+ * time-dependent, or environment-specific data that would cause test failures
+ * across different systems or time periods.
  */
 
 export interface ScrubOptions {
-  /** Scrub absolute file paths (default: true). */
+  /**
+   * Scrub absolute file paths (default: true).
+   */
   paths?: boolean | undefined
-  /** Scrub timestamps and dates (default: true). */
+  /**
+   * Scrub timestamps and dates (default: true).
+   */
   timestamps?: boolean | undefined
-  /** Scrub UUIDs and scan IDs (default: true). */
+  /**
+   * Scrub UUIDs and scan IDs (default: true).
+   */
   ids?: boolean | undefined
-  /** Scrub version numbers (default: false - usually stable in mocks). */
+  /**
+   * Scrub version numbers (default: false - usually stable in mocks).
+   */
   versions?: boolean | undefined
-  /** Scrub IP addresses (default: true). */
+  /**
+   * Scrub IP addresses (default: true).
+   */
   ipAddresses?: boolean | undefined
-  /** Scrub email addresses (default: false - usually stable in mocks). */
+  /**
+   * Scrub email addresses (default: false - usually stable in mocks).
+   */
   emails?: boolean | undefined
-  /** Additional custom scrubbing patterns. */
+  /**
+   * Additional custom scrubbing patterns.
+   */
   custom?: Array<{ pattern: RegExp; replacement: string }> | undefined
 }
 
@@ -29,8 +44,9 @@ export interface ScrubOptions {
  * This function applies multiple scrubbing passes to ensure snapshots are
  * consistent across different machines, environments, and time periods.
  *
- * @param output - The string to scrub
- * @param options - Scrubbing options to control what gets scrubbed
+ * @param output - The string to scrub.
+ * @param options - Scrubbing options to control what gets scrubbed.
+ *
  * @returns The scrubbed string with environment-specific data replaced
  */
 export function scrubSnapshotData(
@@ -130,10 +146,11 @@ export function scrubSnapshotData(
 }
 
 /**
- * Convenience function for scrubbing inline snapshot strings.
- * Wraps scrubSnapshotData with sensible defaults.
+ * Convenience function for scrubbing inline snapshot strings. Wraps
+ * scrubSnapshotData with sensible defaults.
  *
- * @param output - The string to scrub
+ * @param output - The string to scrub.
+ *
  * @returns The scrubbed string with default scrubbing applied
  */
 export function toSnapshotString(output: string): string {

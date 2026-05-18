@@ -1,18 +1,12 @@
 /**
  * Unit tests for config unset output formatting.
  *
- * Purpose:
- * Tests the output formatting for config unset results.
+ * Purpose: Tests the output formatting for config unset results.
  *
- * Test Coverage:
- * - outputConfigUnset function
- * - JSON output format
- * - Text output format
- * - Markdown output format
- * - Error handling
+ * Test Coverage: - outputConfigUnset function - JSON output format - Text
+ * output format - Markdown output format - Error handling.
  *
- * Related Files:
- * - src/commands/config/output-config-unset.mts (implementation)
+ * Related Files: - src/commands/config/output-config-unset.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

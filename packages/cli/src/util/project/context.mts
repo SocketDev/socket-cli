@@ -1,4 +1,6 @@
-/** @fileoverview Project context awareness for better CLI UX. */
+/**
+ * @file Project context awareness for better CLI UX.
+ */
 
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -14,7 +16,7 @@ interface ProjectContext {
 }
 
 /**
- * Detect the framework being used
+ * Detect the framework being used.
  */
 export async function detectFramework(
   root: string,
@@ -82,7 +84,7 @@ export async function detectFramework(
 }
 
 /**
- * Detect the package manager being used in the project
+ * Detect the package manager being used in the project.
  */
 export async function detectPackageManager(
   cwd: string,
@@ -123,7 +125,7 @@ export async function detectPackageManager(
 }
 
 /**
- * Find the project root by looking for package.json
+ * Find the project root by looking for package.json.
  */
 export async function findProjectRoot(
   startDir: string,
@@ -141,7 +143,7 @@ export async function findProjectRoot(
 }
 
 /**
- * Get smart suggestions based on project context
+ * Get smart suggestions based on project context.
  */
 export function getContextualSuggestions(context: ProjectContext): string[] {
   const suggestions: string[] = []
@@ -169,7 +171,7 @@ export function getContextualSuggestions(context: ProjectContext): string[] {
 }
 
 /**
- * Get the full project context
+ * Get the full project context.
  */
 export async function getProjectContext(
   cwd: string = process.cwd(),
@@ -208,7 +210,7 @@ export async function getProjectContext(
 }
 
 /**
- * Detect if this is a monorepo
+ * Detect if this is a monorepo.
  */
 export async function isMonorepo(root: string): Promise<boolean> {
   const pkgPath = path.join(root, 'package.json')

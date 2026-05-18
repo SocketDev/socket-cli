@@ -1,4 +1,6 @@
-/** @fileoverview GITHUB_API_URL environment variable. */
+/**
+ * @file GITHUB_API_URL environment variable.
+ */
 
 import { getGithubApiUrl } from '@socketsecurity/lib/env/github'
 

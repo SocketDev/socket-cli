@@ -27,6 +27,7 @@ import { runSocketBasics } from '../../util/basics/spawn.mts'
  * Filter out .socket.facts.json files from scan paths to avoid duplicates.
  *
  * @param paths - Array of file paths to filter.
+ *
  * @returns Filtered paths without .socket.facts.json files.
  */
 export function excludeFactsJson(paths: string[]): string[] {

@@ -1,10 +1,10 @@
 /**
  * Interactive prompts for `socket scan github`.
  *
- * Extracted from create-scan-from-github.mts to keep that file under
- * the 1000-line File-size cap. These helpers wrap @socketsecurity/lib
- * prompt primitives with a confirm-or-cancel CResult contract that
- * the orchestration code expects.
+ * Extracted from create-scan-from-github.mts to keep that file under the
+ * 1000-line File-size cap. These helpers wrap @socketsecurity/lib prompt
+ * primitives with a confirm-or-cancel CResult contract that the orchestration
+ * code expects.
  */
 
 import { confirm, select } from '@socketsecurity/lib/stdio/prompts'
@@ -31,9 +31,9 @@ export async function makeSure(count: number): Promise<CResult<undefined>> {
 }
 
 /**
- * Ask the user to pick a single repo from a list. Returns ok:false
- * with cause='User chose to cancel the action' when the user picks
- * the synthetic '(Exit)' choice.
+ * Ask the user to pick a single repo from a list. Returns ok:false with
+ * cause='User chose to cancel the action' when the user picks the synthetic
+ * '(Exit)' choice.
  */
 export async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
   const proceed = await select({

@@ -6,7 +6,8 @@
  * handling, pom collection, --verbose paths, and exception handling.
  *
  * Related Files:
- * - src/commands/manifest/convert-gradle-to-maven.mts
+ *
+ * - Src/commands/manifest/convert-gradle-to-maven.mts
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

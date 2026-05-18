@@ -1,19 +1,15 @@
 /**
  * Unit tests for yarn path utilities.
  *
- * Purpose:
- * Tests yarn-specific path utilities. Validates yarn bin path resolution.
+ * Purpose: Tests yarn-specific path utilities. Validates yarn bin path
+ * resolution.
  *
- * Test Coverage:
- * - yarn bin path resolution
- * - Path caching
- * - Error handling when yarn not found
+ * Test Coverage: - yarn bin path resolution - Path caching - Error handling
+ * when yarn not found.
  *
- * Testing Approach:
- * Tests yarn path conventions and resolution logic.
+ * Testing Approach: Tests yarn path conventions and resolution logic.
  *
- * Related Files:
- * - util/yarn/paths.mts (implementation)
+ * Related Files: - util/yarn/paths.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

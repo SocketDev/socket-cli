@@ -1,17 +1,14 @@
 /**
  * Unit tests for uninstall completion output formatting.
  *
- * Purpose:
- * Tests the output formatting for tab completion uninstallation results.
+ * Purpose: Tests the output formatting for tab completion uninstallation
+ * results.
  *
- * Test Coverage:
- * - outputUninstallCompletion function
- * - Success output with removal instructions
- * - Remaining completions notification
- * - Error handling
+ * Test Coverage: - outputUninstallCompletion function - Success output with
+ * removal instructions - Remaining completions notification - Error handling.
  *
- * Related Files:
- * - src/commands/uninstall/output-uninstall-completion.mts (implementation)
+ * Related Files: - src/commands/uninstall/output-uninstall-completion.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

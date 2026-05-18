@@ -3,14 +3,12 @@
  *
  * Tests Kotlin project manifest generation.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Kotlin-specific dependency resolution
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Kotlin-specific dependency resolution.
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest-kotlin.mts - Command definition
- * - src/commands/manifest/handle-manifest-kotlin.mts - Kotlin manifest logic
+ * Related Files: - src/commands/manifest/cmd-manifest-kotlin.mts - Command
+ * definition - src/commands/manifest/handle-manifest-kotlin.mts - Kotlin
+ * manifest logic.
  */
 
 import { describe, expect } from 'vitest'

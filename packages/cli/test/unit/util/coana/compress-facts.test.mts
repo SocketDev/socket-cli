@@ -1,12 +1,10 @@
 /**
  * Unit tests for Coana facts-file brotli compression.
  *
- * Test Coverage:
- * - compressSocketFactsForUpload: swaps .socket.facts.json paths for
- *   brotli-compressed .br temps, leaves other paths alone, cleans up.
+ * Test Coverage: - compressSocketFactsForUpload: swaps .socket.facts.json paths
+ * for brotli-compressed .br temps, leaves other paths alone, cleans up.
  *
- * Related Files:
- * - util/coana/compress-facts.mts (implementation)
+ * Related Files: - util/coana/compress-facts.mts (implementation)
  */
 
 import {

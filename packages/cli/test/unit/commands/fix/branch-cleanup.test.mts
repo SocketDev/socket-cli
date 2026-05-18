@@ -1,17 +1,13 @@
 /**
  * Unit tests for branch cleanup utilities.
  *
- * Purpose:
- * Tests the branch lifecycle management for the fix command.
+ * Purpose: Tests the branch lifecycle management for the fix command.
  *
- * Test Coverage:
- * - cleanupStaleBranch function
- * - cleanupFailedPrBranches function
- * - cleanupSuccessfulPrLocalBranch function
- * - cleanupErrorBranches function
+ * Test Coverage: - cleanupStaleBranch function - cleanupFailedPrBranches
+ * function - cleanupSuccessfulPrLocalBranch function - cleanupErrorBranches
+ * function.
  *
- * Related Files:
- * - src/commands/fix/branch-cleanup.mts (implementation)
+ * Related Files: - src/commands/fix/branch-cleanup.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,11 +1,10 @@
 /**
  * Unit tests for the zpm scrubber adapter.
  *
- * Routes zpm's structured log lines (➤ prefix, YN#### codes, "Done in
- * Xs") to noise; passes everything else through unchanged.
+ * Routes zpm's structured log lines (➤ prefix, YN#### codes, "Done in Xs") to
+ * noise; passes everything else through unchanged.
  *
- * Related Files:
- * - src/util/output/adapters/zpm.mts
+ * Related Files: - src/util/output/adapters/zpm.mts.
  */
 
 import { describe, expect, it } from 'vitest'

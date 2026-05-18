@@ -1,27 +1,21 @@
 /**
  * Integration tests for `socket yarn` wrapper command.
  *
- * Tests the Yarn package manager wrapper that adds Socket security scanning
- * to Yarn operations via Socket Firewall (sfw). Commands are forwarded to
- * sfw which provides security scanning before installation.
+ * Tests the Yarn package manager wrapper that adds Socket security scanning to
+ * Yarn operations via Socket Firewall (sfw). Commands are forwarded to sfw
+ * which provides security scanning before installation.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Yarn install operations with scanning
- * - Config flag variants
- * - Issue rules configuration
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Yarn install operations with scanning - Config flag variants -
+ * Issue rules configuration.
  *
- * Security Features:
- * - Pre-installation security scanning via Socket Firewall
- * - Malware detection integration
- * - Workspace support
+ * Security Features: - Pre-installation security scanning via Socket Firewall -
+ * Malware detection integration - Workspace support.
  *
- * Related Files:
- * - src/commands/yarn/cmd-yarn.mts - yarn command implementation
- * - src/yarn-cli.mts - yarn CLI entry point
- * - src/util/dlx/resolve-binary.mjs - sfw resolution
- * - test/integration/cli/cmd-yarn-malware.test.mts - Malware tests
+ * Related Files: - src/commands/yarn/cmd-yarn.mts - yarn command implementation
+ * - src/yarn-cli.mts - yarn CLI entry point - src/util/dlx/resolve-binary.mjs -
+ * sfw resolution - test/integration/cli/cmd-yarn-malware.test.mts - Malware
+ * tests.
  */
 
 import { describe, expect } from 'vitest'

@@ -2,33 +2,35 @@
 /**
  * Unit tests for runSocketBasics.
  *
- * Spawns the socket-basics Python tool with extracted bundled binaries.
- * Mocks the VFS extractors, spawn, fs, and env helpers.
+ * Spawns the socket-basics Python tool with extracted bundled binaries. Mocks
+ * the VFS extractors, spawn, fs, and env helpers.
  *
  * Test Coverage:
- * - basics tools unavailable → "Basics tools not available"
+ *
+ * - Basics tools unavailable → "Basics tools not available"
  * - VFS extraction returns null → "Failed to extract basics tools"
  * - Python binary missing after extraction → "Python not found"
  * - PyCli already installed (skip pip install) → proceeds
- * - PyCli not installed → pip install path; null spawn / non-zero
- *   exit / wrong version cases
- * - socket_basics not installed → "must be pre-bundled" error
+ * - PyCli not installed → pip install path; null spawn / non-zero exit / wrong
+ *   version cases
+ * - Socket_basics not installed → "must be pre-bundled" error
  * - Default args (no languages, scanSecrets=true, scanContainers=false)
- * - languages list adds --languages csv
- * - scanContainers=true adds --containers
+ * - Languages list adds --languages csv
+ * - ScanContainers=true adds --containers
  * - Custom outputPath used as facts path
  * - Default factsPath is cwd/.socket.facts.json
- * - basicsResult null → "Failed to start"
- * - basicsResult non-zero → "Socket-basics scan failed"
- * - facts file missing post-scan → "not created" error
- * - parseSocketFacts: empty file → ok with empty findings
- * - parseSocketFacts: invalid JSON → ok with empty findings
- * - parseSocketFacts: file read error → ok with empty findings
- * - parseSocketFacts: well-formed JSON returns finding counts
+ * - BasicsResult null → "Failed to start"
+ * - BasicsResult non-zero → "Socket-basics scan failed"
+ * - Facts file missing post-scan → "not created" error
+ * - ParseSocketFacts: empty file → ok with empty findings
+ * - ParseSocketFacts: invalid JSON → ok with empty findings
+ * - ParseSocketFacts: file read error → ok with empty findings
+ * - ParseSocketFacts: well-formed JSON returns finding counts
  *
  * Related Files:
- * - src/util/basics/spawn.mts - Implementation
- * - src/util/basics/vfs-extract.mts - tool availability + extraction (mocked)
+ *
+ * - Src/util/basics/spawn.mts - Implementation
+ * - Src/util/basics/vfs-extract.mts - tool availability + extraction (mocked)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

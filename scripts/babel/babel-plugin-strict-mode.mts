@@ -1,22 +1,23 @@
 /**
- * @fileoverview Babel plugin to transform loose-mode code into strict-mode compatible code
+ * @file Babel plugin to transform loose-mode code into strict-mode compatible
+ *   code This plugin ensures code runs correctly in strict mode by transforming
+ *   problematic patterns:
  *
- * This plugin ensures code runs correctly in strict mode by transforming problematic patterns:
- * 1. Octal numeric literals (0123) → Modern octal (0o123)
- * 2. Octal escape sequences in strings (\012) → Proper escapes
- * 3. With statements → Error (cannot be transformed safely)
- * 4. Future reserved words as identifiers → Safe alternatives
- * 5. Adds 'use strict' directive if missing
+ *   1. Octal numeric literals (0123) → Modern octal (0o123)
+ *   2. Octal escape sequences in strings (\012) → Proper escapes
+ *   3. With statements → Error (cannot be transformed safely)
+ *   4. Future reserved words as identifiers → Safe alternatives
+ *   5. Adds 'use strict' directive if missing
  *
  * @example
- * // Before:
- * var x = 0123  // Octal literal
- * var str = '\012'  // Octal escape
+ *   // Before:
+ *   var x = 0123 // Octal literal
+ *   var str = '\012' // Octal escape
  *
- * // After:
- * 'use strict'
- * var x = 83  // Decimal equivalent
- * var str = '\n'  // Proper escape
+ *   // After:
+ *   ;('use strict')
+ *   var x = 83 // Decimal equivalent
+ *   var str = '\n' // Proper escape
  */
 
 export default function babelPluginStrictMode({ types: t }) {
@@ -32,7 +33,7 @@ export default function babelPluginStrictMode({ types: t }) {
 
     visitor: {
       /**
-       * Add 'use strict' directive to programs that don't have it
+       * Add 'use strict' directive to programs that don't have it.
        */
       Program: {
         enter(path) {
@@ -80,11 +81,11 @@ Strict Mode Transformation Stats:
       },
 
       /**
-       * Transform legacy octal numeric literals
+       * Transform legacy octal numeric literals.
        *
        * @example
-       * // Input: var x = 0123
-       * // Output: var x = 83
+       *   // Input: var x = 0123
+       *   // Output: var x = 83
        */
       NumericLiteral(path) {
         const { node } = path
@@ -107,11 +108,11 @@ Strict Mode Transformation Stats:
       },
 
       /**
-       * Transform octal escape sequences in string literals
+       * Transform octal escape sequences in string literals.
        *
        * @example
-       * // Input: var str = "Hello\012World"
-       * // Output: var str = "Hello\nWorld"
+       *   // Input: var str = "Hello\012World"
+       *   // Output: var str = "Hello\nWorld"
        */
       StringLiteral(path) {
         const { node } = path
@@ -140,8 +141,8 @@ Strict Mode Transformation Stats:
        * Detect and error on 'with' statements (cannot be safely transformed)
        *
        * @example
-       * // Input: with (obj) { x = 1 }
-       * // Output: Error thrown
+       *   // Input: with (obj) { x = 1 }
+       *   // Output: Error thrown
        */
       WithStatement(path) {
         stats.withStatements++
@@ -160,7 +161,7 @@ Strict Mode Transformation Stats:
       },
 
       /**
-       * Transform template literals with octal escapes
+       * Transform template literals with octal escapes.
        */
       TemplateLiteral(path) {
         const { node } = path
@@ -197,9 +198,11 @@ Strict Mode Transformation Stats:
 }
 
 /**
- * Convert legacy octal literal (0123) to decimal number
- * @param {string} value - The numeric literal string
- * @returns {number|undefined} Decimal value or undefined if not octal
+ * Convert legacy octal literal (0123) to decimal number.
+ *
+ * @param {string} value - The numeric literal string.
+ *
+ * @returns {number | undefined} Decimal value or undefined if not octal
  */
 export function convertOctalLiteral(value) {
   // Match legacy octal: starts with 0, followed by octal digits (0-7)
@@ -213,8 +216,10 @@ export function convertOctalLiteral(value) {
 }
 
 /**
- * Transform octal escape sequences in strings to proper escapes
- * @param {string} str - String literal value
+ * Transform octal escape sequences in strings to proper escapes.
+ *
+ * @param {string} str - String literal value.
+ *
  * @returns {string} Transformed string
  */
 export function transformOctalEscapes(str) {

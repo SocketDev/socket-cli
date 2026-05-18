@@ -4,24 +4,21 @@
  * Tests the package manager installation logic used by the optimize command.
  * These tests use mocked spawn/spinner to verify correct command construction.
  *
- * Test Coverage:
- * - pnpm: Special flags (--config.confirmModulesPurge=false, --no-frozen-lockfile, CI=1)
- * - yarn: Basic install command
- * - Custom args pass-through (--frozen-lockfile, --production, etc.)
- * - Spinner integration for progress indication
- * - Unknown/future package managers (fallback behavior)
+ * Test Coverage: - pnpm: Special flags (--config.confirmModulesPurge=false,
+ * --no-frozen-lockfile, CI=1) - yarn: Basic install command - Custom args
+ * pass-through (--frozen-lockfile, --production, etc.) - Spinner integration
+ * for progress indication - Unknown/future package managers (fallback behavior)
  * - Option merging (args, env, stdio)
  *
- * npm Behavior (NOT tested here):
- * - npm uses Socket Firewall (sfw) for security scanning
- * - This cannot be reliably mocked due to ESM module resolution issues
+ * Npm Behavior (NOT tested here): - npm uses Socket Firewall (sfw) for security
+ * scanning - This cannot be reliably mocked due to ESM module resolution issues
  * - npm behavior is tested via integration tests at:
- *   test/integration/cli/cmd-optimize.test.mts
+ * test/integration/cli/cmd-optimize.test.mts.
  *
- * Related Files:
- * - src/commands/optimize/agent-installer.mts - Implementation
- * - src/util/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities
- * - test/integration/cli/cmd-optimize.test.mts - Integration tests for full optimize flow
+ * Related Files: - src/commands/optimize/agent-installer.mts - Implementation -
+ * src/util/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities -
+ * test/integration/cli/cmd-optimize.test.mts - Integration tests for full
+ * optimize flow.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

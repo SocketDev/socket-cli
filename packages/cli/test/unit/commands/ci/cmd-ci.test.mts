@@ -3,25 +3,19 @@
  *
  * Tests the command that creates scans for CI environments.
  *
- * Test Coverage:
- * - Command metadata (description, hidden flag)
- * - --dry-run flag support
- * - --auto-manifest flag support
- * - Handler invocation with correct parameters
- * - Git operation integration (branch, repo name)
- * - Organization slug fetching
+ * Test Coverage: - Command metadata (description, hidden flag) - --dry-run flag
+ * support - --auto-manifest flag support - Handler invocation with correct
+ * parameters - Git operation integration (branch, repo name) - Organization
+ * slug fetching.
  *
- * Testing Approach:
- * - Mock logger to capture output
- * - Mock meowOrExit to control flag values
- * - Mock handleCi to verify handler is called correctly
- * - Mock git operations (gitBranch, detectDefaultBranch, getRepoName)
- * - Mock getDefaultOrgSlug for organization fetching
- * - Mock outputDryRunUpload for dry-run testing
+ * Testing Approach: - Mock logger to capture output - Mock meowOrExit to
+ * control flag values - Mock handleCi to verify handler is called correctly -
+ * Mock git operations (gitBranch, detectDefaultBranch, getRepoName) - Mock
+ * getDefaultOrgSlug for organization fetching - Mock outputDryRunUpload for
+ * dry-run testing.
  *
- * Related Files:
- * - src/commands/ci/cmd-ci.mts - Implementation
- * - src/commands/ci/handle-ci.mts - Handler
+ * Related Files: - src/commands/ci/cmd-ci.mts - Implementation -
+ * src/commands/ci/handle-ci.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,22 +1,16 @@
 /**
- * Output formatting utilities for Socket CLI.
- * Provides consistent formatting for help text and command output.
+ * Output formatting utilities for Socket CLI. Provides consistent formatting
+ * for help text and command output.
  *
- * Key Functions:
- * - getFlagApiRequirementsOutput: Format API requirements for flags
- * - getHelpListOutput: Format help text lists with descriptions
- * - getFlagsHelpOutput: Generate formatted help for command flags
+ * Key Functions: - getFlagApiRequirementsOutput: Format API requirements for
+ * flags - getHelpListOutput: Format help text lists with descriptions -
+ * getFlagsHelpOutput: Generate formatted help for command flags.
  *
- * Formatting Features:
- * - Automatic indentation and alignment
- * - Flag description formatting
- * - Requirements and permissions display
- * - Hidden flag filtering
+ * Formatting Features: - Automatic indentation and alignment - Flag description
+ * formatting - Requirements and permissions display - Hidden flag filtering.
  *
- * Usage:
- * - Used by command help systems
- * - Provides consistent terminal output formatting
- * - Handles kebab-case conversion for flags
+ * Usage: - Used by command help systems - Provides consistent terminal output
+ * formatting - Handles kebab-case conversion for flags.
  */
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
@@ -60,7 +54,8 @@ export function getFlagApiRequirementsOutput(
   const data = (
     requirements.api as Record<
       string,
-      { quota?: number | undefined; permissions?: string[] | undefined } | undefined
+      | { quota?: number | undefined; permissions?: string[] | undefined }
+      | undefined
     >
   )[key]
   let result = ''

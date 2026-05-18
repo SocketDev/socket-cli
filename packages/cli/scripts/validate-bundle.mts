@@ -1,9 +1,9 @@
 /**
- * @fileoverview Validates that the CLI bundle doesn't contain unresolved external dependencies.
+ * @file Validates that the CLI bundle doesn't contain unresolved external
+ *   dependencies. Rules:
  *
- * Rules:
- * - No require("./external/<package>") calls should exist in the bundle.
- * - All socket-lib external dependencies should be inlined.
+ *   - No require("./external/<package>") calls should exist in the bundle.
+ *   - All socket-lib external dependencies should be inlined.
  */
 
 import { readFileSync } from 'node:fs'

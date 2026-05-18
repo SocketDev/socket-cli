@@ -3,20 +3,17 @@
  *
  * Tests checking Socket CLI authentication status.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Authentication status display
- * - User information retrieval
- * - Token validation
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Authentication status display - User information retrieval -
+ * Token validation.
  *
- * Related Files:
- * - src/commands/whoami/cmd-whoami.mts - Complete command implementation
+ * Related Files: - src/commands/whoami/cmd-whoami.mts - Complete command
+ * implementation.
  */
 
 /**
- * @fileoverview Tests for whoami command.
- * Validates authentication status display with various token sources.
+ * @file Tests for whoami command. Validates authentication status display with
+ *   various token sources.
  */
 
 import { afterEach, beforeEach, describe, expect } from 'vitest'

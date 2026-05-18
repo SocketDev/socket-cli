@@ -1,20 +1,16 @@
 /**
  * Unit tests for yarn version detection.
  *
- * Purpose:
- * Tests yarn version detection to determine Classic (1.x) vs Berry (2+).
+ * Purpose: Tests yarn version detection to determine Classic (1.x) vs Berry
+ * (2+).
  *
- * Test Coverage:
- * - isYarnBerry detection
- * - Version parsing
- * - Caching behavior
- * - Error handling
+ * Test Coverage: - isYarnBerry detection - Version parsing - Caching behavior -
+ * Error handling.
  *
- * Testing Approach:
- * Mocks spawnSync and getYarnBinPath to simulate different yarn versions.
+ * Testing Approach: Mocks spawnSync and getYarnBinPath to simulate different
+ * yarn versions.
  *
- * Related Files:
- * - util/yarn/version.mts (implementation)
+ * Related Files: - util/yarn/version.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

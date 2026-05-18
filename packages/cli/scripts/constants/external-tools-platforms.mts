@@ -1,11 +1,10 @@
 /**
- * @fileoverview Platform-specific binary mappings for external security tools.
- * Maps Socket CLI platform identifiers to specific binary asset names from each
- * tool's GitHub releases.
+ * @file Platform-specific binary mappings for external security tools. Maps
+ *   Socket CLI platform identifiers to specific binary asset names from each
+ *   tool's GitHub releases. Used by:
  *
- * Used by:
- * - SEA build utils for downloading and packaging security tools
- * - External tools downloader scripts
+ *   - SEA build utils for downloading and packaging security tools
+ *   - External tools downloader scripts
  */
 
 /**
@@ -13,32 +12,37 @@
  *
  * Maps Socket CLI platform identifiers (e.g., 'darwin-arm64') to the specific
  * binary asset names from each tool's GitHub releases. All binaries are native
- * for their target architecture except on windows-arm64, where Trivy and OpenGrep
- * use x64 emulation (Windows 11 ARM64 includes transparent x64 emulation).
+ * for their target architecture except on windows-arm64, where Trivy and
+ * OpenGrep use x64 emulation (Windows 11 ARM64 includes transparent x64
+ * emulation).
  *
- * Windows ARM64 Emulation:
- * Trivy and OpenGrep don't provide native ARM64 Windows builds. However, Windows 11
- * ARM64 includes transparent x64 emulation (similar to Rosetta on macOS), so we use
- * x64 binaries on windows-arm64 with no code changes or special invocation needed.
- * The binaries are marked with "(x64 emulated)" comments for clarity.
+ * Windows ARM64 Emulation: Trivy and OpenGrep don't provide native ARM64
+ * Windows builds. However, Windows 11 ARM64 includes transparent x64 emulation
+ * (similar to Rosetta on macOS), so we use x64 binaries on windows-arm64 with
+ * no code changes or special invocation needed. The binaries are marked with
+ * "(x64 emulated)" comments for clarity.
  *
- * Socket-Patch Platform Coverage (v2.0.0):
- * socket-patch is a Rust binary from https://github.com/SocketDev/socket-patch.
- * As of v2.0.0, the following builds are available:
- *   - socket-patch-aarch64-apple-darwin.tar.gz      (darwin-arm64)
- *   - socket-patch-x86_64-apple-darwin.tar.gz       (darwin-x64)
- *   - socket-patch-aarch64-unknown-linux-gnu.tar.gz (linux-arm64 glibc)
- *   - socket-patch-x86_64-unknown-linux-musl.tar.gz (linux-x64 musl)
- *   - socket-patch-aarch64-pc-windows-msvc.zip      (win-arm64)
- *   - socket-patch-x86_64-pc-windows-msvc.zip       (win-x64)
+ * Socket-Patch Platform Coverage (v2.0.0): socket-patch is a Rust binary from
+ * https://github.com/SocketDev/socket-patch. As of v2.0.0, the following builds
+ * are available:
+ *
+ * - Socket-patch-aarch64-apple-darwin.tar.gz (darwin-arm64)
+ * - Socket-patch-x86_64-apple-darwin.tar.gz (darwin-x64)
+ * - Socket-patch-aarch64-unknown-linux-gnu.tar.gz (linux-arm64 glibc)
+ * - Socket-patch-x86_64-unknown-linux-musl.tar.gz (linux-x64 musl)
+ * - Socket-patch-aarch64-pc-windows-msvc.zip (win-arm64)
+ * - Socket-patch-x86_64-pc-windows-msvc.zip (win-x64)
  *
  * MISSING BUILDS (using fallbacks):
- *   - linux-x64 (glibc): Using musl build as fallback. Musl binaries are statically
- *     linked and run on glibc systems without issues.
- *   - linux-arm64-musl: Using glibc build as fallback. This may have compatibility
- *     issues on Alpine/musl systems. TODO: Request musl build from socket-patch team.
+ *
+ * - Linux-x64 (glibc): Using musl build as fallback. Musl binaries are statically
+ *   linked and run on glibc systems without issues.
+ * - Linux-arm64-musl: Using glibc build as fallback. This may have compatibility
+ *   issues on Alpine/musl systems. TODO: Request musl build from socket-patch
+ *   team.
  *
  * Tool Binary Naming Conventions:
+ *
  * - Python: cpython-{version}-{arch}-{os}-{abi}-install_only.tar.gz.
  * - Trivy: trivy_{version}_{OS}-{ARCH}.tar.gz or .zip.
  * - TruffleHog: trufflehog_{version}_{os}_{arch}.tar.gz.
@@ -155,11 +159,12 @@ export const PLATFORM_MAP_TOOLS = {
 }
 
 /**
- * Get platform key for EXTERNAL_TOOLS_BY_PLATFORM lookup.
- * Normalizes process.platform (win32) to release naming (win).
+ * Get platform key for EXTERNAL_TOOLS_BY_PLATFORM lookup. Normalizes
+ * process.platform (win32) to release naming (win).
  *
- * @param {string} platform - process.platform value (darwin, linux, win32).
- * @param {string} arch - process.arch value (arm64, x64).
+ * @param {string} platform - Process.platform value (darwin, linux, win32).
+ * @param {string} arch - Process.arch value (arm64, x64).
+ *
  * @returns {string} Normalized platform key (e.g., 'win-x64').
  */
 export function getPlatformKey(platform, arch) {

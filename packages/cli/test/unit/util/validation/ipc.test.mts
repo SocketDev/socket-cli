@@ -1,19 +1,13 @@
 /**
  * Unit tests for IPC validation utilities.
  *
- * Purpose:
- * Tests the IPC message validation and creation functions.
+ * Purpose: Tests the IPC message validation and creation functions.
  *
- * Test Coverage:
- * - isValidIpcMessage function
- * - isValidIpcHandshake function
- * - isValidIpcHandle function
- * - createIpcMessage function
- * - createIpcHandshake function
- * - parseIpcMessage function
+ * Test Coverage: - isValidIpcMessage function - isValidIpcHandshake function -
+ * isValidIpcHandle function - createIpcMessage function - createIpcHandshake
+ * function - parseIpcMessage function.
  *
- * Related Files:
- * - src/util/validation/ipc.mts (implementation)
+ * Related Files: - src/util/validation/ipc.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

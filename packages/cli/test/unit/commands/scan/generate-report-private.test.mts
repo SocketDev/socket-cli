@@ -1,11 +1,10 @@
 /**
  * Unit tests for the (now-exported) private helpers in generate-report.
  *
- * Covers isStricterPolicy strictness ladder:
- * error > warn > monitor > ignore > defer > {unknown}.
+ * Covers isStricterPolicy strictness ladder: error > warn > monitor > ignore >
+ * defer > {unknown}.
  *
- * Related Files:
- * - src/commands/scan/generate-report.mts
+ * Related Files: - src/commands/scan/generate-report.mts.
  */
 
 import { describe, expect, it } from 'vitest'

@@ -1,8 +1,8 @@
 /**
  * ONNX-embedding-based command matching for `socket ask`.
  *
- * Extracted from handle-ask.mts to keep that file under the 1000-line cap.
- * The ONNX matcher is the slow path: it lazily loads a ~17MB MiniLM model
+ * Extracted from handle-ask.mts to keep that file under the 1000-line cap. The
+ * ONNX matcher is the slow path: it lazily loads a ~17MB MiniLM model
  * (currently disabled — see getEmbeddingPipeline body) and scores command
  * descriptions against the query using cosine similarity over the embedded
  * vectors. Used as a fallback when both pattern matching and word-overlap
@@ -19,8 +19,8 @@ const commandEmbeddings: Record<string, Float32Array> = {}
 
 /**
  * Compute cosine similarity between two vectors. Since our embeddings are
- * normalized, cosine similarity reduces to a dot product. Returns 0 when
- * the vectors have different lengths.
+ * normalized, cosine similarity reduces to a dot product. Returns 0 when the
+ * vectors have different lengths.
  */
 export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
   if (a.length !== b.length) {
@@ -35,8 +35,8 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
 
 /**
  * Pre-compute embeddings for the canonical command descriptions. Idempotent:
- * skips work after the first successful pass. Reads through getEmbedding so
- * a disabled pipeline is a silent no-op.
+ * skips work after the first successful pass. Reads through getEmbedding so a
+ * disabled pipeline is a silent no-op.
  */
 export async function ensureCommandEmbeddings(): Promise<void> {
   /* c8 ignore start -- defensive: commandEmbeddings only populates when the ONNX pipeline is enabled, which is currently disabled (see getEmbeddingPipeline). */
@@ -129,10 +129,10 @@ export async function getEmbeddingPipeline() {
 }
 
 /**
- * Score the query against pre-computed command embeddings and return the
- * best match if it clears 0.5 cosine similarity. Returns null when the
- * embedding pipeline is unavailable, the query embeds to null, or no
- * command meets the threshold.
+ * Score the query against pre-computed command embeddings and return the best
+ * match if it clears 0.5 cosine similarity. Returns null when the embedding
+ * pipeline is unavailable, the query embeds to null, or no command meets the
+ * threshold.
  */
 export async function onnxSemanticMatch(query: string): Promise<
   | {

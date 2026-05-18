@@ -1,25 +1,18 @@
 /**
  * Unit tests for fetchThreatFeed.
  *
- * Purpose:
- * Tests fetching threat intelligence feed via the Socket API. Retrieves current security threat information and malware reports.
+ * Purpose: Tests fetching threat intelligence feed via the Socket API.
+ * Retrieves current security threat information and malware reports.
  *
- * Test Coverage:
- * - Successful API operation
- * - SDK setup failure handling
- * - API call error scenarios
- * - Custom SDK options (API tokens, base URLs)
- * - Threat data retrieval
- * - Feed pagination
- * - Filter options
- * - Null prototype usage for security
+ * Test Coverage: - Successful API operation - SDK setup failure handling - API
+ * call error scenarios - Custom SDK options (API tokens, base URLs) - Threat
+ * data retrieval - Feed pagination - Filter options - Null prototype usage for
+ * security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
- * error handling and API integration.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Validates comprehensive error handling and API integration.
  *
- * Related Files:
- * - src/commands/ThreatFeed.mts (implementation)
+ * Related Files: - src/commands/ThreatFeed.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

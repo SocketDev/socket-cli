@@ -1,7 +1,7 @@
 /**
- * Base URL for downloading Node.js binaries for SEA builds.
- * Default: 'socket-btm' (uses smol binaries from socket-btm releases)
- * Can be set to 'https://nodejs.org/download/release' or custom URL.
+ * Base URL for downloading Node.js binaries for SEA builds. Default:
+ * 'socket-btm' (uses smol binaries from socket-btm releases) Can be set to
+ * 'https://nodejs.org/download/release' or custom URL.
  */
 
 import { env } from 'node:process'

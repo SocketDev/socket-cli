@@ -3,24 +3,17 @@
  *
  * Tests the command that triggers intentional errors for development/testing.
  *
- * Test Coverage:
- * - Command metadata (description, hidden flag)
- * - --dry-run flag support
- * - Error throwing in default mode
- * - JSON error output format
- * - Markdown error output format
- * - --throw flag to force error throwing even with output flags
- * - Exit code behavior
+ * Test Coverage: - Command metadata (description, hidden flag) - --dry-run flag
+ * support - Error throwing in default mode - JSON error output format -
+ * Markdown error output format - --throw flag to force error throwing even with
+ * output flags - Exit code behavior.
  *
- * Testing Approach:
- * - Mock logger to capture output
- * - Mock meowOrExit to control flag values
- * - Mock serializeResultJson to verify JSON output format
- * - Mock failMsgWithBadge to verify markdown output format
- * - Verify error throwing and exit codes
+ * Testing Approach: - Mock logger to capture output - Mock meowOrExit to
+ * control flag values - Mock serializeResultJson to verify JSON output format -
+ * Mock failMsgWithBadge to verify markdown output format - Verify error
+ * throwing and exit codes.
  *
- * Related Files:
- * - src/commands/oops/cmd-oops.mts - Implementation
+ * Related Files: - src/commands/oops/cmd-oops.mts - Implementation.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

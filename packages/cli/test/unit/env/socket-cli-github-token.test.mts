@@ -1,18 +1,20 @@
 /**
  * Unit tests for SOCKET_CLI_GITHUB_TOKEN snapshot.
  *
- * The export runs at module-load time so it captures process.env once.
- * Each test resets module-state via vi.resetModules() and re-imports
- * after setting the env, so we can exercise the precedence chain.
+ * The export runs at module-load time so it captures process.env once. Each
+ * test resets module-state via vi.resetModules() and re-imports after setting
+ * the env, so we can exercise the precedence chain.
  *
  * Test Coverage:
+ *
  * - Socket-specific env var (via getSocketCliGithubToken) wins
  * - Falls back to GITHUB_TOKEN when Socket-specific is unset
  * - Falls back to GH_TOKEN when GITHUB_TOKEN is also unset
  * - Returns empty string when nothing is set
  *
  * Related Files:
- * - src/env/socket-cli-github-token.mts
+ *
+ * - Src/env/socket-cli-github-token.mts
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,11 +1,8 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
- * @fileoverview Generate all package directories from templates.
- * Runs all package generation scripts in sequence.
- *
- * Usage:
- *   node scripts/generate-all.mts.
+ * @file Generate all package directories from templates. Runs all package
+ *   generation scripts in sequence. Usage: node scripts/generate-all.mts.
  */
 
 import path from 'node:path'

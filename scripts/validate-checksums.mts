@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * @fileoverview Build-time validation for SHA-256 checksums.
- * Ensures all required platform-specific tool assets have checksums defined
- * in bundle-tools.json before building SEA binaries.
+ * @file Build-time validation for SHA-256 checksums. Ensures all required
+ *   platform-specific tool assets have checksums defined in bundle-tools.json
+ *   before building SEA binaries. This script is a security requirement -
+ *   builds MUST NOT proceed if any checksums are missing for downloadable
+ *   binaries. Exit codes:
  *
- * This script is a security requirement - builds MUST NOT proceed if any
- * checksums are missing for downloadable binaries.
- *
- * Exit codes:
- * - 0: All required checksums are present.
- * - 1: One or more checksums are missing.
+ *   - 0: All required checksums are present.
+ *   - 1: One or more checksums are missing.
  */
 
 import { readFileSync } from 'node:fs'

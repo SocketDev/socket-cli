@@ -1,7 +1,8 @@
 /**
- * esbuild configuration for building Socket CLI as a SINGLE unified file.
+ * Esbuild configuration for building Socket CLI as a SINGLE unified file.
  *
- * esbuild is much faster than Rollup and doesn't have template literal corruption issues.
+ * Esbuild is much faster than Rollup and doesn't have template literal
+ * corruption issues.
  */
 
 import { existsSync } from 'node:fs'

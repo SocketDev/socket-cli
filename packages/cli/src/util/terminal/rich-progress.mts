@@ -1,6 +1,8 @@
 /* oxlint-disable socket/no-status-emoji -- TUI / custom output formatter; emojis are part of the visual contract. */
 
-/** @fileoverview Rich progress indicators for better CLI UX. */
+/**
+ * @file Rich progress indicators for better CLI UX.
+ */
 
 import colors from 'yoctocolors-cjs'
 
@@ -27,7 +29,7 @@ interface TaskProgress {
 }
 
 /**
- * Create a multi-progress bar manager for parallel operations
+ * Create a multi-progress bar manager for parallel operations.
  */
 export class MultiProgress {
   private tasks: Map<string, TaskProgress> = new Map()
@@ -42,7 +44,7 @@ export class MultiProgress {
   }
 
   /**
-   * Add a new task to track
+   * Add a new task to track.
    */
   addTask(id: string, name: string, total: number): void {
     // Prevent unbounded Map growth by enforcing max concurrent tasks.
@@ -78,7 +80,7 @@ export class MultiProgress {
   }
 
   /**
-   * Update task progress
+   * Update task progress.
    */
   updateTask(
     id: string,
@@ -106,7 +108,7 @@ export class MultiProgress {
   }
 
   /**
-   * Mark task as failed
+   * Mark task as failed.
    */
   failTask(id: string, error?: string): void {
     const task = this.tasks.get(id)
@@ -126,7 +128,7 @@ export class MultiProgress {
   }
 
   /**
-   * Start rendering
+   * Start rendering.
    */
   private start(): void {
     if (this.options.hideCursor) {
@@ -169,7 +171,7 @@ export class MultiProgress {
   }
 
   /**
-   * Clear previous output lines
+   * Clear previous output lines.
    */
   private clearLines(): void {
     for (let i = 0; i < this.lastLineCount; i++) {
@@ -179,7 +181,7 @@ export class MultiProgress {
   }
 
   /**
-   * Render all progress bars
+   * Render all progress bars.
    */
   private render(): void {
     this.clearLines()
@@ -199,7 +201,7 @@ export class MultiProgress {
   }
 
   /**
-   * Render a single task
+   * Render a single task.
    */
   private renderTask(task: TaskProgress): string {
     // Clamp percentage to 0-100 to prevent negative repeat counts.
@@ -237,7 +239,7 @@ export class MultiProgress {
 }
 
 /**
- * Create a simple spinner with message
+ * Create a simple spinner with message.
  */
 export class Spinner {
   private frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
@@ -295,7 +297,7 @@ export class Spinner {
 }
 
 /**
- * Progress indicator for file operations
+ * Progress indicator for file operations.
  */
 export class FileProgress {
   private processed = 0
@@ -318,7 +320,8 @@ export class FileProgress {
 
     // Uses raw stderr.write for \r-based progress redraw — logger
     // appends newlines and can't replace the current line.
-    process.stderr.write( // socket-hook: allow console
+    process.stderr.write(
+      // socket-hook: allow console
       `\r${this.operation}: [${this.processed}/${this.total}] ${percentage}% ${colors.gray(`(${elapsed}s)`)} ${colors.cyan(file)}`,
     )
 

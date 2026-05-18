@@ -1,4 +1,7 @@
-/** @fileoverview Test utilities index. Re-exports all test utility functions for convenient importing. */
+/**
+ * @file Test utilities index. Re-exports all test utility functions for
+ *   convenient importing.
+ */
 
 export * from './cli-execution.mts'
 export * from './constants.mts'

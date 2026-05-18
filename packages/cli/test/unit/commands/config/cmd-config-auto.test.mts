@@ -1,27 +1,21 @@
 /**
  * Unit tests for config auto command.
  *
- * Tests the command that automatically discovers and sets correct config values.
+ * Tests the command that automatically discovers and sets correct config
+ * values.
  *
- * Test Coverage:
- * - Command metadata (description, hidden flag)
- * - Config key validation
- * - Flag combinations (--json, --markdown)
- * - --dry-run flag support
- * - Handler invocation with correct parameters
+ * Test Coverage: - Command metadata (description, hidden flag) - Config key
+ * validation - Flag combinations (--json, --markdown) - --dry-run flag support
+ * - Handler invocation with correct parameters.
  *
- * Testing Approach:
- * - Mock logger to capture output
- * - Mock meowOrExit to control flag values
- * - Mock handleConfigAuto to verify handler is called correctly
- * - Mock config utilities (isSupportedConfigKey, getSupportedConfigEntries)
- * - Mock dry-run output utilities
- * - Mock output mode utilities
- * - Mock validation utilities
+ * Testing Approach: - Mock logger to capture output - Mock meowOrExit to
+ * control flag values - Mock handleConfigAuto to verify handler is called
+ * correctly - Mock config utilities (isSupportedConfigKey,
+ * getSupportedConfigEntries) - Mock dry-run output utilities - Mock output mode
+ * utilities - Mock validation utilities.
  *
- * Related Files:
- * - src/commands/config/cmd-config-auto.mts - Implementation
- * - src/commands/config/handle-config-auto.mts - Handler
+ * Related Files: - src/commands/config/cmd-config-auto.mts - Implementation -
+ * src/commands/config/handle-config-auto.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,4 +1,6 @@
-/** Unit tests for repository create command (creates a repo in an organization). */
+/**
+ * Unit tests for repository create command (creates a repo in an organization).
+ */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as LoggerModule from '@socketsecurity/lib/logger'

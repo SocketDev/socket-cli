@@ -1,24 +1,17 @@
 /**
  * Unit tests for outputListScans.
  *
- * Purpose:
- * Tests output formatting for scan list operations.
- * Validates table formatting and JSON serialization.
+ * Purpose: Tests output formatting for scan list operations. Validates table
+ * formatting and JSON serialization.
  *
- * Test Coverage:
- * - Successful scan list output formatting
- * - Error message formatting
- * - JSON output mode
- * - Text output with table formatting
- * - Empty results handling
- * - Exit code setting
+ * Test Coverage: - Successful scan list output formatting - Error message
+ * formatting - JSON output mode - Text output with table formatting - Empty
+ * results handling - Exit code setting.
  *
- * Testing Approach:
- * Uses mocked logger to capture output.
- * Tests different output modes and edge cases.
+ * Testing Approach: Uses mocked logger to capture output. Tests different
+ * output modes and edge cases.
  *
- * Related Files:
- * - src/commands/scan/output-list-scans.mts (implementation)
+ * Related Files: - src/commands/scan/output-list-scans.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

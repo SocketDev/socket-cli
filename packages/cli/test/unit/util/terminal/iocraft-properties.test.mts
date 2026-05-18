@@ -1,8 +1,7 @@
 /**
- * @fileoverview Unit tests for iocraft property support.
- *
- * Tests all iocraft properties including text styling, layout positioning,
- * dimensions, flex layout, and border configuration.
+ * @file Unit tests for iocraft property support. Tests all iocraft properties
+ *   including text styling, layout positioning, dimensions, flex layout, and
+ *   border configuration.
  */
 
 import { describe, expect, it } from 'vitest'

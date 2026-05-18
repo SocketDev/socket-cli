@@ -1,4 +1,6 @@
-/** @fileoverview Version and compatibility constants for Socket CLI. */
+/**
+ * @file Version and compatibility constants for Socket CLI.
+ */
 
 // Version string constant.
 export const LATEST = 'latest'

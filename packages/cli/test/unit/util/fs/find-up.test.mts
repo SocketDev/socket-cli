@@ -1,18 +1,13 @@
 /**
  * Unit tests for find-up utility.
  *
- * Purpose:
- * Tests the findUp function for searching files up the directory tree.
+ * Purpose: Tests the findUp function for searching files up the directory tree.
  *
- * Test Coverage:
- * - Finding files by single name
- * - Finding files by multiple names
- * - Finding directories
- * - Abort signal handling
- * - Custom working directory
+ * Test Coverage: - Finding files by single name - Finding files by multiple
+ * names - Finding directories - Abort signal handling - Custom working
+ * directory.
  *
- * Related Files:
- * - src/util/fs/find-up.mts (implementation)
+ * Related Files: - src/util/fs/find-up.mts (implementation)
  */
 
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'

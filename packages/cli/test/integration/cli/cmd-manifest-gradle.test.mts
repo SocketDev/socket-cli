@@ -3,15 +3,13 @@
  *
  * Tests Gradle project manifest generation for Java/Kotlin/Android projects.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - build.gradle and build.gradle.kts parsing
- * - Multi-module project support
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - build.gradle and build.gradle.kts parsing - Multi-module project
+ * support.
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest-gradle.mts - Command definition
- * - src/commands/manifest/handle-manifest-gradle.mts - Gradle manifest logic
+ * Related Files: - src/commands/manifest/cmd-manifest-gradle.mts - Command
+ * definition - src/commands/manifest/handle-manifest-gradle.mts - Gradle
+ * manifest logic.
  */
 
 import { describe, expect } from 'vitest'

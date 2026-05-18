@@ -2,26 +2,24 @@
 /**
  * Unit tests for the MCP HTTP transport's pure helpers.
  *
- * These small functions handle header normalization, base-URL
- * construction, JSON parsing, scope splitting, OAuth error formatting,
- * and origin classification. Pulled out of transport-http.mts so they
- * can be exercised directly without booting an HTTP server.
+ * These small functions handle header normalization, base-URL construction,
+ * JSON parsing, scope splitting, OAuth error formatting, and origin
+ * classification. Pulled out of transport-http.mts so they can be exercised
+ * directly without booting an HTTP server.
  *
- * Test Coverage (100% target):
- * - getRequestHeaderValue: undefined / string / array / empty array
- * - getForwardedHeaderValue: empty / single / comma-list / whitespace
- * - getRequestBaseUrl: trustProxy on/off × forwarded headers present/missing
- *   × tls / non-tls socket × forwarded-proto valid/invalid
- * - parseJsonObject: valid object / array / null / primitive / malformed
- * - getProtectedResourceMetadataUrl: appends well-known path
- * - buildProtectedResourceMetadata: includes all required fields
- * - writeJson: status code, headers, body
- * - writeOAuthError: with and without resourceMetadataUrl
- * - splitScopes: non-string / empty string / single / multiple / extra ws
- * - isLocalhostOrigin: localhost / 127.0.0.1 / other / malformed URL
+ * Test Coverage (100% target): - getRequestHeaderValue: undefined / string /
+ * array / empty array - getForwardedHeaderValue: empty / single / comma-list /
+ * whitespace - getRequestBaseUrl: trustProxy on/off × forwarded headers
+ * present/missing × tls / non-tls socket × forwarded-proto valid/invalid -
+ * parseJsonObject: valid object / array / null / primitive / malformed -
+ * getProtectedResourceMetadataUrl: appends well-known path -
+ * buildProtectedResourceMetadata: includes all required fields - writeJson:
+ * status code, headers, body - writeOAuthError: with and without
+ * resourceMetadataUrl - splitScopes: non-string / empty string / single /
+ * multiple / extra ws - isLocalhostOrigin: localhost / 127.0.0.1 / other /
+ * malformed URL.
  *
- * Related Files:
- * - src/commands/mcp/transport-http-helpers.mts - Implementation
+ * Related Files: - src/commands/mcp/transport-http-helpers.mts - Implementation
  * - src/commands/mcp/transport-http.mts - Caller (HTTP server)
  */
 

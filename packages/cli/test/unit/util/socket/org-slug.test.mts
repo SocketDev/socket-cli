@@ -1,21 +1,16 @@
 /**
  * Unit tests for Socket org slug utilities.
  *
- * Purpose:
- * Tests Socket organization slug handling. Validates org slug parsing and validation.
+ * Purpose: Tests Socket organization slug handling. Validates org slug parsing
+ * and validation.
  *
- * Test Coverage:
- * - Org slug parsing
- * - Slug validation
- * - Slug normalization
- * - Default org detection
- * - Org context management
+ * Test Coverage: - Org slug parsing - Slug validation - Slug normalization -
+ * Default org detection - Org context management.
  *
- * Testing Approach:
- * Tests org slug utilities used throughout Socket API interactions.
+ * Testing Approach: Tests org slug utilities used throughout Socket API
+ * interactions.
  *
- * Related Files:
- * - util/socket/org-slug.mts (implementation)
+ * Related Files: - util/socket/org-slug.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

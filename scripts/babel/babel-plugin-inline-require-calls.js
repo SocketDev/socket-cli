@@ -4,7 +4,8 @@ const path = require('node:path')
 /**
  * Babel plugin to inline require calls.
  *
- * @param {object} babel - Babel API object
+ * @param {object} babel - Babel API object.
+ *
  * @returns {object} Babel plugin object
  */
 module.exports = function inlineRequireCalls(babel) {

@@ -1,23 +1,18 @@
 /**
  * Integration tests for `socket raw-npm` command.
  *
- * Tests running npm without Socket security scanning wrapper.
- * This command provides an escape hatch for operations that must bypass scanning.
+ * Tests running npm without Socket security scanning wrapper. This command
+ * provides an escape hatch for operations that must bypass scanning.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Unwrapped npm execution
- * - Pass-through of npm flags and arguments
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Unwrapped npm execution - Pass-through of npm flags and
+ * arguments.
  *
- * Use Cases:
- * - Testing npm behavior without Socket intervention
- * - CI/CD scenarios requiring unwrapped npm
- * - Debugging wrapper-related issues
+ * Use Cases: - Testing npm behavior without Socket intervention - CI/CD
+ * scenarios requiring unwrapped npm - Debugging wrapper-related issues.
  *
- * Related Files:
- * - src/commands/wrapper/raw-npm.mts - Unwrapped npm command
- * - test/integration/cli/cmd-npm.test.mts - Wrapped npm tests
+ * Related Files: - src/commands/wrapper/raw-npm.mts - Unwrapped npm command -
+ * test/integration/cli/cmd-npm.test.mts - Wrapped npm tests.
  */
 
 import { describe, expect } from 'vitest'

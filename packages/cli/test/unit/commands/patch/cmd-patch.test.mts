@@ -1,8 +1,8 @@
 /**
  * Unit tests for patch command.
  *
- * Tests the command that manages CVE patches for dependencies.
- * This command forwards subcommands to socket-patch via DLX.
+ * Tests the command that manages CVE patches for dependencies. This command
+ * forwards subcommands to socket-patch via DLX.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

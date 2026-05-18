@@ -2,36 +2,30 @@
 import process from 'node:process'
 
 /**
- * @fileoverview Developer setup script - checks prerequisites and prepares environment.
+ * @file Developer setup script - checks prerequisites and prepares environment.
+ *   Checks and optionally installs:
  *
- * Checks and optionally installs:
- * - Node.js version (>=18.0.0)
- * - pnpm version (>=10.21.0)
- * - gh CLI (optional, for cache restoration)
- * - Homebrew (if needed for installations)
- *
- * Actions:
- * - Checks for required tools (Node.js, pnpm) and fails if missing
- * - Auto-installs optional tools (gh CLI, brew/choco) if --install flag provided
- * - Verifies installed tools are actually available in PATH before proceeding
- * - Attempts to restore build cache from CI (only if gh CLI available)
- * - Reports missing tools with installation instructions
- *
- * Usage:
- *   pnpm run setup                      # Check prerequisites and restore GitHub cache
- *   pnpm run setup --install            # Check and auto-install optional tools, then restore cache
- *   pnpm run setup --skip-prereqs       # Only restore GitHub cache (skip prerequisite checks)
- *   pnpm run setup --skip-gh-cache      # Check prerequisites but skip GitHub cache restoration
- *   pnpm run setup --quiet              # Minimal output (for postinstall)
- *
- * Flags:
- *   --install            Auto-install missing optional tools (gh CLI)
- *   --skip-prereqs       Skip prerequisite checks (for CI use; still attempts cache restoration)
- *   --skip-gh-cache      Skip GitHub cache restoration (useful when cache is corrupt)
- *   --quiet              Minimal output
- *
- * Note: Setup helpers are also exported in build-infra/lib/setup-helpers
- * for reuse in other build scripts.
+ *   - Node.js version (>=18.0.0)
+ *   - pnpm version (>=10.21.0)
+ *   - gh CLI (optional, for cache restoration)
+ *   - Homebrew (if needed for installations) Actions:
+ *   - Checks for required tools (Node.js, pnpm) and fails if missing
+ *   - Auto-installs optional tools (gh CLI, brew/choco) if --install flag
+ *     provided
+ *   - Verifies installed tools are actually available in PATH before proceeding
+ *   - Attempts to restore build cache from CI (only if gh CLI available)
+ *   - Reports missing tools with installation instructions Usage: pnpm run setup
+ *     # Check prerequisites and restore GitHub cache pnpm run setup --install #
+ *     Check and auto-install optional tools, then restore cache pnpm run setup
+ *     --skip-prereqs # Only restore GitHub cache (skip prerequisite checks)
+ *     pnpm run setup --skip-gh-cache # Check prerequisites but skip GitHub
+ *     cache restoration pnpm run setup --quiet # Minimal output (for
+ *     postinstall) Flags: --install Auto-install missing optional tools (gh
+ *     CLI) --skip-prereqs Skip prerequisite checks (for CI use; still attempts
+ *     cache restoration) --skip-gh-cache Skip GitHub cache restoration (useful
+ *     when cache is corrupt) --quiet Minimal output Note: Setup helpers are
+ *     also exported in build-infra/lib/setup-helpers for reuse in other build
+ *     scripts.
  */
 
 import { existsSync } from 'node:fs'
@@ -121,8 +115,7 @@ export async function checkPrerequisite({
 }
 
 /**
- * Compare two version objects.
- * Returns: -1 if a < b, 0 if a === b, 1 if a > b
+ * Compare two version objects. Returns: -1 if a < b, 0 if a === b, 1 if a > b.
  */
 export function compareVersions(a: VersionInfo, b: VersionInfo): number {
   if (a.major !== b.major) {

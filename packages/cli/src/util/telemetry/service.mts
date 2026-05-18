@@ -1,44 +1,41 @@
 /**
- * Telemetry service for Socket CLI.
- * Manages event collection, batching, and submission to Socket API.
+ * Telemetry service for Socket CLI. Manages event collection, batching, and
+ * submission to Socket API.
  *
- * IMPORTANT: Telemetry is ALWAYS scoped to an organization.
- * Cannot track telemetry without an org context.
+ * IMPORTANT: Telemetry is ALWAYS scoped to an organization. Cannot track
+ * telemetry without an org context.
  *
- * Features:
- * - Singleton pattern (one instance per process)
- * - Organization-scoped tracking (required)
- * - Event batching (auto-flush at batch size)
- * - Exit handlers (auto-flush on process exit)
- * - Automatic session ID assignment
- * - Explicit finalization via destroy() for controlled cleanup
- * - Graceful degradation (errors don't block CLI)
+ * Features: - Singleton pattern (one instance per process) -
+ * Organization-scoped tracking (required) - Event batching (auto-flush at batch
+ * size) - Exit handlers (auto-flush on process exit) - Automatic session ID
+ * assignment - Explicit finalization via destroy() for controlled cleanup -
+ * Graceful degradation (errors don't block CLI)
  *
  * @example
- * ```typescript
- * // Get telemetry client (returns singleton instance)
- * const telemetry = await TelemetryService.getTelemetryClient('my-org')
+ *   ```typescript
+ *   // Get telemetry client (returns singleton instance)
+ *   const telemetry = await TelemetryService.getTelemetryClient('my-org')
  *
- * // Track an event (session_id is auto-set)
- * telemetry.track({
- *   event_sender_created_at: new Date().toISOString(),
- *   event_type: 'cli_start',
- *   context: {
- *     version: '2.2.15',
- *     platform: process.platform,
- *     node_version: process.version,
- *     arch: process.arch,
- *     argv: process.argv.slice(2)
- *   }
- * })
+ *   // Track an event (session_id is auto-set)
+ *   telemetry.track({
+ *     event_sender_created_at: new Date().toISOString(),
+ *     event_type: 'cli_start',
+ *     context: {
+ *       version: '2.2.15',
+ *       platform: process.platform,
+ *       node_version: process.version,
+ *       arch: process.arch,
+ *       argv: process.argv.slice(2),
+ *     },
+ *   })
  *
- * // Flush happens automatically on batch size and exit
- * // Can also be called manually if needed
- * await telemetry.flush()
+ *   // Flush happens automatically on batch size and exit
+ *   // Can also be called manually if needed
+ *   await telemetry.flush()
  *
- * // Always call destroy() before exit to flush remaining events
- * await telemetry.destroy()
- * ```
+ *   // Always call destroy() before exit to flush remaining events
+ *   await telemetry.destroy()
+ *   ```
  */
 
 import crypto from 'node:crypto'
@@ -57,8 +54,7 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 type TelemetryConfig = SocketSdkSuccessResult<'getOrgTelemetryConfig'>['data']
 
 /**
- * Debug wrapper for telemetry service.
- * Wraps debugNs to provide a simpler API.
+ * Debug wrapper for telemetry service. Wraps debugNs to provide a simpler API.
  */
 export function debug(message: string): void {
   debugNs('socket:telemetry:service', message)
@@ -67,19 +63,21 @@ export function debug(message: string): void {
 /**
  * DebugDir wrapper for telemetry service.
  */
-export function debugDirWrapper(obj: unknown, inspectOpts?: InspectOptions): void {
+export function debugDirWrapper(
+  obj: unknown,
+  inspectOpts?: InspectOptions,
+): void {
   debugDirNs('socket:telemetry:service', obj, inspectOpts)
 }
 
 /**
- * Process-wide session ID.
- * Generated once per CLI invocation and shared across all telemetry instances.
+ * Process-wide session ID. Generated once per CLI invocation and shared across
+ * all telemetry instances.
  */
 const SESSION_ID = crypto.randomUUID()
 
 /**
- * Default telemetry configuration.
- * Used as fallback if API config fetch fails.
+ * Default telemetry configuration. Used as fallback if API config fetch fails.
  */
 const DEFAULT_TELEMETRY_CONFIG = {
   telemetry: {
@@ -103,29 +101,30 @@ interface TelemetryServiceInstance {
 }
 
 /**
- * Singleton telemetry service instance holder.
- * Only one instance exists per process.
+ * Singleton telemetry service instance holder. Only one instance exists per
+ * process.
  */
 const telemetryServiceInstance: TelemetryServiceInstance = {
   current: undefined,
 }
 
 /**
- * Inflight initialization tracker.
- * Prevents duplicate initialization when multiple concurrent calls occur.
- * LRU cache with max size to prevent unbounded memory growth.
+ * Inflight initialization tracker. Prevents duplicate initialization when
+ * multiple concurrent calls occur. LRU cache with max size to prevent unbounded
+ * memory growth.
  */
 const inflightInit = new LRUCache<string, Promise<TelemetryService>>({
   max: 10,
 })
 
 /**
- * Wrap a promise with a timeout.
- * Rejects if promise doesn't resolve within timeout.
+ * Wrap a promise with a timeout. Rejects if promise doesn't resolve within
+ * timeout.
  *
  * @param promise Promise to wrap.
  * @param timeoutMs Timeout in milliseconds.
  * @param errorMessage Error message if timeout occurs.
+ *
  * @returns Promise that resolves or times out.
  */
 export function withTimeout<T>(
@@ -159,15 +158,15 @@ export function withTimeout<T>(
 }
 
 /**
- * Centralized telemetry service for Socket CLI.
- * Telemetry is always scoped to an organization.
- * Singleton pattern ensures only one instance exists per process.
+ * Centralized telemetry service for Socket CLI. Telemetry is always scoped to
+ * an organization. Singleton pattern ensures only one instance exists per
+ * process.
  *
- * NOTE: Only one telemetry instance exists per process.
- * If getTelemetryClient() is called with a different organization slug,
- * it returns the existing instance for the original organization.
- * Switching organizations mid-execution is not supported - the first
- * organization to initialize telemetry will be used for the entire process.
+ * NOTE: Only one telemetry instance exists per process. If getTelemetryClient()
+ * is called with a different organization slug, it returns the existing
+ * instance for the original organization. Switching organizations mid-execution
+ * is not supported - the first organization to initialize telemetry will be
+ * used for the entire process.
  *
  * This is intended, since we can't switch an org during command execution.
  */
@@ -178,8 +177,7 @@ export class TelemetryService {
   private isDestroyed = false
 
   /**
-   * Private constructor.
-   * Requires organization slug.
+   * Private constructor. Requires organization slug.
    *
    * @param orgSlug - Organization identifier.
    */
@@ -191,8 +189,8 @@ export class TelemetryService {
   }
 
   /**
-   * Get the current telemetry instance if one exists.
-   * Does not create a new instance.
+   * Get the current telemetry instance if one exists. Does not create a new
+   * instance.
    *
    * @returns Current telemetry instance or null if none exists.
    */
@@ -201,11 +199,11 @@ export class TelemetryService {
   }
 
   /**
-   * Get telemetry client for an organization.
-   * Creates and initializes client if it doesn't exist.
-   * Returns existing instance if already initialized.
+   * Get telemetry client for an organization. Creates and initializes client if
+   * it doesn't exist. Returns existing instance if already initialized.
    *
    * @param orgSlug - Organization identifier (required).
+   *
    * @returns Initialized telemetry service instance.
    */
   static async getTelemetryClient(orgSlug: string): Promise<TelemetryService> {
@@ -274,11 +272,11 @@ export class TelemetryService {
   }
 
   /**
-   * Track a telemetry event.
-   * Adds event to queue for batching and eventual submission.
-   * Auto-flushes when batch size is reached.
+   * Track a telemetry event. Adds event to queue for batching and eventual
+   * submission. Auto-flushes when batch size is reached.
    *
-   * @param event - Telemetry event to track (session_id is optional and will be auto-set).
+   * @param event - Telemetry event to track (session_id is optional and will be
+   *   auto-set).
    */
   track(event: Omit<TelemetryEvent, 'session_id'>): void {
     debug('Incoming track event request')
@@ -313,9 +311,9 @@ export class TelemetryService {
   }
 
   /**
-   * Flush all queued events to the API.
-   * Returns immediately if no events queued or telemetry disabled.
-   * Times out after configured flush_timeout to prevent blocking CLI exit.
+   * Flush all queued events to the API. Returns immediately if no events queued
+   * or telemetry disabled. Times out after configured flush_timeout to prevent
+   * blocking CLI exit.
    */
   async flush(): Promise<void> {
     if (this.isDestroyed) {
@@ -373,8 +371,7 @@ export class TelemetryService {
   }
 
   /**
-   * Send events to the API.
-   * Extracted as separate method for timeout wrapping.
+   * Send events to the API. Extracted as separate method for timeout wrapping.
    *
    * @param events Events to send.
    */
@@ -429,9 +426,8 @@ export class TelemetryService {
   }
 
   /**
-   * Destroy the telemetry service for this organization.
-   * Flushes remaining events and clears all state.
-   * Idempotent - safe to call multiple times.
+   * Destroy the telemetry service for this organization. Flushes remaining
+   * events and clears all state. Idempotent - safe to call multiple times.
    */
   async destroy(): Promise<void> {
     if (this.isDestroyed) {

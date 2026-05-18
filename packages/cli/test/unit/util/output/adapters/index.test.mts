@@ -1,11 +1,10 @@
 /**
  * Unit tests for the scrubber adapter registry.
  *
- * Confirms the lookup table returns the right adapter for known tool
- * keys (gem / synp / zpm) and `undefined` for unknown ones.
+ * Confirms the lookup table returns the right adapter for known tool keys (gem
+ * / synp / zpm) and `undefined` for unknown ones.
  *
- * Related Files:
- * - src/util/output/adapters/index.mts
+ * Related Files: - src/util/output/adapters/index.mts.
  */
 
 import { describe, expect, it } from 'vitest'

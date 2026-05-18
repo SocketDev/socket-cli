@@ -1,7 +1,7 @@
 {
   "name": "@monorepo-yarn/app",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
   "description": "App package in monorepo (yarn)",
   "main": "index.js",
   "dependencies": {

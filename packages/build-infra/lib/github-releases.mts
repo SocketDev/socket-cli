@@ -22,9 +22,9 @@ const cache = createTtlCache({
 /**
  * Download a specific release asset.
  *
- * Uses browser_download_url to avoid consuming GitHub API quota.
- * The httpDownload function from @socketsecurity/lib@5.1.3+ automatically
- * follows HTTP redirects, eliminating the need for Octokit's getReleaseAsset API.
+ * Uses browser_download_url to avoid consuming GitHub API quota. The
+ * httpDownload function from @socketsecurity/lib@5.1.3+ automatically follows
+ * HTTP redirects, eliminating the need for Octokit's getReleaseAsset API.
  *
  * @param {string} owner - Repository owner.
  * @param {string} repo - Repository name.
@@ -33,6 +33,7 @@ const cache = createTtlCache({
  * @param {string} outputPath - Path to write the downloaded file.
  * @param {object} [options] - Options.
  * @param {boolean} [options.quiet] - Suppress log messages.
+ *
  * @returns {Promise<void>}
  */
 export async function downloadReleaseAsset(
@@ -88,9 +89,11 @@ export function getAuthHeaders() {
  * @param {string} owner - Repository owner.
  * @param {string} repo - Repository name.
  * @param {object} [options] - Options.
- * @param {string} [options.prefix] - Tag prefix to filter by (for socket-btm tool releases).
+ * @param {string} [options.prefix] - Tag prefix to filter by (for socket-btm
+ *   tool releases).
  * @param {boolean} [options.quiet] - Suppress log messages.
- * @returns {Promise<string|null>} - Latest release tag or null if not found.
+ *
+ * @returns {Promise<string | null>} - Latest release tag or null if not found.
  */
 export async function getLatestRelease(
   owner,
@@ -175,8 +178,8 @@ export async function getLatestRelease(
 /**
  * Get download URL for a specific release asset.
  *
- * Returns the browser download URL which requires redirect following.
- * For public repositories, this URL returns HTTP 302 redirect to CDN.
+ * Returns the browser download URL which requires redirect following. For
+ * public repositories, this URL returns HTTP 302 redirect to CDN.
  *
  * @param {string} owner - Repository owner.
  * @param {string} repo - Repository name.
@@ -184,7 +187,8 @@ export async function getLatestRelease(
  * @param {string} assetName - Asset name to download.
  * @param {object} [options] - Options.
  * @param {boolean} [options.quiet] - Suppress log messages.
- * @returns {Promise<string|null>} - Download URL or null if not found.
+ *
+ * @returns {Promise<string | null>} - Download URL or null if not found.
  */
 export async function getReleaseAssetUrl(
   owner,

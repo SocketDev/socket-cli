@@ -1,13 +1,13 @@
 /**
- * Socket Firewall (sfw) version getter functions.
- * Uses direct process.env access so esbuild define can inline values.
- * IMPORTANT: esbuild's define plugin can only replace direct process.env['KEY'] references.
- * If we imported from env modules, esbuild couldn't inline the values at build time.
- * This is critical for embedding version info into the binary.
+ * Socket Firewall (sfw) version getter functions. Uses direct process.env
+ * access so esbuild define can inline values. IMPORTANT: esbuild's define
+ * plugin can only replace direct process.env['KEY'] references. If we imported
+ * from env modules, esbuild couldn't inline the values at build time. This is
+ * critical for embedding version info into the binary.
  *
- * sfw uses two different distributions:
- * - GitHub binary (SocketDev/sfw-free): Used for SEA builds, version like "v1.6.1"
- * - npm package (sfw): Used for CLI dlx, version like "2.0.4"
+ * Sfw uses two different distributions: - GitHub binary (SocketDev/sfw-free):
+ * Used for SEA builds, version like "v1.6.1" - npm package (sfw): Used for CLI
+ * dlx, version like "2.0.4"
  */
 
 import process from 'node:process'

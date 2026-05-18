@@ -1,10 +1,10 @@
 /**
- * Shared types + the small `description()` helper for the CLI
- * sub-command router.
+ * Shared types + the small `description()` helper for the CLI sub-command
+ * router.
  *
- * Extracted from with-subcommands.mts so help-rendering and the
- * router can each pull in only what they need without circular
- * imports between with-subcommands.mts and with-subcommands-help.mts.
+ * Extracted from with-subcommands.mts so help-rendering and the router can each
+ * pull in only what they need without circular imports between
+ * with-subcommands.mts and with-subcommands-help.mts.
  */
 
 import { indentString } from '@socketsecurity/lib/strings'
@@ -32,16 +32,15 @@ export interface CliSubcommand {
 }
 
 /**
- * Bucket assignments used by the root-help layout. The keys are
- * subcommand names that appear in the `subcommands` map; each value
- * is the bucket the command belongs to. Commands without an entry
- * here are reachable but not surfaced in the bucketed `socket --help`
- * layout — useful for ecosystem-specific or experimental commands.
+ * Bucket assignments used by the root-help layout. The keys are subcommand
+ * names that appear in the `subcommands` map; each value is the bucket the
+ * command belongs to. Commands without an entry here are reachable but not
+ * surfaced in the bucketed `socket --help` layout — useful for
+ * ecosystem-specific or experimental commands.
  *
  * The application owns its bucket map (e.g. `rootCommandBuckets` in
- * `src/commands.mts`); the help builder reads it through
- * `MeowOptions.buckets` so this generic util doesn't need to import
- * the concrete registry.
+ * `src/commands.mts`); the help builder reads it through `MeowOptions.buckets`
+ * so this generic util doesn't need to import the concrete registry.
  */
 export type CliBucket = 'main' | 'api' | 'tools' | 'config'
 
@@ -50,8 +49,8 @@ export type CliBuckets = Readonly<Record<string, CliBucket>>
 export interface MeowOptions extends Omit<Options, 'argv' | 'importMeta'> {
   aliases?: CliAliases | undefined
   /**
-   * Per-subcommand bucket assignments for the root-help layout. Only
-   * consumed by the root-command help text; ignored for sub-commands.
+   * Per-subcommand bucket assignments for the root-help layout. Only consumed
+   * by the root-command help text; ignored for sub-commands.
    */
   buckets?: CliBuckets | undefined
   // When no sub-command is given, default to this sub-command.

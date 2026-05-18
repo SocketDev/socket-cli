@@ -1,11 +1,11 @@
 /**
- * Node.js flags for bootstrap (minimal implementation for size).
- * This file is bundled into bootstrap, not imported at runtime.
+ * Node.js flags for bootstrap (minimal implementation for size). This file is
+ * bundled into bootstrap, not imported at runtime.
  */
 
 /**
- * Get flags to disable SIGUSR1 debugger signal handling.
- * Returns --disable-sigusr1 for newer Node, --no-inspect for older versions.
+ * Get flags to disable SIGUSR1 debugger signal handling. Returns
+ * --disable-sigusr1 for newer Node, --no-inspect for older versions.
  */
 export function getNodeDisableSigusr1Flags(): string[] {
   return supportsDisableSigusr1() ? ['--disable-sigusr1'] : ['--no-inspect']
@@ -26,8 +26,8 @@ export function getNodeMinorVersion(): number {
 }
 
 /**
- * Check if --disable-sigusr1 flag is supported.
- * Supported in v22.14.0+, v23.7.0+, v24.8.0+ (stable in v22.20.0+, v24.8.0+).
+ * Check if --disable-sigusr1 flag is supported. Supported in v22.14.0+,
+ * v23.7.0+, v24.8.0+ (stable in v22.20.0+, v24.8.0+).
  */
 export function supportsDisableSigusr1(): boolean {
   const major = getNodeMajorVersion()

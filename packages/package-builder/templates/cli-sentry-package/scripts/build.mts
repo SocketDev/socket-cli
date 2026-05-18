@@ -1,7 +1,6 @@
 /**
- * @fileoverview Build script for Socket CLI with Sentry.
- * Delegates to esbuild config for actual build.
- * Copies data/ and images from packages/cli.
+ * @file Build script for Socket CLI with Sentry. Delegates to esbuild config
+ *   for actual build. Copies data/ and images from packages/cli.
  */
 
 import { promises as fs } from 'node:fs'

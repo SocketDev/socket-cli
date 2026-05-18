@@ -1,18 +1,12 @@
 /**
  * Unit tests for scan metadata output formatting.
  *
- * Purpose:
- * Tests the output formatting for scan metadata results.
+ * Purpose: Tests the output formatting for scan metadata results.
  *
- * Test Coverage:
- * - outputScanMetadata function
- * - JSON output format
- * - Markdown output format
- * - Text output format
- * - Exit code handling
+ * Test Coverage: - outputScanMetadata function - JSON output format - Markdown
+ * output format - Text output format - Exit code handling.
  *
- * Related Files:
- * - src/commands/scan/output-scan-metadata.mts (implementation)
+ * Related Files: - src/commands/scan/output-scan-metadata.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,15 +1,17 @@
 /**
  * VFS extraction utilities for socket-basics tools bundled in SEA binaries.
  *
- * Extracts Python, Trivy, TruffleHog, and OpenGrep from the VFS (Virtual File System)
- * embedded in SEA binaries and caches them for socket-basics execution.
+ * Extracts Python, Trivy, TruffleHog, and OpenGrep from the VFS (Virtual File
+ * System) embedded in SEA binaries and caches them for socket-basics
+ * execution.
  *
  * Extraction paths (all under ~/.socket/_dlx/<hash>/):
- * - python/                           # Python runtime
- * - python/lib/python3.11/site-packages/  # Python packages (socketsecurity)
- * - trivy                             # Standalone binary
- * - trufflehog                        # Standalone binary
- * - opengrep                          # Standalone binary
+ *
+ * - Python/ # Python runtime
+ * - Python/lib/python3.11/site-packages/ # Python packages (socketsecurity)
+ * - Trivy # Standalone binary
+ * - Trufflehog # Standalone binary
+ * - Opengrep # Standalone binary
  */
 
 import crypto from 'node:crypto'
@@ -42,14 +44,15 @@ const BASICS_TOOL_VFS_PATHS: Record<(typeof BASICS_TOOLS)[number], string> = {
 /**
  * Check if basics tools are available for socket-basics.
  *
- * Returns true if:
- * 1. Running in SEA mode with process.smol.mount available
+ * Returns true if: 1. Running in SEA mode with process.smol.mount available.
  *
  * @returns True if basics tools are available for socket-basics.
  */
 export function areBasicsToolsAvailable(): boolean {
   const processWithSmol = process as unknown as {
-    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
+    smol?:
+      | { mount?: ((vfsPath: string) => Promise<string>) | undefined }
+      | undefined
   }
 
   // Check if running in SEA mode with process.smol.mount available.
@@ -69,15 +72,18 @@ export function areBasicsToolsAvailable(): boolean {
  *
  * Extraction is managed by node-smol and tools are cached persistently.
  *
- * @param _cacheDir - Unused, kept for API compatibility. process.smol.mount() manages paths.
- * @returns Path to the extracted Python directory, or null if extraction failed.
- *
  * @example
- * const toolsDir = await extractBasicsTools()
- * if (toolsDir) {
- *   const paths = getBasicsToolPaths(toolsDir)
- *   // Use paths.python, paths.trivy, etc.
- * }
+ *   const toolsDir = await extractBasicsTools()
+ *   if (toolsDir) {
+ *     const paths = getBasicsToolPaths(toolsDir)
+ *     // Use paths.python, paths.trivy, etc.
+ *   }
+ *
+ * @param _cacheDir - Unused, kept for API compatibility. process.smol.mount()
+ *   manages paths.
+ *
+ * @returns Path to the extracted Python directory, or null if extraction
+ *   failed.
  */
 export async function extractBasicsTools(
   _cacheDir?: string,
@@ -89,7 +95,9 @@ export async function extractBasicsTools(
 
   // Check if process.smol.mount is available.
   const processWithSmol = process as unknown as {
-    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
+    smol?:
+      | { mount?: ((vfsPath: string) => Promise<string>) | undefined }
+      | undefined
   }
 
   if (typeof processWithSmol.smol?.mount !== 'function') {
@@ -192,20 +200,22 @@ export async function extractBasicsTools(
 /**
  * Get paths to extracted basics tools.
  *
- * Note: toolsDir is expected to be the Python directory path returned by extractBasicsTools().
- * For standalone binaries (trivy, trufflehog, opengrep), this function constructs paths
- * based on the Python directory's parent structure.
- *
- * @param toolsDir - Python directory path from extractBasicsTools().
- * @returns Object with paths to each tool binary.
+ * Note: toolsDir is expected to be the Python directory path returned by
+ * extractBasicsTools(). For standalone binaries (trivy, trufflehog, opengrep),
+ * this function constructs paths based on the Python directory's parent
+ * structure.
  *
  * @example
- * const toolsDir = await extractBasicsTools()
- * if (toolsDir) {
- *   const paths = getBasicsToolPaths(toolsDir)
- *   logger.log('Python:', paths.python)
- *   logger.log('Trivy:', paths.trivy)
- * }
+ *   const toolsDir = await extractBasicsTools()
+ *   if (toolsDir) {
+ *     const paths = getBasicsToolPaths(toolsDir)
+ *     logger.log('Python:', paths.python)
+ *     logger.log('Trivy:', paths.trivy)
+ *   }
+ *
+ * @param toolsDir - Python directory path from extractBasicsTools().
+ *
+ * @returns Object with paths to each tool binary.
  */
 export function getBasicsToolPaths(toolsDir: string): {
   opengrep: string
@@ -243,8 +253,8 @@ export function getBasicsToolPaths(toolsDir: string): {
 }
 
 /**
- * Get the base dlx directory path for node-smol.
- * This is the shared extraction directory: ~/.socket/_dlx/<node-smol-hash>/
+ * Get the base dlx directory path for node-smol. This is the shared extraction
+ * directory: ~/.socket/_dlx/<node-smol-hash>/
  *
  * @returns Path to node-smol's dlx directory.
  */
@@ -275,8 +285,8 @@ export function getNodeSmolBasePath(): string {
 }
 
 /**
- * Get the Python site-packages path for extracting Python packages.
- * Path: ~/.socket/_dlx/<hash>/python/lib/python{major.minor}/site-packages/
+ * Get the Python site-packages path for extracting Python packages. Path:
+ * ~/.socket/_dlx/<hash>/python/lib/python{major.minor}/site-packages/
  *
  * @returns Path to site-packages directory.
  */

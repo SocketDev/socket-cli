@@ -1,21 +1,15 @@
 /**
  * Unit tests for config filtering.
  *
- * Purpose:
- * Tests configuration filtering utilities. Validates config option filtering and validation.
+ * Purpose: Tests configuration filtering utilities. Validates config option
+ * filtering and validation.
  *
- * Test Coverage:
- * - Config option filtering
- * - Unknown option handling
- * - Required field validation
- * - Type coercion
- * - Default value application
+ * Test Coverage: - Config option filtering - Unknown option handling - Required
+ * field validation - Type coercion - Default value application.
  *
- * Testing Approach:
- * Tests config validation and sanitization.
+ * Testing Approach: Tests config validation and sanitization.
  *
- * Related Files:
- * - util/validation/filter-config.mts (implementation)
+ * Related Files: - util/validation/filter-config.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'

@@ -1,14 +1,11 @@
 /**
  * Unit tests for alert constants.
  *
- * Purpose:
- * Tests the security alert type constants.
+ * Purpose: Tests the security alert type constants.
  *
- * Test Coverage:
- * - Alert type constant values
+ * Test Coverage: - Alert type constant values.
  *
- * Related Files:
- * - constants/alerts.mts (implementation)
+ * Related Files: - constants/alerts.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

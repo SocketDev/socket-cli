@@ -2,17 +2,12 @@
 /**
  * Unit tests for update manager utilities.
  *
- * Purpose:
- * Tests the update manager for npm/pnpm/yarn installations.
+ * Purpose: Tests the update manager for npm/pnpm/yarn installations.
  *
- * Test Coverage:
- * - checkForUpdates function
- * - scheduleUpdateCheck function
- * - Parameter validation
- * - Cache handling
+ * Test Coverage: - checkForUpdates function - scheduleUpdateCheck function -
+ * Parameter validation - Cache handling.
  *
- * Related Files:
- * - src/util/update/manager.mts (implementation)
+ * Related Files: - src/util/update/manager.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -3,15 +3,11 @@
  *
  * Tests GitHub integration features for scan management.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - GitHub PR commenting
- * - Check run creation
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - GitHub PR commenting - Check run creation.
  *
- * Related Files:
- * - src/commands/scan/cmd-scan-github.mts - Command definition
- * - src/commands/scan/handle-scan-github.mts - GitHub integration logic
+ * Related Files: - src/commands/scan/cmd-scan-github.mts - Command definition -
+ * src/commands/scan/handle-scan-github.mts - GitHub integration logic.
  */
 
 import { describe, expect } from 'vitest'

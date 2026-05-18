@@ -1,4 +1,6 @@
-/** @fileoverview Socket artifact and alert type definitions. */
+/**
+ * @file Socket artifact and alert type definitions.
+ */
 
 import {
   ALERT_TYPE_CRITICAL_CVE,

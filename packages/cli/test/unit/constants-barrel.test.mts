@@ -1,15 +1,12 @@
 /**
  * Unit tests for constants barrel file.
  *
- * Purpose:
- * Tests the constants barrel export file to ensure all exports work correctly.
+ * Purpose: Tests the constants barrel export file to ensure all exports work
+ * correctly.
  *
- * Test Coverage:
- * - Named exports
- * - Default export
+ * Test Coverage: - Named exports - Default export.
  *
- * Related Files:
- * - src/constants.mts (implementation)
+ * Related Files: - src/constants.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

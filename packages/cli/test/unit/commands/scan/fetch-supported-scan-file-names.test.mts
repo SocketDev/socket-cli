@@ -1,8 +1,8 @@
 /**
  * Unit tests for fetchSupportedScanFileNames.
  *
- * Tests fetching supported manifest file names for scanning.
- * Validates which files Socket can analyze via the SDK v4 getSupportedFiles API.
+ * Tests fetching supported manifest file names for scanning. Validates which
+ * files Socket can analyze via the SDK v4 getSupportedFiles API.
  */
 
 import { describe, expect, it, vi } from 'vitest'

@@ -1,16 +1,13 @@
 /**
  * Unit tests for common validation utilities.
  *
- * Purpose:
- * Tests the common validation patterns and workflow.
+ * Purpose: Tests the common validation patterns and workflow.
  *
- * Test Coverage:
- * - validations object (requireOrg, requireAuth, notBoth, isOneOf, isPositive, notEmpty, isUrl)
- * - runStandardValidations function
- * - validateParams (pagination, sorting, outputFlags)
+ * Test Coverage: - validations object (requireOrg, requireAuth, notBoth,
+ * isOneOf, isPositive, notEmpty, isUrl) - runStandardValidations function -
+ * validateParams (pagination, sorting, outputFlags)
  *
- * Related Files:
- * - src/util/validation/common.mts (implementation)
+ * Related Files: - src/util/validation/common.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

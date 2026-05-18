@@ -1,4 +1,6 @@
-/** @fileoverview SOCKET_CLI_VIEW_ALL_RISKS environment variable. */
+/**
+ * @file SOCKET_CLI_VIEW_ALL_RISKS environment variable.
+ */
 
 import { getSocketCliViewAllRisks } from '@socketsecurity/lib/env/socket-cli'
 

@@ -1,12 +1,12 @@
 /**
- * Windows-shim resolution helpers extracted from `environment.mts` to keep
- * that file under the 1000-line File-size cap.
+ * Windows-shim resolution helpers extracted from `environment.mts` to keep that
+ * file under the 1000-line File-size cap.
  *
- * On Windows, package-manager binaries (`npm`, `pnpm`, `yarn`) ship as either
- * a `.cmd` wrapper plus an extensionless shim or a direct `.js` entry point.
+ * On Windows, package-manager binaries (`npm`, `pnpm`, `yarn`) ship as either a
+ * `.cmd` wrapper plus an extensionless shim or a direct `.js` entry point.
  * `resolveBinPathSync` finds the underlying JS file when given a shim;
- * `preferWindowsCmdShim` flips an extensionless path to its `.cmd` sibling
- * when one exists (so child_process can spawn it without `shell: true`).
+ * `preferWindowsCmdShim` flips an extensionless path to its `.cmd` sibling when
+ * one exists (so child_process can spawn it without `shell: true`).
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -16,13 +16,13 @@ import { WIN32 } from '@socketsecurity/lib/constants/platform'
 
 /**
  * Given a bin path that might be an extensionless shim, return the matching
- * `.cmd` file when one exists in the same directory. Otherwise return the
- * input unchanged.
+ * `.cmd` file when one exists in the same directory. Otherwise return the input
+ * unchanged.
  *
  * Returns the input verbatim on POSIX, for non-absolute paths, when the path
  * already has an extension, or when its basename doesn't match `binName`
- * (defensive guard against accidentally turning a parent-directory path
- * into a shim).
+ * (defensive guard against accidentally turning a parent-directory path into a
+ * shim).
  */
 export function preferWindowsCmdShim(binPath: string, binName: string): string {
   if (!WIN32) {
@@ -50,11 +50,10 @@ export function preferWindowsCmdShim(binPath: string, binName: string): string {
 }
 
 /**
- * Resolve a bin path to its underlying JavaScript entry point if the file
- * is an npm/pnpm/yarn shim. Returns the input path unchanged when:
- *   - the file does not exist
- *   - reading or parsing it throws
- *   - no shim pattern is recognized in the file content
+ * Resolve a bin path to its underlying JavaScript entry point if the file is an
+ * npm/pnpm/yarn shim. Returns the input path unchanged when: - the file does
+ * not exist - reading or parsing it throws - no shim pattern is recognized in
+ * the file content.
  *
  * Used on Windows to resolve shims like `npm` or `npm.cmd` to their
  * `npm-cli.js` entry point so we can spawn them via Node directly.

@@ -5,11 +5,12 @@ import path from 'node:path'
 import { safeDelete } from '@socketsecurity/lib/fs'
 
 /**
- * Creates a temporary copy of a fixture directory for testing.
- * The temporary directory is automatically cleaned up when tests complete.
+ * Creates a temporary copy of a fixture directory for testing. The temporary
+ * directory is automatically cleaned up when tests complete.
  *
  * @param fixturePath - Path to the fixture directory to copy.
  * @param cleanupHook - Optional function to register cleanup (e.g., afterEach).
+ *
  * @returns Path to the temporary fixture copy.
  */
 export async function createTempFixture(
@@ -47,6 +48,7 @@ export async function createTempFixture(
  *
  * @param fixtures - Map of fixture name to fixture path.
  * @param cleanupHook - Optional function to register cleanup.
+ *
  * @returns Map of fixture name to temporary path.
  */
 export async function createTempFixtures(
@@ -85,6 +87,7 @@ export async function createTempFixtures(
  * Designed for use in test suites that use afterEach hooks.
  *
  * @param fixturePath - Path to the fixture directory.
+ *
  * @returns Object with tempDir path and cleanup function.
  */
 export async function withTempFixture(fixturePath: string): Promise<{

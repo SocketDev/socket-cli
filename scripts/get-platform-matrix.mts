@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * Output platform matrix JSON for GitHub Actions.
- * Used by publish workflow to generate dynamic matrix.
+ * Output platform matrix JSON for GitHub Actions. Used by publish workflow to
+ * generate dynamic matrix.
  *
- * Usage:
- *   node scripts/get-platform-matrix.mts
- *   # Outputs: {"include":[...]}
+ * Usage: node scripts/get-platform-matrix.mts.
+ *
+ * # Outputs: {"include":[...]}
  */
 
 import { PLATFORM_CONFIGS } from '../packages/build-infra/lib/platform-targets.mts'

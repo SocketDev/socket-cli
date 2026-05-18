@@ -1,10 +1,9 @@
 /**
- * Generate cli-with-sentry package directory from template.
- * Creates the @socketsecurity/cli-with-sentry package that will be used
- * for publishing the CLI with Sentry telemetry integration.
+ * Generate cli-with-sentry package directory from template. Creates the
+ * @socketsecurity/cli-with-sentry package that will be used for publishing the
+ * CLI with Sentry telemetry integration.
  *
- * Usage:
- *   node scripts/generate-cli-sentry-package.mts
+ * Usage: node scripts/generate-cli-sentry-package.mts.
  */
 
 import path from 'node:path'

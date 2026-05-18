@@ -1,28 +1,32 @@
 /**
  * Integration tests for `socket scan` root command.
  *
- * Tests the scan management root command for creating and managing security scans.
+ * Tests the scan management root command for creating and managing security
+ * scans.
  *
  * Test Coverage:
+ *
  * - Help text display and subcommand listing
  * - Dry-run behavior validation
  * - Subcommand routing
  *
  * Available Subcommands:
- * - create: Create new security scan
- * - del: Delete scan
- * - diff: Compare scans
- * - github: GitHub integration
- * - list: List scans
- * - metadata: View scan metadata
- * - reach: Reachability analysis
- * - report: Generate scan reports
- * - setup: Setup scan configuration
- * - view: View scan details
+ *
+ * - Create: Create new security scan
+ * - Del: Delete scan
+ * - Diff: Compare scans
+ * - Github: GitHub integration
+ * - List: List scans
+ * - Metadata: View scan metadata
+ * - Reach: Reachability analysis
+ * - Report: Generate scan reports
+ * - Setup: Setup scan configuration
+ * - View: View scan details
  *
  * Related Files:
- * - src/commands/scan/cmd-scan.mts - Root command definition
- * - src/commands/scan/cmd-scan-*.mts - Subcommands
+ *
+ * - Src/commands/scan/cmd-scan.mts - Root command definition
+ * - Src/commands/scan/cmd-scan-*.mts - Subcommands
  */
 
 import { describe, expect } from 'vitest'

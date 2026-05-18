@@ -1,22 +1,17 @@
 /**
  * Unit tests for outputThreatFeed.
  *
- * Purpose:
- * Tests output formatting for threat intelligence feeds. Validates threat display, severity indicators, and timeline formatting.
+ * Purpose: Tests output formatting for threat intelligence feeds. Validates
+ * threat display, severity indicators, and timeline formatting.
  *
- * Test Coverage:
- * - Successful operation output formatting
- * - Error message formatting
- * - Multiple output formats (text, json, markdown)
- * - Data presentation and formatting
- * - Edge case handling
+ * Test Coverage: - Successful operation output formatting - Error message
+ * formatting - Multiple output formats (text, json, markdown) - Data
+ * presentation and formatting - Edge case handling.
  *
- * Testing Approach:
- * Uses result helpers and fixtures to create test data. Validates formatted
- * output strings across different output modes.
+ * Testing Approach: Uses result helpers and fixtures to create test data.
+ * Validates formatted output strings across different output modes.
  *
- * Related Files:
- * - src/commands/outputThreatFeed.mts (implementation)
+ * Related Files: - src/commands/outputThreatFeed.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

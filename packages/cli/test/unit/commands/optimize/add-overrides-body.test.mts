@@ -1,12 +1,12 @@
 /**
- * Unit tests for the body of addOverrides (the pEach loop over manifest entries).
+ * Unit tests for the body of addOverrides (the pEach loop over manifest
+ * entries).
  *
  * `manifestNpmOverrides = getManifestData(NPM) ?? []` is module-init, so to
- * exercise the loop body we use `vi.resetModules()` + `vi.doMock()` per test
- * to control what `getManifestData` returns at module-load time.
+ * exercise the loop body we use `vi.resetModules()` + `vi.doMock()` per test to
+ * control what `getManifestData` returns at module-load time.
  *
- * Related Files:
- * - src/commands/optimize/add-overrides.mts (implementation)
+ * Related Files: - src/commands/optimize/add-overrides.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

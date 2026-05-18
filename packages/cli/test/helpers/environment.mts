@@ -1,24 +1,28 @@
-/** @fileoverview Test environment setup utilities for Socket CLI. Provides consistent test environment configuration including mock clearing and process state management. */
+/**
+ * @file Test environment setup utilities for Socket CLI. Provides consistent
+ *   test environment configuration including mock clearing and process state
+ *   management.
+ */
 
 import { afterEach, beforeEach, vi } from 'vitest'
 
 /**
- * Clear all mocks manually
+ * Clear all mocks manually.
  */
 export function clearAllMocks(): void {
   vi.clearAllMocks()
 }
 
 /**
- * Reset process.exitCode manually
+ * Reset process.exitCode manually.
  */
 export function resetExitCode(): void {
   process.exitCode = undefined
 }
 
 /**
- * Setup standard test environment with beforeEach hook
- * Clears all mocks and resets process.exitCode
+ * Setup standard test environment with beforeEach hook Clears all mocks and
+ * resets process.exitCode.
  */
 export function setupTestEnvironment(): void {
   beforeEach(() => {
@@ -28,7 +32,7 @@ export function setupTestEnvironment(): void {
 }
 
 /**
- * Setup and cleanup for a test with custom initialization
+ * Setup and cleanup for a test with custom initialization.
  */
 export function setupTestWithCleanup(
   setup?: () => void | Promise<void>,

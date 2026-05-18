@@ -1,32 +1,25 @@
 /* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
- * Unit Tests: API Token Quota Output Formatter
+ * Unit Tests: API Token Quota Output Formatter.
  *
- * Purpose:
- * Tests the output formatting system for API token quota data. Validates JSON and text/markdown
- * output formats, error messaging, exit code setting, and quota value display including zero
- * quota scenarios.
+ * Purpose: Tests the output formatting system for API token quota data.
+ * Validates JSON and text/markdown output formats, error messaging, exit code
+ * setting, and quota value display including zero quota scenarios.
  *
- * Test Coverage:
- * - JSON format output for successful results
- * - JSON format error output with exit codes
- * - Text format with remaining/max/refresh display
- * - Fallback when maxQuota is missing
- * - Refresh time rendering when nextWindowRefresh is set
- * - Text format error output with badges
- * - Markdown format output
- * - Zero quota handling
- * - Default text output when format unspecified
- * - Default exit code setting when code is undefined
+ * Test Coverage: - JSON format output for successful results - JSON format
+ * error output with exit codes - Text format with remaining/max/refresh display
+ * - Fallback when maxQuota is missing - Refresh time rendering when
+ * nextWindowRefresh is set - Text format error output with badges - Markdown
+ * format output - Zero quota handling - Default text output when format
+ * unspecified - Default exit code setting when code is undefined.
  *
- * Testing Approach:
- * Uses vi.doMock to reset module state between tests, mocking logger, result serialization,
- * markdown utilities, and error formatting. Tests verify output content and exit code behavior.
+ * Testing Approach: Uses vi.doMock to reset module state between tests, mocking
+ * logger, result serialization, markdown utilities, and error formatting. Tests
+ * verify output content and exit code behavior.
  *
- * Related Files:
- * - src/commands/organization/output-quota.mts - Output formatter
- * - src/commands/organization/handle-quota.mts - Command handler
- * - src/commands/organization/fetch-quota.mts - Quota fetcher
+ * Related Files: - src/commands/organization/output-quota.mts - Output
+ * formatter - src/commands/organization/handle-quota.mts - Command handler -
+ * src/commands/organization/fetch-quota.mts - Quota fetcher.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

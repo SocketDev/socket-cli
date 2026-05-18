@@ -1,18 +1,15 @@
 /**
- * Unified asset downloader for socket-btm releases.
- * Downloads and extracts all required assets from socket-btm GitHub releases.
+ * Unified asset downloader for socket-btm releases. Downloads and extracts all
+ * required assets from socket-btm GitHub releases.
  *
- * Usage:
- *   node scripts/download-assets.mts [asset-names...] [options]
- *   node scripts/download-assets.mts                 # Download all assets (parallel)
- *   node scripts/download-assets.mts models           # Download specific assets (parallel)
- *   node scripts/download-assets.mts --no-parallel   # Download all assets (sequential)
+ * Usage: node scripts/download-assets.mts [asset-names...] [options] node
+ * scripts/download-assets.mts # Download all assets (parallel) node
+ * scripts/download-assets.mts models # Download specific assets (parallel) node
+ * scripts/download-assets.mts --no-parallel # Download all assets (sequential)
  *
- * Assets:
- *   binject   - Binary injection tool
- *   iocraft   - iocraft native bindings (.node files)
- *   models    - AI models tar.gz (MiniLM, CodeT5)
- *   node-smol - Minimal Node.js binaries
+ * Assets: binject - Binary injection tool iocraft - iocraft native bindings
+ * (.node files) models - AI models tar.gz (MiniLM, CodeT5) node-smol - Minimal
+ * Node.js binaries.
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -30,8 +27,7 @@ const rootPath = path.join(__dirname, '..')
 const logger = getDefaultLogger()
 
 /**
- * Asset configuration.
- * Each asset defines how to download and process it.
+ * Asset configuration. Each asset defines how to download and process it.
  */
 const ASSETS = {
   __proto__: null,
@@ -136,8 +132,8 @@ async function downloadAsset(config) {
 /**
  * Download multiple assets (parallel by default, sequential opt-in).
  *
- * Parallel mode is optimized for fast builds. Assets are downloaded concurrently
- * and have isolated subdirectories to minimize race conditions.
+ * Parallel mode is optimized for fast builds. Assets are downloaded
+ * concurrently and have isolated subdirectories to minimize race conditions.
  *
  * Use --no-parallel flag for sequential mode if filesystem issues occur.
  */

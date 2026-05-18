@@ -11,8 +11,8 @@ export type {
 } from 'npm-package-arg'
 
 /**
- * Safe wrapper for npm-package-arg that doesn't throw.
- * Returns undefined if parsing fails.
+ * Safe wrapper for npm-package-arg that doesn't throw. Returns undefined if
+ * parsing fails.
  */
 export function safeNpa(
   ...args: Parameters<typeof npmPackageArg>

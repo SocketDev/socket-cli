@@ -1,6 +1,6 @@
 /**
- * @fileoverview Tests for ASCII header with shimmer effects.
- * Validates header rendering, theme handling, and environment detection.
+ * @file Tests for ASCII header with shimmer effects. Validates header
+ *   rendering, theme handling, and environment detection.
  */
 
 import { describe, expect, it } from 'vitest'

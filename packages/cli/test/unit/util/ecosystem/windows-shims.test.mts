@@ -1,8 +1,8 @@
 /**
  * Unit tests for the Windows-shim resolution helpers.
  *
- * The helpers behave as no-ops on POSIX, so most assertions pivot on
- * stubbing the WIN32 constant from @socketsecurity/lib via vi.mock().
+ * The helpers behave as no-ops on POSIX, so most assertions pivot on stubbing
+ * the WIN32 constant from @socketsecurity/lib via vi.mock().
  */
 
 import { describe, expect, it, vi } from 'vitest'

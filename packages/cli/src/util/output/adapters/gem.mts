@@ -1,17 +1,14 @@
 /**
  * Scrubber adapter for RubyGems (`gem`).
  *
- * Gem writes progress and status lines to stdout with no TTY check
- * (violates Unix convention). Observed patterns during install:
+ * Gem writes progress and status lines to stdout with no TTY check (violates
+ * Unix convention). Observed patterns during install:
  *
- *   "Fetching rake-13.0.6.gem"
- *   "Successfully installed rake-13.0.6"
- *   "1 gem installed"
- *   "Parsing documentation for rake-13.0.6"
- *   "Installing ri documentation for rake-13.0.6"
- *   "Done installing documentation for rake after 0 seconds"
- *   "Building native extensions. This could take a while..."
- *   "........" (dot progress)
+ * "Fetching rake-13.0.6.gem" "Successfully installed rake-13.0.6" "1 gem
+ * installed" "Parsing documentation for rake-13.0.6" "Installing ri
+ * documentation for rake-13.0.6" "Done installing documentation for rake after
+ * 0 seconds" "Building native extensions. This could take a while..."
+ * "........" (dot progress)
  *
  * All of the above are informational — route to stderr.
  */

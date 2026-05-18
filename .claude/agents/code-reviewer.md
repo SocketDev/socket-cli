@@ -19,6 +19,7 @@ Apply the rules from CLAUDE.md sections listed below. Reference the full section
 **Test Style**: Functional tests over source scanning. Never read source files and assert on contents. Verify behavior with real function calls.
 
 For each file reviewed, report:
+
 - **Style violations** with file:line
 - **Logic issues** (bugs, edge cases, missing error handling)
 - **Test gaps** (untested code paths)

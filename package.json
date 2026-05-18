@@ -1,12 +1,7 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
-  "packageManager": "pnpm@11.1.2",
   "private": true,
-  "engines": {
-    "node": ">=26.0.0",
-    "pnpm": ">=11.1.2"
-  },
   "scripts": {
     "// Build": "",
     "build": "node scripts/build.mts",
@@ -103,7 +98,7 @@
     "@types/semver": "catalog:",
     "@types/which": "catalog:",
     "@types/yargs-parser": "catalog:",
-    "@typescript/native-preview": "7.0.0-dev.20260415.1",
+    "@typescript/native-preview": "7.0.0-dev.20260511.1",
     "@vitest/coverage-v8": "catalog:",
     "@yao-pkg/pkg": "catalog:",
     "browserslist": "catalog:",
@@ -126,15 +121,15 @@
     "npm-package-arg": "catalog:",
     "npm-run-all2": "catalog:",
     "open": "catalog:",
-    "oxfmt": "0.37.0",
-    "oxlint": "1.52.0",
+    "oxfmt": "0.48.0",
+    "oxlint": "1.63.0",
     "package-builder": "workspace:*",
     "postject": "catalog:",
     "registry-auth-token": "catalog:",
     "registry-url": "catalog:",
     "semver": "catalog:",
     "ssri": "catalog:",
-    "taze": "19.9.2",
+    "taze": "19.11.0",
     "terminal-link": "catalog:",
     "trash": "catalog:",
     "type-coverage": "catalog:",
@@ -161,5 +156,10 @@
     "ignoreCatch": true,
     "ignoreEmptyType": true,
     "strict": true
-  }
+  },
+  "engines": {
+    "node": ">=26.0.0",
+    "pnpm": ">=11.1.2"
+  },
+  "packageManager": "pnpm@11.1.2"
 }

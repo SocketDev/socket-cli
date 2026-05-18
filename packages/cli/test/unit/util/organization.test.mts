@@ -1,16 +1,12 @@
 /**
  * Unit tests for organization utilities.
  *
- * Purpose:
- * Tests the organization helper functions.
+ * Purpose: Tests the organization helper functions.
  *
- * Test Coverage:
- * - getEnterpriseOrgs filtering
- * - getOrgSlugs extraction
- * - hasEnterpriseOrgPlan check
+ * Test Coverage: - getEnterpriseOrgs filtering - getOrgSlugs extraction -
+ * hasEnterpriseOrgPlan check.
  *
- * Related Files:
- * - util/organization.mts (implementation)
+ * Related Files: - util/organization.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

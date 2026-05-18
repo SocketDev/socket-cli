@@ -1,18 +1,13 @@
 /**
  * Unit tests for organization list output formatting.
  *
- * Purpose:
- * Tests the output formatting for organization list results.
+ * Purpose: Tests the output formatting for organization list results.
  *
- * Test Coverage:
- * - outputOrganizationList function
- * - JSON output format
- * - Text output format
- * - Markdown output format
- * - Error handling
+ * Test Coverage: - outputOrganizationList function - JSON output format - Text
+ * output format - Markdown output format - Error handling.
  *
- * Related Files:
- * - src/commands/organization/output-organization-list.mts (implementation)
+ * Related Files: - src/commands/organization/output-organization-list.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

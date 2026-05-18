@@ -1,7 +1,8 @@
 /**
  * Unit tests for organization dependencies command.
  *
- * Tests the command that searches for dependencies being used in an organization.
+ * Tests the command that searches for dependencies being used in an
+ * organization.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

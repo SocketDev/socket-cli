@@ -1,6 +1,6 @@
 /**
- * @fileoverview Monorepo-aware check runner with flag-based configuration.
- * Runs code quality checks: Oxlint and TypeScript type checking across packages.
+ * @file Monorepo-aware check runner with flag-based configuration. Runs code
+ *   quality checks: Oxlint and TypeScript type checking across packages.
  */
 
 import path from 'node:path'

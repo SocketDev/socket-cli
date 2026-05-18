@@ -1,17 +1,16 @@
 /**
  * Unified Socket CLI entry point.
  *
- * This single file handles all Socket CLI commands by detecting how it was invoked:
- * - socket (main CLI)
- * - socket-npm (npm wrapper)
- * - socket-npx (npx wrapper)
+ * This single file handles all Socket CLI commands by detecting how it was
+ * invoked: - socket (main CLI) - socket-npm (npm wrapper) - socket-npx (npx
+ * wrapper)
  *
  * Perfect for SEA packaging and single-file distribution.
  *
- * Bootstrap Logic:
- * When running as a SEA binary, we use IPC handshake to detect subprocess mode:
- * - Initial entry (no IPC): Bootstrap to system Node.js or self with IPC
- * - Subprocess entry (has IPC): Bypass bootstrap, act as regular Node.js
+ * Bootstrap Logic: When running as a SEA binary, we use IPC handshake to detect
+ * subprocess mode: - Initial entry (no IPC): Bootstrap to system Node.js or
+ * self with IPC - Subprocess entry (has IPC): Bypass bootstrap, act as regular
+ * Node.js.
  */
 
 import path from 'node:path'

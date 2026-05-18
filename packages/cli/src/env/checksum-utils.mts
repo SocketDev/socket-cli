@@ -1,9 +1,10 @@
 /**
  * Shared utilities for checksum modules.
  *
- * NOTE: Each tool-specific module MUST use direct process.env['INLINED_*_CHECKSUMS']
- * access because esbuild's define plugin can only replace direct references.
- * This module provides shared parsing and validation logic.
+ * NOTE: Each tool-specific module MUST use direct
+ * process.env['INLINED_*_CHECKSUMS'] access because esbuild's define plugin can
+ * only replace direct references. This module provides shared parsing and
+ * validation logic.
  */
 
 import { joinAnd } from '@socketsecurity/lib/arrays'
@@ -11,12 +12,14 @@ import { joinAnd } from '@socketsecurity/lib/arrays'
 export type Checksums = Record<string, string>
 
 /**
- * Parse checksums from a JSON string.
- * Returns empty object if parsing fails or input is empty.
+ * Parse checksums from a JSON string. Returns empty object if parsing fails or
+ * input is empty.
  *
  * @param jsonString - JSON string of checksums (or undefined/empty).
  * @param toolName - Tool name for error messages.
+ *
  * @returns Parsed checksums or empty object.
+ *
  * @throws Error if JSON is malformed (not empty).
  */
 export function parseChecksums(
@@ -38,14 +41,16 @@ export function parseChecksums(
 }
 
 /**
- * Require a checksum for an asset.
- * In production builds (checksums inlined), throws a hard error if asset is missing.
- * In dev mode (checksums not inlined), returns undefined to allow development.
+ * Require a checksum for an asset. In production builds (checksums inlined),
+ * throws a hard error if asset is missing. In dev mode (checksums not inlined),
+ * returns undefined to allow development.
  *
  * @param checksums - Parsed checksums object.
  * @param assetName - The asset filename to look up.
  * @param toolName - Tool name for error messages.
+ *
  * @returns The SHA-256 hex checksum, or undefined in dev mode.
+ *
  * @throws Error if checksum is not found in production builds.
  */
 export function requireChecksum(

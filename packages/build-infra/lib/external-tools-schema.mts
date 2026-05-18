@@ -1,14 +1,13 @@
 /**
  * TypeBox schema for external-tools.json files.
  *
- * Validates tool configuration used by the tool-installer to auto-download
- * and verify external build dependencies.
+ * Validates tool configuration used by the tool-installer to auto-download and
+ * verify external build dependencies.
  *
- * Normalized schema across all Socket repos:
- *   socket-btm: build tools (system tools, pip packages)
- *   socket-cli: bundle tools (npm packages, GitHub release binaries)
- *   socket-registry: CI tools (GitHub release binaries)
- *   ultrathink: build tools (compilers, language toolchains)
+ * Normalized schema across all Socket repos: socket-btm: build tools (system
+ * tools, pip packages) socket-cli: bundle tools (npm packages, GitHub release
+ * binaries) socket-registry: CI tools (GitHub release binaries) ultrathink:
+ * build tools (compilers, language toolchains)
  */
 
 import { Type } from '@sinclair/typebox'
@@ -116,6 +115,7 @@ export const externalToolsSchema = Type.Object(
  * Validate an external-tools.json object against the schema.
  *
  * @param {unknown} data - Parsed JSON data.
+ *
  * @returns `{ ok: true, value }` on success, `{ ok: false, errors }` with
  *   normalized `{ path, message }` issues on failure.
  */

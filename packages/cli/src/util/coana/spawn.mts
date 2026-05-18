@@ -1,4 +1,6 @@
-/** @fileoverview Coana CLI spawn utilities for Socket CLI. */
+/**
+ * @file Coana CLI spawn utilities for Socket CLI.
+ */
 
 import { dlxPackage } from '@socketsecurity/lib/dlx/package'
 
@@ -20,8 +22,8 @@ export type CoanaSpawnOptions = SpawnOptions & {
 }
 
 /**
- * Helper to spawn coana with package manager dlx commands.
- * Returns a CResult with stdout extraction for backward compatibility.
+ * Helper to spawn coana with package manager dlx commands. Returns a CResult
+ * with stdout extraction for backward compatibility.
  *
  * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
  * Coana CLI at that path instead of downloading from npm.

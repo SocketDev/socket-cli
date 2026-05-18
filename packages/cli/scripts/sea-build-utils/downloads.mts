@@ -3,13 +3,12 @@
 /* oxlint-disable socket/prefer-exists-sync -- fs.stat()/lstat() calls read .size / .isFile() for cache validation, size reporting, and chmod checks; not existence checks. */
 
 /**
- * @fileoverview Download utilities for SEA build assets.
- * Manages downloads of node-smol binaries, binject tool, and security tools from GitHub releases.
+ * @file Download utilities for SEA build assets. Manages downloads of node-smol
+ *   binaries, binject tool, and security tools from GitHub releases. Sections:
  *
- * Sections:
- * 1. Constants and Utilities - Shared configuration, auth, platform mappings.
- * 2. Node and Binject Downloads - Binary downloads for SEA injection.
- * 3. External Security Tools - Python, Trivy, TruffleHog, OpenGrep downloads.
+ *   1. Constants and Utilities - Shared configuration, auth, platform mappings.
+ *   2. Node and Binject Downloads - Binary downloads for SEA injection.
+ *   3. External Security Tools - Python, Trivy, TruffleHog, OpenGrep downloads.
  */
 
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
@@ -22,7 +21,10 @@ import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
-import { httpDownload, httpRequest } from '@socketsecurity/lib-stable/http-request'
+import {
+  httpDownload,
+  httpRequest,
+} from '@socketsecurity/lib-stable/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/spawn'
@@ -40,58 +42,69 @@ import { PLATFORM_MAP_TOOLS } from '../constants/external-tools-platforms.mts'
 export const logger = getDefaultLogger()
 
 /**
- * External tools configuration loaded from bundle-tools.json.
- * Contains version info, GitHub repos, and download metadata for security tools.
+ * External tools configuration loaded from bundle-tools.json. Contains version
+ * info, GitHub repos, and download metadata for security tools.
  */
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const externalToolsPath = path.join(__dirname, '../../bundle-tools.json')
 export const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
 /**
- * Download and bundle security tools for socket-basics integration into SEA binaries.
+ * Download and bundle security tools for socket-basics integration into SEA
+ * binaries.
  *
- * Downloads platform-specific binaries of security scanning tools from their respective
- * GitHub releases, extracts them, and creates a compressed tar.gz archive for VFS bundling.
- * The resulting archive is used by binject's --vfs flag to embed tools in the SEA binary
- * with ~70% compression.
+ * Downloads platform-specific binaries of security scanning tools from their
+ * respective GitHub releases, extracts them, and creates a compressed tar.gz
+ * archive for VFS bundling. The resulting archive is used by binject's --vfs
+ * flag to embed tools in the SEA binary with ~70% compression.
  *
  * Bundled Tools:
+ *
  * - Python 3.11: Standalone Python runtime from Astral's python-build-standalone.
- * - Trivy v0.69.1: Container and filesystem vulnerability scanner from Aqua Security.
+ * - Trivy v0.69.1: Container and filesystem vulnerability scanner from Aqua
+ *   Security.
  * - TruffleHog v3.93.1: Secret and credential detection from Truffle Security.
  * - OpenGrep v1.16.0: SAST/code analysis engine (fork of Semgrep).
  *
  * Platform Coverage (8/8 platforms):
- * - darwin-arm64: All native ARM64.
- * - darwin-x64: All native x86_64.
- * - linux-arm64: All native ARM64 (glibc).
- * - linux-arm64-musl: All native ARM64 (musl/Alpine).
- * - linux-x64: All native x86_64 (glibc).
- * - linux-x64-musl: All native x86_64 (musl/Alpine).
- * - windows-x64: All native x86_64.
- * - windows-arm64: Python and TruffleHog native ARM64, Trivy and OpenGrep x64 emulated.
  *
- * Windows ARM64 Emulation:
- * Windows 11 ARM64 has transparent x64 emulation, so Trivy and OpenGrep (no native ARM64
- * builds available) use x64 binaries without any code changes or special invocation.
+ * - Darwin-arm64: All native ARM64.
+ * - Darwin-x64: All native x86_64.
+ * - Linux-arm64: All native ARM64 (glibc).
+ * - Linux-arm64-musl: All native ARM64 (musl/Alpine).
+ * - Linux-x64: All native x86_64 (glibc).
+ * - Linux-x64-musl: All native x86_64 (musl/Alpine).
+ * - Windows-x64: All native x86_64.
+ * - Windows-arm64: Python and TruffleHog native ARM64, Trivy and OpenGrep x64
+ *   emulated.
+ *
+ * Windows ARM64 Emulation: Windows 11 ARM64 has transparent x64 emulation, so
+ * Trivy and OpenGrep (no native ARM64 builds available) use x64 binaries
+ * without any code changes or special invocation.
  *
  * Compression Results:
+ *
  * - Uncompressed tools: ~460 MB.
  * - Compressed tar.gz: ~140 MB (70% reduction).
- * - Final SEA binary: ~191 MB (includes Node.js base + CLI blob + compressed VFS).
+ * - Final SEA binary: ~191 MB (includes Node.js base + CLI blob + compressed
+ *   VFS).
  *
- * @param {string} platform - Node.js platform identifier (darwin, linux, win32).
+ * @example
+ *   const tarGzPath = await downloadExternalTools('darwin', 'arm64')
+ *   // Returns: '../build-infra/build/external-tools/darwin-arm64.tar.gz'
+ *
+ * @example
+ *   const tarGzPath = await downloadExternalTools('linux', 'x64', true)
+ *   // Returns: '../build-infra/build/external-tools/linux-x64-musl.tar.gz'
+ *
+ * @param {string} platform - Node.js platform identifier (darwin, linux,
+ *   win32).
  * @param {string} arch - Node.js architecture identifier (arm64, x64).
- * @param {boolean} [isMusl=false] - Whether to use musl libc binaries for Linux.
- * @returns Promise resolving to path of the generated tar.gz archive, or null if platform not supported.
+ * @param {boolean} [isMusl=false] - Whether to use musl libc binaries for
+ *   Linux.
  *
- * @example
- * const tarGzPath = await downloadExternalTools('darwin', 'arm64')
- * // Returns: '../build-infra/build/external-tools/darwin-arm64.tar.gz'
- *
- * @example
- * const tarGzPath = await downloadExternalTools('linux', 'x64', true)
- * // Returns: '../build-infra/build/external-tools/linux-x64-musl.tar.gz'
+ * @returns Promise resolving to path of the generated tar.gz archive, or null
+ *   if platform not supported.
  */
 export async function downloadExternalTools(platform, arch, isMusl = false) {
   const rootPath = getRootPath()
@@ -555,8 +568,8 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 }
 
 /**
- * Get GitHub API authentication headers.
- * Uses GH_TOKEN or GITHUB_TOKEN environment variables if available.
+ * Get GitHub API authentication headers. Uses GH_TOKEN or GITHUB_TOKEN
+ * environment variables if available.
  *
  * @returns Headers object for GitHub API requests.
  */
@@ -570,15 +583,16 @@ export function getAuthHeaders() {
 }
 
 /**
- * Get the latest binject release version from socket-btm.
- * Returns the version string (e.g., "1.0.0").
- *
- * @returns Promise resolving to binject version string.
- * @throws {Error} When socket-btm releases cannot be fetched.
+ * Get the latest binject release version from socket-btm. Returns the version
+ * string (e.g., "1.0.0").
  *
  * @example
- * const version = await getLatestBinjectVersion()
- * // "1.0.0"
+ *   const version = await getLatestBinjectVersion()
+ *   // "1.0.0"
+ *
+ * @returns Promise resolving to binject version string.
+ *
+ * @throws {Error} When socket-btm releases cannot be fetched.
  */
 export async function getLatestBinjectVersion() {
   try {
@@ -647,8 +661,8 @@ export async function getLatestBinjectVersion() {
 }
 
 /**
- * Get the monorepo root path.
- * Resolves to socket-cli/ directory regardless of where script is run from.
+ * Get the monorepo root path. Resolves to socket-cli/ directory regardless of
+ * where script is run from.
  *
  * @returns Absolute path to monorepo root.
  */

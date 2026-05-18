@@ -1,5 +1,7 @@
 /* max-file-lines: legitimate — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
-/** @fileoverview Integration tests for SEA (Single Executable Application) binary. */
+/**
+ * @file Integration tests for SEA (Single Executable Application) binary.
+ */
 
 import path from 'node:path'
 

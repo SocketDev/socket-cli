@@ -1,19 +1,16 @@
 /**
  * Integration tests for `socket go` wrapper command.
  *
- * Tests the go package manager wrapper that adds Socket security scanning
- * to Go module operations via Socket Firewall (sfw). Commands are forwarded to
- * sfw which provides security scanning before installation.
+ * Tests the go package manager wrapper that adds Socket security scanning to Go
+ * module operations via Socket Firewall (sfw). Commands are forwarded to sfw
+ * which provides security scanning before installation.
  *
- * Test Coverage:
- * - Help text display and usage examples
+ * Test Coverage: - Help text display and usage examples.
  *
- * Security Features:
- * - Pre-installation security scanning via Socket Firewall
+ * Security Features: - Pre-installation security scanning via Socket Firewall.
  *
- * Related Files:
- * - src/commands/go/cmd-go.mts - go command implementation
- * - src/util/dlx/resolve-binary.mts - sfw resolution
+ * Related Files: - src/commands/go/cmd-go.mts - go command implementation -
+ * src/util/dlx/resolve-binary.mts - sfw resolution.
  */
 
 import { describe, expect } from 'vitest'

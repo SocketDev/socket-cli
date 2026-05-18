@@ -1,30 +1,26 @@
 /**
- * Unit Tests: Fix Command Handler - ID Conversion Logic
+ * Unit Tests: Fix Command Handler - ID Conversion Logic.
  *
- * Purpose:
- * Tests the vulnerability ID conversion system that normalizes various vulnerability identifiers
- * (GHSA, CVE, PURL) into standardized GHSA format. Validates the conversion pipeline used by the
- * fix command to accept flexible input formats while working with unified GHSA identifiers.
+ * Purpose: Tests the vulnerability ID conversion system that normalizes various
+ * vulnerability identifiers (GHSA, CVE, PURL) into standardized GHSA format.
+ * Validates the conversion pipeline used by the fix command to accept flexible
+ * input formats while working with unified GHSA identifiers.
  *
- * Test Coverage:
- * - GHSA ID validation and passthrough
- * - CVE to GHSA conversion via Socket API
- * - PURL to GHSA conversion for package-based lookups
- * - Invalid format detection and filtering
- * - Conversion failure handling with user-friendly warnings
- * - Mixed ID type processing in single batch
- * - Whitespace normalization
+ * Test Coverage: - GHSA ID validation and passthrough - CVE to GHSA conversion
+ * via Socket API - PURL to GHSA conversion for package-based lookups - Invalid
+ * format detection and filtering - Conversion failure handling with
+ * user-friendly warnings - Mixed ID type processing in single batch -
+ * Whitespace normalization.
  *
- * Testing Approach:
- * Mocks CVE and PURL conversion utilities, logger functions, and array utilities to test
- * the conversion logic in isolation. Tests verify proper error handling, logging, and
- * filtering of invalid or unconvertible identifiers.
+ * Testing Approach: Mocks CVE and PURL conversion utilities, logger functions,
+ * and array utilities to test the conversion logic in isolation. Tests verify
+ * proper error handling, logging, and filtering of invalid or unconvertible
+ * identifiers.
  *
- * Related Files:
- * - src/commands/fix/handle-fix.mts - Main fix command handler
- * - src/util/cve-to-ghsa.mts - CVE ID conversion utility
- * - src/util/purl/to-ghsa.mts - PURL to GHSA conversion
- * - src/commands/fix/coana-fix.mts - Coana API integration for applying fixes
+ * Related Files: - src/commands/fix/handle-fix.mts - Main fix command handler -
+ * src/util/cve-to-ghsa.mts - CVE ID conversion utility -
+ * src/util/purl/to-ghsa.mts - PURL to GHSA conversion -
+ * src/commands/fix/coana-fix.mts - Coana API integration for applying fixes.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

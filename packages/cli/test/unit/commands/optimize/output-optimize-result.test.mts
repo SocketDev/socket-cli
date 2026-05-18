@@ -1,17 +1,14 @@
 /**
  * Unit tests for optimize result output.
  *
- * Purpose:
- * Tests the outputOptimizeResult function for different output formats.
+ * Purpose: Tests the outputOptimizeResult function for different output
+ * formats.
  *
- * Test Coverage:
- * - JSON output format
- * - Markdown output format
- * - Text output format
- * - Error handling
+ * Test Coverage: - JSON output format - Markdown output format - Text output
+ * format - Error handling.
  *
- * Related Files:
- * - commands/optimize/output-optimize-result.mts (implementation)
+ * Related Files: - commands/optimize/output-optimize-result.mts
+ * (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,13 +1,14 @@
 /**
  * Unit tests for generateAutoManifest.
  *
- * Drives the auto-detected manifest pipeline. Each detected ecosystem
- * (sbt, gradle, conda) calls its converter unless the corresponding
- * socket.json `defaults.manifest.<x>.disabled` flag is true. All
- * converters and the socket.json reader are mocked.
+ * Drives the auto-detected manifest pipeline. Each detected ecosystem (sbt,
+ * gradle, conda) calls its converter unless the corresponding socket.json
+ * `defaults.manifest.<x>.disabled` flag is true. All converters and the
+ * socket.json reader are mocked.
  *
  * Related Files:
- * - src/commands/manifest/generate_auto_manifest.mts
+ *
+ * - Src/commands/manifest/generate_auto_manifest.mts
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

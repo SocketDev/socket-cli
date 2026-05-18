@@ -1,18 +1,12 @@
 /**
  * Unit tests for Socket constants.
  *
- * Purpose:
- * Tests the Socket.dev specific constants for the CLI.
+ * Purpose: Tests the Socket.dev specific constants for the CLI.
  *
- * Test Coverage:
- * - API URL constants
- * - Configuration file constants
- * - Repository metadata constants
- * - Scan type constants
- * - Token constants
+ * Test Coverage: - API URL constants - Configuration file constants -
+ * Repository metadata constants - Scan type constants - Token constants.
  *
- * Related Files:
- * - constants/socket.mts (implementation)
+ * Related Files: - constants/socket.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

@@ -1,20 +1,12 @@
 /**
- * @fileoverview Restore build artifacts from GitHub Actions cache.
- * This is a nice-to-have optimization that speeds up first build after clone.
+ * @file Restore build artifacts from GitHub Actions cache. This is a
+ *   nice-to-have optimization that speeds up first build after clone. Usage:
+ *   node scripts/restore-cache.mts [options] Options: --quiet Suppress progress
+ *   output. --verbose Show detailed output. Requirements:
  *
- * Usage:
- *   node scripts/restore-cache.mts [options]
- *
- * Options:
- *   --quiet      Suppress progress output.
- *   --verbose    Show detailed output.
- *
- * Requirements:
  *   - gh CLI must be installed (https://cli.github.com/).
  *   - Must be in a git repository.
- *   - Must have network access to GitHub.
- *
- * Behavior:
+ *   - Must have network access to GitHub. Behavior:
  *   - Checks if build artifacts already exist (skip if present).
  *   - Computes cache key for current commit.
  *   - Attempts to download matching cache from GitHub Actions.

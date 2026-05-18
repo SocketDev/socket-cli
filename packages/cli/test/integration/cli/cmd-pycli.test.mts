@@ -4,15 +4,12 @@
  * Tests the Python CLI (socketsecurity) passthrough command that provides
  * explicit access to Python CLI features not yet available in the Node.js CLI.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior (--dry-run flag)
- * - Python CLI features documentation
- * - Banner and exit code validation
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * (--dry-run flag) - Python CLI features documentation - Banner and exit code
+ * validation.
  *
- * Related Files:
- * - src/commands/pycli/cmd-pycli.mts - pycli command implementation
- * - src/util/python/standalone.mts - Python CLI spawning
+ * Related Files: - src/commands/pycli/cmd-pycli.mts - pycli command
+ * implementation - src/util/python/standalone.mts - Python CLI spawning.
  */
 
 import { describe, expect } from 'vitest'

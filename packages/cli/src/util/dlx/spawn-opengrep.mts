@@ -1,9 +1,9 @@
 /**
  * Spawn OpenGrep for AST-based code-pattern scanning.
  *
- * - spawnOpengrepDlx: download from GitHub releases, then exec.
- * - spawnOpengrepVfs: extract from SEA bundle, then exec.
- * - spawnOpengrep: auto-detect SEA vs npm-CLI mode and dispatch.
+ * - SpawnOpengrepDlx: download from GitHub releases, then exec.
+ * - SpawnOpengrepVfs: extract from SEA bundle, then exec.
+ * - SpawnOpengrep: auto-detect SEA vs npm-CLI mode and dispatch.
  *
  * Defined via `defineToolSpawn`. See util/dlx/define-tool-spawn.mts.
  */

@@ -5,23 +5,16 @@
  * before running packages. This wrapper intercepts npx commands and scans
  * packages for security issues before execution.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Package execution with versions
- * - Config flag variants
- * - Issue rules configuration
- * - Silent mode operation
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Package execution with versions - Config flag variants - Issue
+ * rules configuration - Silent mode operation.
  *
- * Security Features:
- * - Package scanning before execution
- * - Malware detection integration
- * - API token validation
+ * Security Features: - Package scanning before execution - Malware detection
+ * integration - API token validation.
  *
- * Related Files:
- * - src/commands/wrapper/npx.mts - npx wrapper implementation
- * - src/util/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities
- * - test/integration/cli/cmd-npx-malware.test.mts - Malware-specific tests
+ * Related Files: - src/commands/wrapper/npx.mts - npx wrapper implementation -
+ * src/util/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities -
+ * test/integration/cli/cmd-npx-malware.test.mts - Malware-specific tests.
  */
 
 import { describe, expect } from 'vitest'

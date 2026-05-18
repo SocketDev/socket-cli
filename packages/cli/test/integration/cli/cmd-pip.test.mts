@@ -1,26 +1,20 @@
 /**
  * Integration tests for `socket pip` and `socket pip3` wrapper commands.
  *
- * Tests the pip package manager wrapper that adds Socket security scanning
- * to Python package operations via Socket Firewall (sfw). Commands are forwarded to
- * sfw which provides security scanning before installation.
+ * Tests the pip package manager wrapper that adds Socket security scanning to
+ * Python package operations via Socket Firewall (sfw). Commands are forwarded
+ * to sfw which provides security scanning before installation.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - pip and pip3 alias support
- * - Dry-run behavior validation
- * - pip install operations with scanning
- * - Config flag variants
- * - Issue rules configuration
+ * Test Coverage: - Help text display and usage examples - pip and pip3 alias
+ * support - Dry-run behavior validation - pip install operations with scanning
+ * - Config flag variants - Issue rules configuration.
  *
- * Security Features:
- * - Pre-installation security scanning via Socket Firewall
- * - Malware detection integration
+ * Security Features: - Pre-installation security scanning via Socket Firewall -
+ * Malware detection integration.
  *
- * Related Files:
- * - src/commands/pip/cmd-pip.mts - pip command implementation
- * - src/util/dlx/resolve-binary.mjs - sfw resolution
- * - test/integration/cli/cmd-pip-malware.test.mts - Malware tests
+ * Related Files: - src/commands/pip/cmd-pip.mts - pip command implementation -
+ * src/util/dlx/resolve-binary.mjs - sfw resolution -
+ * test/integration/cli/cmd-pip-malware.test.mts - Malware tests.
  */
 
 import { describe, expect } from 'vitest'

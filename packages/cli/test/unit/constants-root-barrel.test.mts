@@ -1,17 +1,18 @@
 /**
  * Unit tests for root constants barrel file.
  *
- * Purpose:
- * Tests the root constants.mts barrel file exports.
+ * Purpose: Tests the root constants.mts barrel file exports.
  *
  * Test Coverage:
+ *
  * - Named exports verification
  * - Default export verification
  * - Key constants values
  *
  * Related Files:
- * - src/constants.mts (implementation)
- * - src/constants/*.mts (source modules)
+ *
+ * - Src/constants.mts (implementation)
+ * - Src/constants/*.mts (source modules)
  */
 
 import { describe, expect, it } from 'vitest'

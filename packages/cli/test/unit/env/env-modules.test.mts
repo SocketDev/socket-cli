@@ -1,13 +1,13 @@
 /**
  * Unit tests for environment variable modules.
  *
- * Purpose:
- * Tests the environment variable getter functions.
+ * Purpose: Tests the environment variable getter functions.
  *
  * Test Coverage:
- * - getCliVersion function
- * - getCoanaVersion function
- * - isPublishedBuild function
+ *
+ * - GetCliVersion function
+ * - GetCoanaVersion function
+ * - IsPublishedBuild function
  * - CI constant
  * - VITEST constant
  * - HOME constant
@@ -15,7 +15,8 @@
  * - TERM constant
  *
  * Related Files:
- * - env/*.mts (implementations)
+ *
+ * - Env/*.mts (implementations)
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

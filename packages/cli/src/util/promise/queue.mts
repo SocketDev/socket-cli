@@ -1,6 +1,6 @@
 /**
- * A promise queue that limits concurrent execution of async tasks.
- * Based on patterns from coana-package-manager for resource-aware async operations.
+ * A promise queue that limits concurrent execution of async tasks. Based on
+ * patterns from coana-package-manager for resource-aware async operations.
  */
 
 type QueuedTask<T> = {
@@ -17,9 +17,12 @@ export class PromiseQueue {
   private readonly maxQueueLength?: number | undefined
 
   /**
-   * Creates a new PromiseQueue
-   * @param maxConcurrency - Maximum number of promises that can run concurrently
-   * @param maxQueueLength - Maximum queue size (older tasks are dropped if exceeded)
+   * Creates a new PromiseQueue.
+   *
+   * @param maxConcurrency - Maximum number of promises that can run
+   *   concurrently.
+   * @param maxQueueLength - Maximum queue size (older tasks are dropped if
+   *   exceeded)
    */
   constructor(maxConcurrency: number, maxQueueLength?: number) {
     this.maxConcurrency = maxConcurrency
@@ -34,8 +37,10 @@ export class PromiseQueue {
   }
 
   /**
-   * Add a task to the queue
-   * @param fn - Async function to execute
+   * Add a task to the queue.
+   *
+   * @param fn - Async function to execute.
+   *
    * @returns Promise that resolves with the function's result
    */
   async add<T>(fn: () => Promise<T>): Promise<T> {
@@ -109,22 +114,22 @@ export class PromiseQueue {
   }
 
   /**
-   * Get the number of tasks currently running
+   * Get the number of tasks currently running.
    */
   get activeCount(): number {
     return this.running
   }
 
   /**
-   * Get the number of tasks waiting in the queue
+   * Get the number of tasks waiting in the queue.
    */
   get pendingCount(): number {
     return this.queue.length
   }
 
   /**
-   * Clear all pending tasks from the queue (does not affect running tasks).
-   * All pending tasks are rejected with an error.
+   * Clear all pending tasks from the queue (does not affect running tasks). All
+   * pending tasks are rejected with an error.
    */
   clear(): void {
     // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)

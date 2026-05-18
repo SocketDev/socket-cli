@@ -1,12 +1,13 @@
 /**
- * Unit Tests: Conda Environment to Requirements.txt Converter
+ * Unit Tests: Conda Environment to Requirements.txt Converter.
  *
- * Purpose:
- * Tests the YAML parser that extracts pip dependencies from Conda environment.yml files and
- * converts them to requirements.txt format. Validates handling of various YAML indentation
- * styles, comments, and edge cases in Conda environment specifications.
+ * Purpose: Tests the YAML parser that extracts pip dependencies from Conda
+ * environment.yml files and converts them to requirements.txt format. Validates
+ * handling of various YAML indentation styles, comments, and edge cases in
+ * Conda environment specifications.
  *
  * Test Coverage:
+ *
  * - Simple Conda environment conversion with pip dependencies
  * - Arbitrary indentation block support
  * - Single space indentation handling
@@ -16,13 +17,16 @@
  * - Git dependencies and requirements.txt references
  * - Version specifier preservation (==, >=, ~=, <)
  *
- * Testing Approach:
- * Uses direct function invocation with inline snapshot testing to validate YAML parsing logic.
- * Tests verify correct extraction of pip dependencies while ignoring Conda-specific packages.
+ * Testing Approach: Uses direct function invocation with inline snapshot
+ * testing to validate YAML parsing logic. Tests verify correct extraction of
+ * pip dependencies while ignoring Conda-specific packages.
  *
  * Related Files:
- * - src/commands/manifest/convert-conda-to-requirements.mts - Conda to requirements converter
- * - src/commands/manifest/handle-manifest-conda.mts - Command handler using converter
+ *
+ * - Src/commands/manifest/convert-conda-to-requirements.mts - Conda to
+ *   requirements converter
+ * - Src/commands/manifest/handle-manifest-conda.mts - Command handler using
+ *   converter
  */
 
 import { describe, expect, it } from 'vitest'

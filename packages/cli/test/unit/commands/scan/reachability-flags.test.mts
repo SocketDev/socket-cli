@@ -1,16 +1,12 @@
 /**
  * Unit tests for reachability analysis flags.
  *
- * Purpose:
- * Tests the reachability analysis flag definitions.
+ * Purpose: Tests the reachability analysis flag definitions.
  *
- * Test Coverage:
- * - reachabilityFlags constant
- * - Flag types and defaults
- * - Flag descriptions
+ * Test Coverage: - reachabilityFlags constant - Flag types and defaults - Flag
+ * descriptions.
  *
- * Related Files:
- * - src/commands/scan/reachability-flags.mts (implementation)
+ * Related Files: - src/commands/scan/reachability-flags.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

@@ -2,22 +2,18 @@
 /**
  * Unit tests for manifest cdxgen command.
  *
- * Tests the cdxgen command that generates CycloneDX SBOMs (Software Bill of Materials).
- * This command wraps the @cyclonedx/cdxgen tool with Socket CLI integration.
+ * Tests the cdxgen command that generates CycloneDX SBOMs (Software Bill of
+ * Materials). This command wraps the @cyclonedx/cdxgen tool with Socket CLI
+ * integration.
  *
- * Test Coverage:
- * - Command metadata (description, hidden)
- * - Dry-run behavior
- * - Unknown argument handling
- * - Exit code handling with process.exit()
- * - Signal propagation with process.kill()
- * - Lifecycle default setting
- * - Output file defaults
- * - Help flag handling
+ * Test Coverage: - Command metadata (description, hidden) - Dry-run behavior -
+ * Unknown argument handling - Exit code handling with process.exit() - Signal
+ * propagation with process.kill() - Lifecycle default setting - Output file
+ * defaults - Help flag handling.
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest-cdxgen.mts - Command implementation
- * - src/commands/manifest/run-cdxgen.mts - cdxgen spawning logic
+ * Related Files: - src/commands/manifest/cmd-manifest-cdxgen.mts - Command
+ * implementation - src/commands/manifest/run-cdxgen.mts - cdxgen spawning
+ * logic.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

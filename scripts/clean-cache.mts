@@ -3,10 +3,9 @@
 /**
  * Clean stale caches across all packages.
  *
- * Usage:
- *   pnpm run clean:cache         # Clean all stale caches
- *   pnpm run clean:cache --all   # Clean ALL caches (nuclear option)
- *   pnpm run clean:cache --dry-run # Show what would be deleted
+ * Usage: pnpm run clean:cache # Clean all stale caches pnpm run clean:cache
+ * --all # Clean ALL caches (nuclear option) pnpm run clean:cache --dry-run #
+ * Show what would be deleted.
  */
 
 import { readdirSync, statSync } from 'node:fs'
@@ -155,7 +154,9 @@ async function main(): Promise<void> {
     return
   }
 
-  logger.log(`Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? 'y' : 'ies'}:`)
+  logger.log(
+    `Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? 'y' : 'ies'}:`,
+  )
   logger.log('')
 
   let totalDeleted = 0

@@ -1,25 +1,21 @@
 /**
  * Unit tests for detectManifestActions.
  *
- * Walks a directory looking for files that indicate which manifest
- * generators (sbt, gradle, conda) should run. Per-generator
- * `socket.json` `disabled` flags can suppress detection.
+ * Walks a directory looking for files that indicate which manifest generators
+ * (sbt, gradle, conda) should run. Per-generator `socket.json` `disabled` flags
+ * can suppress detection.
  *
- * Test Coverage:
- * - Empty directory → no detections, count 0
- * - build.sbt present → sbt=true, count 1
- * - gradlew present → gradle=true, count 1
- * - environment.yml present → conda=true, count 1
- * - environment.yaml present (when no .yml) → conda=true
- * - Both .yml and .yaml present → only counts once (yml wins)
- * - All three present → all true, count 3
- * - sockJson disables sbt → sbt=false even with build.sbt
- * - sockJson disables gradle → gradle=false even with gradlew
- * - sockJson disables conda → conda=false even with environment.yml
- * - cdxgen field is always false (not auto-detected)
+ * Test Coverage: - Empty directory → no detections, count 0 - build.sbt present
+ * → sbt=true, count 1 - gradlew present → gradle=true, count 1 -
+ * environment.yml present → conda=true, count 1 - environment.yaml present
+ * (when no .yml) → conda=true - Both .yml and .yaml present → only counts once
+ * (yml wins) - All three present → all true, count 3 - sockJson disables sbt →
+ * sbt=false even with build.sbt - sockJson disables gradle → gradle=false even
+ * with gradlew - sockJson disables conda → conda=false even with
+ * environment.yml - cdxgen field is always false (not auto-detected)
  *
- * Related Files:
- * - src/commands/manifest/detect-manifest-actions.mts - Implementation
+ * Related Files: - src/commands/manifest/detect-manifest-actions.mts -
+ * Implementation.
  */
 
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'

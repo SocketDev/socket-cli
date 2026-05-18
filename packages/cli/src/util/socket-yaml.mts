@@ -1,12 +1,12 @@
 /**
- * @fileoverview socket.yml types + parser, replacing the archived
- * `@socketsecurity/config` package (https://github.com/SocketDev/socket-config-js).
- *
- * The original dependency shipped ajv + pony-cause to validate a small,
- * stable schema. Inlining the surface here keeps the same wire format
- * (v1 → v2 migration included) without dragging in a ~300 KB validator.
- * Validation is intentionally lighter: we accept the YAML and coerce
- * the required shape; malformed input throws `SocketValidationError`.
+ * @file Socket.yml types + parser, replacing the archived
+ *   `@socketsecurity/config` package
+ *   (https://github.com/SocketDev/socket-config-js). The original dependency
+ *   shipped ajv + pony-cause to validate a small, stable schema. Inlining the
+ *   surface here keeps the same wire format (v1 → v2 migration included)
+ *   without dragging in a ~300 KB validator. Validation is intentionally
+ *   lighter: we accept the YAML and coerce the required shape; malformed input
+ *   throws `SocketValidationError`.
  */
 
 import { parse as yamlParse } from 'yaml'
@@ -40,7 +40,11 @@ export class SocketValidationError extends Error {
   data: unknown
   validationErrors: string[]
 
-  constructor(message: string, validationErrors: string[], parsedContent: unknown) {
+  constructor(
+    message: string,
+    validationErrors: string[],
+    parsedContent: unknown,
+  ) {
     super(message)
     this.name = 'SocketValidationError'
     this.data = parsedContent
@@ -113,7 +117,9 @@ export function getDefaultConfig(): SocketYml {
   }
 }
 
-export function isPlainObject(value: unknown): value is Record<string, unknown> {
+export function isPlainObject(
+  value: unknown,
+): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
@@ -159,11 +165,11 @@ export function migrateV1(content: SocketYmlV1Shape): SocketYml {
 }
 
 /**
- * Parse a socket.yml file body. Accepts both v2 (current) and v1
- * (pre-`version: 2`) layouts; v1 is migrated to v2 in-place.
+ * Parse a socket.yml file body. Accepts both v2 (current) and v1 (pre-`version:
+ * 2`) layouts; v1 is migrated to v2 in-place.
  *
- * Throws SocketValidationError on missing `version` (v2) or
- * unrecognized top-level shape (v1 + v2 both fail).
+ * Throws SocketValidationError on missing `version` (v2) or unrecognized
+ * top-level shape (v1 + v2 both fail).
  */
 export function parseSocketConfig(fileContent: string): SocketYml {
   let parsed: unknown

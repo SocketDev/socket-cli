@@ -2,26 +2,16 @@
 /**
  * Unit tests for Telemetry integration utilities.
  *
- * Purpose:
- * Tests the telemetry integration helper functions.
+ * Purpose: Tests the telemetry integration helper functions.
  *
- * Test Coverage:
- * - finalizeTelemetry function
- * - finalizeTelemetrySync function
- * - setupTelemetryExitHandlers function
- * - trackSubprocessExit function
- * - sanitizeArgv function (via buildContext)
- * - trackEvent function
- * - trackCliStart function
- * - trackCliEvent function
- * - trackCliComplete function
- * - trackCliError function
- * - trackSubprocessStart function
- * - trackSubprocessComplete function
- * - trackSubprocessError function
+ * Test Coverage: - finalizeTelemetry function - finalizeTelemetrySync function
+ * - setupTelemetryExitHandlers function - trackSubprocessExit function -
+ * sanitizeArgv function (via buildContext) - trackEvent function -
+ * trackCliStart function - trackCliEvent function - trackCliComplete function -
+ * trackCliError function - trackSubprocessStart function -
+ * trackSubprocessComplete function - trackSubprocessError function.
  *
- * Related Files:
- * - util/telemetry/integration.mts (implementation)
+ * Related Files: - util/telemetry/integration.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

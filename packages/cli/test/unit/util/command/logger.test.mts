@@ -1,17 +1,13 @@
 /**
  * Unit tests for command logger utilities.
  *
- * Purpose:
- * Tests the command-scoped logger functionality.
+ * Purpose: Tests the command-scoped logger functionality.
  *
- * Test Coverage:
- * - createCommandLogger function
- * - createOperationLogger function
- * - createDebugLogger function
- * - getLogger, clearLogger, clearAllLoggers functions
+ * Test Coverage: - createCommandLogger function - createOperationLogger
+ * function - createDebugLogger function - getLogger, clearLogger,
+ * clearAllLoggers functions.
  *
- * Related Files:
- * - src/util/command/logger.mts (implementation)
+ * Related Files: - src/util/command/logger.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

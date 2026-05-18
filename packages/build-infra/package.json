@@ -1,8 +1,8 @@
 {
   "name": "build-infra",
   "version": "1.0.0",
-  "description": "Shared build infrastructure utilities for Socket CLI",
   "private": true,
+  "description": "Shared build infrastructure utilities for Socket CLI",
   "type": "module",
   "exports": {
     "./lib/checkpoint-manager": "./lib/checkpoint-manager.mts",

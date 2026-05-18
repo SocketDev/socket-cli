@@ -1,4 +1,6 @@
-/** @fileoverview Build-related constants for Socket CLI. */
+/**
+ * @file Build-related constants for Socket CLI.
+ */
 
 // Build configuration file names.
 export const BIOME_JSON = 'biome.json'

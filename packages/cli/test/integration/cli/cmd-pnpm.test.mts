@@ -1,27 +1,21 @@
 /**
  * Integration tests for `socket pnpm` wrapper command.
  *
- * Tests the pnpm package manager wrapper that adds Socket security scanning
- * to pnpm operations via Socket Firewall (sfw). Commands are forwarded to
- * sfw which provides security scanning before installation.
+ * Tests the pnpm package manager wrapper that adds Socket security scanning to
+ * pnpm operations via Socket Firewall (sfw). Commands are forwarded to sfw
+ * which provides security scanning before installation.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - pnpm install operations with scanning
- * - Config flag variants
- * - Issue rules configuration
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - pnpm install operations with scanning - Config flag variants -
+ * Issue rules configuration.
  *
- * Security Features:
- * - Pre-installation security scanning via Socket Firewall
- * - Malware detection integration
- * - Workspace support
+ * Security Features: - Pre-installation security scanning via Socket Firewall -
+ * Malware detection integration - Workspace support.
  *
- * Related Files:
- * - src/commands/pnpm/cmd-pnpm.mts - pnpm command implementation
- * - src/pnpm-cli.mts - pnpm CLI entry point
- * - src/util/dlx/resolve-binary.mjs - sfw resolution
- * - test/integration/cli/cmd-pnpm-malware.test.mts - Malware tests
+ * Related Files: - src/commands/pnpm/cmd-pnpm.mts - pnpm command implementation
+ * - src/pnpm-cli.mts - pnpm CLI entry point - src/util/dlx/resolve-binary.mjs -
+ * sfw resolution - test/integration/cli/cmd-pnpm-malware.test.mts - Malware
+ * tests.
  */
 
 import { promises as fs } from 'node:fs'

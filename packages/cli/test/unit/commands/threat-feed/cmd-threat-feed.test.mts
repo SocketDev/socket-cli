@@ -3,26 +3,19 @@
  *
  * Tests the command that displays the Socket threat feed.
  *
- * Test Coverage:
- * - Command metadata (description, hidden flag)
- * - API token requirement validation
- * - Organization slug handling
- * - Filter flags: ecosystem, type, package, version
- * - Pagination flags: page, per-page, direction
- * - Output modes: text, JSON, markdown
- * - Dry-run mode
- * - Argument parsing for filters
+ * Test Coverage: - Command metadata (description, hidden flag) - API token
+ * requirement validation - Organization slug handling - Filter flags:
+ * ecosystem, type, package, version - Pagination flags: page, per-page,
+ * direction - Output modes: text, JSON, markdown - Dry-run mode - Argument
+ * parsing for filters.
  *
- * Testing Approach:
- * - Mock logger to capture output
- * - Mock handleThreatFeed to verify handler invocation
- * - Mock determineOrgSlug for organization handling
- * - Mock hasDefaultApiToken for authentication checks
- * - Test flag combinations and defaults
+ * Testing Approach: - Mock logger to capture output - Mock handleThreatFeed to
+ * verify handler invocation - Mock determineOrgSlug for organization handling -
+ * Mock hasDefaultApiToken for authentication checks - Test flag combinations
+ * and defaults.
  *
- * Related Files:
- * - src/commands/threat-feed/cmd-threat-feed.mts - Implementation
- * - src/commands/threat-feed/handle-threat-feed.mts - Handler
+ * Related Files: - src/commands/threat-feed/cmd-threat-feed.mts -
+ * Implementation - src/commands/threat-feed/handle-threat-feed.mts - Handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

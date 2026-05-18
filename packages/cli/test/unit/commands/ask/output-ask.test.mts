@@ -2,21 +2,14 @@
 /**
  * Unit tests for Ask command output formatting.
  *
- * Purpose:
- * Tests the output formatting functions for the ask command.
+ * Purpose: Tests the output formatting functions for the ask command.
  *
- * Test Coverage:
- * - outputAskCommand function
- * - explainCommand function (via outputAskCommand)
- * - Different action types (scan, package, fix, patch, optimize, issues)
- * - Severity filtering display
- * - Environment display
- * - Dry-run mode display
- * - Confidence warnings
- * - Project context display
+ * Test Coverage: - outputAskCommand function - explainCommand function (via
+ * outputAskCommand) - Different action types (scan, package, fix, patch,
+ * optimize, issues) - Severity filtering display - Environment display -
+ * Dry-run mode display - Confidence warnings - Project context display.
  *
- * Related Files:
- * - src/commands/ask/output-ask.mts (implementation)
+ * Related Files: - src/commands/ask/output-ask.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

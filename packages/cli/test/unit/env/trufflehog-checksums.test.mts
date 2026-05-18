@@ -1,8 +1,7 @@
 /**
  * Unit tests for TruffleHog checksums getter.
  *
- * Related Files:
- * - src/env/trufflehog-checksums.mts
+ * Related Files: - src/env/trufflehog-checksums.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

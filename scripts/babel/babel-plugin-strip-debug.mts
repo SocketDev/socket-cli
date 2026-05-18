@@ -1,6 +1,6 @@
 /**
- * @fileoverview Babel plugin to strip debug code blocks.
- * Removes code wrapped in DEBUG checks: if (DEBUG) { ... }
+ * @file Babel plugin to strip debug code blocks. Removes code wrapped in DEBUG
+ *   checks: if (DEBUG) { ... }
  */
 
 /**
@@ -33,21 +33,17 @@ export function isDebugTest(t, test, debugIds) {
 /**
  * Babel plugin to strip debug code.
  *
- * Removes:
- * - if (DEBUG) { ... }
- * - if (DEBUG && condition) { ... }
- * - DEBUG && expression
- * - DEBUG ? trueExpr : falseExpr (keeps falseExpr)
+ * Removes: - if (DEBUG) { ... } - if (DEBUG && condition) { ... } - DEBUG &&
+ * expression - DEBUG ? trueExpr : falseExpr (keeps falseExpr)
  *
- * Usage in code:
- *   if (DEBUG) {
- *     getDefaultLogger().log('debug info')
- *   }
- *   // In production build: entire block removed
+ * Usage in code: if (DEBUG) { getDefaultLogger().log('debug info') } // In
+ * production build: entire block removed.
  *
- * @param {object} babel - Babel API object
- * @param {object} options - Plugin options
- * @param {string[]} [options.identifiers=['DEBUG']] - Debug identifiers to strip
+ * @param {object} babel - Babel API object.
+ * @param {object} options - Plugin options.
+ * @param {string[]} [options.identifiers=['DEBUG']] - Debug identifiers to
+ *   strip.
+ *
  * @returns {object} Babel plugin object
  */
 export default function stripDebug(babel, options = {}) {

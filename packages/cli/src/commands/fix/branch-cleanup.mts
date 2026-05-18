@@ -1,8 +1,9 @@
 /**
- * Branch cleanup utilities for socket fix command.
- * Manages local and remote branch lifecycle during PR creation.
+ * Branch cleanup utilities for socket fix command. Manages local and remote
+ * branch lifecycle during PR creation.
  *
- * Critical distinction: Remote branches are sacred when a PR exists, disposable when they don't.
+ * Critical distinction: Remote branches are sacred when a PR exists, disposable
+ * when they don't.
  */
 
 import { debug } from '@socketsecurity/lib/debug'
@@ -16,8 +17,8 @@ import {
 const logger = getDefaultLogger()
 
 /**
- * Clean up branches in catch block after unexpected error.
- * Safe to delete both remote and local since no PR was created.
+ * Clean up branches in catch block after unexpected error. Safe to delete both
+ * remote and local since no PR was created.
  */
 export async function cleanupErrorBranches(
   branch: string,
@@ -33,8 +34,8 @@ export async function cleanupErrorBranches(
 }
 
 /**
- * Clean up branches after PR creation failure.
- * Safe to delete both remote and local since no PR was created.
+ * Clean up branches after PR creation failure. Safe to delete both remote and
+ * local since no PR was created.
  */
 export async function cleanupFailedPrBranches(
   branch: string,
@@ -47,10 +48,11 @@ export async function cleanupFailedPrBranches(
 }
 
 /**
- * Clean up a stale branch (both remote and local).
- * Safe to delete both since no PR exists for this branch.
+ * Clean up a stale branch (both remote and local). Safe to delete both since no
+ * PR exists for this branch.
  *
- * Returns true if cleanup succeeded or should continue, false if should skip GHSA.
+ * Returns true if cleanup succeeded or should continue, false if should skip
+ * GHSA.
  */
 export async function cleanupStaleBranch(
   branch: string,
@@ -75,8 +77,8 @@ export async function cleanupStaleBranch(
 }
 
 /**
- * Clean up local branch after successful PR creation.
- * Keeps remote branch - PR needs it to be mergeable.
+ * Clean up local branch after successful PR creation. Keeps remote branch - PR
+ * needs it to be mergeable.
  */
 export async function cleanupSuccessfulPrLocalBranch(
   branch: string,

@@ -1,24 +1,22 @@
 /**
- * @fileoverview Unit tests for CLI flag definitions and memory management.
+ * @file Unit tests for CLI flag definitions and memory management. Tests the
+ *   flag system including common flags, output flags, validation flags, and
+ *   dynamic memory configuration based on system resources. Test Coverage:
  *
- * Tests the flag system including common flags, output flags, validation flags,
- * and dynamic memory configuration based on system resources.
- *
- * Test Coverage:
- * - getMaxOldSpaceSizeFlag: Default based on system memory (75% of RAM), CLI flag override
- * - getMaxSemiSpaceSizeFlag: Calculation based on old space size, CLI flag override
- * - commonFlags: Banner, compactHeader, config, dryRun, help, helpFull, maxOldSpaceSize, maxSemiSpaceSize, spinner flags
- * - outputFlags: JSON and markdown output format flags
- * - validationFlags: All and strict validation mode flags
- * - Flag structure validation (type, description, shortFlag properties)
- *
- * Testing Approach:
- * - Mock meow to control CLI flag parsing
- * - Test flag calculations with various memory configurations
- * - Validate flag metadata and structure
- *
- * Related Files:
- * - src/flags.mts - Flag definitions and memory management
+ *   - getMaxOldSpaceSizeFlag: Default based on system memory (75% of RAM), CLI
+ *     flag override
+ *   - getMaxSemiSpaceSizeFlag: Calculation based on old space size, CLI flag
+ *     override
+ *   - commonFlags: Banner, compactHeader, config, dryRun, help, helpFull,
+ *     maxOldSpaceSize, maxSemiSpaceSize, spinner flags
+ *   - outputFlags: JSON and markdown output format flags
+ *   - validationFlags: All and strict validation mode flags
+ *   - Flag structure validation (type, description, shortFlag properties) Testing
+ *     Approach:
+ *   - Mock meow to control CLI flag parsing
+ *   - Test flag calculations with various memory configurations
+ *   - Validate flag metadata and structure Related Files:
+ *   - src/flags.mts - Flag definitions and memory management
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

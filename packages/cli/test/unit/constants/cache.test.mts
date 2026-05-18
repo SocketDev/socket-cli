@@ -1,15 +1,11 @@
 /**
  * Unit tests for cache constants.
  *
- * Purpose:
- * Tests the caching, TTL, and timeout constants.
+ * Purpose: Tests the caching, TTL, and timeout constants.
  *
- * Test Coverage:
- * - Cache TTL constants
- * - Timeout constants
+ * Test Coverage: - Cache TTL constants - Timeout constants.
  *
- * Related Files:
- * - constants/cache.mts (implementation)
+ * Related Files: - constants/cache.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

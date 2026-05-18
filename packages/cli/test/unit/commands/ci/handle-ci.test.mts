@@ -1,34 +1,26 @@
 /**
  * Unit tests for CI command handler.
  *
- * Tests the main CI command that orchestrates repository scanning in CI/CD environments.
- * This is a complex handler integrating organization detection, branch detection, and scan creation.
+ * Tests the main CI command that orchestrates repository scanning in CI/CD
+ * environments. This is a complex handler integrating organization detection,
+ * branch detection, and scan creation.
  *
- * Test Coverage:
- * - Successful CI scan creation with full workflow
- * - Organization slug detection (config, env, API fallback)
- * - Repository name detection from Git
- * - Default branch detection
- * - Current branch detection (Git)
- * - Scan creation with proper parameters
- * - Error handling for missing organization
- * - Error handling for Git detection failures
- * - Debug logging integration
- * - JSON result serialization
+ * Test Coverage: - Successful CI scan creation with full workflow -
+ * Organization slug detection (config, env, API fallback) - Repository name
+ * detection from Git - Default branch detection - Current branch detection
+ * (Git) - Scan creation with proper parameters - Error handling for missing
+ * organization - Error handling for Git detection failures - Debug logging
+ * integration - JSON result serialization.
  *
- * Testing Approach:
- * - Mock getDefaultOrgSlug for organization detection
- * - Mock detectDefaultBranch and gitBranch for Git operations
- * - Mock getRepoName for repository detection
- * - Mock handleCreateNewScan for scan creation
- * - Mock logger for output verification
- * - Mock debug utilities for debug logging
- * - Test complete workflow integration
+ * Testing Approach: - Mock getDefaultOrgSlug for organization detection - Mock
+ * detectDefaultBranch and gitBranch for Git operations - Mock getRepoName for
+ * repository detection - Mock handleCreateNewScan for scan creation - Mock
+ * logger for output verification - Mock debug utilities for debug logging -
+ * Test complete workflow integration.
  *
- * Related Files:
- * - src/commands/ci/handle-ci.mts - Implementation
- * - src/commands/ci/fetch-default-org-slug.mts - Org detection
- * - src/commands/scan/handle-create-new-scan.mts - Scan creation
+ * Related Files: - src/commands/ci/handle-ci.mts - Implementation -
+ * src/commands/ci/fetch-default-org-slug.mts - Org detection -
+ * src/commands/scan/handle-create-new-scan.mts - Scan creation.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

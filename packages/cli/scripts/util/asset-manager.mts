@@ -1,15 +1,14 @@
 /**
- * @fileoverview Unified asset manager for socket-btm releases.
- * Consolidates download functionality from download-assets.mts and sea-build-util/downloads.mts.
+ * @file Unified asset manager for socket-btm releases. Consolidates download
+ *   functionality from download-assets.mts and sea-build-util/downloads.mts.
+ *   This module provides:
  *
- * This module provides:
- * - Unified binary downloads (node-smol, binject)
- * - Version caching and validation
- * - Platform/arch normalization
- * - GitHub API authentication
- *
- * Phase 1 (Foundation): Core class implementation without migration.
- * Existing download functions remain unchanged for backward compatibility.
+ *   - Unified binary downloads (node-smol, binject)
+ *   - Version caching and validation
+ *   - Platform/arch normalization
+ *   - GitHub API authentication Phase 1 (Foundation): Core class implementation
+ *     without migration. Existing download functions remain unchanged for
+ *     backward compatibility.
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -47,22 +46,24 @@ export function getRootPath() {
  * Unified asset manager for downloading and caching socket-btm releases.
  *
  * @example
- * const manager = new AssetManager()
- * const nodePath = await manager.downloadBinary({
- *   tool: 'node-smol',
- *   version: '20251213-7cf90d2',
- *   platform: 'darwin',
- *   arch: 'arm64'
- * })
+ *   const manager = new AssetManager()
+ *   const nodePath = await manager.downloadBinary({
+ *     tool: 'node-smol',
+ *     version: '20251213-7cf90d2',
+ *     platform: 'darwin',
+ *     arch: 'arm64',
+ *   })
  */
 export class AssetManager {
   /**
    * Create a new AssetManager instance.
    *
    * @param {Object} [options] - Configuration options.
-   * @param {string} [options.downloadDir] - Base directory for downloads (default: build-infra/build/downloaded).
+   * @param {string} [options.downloadDir] - Base directory for downloads
+   *   (default: build-infra/build/downloaded).
    * @param {boolean} [options.quiet] - Suppress logs (default: false).
-   * @param {boolean} [options.cacheEnabled] - Enable version caching (default: true).
+   * @param {boolean} [options.cacheEnabled] - Enable version caching (default:
+   *   true).
    */
   constructor(options = {}) {
     const {
@@ -88,8 +89,8 @@ export class AssetManager {
   }
 
   /**
-   * Get GitHub API authentication headers.
-   * Uses GH_TOKEN or GITHUB_TOKEN environment variables if available.
+   * Get GitHub API authentication headers. Uses GH_TOKEN or GITHUB_TOKEN
+   * environment variables if available.
    *
    * @returns {Object} Headers object for GitHub API requests.
    */
@@ -108,7 +109,9 @@ export class AssetManager {
    * @param {string} platform - Platform identifier (darwin, linux, win32).
    * @param {string} arch - Architecture identifier (arm64, x64, ia32).
    * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
-   * @returns {string} Platform-arch identifier (e.g., 'darwin-arm64', 'linux-x64-musl').
+   *
+   * @returns {string} Platform-arch identifier (e.g., 'darwin-arm64',
+   *   'linux-x64-musl').
    */
   getPlatformArch(platform, arch, libc) {
     const muslSuffix = libc === 'musl' ? '-musl' : ''
@@ -120,6 +123,7 @@ export class AssetManager {
    *
    * @param {string} tool - Tool name (node-smol, binject).
    * @param {string} platformArch - Platform-arch identifier.
+   *
    * @returns {string} Absolute path to download directory.
    */
   getDownloadDir(tool, platformArch) {
@@ -127,12 +131,14 @@ export class AssetManager {
   }
 
   /**
-   * Validate cached version matches expected tag.
-   * Checks .version file content and returns true if valid.
+   * Validate cached version matches expected tag. Checks .version file content
+   * and returns true if valid.
    *
    * @param {string} versionPath - Path to .version file.
    * @param {string} expectedTag - Expected version tag.
-   * @param {string} tagPrefix - Required tag prefix for validation (e.g., 'node-smol-').
+   * @param {string} tagPrefix - Required tag prefix for validation (e.g.,
+   *   'node-smol-').
+   *
    * @returns {Promise<boolean>} True if cache is valid.
    */
   async validateCache(versionPath, expectedTag, tagPrefix) {
@@ -161,6 +167,7 @@ export class AssetManager {
    * Clear stale cache directory with verification.
    *
    * @param {string} cacheDir - Directory to clear.
+   *
    * @returns {Promise<void>}
    */
   async clearStaleCache(cacheDir) {
@@ -191,11 +198,15 @@ export class AssetManager {
    *
    * @param {Object} config - Download configuration.
    * @param {string} config.tool - Tool name ('node-smol' or 'binject').
-   * @param {string} config.version - Version tag suffix (e.g., '20251213-7cf90d2').
-   * @param {string} config.platform - Platform identifier (darwin, linux, win32).
+   * @param {string} config.version - Version tag suffix (e.g.,
+   *   '20251213-7cf90d2').
+   * @param {string} config.platform - Platform identifier (darwin, linux,
+   *   win32).
    * @param {string} config.arch - Architecture identifier (arm64, x64).
    * @param {string} [config.libc] - Linux libc variant ('musl' for Alpine).
-   * @param {string} [config.localOverride] - Environment variable name for local file override.
+   * @param {string} [config.localOverride] - Environment variable name for
+   *   local file override.
+   *
    * @returns {Promise<string>} Absolute path to downloaded binary.
    */
   async downloadBinary(config) {

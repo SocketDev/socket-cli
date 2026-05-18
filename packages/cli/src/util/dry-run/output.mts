@@ -1,12 +1,11 @@
 /**
  * Dry-run output utilities for Socket CLI commands.
  *
- * Dry-run previews are contextual output — they describe what WOULD
- * happen, they are not the command's payload. Per the stream discipline
- * rule (CLAUDE.md: SHARED STANDARDS), context belongs on stderr. This
- * keeps `command --json --dry-run` pipe-safe and also keeps dry-run
- * previews visible to humans running `command > file` (where stderr
- * still goes to the terminal).
+ * Dry-run previews are contextual output — they describe what WOULD happen,
+ * they are not the command's payload. Per the stream discipline rule
+ * (CLAUDE.md: SHARED STANDARDS), context belongs on stderr. This keeps `command
+ * --json --dry-run` pipe-safe and also keeps dry-run previews visible to humans
+ * running `command > file` (where stderr still goes to the terminal).
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
@@ -58,8 +57,8 @@ export function outputDryRunExecute(
 
 /**
  * Output a simple dry-run message for commands that just fetch/display data.
- * These commands don't really need dry-run since they're read-only,
- * but showing computed query parameters helps users verify their input.
+ * These commands don't really need dry-run since they're read-only, but showing
+ * computed query parameters helps users verify their input.
  */
 export function outputDryRunFetch(
   resourceName: string,

@@ -1,16 +1,12 @@
 /**
  * Unit tests for update notifier utilities.
  *
- * Purpose:
- * Tests the update notification formatting and display.
+ * Purpose: Tests the update notification formatting and display.
  *
- * Test Coverage:
- * - formatUpdateMessage function
- * - showUpdateNotification function
- * - scheduleExitNotification function
+ * Test Coverage: - formatUpdateMessage function - showUpdateNotification
+ * function - scheduleExitNotification function.
  *
- * Related Files:
- * - src/util/update/notifier.mts (implementation)
+ * Related Files: - src/util/update/notifier.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

@@ -1,15 +1,11 @@
 /**
  * Unit tests for Socket Firewall version getters.
  *
- * Purpose:
- * Tests the version getter functions for sfw (Socket Firewall).
+ * Purpose: Tests the version getter functions for sfw (Socket Firewall).
  *
- * Test Coverage:
- * - getSwfVersion function
- * - getSfwNpmVersion function
+ * Test Coverage: - getSwfVersion function - getSfwNpmVersion function.
  *
- * Related Files:
- * - env/sfw-version.mts (implementation)
+ * Related Files: - env/sfw-version.mts (implementation)
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'

@@ -1,28 +1,21 @@
 /**
  * SEA (Single Executable Application) detection utilities for Socket CLI.
- * Provides reliable detection of whether the current process is running
- * as a Node.js Single Executable Application.
+ * Provides reliable detection of whether the current process is running as a
+ * Node.js Single Executable Application.
  *
- * Key Functions:
- * - isSeaBinary: Detect if running as SEA with caching
- * - getSeaBinaryPath: Get the current SEA binary path
- * - isInSocketDlx: Check if binary is in Socket's managed DLX directory
- * - canSelfUpdate: Check if self-update is allowed for current binary
+ * Key Functions: - isSeaBinary: Detect if running as SEA with caching -
+ * getSeaBinaryPath: Get the current SEA binary path - isInSocketDlx: Check if
+ * binary is in Socket's managed DLX directory - canSelfUpdate: Check if
+ * self-update is allowed for current binary.
  *
- * Detection Method:
- * - Uses Node.js 24+ native sea.isSea() API
- * - Caches result for performance
- * - Graceful fallback for unsupported versions
+ * Detection Method: - Uses Node.js 24+ native sea.isSea() API - Caches result
+ * for performance - Graceful fallback for unsupported versions.
  *
- * Features:
- * - Cached detection for performance
- * - Error-resistant implementation
- * - Support for Node.js 24+ SEA API
+ * Features: - Cached detection for performance - Error-resistant implementation
+ * - Support for Node.js 24+ SEA API.
  *
- * Usage:
- * - Detecting SEA execution context
- * - Conditional SEA-specific functionality
- * - Update notification customization
+ * Usage: - Detecting SEA execution context - Conditional SEA-specific
+ * functionality - Update notification customization.
  */
 
 import { createRequire } from 'node:module'
@@ -37,13 +30,15 @@ const require = createRequire(import.meta.url)
 let _isSea: boolean | undefined
 
 /**
- * Detect if self-update is allowed for the current binary.
- * Self-update is ONLY allowed for SEA binaries running from Socket's
- * managed DLX directory (~/.socket/_dlx/).
+ * Detect if self-update is allowed for the current binary. Self-update is ONLY
+ * allowed for SEA binaries running from Socket's managed DLX directory
+ * (~/.socket/_dlx/).
  *
  * Not allowed for:
- * - npm/pnpm/yarn-installed packages (not in DLX directory)
- * - Standalone binaries in system paths like /usr/local/bin (not in DLX directory)
+ *
+ * - Npm/pnpm/yarn-installed packages (not in DLX directory)
+ * - Standalone binaries in system paths like /usr/local/bin (not in DLX
+ *   directory)
  * - Bootstrap wrappers (not SEA binaries)
  */
 export function canSelfUpdate(): boolean {
@@ -52,16 +47,15 @@ export function canSelfUpdate(): boolean {
 }
 
 /**
- * Get the current SEA binary path.
- * Only valid when running as a SEA binary.
+ * Get the current SEA binary path. Only valid when running as a SEA binary.
  */
 export function getSeaBinaryPath(): string | undefined {
   return isSeaBinary() ? process.argv[0] : undefined
 }
 
 /**
- * Detect if the current process is running as a SEA binary.
- * Uses Node.js 24+ native API with caching for performance.
+ * Detect if the current process is running as a SEA binary. Uses Node.js 24+
+ * native API with caching for performance.
  */
 export function isSeaBinary(): boolean {
   if (_isSea === undefined) {

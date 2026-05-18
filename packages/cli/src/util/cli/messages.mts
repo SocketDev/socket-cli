@@ -1,7 +1,10 @@
-/** @fileoverview Centralized error and info messages for Socket CLI. Provides consistent message templates for common operations and error scenarios. */
+/**
+ * @file Centralized error and info messages for Socket CLI. Provides consistent
+ *   message templates for common operations and error scenarios.
+ */
 
 /**
- * Authentication and authorization messages
+ * Authentication and authorization messages.
  */
 export const AUTH_MESSAGES = {
   NO_TOKEN: 'This command requires a Socket API token for access',
@@ -12,7 +15,7 @@ export const AUTH_MESSAGES = {
 }
 
 /**
- * Input validation messages
+ * Input validation messages.
  */
 export const INPUT_MESSAGES = {
   NO_ORG_SLUG: 'Unable to determine organization slug',
@@ -26,7 +29,7 @@ export const INPUT_MESSAGES = {
 }
 
 /**
- * SDK and API operation messages
+ * SDK and API operation messages.
  */
 export const SDK_MESSAGES = {
   SETUP_FAILED: 'Failed to setup SDK',
@@ -37,7 +40,7 @@ export const SDK_MESSAGES = {
 }
 
 /**
- * Resource operation messages
+ * Resource operation messages.
  */
 export const RESOURCE_MESSAGES = {
   NOT_FOUND: (resource: string) => `${resource} not found`,
@@ -52,7 +55,7 @@ export const RESOURCE_MESSAGES = {
 }
 
 /**
- * Repository-specific messages
+ * Repository-specific messages.
  */
 export const REPO_MESSAGES = {
   NO_REPOS_FOUND: 'No repositories found',
@@ -63,7 +66,7 @@ export const REPO_MESSAGES = {
 }
 
 /**
- * Scan-specific messages
+ * Scan-specific messages.
  */
 export const SCAN_MESSAGES = {
   NO_SCANS_FOUND: 'No scans found',
@@ -75,7 +78,7 @@ export const SCAN_MESSAGES = {
 }
 
 /**
- * Package-specific messages
+ * Package-specific messages.
  */
 export const PACKAGE_MESSAGES = {
   NO_PACKAGE_FOUND: 'Package not found',
@@ -90,7 +93,7 @@ export const PACKAGE_MESSAGES = {
 }
 
 /**
- * Organization-specific messages
+ * Organization-specific messages.
  */
 export const ORG_MESSAGES = {
   NO_ORGS_FOUND: 'No organizations found',
@@ -100,7 +103,7 @@ export const ORG_MESSAGES = {
 }
 
 /**
- * File operation messages
+ * File operation messages.
  */
 export const FILE_MESSAGES = {
   FILE_NOT_FOUND: (path: string) => `File not found: ${path}`,
@@ -112,7 +115,7 @@ export const FILE_MESSAGES = {
 }
 
 /**
- * Configuration messages
+ * Configuration messages.
  */
 export const CONFIG_MESSAGES = {
   UNSUPPORTED_OPERATION: 'Unsupported',
@@ -123,7 +126,7 @@ export const CONFIG_MESSAGES = {
 }
 
 /**
- * General operation messages
+ * General operation messages.
  */
 export const GENERAL_MESSAGES = {
   SUCCESS: 'OK',
@@ -134,7 +137,7 @@ export const GENERAL_MESSAGES = {
 }
 
 /**
- * Validation helpers
+ * Validation helpers.
  */
 export const VALIDATION_MESSAGES = {
   ENUM_INVALID: (name: string, options: string[]) =>

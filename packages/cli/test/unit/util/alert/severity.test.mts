@@ -1,20 +1,21 @@
 /**
  * Unit tests for alert severity utilities.
  *
- * Purpose:
- * Tests severity ordering, counting, and formatting for Socket security alerts.
+ * Purpose: Tests severity ordering, counting, and formatting for Socket
+ * security alerts.
  *
  * Test Coverage:
+ *
  * - ALERT_SEVERITY enum values
  * - ALERT_SEVERITIES_SORTED ordering
- * - formatSeverityCount output formatting
- * - getSeverityCount counting logic
+ * - FormatSeverityCount output formatting
+ * - GetSeverityCount counting logic
  *
- * Testing Approach:
- * Uses mock alert data to validate severity utilities.
+ * Testing Approach: Uses mock alert data to validate severity utilities.
  *
  * Related Files:
- * - util/alert/severity.mts (implementation)
+ *
+ * - Util/alert/severity.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

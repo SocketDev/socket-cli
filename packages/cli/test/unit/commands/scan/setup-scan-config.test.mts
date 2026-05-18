@@ -1,8 +1,7 @@
 /**
  * Unit tests for setup-scan-config helpers and interactive flow.
  *
- * Related Files:
- * - src/commands/scan/setup-scan-config.mts (implementation)
+ * Related Files: - src/commands/scan/setup-scan-config.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

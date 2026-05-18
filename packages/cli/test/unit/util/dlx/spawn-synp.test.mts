@@ -1,9 +1,9 @@
 /**
  * Unit tests for the bespoke `spawnSynpDlx` flow.
  *
- * synp is a pure-npm package — no GitHub release, no local-binary override.
- * `spawnSynpDlx` just delegates to `spawnDlx` with the pinned version.
- * Vfs + auto-dispatch are exercised in define-tool-spawn.test.mts.
+ * Synp is a pure-npm package — no GitHub release, no local-binary override.
+ * `spawnSynpDlx` just delegates to `spawnDlx` with the pinned version. Vfs +
+ * auto-dispatch are exercised in define-tool-spawn.test.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

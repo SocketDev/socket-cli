@@ -155,11 +155,12 @@ export function cleanOutput(output: string): string {
 }
 
 /**
- * Scrub snapshot with custom options.
- * Use when you need to preserve certain data in snapshots.
+ * Scrub snapshot with custom options. Use when you need to preserve certain
+ * data in snapshots.
  *
- * @param output - The output string to clean
- * @param scrubOptions - Options to control what gets scrubbed
+ * @param output - The output string to clean.
+ * @param scrubOptions - Options to control what gets scrubbed.
+ *
  * @returns The cleaned and scrubbed output
  */
 export function cleanOutputWithOptions(
@@ -181,8 +182,8 @@ export function cleanOutputWithOptions(
 }
 
 /**
- * Check if output contains cdxgen help content.
- * Used to verify cdxgen command executed with help flag.
+ * Check if output contains cdxgen help content. Used to verify cdxgen command
+ * executed with help flag.
  */
 export function hasCdxgenHelpContent(output: string): boolean {
   // Check for various cdxgen help indicators.
@@ -200,9 +201,9 @@ export function hasCdxgenHelpContent(output: string): boolean {
 }
 
 /**
- * Check if output contains the Socket CLI banner.
- * The banner appears as ASCII art in the stderr output.
- * Note: The banner contains either '*' (when --config is used) or '.' (when no config is used).
+ * Check if output contains the Socket CLI banner. The banner appears as ASCII
+ * art in the stderr output. Note: The banner contains either '*' (when --config
+ * is used) or '.' (when no config is used).
  */
 export function hasSocketBanner(output: string): boolean {
   // Check for Socket banner ASCII art lines.
@@ -214,8 +215,8 @@ export function hasSocketBanner(output: string): boolean {
 export type TestCollectorOptions = Exclude<Parameters<typeof it>[1], undefined>
 
 /**
- * This is a simple template wrapper for this pattern:
- * `it('should do: socket scan', (['socket', 'scan']) => {})`
+ * This is a simple template wrapper for this pattern: `it('should do: socket
+ * scan', (['socket', 'scan']) => {})`
  */
 export function cmdit(
   cmd: string[],
@@ -239,10 +240,12 @@ export async function spawnSocketCli(
   options?: SpawnOptions | undefined,
 ): Promise<{
   code: number
-  error?: {
-    message: string
-    stack: string
-  } | undefined
+  error?:
+    | {
+        message: string
+        stack: string
+      }
+    | undefined
   status: boolean
   stdout: string
   stderr: string

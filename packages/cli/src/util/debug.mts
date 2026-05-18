@@ -1,15 +1,16 @@
 /**
- * Debug utilities for Socket CLI.
- * Provides structured debugging with categorized levels and helpers.
+ * Debug utilities for Socket CLI. Provides structured debugging with
+ * categorized levels and helpers.
  *
- * Debug Categories:
- * DEFAULT (shown with SOCKET_CLI_DEBUG=1):
+ * Debug Categories: DEFAULT (shown with SOCKET_CLI_DEBUG=1):
+ *
  * - 'error': Critical errors that prevent operation
  * - 'warn': Important warnings that may affect behavior
  * - 'notice': Notable events and state changes
  * - 'silly': Very verbose debugging info
  *
  * OPT-IN ONLY (require explicit DEBUG='category' even with SOCKET_CLI_DEBUG=1):
+ *
  * - 'inspect': Detailed object inspection (DEBUG='inspect' or DEBUG='*')
  * - 'stdio': Command execution logs (DEBUG='stdio' or DEBUG='*')
  *
@@ -48,8 +49,7 @@ const RESPONSE_BODY_TRUNCATE_LENGTH = 2_000
 
 /**
  * Build the structured debug payload shared by the error + failure-status
- * branches of `debugApiResponse`. Extracted so both paths log the same
- * shape.
+ * branches of `debugApiResponse`. Extracted so both paths log the same shape.
  */
 export function buildApiDebugDetails(
   base: Record<string, unknown>,
@@ -104,8 +104,8 @@ export function buildApiDebugDetails(
 }
 
 /**
- * Debug an API request start.
- * Logs essential info without exposing sensitive data.
+ * Debug an API request start. Logs essential info without exposing sensitive
+ * data.
  */
 export function debugApiRequest(
   method: string,
@@ -122,9 +122,9 @@ export function debugApiRequest(
 }
 
 /**
- * Debug an API response. Failed requests (error or status >= 400) log
- * under the `error` namespace; successful responses optionally log a
- * one-liner under `notice`.
+ * Debug an API response. Failed requests (error or status >= 400) log under the
+ * `error` namespace; successful responses optionally log a one-liner under
+ * `notice`.
  *
  * Request and response headers are sanitized via `sanitizeHeaders` so
  * Authorization and `*api-key*` values are redacted.
@@ -185,8 +185,7 @@ export function debugConfig(
 }
 
 /**
- * Debug file operation.
- * Logs file operations with appropriate level.
+ * Debug file operation. Logs file operations with appropriate level.
  */
 export function debugFileOp(
   operation: 'read' | 'write' | 'delete' | 'create',
@@ -207,8 +206,7 @@ export function debugFileOp(
 }
 
 /**
- * Debug git operations.
- * Only logs important git operations, not every command.
+ * Debug git operations. Only logs important git operations, not every command.
  */
 export function debugGit(
   operation: string,
@@ -232,8 +230,7 @@ export function debugGit(
 }
 
 /**
- * Debug package scanning.
- * Provides insight into security scanning.
+ * Debug package scanning. Provides insight into security scanning.
  */
 export function debugScan(
   phase: 'start' | 'progress' | 'complete' | 'error',
@@ -267,8 +264,8 @@ export function debugScan(
 }
 
 /**
- * Sanitize headers to remove sensitive information.
- * Redacts Authorization and API key headers.
+ * Sanitize headers to remove sensitive information. Redacts Authorization and
+ * API key headers.
  *
  * Callers must gate truthy — passing an empty/undefined map skips the loop.
  */

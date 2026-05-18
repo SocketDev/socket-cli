@@ -1,25 +1,29 @@
 /**
- * Markdown utilities for Socket CLI.
- * Generates formatted markdown output for reports and documentation.
+ * Markdown utilities for Socket CLI. Generates formatted markdown output for
+ * reports and documentation.
  *
  * Core Functions:
- * - mdHeader: Create markdown headers (# Title, ## Subtitle, etc.)
- * - mdKeyValue: Create bold label with value (** Label**: value)
- * - mdList: Create bullet or numbered lists with optional truncation
- * - mdError: Format error messages with optional cause
- * - mdSection: Create section with header and content
+ *
+ * - MdHeader: Create markdown headers (# Title, ## Subtitle, etc.)
+ * - MdKeyValue: Create bold label with value (** Label**: value)
+ * - MdList: Create bullet or numbered lists with optional truncation
+ * - MdError: Format error messages with optional cause
+ * - MdSection: Create section with header and content
  *
  * Table Functions:
- * - mdTableStringNumber: Create markdown table with string keys and number values
- * - mdTable: Create generic markdown table from array of records
- * - mdTableOfPairs: Create table from array of key-value pairs
+ *
+ * - MdTableStringNumber: Create markdown table with string keys and number values
+ * - MdTable: Create generic markdown table from array of records
+ * - MdTableOfPairs: Create table from array of key-value pairs
  *
  * Table Features:
+ *
  * - Auto-sizing columns based on content
  * - Proper alignment for headers and data
  * - Clean markdown-compliant formatting
  *
  * Usage:
+ *
  * - Analytics reports
  * - Scan result tables
  * - Statistical summaries
@@ -29,16 +33,17 @@
 /**
  * Format an error message in markdown.
  *
- * @param message - The error message
- * @param cause - Optional error cause/details
- * @returns Markdown formatted error string
- *
  * @example
- * mdError('Failed to connect')
- * // '# Error\n\n**Error**: Failed to connect'
+ *   mdError('Failed to connect')
+ *   // '# Error\n\n**Error**: Failed to connect'
  *
- * mdError('Failed', 'Network timeout')
- * // '# Error\n\n**Error**: Failed\n\n**Cause**: Network timeout'
+ *   mdError('Failed', 'Network timeout')
+ *   // '# Error\n\n**Error**: Failed\n\n**Cause**: Network timeout'
+ *
+ * @param message - The error message.
+ * @param cause - Optional error cause/details.
+ *
+ * @returns Markdown formatted error string
  */
 export function mdError(message: string, cause?: string): string {
   const parts = [mdHeader('Error'), '', mdKeyValue('Error', message)]
@@ -53,13 +58,14 @@ export function mdError(message: string, cause?: string): string {
 /**
  * Create a markdown header.
  *
- * @param title - The header text
- * @param level - Header level (1-6), defaults to 1
- * @returns Markdown header string
- *
  * @example
- * mdHeader('Title') // '# Title'
- * mdHeader('Subtitle', 2) // '## Subtitle'
+ *   mdHeader('Title') // '# Title'
+ *   mdHeader('Subtitle', 2) // '## Subtitle'
+ *
+ * @param title - The header text.
+ * @param level - Header level (1-6), defaults to 1.
+ *
+ * @returns Markdown header string
  */
 export function mdHeader(title: string, level = 1): string {
   const headerLevel = Math.max(1, Math.min(6, level))
@@ -69,15 +75,16 @@ export function mdHeader(title: string, level = 1): string {
 /**
  * Create a markdown key-value pair with bold label.
  *
- * @param label - The label text
- * @param value - The value (string, number, or undefined)
- * @param escaped - Whether to escape markdown in value, defaults to false
- * @returns Markdown formatted key-value string
- *
  * @example
- * mdKeyValue('Status', 'active') // '**Status**: active'
- * mdKeyValue('Count', 42) // '**Count**: 42'
- * mdKeyValue('Missing', undefined) // '**Missing**: N/A'
+ *   mdKeyValue('Status', 'active') // '**Status**: active'
+ *   mdKeyValue('Count', 42) // '**Count**: 42'
+ *   mdKeyValue('Missing', undefined) // '**Missing**: N/A'
+ *
+ * @param label - The label text.
+ * @param value - The value (string, number, or undefined)
+ * @param escaped - Whether to escape markdown in value, defaults to false.
+ *
+ * @returns Markdown formatted key-value string
  */
 export function mdKeyValue(
   label: string,
@@ -94,17 +101,18 @@ export function mdKeyValue(
 /**
  * Create a markdown list (bullet or numbered).
  *
- * @param items - Array of items to list
- * @param options - Configuration options
- * @param options.ordered - Create numbered list instead of bullets
- * @param options.indent - Indentation level (for nested lists)
- * @param options.truncateAt - Truncate list and show count if exceeds this
- * @returns Markdown formatted list string
- *
  * @example
- * mdList(['item1', 'item2']) // '- item1\n- item2'
- * mdList(['a', 'b'], { ordered: true }) // '1. a\n2. b'
- * mdList([...100items], { truncateAt: 5 }) // First 5 + '...and 95 more'
+ *   mdList(['item1', 'item2']) // '- item1\n- item2'
+ *   mdList(['a', 'b'], { ordered: true }) // '1. a\n2. b'
+ *   mdList([...100items], { truncateAt: 5 }) // First 5 + '...and 95 more'
+ *
+ * @param items - Array of items to list.
+ * @param options - Configuration options.
+ * @param options.ordered - Create numbered list instead of bullets.
+ * @param options.indent - Indentation level (for nested lists)
+ * @param options.truncateAt - Truncate list and show count if exceeds this.
+ *
+ * @returns Markdown formatted list string
  */
 export function mdList(
   items: string[],
@@ -141,17 +149,18 @@ export function mdList(
 /**
  * Create a markdown section with optional header.
  *
- * @param title - Section title
- * @param content - Section content (string or array of strings)
- * @param level - Header level (1-6), defaults to 2
- * @returns Markdown formatted section
- *
  * @example
- * mdSection('Details', 'Some content')
- * // '## Details\n\nSome content'
+ *   mdSection('Details', 'Some content')
+ *   // '## Details\n\nSome content'
  *
- * mdSection('Info', ['Line 1', 'Line 2'])
- * // '## Info\n\nLine 1\nLine 2'
+ *   mdSection('Info', ['Line 1', 'Line 2'])
+ *   // '## Info\n\nLine 1\nLine 2'
+ *
+ * @param title - Section title.
+ * @param content - Section content (string or array of strings)
+ * @param level - Header level (1-6), defaults to 2.
+ *
+ * @returns Markdown formatted section
  */
 export function mdSection(
   title: string,

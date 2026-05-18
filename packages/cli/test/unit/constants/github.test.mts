@@ -1,16 +1,12 @@
 /**
  * Unit tests for GitHub constants.
  *
- * Purpose:
- * Tests the GitHub and GraphQL constants for Socket CLI.
+ * Purpose: Tests the GitHub and GraphQL constants for Socket CLI.
  *
- * Test Coverage:
- * - GraphQL pagination constants
- * - PR state constants
- * - Repository constants
+ * Test Coverage: - GraphQL pagination constants - PR state constants -
+ * Repository constants.
  *
- * Related Files:
- * - constants/github.mts (implementation)
+ * Related Files: - constants/github.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'

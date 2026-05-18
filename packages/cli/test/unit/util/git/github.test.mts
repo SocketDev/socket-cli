@@ -2,24 +2,22 @@
 /**
  * Unit tests for GitHub API utilities.
  *
- * Purpose:
- * Tests centralized GitHub API error handling and retry logic used across the CLI.
- * Validates proper error categorization, user-friendly messages, and exponential backoff.
+ * Purpose: Tests centralized GitHub API error handling and retry logic used
+ * across the CLI. Validates proper error categorization, user-friendly
+ * messages, and exponential backoff.
  *
- * Test Coverage:
- * - handleGitHubApiError: error categorization by HTTP status
- * - handleGraphqlError: GraphQL-specific error handling
- * - isGraphqlRateLimitError: rate limit detection
- * - withGitHubRetry: retry logic with exponential backoff
+ * Test Coverage: - handleGitHubApiError: error categorization by HTTP status -
+ * handleGraphqlError: GraphQL-specific error handling -
+ * isGraphqlRateLimitError: rate limit detection - withGitHubRetry: retry logic
+ * with exponential backoff.
  *
- * Testing Approach:
- * Creates mock RequestError and GraphqlResponseError objects to test error handling
- * without actual GitHub API calls. Tests verify proper error messages and retry behavior.
+ * Testing Approach: Creates mock RequestError and GraphqlResponseError objects
+ * to test error handling without actual GitHub API calls. Tests verify proper
+ * error messages and retry behavior.
  *
- * Related Files:
- * - src/util/git/github.mts (implementation)
- * - src/commands/scan/create-scan-from-github.mts (consumer)
- * - src/util/git/github-provider.mts (consumer)
+ * Related Files: - src/util/git/github.mts (implementation) -
+ * src/commands/scan/create-scan-from-github.mts (consumer) -
+ * src/util/git/github-provider.mts (consumer)
  */
 
 import { GraphqlResponseError } from '@octokit/graphql'

@@ -1,8 +1,8 @@
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
- * @fileoverview Monorepo-aware TypeScript type checker.
- * Runs type checking across packages with pretty UI.
+ * @file Monorepo-aware TypeScript type checker. Runs type checking across
+ *   packages with pretty UI.
  */
 
 import type { PackageInfo } from './util/monorepo-helper.mts'

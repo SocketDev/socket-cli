@@ -1,21 +1,20 @@
 /**
  * Machine-mode flag propagation for spawned child processes.
  *
- * Under machine-output mode, socket-cli promises stdout is payload-only.
- * For child tools we spawn, we need to propagate that promise downward:
+ * Under machine-output mode, socket-cli promises stdout is payload-only. For
+ * child tools we spawn, we need to propagate that promise downward:
  *
- *   - Tools with `--json` / equivalent → prepend the flag.
- *   - Tools with `--silent` / `--quiet` → prepend the flag to suppress
- *     informational chatter.
- *   - Tools that honor color env vars → inject NO_COLOR / FORCE_COLOR
- *     so ANSI doesn't contaminate captured stdout.
- *   - Tools that always misbehave → leave args alone and rely on the
- *     scrubber to clean up.
+ * - Tools with `--json` / equivalent → prepend the flag.
+ * - Tools with `--silent` / `--quiet` → prepend the flag to suppress
+ *   informational chatter.
+ * - Tools that honor color env vars → inject NO_COLOR / FORCE_COLOR so ANSI
+ *   doesn't contaminate captured stdout.
+ * - Tools that always misbehave → leave args alone and rely on the scrubber to
+ *   clean up.
  *
- * Coverage is per (tool, subcommand). Flag forwarding is best-effort:
- * unknown subcommands get universal env vars only, no args injected
- * (safer than risking "unknown option" failures from strict parsers
- * like clipanion).
+ * Coverage is per (tool, subcommand). Flag forwarding is best-effort: unknown
+ * subcommands get universal env vars only, no args injected (safer than risking
+ * "unknown option" failures from strict parsers like clipanion).
  */
 
 export interface MachineModeInput {
@@ -31,8 +30,8 @@ export interface MachineModeOutput {
 }
 
 /**
- * Universal env vars applied to every spawned child under machine
- * mode. Most tools respect at least one of these.
+ * Universal env vars applied to every spawned child under machine mode. Most
+ * tools respect at least one of these.
  */
 const UNIVERSAL_ENV: NodeJS.ProcessEnv = {
   __proto__: undefined as never,
@@ -48,24 +47,23 @@ interface ToolRules {
   env?: NodeJS.ProcessEnv | undefined
   /**
    * Args used when the subcommand has no entry in `subcommands` (or
-   * `subcommand` is omitted). Also applied to tools without a
-   * `subcommands` map when `subcommand` is provided. Use when a tool
-   * needs different flags in the JSON-emitting and non-JSON-emitting
-   * cases and the flags would conflict if emitted together (e.g. pnpm's
-   * `--reporter=json` vs `--reporter=silent`).
+   * `subcommand` is omitted). Also applied to tools without a `subcommands` map
+   * when `subcommand` is provided. Use when a tool needs different flags in the
+   * JSON-emitting and non-JSON-emitting cases and the flags would conflict if
+   * emitted together (e.g. pnpm's `--reporter=json` vs `--reporter=silent`).
    */
   fallbackArgs?: readonly string[] | undefined
   /**
-   * Args to prepend unconditionally for this tool, regardless of
-   * subcommand. Use for tools with uniform support (e.g. vlt accepts
-   * --view=json on every subcommand) or tool-wide quiet flags that do
-   * not conflict with any per-subcommand args.
+   * Args to prepend unconditionally for this tool, regardless of subcommand.
+   * Use for tools with uniform support (e.g. vlt accepts --view=json on every
+   * subcommand) or tool-wide quiet flags that do not conflict with any
+   * per-subcommand args.
    */
   prependArgs?: readonly string[] | undefined
   /**
-   * Per-subcommand arg forwarding. Key is the subcommand (the first
-   * non-flag argv). Value is args inserted AFTER prependArgs and
-   * BEFORE the caller's original args.
+   * Per-subcommand arg forwarding. Key is the subcommand (the first non-flag
+   * argv). Value is args inserted AFTER prependArgs and BEFORE the caller's
+   * original args.
    */
   subcommands?: Record<string, readonly string[]> | undefined
 }
@@ -238,15 +236,13 @@ const TOOLS: Record<string, ToolRules> = {
 }
 
 /**
- * Compute the spawn args and env for a child under machine-output
- * mode. Preserves the caller's original args and env; additions merge
- * in on top.
+ * Compute the spawn args and env for a child under machine-output mode.
+ * Preserves the caller's original args and env; additions merge in on top.
  *
- * For per-subcommand tools, the subcommand is expected in
- * `input.subcommand`; if omitted, only universal env vars and the
- * tool's unconditional `prependArgs` apply (no subcommand-specific
- * flags are injected, preventing "unknown option" errors on
- * unrecognized subcommands).
+ * For per-subcommand tools, the subcommand is expected in `input.subcommand`;
+ * if omitted, only universal env vars and the tool's unconditional
+ * `prependArgs` apply (no subcommand-specific flags are injected, preventing
+ * "unknown option" errors on unrecognized subcommands).
  */
 export function applyMachineMode(input: MachineModeInput): MachineModeOutput {
   const rules = TOOLS[input.tool]

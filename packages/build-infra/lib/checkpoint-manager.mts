@@ -2,18 +2,16 @@
  * Build checkpoint manager (lean).
  *
  * Same public API as socket-btm's checkpoint-manager but sized for the
- * single-stage wasm builds in this repo (lang/{rust,cpp,go}). Each stage
- * writes a JSON marker `{ name }.json` keyed by a content hash of its
- * source inputs + platform/arch/mode. If the hash matches next run, the
- * stage is skipped.
+ * single-stage wasm builds in this repo (lang/{rust,cpp,go}). Each stage writes
+ * a JSON marker `{ name }.json` keyed by a content hash of its source inputs +
+ * platform/arch/mode. If the hash matches next run, the stage is skipped.
  *
- * What this intentionally omits vs socket-btm:
- *   - Tarball archival (socket-btm archives the built artifact so CI can
- *     restore it between jobs; lang wasm rebuilds take seconds, not 30 min).
- *   - Ad-hoc macOS codesign (wasm artifacts don't need it).
- *   - Cross-process atomic-write ceremony (no concurrent CI jobs racing on
- *     the same build dir in this repo).
- *   - restoreCheckpoint (nothing to restore when there's no tarball).
+ * What this intentionally omits vs socket-btm: - Tarball archival (socket-btm
+ * archives the built artifact so CI can restore it between jobs; lang wasm
+ * rebuilds take seconds, not 30 min). - Ad-hoc macOS codesign (wasm artifacts
+ * don't need it). - Cross-process atomic-write ceremony (no concurrent CI jobs
+ * racing on the same build dir in this repo). - restoreCheckpoint (nothing to
+ * restore when there's no tarball).
  *
  * Exports mirror the names build-pipeline consumes, so the orchestrator is
  * identical across repos.
@@ -70,12 +68,14 @@ export function computeCacheHash(sourcePaths, options) {
  *
  * @param {string} buildDir
  * @param {string} name - Checkpoint name (must be a CHECKPOINTS value).
- * @param {() => Promise<void>} smokeTest - Throws if the stage output is invalid.
+ * @param {() => Promise<void>} smokeTest - Throws if the stage output is
+ *   invalid.
  * @param {object} [options]
  * @param {string} [options.packageName]
  * @param {string} [options.artifactPath] - Informational; recorded in JSON.
  * @param {string} [options.binaryPath] - Informational; recorded in JSON.
- * @param {string|number} [options.binarySize] - Informational; recorded in JSON.
+ * @param {string | number} [options.binarySize] - Informational; recorded in
+ *   JSON.
  * @param {string[]} [options.sourcePaths] - Inputs hashed into the cache key.
  * @param {string} [options.buildMode]
  * @param {string} [options.nodeVersion]
@@ -215,8 +215,8 @@ export function platformCacheKey({
 }
 
 /**
- * Should the stage run? True if force, no checkpoint, missing cache hash,
- * or the hash no longer matches current inputs.
+ * Should the stage run? True if force, no checkpoint, missing cache hash, or
+ * the hash no longer matches current inputs.
  */
 export async function shouldRun(
   buildDir,

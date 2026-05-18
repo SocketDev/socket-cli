@@ -1,7 +1,7 @@
 {
   "name": "@monorepo-npm/app",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
   "description": "App package in monorepo (npm)",
   "main": "index.js",
   "dependencies": {

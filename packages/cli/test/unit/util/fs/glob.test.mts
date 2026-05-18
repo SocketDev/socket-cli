@@ -1,18 +1,13 @@
 /**
  * Unit tests for glob utilities.
  *
- * Purpose:
- * Tests the glob pattern utilities for file matching.
+ * Purpose: Tests the glob pattern utilities for file matching.
  *
- * Test Coverage:
- * - getSupportedFilePatterns function
- * - filterBySupportedScanFiles function
- * - createSupportedFilesFilter function
- * - isReportSupportedFile function
- * - pathsToGlobPatterns function
+ * Test Coverage: - getSupportedFilePatterns function -
+ * filterBySupportedScanFiles function - createSupportedFilesFilter function -
+ * isReportSupportedFile function - pathsToGlobPatterns function.
  *
- * Related Files:
- * - util/fs/glob.mts (implementation)
+ * Related Files: - util/fs/glob.mts (implementation)
  */
 
 import path from 'node:path'
@@ -376,8 +371,7 @@ describe('util/fs/glob', () => {
       const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
       // pnpm-workspace.yaml missing → empty workspaceGlobs → early-return [].
       safeReadFile.mockResolvedValueOnce(undefined as unknown)
-      const { globWorkspace } =
-        await import('../../../../src/util/fs/glob.mts')
+      const { globWorkspace } = await import('../../../../src/util/fs/glob.mts')
       const result = await globWorkspace('pnpm', '/nonexistent/repo')
       expect(result).toEqual([])
     })

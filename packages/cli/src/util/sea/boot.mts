@@ -1,12 +1,15 @@
 /**
- * Bootstrap abstraction for SEA (Single Executable Application) subprocess handling.
+ * Bootstrap abstraction for SEA (Single Executable Application) subprocess
+ * handling.
  *
  * When running in a SEA binary, we need to distinguish between:
+ *
  * 1. Initial entry - Bootstrap mode: delegate to system Node.js or self with IPC
  * 2. Subprocess entry - Bypass bootstrap: act as regular Node.js
  *
  * The IPC handshake mechanism is used to detect subprocess mode:
- * - process.channel exists = subprocess
+ *
+ * - Process.channel exists = subprocess
  * - SOCKET_IPC_HANDSHAKE message received = validated subprocess
  *
  * This abstraction should be used anywhere we would spawn process.execPath,
@@ -30,14 +33,12 @@ export function findSystemNodejs(): string | undefined {
 /**
  * Get the execution path to use for spawning subprocesses.
  *
- * For SEA binaries:
- * - Returns system Node.js path if available (preferred)
- * - Returns SEA binary path if no system Node.js (will use IPC handshake)
+ * For SEA binaries: - Returns system Node.js path if available (preferred) -
+ * Returns SEA binary path if no system Node.js (will use IPC handshake)
  *
- * For regular Node.js:
- * - Returns process.execPath
+ * For regular Node.js: - Returns process.execPath.
  *
- * @param preferSystemNode - If true, try to find system Node.js first
+ * @param preferSystemNode - If true, try to find system Node.js first.
  */
 export function getBootstrapExecPath(preferSystemNode = true): string {
   // If not a SEA binary, just return execPath.
@@ -60,8 +61,8 @@ export function getBootstrapExecPath(preferSystemNode = true): string {
 }
 
 /**
- * Check if the current process is running as a subprocess with IPC.
- * Returns true if we have an IPC channel (process.channel exists).
+ * Check if the current process is running as a subprocess with IPC. Returns
+ * true if we have an IPC channel (process.channel exists).
  */
 export function isSubprocess(): boolean {
   return !!process.channel
@@ -71,10 +72,11 @@ export function isSubprocess(): boolean {
  * Prepare spawn options for subprocess execution with IPC handshake.
  *
  * When spawning a SEA binary as a subprocess, we need to:
+ *
  * 1. Ensure IPC channel is set up (stdio includes 'ipc')
  * 2. Send SOCKET_IPC_HANDSHAKE message after spawn
  *
- * @param options - Base spawn options
+ * @param options - Base spawn options.
  * @param ipcData - IPC handshake data to send (if spawning SEA binary)
  */
 export function prepareBootstrapSpawnOptions(
@@ -95,11 +97,11 @@ export function prepareBootstrapSpawnOptions(
 /**
  * Send IPC handshake message to a spawned subprocess.
  *
- * This should be called immediately after spawning a SEA binary
- * as a subprocess, so it knows to bypass bootstrap logic.
+ * This should be called immediately after spawning a SEA binary as a
+ * subprocess, so it knows to bypass bootstrap logic.
  *
- * @param childProcess - The spawned child process
- * @param ipcData - IPC handshake data to send
+ * @param childProcess - The spawned child process.
+ * @param ipcData - IPC handshake data to send.
  */
 export function sendBootstrapHandshake(
   childProcess: { send: (message: unknown) => void },
@@ -111,10 +113,9 @@ export function sendBootstrapHandshake(
 }
 
 /**
- * Check if we should bypass bootstrap logic.
- * Returns true if:
- * - Not a SEA binary (regular Node.js doesn't need bootstrap)
- * - Running as a subprocess with IPC channel (already bootstrapped)
+ * Check if we should bypass bootstrap logic. Returns true if: - Not a SEA
+ * binary (regular Node.js doesn't need bootstrap) - Running as a subprocess
+ * with IPC channel (already bootstrapped)
  */
 export function shouldBypassBootstrap(): boolean {
   // If not a SEA binary, no bootstrap needed.
@@ -135,13 +136,14 @@ export function shouldBypassBootstrap(): boolean {
 /**
  * Wait for IPC handshake message on subprocess startup.
  *
- * This should be called at the entry point of a SEA binary
- * to detect if it's running as a subprocess.
+ * This should be called at the entry point of a SEA binary to detect if it's
+ * running as a subprocess.
  *
- * Returns a promise that resolves with the IPC data when received,
- * or rejects if not received within timeout.
+ * Returns a promise that resolves with the IPC data when received, or rejects
+ * if not received within timeout.
  *
  * The returned IPC data includes:
+ *
  * - Bootstrap indicators: subprocess, parent_pid
  * - Custom data: wrapper config, application settings, etc.
  *

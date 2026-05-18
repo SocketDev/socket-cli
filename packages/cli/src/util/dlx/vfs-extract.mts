@@ -4,16 +4,17 @@
 /**
  * VFS extraction utilities for external tools bundled in SEA binaries.
  *
- * Extracts external tools from the VFS (Virtual File System) embedded in SEA binaries
- * and caches them for execution.
+ * Extracts external tools from the VFS (Virtual File System) embedded in SEA
+ * binaries and caches them for execution.
  *
  * Tool types:
- * - Standalone binaries (GitHub releases): sfw, socket-patch
- * - npm packages (with dependencies): cdxgen, coana, synp
  *
- * Build-time package preparation:
- * npm packages use @npmcli/arborist to download complete packages with node_modules/
- * and all production dependencies. See scripts/sea-build-util/npm-packages.mts:
+ * - Standalone binaries (GitHub releases): sfw, socket-patch
+ * - Npm packages (with dependencies): cdxgen, coana, synp
+ *
+ * Build-time package preparation: npm packages use @npmcli/arborist to download
+ * complete packages with node_modules/ and all production dependencies. See
+ * scripts/sea-build-util/npm-packages.mts:
  *
  * ```javascript
  * import { Arborist } from '@npmcli/arborist'
@@ -21,44 +22,35 @@
  * const arb = new Arborist({
  *   audit: false,
  *   binLinks: true,
- *   cache: getSocketCacacheDir(),      // ~/.socket/_cacache
+ *   cache: getSocketCacacheDir(), // ~/.socket/_cacache
  *   fund: false,
- *   ignoreScripts: true,               // Security: no install scripts
- *   omit: ['dev'],                     // Production deps only
+ *   ignoreScripts: true, // Security: no install scripts
+ *   omit: ['dev'], // Production deps only
  *   path: packageDir,
  *   silent: true,
  * })
  * await arb.reify({ add: [packageSpec], save: false })
  * ```
  *
- * VFS structure in SEA binaries:
- *   socket-patch                      # Standalone Rust binary from GitHub release
- *   node_modules/
- *     ├── @cyclonedx/cdxgen/        # Full package with dependencies
- *     │   ├── bin/cdxgen
- *     │   ├── package.json
- *     │   └── node_modules/         # Dependencies
- *     ├── @coana-tech/cli/
- *     │   ├── bin/coana
- *     │   ├── package.json
- *     │   └── node_modules/
- *     ├── @socketsecurity/sfw-bin/  # Standalone binary from GitHub release
- *     │   └── sfw
- *     └── synp/
- *         ├── bin/synp
- *         ├── package.json
- *         └── node_modules/
+ * VFS structure in SEA binaries: socket-patch # Standalone Rust binary from
+ * GitHub release node_modules/ ├── @cyclonedx/cdxgen/ # Full package with
+ * dependencies │ ├── bin/cdxgen │ ├── package.json │ └── node_modules/ #
+ * Dependencies ├── @coana-tech/cli/ │ ├── bin/coana │ ├── package.json │ └──
+ * node_modules/ ├── @socketsecurity/sfw-bin/ # Standalone binary from GitHub
+ * release │ └── sfw └── synp/ ├── bin/synp ├── package.json └── node_modules/
  *
- * VFS Extraction with Full Directory Support:
- * Uses process.smol.mount() API from node-smol to extract both single files and
- * complete directory trees with dependencies from the embedded VFS.
+ * VFS Extraction with Full Directory Support: Uses process.smol.mount() API
+ * from node-smol to extract both single files and complete directory trees with
+ * dependencies from the embedded VFS.
  *
  * For npm packages:
+ *
  * - Extracts entire package directory (node_modules/@package/name/)
  * - Includes all production dependencies and subdirectories
  * - Preserves file permissions and directory structure
  *
  * For standalone binaries:
+ *
  * - Extracts individual binary file from VFS root
  *
  * See socket-btm/docs/vfs-runtime-api.md for full documentation.
@@ -141,21 +133,24 @@ const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
 /**
  * Extract external tools from VFS to node-smol's dlx directory.
  *
- * Extracts external tools from the SEA's VFS and writes them to node-smol's shared
- * dlx directory (~/.socket/_dlx/<node-smol-hash>/).
+ * Extracts external tools from the SEA's VFS and writes them to node-smol's
+ * shared dlx directory (~/.socket/_dlx/<node-smol-hash>/).
  *
  * Tool extraction paths:
- * - Standalone binaries: ~/.socket/_dlx/<hash>/{tool}
- * - npm packages: ~/.socket/_dlx/<hash>/node_modules/{packageName}/bin/{binaryName}
  *
- * @returns Record of tool names to their extracted paths, or null if extraction failed.
+ * - Standalone binaries: ~/.socket/_dlx/<hash>/{tool}
+ * - Npm packages:
+ *   ~/.socket/_dlx/<hash>/node_modules/{packageName}/bin/{binaryName}
  *
  * @example
- * const toolPaths = await extractExternalTools()
- * if (toolPaths) {
- *   const sfwPath = toolPaths.sfw  // ~/.socket/_dlx/<hash>/sfw
- *   const cdxgenPath = toolPaths.cdxgen  // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
- * }
+ *   const toolPaths = await extractExternalTools()
+ *   if (toolPaths) {
+ *     const sfwPath = toolPaths.sfw // ~/.socket/_dlx/<hash>/sfw
+ *     const cdxgenPath = toolPaths.cdxgen // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
+ *   }
+ *
+ * @returns Record of tool names to their extracted paths, or null if extraction
+ *   failed.
  */
 // Maximum recursion depth for extraction retries.
 const MAX_EXTRACTION_DEPTH = 5
@@ -163,14 +158,15 @@ const MAX_EXTRACTION_DEPTH = 5
 /**
  * Check if external tools are available in VFS.
  *
- * Returns true if:
- * 1. Running in SEA mode with process.smol.mount available
+ * Returns true if: 1. Running in SEA mode with process.smol.mount available.
  *
  * @returns True if external tools are available in VFS.
  */
 export function areExternalToolsAvailable(): boolean {
   const processWithSmol = process as unknown as {
-    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
+    smol?:
+      | { mount?: ((vfsPath: string) => Promise<string>) | undefined }
+      | undefined
   }
 
   // Check if running in SEA mode with process.smol.mount available.
@@ -194,7 +190,9 @@ export async function extractExternalTools(
   }
 
   const processWithSmol = process as unknown as {
-    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
+    smol?:
+      | { mount?: ((vfsPath: string) => Promise<string>) | undefined }
+      | undefined
   }
 
   if (!isSeaBinary() || !processWithSmol.smol?.mount) {
@@ -462,22 +460,28 @@ export async function extractExternalTools(
 }
 
 /**
- * Extract a single external tool from VFS to node-smol's dlx directory using process.smol.mount().
- * Extracts to ~/.socket/_dlx/<node-smol-hash>/node_modules/{packageName}/bin/{binaryName}
+ * Extract a single external tool from VFS to node-smol's dlx directory using
+ * process.smol.mount(). Extracts to
+ * ~/.socket/_dlx/<node-smol-hash>/node_modules/{packageName}/bin/{binaryName}
  *
  * Implementation:
- * - npm packages: Uses process.smol.mount() to extract entire directory with dependencies
+ *
+ * - Npm packages: Uses process.smol.mount() to extract entire directory with
+ *   dependencies
  * - Standalone binaries: Uses process.smol.mount() to extract single file
  * - Automatically handles file permissions and directory structure
  * - Supports caching to avoid re-extraction
  *
  * @param tool - Name of the tool to extract.
+ *
  * @returns Path to the extracted tool binary.
  */
 export async function extractTool(tool: ExternalTool): Promise<string> {
   // Check if process.smol.mount is available.
   const processWithSmol = process as unknown as {
-    smol?: { mount?: ((vfsPath: string) => Promise<string>) | undefined } | undefined
+    smol?:
+      | { mount?: ((vfsPath: string) => Promise<string>) | undefined }
+      | undefined
   }
 
   if (!processWithSmol.smol?.mount) {
@@ -563,25 +567,15 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
 }
 
 /**
- * Get the base dlx directory path for node-smol.
- * This is where both VFS-extracted tools and npm-installed packages live.
+ * Get the base dlx directory path for node-smol. This is where both
+ * VFS-extracted tools and npm-installed packages live.
  *
- * Structure:
- * ~/.socket/_dlx/<node-smol-hash>/
- *   ├── node/node                    # Node binary
- *   ├── socket-patch                 # Standalone Rust binary (GitHub release)
- *   └── node_modules/                # npm packages with dependencies
- *       ├── @cyclonedx/cdxgen/
- *       │   ├── bin/cdxgen
- *       │   └── node_modules/
- *       ├── @coana-tech/cli/
- *       │   ├── bin/coana
- *       │   └── node_modules/
- *       ├── @socketsecurity/sfw-bin/ # Standalone sfw binary (GitHub release)
- *       │   └── sfw
- *       └── synp/
- *           ├── bin/synp
- *           └── node_modules/
+ * Structure: ~/.socket/_dlx/<node-smol-hash>/ ├── node/node # Node binary ├──
+ * socket-patch # Standalone Rust binary (GitHub release) └── node_modules/ #
+ * npm packages with dependencies ├── @cyclonedx/cdxgen/ │ ├── bin/cdxgen │ └──
+ * node_modules/ ├── @coana-tech/cli/ │ ├── bin/coana │ └── node_modules/ ├──
+ * @socketsecurity/sfw-bin/ # Standalone sfw binary (GitHub release) │ └── sfw
+ * └── synp/ ├── bin/synp └── node_modules/
  *
  * @returns Path to node-smol's dlx directory.
  */
@@ -613,10 +607,12 @@ export function getNodeSmolBasePath(): string {
 }
 
 /**
- * Get the file system path for a tool based on its type (npm package or standalone binary).
+ * Get the file system path for a tool based on its type (npm package or
+ * standalone binary).
  *
  * @param tool - Tool name.
  * @param nodeSmolBase - Base dlx directory path.
+ *
  * @returns Path to the tool binary (without .exe extension).
  */
 export function getToolFilePath(
@@ -637,16 +633,16 @@ export function getToolFilePath(
 }
 
 /**
- * Get paths to extracted external tools in node-smol's dlx directory.
- * npm packages are in node_modules/{packageName}/bin/{binaryName}.
- * Standalone binaries are in the base directory.
- *
- * @returns Object with paths to each tool binary.
+ * Get paths to extracted external tools in node-smol's dlx directory. npm
+ * packages are in node_modules/{packageName}/bin/{binaryName}. Standalone
+ * binaries are in the base directory.
  *
  * @example
- * const paths = getToolPaths()
- * logger.log('sfw:', paths.sfw)  // ~/.socket/_dlx/<hash>/node_modules/@socketsecurity/sfw-bin/sfw
- * logger.log('cdxgen:', paths.cdxgen)  // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
+ *   const paths = getToolPaths()
+ *   logger.log('sfw:', paths.sfw) // ~/.socket/_dlx/<hash>/node_modules/@socketsecurity/sfw-bin/sfw
+ *   logger.log('cdxgen:', paths.cdxgen) // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
+ *
+ * @returns Object with paths to each tool binary.
  */
 export function getToolPaths(): Record<ExternalTool, string> {
   const isPlatWin = process.platform === 'win32'
@@ -667,6 +663,7 @@ export function getToolPaths(): Record<ExternalTool, string> {
  * Check if npm package directory with dependencies exists and is valid.
  *
  * @param packagePath - Path to npm package directory.
+ *
  * @returns True if package directory exists with node_modules/ and binary.
  */
 export async function isNpmPackageExtracted(

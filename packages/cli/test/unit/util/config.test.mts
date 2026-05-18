@@ -2,22 +2,17 @@
 /**
  * Unit tests for configuration management.
  *
- * Purpose:
- * Tests configuration file loading and merging. Validates config precedence, defaults, and environment overrides.
+ * Purpose: Tests configuration file loading and merging. Validates config
+ * precedence, defaults, and environment overrides.
  *
- * Test Coverage:
- * - Config file loading (.socketrc, package.json)
- * - Default value handling
- * - Environment variable overrides
- * - Config merging and precedence
- * - Validation and schema checking
- * - Non-destructive config saving
+ * Test Coverage: - Config file loading (.socketrc, package.json) - Default
+ * value handling - Environment variable overrides - Config merging and
+ * precedence - Validation and schema checking - Non-destructive config saving.
  *
- * Testing Approach:
- * Uses temporary config files and environment variable mocking.
+ * Testing Approach: Uses temporary config files and environment variable
+ * mocking.
  *
- * Related Files:
- * - util/config.mts (implementation)
+ * Related Files: - util/config.mts (implementation)
  */
 
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'

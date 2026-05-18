@@ -1,8 +1,8 @@
 /**
  * Unit tests for login command.
  *
- * Tests the command entry point that handles Socket API authentication
- * and stores credentials for subsequent CLI operations.
+ * Tests the command entry point that handles Socket API authentication and
+ * stores credentials for subsequent CLI operations.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

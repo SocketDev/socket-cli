@@ -1,16 +1,14 @@
 /**
  * Unit tests for update-pnpm-workspace-yaml.
  *
- * Purpose:
- * Tests the YAML-write path used when the host repo declares pnpm@11+
- * in its `packageManager` field. Comments and non-overrides keys must
- * be preserved across edits.
+ * Purpose: Tests the YAML-write path used when the host repo declares pnpm@11+
+ * in its `packageManager` field. Comments and non-overrides keys must be
+ * preserved across edits.
  *
- * Test Coverage:
- * - updatePnpmWorkspaceYamlOverrides
+ * Test Coverage: - updatePnpmWorkspaceYamlOverrides.
  *
- * Related Files:
- * - commands/optimize/update-pnpm-workspace-yaml.mts (implementation)
+ * Related Files: - commands/optimize/update-pnpm-workspace-yaml.mts
+ * (implementation)
  */
 
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'

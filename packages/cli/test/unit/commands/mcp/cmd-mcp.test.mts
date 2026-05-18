@@ -1,11 +1,12 @@
 /**
  * Unit tests for the `socket mcp` CLI entry point.
  *
- * Tests cmdMcp.run(argv, importMeta, ctx) — argv parsing, env-var
- * fallbacks, flag → handleMcp option translation. Mocks meowOrExit
- * to bypass the real CLI parser and feed pre-shaped flag values.
+ * Tests cmdMcp.run(argv, importMeta, ctx) — argv parsing, env-var fallbacks,
+ * flag → handleMcp option translation. Mocks meowOrExit to bypass the real CLI
+ * parser and feed pre-shaped flag values.
  *
  * Test Coverage:
+ *
  * - Command metadata (description, hidden)
  * - Default mode is stdio
  * - --http flag flips to HTTP mode
@@ -13,16 +14,17 @@
  * - --port flag forwarded; defaults to 3000 when missing
  * - MCP_PORT env var fallback when --port not set
  * - --trust-proxy flag + TRUST_PROXY=true env fallback
- * - --oauth-issuer / --oauth-client-id / --oauth-client-secret
- *   flags + matching SOCKET_OAUTH_* env fallbacks
- * - --oauth-required-scopes parses whitespace-separated string into
- *   array; empty string yields undefined (handler picks default)
+ * - --oauth-issuer / --oauth-client-id / --oauth-client-secret flags + matching
+ *   SOCKET_OAUTH_* env fallbacks
+ * - --oauth-required-scopes parses whitespace-separated string into array; empty
+ *   string yields undefined (handler picks default)
  * - All flags forwarded to handleMcp with the right shape
  *
  * Related Files:
- * - src/commands/mcp/cmd-mcp.mts - Implementation
- * - src/commands/mcp/handle-mcp.mts - Dispatcher (mocked)
- * - src/util/cli/with-subcommands.mts - meowOrExit (mocked)
+ *
+ * - Src/commands/mcp/cmd-mcp.mts - Implementation
+ * - Src/commands/mcp/handle-mcp.mts - Dispatcher (mocked)
+ * - Src/util/cli/with-subcommands.mts - meowOrExit (mocked)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -310,7 +312,9 @@ describe('cmdMcp — help text', () => {
     // The help: (command) => `…` callback is normally invoked by meow
     // when --help is passed. Capture the config we hand to meowOrExit
     // and invoke the help fn directly to exercise that branch.
-    let capturedConfig: { help?: ((cmd: string) => string) | undefined } | undefined
+    let capturedConfig:
+      | { help?: ((cmd: string) => string) | undefined }
+      | undefined
     mockMeowOrExit.mockImplementationOnce(input => {
       capturedConfig = (input as { config: typeof capturedConfig }).config
       return {

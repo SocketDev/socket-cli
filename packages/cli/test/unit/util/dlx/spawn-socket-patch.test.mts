@@ -1,9 +1,9 @@
 /**
  * Unit tests for the bespoke `spawnSocketPatchDlx` flow.
  *
- * The Vfs / auto-dispatch code is tested via define-tool-spawn.test.mts.
- * This file targets the three-way Dlx dispatch (local override / GitHub
- * release / legacy npm fallback).
+ * The Vfs / auto-dispatch code is tested via define-tool-spawn.test.mts. This
+ * file targets the three-way Dlx dispatch (local override / GitHub release /
+ * legacy npm fallback).
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

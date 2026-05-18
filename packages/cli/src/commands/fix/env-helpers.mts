@@ -14,8 +14,8 @@ import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../util/git/operations.mjs'
 
 /**
- * Check which required CI environment variables are missing.
- * Returns lists of missing and present variables.
+ * Check which required CI environment variables are missing. Returns lists of
+ * missing and present variables.
  */
 export function checkCiEnvVars(): MissingEnvVars {
   const missing: string[] = []

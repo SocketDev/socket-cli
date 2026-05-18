@@ -4,16 +4,18 @@
  * Picks GitHubProvider or GitLabProvider based on the remote URL.
  *
  * Test Coverage:
- * - gitlab.com remote → GitLabProvider
+ *
+ * - Gitlab.com remote → GitLabProvider
  * - GITLAB_HOST env set → GitLabProvider
- * - generic 'gitlab' substring → GitLabProvider
- * - github remote → GitHubProvider (default)
- * - getGitRemoteUrlSync returns trimmed lowercase string on success
- * - getGitRemoteUrlSync returns '' on non-zero exit
- * - getGitRemoteUrlSync returns '' on spawn throw
+ * - Generic 'gitlab' substring → GitLabProvider
+ * - Github remote → GitHubProvider (default)
+ * - GetGitRemoteUrlSync returns trimmed lowercase string on success
+ * - GetGitRemoteUrlSync returns '' on non-zero exit
+ * - GetGitRemoteUrlSync returns '' on spawn throw
  *
  * Related Files:
- * - src/util/git/provider-factory.mts
+ *
+ * - Src/util/git/provider-factory.mts
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

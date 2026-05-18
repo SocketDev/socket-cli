@@ -1,19 +1,17 @@
 /**
  * Integration tests for `socket uninstall` root command.
  *
- * Tests the uninstallation utilities root command for removing Socket CLI features.
+ * Tests the uninstallation utilities root command for removing Socket CLI
+ * features.
  *
- * Test Coverage:
- * - Help text display and subcommand listing
- * - Dry-run behavior validation
- * - Subcommand routing
+ * Test Coverage: - Help text display and subcommand listing - Dry-run behavior
+ * validation - Subcommand routing.
  *
- * Available Subcommands:
- * - completion: Uninstall bash completion
+ * Available Subcommands: - completion: Uninstall bash completion.
  *
- * Related Files:
- * - src/commands/uninstall/cmd-uninstall.mts - Root command definition
- * - src/commands/uninstall/cmd-uninstall-completion.mts - Completion removal
+ * Related Files: - src/commands/uninstall/cmd-uninstall.mts - Root command
+ * definition - src/commands/uninstall/cmd-uninstall-completion.mts - Completion
+ * removal.
  */
 
 import { describe, expect } from 'vitest'

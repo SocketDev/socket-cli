@@ -1,6 +1,6 @@
 /**
- * @fileoverview Build script for CLI JavaScript bundle.
- * Orchestrates extraction, building, and validation.
+ * @file Build script for CLI JavaScript bundle. Orchestrates extraction,
+ *   building, and validation.
  */
 
 import { copyFileSync } from 'node:fs'

@@ -1,25 +1,18 @@
 /**
  * Unit tests for fetchDiffScan.
  *
- * Purpose:
- * Tests fetching scan diffs via the Socket API. Compares two scans to identify changes in security posture.
+ * Purpose: Tests fetching scan diffs via the Socket API. Compares two scans to
+ * identify changes in security posture.
  *
- * Test Coverage:
- * - Successful API operation
- * - SDK setup failure handling
- * - API call error scenarios
- * - Custom SDK options (API tokens, base URLs)
- * - Scan comparison
- * - Diff calculation
- * - Change detection
- * - Null prototype usage for security
+ * Test Coverage: - Successful API operation - SDK setup failure handling - API
+ * call error scenarios - Custom SDK options (API tokens, base URLs) - Scan
+ * comparison - Diff calculation - Change detection - Null prototype usage for
+ * security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
- * error handling and API integration.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Validates comprehensive error handling and API integration.
  *
- * Related Files:
- * - src/commands/DiffScan.mts (implementation)
+ * Related Files: - src/commands/DiffScan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

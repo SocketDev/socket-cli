@@ -2,18 +2,17 @@
 /**
  * Coverage tests for create-scan-from-github helpers.
  *
- * Purpose:
- * Drives the remaining uncovered branches in create-scan-from-github.mts
- * that the sibling -direct and main test files don't exercise.
+ * Purpose: Drives the remaining uncovered branches in
+ * create-scan-from-github.mts that the sibling -direct and main test files
+ * don't exercise.
  *
- * Why a separate file:
- * The companion -direct file is already at the file-size soft cap; the
- * coverage-only tests would push it past the 1000-line hard cap.
+ * Why a separate file: The companion -direct file is already at the file-size
+ * soft cap; the coverage-only tests would push it past the 1000-line hard cap.
  *
- * Related Files:
- * - src/commands/scan/create-scan-from-github.mts (implementation)
- * - test/unit/commands/scan/create-scan-from-github-direct.test.mts (direct)
- * - test/unit/commands/scan/create-scan-from-github.test.mts (mock-surface)
+ * Related Files: - src/commands/scan/create-scan-from-github.mts
+ * (implementation) -
+ * test/unit/commands/scan/create-scan-from-github-direct.test.mts (direct) -
+ * test/unit/commands/scan/create-scan-from-github.test.mts (mock-surface)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -274,9 +273,8 @@ describe('create-scan-from-github (coverage)', () => {
     let mockCreateScanFromGithub: typeof CreateScanFromGithub.createScanFromGithub
 
     beforeEach(async () => {
-      const mod = await import(
-        '../../../../src/commands/scan/create-scan-from-github.mts'
-      )
+      const mod =
+        await import('../../../../src/commands/scan/create-scan-from-github.mts')
       mockCreateScanFromGithub = mod.createScanFromGithub
     })
 

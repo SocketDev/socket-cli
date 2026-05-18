@@ -1,13 +1,12 @@
 /**
  * Background preflight downloads for optional dependencies.
  *
- * Silently downloads dependencies in the background on first CLI run:
- * 1. @coana-tech/cli
- * 2. @cyclonedx/cdxgen
- * 3. Python + socketsecurity (socket-python-cli)
+ * Silently downloads dependencies in the background on first CLI run: 1.
+ * @coana-tech/cli 2. @cyclonedx/cdxgen 3. Python + socketsecurity
+ * (socket-python-cli)
  *
- * Downloads are staggered sequentially to avoid resource contention.
- * This runs asynchronously and never blocks the main CLI execution.
+ * Downloads are staggered sequentially to avoid resource contention. This runs
+ * asynchronously and never blocks the main CLI execution.
  */
 
 import { setTimeout as sleep } from 'node:timers/promises'
@@ -27,9 +26,8 @@ import { ensurePythonDlx, ensureSocketPyCli } from '../python/standalone.mts'
 let preflightRunning = false
 
 /**
- * Run preflight downloads in the background.
- * This never blocks or throws errors.
- * Only runs once per process lifetime.
+ * Run preflight downloads in the background. This never blocks or throws
+ * errors. Only runs once per process lifetime.
  */
 export function runPreflightDownloads(): void {
   // Only run once.

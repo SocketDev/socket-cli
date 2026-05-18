@@ -1,12 +1,11 @@
 /**
  * Unit tests for bootstrap shared path resolution.
  *
- * Bootstrap-only path helpers — run before the main ENV module loads,
- * so they read process.env directly. Tests cover env-override + default
- * path construction for every getter.
+ * Bootstrap-only path helpers — run before the main ENV module loads, so they
+ * read process.env directly. Tests cover env-override + default path
+ * construction for every getter.
  *
- * Related Files:
- * - src/bootstrap/shared/paths.mts
+ * Related Files: - src/bootstrap/shared/paths.mts.
  */
 
 import path from 'node:path'

@@ -1,14 +1,14 @@
 /**
  * Spawn Socket Firewall (sfw) — the transparent proxy for npm/yarn/pnpm/etc.
  *
- * - spawnSfwDlx: local override > Socket dlx download.
- * - spawnSfwVfs: extract from SEA bundle, then exec.
- * - spawnSfw: auto-detect SEA vs npm-CLI mode and dispatch.
+ * - SpawnSfwDlx: local override > Socket dlx download.
+ * - SpawnSfwVfs: extract from SEA bundle, then exec.
+ * - SpawnSfw: auto-detect SEA vs npm-CLI mode and dispatch.
  *
- * sfw is a transparent proxy: args is [innerTool, innerSubcommand?, ...rest].
+ * Sfw is a transparent proxy: args is [innerTool, innerSubcommand?, ...rest].
  * Machine-mode flags forward to the inner tool so its stdout stays pipe-safe
- * under --json. The Dlx flow stays bespoke (machine-mode + local-override
- * both apply); Vfs + auto-dispatch use the shared helpers.
+ * under --json. The Dlx flow stays bespoke (machine-mode + local-override both
+ * apply); Vfs + auto-dispatch use the shared helpers.
  */
 
 import { detectExecutableType } from '@socketsecurity/lib/dlx/detect'
@@ -27,9 +27,9 @@ import type { StdioOptions } from 'node:child_process'
 import type { SpawnExtra } from '@socketsecurity/lib/spawn'
 
 /**
- * Helper to spawn Socket Firewall (sfw) with dlx.
- * If SOCKET_CLI_SFW_LOCAL_PATH environment variable is set, uses the local
- * sfw binary at that path instead of downloading from npm.
+ * Helper to spawn Socket Firewall (sfw) with dlx. If SOCKET_CLI_SFW_LOCAL_PATH
+ * environment variable is set, uses the local sfw binary at that path instead
+ * of downloading from npm.
  */
 export async function spawnSfwDlx(
   args: string[] | readonly string[],

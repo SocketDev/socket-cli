@@ -1,7 +1,10 @@
-/** @fileoverview Test constants for Socket CLI. Defines common test values and configuration options used across multiple test files. */
+/**
+ * @file Test constants for Socket CLI. Defines common test values and
+ *   configuration options used across multiple test files.
+ */
 
 /**
- * Common test timeouts in milliseconds
+ * Common test timeouts in milliseconds.
  */
 export const TEST_TIMEOUTS = {
   SHORT: 1000,
@@ -10,7 +13,7 @@ export const TEST_TIMEOUTS = {
 }
 
 /**
- * Common HTTP status codes used in tests
+ * Common HTTP status codes used in tests.
  */
 export const HTTP_STATUS = {
   OK: 200,
@@ -23,7 +26,7 @@ export const HTTP_STATUS = {
 }
 
 /**
- * Common test API URLs
+ * Common test API URLs.
  */
 export const TEST_URLS = {
   API_BASE: 'https://api.socket.dev',
@@ -32,7 +35,7 @@ export const TEST_URLS = {
 }
 
 /**
- * Common test tokens
+ * Common test tokens.
  */
 export const TEST_TOKENS = {
   VALID: 'test-valid-token-12345',
@@ -41,7 +44,7 @@ export const TEST_TOKENS = {
 }
 
 /**
- * Common test organization slugs
+ * Common test organization slugs.
  */
 export const TEST_ORG_SLUGS = {
   DEFAULT: 'test-org',
@@ -50,7 +53,7 @@ export const TEST_ORG_SLUGS = {
 }
 
 /**
- * Common test repository names
+ * Common test repository names.
  */
 export const TEST_REPO_NAMES = {
   DEFAULT: 'test-repo',
@@ -60,7 +63,7 @@ export const TEST_REPO_NAMES = {
 }
 
 /**
- * Common test scan IDs
+ * Common test scan IDs.
  */
 export const TEST_SCAN_IDS = {
   DEFAULT: 'scan-123',

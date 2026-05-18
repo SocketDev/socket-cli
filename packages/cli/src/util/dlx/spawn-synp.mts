@@ -1,11 +1,11 @@
 /**
  * Spawn synp for converting between yarn.lock and package-lock.json.
  *
- * - spawnSynpDlx: install via Socket dlx, then exec.
- * - spawnSynpVfs: extract from SEA bundle, then exec.
- * - spawnSynp: auto-detect SEA vs npm-CLI mode and dispatch.
+ * - SpawnSynpDlx: install via Socket dlx, then exec.
+ * - SpawnSynpVfs: extract from SEA bundle, then exec.
+ * - SpawnSynp: auto-detect SEA vs npm-CLI mode and dispatch.
  *
- * synp is a pure-npm package (no GitHub release / no local override), so the
+ * Synp is a pure-npm package (no GitHub release / no local override), so the
  * Dlx flow is just `spawnDlx` with the synp version pin. Vfs and auto-dispatch
  * use the standard helpers from define-tool-spawn.
  */

@@ -1,6 +1,6 @@
 /**
- * @fileoverview Maps changed source files to test files for affected test running.
- * Uses git utilities from socket-registry to detect changes.
+ * @file Maps changed source files to test files for affected test running. Uses
+ *   git utilities from socket-registry to detect changes.
  */
 
 import { existsSync } from 'node:fs'

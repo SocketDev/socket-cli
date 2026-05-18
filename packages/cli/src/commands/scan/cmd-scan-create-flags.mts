@@ -1,9 +1,9 @@
 /**
  * Flag schema for `socket scan create`.
  *
- * Extracted from cmd-scan-create.mts to keep that file under the
- * 1000-line File-size hard cap. Defining the (large) flag set here
- * lets the main command file focus on the run() orchestration logic.
+ * Extracted from cmd-scan-create.mts to keep that file under the 1000-line
+ * File-size hard cap. Defining the (large) flag set here lets the main command
+ * file focus on the run() orchestration logic.
  */
 
 import { constants } from '../../constants.mts'

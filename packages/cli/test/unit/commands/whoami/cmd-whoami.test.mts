@@ -4,6 +4,7 @@
  * Tests the command that displays authentication status and token information.
  *
  * Test Coverage:
+ *
  * - Command metadata (description, hidden flag)
  * - Token detection from environment variable
  * - Token detection from config file
@@ -12,6 +13,7 @@
  * - Token masking and display
  *
  * Testing Approach:
+ *
  * - Mock logger to capture output
  * - Mock meowOrExit to control flag values and prevent process.exit
  * - Mock getDefaultApiToken from util/socket/sdk.mts
@@ -22,9 +24,10 @@
  * - Verify token display masking (TOKEN_PREFIX + visible prefix + ...)
  *
  * Related Files:
- * - src/commands/whoami/cmd-whoami.mts - Implementation
- * - src/util/socket/sdk.mts - Token utilities
- * - src/util/config.mts - Config file utilities
+ *
+ * - Src/commands/whoami/cmd-whoami.mts - Implementation
+ * - Src/util/socket/sdk.mts - Token utilities
+ * - Src/util/config.mts - Config file utilities
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

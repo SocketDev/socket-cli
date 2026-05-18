@@ -1,17 +1,23 @@
 /**
- * Telemetry types for Socket CLI.
- * Defines the structure of telemetry events and related data.
+ * Telemetry types for Socket CLI. Defines the structure of telemetry events and
+ * related data.
  */
 
 /**
  * Error details for telemetry events.
  */
 export interface TelemetryEventError {
-  /** Error class/type name. */
+  /**
+   * Error class/type name.
+   */
   type: string
-  /** Error message. */
+  /**
+   * Error message.
+   */
   message: string | undefined
-  /** Stack trace (sanitized). */
+  /**
+   * Stack trace (sanitized).
+   */
   stack?: string | undefined
 }
 
@@ -29,8 +35,7 @@ export interface TelemetryContext {
 }
 
 /**
- * Telemetry event structure.
- * All telemetry events must follow this schema.
+ * Telemetry event structure. All telemetry events must follow this schema.
  */
 export interface TelemetryEvent {
   event_sender_created_at: string

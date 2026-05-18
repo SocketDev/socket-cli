@@ -1,19 +1,22 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /**
- * Error utilities for Socket CLI.
- * Provides consistent error handling, formatting, and message extraction.
+ * Error utilities for Socket CLI. Provides consistent error handling,
+ * formatting, and message extraction.
  *
  * Key Classes:
+ *
  * - AuthError: Authentication failures (401/403 responses)
  * - InputError: User input validation failures
  *
  * Key Functions:
- * - captureException: Send errors to Sentry for monitoring
- * - formatErrorWithDetail: Format errors with detailed context
- * - getErrorCause: Get error cause with fallback to UNKNOWN_ERROR
- * - getErrorMessage: Extract error message from any thrown value
+ *
+ * - CaptureException: Send errors to Sentry for monitoring
+ * - FormatErrorWithDetail: Format errors with detailed context
+ * - GetErrorCause: Get error cause with fallback to UNKNOWN_ERROR
+ * - GetErrorMessage: Extract error message from any thrown value
  *
  * Error Handling Strategy:
+ *
  * - Always prefer specific error types over generic errors
  * - Use formatErrorWithDetail for user-facing error messages
  * - Log errors to Sentry in production for monitoring
@@ -51,8 +54,8 @@ type EventHintOrCaptureContext =
   | Function
 
 /**
- * Authentication error with recovery suggestions.
- * Thrown when API authentication fails (401/403).
+ * Authentication error with recovery suggestions. Thrown when API
+ * authentication fails (401/403).
  */
 export class AuthError extends Error {
   public readonly recovery: string[]
@@ -69,8 +72,8 @@ export class AuthError extends Error {
 }
 
 /**
- * User input validation error with details.
- * Thrown when user provides invalid input or arguments.
+ * User input validation error with details. Thrown when user provides invalid
+ * input or arguments.
  */
 export class InputError extends Error {
   public readonly body: string | undefined
@@ -85,8 +88,8 @@ export class InputError extends Error {
 }
 
 /**
- * Network error with retry suggestions.
- * Thrown when network requests fail due to connectivity issues.
+ * Network error with retry suggestions. Thrown when network requests fail due
+ * to connectivity issues.
  */
 export class NetworkError extends Error {
   public readonly statusCode?: number | undefined
@@ -109,8 +112,8 @@ export class NetworkError extends Error {
 }
 
 /**
- * API rate limit error with quota information.
- * Thrown when API rate limits are exceeded (429).
+ * API rate limit error with quota information. Thrown when API rate limits are
+ * exceeded (429).
  */
 export class RateLimitError extends Error {
   public readonly retryAfter?: number | undefined
@@ -131,8 +134,7 @@ export class RateLimitError extends Error {
 }
 
 /**
- * File system error with path context.
- * Thrown when file operations fail.
+ * File system error with path context. Thrown when file operations fail.
  */
 export class FileSystemError extends Error {
   public readonly path?: string | undefined
@@ -180,8 +182,8 @@ export class FileSystemError extends Error {
 }
 
 /**
- * Configuration error with setup instructions.
- * Thrown when CLI configuration is invalid or missing.
+ * Configuration error with setup instructions. Thrown when CLI configuration is
+ * invalid or missing.
  */
 export class ConfigError extends Error {
   public readonly configKey?: string | undefined
@@ -204,8 +206,7 @@ export class ConfigError extends Error {
 }
 
 /**
- * Timeout error with retry guidance.
- * Thrown when operations exceed time limits.
+ * Timeout error with retry guidance. Thrown when operations exceed time limits.
  */
 export class TimeoutError extends Error {
   public readonly timeoutMs?: number | undefined
@@ -264,24 +265,26 @@ export async function buildErrorCause(
 }
 
 /**
- * Build error cause string for SDK error results, preserving detailed quota information for 429 errors.
- * Used by API utilities to format consistent error messages with appropriate context.
- *
- * @param status - HTTP status code from the API response
- * @param message - Primary error message from the API
- * @param reason - Additional error reason/cause from the API
- * @returns Formatted error cause string with appropriate context
+ * Build error cause string for SDK error results, preserving detailed quota
+ * information for 429 errors. Used by API utilities to format consistent error
+ * messages with appropriate context.
  *
  * @example
- * await buildErrorCause(429, 'Quota exceeded', 'Monthly limit reached')
- * // Returns: "Monthly limit reached. API quota exceeded..."
+ *   await buildErrorCause(429, 'Quota exceeded', 'Monthly limit reached')
+ *   // Returns: "Monthly limit reached. API quota exceeded..."
  *
- * await buildErrorCause(400, 'Bad request', 'Invalid parameter')
- * // Returns: "Bad request (reason: Invalid parameter)"
+ *   await buildErrorCause(400, 'Bad request', 'Invalid parameter')
+ *   // Returns: "Bad request (reason: Invalid parameter)"
+ *
+ * @param status - HTTP status code from the API response.
+ * @param message - Primary error message from the API.
+ * @param reason - Additional error reason/cause from the API.
+ *
+ * @returns Formatted error cause string with appropriate context
  */
 /**
- * Calculate similarity ratio between two strings using word overlap.
- * Returns a value between 0 (no overlap) and 1 (identical).
+ * Calculate similarity ratio between two strings using word overlap. Returns a
+ * value between 0 (no overlap) and 1 (identical).
  */
 export function calculateStringSimilarity(str1: string, str2: string): number {
   if (str1 === str2) {
@@ -341,18 +344,19 @@ export function captureExceptionSync(
 }
 
 /**
- * Formats an error message with an optional error detail appended.
- * Extracts the message from an unknown error value and appends it
- * to the base message if available.
- *
- * @param baseMessage - The base message to display
- * @param error - The error object to extract message from
- * @returns Formatted message with error detail if available
+ * Formats an error message with an optional error detail appended. Extracts the
+ * message from an unknown error value and appends it to the base message if
+ * available.
  *
  * @example
- * formatErrorWithDetail('Failed to delete file', error)
- * // Returns: "Failed to delete file: ENOENT: no such file or directory"
- * // Or just: "Failed to delete file" if no error message
+ *   formatErrorWithDetail('Failed to delete file', error)
+ *   // Returns: "Failed to delete file: ENOENT: no such file or directory"
+ *   // Or just: "Failed to delete file" if no error message
+ *
+ * @param baseMessage - The base message to display.
+ * @param error - The error object to extract message from.
+ *
+ * @returns Formatted message with error detail if available
  */
 export function formatErrorWithDetail(
   baseMessage: string,
@@ -363,25 +367,27 @@ export function formatErrorWithDetail(
 }
 
 /**
- * Extracts an error cause from an unknown value.
- * Returns the error message if available, otherwise UNKNOWN_ERROR.
- * Commonly used for creating CResult error causes.
- *
- * @param error - The error object to extract message from
- * @returns The error message or UNKNOWN_ERROR constant
+ * Extracts an error cause from an unknown value. Returns the error message if
+ * available, otherwise UNKNOWN_ERROR. Commonly used for creating CResult error
+ * causes.
  *
  * @example
- * return { ok: false, message: 'Operation failed', cause: getErrorCause(e) }
+ *   return { ok: false, message: 'Operation failed', cause: getErrorCause(e) }
+ *
+ * @param error - The error object to extract message from.
+ *
+ * @returns The error message or UNKNOWN_ERROR constant
  */
 export function getErrorCause(error: unknown): string {
   return getErrorMessageOr(error, UNKNOWN_ERROR)
 }
 
 /**
- * Extracts an error message from an unknown value.
- * Returns the message if it's an Error object, otherwise returns undefined.
+ * Extracts an error message from an unknown value. Returns the message if it's
+ * an Error object, otherwise returns undefined.
  *
- * @param error - The error object to extract message from
+ * @param error - The error object to extract message from.
+ *
  * @returns The error message or undefined
  */
 export function getErrorMessage(error: unknown): string | undefined {
@@ -389,16 +395,17 @@ export function getErrorMessage(error: unknown): string | undefined {
 }
 
 /**
- * Extracts an error message from an unknown value with a fallback.
- * Returns the message if it's an Error object, otherwise returns the fallback.
- *
- * @param error - The error object to extract message from
- * @param fallback - The fallback message if no error message is found
- * @returns The error message or fallback
+ * Extracts an error message from an unknown value with a fallback. Returns the
+ * message if it's an Error object, otherwise returns the fallback.
  *
  * @example
- * getErrorMessageOr(error, 'Unknown error occurred')
- * // Returns: "ENOENT: no such file or directory" or "Unknown error occurred"
+ *   getErrorMessageOr(error, 'Unknown error occurred')
+ *   // Returns: "ENOENT: no such file or directory" or "Unknown error occurred"
+ *
+ * @param error - The error object to extract message from.
+ * @param fallback - The fallback message if no error message is found.
+ *
+ * @returns The error message or fallback
  */
 export function getErrorMessageOr(error: unknown, fallback: string): string {
   return getErrorMessage(error) || fallback
@@ -415,16 +422,17 @@ export function getNetworkErrorCode(error: unknown): string | undefined {
 }
 
 /**
- * Get network error diagnostics with actionable guidance.
- * Provides specific recovery steps based on error type.
- *
- * @param error - The error to diagnose
- * @param durationMs - Optional request duration in milliseconds
- * @returns Diagnostic message with recovery suggestions
+ * Get network error diagnostics with actionable guidance. Provides specific
+ * recovery steps based on error type.
  *
  * @example
- * const diagnostics = getNetworkErrorDiagnostics(error, 5000)
- * // Returns: "Connection refused. The server may be down..."
+ *   const diagnostics = getNetworkErrorDiagnostics(error, 5000)
+ *   // Returns: "Connection refused. The server may be down..."
+ *
+ * @param error - The error to diagnose.
+ * @param durationMs - Optional request duration in milliseconds.
+ *
+ * @returns Diagnostic message with recovery suggestions
  */
 export function getNetworkErrorDiagnostics(
   error: unknown,
@@ -525,7 +533,8 @@ export function getNetworkErrorDiagnostics(
 /**
  * Extract recovery suggestions from an error.
  *
- * @param error - The error object to extract recovery suggestions from
+ * @param error - The error object to extract recovery suggestions from.
+ *
  * @returns Array of recovery suggestion strings, or empty array if none
  */
 export function getRecoverySuggestions(error: unknown): string[] {

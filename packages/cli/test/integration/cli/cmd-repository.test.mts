@@ -4,20 +4,23 @@
  * Tests the repository management root command for GitHub/GitLab integrations.
  *
  * Test Coverage:
+ *
  * - Help text display and subcommand listing
  * - Dry-run behavior validation
  * - Subcommand routing
  *
  * Available Subcommands:
- * - create: Register new repository
- * - del: Unregister repository
- * - list: List registered repositories
- * - update: Update repository settings
- * - view: View repository details
+ *
+ * - Create: Register new repository
+ * - Del: Unregister repository
+ * - List: List registered repositories
+ * - Update: Update repository settings
+ * - View: View repository details
  *
  * Related Files:
- * - src/commands/repository/cmd-repository.mts - Root command definition
- * - src/commands/repository/cmd-repository-*.mts - Subcommands
+ *
+ * - Src/commands/repository/cmd-repository.mts - Root command definition
+ * - Src/commands/repository/cmd-repository-*.mts - Subcommands
  */
 
 import { describe, expect } from 'vitest'

@@ -1,16 +1,12 @@
 /**
  * Unit tests for Coana spawn utilities.
  *
- * Purpose:
- * Tests the Coana CLI spawning functionality.
+ * Purpose: Tests the Coana CLI spawning functionality.
  *
- * Test Coverage:
- * - spawnCoana function export
- * - Environment variable handling
- * - Error handling
+ * Test Coverage: - spawnCoana function export - Environment variable handling -
+ * Error handling.
  *
- * Related Files:
- * - util/coana/spawn.mts (implementation)
+ * Related Files: - util/coana/spawn.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

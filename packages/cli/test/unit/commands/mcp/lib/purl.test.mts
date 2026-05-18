@@ -1,7 +1,8 @@
 /**
  * Unit tests for the MCP command's PURL builder.
  *
- * Tests buildPurl(ecosystem, depname, version) — a thin wrapper around
+ * Tests buildPurl(ecosystem, depname, version) — a thin wrapper around.
+ *
  * @socketregistry/packageurl-js that handles per-ecosystem
  * namespace/name splitting (npm scoped @scope/name, maven
  * groupId:artifactId, golang module path).

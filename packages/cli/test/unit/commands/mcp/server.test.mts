@@ -1,38 +1,29 @@
 /**
  * Unit tests for the MCP server factory.
  *
- * Tests createConfiguredServer(config) — wires the low-level SDK
- * `Server` class with two request handlers (tools/list, tools/call)
- * and the depscore tool. We test by directly invoking the registered
- * handlers via the SDK's `request()` method (which round-trips through
- * its internal validators).
+ * Tests createConfiguredServer(config) — wires the low-level SDK `Server` class
+ * with two request handlers (tools/list, tools/call) and the depscore tool. We
+ * test by directly invoking the registered handlers via the SDK's `request()`
+ * method (which round-trips through its internal validators).
  *
- * Test Coverage:
- * - Server identifies itself with the configured name + version
- * - Capabilities advertise tools{}
- * - tools/list returns exactly one tool (depscore) with the right
- *   metadata (name, description, inputSchema as plain JSON Schema,
- *   readOnlyHint annotation, title)
- * - tools/call dispatches to runDepscore and returns its result
- * - tools/call rejects unknown tool names with isError + message
- * - tools/call validates input via the TypeBox-compiled checker
- *   (rejects missing/wrong-typed `packages` field)
- * - tools/call uses the per-request OAuth token from extra.authInfo
- *   when present (HTTP+OAuth path)
- * - tools/call falls back to config.getApiToken() when authInfo is
- *   absent (stdio path)
- * - tools/call surfaces "Authentication is required." when no token
- *   is available from either source
+ * Test Coverage: - Server identifies itself with the configured name + version
+ * - Capabilities advertise tools{} - tools/list returns exactly one tool
+ * (depscore) with the right metadata (name, description, inputSchema as plain
+ * JSON Schema, readOnlyHint annotation, title) - tools/call dispatches to
+ * runDepscore and returns its result - tools/call rejects unknown tool names
+ * with isError + message - tools/call validates input via the TypeBox-compiled
+ * checker (rejects missing/wrong-typed `packages` field) - tools/call uses the
+ * per-request OAuth token from extra.authInfo when present (HTTP+OAuth path) -
+ * tools/call falls back to config.getApiToken() when authInfo is absent (stdio
+ * path) - tools/call surfaces "Authentication is required." when no token is
+ * available from either source.
  *
- * Testing approach
- * - Mock runDepscore so the test doesn't need a live SDK.
- * - Construct the real `Server`, retrieve its registered handlers via
- *   the SDK's protected map (or by calling it directly), assert on
- *   the result shape.
+ * Testing approach - Mock runDepscore so the test doesn't need a live SDK. -
+ * Construct the real `Server`, retrieve its registered handlers via the SDK's
+ * protected map (or by calling it directly), assert on the result shape.
  *
- * Related Files:
- * - src/commands/mcp/server.mts - Implementation
- * - src/commands/mcp/depscore.mts - Tool worker (mocked here)
+ * Related Files: - src/commands/mcp/server.mts - Implementation -
+ * src/commands/mcp/depscore.mts - Tool worker (mocked here)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -176,7 +167,10 @@ describe('createConfiguredServer — tools/call handler', () => {
         },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
+    )) as {
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
     expect(mockRunDepscore).toHaveBeenCalledTimes(1)
     expect(mockRunDepscore.mock.calls[0]![0]).toEqual({
       packages: [{ depname: 'lodash' }],
@@ -197,7 +191,10 @@ describe('createConfiguredServer — tools/call handler', () => {
         },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
+    )) as {
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
     expect(result.content[0]!.text).toContain('Unknown tool: unknown-tool')
@@ -212,7 +209,10 @@ describe('createConfiguredServer — tools/call handler', () => {
         params: { name: 'depscore', arguments: {} },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
+    )) as {
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
     expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
@@ -227,7 +227,10 @@ describe('createConfiguredServer — tools/call handler', () => {
         params: { name: 'depscore', arguments: { packages: 'not-an-array' } },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
+    )) as {
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
     expect(result.isError).toBe(true)
     expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
   })
@@ -285,7 +288,10 @@ describe('createConfiguredServer — tools/call handler', () => {
         },
       },
       {},
-    )) as { content: Array<{ text: string; type: string }>; isError?: boolean | undefined }
+    )) as {
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
     expect(result.content[0]!.text).toContain('Authentication is required')

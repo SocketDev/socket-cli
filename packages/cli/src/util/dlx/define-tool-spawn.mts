@@ -2,9 +2,10 @@
  * Factory for "tool spawner" functions in the dlx/spawn-* family.
  *
  * Every per-tool wrapper exposes the same triple:
- *   - spawn{Tool}Dlx — npm-CLI mode (download / local override / GitHub release)
- *   - spawn{Tool}Vfs — SEA mode (extract from VFS bundle)
- *   - spawn{Tool}    — auto-dispatch between the two based on isSeaBinary()
+ *
+ * - Spawn{Tool}Dlx — npm-CLI mode (download / local override / GitHub release)
+ * - Spawn{Tool}Vfs — SEA mode (extract from VFS bundle)
+ * - Spawn{Tool} — auto-dispatch between the two based on isSeaBinary()
  *
  * The auto-dispatch and the GitHub-release flow are identical across the
  * pure-binary tools (trufflehog, trivy, opengrep). This factory encapsulates
@@ -100,8 +101,8 @@ export function defineGitHubReleaseSpawn(opts: {
 /**
  * Build the full spawn-* triple for a pure-GitHub-release tool.
  *
- * Returns `{ Dlx, Vfs, auto }` where `auto` is the public spawnFoo()
- * dispatcher and Dlx/Vfs are the underlying spawners.
+ * Returns `{ Dlx, Vfs, auto }` where `auto` is the public spawnFoo() dispatcher
+ * and Dlx/Vfs are the underlying spawners.
  */
 export function defineToolSpawn(opts: {
   toolName: string
