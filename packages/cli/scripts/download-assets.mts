@@ -35,7 +35,7 @@ const ASSETS = {
     description: 'Binary injection tool for SEA builds',
     download: {
       cwd: rootPath,
-      downloadDir: '../../packages/build-infra/build/downloaded',
+      downloadDir: '../../packages/build-infra/build/downloaded/binject',
       envVar: 'SOCKET_BTM_BINJECT_TAG',
       quiet: false,
       tool: 'binject',
@@ -60,7 +60,7 @@ const ASSETS = {
     download: {
       asset: 'models-*.tar.gz',
       cwd: rootPath,
-      downloadDir: '../../packages/build-infra/build/downloaded',
+      downloadDir: '../../packages/build-infra/build/downloaded/models',
       quiet: false,
       tool: 'models',
     },
@@ -76,7 +76,7 @@ const ASSETS = {
     download: {
       bin: 'node',
       cwd: rootPath,
-      downloadDir: '../../packages/build-infra/build/downloaded',
+      downloadDir: '../../packages/build-infra/build/downloaded/node-smol',
       envVar: 'SOCKET_BTM_NODE_SMOL_TAG',
       quiet: false,
       tool: 'node-smol',
