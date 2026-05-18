@@ -112,20 +112,56 @@ describe('socket/no-logger-newline-literal', () => {
       valid: [],
       invalid: [
         // success variants
-        { code: 'logger.log("✓ ok\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
-        { code: 'logger.log("✔ ok\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
-        { code: 'logger.log("✅ ok\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
-        { code: 'logger.log("√ ok\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
+        {
+          code: 'logger.log("✓ ok\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
+        {
+          code: 'logger.log("✔ ok\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
+        {
+          code: 'logger.log("✅ ok\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
+        {
+          code: 'logger.log("√ ok\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
         // fail variants
-        { code: 'logger.log("✗ fail\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
-        { code: 'logger.log("❌ fail\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
-        { code: 'logger.log("✖ fail\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
-        { code: 'logger.log("× fail\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
+        {
+          code: 'logger.log("✗ fail\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
+        {
+          code: 'logger.log("❌ fail\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
+        {
+          code: 'logger.log("✖ fail\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
+        {
+          code: 'logger.log("× fail\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
         // warn variants
-        { code: 'logger.log("⚠ warn\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
-        { code: 'logger.log("🚨 warn\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
-        { code: 'logger.log("❗ warn\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
-        { code: 'logger.log("‼ warn\\n")\n', errors: [{ messageId: 'trailingNewline' }] },
+        {
+          code: 'logger.log("⚠ warn\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
+        {
+          code: 'logger.log("🚨 warn\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
+        {
+          code: 'logger.log("❗ warn\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
+        {
+          code: 'logger.log("‼ warn\\n")\n',
+          errors: [{ messageId: 'trailingNewline' }],
+        },
       ],
     })
   })

@@ -278,7 +278,9 @@ export class RuleTester {
       return
     }
 
-    const tmpdir = mkdtempSync(path.join(os.tmpdir(), `oxlint-test-${ruleName}-`))
+    const tmpdir = mkdtempSync(
+      path.join(os.tmpdir(), `oxlint-test-${ruleName}-`),
+    )
     // `filename:` overrides can put fixtures in subdirs (e.g.
     // `scripts/foo.mts`). Ensure the parent dir exists before each
     // write — fail-fast on a missing dir would manifest as a

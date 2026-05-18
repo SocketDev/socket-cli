@@ -111,9 +111,7 @@ const FUNCTION_NODE_TYPES = new Set([
  * absent or doesn't match a recognized shape. Shallow-only — does
  * NOT unwrap `Promise<Set<…>>` (returns unknown, which is safe).
  */
-export function classifyTypeAnnotation(
-  annotation: AstNode | undefined,
-): Kind {
+export function classifyTypeAnnotation(annotation: AstNode | undefined): Kind {
   if (!annotation || !annotation.typeAnnotation) {
     return 'unknown'
   }
@@ -267,10 +265,7 @@ function findInScope(scope: AstNode, name: string): Kind | undefined {
   }
 
   // for (const X of …) / for (const X in …) — declaration is in scope.left.
-  if (
-    scope.type === 'ForOfStatement' ||
-    scope.type === 'ForInStatement'
-  ) {
+  if (scope.type === 'ForOfStatement' || scope.type === 'ForInStatement') {
     const left: AstNode | undefined = scope.left
     if (left && left.type === 'VariableDeclaration') {
       const k = findInVariableDeclaration(left, name)
@@ -392,9 +387,6 @@ export function resolveKind(useNode: AstNode, name: string): Kind {
  *     },
  *   }
  */
-export function createKindResolver(): (
-  useNode: AstNode,
-  name: string,
-) => Kind {
+export function createKindResolver(): (useNode: AstNode, name: string) => Kind {
   return resolveKind
 }

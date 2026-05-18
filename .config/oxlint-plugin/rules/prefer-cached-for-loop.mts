@@ -111,10 +111,7 @@
 
 /** @type {import('eslint').Rule.RuleModule} */
 
-import {
-  FLAGGED_KINDS,
-  createKindResolver,
-} from '../lib/iterable-kind.mts'
+import { FLAGGED_KINDS, createKindResolver } from '../lib/iterable-kind.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const rule = {

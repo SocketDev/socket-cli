@@ -145,8 +145,8 @@ const UNAMBIGUOUS_EMOJI = {
   '⛔': 'warn',
   '‼': 'warn',
   // info
-  'ℹ': 'info',
-  'ℹ️': 'info',
+  ℹ: 'info',
+  ℹ️: 'info',
 }
 
 // ANCHORED — match only at the start of the string, followed by
@@ -485,7 +485,12 @@ const rule = {
             // The original template starts with backtick then the
             // raw first-quasi content. Strip the leading newline(s)
             // from the source representation to keep escape parity.
-            const newTpl = '`' + originalTpl.slice(1).replace(/^\\?n+/, '').replace(/^\n+/, '')
+            const newTpl =
+              '`' +
+              originalTpl
+                .slice(1)
+                .replace(/^\\?n+/, '')
+                .replace(/^\n+/, '')
             const found = findStatusEmoji(firstCooked)
             const semanticMethod = found?.method ?? origMethod
             const blankCall = blankCallFor(semanticMethod)

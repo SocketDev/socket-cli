@@ -52,7 +52,7 @@ const rule = {
     fixable: undefined,
     messages: {
       processCwd:
-        '`process.cwd()` is unstable in scripts/ and .claude/hooks/ — the user (or Claude Code) may invoke this from any directory. Anchor on the script\'s own location: `path.dirname(fileURLToPath(import.meta.url))` + walk-up, or read `$CLAUDE_PROJECT_DIR` inside hooks.',
+        "`process.cwd()` is unstable in scripts/ and .claude/hooks/ — the user (or Claude Code) may invoke this from any directory. Anchor on the script's own location: `path.dirname(fileURLToPath(import.meta.url))` + walk-up, or read `$CLAUDE_PROJECT_DIR` inside hooks.",
     },
     schema: [],
   },

@@ -40,7 +40,7 @@ describe('socket/prefer-async-spawn', () => {
           // The rule's autofix emits single quotes for the rewritten
           // import source; the call site retains its original quoting.
           output:
-            "import { spawnSync } from '@socketsecurity/lib-stable/spawn'\nspawnSync(\"ls\")\n",
+            'import { spawnSync } from \'@socketsecurity/lib-stable/spawn\'\nspawnSync("ls")\n',
           errors: [{ messageId: 'importBanned' }],
         },
         {

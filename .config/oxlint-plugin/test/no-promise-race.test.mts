@@ -11,8 +11,14 @@ describe('socket/no-promise-race', () => {
   test('valid + invalid cases', () => {
     new RuleTester().run('no-promise-race', rule, {
       valid: [
-        { name: 'Promise.all', code: 'await Promise.all([fetch("a"), fetch("b")])\n' },
-        { name: 'Promise.allSettled', code: 'await Promise.allSettled([fetch("a")])\n' },
+        {
+          name: 'Promise.all',
+          code: 'await Promise.all([fetch("a"), fetch("b")])\n',
+        },
+        {
+          name: 'Promise.allSettled',
+          code: 'await Promise.allSettled([fetch("a")])\n',
+        },
         { name: 'Promise.any', code: 'await Promise.any([fetch("a")])\n' },
       ],
       invalid: [
