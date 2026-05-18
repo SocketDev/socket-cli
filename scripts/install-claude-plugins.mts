@@ -8,11 +8,6 @@
  *   - For each plugin in the wheelhouse marketplace's
  *     `.claude-plugin/marketplace.json`, ensures it's installed at the
  *     pinned SHA.
- *   - Merges `env.CODEX_TRUSTED_ENV_PARENTS` into
- *     `~/.claude/settings.json` so the upstream codex plugin's
- *     SessionStart hook honors `~/.claude/session-env/` as a trusted
- *     parent (Claude Code places per-session env files there, outside
- *     `os.tmpdir()`).
  *
  *   Idempotent — running twice is a no-op. Designed for `pnpm setup`
  *   wiring in every fleet repo.
@@ -24,7 +19,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -38,13 +33,6 @@ const logger = getDefaultLogger()
 // `known_marketplaces.json` and what plugins reference via `@<name>`.
 const MARKETPLACE_NAME = 'socket-wheelhouse'
 const MARKETPLACE_URL = 'https://github.com/SocketDev/socket-wheelhouse'
-
-// The env var the codex plugin's SessionStart hook reads. Setting it
-// in `~/.claude/settings.json:env` makes Claude Code pass it to every
-// hook invocation. The value is the path Claude Code places per-session
-// env files under; the hook treats it as a trusted parent in addition
-// to `os.tmpdir()`.
-const CODEX_TRUSTED_ENV_PARENTS_KEY = 'CODEX_TRUSTED_ENV_PARENTS'
 
 interface MarketplaceListEntry {
   name: string
@@ -78,28 +66,6 @@ interface MarketplaceManifest {
   name?: string
   plugins?: MarketplacePlugin[]
 }
-
-/**
- * Resolve the user's home directory. Matches the resolution order
- * `@socketsecurity/lib/env/home` uses (HOME → USERPROFILE), with a
- * fail-fast guard against the degenerate empty-string case.
- */
-function resolveHome(): string {
-  for (const candidate of [process.env['HOME'], process.env['USERPROFILE']]) {
-    if (candidate && path.isAbsolute(candidate)) {
-      return candidate
-    }
-  }
-  throw new Error(
-    'HOME / USERPROFILE not set to an absolute path — cannot resolve ' +
-      'Claude Code config dir.',
-  )
-}
-
-const HOME = resolveHome()
-const CLAUDE_CONFIG_DIR = path.join(HOME, '.claude')
-const CLAUDE_SETTINGS_JSON = path.join(CLAUDE_CONFIG_DIR, 'settings.json')
-const CLAUDE_SESSION_ENV_DIR = path.join(CLAUDE_CONFIG_DIR, 'session-env')
 
 /**
  * Run `claude` CLI synchronously; return stdout + exit code. Stderr
@@ -214,55 +180,6 @@ function ensurePluginInstalled(plugin: MarketplacePlugin): void {
   }
 }
 
-interface SettingsShape {
-  env?: Record<string, string>
-  [k: string]: unknown
-}
-
-function mergeTrustedEnvParent(): boolean {
-  let settings: SettingsShape = {}
-  if (existsSync(CLAUDE_SETTINGS_JSON)) {
-    try {
-      settings = JSON.parse(
-        readFileSync(CLAUDE_SETTINGS_JSON, 'utf8'),
-      ) as SettingsShape
-    } catch (e) {
-      throw new Error(
-        `~/.claude/settings.json is not parseable JSON: ${errorMessage(e)}. ` +
-          'Fix it by hand before re-running this script.',
-      )
-    }
-  }
-
-  const env = settings.env ?? {}
-  const existing = env[CODEX_TRUSTED_ENV_PARENTS_KEY]
-  const existingEntries = existing
-    ? existing.split(path.delimiter).map(s => s.trim()).filter(Boolean)
-    : []
-  if (existingEntries.includes(CLAUDE_SESSION_ENV_DIR)) {
-    logger.log(
-      `${CODEX_TRUSTED_ENV_PARENTS_KEY} already includes ${CLAUDE_SESSION_ENV_DIR}.`,
-    )
-    return false
-  }
-  const merged = [...existingEntries, CLAUDE_SESSION_ENV_DIR].join(
-    path.delimiter,
-  )
-  const next: SettingsShape = {
-    ...settings,
-    env: { ...env, [CODEX_TRUSTED_ENV_PARENTS_KEY]: merged },
-  }
-  writeFileSync(
-    CLAUDE_SETTINGS_JSON,
-    JSON.stringify(next, null, 2) + '\n',
-    'utf8',
-  )
-  logger.log(
-    `Set ${CODEX_TRUSTED_ENV_PARENTS_KEY}=${merged} in ${CLAUDE_SETTINGS_JSON}.`,
-  )
-  return true
-}
-
 function main(): void {
   logger.log(`Reconciling Claude Code plugins to ${MARKETPLACE_NAME}…`)
   const marketplace = ensureMarketplace()
@@ -276,7 +193,6 @@ function main(): void {
   for (const plugin of plugins) {
     ensurePluginInstalled(plugin)
   }
-  mergeTrustedEnvParent()
   logger.log('Done.')
 }
 
