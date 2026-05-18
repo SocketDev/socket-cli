@@ -4,12 +4,7 @@
   "title": "socket-wheelhouse per-repo config",
   "description": "Per-repo socket-wheelhouse config. Two valid locations: `.config/socket-wheelhouse.json` (primary) or `.socket-wheelhouse.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
   "type": "object",
-  "required": [
-    "schemaVersion",
-    "repoName",
-    "layout",
-    "native"
-  ],
+  "required": ["schemaVersion", "repoName", "layout", "native"],
   "properties": {
     "$schema": {
       "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-wheelhouse-schema.json` — both the config and its schema live side-by-side in `.config/`.",
@@ -254,9 +249,7 @@
       "items": {
         "description": "One exemption for the path-hygiene gate.",
         "type": "object",
-        "required": [
-          "reason"
-        ],
+        "required": ["reason"],
         "properties": {
           "rule": {
             "description": "Rule letter (A, B, C, D, F, G). Omit to match any rule.",
