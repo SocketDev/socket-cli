@@ -30,19 +30,40 @@ interface RunHookOptions {
   readonly stopHookActive?: boolean | undefined
 }
 
+// Single source of truth for the tmp transcript location used by every
+// test (1 path, 1 reference). `setupTranscript` constructs the dir +
+// file once and returns both, along with the cleanup callback.
+function setupTranscript(rawContent: string): {
+  readonly dir: string
+  readonly transcriptPath: string
+  readonly cleanup: () => void
+} {
+  const dir = mkdtempSync(path.join(tmpdir(), 'excuse-detector-test-'))
+  const transcriptPath = path.join(dir, 'session.jsonl')
+  writeFileSync(transcriptPath, rawContent)
+  return {
+    dir,
+    transcriptPath,
+    cleanup: () => {
+      rmSync(dir, { recursive: true, force: true })
+    },
+  }
+}
+
 async function runHook(
   entries: TranscriptEntry[],
   options: RunHookOptions = {},
 ): Promise<Result> {
-  const dir = mkdtempSync(path.join(tmpdir(), 'excuse-detector-test-'))
-  const transcriptPath = path.join(dir, 'session.jsonl')
-  const lines = entries.map(e =>
-    JSON.stringify({ type: e.type, message: { content: e.content } }),
-  )
-  writeFileSync(transcriptPath, lines.join('\n') + '\n')
+  const rawContent =
+    entries
+      .map(e => JSON.stringify({ type: e.type, message: { content: e.content } }))
+      .join('\n') + '\n'
+  const transcript = setupTranscript(rawContent)
   try {
     const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-    const payload: Record<string, unknown> = { transcript_path: transcriptPath }
+    const payload: Record<string, unknown> = {
+      transcript_path: transcript.transcriptPath,
+    }
     if (options.stopHookActive) {
       payload.stop_hook_active = true
     }
@@ -61,7 +82,7 @@ async function runHook(
       })
     })
   } finally {
-    rmSync(dir, { recursive: true, force: true })
+    transcript.cleanup()
   }
 }
 
@@ -233,10 +254,7 @@ test('stop_hook_active: true falls back to informational stderr (no block)', asy
 })
 
 test('respects SOCKET_EXCUSE_DETECTOR_DISABLED', async () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'excuse-detector-test-'))
-  const transcriptPath = path.join(dir, 'session.jsonl')
-  writeFileSync(
-    transcriptPath,
+  const transcript = setupTranscript(
     JSON.stringify({
       type: 'assistant',
       message: { content: 'this is pre-existing.' },
@@ -247,7 +265,7 @@ test('respects SOCKET_EXCUSE_DETECTOR_DISABLED', async () => {
       stdio: 'pipe',
       env: { ...process.env, SOCKET_EXCUSE_DETECTOR_DISABLED: '1' },
     })
-    child.stdin.end(JSON.stringify({ transcript_path: transcriptPath }))
+    child.stdin.end(JSON.stringify({ transcript_path: transcript.transcriptPath }))
     let stderr = ''
     let stdout = ''
     child.stderr.on('data', chunk => {
@@ -265,15 +283,12 @@ test('respects SOCKET_EXCUSE_DETECTOR_DISABLED', async () => {
     assert.strictEqual(result.stderr, '')
     assert.strictEqual(result.stdout, '')
   } finally {
-    rmSync(dir, { recursive: true, force: true })
+    transcript.cleanup()
   }
 })
 
 test('handles array-of-blocks content shape', async () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'excuse-detector-test-'))
-  const transcriptPath = path.join(dir, 'session.jsonl')
-  writeFileSync(
-    transcriptPath,
+  const transcript = setupTranscript(
     JSON.stringify({
       type: 'assistant',
       message: {
@@ -289,7 +304,7 @@ test('handles array-of-blocks content shape', async () => {
   )
   try {
     const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-    child.stdin.end(JSON.stringify({ transcript_path: transcriptPath }))
+    child.stdin.end(JSON.stringify({ transcript_path: transcript.transcriptPath }))
     let stderr = ''
     let stdout = ''
     child.stderr.on('data', chunk => {
@@ -305,7 +320,7 @@ test('handles array-of-blocks content shape', async () => {
     })
     assertBlock(result, /pre-existing/)
   } finally {
-    rmSync(dir, { recursive: true, force: true })
+    transcript.cleanup()
   }
 })
 
