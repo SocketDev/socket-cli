@@ -1,3 +1,4 @@
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/personal-path-placeholders -- "testuser" / "testuserother" are fixture usernames in test input strings exercising tildify; they are not real personal paths. */
 /**
  * Unit tests for home directory path utilities.

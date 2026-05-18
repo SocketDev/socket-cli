@@ -216,6 +216,7 @@ export function parsePlatformTarget(target) {
  *
  * @returns {boolean} True if valid platform target.
  */
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
 export function isPlatformTarget(target) {
   return PLATFORM_TARGETS.includes(target)
 }
@@ -230,6 +231,7 @@ export function isPlatformTarget(target) {
  * @returns {(typeof PLATFORM_CONFIGS)[number] | undefined} Full platform config
  *   or undefined.
  */
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
 export function getPlatformConfig(target) {
   return PLATFORM_CONFIGS.find(
     c =>
@@ -248,6 +250,7 @@ export function getPlatformConfig(target) {
  *
  * @returns {string} Target string (e.g., "linux-x64-musl").
  */
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
 export function formatPlatformTarget(platform, arch, libc) {
   const muslSuffix = libc === 'musl' ? '-musl' : ''
   return `${platform}-${arch}${muslSuffix}`
@@ -278,6 +281,7 @@ export function formatPlatformTarget(platform, arch, libc) {
  *
  * @returns {PlatformArgs} Parsed platform arguments.
  */
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
 export function parsePlatformArgs(args) {
   const result = { arch: undefined, libc: undefined, platform: undefined }
 

@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — single-orchestrator pipeline (clone → configure → build → bundle → sign); the stages share enough internal state (manifest, paths, checkpoints) that splitting would tangle cross-stage data passing. */
 /**
  * WASM build pipeline orchestrator.
  *
@@ -314,9 +315,7 @@ export async function runPipeline(options, cliOverrides) {
 
   if (flags.printCacheKey) {
     process.stdout.write(`${cacheKey}\n`) // socket-hook: allow console
-    return /**
-     * @type {any}
-     */ (undefined)
+    return undefined
   }
 
   const paths = getBuildPaths(buildMode, platformArch)

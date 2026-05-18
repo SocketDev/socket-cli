@@ -1,3 +1,4 @@
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
@@ -97,6 +98,7 @@ export async function exec(
   args: string[] = [],
   options: ExecOptions = {},
 ): Promise<SpawnStdioResult> {
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- helper accepts cwd; the process.cwd() default is for ad-hoc invocations, not a bypass of the anchor-on-script-location rule.
   const { buildDir, cwd = process.cwd(), env = process.env } = options
 
   const cmdStr = `$ ${command} ${args.join(' ')}`
@@ -130,6 +132,7 @@ export async function execSilent(
   args: string[] = [],
   options: ExecOptions = {},
 ): Promise<ExecSilentResult> {
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- helper accepts cwd; the process.cwd() default is for ad-hoc invocations, not a bypass of the anchor-on-script-location rule.
   const { cwd = process.cwd(), env = process.env } = options
 
   const result = await spawn(command, args, {

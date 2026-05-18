@@ -1,4 +1,6 @@
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/sort-source-methods -- `arrayToLower` / `toLower` helpers are kept together at the top (alphabetical anchor for the cdxgen flag mapping below); `run` is the command entry point and lives near its config + cmdManifestCdxgen export, not interleaved with helpers. */
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'

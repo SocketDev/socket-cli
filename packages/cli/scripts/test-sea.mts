@@ -7,6 +7,7 @@
  * --mode=vfs node scripts/test-sea.mts --mode=with-tools.
  */
 
+// oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: fs.stat() reads .size, not existence; per-call would produce many redundant disables.
 // oxlint-disable socket/prefer-exists-sync -- all fs.stat() calls here read .size for size reporting; not existence checks.
 
 import { spawn } from '@socketsecurity/lib-stable/spawn'

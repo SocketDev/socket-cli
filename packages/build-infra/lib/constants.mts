@@ -83,6 +83,7 @@ for (const [name, generator] of Object.entries(CHECKPOINT_CHAINS)) {
 /**
  * Resolve the build mode from CLI flags, env, or CI autodetect.
  */
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by domain (build-mode resolver lives with the BUILD_MODES const it consumes); alphabetizing would separate them.
 export function getBuildMode(args?: string[] | Set<string>): string {
   if (args) {
     const has = Array.isArray(args)

@@ -4,6 +4,7 @@ const isCoverageEnabled =
   process.env.npm_lifecycle_event === 'cover' ||
   process.argv.includes('--coverage')
 
+// oxlint-disable-next-line socket/no-default-export -- vitest config files must use export default per vitest's contract.
 export default defineConfig({
   resolve: {
     preserveSymlinks: false,

@@ -3,6 +3,7 @@
  *   with full dependency trees using Arborist for SEA VFS embedding.
  */
 
+// oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: fs.stat() reads .size, not existence; per-call would produce many redundant disables.
 // oxlint-disable socket/prefer-exists-sync -- fs.stat() calls read .size for cache validation and reporting; not existence checks.
 
 import { existsSync, promises as fs, readFileSync } from 'node:fs'

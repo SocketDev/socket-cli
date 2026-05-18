@@ -45,25 +45,31 @@ const skipGhCache = process.argv.includes('--skip-gh-cache')
 // Handle --help flag.
 const showHelp = process.argv.includes('--help') || process.argv.includes('-h')
 if (showHelp) {
-  logger.log(`
-Socket CLI Developer Setup
-
-Usage:
-  pnpm run setup [options]
-
-Options:
-  --install          Auto-install missing optional tools (gh CLI)
-  --skip-prereqs     Skip prerequisite checks (for CI use)
-  --skip-gh-cache    Skip GitHub cache restoration (useful when cache is corrupt)
-  --quiet            Minimal output
-  --help, -h         Show this help message
-
-Examples:
-  pnpm run setup                      # Check prerequisites and restore cache
-  pnpm run setup --install            # Auto-install optional tools
-  pnpm run setup --skip-gh-cache      # Skip cache (useful if cache is corrupt)
-  pnpm run setup --skip-prereqs       # Skip checks, only restore cache
-`)
+  logger.log('')
+  logger.log('Socket CLI Developer Setup')
+  logger.log('')
+  logger.log('Usage:')
+  logger.log('  pnpm run setup [options]')
+  logger.log('')
+  logger.log('Options:')
+  logger.log('  --install          Auto-install missing optional tools (gh CLI)')
+  logger.log('  --skip-prereqs     Skip prerequisite checks (for CI use)')
+  logger.log(
+    '  --skip-gh-cache    Skip GitHub cache restoration (useful when cache is corrupt)',
+  )
+  logger.log('  --quiet            Minimal output')
+  logger.log('  --help, -h         Show this help message')
+  logger.log('')
+  logger.log('Examples:')
+  logger.log(
+    '  pnpm run setup                      # Check prerequisites and restore cache',
+  )
+  logger.log('  pnpm run setup --install            # Auto-install optional tools')
+  logger.log(
+    '  pnpm run setup --skip-gh-cache      # Skip cache (useful if cache is corrupt)',
+  )
+  logger.log('  pnpm run setup --skip-prereqs       # Skip checks, only restore cache')
+  logger.log('')
   process.exitCode = 0
 }
 

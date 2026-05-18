@@ -12,6 +12,7 @@ import {
 } from '@socketsecurity/lib-stable/git'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
+// oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- module-level constant: script runs under pnpm test which always invokes from the package root.
 const rootPath = path.resolve(process.cwd())
 
 /**

@@ -1,3 +1,4 @@
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/personal-path-placeholders -- "testuser" is a fixture username in expected dry-run output strings; not a real personal path. */
 /**
  * Unit tests for install completion command.
