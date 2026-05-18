@@ -43,7 +43,7 @@ type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo | undefined }
 // exactOptionalPropertyTypes. Cast our internal type to this at the
 // call boundary when handing off; that's the narrow constraint, not
 // our internal shape.
-type McpHandleRequest = IncomingMessage & { auth?: AuthInfo | undefined }
+type McpHandleRequest = IncomingMessage & { auth?: AuthInfo }
 
 interface Session {
   lastActivity: number
