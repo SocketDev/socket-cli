@@ -21,7 +21,7 @@ AND the doc looks like a plan, per a narrow heuristic:
   `roadmap`, `migration plan`, `design doc`.
 
 Both conditions must be true to block — paths that look like plan
-*locations* but don't have plan-shaped content are pass-through. This
+_locations_ but don't have plan-shaped content are pass-through. This
 keeps the hook narrow; the goal is to catch the specific failure
 mode where a design doc gets dropped into `docs/plans/`.
 

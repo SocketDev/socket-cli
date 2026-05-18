@@ -26,15 +26,15 @@ This umbrella reads repo state first to discover what applies — sub-skills are
 
 ## Phases
 
-| # | Phase | Outcome |
-|---|---|---|
-| 1 | Validate environment | Clean tree, detect CI mode (`CI=true` / `GITHUB_ACTIONS`), submodules initialized. |
-| 2 | npm packages | `pnpm run update` → atomic commit if anything moved. |
-| 3 | Validate lockstep | If `lockstep.json` exists: `pnpm run lockstep`. Exit 0 = clean, 1 = stop, 2 = drift (handled in Phase 4). |
-| 4 | Apply drift | 4a: lockstep auto-bumps (one commit per row). 4b: repo-specific `updating-*` sub-skills for non-lockstep submodules. |
-| 5 | Workflow SHA pins | Compare pinned SHAs against `origin/$BASE`; report stale → `/updating-workflows`. |
-| 6 | Final validation | Interactive only: `pnpm run check --all && pnpm test && pnpm run build`. CI skips (validated separately). |
-| 7 | Report | Per-category summary: npm / lockstep / submodules / SHA pins / validation / next steps. |
+| #   | Phase                | Outcome                                                                                                              |
+| --- | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | Validate environment | Clean tree, detect CI mode (`CI=true` / `GITHUB_ACTIONS`), submodules initialized.                                   |
+| 2   | npm packages         | `pnpm run update` → atomic commit if anything moved.                                                                 |
+| 3   | Validate lockstep    | If `lockstep.json` exists: `pnpm run lockstep`. Exit 0 = clean, 1 = stop, 2 = drift (handled in Phase 4).            |
+| 4   | Apply drift          | 4a: lockstep auto-bumps (one commit per row). 4b: repo-specific `updating-*` sub-skills for non-lockstep submodules. |
+| 5   | Workflow SHA pins    | Compare pinned SHAs against `origin/$BASE`; report stale → `/updating-workflows`.                                    |
+| 6   | Final validation     | Interactive only: `pnpm run check --all && pnpm test && pnpm run build`. CI skips (validated separately).            |
+| 7   | Report               | Per-category summary: npm / lockstep / submodules / SHA pins / validation / next steps.                              |
 
 Full bash, exit-code tables, mode contracts, and failure recovery in [`reference.md`](reference.md).
 

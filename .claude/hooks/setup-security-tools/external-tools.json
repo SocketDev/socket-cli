@@ -90,7 +90,18 @@
           "sha256": "9a50e1ddaf038138c3f85418dc5df0113bbe6fc884f5abe158beaa9aea18d70a"
         }
       },
-      "ecosystems": ["npm", "yarn", "pnpm", "pip", "pip3", "uv", "cargo", "gem", "bundler", "nuget"]
+      "ecosystems": [
+        "npm",
+        "yarn",
+        "pnpm",
+        "pip",
+        "pip3",
+        "uv",
+        "cargo",
+        "gem",
+        "bundler",
+        "nuget"
+      ]
     }
   }
 }

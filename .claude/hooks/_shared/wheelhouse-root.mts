@@ -1,27 +1,21 @@
 /**
- * @fileoverview Locate socket-wheelhouse's source-of-truth tree from
- * any fleet repo session.
+ * @file Locate socket-wheelhouse's source-of-truth tree from any fleet repo
+ *   session. Hooks that enforce wheelhouse-level invariants (e.g.
+ *   new-hook-claude-md-guard ensuring every fleet hook has a CLAUDE.md
+ *   citation) need to read `template/CLAUDE.md` — the canonical fleet block —
+ *   regardless of which session the assistant is operating from.
+ *   CLAUDE_PROJECT_DIR points at the _session's_ project; that's socket-cli
+ *   most of the time, not socket-wheelhouse. Resolution order:
  *
- * Hooks that enforce wheelhouse-level invariants (e.g.
- * new-hook-claude-md-guard ensuring every fleet hook has a CLAUDE.md
- * citation) need to read `template/CLAUDE.md` — the canonical fleet
- * block — regardless of which session the assistant is operating
- * from. CLAUDE_PROJECT_DIR points at the *session's* project; that's
- * socket-cli most of the time, not socket-wheelhouse.
- *
- * Resolution order:
  *   1. The session's project dir IS socket-wheelhouse.
  *   2. A sibling directory named `socket-wheelhouse` at `../`.
  *   3. A grandparent layout (worktrees): `../../socket-wheelhouse`.
- *   4. `$HOME/projects/socket-wheelhouse` — the documented fleet
- *      checkout layout.
- *   5. `$SOCKET_WHEELHOUSE_DIR` env override — escape hatch for
- *      non-standard layouts.
- *
- * Returns the absolute path to the wheelhouse repo root (the dir
- * containing `template/`), or `undefined` when none of the lookups
- * resolves. Callers should fail-open on undefined (the hook can't
- * enforce a rule it can't read).
+ *   4. `$HOME/projects/socket-wheelhouse` — the documented fleet checkout layout.
+ *   5. `$SOCKET_WHEELHOUSE_DIR` env override — escape hatch for non-standard
+ *      layouts. Returns the absolute path to the wheelhouse repo root (the dir
+ *      containing `template/`), or `undefined` when none of the lookups
+ *      resolves. Callers should fail-open on undefined (the hook can't enforce
+ *      a rule it can't read).
  */
 
 import { existsSync } from 'node:fs'
@@ -30,8 +24,8 @@ import path from 'node:path'
 
 /**
  * Test whether `dir` is a socket-wheelhouse checkout. Looks for the
- * `template/CLAUDE.md` byte-canonical marker — every wheelhouse has
- * this file, downstream repos don't.
+ * `template/CLAUDE.md` byte-canonical marker — every wheelhouse has this file,
+ * downstream repos don't.
  */
 function isWheelhouseRoot(dir: string): boolean {
   if (!existsSync(dir)) {
@@ -41,8 +35,8 @@ function isWheelhouseRoot(dir: string): boolean {
 }
 
 /**
- * Walk the candidate list and return the first hit. Cheap — at most
- * 5 file-stat probes, all on local disk.
+ * Walk the candidate list and return the first hit. Cheap — at most 5 file-stat
+ * probes, all on local disk.
  */
 export function findWheelhouseRoot(
   options: { startDir?: string | undefined } = {},
@@ -76,8 +70,8 @@ export function findWheelhouseRoot(
 }
 
 /**
- * Convenience: return the path to `template/CLAUDE.md` if the
- * wheelhouse can be located, else undefined.
+ * Convenience: return the path to `template/CLAUDE.md` if the wheelhouse can be
+ * located, else undefined.
  */
 export function findWheelhouseTemplateClaudeMd(
   options: { startDir?: string | undefined } = {},

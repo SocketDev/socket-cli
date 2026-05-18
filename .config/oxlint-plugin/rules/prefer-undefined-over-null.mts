@@ -1,35 +1,32 @@
 /**
- * @fileoverview Per CLAUDE.md "null vs undefined": use `undefined`.
- * `null` is allowed only for `__proto__: null` (object-literal
- * prototype null) or external API requirements (e.g., JSON encoding,
- * `Object.create(null)`, listener-error sinks, third-party callbacks).
+ * @file Per CLAUDE.md "null vs undefined": use `undefined`. `null` is allowed
+ *   only for `__proto__: null` (object-literal prototype null) or external API
+ *   requirements (e.g., JSON encoding, `Object.create(null)`, listener-error
+ *   sinks, third-party callbacks). Autofix scope:
  *
- * Autofix scope:
- *   - **Deterministic**: rewrites `null` → `undefined` ONLY when
- *     context is demonstrably safe. Earlier versions had a
- *     context-blind autofix that produced fleet-wide regressions;
- *     the current set of skip predicates covers every regression
- *     seen in the rollout:
- *       - `__proto__: null` (with or without `as` cast) — the
- *         null-prototype-object contract.
- *       - `Object.create(null)`, `Object.setPrototypeOf(o, null)`,
- *         `Reflect.setPrototypeOf(o, null)` — prototype-aware
- *         callsites that throw / reject `undefined`.
- *       - `JSON.stringify(value, null, space)` — replacer-slot
- *         convention.
- *       - `=== null` / `!== null` comparisons — semantically distinct.
- *   - **AI-handled** (Step 4 of `pnpm run fix`): literals whose
- *     surrounding type annotation mentions `null`
- *     (e.g. `let x: string | null = null`). The annotation is the
- *     contract; flipping just the value creates type errors. The
- *     AI step flips BOTH the value and the annotation in lockstep
- *     and traces through the function signatures / interfaces /
- *     return types that depend on it — exactly the refactor that
- *     blew up socket-stuie when the deterministic autofix was
- *     context-blind.
+ *   - **Deterministic**: rewrites `null` → `undefined` ONLY when context is
+ *     demonstrably safe. Earlier versions had a context-blind autofix that
+ *     produced fleet-wide regressions; the current set of skip predicates
+ *     covers every regression seen in the rollout:
+ *   - `__proto__: null` (with or without `as` cast) — the null-prototype-object
+ *     contract.
+ *   - `Object.create(null)`, `Object.setPrototypeOf(o, null)`,
+ *     `Reflect.setPrototypeOf(o, null)` — prototype-aware callsites that throw
+ *     / reject `undefined`.
+ *   - `JSON.stringify(value, null, space)` — replacer-slot convention.
+ *   - `=== null` / `!== null` comparisons — semantically distinct.
+ *   - **AI-handled** (Step 4 of `pnpm run fix`): literals whose surrounding type
+ *     annotation mentions `null` (e.g. `let x: string | null = null`). The
+ *     annotation is the contract; flipping just the value creates type errors.
+ *     The AI step flips BOTH the value and the annotation in lockstep and
+ *     traces through the function signatures / interfaces / return types that
+ *     depend on it — exactly the refactor that blew up socket-stuie when the
+ *     deterministic autofix was context-blind.
  */
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
@@ -54,12 +51,12 @@ const rule = {
 
   create(context: RuleContext) {
     /**
-     * Walk up through TS type-cast wrappers (`x as T`, `x as const`,
-     * `<T>x`) so that `null as never` inside `{ __proto__: null as never }`
-     * still matches the proto-null exception. Without this, the autofix
-     * rewrites `null as never` → `undefined as never`, which silently
-     * breaks the null-prototype object semantics — `Object.create(null)`
-     * vs `Object.create(undefined)` are very different.
+     * Walk up through TS type-cast wrappers (`x as T`, `x as const`, `<T>x`) so
+     * that `null as never` inside `{ __proto__: null as never }` still matches
+     * the proto-null exception. Without this, the autofix rewrites `null as
+     * never` → `undefined as never`, which silently breaks the null-prototype
+     * object semantics — `Object.create(null)` vs `Object.create(undefined)`
+     * are very different.
      */
     function unwrapTsCast(node: AstNode) {
       let cur = node.parent
@@ -108,21 +105,19 @@ const rule = {
 
     /**
      * `expect(x).toBe(null)` / `.toEqual(null)` / `.toStrictEqual(null)` /
-     * `.toMatchObject(null)` — vitest/jest assertion matchers where the
-     * `null` is the SEMANTIC value being asserted. Rewriting to
-     * `undefined` flips the test contract (a passing test that asserted
-     * "x is null" now asserts "x is undefined").
+     * `.toMatchObject(null)` — vitest/jest assertion matchers where the `null`
+     * is the SEMANTIC value being asserted. Rewriting to `undefined` flips the
+     * test contract (a passing test that asserted "x is null" now asserts "x is
+     * undefined").
      *
      * Also covers chai (`.equal(null)` / `.equals(null)` / `.is(null)` /
-     * `.same(null)`) and node:assert (`assert.equal(_, null)` /
-     * `.deepEqual(_, null)` / `.deepStrictEqual(_, null)` /
-     * `.strictEqual(_, null)`).
+     * `.same(null)`) and node:assert (`assert.equal(_, null)` / `.deepEqual(_,
+     * null)` / `.deepStrictEqual(_, null)` / `.strictEqual(_, null)`).
      *
-     * The detection is shape-based, not name-import-based — any call
-     * that ends in `.<assert-method>(null, ...)` qualifies. False
-     * positives (a non-test method named `toBe`) are extremely rare;
-     * the cost is missing a real autofix opportunity, which is a safe
-     * outcome.
+     * The detection is shape-based, not name-import-based — any call that ends
+     * in `.<assert-method>(null, ...)` qualifies. False positives (a non-test
+     * method named `toBe`) are extremely rare; the cost is missing a real
+     * autofix opportunity, which is a safe outcome.
      */
     const ASSERT_METHODS = new Set([
       'deepEqual',
@@ -172,23 +167,22 @@ const rule = {
     }
 
     /**
-     * `const x: Foo | null = null` / `let y: Foo | null | undefined = null`
-     * — the developer explicitly opted into null in the variable's
-     * type signature. The dedicated annotation IS the contract;
-     * flipping the value alone leaves the contract intact but
-     * produces dead `undefined` writes against a `| null` slot.
+     * `const x: Foo | null = null` / `let y: Foo | null | undefined = null` —
+     * the developer explicitly opted into null in the variable's type
+     * signature. The dedicated annotation IS the contract; flipping the value
+     * alone leaves the contract intact but produces dead `undefined` writes
+     * against a `| null` slot.
      *
-     * Faster than the generic `hasNullTypeAnnotation` walk-up
-     * because it short-circuits at the immediate VariableDeclarator
-     * parent. Both predicates are kept — this fast-path covers the
-     * canonical declarator shape; the walk-up handles the broader
-     * Property / Parameter / return-type / TS-cast cases that
-     * declarator-only detection misses.
+     * Faster than the generic `hasNullTypeAnnotation` walk-up because it
+     * short-circuits at the immediate VariableDeclarator parent. Both
+     * predicates are kept — this fast-path covers the canonical declarator
+     * shape; the walk-up handles the broader Property / Parameter / return-type
+     * / TS-cast cases that declarator-only detection misses.
      *
-     * Textual scan over `<id>: <annot> = ` rather than AST navigation:
-     * the typeAnnotation field shape varies between oxlint AST and
-     * babel/typescript-eslint AST, so the regex is the most resilient
-     * detector across plugin host versions.
+     * Textual scan over `<id>: <annot> = ` rather than AST navigation: the
+     * typeAnnotation field shape varies between oxlint AST and
+     * babel/typescript-eslint AST, so the regex is the most resilient detector
+     * across plugin host versions.
      */
     function isNullableTypeInitializer(node: AstNode) {
       const parent = node.parent
@@ -247,14 +241,14 @@ const rule = {
     }
 
     /**
-     * Prototype-aware callsites where `null` is the explicit "no
-     * prototype" sentinel. Replacing any of these with `undefined`
-     * either throws TypeError or silently changes semantics:
+     * Prototype-aware callsites where `null` is the explicit "no prototype"
+     * sentinel. Replacing any of these with `undefined` either throws TypeError
+     * or silently changes semantics:
      *
-     *   - `Object.create(null)` — first arg, throws if undefined.
-     *   - `Object.setPrototypeOf(o, null)` — second arg, semantics
-     *     differ (undefined is rejected by the spec).
-     *   - `Reflect.setPrototypeOf(o, null)` — same as above.
+     * - `Object.create(null)` — first arg, throws if undefined.
+     * - `Object.setPrototypeOf(o, null)` — second arg, semantics differ
+     *   (undefined is rejected by the spec).
+     * - `Reflect.setPrototypeOf(o, null)` — same as above.
      *
      * Each entry is `[object, method, argIndex]` where argIndex is the
      * 0-indexed slot whose `null` is allowed.
@@ -299,14 +293,13 @@ const rule = {
 
     /**
      * Walk up the AST and return true if any ancestor carries a TS type
-     * annotation that mentions `null`. Used to skip autofix on cases
-     * like `let x: string | null = null` where flipping just the value
-     * creates a type error. Walks until a function / block / program
-     * boundary so we don't pick up unrelated type annotations elsewhere
-     * in the file.
+     * annotation that mentions `null`. Used to skip autofix on cases like `let
+     * x: string | null = null` where flipping just the value creates a type
+     * error. Walks until a function / block / program boundary so we don't pick
+     * up unrelated type annotations elsewhere in the file.
      *
-     * Cheap shortcut: stringify the typeAnnotation subtree and look for
-     * a 'null' token. Avoids a full type-system traversal.
+     * Cheap shortcut: stringify the typeAnnotation subtree and look for a
+     * 'null' token. Avoids a full type-system traversal.
      */
     function hasNullTypeAnnotation(node: AstNode) {
       const sourceCode = context.getSourceCode

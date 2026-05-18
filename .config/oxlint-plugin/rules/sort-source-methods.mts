@@ -1,27 +1,23 @@
 /**
- * @fileoverview Top-level function declarations should be ordered by
- * visibility group then alphanumerically within each group:
+ * @file Top-level function declarations should be ordered by visibility group
+ *   then alphanumerically within each group:
  *
  *   1. Private (un-exported) functions, sorted alphanumerically.
  *   2. Exported functions (`export function ...`), sorted alphanumerically.
- *   3. The script entrypoint (`main()` for runners) is allowed to be
- *      last regardless of name.
- *
- * Rationale: a reader scanning the file should be able to predict
- * where any function lives. Mixed-visibility ordering makes it hard
- * to find the public surface; alphabetical inside each group is
- * cheap, deterministic, and matches the rest of the fleet's sorting
- * conventions (CLAUDE.md "Sorting" rule).
- *
- * Autofix: emits a single fix that re-orders top-level function
- * declarations into canonical order. Function declarations are
- * hoisted, so reordering them is safe for runtime semantics; the
- * leading JSDoc / line-comment block above each declaration travels
- * with the function. The rule only autofixes when every function in
- * the file has a name (anonymous default exports are skipped) and
- * when there are no top-level non-function statements interleaved
- * between functions — interleaved statements can carry side-effects
- * or rely on declaration order, so we don't reshuffle around them.
+ *   3. The script entrypoint (`main()` for runners) is allowed to be last
+ *      regardless of name. Rationale: a reader scanning the file should be able
+ *      to predict where any function lives. Mixed-visibility ordering makes it
+ *      hard to find the public surface; alphabetical inside each group is
+ *      cheap, deterministic, and matches the rest of the fleet's sorting
+ *      conventions (CLAUDE.md "Sorting" rule). Autofix: emits a single fix that
+ *      re-orders top-level function declarations into canonical order. Function
+ *      declarations are hoisted, so reordering them is safe for runtime
+ *      semantics; the leading JSDoc / line-comment block above each declaration
+ *      travels with the function. The rule only autofixes when every function
+ *      in the file has a name (anonymous default exports are skipped) and when
+ *      there are no top-level non-function statements interleaved between
+ *      functions — interleaved statements can carry side-effects or rely on
+ *      declaration order, so we don't reshuffle around them.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
@@ -29,9 +25,9 @@ import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 const SCRIPT_ENTRY_NAMES = new Set(['main'])
 
 /**
- * Type-only top-level statements that can travel with the function they
- * sit above. Reordering them is safe because they're erased at compile
- * time (no runtime side effects, no declaration-order semantics).
+ * Type-only top-level statements that can travel with the function they sit
+ * above. Reordering them is safe because they're erased at compile time (no
+ * runtime side effects, no declaration-order semantics).
  */
 function isTypeOnlyStatement(node: AstNode) {
   if (!node) {
@@ -87,9 +83,9 @@ function declVisibility(node: AstNode) {
 }
 
 /**
- * Compute the sort key for a function entry. Private functions sort
- * before exports; within each group, alphanumerical by name. The
- * script entrypoint (`main`) is pinned to the end regardless of group.
+ * Compute the sort key for a function entry. Private functions sort before
+ * exports; within each group, alphanumerical by name. The script entrypoint
+ * (`main`) is pinned to the end regardless of group.
  */
 interface FunctionEntry {
   isEntrypoint: boolean
@@ -110,11 +106,10 @@ function sortKey(entry: FunctionEntry): string {
 }
 
 /**
- * Locate the byte-range start of a function entry, including any
- * leading JSDoc / line-comment block that's contiguous with it (a
- * block separated by a blank line is treated as a free-standing
- * comment and stays put). Falls back to the node's own start when
- * there are no leading comments.
+ * Locate the byte-range start of a function entry, including any leading JSDoc
+ * / line-comment block that's contiguous with it (a block separated by a blank
+ * line is treated as a free-standing comment and stays put). Falls back to the
+ * node's own start when there are no leading comments.
  */
 function leadingCommentStart(sourceCode: AstNode, node: AstNode): number {
   const comments = sourceCode.getCommentsBefore
@@ -142,11 +137,10 @@ function leadingCommentStart(sourceCode: AstNode, node: AstNode): number {
 }
 
 /**
- * Locate the byte-range end of a function entry, including any
- * trailing comment that's contiguous (no blank line between) and
- * exclusive of the next function. Useful for capturing
- * c8-ignore-stop markers that pair with a start above the function
- * — those need to travel with the function when reordered.
+ * Locate the byte-range end of a function entry, including any trailing comment
+ * that's contiguous (no blank line between) and exclusive of the next function.
+ * Useful for capturing c8-ignore-stop markers that pair with a start above the
+ * function — those need to travel with the function when reordered.
  */
 function trailingCommentEnd(
   sourceCode: AstNode,
@@ -176,7 +170,9 @@ function trailingCommentEnd(
   return latest
 }
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'suggestion',

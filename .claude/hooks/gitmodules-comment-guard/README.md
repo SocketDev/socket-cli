@@ -28,7 +28,7 @@ The slug is short (no path); the version is whatever upstream tags
 
 ## What's enforced
 
-- Every `[submodule "PATH"]` line must be preceded *immediately* (no
+- Every `[submodule "PATH"]` line must be preceded _immediately_ (no
   blank line) by `# <slug>-<version>`.
 - The slug pattern is permissive: `[a-z0-9]([a-z0-9-]*[a-z0-9])?`.
 - The version is anything non-whitespace after the first hyphen.

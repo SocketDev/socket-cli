@@ -1,22 +1,19 @@
 /**
- * @fileoverview Auto-fix script — runs linters with --fix, then security
- * tools (zizmor, agentshield) if available, then an AI-assisted pass
- * for the lint findings the deterministic fixer can't safely handle.
+ * @file Auto-fix script — runs linters with --fix, then security tools (zizmor,
+ *   agentshield) if available, then an AI-assisted pass for the lint findings
+ *   the deterministic fixer can't safely handle. Steps:
  *
- * Steps:
  *   1. pnpm run lint --fix — oxlint + oxfmt (forwards extra argv like --all)
- *   2. zizmor --fix .github/ — GitHub Actions workflow fixes
- *      (skipped if .github/ doesn't exist)
- *   3. agentshield scan --fix — Claude config fixes
- *      (skipped if .claude/ or agentshield isn't installed)
- *   4. AI-assisted lint fix — headless claude (Sonnet) with a
- *      restricted toolset for judgment-call rules. Skipped silently
- *      when the claude CLI isn't installed, when SKIP_AI_FIX=1, or
- *      when --no-ai is passed. See scripts/ai-lint-fix.mts.
- *
- * Forwards `process.argv.slice(2)` to the lint step, so
- * `pnpm run fix --all` runs `pnpm run lint --fix --all` (full-tree
- * fix), and `pnpm run fix --staged` does the staged-only flow.
+ *   2. zizmor --fix .github/ — GitHub Actions workflow fixes (skipped if .github/
+ *      doesn't exist)
+ *   3. agentshield scan --fix — Claude config fixes (skipped if .claude/ or
+ *      agentshield isn't installed)
+ *   4. AI-assisted lint fix — headless claude (Sonnet) with a restricted toolset
+ *      for judgment-call rules. Skipped silently when the claude CLI isn't
+ *      installed, when SKIP_AI_FIX=1, or when --no-ai is passed. See
+ *      scripts/ai-lint-fix.mts. Forwards `process.argv.slice(2)` to the lint
+ *      step, so `pnpm run fix --all` runs `pnpm run lint --fix --all`
+ *      (full-tree fix), and `pnpm run fix --staged` does the staged-only flow.
  */
 
 import { existsSync } from 'node:fs'

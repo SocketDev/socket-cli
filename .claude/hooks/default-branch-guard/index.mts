@@ -123,12 +123,10 @@ async function main(): Promise<void> {
   lines.push(
     '  Per CLAUDE.md "Default branch fallback", scripts must look up the',
   )
-  lines.push(
-    '  remote\'s HEAD and fall back main → master, not hard-code one:',
-  )
+  lines.push("  remote's HEAD and fall back main → master, not hard-code one:")
   lines.push('')
   lines.push(
-    '    BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed \'s@^refs/remotes/origin/@@\')',
+    "    BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')",
   )
   lines.push(
     '    [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/main && BASE=main',
@@ -138,7 +136,9 @@ async function main(): Promise<void> {
   )
   lines.push('    BASE="${BASE:-main}"')
   lines.push('')
-  lines.push('  Bypass: type "Allow default-branch bypass" in a recent message.')
+  lines.push(
+    '  Bypass: type "Allow default-branch bypass" in a recent message.',
+  )
   lines.push('')
   process.stderr.write(lines.join('\n') + '\n')
   process.exit(2)

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/prefer-safe-delete.
+ * @file Unit tests for socket/prefer-safe-delete.
  */
 
 import { describe, test } from 'node:test'

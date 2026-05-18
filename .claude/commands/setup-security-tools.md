@@ -15,6 +15,7 @@ Set up all Socket security tools for local development.
 First, ask the user if they have a Socket API token for SFW enterprise features.
 
 If they do:
+
 1. Ask them to provide it
 2. Write it to `.env.local` as `SOCKET_API_TOKEN=<their-token>` (create if needed). The deprecated `SOCKET_API_KEY` name is also accepted as an alias for one cycle, but new files should use `SOCKET_API_TOKEN`.
 3. Verify `.env.local` is in `.gitignore` — if not, add it and warn
@@ -22,11 +23,13 @@ If they do:
 If they don't, proceed with SFW free mode.
 
 Then run:
+
 ```bash
 node .claude/hooks/setup-security-tools/index.mts
 ```
 
 After the script completes, add the SFW shim directory to PATH:
+
 ```bash
 export PATH="$HOME/.socket/sfw/shims:$PATH"
 ```

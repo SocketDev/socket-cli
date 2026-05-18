@@ -1,33 +1,25 @@
 /**
- * @fileoverview Fleet lint: validate (and optionally fix) the GitHub
- * repository settings against the canonical fleet config.
- *
- * Why this exists: a half-dozen repo settings determine whether the
- * fleet enforces signed commits, restricts PRs to collaborators,
- * disables wikis/discussions/projects/forks, and forces squash-only
- * merges. GitHub doesn't make these flags discoverable to the
- * maintainer, and the only signal a repo is misconfigured is when
- * something breaks in production. This script audits them and prints
- * the exact URL to fix each, or PATCHes them itself with `--fix`.
- *
- * Run cadence: weekly, locally. The first successful run writes
- * `.cache/socket-wheelhouse-github-settings.json` with a timestamp;
- * subsequent runs within 7 days are no-ops (use `--force` to override).
- *
- * CI behavior: if `CI=true` is in the env (GitHub Actions, etc.), the
- * script skips entirely. Settings audits aren't a CI gate — the local
- * cache write is the gate. CI failing on a missing/stale cache would
- * burn API quota on every job and serialize maintainers behind it.
- *
- * Auth: requires `gh` CLI authenticated, OR `GITHUB_TOKEN` /
- * `GH_TOKEN` in env. Read-only audit needs `repo:read`; `--fix` needs
- * `repo:admin` (PATCH /repos/{owner}/{repo}).
- *
- * Usage:
- *   node scripts/lint-github-settings.mts            # audit (uses cache)
- *   node scripts/lint-github-settings.mts --force    # audit (skip cache)
- *   node scripts/lint-github-settings.mts --fix      # audit + apply fixes
- *   node scripts/lint-github-settings.mts --json     # machine-readable
+ * @file Fleet lint: validate (and optionally fix) the GitHub repository
+ *   settings against the canonical fleet config. Why this exists: a half-dozen
+ *   repo settings determine whether the fleet enforces signed commits,
+ *   restricts PRs to collaborators, disables wikis/discussions/projects/forks,
+ *   and forces squash-only merges. GitHub doesn't make these flags discoverable
+ *   to the maintainer, and the only signal a repo is misconfigured is when
+ *   something breaks in production. This script audits them and prints the
+ *   exact URL to fix each, or PATCHes them itself with `--fix`. Run cadence:
+ *   weekly, locally. The first successful run writes
+ *   `.cache/socket-wheelhouse-github-settings.json` with a timestamp;
+ *   subsequent runs within 7 days are no-ops (use `--force` to override). CI
+ *   behavior: if `CI=true` is in the env (GitHub Actions, etc.), the script
+ *   skips entirely. Settings audits aren't a CI gate — the local cache write is
+ *   the gate. CI failing on a missing/stale cache would burn API quota on every
+ *   job and serialize maintainers behind it. Auth: requires `gh` CLI
+ *   authenticated, OR `GITHUB_TOKEN` / `GH_TOKEN` in env. Read-only audit needs
+ *   `repo:read`; `--fix` needs `repo:admin` (PATCH /repos/{owner}/{repo}).
+ *   Usage: node scripts/lint-github-settings.mts # audit (uses cache) node
+ *   scripts/lint-github-settings.mts --force # audit (skip cache) node
+ *   scripts/lint-github-settings.mts --fix # audit + apply fixes node
+ *   scripts/lint-github-settings.mts --json # machine-readable.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -45,11 +37,7 @@ import { REPO_ROOT } from './paths.mts'
 // `loadSocketWheelhouseConfig` from `./paths.mts` would force every
 // consumer to widen their paths.mts surface — wrong direction. Keep
 // the per-package paths.mts narrow; carry the standalone helpers here.
-const NODE_MODULES_CACHE_DIR = path.join(
-  REPO_ROOT,
-  'node_modules',
-  '.cache',
-)
+const NODE_MODULES_CACHE_DIR = path.join(REPO_ROOT, 'node_modules', '.cache')
 
 const SOCKET_WHEELHOUSE_CONFIG_PRIMARY_REL = '.config/socket-wheelhouse.json'
 const SOCKET_WHEELHOUSE_CONFIG_LEGACY_REL = '.socket-wheelhouse.json'
@@ -109,24 +97,22 @@ interface BranchProtectionPayload {
 }
 
 /**
- * GitHub custom-property values for the repo, shaped as the API
- * returns: an array of `{ property_name, value }` pairs. We
- * normalize to `Record<string, string | null>` at read time.
+ * GitHub custom-property values for the repo, shaped as the API returns: an
+ * array of `{ property_name, value }` pairs. We normalize to `Record<string,
+ * string | null>` at read time.
  *
  * Recognized fleet properties:
- *   - `disable-github-actions-security` ('true' | 'false')
- *     When 'true', the fleet's branch-protection-must-require-signed-
- *     commits rule downgrades from error → warn. Rationale: the
- *     shared socket-registry setup/install action IS the security
- *     gate; per-repo branch protection is belt-and-suspenders.
- *   - `doesnt-touch-customers` ('true' | 'false')
- *     Public repos default 'false' (they DO touch customers; full
- *     fleet rules apply). Private repos not published to npm can
- *     set 'true' to opt out of customer-facing rules.
- *   - `temporarily-doesnt-touch-customers` ('true' | 'false')
- *     Escape hatch for repos mid-remediation. Always downgrades
- *     customer-facing rules to warn. Should be removed once the
- *     remediation lands.
+ *
+ * - `disable-github-actions-security` ('true' | 'false') When 'true', the fleet's
+ *   branch-protection-must-require-signed- commits rule downgrades from error →
+ *   warn. Rationale: the shared socket-registry setup/install action IS the
+ *   security gate; per-repo branch protection is belt-and-suspenders.
+ * - `doesnt-touch-customers` ('true' | 'false') Public repos default 'false'
+ *   (they DO touch customers; full fleet rules apply). Private repos not
+ *   published to npm can set 'true' to opt out of customer-facing rules.
+ * - `temporarily-doesnt-touch-customers` ('true' | 'false') Escape hatch for
+ *   repos mid-remediation. Always downgrades customer-facing rules to warn.
+ *   Should be removed once the remediation lands.
  */
 interface CustomPropertyValue {
   property_name?: string | undefined
@@ -142,9 +128,13 @@ interface Finding {
   expected: unknown
   fixUrl: string
   fixable: boolean
-  /** PATCH-shaped patch payload to apply when --fix is given. */
+  /**
+   * PATCH-shaped patch payload to apply when --fix is given.
+   */
   fixPatch?: Record<string, unknown>
-  /** Required permission for the PATCH; informational. */
+  /**
+   * Required permission for the PATCH; informational.
+   */
   fixRequires?: string
 }
 
@@ -188,10 +178,9 @@ function parseFlags(): CliFlags {
 }
 
 /**
- * Read a fresh cache entry, or undefined if absent/stale/malformed.
- * Stale is decided by `verifiedAt + ttl < now`. Malformed entries
- * (parse error, missing fields, wrong repo) are treated as absent —
- * the next run will rewrite them.
+ * Read a fresh cache entry, or undefined if absent/stale/malformed. Stale is
+ * decided by `verifiedAt + ttl < now`. Malformed entries (parse error, missing
+ * fields, wrong repo) are treated as absent — the next run will rewrite them.
  */
 function readCache(repo: string): CacheEntry | undefined {
   if (!existsSync(CACHE_FILE)) return undefined
@@ -222,20 +211,18 @@ function writeCache(entry: CacheEntry): void {
 }
 
 /**
- * Resolve `<owner>/<repo>` by parsing the `origin` git remote. We
- * deliberately use `origin` instead of `gh repo view` because in a
- * fork checkout (e.g. socket-packageurl-js, a fork of
- * package-url/packageurl-js), `gh repo view` returns the UPSTREAM
- * parent, not the SocketDev fork. The audit needs to inspect the
- * SocketDev fork's settings, not upstream's. The git remote is the
+ * Resolve `<owner>/<repo>` by parsing the `origin` git remote. We deliberately
+ * use `origin` instead of `gh repo view` because in a fork checkout (e.g.
+ * socket-packageurl-js, a fork of package-url/packageurl-js), `gh repo view`
+ * returns the UPSTREAM parent, not the SocketDev fork. The audit needs to
+ * inspect the SocketDev fork's settings, not upstream's. The git remote is the
  * source of truth for "which repo does this checkout push to."
  */
 function resolveRepo(): string | undefined {
-  const remote = spawnSync(
-    'git',
-    ['config', '--get', 'remote.origin.url'],
-    { cwd: REPO_ROOT, encoding: 'utf8' },
-  )
+  const remote = spawnSync('git', ['config', '--get', 'remote.origin.url'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  })
   if (remote.status !== 0) return undefined
   const url = remote.stdout.trim()
   // Match `git@github.com:owner/repo[.git]` or
@@ -246,9 +233,9 @@ function resolveRepo(): string | undefined {
 }
 
 /**
- * Thin wrapper around `gh api`. Returns JSON-parsed body on success
- * or undefined on any error. The caller decides whether undefined is
- * an audit-failing condition or a soft skip.
+ * Thin wrapper around `gh api`. Returns JSON-parsed body on success or
+ * undefined on any error. The caller decides whether undefined is an
+ * audit-failing condition or a soft skip.
  */
 function ghApi<T>(
   endpoint: string,
@@ -289,13 +276,17 @@ function ghApi<T>(
 
 /**
  * Required GitHub Apps. We can't list installations directly without
- * `admin:org` scope, so we infer presence from recent check-run
- * activity on main HEAD. An app that's installed but inactive on
- * main may false-negative; for the fleet's hot repos this is rare.
+ * `admin:org` scope, so we infer presence from recent check-run activity on
+ * main HEAD. An app that's installed but inactive on main may false-negative;
+ * for the fleet's hot repos this is rare.
  *
  * Alphabetical order.
  */
-const REQUIRED_APP_SLUGS = ['cursor', 'socket-security', 'socket-trufflehog'] as const
+const REQUIRED_APP_SLUGS = [
+  'cursor',
+  'socket-security',
+  'socket-trufflehog',
+] as const
 
 interface CheckSuitesPayload {
   check_suites?: Array<{
@@ -304,25 +295,22 @@ interface CheckSuitesPayload {
 }
 
 /**
- * Probe app presence by listing check-SUITES (not check-runs) on
- * recent commits. Why suites and not runs:
- *   - Check-runs are only created when an app posts a finding.
- *     Apps like socket-trufflehog that only report on secrets-found
- *     don't post check-runs on clean commits — listing check-runs
- *     would false-negative.
- *   - Check-suites are created whenever an app receives the commit
- *     webhook, regardless of whether it ultimately posted a run.
- *     This is the broader signal — "did this app see the event."
+ * Probe app presence by listing check-SUITES (not check-runs) on recent
+ * commits. Why suites and not runs: - Check-runs are only created when an app
+ * posts a finding. Apps like socket-trufflehog that only report on
+ * secrets-found don't post check-runs on clean commits — listing check-runs
+ * would false-negative. - Check-suites are created whenever an app receives the
+ * commit webhook, regardless of whether it ultimately posted a run. This is the
+ * broader signal — "did this app see the event."
  *
- * Walks the most recent 10 commits on the repo's default branch
- * (resolved at call time so forks with `main` work the same as
- * `master`-only legacy repos). Returns the union of app slugs
- * observed.
+ * Walks the most recent 10 commits on the repo's default branch (resolved at
+ * call time so forks with `main` work the same as `master`-only legacy repos).
+ * Returns the union of app slugs observed.
  */
 /**
- * Load the repo's custom-property values. Returns
- * `{ <name>: <value or null> }`. Empty object when the API isn't
- * available or the call fails — equivalent to "no opt-outs."
+ * Load the repo's custom-property values. Returns `{ <name>: <value or null>
+ * }`. Empty object when the API isn't available or the call fails — equivalent
+ * to "no opt-outs."
  */
 function loadCustomProperties(repo: string): Record<string, string | null> {
   const props = ghApi<CustomPropertyValue[]>(`repos/${repo}/properties/values`)
@@ -339,23 +327,18 @@ function loadCustomProperties(repo: string): Record<string, string | null> {
 
 /**
  * Read the declared GitHub apps from this checkout's
- * `.config/socket-wheelhouse.json` (the fleet-config canon —
- * sibling of `claude`, `workspace`, `hooks` blocks). Schema:
+ * `.config/socket-wheelhouse.json` (the fleet-config canon — sibling of
+ * `claude`, `workspace`, `hooks` blocks). Schema:
  *
- *   {
- *     "github": {
- *       "apps": ["cursor", "socket-security", "socket-trufflehog"]
- *     }
- *   }
+ * { "github": { "apps": ["cursor", "socket-security", "socket-trufflehog"] } }
  *
- * Used for apps whose installation can't be reliably inferred from
- * check-suites — socket-trufflehog being the canonical example (it
- * only posts a check-suite when a secret is found, so a clean repo
- * with the app installed would false-negative under check-suites
- * detection alone).
+ * Used for apps whose installation can't be reliably inferred from check-suites
+ * — socket-trufflehog being the canonical example (it only posts a check-suite
+ * when a secret is found, so a clean repo with the app installed would
+ * false-negative under check-suites detection alone).
  *
- * Audit treats apps listed here as installed (trust the manifest).
- * The maintainer's signed statement IS the install record — trust +
+ * Audit treats apps listed here as installed (trust the manifest). The
+ * maintainer's signed statement IS the install record — trust +
  * verify-once-via-eyeballs > unreliable automation.
  */
 function readDeclaredApps(): Set<string> {
@@ -395,30 +378,31 @@ function detectInstalledApps(repo: string, defaultBranch: string): Set<string> {
 }
 
 interface WorkflowsPayload {
-  workflows?: Array<{
-    name?: string | undefined
-    path?: string | undefined
-    state?: string | undefined
-  }> | undefined
+  workflows?:
+    | Array<{
+        name?: string | undefined
+        path?: string | undefined
+        state?: string | undefined
+      }>
+    | undefined
 }
 
 /**
- * Names of canonical shared workflows hosted in socket-registry.
- * When a fleet repo has a local workflow file whose path basename
- * matches one of these AND the workflow body doesn't `uses:` the
- * shared variant AND doesn't carry the explicit opt-out marker,
- * that's drift.
+ * Names of canonical shared workflows hosted in socket-registry. When a fleet
+ * repo has a local workflow file whose path basename matches one of these AND
+ * the workflow body doesn't `uses:` the shared variant AND doesn't carry the
+ * explicit opt-out marker, that's drift.
  *
  * Two exemption shapes:
- *   1. `_local-not-for-reuse-*` filename prefix — the
- *      socket-registry convention for local triggers that consume a
- *      shared workflow. The file IS the right shape.
- *   2. `# socket-wheelhouse-shadow-allow: <reason>` header line —
- *      maintainer's explicit, audit-able commitment that the local
- *      workflow inlines logic by design (e.g. socket-cli's
- *      provenance.yml does CLI-specific multi-package release
- *      orchestration that doesn't fit the generic shared shape).
- *      The comment text serves as the documented reason.
+ *
+ * 1. `_local-not-for-reuse-*` filename prefix — the socket-registry convention for
+ *    local triggers that consume a shared workflow. The file IS the right
+ *    shape.
+ * 2. `# socket-wheelhouse-shadow-allow: <reason>` header line — maintainer's
+ *    explicit, audit-able commitment that the local workflow inlines logic by
+ *    design (e.g. socket-cli's provenance.yml does CLI-specific multi-package
+ *    release orchestration that doesn't fit the generic shared shape). The
+ *    comment text serves as the documented reason.
  */
 const SHARED_WORKFLOW_BASENAMES = [
   'build.yml',
@@ -434,29 +418,40 @@ function detectLocalShadows(
   repo: string,
 ): Array<{ basename: string; localPath: string }> {
   const out: Array<{ basename: string; localPath: string }> = []
-  const wf = ghApi<WorkflowsPayload>(`repos/${repo}/actions/workflows?per_page=100`)
+  const wf = ghApi<WorkflowsPayload>(
+    `repos/${repo}/actions/workflows?per_page=100`,
+  )
   if (!wf?.workflows) return out
   for (const w of wf.workflows) {
     if (!w.path || !w.path.startsWith('.github/workflows/')) continue
     const basename = w.path.slice('.github/workflows/'.length)
     if (basename.startsWith('_local-not-for-reuse-')) continue
-    if (!SHARED_WORKFLOW_BASENAMES.includes(basename as typeof SHARED_WORKFLOW_BASENAMES[number])) continue
-    const r = spawnSync(
-      'gh',
-      ['api', `repos/${repo}/contents/${w.path}`],
-      { cwd: REPO_ROOT, encoding: 'utf8' },
+    if (
+      !SHARED_WORKFLOW_BASENAMES.includes(
+        basename as (typeof SHARED_WORKFLOW_BASENAMES)[number],
+      )
     )
+      continue
+    const r = spawnSync('gh', ['api', `repos/${repo}/contents/${w.path}`], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    })
     if (r.status !== 0) continue
     let bodyRaw: string
     try {
-      const obj = JSON.parse(r.stdout) as { content?: string; encoding?: string }
+      const obj = JSON.parse(r.stdout) as {
+        content?: string
+        encoding?: string
+      }
       if (obj.encoding !== 'base64' || !obj.content) continue
       bodyRaw = Buffer.from(obj.content, 'base64').toString('utf8')
     } catch {
       continue
     }
     // Exemption 1: delegates to the shared workflow via `uses:`.
-    if (/uses:\s*SocketDev\/socket-registry\/\.github\/workflows\//.test(bodyRaw)) {
+    if (
+      /uses:\s*SocketDev\/socket-registry\/\.github\/workflows\//.test(bodyRaw)
+    ) {
       continue
     }
     // Exemption 2: explicit opt-out comment. Single unified fleet
@@ -474,21 +469,19 @@ function detectLocalShadows(
 }
 
 /**
- * Canonical fleet config. Each rule names the API field, expected
- * value, and the fix URL. `fixPatch` is the body to send to PATCH
- * /repos/{owner}/{repo} when --fix is given (undefined = manual fix
- * required, no API endpoint yet).
+ * Canonical fleet config. Each rule names the API field, expected value, and
+ * the fix URL. `fixPatch` is the body to send to PATCH /repos/{owner}/{repo}
+ * when --fix is given (undefined = manual fix required, no API endpoint yet).
  */
 /**
- * Custom-property opt-out knobs that downgrade specific rules from
- * 'error' to 'warn'. Reading the property values is one API call per
- * audit (see `loadCustomProperties`).
+ * Custom-property opt-out knobs that downgrade specific rules from 'error' to
+ * 'warn'. Reading the property values is one API call per audit (see
+ * `loadCustomProperties`).
  *
  * Why warn-not-skip: a maintainer marking a repo
- * `temporarily-doesnt-touch-customers: true` should still see a
- * reminder of what's deferred — silencing the finding entirely
- * would mean the eventual lift forgets the reminder existed. Warn
- * = visible-but-not-CI-blocking.
+ * `temporarily-doesnt-touch-customers: true` should still see a reminder of
+ * what's deferred — silencing the finding entirely would mean the eventual lift
+ * forgets the reminder existed. Warn = visible-but-not-CI-blocking.
  */
 function severityOverride(
   ruleKey: string,
@@ -558,7 +551,9 @@ function evaluate(
       expected,
       fixUrl,
       fixable: fixPatch !== undefined,
-      ...(fixPatch !== undefined ? { fixPatch, fixRequires: 'repo:admin' } : {}),
+      ...(fixPatch !== undefined
+        ? { fixPatch, fixRequires: 'repo:admin' }
+        : {}),
     })
   }
 
@@ -572,20 +567,74 @@ function evaluate(
     // and then set it. Manual.
     undefined,
   )
-  check('has_wiki must be false', apiRepo.has_wiki, false, `${settingsUrl}#features`, { has_wiki: false })
-  check('has_discussions must be false', apiRepo.has_discussions, false, `${settingsUrl}#features`, { has_discussions: false })
-  check('has_projects must be false', apiRepo.has_projects, false, `${settingsUrl}#features`, { has_projects: false })
+  check(
+    'has_wiki must be false',
+    apiRepo.has_wiki,
+    false,
+    `${settingsUrl}#features`,
+    { has_wiki: false },
+  )
+  check(
+    'has_discussions must be false',
+    apiRepo.has_discussions,
+    false,
+    `${settingsUrl}#features`,
+    { has_discussions: false },
+  )
+  check(
+    'has_projects must be false',
+    apiRepo.has_projects,
+    false,
+    `${settingsUrl}#features`,
+    { has_projects: false },
+  )
   // Note: `allow_forking` is intentionally NOT checked. The actual
   // "no outside-contributor PRs" gate is `pull_request_creation_
   // policy: collaborators_only` (checked below). Letting people fork
   // for read access / personal-use is the open-source default and
   // doesn't bypass PR review.
-  check('allow_squash_merge must be true', apiRepo.allow_squash_merge, true, `${settingsUrl}#pull-requests`, { allow_squash_merge: true })
-  check('allow_merge_commit must be false', apiRepo.allow_merge_commit, false, `${settingsUrl}#pull-requests`, { allow_merge_commit: false })
-  check('allow_rebase_merge must be false', apiRepo.allow_rebase_merge, false, `${settingsUrl}#pull-requests`, { allow_rebase_merge: false })
-  check('allow_auto_merge must be true', apiRepo.allow_auto_merge, true, `${settingsUrl}#pull-requests`, { allow_auto_merge: true })
-  check('allow_update_branch must be true', apiRepo.allow_update_branch, true, `${settingsUrl}#pull-requests`, { allow_update_branch: true })
-  check('delete_branch_on_merge must be true', apiRepo.delete_branch_on_merge, true, `${settingsUrl}#pull-requests`, { delete_branch_on_merge: true })
+  check(
+    'allow_squash_merge must be true',
+    apiRepo.allow_squash_merge,
+    true,
+    `${settingsUrl}#pull-requests`,
+    { allow_squash_merge: true },
+  )
+  check(
+    'allow_merge_commit must be false',
+    apiRepo.allow_merge_commit,
+    false,
+    `${settingsUrl}#pull-requests`,
+    { allow_merge_commit: false },
+  )
+  check(
+    'allow_rebase_merge must be false',
+    apiRepo.allow_rebase_merge,
+    false,
+    `${settingsUrl}#pull-requests`,
+    { allow_rebase_merge: false },
+  )
+  check(
+    'allow_auto_merge must be true',
+    apiRepo.allow_auto_merge,
+    true,
+    `${settingsUrl}#pull-requests`,
+    { allow_auto_merge: true },
+  )
+  check(
+    'allow_update_branch must be true',
+    apiRepo.allow_update_branch,
+    true,
+    `${settingsUrl}#pull-requests`,
+    { allow_update_branch: true },
+  )
+  check(
+    'delete_branch_on_merge must be true',
+    apiRepo.delete_branch_on_merge,
+    true,
+    `${settingsUrl}#pull-requests`,
+    { delete_branch_on_merge: true },
+  )
   check(
     'pull_request_creation_policy must be collaborators_only',
     apiRepo.pull_request_creation_policy,
@@ -607,7 +656,10 @@ function evaluate(
   } else if (apiProtection.required_signatures?.enabled !== true) {
     findings.push({
       rule: 'main branch protection: required_signatures must be enabled',
-      severity: severityOverride('branch-protection-required-signatures', customProps),
+      severity: severityOverride(
+        'branch-protection-required-signatures',
+        customProps,
+      ),
       current: apiProtection.required_signatures?.enabled ?? false,
       expected: true,
       fixUrl: branchesUrl,
@@ -628,7 +680,8 @@ function evaluate(
         // app installation is universal. (Could be made overridable
         // per-property if a use case emerges.)
         severity: 'error',
-        current: 'not detected on recent check-suites or declared in .github/required-apps.yml',
+        current:
+          'not detected on recent check-suites or declared in .github/required-apps.yml',
         expected: 'installed + declared',
         fixUrl: `https://github.com/apps/${slug}`,
         fixable: false,
@@ -668,7 +721,9 @@ function applyFixes(repo: string, findings: readonly Finding[]): number {
   for (const f of patchable) {
     Object.assign(patch, f.fixPatch)
   }
-  process.stdout.write(`\n🔧 Applying ${patchable.length} fixes via PATCH /repos/${repo}:\n`)
+  process.stdout.write(
+    `\n🔧 Applying ${patchable.length} fixes via PATCH /repos/${repo}:\n`,
+  )
   for (const [k, v] of Object.entries(patch)) {
     process.stdout.write(`    ${k} = ${JSON.stringify(v)}\n`)
   }
@@ -682,7 +737,11 @@ function applyFixes(repo: string, findings: readonly Finding[]): number {
   return patchable.length
 }
 
-function printReport(findings: readonly Finding[], repo: string, json: boolean): void {
+function printReport(
+  findings: readonly Finding[],
+  repo: string,
+  json: boolean,
+): void {
   if (json) {
     process.stdout.write(JSON.stringify({ repo, findings }, null, 2) + '\n')
     return
@@ -712,18 +771,32 @@ function printReport(findings: readonly Finding[], repo: string, json: boolean):
   // Manual-verify items — always print.
   const settingsUrl = `https://github.com/${repo}/settings`
   process.stdout.write('Manual-verify (no REST API; check via UI):\n')
-  process.stdout.write(`  • Commit comments must be disabled: ${settingsUrl} → General → Commits\n`)
-  process.stdout.write(`  • Release immutability enabled: ${settingsUrl} → General → Releases\n`)
-  process.stdout.write(`  • Sponsorships button off: ${settingsUrl} → General → Features\n`)
-  process.stdout.write(`  • Auto-close issues with merged linked PRs ON: ${settingsUrl} → General → Pull Requests\n`)
-  process.stdout.write(`  • Single-push branch+tag update limit = 5: ${settingsUrl} → General → Pushes\n`)
-  process.stdout.write(`  • Required Actions secrets present (ANTHROPIC_API_KEY, SOCKET_API_TOKEN): ${settingsUrl}/secrets/actions\n`)
+  process.stdout.write(
+    `  • Commit comments must be disabled: ${settingsUrl} → General → Commits\n`,
+  )
+  process.stdout.write(
+    `  • Release immutability enabled: ${settingsUrl} → General → Releases\n`,
+  )
+  process.stdout.write(
+    `  • Sponsorships button off: ${settingsUrl} → General → Features\n`,
+  )
+  process.stdout.write(
+    `  • Auto-close issues with merged linked PRs ON: ${settingsUrl} → General → Pull Requests\n`,
+  )
+  process.stdout.write(
+    `  • Single-push branch+tag update limit = 5: ${settingsUrl} → General → Pushes\n`,
+  )
+  process.stdout.write(
+    `  • Required Actions secrets present (ANTHROPIC_API_KEY, SOCKET_API_TOKEN): ${settingsUrl}/secrets/actions\n`,
+  )
 }
 
 function main(): number {
   // CI bypass — settings audits are local-run only. See header comment.
   if (process.env['CI'] === 'true') {
-    process.stdout.write('CI=true detected; skipping GitHub settings audit (local-run only).\n')
+    process.stdout.write(
+      'CI=true detected; skipping GitHub settings audit (local-run only).\n',
+    )
     return 0
   }
 
@@ -740,7 +813,9 @@ function main(): number {
   if (!flags.force && !flags.fix) {
     const cached = readCache(repo)
     if (cached?.pass) {
-      const ageHours = Math.round((Date.now() - Date.parse(cached.verifiedAt)) / 3600_000)
+      const ageHours = Math.round(
+        (Date.now() - Date.parse(cached.verifiedAt)) / 3600_000,
+      )
       process.stdout.write(
         `✓ Cache fresh (${ageHours}h old, < 7d TTL). Use --force to re-check.\n`,
       )

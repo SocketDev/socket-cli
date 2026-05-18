@@ -1,19 +1,14 @@
 /**
- * @fileoverview Per-kind checkers for the lockstep harness.
- *
- * One `check<Kind>` function per row kind, each producing the matching
- * `<Kind>Report`. The dispatcher in `cli.mts` switches on `row.kind` and
- * routes to the right checker; each checker is independent and pure-ish
- * (reads files / submodules but mutates only the report it returns).
- *
- * `checkCrossRowConsistency` is the manifest-wide layer on top: schema
- * validation catches per-row shape, this catches referential integrity
- * (duplicate ids within an area, dangling `upstream` aliases, ports
- * pointing at sites that don't exist).
- *
- * `rootDir` is supplied by the CLI so all path resolution is relative
- * to one canonical anchor (the repo root computed in `cli.mts` from
- * `import.meta.url`).
+ * @file Per-kind checkers for the lockstep harness. One `check<Kind>` function
+ *   per row kind, each producing the matching `<Kind>Report`. The dispatcher in
+ *   `cli.mts` switches on `row.kind` and routes to the right checker; each
+ *   checker is independent and pure-ish (reads files / submodules but mutates
+ *   only the report it returns). `checkCrossRowConsistency` is the
+ *   manifest-wide layer on top: schema validation catches per-row shape, this
+ *   catches referential integrity (duplicate ids within an area, dangling
+ *   `upstream` aliases, ports pointing at sites that don't exist). `rootDir` is
+ *   supplied by the CLI so all path resolution is relative to one canonical
+ *   anchor (the repo root computed in `cli.mts` from `import.meta.url`).
  */
 
 import { existsSync } from 'node:fs'
@@ -402,11 +397,11 @@ export function checkLangParity(
 // ---------------------------------------------------------------------------
 
 /**
- * Cross-row checks that zod validation can't express: unique ids, upstream
- * refs resolve to the `upstreams` map, port keys resolve to the `sites`
- * map. Zod's `LockstepManifestSchema.parse()` (called from `loadManifestTree`)
- * already covers per-row shape, enum values, id pattern, and required
- * fields — this is the referential-integrity layer on top.
+ * Cross-row checks that zod validation can't express: unique ids, upstream refs
+ * resolve to the `upstreams` map, port keys resolve to the `sites` map. Zod's
+ * `LockstepManifestSchema.parse()` (called from `loadManifestTree`) already
+ * covers per-row shape, enum values, id pattern, and required fields — this is
+ * the referential-integrity layer on top.
  */
 export function checkCrossRowConsistency(
   rowsWithArea: Array<{ row: Row; area: string }>,

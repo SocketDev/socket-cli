@@ -34,7 +34,8 @@ interface StopPayload {
 
 // Plan-announcement phrases. Each fires only if the announcement is
 // NOT followed (within a window of text) by a numbered list.
-const PLAN_PHRASE_RE = /\b(here'?s the plan|my plan is|i will:|approach:|steps:|step 1)\b/i
+const PLAN_PHRASE_RE =
+  /\b(here'?s the plan|my plan is|i will:|approach:|steps:|step 1)\b/i
 
 // Numbered-list shape: "1." or "1)" at line start.
 const NUMBERED_LIST_RE = /^\s*1\s*[.)]\s+\S/m
@@ -74,7 +75,7 @@ async function main(): Promise<void> {
       hits.push(
         'plan announced but no numbered list within 800 chars — ' +
           'per "Plan review before approval", list steps numerically, ' +
-          'name files you\'ll touch, name rules you\'ll honor',
+          "name files you'll touch, name rules you'll honor",
       )
     }
   }

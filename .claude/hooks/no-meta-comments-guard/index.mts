@@ -76,7 +76,8 @@ const TASK_PATTERNS: ReadonlyArray<{
   // `// Plan: ...` / `// Task: ...` / `// Note from plan: ...`
   {
     re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:plan|task|note from (?:plan|task|brief))\s*:/i,
-    stripPrefix: /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:plan|task|note from (?:plan|task|brief))\s*:\s*/i,
+    stripPrefix:
+      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:plan|task|note from (?:plan|task|brief))\s*:\s*/i,
   },
   // `// Per the task ...` / `// Per the plan ...` / `// As requested ...`
   {
@@ -113,10 +114,9 @@ const REMOVED_CODE_PATTERNS: ReadonlyArray<RegExp> = [
 ]
 
 /**
- * Uppercase the first alphabetic character that follows the comment
- * marker, so a stripped `// plan: use the cache` reads as
- * `// Use the cache`. Skips the comment marker tokens so they don't
- * count as "first letter".
+ * Uppercase the first alphabetic character that follows the comment marker, so
+ * a stripped `// plan: use the cache` reads as `// Use the cache`. Skips the
+ * comment marker tokens so they don't count as "first letter".
  */
 function uppercaseFirstLetterAfterMarker(line: string): string {
   const m = line.match(/^(\s*(?:\/\/|\/\*|\*|#|-)\s*)([a-zA-Z])/)
@@ -129,8 +129,8 @@ function uppercaseFirstLetterAfterMarker(line: string): string {
 }
 
 /**
- * Walk the text, find every meta-comment finding. Returns the line
- * number (1-indexed) so the error message can name the exact site.
+ * Walk the text, find every meta-comment finding. Returns the line number
+ * (1-indexed) so the error message can name the exact site.
  */
 function findMetaComments(text: string): MetaCommentFinding[] {
   const findings: MetaCommentFinding[] = []
@@ -150,13 +150,18 @@ function findMetaComments(text: string): MetaCommentFinding[] {
       // operator to rewrite.
       const stripped = stripPrefix
         ? line.replace(stripPrefix, '$1').replace(/\s+/g, ' ').trim()
-        : line.trim().replace(/^[\s/*#-]+/, '').trim()
+        : line
+            .trim()
+            .replace(/^[\s/*#-]+/, '')
+            .trim()
       const suggestion = uppercaseFirstLetterAfterMarker(stripped)
       findings.push({
         kind: 'task',
         line: i + 1,
         snippet: line.trim(),
-        suggestion: suggestion || '(remove the comment entirely — it has no runtime content)',
+        suggestion:
+          suggestion ||
+          '(remove the comment entirely — it has no runtime content)',
       })
       break
     }
@@ -168,7 +173,8 @@ function findMetaComments(text: string): MetaCommentFinding[] {
         kind: 'removed-code',
         line: i + 1,
         snippet: line.trim(),
-        suggestion: '(remove the comment — code that no longer exists is git-history territory, not source comments)',
+        suggestion:
+          '(remove the comment — code that no longer exists is git-history territory, not source comments)',
       })
       break
     }
@@ -200,7 +206,8 @@ process.stdin.on('end', () => {
     if (!/\.(?:[cm]?[jt]sx?|cc|cpp|h|hpp|rs|go|py|sh)$/.test(filePath)) {
       process.exit(0)
     }
-    const text = payload.tool_input?.new_string ?? payload.tool_input?.content ?? ''
+    const text =
+      payload.tool_input?.new_string ?? payload.tool_input?.content ?? ''
     if (!text) {
       process.exit(0)
     }
@@ -222,14 +229,18 @@ process.stdin.on('end', () => {
     }
     lines.push('  Per CLAUDE.md "Code style → Comments": comments describe the')
     lines.push('  CONSTRAINT or the hidden invariant. Development context')
-    lines.push('  (the plan, the task, the user request, removed code) lives in')
+    lines.push(
+      '  (the plan, the task, the user request, removed code) lives in',
+    )
     lines.push('  commit messages and PR descriptions, not source comments.')
     lines.push('')
     lines.push('  Rewrite or delete the comment, then retry the Edit/Write.')
     process.stderr.write(lines.join('\n') + '\n')
     process.exit(2)
   } catch (e) {
-    process.stderr.write(`[no-meta-comments-guard] hook error (allowing): ${e}\n`)
+    process.stderr.write(
+      `[no-meta-comments-guard] hook error (allowing): ${e}\n`,
+    )
     process.exit(0)
   }
 })

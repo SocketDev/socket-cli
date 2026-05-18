@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/sort-set-args.
+ * @file Unit tests for socket/sort-set-args.
  */
 
 import { describe, test } from 'node:test'

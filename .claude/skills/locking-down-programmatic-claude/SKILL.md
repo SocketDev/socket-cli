@@ -11,14 +11,14 @@ allowed-tools: Read, Grep, Glob
 
 ## The four flags
 
-| Layer | SDK option | CLI flag | What it does |
-|---|---|---|---|
-| Definition | `tools` | `--tools` | Base set the model is told about. Tools not listed are invisible — no `tool_use` block possible. |
-| Auto-approve | `allowedTools` | `--allowedTools` | Step 4. Listed tools run without invoking `canUseTool`. |
-| Deny | `disallowedTools` | `--disallowedTools` | Step 2. Wins even against `bypassPermissions`. Defense-in-depth. |
-| Mode | `permissionMode: 'dontAsk'` | `--permission-mode dontAsk` | Step 3. Unmatched tools denied without falling through to a missing `canUseTool`. |
+| Layer        | SDK option                  | CLI flag                    | What it does                                                                                     |
+| ------------ | --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------ |
+| Definition   | `tools`                     | `--tools`                   | Base set the model is told about. Tools not listed are invisible — no `tool_use` block possible. |
+| Auto-approve | `allowedTools`              | `--allowedTools`            | Step 4. Listed tools run without invoking `canUseTool`.                                          |
+| Deny         | `disallowedTools`           | `--disallowedTools`         | Step 2. Wins even against `bypassPermissions`. Defense-in-depth.                                 |
+| Mode         | `permissionMode: 'dontAsk'` | `--permission-mode dontAsk` | Step 3. Unmatched tools denied without falling through to a missing `canUseTool`.                |
 
-The official permission flow (1) hooks → (2) deny rules → (3) permission mode → (4) allow rules → (5) `canUseTool`. In `dontAsk` mode step 5 is skipped — denied. The doc states verbatim: *"`allowedTools` and `disallowedTools` ... control whether a tool call is approved, not whether the tool is available."* Availability is `tools`.
+The official permission flow (1) hooks → (2) deny rules → (3) permission mode → (4) allow rules → (5) `canUseTool`. In `dontAsk` mode step 5 is skipped — denied. The doc states verbatim: _"`allowedTools` and `disallowedTools` ... control whether a tool call is approved, not whether the tool is available."_ Availability is `tools`.
 
 ## Recipe — read-only agent (audit, classify, summarize)
 
@@ -30,7 +30,16 @@ query({
   options: {
     tools: ['Read', 'Grep', 'Glob'],
     allowedTools: ['Read', 'Grep', 'Glob'],
-    disallowedTools: ['Agent', 'Bash', 'Edit', 'NotebookEdit', 'Task', 'WebFetch', 'WebSearch', 'Write'],
+    disallowedTools: [
+      'Agent',
+      'Bash',
+      'Edit',
+      'NotebookEdit',
+      'Task',
+      'WebFetch',
+      'WebSearch',
+      'Write',
+    ],
     permissionMode: 'dontAsk',
   },
 })
@@ -40,13 +49,13 @@ CLI form for workflow YAML / shell scripts:
 
 ```yaml
 claude --print \
-  --tools "Read" "Grep" "Glob" \
-  --allowedTools "Read" "Grep" "Glob" \
-  --disallowedTools "Agent" "Bash" "Edit" "NotebookEdit" "Task" "WebFetch" "WebSearch" "Write" \
-  --permission-mode dontAsk \
-  --model "$MODEL" \
-  --max-turns 25 \
-  "<prompt>"
+--tools "Read" "Grep" "Glob" \
+--allowedTools "Read" "Grep" "Glob" \
+--disallowedTools "Agent" "Bash" "Edit" "NotebookEdit" "Task" "WebFetch" "WebSearch" "Write" \
+--permission-mode dontAsk \
+--model "$MODEL" \
+--max-turns 25 \
+"<prompt>"
 ```
 
 ## Recipe — agent that needs Bash (e.g. `/updating`: pnpm + git + jq)

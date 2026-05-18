@@ -13,21 +13,21 @@ The phrases that precede those deferrals are predictable: "pre-existing", "not r
 
 ## What it catches
 
-| Phrase | Why it's flagged |
-|---|---|
-| `pre-existing` / `preexisting` | Bare rationalization; CLAUDE.md bans the label. |
-| `not related to my <X>` | Scoping out a fix. CLAUDE.md says fix it. |
-| `unrelated to the task` | Same. |
-| `out of scope` | Same. The genuine exception (large refactor) requires asking, not silent deferral. |
-| `separate concern` | Same. |
-| `leave it for later` | Deferral marker. CLAUDE.md "Completion" bans deferrals. |
-| `not my issue` / `not my problem` | Scoping out. |
-| `which direction do you want` | Fix-vs-defer choice menu. Pick the fix path. |
-| `should I implement … or accept` | Same — choice-architecture masquerading as a question. |
-| `accept … as (a known) gap/drift/limitation` | Gap-acceptance is the rationalization branch. Fix it. |
-| `two/three paths/options: fix … or …` | Collapsing the menu — pick fix, start the first sub-step. |
-| `document(ed) as a known gap/drift/limitation` | Deferral euphemism. Fix instead. |
-| `want me to fix … or skip/defer/document/treat/leave` | Re-litigating a fix the user already said yes to. |
+| Phrase                                                | Why it's flagged                                                                   |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `pre-existing` / `preexisting`                        | Bare rationalization; CLAUDE.md bans the label.                                    |
+| `not related to my <X>`                               | Scoping out a fix. CLAUDE.md says fix it.                                          |
+| `unrelated to the task`                               | Same.                                                                              |
+| `out of scope`                                        | Same. The genuine exception (large refactor) requires asking, not silent deferral. |
+| `separate concern`                                    | Same.                                                                              |
+| `leave it for later`                                  | Deferral marker. CLAUDE.md "Completion" bans deferrals.                            |
+| `not my issue` / `not my problem`                     | Scoping out.                                                                       |
+| `which direction do you want`                         | Fix-vs-defer choice menu. Pick the fix path.                                       |
+| `should I implement … or accept`                      | Same — choice-architecture masquerading as a question.                             |
+| `accept … as (a known) gap/drift/limitation`          | Gap-acceptance is the rationalization branch. Fix it.                              |
+| `two/three paths/options: fix … or …`                 | Collapsing the menu — pick fix, start the first sub-step.                          |
+| `document(ed) as a known gap/drift/limitation`        | Deferral euphemism. Fix instead.                                                   |
+| `want me to fix … or skip/defer/document/treat/leave` | Re-litigating a fix the user already said yes to.                                  |
 
 **Codewords that override gap-acceptance:** "fix it", "build it", "do it all", "100%", "keep going", "implement X", "make it work". When any appears in a recent user turn, the only legitimate response to a failure is another fix attempt.
 
@@ -35,7 +35,7 @@ The phrases that precede those deferrals are predictable: "pre-existing", "not r
 
 ## Why it doesn't block
 
-Stop hooks fire *after* the assistant has produced its response. Blocking at that point would just truncate the message — the rationalization is already out. The warning surfaces alongside the response so the user reads both, and can push back in the next turn.
+Stop hooks fire _after_ the assistant has produced its response. Blocking at that point would just truncate the message — the rationalization is already out. The warning surfaces alongside the response so the user reads both, and can push back in the next turn.
 
 The right enforcement is layered:
 

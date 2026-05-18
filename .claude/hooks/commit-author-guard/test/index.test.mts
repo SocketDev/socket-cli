@@ -16,7 +16,9 @@ interface FakeRepo {
   cleanup(): void
 }
 
-function makeFakeRepo(canonicalEmail = 'john.david.dalton@gmail.com'): FakeRepo {
+function makeFakeRepo(
+  canonicalEmail = 'john.david.dalton@gmail.com',
+): FakeRepo {
   const root = mkdtempSync(path.join(tmpdir(), 'authorguard-'))
   const home = path.join(root, 'home')
   mkdirSync(path.join(home, '.claude'), { recursive: true })
@@ -155,11 +157,9 @@ test('BLOCKS when local checkout has wrong user.email and no override', () => {
   try {
     // Reset the repo's user.email to a wrong value, simulating a corrupted
     // local checkout config.
-    spawnSync(
-      'git',
-      ['config', 'user.email', 'imposter@example.com'],
-      { cwd: path.join(repo.root, 'repo') },
-    )
+    spawnSync('git', ['config', 'user.email', 'imposter@example.com'], {
+      cwd: path.join(repo.root, 'repo'),
+    })
     const { stderr, exitCode } = runHook(
       {
         tool_name: 'Bash',
@@ -254,7 +254,10 @@ test('ALLOWS with "Allow commit-author bypass" phrase', () => {
         tool_input: {
           command: 'git commit --author="Wrong <w@e.com>" -m "fix"',
         },
-        transcript_path: makeTranscript(repo.root, 'Allow commit-author bypass'),
+        transcript_path: makeTranscript(
+          repo.root,
+          'Allow commit-author bypass',
+        ),
         cwd: path.join(repo.root, 'repo'),
       },
       repo.home,
@@ -274,7 +277,10 @@ test('ALLOWS with hyphenless variant "Allow commit author bypass"', () => {
         tool_input: {
           command: 'git commit --author="Wrong <w@e.com>" -m "fix"',
         },
-        transcript_path: makeTranscript(repo.root, 'Allow commit author bypass'),
+        transcript_path: makeTranscript(
+          repo.root,
+          'Allow commit author bypass',
+        ),
         cwd: path.join(repo.root, 'repo'),
       },
       repo.home,
@@ -317,7 +323,9 @@ test('fails open when no canonical email is configured anywhere', () => {
   const repo = path.join(root, 'repo')
   mkdirSync(repo, { recursive: true })
   spawnSync('git', ['init', '-q'], { cwd: repo })
-  spawnSync('git', ['config', 'user.email', 'whoever@example.com'], { cwd: repo })
+  spawnSync('git', ['config', 'user.email', 'whoever@example.com'], {
+    cwd: repo,
+  })
   try {
     // The hook will fall back to the user's REAL global git config. Since
     // we can't safely unset that, we just verify the hook doesn't crash on

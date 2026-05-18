@@ -57,17 +57,16 @@ import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 
-import {
-  bypassPhrasePresent,
-  readStdin,
-} from '../_shared/transcript.mts'
+import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
-  tool_input?: {
-    content?: string | undefined
-    file_path?: string | undefined
-    new_string?: string | undefined
-  } | undefined
+  tool_input?:
+    | {
+        content?: string | undefined
+        file_path?: string | undefined
+        new_string?: string | undefined
+      }
+    | undefined
   tool_name?: string | undefined
   transcript_path?: string | undefined
 }
@@ -80,10 +79,9 @@ const EXPORT_STAR_RE =
   /^\s*export\s+\*\s+from\s+['"]([^'"]+\/paths\.m?ts)['"];?\s*$/m
 
 /**
- * Walk up from `filePath` looking for an ancestor `scripts/paths.mts`
- * or `scripts/paths.cts`. Returns the absolute path of the nearest
- * one, or `undefined` if there's no ancestor (i.e. this IS the repo-
- * root paths.mts).
+ * Walk up from `filePath` looking for an ancestor `scripts/paths.mts` or
+ * `scripts/paths.cts`. Returns the absolute path of the nearest one, or
+ * `undefined` if there's no ancestor (i.e. this IS the repo- root paths.mts).
  *
  * Stops at the first ancestor found OR at the filesystem root.
  */
@@ -148,9 +146,7 @@ async function main(): Promise<number> {
   // the same shape as Edit at the payload level (Claude Code
   // serializes the merged result).
   const fragment =
-    payload.tool_input?.content ??
-    payload.tool_input?.new_string ??
-    ''
+    payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
   if (EXPORT_STAR_RE.test(fragment)) {
     return 0
   }

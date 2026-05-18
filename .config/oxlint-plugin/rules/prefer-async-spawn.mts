@@ -1,41 +1,31 @@
 /**
- * @fileoverview Per CLAUDE.md "Subprocesses" rule:
+ * @file Per CLAUDE.md "Subprocesses" rule: Prefer async `spawn` from
+ *   `@socketsecurity/lib-stable/spawn` over `spawnSync` from
+ *   `node:child_process`. Async unblocks parallel tests / event-loop work; the
+ *   sync version freezes the runner for the duration of the child. Use
+ *   `spawnSync` only when you genuinely need synchronous semantics. Detects:
  *
- *   Prefer async `spawn` from `@socketsecurity/lib-stable/spawn` over
- *   `spawnSync` from `node:child_process`. Async unblocks parallel
- *   tests / event-loop work; the sync version freezes the runner for
- *   the duration of the child. Use `spawnSync` only when you genuinely
- *   need synchronous semantics.
- *
- * Detects:
  *   - `import { spawnSync } from 'node:child_process'`
  *   - `import { spawnSync } from 'child_process'`
- *   - `child_process.spawnSync(...)` calls (when the require side
- *     dodges the import-name detector).
- *   - `spawn` from `node:child_process` — recommend the lib instead.
- *     Even the async core spawn lacks the lib's SpawnError shape.
- *
- * Autofix scope (deterministic; no AI required) — sync-aware:
- *   The lib re-exports BOTH `spawn` and `spawnSync`. The autofix only
- *   ever rewrites the import source (`node:child_process` →
- *   `@socketsecurity/lib-stable/spawn`); it never changes the imported name,
- *   never collapses `spawnSync` into `spawn`, and never touches call
- *   sites. Converting sync → async is a semantic change (callers must
- *   `await`, return types change from objects to promises) and that's
- *   a human-eyes job, not an autofix.
- *
- *   Skipped when:
- *     a) any non-spawn named import (e.g. `exec`, `execSync`,
- *        `ChildProcess`) shares the same statement — the lib doesn't
- *        re-export those, so we can't safely rewrite the whole line.
- *
- * Allowed exceptions:
- *   - Adjacent comment with `prefer-async-spawn: sync-required` —
- *     for top-level scripts whose entire flow is sync (per CLAUDE.md
- *     "Reserve `spawnSync` for top-level scripts whose entire flow is
- *     sync").
- *   - Files inside `@socketsecurity/lib-stable/spawn` itself — they wrap the
- *     core APIs. Handled at the .config/oxlintrc.json ignorePatterns level.
+ *   - `child_process.spawnSync(...)` calls (when the require side dodges the
+ *     import-name detector).
+ *   - `spawn` from `node:child_process` — recommend the lib instead. Even the
+ *     async core spawn lacks the lib's SpawnError shape. Autofix scope
+ *     (deterministic; no AI required) — sync-aware: The lib re-exports BOTH
+ *     `spawn` and `spawnSync`. The autofix only ever rewrites the import source
+ *     (`node:child_process` → `@socketsecurity/lib-stable/spawn`); it never
+ *     changes the imported name, never collapses `spawnSync` into `spawn`, and
+ *     never touches call sites. Converting sync → async is a semantic change
+ *     (callers must `await`, return types change from objects to promises) and
+ *     that's a human-eyes job, not an autofix. Skipped when: a) any non-spawn
+ *     named import (e.g. `exec`, `execSync`, `ChildProcess`) shares the same
+ *     statement — the lib doesn't re-export those, so we can't safely rewrite
+ *     the whole line. Allowed exceptions:
+ *   - Adjacent comment with `prefer-async-spawn: sync-required` — for top-level
+ *     scripts whose entire flow is sync (per CLAUDE.md "Reserve `spawnSync` for
+ *     top-level scripts whose entire flow is sync").
+ *   - Files inside `@socketsecurity/lib-stable/spawn` itself — they wrap the core
+ *     APIs. Handled at the .config/oxlintrc.json ignorePatterns level.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
@@ -51,7 +41,9 @@ const BANNED_NAMES = new Set(['spawnSync', 'spawn'])
 
 const BYPASS_RE = /prefer-async-spawn:\s*sync-required/
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',
@@ -88,19 +80,19 @@ const rule = {
     }
 
     /**
-     * Build a fixer that swaps the import SOURCE without changing the
-     * imported NAMES. The lib re-exports both `spawn` and `spawnSync`
-     * (and a `Spawn`-typed namespace under them), so consumers who
-     * imported `spawnSync` keep using `spawnSync` from the lib and
-     * their call sites stay correct.
+     * Build a fixer that swaps the import SOURCE without changing the imported
+     * NAMES. The lib re-exports both `spawn` and `spawnSync` (and a
+     * `Spawn`-typed namespace under them), so consumers who imported
+     * `spawnSync` keep using `spawnSync` from the lib and their call sites stay
+     * correct.
      *
-     * The original rule collapsed `spawnSync` → `spawn` and left the
-     * call sites untouched, producing files that called `spawnSync(...)`
-     * with no `spawnSync` symbol in scope. Sync-aware: never rename.
+     * The original rule collapsed `spawnSync` → `spawn` and left the call sites
+     * untouched, producing files that called `spawnSync(...)` with no
+     * `spawnSync` symbol in scope. Sync-aware: never rename.
      *
-     * Conservatively skip when other (non-banned) named imports share
-     * the line — `exec`, `ChildProcess`, etc. aren't re-exported, so
-     * the whole-line rewrite would break those references.
+     * Conservatively skip when other (non-banned) named imports share the line
+     * — `exec`, `ChildProcess`, etc. aren't re-exported, so the whole-line
+     * rewrite would break those references.
      */
     function fixImport(fixer: RuleFixer, node: AstNode) {
       const others = node.specifiers.filter(

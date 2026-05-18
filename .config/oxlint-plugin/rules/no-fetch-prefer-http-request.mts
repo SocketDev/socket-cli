@@ -1,19 +1,19 @@
 /**
- * @fileoverview Per CLAUDE.md "HTTP — never `fetch()`. Use httpJson /
- * httpText / httpRequest from @socketsecurity/lib-stable/http-request."
+ * @file Per CLAUDE.md "HTTP — never `fetch()`. Use httpJson / httpText /
+ *   httpRequest from @socketsecurity/lib-stable/http-request." Reports any
+ *   `fetch(...)` call (global fetch). Does NOT auto-fix because the right
+ *   replacement (`httpJson` vs `httpText` vs `httpRequest`) depends on what the
+ *   caller does with the response — a wrong autofix would silently change
+ *   behavior. Reporting only. Allowed exceptions (skipped):
  *
- * Reports any `fetch(...)` call (global fetch). Does NOT auto-fix
- * because the right replacement (`httpJson` vs `httpText` vs
- * `httpRequest`) depends on what the caller does with the response —
- * a wrong autofix would silently change behavior. Reporting only.
- *
- * Allowed exceptions (skipped):
- *   - `globalThis.fetch` — explicit reference (often for monkey-patching
- *     in tests).
+ *   - `globalThis.fetch` — explicit reference (often for monkey-patching in
+ *     tests).
  *   - Method calls (`obj.fetch(...)`) — those aren't the global.
  */
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 

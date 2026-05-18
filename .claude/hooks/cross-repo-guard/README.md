@@ -6,7 +6,7 @@ repo into another.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `PreToolUse` hook
-> like this one fires *before* Claude calls a tool. It can either
+> like this one fires _before_ Claude calls a tool. It can either
 > **prime** (write to stderr, exit 0, model carries on) or **block**
 > (exit 2, edit never happens). This one blocks.
 
@@ -14,10 +14,10 @@ repo into another.
 
 Two forbidden shapes — both name another fleet repo by path:
 
-| Form | Example | Why it's bad |
-|------|---------|--------------|
-| Cross-repo relative | `require('../../socket-lib/dist/effects/text-shimmer.js')` | Assumes `ultrathink/` and `socket-lib/` are sibling clones. Breaks in CI sandboxes, fresh checkouts, and any non-standard layout. |
-| Cross-repo absolute | `require('/Users/jdalton/projects/socket-lib/dist/effects/ultra.js')` | Leaks the author's local directory layout into the committed tree. Same brittleness. |
+| Form                | Example                                                               | Why it's bad                                                                                                                      |
+| ------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Cross-repo relative | `require('../../socket-lib/dist/effects/text-shimmer.js')`            | Assumes `ultrathink/` and `socket-lib/` are sibling clones. Breaks in CI sandboxes, fresh checkouts, and any non-standard layout. |
+| Cross-repo absolute | `require('/Users/jdalton/projects/socket-lib/dist/effects/ultra.js')` | Leaks the author's local directory layout into the committed tree. Same brittleness.                                              |
 
 ## What to do instead
 

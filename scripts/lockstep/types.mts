@@ -1,13 +1,10 @@
 /**
- * @fileoverview Report types and shared aliases for the lockstep harness.
- *
- * Each row kind in the manifest produces a typed report row — the dispatcher
- * in `cli.mts` is exhaustively typed on the `Report` union below so the
- * formatter can read each kind's payload without `any` casts.
- *
- * `Severity` is the tri-state every report carries: `ok` (no drift),
- * `drift` (consumer needs to look), `error` (manifest is broken). Exit
- * codes map 0 / 2 / 1 respectively.
+ * @file Report types and shared aliases for the lockstep harness. Each row kind
+ *   in the manifest produces a typed report row — the dispatcher in `cli.mts`
+ *   is exhaustively typed on the `Report` union below so the formatter can read
+ *   each kind's payload without `any` casts. `Severity` is the tri-state every
+ *   report carries: `ok` (no drift), `drift` (consumer needs to look), `error`
+ *   (manifest is broken). Exit codes map 0 / 2 / 1 respectively.
  */
 
 import type { PortStatus, LockstepManifest } from './schema.mts'

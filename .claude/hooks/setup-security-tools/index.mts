@@ -53,34 +53,33 @@ interface Finding {
 }
 
 /**
- * Regex for the Socket API 401-validation error message. The exact
- * text is emitted by every Socket-tool client (sfw, agentshield,
- * socket-cli, the JS SDK) when the configured token is rejected at
- * upstream. We match a loose shape so a future variant of the
- * sentence (newline-wrapped, prefixed with file-path, etc.) still
- * trips the rule.
+ * Regex for the Socket API 401-validation error message. The exact text is
+ * emitted by every Socket-tool client (sfw, agentshield, socket-cli, the JS
+ * SDK) when the configured token is rejected at upstream. We match a loose
+ * shape so a future variant of the sentence (newline-wrapped, prefixed with
+ * file-path, etc.) still trips the rule.
  *
- * Why: the SDK + sfw render this same error to stderr / stdout, but
- * the operator usually scrolls past it and the next tool call also
- * 401s. The right remediation is to rotate the token, not to retry.
+ * Why: the SDK + sfw render this same error to stderr / stdout, but the
+ * operator usually scrolls past it and the next tool call also 401s. The right
+ * remediation is to rotate the token, not to retry.
  *
  * Recognized today:
- *   - "SOCKET_API_KEY validation got status of 401 from the Socket API"
- *   - "SOCKET_API_TOKEN validation got status of 401 from the Socket API"
- *     (forward-looking, in case the fleet env-var rename reaches the
- *      upstream SDK error path)
+ *
+ * - "SOCKET_API_KEY validation got status of 401 from the Socket API"
+ * - "SOCKET_API_TOKEN validation got status of 401 from the Socket API"
+ *   (forward-looking, in case the fleet env-var rename reaches the upstream SDK
+ *   error path)
  */
 const TOKEN_401_RE =
   /SOCKET_API_(?:KEY|TOKEN) validation got status of 401 from the Socket API/
 
 /**
- * Silently auto-repair an empty/missing SFW shims directory when the
- * SFW binary + the regenerate script are both present. This handles
- * the common failure shape where shims got renamed/moved
- * (`shims.broken-backup/`) and the operator forgot to re-run the
- * regenerator. Returns a single 'auto-repaired' finding on success
- * (so the user sees one tidy notice instead of nothing) — or nothing
- * if the repair conditions weren't met / the script failed.
+ * Silently auto-repair an empty/missing SFW shims directory when the SFW binary
+ * + the regenerate script are both present. This handles the common failure
+ * shape where shims got renamed/moved (`shims.broken-backup/`) and the operator
+ * forgot to re-run the regenerator. Returns a single 'auto-repaired' finding on
+ * success (so the user sees one tidy notice instead of nothing) — or nothing if
+ * the repair conditions weren't met / the script failed.
  */
 function repairShims(home: string): Finding[] {
   const sfwDir = path.join(home, '.socket', 'sfw')
@@ -220,14 +219,13 @@ function checkEdition(): Finding[] {
 }
 
 /**
- * Scan the most recent assistant turn for the Socket API 401-
- * validation error. The transcript path comes from the Stop payload
- * piped to the hook; if it's missing or unreadable we return no
- * findings — never throw, never block.
+ * Scan the most recent assistant turn for the Socket API 401- validation error.
+ * The transcript path comes from the Stop payload piped to the hook; if it's
+ * missing or unreadable we return no findings — never throw, never block.
  *
- * Reads the whole JSONL one line at a time (the transcript is
- * usually < 1 MB but can grow); we walk in reverse so we stop at the
- * last assistant turn instead of dragging through old context.
+ * Reads the whole JSONL one line at a time (the transcript is usually < 1 MB
+ * but can grow); we walk in reverse so we stop at the last assistant turn
+ * instead of dragging through old context.
  */
 async function checkToken401(transcriptPath: string): Promise<Finding[]> {
   if (!existsSync(transcriptPath)) {

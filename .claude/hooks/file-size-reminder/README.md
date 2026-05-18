@@ -20,10 +20,10 @@ After each assistant turn, the hook walks the most recent assistant's tool-use e
 
 For each target `file_path`, it reads the current on-disk state (post-edit, since the hook fires after the tool ran), counts lines, and warns if the count is past either cap.
 
-| Cap | Threshold | Action |
-|---|---|---|
+| Cap  | Threshold      | Action                             |
+| ---- | -------------- | ---------------------------------- |
 | Soft | 501-1000 lines | Warning — start planning the split |
-| Hard | 1001+ lines | Stronger warning — split now |
+| Hard | 1001+ lines    | Stronger warning — split now       |
 
 ## Exempt paths
 

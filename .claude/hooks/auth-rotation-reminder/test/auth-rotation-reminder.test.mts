@@ -15,10 +15,12 @@ interface Env {
   [key: string]: string
 }
 
-function runHook(opts: {
-  cwd?: string
-  env?: Env
-} = {}): Promise<{ code: number; stderr: string }> {
+function runHook(
+  opts: {
+    cwd?: string
+    env?: Env
+  } = {},
+): Promise<{ code: number; stderr: string }> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [HOOK], {
       cwd: opts.cwd ?? process.cwd(),

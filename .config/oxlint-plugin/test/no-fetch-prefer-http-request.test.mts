@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/no-fetch-prefer-http-request.
+ * @file Unit tests for socket/no-fetch-prefer-http-request.
  */
 
 import { describe, test } from 'node:test'

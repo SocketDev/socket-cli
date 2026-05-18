@@ -50,7 +50,10 @@ function listStagedFiles(repoDir: string): string[] {
     timeout: 5_000,
   })
   if (r.status !== 0) return []
-  return r.stdout.split('\n').map(s => s.trim()).filter(Boolean)
+  return r.stdout
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean)
 }
 
 async function drainStdin(): Promise<void> {

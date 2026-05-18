@@ -17,9 +17,7 @@ interface Result {
   readonly stderr: string
 }
 
-async function runHook(
-  payload: Record<string, unknown>,
-): Promise<Result> {
+async function runHook(payload: Record<string, unknown>): Promise<Result> {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
   child.stdin.end(JSON.stringify(payload))
   let stderr = ''
@@ -131,7 +129,7 @@ test('does not match flag mentioned inside a heredoc body', async () => {
   const result = await runHook({
     tool_input: {
       command:
-        "git commit -m \"$(cat <<'EOF'\nthe --experimental-strip-types flag is dead\nEOF\n)\"",
+        'git commit -m "$(cat <<\'EOF\'\nthe --experimental-strip-types flag is dead\nEOF\n)"',
     },
     tool_name: 'Bash',
   })
@@ -141,8 +139,7 @@ test('does not match flag mentioned inside a heredoc body', async () => {
 test('still blocks flag passed as a real arg even when other quoted args mention it', async () => {
   const result = await runHook({
     tool_input: {
-      command:
-        "echo 'reminder' && node --experimental-strip-types foo.ts",
+      command: "echo 'reminder' && node --experimental-strip-types foo.ts",
     },
     tool_name: 'Bash',
   })

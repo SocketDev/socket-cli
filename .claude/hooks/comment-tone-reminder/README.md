@@ -10,14 +10,14 @@ The patterns this hook flags are predictable shapes: "First, we will...", "Note 
 
 ## What it catches
 
-| Phrase | Why it's flagged |
-|---|---|
-| `first, we (will\|are\|need\|should)` | Step-by-step narration — drop the framing. |
-| `note that` | Tutorial filler. State the load-bearing point directly. |
-| `it's important to` | Don't announce importance — state the constraint. |
-| `as you can see` | Presupposes reader engagement. Drop. |
-| `remember (that\|to)` | Reader doesn't need reminding — state the rule. |
-| `in order to` | Wordy. "To X" suffices unless contrasting paths. |
+| Phrase                                | Why it's flagged                                        |
+| ------------------------------------- | ------------------------------------------------------- |
+| `first, we (will\|are\|need\|should)` | Step-by-step narration — drop the framing.              |
+| `note that`                           | Tutorial filler. State the load-bearing point directly. |
+| `it's important to`                   | Don't announce importance — state the constraint.       |
+| `as you can see`                      | Presupposes reader engagement. Drop.                    |
+| `remember (that\|to)`                 | Reader doesn't need reminding — state the rule.         |
+| `in order to`                         | Wordy. "To X" suffices unless contrasting paths.        |
 
 ## Why it doesn't block
 

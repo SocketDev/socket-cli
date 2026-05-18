@@ -29,9 +29,9 @@ import { runStopReminder } from '../_shared/stop-reminder.mts'
 const DEFER = String.raw`(skip|skipping|skipped|leave|leaving|left|defer|deferring|deferred|ignore|ignoring|ignored|won't|wont|cannot|can't|cant|not (going|gonna) to (fix|address|touch))`
 
 /**
- * Build a regex that fires when `phraseRe` appears within ~60 chars
- * (either side) of a deferral verb. Use for bare phrases whose
- * surface form alone is ambiguous (descriptive vs. deferral).
+ * Build a regex that fires when `phraseRe` appears within ~60 chars (either
+ * side) of a deferral verb. Use for bare phrases whose surface form alone is
+ * ambiguous (descriptive vs. deferral).
  */
 function withDeferralVerb(phraseRe: string): RegExp {
   return new RegExp(
@@ -76,7 +76,9 @@ await runStopReminder({
       label: 'out of scope (deferral shape)',
       // Common descriptive shape: "the rule's out-of-scope handling
       // is X". Require a deferral verb so we don't fire on docs.
-      regex: withDeferralVerb(String.raw`\b(out of|outside)( (the|this))? scope\b`),
+      regex: withDeferralVerb(
+        String.raw`\b(out of|outside)( (the|this))? scope\b`,
+      ),
       why: 'CLAUDE.md "No pre-existing excuse": the only exceptions are genuinely large refactors (state the trade-off and ask). (Only fires when paired with a deferral verb in range.)',
     },
     {
@@ -105,7 +107,8 @@ await runStopReminder({
     },
     {
       label: 'should I implement … or accept',
-      regex: /\bshould (i|we) (implement|fix|do|build) [^.?!\n]+(or|,)\s+(accept|defer|document|skip|leave|treat)\b/i,
+      regex:
+        /\bshould (i|we) (implement|fix|do|build) [^.?!\n]+(or|,)\s+(accept|defer|document|skip|leave|treat)\b/i,
       why: 'CLAUDE.md "Fix > defer": this is a choice-architecture masquerading as a question. Fix it.',
     },
     {
@@ -134,5 +137,5 @@ await runStopReminder({
     },
   ],
   closingHint:
-    'These phrases usually precede a deferral. The Stop hook will block once so Claude must act on the matched item — either fix it now, or state the trade-off explicitly with the user\'s constraint.',
+    "These phrases usually precede a deferral. The Stop hook will block once so Claude must act on the matched item — either fix it now, or state the trade-off explicitly with the user's constraint.",
 })

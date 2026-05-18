@@ -98,16 +98,11 @@ const PLAN_FILENAME_TOKENS = [
 // First-heading tokens that mark a doc as "plan-shaped." Checked
 // against the first non-blank line of the new content if the
 // filename heuristic didn't fire.
-const PLAN_HEADING_TOKENS = [
-  'plan',
-  'roadmap',
-  'migration plan',
-  'design doc',
-]
+const PLAN_HEADING_TOKENS = ['plan', 'roadmap', 'migration plan', 'design doc']
 
 /**
- * Lowercased filename without extension. Returns empty string for
- * paths without a basename.
+ * Lowercased filename without extension. Returns empty string for paths without
+ * a basename.
  */
 function basenameStem(filePath: string): string {
   const base = path.basename(filePath)
@@ -145,16 +140,17 @@ function contentLooksLikePlan(content: string | undefined): boolean {
 
 /**
  * Classify the target path. Returns:
- *   - 'allowed-root-claude-plans' — under <something>/.claude/plans/
- *   - 'blocked-docs-plans'        — under <something>/docs/plans/
- *   - 'blocked-sub-claude-plans'  — under <something>/<sub>/.claude/plans/
- *                                   (i.e. not at the first .claude/ segment)
- *   - 'irrelevant'                — none of the above
  *
- * The classification is purely lexical on the resolved path. It does
- * NOT walk for a repo root, since the fleet rule applies to any
- * docs/plans/ regardless of repo context — including the case where
- * a script under /tmp tries to write into a project tree.
+ * - 'allowed-root-claude-plans' — under <something>/.claude/plans/
+ * - 'blocked-docs-plans' — under <something>/docs/plans/
+ * - 'blocked-sub-claude-plans' — under <something>/<sub>/.claude/plans/ (i.e. not
+ *   at the first .claude/ segment)
+ * - 'irrelevant' — none of the above
+ *
+ * The classification is purely lexical on the resolved path. It does NOT walk
+ * for a repo root, since the fleet rule applies to any docs/plans/ regardless
+ * of repo context — including the case where a script under /tmp tries to write
+ * into a project tree.
  */
 function classifyPath(filePath: string): string {
   const normalized = filePath.replace(/\\/g, '/')
@@ -247,8 +243,7 @@ async function main(): Promise<number> {
   // is probably a coincidence (e.g. an unrelated doc that happened
   // to live under docs/plans/ for historical reasons) — let it through
   // and let the human decide.
-  const content =
-    payload.tool_input?.new_string ?? payload.tool_input?.content
+  const content = payload.tool_input?.new_string ?? payload.tool_input?.content
   const looksLikePlan =
     filenameLooksLikePlan(filePath) || contentLooksLikePlan(content)
   if (!looksLikePlan) {

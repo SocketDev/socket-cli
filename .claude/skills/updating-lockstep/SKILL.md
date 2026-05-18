@@ -25,13 +25,13 @@ Full policy table, scripts per phase, and advisory format in [`reference.md`](re
 
 ## Phases
 
-| # | Phase | Outcome |
-|---|---|---|
-| 1 | Pre-flight | Bail if no `lockstep.json`. Verify scaffolding (`lockstep.schema.json`, `scripts/lockstep.mts`). Clean tree. Detect CI mode. |
-| 2 | Collect drift | `pnpm run lockstep --json` → split rows into **auto** (mechanical version-pin bumps) and **advisory** (everything else with drift). |
-| 3 | Auto-bump | Per row: resolve submodule, fetch tags, identify target tag, checkout, update `lockstep.json` + `.gitmodules`, validate, commit (`chore(deps): bump <upstream> to <tag>`). Test before committing in interactive mode. |
-| 4 | Advisory | Compose per-row markdown lines for the PR body. |
-| 5 | Report | Human-readable summary; in CI mode, emit advisory block to `$GITHUB_OUTPUT` (base64); HANDOFF block per `_shared/report-format.md`. |
+| #   | Phase         | Outcome                                                                                                                                                                                                                |
+| --- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Pre-flight    | Bail if no `lockstep.json`. Verify scaffolding (`lockstep.schema.json`, `scripts/lockstep.mts`). Clean tree. Detect CI mode.                                                                                           |
+| 2   | Collect drift | `pnpm run lockstep --json` → split rows into **auto** (mechanical version-pin bumps) and **advisory** (everything else with drift).                                                                                    |
+| 3   | Auto-bump     | Per row: resolve submodule, fetch tags, identify target tag, checkout, update `lockstep.json` + `.gitmodules`, validate, commit (`chore(deps): bump <upstream> to <tag>`). Test before committing in interactive mode. |
+| 4   | Advisory      | Compose per-row markdown lines for the PR body.                                                                                                                                                                        |
+| 5   | Report        | Human-readable summary; in CI mode, emit advisory block to `$GITHUB_OUTPUT` (base64); HANDOFF block per `_shared/report-format.md`.                                                                                    |
 
 ## Hard requirements
 

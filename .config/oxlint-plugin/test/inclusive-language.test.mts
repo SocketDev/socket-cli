@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/inclusive-language.
+ * @file Unit tests for socket/inclusive-language.
  */
 
 import { describe, test } from 'node:test'

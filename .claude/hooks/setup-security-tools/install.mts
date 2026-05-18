@@ -1,41 +1,28 @@
 #!/usr/bin/env node
 /**
- * @fileoverview User-invoked installer / health-fixer for the Socket
- * security tools (AgentShield, Zizmor, SFW).
+ * @file User-invoked installer / health-fixer for the Socket security tools
+ *   (AgentShield, Zizmor, SFW). Runs interactively. Differs from `index.mts`
+ *   (the Stop hook):
  *
- * Runs interactively. Differs from `index.mts` (the Stop hook):
- *
- *   - This script PROMPTS for missing config (e.g. SOCKET_API_TOKEN)
- *     and persists to the OS keychain.
+ *   - This script PROMPTS for missing config (e.g. SOCKET_API_TOKEN) and persists
+ *     to the OS keychain.
  *   - It DOWNLOADS missing or stale binaries.
- *   - It REPAIRS broken SFW shims (entries pointing to dlx-cache
- *     hashes that no longer exist on disk).
- *
- * The Stop hook only DETECTS and REPORTS. Auto-prompting / auto-
- * downloading from a Stop hook would surprise the operator with
- * network calls + interactive flows mid-conversation.
- *
- * Skips the interactive prompt path when:
+ *   - It REPAIRS broken SFW shims (entries pointing to dlx-cache hashes that no
+ *     longer exist on disk). The Stop hook only DETECTS and REPORTS.
+ *     Auto-prompting / auto- downloading from a Stop hook would surprise the
+ *     operator with network calls + interactive flows mid-conversation. Skips
+ *     the interactive prompt path when:
  *   - Running in CI (`getCI()` from @socketsecurity/lib-stable/env/ci).
- *   - Stdin isn't a TTY (`!process.stdin.isTTY`).
- *
- * In those skip cases, the script falls back to sfw-free (the auth-
- * free SFW build) and continues without persisting a token.
- *
- * Invocation:
- *   node .claude/hooks/setup-security-tools/install.mts
- *   node .claude/hooks/setup-security-tools/install.mts --rotate
- *
- * Flags:
- *   --rotate           Re-prompt for SOCKET_API_TOKEN and overwrite the
- *                      keychain entry, ignoring env/.env/keychain lookup.
- *                      Use to rotate a leaked or expired token without
- *                      manually clearing the keychain first.
- *   --update-token     Alias for --rotate.
- *
- * Exit codes:
- *   0 — all tools installed + verified.
- *   1 — at least one tool failed; details on stderr.
+ *   - Stdin isn't a TTY (`!process.stdin.isTTY`). In those skip cases, the script
+ *     falls back to sfw-free (the auth- free SFW build) and continues without
+ *     persisting a token. Invocation: node
+ *     .claude/hooks/setup-security-tools/install.mts node
+ *     .claude/hooks/setup-security-tools/install.mts --rotate Flags: --rotate
+ *     Re-prompt for SOCKET_API_TOKEN and overwrite the keychain entry, ignoring
+ *     env/.env/keychain lookup. Use to rotate a leaked or expired token without
+ *     manually clearing the keychain first. --update-token Alias for --rotate.
+ *     Exit codes: 0 — all tools installed + verified. 1 — at least one tool
+ *     failed; details on stderr.
  */
 
 import { existsSync, promises as fs } from 'node:fs'
@@ -59,9 +46,9 @@ const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /**
- * Read a secret from the TTY without echoing it. Wraps node:readline
- * with custom output muting — typed characters never appear on
- * screen and never end up in shell history.
+ * Read a secret from the TTY without echoing it. Wraps node:readline with
+ * custom output muting — typed characters never appear on screen and never end
+ * up in shell history.
  *
  * Caller must verify `process.stdin.isTTY` before invoking.
  */
@@ -95,10 +82,10 @@ async function promptSecret(prompt: string): Promise<string> {
 }
 
 /**
- * Walk an existing SFW shim and report whether its dlx-cached
- * binary target still exists. A shim is "broken" when the dlx
- * cache has been evicted (cleanup script, manual delete, manifest
- * rebuild) and the shim points at a path that no longer resolves.
+ * Walk an existing SFW shim and report whether its dlx-cached binary target
+ * still exists. A shim is "broken" when the dlx cache has been evicted (cleanup
+ * script, manual delete, manifest rebuild) and the shim points at a path that
+ * no longer resolves.
  */
 async function findBrokenShims(): Promise<string[]> {
   const shimsDir = path.join(
@@ -135,9 +122,9 @@ async function findBrokenShims(): Promise<string[]> {
 }
 
 /**
- * Shared prompt-and-persist body used by both the "no token found" and
- * the explicit `--rotate` paths. The `reason` strings differ but the
- * gating + the prompt + the keychain write are identical.
+ * Shared prompt-and-persist body used by both the "no token found" and the
+ * explicit `--rotate` paths. The `reason` strings differ but the gating + the
+ * prompt + the keychain write are identical.
  */
 async function promptAndPersist(
   reason: 'missing' | 'rotate',
@@ -181,7 +168,7 @@ async function promptAndPersist(
     )
   }
   logger.log(
-    "Get a token at https://socket.dev/dashboard or press Enter to skip" +
+    'Get a token at https://socket.dev/dashboard or press Enter to skip' +
       (reason === 'rotate'
         ? ' (the existing keychain entry stays in place).'
         : ' and use sfw-free.'),
@@ -199,7 +186,9 @@ async function promptAndPersist(
   try {
     writeTokenToKeychain(answer)
     if (reason === 'rotate') {
-      logger.success(`SOCKET_API_TOKEN rotated and persisted via ${kc.toolName}.`)
+      logger.success(
+        `SOCKET_API_TOKEN rotated and persisted via ${kc.toolName}.`,
+      )
     }
   } catch (e) {
     logger.error(
@@ -212,12 +201,12 @@ async function promptAndPersist(
 }
 
 /**
- * Write (or refresh) the keychain → shell-env bridge block in the
- * user's shell rc. Idempotent: re-running install.mts on an already-
- * wired rc is a no-op. Called from main() on every invocation so the
- * bridge gets installed whether or not the user just entered a fresh
- * token via the prompt — keychain hits from env/.env/keychain still
- * need the bridge to actually reach the shell of every NEW session.
+ * Write (or refresh) the keychain → shell-env bridge block in the user's shell
+ * rc. Idempotent: re-running install.mts on an already- wired rc is a no-op.
+ * Called from main() on every invocation so the bridge gets installed whether
+ * or not the user just entered a fresh token via the prompt — keychain hits
+ * from env/.env/keychain still need the bridge to actually reach the shell of
+ * every NEW session.
  */
 function wireBridgeIntoShellRc(token: string): void {
   try {
@@ -232,10 +221,10 @@ function wireBridgeIntoShellRc(token: string): void {
 }
 
 /**
- * Print a one-paragraph summary of what the shell-rc bridge did (or
- * didn't do), with a copy-pasteable next step. Splitting this out
- * keeps `promptAndPersist` readable and gives the rotate path the
- * same instruction without duplicating the prose.
+ * Print a one-paragraph summary of what the shell-rc bridge did (or didn't do),
+ * with a copy-pasteable next step. Splitting this out keeps `promptAndPersist`
+ * readable and gives the rotate path the same instruction without duplicating
+ * the prose.
  */
 function reportBridgeOutcome(bridge: BridgeWriteResult | undefined): void {
   if (!bridge) {

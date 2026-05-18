@@ -24,7 +24,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { parseNpmSpecifier, stringify } from '@socketregistry/packageurl-js-stable'
+import {
+  parseNpmSpecifier,
+  stringify,
+} from '@socketregistry/packageurl-js-stable'
 import type { PackageURL } from '@socketregistry/packageurl-js-stable'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-stable/constants/socket'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'

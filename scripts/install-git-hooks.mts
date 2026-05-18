@@ -1,16 +1,13 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Configure git to use .git-hooks/ as the local hooks
- * dir. Replaces husky — same end-state (committed hook source +
- * auto-install on `pnpm install`), one fewer dependency.
+ * @file Configure git to use .git-hooks/ as the local hooks dir. Replaces husky
+ *   — same end-state (committed hook source + auto-install on `pnpm install`),
+ *   one fewer dependency. Idempotent: re-running is a no-op when core.hooksPath
+ *   already points at .git-hooks. Safe to invoke from `prepare`. Skipped when:
  *
- * Idempotent: re-running is a no-op when core.hooksPath already
- * points at .git-hooks. Safe to invoke from `prepare`.
- *
- * Skipped when:
  *   - Not inside a git repo (e.g. running in a tarball install).
- *   - .git-hooks/ doesn't exist (e.g. the template scaffold hasn't
- *     been cascaded into this repo yet).
+ *   - .git-hooks/ doesn't exist (e.g. the template scaffold hasn't been cascaded
+ *     into this repo yet).
  */
 
 import { spawnSync } from 'node:child_process'

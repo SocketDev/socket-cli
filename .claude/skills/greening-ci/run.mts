@@ -1,41 +1,29 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Watch a repo's GitHub Actions CI run, surface the first
- * failure log, and exit. The fix-and-push loop is driven by the human
- * (or the agent invoking this skill) — this runner is the eyes.
+ * @file Watch a repo's GitHub Actions CI run, surface the first failure log,
+ *   and exit. The fix-and-push loop is driven by the human (or the agent
+ *   invoking this skill) — this runner is the eyes. Three modes the skill
+ *   orchestrator picks between:
  *
- * Three modes the skill orchestrator picks between:
- *
- *   1. `--mode=fast` (default for ci.yml)
- *      Poll every 30s. Stop on first failure or first success.
- *      Use when watching a freshly-pushed commit's CI on main / PR.
- *
- *   2. `--mode=release`
- *      Poll every 30s until the FIRST job either fails or succeeds.
- *      Release matrices (curl, lief, binsuite, node-smol, …) fail fast
- *      in one matrix slot before others finish — we want that signal as
- *      soon as possible. Once any slot succeeds, the next poll cools
- *      down to 120s for the rest of the matrix.
- *
- *   3. `--mode=cool`
- *      Poll every 120s. Use after `release` has reported a first
- *      success — the rest of the matrix is just confirmation.
- *
- * Output (always JSON on the last line, prose above for humans):
- *
- *   {
- *     "status": "completed" | "in_progress" | "queued" | "failure",
- *     "conclusion": "success" | "failure" | "cancelled" | "skipped" | null,
- *     "runId": <number>,
- *     "url": "https://github.com/<owner>/<repo>/actions/runs/<id>",
- *     "failedJobs": [{ "name": "...", "logTailPath": "..." }],
- *     "elapsedSec": <number>
- *   }
- *
- * The orchestrator (SKILL.md prompt) reads the JSON, decides whether to
- * fix and push, then invokes this runner again. The log tail is dumped
- * to a tmp file so the orchestrator can Read it without re-spending the
- * `gh run view --log-failed` budget on every retry.
+ *   1. `--mode=fast` (default for ci.yml) Poll every 30s. Stop on first failure or
+ *      first success. Use when watching a freshly-pushed commit's CI on main /
+ *      PR.
+ *   2. `--mode=release` Poll every 30s until the FIRST job either fails or
+ *      succeeds. Release matrices (curl, lief, binsuite, node-smol, …) fail
+ *      fast in one matrix slot before others finish — we want that signal as
+ *      soon as possible. Once any slot succeeds, the next poll cools down to
+ *      120s for the rest of the matrix.
+ *   3. `--mode=cool` Poll every 120s. Use after `release` has reported a first
+ *      success — the rest of the matrix is just confirmation. Output (always
+ *      JSON on the last line, prose above for humans): { "status": "completed"
+ *      | "in_progress" | "queued" | "failure", "conclusion": "success" |
+ *      "failure" | "cancelled" | "skipped" | null, "runId": <number>, "url":
+ *      "https://github.com/<owner>/<repo>/actions/runs/<id>", "failedJobs": [{
+ *      "name": "...", "logTailPath": "..." }], "elapsedSec": <number> } The
+ *      orchestrator (SKILL.md prompt) reads the JSON, decides whether to fix
+ *      and push, then invokes this runner again. The log tail is dumped to a
+ *      tmp file so the orchestrator can Read it without re-spending the `gh run
+ *      view --log-failed` budget on every retry.
  */
 
 import { mkdtempSync } from 'node:fs'
@@ -197,10 +185,10 @@ async function fetchJobs(args: CliArgs, runId: number): Promise<GhJob[]> {
 }
 
 /**
- * Dump the failed-job log tail to a tmp file so the orchestrator can
- * Read it without re-spending `gh run view --log-failed` budget on
- * every retry. The tail is the last ~400 lines — enough to catch the
- * error band without flooding context.
+ * Dump the failed-job log tail to a tmp file so the orchestrator can Read it
+ * without re-spending `gh run view --log-failed` budget on every retry. The
+ * tail is the last ~400 lines — enough to catch the error band without flooding
+ * context.
  */
 async function dumpFailedLog(
   args: CliArgs,
@@ -246,21 +234,19 @@ function pickPollSec(mode: Mode, override: number | undefined): number {
 /**
  * Decide whether this poll's snapshot is a stopping point.
  *
- * Returns:
- *   - 'stop'    : terminal — caller reports + exits.
- *   - 'continue': loop again after pollSec.
+ * Returns: - 'stop' : terminal — caller reports + exits. - 'continue': loop
+ * again after pollSec.
  *
- * fast: stop when the run is completed (success OR failure) OR when any
- *       job has conclusion === failure (so we surface a failing job
- *       before the whole run finishes).
+ * Fast: stop when the run is completed (success OR failure) OR when any job has
+ * conclusion === failure (so we surface a failing job before the whole run
+ * finishes).
  *
- * release: stop when ANY job has either conclusion === failure or
- *          conclusion === success. The matrix runs in parallel; one
- *          slot landing is enough signal to know whether to start
- *          fixing or to cool down.
+ * Release: stop when ANY job has either conclusion === failure or conclusion
+ * === success. The matrix runs in parallel; one slot landing is enough signal
+ * to know whether to start fixing or to cool down.
  *
- * cool: stop only on a fully-completed run. The caller is just waiting
- *       out the rest of the matrix.
+ * Cool: stop only on a fully-completed run. The caller is just waiting out the
+ * rest of the matrix.
  */
 function decide(mode: Mode, run: GhRun, jobs: GhJob[]): 'stop' | 'continue' {
   if (mode === 'cool') {

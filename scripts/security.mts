@@ -1,32 +1,21 @@
 /**
- * @fileoverview Canonical fleet scanning-security runner.
+ * @file Canonical fleet scanning-security runner. Runs the two static-analysis
+ *   tools the fleet uses for local security checks before push:
  *
- * Runs the two static-analysis tools the fleet uses for local security
- * checks before push:
- *
- *   1. AgentShield — scans `.claude/` config for prompt-injection,
- *      leaked secrets, and overly-permissive tool permissions.
- *   2. zizmor      — static analysis for `.github/workflows/*.yml`
- *      (unpinned actions, secret exposure, template injection,
- *      permission issues).
- *
- * Either tool missing prints a "run pnpm run setup-security-tools"
- * hint (which downloads + verifies the pinned binary via the
- * setup-security-tools hook + prompts for a Socket API token if
- * none is stored) and skips that scan rather than failing the
- * entire run.
- *
- * Cross-platform: uses `which` from `@socketsecurity/lib-stable/bin` for
- * binary discovery (handles Windows .exe/.cmd resolution; returns null
- * rather than throwing on miss) and `spawn` from
- * `@socketsecurity/lib-stable/spawn` for proper async lifecycle.
- *
- * Wired in via `package.json`:
- *
- *   "security": "node scripts/security.mts"
- *
- * Byte-identical across every fleet repo. Sync-scaffolding flags
- * drift.
+ *   1. AgentShield — scans `.claude/` config for prompt-injection, leaked secrets,
+ *      and overly-permissive tool permissions.
+ *   2. zizmor — static analysis for `.github/workflows/*.yml` (unpinned actions,
+ *      secret exposure, template injection, permission issues). Either tool
+ *      missing prints a "run pnpm run setup-security-tools" hint (which
+ *      downloads + verifies the pinned binary via the setup-security-tools hook
+ *      + prompts for a Socket API token if none is stored) and skips that scan
+ *      rather than failing the entire run. Cross-platform: uses `which` from
+ *      `@socketsecurity/lib-stable/bin` for binary discovery (handles Windows
+ *      .exe/.cmd resolution; returns null rather than throwing on miss) and
+ *      `spawn` from `@socketsecurity/lib-stable/spawn` for proper async
+ *      lifecycle. Wired in via `package.json`: "security": "node
+ *      scripts/security.mts" Byte-identical across every fleet repo.
+ *      Sync-scaffolding flags drift.
  */
 
 import process from 'node:process'
@@ -62,7 +51,9 @@ async function runTool(command: string, args: string[]): Promise<number> {
 
 async function main(): Promise<void> {
   if (!(await hasExecutable('agentshield'))) {
-    logger.info('agentshield not installed; run "pnpm run setup-security-tools" to install')
+    logger.info(
+      'agentshield not installed; run "pnpm run setup-security-tools" to install',
+    )
   } else {
     const agentshieldCode = await runTool('agentshield', ['scan'])
     if (agentshieldCode !== 0) {
@@ -72,7 +63,9 @@ async function main(): Promise<void> {
   }
 
   if (!(await hasExecutable('zizmor'))) {
-    logger.info('zizmor not installed; run "pnpm run setup-security-tools" to install')
+    logger.info(
+      'zizmor not installed; run "pnpm run setup-security-tools" to install',
+    )
     return
   }
 

@@ -1,11 +1,9 @@
 /**
- * @fileoverview Tests for the shell-rc env-var block writer.
- *
- * Drives installShellRcBridge / uninstallShellRcBridge against a
- * temp HOME so the real `~/.zshenv` never gets touched. macOS-only
- * (matches the implementation gate); on non-macOS hosts the
- * functions return `undefined` / `false` and the assertions skip
- * the rewrite-shape checks.
+ * @file Tests for the shell-rc env-var block writer. Drives
+ *   installShellRcBridge / uninstallShellRcBridge against a temp HOME so the
+ *   real `~/.zshenv` never gets touched. macOS-only (matches the implementation
+ *   gate); on non-macOS hosts the functions return `undefined` / `false` and
+ *   the assertions skip the rewrite-shape checks.
  */
 
 import { test } from 'node:test'
@@ -24,7 +22,9 @@ const IS_MACOS = platform() === 'darwin'
 
 const FAKE_TOKEN = 'sk-test-aaaabbbbccccddddeeeeffff'
 
-function withFakeHome(fn: (rcPath: string) => Promise<void> | void): () => Promise<void> {
+function withFakeHome(
+  fn: (rcPath: string) => Promise<void> | void,
+): () => Promise<void> {
   return async () => {
     const fake = mkdtempSync(path.join(tmpdir(), 'shell-rc-bridge-test-'))
     const prevHome = process.env['HOME']
@@ -58,9 +58,7 @@ test(
       return
     }
     writeFileSync(rcPath, '# existing\nexport PATH=$PATH:/foo\n')
-    const { installShellRcBridge } = await import(
-      '../lib/shell-rc-bridge.mts'
-    )
+    const { installShellRcBridge } = await import('../lib/shell-rc-bridge.mts')
     const r = installShellRcBridge(FAKE_TOKEN)
     assert.ok(r)
     assert.equal(r.outcome, 'inserted')
@@ -68,14 +66,8 @@ test(
     assert.match(content, /BEGIN socket-cli env/)
     assert.match(content, /END socket-cli env/)
     // Token literal exported under both names.
-    assert.match(
-      content,
-      new RegExp(`export SOCKET_API_TOKEN='${FAKE_TOKEN}'`),
-    )
-    assert.match(
-      content,
-      new RegExp(`export SOCKET_API_KEY='${FAKE_TOKEN}'`),
-    )
+    assert.match(content, new RegExp(`export SOCKET_API_TOKEN='${FAKE_TOKEN}'`))
+    assert.match(content, new RegExp(`export SOCKET_API_KEY='${FAKE_TOKEN}'`))
     // NO live keychain CALL — `security find-generic-password` may
     // appear in a `#` doc comment that points the user at the
     // canonical store, but it must NOT be inside a `$(...)` or
@@ -96,9 +88,7 @@ test(
       return
     }
     writeFileSync(rcPath, '')
-    const { installShellRcBridge } = await import(
-      '../lib/shell-rc-bridge.mts'
-    )
+    const { installShellRcBridge } = await import('../lib/shell-rc-bridge.mts')
     installShellRcBridge(FAKE_TOKEN)
     const r = installShellRcBridge(FAKE_TOKEN)
     assert.ok(r)
@@ -113,9 +103,7 @@ test(
       return
     }
     writeFileSync(rcPath, '')
-    const { installShellRcBridge } = await import(
-      '../lib/shell-rc-bridge.mts'
-    )
+    const { installShellRcBridge } = await import('../lib/shell-rc-bridge.mts')
     installShellRcBridge(FAKE_TOKEN)
     const rotated = `${FAKE_TOKEN}-rotated`
     const r = installShellRcBridge(rotated)
@@ -141,9 +129,7 @@ test(
       return
     }
     writeFileSync(rcPath, '')
-    const { installShellRcBridge } = await import(
-      '../lib/shell-rc-bridge.mts'
-    )
+    const { installShellRcBridge } = await import('../lib/shell-rc-bridge.mts')
     installShellRcBridge(FAKE_TOKEN)
     const tampered = readFileSync(rcPath, 'utf8').replace(
       `export SOCKET_API_KEY='${FAKE_TOKEN}'`,
@@ -156,10 +142,7 @@ test(
     const content = readFileSync(rcPath, 'utf8')
     const beginCount = (content.match(/BEGIN socket-cli env/g) || []).length
     assert.equal(beginCount, 1)
-    assert.match(
-      content,
-      new RegExp(`export SOCKET_API_KEY='${FAKE_TOKEN}'`),
-    )
+    assert.match(content, new RegExp(`export SOCKET_API_KEY='${FAKE_TOKEN}'`))
     assert.doesNotMatch(content, /export SOCKET_API_KEY='junk'/)
   }),
 )
@@ -171,19 +154,14 @@ test(
       return
     }
     writeFileSync(rcPath, '')
-    const { installShellRcBridge } = await import(
-      '../lib/shell-rc-bridge.mts'
-    )
+    const { installShellRcBridge } = await import('../lib/shell-rc-bridge.mts')
     // Hypothetical token with a single quote in it. Not a real shape,
     // but the escape logic should survive any byte sequence.
     const weird = "sk-test-with'quote"
     installShellRcBridge(weird)
     const content = readFileSync(rcPath, 'utf8')
     // Single-quote-close, escaped-quote, single-quote-reopen.
-    assert.match(
-      content,
-      /export SOCKET_API_TOKEN='sk-test-with'\\''quote'/,
-    )
+    assert.match(content, /export SOCKET_API_TOKEN='sk-test-with'\\''quote'/)
   }),
 )
 
@@ -193,9 +171,7 @@ test(
     if (!IS_MACOS) {
       return
     }
-    const { installShellRcBridge } = await import(
-      '../lib/shell-rc-bridge.mts'
-    )
+    const { installShellRcBridge } = await import('../lib/shell-rc-bridge.mts')
     assert.throws(() => installShellRcBridge(''), /non-empty string/)
     assert.throws(
       // @ts-expect-error: deliberately wrong type
@@ -212,9 +188,8 @@ test(
       return
     }
     writeFileSync(rcPath, '# before\nexport PATH=$PATH:/foo\n')
-    const { installShellRcBridge, uninstallShellRcBridge } = await import(
-      '../lib/shell-rc-bridge.mts'
-    )
+    const { installShellRcBridge, uninstallShellRcBridge } =
+      await import('../lib/shell-rc-bridge.mts')
     installShellRcBridge(FAKE_TOKEN)
     const removed = uninstallShellRcBridge()
     assert.equal(removed, true)
@@ -232,9 +207,8 @@ test(
       return
     }
     writeFileSync(rcPath, '# nothing here\n')
-    const { uninstallShellRcBridge } = await import(
-      '../lib/shell-rc-bridge.mts'
-    )
+    const { uninstallShellRcBridge } =
+      await import('../lib/shell-rc-bridge.mts')
     assert.equal(uninstallShellRcBridge(), false)
     assert.ok(existsSync(rcPath))
   }),

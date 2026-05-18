@@ -36,11 +36,17 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const SOURCE_SCRIPT = path.join(here, '..', 'install-git-hooks.mts')
 
 interface TmpRepo {
-  /** Absolute path to the tmpdir; serves as the repo root the installer sees. */
+  /**
+   * Absolute path to the tmpdir; serves as the repo root the installer sees.
+   */
   readonly dir: string
-  /** Copy of install-git-hooks.mts under <dir>/scripts/ — what each test spawns. */
+  /**
+   * Copy of install-git-hooks.mts under <dir>/scripts/ — what each test spawns.
+   */
   readonly installerPath: string
-  /** Where the installer expects to find / will write `core.hooksPath` -> here. */
+  /**
+   * Where the installer expects to find / will write `core.hooksPath` -> here.
+   */
   readonly hooksDir: string
   readonly cleanup: () => void
 }
@@ -104,7 +110,10 @@ test('install-git-hooks: sets core.hooksPath when .git + .git-hooks both present
 
     const result = runInstaller(repo.installerPath, repo.dir)
     assert.strictEqual(result.code, 0, `installer stderr: ${result.stderr}`)
-    assert.strictEqual(readLocalConfig(repo.dir, 'core.hooksPath'), '.git-hooks')
+    assert.strictEqual(
+      readLocalConfig(repo.dir, 'core.hooksPath'),
+      '.git-hooks',
+    )
   } finally {
     repo.cleanup()
   }
@@ -118,12 +127,18 @@ test('install-git-hooks: idempotent — second run is a silent no-op', () => {
 
     const first = runInstaller(repo.installerPath, repo.dir)
     assert.strictEqual(first.code, 0)
-    assert.strictEqual(readLocalConfig(repo.dir, 'core.hooksPath'), '.git-hooks')
+    assert.strictEqual(
+      readLocalConfig(repo.dir, 'core.hooksPath'),
+      '.git-hooks',
+    )
 
     const second = runInstaller(repo.installerPath, repo.dir)
     assert.strictEqual(second.code, 0)
     // Still set, still pointing at .git-hooks.
-    assert.strictEqual(readLocalConfig(repo.dir, 'core.hooksPath'), '.git-hooks')
+    assert.strictEqual(
+      readLocalConfig(repo.dir, 'core.hooksPath'),
+      '.git-hooks',
+    )
     // Second run produced no stderr (truly silent on the no-op path).
     assert.strictEqual(second.stderr.trim(), '')
   } finally {

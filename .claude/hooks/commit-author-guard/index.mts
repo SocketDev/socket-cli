@@ -88,12 +88,16 @@ function readAllowedAuthors(): AllowedAuthors {
   let email: string | undefined
   let name: string | undefined
   try {
-    email = execSync('git config --global user.email', { encoding: 'utf8' }).trim()
+    email = execSync('git config --global user.email', {
+      encoding: 'utf8',
+    }).trim()
   } catch {
     // unset
   }
   try {
-    name = execSync('git config --global user.name', { encoding: 'utf8' }).trim()
+    name = execSync('git config --global user.name', {
+      encoding: 'utf8',
+    }).trim()
   } catch {
     // unset
   }
@@ -158,7 +162,9 @@ function parseAuthorOverride(command: string): GitAuthor | undefined {
 function readCheckoutAuthor(cwd: string | undefined): GitAuthor {
   let email: string | undefined
   let name: string | undefined
-  const opts = cwd ? { encoding: 'utf8' as const, cwd } : { encoding: 'utf8' as const }
+  const opts = cwd
+    ? { encoding: 'utf8' as const, cwd }
+    : { encoding: 'utf8' as const }
   try {
     email = execSync('git config user.email', opts).trim()
   } catch {
@@ -242,7 +248,9 @@ async function main(): Promise<void> {
   lines.push('')
   lines.push('    # Or correct the local checkout config:')
   lines.push(`    git config user.email ${allowed.canonical.email}`)
-  lines.push(`    git config user.name "${allowed.canonical.name ?? 'jdalton'}"`)
+  lines.push(
+    `    git config user.name "${allowed.canonical.name ?? 'jdalton'}"`,
+  )
   lines.push('')
   lines.push('  Allowed-author list: ~/.claude/git-authors.json')
   lines.push('  (falls back to `git config --global user.email` when absent)')

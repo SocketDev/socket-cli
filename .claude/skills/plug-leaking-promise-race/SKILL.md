@@ -24,7 +24,7 @@ allowed-tools: Read, Grep, Glob
 
   ```ts
   while (queue.length) {
-    const winner = await Promise.race(pool)  // ← N handlers per arm by iteration N
+    const winner = await Promise.race(pool) // ← N handlers per arm by iteration N
     pool = pool.filter(p => p !== winner)
   }
   ```
@@ -52,8 +52,8 @@ while (queue.length) {
 }
 ```
 
-The arm being awaited is *always fresh*; nothing accumulates handlers.
+The arm being awaited is _always fresh_; nothing accumulates handlers.
 
 ## Quick check
 
-Before merging concurrency code, ask: *does any arm of a `Promise.race`/`Promise.any` outlive the call?* If yes, refactor to the single-waiter signal.
+Before merging concurrency code, ask: _does any arm of a `Promise.race`/`Promise.any` outlive the call?_ If yes, refactor to the single-waiter signal.

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/no-npx-dlx.
+ * @file Unit tests for socket/no-npx-dlx.
  */
 
 import { describe, test } from 'node:test'

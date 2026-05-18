@@ -1,35 +1,29 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Audit the dev machine for prompt-less secret / signing
- * setup. Each check has a `fix` suggestion the operator can copy-paste.
+ * @file Audit the dev machine for prompt-less secret / signing setup. Each
+ *   check has a `fix` suggestion the operator can copy-paste. Exit code 0 = all
+ *   good. Exit code 1 = at least one check failed. Use `--fix` to attempt
+ *   automatic remediation (writes ~/.gnupg/ gpg-agent.conf + ~/.zshenv).
+ *   Read-only by default. Checks (macOS, Linux, Windows where applicable):
  *
- * Exit code 0 = all good. Exit code 1 = at least one check failed.
- * Use `--fix` to attempt automatic remediation (writes ~/.gnupg/
- * gpg-agent.conf + ~/.zshenv). Read-only by default.
- *
- * Checks (macOS, Linux, Windows where applicable):
- *
- *   1. gpg-agent cache TTL ≥ 8 hours (otherwise pinentry re-prompts
- *      every ~10 minutes, which is the default).
- *   2. GPG_TTY exported in the user's shell rc so pinentry can find
- *      the controlling terminal in non-interactive shells.
- *   3. commit.gpgsign config consistency — if signing is enabled,
- *      the signing key must exist and gpg-agent must cache it.
- *   4. macOS: pinentry-program points at pinentry-mac (offers
- *      "Save in Keychain" so subsequent signs don't even hit gpg).
- *   5. SOCKET_API_TOKEN present in env OR wired via shell-rc-bridge
- *      block (so hooks read env instead of hitting the keychain).
- *   6. macOS: keychain has the Socket token entry with ACL set to
- *      "any app" (-T '') so subsequent reads don't trigger the
- *      "this app wants to access your keychain" dialog.
- *
- * Invocation:
- *   node template/scripts/check-prompt-less-setup.mts
- *   node template/scripts/check-prompt-less-setup.mts --fix
- *
- * Wired into `pnpm run doctor:auth` in template/package.json — that's
- * the canonical entry point. Run it after `pnpm run setup` and
- * whenever a fresh signing/keychain prompt surprises you.
+ *   1. gpg-agent cache TTL ≥ 8 hours (otherwise pinentry re-prompts every ~10
+ *      minutes, which is the default).
+ *   2. GPG_TTY exported in the user's shell rc so pinentry can find the
+ *      controlling terminal in non-interactive shells.
+ *   3. commit.gpgsign config consistency — if signing is enabled, the signing key
+ *      must exist and gpg-agent must cache it.
+ *   4. macOS: pinentry-program points at pinentry-mac (offers "Save in Keychain"
+ *      so subsequent signs don't even hit gpg).
+ *   5. SOCKET_API_TOKEN present in env OR wired via shell-rc-bridge block (so
+ *      hooks read env instead of hitting the keychain).
+ *   6. macOS: keychain has the Socket token entry with ACL set to "any app" (-T
+ *      '') so subsequent reads don't trigger the "this app wants to access your
+ *      keychain" dialog. Invocation: node
+ *      template/scripts/check-prompt-less-setup.mts node
+ *      template/scripts/check-prompt-less-setup.mts --fix Wired into `pnpm run
+ *      doctor:auth` in template/package.json — that's the canonical entry
+ *      point. Run it after `pnpm run setup` and whenever a fresh
+ *      signing/keychain prompt surprises you.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -91,7 +85,8 @@ function checkGpgAgentCacheTtl(): CheckResult {
     return {
       name: 'gpg-agent cache TTL',
       ok: false,
-      detail: '~/.gnupg/gpg-agent.conf missing — defaults are 600s (10 min) which forces a fresh pinentry every ~10 minutes of work.',
+      detail:
+        '~/.gnupg/gpg-agent.conf missing — defaults are 600s (10 min) which forces a fresh pinentry every ~10 minutes of work.',
       fix:
         'mkdir -p ~/.gnupg && cat >> ~/.gnupg/gpg-agent.conf <<EOF\n' +
         'default-cache-ttl 28800\n' +
@@ -114,19 +109,21 @@ function checkGpgAgentCacheTtl(): CheckResult {
       ]
         .filter(Boolean)
         .join(' + ')}; gpg-agent falls back to 600s defaults.`,
-      fix: 'Add the missing directives to ~/.gnupg/gpg-agent.conf:\n' +
+      fix:
+        'Add the missing directives to ~/.gnupg/gpg-agent.conf:\n' +
         'default-cache-ttl 28800\nmax-cache-ttl 28800\n' +
         'Then: gpg-connect-agent reloadagent /bye',
     }
   }
-  if (defaultTtl < CACHE_TTL_THRESHOLD_SECONDS || maxTtl < CACHE_TTL_THRESHOLD_SECONDS) {
+  if (
+    defaultTtl < CACHE_TTL_THRESHOLD_SECONDS ||
+    maxTtl < CACHE_TTL_THRESHOLD_SECONDS
+  ) {
     return {
       name: 'gpg-agent cache TTL',
       ok: false,
-      detail:
-        `default-cache-ttl=${defaultTtl}s, max-cache-ttl=${maxTtl}s. Threshold is ${CACHE_TTL_THRESHOLD_SECONDS}s (8h). Lower TTLs make pinentry re-prompt mid-session.`,
-      fix:
-        `Edit ~/.gnupg/gpg-agent.conf to set both default-cache-ttl and max-cache-ttl to ${CACHE_TTL_THRESHOLD_SECONDS} (8h). Then: gpg-connect-agent reloadagent /bye`,
+      detail: `default-cache-ttl=${defaultTtl}s, max-cache-ttl=${maxTtl}s. Threshold is ${CACHE_TTL_THRESHOLD_SECONDS}s (8h). Lower TTLs make pinentry re-prompt mid-session.`,
+      fix: `Edit ~/.gnupg/gpg-agent.conf to set both default-cache-ttl and max-cache-ttl to ${CACHE_TTL_THRESHOLD_SECONDS} (8h). Then: gpg-connect-agent reloadagent /bye`,
     }
   }
   return {
@@ -170,8 +167,7 @@ function checkGpgTtyExported(): CheckResult {
     ok: false,
     detail:
       'No `export GPG_TTY=$(tty)` found in ~/.zshenv / ~/.zshrc / ~/.bashrc / ~/.bash_profile / ~/.profile. pinentry needs GPG_TTY to find the controlling terminal in non-interactive shells (Claude Code, IDE integrations).',
-    fix:
-      "echo 'export GPG_TTY=$(tty)' >> ~/.zshenv  (or ~/.bashrc for bash)",
+    fix: "echo 'export GPG_TTY=$(tty)' >> ~/.zshenv  (or ~/.bashrc for bash)",
   }
 }
 
@@ -191,8 +187,7 @@ function checkPinentryProgram(): CheckResult {
       ok: false,
       detail:
         'No `pinentry-program` set in ~/.gnupg/gpg-agent.conf. pinentry-mac integrates with macOS Keychain ("Save in Keychain" checkbox); without it, gpg may use a less-friendly fallback.',
-      fix:
-        'brew install pinentry-mac && echo "pinentry-program $(brew --prefix)/bin/pinentry-mac" >> ~/.gnupg/gpg-agent.conf && gpg-connect-agent reloadagent /bye',
+      fix: 'brew install pinentry-mac && echo "pinentry-program $(brew --prefix)/bin/pinentry-mac" >> ~/.gnupg/gpg-agent.conf && gpg-connect-agent reloadagent /bye',
     }
   }
   const program = m[1]!
@@ -201,8 +196,7 @@ function checkPinentryProgram(): CheckResult {
       name: 'pinentry-program',
       ok: false,
       detail: `pinentry-program is ${program} — not pinentry-mac. pinentry-mac is the recommended choice on macOS (Keychain integration).`,
-      fix:
-        'brew install pinentry-mac && sed -i "" "s|^pinentry-program .*|pinentry-program $(brew --prefix)/bin/pinentry-mac|" ~/.gnupg/gpg-agent.conf && gpg-connect-agent reloadagent /bye',
+      fix: 'brew install pinentry-mac && sed -i "" "s|^pinentry-program .*|pinentry-program $(brew --prefix)/bin/pinentry-mac|" ~/.gnupg/gpg-agent.conf && gpg-connect-agent reloadagent /bye',
     }
   }
   if (!existsSync(program)) {
@@ -221,10 +215,14 @@ function checkPinentryProgram(): CheckResult {
 }
 
 function checkCommitGpgsign(): CheckResult {
-  const r = spawnSync('git', ['config', '--global', '--get', 'commit.gpgsign'], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
+  const r = spawnSync(
+    'git',
+    ['config', '--global', '--get', 'commit.gpgsign'],
+    {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  )
   const value = typeof r.stdout === 'string' ? r.stdout.trim() : ''
   if (r.status !== 0 || !value) {
     return {
@@ -251,7 +249,8 @@ function checkCommitGpgsign(): CheckResult {
     return {
       name: 'commit.gpgsign',
       ok: false,
-      detail: 'commit.gpgsign=true but user.signingkey is unset. Commits will fail or prompt for key selection on every sign.',
+      detail:
+        'commit.gpgsign=true but user.signingkey is unset. Commits will fail or prompt for key selection on every sign.',
       fix:
         'gpg --list-secret-keys --keyid-format LONG  # find your key id\n' +
         'git config --global user.signingkey <KEYID>',
@@ -397,7 +396,9 @@ function runAllChecks(): CheckSummary {
 
 function printReport(summary: CheckSummary): void {
   logger.error('')
-  logger.error(`=== prompt-less auth setup audit (${summary.ok}/${summary.total} ok) ===`)
+  logger.error(
+    `=== prompt-less auth setup audit (${summary.ok}/${summary.total} ok) ===`,
+  )
   for (let i = 0, { length } = summary.results; i < length; i += 1) {
     const r = summary.results[i]!
     const status = r.ok ? '[ok]  ' : '[FAIL]'

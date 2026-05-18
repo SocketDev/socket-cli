@@ -59,14 +59,14 @@ test('BLOCKS --base=main', () => {
 })
 
 test('BLOCKS DEFAULT_BRANCH=main', () => {
-  const { exitCode } = runHook('DEFAULT_BRANCH=main\ngit diff $DEFAULT_BRANCH..HEAD')
+  const { exitCode } = runHook(
+    'DEFAULT_BRANCH=main\ngit diff $DEFAULT_BRANCH..HEAD',
+  )
   assert.equal(exitCode, 2)
 })
 
 test('BLOCKS script-file write with main..HEAD literal', () => {
-  const { exitCode } = runHook(
-    'cat > script.sh <<EOF\ngit log main..HEAD\nEOF',
-  )
+  const { exitCode } = runHook('cat > script.sh <<EOF\ngit log main..HEAD\nEOF')
   assert.equal(exitCode, 2)
 })
 
@@ -105,10 +105,8 @@ test('ALLOWS with "Allow default-branch bypass" phrase', () => {
 })
 
 test('disabled env var short-circuits', () => {
-  const { exitCode } = runHook(
-    'BASE=main',
-    undefined,
-    { SOCKET_DEFAULT_BRANCH_GUARD_DISABLED: '1' },
-  )
+  const { exitCode } = runHook('BASE=main', undefined, {
+    SOCKET_DEFAULT_BRANCH_GUARD_DISABLED: '1',
+  })
   assert.equal(exitCode, 0)
 })

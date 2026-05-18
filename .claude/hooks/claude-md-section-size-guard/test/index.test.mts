@@ -35,9 +35,7 @@ const PROLOG = `# Header\n\n<!-- BEGIN FLEET-CANONICAL -->\n\n`
 const EPILOG = `\n<!-- END FLEET-CANONICAL -->\n\nAfter the block.\n`
 
 function buildClaudeMd(sections: { heading: string; body: string }[]): string {
-  const body = sections
-    .map(s => `### ${s.heading}\n\n${s.body}\n`)
-    .join('\n')
+  const body = sections.map(s => `### ${s.heading}\n\n${s.body}\n`).join('\n')
   return PROLOG + body + EPILOG
 }
 
@@ -53,7 +51,8 @@ test('non-CLAUDE.md targets pass through', async () => {
   const result = await runHook({
     tool_input: {
       file_path: '/Users/x/projects/foo/README.md',
-      content: '# README\n\n<!-- BEGIN FLEET-CANONICAL -->\n### s1\n' +
+      content:
+        '# README\n\n<!-- BEGIN FLEET-CANONICAL -->\n### s1\n' +
         'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\n<!-- END FLEET-CANONICAL -->',
     },
     tool_name: 'Write',
@@ -75,9 +74,7 @@ test('allows short sections under the default cap', async () => {
 
 test('blocks a section that exceeds the default 8-line cap', async () => {
   const longBody = Array(12).fill('one detail line').join('\n')
-  const content = buildClaudeMd([
-    { heading: 'Long rule', body: longBody },
-  ])
+  const content = buildClaudeMd([{ heading: 'Long rule', body: longBody }])
   const result = await runHook({
     tool_input: { file_path: '/x/CLAUDE.md', content },
     tool_name: 'Write',
@@ -111,10 +108,7 @@ test('code-fence lines do count toward the cap', async () => {
     codeLines.push(`const v${i} = ${i}`)
   }
   codeLines.push('```')
-  const body = [
-    'Use this pattern:', '',
-    ...codeLines,
-  ].join('\n')
+  const body = ['Use this pattern:', '', ...codeLines].join('\n')
   const content = buildClaudeMd([{ heading: 'Has code block', body }])
   const result = await runHook({
     tool_input: { file_path: '/x/CLAUDE.md', content },
@@ -184,8 +178,8 @@ test('respects CLAUDE_MD_FLEET_SECTION_MAX_LINES env override', async () => {
 })
 
 test('passes through when fleet markers are absent', async () => {
-  const content = '# No fleet block\n\n### Rule\n\n' +
-    Array(100).fill('line').join('\n')
+  const content =
+    '# No fleet block\n\n### Rule\n\n' + Array(100).fill('line').join('\n')
   const result = await runHook({
     tool_input: { file_path: '/x/CLAUDE.md', content },
     tool_name: 'Write',

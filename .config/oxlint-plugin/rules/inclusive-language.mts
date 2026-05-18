@@ -1,39 +1,27 @@
 /* oxlint-disable socket/inclusive-language -- this file IS the rule definition; the legacy terms are lookup-table data, not real usage. */
 
 /**
- * @fileoverview Per CLAUDE.md "Inclusive language" rule (full table
- * in docs/references/inclusive-language.md).
+ * @file Per CLAUDE.md "Inclusive language" rule (full table in
+ *   docs/references/inclusive-language.md). Substitutions: whitelist →
+ *   allowlist blacklist → denylist master → main / primary slave → replica /
+ *   secondary / worker grandfathered → legacy sanity check → quick check dummy
+ *   → placeholder Detects identifiers, string literals, and comments containing
+ *   the legacy terms. Word-boundary matched on the literal stem so case
+ *   variants `Whitelist` / `WHITELIST` / `whitelisted` all fire. Autofix:
  *
- * Substitutions:
- *
- *   whitelist  → allowlist
- *   blacklist  → denylist
- *   master     → main / primary
- *   slave      → replica / secondary / worker
- *   grandfathered → legacy
- *   sanity check  → quick check
- *   dummy      → placeholder
- *
- * Detects identifiers, string literals, and comments containing the
- * legacy terms. Word-boundary matched on the literal stem so case
- * variants `Whitelist` / `WHITELIST` / `whitelisted` all fire.
- *
- * Autofix:
- *   - Identifiers and string literals: rewrite case-preserving
- *     (e.g. `Whitelist` → `Allowlist`, `WHITELIST` → `ALLOWLIST`,
- *     `whitelistEntry` → `allowlistEntry`).
+ *   - Identifiers and string literals: rewrite case-preserving (e.g. `Whitelist`
+ *     → `Allowlist`, `WHITELIST` → `ALLOWLIST`, `whitelistEntry` →
+ *     `allowlistEntry`).
  *   - Comments: rewrite the comment text in place, same case rules.
- *   - Multi-word terms (`sanity check`, `master branch`): only the
- *     first word is replaced; the rest is left alone (`sanity check`
- *     → `quick check`).
- *
- * Allowed exceptions (skipped — no report, no fix):
- *   - Third-party API field references: comment with
- *     `inclusive-language: external-api` adjacent to the line.
+ *   - Multi-word terms (`sanity check`, `master branch`): only the first word is
+ *     replaced; the rest is left alone (`sanity check` → `quick check`).
+ *     Allowed exceptions (skipped — no report, no fix):
+ *   - Third-party API field references: comment with `inclusive-language:
+ *     external-api` adjacent to the line.
  *   - Vendored / fixture paths: handled at the .config/oxlintrc.json
  *     ignorePatterns level; this rule trusts the include set.
- *   - The literal phrase "main / primary" / etc. inside a doc that
- *     spells out the substitution table — handled by the
+ *   - The literal phrase "main / primary" / etc. inside a doc that spells out the
+ *     substitution table — handled by the
  *     `docs/references/inclusive-language.md` ignore pattern in
  *     .config/oxlintrc.json (caller adds the override).
  */
@@ -60,16 +48,16 @@ const REPORT_ONLY_TERMS = ['master', 'slave']
 
 const BYPASS_RE = /inclusive-language:\s*external-api/
 
-/** Build a regex matching any legacy stem with word boundaries.
+/**
+ * Build a regex matching any legacy stem with word boundaries.
  *
- * Stems are sorted alphabetically before being joined so the regex
- * alternation has a deterministic, stable form. Two reasons:
- *   1. The fleet ships a `sort-regex-alternations` rule that flags
- *      unsorted `(a|b|c)`-style alternations; this regex would trip
- *      its own sibling rule without the sort.
- *   2. Regex engines treat `|` as "first match wins" when alternatives
- *      have shared prefixes — sorting keeps the precedence visible
- *      in source rather than depending on declaration order.
+ * Stems are sorted alphabetically before being joined so the regex alternation
+ * has a deterministic, stable form. Two reasons: 1. The fleet ships a
+ * `sort-regex-alternations` rule that flags unsorted `(a|b|c)`-style
+ * alternations; this regex would trip its own sibling rule without the sort. 2.
+ * Regex engines treat `|` as "first match wins" when alternatives have shared
+ * prefixes — sorting keeps the precedence visible in source rather than
+ * depending on declaration order.
  */
 function buildDetectorRegex() {
   const stems = [
@@ -82,10 +70,9 @@ function buildDetectorRegex() {
 const DETECTOR_RE = buildDetectorRegex()
 
 /**
- * Replace a single hit `match` (e.g. `Whitelist`, `WHITELIST`,
- * `whitelisted`, `whitelistEntry`) with the case-preserving form of
- * the new stem. Returns undefined when there's no autofix-able
- * substitution (master/slave).
+ * Replace a single hit `match` (e.g. `Whitelist`, `WHITELIST`, `whitelisted`,
+ * `whitelistEntry`) with the case-preserving form of the new stem. Returns
+ * undefined when there's no autofix-able substitution (master/slave).
  */
 function rewriteHit(match: string): string | undefined {
   const lower = match.toLowerCase()
@@ -134,7 +121,9 @@ function findHits(text: string): Hit[] {
   return hits
 }
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'suggestion',

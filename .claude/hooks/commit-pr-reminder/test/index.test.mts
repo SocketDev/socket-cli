@@ -38,7 +38,9 @@ test('FLAGS "Generated with Claude"', () => {
 })
 
 test('FLAGS "Co-Authored-By: Claude"', () => {
-  const t = makeTranscript('Trailer:\nCo-Authored-By: Claude <noreply@anthropic.com>')
+  const t = makeTranscript(
+    'Trailer:\nCo-Authored-By: Claude <noreply@anthropic.com>',
+  )
   const { stderr, exitCode } = runHook(t)
   assert.equal(exitCode, 0)
   assert.match(stderr, /co-authored-by/i)
@@ -52,7 +54,9 @@ test('FLAGS robot emoji generated tag', () => {
 })
 
 test('does NOT fire on plain Conventional Commit text', () => {
-  const t = makeTranscript('feat(api): add new endpoint\n\nDetails about the change.')
+  const t = makeTranscript(
+    'feat(api): add new endpoint\n\nDetails about the change.',
+  )
   const { stderr, exitCode } = runHook(t)
   assert.equal(exitCode, 0)
   assert.equal(stderr, '')

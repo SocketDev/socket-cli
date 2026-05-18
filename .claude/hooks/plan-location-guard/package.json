@@ -6,13 +6,13 @@
   "exports": {
     ".": "./index.mts"
   },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  },
   "dependencies": {
     "@socketsecurity/lib-stable": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:"
-  },
-  "scripts": {
-    "test": "node --test test/*.test.mts"
   }
 }

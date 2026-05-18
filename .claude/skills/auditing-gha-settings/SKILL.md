@@ -17,13 +17,13 @@ Diff a fleet repo's GitHub Actions repository-level settings against the canonic
 
 ## What the baseline checks
 
-| Setting (per repo)                  | Baseline                           | Why                                                                                                                                                  |
-| ----------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enabled`                           | `true`                             | Per-repo override is on. **Note**: `enabled: false` does NOT mean Actions are off — it means the per-repo override is unset and org policy is the source of truth. To get drift-detection on a repo, opt in to per-repo settings + mirror the canonical baseline. |
-| `allowed_actions`                   | `'selected'`                       | "Allow enterprise, and select non-enterprise, actions and reusable workflows" — the only mode where the explicit allowlist is the source of truth. |
-| `github_owned_allowed`              | `false`                            | Don't blanket-allow `actions/*`. The canonical patterns list already names every github-owned action we need; unlisted ones must be explicit.        |
-| `verified_allowed`                  | `false`                            | Marketplace "verified creator" is not implicit allow — every action must be on the canonical patterns list.                                          |
-| `patterns_allowed ⊇ canonical set` | Each fleet pattern present         | Each canonical entry is referenced by at least one socket-registry shared workflow; missing one breaks every consumer.                              |
+| Setting (per repo)                 | Baseline                   | Why                                                                                                                                                                                                                                                               |
+| ---------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`                          | `true`                     | Per-repo override is on. **Note**: `enabled: false` does NOT mean Actions are off — it means the per-repo override is unset and org policy is the source of truth. To get drift-detection on a repo, opt in to per-repo settings + mirror the canonical baseline. |
+| `allowed_actions`                  | `'selected'`               | "Allow enterprise, and select non-enterprise, actions and reusable workflows" — the only mode where the explicit allowlist is the source of truth.                                                                                                                |
+| `github_owned_allowed`             | `false`                    | Don't blanket-allow `actions/*`. The canonical patterns list already names every github-owned action we need; unlisted ones must be explicit.                                                                                                                     |
+| `verified_allowed`                 | `false`                    | Marketplace "verified creator" is not implicit allow — every action must be on the canonical patterns list.                                                                                                                                                       |
+| `patterns_allowed ⊇ canonical set` | Each fleet pattern present | Each canonical entry is referenced by at least one socket-registry shared workflow; missing one breaks every consumer.                                                                                                                                            |
 
 The **canonical patterns** (every fleet repo must have all of these):
 
@@ -47,15 +47,15 @@ Extras beyond the canonical set are tolerated (reported as info, not failure). A
 
 **Third-party actions are NOT on the allowlist.** Anything outside `actions/`, `github/`, and `depot/` should be ported to a hand-rolled composite under `SocketDev/socket-registry/.github/actions/` rather than added here. The current set of socket-registry composite replacements:
 
-| Third-party | socket-registry composite |
-| --- | --- |
-| `dtolnay/rust-toolchain` | `setup-rust-toolchain` |
-| `hendrikmuhs/ccache-action` | `setup-ccache` |
+| Third-party                       | socket-registry composite  |
+| --------------------------------- | -------------------------- |
+| `dtolnay/rust-toolchain`          | `setup-rust-toolchain`     |
+| `hendrikmuhs/ccache-action`       | `setup-ccache`             |
 | `HaaLeo/publish-vscode-extension` | `publish-vscode-extension` |
-| `mlugg/setup-zig` | `setup-zig` |
-| `pnpm/action-setup` | `setup-pnpm` |
-| `softprops/action-gh-release` | `create-gh-release` |
-| `Swatinem/rust-cache` | `setup-rust-cache` |
+| `mlugg/setup-zig`                 | `setup-zig`                |
+| `pnpm/action-setup`               | `setup-pnpm`               |
+| `softprops/action-gh-release`     | `create-gh-release`        |
+| `Swatinem/rust-cache`             | `setup-rust-cache`         |
 
 Note: `enabled: false` from the per-repo API does NOT mean Actions are disabled — it means the per-repo override is unset and org-level policy is in effect. The skill explains this in its output.
 
@@ -89,23 +89,23 @@ Each finding line names the exact toggle to flip. The fix is **manual**: the run
 
 Two paths:
 
-1. **Web UI (preferred)** — Repo → Settings → Actions → General. The settings map 1:1 with the audit findings:
-   - "Allow enterprise, and select non-enterprise, actions and reusable workflows" → flips `allowed_actions` to `selected`.
-   - Uncheck "Allow actions created by GitHub" → `github_owned_allowed: false`.
-   - Uncheck "Allow Marketplace actions by verified creators" → `verified_allowed: false`.
-   - "Allow specified actions and reusable workflows" textarea — paste the canonical patterns list (one per line). Existing extras can stay; remove only ones with no consumer.
+1.  **Web UI (preferred)** — Repo → Settings → Actions → General. The settings map 1:1 with the audit findings:
+    - "Allow enterprise, and select non-enterprise, actions and reusable workflows" → flips `allowed_actions` to `selected`.
+    - Uncheck "Allow actions created by GitHub" → `github_owned_allowed: false`.
+    - Uncheck "Allow Marketplace actions by verified creators" → `verified_allowed: false`.
+    - "Allow specified actions and reusable workflows" textarea — paste the canonical patterns list (one per line). Existing extras can stay; remove only ones with no consumer.
 
-2. **`gh api` PUT (admin-scoped tokens only)** — surfaced for completeness; prefer the UI:
+2.  **`gh api` PUT (admin-scoped tokens only)** — surfaced for completeness; prefer the UI:
 
-       gh api -X PUT repos/<owner>/<repo>/actions/permissions \
-         -F enabled=true -F allowed_actions=selected
-       gh api -X PUT repos/<owner>/<repo>/actions/permissions/selected-actions \
-         -F github_owned_allowed=false -F verified_allowed=false \
-         -f patterns_allowed[]='actions/cache/restore@*' \
-         -f patterns_allowed[]='actions/cache/save@*' \
-         # ...one -f per canonical pattern...
+        gh api -X PUT repos/<owner>/<repo>/actions/permissions \
+          -F enabled=true -F allowed_actions=selected
+        gh api -X PUT repos/<owner>/<repo>/actions/permissions/selected-actions \
+          -F github_owned_allowed=false -F verified_allowed=false \
+          -f patterns_allowed[]='actions/cache/restore@*' \
+          -f patterns_allowed[]='actions/cache/save@*' \
+          # ...one -f per canonical pattern...
 
-   The whole-list replace semantics on the selected-actions endpoint mean **omitting a repo's existing extras drops them** — preserve them when relevant.
+    The whole-list replace semantics on the selected-actions endpoint mean **omitting a repo's existing extras drops them** — preserve them when relevant.
 
 ## Anti-patterns
 

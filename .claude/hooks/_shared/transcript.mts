@@ -1,36 +1,29 @@
 /**
- * @fileoverview Shared helpers for Claude Code PreToolUse / Stop hooks.
+ * @file Shared helpers for Claude Code PreToolUse / Stop hooks. Two
+ *   responsibilities the fleet's hooks were each duplicating:
  *
- * Two responsibilities the fleet's hooks were each duplicating:
- *
- *   1. `readStdin()` — pull the JSON payload Claude Code sends on
- *      stdin. Always the same shape, always the same code.
- *
- *   2. `bypassPhrasePresent()` / `readUserText()` — scan the
- *      conversation transcript JSONL for a canonical `Allow <X>
- *      bypass` phrase. The transcript format has 3 variant shapes
- *      across harness versions; centralizing the parser means a
- *      schema change is a one-file fix.
- *
- * Why one file: KISS. Both helpers want the same imports
- * (`node:fs` + the JSONL parser); separating into two files would
- * just shuffle imports. The file is small (~100 LOC) so cohesion
- * wins.
- *
- * Fail-open contract: every helper here returns a safe default on
- * any parse / I/O error rather than throwing. A hook that crashes
- * blocks every Claude Code call indefinitely; one that returns
- * "no bypass present" or "empty user text" simply falls through to
- * the hook's default decision. Per the fleet's hook contract: "a
- * buggy hook silently allows" is preferable to "a buggy hook wedges
- * the session."
+ *   1. `readStdin()` — pull the JSON payload Claude Code sends on stdin. Always
+ *      the same shape, always the same code.
+ *   2. `bypassPhrasePresent()` / `readUserText()` — scan the conversation
+ *      transcript JSONL for a canonical `Allow <X> bypass` phrase. The
+ *      transcript format has 3 variant shapes across harness versions;
+ *      centralizing the parser means a schema change is a one-file fix. Why one
+ *      file: KISS. Both helpers want the same imports (`node:fs` + the JSONL
+ *      parser); separating into two files would just shuffle imports. The file
+ *      is small (~100 LOC) so cohesion wins. Fail-open contract: every helper
+ *      here returns a safe default on any parse / I/O error rather than
+ *      throwing. A hook that crashes blocks every Claude Code call
+ *      indefinitely; one that returns "no bypass present" or "empty user text"
+ *      simply falls through to the hook's default decision. Per the fleet's
+ *      hook contract: "a buggy hook silently allows" is preferable to "a buggy
+ *      hook wedges the session."
  */
 
 import { existsSync, readFileSync } from 'node:fs'
 
 /**
- * Read the entire stdin buffer into a string. Used by every
- * PreToolUse hook to slurp the JSON payload Claude Code sends.
+ * Read the entire stdin buffer into a string. Used by every PreToolUse hook to
+ * slurp the JSON payload Claude Code sends.
  */
 export function readStdin(): Promise<string> {
   return new Promise(resolve => {
@@ -46,9 +39,9 @@ export function readStdin(): Promise<string> {
 type Role = 'user' | 'assistant'
 
 /**
- * Extract this turn's text content into a flat array of pieces. Handles
- * the 3 content shapes the harness emits (string / array-of-blocks /
- * nested message.content).
+ * Extract this turn's text content into a flat array of pieces. Handles the 3
+ * content shapes the harness emits (string / array-of-blocks / nested
+ * message.content).
  */
 function extractTurnPieces(content: unknown): string[] {
   const pieces: string[] = []
@@ -75,16 +68,18 @@ function extractTurnPieces(content: unknown): string[] {
  * Resolve a JSONL event's role (`'user'` / `'assistant'`) and content
  * tolerantly across the 3 variant shapes seen in harness versions:
  *
- *   { role: 'user', content: '...' }
- *   { type: 'user', message: { role: 'user', content: '...' } }
- *   { type: 'user', message: { content: [{ type: 'text', text: '...' }] } }
+ * { role: 'user', content: '...' } { type: 'user', message: { role: 'user',
+ * content: '...' } } { type: 'user', message: { content: [{ type: 'text', text:
+ * '...' }] } }
  *
  * Returns undefined for malformed events so the caller can skip cleanly.
  */
-function resolveRoleAndContent(evt: unknown): {
-  content: unknown
-  role: string | undefined
-} | undefined {
+function resolveRoleAndContent(evt: unknown):
+  | {
+      content: unknown
+      role: string | undefined
+    }
+  | undefined {
   if (!evt || typeof evt !== 'object') {
     return undefined
   }
@@ -105,9 +100,9 @@ function resolveRoleAndContent(evt: unknown): {
 }
 
 /**
- * Read the transcript JSONL file into newline-filtered lines. Returns
- * an empty array on missing path or read error — every caller in this
- * module wants the same empty-on-failure semantics.
+ * Read the transcript JSONL file into newline-filtered lines. Returns an empty
+ * array on missing path or read error — every caller in this module wants the
+ * same empty-on-failure semantics.
  */
 function readLines(transcriptPath: string | undefined): string[] {
   if (!transcriptPath || !existsSync(transcriptPath)) {
@@ -123,13 +118,13 @@ function readLines(transcriptPath: string | undefined): string[] {
 }
 
 /**
- * Generic turn-walker: walk the transcript newest → oldest, collecting
- * text from turns whose role matches `role`. Joins all turns'
- * pieces with newlines and returns chronological order at the end.
+ * Generic turn-walker: walk the transcript newest → oldest, collecting text
+ * from turns whose role matches `role`. Joins all turns' pieces with newlines
+ * and returns chronological order at the end.
  *
- * `lookback` (optional) limits the search to the most-recent N
- * matching turns so callers don't pay the full-transcript cost when
- * they only need recent context.
+ * `lookback` (optional) limits the search to the most-recent N matching turns
+ * so callers don't pay the full-transcript cost when they only need recent
+ * context.
  */
 function readRoleText(
   transcriptPath: string | undefined,
@@ -167,10 +162,10 @@ function readRoleText(
 }
 
 /**
- * Read every user-turn text content from a transcript JSONL, joined
- * by newlines. Returns empty string when the path is unset, missing,
- * or unparseable. `lookbackUserTurns` limits to the most-recent N user
- * turns (counted from the tail); omit to read all turns.
+ * Read every user-turn text content from a transcript JSONL, joined by
+ * newlines. Returns empty string when the path is unset, missing, or
+ * unparseable. `lookbackUserTurns` limits to the most-recent N user turns
+ * (counted from the tail); omit to read all turns.
  */
 export function readUserText(
   transcriptPath: string | undefined,
@@ -180,9 +175,9 @@ export function readUserText(
 }
 
 /**
- * Read the most-recent assistant-turn text content. Same shape parser
- * as `readUserText`; used by hooks (excuse-detector) that scan what
- * the assistant just said rather than what the user typed.
+ * Read the most-recent assistant-turn text content. Same shape parser as
+ * `readUserText`; used by hooks (excuse-detector) that scan what the assistant
+ * just said rather than what the user typed.
  */
 export function readLastAssistantText(
   transcriptPath: string | undefined,
@@ -191,21 +186,20 @@ export function readLastAssistantText(
 }
 
 /**
- * Is any canonical bypass phrase present in a recent user turn?
- * Substring match, case-sensitive (intentional — `allow X bypass`
- * lowercase doesn't count, matches the fleet rule stated in
- * docs/claude.md/bypass-phrases.md).
+ * Is any canonical bypass phrase present in a recent user turn? Substring
+ * match, case-sensitive (intentional — `allow X bypass` lowercase doesn't
+ * count, matches the fleet rule stated in docs/claude.md/bypass-phrases.md).
  *
- * Accepts a string or string[] so callers with a single canonical
- * spelling and callers with equivalent spellings (e.g. "soaktime" /
- * "soak time" / "soak-time") share the same helper. The transcript
- * is read once; each phrase substring-checks against the same text.
+ * Accepts a string or string[] so callers with a single canonical spelling and
+ * callers with equivalent spellings (e.g. "soaktime" / "soak time" /
+ * "soak-time") share the same helper. The transcript is read once; each phrase
+ * substring-checks against the same text.
  *
- * Use this when the bypass is **broad** — one phrase authorizes any
- * matching action for the rest of the conversation window. For
- * **per-trigger** authorization (one phrase = one action), use
- * `bypassPhraseRemaining` instead so a single phrase doesn't open
- * the door for a follow-up action of the same shape later.
+ * Use this when the bypass is **broad** — one phrase authorizes any matching
+ * action for the rest of the conversation window. For **per-trigger**
+ * authorization (one phrase = one action), use `bypassPhraseRemaining` instead
+ * so a single phrase doesn't open the door for a follow-up action of the same
+ * shape later.
  */
 export function bypassPhrasePresent(
   transcriptPath: string | undefined,
@@ -230,18 +224,17 @@ export function bypassPhrasePresent(
 }
 
 /**
- * Count the number of bypass-phrase occurrences in recent user
- * turns. Each occurrence is a separate authorization slot — the
- * user typing the phrase twice authorizes two actions, not one.
+ * Count the number of bypass-phrase occurrences in recent user turns. Each
+ * occurrence is a separate authorization slot — the user typing the phrase
+ * twice authorizes two actions, not one.
  *
- * Substring-counted, non-overlapping (each match consumes its own
- * span of characters), case-sensitive. Multiple accepted spellings
- * (`phrases: string[]`) each contribute their own count.
+ * Substring-counted, non-overlapping (each match consumes its own span of
+ * characters), case-sensitive. Multiple accepted spellings (`phrases:
+ * string[]`) each contribute their own count.
  *
- * Use with `bypassPhraseRemaining(...) > 0` to gate one-time
- * bypasses where the hook also tracks prior consumption (e.g.
- * count of prior workflow_dispatch invocations of the same
- * workflow in the assistant tool-use history).
+ * Use with `bypassPhraseRemaining(...) > 0` to gate one-time bypasses where the
+ * hook also tracks prior consumption (e.g. count of prior workflow_dispatch
+ * invocations of the same workflow in the assistant tool-use history).
  */
 export function countBypassPhrases(
   transcriptPath: string | undefined,
@@ -272,9 +265,7 @@ export function countBypassPhrases(
     while ((idx = text.indexOf(phrase, idx)) !== -1) {
       const start = idx
       const end = idx + phrase.length
-      const overlaps = claimed.some(
-        ([cs, ce]) => start < ce && end > cs,
-      )
+      const overlaps = claimed.some(([cs, ce]) => start < ce && end > cs)
       if (!overlaps) {
         // Word-boundary check on the trailing edge: the char right
         // after `end` must not be an identifier char (alnum / . / -),
@@ -302,23 +293,21 @@ export function countBypassPhrases(
 }
 
 /**
- * Returns the count of bypass phrases NOT YET CONSUMED by prior
- * actions. The caller supplies `priorActionCount` — usually a
- * count of past tool-use invocations that would have consumed a
- * phrase if it had been present. The phrase budget is replenished
- * by every fresh user-typed occurrence.
+ * Returns the count of bypass phrases NOT YET CONSUMED by prior actions. The
+ * caller supplies `priorActionCount` — usually a count of past tool-use
+ * invocations that would have consumed a phrase if it had been present. The
+ * phrase budget is replenished by every fresh user-typed occurrence.
  *
- *   remaining = phraseCount - priorActionCount
- *   remaining > 0  → caller may proceed (one slot consumed by this action)
- *   remaining <= 0 → caller must block; phrase budget exhausted
+ * Remaining = phraseCount - priorActionCount remaining > 0 → caller may proceed
+ * (one slot consumed by this action) remaining <= 0 → caller must block; phrase
+ * budget exhausted.
  *
- * Per-trigger semantics: a single `Allow X bypass` authorizes
- * exactly one action of the gated shape. To do a second, the user
- * types the phrase again.
+ * Per-trigger semantics: a single `Allow X bypass` authorizes exactly one
+ * action of the gated shape. To do a second, the user types the phrase again.
  *
- * For workflow_dispatch and similar "name the target" bypasses,
- * the phrase format is `Allow <action> bypass: <target>` and the
- * caller passes only target-matching phrases.
+ * For workflow_dispatch and similar "name the target" bypasses, the phrase
+ * format is `Allow <action> bypass: <target>` and the caller passes only
+ * target-matching phrases.
  */
 export function bypassPhraseRemaining(
   transcriptPath: string | undefined,
@@ -335,36 +324,32 @@ export function bypassPhraseRemaining(
 }
 
 /**
- * Strip fenced code blocks (```…```) and inline code (`…`) from a text
- * snapshot before pattern-matching. Assistant prose frequently quotes
- * phrases as code examples (`` `out of scope` ``) which would otherwise
- * false-positive phrase detectors. Cheap to run: two regex passes,
- * O(n) over the input.
+ * Strip fenced code blocks (`…`) and inline code (`…`) from a text snapshot
+ * before pattern-matching. Assistant prose frequently quotes phrases as code
+ * examples (`` `out of scope` ``) which would otherwise false-positive phrase
+ * detectors. Cheap to run: two regex passes, O(n) over the input.
  */
 export function stripCodeFences(text: string): string {
-  return text
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/`[^`\n]*`/g, ' ')
+  return text.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`\n]*`/g, ' ')
 }
 
 /**
- * Strip text that's clearly *quoted* rather than asserted — i.e. text
- * the assistant is referring to as a phrase, not using as one. Used by
- * Stop hooks that scan for excuse phrases: a summary like
- *   when Claude says "pre-existing", … the hook now blocks
- * mentions the trigger but isn't an excuse. Without this strip, the
- * hook self-fires every time it explains itself.
+ * Strip text that's clearly _quoted_ rather than asserted — i.e. text the
+ * assistant is referring to as a phrase, not using as one. Used by Stop hooks
+ * that scan for excuse phrases: a summary like when Claude says "pre-existing",
+ * … the hook now blocks mentions the trigger but isn't an excuse. Without this
+ * strip, the hook self-fires every time it explains itself.
  *
- * Heuristic: strip the contents of paired ASCII double-quotes (`"…"`),
- * paired smart double-quotes (`"…"`), and the same for single quotes
- * (`'…'`, `'…'`). Strips only short spans (<= 80 chars between the
- * quote marks) so prose paragraphs with stray quotation marks don't
- * disappear wholesale. Falls back to leaving the text alone if no
- * matching close is found on the same line — quoted speech doesn't
- * span paragraphs and a runaway match would erase real content.
+ * Heuristic: strip the contents of paired ASCII double-quotes (`"…"`), paired
+ * smart double-quotes (`"…"`), and the same for single quotes (`'…'`, `'…'`).
+ * Strips only short spans (<= 80 chars between the quote marks) so prose
+ * paragraphs with stray quotation marks don't disappear wholesale. Falls back
+ * to leaving the text alone if no matching close is found on the same line —
+ * quoted speech doesn't span paragraphs and a runaway match would erase real
+ * content.
  *
- * Combine with `stripCodeFences` for full noise filtering. Order
- * doesn't matter (the two strip disjoint surfaces).
+ * Combine with `stripCodeFences` for full noise filtering. Order doesn't matter
+ * (the two strip disjoint surfaces).
  */
 export function stripQuotedSpans(text: string): string {
   // ASCII double quotes: "…" — up to 80 chars, single line.
@@ -382,13 +367,13 @@ export function stripQuotedSpans(text: string): string {
 }
 
 /**
- * Inverse of `stripCodeFences`: extract the contents of fenced code
- * blocks. Returns each block's body (the lines between the opening
- * and closing fence) as a separate string. The leading language tag
- * (e.g. ```` ```ts ````) is stripped — only the code lines are kept.
+ * Inverse of `stripCodeFences`: extract the contents of fenced code blocks.
+ * Returns each block's body (the lines between the opening and closing fence)
+ * as a separate string. The leading language tag (e.g. ` ```ts `) is stripped —
+ * only the code lines are kept.
  *
- * Used by hooks (error-message-quality-reminder) that need to inspect
- * the code the assistant wrote rather than the prose around it.
+ * Used by hooks (error-message-quality-reminder) that need to inspect the code
+ * the assistant wrote rather than the prose around it.
  */
 export interface CodeFence {
   lang: string
@@ -413,15 +398,15 @@ export function extractCodeFences(text: string): CodeFence[] {
 }
 
 /**
- * Shape of a tool-use event extracted from an assistant turn. The
- * harness emits these as content blocks with `type: 'tool_use'`,
- * carrying the tool name (e.g. 'Write', 'Edit', 'Bash') and the
- * structured `input` object passed to that tool.
+ * Shape of a tool-use event extracted from an assistant turn. The harness emits
+ * these as content blocks with `type: 'tool_use'`, carrying the tool name (e.g.
+ * 'Write', 'Edit', 'Bash') and the structured `input` object passed to that
+ * tool.
  *
- * Inputs are intentionally typed `Record<string, unknown>` because
- * each tool has its own schema and we don't want to enumerate them
- * here. Callers narrow on `name` and inspect the fields they care
- * about (e.g. `input.file_path` for Write/Edit).
+ * Inputs are intentionally typed `Record<string, unknown>` because each tool
+ * has its own schema and we don't want to enumerate them here. Callers narrow
+ * on `name` and inspect the fields they care about (e.g. `input.file_path` for
+ * Write/Edit).
  */
 export interface ToolUseEvent {
   readonly name: string
@@ -457,11 +442,11 @@ function extractToolUseBlocks(content: unknown): ToolUseEvent[] {
 }
 
 /**
- * Walk the transcript newest → oldest, return every tool-use event
- * from the most recent assistant turn. Returns an empty array if the
- * transcript is missing or the most recent assistant turn has no
- * tool uses. Used by hooks that gate on what the assistant just did
- * (e.g. file-size-reminder reading Write/Edit events).
+ * Walk the transcript newest → oldest, return every tool-use event from the
+ * most recent assistant turn. Returns an empty array if the transcript is
+ * missing or the most recent assistant turn has no tool uses. Used by hooks
+ * that gate on what the assistant just did (e.g. file-size-reminder reading
+ * Write/Edit events).
  */
 export function readLastAssistantToolUses(
   transcriptPath: string | undefined,

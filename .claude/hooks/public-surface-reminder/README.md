@@ -8,7 +8,7 @@ on a PR, or otherwise publish text somewhere public.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `PreToolUse` hook
-> like this one fires *before* Claude calls a tool (here, the Bash
+> like this one fires _before_ Claude calls a tool (here, the Bash
 > tool). The hook can either **prime** the model (write to stderr,
 > exit 0, model carries on) or **block** the call (exit 2). This one
 > only primes.
@@ -74,7 +74,7 @@ Always `0`. The hook prints a reminder and steps aside.
 
 - [`private-name-guard`](../private-name-guard/) — primes on private
   repo / project names.
-- [`token-guard`](../token-guard/) — *blocks* Bash calls that would
+- [`token-guard`](../token-guard/) — _blocks_ Bash calls that would
   leak literal secrets to stdout. (The blocking sibling, contrasted
   with this priming one.)
 

@@ -17,11 +17,13 @@ This hook catches the failure before the commit lands.
 Three failure modes:
 
 1. **`--author=` override**:
+
    ```
    git commit --author="Wrong <wrong@example.com>" -m "..."
    ```
 
 2. **`-c user.email=` override**:
+
    ```
    git commit -c user.email=wrong@example.com -m "..."
    ```
@@ -42,9 +44,7 @@ Explicit allowlist, the source of truth when present:
     "name": "jdalton",
     "email": "john.david.dalton@gmail.com"
   },
-  "aliases": [
-    { "name": "jdalton", "email": "jdalton@socket.dev" }
-  ]
+  "aliases": [{ "name": "jdalton", "email": "jdalton@socket.dev" }]
 }
 ```
 

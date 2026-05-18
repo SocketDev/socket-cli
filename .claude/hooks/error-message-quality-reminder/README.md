@@ -7,6 +7,7 @@ Stop hook that inspects code blocks the assistant wrote for low-quality error me
 CLAUDE.md "Error messages":
 
 > An error message is UI. The reader should fix the problem from the message alone. Four ingredients in order:
+>
 > 1. **What** — the rule, not the fallout (`must be lowercase`, not `invalid`)
 > 2. **Where** — exact file/line/key/field/flag
 > 3. **Saw vs. wanted** — bad value and the allowed shape/set
@@ -16,15 +17,15 @@ This hook catches the trivial-vague case: a `throw new <X>Error(...)` whose enti
 
 ## What it catches
 
-| Pattern | Example | Hint |
-|---|---|---|
-| Bare `invalid` | `throw new Error("invalid")` | "Invalid" is the fallout. State the rule: "must be lowercase", "must match /^[a-z]+$/". |
-| Bare `failed` | `throw new Error("failed")` | Name what was attempted: "could not write \<path\>: ENOENT". |
-| Bare `error occurred` | `throw new Error("an error occurred")` | Says nothing actionable. State rule, location, bad value. |
-| `something went wrong` | `throw new Error("something went wrong")` | Pure filler. |
-| `unable to X` / `could not X` | `throw new Error("unable to read")` | Add object + reason: "could not read \<path\>: \<errno\>". |
-| `not found` | `throw new Error("not found")` | Missing what? Where? "config file not found: \<path\>". |
-| `bad` / `wrong` / `incorrect` | `throw new Error("bad value")` | Describe the rule the value violated, not how you feel about it. |
+| Pattern                       | Example                                   | Hint                                                                                    |
+| ----------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| Bare `invalid`                | `throw new Error("invalid")`              | "Invalid" is the fallout. State the rule: "must be lowercase", "must match /^[a-z]+$/". |
+| Bare `failed`                 | `throw new Error("failed")`               | Name what was attempted: "could not write \<path\>: ENOENT".                            |
+| Bare `error occurred`         | `throw new Error("an error occurred")`    | Says nothing actionable. State rule, location, bad value.                               |
+| `something went wrong`        | `throw new Error("something went wrong")` | Pure filler.                                                                            |
+| `unable to X` / `could not X` | `throw new Error("unable to read")`       | Add object + reason: "could not read \<path\>: \<errno\>".                              |
+| `not found`                   | `throw new Error("not found")`            | Missing what? Where? "config file not found: \<path\>".                                 |
+| `bad` / `wrong` / `incorrect` | `throw new Error("bad value")`            | Describe the rule the value violated, not how you feel about it.                        |
 
 ## What it does NOT catch
 

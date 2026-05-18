@@ -81,9 +81,9 @@ function getCap(): number {
 }
 
 /**
- * Extract the fleet-canonical block from a CLAUDE.md text. Returns
- * undefined if the markers aren't present (per-repo CLAUDE.md may not
- * have them, in which case the cap doesn't apply).
+ * Extract the fleet-canonical block from a CLAUDE.md text. Returns undefined if
+ * the markers aren't present (per-repo CLAUDE.md may not have them, in which
+ * case the cap doesn't apply).
  */
 function extractFleetBlock(text: string): string | undefined {
   const beginIdx = text.indexOf(FLEET_BEGIN_MARKER)
@@ -103,10 +103,10 @@ function extractFleetBlock(text: string): string | undefined {
 }
 
 /**
- * Compute the post-edit text. For Write, that's just `content`. For
- * Edit, splice the on-disk file: replace `old_string` with `new_string`
- * once. If the on-disk file isn't readable or `old_string` doesn't
- * match exactly, return undefined (caller fails open).
+ * Compute the post-edit text. For Write, that's just `content`. For Edit,
+ * splice the on-disk file: replace `old_string` with `new_string` once. If the
+ * on-disk file isn't readable or `old_string` doesn't match exactly, return
+ * undefined (caller fails open).
  */
 function computePostEditText(
   toolName: string,

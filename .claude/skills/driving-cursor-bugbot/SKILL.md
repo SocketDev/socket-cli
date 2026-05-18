@@ -22,35 +22,35 @@ This skill makes all of the above mechanical.
 
 ## Modes
 
-| Invocation | What it does |
-|---|---|
-| `/driving-cursor-bugbot <PR#>` | Full audit-and-fix on one PR (default). |
-| `/driving-cursor-bugbot check <PR#>` | List Bugbot findings, classify them — don't fix or reply. |
+| Invocation                                          | What it does                                                                                                                                      |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/driving-cursor-bugbot <PR#>`                      | Full audit-and-fix on one PR (default).                                                                                                           |
+| `/driving-cursor-bugbot check <PR#>`                | List Bugbot findings, classify them — don't fix or reply.                                                                                         |
 | `/driving-cursor-bugbot reply <comment-id> <state>` | Single reply where `<state>` is `fixed` / `false-positive` / `wont-fix`. Auto-resolves on `fixed` / `false-positive`; leaves open for `wont-fix`. |
-| `/driving-cursor-bugbot resolve <PR#>` | Sweep open Bugbot threads with author replies and resolve them. |
-| `/driving-cursor-bugbot scope <PR#>` | Re-evaluate the PR title and body against the actual commits and rewrite when out of step. |
+| `/driving-cursor-bugbot resolve <PR#>`              | Sweep open Bugbot threads with author replies and resolve them.                                                                                   |
+| `/driving-cursor-bugbot scope <PR#>`                | Re-evaluate the PR title and body against the actual commits and rewrite when out of step.                                                        |
 
 ## Phases
 
-| # | Phase | Outcome |
-|---|---|---|
-| 1 | Inventory | List Bugbot findings via `gh api .../pulls/<PR#>/comments`. Capture `id`, `path`, `line`, body. |
-| 2 | Classify | Sort each finding into `real` / `already-fixed` / `false-positive` / `wont-fix`. |
-| 3 | Fix | Implement fixes for `real` findings. Propagate to canonical (`socket-wheelhouse/template/`) when the file is fleet-shared. One commit per finding. |
-| 4 | Reply + resolve | Reply on each inline thread (NOT detached); resolve on `fixed` / `already-fixed` / `false-positive`; leave `wont-fix` open. |
-| 5 | Title + body realignment | Per CLAUDE.md, update PR title / body when scope shifted. Use `gh pr edit`. |
-| 6 | Push | `git push`. Bugbot re-reviews; loop back to phase 1 if new findings. |
+| #   | Phase                    | Outcome                                                                                                                                            |
+| --- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Inventory                | List Bugbot findings via `gh api .../pulls/<PR#>/comments`. Capture `id`, `path`, `line`, body.                                                    |
+| 2   | Classify                 | Sort each finding into `real` / `already-fixed` / `false-positive` / `wont-fix`.                                                                   |
+| 3   | Fix                      | Implement fixes for `real` findings. Propagate to canonical (`socket-wheelhouse/template/`) when the file is fleet-shared. One commit per finding. |
+| 4   | Reply + resolve          | Reply on each inline thread (NOT detached); resolve on `fixed` / `already-fixed` / `false-positive`; leave `wont-fix` open.                        |
+| 5   | Title + body realignment | Per CLAUDE.md, update PR title / body when scope shifted. Use `gh pr edit`.                                                                        |
+| 6   | Push                     | `git push`. Bugbot re-reviews; loop back to phase 1 if new findings.                                                                               |
 
 API surface, GraphQL queries, and reply templates in [`reference.md`](reference.md).
 
 ## Classification rubric
 
-| Bucket | Meaning | Action |
-|---|---|---|
-| `real` | Live bug, reproducible against current PR HEAD. | Fix the code, push, reply with the fix commit SHA. |
-| `already-fixed` | Bugbot reviewed an old commit; later commit on the same PR fixed it. | Reply citing the existing fix commit SHA. No new code. |
-| `false-positive` | Bugbot misread the code (hash length miscount, regex backtracking false-flag, JSDoc-example mistaken for runtime code). Often confirmed by `Bugbot Autofix` reply on the same thread. | Reply explaining why; cite a counter-example or the autofix verdict. |
-| `wont-fix` | Real but out of scope (would re-open resolved arguments, blocked on upstream change, intentional design choice). | Reply with rationale + link to follow-up issue. Don't auto-close — reviewer decides. |
+| Bucket           | Meaning                                                                                                                                                                               | Action                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `real`           | Live bug, reproducible against current PR HEAD.                                                                                                                                       | Fix the code, push, reply with the fix commit SHA.                                   |
+| `already-fixed`  | Bugbot reviewed an old commit; later commit on the same PR fixed it.                                                                                                                  | Reply citing the existing fix commit SHA. No new code.                               |
+| `false-positive` | Bugbot misread the code (hash length miscount, regex backtracking false-flag, JSDoc-example mistaken for runtime code). Often confirmed by `Bugbot Autofix` reply on the same thread. | Reply explaining why; cite a counter-example or the autofix verdict.                 |
+| `wont-fix`       | Real but out of scope (would re-open resolved arguments, blocked on upstream change, intentional design choice).                                                                      | Reply with rationale + link to follow-up issue. Don't auto-close — reviewer decides. |
 
 To check `already-fixed`: read `git log` on the PR branch since the comment's `commit_id` and look for a commit that touches the file at that line.
 

@@ -8,7 +8,7 @@ code that's supposed to use a logger.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `PreToolUse` hook
-> like this one fires *before* Claude calls a tool. It can either
+> like this one fires _before_ Claude calls a tool. It can either
 > **prime** (write to stderr, exit 0, model carries on) or **block**
 > (exit 2, edit never happens). This one blocks.
 
@@ -57,15 +57,15 @@ The hook is intentionally narrow:
 When the hook blocks, it surfaces a concrete rewrite per hit so the
 agent can apply it directly:
 
-| Direct call | Logger equivalent |
-|-------------|-------------------|
-| `process.stderr.write(s)` | `logger.error(s)` |
-| `process.stdout.write(s)` | `logger.info(s)` |
-| `console.error(...)` | `logger.error(...)` |
-| `console.warn(...)` | `logger.warn(...)` |
-| `console.info(...)` | `logger.info(...)` |
-| `console.debug(...)` | `logger.debug(...)` |
-| `console.log(...)` | `logger.info(...)` |
+| Direct call               | Logger equivalent   |
+| ------------------------- | ------------------- |
+| `process.stderr.write(s)` | `logger.error(s)`   |
+| `process.stdout.write(s)` | `logger.info(s)`    |
+| `console.error(...)`      | `logger.error(...)` |
+| `console.warn(...)`       | `logger.warn(...)`  |
+| `console.info(...)`       | `logger.info(...)`  |
+| `console.debug(...)`      | `logger.debug(...)` |
+| `console.log(...)`        | `logger.info(...)`  |
 
 ## Wiring
 

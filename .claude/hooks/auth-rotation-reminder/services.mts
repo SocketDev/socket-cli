@@ -120,11 +120,7 @@ export const SERVICES: readonly Service[] = [
     name: 'docker',
     // No portable "am I logged in" — `docker info` returns mixed data.
     // Approximate via `docker system info` filter.
-    detectCmd: [
-      'sh',
-      '-c',
-      'docker info 2>/dev/null | grep -q "^ Username:"',
-    ],
+    detectCmd: ['sh', '-c', 'docker info 2>/dev/null | grep -q "^ Username:"'],
     // Without a registry arg, `docker logout` clears the default index.
     logoutCmd: ['docker', 'logout'],
     optional: true,

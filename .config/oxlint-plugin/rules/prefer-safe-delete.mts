@@ -1,34 +1,27 @@
 /**
- * @fileoverview Per CLAUDE.md "File deletion" rule: route every delete
- * through `safeDelete()` / `safeDeleteSync()` from
- * `@socketsecurity/lib-stable/fs`. Never `fs.rm` / `fs.unlink` / `fs.rmdir` /
- * `rm -rf` directly — even for one known file.
+ * @file Per CLAUDE.md "File deletion" rule: route every delete through
+ *   `safeDelete()` / `safeDeleteSync()` from `@socketsecurity/lib-stable/fs`.
+ *   Never `fs.rm` / `fs.unlink` / `fs.rmdir` / `rm -rf` directly — even for one
+ *   known file. Detects:
  *
- * Detects:
  *   - `fs.rm(...)` / `fs.rmSync(...)` / `fs.promises.rm(...)`
  *   - `fs.unlink(...)` / `fs.unlinkSync(...)`
- *   - `fs.rmdir(...)` / `fs.rmdirSync(...)`
- *
- * Autofix: rewrites the call to `safeDelete(path)` / `safeDeleteSync(path)`
- * AND injects `import { safeDelete } from '@socketsecurity/lib-stable/fs'`
- * (or `safeDeleteSync`) when missing.
- *
- * The autofix is conservative — it only fires when the call shape is
- * "obviously equivalent" to safeDelete:
- *
+ *   - `fs.rmdir(...)` / `fs.rmdirSync(...)` Autofix: rewrites the call to
+ *     `safeDelete(path)` / `safeDeleteSync(path)` AND injects `import {
+ *     safeDelete } from '@socketsecurity/lib-stable/fs'` (or `safeDeleteSync`)
+ *     when missing. The autofix is conservative — it only fires when the call
+ *     shape is "obviously equivalent" to safeDelete:
  *   - The first argument is a single expression (the path).
- *   - Any second argument is an options object literal (we drop it;
- *     safeDelete handles recursive/force internally).
+ *   - Any second argument is an options object literal (we drop it; safeDelete
+ *     handles recursive/force internally).
  *   - No third argument (rules out fs.rm with an explicit callback).
- *   - Not a node-callback-style usage (no trailing function expression).
- *
- * Skipped (reported without fix):
+ *   - Not a node-callback-style usage (no trailing function expression). Skipped
+ *     (reported without fix):
  *   - `fs.rm(p, opts, cb)` — node-callback style; semantics differ.
- *   - Calls whose result is checked/assigned in a way that depends on
- *     fs.rm's specific throw-on-missing or callback contract.
- *
- * Spawn-based bans (`rm -rf`, `Remove-Item`) live in a separate hook
- * (`.claude/hooks/path-guard/`) — this rule covers the JavaScript side.
+ *   - Calls whose result is checked/assigned in a way that depends on fs.rm's
+ *     specific throw-on-missing or callback contract. Spawn-based bans (`rm
+ *     -rf`, `Remove-Item`) live in a separate hook
+ *     (`.claude/hooks/path-guard/`) — this rule covers the JavaScript side.
  */
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
@@ -46,7 +39,9 @@ const DELETE_METHODS = new Set([
 
 const SYNC_METHODS = new Set(['rmSync', 'unlinkSync', 'rmdirSync'])
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',
@@ -92,17 +87,12 @@ const rule = {
     }
 
     /**
-     * The autofix only fires when the call shape is unambiguous:
-     *   fs.rm(path)
-     *   fs.rm(path, { ...opts })
-     *   fs.rmSync(path)
-     *   fs.rmSync(path, { ...opts })
+     * The autofix only fires when the call shape is unambiguous: fs.rm(path)
+     * fs.rm(path, { ...opts }) fs.rmSync(path) fs.rmSync(path, { ...opts })
      *
-     * Bail on:
-     *   - 0 args (malformed; skip)
-     *   - 3+ args (callback-style fs.rm — semantics differ)
-     *   - 2nd arg is a function expression (callback-style)
-     *   - any spread argument (...args; can't reason about arity)
+     * Bail on: - 0 args (malformed; skip) - 3+ args (callback-style fs.rm —
+     * semantics differ) - 2nd arg is a function expression (callback-style) -
+     * any spread argument (...args; can't reason about arity)
      */
     function isFixable(node: AstNode) {
       const args = node.arguments

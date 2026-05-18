@@ -1,11 +1,9 @@
 /**
- * @fileoverview Emit `lockstep.schema.json` from the TypeBox schema.
- *
- * The TypeBox schema in `scripts/lockstep/schema.mts` is the source of truth.
- * TypeBox schemas are JSON Schema natively — no conversion library needed,
- * just serialize the schema object and add the draft-2020-12 meta headers.
- *
- * Run via `pnpm run lockstep:emit-schema` when the schema changes.
+ * @file Emit `lockstep.schema.json` from the TypeBox schema. The TypeBox schema
+ *   in `scripts/lockstep/schema.mts` is the source of truth. TypeBox schemas
+ *   are JSON Schema natively — no conversion library needed, just serialize the
+ *   schema object and add the draft-2020-12 meta headers. Run via `pnpm run
+ *   lockstep:emit-schema` when the schema changes.
  */
 
 import { writeFileSync } from 'node:fs'
@@ -42,13 +40,9 @@ writeFileSync(outPath, JSON.stringify(enriched, null, 2) + '\n', 'utf8')
 // over the tree) would flag the emitted schema as drifted on every
 // repo that re-emits it. The schema is in IDENTICAL_FILES, so the
 // formatted form is the byte-canonical form fleet-wide.
-await spawn(
-  'pnpm',
-  ['exec', 'oxfmt', '-c', '.config/oxfmtrc.json', outPath],
-  {
-    cwd: rootDir,
-    stdio: 'inherit',
-  },
-)
+await spawn('pnpm', ['exec', 'oxfmt', '-c', '.config/oxfmtrc.json', outPath], {
+  cwd: rootDir,
+  stdio: 'inherit',
+})
 
 logger.success(`wrote ${path.relative(rootDir, outPath)}`)

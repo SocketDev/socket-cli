@@ -19,6 +19,7 @@ Shared prerequisite validation for all pipelines. Run at the start of every skil
 ## Queue Tracking
 
 Write a run entry to `.claude/ops/queue.yaml` with:
+
 - `id`: `{pipeline}-{YYYY-MM-DD}-{NNN}`
 - `pipeline`: the invoking skill name
 - `status`: `in-progress`

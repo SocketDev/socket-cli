@@ -1,32 +1,28 @@
 /**
- * @fileoverview Forbid `export default` — fleet convention is named
- * exports only. Default exports lose the name at the import site
- * (`import x from 'mod'` lets the caller rename freely), defeat
- * grep / "find references" tools, and don't compose with re-exports
- * (`export * from 'mod'` skips the default).
+ * @file Forbid `export default` — fleet convention is named exports only.
+ *   Default exports lose the name at the import site (`import x from 'mod'`
+ *   lets the caller rename freely), defeat grep / "find references" tools, and
+ *   don't compose with re-exports (`export * from 'mod'` skips the default).
+ *   Style signal that motivated the rule: across socket-sdk-js, socket-cli,
+ *   socket-packageurl-js, socket-sdxgen, socket-lib, and socket-stuie, the
+ *   named-vs-default ratio is essentially 100-to-1 — socket-lib has zero
+ *   `export default` statements, the other repos have a handful of stragglers
+ *   each. Autofix scope:
  *
- * Style signal that motivated the rule: across socket-sdk-js,
- * socket-cli, socket-packageurl-js, socket-sdxgen, socket-lib, and
- * socket-stuie, the named-vs-default ratio is essentially
- * 100-to-1 — socket-lib has zero `export default` statements, the
- * other repos have a handful of stragglers each.
- *
- * Autofix scope:
  *   - `export default function foo() {}` → `export function foo() {}`
  *   - `export default class Foo {}` → `export class Foo {}`
- *   - `export default <identifier>` (separate-declaration form) →
- *     `export { <identifier> }`
- *
- * Skips (report-only, no fix):
- *   - `export default function () {}` / `export default class {}` —
- *     anonymous declarations, no canonical name to assign.
- *   - `export default <expression>` where the expression isn't a bare
- *     identifier (e.g. `export default { foo: 1 }`,
- *     `export default makePlugin(...)`) — choosing a name requires
- *     human input.
+ *   - `export default <identifier>` (separate-declaration form) → `export {
+ *     <identifier> }` Skips (report-only, no fix):
+ *   - `export default function () {}` / `export default class {}` — anonymous
+ *     declarations, no canonical name to assign.
+ *   - `export default <expression>` where the expression isn't a bare identifier
+ *     (e.g. `export default { foo: 1 }`, `export default makePlugin(...)`) —
+ *     choosing a name requires human input.
  */
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 

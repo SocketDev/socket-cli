@@ -75,9 +75,9 @@ const PATH_FLAVOR_RE =
   /(\.cache|node_modules|\/build\/|\bpaths?\.|os\.homedir|process\.cwd|fileURLToPath|path\.join|path\.resolve|path\.sep|normalize)/
 
 /**
- * Find regex literals in `code` that match both path separators inline.
- * Returns a list of findings (pattern + reason). Includes only regexes
- * appearing within ~10 lines of path-flavored code.
+ * Find regex literals in `code` that match both path separators inline. Returns
+ * a list of findings (pattern + reason). Includes only regexes appearing within
+ * ~10 lines of path-flavored code.
  */
 function findDualSeparatorRegexes(code: string): Finding[] {
   const findings: Finding[] = []
@@ -195,9 +195,7 @@ async function main(): Promise<void> {
   lines.push(
     '  then write a single-separator regex against `normalizePath(input)`.',
   )
-  lines.push(
-    `  Bypass: type "${BYPASS_PHRASE}" verbatim in a recent message.`,
-  )
+  lines.push(`  Bypass: type "${BYPASS_PHRASE}" verbatim in a recent message.`)
   lines.push('')
   process.stderr.write(lines.join('\n') + '\n') // socket-hook: allow console
   process.exit(0)

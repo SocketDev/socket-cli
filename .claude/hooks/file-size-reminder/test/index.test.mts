@@ -41,7 +41,9 @@ function makeTranscript(
 }
 
 function writeLines(filePath: string, n: number): void {
-  const content = Array.from({ length: n }, (_, i) => `line ${i + 1}`).join('\n')
+  const content = Array.from({ length: n }, (_, i) => `line ${i + 1}`).join(
+    '\n',
+  )
   writeFileSync(filePath, content)
 }
 
@@ -143,7 +145,10 @@ test('handles missing file gracefully (no crash)', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'fsize-'))
   try {
     const transcript = makeTranscript(dir, [
-      { name: 'Edit', input: { file_path: '/tmp/does-not-exist-xyz.mts', new_string: 'x' } },
+      {
+        name: 'Edit',
+        input: { file_path: '/tmp/does-not-exist-xyz.mts', new_string: 'x' },
+      },
     ])
     const { stderr, exitCode } = runHook(transcript)
     assert.equal(exitCode, 0)

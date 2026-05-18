@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/no-logger-newline-literal.
+ * @file Unit tests for socket/no-logger-newline-literal.
  */
 
 /* oxlint-disable socket/no-status-emoji -- emoji literals in invalid-case

@@ -18,12 +18,12 @@ Four-pass multi-agent code review of the current branch against a base ref. Each
 
 ## Default pipeline
 
-| Pass | Role                  | Default backend  | Output |
-|------|-----------------------|------------------|--------|
-| 1    | discovery             | `codex`          | overwrites report |
-| 2    | discovery-secondary   | `codex`          | merges into report (skipped if no new findings) |
-| 3    | remediation           | `codex`          | adds Suggested Fix + Suggested Regression Tests per finding |
-| 4    | verify                | `claude`         | appends `## <Backend> Verification` section |
+| Pass | Role                | Default backend | Output                                                      |
+| ---- | ------------------- | --------------- | ----------------------------------------------------------- |
+| 1    | discovery           | `codex`         | overwrites report                                           |
+| 2    | discovery-secondary | `codex`         | merges into report (skipped if no new findings)             |
+| 3    | remediation         | `codex`         | adds Suggested Fix + Suggested Regression Tests per finding |
+| 4    | verify              | `claude`        | appends `## <Backend> Verification` section                 |
 
 Per-role fallback order, hybrid-backend handling (`opencode`), and the graceful-detect / skip-with-note policy live in [`_shared/multi-agent-backends.md`](../_shared/multi-agent-backends.md). This skill is the canonical implementation of that contract.
 
@@ -64,12 +64,12 @@ node .claude/skills/reviewing-code/run.mts --only discovery,verify
 
 ## Configuration via env vars
 
-| Var | Default | Effect |
-|---|---|---|
-| `CODEX_MODEL` | `gpt-5.4` | Codex model when codex is the active backend |
-| `CODEX_REASONING` | `xhigh` | Codex reasoning effort |
-| `CLAUDE_MODEL` | `opus` | Claude model when claude is the active backend |
-| `KIMI_MODEL` | `kimi-latest` | Kimi model when kimi is the active backend |
+| Var               | Default       | Effect                                         |
+| ----------------- | ------------- | ---------------------------------------------- |
+| `CODEX_MODEL`     | `gpt-5.4`     | Codex model when codex is the active backend   |
+| `CODEX_REASONING` | `xhigh`       | Codex reasoning effort                         |
+| `CLAUDE_MODEL`    | `opus`        | Claude model when claude is the active backend |
+| `KIMI_MODEL`      | `kimi-latest` | Kimi model when kimi is the active backend     |
 
 ## Output
 

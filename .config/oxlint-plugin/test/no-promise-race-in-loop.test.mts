@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/no-promise-race-in-loop.
+ * @file Unit tests for socket/no-promise-race-in-loop.
  */
 
 import { describe, test } from 'node:test'

@@ -1,9 +1,8 @@
 /**
- * @fileoverview Unit tests for socket/sort-source-methods.
- *
- * This rule sorts function/method declarations at the top level of a
- * file by group (constants, types, exports, etc.) and then
- * alphabetically. Tests cover both axes.
+ * @file Unit tests for socket/sort-source-methods. This rule sorts
+ *   function/method declarations at the top level of a file by group
+ *   (constants, types, exports, etc.) and then alphabetically. Tests cover both
+ *   axes.
  */
 
 import { describe, test } from 'node:test'

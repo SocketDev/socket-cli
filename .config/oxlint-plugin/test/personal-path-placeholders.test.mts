@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/personal-path-placeholders.
+ * @file Unit tests for socket/personal-path-placeholders.
  */
 
 import { describe, test } from 'node:test'

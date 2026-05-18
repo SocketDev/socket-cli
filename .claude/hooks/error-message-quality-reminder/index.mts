@@ -51,15 +51,21 @@ interface StopPayload {
 // no colon (a colon usually signals a field-path prefix like
 // "user.email: must be lowercase"), no period sentences, no quoted
 // values.
-const VAGUE_MESSAGE_PATTERNS: readonly { label: string; regex: RegExp; hint: string }[] = [
+const VAGUE_MESSAGE_PATTERNS: readonly {
+  label: string
+  regex: RegExp
+  hint: string
+}[] = [
   {
     label: 'bare "invalid"',
-    regex: /^(invalid|invalid value|invalid input|invalid argument|invalid format)\.?$/i,
+    regex:
+      /^(invalid|invalid value|invalid input|invalid argument|invalid format)\.?$/i,
     hint: '"Invalid" describes the fallout, not the rule. Say what shape was expected: "must be lowercase", "must match /^[a-z]+$/", "must be one of X / Y / Z".',
   },
   {
     label: 'bare "failed"',
-    regex: /^(failed|failure|operation failed|request failed|action failed)\.?$/i,
+    regex:
+      /^(failed|failure|operation failed|request failed|action failed)\.?$/i,
     hint: '"Failed" describes the symptom. Name what was attempted and what blocked it: "could not write <path>: ENOENT", "fetch <url> returned 503".',
   },
   {
@@ -84,7 +90,8 @@ const VAGUE_MESSAGE_PATTERNS: readonly { label: string; regex: RegExp; hint: str
   },
   {
     label: 'bare "bad" / "wrong" / "incorrect"',
-    regex: /^(bad|wrong|incorrect|invalid format)(\s+(value|input|argument|format|data))?\.?$/i,
+    regex:
+      /^(bad|wrong|incorrect|invalid format)(\s+(value|input|argument|format|data))?\.?$/i,
     hint: 'Same as "invalid" — describe the rule the value violated, not how you feel about it.',
   },
 ]
@@ -101,7 +108,8 @@ const VAGUE_MESSAGE_PATTERNS: readonly { label: string; regex: RegExp; hint: str
 // same `quote`. (We intentionally don't try to handle interpolated
 // templates with ${...} inside — those messages are dynamic, the
 // hook is for static-string violations.)
-const THROW_NEW_ERROR_RE = /\bthrow\s+new\s+(\w*Error|TemporalError)\s*\(\s*(['"`])([^'"`\n]{0,200})\2\s*[,)]/g
+const THROW_NEW_ERROR_RE =
+  /\bthrow\s+new\s+(\w*Error|TemporalError)\s*\(\s*(['"`])([^'"`\n]{0,200})\2\s*[,)]/g
 
 interface MessageFinding {
   readonly errorClass: string
@@ -112,7 +120,11 @@ interface MessageFinding {
 
 function gradeMessages(codeBlocks: readonly CodeFence[]): MessageFinding[] {
   const findings: MessageFinding[] = []
-  for (let bi = 0, { length: blocksLen } = codeBlocks; bi < blocksLen; bi += 1) {
+  for (
+    let bi = 0, { length: blocksLen } = codeBlocks;
+    bi < blocksLen;
+    bi += 1
+  ) {
     const block = codeBlocks[bi]!.body
     // Reset the regex's lastIndex each block (global flag preserves it).
     THROW_NEW_ERROR_RE.lastIndex = 0
@@ -125,7 +137,11 @@ function gradeMessages(codeBlocks: readonly CodeFence[]): MessageFinding[] {
       }
       // Skip messages that contain a colon (suggests field-path prefix)
       // or a quoted value (suggests "saw vs. wanted" present).
-      if (message.includes(':') || message.includes('"') || message.includes('`')) {
+      if (
+        message.includes(':') ||
+        message.includes('"') ||
+        message.includes('`')
+      ) {
         continue
       }
       // Skip long messages — they may have the four ingredients spread
@@ -133,7 +149,11 @@ function gradeMessages(codeBlocks: readonly CodeFence[]): MessageFinding[] {
       if (message.length > 40) {
         continue
       }
-      for (let pi = 0, { length: patternsLen } = VAGUE_MESSAGE_PATTERNS; pi < patternsLen; pi += 1) {
+      for (
+        let pi = 0, { length: patternsLen } = VAGUE_MESSAGE_PATTERNS;
+        pi < patternsLen;
+        pi += 1
+      ) {
         const pattern = VAGUE_MESSAGE_PATTERNS[pi]!
         if (pattern.regex.test(message)) {
           findings.push({
@@ -191,9 +211,7 @@ async function main(): Promise<void> {
   lines.push(
     '  (2) Where — exact file/line/key/field. (3) Saw vs. wanted — bad',
   )
-  lines.push(
-    '  value + allowed shape. (4) Fix — one imperative action. Full',
-  )
+  lines.push('  value + allowed shape. (4) Fix — one imperative action. Full')
   lines.push('  guidance: docs/claude.md/error-messages.md.')
   lines.push('')
   process.stderr.write(lines.join('\n') + '\n')

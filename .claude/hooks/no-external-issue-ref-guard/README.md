@@ -38,5 +38,5 @@ up pinging the upstream maintainer N times.
 
 ## Cited from CLAUDE.md
 
-Under *Public-surface hygiene*: "No external issue/PR refs in commit
+Under _Public-surface hygiene_: "No external issue/PR refs in commit
 messages or PR bodies" bullet.

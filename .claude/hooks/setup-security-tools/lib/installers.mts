@@ -97,8 +97,8 @@ function findApiToken(): string | undefined {
           /^SOCKET_API_KEY\s*=\s*(.+)$/m.exec(content)
         if (match) {
           return match[1]!
-            .replace(/\s*#.*$/, '')      // Strip inline comments.
-            .trim()                      // Strip whitespace before quote removal.
+            .replace(/\s*#.*$/, '') // Strip inline comments.
+            .trim() // Strip whitespace before quote removal.
             .replace(/^["']|["']$/g, '') // Strip surrounding quotes.
         }
       } catch (e) {
@@ -124,9 +124,13 @@ export async function setupAgentShield(): Promise<boolean> {
   logger.log('=== AgentShield ===')
   const purl = PackageURL.fromString(AGENTSHIELD.purl!)
   if (purl.type !== 'npm') {
-    throw new Error(`Unsupported PURL type "${purl.type}" — only npm is supported`)
+    throw new Error(
+      `Unsupported PURL type "${purl.type}" — only npm is supported`,
+    )
   }
-  const npmPackage = purl.namespace ? `${purl.namespace}/${purl.name}` : purl.name!
+  const npmPackage = purl.namespace
+    ? `${purl.namespace}/${purl.name}`
+    : purl.name!
   const version = AGENTSHIELD.version ?? purl.version
   const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
 
@@ -186,9 +190,10 @@ export async function setupAgentShield(): Promise<boolean> {
 async function checkZizmorVersion(binPath: string): Promise<boolean> {
   try {
     const result = await spawn(binPath, ['--version'], { stdio: 'pipe' })
-    const output = typeof result.stdout === 'string'
-      ? result.stdout.trim()
-      : result.stdout.toString().trim()
+    const output =
+      typeof result.stdout === 'string'
+        ? result.stdout.trim()
+        : result.stdout.toString().trim()
     return ZIZMOR.version ? output.includes(ZIZMOR.version) : false
   } catch {
     return false
@@ -224,12 +229,16 @@ export async function setupZizmor(): Promise<boolean> {
     name: `zizmor-${ZIZMOR.version}-${asset}`,
     sha256: expectedSha,
   })
-  logger.log(downloaded ? 'Download complete, checksum verified.' : `Using cached archive: ${archivePath}`)
+  logger.log(
+    downloaded
+      ? 'Download complete, checksum verified.'
+      : `Using cached archive: ${archivePath}`,
+  )
 
   // Extract binary from the cached archive.
   const ext = process.platform === 'win32' ? '.exe' : ''
   const binPath = path.join(path.dirname(archivePath), `zizmor${ext}`)
-  if (existsSync(binPath) && await checkZizmorVersion(binPath)) {
+  if (existsSync(binPath) && (await checkZizmorVersion(binPath))) {
     logger.log(`Cached: ${binPath} (v${ZIZMOR.version})`)
     return true
   }
@@ -239,13 +248,23 @@ export async function setupZizmor(): Promise<boolean> {
   const extractDir = await fs.mkdtemp(path.join(tmpdir(), 'zizmor-extract-'))
   try {
     if (isZip) {
-      await spawn('powershell', ['-NoProfile', '-Command',
-        `Expand-Archive -Path '${archivePath}' -DestinationPath '${extractDir}' -Force`], { stdio: 'pipe' })
+      await spawn(
+        'powershell',
+        [
+          '-NoProfile',
+          '-Command',
+          `Expand-Archive -Path '${archivePath}' -DestinationPath '${extractDir}' -Force`,
+        ],
+        { stdio: 'pipe' },
+      )
     } else {
-      await spawn('tar', ['xzf', archivePath, '-C', extractDir], { stdio: 'pipe' })
+      await spawn('tar', ['xzf', archivePath, '-C', extractDir], {
+        stdio: 'pipe',
+      })
     }
     const extractedBin = path.join(extractDir, `zizmor${ext}`)
-    if (!existsSync(extractedBin)) throw new Error(`Binary not found after extraction: ${extractedBin}`)
+    if (!existsSync(extractedBin))
+      throw new Error(`Binary not found after extraction: ${extractedBin}`)
     await fs.copyFile(extractedBin, binPath)
     await fs.chmod(binPath, 0o755)
   } finally {
@@ -266,12 +285,12 @@ export async function setupZizmor(): Promise<boolean> {
 
 // ── SFW ──
 
-export async function setupSfw(
-  apiToken: string | undefined,
-): Promise<boolean> {
+export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
   const isEnterprise = !!apiToken
   const sfwConfig = isEnterprise ? SFW_ENTERPRISE : SFW_FREE
-  logger.log(`=== Socket Firewall (${isEnterprise ? 'enterprise' : 'free'}) ===`)
+  logger.log(
+    `=== Socket Firewall (${isEnterprise ? 'enterprise' : 'free'}) ===`,
+  )
 
   // Platform.
   const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
@@ -287,8 +306,14 @@ export async function setupSfw(
   const binaryName = isEnterprise ? 'sfw' : 'sfw-free'
 
   // Download (with cache + checksum).
-  const { binaryPath, downloaded } = await downloadBinary({ url, name: binaryName, sha256 })
-  logger.log(downloaded ? `Downloaded to ${binaryPath}` : `Cached at ${binaryPath}`)
+  const { binaryPath, downloaded } = await downloadBinary({
+    url,
+    name: binaryName,
+    sha256,
+  })
+  logger.log(
+    downloaded ? `Downloaded to ${binaryPath}` : `Cached at ${binaryPath}`,
+  )
 
   // Create shims.
   const isWindows = process.platform === 'win32'
@@ -299,8 +324,10 @@ export async function setupSfw(
   if (isEnterprise && process.platform === 'linux') {
     ecosystems.push('go')
   }
-  const cleanPath = (process.env['PATH'] ?? '').split(path.delimiter)
-    .filter(p => p !== shimDir).join(path.delimiter)
+  const cleanPath = (process.env['PATH'] ?? '')
+    .split(path.delimiter)
+    .filter(p => p !== shimDir)
+    .join(path.delimiter)
   const sfwBin = normalizePath(binaryPath)
   const created: string[] = []
   for (const cmd of ecosystems) {
@@ -344,7 +371,10 @@ export async function setupSfw(
     bashLines.push(`exec "${sfwBin}" "${realBin}" "$@"`)
     const bashContent = bashLines.join('\n') + '\n'
     const bashPath = path.join(shimDir, cmd)
-    if (!existsSync(bashPath) || await fs.readFile(bashPath, 'utf8').catch(() => '') !== bashContent) {
+    if (
+      !existsSync(bashPath) ||
+      (await fs.readFile(bashPath, 'utf8').catch(() => '')) !== bashContent
+    ) {
       await fs.writeFile(bashPath, bashContent, { mode: 0o755 })
     }
     created.push(cmd)
@@ -357,32 +387,35 @@ export async function setupSfw(
         // shim logic. SOCKET_API_TOKEN is canonical; SOCKET_API_KEY is
         // the deprecated alias kept for one cycle.
         cmdApiTokenBlock =
-          `if not defined SOCKET_API_TOKEN (\r\n`
-          + `  if defined SOCKET_API_KEY set "SOCKET_API_TOKEN=%SOCKET_API_KEY%"\r\n`
-          + `)\r\n`
-          + `if not defined SOCKET_API_TOKEN (\r\n`
-          + `  for %%F in (.env.local .env) do (\r\n`
-          + `    if exist "%%F" (\r\n`
-          + `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_TOKEN" "%%F"') do (\r\n`
-          + `        set "SOCKET_API_TOKEN=%%B"\r\n`
-          + `      )\r\n`
-          + `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_KEY" "%%F"') do (\r\n`
-          + `        if not defined SOCKET_API_TOKEN set "SOCKET_API_TOKEN=%%B"\r\n`
-          + `      )\r\n`
-          + `    )\r\n`
-          + `  )\r\n`
-          + `)\r\n`
-          + `if defined SOCKET_API_TOKEN set "SOCKET_API_KEY=%SOCKET_API_TOKEN%"\r\n`
+          `if not defined SOCKET_API_TOKEN (\r\n` +
+          `  if defined SOCKET_API_KEY set "SOCKET_API_TOKEN=%SOCKET_API_KEY%"\r\n` +
+          `)\r\n` +
+          `if not defined SOCKET_API_TOKEN (\r\n` +
+          `  for %%F in (.env.local .env) do (\r\n` +
+          `    if exist "%%F" (\r\n` +
+          `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_TOKEN" "%%F"') do (\r\n` +
+          `        set "SOCKET_API_TOKEN=%%B"\r\n` +
+          `      )\r\n` +
+          `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_KEY" "%%F"') do (\r\n` +
+          `        if not defined SOCKET_API_TOKEN set "SOCKET_API_TOKEN=%%B"\r\n` +
+          `      )\r\n` +
+          `    )\r\n` +
+          `  )\r\n` +
+          `)\r\n` +
+          `if defined SOCKET_API_TOKEN set "SOCKET_API_KEY=%SOCKET_API_TOKEN%"\r\n`
       }
       const cmdContent =
-        `@echo off\r\n`
-        + `set "PATH=;%PATH%;"\r\n`
-        + `set "PATH=%PATH:;${shimDir};=%"\r\n`
-        + `set "PATH=%PATH:~1,-1%"\r\n`
-        + cmdApiTokenBlock
-        + `"${sfwBin}" "${realBin}" %*\r\n`
+        `@echo off\r\n` +
+        `set "PATH=;%PATH%;"\r\n` +
+        `set "PATH=%PATH:;${shimDir};=%"\r\n` +
+        `set "PATH=%PATH:~1,-1%"\r\n` +
+        cmdApiTokenBlock +
+        `"${sfwBin}" "${realBin}" %*\r\n`
       const cmdPath = path.join(shimDir, `${cmd}.cmd`)
-      if (!existsSync(cmdPath) || await fs.readFile(cmdPath, 'utf8').catch(() => '') !== cmdContent) {
+      if (
+        !existsSync(cmdPath) ||
+        (await fs.readFile(cmdPath, 'utf8').catch(() => '')) !== cmdContent
+      ) {
         await fs.writeFile(cmdPath, cmdContent)
       }
     }

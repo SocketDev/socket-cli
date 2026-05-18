@@ -1,16 +1,12 @@
 /**
- * @fileoverview Fleet oxlint plugin. Custom rules that encode the
- * fleet's CLAUDE.md style guide as lint errors with autofix where
- * the rewrite is unambiguous.
- *
- * Why a plugin instead of a separate scanner: oxlint's native plugin
- * surface integrates with the existing `pnpm run lint` pipeline,
- * inherits oxlint's AST + sourcemap + fix-application machinery, and
- * keeps the rule set discoverable via `oxlint --rules`.
- *
- * Wiring: `.config/oxlintrc.json` adds this plugin via `jsPlugins:
- * ["./oxlint-plugin/index.mts"]` and enables rules under the
- * `socket/` namespace.
+ * @file Fleet oxlint plugin. Custom rules that encode the fleet's CLAUDE.md
+ *   style guide as lint errors with autofix where the rewrite is unambiguous.
+ *   Why a plugin instead of a separate scanner: oxlint's native plugin surface
+ *   integrates with the existing `pnpm run lint` pipeline, inherits oxlint's
+ *   AST + sourcemap + fix-application machinery, and keeps the rule set
+ *   discoverable via `oxlint --rules`. Wiring: `.config/oxlintrc.json` adds
+ *   this plugin via `jsPlugins: ["./oxlint-plugin/index.mts"]` and enables
+ *   rules under the `socket/` namespace.
  */
 
 import exportTopLevelFunctions from './rules/export-top-level-functions.mts'
@@ -48,7 +44,9 @@ import sortRegexAlternations from './rules/sort-regex-alternations.mts'
 import sortSetArgs from './rules/sort-set-args.mts'
 import sortSourceMethods from './rules/sort-source-methods.mts'
 
-/** @type {import('eslint').ESLint.Plugin} */
+/**
+ * @type {import('eslint').ESLint.Plugin}
+ */
 const plugin = {
   meta: {
     name: 'socket',

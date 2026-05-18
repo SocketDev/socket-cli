@@ -244,7 +244,9 @@ async function main(): Promise<void> {
   ]
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const h = hits[i]!
-    lines.push(`  • line ${h.lineNumber}: "${h.preview}${h.preview.length === 100 ? '…' : ''}"`)
+    lines.push(
+      `  • line ${h.lineNumber}: "${h.preview}${h.preview.length === 100 ? '…' : ''}"`,
+    )
   }
   lines.push('')
   lines.push(
@@ -253,9 +255,7 @@ async function main(): Promise<void> {
   lines.push(
     '  must carry a one-line claim explaining the decision, so a reader',
   )
-  lines.push(
-    '  who never follows the pointer still walks away with the *why*.',
-  )
+  lines.push('  who never follows the pointer still walks away with the *why*.')
   lines.push('')
   lines.push('  Bad:')
   lines.push('    // See the @fileoverview JSDoc above.')

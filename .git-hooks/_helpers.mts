@@ -92,16 +92,17 @@ export const normalizePath = (p: string): string => p.replace(/\\/g, '/')
  * Split text into lines, normalizing CRLF (`\r\n`) to LF (`\n`) first.
  *
  * Hooks consume text from three sources where CRLF can show up:
- *   - subprocess stdout/stderr (especially git on Windows / msys)
- *   - stdin from the git push protocol on Windows
- *   - file contents from a working copy with `core.autocrlf` semantics
  *
- * Plain `text.split('\n')` on CRLF input leaves a trailing `\r` on every
- * line, which breaks per-line regex anchors used by the secret /
- * personal-path / AI-attribution scanners. The hook then reports "no
- * findings" on Windows even though the input clearly contains them —
- * a security-gate fail-open. Always go through this helper for any
- * text that didn't originate as a literal in our own code.
+ * - Subprocess stdout/stderr (especially git on Windows / msys)
+ * - Stdin from the git push protocol on Windows
+ * - File contents from a working copy with `core.autocrlf` semantics
+ *
+ * Plain `text.split('\n')` on CRLF input leaves a trailing `\r` on every line,
+ * which breaks per-line regex anchors used by the secret / personal-path /
+ * AI-attribution scanners. The hook then reports "no findings" on Windows even
+ * though the input clearly contains them — a security-gate fail-open. Always go
+ * through this helper for any text that didn't originate as a literal in our
+ * own code.
  */
 export const splitLines = (text: string): string[] =>
   text.replace(/\r\n/g, '\n').split('\n')
@@ -180,9 +181,9 @@ const SLASH_COMMENT_EXT_RE =
  * Pick the natural per-line opt-out marker for a host file.
  *
  * The marker regex above accepts `#`, `//`, and `/*` prefixes — but error
- * messages should print the *one* form a contributor would actually paste
- * into that file. TS edits get `// socket-hook: allow <rule>`; YAML gets
- * `# socket-hook: allow <rule>`. Same rule, different comment lexer.
+ * messages should print the _one_ form a contributor would actually paste into
+ * that file. TS edits get `// socket-hook: allow <rule>`; YAML gets `#
+ * socket-hook: allow <rule>`. Same rule, different comment lexer.
  */
 export const socketHookMarkerFor = (filePath: string, rule: string): string =>
   SLASH_COMMENT_EXT_RE.test(filePath)

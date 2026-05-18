@@ -88,9 +88,9 @@ function isDotenvPath(filePath: string): boolean {
 
 /**
  * Match either a known token-bearing vendor key OR a generic
- * `<X>_(?:TOKEN|KEY|SECRET)` suffix. A dotenv is the most leak-prone
- * place a secret can live, so both passes apply here even though
- * elsewhere (token-guard) we prefer the named-vendor list alone.
+ * `<X>_(?:TOKEN|KEY|SECRET)` suffix. A dotenv is the most leak-prone place a
+ * secret can live, so both passes apply here even though elsewhere
+ * (token-guard) we prefer the named-vendor list alone.
  */
 function isLeakyTokenKey(key: string): boolean {
   return isTokenKey(key) || GENERIC_TOKEN_SUFFIX_RE.test(key)
@@ -102,9 +102,9 @@ function isPlaceholder(value: string): boolean {
 }
 
 /**
- * Scan a dotenv body for `<token-key>=<real-value>` patterns. Returns
- * one hit per offending line so the error message can name them all
- * (the operator might have multiple leaks in one paste).
+ * Scan a dotenv body for `<token-key>=<real-value>` patterns. Returns one hit
+ * per offending line so the error message can name them all (the operator might
+ * have multiple leaks in one paste).
  */
 export function findTokenLeaks(content: string): Hit[] {
   const hits: Hit[] = []
@@ -120,7 +120,10 @@ export function findTokenLeaks(content: string): Hit[] {
       continue
     }
     // Optional `export ` prefix per POSIX shells.
-    const rawKey = trimmed.slice(0, eqIdx).trim().replace(/^export\s+/, '')
+    const rawKey = trimmed
+      .slice(0, eqIdx)
+      .trim()
+      .replace(/^export\s+/, '')
     if (!isLeakyTokenKey(rawKey)) {
       continue
     }
@@ -171,7 +174,9 @@ process.stdin.on('end', () => {
       process.exit(0)
     }
     const lines: string[] = []
-    lines.push('[no-token-in-dotenv-guard] Blocked: token-bearing key in dotenv.')
+    lines.push(
+      '[no-token-in-dotenv-guard] Blocked: token-bearing key in dotenv.',
+    )
     lines.push(`  File: ${filePath}`)
     lines.push('')
     for (const h of hits) {
@@ -179,7 +184,9 @@ process.stdin.on('end', () => {
       lines.push(`    Key:   ${h.key}`)
     }
     lines.push('')
-    lines.push('  Dotfiles leak — .env / .env.local accidentally get committed,')
+    lines.push(
+      '  Dotfiles leak — .env / .env.local accidentally get committed,',
+    )
     lines.push('  read by every dev tool that walks the project dir, swept by')
     lines.push("  log-scraper / file-indexer / backup clients. Tokens don't")
     lines.push('  belong here.')
@@ -192,7 +199,9 @@ process.stdin.on('end', () => {
     lines.push(
       '      to macOS Keychain / Linux libsecret / Windows CredentialManager.',
     )
-    lines.push('    - CI env: set as a secret in your CI provider, not in a file.')
+    lines.push(
+      '    - CI env: set as a secret in your CI provider, not in a file.',
+    )
     lines.push('')
     lines.push(
       '  Bypass (e.g. seeding a test fixture with a known-junk value):',

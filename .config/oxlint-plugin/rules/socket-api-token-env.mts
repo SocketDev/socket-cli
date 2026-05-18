@@ -1,25 +1,20 @@
 /**
- * @fileoverview Per CLAUDE.md "Token hygiene → Socket API token env
- * var" rule:
- *
- *   The canonical fleet name is `SOCKET_API_TOKEN`. The legacy names
+ * @file Per CLAUDE.md "Token hygiene → Socket API token env var" rule: The
+ *   canonical fleet name is `SOCKET_API_TOKEN`. The legacy names
  *   `SOCKET_API_KEY`, `SOCKET_SECURITY_API_TOKEN`, and
  *   `SOCKET_SECURITY_API_KEY` are accepted as aliases for one cycle
- *   (deprecation grace period) — bootstrap hooks read all four and
- *   normalize to `SOCKET_API_TOKEN` going forward.
+ *   (deprecation grace period) — bootstrap hooks read all four and normalize to
+ *   `SOCKET_API_TOKEN` going forward. Detects string literals naming any of the
+ *   legacy aliases:
  *
- * Detects string literals naming any of the legacy aliases:
  *   - SOCKET_API_KEY
  *   - SOCKET_SECURITY_API_TOKEN
- *   - SOCKET_SECURITY_API_KEY
- *
- * Autofix: rewrites to `SOCKET_API_TOKEN`. Skipped:
- *   - Lines marked with `socket-api-token-env: bootstrap` adjacent
- *     comment — the alias-normalization code that intentionally reads
- *     all four names. The bootstrap hook is the one place legacy
- *     aliases legitimately appear.
- *   - The literal `SOCKET_CLI_API_TOKEN` — unrelated; that's the
- *     socket-cli configuration setting, not an API token alias.
+ *   - SOCKET_SECURITY_API_KEY Autofix: rewrites to `SOCKET_API_TOKEN`. Skipped:
+ *   - Lines marked with `socket-api-token-env: bootstrap` adjacent comment — the
+ *     alias-normalization code that intentionally reads all four names. The
+ *     bootstrap hook is the one place legacy aliases legitimately appear.
+ *   - The literal `SOCKET_CLI_API_TOKEN` — unrelated; that's the socket-cli
+ *     configuration setting, not an API token alias.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
@@ -34,7 +29,9 @@ const CANONICAL = 'SOCKET_API_TOKEN'
 
 const BYPASS_RE = /socket-api-token-env:\s*bootstrap/
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',

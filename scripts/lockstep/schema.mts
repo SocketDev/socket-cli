@@ -1,16 +1,15 @@
 /**
- * @fileoverview TypeBox schema for lockstep.json — single source of truth.
+ * @file TypeBox schema for lockstep.json — single source of truth. Everything
+ *   else is derived:
  *
- * Everything else is derived:
  *   - TypeScript types in scripts/lockstep/cli.mts via `Static<typeof ...>`
  *   - lockstep.schema.json (draft 2020-12) via direct JSON.stringify of the
  *     TypeBox schema, emitted by scripts/lockstep/emit-schema.mts
  *   - Runtime validation at harness startup via
  *     `validateSchema(LockstepManifestSchema, ...)` from
- *     `@socketsecurity/lib-stable/validation/validate-schema`
- *
- * Byte-identical across sdxgen / socket-btm / socket-registry /
- * socket-wheelhouse / stuie / ultrathink via sync-scaffolding.mts.
+ *     `@socketsecurity/lib-stable/validation/validate-schema` Byte-identical
+ *     across sdxgen / socket-btm / socket-registry / socket-wheelhouse / stuie
+ *     / ultrathink via sync-scaffolding.mts.
  */
 
 import { Type, type Static } from '@sinclair/typebox'

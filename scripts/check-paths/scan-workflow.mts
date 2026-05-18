@@ -1,20 +1,15 @@
 /**
- * @fileoverview Rule C + D scanner for `.github/workflows/*.yml`.
- *
- * Rule C — workflow constructs the same multi-stage path 2+ times
- * outside a canonical "Compute paths" step. The fix is to add one
- * `id: paths` step early in the job that computes the path and
- * exposes it via `$GITHUB_OUTPUT`; later steps reference it.
- *
- * Rule D — comments encode a fully-qualified multi-stage path string.
- * Comments may describe path *structure* with placeholders but
- * shouldn't carry a tool-parsable path — the canonical construction
- * IS the documentation.
- *
- * `isInsideComputePathsBlock` walks backwards from the current line
- * to find the enclosing step header; if that step is named
- * `Compute … paths` or has `id: paths`, the line is exempt from
- * Rule C (the canonical place to construct a path).
+ * @file Rule C + D scanner for `.github/workflows/*.yml`. Rule C — workflow
+ *   constructs the same multi-stage path 2+ times outside a canonical "Compute
+ *   paths" step. The fix is to add one `id: paths` step early in the job that
+ *   computes the path and exposes it via `$GITHUB_OUTPUT`; later steps
+ *   reference it. Rule D — comments encode a fully-qualified multi-stage path
+ *   string. Comments may describe path _structure_ with placeholders but
+ *   shouldn't carry a tool-parsable path — the canonical construction IS the
+ *   documentation. `isInsideComputePathsBlock` walks backwards from the current
+ *   line to find the enclosing step header; if that step is named `Compute …
+ *   paths` or has `id: paths`, the line is exempt from Rule C (the canonical
+ *   place to construct a path).
  */
 
 import { readFileSync } from 'node:fs'

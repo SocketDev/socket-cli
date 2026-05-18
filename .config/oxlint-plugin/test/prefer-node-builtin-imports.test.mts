@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/prefer-node-builtin-imports.
+ * @file Unit tests for socket/prefer-node-builtin-imports.
  */
 
 import { describe, test } from 'node:test'

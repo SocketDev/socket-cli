@@ -84,8 +84,7 @@ test('allows plan under repo-root .claude/plans/', async () => {
 test('blocks plan under sub-package .claude/plans/', async () => {
   const result = await runHook({
     tool_input: {
-      file_path:
-        '/Users/x/projects/foo/packages/bar/.claude/plans/sub-plan.md',
+      file_path: '/Users/x/projects/foo/packages/bar/.claude/plans/sub-plan.md',
       content: '# Sub-package plan',
     },
     tool_name: 'Write',
@@ -110,7 +109,8 @@ test('blocks README.md whose heading mentions "plans" (heading heuristic)', asyn
   const result = await runHook({
     tool_input: {
       file_path: '/Users/x/projects/foo/docs/plans/README.md',
-      content: '# Plans directory\n\nThis directory holds historical plan archives.',
+      content:
+        '# Plans directory\n\nThis directory holds historical plan archives.',
     },
     tool_name: 'Write',
   })
@@ -120,7 +120,7 @@ test('blocks README.md whose heading mentions "plans" (heading heuristic)', asyn
   assert.strictEqual(result.code, 2)
 })
 
-test('allows truly-unrelated doc under docs/plans/ that doesn\'t look like a plan', async () => {
+test("allows truly-unrelated doc under docs/plans/ that doesn't look like a plan", async () => {
   const result = await runHook({
     tool_input: {
       file_path: '/Users/x/projects/foo/docs/plans/index.md',
@@ -155,7 +155,7 @@ test('detects plan via filename when content is missing', async () => {
   assert.strictEqual(result.code, 2)
 })
 
-test('respects bypass phrase in recent user turn', async (t) => {
+test('respects bypass phrase in recent user turn', async t => {
   // Build a transcript file containing the bypass phrase.
   const { writeFile, mkdtemp, rm } = await import('node:fs/promises')
   const os = await import('node:os')

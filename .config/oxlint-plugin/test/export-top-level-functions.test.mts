@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/export-top-level-functions.
+ * @file Unit tests for socket/export-top-level-functions.
  */
 
 import { describe, test } from 'node:test'

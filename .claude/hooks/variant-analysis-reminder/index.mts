@@ -81,10 +81,7 @@ function detectSeverityMentions(text: string): DetectedSeverity[] {
       const term = match[1]!
       const start = Math.max(0, match.index - 20)
       const end = Math.min(stripped.length, match.index + match[0].length + 40)
-      const snippet = stripped
-        .slice(start, end)
-        .replace(/\s+/g, ' ')
-        .trim()
+      const snippet = stripped.slice(start, end).replace(/\s+/g, ' ').trim()
       found.push({ term, snippet })
       // Limit per pattern to avoid spam if every line says "High".
       if (found.length >= 3) {
@@ -137,9 +134,7 @@ async function main(): Promise<void> {
     lines.push(`  • ${hit.term}: …${hit.snippet}…`)
   }
   lines.push('')
-  lines.push(
-    '  CLAUDE.md "Variant analysis on every High/Critical finding":',
-  )
+  lines.push('  CLAUDE.md "Variant analysis on every High/Critical finding":')
   lines.push(
     '  Bugs cluster — same mental model, same antipattern. Three searches',
   )

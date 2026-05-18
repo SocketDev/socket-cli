@@ -31,7 +31,7 @@ function runHook(transcriptPath: string): { stderr: string; exitCode: number } {
 
 test('FLAGS "Here\'s the plan" without numbered list', () => {
   const t = makeTranscript(
-    'Here\'s the plan: I\'ll touch a few files, fix the bug, run tests. Done.',
+    "Here's the plan: I'll touch a few files, fix the bug, run tests. Done.",
   )
   const { stderr, exitCode } = runHook(t)
   assert.equal(exitCode, 0)
@@ -41,7 +41,7 @@ test('FLAGS "Here\'s the plan" without numbered list', () => {
 
 test('does NOT fire when plan has numbered list', () => {
   const t = makeTranscript(
-    'Here\'s the plan:\n\n1. Read file foo.ts\n2. Apply Edit\n3. Run pnpm test',
+    "Here's the plan:\n\n1. Read file foo.ts\n2. Apply Edit\n3. Run pnpm test",
   )
   const { stderr, exitCode } = runHook(t)
   assert.equal(exitCode, 0)
@@ -50,7 +50,7 @@ test('does NOT fire when plan has numbered list', () => {
 
 test('FLAGS fleet-shared mention without second-opinion invite', () => {
   const t = makeTranscript(
-    'I\'ll edit `template/CLAUDE.md` to add a new rule, then update `.claude/hooks/foo/`.',
+    "I'll edit `template/CLAUDE.md` to add a new rule, then update `.claude/hooks/foo/`.",
   )
   const { stderr, exitCode } = runHook(t)
   assert.equal(exitCode, 0)
@@ -59,7 +59,7 @@ test('FLAGS fleet-shared mention without second-opinion invite', () => {
 
 test('does NOT fire when fleet-shared edit has second-opinion invite', () => {
   const t = makeTranscript(
-    'Here\'s the plan:\n\n1. Edit `template/CLAUDE.md`\n2. Invite a second-opinion pass before code.',
+    "Here's the plan:\n\n1. Edit `template/CLAUDE.md`\n2. Invite a second-opinion pass before code.",
   )
   const { stderr, exitCode } = runHook(t)
   assert.equal(exitCode, 0)
@@ -76,7 +76,7 @@ test('does NOT fire on plain non-plan prose', () => {
 })
 
 test('disabled env var short-circuits', () => {
-  const t = makeTranscript('Here\'s the plan: do stuff.')
+  const t = makeTranscript("Here's the plan: do stuff.")
   const result = spawnSync('node', [HOOK_PATH], {
     input: JSON.stringify({ transcript_path: t }),
     encoding: 'utf8',

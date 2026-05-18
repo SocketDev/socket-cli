@@ -1,13 +1,11 @@
 /**
- * @fileoverview Unit tests for socket/no-cached-for-on-iterable.
- *
- * The rule catches the silent-no-op bug where the fleet's canonical
- * cached-length `for (let i = 0, { length } = X; …)` loop is applied
- * to a Set / Map / Iterable instead of an array. The 4 fleet
- * incidents that motivated the rule all had a clear `new Set(...)`
- * or `: Set<string>` annotation in scope; tests cover those signals
- * plus a few negatives (arrays, unknown bindings) where the rule
- * must stay silent to avoid nagging on the canonical shape.
+ * @file Unit tests for socket/no-cached-for-on-iterable. The rule catches the
+ *   silent-no-op bug where the fleet's canonical cached-length `for (let i = 0,
+ *   { length } = X; …)` loop is applied to a Set / Map / Iterable instead of an
+ *   array. The 4 fleet incidents that motivated the rule all had a clear `new
+ *   Set(...)` or `: Set<string>` annotation in scope; tests cover those signals
+ *   plus a few negatives (arrays, unknown bindings) where the rule must stay
+ *   silent to avoid nagging on the canonical shape.
  */
 
 import { describe, test } from 'node:test'

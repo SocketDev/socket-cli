@@ -1,25 +1,22 @@
 /**
- * @fileoverview Per CLAUDE.md "File size" rule:
+ * @file Per CLAUDE.md "File size" rule: Source files have a soft cap of 500
+ *   lines and a hard cap of 1000 lines. Past those thresholds, split the file
+ *   along its natural seams. Two severities:
  *
- *   Source files have a soft cap of 500 lines and a hard cap of 1000
- *   lines. Past those thresholds, split the file along its natural
- *   seams.
+ *   - > 500 lines: warning, with the message pointing at the splitting guidance in.
  *
- * Two severities:
- *   - >500 lines: warning, with the message pointing at the splitting
- *     guidance in CLAUDE.md.
- *   - >1000 lines: error.
+ *   > CLAUDE.md.
  *
- * No autofix — splitting requires judgment about where the natural
- * seams are. The rule's job is to make the cap visible at every
- * commit.
+ *   - > 1000 lines: error. No autofix — splitting requires judgment about where.
  *
- * Allowed exceptions:
- *   - Files marked at the top with a comment containing
- *     `max-file-lines: legitimate parser/state-machine/table` or
- *     `eslint-disable socket/max-file-lines`. Per CLAUDE.md the rare
- *     legitimate cases are parsers, state machines, and config tables;
- *     they should self-document with a one-line comment.
+ *   > the. natural seams are. The rule's job is to make the cap visible at every
+ *   > commit. Allowed exceptions:
+ *
+ *   - Files marked at the top with a comment containing `max-file-lines:
+ *     legitimate parser/state-machine/table` or `eslint-disable
+ *     socket/max-file-lines`. Per CLAUDE.md the rare legitimate cases are
+ *     parsers, state machines, and config tables; they should self-document
+ *     with a one-line comment.
  *   - Generated artifacts — the rule trusts .config/oxlintrc.json's
  *     ignorePatterns to keep generated files out of scope.
  */
@@ -32,7 +29,9 @@ const HARD_CAP = 1000
 const BYPASS_RE =
   /max-file-lines:\s*(legitimate|parser|state[- ]?machine|table)/i
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'suggestion',

@@ -15,13 +15,13 @@ Hedging undermines those rules — it offloads judgment back to the user instead
 
 ### Fixed-phrase regex layer
 
-| Phrase | Why it's flagged |
-|---|---|
-| `I'm not sure` / `I am not sure` | Hedge; state a recommendation with rationale instead. |
-| `you decide` / `your call` / `up to you` | Offloads judgment. Pick the recommended path. |
-| `either approach works` / `either way works` | False-equivalence hedging. Pick one. |
-| `let me know` / `your preference` | Hand-off phrasing. Ask one specific question or execute. |
-| `maybe X` / `perhaps X` (sentence-initial) | Front-loaded uncertainty user didn't ask for. |
+| Phrase                                       | Why it's flagged                                         |
+| -------------------------------------------- | -------------------------------------------------------- |
+| `I'm not sure` / `I am not sure`             | Hedge; state a recommendation with rationale instead.    |
+| `you decide` / `your call` / `up to you`     | Offloads judgment. Pick the recommended path.            |
+| `either approach works` / `either way works` | False-equivalence hedging. Pick one.                     |
+| `let me know` / `your preference`            | Hand-off phrasing. Ask one specific question or execute. |
+| `maybe X` / `perhaps X` (sentence-initial)   | Front-loaded uncertainty user didn't ask for.            |
 
 ### Modal-verb NLP layer (compromise.js)
 

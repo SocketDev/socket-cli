@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/prefer-function-declaration.
+ * @file Unit tests for socket/prefer-function-declaration.
  */
 
 import { describe, test } from 'node:test'

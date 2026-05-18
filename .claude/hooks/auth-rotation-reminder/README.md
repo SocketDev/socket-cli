@@ -1,13 +1,13 @@
 # auth-rotation-reminder
 
-A **Claude Code hook** that runs at the *end* of every Claude turn,
+A **Claude Code hook** that runs at the _end_ of every Claude turn,
 notices when you've been logged into a CLI for "too long," and
 automatically logs you out so stale long-lived tokens don't sit in
 your dotfiles or keychain for days.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `Stop` hook like
-> this one fires *after* Claude finishes a turn. Stop hooks are a
+> this one fires _after_ Claude finishes a turn. Stop hooks are a
 > good place for periodic maintenance — they have access to your
 > shell environment but don't gate any tool calls.
 
@@ -25,7 +25,7 @@ mean to publish?").
 
 - **Interval**: 1 hour. Set `SOCKET_AUTH_ROTATION_INTERVAL_HOURS=4` to
   loosen, `=0` to run on every Stop event.
-- **Mode**: auto-logout (the hook *acts*, not just warns).
+- **Mode**: auto-logout (the hook _acts_, not just warns).
 - **Default skip-list**: `gh` is skipped because Claude Code itself
   uses `gh` for `gh pr edit` etc. — auto-revoking it would break the
   agent.
@@ -33,17 +33,17 @@ mean to publish?").
 
 ## What's swept
 
-| id        | display name      | detect            | logout                         |
-| --------- | ----------------- | ----------------- | ------------------------------ |
-| npm       | npm               | `npm whoami`      | `npm logout`                   |
-| pnpm      | pnpm              | `pnpm whoami`     | `pnpm logout`                  |
-| yarn      | yarn              | `yarn --version`  | `yarn npm logout`              |
-| gcloud    | gcloud            | `gcloud auth list ... ACTIVE` | `gcloud auth revoke --all --quiet` |
-| aws-sso   | aws (sso)         | `aws sts get-caller-identity` | `aws sso logout` |
-| gh        | gh (GitHub CLI)   | `gh auth status`  | `gh auth logout --hostname github.com` |
-| vault     | vault             | `vault token lookup` | `vault token revoke -self` |
-| docker    | docker            | `docker info \| grep Username:` | `docker logout` |
-| socket    | socket            | `socket whoami`   | `socket logout`                |
+| id      | display name    | detect                          | logout                                 |
+| ------- | --------------- | ------------------------------- | -------------------------------------- |
+| npm     | npm             | `npm whoami`                    | `npm logout`                           |
+| pnpm    | pnpm            | `pnpm whoami`                   | `pnpm logout`                          |
+| yarn    | yarn            | `yarn --version`                | `yarn npm logout`                      |
+| gcloud  | gcloud          | `gcloud auth list ... ACTIVE`   | `gcloud auth revoke --all --quiet`     |
+| aws-sso | aws (sso)       | `aws sts get-caller-identity`   | `aws sso logout`                       |
+| gh      | gh (GitHub CLI) | `gh auth status`                | `gh auth logout --hostname github.com` |
+| vault   | vault           | `vault token lookup`            | `vault token revoke -self`             |
+| docker  | docker          | `docker info \| grep Username:` | `docker logout`                        |
+| socket  | socket          | `socket whoami`                 | `socket logout`                        |
 
 The hook never reads, prints, or compares any token value. Detection
 is exit-code only; logout commands' output is suppressed except for

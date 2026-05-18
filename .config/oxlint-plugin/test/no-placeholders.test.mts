@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/no-placeholders.
+ * @file Unit tests for socket/no-placeholders.
  */
 
 import { describe, test } from 'node:test'

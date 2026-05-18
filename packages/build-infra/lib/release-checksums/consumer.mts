@@ -1,13 +1,12 @@
 /**
  * Release-checksum consumer: network fetch + cache for sibling-repo releases.
  *
- * Use this when your repo *consumes* releases produced by another repo
- * (e.g. socket-addon republishes binaries from socket-btm). Composes the
- * embedded-checksum loader from `core.mts` with a `checksums.txt` fetch
- * that falls back to the network when the embedded manifest is missing
- * a tag.
+ * Use this when your repo _consumes_ releases produced by another repo (e.g.
+ * socket-addon republishes binaries from socket-btm). Composes the
+ * embedded-checksum loader from `core.mts` with a `checksums.txt` fetch that
+ * falls back to the network when the embedded manifest is missing a tag.
  *
- * Repos that *produce* releases don't need this file — see `producer.mts`.
+ * Repos that _produce_ releases don't need this file — see `producer.mts`.
  *
  * Fleet-canonical: byte-identical across every repo that ships
  * `packages/build-infra/lib/release-checksums/`.
@@ -37,20 +36,31 @@ export interface ChecksumsResult {
 const checksumCache = new Map<string, ChecksumsResult>()
 
 interface GetChecksumsOptions {
-  /** The producing repo whose releases we're verifying against. */
+  /**
+   * The producing repo whose releases we're verifying against.
+   */
   repoConfig: RepoConfig
-  /** Tool name prefix used in the producing repo's release tag (e.g. `iocraft`). */
+  /**
+   * Tool name prefix used in the producing repo's release tag (e.g. `iocraft`).
+   */
   tool: string
-  /** Specific tag to fetch. If omitted, uses the embedded tag, then `latest`. */
+  /**
+   * Specific tag to fetch. If omitted, uses the embedded tag, then `latest`.
+   */
   releaseTag?: string
-  /** Where to cache the downloaded `checksums.txt`. Defaults to `<cwd>/build/temp`. */
+  /**
+   * Where to cache the downloaded `checksums.txt`. Defaults to
+   * `<cwd>/build/temp`.
+   */
   tempDir?: string
-  /** Suppress info/warn logging (errors still log). */
+  /**
+   * Suppress info/warn logging (errors still log).
+   */
   quiet?: boolean
   /**
-   * If true (default), use embedded checksums when available even if a
-   * network fetch could find newer ones. Set false to force a network
-   * fetch — useful when bumping checksums.
+   * If true (default), use embedded checksums when available even if a network
+   * fetch could find newer ones. Set false to force a network fetch — useful
+   * when bumping checksums.
    */
   preferEmbedded?: boolean
 }
@@ -58,10 +68,9 @@ interface GetChecksumsOptions {
 /**
  * Get checksums for a producing repo's release.
  *
- * Lookup priority:
- *   1. In-memory cache (per-process)
- *   2. Embedded checksums from `release-assets.json` (works offline)
- *   3. Download `checksums.txt` from the producing repo's GitHub release
+ * Lookup priority: 1. In-memory cache (per-process) 2. Embedded checksums from
+ * `release-assets.json` (works offline) 3. Download `checksums.txt` from the
+ * producing repo's GitHub release.
  *
  * Network failures fall back to embedded checksums when available.
  */

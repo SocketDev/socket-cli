@@ -36,7 +36,7 @@ If any of the 3 most recent user turns contains an explicit stop signal — "sto
 
 - `SOCKET_DONT_STOP_MID_QUEUE_REMINDER_DISABLED=1` — turn off entirely.
 
-This hook is a soft reminder (exit 0 with stderr message), not a blocker (exit 2). The Stop event runs *after* the turn is over; blocking would be too late to be useful. Instead, the next assistant turn sees the reminder in its context.
+This hook is a soft reminder (exit 0 with stderr message), not a blocker (exit 2). The Stop event runs _after_ the turn is over; blocking would be too late to be useful. Instead, the next assistant turn sees the reminder in its context.
 
 ## Test
 

@@ -18,15 +18,15 @@ For every confirmed finding, run three searches before closing it out:
 
 ## What counts as "the same shape"
 
-| Bug class | What to search for |
-|---|---|
-| Missing null check | the call before the access — `foo.bar()` where `foo` could be undefined |
-| Race condition | the lock primitive + the call sequence |
-| Path construction | literal `path.join('build', …)` outside the canonical `paths.mts` |
-| Insecure default | the option name, the boolean default, the env-var fallback |
-| Token leak | the field name (`token`, `api_key`, …), the log statement, the error message |
-| Promise.race leak | `Promise.race(`, `Promise.any(` inside a `for`/`while` |
-| Forbidden API | `fetch(`, `fs.rm(`, `fs.access(`, raw `npx` / `pnpm dlx` |
+| Bug class          | What to search for                                                           |
+| ------------------ | ---------------------------------------------------------------------------- |
+| Missing null check | the call before the access — `foo.bar()` where `foo` could be undefined      |
+| Race condition     | the lock primitive + the call sequence                                       |
+| Path construction  | literal `path.join('build', …)` outside the canonical `paths.mts`            |
+| Insecure default   | the option name, the boolean default, the env-var fallback                   |
+| Token leak         | the field name (`token`, `api_key`, …), the log statement, the error message |
+| Promise.race leak  | `Promise.race(`, `Promise.any(` inside a `for`/`while`                       |
+| Forbidden API      | `fetch(`, `fs.rm(`, `fs.access(`, raw `npx` / `pnpm dlx`                     |
 
 ## Outputs
 

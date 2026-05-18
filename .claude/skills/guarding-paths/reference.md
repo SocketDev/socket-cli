@@ -5,16 +5,36 @@ The patterns to apply for each detection rule. The orchestration story (modes, p
 ## Rule A — Multi-stage path constructed inline (in `.mts`/`.cts`)
 
 **Bad**:
+
 ```ts
-const finalBinary = path.join(PACKAGE_ROOT, 'build', BUILD_MODE, PLATFORM_ARCH, 'out', 'Final', 'binary')
+const finalBinary = path.join(
+  PACKAGE_ROOT,
+  'build',
+  BUILD_MODE,
+  PLATFORM_ARCH,
+  'out',
+  'Final',
+  'binary',
+)
 ```
 
 **Fix**: move the construction into the package's `scripts/paths.mts` (or `lib/paths.mts`), or use a build-infra helper:
+
 ```ts
 // In packages/foo/scripts/paths.mts:
 export function getBuildPaths(mode, platformArch) {
   // ... constructs once ...
-  return { outputFinalBinary: path.join(PACKAGE_ROOT, 'build', mode, platformArch, 'out', 'Final', binaryName) }
+  return {
+    outputFinalBinary: path.join(
+      PACKAGE_ROOT,
+      'build',
+      mode,
+      platformArch,
+      'out',
+      'Final',
+      binaryName,
+    ),
+  }
 }
 
 // In the consumer:
@@ -27,8 +47,19 @@ For binsuite tools (binpress / binflate / binject) the canonical helper is `getF
 ## Rule B — Cross-package traversal
 
 **Bad**:
+
 ```ts
-const liefDir = path.join(PACKAGE_ROOT, '..', 'lief-builder', 'build', mode, platformArch, 'out', 'Final', 'lief')
+const liefDir = path.join(
+  PACKAGE_ROOT,
+  '..',
+  'lief-builder',
+  'build',
+  mode,
+  platformArch,
+  'out',
+  'Final',
+  'lief',
+)
 ```
 
 **Fix**: declare the workspace dep, expose `paths.mts` via the producer's `exports`, import the helper:
@@ -52,6 +83,7 @@ const liefDir = path.join(PACKAGE_ROOT, '..', 'lief-builder', 'build', mode, pla
 ## Rule C — Workflow path repetition
 
 **Bad** (3 steps each rebuilding the same path):
+
 ```yaml
 - name: Step A
   run: cd packages/foo/build/${BUILD_MODE}/${PLATFORM_ARCH}/out/Final && do-thing-1
@@ -91,12 +123,14 @@ For paths used inside `working-directory: packages/foo` steps, expose a `_rel` c
 ## Rule D — Comment-encoded paths
 
 **Bad**:
+
 ```yaml
 # Path: packages/foo/build/dev/darwin-arm64/out/Final/binary
 COPY --from=builder /build/.../out/Final/binary /out/Final/binary
 ```
 
 **Fix**: cite the canonical `paths.mts` instead of duplicating the string:
+
 ```yaml
 # Layout owned by packages/foo/scripts/paths.mts:getBuildPaths().
 COPY --from=builder /build/packages/foo/build/${BUILD_MODE}/${PLATFORM_ARCH}/out/Final/binary /out/Final/binary
@@ -107,6 +141,7 @@ The comment may describe structure (`<mode>/<arch>`) but should not be a parsabl
 ## Rule G — Dockerfile / Makefile / shell duplicate construction
 
 **Bad** (Dockerfile reconstructs the path 3 times in the same stage):
+
 ```dockerfile
 RUN mkdir -p build/${BUILD_MODE}/${PLATFORM_ARCH}/out/Final && \
     cp src build/${BUILD_MODE}/${PLATFORM_ARCH}/out/Final/output && \
@@ -114,6 +149,7 @@ RUN mkdir -p build/${BUILD_MODE}/${PLATFORM_ARCH}/out/Final && \
 ```
 
 **Fix**: declare an `ENV` once, reference everywhere:
+
 ```dockerfile
 # Layout owned by packages/foo/scripts/paths.mts.
 ENV FINAL_DIR=build/${BUILD_MODE}/${PLATFORM_ARCH}/out/Final

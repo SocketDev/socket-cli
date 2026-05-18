@@ -35,10 +35,7 @@
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 
-import {
-  bypassPhrasePresent,
-  readStdin,
-} from '../_shared/transcript.mts'
+import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
   tool_name?: string | undefined
@@ -99,18 +96,19 @@ function isPublicMessageCommand(command: string): boolean {
 }
 
 /**
- * Extract the textual message body from a shell command. Covers the
- * three common forms:
- *   - `-m "..."` / `-m '...'` (one or more times — git supports it)
- *   - `--message=...` / `--message ...`
- *   - `--body=...` / `--body ...`
- *   - `--body-file=<path>` is NOT inspected (we'd have to read the
- *     file; out of scope, we only check args-as-text)
- *   - HEREDOC bodies: `... -m "$(cat <<'EOF' ... EOF\n)"`. We parse the
- *     literal HEREDOC body when present in the command string.
+ * Extract the textual message body from a shell command. Covers the three
+ * common forms:
  *
- * Returns all extracted message bodies joined by newlines so the
- * caller can run one regex pass over the combined text.
+ * - `-m "..."` / `-m '...'` (one or more times — git supports it)
+ * - `--message=...` / `--message ...`
+ * - `--body=...` / `--body ...`
+ * - `--body-file=<path>` is NOT inspected (we'd have to read the file; out of
+ *   scope, we only check args-as-text)
+ * - HEREDOC bodies: `... -m "$(cat <<'EOF' ... EOF\n)"`. We parse the literal
+ *   HEREDOC body when present in the command string.
+ *
+ * Returns all extracted message bodies joined by newlines so the caller can run
+ * one regex pass over the combined text.
  */
 function extractMessageBodies(command: string): string {
   const out: string[] = []
@@ -151,11 +149,11 @@ function extractMessageBodies(command: string): string {
 }
 
 /**
- * Strip a single layer of shell quoting from a token. Handles single
- * quotes, double quotes, and unquoted text. We don't attempt full
- * shell-quote unescaping — for the leak we're guarding against, the
- * literal content is what GitHub sees, and any escaped char that's
- * inside `<owner>/<repo>#<num>` would prevent the auto-link anyway.
+ * Strip a single layer of shell quoting from a token. Handles single quotes,
+ * double quotes, and unquoted text. We don't attempt full shell-quote
+ * unescaping — for the leak we're guarding against, the literal content is what
+ * GitHub sees, and any escaped char that's inside `<owner>/<repo>#<num>` would
+ * prevent the auto-link anyway.
  */
 function unquoteShell(token: string): string {
   if (token.length >= 2) {
@@ -172,9 +170,9 @@ function unquoteShell(token: string): string {
 }
 
 /**
- * Walk the message text and collect every external-org reference.
- * Returns an empty array when the text only references same-repo
- * (`#123`) or SocketDev-owned (`SocketDev/socket-lib#42`) issues.
+ * Walk the message text and collect every external-org reference. Returns an
+ * empty array when the text only references same-repo (`#123`) or
+ * SocketDev-owned (`SocketDev/socket-lib#42`) issues.
  */
 function findExternalRefs(text: string): ExternalRef[] {
   const out: ExternalRef[] = []
@@ -278,7 +276,7 @@ async function main(): Promise<number> {
     '',
     'Why this matters: GitHub auto-links these tokens and posts an',
     "'added N commits that reference this issue' event back to the",
-    "target. A fleet cascade of N commits = N pings to the maintainer.",
+    'target. A fleet cascade of N commits = N pings to the maintainer.',
     '',
     'Refs found:',
   ]

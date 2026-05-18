@@ -1,26 +1,23 @@
 /**
- * Audit logging + slopsquatting (Threat 2.2) tracking for the
- * check-new-deps hook.
+ * Audit logging + slopsquatting (Threat 2.2) tracking for the check-new-deps
+ * hook.
  *
- * Two responsibilities, co-located because they share end-of-hook
- * timing:
+ * Two responsibilities, co-located because they share end-of-hook timing:
  *
- *   1. Audit log — append one JSONL record per checked package to
- *      `~/.claude/audit/check-new-deps.jsonl`. The log is LOCAL ONLY:
- *      no outbound channel, no network. Private package names never
- *      leave the developer's machine via this log.
+ * 1. Audit log — append one JSONL record per checked package to
+ *    `~/.claude/audit/check-new-deps.jsonl`. The log is LOCAL ONLY: no outbound
+ *    channel, no network. Private package names never leave the developer's
+ *    machine via this log.
+ * 2. 404 tracking — when a PURL returns "not found" from the firewall API, bump a
+ *    persistent cacache-backed TTL counter. After NOT_FOUND_THRESHOLD attempts
+ *    on the same nonexistent package, surface a warning with a "did you mean"
+ *    suggestion. The cache survives across sessions and processes so attackers
+ *    can't shake the counter by triggering a new session.
  *
- *   2. 404 tracking — when a PURL returns "not found" from the
- *      firewall API, bump a persistent cacache-backed TTL counter.
- *      After NOT_FOUND_THRESHOLD attempts on the same nonexistent
- *      package, surface a warning with a "did you mean" suggestion.
- *      The cache survives across sessions and processes so attackers
- *      can't shake the counter by triggering a new session.
- *
- * Failure mode: everything here is best-effort. A disk-full / EACCES
- * audit-log failure or a corrupt cacache entry must NEVER change the
- * verdict the hook returns. All write paths are wrapped in try/catch
- * that logs to stderr and continues.
+ * Failure mode: everything here is best-effort. A disk-full / EACCES audit-log
+ * failure or a corrupt cacache entry must NEVER change the verdict the hook
+ * returns. All write paths are wrapped in try/catch that logs to stderr and
+ * continues.
  */
 
 import { promises as fsp } from 'node:fs'

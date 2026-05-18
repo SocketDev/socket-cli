@@ -1,15 +1,11 @@
 /**
- * @fileoverview Tests for the release-workflow-guard hook.
- *
- * Runs the hook as a subprocess (node --test), piping a tool-use
- * payload on stdin and asserting on the exit code + stderr. Exit 2
- * means the hook refused the command; exit 0 means it passed it
- * through.
- *
- * The dry-run bypass tests need a fixture workflow on disk because
- * the hook verifies the named workflow declares a `dry-run:` input.
- * Each test that exercises the bypass writes a tmpDir + workflow
- * fixture and points the hook at it via CLAUDE_PROJECT_DIR.
+ * @file Tests for the release-workflow-guard hook. Runs the hook as a
+ *   subprocess (node --test), piping a tool-use payload on stdin and asserting
+ *   on the exit code + stderr. Exit 2 means the hook refused the command; exit
+ *   0 means it passed it through. The dry-run bypass tests need a fixture
+ *   workflow on disk because the hook verifies the named workflow declares a
+ *   `dry-run:` input. Each test that exercises the bypass writes a tmpDir +
+ *   workflow fixture and points the hook at it via CLAUDE_PROJECT_DIR.
  */
 
 import { promises as fs } from 'node:fs'
@@ -40,14 +36,14 @@ async function runHook(
 }
 
 /**
- * Make a tmp transcript file containing one user-turn message with
- * the given text. Used to exercise the phrase-bypass path.
+ * Make a tmp transcript file containing one user-turn message with the given
+ * text. Used to exercise the phrase-bypass path.
  */
 /**
- * Build a synthetic transcript with a single user turn (text) and
- * an optional assistant turn (tool-use blocks). The assistant turn
- * is appended after the user turn so the per-trigger
- * "prior-dispatch" counter sees historical Bash invocations.
+ * Build a synthetic transcript with a single user turn (text) and an optional
+ * assistant turn (tool-use blocks). The assistant turn is appended after the
+ * user turn so the per-trigger "prior-dispatch" counter sees historical Bash
+ * invocations.
  */
 async function makeTranscript(
   text: string,
@@ -84,10 +80,10 @@ async function makeTranscript(
 }
 
 /**
- * Make a tmp project root with a `.github/workflows/<name>.yml`
- * fixture containing the given workflow body. Returns the project
- * dir + a cleanup function. Pass the project dir as CLAUDE_PROJECT_DIR
- * to runHook so the dry-run verification reads the fixture.
+ * Make a tmp project root with a `.github/workflows/<name>.yml` fixture
+ * containing the given workflow body. Returns the project dir + a cleanup
+ * function. Pass the project dir as CLAUDE_PROJECT_DIR to runHook so the
+ * dry-run verification reads the fixture.
  */
 async function makeWorkflowFixture(
   filename: string,
@@ -284,9 +280,13 @@ describe('release-workflow-guard hook', () => {
         'build.yml',
         WF_WITH_DRY_RUN,
       ))
-      const r = await runHook('gh workflow run build.yml -f dry-run=true', 'Bash', {
-        CLAUDE_PROJECT_DIR: projectDir,
-      })
+      const r = await runHook(
+        'gh workflow run build.yml -f dry-run=true',
+        'Bash',
+        {
+          CLAUDE_PROJECT_DIR: projectDir,
+        },
+      )
       assert.equal(r.code, 0, `Expected 0 but got ${r.code}: ${r.stderr}`)
       assert.match(r.stderr, /ALLOWED/)
       assert.match(r.stderr, /verifiable dry-run/)
@@ -377,9 +377,13 @@ describe('release-workflow-guard hook', () => {
       // intentionally fails the verification rather than guessing.
       const wf = WF_WITH_DRY_RUN.replace('dry-run:', 'dry_run:')
       ;({ projectDir, cleanup } = await makeWorkflowFixture('build.yml', wf))
-      const r = await runHook('gh workflow run build.yml -f dry-run=true', 'Bash', {
-        CLAUDE_PROJECT_DIR: projectDir,
-      })
+      const r = await runHook(
+        'gh workflow run build.yml -f dry-run=true',
+        'Bash',
+        {
+          CLAUDE_PROJECT_DIR: projectDir,
+        },
+      )
       assert.equal(r.code, 2)
     })
 
@@ -393,11 +397,7 @@ describe('release-workflow-guard hook', () => {
       const matchingName = path.basename(targetProjectDir)
       const wfDir = path.join(targetProjectDir, '.github', 'workflows')
       await fs.mkdir(wfDir, { recursive: true })
-      await fs.writeFile(
-        path.join(wfDir, 'build.yml'),
-        WF_WITH_DRY_RUN,
-        'utf8',
-      )
+      await fs.writeFile(path.join(wfDir, 'build.yml'), WF_WITH_DRY_RUN, 'utf8')
       try {
         const r = await runHook(
           `gh workflow run build.yml --repo SocketDev/${matchingName} -f dry-run=true`,
@@ -746,14 +746,21 @@ describe('release-workflow-guard hook', () => {
       // GH-release-only shape.
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'publish.yml',
-        ['name: publish', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  publish:', '    steps:', '      - run: npm publish', '',
+        [
+          'name: publish',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  publish:',
+          '    steps:',
+          '      - run: npm publish',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'just a regular message with no bypass phrase here',
-      )
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript(
+          'just a regular message with no bypass phrase here',
+        )
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run publish.yml',
@@ -773,14 +780,21 @@ describe('release-workflow-guard hook', () => {
       // authorizes ONE dispatch of THIS exact workflow.
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
-        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  build:', '    steps:', '      - run: ./scripts/build.sh', '',
+        [
+          'name: build',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  build:',
+          '    steps:',
+          '      - run: ./scripts/build.sh',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'Allow workflow-dispatch bypass: build.yml — kicking off the smol build',
-      )
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript(
+          'Allow workflow-dispatch bypass: build.yml — kicking off the smol build',
+        )
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run build.yml',
@@ -797,14 +811,19 @@ describe('release-workflow-guard hook', () => {
     it('basename form (no .yml suffix) also matches', async () => {
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
-        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  build:', '    steps:', '      - run: ./build', '',
+        [
+          'name: build',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  build:',
+          '    steps:',
+          '      - run: ./build',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'Allow workflow-dispatch bypass: build',
-      )
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript('Allow workflow-dispatch bypass: build')
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run build.yml',
@@ -822,14 +841,19 @@ describe('release-workflow-guard hook', () => {
       // the phrase is workflow-scoped, so the wrong target rejects.
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
-        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  build:', '    steps:', '      - run: ./build', '',
+        [
+          'name: build',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  build:',
+          '    steps:',
+          '      - run: ./build',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'Allow workflow-dispatch bypass: publish.yml',
-      )
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript('Allow workflow-dispatch bypass: publish.yml')
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run build.yml',
@@ -849,14 +873,19 @@ describe('release-workflow-guard hook', () => {
       // longer accepts the bare form.
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
-        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  build:', '    steps:', '      - run: ./build', '',
+        [
+          'name: build',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  build:',
+          '    steps:',
+          '      - run: ./build',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'Allow workflow-dispatch bypass',
-      )
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript('Allow workflow-dispatch bypass')
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run build.yml',
@@ -871,14 +900,21 @@ describe('release-workflow-guard hook', () => {
     it('phrase match is case-sensitive (lowercased phrase does NOT bypass)', async () => {
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
-        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  build:', '    steps:', '      - run: ./scripts/build.sh', '',
+        [
+          'name: build',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  build:',
+          '    steps:',
+          '      - run: ./scripts/build.sh',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'allow workflow-dispatch bypass: build.yml — wrong case',
-      )
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript(
+          'allow workflow-dispatch bypass: build.yml — wrong case',
+        )
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run build.yml',
@@ -895,14 +931,21 @@ describe('release-workflow-guard hook', () => {
       // "ship it" inferring intent must not unlock the dispatch.
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
-        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  build:', '    steps:', '      - run: ./scripts/build.sh', '',
+        [
+          'name: build',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  build:',
+          '    steps:',
+          '      - run: ./scripts/build.sh',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'go ahead and dispatch the workflow, skip the guard',
-      )
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript(
+          'go ahead and dispatch the workflow, skip the guard',
+        )
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run build.yml',
@@ -940,14 +983,21 @@ describe('release-workflow-guard hook', () => {
       // matches by substring on the concatenated user turns.
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
-        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  build:', '    steps:', '      - run: ./build', '',
+        [
+          'name: build',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  build:',
+          '    steps:',
+          '      - run: ./build',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'here is some preamble\nAllow workflow-dispatch bypass: build.yml\nand some trailing text',
-      )
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript(
+          'here is some preamble\nAllow workflow-dispatch bypass: build.yml\nand some trailing text',
+        )
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run build.yml',
@@ -968,23 +1018,27 @@ describe('release-workflow-guard hook', () => {
       // dispatch (the second) finds remaining=0 and blocks.
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
-        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  build:', '    steps:', '      - run: ./build', '',
+        [
+          'name: build',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  build:',
+          '    steps:',
+          '      - run: ./build',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
       // Build a transcript with: user phrase, then assistant Bash
       // tool-use dispatching the workflow.
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'Allow workflow-dispatch bypass: build.yml',
-        [
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript('Allow workflow-dispatch bypass: build.yml', [
           {
             type: 'tool_use',
             name: 'Bash',
             input: { command: 'gh workflow run build.yml' },
           },
-        ],
-      )
+        ])
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run build.yml',
@@ -1003,21 +1057,28 @@ describe('release-workflow-guard hook', () => {
       // — this dispatch consumes the last slot.
       const { projectDir, cleanup } = await makeWorkflowFixture(
         'build.yml',
-        ['name: build', 'on: { workflow_dispatch: {} }', 'jobs:',
-         '  build:', '    steps:', '      - run: ./build', '',
+        [
+          'name: build',
+          'on: { workflow_dispatch: {} }',
+          'jobs:',
+          '  build:',
+          '    steps:',
+          '      - run: ./build',
+          '',
         ].join('\n'),
       )
       cleanups.push(cleanup)
-      const { transcriptPath, cleanup: cleanupTranscript } = await makeTranscript(
-        'Allow workflow-dispatch bypass: build.yml\nAllow workflow-dispatch bypass: build.yml',
-        [
-          {
-            type: 'tool_use',
-            name: 'Bash',
-            input: { command: 'gh workflow run build.yml' },
-          },
-        ],
-      )
+      const { transcriptPath, cleanup: cleanupTranscript } =
+        await makeTranscript(
+          'Allow workflow-dispatch bypass: build.yml\nAllow workflow-dispatch bypass: build.yml',
+          [
+            {
+              type: 'tool_use',
+              name: 'Bash',
+              input: { command: 'gh workflow run build.yml' },
+            },
+          ],
+        )
       cleanups.push(cleanupTranscript)
       const r = await runHook(
         'gh workflow run build.yml',

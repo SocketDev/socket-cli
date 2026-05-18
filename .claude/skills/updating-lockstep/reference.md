@@ -4,13 +4,13 @@ Long-form details for the `updating-lockstep` skill — phase scripts, per-kind 
 
 ## Per-kind action policy
 
-| Kind | Drift signal | Action |
-|---|---|---|
-| `version-pin` | Upstream commits on default ref since pinned SHA | **Auto-bump** per `upgrade_policy`: `track-latest` → advance to latest stable tag; `major-gate` → advance patch/minor only; `locked` → advisory only |
-| `file-fork` | Upstream file changed since `forked_at_sha` | **Advisory** — note in PR body; do NOT auto-merge (forks carry local deltas that need human review) |
-| `feature-parity` | Parity score below `criticality/10` floor | **Advisory** — note in PR body; human decides implement vs downgrade criticality |
-| `spec-conformance` | Spec submodule moved | **Advisory** — note in PR body; human decides whether to bump `spec_version` |
-| `lang-parity` | Port divergence / `rejected` anti-pattern reintroduced | **Advisory** — note in PR body; humans fix the port or update the manifest |
+| Kind               | Drift signal                                           | Action                                                                                                                                               |
+| ------------------ | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version-pin`      | Upstream commits on default ref since pinned SHA       | **Auto-bump** per `upgrade_policy`: `track-latest` → advance to latest stable tag; `major-gate` → advance patch/minor only; `locked` → advisory only |
+| `file-fork`        | Upstream file changed since `forked_at_sha`            | **Advisory** — note in PR body; do NOT auto-merge (forks carry local deltas that need human review)                                                  |
+| `feature-parity`   | Parity score below `criticality/10` floor              | **Advisory** — note in PR body; human decides implement vs downgrade criticality                                                                     |
+| `spec-conformance` | Spec submodule moved                                   | **Advisory** — note in PR body; human decides whether to bump `spec_version`                                                                         |
+| `lang-parity`      | Port divergence / `rejected` anti-pattern reintroduced | **Advisory** — note in PR body; humans fix the port or update the manifest                                                                           |
 
 The umbrella rule: **`version-pin` is mechanical** (safe to auto-apply with `track-latest` / `major-gate` policies); everything else is **advisory** (upstream semantics and local deltas matter, humans decide).
 

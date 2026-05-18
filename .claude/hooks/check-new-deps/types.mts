@@ -1,7 +1,7 @@
 /**
- * Shared types for the check-new-deps hook. Pure type definitions —
- * no runtime side effects, so both index.mts and audit.mts can import
- * without circularity concerns.
+ * Shared types for the check-new-deps hook. Pure type definitions — no runtime
+ * side effects, so both index.mts and audit.mts can import without circularity
+ * concerns.
  */
 
 // Extracted dependency with ecosystem type, name, and optional scope.

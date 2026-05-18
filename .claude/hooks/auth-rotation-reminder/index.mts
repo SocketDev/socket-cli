@@ -80,11 +80,7 @@ const GLOBAL_SKIP_LIST = path.join(STATE_DIR, 'services-skip')
 // the paths stay correct regardless of session cwd — process.cwd()
 // drifts when the user navigates into a subpackage.
 const PROJECT_DIR = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
-const PROJECT_SNOOZE = path.join(
-  PROJECT_DIR,
-  '.claude',
-  'auth-rotation.snooze',
-)
+const PROJECT_SNOOZE = path.join(PROJECT_DIR, '.claude', 'auth-rotation.snooze')
 const PROJECT_SKIP_LIST = path.join(
   PROJECT_DIR,
   '.claude',
@@ -195,13 +191,13 @@ interface LeakDetection {
 }
 
 /**
- * Scan the most-recent assistant turn (from the Stop-hook JSON
- * payload's transcript_path) for a leak-warning marker. Returns
- * `triggered: true` when any pattern hits — caller bypasses the
- * throttle and runs rotation immediately.
+ * Scan the most-recent assistant turn (from the Stop-hook JSON payload's
+ * transcript_path) for a leak-warning marker. Returns `triggered: true` when
+ * any pattern hits — caller bypasses the throttle and runs rotation
+ * immediately.
  *
- * Caller passes in the raw stdin payload because `main()` already
- * captured it (Node's stdin is single-use).
+ * Caller passes in the raw stdin payload because `main()` already captured it
+ * (Node's stdin is single-use).
  */
 function detectLeakWarning(stdinPayload: string): LeakDetection {
   if (!stdinPayload) {

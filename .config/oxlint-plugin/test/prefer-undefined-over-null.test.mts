@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/prefer-undefined-over-null.
+ * @file Unit tests for socket/prefer-undefined-over-null.
  */
 
 import { describe, test } from 'node:test'

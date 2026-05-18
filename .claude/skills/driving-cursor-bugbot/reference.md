@@ -68,7 +68,7 @@ mutation($threadId: ID!) {
 
 - **`real`, fixed** — resolve after the fix commit lands and the reply is posted.
 - **`already-fixed`** — resolve immediately after the reply (the fix already exists).
-- **`false-positive`** — resolve immediately after the reply, *unless* the verdict is contested by the reviewer.
+- **`false-positive`** — resolve immediately after the reply, _unless_ the verdict is contested by the reviewer.
 - **`wont-fix`** — do NOT resolve. The reviewer decides; leave it open as an open question.
 
 ## Reply templates
@@ -108,5 +108,5 @@ Conventional-commit-style PR titles: `<type>(<scope>): <description>`. When fixe
 - ❌ Force-rewriting a Bugbot's finding by editing the comment via `--method PATCH`. The bot may re-post.
 - ❌ Resolving a thread without a written reply. Future you (or the reviewer) won't know what happened. Reply first, resolve second.
 - ❌ Closing Bugbot threads via the GitHub UI without a written reply.
-- ❌ Fixing a Bugbot finding by deleting the offending code without understanding *why* the code was there. Bugbot doesn't know about your domain; the human reviewer does.
+- ❌ Fixing a Bugbot finding by deleting the offending code without understanding _why_ the code was there. Bugbot doesn't know about your domain; the human reviewer does.
 - ❌ Treating "Bugbot Autofix determined this is a false positive" as a definitive verdict without checking. The autofix bot is right ~95% of the time but verifying takes 10 seconds.

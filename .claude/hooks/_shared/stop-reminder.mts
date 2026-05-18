@@ -1,17 +1,15 @@
 /**
- * @fileoverview Shared scaffold for Stop-hook reminders.
+ * @file Shared scaffold for Stop-hook reminders. Most fleet reminders share the
+ *   same shape:
  *
- * Most fleet reminders share the same shape:
  *   1. Read the Stop payload JSON from stdin.
  *   2. Read the most-recent assistant turn from the transcript.
  *   3. Run a list of regex patterns against the (code-fence-stripped) text.
  *   4. If any match, emit a stderr block summarizing the hits.
- *   5. Always exit 0 (informational).
- *
- * This module factors that loop so each new reminder is just a name +
- * env-var + pattern list. Keeps every hook under ~50 lines and ensures
- * the harness contract (JSON parse, fail-open, code-fence strip) lives
- * in one place.
+ *   5. Always exit 0 (informational). This module factors that loop so each new
+ *      reminder is just a name + env-var + pattern list. Keeps every hook under
+ *      ~50 lines and ensures the harness contract (JSON parse, fail-open,
+ *      code-fence strip) lives in one place.
  */
 
 import process from 'node:process'
@@ -47,38 +45,39 @@ export interface ReminderConfig {
   readonly closingHint?: string | undefined
   /**
    * Optional extra check, invoked after the regex sweep. Receives the
-   * code-fence-stripped text and returns any additional hits to merge
-   * with the regex matches. Use when the regex layer is insufficient
-   * (e.g. NLP modal-verb detection in judgment-reminder).
+   * code-fence-stripped text and returns any additional hits to merge with the
+   * regex matches. Use when the regex layer is insufficient (e.g. NLP
+   * modal-verb detection in judgment-reminder).
    *
-   * Fail-open: if the check throws, the hook ignores it and reports
-   * only the regex hits. A buggy extra-check must not block the rest
-   * of the warning surface.
+   * Fail-open: if the check throws, the hook ignores it and reports only the
+   * regex hits. A buggy extra-check must not block the rest of the warning
+   * surface.
    */
   readonly extraCheck?:
-    | ((text: string) => readonly ReminderHit[] | Promise<readonly ReminderHit[]>)
+    | ((
+        text: string,
+      ) => readonly ReminderHit[] | Promise<readonly ReminderHit[]>)
     | undefined
   /**
-   * When true, hits trigger a blocking Stop-hook decision so the
-   * assistant must continue the turn and address the matched phrase
-   * rather than ending on the excuse. The block is suppressed when
-   * Claude Code reports `stop_hook_active: true` to avoid loops.
+   * When true, hits trigger a blocking Stop-hook decision so the assistant must
+   * continue the turn and address the matched phrase rather than ending on the
+   * excuse. The block is suppressed when Claude Code reports `stop_hook_active:
+   * true` to avoid loops.
    */
   readonly blocking?: boolean | undefined
   /**
-   * When true, strip ASCII / smart quoted spans from the scanned text
-   * before pattern-matching. Stop hooks that detect *meta-discussion*
-   * of phrases (e.g. excuse-detector explaining what it detects) should
-   * enable this so the hook doesn't self-fire on its own changelog or
-   * post-mortem. Code-fence stripping is always on; this is the
-   * narrower, prose-only escape hatch.
+   * When true, strip ASCII / smart quoted spans from the scanned text before
+   * pattern-matching. Stop hooks that detect _meta-discussion_ of phrases (e.g.
+   * excuse-detector explaining what it detects) should enable this so the hook
+   * doesn't self-fire on its own changelog or post-mortem. Code-fence stripping
+   * is always on; this is the narrower, prose-only escape hatch.
    */
   readonly stripQuotedSpans?: boolean | undefined
 }
 
 /**
- * Run a Stop-hook reminder. Reads stdin, scans the most-recent
- * assistant turn, and writes hits to stderr. Always exits 0.
+ * Run a Stop-hook reminder. Reads stdin, scans the most-recent assistant turn,
+ * and writes hits to stderr. Always exits 0.
  */
 export async function runStopReminder(config: ReminderConfig): Promise<void> {
   const payloadRaw = await readStdin()
@@ -120,7 +119,11 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
   if (config.extraCheck) {
     try {
       const extra = await config.extraCheck(text)
-      for (let i = 0, { length: extraLength } = extra; i < extraLength; i += 1) {
+      for (
+        let i = 0, { length: extraLength } = extra;
+        i < extraLength;
+        i += 1
+      ) {
         hits.push(extra[i]!)
       }
     } catch {
@@ -135,10 +138,7 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
   const lines = [
     `[${config.name}] Assistant turn matched reminder patterns:`,
     '',
-    ...hits.flatMap(h => [
-      `  • "${h.label}" — ${h.snippet}`,
-      `      ${h.why}`,
-    ]),
+    ...hits.flatMap(h => [`  • "${h.label}" — ${h.snippet}`, `      ${h.why}`]),
   ]
   if (config.closingHint) {
     lines.push('', `  ${config.closingHint}`)
@@ -154,9 +154,7 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
       message +
       '\nFix the underlying issue now (or, if it truly cannot be fixed in this session, ' +
       'say so explicitly with the trade-off — do not end the turn on the excuse phrase).'
-    process.stdout.write(
-      JSON.stringify({ decision: 'block', reason }) + '\n',
-    )
+    process.stdout.write(JSON.stringify({ decision: 'block', reason }) + '\n')
     process.exit(0)
   }
 

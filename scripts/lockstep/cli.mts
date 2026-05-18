@@ -1,37 +1,26 @@
 /**
- * @fileoverview lockstep harness CLI entry — dispatcher + `main()`.
+ * @file Lockstep harness CLI entry — dispatcher + `main()`. Reads
+ *   `lockstep.json` (+ any `includes[]` sub-manifests) and validates each row
+ *   against its upstream or sibling ports. Every supported `kind` has a
+ *   checker; a repo populates its manifest only with the kinds it needs. Kinds:
+ *   file-fork vendored upstream file with local deviations; drift = upstream
+ *   moved since our fork SHA. version-pin submodule pinned to a specific
+ *   SHA/tag; drift = upstream cut a new release (on default ref).
+ *   feature-parity local impl should match an upstream behavior; three-pillar
+ *   score: code + test + fixture snapshot. spec-conformance local impl of an
+ *   external spec at a known version. lang-parity N sibling language ports of
+ *   one spec; drift = port diverged, or rejected anti-pattern reintroduced on
+ *   any port. Exit codes: 0 — manifest valid, no drift. 1 — schema violation,
+ *   missing file, unreachable baseline, unknown kind. 2 — drift (upstream
+ *   moved, parity below floor, rejected anti-pattern). Output: Default —
+ *   human-readable, compact per-area summary + detailed rows. `--format=json`
+ *   or `--json` — single JSON object for CI tooling. Sources and learnings:
  *
- * Reads `lockstep.json` (+ any `includes[]` sub-manifests) and validates each
- * row against its upstream or sibling ports. Every supported `kind` has a
- * checker; a repo populates its manifest only with the kinds it needs.
- *
- * Kinds:
- *   file-fork         vendored upstream file with local deviations;
- *                     drift = upstream moved since our fork SHA.
- *   version-pin       submodule pinned to a specific SHA/tag;
- *                     drift = upstream cut a new release (on default ref).
- *   feature-parity    local impl should match an upstream behavior;
- *                     three-pillar score: code + test + fixture snapshot.
- *   spec-conformance  local impl of an external spec at a known version.
- *   lang-parity       N sibling language ports of one spec;
- *                     drift = port diverged, or rejected anti-pattern
- *                     reintroduced on any port.
- *
- * Exit codes:
- *   0 — manifest valid, no drift.
- *   1 — schema violation, missing file, unreachable baseline, unknown kind.
- *   2 — drift (upstream moved, parity below floor, rejected anti-pattern).
- *
- * Output:
- *   Default — human-readable, compact per-area summary + detailed rows.
- *   `--format=json` or `--json` — single JSON object for CI tooling.
- *
- * Sources and learnings:
  *   - file-fork and version-pin semantics: stuie (this repo).
- *   - feature-parity three-pillar scoring: sdxgen
- *     lock-step-features.json (snapshots replace the 20% tolerance).
- *   - lang-parity ports, rejected anti-pattern, per-area summaries, exit
- *     code 2 semantics: ultrathink/acorn/scripts/xlang-harness.mts.
+ *   - feature-parity three-pillar scoring: sdxgen lock-step-features.json
+ *     (snapshots replace the 20% tolerance).
+ *   - lang-parity ports, rejected anti-pattern, per-area summaries, exit code 2
+ *     semantics: ultrathink/acorn/scripts/xlang-harness.mts.
  */
 
 import path from 'node:path'

@@ -17,7 +17,7 @@ test('buildQuoteMask: empty string', () => {
   assert.deepEqual(buildQuoteMask(''), [])
 })
 
-test("buildQuoteMask: plain text is all false", () => {
+test('buildQuoteMask: plain text is all false', () => {
   const mask = buildQuoteMask('git status --short')
   assert.ok(mask.every(b => b === false))
 })
@@ -79,7 +79,7 @@ test('buildQuoteMask: single quotes nested inside double quotes are text', () =>
 })
 
 test('stripHeredocBodies: replaces body with spaces, preserves length', () => {
-  const s = "cat <<EOF\nhello\nworld\nEOF\nrest"
+  const s = 'cat <<EOF\nhello\nworld\nEOF\nrest'
   const stripped = stripHeredocBodies(s)
   assert.strictEqual(stripped.length, s.length)
   // The word `hello` should be blanked out.
@@ -97,7 +97,7 @@ test('stripHeredocBodies: handles quoted delimiter', () => {
 })
 
 test('stripHeredocBodies: handles tab-stripped form', () => {
-  const s = "cat <<-EOF\n\tbody\n\tEOF"
+  const s = 'cat <<-EOF\n\tbody\n\tEOF'
   const stripped = stripHeredocBodies(s)
   assert.ok(!stripped.includes('body'))
 })
@@ -108,26 +108,20 @@ test('containsOutsideQuotes: matches free text', () => {
 
 test('containsOutsideQuotes: does not match inside single quotes', () => {
   assert.ok(
-    !containsOutsideQuotes(
-      "echo 'reminder: --bad-flag is gone'",
-      /--bad-flag/,
-    ),
+    !containsOutsideQuotes("echo 'reminder: --bad-flag is gone'", /--bad-flag/),
   )
 })
 
 test('containsOutsideQuotes: does not match inside double quotes', () => {
   assert.ok(
-    !containsOutsideQuotes(
-      'echo "reminder: --bad-flag is gone"',
-      /--bad-flag/,
-    ),
+    !containsOutsideQuotes('echo "reminder: --bad-flag is gone"', /--bad-flag/),
   )
 })
 
 test('containsOutsideQuotes: does not match inside heredoc body', () => {
   assert.ok(
     !containsOutsideQuotes(
-      "git commit -m \"$(cat <<'EOF'\nmention --bad-flag here\nEOF\n)\"",
+      'git commit -m "$(cat <<\'EOF\'\nmention --bad-flag here\nEOF\n)"',
       /--bad-flag/,
     ),
   )
@@ -143,10 +137,7 @@ test('containsOutsideQuotes: matches when both quoted + unquoted occurrences exi
 })
 
 test('matchOutsideQuotes: returns the unquoted match', () => {
-  const m = matchOutsideQuotes(
-    "echo 'noise --x' && node --x foo",
-    /--x/,
-  )
+  const m = matchOutsideQuotes("echo 'noise --x' && node --x foo", /--x/)
   assert.ok(m)
   // The unquoted occurrence sits at the end, well past the quoted one.
   assert.ok(m!.index > 20)

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/sort-named-imports.
+ * @file Unit tests for socket/sort-named-imports.
  */
 
 import { describe, test } from 'node:test'

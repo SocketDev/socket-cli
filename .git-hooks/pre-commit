@@ -15,6 +15,21 @@
 # - DISABLE_PRECOMMIT_LINT=1 to skip linting
 # - DISABLE_PRECOMMIT_TEST=1 to skip testing
 
+# Sanitize placeholder Socket API credentials. Some shell setups
+# export `SOCKET_API_TOKEN=literal-value` (or similar placeholders
+# used in onboarding docs) which causes Socket Firewall's sfw
+# pnpm-shim to return 401 on every invocation and block the
+# pre-commit chain before any check runs. A real Socket API key
+# is a `sktsec_…` token; anything that doesn't start with `sktsec_`
+# is treated as a placeholder and unset for this hook's subprocess.
+for var in SOCKET_API_TOKEN SOCKET_API_KEY; do
+  eval "val=\${$var}"
+  if [ -n "$val" ] && ! printf '%s' "$val" | grep -q '^sktsec_'; then
+    echo "[pre-commit] unsetting placeholder $var (was: '$val') so pnpm/sfw doesn't 401."
+    unset "$var"
+  fi
+done
+
 # Run Socket security pre-commit checks (API keys, .DS_Store, etc.).
 node "$(dirname "$0")/pre-commit.mts"
 

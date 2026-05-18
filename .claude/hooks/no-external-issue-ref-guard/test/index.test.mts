@@ -1,9 +1,8 @@
 /**
- * @fileoverview Unit tests for no-external-issue-ref-guard.
- *
- * Test strategy: spawn the hook with a JSON payload on stdin and
- * assert the exit code + stderr. Mirrors the test shape used by the
- * no-revert-guard / no-meta-comments-guard test suites.
+ * @file Unit tests for no-external-issue-ref-guard. Test strategy: spawn the
+ *   hook with a JSON payload on stdin and assert the exit code + stderr.
+ *   Mirrors the test shape used by the no-revert-guard / no-meta-comments-guard
+ *   test suites.
  */
 
 import assert from 'node:assert/strict'
@@ -101,9 +100,7 @@ describe('no-external-issue-ref-guard', () => {
   })
 
   test('blocks external GitHub pull URL', () => {
-    const r = commit(
-      'git commit -m "fixes https://github.com/foo/bar/pull/7"',
-    )
+    const r = commit('git commit -m "fixes https://github.com/foo/bar/pull/7"')
     assert.equal(r.code, 2)
   })
 
@@ -127,9 +124,7 @@ EOF
   })
 
   test('blocks ref in gh issue comment --body', () => {
-    const r = commit(
-      'gh issue comment 1 --body "see torvalds/linux#999 too"',
-    )
+    const r = commit('gh issue comment 1 --body "see torvalds/linux#999 too"')
     assert.equal(r.code, 2)
     assert.match(r.stderr, /torvalds\/linux#999/)
   })

@@ -1,9 +1,7 @@
 /**
- * @fileoverview Unit tests for no-orphaned-staging hook.
- *
- * Test strategy: create a temp git repo, stage a file (or not), spawn
- * the hook with CLAUDE_PROJECT_DIR pointed at the temp repo, and
- * inspect stderr.
+ * @file Unit tests for no-orphaned-staging hook. Test strategy: create a temp
+ *   git repo, stage a file (or not), spawn the hook with CLAUDE_PROJECT_DIR
+ *   pointed at the temp repo, and inspect stderr.
  */
 
 import assert from 'node:assert/strict'

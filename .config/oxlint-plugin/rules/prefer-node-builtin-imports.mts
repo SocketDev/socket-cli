@@ -1,50 +1,38 @@
 /**
- * @fileoverview Per CLAUDE.md "Imports" rule:
+ * @file Per CLAUDE.md "Imports" rule: `node:fs` cherry-picks (`existsSync`,
+ *   `promises as fs`); `path` / `os` / `url` / `crypto` use default imports.
+ *   Exception: `fileURLToPath` from `node:url`. The fleet's Node-builtin import
+ *   shape is asymmetric on purpose:
  *
- *   `node:fs` cherry-picks (`existsSync`, `promises as fs`); `path` /
- *   `os` / `url` / `crypto` use default imports. Exception:
- *   `fileURLToPath` from `node:url`.
- *
- * The fleet's Node-builtin import shape is asymmetric on purpose:
- *
- *   - `node:fs` is large; cherry-picking is the canonical idiom and
- *     keeps the import line meaningful (you can read off which fs
- *     APIs the module actually uses).
- *   - `node:path`, `node:os`, `node:url`, `node:crypto` are small;
- *     a default import (`import path from 'node:path'`) reads cleaner
- *     than four named imports and matches the way most fleet code
- *     references `path.join` / `path.resolve` / `path.dirname`.
- *   - `fileURLToPath` is the documented exception — named import
- *     from `node:url` is allowed because every caller uses just that
- *     one symbol and `url.fileURLToPath(import.meta.url)` reads worse
- *     than `fileURLToPath(import.meta.url)`.
- *
- * Detects:
- *   - `import fs from 'node:fs'` / `import * as fs from 'node:fs'`
- *     — recommends named imports.
- *   - `import { join, resolve } from 'node:path'`
- *     — recommends default import + dotted access (`path.join`,
- *     `path.resolve`).
+ *   - `node:fs` is large; cherry-picking is the canonical idiom and keeps the
+ *     import line meaningful (you can read off which fs APIs the module
+ *     actually uses).
+ *   - `node:path`, `node:os`, `node:url`, `node:crypto` are small; a default
+ *     import (`import path from 'node:path'`) reads cleaner than four named
+ *     imports and matches the way most fleet code references `path.join` /
+ *     `path.resolve` / `path.dirname`.
+ *   - `fileURLToPath` is the documented exception — named import from `node:url`
+ *     is allowed because every caller uses just that one symbol and
+ *     `url.fileURLToPath(import.meta.url)` reads worse than
+ *     `fileURLToPath(import.meta.url)`. Detects:
+ *   - `import fs from 'node:fs'` / `import * as fs from 'node:fs'` — recommends
+ *     named imports.
+ *   - `import { join, resolve } from 'node:path'` — recommends default import +
+ *     dotted access (`path.join`, `path.resolve`).
  *   - Same for `node:os`, `node:url` (with `fileURLToPath` exception),
- *     `node:crypto`.
- *
- * Autofix:
- *   - `import { join } from 'node:path'` → `import path from 'node:path'`
- *     AND every `join(...)` reference in the file is rewritten to
- *     `path.join(...)`. Same shape for os/url/crypto. Skipped when
- *     the file already has a default import for the module (would
- *     double-import).
- *   - `import fs from 'node:fs'` / `import * as fs from 'node:fs'` →
- *     scans the file's references to the local binding (e.g. `fs`),
- *     collects the set of accessed properties (`fs.existsSync`,
- *     `fs.readFileSync`), and rewrites the import to a sorted
- *     named-imports clause. Each `fs.X` reference is rewritten to
- *     bare `X`. Skipped when:
- *       a) any reference shape is "weird" (computed access `fs[expr]`,
- *          spread `...fs`, passed as a value `fn(fs)`, reassignment).
- *          Those need human eyes — the rewrite would lose semantics.
- *       b) collected names collide with existing top-level bindings
- *          in the file.
+ *     `node:crypto`. Autofix:
+ *   - `import { join } from 'node:path'` → `import path from 'node:path'` AND
+ *     every `join(...)` reference in the file is rewritten to `path.join(...)`.
+ *     Same shape for os/url/crypto. Skipped when the file already has a default
+ *     import for the module (would double-import).
+ *   - `import fs from 'node:fs'` / `import * as fs from 'node:fs'` → scans the
+ *     file's references to the local binding (e.g. `fs`), collects the set of
+ *     accessed properties (`fs.existsSync`, `fs.readFileSync`), and rewrites
+ *     the import to a sorted named-imports clause. Each `fs.X` reference is
+ *     rewritten to bare `X`. Skipped when: a) any reference shape is "weird"
+ *     (computed access `fs[expr]`, spread `...fs`, passed as a value `fn(fs)`,
+ *     reassignment). Those need human eyes — the rewrite would lose semantics.
+ *     b) collected names collide with existing top-level bindings in the file.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
@@ -62,7 +50,9 @@ const NAMED_EXCEPTIONS = {
   'node:url': new Set(['fileURLToPath']),
 }
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',
@@ -90,9 +80,9 @@ const rule = {
       : context.sourceCode
 
     /**
-     * Look at the program body to determine whether `localName` is
-     * already in use (any binding form). If so, autofixing to a
-     * default import would shadow it.
+     * Look at the program body to determine whether `localName` is already in
+     * use (any binding form). If so, autofixing to a default import would
+     * shadow it.
      */
     function localBindingExists(
       programBody: AstNode[],

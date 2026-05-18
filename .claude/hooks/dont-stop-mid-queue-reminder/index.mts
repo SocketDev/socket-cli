@@ -72,7 +72,8 @@ const STOP_PATTERNS: readonly { label: string; regex: RegExp }[] = [
   },
   {
     label: 'want me to continue / should I keep going',
-    regex: /\b(want\s+me\s+to\s+continue|should\s+i\s+keep\s+going|shall\s+i\s+continue)\??/i,
+    regex:
+      /\b(want\s+me\s+to\s+continue|should\s+i\s+keep\s+going|shall\s+i\s+continue)\??/i,
   },
   {
     label: "what's next?",
@@ -80,11 +81,13 @@ const STOP_PATTERNS: readonly { label: string; regex: RegExp }[] = [
   },
   {
     label: 'pick a/the next item',
-    regex: /\bpick\s+(a|the|one|which|specific)\b[^.?!\n]{0,30}(item|one|task)/i,
+    regex:
+      /\bpick\s+(a|the|one|which|specific)\b[^.?!\n]{0,30}(item|one|task)/i,
   },
   {
     label: 'want me to pick / take them in order',
-    regex: /\b(want\s+me\s+to\s+pick|take\s+(them|these|those)\s+in\s+order|which\s+(one|item|task)\s+(first|next)|should\s+i\s+start\s+with)\b/i,
+    regex:
+      /\b(want\s+me\s+to\s+pick|take\s+(them|these|those)\s+in\s+order|which\s+(one|item|task)\s+(first|next)|should\s+i\s+start\s+with)\b/i,
   },
   {
     label: 'pick one and continue / one or in order menu',
@@ -96,7 +99,8 @@ const STOP_PATTERNS: readonly { label: string; regex: RegExp }[] = [
   },
   {
     label: 'stop(ping) for this session',
-    regex: /\b(stop(ping)?|stopping\s+work)\s+(for\s+(this|the)|in\s+this)\s+session\b/i,
+    regex:
+      /\b(stop(ping)?|stopping\s+work)\s+(for\s+(this|the)|in\s+this)\s+session\b/i,
   },
   {
     label: 'session totals / final session state',
@@ -113,7 +117,8 @@ const STOP_PATTERNS: readonly { label: string; regex: RegExp }[] = [
     // open queue), AND the turn's LAST non-empty line is a question.
     // The most common failure: enumerate what's left, then ask the
     // user which one to pick instead of just picking the next item.
-    regex: /\b(still\s+pending|what'?s\s+left|remaining|still\s+to\s+do|outstanding|pending:)\b[\s\S]{0,800}\?\s*$/im,
+    regex:
+      /\b(still\s+pending|what'?s\s+left|remaining|still\s+to\s+do|outstanding|pending:)\b[\s\S]{0,800}\?\s*$/im,
   },
 ]
 
@@ -178,15 +183,11 @@ async function main(): Promise<void> {
   lines.push(
     '  ⚠  Action for the NEXT turn: do NOT wait for the user to answer.',
   )
-  lines.push(
-    '      Identify the next item in the queue (or, if the queue is',
-  )
+  lines.push('      Identify the next item in the queue (or, if the queue is')
   lines.push(
     '      unclear, pick the highest-value remaining item and SAY which',
   )
-  lines.push(
-    '      one you\'re picking), then START WORK on it immediately.',
-  )
+  lines.push("      one you're picking), then START WORK on it immediately.")
   lines.push('')
   lines.push(
     '  Why: the user gave you a queue ("complete each one," "keep going,"',

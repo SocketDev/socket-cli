@@ -1,29 +1,23 @@
 /**
- * @fileoverview Sort regex alternation groups alphanumerically. Per
- * CLAUDE.md "Sorting" rule extended to alternation: `(b|a)` should be
- * `(a|b)` so the regex reads in the same order as the rest of the
- * fleet's sorted-by-default style.
+ * @file Sort regex alternation groups alphanumerically. Per CLAUDE.md "Sorting"
+ *   rule extended to alternation: `(b|a)` should be `(a|b)` so the regex reads
+ *   in the same order as the rest of the fleet's sorted-by-default style.
+ *   Detects:
  *
- * Detects:
  *   - Capturing groups: `(foo|bar|baz)` → require sorted order.
  *   - Non-capturing groups: `(?:foo|bar)` → same.
- *   - Named-capture: `(?<name>foo|bar)` → same.
- *
- * Allowed exceptions (skipped):
+ *   - Named-capture: `(?<name>foo|bar)` → same. Allowed exceptions (skipped):
  *   - Single-alternative groups (`(foo)`) — nothing to sort.
- *   - Position-bearing alternations where order encodes precedence
- *     (e.g. `<!--|-->` where `-->` MUST be tried after `<!--`). The
- *     rule can't prove this is the case, so it requires authors to
- *     append `// socket-hook: allow regex-alternation-order` on the
- *     line for the genuine exception.
- *   - Alternations whose elements aren't simple literals (containing
- *     `(`, `[`, `?`, `*`, `+`, `{`, etc.) — sorting may change
- *     match semantics in subtle ways. Reported but not auto-fixed.
- *
- * Autofix: rewrites the alternation in alphanumeric order when every
- * element is a "simple literal" (alphanumeric / underscore / hyphen
- * / colon / dot / forward-slash content). For richer alternations,
- * reports without autofix.
+ *   - Position-bearing alternations where order encodes precedence (e.g.
+ *     `<!--|-->` where `-->` MUST be tried after `<!--`). The rule can't prove
+ *     this is the case, so it requires authors to append `// socket-hook: allow
+ *     regex-alternation-order` on the line for the genuine exception.
+ *   - Alternations whose elements aren't simple literals (containing `(`, `[`,
+ *     `?`, `*`, `+`, `{`, etc.) — sorting may change match semantics in subtle
+ *     ways. Reported but not auto-fixed. Autofix: rewrites the alternation in
+ *     alphanumeric order when every element is a "simple literal" (alphanumeric
+ *     / underscore / hyphen / colon / dot / forward-slash content). For richer
+ *     alternations, reports without autofix.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
@@ -61,10 +55,9 @@ function isLineMarkered(line: string): boolean {
 }
 
 /**
- * Find every alternation group in a regex pattern. Returns
- * `{ start, end, prefix, alternatives, suffix }` for each group.
- * Walks the pattern character by character to handle nested groups +
- * character classes correctly.
+ * Find every alternation group in a regex pattern. Returns `{ start, end,
+ * prefix, alternatives, suffix }` for each group. Walks the pattern character
+ * by character to handle nested groups + character classes correctly.
  */
 function findAlternationGroups(pattern: string): AlternationGroup[] {
   const groups: AlternationGroup[] = []
@@ -155,8 +148,8 @@ function findAlternationGroups(pattern: string): AlternationGroup[] {
 }
 
 /**
- * Sort an alternation in alphanumeric order. Returns null if any
- * element isn't a simple literal (caller should report-only).
+ * Sort an alternation in alphanumeric order. Returns null if any element isn't
+ * a simple literal (caller should report-only).
  */
 function sortAlternativesIfSimple(
   pattern: string,
@@ -176,7 +169,9 @@ function sortAlternativesIfSimple(
   return { actual: alts, sorted }
 }
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'suggestion',

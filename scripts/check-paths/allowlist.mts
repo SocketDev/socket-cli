@@ -1,19 +1,14 @@
 /**
- * @fileoverview Allowlist parsing + matching for the path-hygiene gate.
- *
- * Loads `.github/paths-allowlist.yml` with a tiny purpose-built YAML
- * subset parser (entries with scalar fields plus YAML 1.2 `|` / `>`
- * block scalars for multi-line `reason` text) so the gate stays
- * self-contained — usable inside socket-lib itself, where adding a
- * `yaml` dep would create a circular dependency.
- *
- * `snippetHash` produces a whitespace-insensitive, 12-hex-char SHA-256
- * prefix used as a drift-tolerant key in allowlist entries.
- *
- * `isAllowlisted` matches a finding against any combination of
- * `rule` / `file` / `pattern` / `line` / `snippet_hash` filters; the
- * line/hash check is OR'd so reformatting that shifts the line still
- * matches via the hash.
+ * @file Allowlist parsing + matching for the path-hygiene gate. Loads
+ *   `.github/paths-allowlist.yml` with a tiny purpose-built YAML subset parser
+ *   (entries with scalar fields plus YAML 1.2 `|` / `>` block scalars for
+ *   multi-line `reason` text) so the gate stays self-contained — usable inside
+ *   socket-lib itself, where adding a `yaml` dep would create a circular
+ *   dependency. `snippetHash` produces a whitespace-insensitive, 12-hex-char
+ *   SHA-256 prefix used as a drift-tolerant key in allowlist entries.
+ *   `isAllowlisted` matches a finding against any combination of `rule` /
+ *   `file` / `pattern` / `line` / `snippet_hash` filters; the line/hash check
+ *   is OR'd so reformatting that shifts the line still matches via the hash.
  */
 
 import { createHash } from 'node:crypto'
@@ -23,17 +18,17 @@ import path from 'node:path'
 import type { AllowlistEntry, Finding } from './types.mts'
 
 /**
- * Read `pathsAllowlist` from `.config/socket-wheelhouse.json` (the
- * fleet's canonical config file — JSON, not YAML, per the
- * "JSON not YAML for our own configs" rule). Returns `undefined`
- * when the config is absent / has no pathsAllowlist key — caller
- * falls back to the legacy `.github/paths-allowlist.yml`. Returns
- * `[]` when the key is present but empty.
+ * Read `pathsAllowlist` from `.config/socket-wheelhouse.json` (the fleet's
+ * canonical config file — JSON, not YAML, per the "JSON not YAML for our own
+ * configs" rule). Returns `undefined` when the config is absent / has no
+ * pathsAllowlist key — caller falls back to the legacy
+ * `.github/paths-allowlist.yml`. Returns `[]` when the key is present but
+ * empty.
  *
  * Each entry mirrors the YAML schema (rule/file/pattern/line/
- * snippet_hash/reason). `reason` is required; structural
- * validation is light — bad shapes get dropped with a stderr
- * note rather than blowing up the whole gate.
+ * snippet_hash/reason). `reason` is required; structural validation is light —
+ * bad shapes get dropped with a stderr note rather than blowing up the whole
+ * gate.
  */
 const loadAllowlistFromJson = (
   repoRoot: string,
@@ -229,11 +224,10 @@ export const loadAllowlist = (repoRoot: string): AllowlistEntry[] => {
 
 /**
  * Stable, normalized snippet hash. Whitespace-insensitive so trivial
- * reformatting (indent change, trailing comma, line wrap) doesn't
- * invalidate an allowlist entry, but content-changing edits do. The
- * hash exposes only the first 12 hex chars (~48 bits) which is plenty
- * for collision-resistance within a single repo's finding set and
- * keeps the YAML readable.
+ * reformatting (indent change, trailing comma, line wrap) doesn't invalidate an
+ * allowlist entry, but content-changing edits do. The hash exposes only the
+ * first 12 hex chars (~48 bits) which is plenty for collision-resistance within
+ * a single repo's finding set and keeps the YAML readable.
  */
 export const snippetHash = (snippet: string): string => {
   const normalized = snippet.replace(/\s+/g, ' ').trim()
@@ -243,19 +237,19 @@ export const snippetHash = (snippet: string): string => {
 /**
  * Allowlist matching trades off two failure modes:
  *
- *   - Drift via reformatting (a line shift breaks an entry, the
- *     finding re-surfaces, devs paper over with a new entry).
- *   - Stealth allowlisting (an entry pinned to "anywhere in this file"
- *     silently exempts unrelated future violations).
+ * - Drift via reformatting (a line shift breaks an entry, the finding
+ *   re-surfaces, devs paper over with a new entry).
+ * - Stealth allowlisting (an entry pinned to "anywhere in this file" silently
+ *   exempts unrelated future violations).
  *
- * Strategy: exact line match OR `snippet_hash` match (whitespace-
- * normalized SHA-256, first 12 hex). Either is sufficient. Lines stay
- * exact (was ±2; the slack let reformatting silently slide), and
- * `snippet_hash` provides reformatting-tolerant matching that's still
- * tied to the literal text — paste-and-edit cheating would change the
- * hash. If neither `line` nor `snippet_hash` is provided, the entry
- * matches purely by `rule` + `file` + `pattern` (file-level exempt;
- * use sparingly and always pair with a precise `pattern`).
+ * Strategy: exact line match OR `snippet_hash` match (whitespace- normalized
+ * SHA-256, first 12 hex). Either is sufficient. Lines stay exact (was ±2; the
+ * slack let reformatting silently slide), and `snippet_hash` provides
+ * reformatting-tolerant matching that's still tied to the literal text —
+ * paste-and-edit cheating would change the hash. If neither `line` nor
+ * `snippet_hash` is provided, the entry matches purely by `rule` + `file` +
+ * `pattern` (file-level exempt; use sparingly and always pair with a precise
+ * `pattern`).
  */
 export const isAllowlisted = (
   finding: Finding,

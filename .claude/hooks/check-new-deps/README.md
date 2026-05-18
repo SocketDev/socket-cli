@@ -3,13 +3,13 @@
 A **Claude Code hook** that runs whenever Claude tries to edit or
 create a dependency manifest (`package.json`, `requirements.txt`,
 `Cargo.toml`, and 14+ other ecosystems). It extracts the
-*newly added* dependencies, asks [Socket.dev](https://socket.dev) if
+_newly added_ dependencies, asks [Socket.dev](https://socket.dev) if
 any of them are known malware or have critical security alerts, and
 **blocks** the edit if so.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `PreToolUse` hook
-> like this one fires *before* Claude calls a tool (here, `Edit` or
+> like this one fires _before_ Claude calls a tool (here, `Edit` or
 > `Write`). It can either **prime** (write to stderr, exit 0, model
 > carries on) or **block** (exit 2, edit never happens). This one
 > blocks for malware/critical findings and primes for low-quality
@@ -23,7 +23,7 @@ any of them are known malware or have critical security alerts, and
 3. It detects the file type and extracts dependency names from the
    new content.
 4. For an `Edit` (not a `Write`), it diffs new content vs. old, so
-   only *newly added* dependencies get checked — existing deps
+   only _newly added_ dependencies get checked — existing deps
    aren't re-scanned every time you bump an unrelated version.
 5. It builds a [Package URL (PURL)](https://github.com/package-url/purl-spec)
    for each new dep and calls Socket.dev's `checkMalware` API.
@@ -62,25 +62,25 @@ Call sdk.checkMalware(components)
 
 ## Supported ecosystems
 
-| File pattern | Ecosystem | Example |
-|-------------|-----------|---------|
-| `package.json` | npm | `"express": "^4.19"` |
-| `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock` | npm | lockfile entries |
-| `requirements.txt`, `pyproject.toml`, `setup.py` | PyPI | `flask>=3.0` |
-| `Cargo.toml`, `Cargo.lock` | Cargo (Rust) | `serde = "1.0"` |
-| `go.mod`, `go.sum` | Go | `github.com/gin-gonic/gin v1.9` |
-| `Gemfile`, `Gemfile.lock` | RubyGems | `gem 'rails'` |
-| `composer.json`, `composer.lock` | Composer (PHP) | `"vendor/package": "^3.0"` |
-| `pom.xml`, `build.gradle` | Maven (Java) | `<artifactId>commons</artifactId>` |
-| `pubspec.yaml`, `pubspec.lock` | Pub (Dart) | `flutter_bloc: ^8.1` |
-| `.csproj` | NuGet (.NET) | `<PackageReference Include="..." />` |
-| `mix.exs` | Hex (Elixir) | `{:phoenix, "~> 1.7"}` |
-| `Package.swift` | Swift PM | `.package(url: "...", from: "4.0")` |
-| `*.tf` | Terraform | `source = "hashicorp/aws"` |
-| `Brewfile` | Homebrew | `brew "git"` |
-| `conanfile.*` | Conan (C/C++) | `boost/1.83.0` |
-| `flake.nix` | Nix | `github:owner/repo` |
-| `.github/workflows/*.yml` | GitHub Actions | `uses: owner/repo@ref` |
+| File pattern                                       | Ecosystem      | Example                              |
+| -------------------------------------------------- | -------------- | ------------------------------------ |
+| `package.json`                                     | npm            | `"express": "^4.19"`                 |
+| `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock` | npm            | lockfile entries                     |
+| `requirements.txt`, `pyproject.toml`, `setup.py`   | PyPI           | `flask>=3.0`                         |
+| `Cargo.toml`, `Cargo.lock`                         | Cargo (Rust)   | `serde = "1.0"`                      |
+| `go.mod`, `go.sum`                                 | Go             | `github.com/gin-gonic/gin v1.9`      |
+| `Gemfile`, `Gemfile.lock`                          | RubyGems       | `gem 'rails'`                        |
+| `composer.json`, `composer.lock`                   | Composer (PHP) | `"vendor/package": "^3.0"`           |
+| `pom.xml`, `build.gradle`                          | Maven (Java)   | `<artifactId>commons</artifactId>`   |
+| `pubspec.yaml`, `pubspec.lock`                     | Pub (Dart)     | `flutter_bloc: ^8.1`                 |
+| `.csproj`                                          | NuGet (.NET)   | `<PackageReference Include="..." />` |
+| `mix.exs`                                          | Hex (Elixir)   | `{:phoenix, "~> 1.7"}`               |
+| `Package.swift`                                    | Swift PM       | `.package(url: "...", from: "4.0")`  |
+| `*.tf`                                             | Terraform      | `source = "hashicorp/aws"`           |
+| `Brewfile`                                         | Homebrew       | `brew "git"`                         |
+| `conanfile.*`                                      | Conan (C/C++)  | `boost/1.83.0`                       |
+| `flake.nix`                                        | Nix            | `github:owner/repo`                  |
+| `.github/workflows/*.yml`                          | GitHub Actions | `uses: owner/repo@ref`               |
 
 ## Caching
 
@@ -156,10 +156,10 @@ All dependencies use `catalog:` references from the workspace root
 
 ## Exit codes
 
-| Code | Meaning | What Claude does next |
-|------|---------|----------------------|
-| `0` | Allow | Edit/Write proceeds normally. |
-| `2` | Block | Edit/Write is rejected; Claude reads the block reason from stderr. |
+| Code | Meaning | What Claude does next                                              |
+| ---- | ------- | ------------------------------------------------------------------ |
+| `0`  | Allow   | Edit/Write proceeds normally.                                      |
+| `2`  | Block   | Edit/Write is rejected; Claude reads the block reason from stderr. |
 
 ## Cross-fleet sync
 

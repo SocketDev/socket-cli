@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/prefer-exists-sync.
+ * @file Unit tests for socket/prefer-exists-sync.
  */
 
 import { describe, test } from 'node:test'

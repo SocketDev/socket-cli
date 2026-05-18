@@ -16,9 +16,9 @@ If the wording changes here, re-run `node scripts/sync-scaffolding.mts
 
 ## 1 path, 1 reference
 
-**A path is *constructed* exactly once. Everywhere else *references* the constructed value.**
+**A path is _constructed_ exactly once. Everywhere else _references_ the constructed value.**
 
-Referencing a single computed path many times is fine — that's the whole point of computing it once. What's banned is *re-constructing* the same path in multiple places, because that's where drift is born. Three concrete shapes:
+Referencing a single computed path many times is fine — that's the whole point of computing it once. What's banned is _re-constructing_ the same path in multiple places, because that's where drift is born. Three concrete shapes:
 
 1. **Within a package** — every script, test, and lib file that needs a build path imports it from the package's `scripts/paths.mts` (or `lib/paths.mts`). No `path.join('build', mode, ...)` outside that module.
 

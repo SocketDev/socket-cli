@@ -1,23 +1,19 @@
 /**
- * @fileoverview Require every top-level `function` declaration to be
- * `export`ed. Per the fleet rule: "we should export all methods for
- * testing." Exposing internal helpers as named exports lets tests
- * import them directly, no `__test_only__` shim or per-test rebuild.
+ * @file Require every top-level `function` declaration to be `export`ed. Per
+ *   the fleet rule: "we should export all methods for testing." Exposing
+ *   internal helpers as named exports lets tests import them directly, no
+ *   `__test_only__` shim or per-test rebuild. Scope: top-level function
+ *   declarations only (not class methods, not arrow functions assigned to
+ *   const, not local nested functions). Local helpers and arrow-as-const are
+ *   visible to their parent module's tests via the parent function; only the
+ *   top-level surface needs explicit export. Allowed exceptions (skipped):
  *
- * Scope: top-level function declarations only (not class methods,
- * not arrow functions assigned to const, not local nested functions).
- * Local helpers and arrow-as-const are visible to their parent
- * module's tests via the parent function; only the top-level surface
- * needs explicit export.
- *
- * Allowed exceptions (skipped):
- *   - The function is named `main` (script entrypoint convention).
- *
- * Autofix: prepends `export ` to the function declaration when the
- * function isn't already named in a sibling `export { ... }`
- * statement. If a named-re-export already exists, report without
- * autofix (the human picks: keep the named-re-export shape, or
- * collapse to the inline `export function`).
+ *   - The function is named `main` (script entrypoint convention). Autofix:
+ *     prepends `export ` to the function declaration when the function isn't
+ *     already named in a sibling `export { ... }` statement. If a
+ *     named-re-export already exists, report without autofix (the human picks:
+ *     keep the named-re-export shape, or collapse to the inline `export
+ *     function`).
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
@@ -25,15 +21,14 @@ import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 const SCRIPT_ENTRY_NAMES = new Set(['main'])
 
 /**
- * Walk Program body once and collect names exported via:
- *   - `export { foo, bar }`
- *   - `export { foo as bar }` (the local-name `foo` counts)
- *   - `export default foo`
+ * Walk Program body once and collect names exported via: - `export { foo, bar
+ * }` - `export { foo as bar }` (the local-name `foo` counts) - `export default
+ * foo`
  *
- * Function declarations that already say `export function foo` won't
- * reach this rule's visitor (the visitor matches bare function
- * declarations only via `Program > FunctionDeclaration`; an
- * `ExportNamedDeclaration` wraps them in a different shape).
+ * Function declarations that already say `export function foo` won't reach this
+ * rule's visitor (the visitor matches bare function declarations only via
+ * `Program > FunctionDeclaration`; an `ExportNamedDeclaration` wraps them in a
+ * different shape).
  */
 function collectExportedNames(program: AstNode): Set<string> {
   const exported = new Set<string>()
@@ -57,7 +52,9 @@ function collectExportedNames(program: AstNode): Set<string> {
   return exported
 }
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'suggestion',

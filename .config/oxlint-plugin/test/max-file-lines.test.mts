@@ -1,9 +1,7 @@
 /**
- * @fileoverview Unit tests for socket/max-file-lines.
- *
- * Synthesizes files past the soft (500) and hard (1000) caps to
- * verify both severities fire. The body is `// line N` lines —
- * minimal valid TypeScript.
+ * @file Unit tests for socket/max-file-lines. Synthesizes files past the soft
+ *   (500) and hard (1000) caps to verify both severities fire. The body is `//
+ *   line N` lines — minimal valid TypeScript.
  */
 
 import { describe, test } from 'node:test'

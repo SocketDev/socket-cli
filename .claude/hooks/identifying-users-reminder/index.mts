@@ -39,7 +39,8 @@ const PATTERNS: readonly RuleViolation[] = [
     // Match `the user` followed by an action verb that implies a
     // specific person's intent. The verb-list is intentionally narrow
     // — generic API docs say "the user can call X" which is fine.
-    regex: /\b[Tt]he\s+user\s+(wants|needs|asked|said|requested|prefers|likes|wrote|chose|picked|decided)\b/i,
+    regex:
+      /\b[Tt]he\s+user\s+(wants|needs|asked|said|requested|prefers|likes|wrote|chose|picked|decided)\b/i,
     why: 'Refers to a specific person\'s intent. Use their name from `git config user.name`, or "you" if speaking directly.',
   },
   {
@@ -54,7 +55,8 @@ const PATTERNS: readonly RuleViolation[] = [
   },
   {
     label: 'the developer / the engineer (third-party framing)',
-    regex: /\b[Tt]he\s+(developer|engineer)\s+(wants|needs|asked|said|prefers|wrote)\b/i,
+    regex:
+      /\b[Tt]he\s+(developer|engineer)\s+(wants|needs|asked|said|prefers|wrote)\b/i,
     why: 'Same — name them if known, "you" if direct.',
   },
 ]

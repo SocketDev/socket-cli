@@ -1,47 +1,40 @@
 /**
- * @fileoverview Per CLAUDE.md "Token hygiene → Personal-path
- * placeholders" rule:
- *
+ * @file Per CLAUDE.md "Token hygiene → Personal-path
+ *   placeholders" rule:
  *   When a doc / test / comment needs to show an example user-home
  *   path, use the canonical platform-specific placeholder so the
  *   personal-paths scanner recognizes it as documentation:
- *     /Users/<user>/...     (macOS)
- *     /home/<user>/...      (Linux)
- *     C:\Users\<USERNAME>\... (Windows)
- *
+ *   /Users/<user>/...     (macOS)
+ *   /home/<user>/...      (Linux)
+ *   C:\Users<USERNAME>... (Windows)
  *   Don't drift to <name> / <me> / <USER> / <u> etc. — the scanner
  *   accepts anything in <...> but a fleet-wide audit relies on the
  *   canonical strings being grep-able.
- *
- * Detects user-home paths in string literals + comments where the
- * placeholder slug isn't the canonical form. The detection is
- * conservative: a string must clearly look like a user-home path
- * before the rule fires.
- *
- * Autofix: replaces the non-canonical placeholder with the canonical
- * one for the platform path prefix:
+ *   Detects user-home paths in string literals + comments where the
+ *   placeholder slug isn't the canonical form. The detection is
+ *   conservative: a string must clearly look like a user-home path
+ *   before the rule fires.
+ *   Autofix: replaces the non-canonical placeholder with the canonical
+ *   one for the platform path prefix:
  *   /Users/<X>/      → /Users/<user>/
  *   /home/<X>/       → /home/<user>/
- *   C:\Users\<X>\    → C:\Users\<USERNAME>\
+ *   C:\Users<X>\    → C:\Users<USERNAME>\
  *   C:/Users/<X>/    → C:/Users/<USERNAME>/
+ *   Real personal data (a literal username instead of a placeholder)
+ *   is also flagged. Two scenarios:
  *
- * Real personal data (a literal username instead of a placeholder)
- * is also flagged. Two scenarios:
- *
- *   1. Source code / docs / tests — the path was hand-written and
- *      should be replaced with the canonical placeholder, an env-var
- *      form (`$HOME`, `${USER}`, `%USERNAME%`), or deleted entirely.
- *   2. WASM / generated bundles — a literal username inside compiled
- *      output means a build pipeline is leaking the developer's path
- *      into the artifact (typically esbuild / rolldown sourcemaps,
- *      sourceMappingURL, or `__filename` baked at build time).
- *      The fix is the build config, NOT the artifact — chasing the
- *      string in the bundle is treating the symptom.
- *
- * The deterministic linter can't tell scenario 1 from scenario 2,
- * so it reports without an autofix. The AI-fix step (Step 4 of
- * `pnpm run fix`) handles both: rewriting source mentions for #1
- * and tracing back to the build config for #2.
+ *   1. Source code / docs / tests — the path was hand-written and should be
+ *      replaced with the canonical placeholder, an env-var form (`$HOME`,
+ *      `${USER}`, `%USERNAME%`), or deleted entirely.
+ *   2. WASM / generated bundles — a literal username inside compiled output means
+ *      a build pipeline is leaking the developer's path into the artifact
+ *      (typically esbuild / rolldown sourcemaps, sourceMappingURL, or
+ *      `__filename` baked at build time). The fix is the build config, NOT the
+ *      artifact — chasing the string in the bundle is treating the symptom. The
+ *      deterministic linter can't tell scenario 1 from scenario 2, so it
+ *      reports without an autofix. The AI-fix step (Step 4 of `pnpm run fix`)
+ *      handles both: rewriting source mentions for #1 and tracing back to the
+ *      build config for #2.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
@@ -76,7 +69,9 @@ const REAL_USERNAME_PATTERNS = [
   /(\/home\/)([a-zA-Z][a-zA-Z0-9_-]{1,31})(\/)/,
 ]
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',

@@ -7,7 +7,7 @@ to do it themselves.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `PreToolUse` hook
-> like this one fires *before* Claude calls a tool. It can either
+> like this one fires _before_ Claude calls a tool. It can either
 > **prime** (write to stderr, exit 0, model carries on) or **block**
 > (exit 2, command never runs). This one blocks.
 
@@ -21,7 +21,7 @@ Workflow dispatches are **irrevocable**:
   SHA. Releases can be edited, but the SHA + the moment they were
   cut are forever.
 - Container workflows push immutable image tags.
-- Even workflows that *advertise* a `dry_run` input still treat the
+- Even workflows that _advertise_ a `dry_run` input still treat the
   dispatch itself as a prod trigger — the workflow runs and counts
   for downstream CI gating; only specific steps may be skipped.
 

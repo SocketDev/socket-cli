@@ -6,7 +6,7 @@ PreToolUse hook (informational; never blocks) that flags pointer-style comments 
 
 Per CLAUDE.md's "Code style → Pointer comments" rule:
 
-> Pointer comments are acceptable when (a) the destination actually carries the load-bearing explanation, AND (b) the inline form carries the one-line claim so a reader who never follows the pointer still walks away with the *why*. A pointer with neither is dead weight; a pointer with only (a) fails CLAUDE.md's "the reader should fix the problem from the comment alone" test.
+> Pointer comments are acceptable when (a) the destination actually carries the load-bearing explanation, AND (b) the inline form carries the one-line claim so a reader who never follows the pointer still walks away with the _why_. A pointer with neither is dead weight; a pointer with only (a) fails CLAUDE.md's "the reader should fix the problem from the comment alone" test.
 
 This hook verifies (b) syntactically. (a) requires following the pointer and assessing destination quality, which a static check can't do.
 

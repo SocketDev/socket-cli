@@ -1,9 +1,8 @@
 /**
- * @fileoverview Unit tests for socket/no-process-cwd-in-scripts-hooks.
- *
- * The rule only applies to files under `scripts/` or `.claude/hooks/`.
- * Test cases use the `filename:` override to place fixtures at the
- * right virtual path so the rule's path-matching logic fires.
+ * @file Unit tests for socket/no-process-cwd-in-scripts-hooks. The rule only
+ *   applies to files under `scripts/` or `.claude/hooks/`. Test cases use the
+ *   `filename:` override to place fixtures at the right virtual path so the
+ *   rule's path-matching logic fires.
  */
 
 import { describe, test } from 'node:test'

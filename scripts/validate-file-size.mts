@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Validates that no individual files exceed size threshold.
+ * @file Validates that no individual files exceed size threshold. Rules:
  *
- * Rules:
- * - No single file should exceed 2MB (2,097,152 bytes)
- * - Helps prevent accidental commits of large binaries, data files, or artifacts
- * - Excludes: node_modules, .git, dist, build, coverage directories
+ *   - No single file should exceed 2MB (2,097,152 bytes)
+ *   - Helps prevent accidental commits of large binaries, data files, or
+ *     artifacts
+ *   - Excludes: node_modules, .git, dist, build, coverage directories
  */
 
 import { promises as fs } from 'node:fs'

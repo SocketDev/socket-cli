@@ -9,7 +9,10 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
-interface ToolUse { name: string; input: Record<string, unknown> }
+interface ToolUse {
+  name: string
+  input: Record<string, unknown>
+}
 
 function makeTranscript(
   assistantText: string,
@@ -19,7 +22,11 @@ function makeTranscript(
   const transcriptPath = path.join(dir, 'session.jsonl')
   const content: object[] = [{ type: 'text', text: assistantText }]
   for (let i = 0, { length } = toolUses; i < length; i += 1) {
-    content.push({ type: 'tool_use', name: toolUses[i]!.name, input: toolUses[i]!.input })
+    content.push({
+      type: 'tool_use',
+      name: toolUses[i]!.name,
+      input: toolUses[i]!.input,
+    })
   }
   writeFileSync(
     transcriptPath,
@@ -31,7 +38,10 @@ function makeTranscript(
       }),
     ].join('\n'),
   )
-  return { path: transcriptPath, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
+  return {
+    path: transcriptPath,
+    cleanup: () => rmSync(dir, { recursive: true, force: true }),
+  }
 }
 
 function runHook(transcriptPath: string): { stderr: string; exitCode: number } {

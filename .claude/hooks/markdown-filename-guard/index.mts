@@ -73,17 +73,16 @@ const ALLOWED_SCREAMING_CASE: ReadonlySet<string> = new Set([
 ])
 
 /**
- * Strip a leading repo-absolute prefix (anything up through and
- * including a `<repo-name>/` segment) so we get the in-repo relative
- * path. Falls back to the input if no recognizable prefix.
+ * Strip a leading repo-absolute prefix (anything up through and including a
+ * `<repo-name>/` segment) so we get the in-repo relative path. Falls back to
+ * the input if no recognizable prefix.
  *
- * Special case: socket-wheelhouse keeps the fleet-canonical doc tree
- * under `template/`, which acts as the "repo root" from the fleet
- * perspective. Strip that extra prefix so doc-location rules apply
- * the same way as in a downstream repo (where the docs live at
- * actual root). Without this carve-out, every SCREAMING_CASE doc
- * in `template/` (CLAUDE.md, README.md at template root) would trip
- * the SCREAMING_CASE-only-at-repo-root rule.
+ * Special case: socket-wheelhouse keeps the fleet-canonical doc tree under
+ * `template/`, which acts as the "repo root" from the fleet perspective. Strip
+ * that extra prefix so doc-location rules apply the same way as in a downstream
+ * repo (where the docs live at actual root). Without this carve-out, every
+ * SCREAMING_CASE doc in `template/` (CLAUDE.md, README.md at template root)
+ * would trip the SCREAMING_CASE-only-at-repo-root rule.
  */
 function toRepoRelative(filePath: string): string {
   // PreToolUse passes absolute paths. Strip up through `/projects/<repo>/`.
@@ -123,13 +122,12 @@ function isAtAllowedRegularLocation(relPath: string): boolean {
 }
 
 /**
- * Strip a single trailing "source-file extension" hint from a
- * doc-filename stem. Canonical fleet pattern for docs describing a
- * specific code file is `<source>.md` (e.g. `smol-ffi.js.md` describes
- * `smol-ffi.js`). Without this strip, `smol-ffi.js.md` is parsed as
- * stem `smol-ffi.js` which fails `isLowercaseHyphenated` on the
- * embedded `.`. The accepted hint extensions match the language set
- * the fleet documents code in.
+ * Strip a single trailing "source-file extension" hint from a doc-filename
+ * stem. Canonical fleet pattern for docs describing a specific code file is
+ * `<source>.md` (e.g. `smol-ffi.js.md` describes `smol-ffi.js`). Without this
+ * strip, `smol-ffi.js.md` is parsed as stem `smol-ffi.js` which fails
+ * `isLowercaseHyphenated` on the embedded `.`. The accepted hint extensions
+ * match the language set the fleet documents code in.
  */
 function stripCodeFileHintExt(stem: string): string {
   return stem.replace(

@@ -1,26 +1,23 @@
 /**
- * Update: two-pass taze to apply the fleet's maturity policy
- * correctly.
+ * Update: two-pass taze to apply the fleet's maturity policy correctly.
  *
- *   Pass 1: default config (.config/taze.config.mts) —
- *     non-Socket deps respect maturityPeriod: 7.
+ * Pass 1: default config (.config/taze.config.mts) — non-Socket deps respect
+ * maturityPeriod: 7.
  *
- *   Pass 2: CLI-flag override — Socket-owned scopes only,
- *     maturityPeriod: 0. taze's config auto-discovery is
- *     path-based and doesn't support a --config override, so
- *     the second pass uses `--include <scopes> --maturity-
- *     period 0` flags instead of a second config file.
+ * Pass 2: CLI-flag override — Socket-owned scopes only, maturityPeriod: 0.
+ * taze's config auto-discovery is path-based and doesn't support a --config
+ * override, so the second pass uses `--include <scopes> --maturity- period 0`
+ * flags instead of a second config file.
  *
- *   Pass 3: pnpm install to refresh the lockfile against the
- *     updated package.json.
+ * Pass 3: pnpm install to refresh the lockfile against the updated
+ * package.json.
  *
- * SOCKET_SCOPES below MUST match the `exclude` list in
- * .config/taze.config.mts — drift causes double-bumps or
- * misses.
+ * SOCKET_SCOPES below MUST match the `exclude` list in .config/taze.config.mts
+ * — drift causes double-bumps or misses.
  *
- * This is a reference script. Consuming repos can drop it into
- * their own scripts/ dir and wire it in via a `"update": "node
- * scripts/update.mts"` package.json entry.
+ * This is a reference script. Consuming repos can drop it into their own
+ * scripts/ dir and wire it in via a `"update": "node scripts/update.mts"`
+ * package.json entry.
  */
 import { spawn } from '@socketsecurity/lib-stable/spawn'
 

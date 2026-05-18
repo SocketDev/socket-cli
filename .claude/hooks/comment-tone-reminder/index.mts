@@ -28,9 +28,9 @@ await runStopReminder({
       why: 'Tutorial filler. If the note is load-bearing, state it directly without the preamble.',
     },
     {
-      label: 'it[\'’]?s important to',
+      label: "it['’]?s important to",
       regex: /\bit'?s important to\b/i,
-      why: 'Teacher-tone. State the constraint, don\'t announce that it\'s important.',
+      why: "Teacher-tone. State the constraint, don't announce that it's important.",
     },
     {
       label: 'as you can see',
@@ -40,7 +40,7 @@ await runStopReminder({
     {
       label: 'remember that',
       regex: /\bremember (that|to)\b/i,
-      why: 'Teacher-tone. The reader doesn\'t need to be reminded — state the rule.',
+      why: "Teacher-tone. The reader doesn't need to be reminded — state the rule.",
     },
     {
       label: 'in order to',

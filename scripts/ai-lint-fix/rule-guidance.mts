@@ -1,25 +1,21 @@
 /* oxlint-disable socket/inclusive-language -- AI-fix rule guidance documents the legacy terms each rule scans for. */
 
 /**
- * @fileoverview Rule allowlist + per-rule prompt guidance for the
- * AI-fix orchestrator.
+ * @file Rule allowlist + per-rule prompt guidance for the AI-fix orchestrator.
+ *   Kept separate from `cli.mts` because:
  *
- * Kept separate from `cli.mts` because:
- *
- *   1. The data is large (~200 LOC of prompt text) and changes
- *      independently from the orchestrator logic.
- *   2. Editing a prompt is a content review, not a code review —
- *      having it in its own file makes that distinction visible.
- *   3. Adding / removing a rule is a one-file edit here; the
- *      orchestrator just imports `AI_HANDLED_RULES` + `RULE_GUIDANCE`
- *      and works with whatever's defined.
- *
- * Invariant: every entry in `AI_HANDLED_RULES` must have a matching
- * key in `RULE_GUIDANCE`. The orchestrator iterates findings, filters
- * to AI-handled rules, then looks up the guidance text per rule id.
- * A missing guidance entry would render an empty `<rule>` block — the
- * lint runner's `validate-template.mts` could enforce this if drift
- * ever becomes a concern.
+ *   1. The data is large (~200 LOC of prompt text) and changes independently from
+ *      the orchestrator logic.
+ *   2. Editing a prompt is a content review, not a code review — having it in its
+ *      own file makes that distinction visible.
+ *   3. Adding / removing a rule is a one-file edit here; the orchestrator just
+ *      imports `AI_HANDLED_RULES` + `RULE_GUIDANCE` and works with whatever's
+ *      defined. Invariant: every entry in `AI_HANDLED_RULES` must have a
+ *      matching key in `RULE_GUIDANCE`. The orchestrator iterates findings,
+ *      filters to AI-handled rules, then looks up the guidance text per rule
+ *      id. A missing guidance entry would render an empty `<rule>` block — the
+ *      lint runner's `validate-template.mts` could enforce this if drift ever
+ *      becomes a concern.
  */
 
 // Rules below need an AI-driven fix because the right rewrite
@@ -63,13 +59,13 @@ export const AI_HANDLED_RULES: ReadonlySet<string> = new Set([
 ])
 
 /**
- * Per-rule guidance — concise, low-freedom (one canonical rewrite
- * per rule). Built per Anthropic's prompt-engineering best practices:
- * direct instructions, XML structure, examples per rule.
+ * Per-rule guidance — concise, low-freedom (one canonical rewrite per rule).
+ * Built per Anthropic's prompt-engineering best practices: direct instructions,
+ * XML structure, examples per rule.
  *
- * Each entry is rendered into the prompt as `<rule id="...">…</rule>`
- * inside a `<rules>` block. Claude sees only the rules that fired in
- * the current file, so noise stays low.
+ * Each entry is rendered into the prompt as `<rule id="...">…</rule>` inside a
+ * `<rules>` block. Claude sees only the rules that fired in the current file,
+ * so noise stays low.
  */
 export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
   // oxlint-disable-next-line socket/prefer-undefined-over-null -- null-prototype object literal.

@@ -1,43 +1,37 @@
 /**
- * @fileoverview Sort string-equality disjunctions alphanumerically.
+ * @file Sort string-equality disjunctions alphanumerically. Per CLAUDE.md
+ *   "Sorting" rule, `x === 'a' || x === 'b' || x === 'c'` is sorted by the
+ *   comparand string (literal byte order, ASCII before letters). Order doesn't
+ *   affect runtime semantics — JS's `||` short-circuits regardless of operand
+ *   order — but keeps the diff churn low when adding a new comparand and makes
+ *   "is X in this set?" checks visually consistent across the fleet. Detects:
  *
- * Per CLAUDE.md "Sorting" rule, `x === 'a' || x === 'b' || x === 'c'`
- * is sorted by the comparand string (literal byte order, ASCII before
- * letters). Order doesn't affect runtime semantics — JS's `||`
- * short-circuits regardless of operand order — but keeps the diff
- * churn low when adding a new comparand and makes "is X in this set?"
- * checks visually consistent across the fleet.
- *
- * Detects:
  *   - `(x === 'a' || x === 'b')`
  *   - `(x !== 'a' && x !== 'b')` — De Morgan dual; ordering rule applies
- *   - Chains of any length (≥2 operands).
- *
- * Each disjunction must:
+ *   - Chains of any length (≥2 operands). Each disjunction must:
  *   - Use the SAME left operand (`x` in the example) for every clause.
- *   - Use the SAME comparison operator (`===` for `||` chains, `!==`
- *     for `&&` chains).
- *   - Use string-literal right operands (number / boolean / template
- *     literals are skipped — those rarely benefit from alpha order
- *     and confuse the autofix).
- *
- * Autofix: rewrites the right-hand string literals in sorted order.
- * Skipped (reports without fix) when:
+ *   - Use the SAME comparison operator (`===` for `||` chains, `!==` for `&&`
+ *     chains).
+ *   - Use string-literal right operands (number / boolean / template literals are
+ *     skipped — those rarely benefit from alpha order and confuse the autofix).
+ *     Autofix: rewrites the right-hand string literals in sorted order. Skipped
+ *     (reports without fix) when:
  *   - Any clause's left operand differs (mixed identifier).
  *   - Any clause's right operand isn't a plain string literal.
  *   - Any clause uses a different operator from the first.
- *   - Comments live between clauses (reordering through a comment
- *     would break attribution).
- *
- * Why a separate rule from sort-named-imports / sort-set-args:
- *   - The shape is structurally different (BinaryExpression chain
- *     under LogicalExpression, not an ArrayExpression / ImportSpecifier).
- *   - Catches the most common "is this one of these constants?"
- *     pattern in dispatch code (e.g. switch-prelude guards,
- *     fix-action category checks). A single rule keeps this normalized.
+ *   - Comments live between clauses (reordering through a comment would break
+ *     attribution). Why a separate rule from sort-named-imports /
+ *     sort-set-args:
+ *   - The shape is structurally different (BinaryExpression chain under
+ *     LogicalExpression, not an ArrayExpression / ImportSpecifier).
+ *   - Catches the most common "is this one of these constants?" pattern in
+ *     dispatch code (e.g. switch-prelude guards, fix-action category checks). A
+ *     single rule keeps this normalized.
  */
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
@@ -64,10 +58,9 @@ const rule = {
       : context.sourceCode
 
     /**
-     * Flatten a left-associative LogicalExpression chain into a list
-     * of leaf nodes. `(a || b) || c` and `a || (b || c)` both flatten
-     * to [a, b, c]. We require the chain operator to be uniform
-     * (caller checks).
+     * Flatten a left-associative LogicalExpression chain into a list of leaf
+     * nodes. `(a || b) || c` and `a || (b || c)` both flatten to [a, b, c]. We
+     * require the chain operator to be uniform (caller checks).
      */
     function flatten(node: AstNode, op: string, out: AstNode[]): void {
       if (node.type === 'LogicalExpression' && node.operator === op) {
@@ -79,8 +72,8 @@ const rule = {
     }
 
     /**
-     * For a binary-equality leaf, return `{ left, right, operator }`
-     * if it's the shape we sort. Returns undefined otherwise.
+     * For a binary-equality leaf, return `{ left, right, operator }` if it's
+     * the shape we sort. Returns undefined otherwise.
      */
     function asEqualityClause(node: AstNode) {
       if (node.type !== 'BinaryExpression') {
@@ -113,9 +106,9 @@ const rule = {
     }
 
     /**
-     * Returns true if a comment lies anywhere between the first and
-     * last leaf of the chain. Comment-aware skipping prevents the
-     * autofix from silently relocating attribution.
+     * Returns true if a comment lies anywhere between the first and last leaf
+     * of the chain. Comment-aware skipping prevents the autofix from silently
+     * relocating attribution.
      */
     function hasInteriorComment(leaves: AstNode[]): boolean {
       if (!sourceCode.getCommentsInside) {

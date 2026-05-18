@@ -1,16 +1,12 @@
 /**
- * @fileoverview Rule G scanner for Makefile / Dockerfile / shell.
- *
- * Same shape as Rule A (multi-stage path constructed inline), applied
- * to executable artifacts that can't `import` a TS `paths.mts`. Each
- * canonical construction in a script must reference the source-of-
- * truth TS module by comment so the script can't drift from TS
- * without a flagged change.
- *
- * Dockerfile-aware: each `FROM ... AS ...` opens a new stage scope in
- * which earlier `ENV` / `ARG` declarations don't propagate, so the
- * 2+-times check is scoped per stage. Non-Dockerfile scripts share
- * one global scope (stage 0).
+ * @file Rule G scanner for Makefile / Dockerfile / shell. Same shape as Rule A
+ *   (multi-stage path constructed inline), applied to executable artifacts that
+ *   can't `import` a TS `paths.mts`. Each canonical construction in a script
+ *   must reference the source-of- truth TS module by comment so the script
+ *   can't drift from TS without a flagged change. Dockerfile-aware: each `FROM
+ *   ... AS ...` opens a new stage scope in which earlier `ENV` / `ARG`
+ *   declarations don't propagate, so the 2+-times check is scoped per stage.
+ *   Non-Dockerfile scripts share one global scope (stage 0).
  */
 
 import { readFileSync } from 'node:fs'

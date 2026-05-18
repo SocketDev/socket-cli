@@ -8,11 +8,11 @@ Each unit of engineering work should make subsequent units **easier**, not harde
 
 Three places a lesson can land in this fleet:
 
-| Where | When | Effect |
-|---|---|---|
-| **CLAUDE.md fleet rule** | The mistake recurs across repos or is a fleet-wide invariant | Every fleet repo inherits the rule on next sync |
-| **`.claude/hooks/*` block** | The mistake is mechanical and can be detected from tool input/output | Hook blocks the next attempt before the file is written |
-| **Skill prompt update** | The mistake is judgment-shaped (review pass missed a class of finding) | Future runs of that skill catch the variant |
+| Where                       | When                                                                   | Effect                                                  |
+| --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------- |
+| **CLAUDE.md fleet rule**    | The mistake recurs across repos or is a fleet-wide invariant           | Every fleet repo inherits the rule on next sync         |
+| **`.claude/hooks/*` block** | The mistake is mechanical and can be detected from tool input/output   | Hook blocks the next attempt before the file is written |
+| **Skill prompt update**     | The mistake is judgment-shaped (review pass missed a class of finding) | Future runs of that skill catch the variant             |
 
 ## When to compound
 

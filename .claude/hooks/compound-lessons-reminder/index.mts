@@ -83,11 +83,13 @@ const REPEAT_FINDING_PATTERNS: readonly { label: string; regex: RegExp }[] = [
     // Up to ~40 chars between "same" and "as/we saw" so we can match
     // "same monthCode resolution bug as we saw before" (multi-word X)
     // but not entire sentences.
-    regex: /\bsame\s+[^.?!\n]{1,40}?\s+(as|we saw)\s+(before|earlier|previously|last time)\b/i,
+    regex:
+      /\bsame\s+[^.?!\n]{1,40}?\s+(as|we saw)\s+(before|earlier|previously|last time)\b/i,
   },
   {
     label: "we've seen this before",
-    regex: /\b(we'?ve|i'?ve|we have|i have)\s+seen\s+this\s+(before|already)\b/i,
+    regex:
+      /\b(we'?ve|i'?ve|we have|i have)\s+seen\s+this\s+(before|already)\b/i,
   },
   {
     label: 'recurring / keeps happening',
@@ -139,7 +141,11 @@ function hasRulePromotionEvidence(
     if (typeof filePath !== 'string') {
       continue
     }
-    for (let j = 0, { length: pLen } = RULE_SURFACE_PATTERNS; j < pLen; j += 1) {
+    for (
+      let j = 0, { length: pLen } = RULE_SURFACE_PATTERNS;
+      j < pLen;
+      j += 1
+    ) {
       if (RULE_SURFACE_PATTERNS[j]!.test(filePath)) {
         return true
       }
@@ -186,18 +192,14 @@ async function main(): Promise<void> {
     lines.push(`  • "${hit.label}" — …${hit.snippet}…`)
   }
   lines.push('')
-  lines.push(
-    '  CLAUDE.md "Compound lessons into rules": when the same kind of',
-  )
+  lines.push('  CLAUDE.md "Compound lessons into rules": when the same kind of')
   lines.push(
     '  finding fires twice, promote it to a rule. Land it in CLAUDE.md,',
   )
   lines.push(
     '  a `.claude/hooks/*` block, or a skill prompt — pick the lowest-',
   )
-  lines.push(
-    '  friction surface. Always cite the original incident in a',
-  )
+  lines.push('  friction surface. Always cite the original incident in a')
   lines.push('  `**Why:**` line.')
   lines.push('')
   // If the rule is fleet-wide (not just this repo), it belongs in
@@ -205,22 +207,14 @@ async function main(): Promise<void> {
   // — or fall back to the PR link if the wheelhouse isn't local.
   const wheelhouseMd = findWheelhouseClaudeMd(process.cwd())
   if (wheelhouseMd) {
-    lines.push(
-      `  Fleet rule? Edit: ${wheelhouseMd}`,
-    )
+    lines.push(`  Fleet rule? Edit: ${wheelhouseMd}`)
     lines.push(
       '  (Then re-cascade via `socket-wheelhouse/scripts/sync-scaffolding.mts`.)',
     )
   } else {
-    lines.push(
-      '  Fleet rule? Wheelhouse not found locally. Open a PR at',
-    )
-    lines.push(
-      '    https://github.com/SocketDev/socket-wheelhouse',
-    )
-    lines.push(
-      '  editing `template/CLAUDE.md` (or `template/.claude/hooks/`).',
-    )
+    lines.push('  Fleet rule? Wheelhouse not found locally. Open a PR at')
+    lines.push('    https://github.com/SocketDev/socket-wheelhouse')
+    lines.push('  editing `template/CLAUDE.md` (or `template/.claude/hooks/`).')
   }
   lines.push('')
   process.stderr.write(lines.join('\n') + '\n')

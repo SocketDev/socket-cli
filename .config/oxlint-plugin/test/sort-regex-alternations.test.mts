@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/sort-regex-alternations.
+ * @file Unit tests for socket/sort-regex-alternations.
  */
 
 import { describe, test } from 'node:test'

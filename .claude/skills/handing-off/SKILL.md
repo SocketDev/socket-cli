@@ -2,7 +2,7 @@
 name: handing-off
 description: Compact the current conversation into a handoff doc so a fresh agent can pick up the work. Use when context is getting thin, a session is about to end, or the next stage of the work needs a different agent / human.
 user-invocable: true
-argument-hint: "What will the next session focus on?"
+argument-hint: 'What will the next session focus on?'
 allowed-tools: Bash(mkdir:*), Bash(date:*), Read, Write
 ---
 
@@ -19,7 +19,7 @@ Write a handoff document so a fresh agent can continue the work without re-loadi
 
 ## How to write the doc
 
-1. **Summarize, don't duplicate.** Reference commits (`<sha> — <message>`), files (`path:line`), PRs, issues, ADRs, plans. The next agent can `git log`, `Read`, `gh` their way to detail. The doc carries the *why* and *where things stand*, not the contents.
+1. **Summarize, don't duplicate.** Reference commits (`<sha> — <message>`), files (`path:line`), PRs, issues, ADRs, plans. The next agent can `git log`, `Read`, `gh` their way to detail. The doc carries the _why_ and _where things stand_, not the contents.
 2. **Lead with state.** What's done, what's in flight, what's blocked, what's next. Use bullet lists, not paragraphs.
 3. **Name suggested skills.** If the next session should reach for `reviewing-code`, `updating-lockstep`, etc., list them by name with a one-line "use when" so the next agent doesn't have to discover them.
 4. **Tailor to the focus.** If the user passed an argument (`/handing-off SEA migration`), shape the doc around that scope; drop unrelated work into a "deferred" section.

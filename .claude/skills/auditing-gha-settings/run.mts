@@ -1,30 +1,22 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Audit a repo's GitHub Actions permissions + allowlist
- * against the fleet baseline. Read-only — reports drift, does not write.
- * The fix is a manual step in the repo's Settings → Actions → General
- * page (or via `gh api` PUT with admin scope), because flipping these
- * silently is too dangerous to automate.
- *
- * Baseline (every fleet repo must match):
- *
- *   permissions.enabled              = true
- *   permissions.allowed_actions      = 'selected'
- *   selected_actions.github_owned_allowed = false
- *     (don't allow github-owned actions implicitly — the patterns_allowed
- *     list IS the canonical set; an unlisted github/foo would slip in)
- *   selected_actions.verified_allowed     = false
- *     (same reason — verified marketplace actions aren't on the allowlist
- *     by intent)
- *   selected_actions.patterns_allowed ⊇ CANONICAL_PATTERNS
- *     (superset is allowed — a repo can pin additional actions if it
- *     has a real consumer, but every canonical pattern must be present
- *     since they're referenced through the socket-registry shared
- *     workflows)
- *
- * Exit code: 0 if compliant, 1 if any repo fails the baseline. The
- * orchestrator (skill prompt) shapes the human-readable report and
- * tells the user exactly which Settings → Actions toggles to flip.
+ * @file Audit a repo's GitHub Actions permissions + allowlist against the fleet
+ *   baseline. Read-only — reports drift, does not write. The fix is a manual
+ *   step in the repo's Settings → Actions → General page (or via `gh api` PUT
+ *   with admin scope), because flipping these silently is too dangerous to
+ *   automate. Baseline (every fleet repo must match): permissions.enabled =
+ *   true permissions.allowed_actions = 'selected'
+ *   selected_actions.github_owned_allowed = false (don't allow github-owned
+ *   actions implicitly — the patterns_allowed list IS the canonical set; an
+ *   unlisted github/foo would slip in) selected_actions.verified_allowed =
+ *   false (same reason — verified marketplace actions aren't on the allowlist
+ *   by intent) selected_actions.patterns_allowed ⊇ CANONICAL_PATTERNS (superset
+ *   is allowed — a repo can pin additional actions if it has a real consumer,
+ *   but every canonical pattern must be present since they're referenced
+ *   through the socket-registry shared workflows) Exit code: 0 if compliant, 1
+ *   if any repo fails the baseline. The orchestrator (skill prompt) shapes the
+ *   human-readable report and tells the user exactly which Settings → Actions
+ *   toggles to flip.
  */
 
 import process from 'node:process'

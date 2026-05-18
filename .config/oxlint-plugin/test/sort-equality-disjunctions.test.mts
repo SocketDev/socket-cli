@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/sort-equality-disjunctions.
+ * @file Unit tests for socket/sort-equality-disjunctions.
  */
 
 import { describe, test } from 'node:test'

@@ -1,10 +1,9 @@
 /**
- * @fileoverview Unit tests for overeager-staging-guard hook.
+ * @file Unit tests for overeager-staging-guard hook. Two layers under test:
  *
- * Two layers under test:
  *   1. Layer 1 — block `git add -A` / `.` / `-u` (exit 2).
- *   2. Layer 2 — informational warning on `git commit` when index
- *      contains files not touched by this session (exit 0 + stderr).
+ *   2. Layer 2 — informational warning on `git commit` when index contains files
+ *      not touched by this session (exit 0 + stderr).
  */
 
 import assert from 'node:assert/strict'
@@ -66,10 +65,7 @@ function gitAdd(repo: string, files: string[]): void {
 function writeTranscript(entries: object[]): string {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'overeager-tx-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
-  writeFileSync(
-    transcriptPath,
-    entries.map(e => JSON.stringify(e)).join('\n'),
-  )
+  writeFileSync(transcriptPath, entries.map(e => JSON.stringify(e)).join('\n'))
   return transcriptPath
 }
 
@@ -258,17 +254,13 @@ test('git commit silent when index files match transcript git-add history', () =
 // ─── Misc edge cases ──────────────────────────────────────────────
 
 test('non-Bash tool_name is ignored', () => {
-  const r = spawnSync(
-    'node',
-    [HOOK],
-    {
-      input: JSON.stringify({
-        tool_name: 'Edit',
-        tool_input: { file_path: '/tmp/foo' },
-      }),
-      encoding: 'utf8',
-    },
-  )
+  const r = spawnSync('node', [HOOK], {
+    input: JSON.stringify({
+      tool_name: 'Edit',
+      tool_input: { file_path: '/tmp/foo' },
+    }),
+    encoding: 'utf8',
+  })
   assert.equal(r.status, 0)
 })
 

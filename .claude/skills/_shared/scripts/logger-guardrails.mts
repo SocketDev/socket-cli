@@ -3,39 +3,36 @@
  *
  * Five checks, one pass:
  *
- * 1. **Status-symbol emoji** (✓ ✔ ❌ ✗ ⚠ ⚠️ ❗ ✅ ❎ ☑) — banned.
- *    The `@socketsecurity/lib/logger` package owns the visual prefix
- *    via `logger.success()` / `logger.fail()` / `logger.warn()` etc.
- *    Hand-rolling the symbols fragments the visual style and bypasses
- *    theme-aware color.
- * 2. **`console.log` / `console.error` / `console.warn` / `console.info`
- *    / `console.debug` / `console.trace`** — banned. Use the logger.
- * 3. **Inline `getDefaultLogger().<method>()`** — banned. The logger
- *    must be hoisted at the top of the file:
- *      `const logger = getDefaultLogger()`
- *    then `logger.success(...)`. Inline calls re-resolve the logger
- *    every invocation and read inconsistently.
- * 4. **Dynamic `import()` in non-bundled code** — banned. Scripts under
- *    `scripts/` run directly via `node`; nothing bundles them, so a
- *    dynamic import only adds a runtime async hop for no resolution win.
- *    Use static ES6 imports. Allowed inside `src/` (which gets bundled)
- *    and inside `.config/` bundler configs.
+ * 1. **Status-symbol emoji** (✓ ✔ ❌ ✗ ⚠ ⚠️ ❗ ✅ ❎ ☑) — banned. The
+ *    `@socketsecurity/lib/logger` package owns the visual prefix via
+ *    `logger.success()` / `logger.fail()` / `logger.warn()` etc. Hand-rolling
+ *    the symbols fragments the visual style and bypasses theme-aware color.
+ * 2. **`console.log` / `console.error` / `console.warn` / `console.info` /
+ *    `console.debug` / `console.trace`** — banned. Use the logger.
+ * 3. **Inline `getDefaultLogger().<method>()`** — banned. The logger must be
+ *    hoisted at the top of the file: `const logger = getDefaultLogger()` then
+ *    `logger.success(...)`. Inline calls re-resolve the logger every invocation
+ *    and read inconsistently.
+ * 4. **Dynamic `import()` in non-bundled code** — banned. Scripts under `scripts/`
+ *    run directly via `node`; nothing bundles them, so a dynamic import only
+ *    adds a runtime async hop for no resolution win. Use static ES6 imports.
+ *    Allowed inside `src/` (which gets bundled) and inside `.config/` bundler
+ *    configs.
  *
- * (TypeScript `any` is enforced by oxlint's `typescript/no-explicit-any`
- * rule — kept in `.oxlintrc.json` so it benefits from the language-aware
- * AST. Don't duplicate that here.)
+ * (TypeScript `any` is enforced by oxlint's `typescript/no-explicit-any` rule —
+ * kept in `.oxlintrc.json` so it benefits from the language-aware AST. Don't
+ * duplicate that here.)
  *
- * Why a custom check instead of oxlint plugins: the rules above need
- * either custom matchers (the inline-logger hoist requirement) or
- * conditional scope (dynamic-import bans only outside the bundled tree)
- * that oxlint's built-in rule set doesn't express. A small TS scanner
- * is cheaper than a full oxlint plugin and runs in the existing
- * scripts/check.mts pipeline.
+ * Why a custom check instead of oxlint plugins: the rules above need either
+ * custom matchers (the inline-logger hoist requirement) or conditional scope
+ * (dynamic-import bans only outside the bundled tree) that oxlint's built-in
+ * rule set doesn't express. A small TS scanner is cheaper than a full oxlint
+ * plugin and runs in the existing scripts/check.mts pipeline.
  *
- * Usage:
- *   import { checkLoggerGuardrails } from '.../_shared/scripts/logger-guardrails.mts'
- *   const { violations } = await checkLoggerGuardrails({ cwd: process.cwd() })
- *   if (violations.length) { process.exitCode = 1 }
+ * Usage: import { checkLoggerGuardrails } from
+ * '.../_shared/scripts/logger-guardrails.mts' const { violations } = await
+ * checkLoggerGuardrails({ cwd: process.cwd() }) if (violations.length) {
+ * process.exitCode = 1 }
  */
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -57,18 +54,26 @@ export type GuardrailViolation = {
 }
 
 export type CheckLoggerGuardrailsOptions = {
-  /** Repo root. Defaults to process.cwd(). */
+  /**
+   * Repo root. Defaults to process.cwd().
+   */
   readonly cwd?: string
-  /** Globs to scan, relative to cwd. */
+  /**
+   * Globs to scan, relative to cwd.
+   */
   readonly include?: readonly string[]
-  /** Globs to skip. */
+  /**
+   * Globs to skip.
+   */
   readonly exclude?: readonly string[]
-  /** File extensions to scan. */
+  /**
+   * File extensions to scan.
+   */
   readonly extensions?: readonly string[]
   /**
-   * Globs that ARE bundled. Dynamic `import()` is allowed inside these
-   * (the bundler resolves the import statically at build time). Default
-   * is `src/**` + `.config/**` (bundler configs).
+   * Globs that ARE bundled. Dynamic `import()` is allowed inside these (the
+   * bundler resolves the import statically at build time). Default is `src/**`
+   * + `.config/**` (bundler configs).
    */
   readonly bundledRoots?: readonly string[]
 }

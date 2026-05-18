@@ -1,33 +1,27 @@
 /**
- * @fileoverview Single source of truth for "what's the Socket API token?"
- *
- * Resolution order (first hit wins):
+ * @file Single source of truth for "what's the Socket API token?" Resolution
+ *   order (first hit wins):
  *
  *   1. `SOCKET_API_TOKEN` env var (canonical fleet name).
- *   2. `SOCKET_API_KEY` env var (legacy alias; deprecated, kept readable
- *      for one cycle so existing dev setups don't break in lockstep with
- *      the rename).
- *   3. OS keychain (macOS Keychain / Linux libsecret / Windows
- *      CredentialManager).
- *
- * Returns `undefined` when no token is found. Never throws — callers
- * decide how to react (use free SFW, skip auth-gated install, prompt).
- *
- * **No `.env` / `.env.local` reads.** Dotfiles leak — they get
- * accidentally committed, read by every dev tool that walks the
- * project dir, swept into log scrapers. Tokens belong in env (for
- * CI) or in the OS keychain (for dev local). The canonical
- * resolution chain stays explicit: env → keychain → prompt.
- *
- * **Module-scope cache.** Each successful resolution is memoized for
- * the lifetime of the process. Reason: every `security find-generic-
- * password` call on macOS triggers a fresh Keychain ACL check, which
- * surfaces the "this app wants to access your keychain" dialog. A
- * pre-commit hook + commit-msg hook + post-commit invocation can fire
- * three keychain reads in 200ms — each one its own prompt. The cache
- * collapses N reads per process to 1. Also propagates the resolved
- * token into `process.env.SOCKET_API_TOKEN` so child processes
- * (spawned by the same hook chain) inherit it instead of re-querying.
+ *   2. `SOCKET_API_KEY` env var (legacy alias; deprecated, kept readable for one
+ *      cycle so existing dev setups don't break in lockstep with the rename).
+ *   3. OS keychain (macOS Keychain / Linux libsecret / Windows CredentialManager).
+ *      Returns `undefined` when no token is found. Never throws — callers
+ *      decide how to react (use free SFW, skip auth-gated install, prompt).
+ *      **No `.env` / `.env.local` reads.** Dotfiles leak — they get
+ *      accidentally committed, read by every dev tool that walks the project
+ *      dir, swept into log scrapers. Tokens belong in env (for CI) or in the OS
+ *      keychain (for dev local). The canonical resolution chain stays explicit:
+ *      env → keychain → prompt. **Module-scope cache.** Each successful
+ *      resolution is memoized for the lifetime of the process. Reason: every
+ *      `security find-generic- password` call on macOS triggers a fresh
+ *      Keychain ACL check, which surfaces the "this app wants to access your
+ *      keychain" dialog. A pre-commit hook + commit-msg hook + post-commit
+ *      invocation can fire three keychain reads in 200ms — each one its own
+ *      prompt. The cache collapses N reads per process to 1. Also propagates
+ *      the resolved token into `process.env.SOCKET_API_TOKEN` so child
+ *      processes (spawned by the same hook chain) inherit it instead of
+ *      re-querying.
  */
 
 import { readTokenFromKeychain } from './token-storage.mts'
@@ -82,16 +76,15 @@ export function findApiToken(): TokenLookup {
 }
 
 /**
- * Populate BOTH `SOCKET_API_TOKEN` and `SOCKET_API_KEY` in
- * `process.env` so any spawned child — whether it resolves the
- * canonical or the legacy name — inherits the value and skips its
- * own keychain read. Mirrors the WRITE_SLOTS behavior in
- * token-storage.mts: writes paint both slots, reads only the
- * canonical one. The keychain-side legacy slot stays untouched here;
- * this is purely an in-process env mirror.
+ * Populate BOTH `SOCKET_API_TOKEN` and `SOCKET_API_KEY` in `process.env` so any
+ * spawned child — whether it resolves the canonical or the legacy name —
+ * inherits the value and skips its own keychain read. Mirrors the WRITE_SLOTS
+ * behavior in token-storage.mts: writes paint both slots, reads only the
+ * canonical one. The keychain-side legacy slot stays untouched here; this is
+ * purely an in-process env mirror.
  *
- * Idempotent — already-set values are left alone (so the user's
- * explicit env value isn't clobbered by a keychain read).
+ * Idempotent — already-set values are left alone (so the user's explicit env
+ * value isn't clobbered by a keychain read).
  */
 function propagateToEnv(token: string): void {
   if (!process.env[CANONICAL]) {
@@ -103,9 +96,9 @@ function propagateToEnv(token: string): void {
 }
 
 /**
- * Clear the module cache. Test-only escape hatch — production code
- * should never call this. Used by `--rotate` flows that need to
- * re-prompt after wiping the keychain entry.
+ * Clear the module cache. Test-only escape hatch — production code should never
+ * call this. Used by `--rotate` flows that need to re-prompt after wiping the
+ * keychain entry.
  */
 export function _resetApiTokenCacheForTesting(): void {
   cached = undefined

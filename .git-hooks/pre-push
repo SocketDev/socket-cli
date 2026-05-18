@@ -2,4 +2,18 @@
 # Git pre-push hook entry point. Invoked by git when core.hooksPath
 # points at this directory (set by `node scripts/install-git-hooks.mts`
 # at `pnpm install` time). Defers to the .mts implementation.
+
+# Same placeholder-Socket-token sanitization as pre-commit. A
+# `SOCKET_API_TOKEN=literal-value` placeholder in the user's
+# environment causes sfw to 401 on the pnpm shim before this hook
+# can run its own checks; unset any value that doesn't look like a
+# real `sktsec_…` token.
+for var in SOCKET_API_TOKEN SOCKET_API_KEY; do
+  eval "val=\${$var}"
+  if [ -n "$val" ] && ! printf '%s' "$val" | grep -q '^sktsec_'; then
+    echo "[pre-push] unsetting placeholder $var (was: '$val') so pnpm/sfw doesn't 401."
+    unset "$var"
+  fi
+done
+
 exec node "$(dirname "$0")/pre-push.mts" "$@"

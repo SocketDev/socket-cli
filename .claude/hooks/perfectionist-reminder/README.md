@@ -14,15 +14,15 @@ The assistant's job is to internalize the perfectionist default and execute, not
 
 ## What it catches
 
-| Phrase pattern | Why it's flagged |
-|---|---|
-| `Option A (depth)… Option B (speed)` | Binary choice menu offloading judgment. Pick depth. |
-| `maximally useful vs maximally shipped` | Same framing — execute the perfectionist path. |
-| `ship-it precision`, `ship-it-now` | Velocity euphemism. Use only when user time-boxed. |
-| `depth over breadth?` / `breadth over depth?` | The default IS depth (perfectionist). |
-| `speed vs depth`, `fast vs right`, `now vs correct` | Speed-vs-quality framing. Perfectionist is default. |
-| `if you say A … if you say B` | Binary choice architecture pretending to be helpful. |
-| `plow through vs do it right` | Same pattern — velocity vs care. |
+| Phrase pattern                                      | Why it's flagged                                     |
+| --------------------------------------------------- | ---------------------------------------------------- |
+| `Option A (depth)… Option B (speed)`                | Binary choice menu offloading judgment. Pick depth.  |
+| `maximally useful vs maximally shipped`             | Same framing — execute the perfectionist path.       |
+| `ship-it precision`, `ship-it-now`                  | Velocity euphemism. Use only when user time-boxed.   |
+| `depth over breadth?` / `breadth over depth?`       | The default IS depth (perfectionist).                |
+| `speed vs depth`, `fast vs right`, `now vs correct` | Speed-vs-quality framing. Perfectionist is default.  |
+| `if you say A … if you say B`                       | Binary choice architecture pretending to be helpful. |
+| `plow through vs do it right`                       | Same pattern — velocity vs care.                     |
 
 ## Legitimate exceptions
 

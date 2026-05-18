@@ -30,10 +30,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import process from 'node:process'
 
-import {
-  readLastAssistantToolUses,
-  readStdin,
-} from '../_shared/transcript.mts'
+import { readLastAssistantToolUses, readStdin } from '../_shared/transcript.mts'
 
 interface StopPayload {
   readonly transcript_path?: string | undefined
@@ -132,7 +129,9 @@ function countLines(absPath: string): number | undefined {
   }
 }
 
-function collectHits(events: readonly { name: string; input: Record<string, unknown> }[]): SizeHit[] {
+function collectHits(
+  events: readonly { name: string; input: Record<string, unknown> }[],
+): SizeHit[] {
   const seen = new Set<string>()
   const hits: SizeHit[] = []
   for (let i = 0, { length } = events; i < length; i += 1) {
@@ -188,9 +187,10 @@ async function main(): Promise<void> {
   const lines = ['[file-size-reminder] File-size cap exceeded:', '']
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const hit = hits[i]!
-    const capLabel = hit.cap === 'hard'
-      ? `HARD CAP (${HARD_CAP_LINES} lines)`
-      : `soft cap (${SOFT_CAP_LINES} lines)`
+    const capLabel =
+      hit.cap === 'hard'
+        ? `HARD CAP (${HARD_CAP_LINES} lines)`
+        : `soft cap (${SOFT_CAP_LINES} lines)`
     lines.push(`  • ${hit.path}`)
     lines.push(`      ${hit.lines} lines — past ${capLabel}`)
   }
@@ -199,12 +199,14 @@ async function main(): Promise<void> {
     '  CLAUDE.md "File size": split along natural seams — group by domain,',
   )
   lines.push(
-    '  name files for what\'s in them, co-locate helpers with consumers.',
+    "  name files for what's in them, co-locate helpers with consumers.",
   )
   lines.push(
     '  Exceptions (single legitimate large function / generated artifact)',
   )
-  lines.push('  should be stated inline. Full playbook: docs/claude.md/file-size.md.')
+  lines.push(
+    '  should be stated inline. Full playbook: docs/claude.md/file-size.md.',
+  )
   lines.push('')
   process.stderr.write(lines.join('\n') + '\n')
   process.exit(0)

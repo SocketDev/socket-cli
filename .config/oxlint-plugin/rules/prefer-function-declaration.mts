@@ -1,54 +1,47 @@
 /**
- * @fileoverview Module-scope function definitions should use
- * `function foo() {}` declarations, not `const foo = () => {}` or
- * `const foo = function () {}` expressions. Function declarations
- * hoist, sort cleanly under `sort-source-methods`, and render with
- * a stable `foo.name` in stack traces — arrow expressions assigned
- * to `const` lose all three properties (no hoisting, treated as
- * statements by the sort rule, and `.name` is the variable name
- * which is fragile across refactors).
+ * @file Module-scope function definitions should use `function foo() {}`
+ *   declarations, not `const foo = () => {}` or `const foo = function () {}`
+ *   expressions. Function declarations hoist, sort cleanly under
+ *   `sort-source-methods`, and render with a stable `foo.name` in stack traces
+ *   — arrow expressions assigned to `const` lose all three properties (no
+ *   hoisting, treated as statements by the sort rule, and `.name` is the
+ *   variable name which is fragile across refactors). Style signal that
+ *   motivated the rule: across the fleet's six surveyed repos, the ratio of
+ *   `function` declarations to top-level arrow `const`s is overwhelming —
+ *   socket-cli 962:5, socket-lib 842:13, socket-sdk-js 200:6. The arrow
+ *   stragglers are drift. Autofix scope (deterministic only):
  *
- * Style signal that motivated the rule: across the fleet's six
- * surveyed repos, the ratio of `function` declarations to top-level
- * arrow `const`s is overwhelming — socket-cli 962:5, socket-lib
- * 842:13, socket-sdk-js 200:6. The arrow stragglers are drift.
- *
- * Autofix scope (deterministic only):
- *   - `const foo = () => { ... }` (block body) →
- *     `function foo() { ... }`
- *   - `const foo = (a, b) => expr` (expression body) →
- *     `function foo(a, b) { return expr }`
- *   - `const foo = function (a, b) { ... }` →
- *     `function foo(a, b) { ... }`
+ *   - `const foo = () => { ... }` (block body) → `function foo() { ... }`
+ *   - `const foo = (a, b) => expr` (expression body) → `function foo(a, b) {
+ *     return expr }`
+ *   - `const foo = function (a, b) { ... }` → `function foo(a, b) { ... }`
  *   - `const foo = async () => { ... }` → `async function foo() {}`
- *   - `export const foo = () => {}` →
- *     `export function foo() {}` (preserves the export)
- *
- * Skips (report-only, no fix):
- *   - Generator function expressions (`function*`) — autofix needs
- *     to insert `*` after `function` without losing the name, and
- *     the construct is rare enough that the human can do it.
- *   - Destructured / non-Identifier declarators
- *     (`const { foo } = ...`, `const [foo] = ...`).
- *   - Multi-declarator `const foo = ..., bar = ...` — splitting
- *     into declarations + function declarations is messy; the
- *     reader should split it manually first.
- *   - Declarations carrying a TS type annotation
- *     (`const foo: Handler = () => {}`) — the annotation is the
- *     contract and would need to migrate to a `satisfies` or be
- *     dropped. Human call.
- *   - Functions that reference `this` — declaration-form `function`
- *     has its own `this`; arrows inherit. Static check: the
- *     function body contains the `this` keyword anywhere.
- *   - Functions inside non-Program scopes (loops, conditionals, etc.)
- *     — only the top-level (Program body) shape is rewritten.
+ *   - `export const foo = () => {}` → `export function foo() {}` (preserves the
+ *     export) Skips (report-only, no fix):
+ *   - Generator function expressions (`function*`) — autofix needs to insert `*`
+ *     after `function` without losing the name, and the construct is rare
+ *     enough that the human can do it.
+ *   - Destructured / non-Identifier declarators (`const { foo } = ...`, `const
+ *     [foo] = ...`).
+ *   - Multi-declarator `const foo = ..., bar = ...` — splitting into declarations
+ *   - function declarations is messy; the reader should split it manually first.
+ *   - Declarations carrying a TS type annotation (`const foo: Handler = () =>
+ *     {}`) — the annotation is the contract and would need to migrate to a
+ *     `satisfies` or be dropped. Human call.
+ *   - Functions that reference `this` — declaration-form `function` has its own
+ *     `this`; arrows inherit. Static check: the function body contains the
+ *     `this` keyword anywhere.
+ *   - Functions inside non-Program scopes (loops, conditionals, etc.) — only the
+ *     top-level (Program body) shape is rewritten.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const SKIP_TYPE_ANNOTATION = true
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'suggestion',
@@ -177,17 +170,15 @@ const rule = {
 /**
  * Walk the function body iteratively looking for a `ThisExpression`.
  *
- * We previously serialized the AST with JSON.stringify + regex on
- * `\bthis\b`, but oxlint's AST nodes can carry back-references
- * (parent, scope, type-arg back-pointers from the TS plugin) via
- * getters that return fresh wrapper objects. A WeakSet de-cycle
- * keyed on object identity misses those cases — the seen-check
- * returns false and JSON.stringify hits the limit and throws
- * "Converting circular structure to JSON," crashing the rule. The
- * AST walk avoids serialization entirely: each visit checks the
- * node's `type` and pushes child nodes onto a work queue. Identity-
- * based seen-set still de-cycles for safety, this time without
- * paying the cost of stringification.
+ * We previously serialized the AST with JSON.stringify + regex on `\bthis\b`,
+ * but oxlint's AST nodes can carry back-references (parent, scope, type-arg
+ * back-pointers from the TS plugin) via getters that return fresh wrapper
+ * objects. A WeakSet de-cycle keyed on object identity misses those cases — the
+ * seen-check returns false and JSON.stringify hits the limit and throws
+ * "Converting circular structure to JSON," crashing the rule. The AST walk
+ * avoids serialization entirely: each visit checks the node's `type` and pushes
+ * child nodes onto a work queue. Identity- based seen-set still de-cycles for
+ * safety, this time without paying the cost of stringification.
  */
 function referencesThis(node: AstNode) {
   if (!node.body) {

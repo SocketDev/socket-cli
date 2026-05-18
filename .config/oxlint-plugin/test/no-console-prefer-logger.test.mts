@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/no-console-prefer-logger.
+ * @file Unit tests for socket/no-console-prefer-logger.
  */
 
 import { describe, test } from 'node:test'

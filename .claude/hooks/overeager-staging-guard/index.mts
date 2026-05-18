@@ -219,7 +219,7 @@ async function main(): Promise<void> {
         `[overeager-staging-guard] Blocked: ${broad}`,
         '',
         '  This sweeps the entire working tree into the index.',
-        '  In a parallel-session repo, that pulls in another agent\'s',
+        "  In a parallel-session repo, that pulls in another agent's",
         '  unstaged edits and they get swept into your next commit.',
         '',
         '  Fix: stage by explicit path.',

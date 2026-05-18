@@ -29,8 +29,7 @@ test('non-workflow files pass through', async () => {
   const result = await runHook({
     tool_input: {
       file_path: '/x/src/foo.ts',
-      new_string:
-        'on: pull_request_target\nactions/checkout\npnpm install\n',
+      new_string: 'on: pull_request_target\nactions/checkout\npnpm install\n',
     },
     tool_name: 'Edit',
   })

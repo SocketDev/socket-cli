@@ -1,48 +1,33 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Path-hygiene gate CLI entry.
+ * @file Path-hygiene gate CLI entry. Mantra: 1 path, 1 reference. A path is
+ *   constructed exactly once; everywhere else references the constructed value.
+ *   Whole-repo scan complementing the per-edit `.claude/hooks/path-guard` hook.
+ *   The hook stops new violations from landing; this gate finds the existing
+ *   ones and blocks merges that introduce more. Helper modules:
  *
- * Mantra: 1 path, 1 reference. A path is constructed exactly once;
- * everywhere else references the constructed value.
- *
- * Whole-repo scan complementing the per-edit `.claude/hooks/path-guard`
- * hook. The hook stops new violations from landing; this gate finds
- * the existing ones and blocks merges that introduce more.
- *
- * Helper modules:
- *   - exempt.mts        — file-path patterns the gate skips
- *   - walk.mts          — recursive file walker with SKIP_DIRS
- *   - allowlist.mts     — paths-allowlist.yml parser + matcher
- *   - scan-code.mts     — Rule A + B (.mts / .cts)
+ *   - exempt.mts — file-path patterns the gate skips
+ *   - walk.mts — recursive file walker with SKIP_DIRS
+ *   - allowlist.mts — paths-allowlist.yml parser + matcher
+ *   - scan-code.mts — Rule A + B (.mts / .cts)
  *   - scan-workflow.mts — Rule C + D (.github/workflows/*.yml)
- *   - scan-script.mts   — Rule G (Makefile / Dockerfile / shell)
- *   - rules.mts         — Rule F (cross-file shape repetition)
- *   - state.mts         — shared findings array + push/get helpers
- *   - types.mts         — Finding + AllowlistEntry interfaces
- *
- * Rules enforced (full prose lives in each scanner module):
- *
- *   A — Multi-stage path constructed inline.
- *   B — Cross-package path traversal into a sibling's build output.
- *   C — Hand-built workflow path outside a "Compute paths" step.
- *   D — Comment-encoded fully-qualified path.
- *   F — Same path shape constructed in 2+ files.
- *   G — Hand-built paths in Makefiles, Dockerfiles, shell scripts.
- *
- * Allowlist: `.github/paths-allowlist.yml`. Each entry needs a
- * `reason` so the list stays audit-able. Patterns are deliberately
- * narrow — entries should be specific, not blanket.
- *
- * Usage:
- *   node scripts/check-paths.mts             # default: report + fail
- *   node scripts/check-paths.mts --explain   # long-form explanation
- *   node scripts/check-paths.mts --json      # machine-readable
- *   node scripts/check-paths.mts --quiet     # silent on clean
- *
- * Exit codes:
- *   0 — clean (no findings, or every finding is allowlisted)
- *   1 — findings present
- *   2 — gate itself crashed
+ *   - scan-script.mts — Rule G (Makefile / Dockerfile / shell)
+ *   - rules.mts — Rule F (cross-file shape repetition)
+ *   - state.mts — shared findings array + push/get helpers
+ *   - types.mts — Finding + AllowlistEntry interfaces Rules enforced (full prose
+ *     lives in each scanner module): A — Multi-stage path constructed inline. B
+ *     — Cross-package path traversal into a sibling's build output. C —
+ *     Hand-built workflow path outside a "Compute paths" step. D —
+ *     Comment-encoded fully-qualified path. F — Same path shape constructed in
+ *     2+ files. G — Hand-built paths in Makefiles, Dockerfiles, shell scripts.
+ *     Allowlist: `.github/paths-allowlist.yml`. Each entry needs a `reason` so
+ *     the list stays audit-able. Patterns are deliberately narrow — entries
+ *     should be specific, not blanket. Usage: node scripts/check-paths.mts #
+ *     default: report + fail node scripts/check-paths.mts --explain # long-form
+ *     explanation node scripts/check-paths.mts --json # machine-readable node
+ *     scripts/check-paths.mts --quiet # silent on clean Exit codes: 0 — clean
+ *     (no findings, or every finding is allowlisted) 1 — findings present 2 —
+ *     gate itself crashed
  */
 
 import { existsSync } from 'node:fs'

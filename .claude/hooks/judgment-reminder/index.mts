@@ -75,9 +75,12 @@ async function loadCompromise(): Promise<NlpFn | null> {
 // don't false-positive. The compromise pattern matches:
 //   - (i|we) + (could|might|may)
 //   - sentence-initial perhaps/maybe + we/I/it
-const HEDGE_VERB_REGEX = /\b(i|we)\s+(could|might|may)\s+(go|do|try|use|pick|choose|approach|consider)\b/i
+const HEDGE_VERB_REGEX =
+  /\b(i|we)\s+(could|might|may)\s+(go|do|try|use|pick|choose|approach|consider)\b/i
 
-async function detectModalHedges(text: string): Promise<readonly ReminderHit[]> {
+async function detectModalHedges(
+  text: string,
+): Promise<readonly ReminderHit[]> {
   const nlp = await loadCompromise()
   if (!nlp) {
     // Fallback: regex-only. We still catch the most common shape.
@@ -85,11 +88,13 @@ async function detectModalHedges(text: string): Promise<readonly ReminderHit[]> 
     if (!match) {
       return []
     }
-    return [{
-      label: 'modal-verb hedge (regex fallback)',
-      why: 'Modal verbs (could/might/may) used in first-person judgment context. State the position; don\'t hedge.',
-      snippet: extractSnippet(text, match.index, match[0].length),
-    }]
+    return [
+      {
+        label: 'modal-verb hedge (regex fallback)',
+        why: "Modal verbs (could/might/may) used in first-person judgment context. State the position; don't hedge.",
+        snippet: extractSnippet(text, match.index, match[0].length),
+      },
+    ]
   }
 
   // Compromise.js path: walk sentences, flag any that contain a
@@ -117,7 +122,7 @@ async function detectModalHedges(text: string): Promise<readonly ReminderHit[]> 
     }
     hits.push({
       label: 'modal-verb hedge',
-      why: 'First-person modal (could/might/may) used in judgment context. State the position; don\'t hedge.',
+      why: "First-person modal (could/might/may) used in judgment context. State the position; don't hedge.",
       snippet: sentence.length > 80 ? sentence.slice(0, 77) + '…' : sentence,
     })
     // One hit per turn is enough — flag and move on.
@@ -147,7 +152,8 @@ const FIXED_HEDGE_PATTERNS: readonly RuleViolation[] = [
   },
   {
     label: 'either approach works / either way works',
-    regex: /\b(either\s+(approach|way|option|path)\s+works|either\s+is\s+fine)\b/i,
+    regex:
+      /\b(either\s+(approach|way|option|path)\s+works|either\s+is\s+fine)\b/i,
     why: 'False-equivalence hedging. Even when paths are close, name the one with the smaller blast radius and pick it.',
   },
   {

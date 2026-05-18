@@ -1,10 +1,9 @@
 /**
- * @fileoverview Exempt-file patterns for the path-hygiene gate.
- *
- * Lists the files that legitimately enumerate path segments — the
- * canonical constructors (`paths.mts`), build-infra helpers, and the
- * scanners / hooks that READ the segment vocabulary in order to flag
- * everyone else. Pure data + predicate; no I/O.
+ * @file Exempt-file patterns for the path-hygiene gate. Lists the files that
+ *   legitimately enumerate path segments — the canonical constructors
+ *   (`paths.mts`), build-infra helpers, and the scanners / hooks that READ the
+ *   segment vocabulary in order to flag everyone else. Pure data + predicate;
+ *   no I/O.
  */
 
 // File-path patterns that legitimately enumerate path segments.

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/no-inline-logger.
+ * @file Unit tests for socket/no-inline-logger.
  */
 
 import { describe, test } from 'node:test'

@@ -573,7 +573,10 @@ test('splitLines: standalone \\r is preserved (mac classic — out of scope)', (
 test('gitOrThrow: returns stdout on success', () => {
   // `git --version` works in any environment with git on PATH.
   const out = gitOrThrow('--version')
-  assert.ok(out.startsWith('git version'), `expected "git version ...", got ${out}`)
+  assert.ok(
+    out.startsWith('git version'),
+    `expected "git version ...", got ${out}`,
+  )
 })
 
 test('gitOrThrow: throws on non-zero exit', () => {

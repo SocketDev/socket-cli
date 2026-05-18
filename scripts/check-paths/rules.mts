@@ -1,15 +1,12 @@
 /**
- * @fileoverview Cross-file rule promotions for the path-hygiene gate.
- *
- * Rule F — same path shape constructed in 2+ DISTINCT files. Runs
- * after every scanner has populated `state.findings`. Walks the
- * Rule-A findings (the only ones that produce comparable snippets),
- * groups by the literal-segment shape of each snippet, and when a
- * shape appears in two or more distinct files, promotes those
- * findings to Rule F with a sharper message.
- *
- * Two hand-builds in a single file stay Rule A; the violation is
- * cross-FILE duplication of the construction.
+ * @file Cross-file rule promotions for the path-hygiene gate. Rule F — same
+ *   path shape constructed in 2+ DISTINCT files. Runs after every scanner has
+ *   populated `state.findings`. Walks the Rule-A findings (the only ones that
+ *   produce comparable snippets), groups by the literal-segment shape of each
+ *   snippet, and when a shape appears in two or more distinct files, promotes
+ *   those findings to Rule F with a sharper message. Two hand-builds in a
+ *   single file stay Rule A; the violation is cross-FILE duplication of the
+ *   construction.
  */
 
 import { findings } from './state.mts'

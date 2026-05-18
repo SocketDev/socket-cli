@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/prefer-cached-for-loop.
+ * @file Unit tests for socket/prefer-cached-for-loop.
  */
 
 import { describe, test } from 'node:test'

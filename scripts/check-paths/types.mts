@@ -1,10 +1,8 @@
 /**
- * @fileoverview Shared types for the path-hygiene gate.
- *
- * `Finding` is the canonical finding shape every scanner produces;
- * `AllowlistEntry` mirrors the YAML row shape in
- * `.github/paths-allowlist.yml`. Pure types — no runtime; importing
- * this file has zero side effects.
+ * @file Shared types for the path-hygiene gate. `Finding` is the canonical
+ *   finding shape every scanner produces; `AllowlistEntry` mirrors the YAML row
+ *   shape in `.github/paths-allowlist.yml`. Pure types — no runtime; importing
+ *   this file has zero side effects.
  */
 
 export type Finding = {

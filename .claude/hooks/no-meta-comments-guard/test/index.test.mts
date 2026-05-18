@@ -35,9 +35,16 @@ test('non-Edit/Write tool calls pass through', async () => {
 })
 
 test('non-source files pass through (markdown / json / yaml)', async () => {
-  for (const file_path of ['/x/docs/readme.md', '/x/package.json', '/x/.github/workflows/ci.yml']) {
+  for (const file_path of [
+    '/x/docs/readme.md',
+    '/x/package.json',
+    '/x/.github/workflows/ci.yml',
+  ]) {
     const result = await runHook({
-      tool_input: { file_path, new_string: '// Plan: do the thing\nconst x = 1' },
+      tool_input: {
+        file_path,
+        new_string: '// Plan: do the thing\nconst x = 1',
+      },
       tool_name: 'Edit',
     })
     assert.strictEqual(result.code, 0, file_path)
@@ -48,7 +55,8 @@ test('// Plan: prefix is blocked with strip-prefix suggestion', async () => {
   const result = await runHook({
     tool_input: {
       file_path: '/x/src/foo.ts',
-      new_string: 'const x = 1\n// Plan: use the cache to avoid re-resolving\nconst y = 2',
+      new_string:
+        'const x = 1\n// Plan: use the cache to avoid re-resolving\nconst y = 2',
     },
     tool_name: 'Edit',
   })
@@ -95,7 +103,8 @@ test('// removed X is blocked (removed-code pattern)', async () => {
   const result = await runHook({
     tool_input: {
       file_path: '/x/src/foo.ts',
-      new_string: '// removed: old behavior used a Map here\nconst data = new Set()',
+      new_string:
+        '// removed: old behavior used a Map here\nconst data = new Set()',
     },
     tool_name: 'Edit',
   })
@@ -107,7 +116,8 @@ test('// previously called X is blocked', async () => {
   const result = await runHook({
     tool_input: {
       file_path: '/x/src/foo.ts',
-      new_string: '// previously called fooSync; now async\nasync function foo() {}',
+      new_string:
+        '// previously called fooSync; now async\nasync function foo() {}',
     },
     tool_name: 'Edit',
   })
@@ -118,7 +128,8 @@ test('// used to be sync, made async in 6.0 is blocked', async () => {
   const result = await runHook({
     tool_input: {
       file_path: '/x/src/foo.ts',
-      new_string: '// used to be sync, made async in 6.0\nasync function foo() {}',
+      new_string:
+        '// used to be sync, made async in 6.0\nasync function foo() {}',
     },
     tool_name: 'Edit',
   })
@@ -129,7 +140,8 @@ test('// no longer needed because X is blocked', async () => {
   const result = await runHook({
     tool_input: {
       file_path: '/x/src/foo.ts',
-      new_string: '// no longer needed because Node 26 ships this natively\nlet polyfill: unknown',
+      new_string:
+        '// no longer needed because Node 26 ships this natively\nlet polyfill: unknown',
     },
     tool_name: 'Edit',
   })
@@ -196,7 +208,8 @@ test('// "tier" inside content (not a phase marker) passes through', async () =>
   const result = await runHook({
     tool_input: {
       file_path: '/x/src/foo.ts',
-      new_string: '// Cache tier selection happens in resolveTier()\nconst t = 0',
+      new_string:
+        '// Cache tier selection happens in resolveTier()\nconst t = 0',
     },
     tool_name: 'Edit',
   })
@@ -208,7 +221,7 @@ test('normal explanatory comments pass through', async () => {
     '// Use the cache to avoid re-resolving on every call.\nconst cache = new Map()',
     "// Falls back to the JS impl when smol-versions isn't available.\nconst v = getSmol()",
     '// V8 inlines this when the call site is monomorphic.\nfunction hot() {}',
-    "/* Multi-line block comments describing the invariant\n   are also fine. */\nfunction f() {}",
+    '/* Multi-line block comments describing the invariant\n   are also fine. */\nfunction f() {}',
   ]) {
     const result = await runHook({
       tool_input: { file_path: '/x/src/foo.ts', new_string: text },

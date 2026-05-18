@@ -1,26 +1,19 @@
 /**
- * @fileoverview Ban inline `getDefaultLogger().<method>(...)`. The
- * logger must be hoisted at the top of the file:
- *   const logger = getDefaultLogger()
- *   ...
- *   logger.success('...')
+ * @file Ban inline `getDefaultLogger().<method>(...)`. The logger must be
+ *   hoisted at the top of the file: const logger = getDefaultLogger() ...
+ *   logger.success('...') Inline `getDefaultLogger().success(...)` re-resolves
+ *   the logger on every call and reads inconsistently. The hoisted form is the
+ *   fleet-canonical pattern. Autofix: rewrites `getDefaultLogger().<method>` →
+ *   `logger.<method>` AND inserts the missing pieces in one go:
  *
- * Inline `getDefaultLogger().success(...)` re-resolves the logger on
- * every call and reads inconsistently. The hoisted form is the
- * fleet-canonical pattern.
- *
- * Autofix: rewrites `getDefaultLogger().<method>` → `logger.<method>`
- * AND inserts the missing pieces in one go:
- *
- *   1. `import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'`
- *      — appended after the last existing top-level import (or at the
- *      top of the file if there are none).
- *   2. `const logger = getDefaultLogger()` — appended after the import
- *      block (so `logger` is hoisted at module scope).
- *
- * Each inline call site emits its own fix independently. ESLint's
- * autofixer dedupes overlapping inserts, so multiple violations in the
- * same file collapse the import + hoist into a single insertion.
+ *   1. `import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'` —
+ *      appended after the last existing top-level import (or at the top of the
+ *      file if there are none).
+ *   2. `const logger = getDefaultLogger()` — appended after the import block (so
+ *      `logger` is hoisted at module scope). Each inline call site emits its
+ *      own fix independently. ESLint's autofixer dedupes overlapping inserts,
+ *      so multiple violations in the same file collapse the import + hoist into
+ *      a single insertion.
  */
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
@@ -31,7 +24,9 @@ const LOGGER_IMPORT_LINE =
   "import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'"
 const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',

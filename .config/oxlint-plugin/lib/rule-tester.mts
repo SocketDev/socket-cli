@@ -1,26 +1,19 @@
 /**
- * @fileoverview RuleTester for the fleet's oxlint plugin rules.
+ * @file RuleTester for the fleet's oxlint plugin rules. Oxlint doesn't yet ship
+ *   its own RuleTester (oxc-project/oxc#16018 tracks the planned
+ *   `@oxlint/plugin-dev` package). This module is a dummy stand-in modeled on
+ *   ESLint's RuleTester API — same `valid` / `invalid` array shape, same
+ *   per-case fields (`code`, `errors`, `output`, `filename`). How it works:
  *
- * Oxlint doesn't yet ship its own RuleTester (oxc-project/oxc#16018
- * tracks the planned `@oxlint/plugin-dev` package). This module is a
- * dummy stand-in modeled on ESLint's RuleTester API — same `valid` /
- * `invalid` array shape, same per-case fields (`code`, `errors`,
- * `output`, `filename`).
- *
- * How it works:
- *
- *   1. For each test case, write the fixture to an OS-temp dir
- *      (mkdtemp).
- *   2. Write a tiny `.oxlintrc.json` that enables ONLY the rule
- *      under test, plus `jsPlugins: [<plugin-path>]`.
- *   3. Spawn `oxlint --config <tmpdir>/.oxlintrc.json <fixture>` and
- *      capture stdout.
+ *   1. For each test case, write the fixture to an OS-temp dir (mkdtemp).
+ *   2. Write a tiny `.oxlintrc.json` that enables ONLY the rule under test, plus
+ *      `jsPlugins: [<plugin-path>]`.
+ *   3. Spawn `oxlint --config <tmpdir>/.oxlintrc.json <fixture>` and capture
+ *      stdout.
  *   4. Compare findings against the test case's `errors` array.
- *   5. Clean up via `safeDeleteSync` (fleet rule: never `fs.rm` /
- *      `fs.unlink` / `rm -rf` directly).
- *
- * Cleanup runs in a try/finally so a failing assertion doesn't
- * leak tmp dirs.
+ *   5. Clean up via `safeDeleteSync` (fleet rule: never `fs.rm` / `fs.unlink` /
+ *      `rm -rf` directly). Cleanup runs in a try/finally so a failing assertion
+ *      doesn't leak tmp dirs.
  *
  * @example
  *   import { RuleTester } from '../lib/rule-tester.mts'
@@ -59,28 +52,33 @@ const PLUGIN_INDEX = path.resolve(
 )
 
 export interface ValidTestCase {
-  /** Source to lint. */
+  /**
+   * Source to lint.
+   */
   readonly code: string
-  /** Optional override for the fixture filename (e.g. `'.cts'` cases). */
+  /**
+   * Optional override for the fixture filename (e.g. `'.cts'` cases).
+   */
   readonly filename?: string | undefined
-  /** Human-readable label shown in failure output. */
+  /**
+   * Human-readable label shown in failure output.
+   */
   readonly name?: string | undefined
 }
 
 export interface InvalidTestCase extends ValidTestCase {
   /**
-   * Expected error matches. Each entry must match by `messageId`,
-   * `message`, or both. Order-sensitive — oxlint emits findings in
-   * source order.
+   * Expected error matches. Each entry must match by `messageId`, `message`, or
+   * both. Order-sensitive — oxlint emits findings in source order.
    */
   readonly errors: ReadonlyArray<{
     readonly messageId?: string | undefined
     readonly message?: string | undefined
   }>
   /**
-   * Expected source after autofix. If provided, the tester reruns
-   * `oxlint --fix` against a copy of the fixture and asserts the
-   * result. Omit when the rule has no autofix.
+   * Expected source after autofix. If provided, the tester reruns `oxlint
+   * --fix` against a copy of the fixture and asserts the result. Omit when the
+   * rule has no autofix.
    */
   readonly output?: string | undefined
 }
@@ -91,10 +89,9 @@ export interface RunOpts {
 }
 
 /**
- * Find the `oxlint` binary. Returns undefined when not on PATH —
- * tests skip with a clear note rather than fail (a fresh-laptop
- * checkout shouldn't false-fail before `pnpm install` completes
- * the bin link).
+ * Find the `oxlint` binary. Returns undefined when not on PATH — tests skip
+ * with a clear note rather than fail (a fresh-laptop checkout shouldn't
+ * false-fail before `pnpm install` completes the bin link).
  */
 function resolveOxlintBinary(): string | undefined {
   const r = spawnSync('which', ['oxlint'], { encoding: 'utf8' })
@@ -109,8 +106,8 @@ interface OxlintDiagnostic {
 }
 
 /**
- * Run oxlint against a fixture file with a one-rule config; return
- * the parsed list of findings for THIS rule.
+ * Run oxlint against a fixture file with a one-rule config; return the parsed
+ * list of findings for THIS rule.
  */
 function runOxlint(args: {
   oxlintBin: string
@@ -189,8 +186,8 @@ function runOxlint(args: {
 }
 
 /**
- * Build the minimal .oxlintrc.json that enables ONE socket plugin
- * rule plus the plugin's JS entry point.
+ * Build the minimal .oxlintrc.json that enables ONE socket plugin rule plus the
+ * plugin's JS entry point.
  */
 function buildConfig(ruleName: string): string {
   return JSON.stringify(
@@ -206,10 +203,9 @@ function buildConfig(ruleName: string): string {
 }
 
 /**
- * Default fixture filename derived from the test case's
- * `filename` override or `'fixture.ts'`. ESLint's RuleTester uses
- * `'<input>.js'`; we default to `.ts` since the fleet rules are
- * TS-aware.
+ * Default fixture filename derived from the test case's `filename` override or
+ * `'fixture.ts'`. ESLint's RuleTester uses `'<input>.js'`; we default to `.ts`
+ * since the fleet rules are TS-aware.
  */
 function fixtureFilename(testCase: ValidTestCase): string {
   return testCase.filename ?? 'fixture.ts'
@@ -218,22 +214,18 @@ function fixtureFilename(testCase: ValidTestCase): string {
 /**
  * Compare a single error spec against an emitted diagnostic.
  *
- * Two acceptance paths:
- *   1. `messageId` — strict match against `diag.messageId` when the
- *      oxlint version emits that field (older builds). Recent
- *      builds drop `messageId` from the JSON output entirely, so
- *      a `messageId`-only spec falls through to (2): once the
- *      runner has already filtered diagnostics down to this rule
- *      via `matchesRule`, "the diagnostic is from this rule" is the
- *      same claim "messageId matches" was making.
- *   2. `message` — substring match against `diag.message`. Use this
- *      when the spec wants to assert specific copy text.
+ * Two acceptance paths: 1. `messageId` — strict match against `diag.messageId`
+ * when the oxlint version emits that field (older builds). Recent builds drop
+ * `messageId` from the JSON output entirely, so a `messageId`-only spec falls
+ * through to (2): once the runner has already filtered diagnostics down to this
+ * rule via `matchesRule`, "the diagnostic is from this rule" is the same claim
+ * "messageId matches" was making. 2. `message` — substring match against
+ * `diag.message`. Use this when the spec wants to assert specific copy text.
  *
- * If the spec has neither, accept the diagnostic (the runner has
- * already filtered to this rule, so the presence of a diagnostic is
- * itself the assertion). This is how a bare `{ messageId: 'foo' }`
- * spec keeps working under oxlint builds that no longer emit
- * `messageId` in JSON.
+ * If the spec has neither, accept the diagnostic (the runner has already
+ * filtered to this rule, so the presence of a diagnostic is itself the
+ * assertion). This is how a bare `{ messageId: 'foo' }` spec keeps working
+ * under oxlint builds that no longer emit `messageId` in JSON.
  */
 function errorMatches(
   spec: { messageId?: string | undefined; message?: string | undefined },
@@ -260,10 +252,10 @@ interface RuleModule {
 
 export class RuleTester {
   /**
-   * Execute the test suite. Throws on the first failure (matches
-   * node:test expectations — a failing test bubbles up as a thrown
-   * assertion error). For per-case isolation use describe() blocks
-   * in your test file and call .run() inside each.
+   * Execute the test suite. Throws on the first failure (matches node:test
+   * expectations — a failing test bubbles up as a thrown assertion error). For
+   * per-case isolation use describe() blocks in your test file and call .run()
+   * inside each.
    */
   run(ruleName: string, _rule: RuleModule, opts: RunOpts): void {
     const oxlintBin = resolveOxlintBinary()

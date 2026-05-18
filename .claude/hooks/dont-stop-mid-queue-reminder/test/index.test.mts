@@ -65,7 +65,7 @@ test('FLAGS "honest stopping point"', () => {
 test('FLAGS "what\'s next?"', () => {
   const transcriptPath = makeTranscript([
     { role: 'user', text: 'work the queue' },
-    { role: 'assistant', text: 'Done with task A. What\'s next?' },
+    { role: 'assistant', text: "Done with task A. What's next?" },
   ])
   const { stderr, exitCode } = runHook(transcriptPath)
   assert.equal(exitCode, 0)
@@ -75,7 +75,10 @@ test('FLAGS "what\'s next?"', () => {
 test('FLAGS "want me to continue?"', () => {
   const transcriptPath = makeTranscript([
     { role: 'user', text: 'do them all' },
-    { role: 'assistant', text: 'Hook built. Want me to continue with the next one?' },
+    {
+      role: 'assistant',
+      text: 'Hook built. Want me to continue with the next one?',
+    },
   ])
   const { stderr, exitCode } = runHook(transcriptPath)
   assert.equal(exitCode, 0)
@@ -87,7 +90,7 @@ test('FLAGS "pick a next item"', () => {
     { role: 'user', text: 'go through the list' },
     {
       role: 'assistant',
-      text: 'I\'ve finished hook 5. Pick the next item from the queue.',
+      text: "I've finished hook 5. Pick the next item from the queue.",
     },
   ])
   const { stderr, exitCode } = runHook(transcriptPath)
@@ -204,7 +207,7 @@ test('FLAGS "I\'ll hold pending your call"', () => {
     { role: 'user', text: 'do them all' },
     {
       role: 'assistant',
-      text: 'Tier 2 work complete. I\'ll hold pending your call on which one is next.',
+      text: "Tier 2 work complete. I'll hold pending your call on which one is next.",
     },
   ])
   const { stderr, exitCode } = runHook(transcriptPath)
@@ -266,7 +269,7 @@ test('does NOT fire on technical "holding the lock"', () => {
 
 test('SKIPS when user said "stop" in recent turn', () => {
   const transcriptPath = makeTranscript([
-    { role: 'user', text: 'okay let\'s stop here for today' },
+    { role: 'user', text: "okay let's stop here for today" },
     { role: 'assistant', text: 'Stopping here. Session summary follows.' },
   ])
   const { stderr, exitCode } = runHook(transcriptPath)
@@ -286,7 +289,7 @@ test('SKIPS when user said "pause"', () => {
 
 test('SKIPS when user said "we\'re done"', () => {
   const transcriptPath = makeTranscript([
-    { role: 'user', text: 'okay we\'re done for today' },
+    { role: 'user', text: "okay we're done for today" },
     { role: 'assistant', text: 'Got it. Final session state below.' },
   ])
   const { stderr, exitCode } = runHook(transcriptPath)
@@ -296,7 +299,7 @@ test('SKIPS when user said "we\'re done"', () => {
 
 test('SKIPS when user said "enough for now"', () => {
   const transcriptPath = makeTranscript([
-    { role: 'user', text: 'that\'s enough for now' },
+    { role: 'user', text: "that's enough for now" },
     { role: 'assistant', text: 'Understood. Stopping here.' },
   ])
   const { stderr, exitCode } = runHook(transcriptPath)
@@ -307,7 +310,10 @@ test('SKIPS when user said "enough for now"', () => {
 test('does NOT fire on innocuous text', () => {
   const transcriptPath = makeTranscript([
     { role: 'user', text: 'list the files' },
-    { role: 'assistant', text: 'Here are the files in the directory: a.ts, b.ts.' },
+    {
+      role: 'assistant',
+      text: 'Here are the files in the directory: a.ts, b.ts.',
+    },
   ])
   const { stderr, exitCode } = runHook(transcriptPath)
   assert.equal(exitCode, 0)

@@ -73,8 +73,7 @@ function isWorkflowPath(filePath: string): boolean {
 //   on:
 //     pull_request_target:
 //       types: [...]
-const TRIGGER_RE =
-  /^\s*on\s*:[\s\S]*?\bpull_request_target\b/m
+const TRIGGER_RE = /^\s*on\s*:[\s\S]*?\bpull_request_target\b/m
 
 // 2. `actions/checkout` with a ref pointing at the fork's HEAD.
 // Common shapes in YAML:
@@ -172,16 +171,17 @@ interface Finding {
 }
 
 /**
- * Scan a workflow body and return findings. Returns empty when the
- * dangerous combo isn't present.
+ * Scan a workflow body and return findings. Returns empty when the dangerous
+ * combo isn't present.
  *
  * Three preconditions must hold for ANY finding to fire:
- *   1. on: pull_request_target
- *   2. actions/checkout with a fork-HEAD ref
- *   3. one or more execute-fork-code steps
  *
- * If only (1) and (2) hold, zizmor's `dangerous-triggers` already
- * surfaces it. The execute-fork-code step is what this hook adds.
+ * 1. On: pull_request_target
+ * 2. Actions/checkout with a fork-HEAD ref
+ * 3. One or more execute-fork-code steps
+ *
+ * If only (1) and (2) hold, zizmor's `dangerous-triggers` already surfaces it.
+ * The execute-fork-code step is what this hook adds.
  */
 export function findUnsafeForkExecution(content: string): Finding[] {
   if (!TRIGGER_RE.test(content)) {
@@ -262,13 +262,13 @@ process.stdin.on('end', () => {
     lines.push(`  File: ${path.basename(filePath)}`)
     lines.push('')
     lines.push('  Workflow combines all three high-risk patterns:')
-    lines.push('    1. on: pull_request_target  (runs in BASE repo context with secrets)')
+    lines.push(
+      '    1. on: pull_request_target  (runs in BASE repo context with secrets)',
+    )
     lines.push(
       '    2. actions/checkout with ref: ${{ github.event.pull_request.head.* }}',
     )
-    lines.push(
-      '       (checks out the FORK code — attacker-controlled)',
-    )
+    lines.push('       (checks out the FORK code — attacker-controlled)')
     lines.push('    3. Subsequent execute-fork-code step(s):')
     for (const f of findings) {
       lines.push(`         Line ${f.line} (${f.cmd}): ${f.snippet}`)
@@ -279,9 +279,11 @@ process.stdin.on('end', () => {
       '    The fork can declare a `prepare` / `postinstall` script (or a build',
     )
     lines.push(
-      '    step) that exfiltrates the base repo\'s secrets. Even `--ignore-scripts`',
+      "    step) that exfiltrates the base repo's secrets. Even `--ignore-scripts`",
     )
-    lines.push('    only stops install-time execution — a build still runs fork code.')
+    lines.push(
+      '    only stops install-time execution — a build still runs fork code.',
+    )
     lines.push('')
     lines.push('  Safer patterns:')
     lines.push(
@@ -294,8 +296,12 @@ process.stdin.on('end', () => {
     lines.push(
       '    b. Gate the pull_request_target trigger on `labeled` so only maintainers',
     )
-    lines.push('       can run it: `on: pull_request_target: types: [labeled]`.')
-    lines.push('    c. Never check out the fork in pull_request_target context.')
+    lines.push(
+      '       can run it: `on: pull_request_target: types: [labeled]`.',
+    )
+    lines.push(
+      '    c. Never check out the fork in pull_request_target context.',
+    )
     lines.push('')
     lines.push(
       '  Reference: https://bsky.app/profile/43081j.com/post/3mlnme43qnc2e',

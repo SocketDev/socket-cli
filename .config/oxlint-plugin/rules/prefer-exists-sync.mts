@@ -1,33 +1,28 @@
 /**
- * @fileoverview Per CLAUDE.md "File existence" rule: use `existsSync`
- * from `node:fs`. Never `fs.access` / `fs.stat`-for-existence / async
- * `fileExists` wrapper.
+ * @file Per CLAUDE.md "File existence" rule: use `existsSync` from `node:fs`.
+ *   Never `fs.access` / `fs.stat`-for-existence / async `fileExists` wrapper.
+ *   Detects:
  *
- * Detects:
  *   - `fs.access(...)` / `fs.accessSync(...)` / `fs.promises.access(...)`
- *   - `fs.stat(...)` / `fs.statSync(...)` / `fs.promises.stat(...)`
- *     when the result is being used in a boolean / try-catch context
- *     (a strong signal of "is it there"). We can't perfectly detect
- *     all existence-checks, but flagging every `access(...)` and
- *     `statSync(...)` covers the common cases — false positives are
- *     fixed by switching to existsSync, which is harmless.
+ *   - `fs.stat(...)` / `fs.statSync(...)` / `fs.promises.stat(...)` when the
+ *     result is being used in a boolean / try-catch context (a strong signal of
+ *     "is it there"). We can't perfectly detect all existence-checks, but
+ *     flagging every `access(...)` and `statSync(...)` covers the common cases
+ *     — false positives are fixed by switching to existsSync, which is
+ *     harmless.
  *   - Custom wrappers: `fileExists(p)` / `pathExists(p)` / `isFile(p)` /
- *     `isDir(p)`.
- *
- * Autofix scope:
- *   - **Deterministic**: custom wrappers (`fileExists(p)` /
- *     `pathExists(p)` / `isFile(p)` / `isDir(p)`) are rewritten to
- *     `existsSync(p)` with `import { existsSync } from 'node:fs'`
- *     injected. Same arity, same boolean semantics, drop-in safe.
- *   - **AI-handled** (Step 4 of `pnpm run fix`): `fs.access` /
- *     `fs.stat` rewrites. These flip control flow — `try { await
- *     fs.access(p); … } catch { … }` becomes `if (existsSync(p))
- *     { … } else { … }`, and `const s = await fs.stat(p)` with
- *     metadata access (`s.size`, `s.isDirectory()`) needs to stay
- *     a stat call. The right rewrite depends on the surrounding
- *     code, but the pattern is mechanical enough for the AI step
- *     to handle reliably with the canonical guidance in
- *     scripts/ai-lint-fix.mts.
+ *     `isDir(p)`. Autofix scope:
+ *   - **Deterministic**: custom wrappers (`fileExists(p)` / `pathExists(p)` /
+ *     `isFile(p)` / `isDir(p)`) are rewritten to `existsSync(p)` with `import {
+ *     existsSync } from 'node:fs'` injected. Same arity, same boolean
+ *     semantics, drop-in safe.
+ *   - **AI-handled** (Step 4 of `pnpm run fix`): `fs.access` / `fs.stat`
+ *     rewrites. These flip control flow — `try { await fs.access(p); … } catch
+ *     { … }` becomes `if (existsSync(p)) { … } else { … }`, and `const s =
+ *     await fs.stat(p)` with metadata access (`s.size`, `s.isDirectory()`)
+ *     needs to stay a stat call. The right rewrite depends on the surrounding
+ *     code, but the pattern is mechanical enough for the AI step to handle
+ *     reliably with the canonical guidance in scripts/ai-lint-fix.mts.
  */
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
@@ -40,7 +35,9 @@ const WRAPPER_NAMES = new Set(['fileExists', 'pathExists', 'isFile', 'isDir'])
 
 const EXISTS_SYNC_IMPORT_LINE = "import { existsSync } from 'node:fs'"
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',
@@ -87,14 +84,13 @@ const rule = {
     }
 
     /**
-     * Wrappers are only fixable when:
-     *   - exactly 1 argument (matches existsSync arity)
-     *   - argument is not a SpreadElement
+     * Wrappers are only fixable when: - exactly 1 argument (matches existsSync
+     * arity) - argument is not a SpreadElement.
      *
-     * The call is often wrapped in `await` — that's fine. Replacing
-     * `await fileExists(p)` with `existsSync(p)` (no await) is the
-     * intended rewrite; existsSync is sync and the surrounding `await`
-     * collapses to a no-op on a non-promise value.
+     * The call is often wrapped in `await` — that's fine. Replacing `await
+     * fileExists(p)` with `existsSync(p)` (no await) is the intended rewrite;
+     * existsSync is sync and the surrounding `await` collapses to a no-op on a
+     * non-promise value.
      */
     function isFixableWrapperCall(node: AstNode) {
       if (node.arguments.length !== 1) {

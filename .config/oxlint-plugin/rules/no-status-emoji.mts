@@ -1,17 +1,15 @@
 /* oxlint-disable socket/no-status-emoji -- this file IS the rule definition; emoji literals are lookup-table data, not real usage. */
 
 /**
- * @fileoverview Ban status-symbol emoji literals (✓ ✔ ❌ ✗ ⚠ ⚠️ ❗ ✅
- * ❎ ☑) inside string literals. The `@socketsecurity/lib-stable/logger`
- * package owns the visual prefix via `logger.success()` /
- * `logger.fail()` / `logger.warn()` etc. Hand-rolling the symbols
- * fragments the visual style and bypasses theme-aware color.
- *
- * Autofix: when the literal is the FIRST argument to `console.log` /
- * `console.error` / `logger.log` (no semantic logger method specified)
- * AND only one symbol leads the string, rewrite to the matching
- * `logger.<method>(...)`. Otherwise emit a warning without a fix
- * (the human picks the right method).
+ * @file Ban status-symbol emoji literals (✓ ✔ ❌ ✗ ⚠ ⚠️ ❗ ✅ ❎ ☑) inside string
+ *   literals. The `@socketsecurity/lib-stable/logger` package owns the visual
+ *   prefix via `logger.success()` / `logger.fail()` / `logger.warn()` etc.
+ *   Hand-rolling the symbols fragments the visual style and bypasses
+ *   theme-aware color. Autofix: when the literal is the FIRST argument to
+ *   `console.log` / `console.error` / `logger.log` (no semantic logger method
+ *   specified) AND only one symbol leads the string, rewrite to the matching
+ *   `logger.<method>(...)`. Otherwise emit a warning without a fix (the human
+ *   picks the right method).
  */
 
 /* oxlint-disable socket/no-status-emoji -- this rule defines the emoji table it bans. */
@@ -38,7 +36,9 @@ const EMOJI_LEAD_RE = new RegExp(
   `^\\s*(${EMOJI.map(e => e.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\s*`,
 )
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',
@@ -71,9 +71,9 @@ const rule = {
     }
 
     /**
-     * If the string `value` LEADS with a known emoji + whitespace,
-     * return { emoji, restAfter } where restAfter is the string with
-     * the leading emoji+spaces stripped. Otherwise null.
+     * If the string `value` LEADS with a known emoji + whitespace, return {
+     * emoji, restAfter } where restAfter is the string with the leading
+     * emoji+spaces stripped. Otherwise null.
      */
     interface LeadInfo {
       emoji: string

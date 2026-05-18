@@ -1,21 +1,18 @@
 /**
- * @fileoverview Ban `console.log` / `console.error` / `console.warn`
- * / `console.info` / `console.debug` / `console.trace`. The fleet uses
- * `getDefaultLogger()` from `@socketsecurity/lib-stable/logger` — those
- * methods emit theme-aware coloring + canonical symbols.
+ * @file Ban `console.log` / `console.error` / `console.warn` / `console.info` /
+ *   `console.debug` / `console.trace`. The fleet uses `getDefaultLogger()` from
+ *   `@socketsecurity/lib-stable/logger` — those methods emit theme-aware
+ *   coloring + canonical symbols. Autofix: rewrites `console.<method>(...)` →
+ *   `logger.<loggerMethod>(...)` AND inserts the missing pieces in one go:
  *
- * Autofix: rewrites `console.<method>(...)` → `logger.<loggerMethod>(...)`
- * AND inserts the missing pieces in one go:
- *
- *   1. `import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'`
- *      — appended after the last existing top-level import (or at the
- *      top of the file if there are none).
- *   2. `const logger = getDefaultLogger()` — appended after the import
- *      block (so `logger` is hoisted at module scope).
- *
- * Each `console.<method>(...)` call site emits its own fix
- * independently. ESLint's autofixer dedupes overlapping inserts (the
- * import line + hoist), so the visit order is irrelevant.
+ *   1. `import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'` —
+ *      appended after the last existing top-level import (or at the top of the
+ *      file if there are none).
+ *   2. `const logger = getDefaultLogger()` — appended after the import block (so
+ *      `logger` is hoisted at module scope). Each `console.<method>(...)` call
+ *      site emits its own fix independently. ESLint's autofixer dedupes
+ *      overlapping inserts (the import line + hoist), so the visit order is
+ *      irrelevant.
  */
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
@@ -35,7 +32,9 @@ const LOGGER_IMPORT_LINE =
   "import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'"
 const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',

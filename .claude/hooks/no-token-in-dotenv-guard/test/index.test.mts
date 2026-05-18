@@ -54,7 +54,8 @@ test('blocks SOCKET_API_TOKEN in .env', async () => {
   const result = await runHook({
     tool_input: {
       file_path: '/x/proj/.env',
-      new_string: 'NODE_ENV=development\nSOCKET_API_TOKEN=sktsec_abc123def456\n',
+      new_string:
+        'NODE_ENV=development\nSOCKET_API_TOKEN=sktsec_abc123def456\n',
     },
     tool_name: 'Write',
   })
@@ -164,7 +165,14 @@ test('allows <your-token> placeholder', async () => {
 })
 
 test('allows xxx / TODO / REPLACE_ME placeholders', async () => {
-  for (const placeholder of ['xxx', 'XXX', 'TODO', 'REPLACE_ME', 'REPLACE-ME', 'your-key']) {
+  for (const placeholder of [
+    'xxx',
+    'XXX',
+    'TODO',
+    'REPLACE_ME',
+    'REPLACE-ME',
+    'your-key',
+  ]) {
     const result = await runHook({
       tool_input: {
         file_path: '/x/proj/.env',

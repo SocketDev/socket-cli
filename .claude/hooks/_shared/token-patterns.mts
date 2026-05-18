@@ -1,36 +1,28 @@
 /**
- * @fileoverview Shared catalog of secret-bearing env-var key names.
- *
- * Used by every hook that scans for accidentally-checked-in or
- * accidentally-printed credentials:
+ * @file Shared catalog of secret-bearing env-var key names. Used by every hook
+ *   that scans for accidentally-checked-in or accidentally-printed
+ *   credentials:
  *
  *   - token-guard (Bash): blocks commands that print these to stdout.
- *   - no-token-in-dotenv-guard (Edit|Write): blocks writing these to
- *     `.env` / `.env.local` / similar dotfiles.
- *   - (future) repo-wide secret scanner: same catalog feeds a scripts/
- *     gate that walks the working tree at commit time.
- *
- * Keep the catalog narrow + auditable. Adding a name here means
- * every consumer will scan for it; false-positives on legitimate
- * config keys (e.g. `FOO_API_VERSION=2.1`) are real friction. Names
- * follow the published env-var convention of each tool — when in
- * doubt, prefer the official docs over guessed shapes.
- *
- * Layout:
- *
- *   - Per-category arrays so consumers can opt out of specific
- *     categories if needed (e.g. an AWS-only repo might not care
- *     about Linear).
+ *   - no-token-in-dotenv-guard (Edit|Write): blocks writing these to `.env` /
+ *     `.env.local` / similar dotfiles.
+ *   - (future) repo-wide secret scanner: same catalog feeds a scripts/ gate that
+ *     walks the working tree at commit time. Keep the catalog narrow +
+ *     auditable. Adding a name here means every consumer will scan for it;
+ *     false-positives on legitimate config keys (e.g. `FOO_API_VERSION=2.1`)
+ *     are real friction. Names follow the published env-var convention of each
+ *     tool — when in doubt, prefer the official docs over guessed shapes.
+ *     Layout:
+ *   - Per-category arrays so consumers can opt out of specific categories if
+ *     needed (e.g. an AWS-only repo might not care about Linear).
  *   - `ALL_TOKEN_KEY_PATTERNS` is the flat union used by default.
- *   - `GENERIC_TOKEN_SUFFIX_RE` catches anything ending in
- *     `_TOKEN` / `_KEY` / `_SECRET` after the named lists; consumers
- *     decide whether to include it. The trade-off: catches more
- *     leaks but also fires on `JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY----`
- *     etc. The named lists are the recommended primary pass.
- *
- * If you need to add a name, add it to the matching category. If
- * the category doesn't exist yet, add it (with a comment naming the
- * vendor / product) — don't dump it into MISC.
+ *   - `GENERIC_TOKEN_SUFFIX_RE` catches anything ending in `_TOKEN` / `_KEY` /
+ *     `_SECRET` after the named lists; consumers decide whether to include it.
+ *     The trade-off: catches more leaks but also fires on
+ *     `JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY----` etc. The named lists are the
+ *     recommended primary pass. If you need to add a name, add it to the
+ *     matching category. If the category doesn't exist yet, add it (with a
+ *     comment naming the vendor / product) — don't dump it into MISC.
  */
 
 // ── Socket fleet ─────────────────────────────────────────────────────
@@ -149,8 +141,8 @@ export const CI_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
 ]
 
 /**
- * Flat union of every named category above. Default catalog for
- * consumers that don't need per-category granularity.
+ * Flat union of every named category above. Default catalog for consumers that
+ * don't need per-category granularity.
  */
 export const ALL_TOKEN_KEY_PATTERNS: ReadonlyArray<RegExp> = [
   ...SOCKET_FLEET_TOKEN_PATTERNS,
@@ -167,25 +159,23 @@ export const ALL_TOKEN_KEY_PATTERNS: ReadonlyArray<RegExp> = [
 ]
 
 /**
- * Fallback: anything that *looks* like a token by suffix. Catches
- * vendors not in the named lists at the cost of false-positives on
- * things like `JWT_PUBLIC_KEY` (which is decidedly NOT a secret).
- * Consumers should use this as an additional pass after the named
- * lists, not in place of them.
+ * Fallback: anything that _looks_ like a token by suffix. Catches vendors not
+ * in the named lists at the cost of false-positives on things like
+ * `JWT_PUBLIC_KEY` (which is decidedly NOT a secret). Consumers should use this
+ * as an additional pass after the named lists, not in place of them.
  *
- * The shape: `<PREFIX>_<SECRET-NOUN>_<KEY|TOKEN|SECRET>` — at least
- * one underscore-separated qualifier word in front of the suffix to
- * avoid matching bare `KEY=`/`TOKEN=` keys (which are usually loop
- * indices, not secrets).
+ * The shape: `<PREFIX>_<SECRET-NOUN>_<KEY|TOKEN|SECRET>` — at least one
+ * underscore-separated qualifier word in front of the suffix to avoid matching
+ * bare `KEY=`/`TOKEN=` keys (which are usually loop indices, not secrets).
  */
 export const GENERIC_TOKEN_SUFFIX_RE =
   /^[A-Z_]*(?:API|AUTH|ACCESS|SECRET|PRIVATE|CLIENT|BOT|WEBHOOK|SESSION)_(?:TOKEN|KEY|SECRET)$/
 
 /**
- * Convenience: returns true if the given key name matches any
- * pattern in `ALL_TOKEN_KEY_PATTERNS`. Doesn't include the generic
- * suffix fallback — callers that want it should test `isTokenKey(key)
- * || GENERIC_TOKEN_SUFFIX_RE.test(key)`.
+ * Convenience: returns true if the given key name matches any pattern in
+ * `ALL_TOKEN_KEY_PATTERNS`. Doesn't include the generic suffix fallback —
+ * callers that want it should test `isTokenKey(key) ||
+ * GENERIC_TOKEN_SUFFIX_RE.test(key)`.
  */
 export function isTokenKey(key: string): boolean {
   for (const re of ALL_TOKEN_KEY_PATTERNS) {
@@ -197,16 +187,15 @@ export function isTokenKey(key: string): boolean {
 }
 
 /**
- * Substring fragments matched case-insensitively against Bash command
- * text by `token-guard`. Different shape from `ALL_TOKEN_KEY_PATTERNS`:
- * those match a parsed KEY= identifier exactly, these match anywhere
- * in arbitrary command text (`curl -H "Authorization: $TOKEN"` →
- * matches "TOKEN" → flag for inspection).
+ * Substring fragments matched case-insensitively against Bash command text by
+ * `token-guard`. Different shape from `ALL_TOKEN_KEY_PATTERNS`: those match a
+ * parsed KEY= identifier exactly, these match anywhere in arbitrary command
+ * text (`curl -H "Authorization: $TOKEN"` → matches "TOKEN" → flag for
+ * inspection).
  *
  * Kept short to minimize false positives. A "PASSWORD" mention in a
- * commit-message body would otherwise trip every commit; token-guard
- * pairs this list with `containsOutsideQuotes()` to skip in-string
- * fragments.
+ * commit-message body would otherwise trip every commit; token-guard pairs this
+ * list with `containsOutsideQuotes()` to skip in-string fragments.
  */
 export const SENSITIVE_NAME_FRAGMENTS: ReadonlyArray<string> = [
   'TOKEN',

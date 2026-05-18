@@ -24,6 +24,7 @@ Apply these rules from CLAUDE.md exactly:
 6. **Error handling**: Sensitive data in error messages. Stack traces exposed to users.
 
 For each finding, report:
+
 - **Severity**: CRITICAL / HIGH / MEDIUM / LOW
 - **Location**: file:line
 - **Issue**: what's wrong

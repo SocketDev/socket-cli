@@ -13,11 +13,11 @@ The fleet runs Node 22.6+ everywhere. Passing the flag is dead weight — it's a
 
 ## What it blocks
 
-| Pattern                                  | Why                                                              |
-| ---------------------------------------- | ---------------------------------------------------------------- |
-| `node --experimental-strip-types foo.ts` | Strip is stable/default; flag is a no-op.                        |
-| `NODE_OPTIONS='--experimental-strip-types' ...` | Same. Captured by the same regex (word-boundary match).    |
-| `pnpm exec node --experimental-strip-types ...` | Same.                                                       |
+| Pattern                                         | Why                                                     |
+| ----------------------------------------------- | ------------------------------------------------------- |
+| `node --experimental-strip-types foo.ts`        | Strip is stable/default; flag is a no-op.               |
+| `NODE_OPTIONS='--experimental-strip-types' ...` | Same. Captured by the same regex (word-boundary match). |
+| `pnpm exec node --experimental-strip-types ...` | Same.                                                   |
 
 ## How
 

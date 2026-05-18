@@ -1,14 +1,10 @@
 /**
- * @fileoverview File-tree walker + regex matcher for the feature-parity
- * scorer.
- *
- * `walkDirFiles` is a depth-first walker that ignores the usual noise
- * directories (`node_modules`, `.git`, `dist`). `countPatternHits` is the
- * regex-scoring loop the feature-parity check uses to compute the code
- * and test pillars.
- *
- * Invalid manifest regexes log a warning instead of throwing, so one bad
- * pattern doesn't sink an otherwise-clean lockstep run.
+ * @file File-tree walker + regex matcher for the feature-parity scorer.
+ *   `walkDirFiles` is a depth-first walker that ignores the usual noise
+ *   directories (`node_modules`, `.git`, `dist`). `countPatternHits` is the
+ *   regex-scoring loop the feature-parity check uses to compute the code and
+ *   test pillars. Invalid manifest regexes log a warning instead of throwing,
+ *   so one bad pattern doesn't sink an otherwise-clean lockstep run.
  */
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'

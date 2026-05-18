@@ -237,7 +237,8 @@ const checkRuleB = (calls: ReturnType<typeof extractPathCalls>): void => {
 // (${...}) are stripped to a sentinel that won't match any segment
 // set, so segments composed entirely of interpolation contribute
 // nothing to the trigger.
-const TEMPLATE_LITERAL_RE = /`((?:\\.|(?:\$\{(?:[^{}]|\{[^{}]*\})*\})|(?!`)[^\\])*)`/g
+const TEMPLATE_LITERAL_RE =
+  /`((?:\\.|(?:\$\{(?:[^{}]|\{[^{}]*\})*\})|(?!`)[^\\])*)`/g
 
 const checkRuleATemplate = (source: string): void => {
   TEMPLATE_LITERAL_RE.lastIndex = 0

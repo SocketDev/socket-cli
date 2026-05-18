@@ -1,36 +1,30 @@
 /* oxlint-disable socket/no-placeholders -- this rule documents the markers it bans. */
 /**
- * @fileoverview Per CLAUDE.md "Completion" rule: never leave TODO /
- * FIXME / XXX / shims / stubs / placeholders. Finish the work 100% or
- * ask before deferring. This rule is the commit-time gate for that
- * principle and covers every shape a placeholder hides in:
+ * @file Per CLAUDE.md "Completion" rule: never leave TODO / FIXME / XXX / shims
+ *   / stubs / placeholders. Finish the work 100% or ask before deferring. This
+ *   rule is the commit-time gate for that principle and covers every shape a
+ *   placeholder hides in:
  *
- *   1. Comment markers — TODO, FIXME, XXX, HACK, TBD, STUB, WIP,
- *      UNIMPLEMENTED. Word-boundary anchored so identifiers like
- *      `todoStore` don't trigger.
+ *   1. Comment markers — TODO, FIXME, XXX, HACK, TBD, STUB, WIP, UNIMPLEMENTED.
+ *      Word-boundary anchored so identifiers like `todoStore` don't trigger.
+ *   2. `throw new Error('not implemented')` / `'TODO'` / `'unimplemented'` /
+ *      `'placeholder'` / `'stub'` — the runtime placeholder.
+ *   3. Stub function bodies — a function whose entire body is empty (`{}`) or
+ *      contains nothing but a placeholder-marker comment. `() => undefined` and
+ *      `() => {}` are flagged when not part of a no-op contract (callbacks
+ *      intentionally suppressed via a docstring `@noop` tag escape). No
+ *      autofix: a placeholder is a deferred decision; auto-removing it leaves
+ *      the underlying gap. The right move is for a human to either implement
+ *      the work or open a tracked issue. Allowed exceptions:
  *
- *   2. `throw new Error('not implemented')` / `'TODO'` / `'unimplemented'`
- *      / `'placeholder'` / `'stub'` — the runtime placeholder.
- *
- *   3. Stub function bodies — a function whose entire body is empty
- *      (`{}`) or contains nothing but a placeholder-marker comment.
- *      `() => undefined` and `() => {}` are flagged when not part of a
- *      no-op contract (callbacks intentionally suppressed via a
- *      docstring `@noop` tag escape).
- *
- * No autofix: a placeholder is a deferred decision; auto-removing it
- * leaves the underlying gap. The right move is for a human to either
- * implement the work or open a tracked issue.
- *
- * Allowed exceptions:
- *   - Marker text inside a string or regex (intentional, e.g. a
- *     parser that detects TODO comments). Skipped — the rule scopes
- *     comment matches to comment AST nodes only.
- *   - Functions that document themselves as intentional no-ops via a
- *     leading `@noop` JSDoc tag in the immediately preceding comment.
- *   - Functions whose body is `{ return }` / `{ return undefined }`
- *     — not flagged unless paired with a placeholder comment. The
- *     stub detector requires a marker comment in the body.
+ *   - Marker text inside a string or regex (intentional, e.g. a parser that
+ *     detects TODO comments). Skipped — the rule scopes comment matches to
+ *     comment AST nodes only.
+ *   - Functions that document themselves as intentional no-ops via a leading
+ *     `@noop` JSDoc tag in the immediately preceding comment.
+ *   - Functions whose body is `{ return }` / `{ return undefined }` — not flagged
+ *     unless paired with a placeholder comment. The stub detector requires a
+ *     marker comment in the body.
  */
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
@@ -43,7 +37,9 @@ const STUB_BODY_MARKER_RE =
 const THROW_MESSAGE_RE =
   /\b(TODO|FIXME|not\s+implemented|unimplemented|placeholder|stub)\b/i
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',
@@ -72,10 +68,10 @@ const rule = {
       : context.sourceCode
 
     /**
-     * A function counts as "intentionally a no-op" when its leading
-     * JSDoc / line comment contains `@noop`. This is the documented
-     * escape hatch for callbacks that genuinely do nothing
-     * (e.g. event-handler defaults, test spies).
+     * A function counts as "intentionally a no-op" when its leading JSDoc /
+     * line comment contains `@noop`. This is the documented escape hatch for
+     * callbacks that genuinely do nothing (e.g. event-handler defaults, test
+     * spies).
      */
     function isExplicitNoop(fnNode: AstNode): boolean {
       const leading = sourceCode.getCommentsBefore(fnNode)

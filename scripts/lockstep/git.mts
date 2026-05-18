@@ -1,17 +1,13 @@
 /**
- * @fileoverview Git helpers for the lockstep harness.
- *
- * Thin wrappers over `git -C <dir> <cmd>` that the kind checkers (file-fork,
- * version-pin) use to peek at submodule state without dragging in a full
- * libgit binding. The harness is read-only — these helpers never mutate.
- *
- * `splitLines` is the CRLF-tolerant counterpart to `.split('\n')`; bare
- * splits leave a trailing `\r` on each line when git is invoked on
- * Windows / msys, which throws off downstream `includes`/match checks.
- *
- * `resolveUpstream` is a lookup helper that lives here because it's
- * coupled to the same per-row-message accumulator the other helpers
- * write to.
+ * @file Git helpers for the lockstep harness. Thin wrappers over `git -C <dir>
+ *   <cmd>` that the kind checkers (file-fork, version-pin) use to peek at
+ *   submodule state without dragging in a full libgit binding. The harness is
+ *   read-only — these helpers never mutate. `splitLines` is the CRLF-tolerant
+ *   counterpart to `.split('\n')`; bare splits leave a trailing `\r` on each
+ *   line when git is invoked on Windows / msys, which throws off downstream
+ *   `includes`/match checks. `resolveUpstream` is a lookup helper that lives
+ *   here because it's coupled to the same per-row-message accumulator the other
+ *   helpers write to.
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/spawn'
@@ -20,9 +16,9 @@ import type { Upstream } from './schema.mts'
 import type { DriftCommit, Manifest } from './types.mts'
 
 /**
- * Split text on LF after CRLF normalization. Git on Windows / msys may
- * emit CRLF-terminated output; bare `.split('\n')` leaves a trailing
- * `\r` on every line that throws off downstream `includes`/match checks.
+ * Split text on LF after CRLF normalization. Git on Windows / msys may emit
+ * CRLF-terminated output; bare `.split('\n')` leaves a trailing `\r` on every
+ * line that throws off downstream `includes`/match checks.
  */
 export function splitLines(text: string): string[] {
   return text.replace(/\r\n/g, '\n').split('\n')

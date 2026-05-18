@@ -125,10 +125,10 @@ const BYPASS_PHRASE_PREFIX = 'Allow workflow-dispatch bypass:'
 const BYPASS_LOOKBACK_USER_TURNS = 8
 
 /**
- * Build the canonical phrase variants that authorize ONE dispatch
- * of `workflow`. The user can name the workflow in any of three
- * shapes — the filename, the basename (drop `.yml` / `.yaml`), or
- * the numeric workflow id — and any of them counts.
+ * Build the canonical phrase variants that authorize ONE dispatch of
+ * `workflow`. The user can name the workflow in any of three shapes — the
+ * filename, the basename (drop `.yml` / `.yaml`), or the numeric workflow id —
+ * and any of them counts.
  */
 function buildAcceptedPhrases(workflow: string): readonly string[] {
   const stripped = workflow.replace(/\.(?:yml|yaml)$/i, '')
@@ -139,15 +139,13 @@ function buildAcceptedPhrases(workflow: string): readonly string[] {
 }
 
 /**
- * Count past `gh workflow run/dispatch` invocations targeting
- * `workflow` in the assistant tool-use history. Each prior
- * dispatch consumes one bypass phrase, so the per-trigger guard
- * requires `phraseCount > priorDispatchCount`.
+ * Count past `gh workflow run/dispatch` invocations targeting `workflow` in the
+ * assistant tool-use history. Each prior dispatch consumes one bypass phrase,
+ * so the per-trigger guard requires `phraseCount > priorDispatchCount`.
  *
- * Walks the transcript JSONL directly — `_shared/transcript.mts`
- * exposes `readLastAssistantToolUses` for the most-recent turn
- * only, but here we need the full history. Best-effort: malformed
- * lines are skipped silently.
+ * Walks the transcript JSONL directly — `_shared/transcript.mts` exposes
+ * `readLastAssistantToolUses` for the most-recent turn only, but here we need
+ * the full history. Best-effort: malformed lines are skipped silently.
  */
 function countPriorDispatches(
   transcriptPath: string | undefined,
@@ -162,10 +160,7 @@ function countPriorDispatches(
   } catch {
     return 0
   }
-  const accepted = new Set([
-    workflow,
-    workflow.replace(/\.(?:yml|yaml)$/i, ''),
-  ])
+  const accepted = new Set([workflow, workflow.replace(/\.(?:yml|yaml)$/i, '')])
   let count = 0
   const lines = raw.split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
@@ -206,8 +201,9 @@ function countPriorDispatches(
       if (b['type'] !== 'tool_use' || b['name'] !== 'Bash') {
         continue
       }
-      const cmd =
-        (b['input'] as Record<string, unknown> | undefined)?.['command']
+      const cmd = (b['input'] as Record<string, unknown> | undefined)?.[
+        'command'
+      ]
       if (typeof cmd !== 'string') {
         continue
       }
@@ -458,7 +454,10 @@ function resolveSearchRoots(command: string): string[] {
   // run ...` from a session pinned to a different project.
   const roots: string[] = [projectDir]
   const cwd = process.cwd()
-  if (cwd !== projectDir && existsSync(path.join(cwd, '.github', 'workflows'))) {
+  if (
+    cwd !== projectDir &&
+    existsSync(path.join(cwd, '.github', 'workflows'))
+  ) {
     roots.push(cwd)
   }
   const inlineCd = INLINE_CD_RE.exec(command)
@@ -622,7 +621,8 @@ function main(): void {
       // Transparently log the bypass so the user sees why the guard
       // let it through. Stderr only — no exit-code change, hook
       // behaves as if it never fired.
-      process.stderr.write( // socket-hook: allow console
+      process.stderr.write(
+        // socket-hook: allow console
         `[release-workflow-guard] ALLOWED: ${shape} on ${workflow ?? '<unknown>'} — ${allowedReason}\n`,
       )
     }
@@ -651,7 +651,8 @@ function main(): void {
       BYPASS_LOOKBACK_USER_TURNS,
     )
     if (remaining > 0) {
-      process.stderr.write( // socket-hook: allow console
+      process.stderr.write(
+        // socket-hook: allow console
         `[release-workflow-guard] ALLOWED: ${shape} on ${workflow} — bypass phrase consumed (${remaining - 1} remaining for this workflow)\n`,
       )
       return

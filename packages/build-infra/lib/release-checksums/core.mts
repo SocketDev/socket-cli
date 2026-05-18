@@ -3,8 +3,8 @@
  *
  * This file is the **shared core** used by every fleet repo that publishes
  * artifacts whose integrity is gated by SHA-256 checksums. It contains no
- * network code and no producer code — see `consumer.mts` for the network
- * fetch path, and `producer.mts` for the writer side.
+ * network code and no producer code — see `consumer.mts` for the network fetch
+ * path, and `producer.mts` for the writer side.
  *
  * Fleet-canonical: byte-identical across every repo that ships
  * `packages/build-infra/lib/release-checksums/`. Drift caught by
@@ -116,10 +116,10 @@ export async function computeFileHash(filePath: string): Promise<string> {
 /**
  * Parse `checksums.txt` content into a map.
  *
- * Format: one entry per line, `<sha256-hex>  <filename>` (two spaces or any
- * whitespace between hash and name). Blank lines are skipped. Lines that
- * don't match the expected shape are silently ignored — defensive against
- * tools that prepend a header or comments.
+ * Format: one entry per line, `<sha256-hex> <filename>` (two spaces or any
+ * whitespace between hash and name). Blank lines are skipped. Lines that don't
+ * match the expected shape are silently ignored — defensive against tools that
+ * prepend a header or comments.
  */
 export function parseChecksums(content: string): Record<string, string> {
   const checksums: Record<string, string> = { __proto__: null as never }
@@ -148,20 +148,22 @@ interface VerifyOptions {
 }
 
 /**
- * Verify a downloaded file against the embedded SHA-256 in `release-assets.json`.
+ * Verify a downloaded file against the embedded SHA-256 in
+ * `release-assets.json`.
  *
  * Embedded checksums are the source of truth. Three outcomes:
  *
  * 1. Embedded match found and SHA-256 agrees → `{ valid: true }`.
- * 2. Embedded match found but SHA-256 disagrees → `{ valid: false }` with
- *    `actual` + `expected` populated. **Fail loudly.**
- * 3. Tool is in `release-assets.json` but `assetName` isn't listed → return
- *    `{ valid: false }`. The likely cause is a stale embedded manifest;
- *    bump `tag` + `checksums` in `release-assets.json` and re-run.
- * 4. Tool isn't in `release-assets.json` at all → return
- *    `{ valid: true, skipped: true }` with a warning. This is the
- *    "release-assets.json doesn't track this tool yet" path; callers that
- *    need strict verification should treat `skipped` as a failure.
+ * 2. Embedded match found but SHA-256 disagrees → `{ valid: false }` with `actual`
+ *
+ *    - `expected` populated. **Fail loudly.**
+ * 3. Tool is in `release-assets.json` but `assetName` isn't listed → return `{
+ *    valid: false }`. The likely cause is a stale embedded manifest; bump `tag`
+ *    + `checksums` in `release-assets.json` and re-run.
+ * 4. Tool isn't in `release-assets.json` at all → return `{ valid: true, skipped:
+ *    true }` with a warning. This is the "release-assets.json doesn't track
+ *    this tool yet" path; callers that need strict verification should treat
+ *    `skipped` as a failure.
  */
 export async function verifyReleaseChecksum(
   options: VerifyOptions,

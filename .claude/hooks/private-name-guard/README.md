@@ -8,7 +8,7 @@ is about to commit, push, or comment on a public-facing PR/issue.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `PreToolUse` hook
-> like this one fires *before* Claude calls a tool (here, the Bash
+> like this one fires _before_ Claude calls a tool (here, the Bash
 > tool). It can either **prime** (write to stderr, exit 0, model
 > carries on) or **block** (exit 2). This one only primes.
 

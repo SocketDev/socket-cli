@@ -1,50 +1,31 @@
 /**
- * @fileoverview Ban `\n` inside string literals passed to
- * `logger.<method>(...)`. The logger's symbol-prefixed methods
- * (`success`, `fail`, `warn`, `info`) own the line-leading visual.
- * Embedding `\n` smuggles raw line breaks into a single call and
- * makes the output inconsistent with the indentation/grouping the
- * logger applies.
+ * @file Ban `\n` inside string literals passed to `logger.<method>(...)`. The
+ *   logger's symbol-prefixed methods (`success`, `fail`, `warn`, `info`) own
+ *   the line-leading visual. Embedding `\n` smuggles raw line breaks into a
+ *   single call and makes the output inconsistent with the indentation/grouping
+ *   the logger applies. Canonical rewrite: split the call into two. The blank
+ *   line uses a stream-matched logger call. The message uses a semantic method
+ *   picked from the emoji found in the string (✗/❌ → .fail, ✓/✔/✅ → .success, ⚠
+ *   → .warn, etc.). The semantic method wins over the original method name —
+ *   `logger.error('\n✗ ...')` becomes `logger.error('')` +
+ *   `logger.fail('...')`. Stream mapping: .log → stdout → blank uses
+ *   logger.log('') .error / .fail / .success / .warn / .info / .step / .substep
+ *   → stderr → blank uses logger.error('') Order: leading \n → blank line
+ *   first, then message trailing \n → message first, then blank line Catches:
+ *   logger.error('\n✗ Build failed:', e) → logger.error('') →
+ *   logger.fail('Build failed:', e) logger.success('✓ Done\n') →
+ *   logger.success('Done') → logger.error('') // .success goes to stderr
+ *   logger.log(`build/${mode}/out\n`) → logger.log(`build/${mode}/out`) →
+ *   logger.log('') // .log goes to stdout Autofix scope:
  *
- * Canonical rewrite: split the call into two. The blank line uses a
- * stream-matched logger call. The message uses a semantic method
- * picked from the emoji found in the string (✗/❌ → .fail,
- * ✓/✔/✅ → .success, ⚠ → .warn, etc.). The semantic method wins
- * over the original method name — `logger.error('\n✗ ...')` becomes
- * `logger.error('')` + `logger.fail('...')`.
- *
- * Stream mapping:
- *   .log        → stdout → blank uses logger.log('')
- *   .error / .fail / .success / .warn / .info / .step / .substep
- *               → stderr → blank uses logger.error('')
- *
- * Order:
- *   leading \n  → blank line first, then message
- *   trailing \n → message first, then blank line
- *
- * Catches:
- *   logger.error('\n✗ Build failed:', e)
- *     → logger.error('')
- *     → logger.fail('Build failed:', e)
- *
- *   logger.success('✓ Done\n')
- *     → logger.success('Done')
- *     → logger.error('')        // .success goes to stderr
- *
- *   logger.log(`build/${mode}/out\n`)
- *     → logger.log(`build/${mode}/out`)
- *     → logger.log('')          // .log goes to stdout
- *
- * Autofix scope:
- *   - Single-string-argument calls with leading or trailing `\n`
- *     (the dominant shape in scripts): autofix splits into two
- *     statements with the correct blank-line + semantic methods.
- *   - Multi-argument calls (label + payload) and embedded `\n`
- *     mid-string: no autofix. The fix needs author judgment because
- *     the original string may carry meaningful chars between the
- *     emoji and the rest, and the extra args change the rewrite
- *     shape. The warning text names both the stream-matched blank-
- *     line method and the emoji-matched semantic method.
+ *   - Single-string-argument calls with leading or trailing `\n` (the dominant
+ *     shape in scripts): autofix splits into two statements with the correct
+ *     blank-line + semantic methods.
+ *   - Multi-argument calls (label + payload) and embedded `\n` mid-string: no
+ *     autofix. The fix needs author judgment because the original string may
+ *     carry meaningful chars between the emoji and the rest, and the extra args
+ *     change the rewrite shape. The warning text names both the stream-matched
+ *     blank- line method and the emoji-matched semantic method.
  */
 
 // stderr-bound methods (per Logger#getTargetStream). `log` is the
@@ -177,8 +158,7 @@ const UNAMBIGUOUS_LIST = Object.keys(UNAMBIGUOUS_EMOJI)
  * Return the first known status emoji + its method, or undefined.
  *
  * Two passes: unambiguous shapes match anywhere in the string;
- * ANCHORED_FALLBACK shapes only match at the start followed by
- * whitespace.
+ * ANCHORED_FALLBACK shapes only match at the start followed by whitespace.
  */
 function findStatusEmoji(
   value: string,
@@ -214,7 +194,9 @@ function blankCallFor(method: string): string {
   return STDERR_METHODS.has(method) ? "logger.error('')" : "logger.log('')"
 }
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',
@@ -246,10 +228,10 @@ const rule = {
       : context.sourceCode
 
     /**
-     * Walk up from a node to its enclosing ExpressionStatement.
-     * Returns undefined if the call isn't a top-level statement
-     * (e.g. it's inside a conditional expression or assignment) —
-     * those shapes are too contextual to autofix.
+     * Walk up from a node to its enclosing ExpressionStatement. Returns
+     * undefined if the call isn't a top-level statement (e.g. it's inside a
+     * conditional expression or assignment) — those shapes are too contextual
+     * to autofix.
      */
     function enclosingStatement(node: AstNode): AstNode | undefined {
       let cur = node.parent
@@ -292,9 +274,8 @@ const rule = {
     }
 
     /**
-     * Quote a string for source output. Uses single quotes by
-     * default; if the value contains a single quote, falls back to
-     * double quotes.
+     * Quote a string for source output. Uses single quotes by default; if the
+     * value contains a single quote, falls back to double quotes.
      */
     function quoteString(value: string): string {
       if (!value.includes("'")) {
@@ -304,8 +285,8 @@ const rule = {
     }
 
     /**
-     * If `node` is an argument of a call to `logger.<method>(...)`,
-     * return that method name. Otherwise return undefined.
+     * If `node` is an argument of a call to `logger.<method>(...)`, return that
+     * method name. Otherwise return undefined.
      */
     function loggerMethodForArg(node: AstNode) {
       const parent = node.parent
@@ -347,11 +328,11 @@ const rule = {
 
     /**
      * Build the report payload for a literal value bound to a
-     * logger.<origMethod>(...) call. Emits an autofix only when the
-     * call is `logger.X('<value>')` with exactly one Literal arg,
-     * lives in a plain ExpressionStatement, and the newline placement
-     * is leading or trailing (not embedded). Multi-arg + embedded
-     * shapes stay unfixed — the rewrite needs author judgment.
+     * logger.<origMethod>(...) call. Emits an autofix only when the call is
+     * `logger.X('<value>')` with exactly one Literal arg, lives in a plain
+     * ExpressionStatement, and the newline placement is leading or trailing
+     * (not embedded). Multi-arg + embedded shapes stay unfixed — the rewrite
+     * needs author judgment.
      */
     function reportFor(node: AstNode, value: string, origMethod: string): void {
       const placement = classifyNewline(value)

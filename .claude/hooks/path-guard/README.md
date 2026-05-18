@@ -5,13 +5,13 @@ on `.mts` or `.cts` files and **blocks** edits that would build a
 multi-segment build/output path inline. The fleet's rule, in one
 sentence:
 
-> 1 path, 1 reference. Construct a path *once* in a canonical
+> 1 path, 1 reference. Construct a path _once_ in a canonical
 > `paths.mts` (or a build-infra helper); reference the computed value
 > everywhere else.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `PreToolUse` hook
-> like this one fires *before* Claude calls a tool. It can either
+> like this one fires _before_ Claude calls a tool. It can either
 > **prime** (write to stderr, exit 0, model carries on) or **block**
 > (exit 2, edit never happens). This one blocks.
 
@@ -29,10 +29,10 @@ scan at `pnpm check` time, catching anything this hook missed.
 
 ## What it blocks
 
-| Rule | Example that gets blocked | Fix |
-|------|--------------------------|-----|
+| Rule                                        | Example that gets blocked                             | Fix                                                                                                                                                      |
+| ------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **A** — multi-stage path constructed inline | `path.join(PKG, 'build', mode, 'out', 'Final', name)` | Move the construction into the package's `scripts/paths.mts` (or use `getFinalBinaryPath` from `build-infra/lib/paths`); import the computed value here. |
-| **B** — cross-package path traversal | `path.join(PKG, '..', 'lief-builder', 'build', ...)` | Add `lief-builder: workspace:*` as a dependency; import its `paths.mts` via the workspace `exports` field. |
+| **B** — cross-package path traversal        | `path.join(PKG, '..', 'lief-builder', 'build', ...)`  | Add `lief-builder: workspace:*` as a dependency; import its `paths.mts` via the workspace `exports` field.                                               |
 
 The hook fires on `Edit` and `Write` tool calls when the target path
 ends in `.mts` or `.cts`. Other extensions (`.ts`, `.mjs`, `.js`,
@@ -85,7 +85,7 @@ When a new package joins the workspace, add it to
 ## Fail-open on hook bugs
 
 If the hook itself crashes, it writes a log line and exits `0` —
-i.e. *the edit is allowed*. A buggy security hook that blocks
+i.e. _the edit is allowed_. A buggy security hook that blocks
 everything is worse than one that temporarily lets things through.
 The companion `scripts/check-paths.mts` gate at commit time catches
 anything the hook missed.

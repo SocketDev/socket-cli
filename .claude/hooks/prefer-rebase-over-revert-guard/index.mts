@@ -41,19 +41,17 @@ interface ToolInput {
 }
 
 /**
- * Pull the first argument that looks like a ref out of a `git revert`
- * command. Returns undefined when nothing parsable is found — better
- * to skip the reminder than to false-positive on a complex command.
+ * Pull the first argument that looks like a ref out of a `git revert` command.
+ * Returns undefined when nothing parsable is found — better to skip the
+ * reminder than to false-positive on a complex command.
  *
- * Handles common shapes:
- *   git revert HEAD
- *   git revert HEAD~3
- *   git revert abc1234
- *   git revert <sha>..<sha>
- *   git revert --no-commit HEAD
+ * Handles common shapes: git revert HEAD git revert HEAD~3 git revert abc1234
+ * git revert <sha>..<sha> git revert --no-commit HEAD.
  */
 function extractRef(command: string): string | undefined {
-  const m = command.match(/\bgit\s+revert\s+([^\s;&|`]+(?:\s+[^\s;&|`-][^\s;&|`]*)?)/)
+  const m = command.match(
+    /\bgit\s+revert\s+([^\s;&|`]+(?:\s+[^\s;&|`-][^\s;&|`]*)?)/,
+  )
   if (!m) {
     return undefined
   }
@@ -69,9 +67,9 @@ function extractRef(command: string): string | undefined {
 }
 
 /**
- * Probe `git` for whether `ref` is reachable on `origin/<current-branch>`.
- * If the local branch has no upstream we can't tell, so return undefined
- * (= "don't fire the reminder, we'd false-positive on a brand-new branch").
+ * Probe `git` for whether `ref` is reachable on `origin/<current-branch>`. If
+ * the local branch has no upstream we can't tell, so return undefined (= "don't
+ * fire the reminder, we'd false-positive on a brand-new branch").
  */
 function isRefPushed(ref: string): boolean | undefined {
   // Run all probes in the current working directory — same dir the
@@ -93,7 +91,11 @@ function isRefPushed(ref: string): boolean | undefined {
   }
 
   // 2. Resolve the target ref to a SHA. Bad refs → undefined.
-  const targetSha = spawnSync('git', ['rev-parse', '--verify', `${ref}^{commit}`], opts)
+  const targetSha = spawnSync(
+    'git',
+    ['rev-parse', '--verify', `${ref}^{commit}`],
+    opts,
+  )
   if (targetSha.status !== 0) {
     return undefined
   }

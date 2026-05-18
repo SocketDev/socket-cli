@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/no-dynamic-import-outside-bundle.
+ * @file Unit tests for socket/no-dynamic-import-outside-bundle.
  */
 
 import { describe, test } from 'node:test'

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/prefer-async-spawn.
+ * @file Unit tests for socket/prefer-async-spawn.
  */
 
 import { describe, test } from 'node:test'

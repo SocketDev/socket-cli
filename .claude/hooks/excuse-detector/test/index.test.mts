@@ -56,7 +56,9 @@ async function runHook(
 ): Promise<Result> {
   const rawContent =
     entries
-      .map(e => JSON.stringify({ type: e.type, message: { content: e.content } }))
+      .map(e =>
+        JSON.stringify({ type: e.type, message: { content: e.content } }),
+      )
       .join('\n') + '\n'
   const transcript = setupTranscript(rawContent)
   try {
@@ -366,7 +368,9 @@ test('respects SOCKET_EXCUSE_DETECTOR_DISABLED', async () => {
       stdio: 'pipe',
       env: { ...process.env, SOCKET_EXCUSE_DETECTOR_DISABLED: '1' },
     })
-    child.stdin.end(JSON.stringify({ transcript_path: transcript.transcriptPath }))
+    child.stdin.end(
+      JSON.stringify({ transcript_path: transcript.transcriptPath }),
+    )
     let stderr = ''
     let stdout = ''
     child.stderr.on('data', chunk => {
@@ -405,7 +409,9 @@ test('handles array-of-blocks content shape', async () => {
   )
   try {
     const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-    child.stdin.end(JSON.stringify({ transcript_path: transcript.transcriptPath }))
+    child.stdin.end(
+      JSON.stringify({ transcript_path: transcript.transcriptPath }),
+    )
     let stderr = ''
     let stdout = ''
     child.stderr.on('data', chunk => {

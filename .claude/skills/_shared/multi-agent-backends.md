@@ -2,7 +2,7 @@
 
 Shared policy for skills that delegate work to multiple AI CLIs (codex, claude, opencode, kimi, …). Any skill that calls out to another agent should follow this contract so the user gets a uniform experience across skills.
 
-> Looking for *when* to hand work off to another agent (CLI subprocess vs. mid-conversation `Agent(subagent_type=…)`)? See [`docs/references/agent-delegation.md`](../../../docs/references/agent-delegation.md). This file covers the *how* for the CLI-subprocess path.
+> Looking for _when_ to hand work off to another agent (CLI subprocess vs. mid-conversation `Agent(subagent_type=…)`)? See [`docs/references/agent-delegation.md`](../../../docs/references/agent-delegation.md). This file covers the _how_ for the CLI-subprocess path.
 
 ## Goals
 
@@ -12,12 +12,12 @@ Shared policy for skills that delegate work to multiple AI CLIs (codex, claude, 
 
 ## Backend registry
 
-| Backend  | CLI binary | Hybrid? | Default role preference                                  |
-|----------|------------|---------|----------------------------------------------------------|
-| codex    | `codex`    | no      | discovery, discovery-secondary, remediation              |
-| claude   | `claude`   | no      | verify                                                   |
-| kimi     | `kimi`     | no      | any role (fallback)                                      |
-| opencode | `opencode` | **yes** | only when `--pass <role>=opencode` explicitly chosen      |
+| Backend  | CLI binary | Hybrid? | Default role preference                              |
+| -------- | ---------- | ------- | ---------------------------------------------------- |
+| codex    | `codex`    | no      | discovery, discovery-secondary, remediation          |
+| claude   | `claude`   | no      | verify                                               |
+| kimi     | `kimi`     | no      | any role (fallback)                                  |
+| opencode | `opencode` | **yes** | only when `--pass <role>=opencode` explicitly chosen |
 
 Adding a new backend = one entry in the registry: `{ name, bin, hybrid, run(promptFile, outFile) -> { argv, outMode } }`. No other call site changes.
 
@@ -37,12 +37,12 @@ Document skips inline in whatever output the skill produces (`> Skipped pass: <r
 
 ## Env-var conventions
 
-| Var | Default | Purpose |
-|---|---|---|
-| `CODEX_MODEL` | `gpt-5.4` | Codex model when codex is the active backend |
-| `CODEX_REASONING` | `xhigh` | Codex reasoning effort |
-| `CLAUDE_MODEL` | `opus` | Claude model when claude is the active backend |
-| `KIMI_MODEL` | `kimi-latest` | Kimi model when kimi is the active backend |
+| Var               | Default       | Purpose                                        |
+| ----------------- | ------------- | ---------------------------------------------- |
+| `CODEX_MODEL`     | `gpt-5.4`     | Codex model when codex is the active backend   |
+| `CODEX_REASONING` | `xhigh`       | Codex reasoning effort                         |
+| `CLAUDE_MODEL`    | `opus`        | Claude model when claude is the active backend |
+| `KIMI_MODEL`      | `kimi-latest` | Kimi model when kimi is the active backend     |
 
 Don't invent per-skill env var names — reuse these. Skills that need a non-default model for a specific run accept a `--model` flag rather than introducing new env vars.
 
@@ -52,6 +52,6 @@ Don't invent per-skill env var names — reuse these. Skills that need a non-def
 
 ## When NOT to use
 
-- Skills that only need *one* agent (the current Claude session driving the user). No detection needed; just do the work.
+- Skills that only need _one_ agent (the current Claude session driving the user). No detection needed; just do the work.
 - Skills that need a specific model unconditionally (e.g. a benchmark that compares two models — those use direct API calls, not the CLI registry).
 - Per-repo fix scripts that rely on a single tool (`pnpm`, `git`, `cargo`). Tooling, not agents.

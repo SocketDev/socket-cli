@@ -65,6 +65,7 @@ Install zizmor for GitHub Actions security scanning, respecting the soak time �
 ### Phase 4: Repository Cleanup
 
 Find junk files (interactive mode confirms each batch via `AskUserQuestion`; non-interactive mode lists what was found in the report and leaves them in place — don't delete files without explicit confirmation, even on a clean dirty-tree):
+
 - SCREAMING_TEXT.md files outside `.claude/` and `docs/`
 - Test files in wrong locations
 - Temp files (`.tmp`, `.DS_Store`, `*~`, `*.swp`, `*.bak`)
@@ -87,12 +88,14 @@ In **non-interactive** mode, run all scan types — no prompt.
 ### Phase 7: Execute Scans
 
 For each enabled scan type, spawn a Task agent with the corresponding prompt:
+
 - Legacy types (1–8) — prompt from `reference.md`.
 - Modular types (9+) — prompt from `scans/<type>.md`.
 
 Run sequentially in priority order: critical, logic, cache, workflow, security, then the modular scans (variant-analysis depends on earlier findings so runs after them; insecure-defaults and differential are independent), then documentation last.
 
 Each agent reports findings as:
+
 - File: path:line
 - Issue, Severity, Pattern, Trigger, Fix, Impact
 
@@ -110,7 +113,7 @@ Report final metrics: dependency updates, structural validation results, cleanup
 
 ## Commit cadence
 
-This skill is read-only — it scans and reports, it doesn't fix. Cadence rules apply to *handing the report off*, not to fixes:
+This skill is read-only — it scans and reports, it doesn't fix. Cadence rules apply to _handing the report off_, not to fixes:
 
 - **Save the report before acting on it.** If the user opts to save (`reports/scanning-quality-YYYY-MM-DD.md`), commit the report file in its own commit (`docs(reports): scanning-quality YYYY-MM-DD`). That snapshot is referenceable later when fixes land.
 - **Don't fix in-skill.** If findings need fixes, hand off to the appropriate skill — `/guarding-paths` for path drift, `refactor-cleaner` agent via `/quality-loop` for code-quality findings — and commit those fixes per that skill's own cadence rules. Don't bundle scan + fixes in one commit.

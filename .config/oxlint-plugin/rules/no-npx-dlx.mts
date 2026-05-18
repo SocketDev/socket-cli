@@ -1,31 +1,25 @@
 /* oxlint-disable socket/no-npx-dlx -- this file IS the rule definition; the banned commands are lookup-table data, not real usage. */
 
 /**
- * @fileoverview Per CLAUDE.md "Tooling" rule:
+ * @file Per CLAUDE.md "Tooling" rule: 🚨 NEVER use `npx`, `pnpm dlx`, or `yarn
+ *   dlx` — use `pnpm exec <package>` or `pnpm run <script>`. Detects `npx`,
+ *   `pnpm dlx`, `pnx` (the pnpm-11 dlx shorthand), and `yarn dlx` in source
+ *   string literals — argv slices passed to `spawn()`, shell strings, scripts,
+ *   doc snippets, README examples, etc. The hook at `.claude/hooks/path-guard/`
+ *   blocks these at the shell layer; this rule catches them at edit / commit
+ *   time inside JavaScript / TypeScript source. Autofix: rewrites the literal
+ *   in place — `npx foo` → `pnpm exec foo`, `pnpm dlx foo` → `pnpm exec foo`,
+ *   `yarn dlx foo` → `pnpm exec foo`, `pnx foo` → `pnpm exec foo`. Allowed
+ *   exceptions (skipped):
  *
- *   🚨 NEVER use `npx`, `pnpm dlx`, or `yarn dlx` — use
- *   `pnpm exec <package>` or `pnpm run <script>`.
- *
- * Detects `npx`, `pnpm dlx`, `pnx` (the pnpm-11 dlx shorthand), and
- * `yarn dlx` in source string literals — argv slices passed to
- * `spawn()`, shell strings, scripts, doc snippets, README examples,
- * etc. The hook at `.claude/hooks/path-guard/` blocks these at the
- * shell layer; this rule catches them at edit / commit time inside
- * JavaScript / TypeScript source.
- *
- * Autofix: rewrites the literal in place — `npx foo` → `pnpm exec foo`,
- * `pnpm dlx foo` → `pnpm exec foo`, `yarn dlx foo` → `pnpm exec foo`,
- * `pnx foo` → `pnpm exec foo`.
- *
- * Allowed exceptions (skipped):
- *   - The literal `npx` inside a comment with `socket-hook: allow npx`
- *     — the canonical bypass marker, used by the lockdown skill spec.
- *   - The literal `pnpm dlx` inside a comment justifying a soak-time
- *     bypass (rare; case-by-case).
- *   - The CLAUDE.md fleet block reference itself — string literals
- *     like `'`pnpm dlx`'` documenting the rule. Heuristic: skip when
- *     the literal is inside a backtick-wrapped phrase in the source
- *     text (i.e. the literal value starts and ends with a backtick).
+ *   - The literal `npx` inside a comment with `socket-hook: allow npx` — the
+ *     canonical bypass marker, used by the lockdown skill spec.
+ *   - The literal `pnpm dlx` inside a comment justifying a soak-time bypass
+ *     (rare; case-by-case).
+ *   - The CLAUDE.md fleet block reference itself — string literals like `'`pnpm
+ *     dlx`'` documenting the rule. Heuristic: skip when the literal is inside a
+ *     backtick-wrapped phrase in the source text (i.e. the literal value starts
+ *     and ends with a backtick).
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
@@ -42,7 +36,9 @@ const PATTERNS = [
 
 const COMMENT_BYPASS_RE = /socket-hook:\s*allow\s+npx/ // socket-hook: allow npx
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',
@@ -66,10 +62,9 @@ const rule = {
       : context.sourceCode
 
     /**
-     * Return [matchPrefix, replacementPrefix, label] for the longest
-     * dlx-style prefix that appears anywhere in the string, or
-     * undefined when none match. Anchors at word boundaries — `pnxx`
-     * doesn't match `pnx`.
+     * Return [matchPrefix, replacementPrefix, label] for the longest dlx-style
+     * prefix that appears anywhere in the string, or undefined when none match.
+     * Anchors at word boundaries — `pnxx` doesn't match `pnx`.
      */
     function findBannedPrefix(
       value: string,
@@ -93,9 +88,8 @@ const rule = {
     }
 
     /**
-     * Skip when the surrounding source has the canonical bypass
-     * comment (`socket-hook: allow npx`) on the same or an adjacent
-     * line.
+     * Skip when the surrounding source has the canonical bypass comment
+     * (`socket-hook: allow npx`) on the same or an adjacent line.
      */
     function hasBypassComment(node: AstNode) {
       const before = sourceCode.getCommentsBefore(node)

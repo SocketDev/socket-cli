@@ -9,12 +9,7 @@
 // depending on actual fleet-repo checkouts.
 
 import { spawn } from 'node:child_process'
-import {
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -51,15 +46,22 @@ async function runHook(
 }
 
 function userTurn(text: string): string {
-  return JSON.stringify({ type: 'user', message: { role: 'user', content: text } }) + '\n'
+  return (
+    JSON.stringify({ type: 'user', message: { role: 'user', content: text } }) +
+    '\n'
+  )
 }
 
 interface RepoSetup {
   hasFleetCanonical: boolean
 }
 
-/** Create a temp dir that looks like a fleet repo. */
-function makeFakeFleetRepo(setup: RepoSetup = { hasFleetCanonical: true }): string {
+/**
+ * Create a temp dir that looks like a fleet repo.
+ */
+function makeFakeFleetRepo(
+  setup: RepoSetup = { hasFleetCanonical: true },
+): string {
   const repo = mkdtempSync(path.join(tmpdir(), 'fake-fleet-repo-'))
   writeFileSync(path.join(repo, 'package.json'), '{"name":"fake-fleet"}\n')
   const claudeMarker = setup.hasFleetCanonical
@@ -199,10 +201,7 @@ test('Write tool also blocked, not just Edit', async () => {
 test('MultiEdit tool also blocked', async () => {
   const repo = makeFakeFleetRepo()
   try {
-    const file = makeCanonicalFile(
-      repo,
-      '.config/oxlint-plugin/rules/foo.mts',
-    )
+    const file = makeCanonicalFile(repo, '.config/oxlint-plugin/rules/foo.mts')
     const result = await runHook({
       tool_input: { file_path: file, edits: [] },
       tool_name: 'MultiEdit',
@@ -252,10 +251,10 @@ test('bypass phrase variants do NOT count', async () => {
     const file = makeCanonicalFile(repo, '.git-hooks/pre-push.mts')
     // Each of these should NOT bypass — phrase must be exact.
     for (const variant of [
-      'allow fleet-fork bypass',         // lowercase
-      'Allow fleet fork bypass',          // space instead of hyphen
-      'Allow fleet-fork',                 // no "bypass"
-      'fleet-fork bypass',                // no "Allow"
+      'allow fleet-fork bypass', // lowercase
+      'Allow fleet fork bypass', // space instead of hyphen
+      'Allow fleet-fork', // no "bypass"
+      'fleet-fork bypass', // no "Allow"
     ]) {
       const result = await runHook(
         {

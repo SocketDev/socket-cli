@@ -1,34 +1,32 @@
 /**
- * @fileoverview Forbid inline type specifiers (`import { type X, Y }`)
- * — split into a dedicated `import type { X }` plus a value-only
- * `import { Y }`. Two style benefits:
+ * @file Forbid inline type specifiers (`import { type X, Y }`) — split into a
+ *   dedicated `import type { X }` plus a value-only `import { Y }`. Two style
+ *   benefits:
  *
- *   1. The reader sees the type-vs-value split at the import header
- *      without parsing per-specifier `type` keywords.
- *   2. Sorted-imports rules can group `import type` statements
- *      separately from value imports (fleet convention is value
- *      imports first, then types as a trailing block).
+ *   1. The reader sees the type-vs-value split at the import header without
+ *      parsing per-specifier `type` keywords.
+ *   2. Sorted-imports rules can group `import type` statements separately from
+ *      value imports (fleet convention is value imports first, then types as a
+ *      trailing block). Style signal that motivated the rule: across the
+ *      fleet's six surveyed repos, separate `import type` statements outnumber
+ *      inline `type` specifiers ~200-to-1 (socket-cli: 535 separate vs 2
+ *      inline; socket-lib: 212 vs 8). The stragglers are drift, not a different
+ *      convention. Autofix:
  *
- * Style signal that motivated the rule: across the fleet's six
- * surveyed repos, separate `import type` statements outnumber inline
- * `type` specifiers ~200-to-1 (socket-cli: 535 separate vs 2 inline;
- * socket-lib: 212 vs 8). The stragglers are drift, not a different
- * convention.
- *
- * Autofix:
- *   - Inline `type` specifiers in a `import { ... } from 'mod'`
- *     statement are moved into a new `import type { ... } from 'mod'`
- *     statement inserted directly after the original import. The
- *     `type` keyword is stripped from the inline specifier.
- *   - If ALL specifiers in an import are `type`-prefixed, the whole
- *     statement is converted in place to `import type { ... }`.
- *   - Default + type-specifier mixes
- *     (`import Foo, { type Bar } from 'mod'`) are split: default
- *     keeps the original statement, types move to a new
- *     `import type { Bar } from 'mod'` line.
+ *   - Inline `type` specifiers in a `import { ... } from 'mod'` statement are
+ *     moved into a new `import type { ... } from 'mod'` statement inserted
+ *     directly after the original import. The `type` keyword is stripped from
+ *     the inline specifier.
+ *   - If ALL specifiers in an import are `type`-prefixed, the whole statement is
+ *     converted in place to `import type { ... }`.
+ *   - Default + type-specifier mixes (`import Foo, { type Bar } from 'mod'`) are
+ *     split: default keeps the original statement, types move to a new `import
+ *     type { Bar } from 'mod'` line.
  */
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
@@ -170,10 +168,10 @@ const rule = {
 }
 
 /**
- * Render an `ImportSpecifier` for the rewritten statement. When
- * `stripType` is true the `type` keyword is omitted (the specifier
- * is being moved into a statement-level `import type` block, where
- * per-specifier `type` would be redundant).
+ * Render an `ImportSpecifier` for the rewritten statement. When `stripType` is
+ * true the `type` keyword is omitted (the specifier is being moved into a
+ * statement-level `import type` block, where per-specifier `type` would be
+ * redundant).
  */
 function specifierText(
   sourceCode: unknown,

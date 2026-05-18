@@ -101,17 +101,21 @@ function getMaxBodyLines(): number {
 }
 
 /**
- * Apply an Edit's `old_string` → `new_string` substitution against
- * on-disk content. Returns the post-edit content, or undefined if
- * the substitution can't be applied cleanly (no match, multiple
- * matches without replace_all, or the file doesn't exist).
+ * Apply an Edit's `old_string` → `new_string` substitution against on-disk
+ * content. Returns the post-edit content, or undefined if the substitution
+ * can't be applied cleanly (no match, multiple matches without replace_all, or
+ * the file doesn't exist).
  */
 function applyEditToFile(
   filePath: string,
   oldString: string | undefined,
   newString: string | undefined,
 ): string | undefined {
-  if (!existsSync(filePath) || oldString === undefined || newString === undefined) {
+  if (
+    !existsSync(filePath) ||
+    oldString === undefined ||
+    newString === undefined
+  ) {
     return undefined
   }
   let onDisk: string
@@ -148,11 +152,10 @@ interface SectionTooLong {
 }
 
 /**
- * Walk the fleet block and return any `### ` sections whose body
- * exceeds `maxBodyLines`. Sections are bounded by the next `### `
- * heading or by the end of the input. Headings at `##` or `#`
- * level are NOT inspected — only `### ` (third-level) since that's
- * the rule-level heading in the fleet block.
+ * Walk the fleet block and return any `### ` sections whose body exceeds
+ * `maxBodyLines`. Sections are bounded by the next `### ` heading or by the end
+ * of the input. Headings at `##` or `#` level are NOT inspected — only `### `
+ * (third-level) since that's the rule-level heading in the fleet block.
  */
 function findTooLongSections(
   fleetBlock: string,
@@ -275,19 +278,25 @@ async function main(): Promise<number> {
   lines.push(``)
   lines.push(`Why this cap exists:`)
   lines.push(`  The fleet block ships byte-identical to every socket-* repo`)
-  lines.push(`  (12+ repos at last count). Every line is N copies of in-context`)
+  lines.push(
+    `  (12+ repos at last count). Every line is N copies of in-context`,
+  )
   lines.push(`  cost. Long sections are also harder to skim — the fleet block`)
   lines.push(`  is a reference card, not a tutorial.`)
   lines.push(``)
   lines.push(`Fix:`)
   lines.push(`  1. Pick the smallest faithful summary (1-2 sentences) of the`)
   lines.push(`     section's rule.`)
-  lines.push(`  2. Move the long-form content (rationale, examples, edge cases)`)
+  lines.push(
+    `  2. Move the long-form content (rationale, examples, edge cases)`,
+  )
   lines.push(`     into a new doc: docs/claude.md/fleet/<topic>.md (cascaded`)
   lines.push(`     via socket-wheelhouse — add the path to the sync manifest).`)
   lines.push(`  3. Replace the section body with the summary plus a markdown`)
   lines.push(`     link to the new doc:`)
-  lines.push(`         Full rationale in [\`docs/claude.md/fleet/<topic>.md\`].`)
+  lines.push(
+    `         Full rationale in [\`docs/claude.md/fleet/<topic>.md\`].`,
+  )
   lines.push(``)
   lines.push(`Override (rare; per-edit): set CLAUDE_MD_FLEET_SECTION_MAX_LINES`)
   lines.push(`in the environment before the edit.`)

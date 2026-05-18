@@ -1,12 +1,10 @@
 /**
- * @fileoverview Repo file-walker for the path-hygiene gate.
- *
- * Recursively yields files under `dir` whose repo-relative path passes
- * `filter`. The skip set covers everything we never want to scan:
- * `node_modules`, generated outputs (`build`/`dist`/`out`/`target`),
- * VCS metadata, caches, and `upstream/` vendor trees. The generator
- * shape lets callers stop scanning early without buffering the whole
- * tree.
+ * @file Repo file-walker for the path-hygiene gate. Recursively yields files
+ *   under `dir` whose repo-relative path passes `filter`. The skip set covers
+ *   everything we never want to scan: `node_modules`, generated outputs
+ *   (`build`/`dist`/`out`/`target`), VCS metadata, caches, and `upstream/`
+ *   vendor trees. The generator shape lets callers stop scanning early without
+ *   buffering the whole tree.
  */
 
 import { readdirSync } from 'node:fs'

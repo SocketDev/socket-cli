@@ -54,10 +54,7 @@ import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 
-import {
-  bypassPhrasePresent,
-  readStdin,
-} from '../_shared/transcript.mts'
+import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
   tool_input?: { file_path?: string } | undefined
@@ -103,10 +100,10 @@ const TEMPLATE_PATH_TOKENS = [
 ]
 
 /**
- * Find the fleet repo root for an absolute file path by walking up
- * until we hit a directory that has package.json AND a CLAUDE.md
- * containing the FLEET-CANONICAL marker. Returns the repo root path
- * or undefined if the file is outside a fleet repo.
+ * Find the fleet repo root for an absolute file path by walking up until we hit
+ * a directory that has package.json AND a CLAUDE.md containing the
+ * FLEET-CANONICAL marker. Returns the repo root path or undefined if the file
+ * is outside a fleet repo.
  */
 function findFleetRepoRoot(filePath: string): string | undefined {
   let cur = path.dirname(filePath)

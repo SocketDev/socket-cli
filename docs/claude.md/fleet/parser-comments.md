@@ -35,6 +35,62 @@ When the fleet repo already has an upstream pin (in `xport.json`, `lockstep.json
 
 When the local impl diverges from upstream (faster path, different error shape, missing edge case), write a short paragraph explaining _why_ the divergence is intentional. One-line `// differs from upstream` notes get stripped during cleanups; paragraphs survive because they carry the load-bearing _why_.
 
+## 5. Lock-step references across language ports
+
+When a parser ships in multiple implementations that must agree behaviorally (e.g. ultrathink's acorn ports: Rust / Go / C++ / TypeScript; socket-btm's `mcp/*.cpp` ports of upstream Python/Rust), every cross-impl reference uses the `Lock-step` prefix. The naming is load-bearing — `grep -r 'Lock-step'` is the audit surface.
+
+Three forms, three jobs:
+
+**File-level provenance** — top-of-file `//!` doc comment that names where the canonical source lives. Ports state who they follow; canonical files state who follows them:
+
+```rust
+//! Lock-step with Go: src/parser/class.go
+//! Lock-step with C++: src/parser/class.cpp
+//! Lock-step with TS: src/parser/class.ts
+```
+
+```go
+//! Lock-step from Rust: crates/parser/src/class.rs
+```
+
+`Lock-step with X` = "X is a peer / downstream port; keep in sync". `Lock-step from X` = "X is the canonical source for this file".
+
+**Inline cross-references** — point at the specific line range in the canonical impl. Include a colon-and-line-range so reviewers can jump:
+
+```rust
+// Lock-step with Go: parser.go:6450-6457
+// Lock-step with Go: parser.go:6672-6682, upstream acorn: statement.js:737-745
+```
+
+In a port (Go/C++/TS), the reference points up at Rust. In Rust (canonical), the reference may point further upstream at Acorn JS — the rule is comments always point at the source-of-truth, never at a downstream port.
+
+**Lock-step note** — explains a _deliberate_ divergence from the canonical shape. Reads like a thesis: here's the canonical idiom, here's why this impl can't follow it verbatim, here's the chosen reshape:
+
+```cpp
+// Lock-step note: Rust uses bumpalo-arena ownership for NodeVec;
+// here we hold std::vector<NodeId> with manual reserve() because
+// the C++ port can't share Rust's lifetime model. Capacity is
+// pre-computed by parse_class_body's first pass — see parser.cpp:482.
+```
+
+```rust
+// Lock-step note: reshaped for borrowck — Go's `defer s.restore()`
+// returns a ResetScope holding &mut Path; capture len() and restore
+// via set_length() so the path can be re-borrowed for append()
+// in between.
+```
+
+The line `Lock-step with X` says "go look here"; the note `Lock-step note:` says "I already looked, and this is why I'm not matching shape-for-shape". Keep them distinct: a reviewer searching for missing lock-step refs filters by the former; a reviewer auditing _why_ this port diverges filters by the latter.
+
+## 6. Don't let lock-step references rot
+
+Paths in `Lock-step with X: <path>:<lines>` are claims about file layout that decay when ports get reorganized. A stale `Lock-step with Rust: crates/parser-stmt/src/...` reference after `crates/parser-stmt/` is renamed is worse than no reference — it lies to the reader.
+
+Two cheap defenses:
+
+- Reference paths, not symbols. `parser.go:6450-6457` survives a method rename; `parseClassBody` doesn't.
+- Add a `scripts/check-lock-step-refs.mts` gate that greps every `Lock-step with <Lang>:` comment, resolves the path against the right impl root, and fails CI if the path no longer exists. Line ranges are advisory and can drift; path existence is enforceable.
+
 ## Scope
 
 This exception applies to:

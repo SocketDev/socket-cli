@@ -9,7 +9,10 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
-function makeTranscript(assistantText: string): { path: string; cleanup: () => void } {
+function makeTranscript(assistantText: string): {
+  path: string
+  cleanup: () => void
+} {
   const dir = mkdtempSync(path.join(tmpdir(), 'errmsg-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   const lines = [
@@ -17,7 +20,10 @@ function makeTranscript(assistantText: string): { path: string; cleanup: () => v
     JSON.stringify({ role: 'assistant', content: assistantText }),
   ].join('\n')
   writeFileSync(transcriptPath, lines)
-  return { path: transcriptPath, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
+  return {
+    path: transcriptPath,
+    cleanup: () => rmSync(dir, { recursive: true, force: true }),
+  }
 }
 
 function runHook(transcriptPath: string): { stderr: string; exitCode: number } {
@@ -161,7 +167,10 @@ test('disabled env var short-circuits', () => {
     const result = spawnSync('node', [HOOK_PATH], {
       input: JSON.stringify({ transcript_path: p }),
       encoding: 'utf8',
-      env: { ...process.env, SOCKET_ERROR_MESSAGE_QUALITY_REMINDER_DISABLED: '1' },
+      env: {
+        ...process.env,
+        SOCKET_ERROR_MESSAGE_QUALITY_REMINDER_DISABLED: '1',
+      },
     })
     assert.equal(result.status, 0)
     assert.equal(result.stderr, '')

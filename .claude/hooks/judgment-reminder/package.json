@@ -6,13 +6,13 @@
   "exports": {
     ".": "./index.mts"
   },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  },
   "dependencies": {
     "compromise": "14.15.0"
   },
   "devDependencies": {
     "@types/node": "catalog:"
-  },
-  "scripts": {
-    "test": "node --test test/*.test.mts"
   }
 }

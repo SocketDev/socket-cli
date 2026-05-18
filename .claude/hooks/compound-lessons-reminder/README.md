@@ -14,13 +14,13 @@ This hook catches the failure mode where the assistant notices a recurring bug c
 
 Repeat-finding language in the assistant's prose:
 
-| Pattern | Example |
-|---|---|
-| `again` / `once more` | "Hitting the same lockfile issue again" |
-| `second/third time` | "This is the second time we've seen this regex bug" |
-| `same X as before` | "Same monthCode handling bug as we saw earlier" |
-| `we've seen this before` | "We've seen this pattern before" |
-| `recurring`, `keeps happening` | "Recurring CI failure on the same line" |
+| Pattern                        | Example                                             |
+| ------------------------------ | --------------------------------------------------- |
+| `again` / `once more`          | "Hitting the same lockfile issue again"             |
+| `second/third time`            | "This is the second time we've seen this regex bug" |
+| `same X as before`             | "Same monthCode handling bug as we saw earlier"     |
+| `we've seen this before`       | "We've seen this pattern before"                    |
+| `recurring`, `keeps happening` | "Recurring CI failure on the same line"             |
 
 Code fences are stripped first so quoted phrases don't false-positive.
 

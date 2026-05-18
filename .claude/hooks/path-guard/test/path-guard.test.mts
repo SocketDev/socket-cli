@@ -58,11 +58,7 @@ describe('path-guard — Rule A (multi-stage construction)', () => {
     const source = `
       const p = path.join(PKG, 'build', 'dev', 'out', 'Final', 'binary')
     `
-    const { code } = runHook(
-      'Edit',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Edit', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 2)
   })
 
@@ -83,11 +79,7 @@ describe('path-guard — Rule A (multi-stage construction)', () => {
     const source = `
       const tmp = path.join(packageRoot, 'build', 'temp')
     `
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 0)
   })
 
@@ -95,11 +87,7 @@ describe('path-guard — Rule A (multi-stage construction)', () => {
     const source = `
       const cfg = path.join(packageRoot, 'config', 'settings.json')
     `
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 0)
   })
 })
@@ -137,11 +125,7 @@ describe('path-guard — Rule B (cross-package traversal)', () => {
     const source = `
       const x = path.join(PKG, '..', 'fixtures', 'build', 'Final')
     `
-    const { code } = runHook(
-      'Write',
-      'packages/foo/test/test.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/test/test.mts', source)
     assert.equal(code, 0)
   })
 
@@ -152,11 +136,7 @@ describe('path-guard — Rule B (cross-package traversal)', () => {
     const source = `
       const x = path.join(PKG, '..', 'cache', 'lief-builder', 'config.json')
     `
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 0)
   })
 })
@@ -169,11 +149,7 @@ describe('path-guard — paren-balance correctness', () => {
     const source = `
       const p = path.join(getDir(child(x)), 'build', 'dev', 'out', 'Final')
     `
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 2)
   })
 
@@ -181,11 +157,7 @@ describe('path-guard — paren-balance correctness', () => {
     const source = `
       const p = path.resolve(PKG, 'build', 'dev', 'out', 'Final', 'bin')
     `
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 2)
   })
 })
@@ -193,53 +165,33 @@ describe('path-guard — paren-balance correctness', () => {
 describe('path-guard — template literals', () => {
   it('detects A in fully-literal template path', () => {
     const source = '\n      const p = `build/dev/out/Final/binary`\n    '
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 2)
   })
 
   it('detects A in template with placeholders', () => {
     const source =
       '\n      const p = `${PKG}/build/${mode}/${arch}/out/Final/${name}`\n    '
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 2)
   })
 
   it('allows template with single non-stage segment', () => {
     const source = '\n      const url = `https://example.com/path`\n    '
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 0)
   })
 
   it('allows template with no stage segments', () => {
     const source = '\n      const tmp = `${packageRoot}/build/temp/cache`\n    '
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 0)
   })
 
   it('allows template that is purely interpolation', () => {
     // `${a}/${b}/${c}` has no literal stage segments.
     const source = '\n      const p = `${a}/${b}/${c}`\n    '
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 0)
   })
 })
@@ -266,11 +218,7 @@ describe('path-guard — file-type filter', () => {
       run: |
         FINAL="build/\${MODE}/\${ARCH}/out/Final"
     `
-    const { code } = runHook(
-      'Write',
-      '.github/workflows/foo.yml',
-      source,
-    )
+    const { code } = runHook('Write', '.github/workflows/foo.yml', source)
     assert.equal(code, 0)
   })
 
@@ -278,11 +226,7 @@ describe('path-guard — file-type filter', () => {
     const source = `
       const p = path.join(PKG, 'build', 'dev', 'out', 'Final', 'bin')
     `
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.mts', source)
     assert.equal(code, 2)
   })
 
@@ -290,11 +234,7 @@ describe('path-guard — file-type filter', () => {
     const source = `
       const p = path.join(PKG, 'build', 'dev', 'out', 'Final', 'bin')
     `
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/build.cts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/build.cts', source)
     assert.equal(code, 2)
   })
 })
@@ -304,11 +244,7 @@ describe('path-guard — exempt files', () => {
     const source = `
       export const FINAL_DIR = path.join(PKG, 'build', 'dev', 'out', 'Final')
     `
-    const { code } = runHook(
-      'Write',
-      'packages/foo/scripts/paths.mts',
-      source,
-    )
+    const { code } = runHook('Write', 'packages/foo/scripts/paths.mts', source)
     assert.equal(code, 0)
   })
 

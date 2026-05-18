@@ -1,13 +1,13 @@
 # stale-process-sweeper
 
-A **Claude Code hook** that runs at the *end* of every Claude turn
+A **Claude Code hook** that runs at the _end_ of every Claude turn
 and sweeps stale Node test/build worker processes that lost their
 parent. Without this, abandoned workers accumulate across turns and
 gradually exhaust system memory.
 
 > If you haven't worked with Claude Code hooks before: hooks are tiny
 > scripts that run at specific lifecycle points. A `Stop` hook like
-> this one fires *after* Claude finishes a turn (a unit of work that
+> this one fires _after_ Claude finishes a turn (a unit of work that
 > ends with the model handing the conversation back to the user).
 > Stop hooks can do cleanup, log diagnostics, or — like this one —
 > reap orphans.
@@ -24,17 +24,17 @@ After a few interrupted runs, you can have several gigabytes of
 abandoned processes sitting around. The sweeper finds them by
 matching their command line against a known pattern list, confirms
 their parent process has died (so we don't kill workers belonging to
-a *real* in-progress run), and sends them `SIGTERM`.
+a _real_ in-progress run), and sends them `SIGTERM`.
 
 ## What's swept
 
-| Pattern | What it matches |
-|---------|----------------|
-| `vitest/dist/workers/(forks\|threads)` | Vitest worker pool processes |
-| `vitest/dist/(cli\|node).[mc]?js` | Orphaned Vitest parent runners |
-| `\btsgo\b` | TypeScript Go-based type checker |
-| `type-coverage/bin/type-coverage` | Type coverage tool |
-| `esbuild/(bin\|lib)/.*\bservice\b` | esbuild's daemon service |
+| Pattern                                | What it matches                  |
+| -------------------------------------- | -------------------------------- |
+| `vitest/dist/workers/(forks\|threads)` | Vitest worker pool processes     |
+| `vitest/dist/(cli\|node).[mc]?js`      | Orphaned Vitest parent runners   |
+| `\btsgo\b`                             | TypeScript Go-based type checker |
+| `type-coverage/bin/type-coverage`      | Type coverage tool               |
+| `esbuild/(bin\|lib)/.*\bservice\b`     | esbuild's daemon service         |
 
 ## What's not swept
 

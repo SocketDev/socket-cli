@@ -87,9 +87,7 @@ test('ALLOWS when CLAUDE.md has the canonical reference', () => {
 })
 
 test('ALLOWS when CLAUDE.md uses trailing-slash-omitted variant', () => {
-  const repo = makeFakeRepo(
-    '(enforced by `.claude/hooks/my-new-hook`)',
-  )
+  const repo = makeFakeRepo('(enforced by `.claude/hooks/my-new-hook`)')
   try {
     const { exitCode } = runHook({
       tool_name: 'Edit',

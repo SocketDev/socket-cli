@@ -9,7 +9,10 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
-function makeTranscript(assistantText: string): { path: string; cleanup: () => void } {
+function makeTranscript(assistantText: string): {
+  path: string
+  cleanup: () => void
+} {
   const dir = mkdtempSync(path.join(tmpdir(), 'identify-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   writeFileSync(
@@ -19,7 +22,10 @@ function makeTranscript(assistantText: string): { path: string; cleanup: () => v
       JSON.stringify({ role: 'assistant', content: assistantText }),
     ].join('\n'),
   )
-  return { path: transcriptPath, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
+  return {
+    path: transcriptPath,
+    cleanup: () => rmSync(dir, { recursive: true, force: true }),
+  }
 }
 
 function runHook(transcriptPath: string): { stderr: string; exitCode: number } {

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/socket-api-token-env.
+ * @file Unit tests for socket/socket-api-token-env.
  */
 
 import { describe, test } from 'node:test'

@@ -9,7 +9,10 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
-function makeTranscript(assistantText: string): { path: string; cleanup: () => void } {
+function makeTranscript(assistantText: string): {
+  path: string
+  cleanup: () => void
+} {
   const dir = mkdtempSync(path.join(tmpdir(), 'perfectionist-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   const lines = [
@@ -17,7 +20,10 @@ function makeTranscript(assistantText: string): { path: string; cleanup: () => v
     JSON.stringify({ role: 'assistant', content: assistantText }),
   ].join('\n')
   writeFileSync(transcriptPath, lines)
-  return { path: transcriptPath, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
+  return {
+    path: transcriptPath,
+    cleanup: () => rmSync(dir, { recursive: true, force: true }),
+  }
 }
 
 function runHook(transcriptPath: string): { stderr: string; exitCode: number } {
@@ -116,7 +122,9 @@ test('does not false-positive on phrases inside code fences', () => {
 })
 
 test('disabled env var short-circuits', () => {
-  const { path: p, cleanup } = makeTranscript('Option A (depth) or Option B (speed)?')
+  const { path: p, cleanup } = makeTranscript(
+    'Option A (depth) or Option B (speed)?',
+  )
   try {
     const result = spawnSync('node', [HOOK_PATH], {
       input: JSON.stringify({ transcript_path: p }),

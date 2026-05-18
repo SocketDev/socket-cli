@@ -1,24 +1,18 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Install Socket Firewall (sfw) into the Socket _dlx cache
- * via @socketsecurity/lib-stable's downloadBinary helper.
+ * @file Install Socket Firewall (sfw) into the Socket _dlx cache via
  *
- * Matches the CI install path: same version source, same binary
- * integrity check (SHA-256 inline), same on-disk layout
- * (~/.socket/_dlx/<hash>/sfw). The dev-only piece is a stable shim
- * symlink at ~/.socket/sfw/bin/sfw → _dlx-hashed path so existing
- * shims in ~/.socket/sfw/shims/ continue to resolve.
- *
- * Reads version + per-platform sha256 from the repo's root
- * `external-tools.json` under `tools.sfw-free` / `tools.sfw-enterprise`.
- * That file is the single fleet source of truth — every consumer of
- * external tooling reads the same entries.
- *
- * Usage:
- *   pnpm run install:sfw                  # free flavor
- *   pnpm run install:sfw -- --enterprise  # requires SOCKET_API_TOKEN
- *   pnpm run install:sfw -- --force       # ignore cache, redownload
- *   pnpm run install:sfw -- --quiet
+ * @socketsecurity/lib-stable's downloadBinary helper. Matches the CI install
+ *   path: same version source, same binary integrity check (SHA-256 inline),
+ *   same on-disk layout (~/.socket/_dlx/<hash>/sfw). The dev-only piece is a
+ *   stable shim symlink at ~/.socket/sfw/bin/sfw → _dlx-hashed path so existing
+ *   shims in ~/.socket/sfw/shims/ continue to resolve. Reads version +
+ *   per-platform sha256 from the repo's root `external-tools.json` under
+ *   `tools.sfw-free` / `tools.sfw-enterprise`. That file is the single fleet
+ *   source of truth — every consumer of external tooling reads the same
+ *   entries. Usage: pnpm run install:sfw # free flavor pnpm run install:sfw --
+ *   --enterprise # requires SOCKET_API_TOKEN pnpm run install:sfw -- --force #
+ *   ignore cache, redownload pnpm run install:sfw -- --quiet.
  */
 
 import { existsSync, promises as fsPromises, readFileSync } from 'node:fs'

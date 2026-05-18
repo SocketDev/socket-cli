@@ -1,18 +1,14 @@
 /**
- * @fileoverview Ban dynamic `import()` (ImportExpression) in code that
- * isn't bundled. The fleet favors static ES6 imports — dynamic import
- * is only meaningful when a bundler resolves it statically at build
- * time. Scripts under `scripts/` run directly via `node`; nothing
- * bundles them, so a dynamic import only adds a runtime async hop for
- * no resolution win.
- *
- * Allowed paths: `src/**`, `.config/**` (bundler configs themselves
- * may load tools dynamically via the bundler's API).
- *
- * No autofix: converting `await import('foo')` to `import 'foo'`
- * requires moving the statement to the top of the file and removing
- * `await`/destructuring — the bundler-aware AST rewrite is non-trivial
- * to do safely. Reporting only.
+ * @file Ban dynamic `import()` (ImportExpression) in code that isn't bundled.
+ *   The fleet favors static ES6 imports — dynamic import is only meaningful
+ *   when a bundler resolves it statically at build time. Scripts under
+ *   `scripts/` run directly via `node`; nothing bundles them, so a dynamic
+ *   import only adds a runtime async hop for no resolution win. Allowed paths:
+ *   `src/**`, `.config/**` (bundler configs themselves may load tools
+ *   dynamically via the bundler's API). No autofix: converting `await
+ *   import('foo')` to `import 'foo'` requires moving the statement to the top
+ *   of the file and removing `await`/destructuring — the bundler-aware AST
+ *   rewrite is non-trivial to do safely. Reporting only.
  */
 
 import path from 'node:path'
@@ -21,7 +17,9 @@ import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 const DEFAULT_BUNDLED_ROOTS = ['src/', '.config/', 'packages/']
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'problem',

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/prefer-node-modules-dot-cache.
+ * @file Unit tests for socket/prefer-node-modules-dot-cache.
  */
 
 import { describe, test } from 'node:test'

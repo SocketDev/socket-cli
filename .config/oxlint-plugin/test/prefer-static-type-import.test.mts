@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/prefer-static-type-import.
+ * @file Unit tests for socket/prefer-static-type-import.
  */
 
 import { describe, test } from 'node:test'

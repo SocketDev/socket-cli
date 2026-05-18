@@ -67,7 +67,10 @@ const WHEELHOUSE_ONLY_HOOKS: ReadonlySet<string> = new Set([
   'new-hook-claude-md-guard',
 ])
 
-function findCanonicalClaudeMd(filePath: string, cwd: string | undefined): string | undefined {
+function findCanonicalClaudeMd(
+  filePath: string,
+  cwd: string | undefined,
+): string | undefined {
   // Wheelhouse mode: `<repo>/template/.claude/hooks/<name>/index.mts`
   // → check `<repo>/template/CLAUDE.md` (the fleet-canonical source).
   const tplIdx = filePath.indexOf('/template/.claude/hooks/')
@@ -176,8 +179,8 @@ async function main(): Promise<void> {
     `      (enforced by \`.claude/hooks/${hookName}/\`)`,
     '',
     '  Why: fleet repos read CLAUDE.md as the source of truth. A hook',
-    '  without a CLAUDE.md entry is policy that doesn\'t exist on paper —',
-    '  users won\'t know why they got blocked. Keep the entry minimal,',
+    "  without a CLAUDE.md entry is policy that doesn't exist on paper —",
+    "  users won't know why they got blocked. Keep the entry minimal,",
     '  attached to an existing rule whenever possible.',
     '',
     '  Bypass (use sparingly, e.g. when adding the CLAUDE.md entry in',

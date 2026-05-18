@@ -1,10 +1,7 @@
 /**
- * @fileoverview Emit `socket-wheelhouse-schema.json` from the
- * TypeBox source.
- *
- * Run via `pnpm run socket-wheelhouse:emit-schema` from a fleet
- * repo (the worktree where TypeBox is installed). Mirrors the lockstep
- * emit pattern.
+ * @file Emit `socket-wheelhouse-schema.json` from the TypeBox source. Run via
+ *   `pnpm run socket-wheelhouse:emit-schema` from a fleet repo (the worktree
+ *   where TypeBox is installed). Mirrors the lockstep emit pattern.
  */
 
 import { writeFileSync } from 'node:fs'
@@ -39,13 +36,9 @@ writeFileSync(outPath, JSON.stringify(enriched, null, 2) + '\n', 'utf8')
 // over the tree) would flag the emitted schema as drifted on every
 // repo that re-emits it. The schema is in IDENTICAL_FILES, so the
 // formatted form is the byte-canonical form fleet-wide.
-await spawn(
-  'pnpm',
-  ['exec', 'oxfmt', '-c', '.config/oxfmtrc.json', outPath],
-  {
-    cwd: rootDir,
-    stdio: 'inherit',
-  },
-)
+await spawn('pnpm', ['exec', 'oxfmt', '-c', '.config/oxfmtrc.json', outPath], {
+  cwd: rootDir,
+  stdio: 'inherit',
+})
 
 logger.success(`wrote ${path.relative(rootDir, outPath)}`)

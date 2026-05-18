@@ -42,8 +42,7 @@ const ALLOW_MARKER = '# socket-hook: allow uses-no-stamp'
 // Matches a YAML `uses:` line that pins a 40-char SHA, e.g.
 //   `        uses: actions/checkout@de0fac2e... # v6.0.2 (2026-05-15)`
 // Captures: (1) ref-name, (2) sha, (3) trailing-comment (may be empty).
-const USES_RE =
-  /^\s*-?\s*uses:\s+([^\s@]+)@([0-9a-f]{40})(\s*#[^\n]*)?\s*$/
+const USES_RE = /^\s*-?\s*uses:\s+([^\s@]+)@([0-9a-f]{40})(\s*#[^\n]*)?\s*$/
 
 // Local actions (`./.github/...`) and Docker images (`docker://...`)
 // don't have SHAs and aren't matched by USES_RE — no special-casing
@@ -53,8 +52,7 @@ const USES_RE =
 // non-paren text, date is 4-2-2 digits). The leading `#` and a space
 // are required; everything else after the date is rejected so we
 // don't tolerate sloppy trailing junk.
-const COMMENT_RE =
-  /^#\s+\S[^()]*\s+\(\d{4}-\d{2}-\d{2}\)\s*$/
+const COMMENT_RE = /^#\s+\S[^()]*\s+\(\d{4}-\d{2}-\d{2}\)\s*$/
 
 interface Hook {
   tool_name?: string
@@ -136,9 +134,7 @@ function main() {
         `[workflow-uses-comment-guard] refusing edit: ${bad.length} ` +
           `\`uses:\` line(s) lack the canonical ` +
           `\`# <tag-or-version-or-branch> (YYYY-MM-DD)\` comment:\n` +
-          bad
-            .map(b => `    ${b.line}\n      ↳ ${b.reason}`)
-            .join('\n') +
+          bad.map(b => `    ${b.line}\n      ↳ ${b.reason}`).join('\n') +
           '\n\nFix: append a comment like `# v6.4.0 (' +
           today +
           ')` or `# main (' +

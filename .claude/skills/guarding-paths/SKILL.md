@@ -11,12 +11,12 @@ allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm r
 
 ## Modes
 
-| Invocation | Effect |
-|---|---|
-| `/guarding-paths` | Full audit-and-fix on the current repo (default). |
-| `/guarding-paths check` | Read-only audit; report violations; no fixes. |
-| `/guarding-paths fix <id>` | Fix a single finding from a prior `check` run, by index. |
-| `/guarding-paths install` | Drop the gate + hook + rule + allowlist into a fresh repo. |
+| Invocation                 | Effect                                                     |
+| -------------------------- | ---------------------------------------------------------- |
+| `/guarding-paths`          | Full audit-and-fix on the current repo (default).          |
+| `/guarding-paths check`    | Read-only audit; report violations; no fixes.              |
+| `/guarding-paths fix <id>` | Fix a single finding from a prior `check` run, by index.   |
+| `/guarding-paths install`  | Drop the gate + hook + rule + allowlist into a fresh repo. |
 
 ## Three-level enforcement
 
@@ -34,27 +34,27 @@ This skill is the **audit-and-fix workflow** that makes a repo conform initially
 
 The gate enforces six rules. The hook enforces a subset (A and B), since it sees only one diff at a time.
 
-| Rule | What it catches | Where checked |
-|---|---|---|
-| **A** | Multi-stage `path.join(...)` constructed inline. Two or more "stage" segments (Final, Release, Stripped, Compressed, Optimized, Synced, wasm, downloaded), or one stage + build-root + mode. | `.mts` / `.cts` files outside a `paths.mts`. Hook + gate. |
-| **B** | Cross-package traversal: `path.join(*, '..', '<sibling-package>', 'build', ...)` reaching into a sibling's output instead of importing via `exports`. | `.mts` / `.cts` files. Hook + gate. |
-| **C** | Workflow YAML constructs the same path string in 2+ steps outside a "Compute paths" step. | `.github/workflows/*.yml`. Gate. |
-| **D** | Comment encodes a fully-qualified multi-stage path string (e.g. `# build/dev/darwin-arm64/out/Final/binary`). | `.github/workflows/*.yml`. Gate. |
-| **F** | Same path shape constructed in 2+ different files. | All scanned files. Gate. |
-| **G** | Hand-built multi-stage path constructed 2+ times in the same Makefile / Dockerfile / shell stage. | `Makefile`, `*.mk`, `*.Dockerfile`, `Dockerfile.*`, `*.sh`. Gate. |
+| Rule  | What it catches                                                                                                                                                                              | Where checked                                                     |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **A** | Multi-stage `path.join(...)` constructed inline. Two or more "stage" segments (Final, Release, Stripped, Compressed, Optimized, Synced, wasm, downloaded), or one stage + build-root + mode. | `.mts` / `.cts` files outside a `paths.mts`. Hook + gate.         |
+| **B** | Cross-package traversal: `path.join(*, '..', '<sibling-package>', 'build', ...)` reaching into a sibling's output instead of importing via `exports`.                                        | `.mts` / `.cts` files. Hook + gate.                               |
+| **C** | Workflow YAML constructs the same path string in 2+ steps outside a "Compute paths" step.                                                                                                    | `.github/workflows/*.yml`. Gate.                                  |
+| **D** | Comment encodes a fully-qualified multi-stage path string (e.g. `# build/dev/darwin-arm64/out/Final/binary`).                                                                                | `.github/workflows/*.yml`. Gate.                                  |
+| **F** | Same path shape constructed in 2+ different files.                                                                                                                                           | All scanned files. Gate.                                          |
+| **G** | Hand-built multi-stage path constructed 2+ times in the same Makefile / Dockerfile / shell stage.                                                                                            | `Makefile`, `*.mk`, `*.Dockerfile`, `Dockerfile.*`, `*.sh`. Gate. |
 
-Comments may describe path *structure* with placeholders (`<mode>/<arch>` or `${BUILD_MODE}/${PLATFORM_ARCH}`) but should not encode a complete literal path string. Violations in `.mts`, Makefiles, Dockerfiles, workflow YAML, and shell scripts are blocking; comments come second.
+Comments may describe path _structure_ with placeholders (`<mode>/<arch>` or `${BUILD_MODE}/${PLATFORM_ARCH}`) but should not encode a complete literal path string. Violations in `.mts`, Makefiles, Dockerfiles, workflow YAML, and shell scripts are blocking; comments come second.
 
 ## Mode: audit-and-fix (default)
 
-| # | Phase | Outcome |
-|---|---|---|
-| 1 | Setup | Spawn worktree off `origin/$BASE` (default-branch fallback). |
-| 2 | Audit | `pnpm run check:paths --json > /tmp/paths-findings.json`; `pnpm run check:paths --explain` for human-readable. |
-| 3 | Fix loop | For each finding, apply the matching pattern from [`reference.md`](reference.md). Re-run the gate after each fix. Stop when `pnpm run check:paths` exits 0. |
-| 4 | Verify | `pnpm check` + `zizmor` on any modified workflow. |
-| 5 | Commit + push | Per-rule commits, atomic. Push directly to `$BASE` for repos that allow it; PR for socket-cli / socket-sdk-js / socket-registry. |
-| 6 | Cleanup | `git worktree remove ../<repo>-paths-audit`. `git worktree list` should show only the primary afterward. |
+| #   | Phase         | Outcome                                                                                                                                                     |
+| --- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Setup         | Spawn worktree off `origin/$BASE` (default-branch fallback).                                                                                                |
+| 2   | Audit         | `pnpm run check:paths --json > /tmp/paths-findings.json`; `pnpm run check:paths --explain` for human-readable.                                              |
+| 3   | Fix loop      | For each finding, apply the matching pattern from [`reference.md`](reference.md). Re-run the gate after each fix. Stop when `pnpm run check:paths` exits 0. |
+| 4   | Verify        | `pnpm check` + `zizmor` on any modified workflow.                                                                                                           |
+| 5   | Commit + push | Per-rule commits, atomic. Push directly to `$BASE` for repos that allow it; PR for socket-cli / socket-sdk-js / socket-registry.                            |
+| 6   | Cleanup       | `git worktree remove ../<repo>-paths-audit`. `git worktree list` should show only the primary afterward.                                                    |
 
 Worktree setup uses the default-branch fallback from CLAUDE.md:
 
@@ -102,7 +102,7 @@ Genuine exemptions are rare — most "false positives" should be reported as gat
 - **`line:`** — exact line number. Strict; a single-line edit above shifts the entry off-target and the finding re-surfaces.
 - **`snippet_hash:`** — 12-char SHA-256 prefix of the offending snippet (whitespace-normalized). Drift-resistant — survives reformatting, but any content-changing edit invalidates it. Get the hash via `pnpm run check:paths --show-hashes`.
 
-Both may be set — either matching is sufficient. Prefer `snippet_hash` over raw `line:` when the exemption is expected to outlive routine reformatting; prefer `line:` when you specifically *want* the entry to fall off after any nearby edit.
+Both may be set — either matching is sufficient. Prefer `snippet_hash` over raw `line:` when the exemption is expected to outlive routine reformatting; prefer `line:` when you specifically _want_ the entry to fall off after any nearby edit.
 
 ## Commit cadence
 
@@ -114,7 +114,7 @@ Conventional commit shape: `fix(paths): rule A — extract foo build paths into 
 
 ## Tie-in with `scanning-quality`
 
-`/scanning-quality` calls `pnpm run check:paths --json` as one of its sub-scans and surfaces findings in its A-F report. The full audit-and-fix workflow lives here; `scanning-quality` only *detects* during periodic scans.
+`/scanning-quality` calls `pnpm run check:paths --json` as one of its sub-scans and surfaces findings in its A-F report. The full audit-and-fix workflow lives here; `scanning-quality` only _detects_ during periodic scans.
 
 ## Fix patterns
 

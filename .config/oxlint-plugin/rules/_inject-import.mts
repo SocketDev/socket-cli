@@ -1,15 +1,12 @@
 /**
- * @fileoverview Shared helper for rule fixers that need to inject
- * an `import { Name } from 'specifier'` statement (and optionally a
- * matching hoisted `const`) into a file.
- *
- * Fixers call `summarizeImportTarget(programNode, specifier, importName)`
- * to learn the file's current shape, then `appendImportFixes(...)`
- * inside their `fix(fixer)` callback to add the missing pieces.
- *
- * ESLint's autofixer dedupes overlapping inserts at the same range,
- * so multiple violations in the same file can each emit the import
- * insertion safely — only one survives.
+ * @file Shared helper for rule fixers that need to inject an `import { Name }
+ *   from 'specifier'` statement (and optionally a matching hoisted `const`)
+ *   into a file. Fixers call `summarizeImportTarget(programNode, specifier,
+ *   importName)` to learn the file's current shape, then
+ *   `appendImportFixes(...)` inside their `fix(fixer)` callback to add the
+ *   missing pieces. ESLint's autofixer dedupes overlapping inserts at the same
+ *   range, so multiple violations in the same file can each emit the import
+ *   insertion safely — only one survives.
  */
 
 import type { AstNode, RuleFixer } from '../lib/rule-types.mts'
@@ -23,23 +20,21 @@ export interface ImportSummary {
 export type FixerOp = unknown
 
 /**
- * Walk a Program node body once and figure out:
- *   - the last top-level ImportDeclaration node (or undefined)
- *   - whether `importName` is already imported (from ANY source)
- *   - whether a top-level `localName` identifier already exists
- *     (any const/let/var or import-as-local with that name)
+ * Walk a Program node body once and figure out: - the last top-level
+ * ImportDeclaration node (or undefined) - whether `importName` is already
+ * imported (from ANY source) - whether a top-level `localName` identifier
+ * already exists (any const/let/var or import-as-local with that name)
  *
- * Import detection ignores the specifier path: a file inside the lib
- * package itself imports `getDefaultLogger` from `'../logger'`, while
- * a downstream repo imports the same name from
- * `'@socketsecurity/lib-stable/logger'`. Both resolve to the same identifier;
- * either should count as "already imported" so the autofix doesn't
- * inject a duplicate (and broken — see issue #64).
+ * Import detection ignores the specifier path: a file inside the lib package
+ * itself imports `getDefaultLogger` from `'../logger'`, while a downstream repo
+ * imports the same name from `'@socketsecurity/lib-stable/logger'`. Both
+ * resolve to the same identifier; either should count as "already imported" so
+ * the autofix doesn't inject a duplicate (and broken — see issue #64).
  *
- * `specifier` is retained in the signature for backward compatibility
- * but is no longer used for the match decision. Callers may pass any
- * truthy value (typically the canonical package path the rule would
- * inject if the import were missing).
+ * `specifier` is retained in the signature for backward compatibility but is no
+ * longer used for the match decision. Callers may pass any truthy value
+ * (typically the canonical package path the rule would inject if the import
+ * were missing).
  */
 export function summarizeImportTarget(
   program: AstNode,
@@ -112,14 +107,12 @@ export function summarizeImportTarget(
 }
 
 /**
- * Build the fixer-side inserts for missing import + optional hoist.
- * Returns an array of fixer operations the caller appends to its own
- * fix() return value.
+ * Build the fixer-side inserts for missing import + optional hoist. Returns an
+ * array of fixer operations the caller appends to its own fix() return value.
  *
- *   summary       — output of summarizeImportTarget()
- *   fixer         — the fixer passed to context.report({ fix })
- *   importLine    — the literal `import { ... } from '...'` text
- *   hoistLine     — optional; the literal `const x = ...()` text
+ * Summary — output of summarizeImportTarget() fixer — the fixer passed to
+ * context.report({ fix }) importLine — the literal `import { ... } from '...'`
+ * text hoistLine — optional; the literal `const x = ...()` text.
  */
 export function appendImportFixes(
   summary: ImportSummary,

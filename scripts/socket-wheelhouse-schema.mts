@@ -1,25 +1,22 @@
 /**
- * @fileoverview TypeBox schema for the per-fleet-repo socket-wheelhouse
- * config consumed by `sync-scaffolding`. Two valid locations:
- * `.config/socket-wheelhouse.json` (primary) or
- * `.socket-wheelhouse.json` at the repo root (alternative). Both are
- * first-class — pick the location that fits your repo's convention.
+ * @file TypeBox schema for the per-fleet-repo socket-wheelhouse config consumed
+ *   by `sync-scaffolding`. Two valid locations:
+ *   `.config/socket-wheelhouse.json` (primary) or `.socket-wheelhouse.json` at
+ *   the repo root (alternative). Both are first-class — pick the location that
+ *   fits your repo's convention. Each fleet repo (socket-lib, socket-cli,
+ *   ultrathink, …) ships this config declaring its `layout` + `native` axes
+ *   plus any per-repo opt-ins. The runner reads it to decide which optional
+ *   files the repo is expected to ship and which it must not ship.
+ *   Source-of-truth flow:
  *
- * Each fleet repo (socket-lib, socket-cli, ultrathink, …) ships this
- * config declaring its `layout` + `native` axes plus any per-repo
- * opt-ins. The runner reads it to decide which optional files the
- * repo is expected to ship and which it must not ship.
- *
- * Source-of-truth flow:
- *   - This TypeBox source → `Static<typeof SocketWheelhouseConfigSchema>`
- *     for typed reads in the runner.
+ *   - This TypeBox source → `Static<typeof SocketWheelhouseConfigSchema>` for
+ *     typed reads in the runner.
  *   - `socket-wheelhouse-emit-schema.mts` writes
- *     `.config/socket-wheelhouse-schema.json` (draft 2020-12) next to
- *     the per-repo config.
- *   - The per-repo config references the JSON Schema via its `$schema`
- *     field for IDE autocompletion.
- *
- * Byte-identical across the fleet via sync-scaffolding's IDENTICAL_FILES.
+ *     `.config/socket-wheelhouse-schema.json` (draft 2020-12) next to the
+ *     per-repo config.
+ *   - The per-repo config references the JSON Schema via its `$schema` field for
+ *     IDE autocompletion. Byte-identical across the fleet via
+ *     sync-scaffolding's IDENTICAL_FILES.
  */
 
 import { Type, type Static } from '@sinclair/typebox'
@@ -269,8 +266,7 @@ const PathsAllowlistEntrySchema = Type.Object(
   {
     rule: Type.Optional(
       Type.String({
-        description:
-          'Rule letter (A, B, C, D, F, G). Omit to match any rule.',
+        description: 'Rule letter (A, B, C, D, F, G). Omit to match any rule.',
       }),
     ),
     file: Type.Optional(
@@ -291,7 +287,7 @@ const PathsAllowlistEntrySchema = Type.Object(
     snippet_hash: Type.Optional(
       Type.String({
         description:
-          '12-char SHA-256 prefix of the normalized snippet (whitespace collapsed). Drift-resistant: keeps matching after reformatting that doesn\'t change the offending construction. Get via `node scripts/check-paths.mts --show-hashes`.',
+          "12-char SHA-256 prefix of the normalized snippet (whitespace collapsed). Drift-resistant: keeps matching after reformatting that doesn't change the offending construction. Get via `node scripts/check-paths.mts --show-hashes`.",
       }),
     ),
     reason: Type.String({

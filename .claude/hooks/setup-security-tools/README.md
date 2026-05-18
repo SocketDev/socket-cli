@@ -6,7 +6,7 @@ Firewall)** — and wires them into your shell's PATH. Run it once per
 machine and you're set.
 
 > Despite living under `.claude/hooks/`, this isn't a Claude Code
-> *lifecycle* hook (it doesn't fire on `PreToolUse` / `Stop` / etc.).
+> _lifecycle_ hook (it doesn't fire on `PreToolUse` / `Stop` / etc.).
 > It's just a shared setup script that any fleet repo can invoke as
 > `pnpm run setup`. It lives here because it's tightly coupled to the
 > claude config it sets up alongside.
@@ -41,7 +41,7 @@ its pinned version, not your system one.
 
 Intercepts package manager commands (`npm install`, `pnpm add`, etc.)
 and scans the resolved packages against Socket.dev's malware database
-*before* the install runs. Catches malware that landed in the
+_before_ the install runs. Catches malware that landed in the
 registry between your last `pnpm install` and now.
 
 **How it's installed**: as a native binary, downloaded from GitHub,
@@ -73,12 +73,12 @@ whatever isn't already cached.
 
 ## Where each tool lands
 
-| Tool | Location | Persists across repos? |
-|------|---------|------------------------|
-| AgentShield | `~/.socket/_dlx/<hash>/agentshield` | Yes |
-| zizmor | `~/.socket/_dlx/<hash>/zizmor` | Yes |
-| SFW binary | `~/.socket/_dlx/<hash>/sfw` | Yes |
-| SFW shims | `~/.socket/sfw/shims/npm`, etc. | Yes |
+| Tool        | Location                            | Persists across repos? |
+| ----------- | ----------------------------------- | ---------------------- |
+| AgentShield | `~/.socket/_dlx/<hash>/agentshield` | Yes                    |
+| zizmor      | `~/.socket/_dlx/<hash>/zizmor`      | Yes                    |
+| SFW binary  | `~/.socket/_dlx/<hash>/sfw`         | Yes                    |
+| SFW shims   | `~/.socket/sfw/shims/npm`, etc.     | Yes                    |
 
 `<hash>` in `_dlx/<hash>/` is a content-addressed directory keyed off
 the pinned version + sha256, so multiple versions can coexist
@@ -136,7 +136,7 @@ for package managers found on your `PATH` at install time. Install
 npm/pnpm/whatever first, then re-run setup.
 
 **SFW shims not intercepting** — Make sure `~/.socket/sfw/shims` is
-at the *front* of your `PATH`. Run `which npm` — it should point at
+at the _front_ of your `PATH`. Run `which npm` — it should point at
 the shim under `~/.socket/sfw/shims/`, not the real binary.
 
 ## Cross-fleet sync

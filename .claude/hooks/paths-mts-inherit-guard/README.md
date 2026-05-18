@@ -14,7 +14,7 @@ the nearest ancestor so `REPO_ROOT`, `CONFIG_DIR`,
 The fleet rule from CLAUDE.md (1 path, 1 reference):
 
 > Sub-packages inherit: a sub-package's `paths.mts` `export * from
-> '<rel>/paths.mts'` from the nearest ancestor and adds local
+'<rel>/paths.mts'` from the nearest ancestor and adds local
 > overrides below the re-export. Don't re-derive `REPO_ROOT` /
 > `CONFIG_DIR` / `NODE_MODULES_CACHE_DIR`.
 
@@ -41,8 +41,7 @@ inheriting:
 
 ```ts
 // BLOCKED — should re-export from the ancestor
-const REPO_ROOT = fileURLToPath(import.meta.url)
-  .split('/scripts/')[0]
+const REPO_ROOT = fileURLToPath(import.meta.url).split('/scripts/')[0]
 ```
 
 ## Bypass
@@ -54,4 +53,4 @@ inheritance pattern.
 
 ## Cited from CLAUDE.md
 
-Under *1 path, 1 reference*: "Sub-packages inherit" bullet.
+Under _1 path, 1 reference_: "Sub-packages inherit" bullet.

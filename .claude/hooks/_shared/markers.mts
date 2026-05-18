@@ -1,16 +1,14 @@
 /**
- * @fileoverview Canonical opt-out marker handling shared across hooks.
- *
- * The fleet `// socket-hook: allow <rule>` marker has two surfaces:
+ * @file Canonical opt-out marker handling shared across hooks. The fleet `//
+ *   socket-hook: allow <rule>` marker has two surfaces:
  *
  *   1. `.claude/hooks/*-guard/index.mts` (PreToolUse hooks, Claude Code).
- *   2. `.git-hooks/_helpers.mts` (pre-commit / pre-push scanners).
- *
- * Both surfaces need the same regex, the same suppression check, and
- * the same alias map. Defining them in one place means a future
- * `RULE_ALIASES` addition can't silently diverge between the two — the
- * "Marker name was logger, now it's console" episode showed why
- * inline-duplicating the alias check is a footgun.
+ *   2. `.git-hooks/_helpers.mts` (pre-commit / pre-push scanners). Both surfaces
+ *      need the same regex, the same suppression check, and the same alias map.
+ *      Defining them in one place means a future `RULE_ALIASES` addition can't
+ *      silently diverge between the two — the "Marker name was logger, now it's
+ *      console" episode showed why inline-duplicating the alias check is a
+ *      footgun.
  */
 
 // `<comment-prefix>` is `#`, `//`, or `/*` to match shell, JS/TS, and
@@ -22,10 +20,9 @@ export const SOCKET_HOOK_MARKER_RE: RegExp =
   /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
 
 /**
- * Legacy marker names recognized as equivalent to a current rule for
- * one deprecation cycle. Keys are aliases; values are the canonical
- * rule name. The match is bidirectional in `aliasMatches` so callers
- * can ask either side.
+ * Legacy marker names recognized as equivalent to a current rule for one
+ * deprecation cycle. Keys are aliases; values are the canonical rule name. The
+ * match is bidirectional in `aliasMatches` so callers can ask either side.
  *
  * Add entries when renaming a rule. Drop them after one cycle.
  */
@@ -39,8 +36,8 @@ export const RULE_ALIASES: Readonly<Record<string, string>> = Object.freeze({
 } as unknown as Record<string, string>)
 
 /**
- * True when `marker` and `rule` name the same logical rule, either
- * directly or via a `RULE_ALIASES` entry in either direction.
+ * True when `marker` and `rule` name the same logical rule, either directly or
+ * via a `RULE_ALIASES` entry in either direction.
  */
 export function aliasMatches(marker: string, rule: string): boolean {
   if (marker === rule) {
@@ -51,11 +48,11 @@ export function aliasMatches(marker: string, rule: string): boolean {
 
 /**
  * True when `line` carries a marker that suppresses `rule`. A bare
- * `socket-hook: allow` (no rule name) is treated as a blanket allow
- * and returns true for every `rule`.
+ * `socket-hook: allow` (no rule name) is treated as a blanket allow and returns
+ * true for every `rule`.
  *
- * `rule === undefined` means "is any marker present at all" — used by
- * generic line-iteration helpers that don't carry a rule context.
+ * `rule === undefined` means "is any marker present at all" — used by generic
+ * line-iteration helpers that don't carry a rule context.
  */
 export function lineIsSuppressed(line: string, rule?: string): boolean {
   const m = line.match(SOCKET_HOOK_MARKER_RE)

@@ -1,19 +1,14 @@
 /**
- * @fileoverview Rule A + B scanner for .mts / .cts source files.
- *
- * Rule A — multi-stage path constructed inline (a `path.join(...)` /
- * `path.resolve(...)` call OR a template literal that stitches stage
- * tokens together).
- *
- * Rule B — cross-package traversal: `path.join(*, '..', '<sibling>',
- * 'build', ...)` reaching into a sibling package's build output
- * without going through its `exports`.
- *
- * Argument extraction uses a paren-balancing scanner (not just regex)
- * so nested calls like `path.join(getDir(child(x)), 'build', 'Final')`
- * are captured fully. Template literals get their `${...}`
- * placeholders stripped to a sentinel so a placeholder-only segment
- * can't accidentally match a stage token.
+ * @file Rule A + B scanner for .mts / .cts source files. Rule A — multi-stage
+ *   path constructed inline (a `path.join(...)` / `path.resolve(...)` call OR a
+ *   template literal that stitches stage tokens together). Rule B —
+ *   cross-package traversal: `path.join(*, '..', '<sibling>', 'build', ...)`
+ *   reaching into a sibling package's build output without going through its
+ *   `exports`. Argument extraction uses a paren-balancing scanner (not just
+ *   regex) so nested calls like `path.join(getDir(child(x)), 'build', 'Final')`
+ *   are captured fully. Template literals get their `${...}` placeholders
+ *   stripped to a sentinel so a placeholder-only segment can't accidentally
+ *   match a stage token.
  */
 
 import { readFileSync } from 'node:fs'
@@ -42,11 +37,11 @@ export const TEMPLATE_LITERAL_RE =
   /`((?:\\.|(?:\$\{(?:[^{}]|\{[^{}]*\})*\})|(?!`)[^\\])*)`/g
 
 /**
- * Convert a template-literal body into a synthetic forward-slash path
- * by replacing `${...}` placeholders with a sentinel and normalizing
- * separators. Returns the sequence of path segments split on `/`. The
- * sentinel doesn't match any STAGE/BUILD_ROOT/MODE token, so a
- * placeholder-only segment (`${binaryName}`) won't match those sets.
+ * Convert a template-literal body into a synthetic forward-slash path by
+ * replacing `${...}` placeholders with a sentinel and normalizing separators.
+ * Returns the sequence of path segments split on `/`. The sentinel doesn't
+ * match any STAGE/BUILD_ROOT/MODE token, so a placeholder-only segment
+ * (`${binaryName}`) won't match those sets.
  */
 export const templateLiteralSegments = (body: string): string[] => {
   // Strip placeholders so they don't introduce noise in segments.
@@ -57,10 +52,10 @@ export const templateLiteralSegments = (body: string): string[] => {
 }
 
 /**
- * Extract every `path.join(...)` and `path.resolve(...)` call from the
- * source text, returning each call's literal start offset and argument
- * substring. Uses paren-balancing so deeply-nested arguments like
- * `path.join(getDir(child(x)), 'build', 'Final')` are captured fully.
+ * Extract every `path.join(...)` and `path.resolve(...)` call from the source
+ * text, returning each call's literal start offset and argument substring. Uses
+ * paren-balancing so deeply-nested arguments like `path.join(getDir(child(x)),
+ * 'build', 'Final')` are captured fully.
  */
 export const extractPathCalls = (
   source: string,

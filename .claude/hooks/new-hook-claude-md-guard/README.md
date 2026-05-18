@@ -19,8 +19,9 @@ Adding a new hook (`template/.claude/hooks/my-rule/index.mts`) must be accompani
 The pattern: **one minimal line, attached to the rule it enforces**, with the parenthetical hook reference in `(enforced by `.claude/hooks/<name>/`)` form. Don't add prose; the hook's README carries the detail.
 
 Accepted variants:
-- `` (enforced by `.claude/hooks/my-rule/`) `` — preferred
-- `` (enforced by `.claude/hooks/my-rule`) `` — trailing slash optional
+
+- ``(enforced by `.claude/hooks/my-rule/`)`` — preferred
+- ``(enforced by `.claude/hooks/my-rule`)`` — trailing slash optional
 - `` enforced by `.claude/hooks/my-rule/` `` — without parens (less common but accepted)
 
 ## Why wheelhouse-only

@@ -1,28 +1,20 @@
 /**
- * @fileoverview Cross-platform secure storage for the Socket API token.
- *
- * Wraps each OS's native credential store:
- *
- *   macOS    → `security add-generic-password` / `find-generic-password`
- *              (Keychain Access).
- *   Linux    → `secret-tool store` / `secret-tool lookup` (libsecret).
- *   Windows  → `cmdkey /add` plus PowerShell readback via `Get-StoredCredential`
- *              (CredentialManager module). Falls back to `DPAPI`-encrypted
- *              file under `%APPDATA%\\socket-cli\\token.enc` when neither
- *              CredentialManager module nor cmdkey-readback is available.
- *
- * The token is stored under service name `socket-cli` with account
- * `SOCKET_API_TOKEN` so it co-exists with other Socket credentials
- * (e.g. CLI-managed publish tokens) without collision.
- *
- * **Never read from or write to a plain file.** The point of this
- * module is to keep the token off the filesystem entirely. The
- * fallback DPAPI file on Windows is encrypted under the user's
- * machine key — still not plaintext.
- *
- * Returned values are the raw token string or `undefined`. Errors
- * during read are silent (returns undefined); errors during write
- * throw so the caller can surface why persistence failed.
+ * @file Cross-platform secure storage for the Socket API token. Wraps each OS's
+ *   native credential store: macOS → `security add-generic-password` /
+ *   `find-generic-password` (Keychain Access). Linux → `secret-tool store` /
+ *   `secret-tool lookup` (libsecret). Windows → `cmdkey /add` plus PowerShell
+ *   readback via `Get-StoredCredential` (CredentialManager module). Falls back
+ *   to `DPAPI`-encrypted file under `%APPDATA%\\socket-cli\\token.enc` when
+ *   neither CredentialManager module nor cmdkey-readback is available. The
+ *   token is stored under service name `socket-cli` with account
+ *   `SOCKET_API_TOKEN` so it co-exists with other Socket credentials (e.g.
+ *   CLI-managed publish tokens) without collision. **Never read from or write
+ *   to a plain file.** The point of this module is to keep the token off the
+ *   filesystem entirely. The fallback DPAPI file on Windows is encrypted under
+ *   the user's machine key — still not plaintext. Returned values are the raw
+ *   token string or `undefined`. Errors during read are silent (returns
+ *   undefined); errors during write throw so the caller can surface why
+ *   persistence failed.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -73,15 +65,15 @@ function detectPlatform(): Platform {
 }
 
 /**
- * Read the token from the platform's secure store. Returns undefined
- * when the entry doesn't exist OR when the underlying tool isn't on
- * PATH — read paths never throw, so callers can fall through to the
- * next source (env, .env, prompt) cleanly.
+ * Read the token from the platform's secure store. Returns undefined when the
+ * entry doesn't exist OR when the underlying tool isn't on PATH — read paths
+ * never throw, so callers can fall through to the next source (env, .env,
+ * prompt) cleanly.
  *
  * Tries the canonical account name first, then the legacy alias. The
- * fall-through means an existing keychain entry under SOCKET_API_KEY
- * (from a manual `security add` or a pre-migration install) keeps
- * working until the next write rebuilds both entries.
+ * fall-through means an existing keychain entry under SOCKET_API_KEY (from a
+ * manual `security add` or a pre-migration install) keeps working until the
+ * next write rebuilds both entries.
  */
 export function readTokenFromKeychain(): string | undefined {
   const platform_ = detectPlatform()
@@ -108,19 +100,20 @@ export function readTokenFromKeychain(): string | undefined {
 }
 
 /**
- * Persist the token to the platform's secure store. Throws on write
- * failure — the caller is in a user-initiated setup flow and should
- * see why persistence failed, not silently continue.
+ * Persist the token to the platform's secure store. Throws on write failure —
+ * the caller is in a user-initiated setup flow and should see why persistence
+ * failed, not silently continue.
  *
- * Writes the token under BOTH the canonical account
- * (`SOCKET_API_TOKEN`) and the legacy alias (`SOCKET_API_KEY`) so
- * consumers that still read the legacy env-var name (sfw, older
- * socket-cli builds) find it without a wrapper script. The two
- * entries always hold the same value.
+ * Writes the token under BOTH the canonical account (`SOCKET_API_TOKEN`) and
+ * the legacy alias (`SOCKET_API_KEY`) so consumers that still read the legacy
+ * env-var name (sfw, older socket-cli builds) find it without a wrapper script.
+ * The two entries always hold the same value.
  */
 export function writeTokenToKeychain(token: string): void {
   if (!token || typeof token !== 'string') {
-    throw new TypeError('writeTokenToKeychain: token must be a non-empty string')
+    throw new TypeError(
+      'writeTokenToKeychain: token must be a non-empty string',
+    )
   }
   const platform_ = detectPlatform()
   if (platform_ === 'other') {
@@ -145,9 +138,9 @@ export function writeTokenToKeychain(token: string): void {
 }
 
 /**
- * Remove the token from the platform's secure store. Idempotent —
- * succeeds whether the entry exists or not. Clears both the canonical
- * account and the legacy alias.
+ * Remove the token from the platform's secure store. Idempotent — succeeds
+ * whether the entry exists or not. Clears both the canonical account and the
+ * legacy alias.
  */
 export function deleteTokenFromKeychain(): void {
   const platform_ = detectPlatform()
@@ -252,14 +245,7 @@ function writeLinux(token: string, account: string): void {
   // `ps` / `/proc/<pid>/cmdline`.
   const r = spawnSync(
     'secret-tool',
-    [
-      'store',
-      '--label=Socket API token',
-      'service',
-      SERVICE,
-      'user',
-      account,
-    ],
+    ['store', '--label=Socket API token', 'service', SERVICE, 'user', account],
     {
       encoding: 'utf8',
       input: token,
@@ -276,11 +262,9 @@ function writeLinux(token: string, account: string): void {
 }
 
 function deleteLinux(account: string): void {
-  spawnSync(
-    'secret-tool',
-    ['clear', 'service', SERVICE, 'user', account],
-    { stdio: 'ignore' },
-  )
+  spawnSync('secret-tool', ['clear', 'service', SERVICE, 'user', account], {
+    stdio: 'ignore',
+  })
 }
 
 // ── Windows ──────────────────────────────────────────────────────────
@@ -325,15 +309,11 @@ function writeWindows(token: string, account: string): void {
       exit 0
     } catch { exit 1 }
   `
-  const ps = spawnSync(
-    'powershell',
-    ['-NoProfile', '-Command', psScript],
-    {
-      encoding: 'utf8',
-      input: token,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    },
-  )
+  const ps = spawnSync('powershell', ['-NoProfile', '-Command', psScript], {
+    encoding: 'utf8',
+    input: token,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
   if (ps.status === 0) {
     return
   }
@@ -374,7 +354,8 @@ function deleteWindows(account: string): void {
 }
 
 function getWindowsDpapiFilePath(): string {
-  const appData = process.env['APPDATA'] ?? path.join(homedir(), 'AppData', 'Roaming')
+  const appData =
+    process.env['APPDATA'] ?? path.join(homedir(), 'AppData', 'Roaming')
   return path.join(appData, 'socket-cli', 'token.enc')
 }
 
@@ -390,11 +371,10 @@ function readWindowsDpapiFile(): string | undefined {
     $plain = [System.Security.Cryptography.ProtectedData]::Unprotect($bytes, $null, 'CurrentUser')
     [System.Text.Encoding]::UTF8.GetString($plain)
   `
-  const ps = spawnSync(
-    'powershell',
-    ['-NoProfile', '-Command', psScript],
-    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
-  )
+  const ps = spawnSync('powershell', ['-NoProfile', '-Command', psScript], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
   if (ps.status !== 0) {
     return undefined
   }
@@ -415,15 +395,11 @@ function writeWindowsDpapiFile(token: string): void {
     $protected = [System.Security.Cryptography.ProtectedData]::Protect($bytes, $null, 'CurrentUser')
     [Convert]::ToBase64String($protected) | Set-Content -Path '${filePath.replace(/'/g, "''")}' -NoNewline
   `
-  const ps = spawnSync(
-    'powershell',
-    ['-NoProfile', '-Command', psScript],
-    {
-      encoding: 'utf8',
-      input: token,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    },
-  )
+  const ps = spawnSync('powershell', ['-NoProfile', '-Command', psScript], {
+    encoding: 'utf8',
+    input: token,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  })
   if (ps.status !== 0) {
     throw new Error(
       `DPAPI file write failed: ${ps.stderr.trim()}. ` +
@@ -436,10 +412,9 @@ function writeWindowsDpapiFile(token: string): void {
 }
 
 /**
- * Diagnostic: report whether the platform's keychain tool is
- * available. Used by the install script to tell the operator
- * upfront if libsecret/CredentialManager need installing before
- * the prompt.
+ * Diagnostic: report whether the platform's keychain tool is available. Used by
+ * the install script to tell the operator upfront if
+ * libsecret/CredentialManager need installing before the prompt.
  */
 export function keychainAvailable(): {
   available: boolean
@@ -450,7 +425,11 @@ export function keychainAvailable(): {
   switch (p) {
     case 'darwin': {
       // security(1) ships with macOS — always present.
-      return { available: true, toolName: 'security(1)', installHint: undefined }
+      return {
+        available: true,
+        toolName: 'security(1)',
+        installHint: undefined,
+      }
     }
     case 'linux': {
       const r = spawnSync('secret-tool', ['--version'], { stdio: 'ignore' })

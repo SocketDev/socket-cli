@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/no-status-emoji.
+ * @file Unit tests for socket/no-status-emoji.
  */
 
 import { describe, test } from 'node:test'

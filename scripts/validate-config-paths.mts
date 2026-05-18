@@ -1,38 +1,29 @@
 #!/usr/bin/env node
 /**
- * @fileoverview Repo gate: every tooling config that *can* live in
- * `.config/` *does* live there, and there is no stale duplicate at
- * the repo root.
+ * @file Repo gate: every tooling config that _can_ live in `.config/` _does_
+ *   live there, and there is no stale duplicate at the repo root. Per
+ *   CLAUDE.md's "Config files in `.config/`" rule, the root keeps only what
+ *   _must_ be there:
  *
- * Per CLAUDE.md's "Config files in `.config/`" rule, the root keeps
- * only what *must* be there:
  *   - package manifests + lockfile (package.json, pnpm-lock.yaml,
  *     pnpm-workspace.yaml)
- *   - linter / formatter dotfiles whose tools require root
- *     placement (.oxlintrc.json, .oxfmtrc.json, .npmrc, .gitignore,
- *     .gitattributes, .node-version)
- *   - tsconfig.json (TypeScript's project root anchor — extends
- *     from .config/tsconfig.base.json)
- *
- * Everything else (taze.config.mts, vitest.config*.mts,
- * tsconfig.base.json, esbuild.config.mts, lockstep.json,
- * socket-wheelhouse.json, etc.) lives in `.config/`. A copy at root
- * is drift — usually a half-finished move that left a stale file
- * behind.
- *
- * `tsconfig.base.json` is the abstract compiler-options layer
- * (fleet-canonical, byte-identical across the fleet) and stays in
- * `.config/`. *Concrete* tsconfigs (`tsconfig.json`,
- * `tsconfig.check.json`, `tsconfig.dts.json`, etc. — anything with
- * `include`/`exclude`/`files`) live at the package root: at repo root
- * for single-package repos, at each `packages/<pkg>/` for monorepos.
- * tsc discovers `tsconfig.json` at cwd natively; keeping the concrete
- * elsewhere breaks IDE language-server discovery and forces every
- * caller to pass `-p <path>` explicitly.
- *
- * Exit codes:
- *   0 — clean
- *   1 — duplicate(s) found
+ *   - linter / formatter dotfiles whose tools require root placement
+ *     (.oxlintrc.json, .oxfmtrc.json, .npmrc, .gitignore, .gitattributes,
+ *     .node-version)
+ *   - tsconfig.json (TypeScript's project root anchor — extends from
+ *     .config/tsconfig.base.json) Everything else (taze.config.mts,
+ *     vitest.config_.mts, tsconfig.base.json, esbuild.config.mts,
+ *     lockstep.json, socket-wheelhouse.json, etc.) lives in `.config/`. A copy
+ *     at root is drift — usually a half-finished move that left a stale file
+ *     behind. `tsconfig.base.json` is the abstract compiler-options layer
+ *     (fleet-canonical, byte-identical across the fleet) and stays in
+ *     `.config/`. *Concrete_ tsconfigs (`tsconfig.json`, `tsconfig.check.json`,
+ *     `tsconfig.dts.json`, etc. — anything with `include`/`exclude`/`files`)
+ *     live at the package root: at repo root for single-package repos, at each
+ *     `packages/<pkg>/` for monorepos. tsc discovers `tsconfig.json` at cwd
+ *     natively; keeping the concrete elsewhere breaks IDE language-server
+ *     discovery and forces every caller to pass `-p <path>` explicitly. Exit
+ *     codes: 0 — clean 1 — duplicate(s) found
  */
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -132,8 +123,7 @@ function main(): void {
   }
 
   if (findings.length === 0) {
-    const total =
-      CONFIG_BASENAMES.length + CONCRETE_TSCONFIG_BASENAMES.length
+    const total = CONFIG_BASENAMES.length + CONCRETE_TSCONFIG_BASENAMES.length
     logger.success(
       `Config-path hygiene OK — ${total} basenames checked, no drift.`,
     )

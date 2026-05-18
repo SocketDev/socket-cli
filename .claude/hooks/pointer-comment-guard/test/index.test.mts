@@ -42,8 +42,8 @@ function runHook(
 
 test('FLAGS bare "See the @fileoverview JSDoc above."', () => {
   const content = [
-    "export const x = 1",
-    "// See the @fileoverview JSDoc above.",
+    'export const x = 1',
+    '// See the @fileoverview JSDoc above.',
     'export const StringPrototypeEndsWith = uncurry()',
   ].join('\n')
   const { stderr, exitCode } = runHook('Write', '/repo/src/foo.ts', content)
@@ -54,7 +54,7 @@ test('FLAGS bare "See the @fileoverview JSDoc above."', () => {
 
 test('FLAGS bare "Full rationale in the fileoverview."', () => {
   const content = [
-    "// Full rationale in the fileoverview.",
+    '// Full rationale in the fileoverview.',
     'export const x = 1',
   ].join('\n')
   const { stderr, exitCode } = runHook('Write', '/repo/src/bar.ts', content)
@@ -63,10 +63,7 @@ test('FLAGS bare "Full rationale in the fileoverview."', () => {
 })
 
 test('FLAGS bare "See X for details."', () => {
-  const content = [
-    "// See X for details.",
-    'export const x = 1',
-  ].join('\n')
+  const content = ['// See X for details.', 'export const x = 1'].join('\n')
   const { exitCode } = runHook('Write', '/repo/src/baz.ts', content)
   assert.equal(exitCode, 0)
 })
@@ -85,7 +82,7 @@ test('ACCEPTS pointer + claim form (current breadcrumb shape)', () => {
 test('ACCEPTS claim-first-then-pointer form (alternate)', () => {
   const content = [
     "// Searches stay uncurried — V8's hot path beats any Fast API",
-    "// binding here. Full rationale in the @fileoverview JSDoc above.",
+    '// binding here. Full rationale in the @fileoverview JSDoc above.',
     'export const StringPrototypeEndsWith = uncurry()',
   ].join('\n')
   const { stderr, exitCode } = runHook('Write', '/repo/src/string.ts', content)
@@ -95,7 +92,7 @@ test('ACCEPTS claim-first-then-pointer form (alternate)', () => {
 
 test('ACCEPTS pointer with claim via "because"', () => {
   const content = [
-    "// See the upstream spec for details, because the ordering matters here.",
+    '// See the upstream spec for details, because the ordering matters here.',
     'export const x = 1',
   ].join('\n')
   const { stderr, exitCode } = runHook('Write', '/repo/src/x.ts', content)
@@ -105,7 +102,7 @@ test('ACCEPTS pointer with claim via "because"', () => {
 
 test('ACCEPTS plain non-pointer comments', () => {
   const content = [
-    "// This is a regular comment about the constraint.",
+    '// This is a regular comment about the constraint.',
     'export const x = 1',
   ].join('\n')
   const { stderr, exitCode } = runHook('Write', '/repo/src/x.ts', content)
@@ -125,9 +122,7 @@ test('ACCEPTS prose containing "see" not as a pointer opener', () => {
 })
 
 test('IGNORES non-source extensions (markdown, json)', () => {
-  const content = [
-    "// See the @fileoverview JSDoc above.",
-  ].join('\n')
+  const content = ['// See the @fileoverview JSDoc above.'].join('\n')
   const md = runHook('Write', '/repo/docs/foo.md', content)
   const json = runHook('Write', '/repo/data.json', content)
   assert.equal(md.exitCode, 0)
@@ -137,10 +132,7 @@ test('IGNORES non-source extensions (markdown, json)', () => {
 })
 
 test('IGNORES test files (illustrative pointer-only comments are fine there)', () => {
-  const content = [
-    "// See X for details.",
-    'export const x = 1',
-  ].join('\n')
+  const content = ['// See X for details.', 'export const x = 1'].join('\n')
   const testDir = runHook('Write', '/repo/test/foo.ts', content)
   const testFile = runHook('Write', '/repo/src/foo.test.ts', content)
   assert.equal(testDir.exitCode, 0)
@@ -150,7 +142,7 @@ test('IGNORES test files (illustrative pointer-only comments are fine there)', (
 })
 
 test('IGNORES non-Edit/Write tools', () => {
-  const content = "// See X for details."
+  const content = '// See X for details.'
   const { exitCode, stderr } = runHook('Read', '/repo/src/foo.ts', content)
   assert.equal(exitCode, 0)
   assert.equal(stderr, '')
@@ -158,7 +150,7 @@ test('IGNORES non-Edit/Write tools', () => {
 
 test('ACCEPTS with "Allow pointer-comment bypass" phrase', () => {
   const t = makeTranscript('Allow pointer-comment bypass')
-  const content = "// See the @fileoverview JSDoc above."
+  const content = '// See the @fileoverview JSDoc above.'
   const { exitCode, stderr } = runHook('Write', '/repo/src/foo.ts', content, {
     transcriptPath: t,
   })
@@ -167,7 +159,7 @@ test('ACCEPTS with "Allow pointer-comment bypass" phrase', () => {
 })
 
 test('disabled env var short-circuits', () => {
-  const content = "// See the @fileoverview JSDoc above."
+  const content = '// See the @fileoverview JSDoc above.'
   const { exitCode, stderr } = runHook('Write', '/repo/src/foo.ts', content, {
     env: { SOCKET_POINTER_COMMENT_GUARD_DISABLED: '1' },
   })
@@ -190,7 +182,7 @@ test('handles block comments — bare pointer in /* … */ is flagged', () => {
 test('handles block comments — pointer + claim in /* … */ passes', () => {
   const content = [
     '/**',
-    " * See the @fileoverview JSDoc above. The hot path beats the trampoline.",
+    ' * See the @fileoverview JSDoc above. The hot path beats the trampoline.',
     ' */',
     'export const x = 1',
   ].join('\n')

@@ -1,115 +1,105 @@
 /**
- * @fileoverview Prefer a cached-length C-style `for` loop over both
- * `.forEach(cb)` and `for...of`. Two distinct wins:
+ * @file Prefer a cached-length C-style `for` loop over both `.forEach(cb)` and
+ *   `for...of`. Two distinct wins:
  *
- *   1. `.forEach` creates a function frame per iteration; the
- *      C-style loop does not. For hot paths the difference is
- *      measurable, and the readability cost is small once the
- *      pattern is uniform across the fleet.
- *   2. `for...of` allocates an iterator object and dispatches
- *      `Symbol.iterator` / `.next()` per step. For plain arrays
- *      (the fleet's overwhelmingly common case) the cached-length
- *      `for` loop is both faster and produces predictable
- *      generated code under TS/oxc.
+ *   1. `.forEach` creates a function frame per iteration; the C-style loop does
+ *      not. For hot paths the difference is measurable, and the readability
+ *      cost is small once the pattern is uniform across the fleet.
+ *   2. `for...of` allocates an iterator object and dispatches `Symbol.iterator` /
+ *      `.next()` per step. For plain arrays (the fleet's overwhelmingly common
+ *      case) the cached-length `for` loop is both faster and produces
+ *      predictable generated code under TS/oxc. Style signal that motivated the
+ *      rule: jdalton has hand-optimized fleet hot paths to cached-length `for
+ *      (let i = 0, { length } = arr; i < length; i += 1)` form repeatedly.
+ *      Encoding the preference as a rule prevents drift back to the more
+ *      idiomatic forms in subsequent edits. Canonical shape emitted by the
+ *      autofix: for (let i = 0, { length } = arr; i < length; i += 1) { const
+ *      item = arr[i]!
  *
- * Style signal that motivated the rule: jdalton has hand-optimized
- * fleet hot paths to cached-length `for (let i = 0, { length } = arr; i < length; i += 1)`
- * form repeatedly. Encoding the preference as a rule prevents drift
- * back to the more idiomatic forms in subsequent edits.
- *
- * Canonical shape emitted by the autofix:
- *
- *   for (let i = 0, { length } = arr; i < length; i += 1) {
- *     const item = arr[i]!
- *     <body>
+ *   <body>
  *   }
- *
- * Notes on the shape:
+ *   Notes on the shape:
  *   - `i += 1` instead of `i++` — postfix `++` returns the
- *     pre-increment value, which is a common source of off-by-one
- *     bugs and which the fleet's lint config bans elsewhere.
+ *   pre-increment value, which is a common source of off-by-one
+ *   bugs and which the fleet's lint config bans elsewhere.
  *   - `{ length } = arr` destructures the length once at loop init,
- *     so the test `i < length` doesn't re-read `arr.length` per
- *     iteration. Equivalent to `const len = arr.length` but pairs
- *     with `let i = 0` in a single `let` head.
+ *   so the test `i < length` doesn't re-read `arr.length` per
+ *   iteration. Equivalent to `const len = arr.length` but pairs
+ *   with `let i = 0` in a single `let` head.
  *   - `arr[i]!` non-null assertion — under `noUncheckedIndexedAccess`
- *     the lookup type is `T | undefined`, and the bound `i` is
- *     provably in `[0, length)`. The assertion suppresses TS18048
- *     at every read of `item` downstream. No-op for tsconfigs
- *     without the strict flag.
- *
- * Autofix scope (deterministic only):
- *
+ *   the lookup type is `T | undefined`, and the bound `i` is
+ *   provably in `[0, length)`. The assertion suppresses TS18048
+ *   at every read of `item` downstream. No-op for tsconfigs
+ *   without the strict flag.
+ *   Autofix scope (deterministic only):
  *   - `arr.forEach((item) => { body })` →
- *     ```
- *     for (let i = 0, { length } = arr; i < length; i += 1) {
- *       const item = arr[i]
- *       body
- *     }
- *     ```
- *
+ *   ```
+ *   for (let i = 0, { length } = arr; i < length; i += 1) {
+ *   const item = arr[i]
+ *   body
+ *   }
+ *   ```
  *   - `arr.forEach((item, index) => { body })` →
- *     ```
- *     for (let index = 0, { length } = arr; index < length; index += 1) {
- *       const item = arr[index]
- *       body
- *     }
- *     ```
- *     (The second-arg `index` name takes over the loop counter — no
- *     name collision since the callback parameter is in its own
- *     scope.)
- *
+ *   ```
+ *   for (let index = 0, { length } = arr; index < length; index += 1) {
+ *   const item = arr[index]
+ *   body
+ *   }
+ *   ```
+ *   (The second-arg `index` name takes over the loop counter — no
+ *   name collision since the callback parameter is in its own
+ *   scope.)
  *   - `for (const item of arr) { body }` →
- *     ```
- *     for (let i = 0, { length } = arr; i < length; i += 1) {
- *       const item = arr[i]
- *       body
- *     }
- *     ```
- *
- * Skips (report-only or skip entirely):
+ *   ```
+ *   for (let i = 0, { length } = arr; i < length; i += 1) {
+ *   const item = arr[i]
+ *   body
+ *   }
+ *   ```
+ *   Skips (report-only or skip entirely):
  *   - `.forEach` with a function reference (not an inline arrow /
- *     function expression) — e.g. `arr.forEach(handler)` — the
- *     callback is opaque; rewriting would change semantics if the
- *     handler uses `arguments` or has a non-trivial `.length`.
+ *   function expression) — e.g. `arr.forEach(handler)` — the
+ *   callback is opaque; rewriting would change semantics if the
+ *   handler uses `arguments` or has a non-trivial `.length`.
  *   - `.forEach` with `thisArg` (2nd argument).
  *   - `.forEach` whose callback uses a 3rd `array` parameter — we'd
- *     need to bind a separate name, and the construct is rare.
+ *   need to bind a separate name, and the construct is rare.
  *   - `.forEach` whose callback references `this` (would need
- *     `.bind(this)`).
+ *   `.bind(this)`).
  *   - `.forEach` whose callback has destructured / non-Identifier
- *     parameters (`({ id }) => {}`) — rewriting requires inserting a
- *     destructure pattern inside the loop body; doable but the
- *     human review is cleaner.
+ *   parameters (`({ id }) => {}`) — rewriting requires inserting a
+ *   destructure pattern inside the loop body; doable but the
+ *   human review is cleaner.
  *   - `.forEach` containing `await` (the callback was previously
- *     async and the iterations were independent; switching to a
- *     `for` loop changes that to sequential awaits, which IS what
- *     the user wants here but only if they say so — flag instead).
+ *   async and the iterations were independent; switching to a
+ *   `for` loop changes that to sequential awaits, which IS what
+ *   the user wants here but only if they say so — flag instead).
  *   - `for...of` over an iterator that isn't a bare Identifier
- *     (`for (const x of getThings())`, `for (const x of obj.list)`)
- *     — we'd need to hoist the iterable to a `const` first; skip
- *     SILENTLY. The rewrite is doable in many cases but the human
- *     review is cleaner, and the rule's user experience is bad if
- *     it reports an unfixable warning for every member-access loop.
+ *   (`for (const x of getThings())`, `for (const x of obj.list)`)
+ *   — we'd need to hoist the iterable to a `const` first; skip
+ *   SILENTLY. The rewrite is doable in many cases but the human
+ *   review is cleaner, and the rule's user experience is bad if
+ *   it reports an unfixable warning for every member-access loop.
  *   - `for...of` whose loop variable is destructured
- *     (`for (const [k, v] of m)`, `for (const { x } of arr)`)
- *     — the typical source is a Map / Set / `.entries()` iteration
- *     where there's no equivalent cached-for-loop shape (Maps aren't
- *     integer-indexable). Skip SILENTLY.
+ *   (`for (const [k, v] of m)`, `for (const { x } of arr)`)
+ *   — the typical source is a Map / Set / `.entries()` iteration
+ *   where there's no equivalent cached-for-loop shape (Maps aren't
+ *   integer-indexable). Skip SILENTLY.
  *   - `for...of` whose body uses `continue`/`break` labels matching
- *     `i` or `length` (extremely rare; skip to be safe).
+ *   `i` or `length` (extremely rare; skip to be safe).
  *   - `for...await...of` — semantically distinct, do not touch.
- *
- * The earlier revision of this rule reported `preferCachedForNoFix`
- * for the two skip-silently cases above. That surfaced as a lint
- * error per location with no autofix path — the user had no way to
- * resolve the finding short of hand-rewriting (often impossible:
- * Maps don't have an indexed form). Now the rule only emits findings
- * when an autofix is available; the cases above are skipped without
- * a report at all.
+ *   The earlier revision of this rule reported `preferCachedForNoFix`
+ *   for the two skip-silently cases above. That surfaced as a lint
+ *   error per location with no autofix path — the user had no way to
+ *   resolve the finding short of hand-rewriting (often impossible:
+ *   Maps don't have an indexed form). Now the rule only emits findings
+ *   when an autofix is available; the cases above are skipped without
+ *   a report at all.
  */
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 
 import { FLAGGED_KINDS, createKindResolver } from '../lib/iterable-kind.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
@@ -398,9 +388,9 @@ const rule = {
 }
 
 /**
- * Pick a counter-variable name that won't collide with the item
- * variable. Defaults to `i`, falls back to `i2`, `i3`, ... if the
- * item is itself named `i` (rare but defensive).
+ * Pick a counter-variable name that won't collide with the item variable.
+ * Defaults to `i`, falls back to `i2`, `i3`, ... if the item is itself named
+ * `i` (rare but defensive).
  */
 function pickCounterName(itemName: string): string {
   if (itemName !== 'i') {
@@ -410,15 +400,15 @@ function pickCounterName(itemName: string): string {
 }
 
 /**
- * Textual check: does the loop body reassign the named identifier?
- * Catches `name = ...`, `name +=`, `name++`, `++name`, etc., and
- * destructuring-as-assignment patterns. Conservative: false
- * positives only force `let` (semantically safe), false negatives
- * trip `no-const-assign` (the bug this guards against).
+ * Textual check: does the loop body reassign the named identifier? Catches
+ * `name = ...`, `name +=`, `name++`, `++name`, etc., and
+ * destructuring-as-assignment patterns. Conservative: false positives only
+ * force `let` (semantically safe), false negatives trip `no-const-assign` (the
+ * bug this guards against).
  *
- * AST-walking would be more precise but oxlint's plugin host
- * doesn't expose a uniform visitor for body subtrees here; the
- * regex catches every reassignment shape that compiles today.
+ * AST-walking would be more precise but oxlint's plugin host doesn't expose a
+ * uniform visitor for body subtrees here; the regex catches every reassignment
+ * shape that compiles today.
  */
 function reassignsInBody(
   sourceCode: AstNode,
@@ -453,9 +443,9 @@ function reassignsInBody(
 }
 
 /**
- * Recover the indentation prefix on the line where `node` starts so
- * the rewritten block can re-indent its contents consistently with
- * the surrounding code.
+ * Recover the indentation prefix on the line where `node` starts so the
+ * rewritten block can re-indent its contents consistently with the surrounding
+ * code.
  */
 function leadingIndent(sourceCode: AstNode, node: AstNode): string {
   const text = sourceCode.text

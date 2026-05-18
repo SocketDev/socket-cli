@@ -1,44 +1,34 @@
 /**
- * @fileoverview AI-assisted lint fix step.
- *
- * Runs after `pnpm run lint --fix` (oxlint + oxfmt deterministic
- * autofix) to handle the lint findings that aren't safely
- * mechanically fixable. The CLAUDE.md "Lint rules" guidance is to
- * autofix when the rewrite is unambiguous; what's left after the
- * deterministic pass is by definition the judgment-call set.
- *
- * Pipeline:
+ * @file AI-assisted lint fix step. Runs after `pnpm run lint --fix` (oxlint +
+ *   oxfmt deterministic autofix) to handle the lint findings that aren't safely
+ *   mechanically fixable. The CLAUDE.md "Lint rules" guidance is to autofix
+ *   when the rewrite is unambiguous; what's left after the deterministic pass
+ *   is by definition the judgment-call set. Pipeline:
  *
  *   1. Run `pnpm run lint --json` to capture remaining violations.
- *   2. If there are any findings the AI step is allowed to handle,
- *      build a per-file batch and spawn a headless `claude --print`
- *      with Sonnet, the four lockdown flags, and a tight tool list
- *      (Read, Edit, Grep, Glob). Each spawn handles one file's
- *      worth of findings to keep the context window predictable.
- *   3. After all spawns finish, re-run `pnpm run lint` (without
- *      --fix) to verify nothing got worse. If the count went up,
- *      log a warning and exit non-zero.
+ *   2. If there are any findings the AI step is allowed to handle, build a
+ *      per-file batch and spawn a headless `claude --print` with Sonnet, the
+ *      four lockdown flags, and a tight tool list (Read, Edit, Grep, Glob).
+ *      Each spawn handles one file's worth of findings to keep the context
+ *      window predictable.
+ *   3. After all spawns finish, re-run `pnpm run lint` (without --fix) to verify
+ *      nothing got worse. If the count went up, log a warning and exit
+ *      non-zero. Skipped silently:
  *
- * Skipped silently:
  *   - When the `claude` CLI isn't on PATH.
  *   - When `SKIP_AI_FIX=1` is set (CI sets this; AI-fix runs locally).
- *   - When `--no-ai` is passed.
- *
- * The four lockdown flags per CLAUDE.md "Programmatic Claude calls":
- *   - tools / allowedTools / disallowedTools / permissionMode.
- *
- * Cost / safety:
- *   - Sonnet 4.6, not Opus — judgment work but not architecturally
- *     deep; cost-tier-appropriate.
+ *   - When `--no-ai` is passed. The four lockdown flags per CLAUDE.md
+ *     "Programmatic Claude calls":
+ *   - tools / allowedTools / disallowedTools / permissionMode. Cost / safety:
+ *   - Sonnet 4.6, not Opus — judgment work but not architecturally deep;
+ *     cost-tier-appropriate.
  *   - Per-file batches with a 5-minute timeout — bounds runaway loops.
- *   - Tools restricted to Read/Edit/Grep/Glob — no Bash, no Write of
- *     new files. The AI can only edit files that already exist.
- *   - permissionMode `acceptEdits` so Edit calls don't deadlock on
- *     the missing AskUserQuestion surface.
- *
- * Rule data (which rules the AI handles + per-rule guidance prompts)
- * lives in `./rule-guidance.mts` so the prompt corpus can be
- * reviewed / extended without touching the orchestrator logic.
+ *   - Tools restricted to Read/Edit/Grep/Glob — no Bash, no Write of new files.
+ *     The AI can only edit files that already exist.
+ *   - permissionMode `acceptEdits` so Edit calls don't deadlock on the missing
+ *     AskUserQuestion surface. Rule data (which rules the AI handles + per-rule
+ *     guidance prompts) lives in `./rule-guidance.mts` so the prompt corpus can
+ *     be reviewed / extended without touching the orchestrator logic.
  */
 
 import { existsSync } from 'node:fs'
@@ -68,10 +58,10 @@ interface OxlintFile {
 }
 
 /**
- * Raw shape of a diagnostic in oxlint's `--format=json` output.
- * The wrapper object is `{ "diagnostics": [Diagnostic, ...] }`.
- * Each diagnostic carries `code` (e.g. `"socket(rule-id)"`), `filename`,
- * and a `labels[]` array whose first entry has the source span.
+ * Raw shape of a diagnostic in oxlint's `--format=json` output. The wrapper
+ * object is `{ "diagnostics": [Diagnostic, ...] }`. Each diagnostic carries
+ * `code` (e.g. `"socket(rule-id)"`), `filename`, and a `labels[]` array whose
+ * first entry has the source span.
  */
 interface OxlintDiagnostic {
   code: string
@@ -94,9 +84,9 @@ interface OxlintJsonOutput {
 
 /**
  * Normalize oxlint's `{diagnostics:[...]}` payload into the ESLint-style
- * `OxlintFile[]` shape the rest of this CLI expects. Strip the
- * `socket(...)` wrapper around the rule code so AI_HANDLED_RULES (which
- * stores bare rule names) matches.
+ * `OxlintFile[]` shape the rest of this CLI expects. Strip the `socket(...)`
+ * wrapper around the rule code so AI_HANDLED_RULES (which stores bare rule
+ * names) matches.
  */
 function normalizeOxlintJson(payload: OxlintJsonOutput): OxlintFile[] {
   const byFile = new Map<string, OxlintMessage[]>()
@@ -157,7 +147,6 @@ function parseArgs(argv: readonly string[]): CliArgs {
       continue
     }
     passthrough.push(arg)
-  
   }
   return { all, noAi, passthrough, staged }
 }
@@ -220,7 +209,6 @@ function bucketFindings(files: OxlintFile[]): Map<string, OxlintMessage[]> {
       continue
     }
     byFile.set(f.filePath, handled)
-  
   }
   return byFile
 }
@@ -246,7 +234,6 @@ function renderRuleGuidance(findings: OxlintMessage[]): string {
     if (f.ruleId) {
       seen.add(f.ruleId)
     }
-  
   }
   const entries = [...seen]
     .sort()
@@ -265,30 +252,28 @@ function renderRuleGuidance(findings: OxlintMessage[]): string {
 }
 
 /**
- * Build the per-file prompt. Structure follows Anthropic's prompt-
- * engineering best practices for headless tool-use:
+ * Build the per-file prompt. Structure follows Anthropic's prompt- engineering
+ * best practices for headless tool-use:
  *
- *   - <role>: senior engineer doing a careful refactor — sets the
- *     bar above "quick autofix" so the model treats edge cases.
- *   - <task>: one-sentence framing.
- *   - <file>: the target path. Edits must stay scoped to it.
- *   - <findings>: machine-readable list of violations.
- *   - <rules>: per-rule canonical rewrite + good/bad examples (low
- *     freedom).
- *   - <process>: numbered steps that force a Read → reason → Edit →
- *     self-verify loop. Self-verify is the highest-leverage step —
- *     it catches the import/callsite mismatch class that produced
- *     past breakage.
- *   - <constraints>: hard rules — no Bash, no Write, single-file
- *     scope, no orphan imports.
- *   - <reminders>: instructions repeated at the END for the long-
- *     context regime per Anthropic guidance.
- *   - <output>: response format expectation, prefilled to suppress
- *     markdown / preamble.
+ * - <role>: senior engineer doing a careful refactor — sets the bar above "quick
+ *   autofix" so the model treats edge cases.
+ * - <task>: one-sentence framing.
+ * - <file>: the target path. Edits must stay scoped to it.
+ * - <findings>: machine-readable list of violations.
+ * - <rules>: per-rule canonical rewrite + good/bad examples (low freedom).
+ * - <process>: numbered steps that force a Read → reason → Edit → self-verify
+ *   loop. Self-verify is the highest-leverage step — it catches the
+ *   import/callsite mismatch class that produced past breakage.
+ * - <constraints>: hard rules — no Bash, no Write, single-file scope, no orphan
+ *   imports.
+ * - <reminders>: instructions repeated at the END for the long- context regime
+ *   per Anthropic guidance.
+ * - <output>: response format expectation, prefilled to suppress markdown /
+ *   preamble.
  *
- * The prompt is intentionally short but the structure is explicit.
- * Adding boilerplate dilutes instructions; omitting the verify step
- * is how this prompt has historically produced orphan imports.
+ * The prompt is intentionally short but the structure is explicit. Adding
+ * boilerplate dilutes instructions; omitting the verify step is how this prompt
+ * has historically produced orphan imports.
  */
 function buildPrompt(filePath: string, findings: OxlintMessage[]): string {
   // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- relative path for prompt display; user invokes `pnpm run fix` from their cwd and expects paths relative to where they ran.

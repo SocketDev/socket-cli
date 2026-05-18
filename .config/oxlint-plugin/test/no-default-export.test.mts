@@ -1,10 +1,8 @@
 /**
- * @fileoverview Unit tests for the no-default-export oxlint rule.
- *
- * Spawns the real oxlint binary against fixture files in a tmp dir
- * (see lib/rule-tester.mts). Skips silently when `oxlint` isn't on
- * PATH so a fresh-laptop checkout doesn't false-fail before
- * `pnpm install` materializes the bin link.
+ * @file Unit tests for the no-default-export oxlint rule. Spawns the real
+ *   oxlint binary against fixture files in a tmp dir (see lib/rule-tester.mts).
+ *   Skips silently when `oxlint` isn't on PATH so a fresh-laptop checkout
+ *   doesn't false-fail before `pnpm install` materializes the bin link.
  */
 
 import { describe, test } from 'node:test'

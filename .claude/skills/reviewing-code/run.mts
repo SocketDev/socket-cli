@@ -1,16 +1,13 @@
 /**
- * reviewing-code skill runner — multi-agent four-pass review of a branch.
+ * Reviewing-code skill runner — multi-agent four-pass review of a branch.
  *
- * Pipeline (defaults):
- *   1. discovery            — codex
- *   2. discovery-secondary  — codex
- *   3. remediation          — codex
- *   4. verify               — claude
+ * Pipeline (defaults): 1. discovery — codex 2. discovery-secondary — codex 3.
+ * remediation — codex 4. verify — claude.
  *
- * Each pass picks the preferred backend per role from a small registry,
- * with graceful fallback through the ordered preference list when a CLI
- * isn't installed. opencode is orchestrator-tier and only runs when
- * explicitly selected.
+ * Each pass picks the preferred backend per role from a small registry, with
+ * graceful fallback through the ordered preference list when a CLI isn't
+ * installed. opencode is orchestrator-tier and only runs when explicitly
+ * selected.
  *
  * See SKILL.md for full usage.
  */

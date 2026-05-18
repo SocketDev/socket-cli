@@ -1,39 +1,29 @@
 /**
- * @fileoverview Fleet convention: per-repo tool caches live in
- * `node_modules/.cache/`, NOT `<repo-root>/.cache/`.
+ * @file Fleet convention: per-repo tool caches live in `node_modules/.cache/`,
+ *   NOT `<repo-root>/.cache/`. Why `node_modules/.cache/`:
  *
- * Why `node_modules/.cache/`:
- *   - It's the convention every JS build tool already uses (vitest,
- *     babel, terser, webpack, etc.) — discoverable.
+ *   - It's the convention every JS build tool already uses (vitest, babel,
+ *     terser, webpack, etc.) — discoverable.
  *   - It's gitignored everywhere (pnpm/npm gitignore `node_modules/`).
- *   - `pnpm install` blows it away when needed (no stale-cache
- *     headaches surviving a fresh checkout).
- *   - Centralizes cache location so the fleet's drift sweep can
- *     reason about it.
- *
- * Repo-root `.cache/` works because the fleet's gitignore has
- * a `.cache/` glob, but it's a second canonical location for the
- * same concept — duplication invites drift.
- *
- * Detects:
- *   - String literals `'.cache/...'` / `'./.cache/...'` /
- *     `'/.cache/...'` not preceded by `'node_modules'`.
- *   - `path.join(<args>, '.cache', ...)` where no prior arg is the
- *     literal `'node_modules'`.
- *
- * Exempts:
- *   - `path.join(home, '.cache', ...)` where the first arg is an
- *     identifier that obviously names a user-home dir (`home`,
- *     `homedir`, `userHome`, etc.) or is a call to `os.homedir()`
- *     or `os.userInfo().homedir`, or reads an HOME-style env var
- *     (`HOME`, `XDG_CACHE_HOME`, `LOCALAPPDATA`, `APPDATA`). These
- *     are XDG-spec platform-dir helpers, NOT repo-root cache paths.
- *
- * Autofix: none (the rewrite needs context — sometimes you want
- * `node_modules/.cache/foo`, sometimes `node_modules/.cache/<pkg>/foo`,
- * sometimes a temp dir is appropriate). Report-only; manual fix.
- *
- * Scope: .ts / .cts / .mts / .js / .cjs / .mjs.
+ *   - `pnpm install` blows it away when needed (no stale-cache headaches
+ *     surviving a fresh checkout).
+ *   - Centralizes cache location so the fleet's drift sweep can reason about it.
+ *     Repo-root `.cache/` works because the fleet's gitignore has a `.cache/`
+ *     glob, but it's a second canonical location for the same concept —
+ *     duplication invites drift. Detects:
+ *   - String literals `'.cache/...'` / `'./.cache/...'` / `'/.cache/...'` not
+ *     preceded by `'node_modules'`.
+ *   - `path.join(<args>, '.cache', ...)` where no prior arg is the literal
+ *     `'node_modules'`. Exempts:
+ *   - `path.join(home, '.cache', ...)` where the first arg is an identifier that
+ *     obviously names a user-home dir (`home`, `homedir`, `userHome`, etc.) or
+ *     is a call to `os.homedir()` or `os.userInfo().homedir`, or reads an
+ *     HOME-style env var (`HOME`, `XDG_CACHE_HOME`, `LOCALAPPDATA`, `APPDATA`).
+ *     These are XDG-spec platform-dir helpers, NOT repo-root cache paths.
+ *     Autofix: none (the rewrite needs context — sometimes you want
+ *     `node_modules/.cache/foo`, sometimes `node_modules/.cache/<pkg>/foo`,
+ *     sometimes a temp dir is appropriate). Report-only; manual fix. Scope: .ts
+ *     / .cts / .mts / .js / .cjs / .mjs.
  */
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -61,7 +51,9 @@ const HOME_IDENT_RE = /^(?:home(?:dir)?|userhome|userdir|app(?:data|home))$/i
 const HOME_ENV_RE =
   /^(?:HOME|XDG_(?:CACHE|CONFIG|DATA|STATE)_HOME|XDG_RUNTIME_DIR|LOCALAPPDATA|APPDATA|USERPROFILE)$/
 
-/** @type {import('eslint').Rule.RuleModule} */
+/**
+ * @type {import('eslint').Rule.RuleModule}
+ */
 const rule = {
   meta: {
     type: 'suggestion',
@@ -85,17 +77,16 @@ const rule = {
     /**
      * Is the leading segment of `value` already `node_modules`? Catches
      * `node_modules/.cache/foo` (allowed) without false-positive on
-     * `.cache/foo` (forbidden). Input is expected to be already
-     * normalized (forward slashes).
+     * `.cache/foo` (forbidden). Input is expected to be already normalized
+     * (forward slashes).
      */
     function isNodeModulesCache(value: string): boolean {
       return /(^|\/)node_modules\/\.cache(\/|$)/.test(value)
     }
 
     /**
-     * True for a Literal node whose string value matches the
-     * repo-root `.cache` pattern and is NOT already a
-     * `node_modules/.cache` path.
+     * True for a Literal node whose string value matches the repo-root `.cache`
+     * pattern and is NOT already a `node_modules/.cache` path.
      */
     function isRepoRootCacheString(node: AstNode) {
       if (node.type !== 'Literal' && node.type !== 'TemplateElement') {
@@ -118,15 +109,15 @@ const rule = {
     }
 
     /**
-     * True when `node` is, by name or shape, an expression that yields
-     * the current user's home dir. Used to exempt XDG / platform-dir
-     * helpers (where `~/.cache/<app>` is the correct convention, not
-     * a fleet violation).
+     * True when `node` is, by name or shape, an expression that yields the
+     * current user's home dir. Used to exempt XDG / platform-dir helpers (where
+     * `~/.cache/<app>` is the correct convention, not a fleet violation).
      *
      * Matches:
-     *   - Identifier whose name fits HOME_IDENT_RE (`home`, `homedir`, etc.)
-     *   - `os.homedir()` call (or `nodeOs.homedir()`, any `<id>.homedir()`)
-     *   - `process.env.HOME` / `process.env['HOME']` / same for XDG vars
+     *
+     * - Identifier whose name fits HOME_IDENT_RE (`home`, `homedir`, etc.)
+     * - `os.homedir()` call (or `nodeOs.homedir()`, any `<id>.homedir()`)
+     * - `process.env.HOME` / `process.env['HOME']` / same for XDG vars
      */
     function isHomeDirExpression(node: AstNode) {
       if (!node) return false
@@ -169,9 +160,9 @@ const rule = {
     }
 
     /**
-     * Detect `path.join(...args)` where `'.cache'` is one of the args
-     * and no PRIOR arg is `'node_modules'`. We approximate "prior" by
-     * walking left-to-right.
+     * Detect `path.join(...args)` where `'.cache'` is one of the args and no
+     * PRIOR arg is `'node_modules'`. We approximate "prior" by walking
+     * left-to-right.
      */
     function checkPathJoin(node: AstNode) {
       if (node.type !== 'CallExpression') return
@@ -214,8 +205,7 @@ const rule = {
     }
 
     /**
-     * Visit Literal / TemplateElement nodes and flag repo-root .cache
-     * paths.
+     * Visit Literal / TemplateElement nodes and flag repo-root .cache paths.
      */
     function checkLiteral(node: AstNode) {
       if (!isRepoRootCacheString(node)) return

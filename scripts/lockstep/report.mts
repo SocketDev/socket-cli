@@ -1,17 +1,13 @@
 /**
- * @fileoverview Human-readable rendering for lockstep reports.
- *
- * `summarize` produces the per-area roll-up (total / ok / drift / error
- * counts, sorted by area name) consumed at the top of the human output
- * and embedded in the `--json` payload.
- *
- * `emitHuman` is the default formatter; it writes the per-area summary
- * table and then each row's detail block (banner, kind-specific facts,
- * accumulated messages, file-fork drift commits). The return value is
- * the exit code: 0 = clean, 1 = error in any row, 2 = drift in any row
- * (per the harness contract documented at the top of `cli.mts`).
- *
- * Learned from ultrathink xlang-harness.
+ * @file Human-readable rendering for lockstep reports. `summarize` produces the
+ *   per-area roll-up (total / ok / drift / error counts, sorted by area name)
+ *   consumed at the top of the human output and embedded in the `--json`
+ *   payload. `emitHuman` is the default formatter; it writes the per-area
+ *   summary table and then each row's detail block (banner, kind-specific
+ *   facts, accumulated messages, file-fork drift commits). The return value is
+ *   the exit code: 0 = clean, 1 = error in any row, 2 = drift in any row (per
+ *   the harness contract documented at the top of `cli.mts`). Learned from
+ *   ultrathink xlang-harness.
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
@@ -42,10 +38,7 @@ export function summarize(reports: Report[]): AreaSummary[] {
   return [...byArea.values()].sort((a, b) => a.area.localeCompare(b.area))
 }
 
-export function emitHuman(
-  reports: Report[],
-  summaries: AreaSummary[],
-): number {
+export function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
   logger.info(
     `lockstep — ${reports.length} row(s) across ${summaries.length} area(s)`,
   )

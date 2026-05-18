@@ -9,7 +9,10 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
-function makeTranscript(assistantText: string): { path: string; cleanup: () => void } {
+function makeTranscript(assistantText: string): {
+  path: string
+  cleanup: () => void
+} {
   const dir = mkdtempSync(path.join(tmpdir(), 'judgment-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   const lines = [
@@ -17,7 +20,10 @@ function makeTranscript(assistantText: string): { path: string; cleanup: () => v
     JSON.stringify({ role: 'assistant', content: assistantText }),
   ].join('\n')
   writeFileSync(transcriptPath, lines)
-  return { path: transcriptPath, cleanup: () => rmSync(dir, { recursive: true, force: true }) }
+  return {
+    path: transcriptPath,
+    cleanup: () => rmSync(dir, { recursive: true, force: true }),
+  }
 }
 
 function runHook(transcriptPath: string): { stderr: string; exitCode: number } {
@@ -29,7 +35,9 @@ function runHook(transcriptPath: string): { stderr: string; exitCode: number } {
 }
 
 test('flags "I\'m not sure" hedge', () => {
-  const { path: p, cleanup } = makeTranscript("I'm not sure which approach is better.")
+  const { path: p, cleanup } = makeTranscript(
+    "I'm not sure which approach is better.",
+  )
   try {
     const { stderr, exitCode } = runHook(p)
     assert.equal(exitCode, 0)
@@ -41,7 +49,9 @@ test('flags "I\'m not sure" hedge', () => {
 })
 
 test('flags "you decide" offload', () => {
-  const { path: p, cleanup } = makeTranscript('Want me to do A or B? You decide.')
+  const { path: p, cleanup } = makeTranscript(
+    'Want me to do A or B? You decide.',
+  )
   try {
     const { stderr } = runHook(p)
     assert.match(stderr, /you decide/i)
@@ -51,7 +61,9 @@ test('flags "you decide" offload', () => {
 })
 
 test('flags "either approach works" false-equivalence', () => {
-  const { path: p, cleanup } = makeTranscript('Either approach works for this case.')
+  const { path: p, cleanup } = makeTranscript(
+    'Either approach works for this case.',
+  )
   try {
     const { stderr } = runHook(p)
     assert.match(stderr, /either/i)
@@ -61,7 +73,9 @@ test('flags "either approach works" false-equivalence', () => {
 })
 
 test('flags first-person modal hedge ("I could go either way")', () => {
-  const { path: p, cleanup } = makeTranscript('I could go either way on this design.')
+  const { path: p, cleanup } = makeTranscript(
+    'I could go either way on this design.',
+  )
   try {
     const { stderr } = runHook(p)
     // Either the modal-hedge match OR the "either way" fixed phrase
@@ -73,7 +87,9 @@ test('flags first-person modal hedge ("I could go either way")', () => {
 })
 
 test('does NOT flag technical conditional ("could throw")', () => {
-  const { path: p, cleanup } = makeTranscript('The parser could throw if the input is malformed.')
+  const { path: p, cleanup } = makeTranscript(
+    'The parser could throw if the input is malformed.',
+  )
   try {
     const { stderr, exitCode } = runHook(p)
     assert.equal(exitCode, 0)
@@ -87,7 +103,9 @@ test('does NOT flag technical conditional ("could throw")', () => {
 })
 
 test('does not flag plain prose', () => {
-  const { path: p, cleanup } = makeTranscript('The cache stores results keyed by file path.')
+  const { path: p, cleanup } = makeTranscript(
+    'The cache stores results keyed by file path.',
+  )
   try {
     const { stderr } = runHook(p)
     assert.equal(stderr, '')
@@ -97,7 +115,9 @@ test('does not flag plain prose', () => {
 })
 
 test('does not false-positive on phrases inside code fences', () => {
-  const { path: p, cleanup } = makeTranscript('Output:\n```\nI am not sure (in code)\n```\nPlain prose here.')
+  const { path: p, cleanup } = makeTranscript(
+    'Output:\n```\nI am not sure (in code)\n```\nPlain prose here.',
+  )
   try {
     const { stderr } = runHook(p)
     assert.equal(stderr, '')

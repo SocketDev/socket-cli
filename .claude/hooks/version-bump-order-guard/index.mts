@@ -110,7 +110,7 @@ async function main(): Promise<void> {
     '    chore(scope): release X.Y.Z',
     '',
     '  If a bump commit exists earlier in history, rebase it forward to',
-    '  the tip. If it doesn\'t exist yet, run the prep wave first:',
+    "  the tip. If it doesn't exist yet, run the prep wave first:",
     '',
     '    pnpm run update',
     '    pnpm i',

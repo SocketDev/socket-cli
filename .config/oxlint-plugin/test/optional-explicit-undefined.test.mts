@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for socket/optional-explicit-undefined.
+ * @file Unit tests for socket/optional-explicit-undefined.
  */
 
 import { describe, test } from 'node:test'

@@ -17,11 +17,11 @@ Watch a target repo's CI, surface failures the moment they land, and drive a fix
 
 ## Three modes
 
-| Mode      | Poll interval | Stop trigger                                                          | When to pick                                                                                          |
-| --------- | ------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `fast`    | 30s           | Any job fails OR whole run completes                                  | Default. `ci.yml` watching — surface the failure as soon as one job lands.                            |
-| `release` | 30s           | Any job fails OR any job succeeds                                     | Build-server matrices. Matrix slots run in parallel; one slot's outcome is enough to start reacting.  |
-| `cool`    | 120s          | Whole run completes                                                   | After `release` reported a first success — just confirming the rest of the matrix. No fast polls.     |
+| Mode      | Poll interval | Stop trigger                         | When to pick                                                                                         |
+| --------- | ------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `fast`    | 30s           | Any job fails OR whole run completes | Default. `ci.yml` watching — surface the failure as soon as one job lands.                           |
+| `release` | 30s           | Any job fails OR any job succeeds    | Build-server matrices. Matrix slots run in parallel; one slot's outcome is enough to start reacting. |
+| `cool`    | 120s          | Whole run completes                  | After `release` reported a first success — just confirming the rest of the matrix. No fast polls.    |
 
 The skill picks `fast` by default. After running `release` and getting a first success, the orchestrator (the agent invoking this skill) flips to `cool` for the remainder.
 
@@ -51,15 +51,15 @@ The skill picks `fast` by default. After running `release` and getting a first s
 
 The log tail almost always ends in one of these patterns. The skill calls these out so the orchestrator can pattern-match before doing real analysis:
 
-| Pattern in log tail                                                  | Likely root cause                                                              | Default fix                                                                                                |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `× @socketsecurity/lib not resolvable from /home/runner/work/...`    | Root `package.json` is missing the runtime dep the setup action requires.      | Add `"@socketsecurity/lib": "catalog:"` next to `lib-stable` in the root `package.json` + catalog entry.   |
-| `Error: Cannot find module '...'` during a `node` step               | Missing dep / wrong import path / unbuilt artifact.                            | Trace the import to its package, add the dep, `pnpm install`, push.                                        |
-| `pnpm: command not found` / `pnpm exec ...` exits 127                | `packageManager` mismatch / corepack disabled.                                 | Confirm `packageManager` in root `package.json` matches the workflow's expected pnpm.                      |
-| `npm ERR! 401`/`403` reaching `registry.npmjs.org`                   | Stale `NPM_TOKEN` secret, scoped-package permission drift, or registry filter. | Surface to user — token rotation is out of scope for an auto-fix.                                          |
-| `error: process "/bin/sh -c ..." did not complete successfully`      | Docker build step crashed — read the inner `RUN` for the real error.           | Read the Docker context for what `RUN` produced the exit code; fix that.                                   |
-| `Failed to restore from cache` followed by `Process completed with exit code 1` | Cache miss + the build doesn't degrade — it errors.                            | Bump the `cache-versions.json` entry to invalidate, OR fix the degraded-mode code path.                    |
-| `denied by enterprise admin` / `not allowed to be used`              | GH Actions allowlist missing an action. See `auditing-gha-settings`.           | Add the action to the org allowlist. The repo can't fix this — escalate.                                   |
+| Pattern in log tail                                                             | Likely root cause                                                              | Default fix                                                                                              |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `× @socketsecurity/lib not resolvable from /home/runner/work/...`               | Root `package.json` is missing the runtime dep the setup action requires.      | Add `"@socketsecurity/lib": "catalog:"` next to `lib-stable` in the root `package.json` + catalog entry. |
+| `Error: Cannot find module '...'` during a `node` step                          | Missing dep / wrong import path / unbuilt artifact.                            | Trace the import to its package, add the dep, `pnpm install`, push.                                      |
+| `pnpm: command not found` / `pnpm exec ...` exits 127                           | `packageManager` mismatch / corepack disabled.                                 | Confirm `packageManager` in root `package.json` matches the workflow's expected pnpm.                    |
+| `npm ERR! 401`/`403` reaching `registry.npmjs.org`                              | Stale `NPM_TOKEN` secret, scoped-package permission drift, or registry filter. | Surface to user — token rotation is out of scope for an auto-fix.                                        |
+| `error: process "/bin/sh -c ..." did not complete successfully`                 | Docker build step crashed — read the inner `RUN` for the real error.           | Read the Docker context for what `RUN` produced the exit code; fix that.                                 |
+| `Failed to restore from cache` followed by `Process completed with exit code 1` | Cache miss + the build doesn't degrade — it errors.                            | Bump the `cache-versions.json` entry to invalidate, OR fix the degraded-mode code path.                  |
+| `denied by enterprise admin` / `not allowed to be used`                         | GH Actions allowlist missing an action. See `auditing-gha-settings`.           | Add the action to the org allowlist. The repo can't fix this — escalate.                                 |
 
 When the pattern isn't in the table, fall back to careful read-through of the log tail. Don't guess.
 
