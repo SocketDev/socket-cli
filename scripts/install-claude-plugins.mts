@@ -3,19 +3,26 @@
  * @file Reconcile the local machine's Claude Code plugin state to the
  *   wheelhouse-canonical SHA-pinned set.
  *
- *   - Ensures the `socket-wheelhouse` marketplace is added to Claude
- *     Code (`~/.claude/plugins/known_marketplaces.json`).
- *   - For each plugin in the wheelhouse marketplace's
- *     `.claude-plugin/marketplace.json`, ensures it's installed at the
- *     pinned SHA.
- *   - Merges `env.CODEX_TRUSTED_ENV_PARENTS` into
- *     `~/.claude/settings.json` so the upstream codex plugin's
- *     SessionStart hook honors `~/.claude/session-env/` as a trusted
- *     parent (Claude Code places per-session env files there, outside
- *     `os.tmpdir()`).
+ *   What the reconciler does:
  *
- *   Idempotent — running twice is a no-op. Designed for `pnpm setup`
- *   wiring in every fleet repo.
+ *   1. Ensures the `socket-wheelhouse` marketplace is added to Claude
+ *      Code (`~/.claude/plugins/known_marketplaces.json`).
+ *   2. For each plugin in the wheelhouse marketplace's
+ *      `.claude-plugin/marketplace.json`:
+ *      - If installed under a *different* marketplace (foreign source) —
+ *        uninstalls it, then installs ours. Wheelhouse is the pin
+ *        authority; foreign installs are silently overriding our pin.
+ *      - If installed under our marketplace at the right SHA — no-op.
+ *      - If installed under our marketplace at a stale SHA — uninstalls
+ *        + reinstalls to bump.
+ *      - If not installed at all — installs.
+ *   3. Warns (does NOT auto-remove) about marketplaces that exist
+ *      locally + only serve plugins we now serve canonically. The
+ *      user might intentionally keep a dev-source override; let them
+ *      remove it explicitly.
+ *
+ *   Idempotent — running twice in a row is a no-op. Designed for
+ *   `pnpm setup` wiring in every fleet repo.
  *
  *   Pin discipline is enforced by `.claude/hooks/marketplace-comment-guard/`:
  *   every `plugins[].source.sha` in `marketplace.json` must have a row
@@ -24,7 +31,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -39,20 +46,18 @@ const logger = getDefaultLogger()
 const MARKETPLACE_NAME = 'socket-wheelhouse'
 const MARKETPLACE_URL = 'https://github.com/SocketDev/socket-wheelhouse'
 
-// The env var the codex plugin's SessionStart hook reads. Setting it
-// in `~/.claude/settings.json:env` makes Claude Code pass it to every
-// hook invocation. The value is the path Claude Code places per-session
-// env files under; the hook treats it as a trusted parent in addition
-// to `os.tmpdir()`.
-const CODEX_TRUSTED_ENV_PARENTS_KEY = 'CODEX_TRUSTED_ENV_PARENTS'
+// Claude Code stores SHA-pinned plugin installs at a cache directory
+// whose name is `<sha-12-chars>-<content-hash-8-chars>`. We parse the
+// first segment to extract the pinned SHA for drift comparison.
+const SHA_PINNED_DIR_NAME = /^([0-9a-f]{12})-[0-9a-f]{8,}$/
 
-interface MarketplaceListEntry {
+export interface MarketplaceListEntry {
   name: string
   source: string
   installLocation?: string
 }
 
-interface PluginListEntry {
+export interface PluginListEntry {
   id: string
   version?: string
   scope?: string
@@ -60,7 +65,7 @@ interface PluginListEntry {
   installPath?: string
 }
 
-interface MarketplacePluginSource {
+export interface MarketplacePluginSource {
   source: string
   url?: string
   path?: string
@@ -69,37 +74,81 @@ interface MarketplacePluginSource {
   commit?: string
 }
 
-interface MarketplacePlugin {
+export interface MarketplacePlugin {
   name: string
   source: MarketplacePluginSource
 }
 
-interface MarketplaceManifest {
+export interface MarketplaceManifest {
   name?: string
   plugins?: MarketplacePlugin[]
 }
 
 /**
- * Resolve the user's home directory. Matches the resolution order
- * `@socketsecurity/lib/env/home` uses (HOME → USERPROFILE), with a
- * fail-fast guard against the degenerate empty-string case.
+ * Parse the plugin's `installPath` to extract the SHA prefix it was
+ * pinned to (12 chars). Returns `null` for directory installs,
+ * version-tagged installs, or any path shape we don't recognize as
+ * SHA-pinned. Used to detect drift between manifest pin and on-disk
+ * install.
  */
-function resolveHome(): string {
-  for (const candidate of [process.env['HOME'], process.env['USERPROFILE']]) {
-    if (candidate && path.isAbsolute(candidate)) {
-      return candidate
-    }
-  }
-  throw new Error(
-    'HOME / USERPROFILE not set to an absolute path — cannot resolve ' +
-      'Claude Code config dir.',
-  )
+export function extractInstalledSha(
+  installPath: string | undefined,
+): string | null {
+  if (!installPath) return null
+  const dirName = path.basename(installPath)
+  const m = SHA_PINNED_DIR_NAME.exec(dirName)
+  return m ? m[1] ?? null : null
 }
 
-const HOME = resolveHome()
-const CLAUDE_CONFIG_DIR = path.join(HOME, '.claude')
-const CLAUDE_SETTINGS_JSON = path.join(CLAUDE_CONFIG_DIR, 'settings.json')
-const CLAUDE_SESSION_ENV_DIR = path.join(CLAUDE_CONFIG_DIR, 'session-env')
+/**
+ * Find an existing install of `pluginName` that came from a marketplace
+ * *other than* ours. Plugin ids have the shape `<name>@<marketplace>`.
+ * Returns the foreign install entry, or `undefined` if none.
+ */
+export function findForeignInstall(
+  pluginName: string,
+  plugins: PluginListEntry[],
+  ourMarketplace: string,
+): PluginListEntry | undefined {
+  const ourId = `${pluginName}@${ourMarketplace}`
+  for (const p of plugins) {
+    if (!p.id.startsWith(`${pluginName}@`)) continue
+    if (p.id === ourId) continue
+    return p
+  }
+  return undefined
+}
+
+/**
+ * Identify marketplaces that look orphaned — exist locally, aren't
+ * ours, and only serve plugins our marketplace now serves canonically.
+ * Returns the marketplace names; we warn the user rather than
+ * auto-remove (a dev-source override is a legitimate deliberate state).
+ */
+export function findOrphanMarketplaces(
+  marketplaces: MarketplaceListEntry[],
+  ourMarketplace: string,
+  ourPluginNames: Set<string>,
+  plugins: PluginListEntry[],
+): string[] {
+  const orphans: string[] = []
+  for (const mkt of marketplaces) {
+    if (mkt.name === ourMarketplace) continue
+    // Find every plugin installed from this marketplace.
+    const installedFromHere = plugins
+      .filter(p => p.id.endsWith(`@${mkt.name}`))
+      .map(p => p.id.slice(0, -`@${mkt.name}`.length))
+    if (installedFromHere.length === 0) {
+      // No installs from this marketplace — leave it alone. The user
+      // added it for a reason we can't see.
+      continue
+    }
+    if (installedFromHere.every(name => ourPluginNames.has(name))) {
+      orphans.push(mkt.name)
+    }
+  }
+  return orphans
+}
 
 /**
  * Run `claude` CLI synchronously; return stdout + exit code. Stderr
@@ -196,71 +245,95 @@ function loadMarketplaceManifest(
   return JSON.parse(raw) as MarketplaceManifest
 }
 
-function ensurePluginInstalled(plugin: MarketplacePlugin): void {
-  const installId = `${plugin.name}@${MARKETPLACE_NAME}`
-  const installed = listPlugins().find(p => p.id === installId)
-  if (installed) {
-    logger.log(`Plugin ${installId} already installed (scope: ${installed.scope ?? 'unknown'}).`)
+function uninstallPlugin(installId: string): void {
+  logger.log(`Uninstalling ${installId}…`)
+  runClaudeCli(['plugin', 'uninstall', installId, '--scope', 'user'])
+}
+
+function installPlugin(installId: string, pinDescription: string): void {
+  logger.log(`Installing ${installId} pinned to ${pinDescription}…`)
+  runClaudeCli(['plugin', 'install', installId, '--scope', 'user'])
+}
+
+/**
+ * Reconcile a single plugin to the wheelhouse pin. Handles four cases:
+ * foreign install (uninstall + install), missing (install), stale SHA
+ * (uninstall + reinstall), and correct (no-op).
+ */
+function reconcilePlugin(plugin: MarketplacePlugin): void {
+  const ourInstallId = `${plugin.name}@${MARKETPLACE_NAME}`
+  const expectedShaPrefix = plugin.source.sha?.slice(0, 12) ?? null
+  const pinDescription =
+    plugin.source.sha ?? plugin.source.ref ?? '<no ref>'
+
+  let plugins = listPlugins()
+
+  // (1) Foreign install: same plugin name, different marketplace. Wheelhouse
+  // is the pin authority; uninstall the foreign install so our pin can
+  // take effect. The user's enabledPlugins entry under the foreign id
+  // disappears as a side effect of the CLI uninstall.
+  const foreign = findForeignInstall(plugin.name, plugins, MARKETPLACE_NAME)
+  if (foreign) {
+    logger.log(
+      `Found foreign install ${foreign.id} (path: ${foreign.installPath ?? '<unknown>'}); rewiring to ${ourInstallId}.`,
+    )
+    uninstallPlugin(foreign.id)
+    plugins = listPlugins()
+  }
+
+  // (2) Our install present? Check SHA.
+  const ours = plugins.find(p => p.id === ourInstallId)
+  if (ours) {
+    const installedShaPrefix = extractInstalledSha(ours.installPath)
+    if (!expectedShaPrefix) {
+      // Manifest pin has no SHA — we can't drift-compare. Trust the
+      // existing install.
+      logger.log(`Plugin ${ourInstallId} already installed (manifest has no SHA to compare).`)
+      return
+    }
+    if (installedShaPrefix === expectedShaPrefix) {
+      logger.log(`Plugin ${ourInstallId} already installed at pinned SHA ${expectedShaPrefix}.`)
+      return
+    }
+    // Drift: our install is at a different SHA. Reinstall.
+    logger.log(
+      `Plugin ${ourInstallId} drift: installed at ${installedShaPrefix ?? '<unknown>'}, manifest pins ${expectedShaPrefix}. Reinstalling.`,
+    )
+    uninstallPlugin(ourInstallId)
+    installPlugin(ourInstallId, pinDescription)
     return
   }
-  logger.log(`Installing ${installId} pinned to ${plugin.source.sha ?? plugin.source.ref ?? '<no ref>'}…`)
-  runClaudeCli(['plugin', 'install', installId, '--scope', 'user'])
-  const after = listPlugins().find(p => p.id === installId)
+
+  // (3) Not installed at all (or we just uninstalled a foreign copy).
+  installPlugin(ourInstallId, pinDescription)
+  const after = listPlugins().find(p => p.id === ourInstallId)
   if (!after) {
     throw new Error(
-      `plugin ${installId} did not appear in plugin list after install ` +
+      `plugin ${ourInstallId} did not appear in plugin list after install ` +
         '— check the CLI output above.',
     )
   }
 }
 
-interface SettingsShape {
-  env?: Record<string, string>
-  [k: string]: unknown
-}
-
-function mergeTrustedEnvParent(): boolean {
-  let settings: SettingsShape = {}
-  if (existsSync(CLAUDE_SETTINGS_JSON)) {
-    try {
-      settings = JSON.parse(
-        readFileSync(CLAUDE_SETTINGS_JSON, 'utf8'),
-      ) as SettingsShape
-    } catch (e) {
-      throw new Error(
-        `~/.claude/settings.json is not parseable JSON: ${errorMessage(e)}. ` +
-          'Fix it by hand before re-running this script.',
-      )
-    }
-  }
-
-  const env = settings.env ?? {}
-  const existing = env[CODEX_TRUSTED_ENV_PARENTS_KEY]
-  const existingEntries = existing
-    ? existing.split(path.delimiter).map(s => s.trim()).filter(Boolean)
-    : []
-  if (existingEntries.includes(CLAUDE_SESSION_ENV_DIR)) {
-    logger.log(
-      `${CODEX_TRUSTED_ENV_PARENTS_KEY} already includes ${CLAUDE_SESSION_ENV_DIR}.`,
+function warnOrphanMarketplaces(
+  marketplaces: MarketplaceListEntry[],
+  ourPluginNames: Set<string>,
+  plugins: PluginListEntry[],
+): void {
+  const orphans = findOrphanMarketplaces(
+    marketplaces,
+    MARKETPLACE_NAME,
+    ourPluginNames,
+    plugins,
+  )
+  for (const name of orphans) {
+    logger.warn(
+      `Marketplace "${name}" appears to only serve plugins we now pin via ` +
+        `"${MARKETPLACE_NAME}". Consider \`claude plugin marketplace remove ${name}\` ` +
+        `to keep your config tidy. (Not auto-removed — a deliberate dev-source ` +
+        `override is a legitimate state we won't silently undo.)`,
     )
-    return false
   }
-  const merged = [...existingEntries, CLAUDE_SESSION_ENV_DIR].join(
-    path.delimiter,
-  )
-  const next: SettingsShape = {
-    ...settings,
-    env: { ...env, [CODEX_TRUSTED_ENV_PARENTS_KEY]: merged },
-  }
-  writeFileSync(
-    CLAUDE_SETTINGS_JSON,
-    JSON.stringify(next, null, 2) + '\n',
-    'utf8',
-  )
-  logger.log(
-    `Set ${CODEX_TRUSTED_ENV_PARENTS_KEY}=${merged} in ${CLAUDE_SETTINGS_JSON}.`,
-  )
-  return true
 }
 
 function main(): void {
@@ -274,15 +347,23 @@ function main(): void {
     )
   }
   for (const plugin of plugins) {
-    ensurePluginInstalled(plugin)
+    reconcilePlugin(plugin)
   }
-  mergeTrustedEnvParent()
+
+  // Post-pass: warn about marketplaces that now look redundant.
+  const ourPluginNames = new Set(plugins.map(p => p.name))
+  warnOrphanMarketplaces(listMarketplaces(), ourPluginNames, listPlugins())
+
   logger.log('Done.')
 }
 
-try {
-  main()
-} catch (e) {
-  logger.fail(errorMessage(e))
-  process.exit(1)
+// Skip execution when imported (for tests). The CLI entry is direct
+// `node scripts/install-claude-plugins.mts` invocation.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  try {
+    main()
+  } catch (e) {
+    logger.fail(errorMessage(e))
+    process.exit(1)
+  }
 }

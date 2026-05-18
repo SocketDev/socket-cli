@@ -37,7 +37,7 @@ When the local impl diverges from upstream (faster path, different error shape, 
 
 ## 5. Lock-step references across language ports
 
-When a parser ships in multiple implementations that must agree behaviorally (e.g. ultrathink's acorn ports: Rust / Go / C++ / TypeScript; socket-btm's `mcp/*.cpp` ports of upstream Python/Rust), every cross-impl reference uses the `Lock-step` prefix. The naming is load-bearing — `grep -r 'Lock-step'` is the audit surface.
+When a parser ships in multiple implementations that must agree behaviorally (e.g. ultrathink's acorn ports: Rust / Go / C++ / TypeScript; socket-btm's `packages/temporal-infra/src/socketsecurity/temporal/*.{cc,h}` C++ port of upstream `temporal_rs` Rust crate), every cross-impl reference uses the `Lock-step` prefix. The naming is load-bearing — `grep -r 'Lock-step'` is the audit surface.
 
 Three forms, three jobs:
 
