@@ -1,7 +1,7 @@
 {
   "name": "socket-cli-monorepo",
   "version": "0.0.0",
-  "packageManager": "pnpm@11.0.8",
+  "packageManager": "pnpm@11.1.2",
   "private": true,
   "engines": {
     "node": ">=26.0.0",
