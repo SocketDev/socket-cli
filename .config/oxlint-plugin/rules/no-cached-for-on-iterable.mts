@@ -77,7 +77,10 @@
  * diagnostic message names it explicitly.
  */
 
-import { FLAGGED_KINDS, trackKinds } from '../lib/iterable-kind.mts'
+import {
+  FLAGGED_KINDS,
+  createKindResolver,
+} from '../lib/iterable-kind.mts'
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 /**
@@ -140,19 +143,21 @@ const rule = {
   },
 
   create(context: RuleContext) {
-    // Per-file kind map + the visitors that populate it. Shared with
-    // prefer-cached-for-loop via lib/iterable-kind.mts so both rules
-    // agree on what "this binding is a Set/Map/Iterable" means.
-    const { kinds, visitors } = trackKinds()
+    // Scope-aware kind resolver. Shared with prefer-cached-for-loop
+    // via lib/iterable-kind.mts so both rules agree on what "this
+    // binding is a Set/Map/Iterable" means — including under
+    // shadowing (a function-local `const closure = new Map()`
+    // does NOT taint an outer-scope `const closure = await fn()`
+    // array binding).
+    const resolveKind = createKindResolver()
 
     return {
-      ...visitors,
       ForStatement(node: AstNode) {
         const iterName = matchCachedForInit(node.init)
         if (!iterName) {
           return
         }
-        const kind = kinds.get(iterName) ?? 'unknown'
+        const kind = resolveKind(node, iterName)
         if (!FLAGGED_KINDS.has(kind)) {
           return
         }
@@ -170,7 +175,7 @@ const rule = {
           return
         }
         const name = node.object.name as string
-        const kind = kinds.get(name) ?? 'unknown'
+        const kind = resolveKind(node, name)
         if (!FLAGGED_KINDS.has(kind)) {
           return
         }

@@ -111,7 +111,10 @@
 
 /** @type {import('eslint').Rule.RuleModule} */
 
-import { FLAGGED_KINDS, trackKinds } from '../lib/iterable-kind.mts'
+import {
+  FLAGGED_KINDS,
+  createKindResolver,
+} from '../lib/iterable-kind.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const rule = {
@@ -138,15 +141,14 @@ const rule = {
       ? context.getSourceCode()
       : context.sourceCode
 
-    // Track Set/Map/Iterable bindings so we DON'T rewrite their
-    // for...of into the cached-length shape — that would silently
-    // no-op the loop (no .length, not integer-indexable) and is
-    // exactly the bug socket/no-cached-for-on-iterable catches.
-    // Shared with that rule via lib/iterable-kind.mts.
-    const { kinds, visitors: kindVisitors } = trackKinds()
+    // Scope-aware kind resolver. Shared with no-cached-for-on-iterable
+    // via lib/iterable-kind.mts. We use it to SKIP rewriting
+    // `for (const item of setVar)` into the cached-length shape —
+    // that would silently no-op the loop (no .length, not integer-
+    // indexable) and is exactly the bug the other rule catches.
+    const resolveKind = createKindResolver()
 
     return {
-      ...kindVisitors,
       CallExpression(node: AstNode) {
         // Match `<iter>.forEach(cb)` patterns.
         const callee = node.callee
@@ -351,7 +353,7 @@ const rule = {
         // integer-indexable). The companion rule
         // socket/no-cached-for-on-iterable would then flag what THIS
         // rule just wrote. Skip silently rather than fight ourselves.
-        const iterKind = kinds.get(iter.name) ?? 'unknown'
+        const iterKind = resolveKind(node, iter.name as string)
         if (FLAGGED_KINDS.has(iterKind)) {
           return
         }

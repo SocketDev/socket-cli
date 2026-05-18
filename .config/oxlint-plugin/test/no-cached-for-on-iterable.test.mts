@@ -106,6 +106,42 @@ describe('socket/no-cached-for-on-iterable', () => {
             'const v = m[someKey]\n' +
             'void v\n',
         },
+        {
+          name: 'scope shadowing: function-local Map does NOT taint outer Array binding',
+          // The original bug that motivated the scope-aware refactor:
+          // a function-local `new Map()` shadowed by name with an
+          // outer-scope array binding would propagate the "map" kind
+          // to the outer use under the old flat-Map tracking. The
+          // scope-walk resolver looks up from each use site, finds
+          // the nearest declaring scope, and classifies based on
+          // *that* declaration — so the outer `.length` read here
+          // resolves to the outer array (kind=unknown via init type
+          // annotation absent + await init) and does NOT fire.
+          code:
+            'function inner(): number[] {\n' +
+            '  const closure = new Map<string, number>()\n' +
+            '  return [...closure.values()]\n' +
+            '}\n' +
+            'const closure: readonly number[] = inner()\n' +
+            'const n = closure.length\n' +
+            'void n\n',
+        },
+        {
+          name: 'scope shadowing: outer Set, inner non-iterable rebind shadows it',
+          // The reverse direction: outer scope has a Set binding,
+          // an inner function declares a same-named array. The
+          // .length read inside the inner function should resolve
+          // to the inner array, not the outer Set — so it must NOT
+          // fire.
+          code:
+            'const items = new Set<string>()\n' +
+            'function inner(): void {\n' +
+            '  const items: readonly string[] = []\n' +
+            '  const n = items.length\n' +
+            '  void n\n' +
+            '}\n' +
+            'inner()\n',
+        },
       ],
       invalid: [
         {
@@ -264,6 +300,25 @@ describe('socket/no-cached-for-on-iterable', () => {
             { messageId: 'noCachedForOnIterable' },
             { messageId: 'indexedAccessOnIterable' },
           ],
+        },
+        {
+          name: 'scope shadowing: outer Set IS flagged in outer scope (inner shadow does not exempt)',
+          // Proves the scope walk is two-way correct: the outer
+          // .length read must STILL fire on the outer Set, even
+          // though an inner function shadows the name with an
+          // array. The inner array binding doesn't reach into the
+          // outer scope, so the outer lookup finds the outer Set
+          // declaration and flags correctly.
+          code:
+            'const items = new Set<string>()\n' +
+            'function inner(): void {\n' +
+            '  const items: readonly string[] = []\n' +
+            '  void items.length\n' +
+            '}\n' +
+            'inner()\n' +
+            'const n = items.length\n' +
+            'void n\n',
+          errors: [{ messageId: 'lengthOnIterable' }],
         },
       ],
     })
