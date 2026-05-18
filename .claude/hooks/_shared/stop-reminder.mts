@@ -16,7 +16,12 @@
 
 import process from 'node:process'
 
-import { readLastAssistantText, readStdin, stripCodeFences } from './transcript.mts'
+import {
+  readLastAssistantText,
+  readStdin,
+  stripCodeFences,
+  stripQuotedSpans,
+} from './transcript.mts'
 
 interface StopPayload {
   readonly transcript_path?: string | undefined
@@ -60,6 +65,15 @@ export interface ReminderConfig {
    * Claude Code reports `stop_hook_active: true` to avoid loops.
    */
   readonly blocking?: boolean | undefined
+  /**
+   * When true, strip ASCII / smart quoted spans from the scanned text
+   * before pattern-matching. Stop hooks that detect *meta-discussion*
+   * of phrases (e.g. excuse-detector explaining what it detects) should
+   * enable this so the hook doesn't self-fire on its own changelog or
+   * post-mortem. Code-fence stripping is always on; this is the
+   * narrower, prose-only escape hatch.
+   */
+  readonly stripQuotedSpans?: boolean | undefined
 }
 
 /**
@@ -82,7 +96,10 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
   if (!rawText) {
     process.exit(0)
   }
-  const text = stripCodeFences(rawText)
+  const fencesStripped = stripCodeFences(rawText)
+  const text = config.stripQuotedSpans
+    ? stripQuotedSpans(fencesStripped)
+    : fencesStripped
 
   const hits: ReminderHit[] = []
   const { patterns } = config

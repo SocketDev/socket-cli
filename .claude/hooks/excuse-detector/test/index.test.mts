@@ -253,6 +253,60 @@ test('stop_hook_active: true falls back to informational stderr (no block)', asy
   assert.match(result.stderr, /excuse-detector/)
 })
 
+test('does not fire on phrases inside ASCII double quotes (meta-discussion)', async () => {
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content:
+        'When Claude says "pre-existing" or "out of scope", the hook now blocks. Implementation done.',
+    },
+  ])
+  // Quoted = referenced, not asserted. No block, no warning.
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
+})
+
+test('does not fire on phrases inside ASCII single quotes', async () => {
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content:
+        "The phrase 'leave it for later' is one of the patterns. Implementation done.",
+    },
+  ])
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
+})
+
+test('does not fire on phrases inside smart double quotes', async () => {
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content:
+        'The summary mentions “unrelated to the task” as one excuse phrase.',
+    },
+  ])
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
+})
+
+test('still fires on phrases asserted in plain prose (not quoted)', async () => {
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content:
+        'I noticed a lint error but it is pre-existing and out of scope for this task.',
+    },
+  ])
+  // Neither "pre-existing" nor "out of scope" is quoted here — both
+  // are assertions, both should fire.
+  assertBlock(result, /pre-existing/)
+  assert.match(result.stdout, /out of scope/)
+})
+
 test('respects SOCKET_EXCUSE_DETECTOR_DISABLED', async () => {
   const transcript = setupTranscript(
     JSON.stringify({

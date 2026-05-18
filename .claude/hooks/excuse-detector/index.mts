@@ -21,6 +21,12 @@ await runStopReminder({
   name: 'excuse-detector',
   disabledEnvVar: 'SOCKET_EXCUSE_DETECTOR_DISABLED',
   blocking: true,
+  // Strip quoted spans so the hook doesn't self-fire when the
+  // assistant *describes* the phrases it detects (e.g. a summary
+  // saying "when Claude says 'pre-existing', the hook blocks").
+  // Quoted phrases are *referenced* not *asserted*, so they should
+  // not count as deferrals.
+  stripQuotedSpans: true,
   patterns: [
     {
       label: 'pre-existing',

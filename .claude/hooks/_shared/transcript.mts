@@ -348,6 +348,40 @@ export function stripCodeFences(text: string): string {
 }
 
 /**
+ * Strip text that's clearly *quoted* rather than asserted — i.e. text
+ * the assistant is referring to as a phrase, not using as one. Used by
+ * Stop hooks that scan for excuse phrases: a summary like
+ *   when Claude says "pre-existing", … the hook now blocks
+ * mentions the trigger but isn't an excuse. Without this strip, the
+ * hook self-fires every time it explains itself.
+ *
+ * Heuristic: strip the contents of paired ASCII double-quotes (`"…"`),
+ * paired smart double-quotes (`"…"`), and the same for single quotes
+ * (`'…'`, `'…'`). Strips only short spans (<= 80 chars between the
+ * quote marks) so prose paragraphs with stray quotation marks don't
+ * disappear wholesale. Falls back to leaving the text alone if no
+ * matching close is found on the same line — quoted speech doesn't
+ * span paragraphs and a runaway match would erase real content.
+ *
+ * Combine with `stripCodeFences` for full noise filtering. Order
+ * doesn't matter (the two strip disjoint surfaces).
+ */
+export function stripQuotedSpans(text: string): string {
+  // ASCII double quotes: "…" — up to 80 chars, single line.
+  // ASCII single quotes: '…' — same constraint. Word-boundary
+  // gate on the opening quote so we don't strip apostrophes
+  // mid-word (e.g. "don't", "Claude's"). The closing quote can
+  // be followed by anything.
+  // Smart quotes get their own pass — Unicode codepoints don't fit
+  // the ASCII charset and benefit from a separate, simpler regex.
+  return text
+    .replace(/"[^"\n]{1,80}"/g, ' ')
+    .replace(/(^|[\s(\[{,;:>])'[^'\n]{1,80}'/g, '$1 ')
+    .replace(/“[^”\n]{1,80}”/g, ' ')
+    .replace(/‘[^’\n]{1,80}’/g, ' ')
+}
+
+/**
  * Inverse of `stripCodeFences`: extract the contents of fenced code
  * blocks. Returns each block's body (the lines between the opening
  * and closing fence) as a separate string. The leading language tag
