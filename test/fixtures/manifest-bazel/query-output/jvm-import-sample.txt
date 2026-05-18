@@ -1,0 +1,24 @@
+# /private/var/tmp/_bazel_user/abc/external/maven/BUILD.bazel:1:11
+jvm_import(
+  name = "com_google_guava_guava",
+  jars = ["@maven//:v1/https/repo1.maven.org/maven2/com/google/guava/guava/33.0.0-jre/guava-33.0.0-jre.jar"],
+  maven_coordinates = "com.google.guava:guava:33.0.0-jre",
+  maven_url = "https://repo1.maven.org/maven2/com/google/guava/guava/33.0.0-jre/guava-33.0.0-jre.jar",
+  maven_sha256 = "9408c2c43dad97e2e3a86f5c6caf9a7c7fe83f44ce11b34d9d40b9f2eee3e3a4",
+  deps = ["@maven//:com_google_guava_failureaccess", "@maven//:org_checkerframework_checker_qual"],
+)
+# /private/var/tmp/_bazel_user/abc/external/maven/BUILD.bazel:11:11
+jvm_import(
+  name = "com_google_guava_failureaccess",
+  jars = ["@maven//:v1/https/repo1.maven.org/maven2/com/google/guava/failureaccess/1.0.2/failureaccess-1.0.2.jar"],
+  maven_coordinates = "com.google.guava:failureaccess:1.0.2",
+  maven_url = "https://repo1.maven.org/maven2/com/google/guava/failureaccess/1.0.2/failureaccess-1.0.2.jar",
+  maven_sha256 = "0000000000000000000000000000000000000000000000000000000000000001",
+  deps = [],
+)
+# /private/var/tmp/_bazel_user/abc/external/maven/BUILD.bazel:21:11
+jvm_import(
+  name = "no_coords_rule",
+  jars = ["@maven//:something.jar"],
+  deps = [],
+)

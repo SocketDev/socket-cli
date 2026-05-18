@@ -111,6 +111,8 @@ export async function handleCreateNewScan({
   tmp,
   workspace,
 }: HandleCreateNewScanConfig): Promise<void> {
+  let scanTargets = targets
+
   debugFn(
     'notice',
     `Creating new scan for ${orgSlug}/${workspace ? `${workspace}/` : ''}${repoName}`,
@@ -137,12 +139,17 @@ export async function handleCreateNewScan({
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
     debugDir('inspect', { detected })
-    await generateAutoManifest({
+    const autoManifestResult = await generateAutoManifest({
       detected,
       cwd,
       outputKind,
       verbose: false,
     })
+    if (autoManifestResult.generatedFiles.length) {
+      scanTargets = Array.from(
+        new Set([...targets, ...autoManifestResult.generatedFiles]),
+      )
+    }
     logger.info('Auto-generation finished. Proceeding with Scan creation.')
   }
 
@@ -180,11 +187,15 @@ export async function handleCreateNewScan({
       target: targets[0]!,
     })
 
-  const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
-    additionalIgnores: additionalScaIgnores,
-    config: socketConfig,
-    cwd,
-  })
+  const packagePaths = await getPackageFilesForScan(
+    scanTargets,
+    supportedFiles,
+    {
+      additionalIgnores: additionalScaIgnores,
+      config: socketConfig,
+      cwd,
+    },
+  )
 
   spinner.successAndStop(
     `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,
