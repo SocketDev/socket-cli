@@ -208,6 +208,7 @@
     "**/scripts/socket-wheelhouse-schema.mts",
     "**/scripts/test/check-lock-step-header.test.mts",
     "**/scripts/test/check-lock-step-refs.test.mts",
+    "**/scripts/test/install-claude-plugins.test.mts",
     "**/scripts/test/install-git-hooks.test.mts",
     "**/scripts/update.mts",
     "**/scripts/validate-bundle-deps.mts",
