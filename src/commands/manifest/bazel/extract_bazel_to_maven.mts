@@ -234,6 +234,21 @@ function bazelExternalDir(
   }
 }
 
+// Internal diagnostic: when truthy, skip the unsorted_deps.json fast path
+// and force the bazel-query regex fallback. Used by bazel-bench to
+// deterministically exercise parseBazelBuildOutput on every CI run. Truthy
+// values are '1', 'true', 'yes' (case-insensitive); anything else (unset,
+// '', '0', 'false') is treated as off. Not exposed as a user-facing CLI
+// flag, so it is read here rather than added to constants.mts.
+function isForceQueryFallbackEnabled(): boolean {
+  const raw = process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK']
+  if (!raw) {
+    return false
+  }
+  const normalized = raw.toLowerCase()
+  return normalized === '1' || normalized === 'true' || normalized === 'yes'
+}
+
 // Tries `external/<repo>/unsorted_deps.json` first; falls back to parsing the
 // probe stdout the caller already captured during discovery. Discovery runs
 // the same `kind("jvm_import rule|aar_import rule", @<repo>//:*)` query that
@@ -256,9 +271,17 @@ async function extractFromOneRepo(
       externalDir ?? '(unresolved — bazel-out symlink absent)',
     )
   }
-  const candidates = externalDir
-    ? [path.join(externalDir, repoName, 'unsorted_deps.json')]
-    : []
+  const forceFallback = isForceQueryFallbackEnabled()
+  if (forceFallback && verbose) {
+    logger.log(
+      `[VERBOSE] @${repoName}: SOCKET_BAZEL_FORCE_QUERY_FALLBACK set; skipping unsorted_deps.json fast path.`,
+    )
+  }
+  const candidates = forceFallback
+    ? []
+    : externalDir
+      ? [path.join(externalDir, repoName, 'unsorted_deps.json')]
+      : []
   for (const c of candidates) {
     if (existsSync(c)) {
       // Bound the read to 1GB to prevent OOM on hostile content while allowing large real-world lockfiles.
