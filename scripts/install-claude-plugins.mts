@@ -1,33 +1,29 @@
 #!/usr/bin/env node
 /**
  * @file Reconcile the local machine's Claude Code plugin state to the
- *   wheelhouse-canonical SHA-pinned set.
+ *   wheelhouse-canonical SHA-pinned set. What the reconciler does:
  *
- *   What the reconciler does:
- *
- *   1. Ensures the `socket-wheelhouse` marketplace is added to Claude
- *      Code (`~/.claude/plugins/known_marketplaces.json`).
+ *   1. Ensures the `socket-wheelhouse` marketplace is added to Claude Code
+ *      (`~/.claude/plugins/known_marketplaces.json`).
  *   2. For each plugin in the wheelhouse marketplace's
  *      `.claude-plugin/marketplace.json`:
- *      - If installed under a *different* marketplace (foreign source) —
- *        uninstalls it, then installs ours. Wheelhouse is the pin
- *        authority; foreign installs are silently overriding our pin.
- *      - If installed under our marketplace at the right SHA — no-op.
- *      - If installed under our marketplace at a stale SHA — uninstalls
- *        + reinstalls to bump.
- *      - If not installed at all — installs.
- *   3. Warns (does NOT auto-remove) about marketplaces that exist
- *      locally + only serve plugins we now serve canonically. The
- *      user might intentionally keep a dev-source override; let them
- *      remove it explicitly.
  *
- *   Idempotent — running twice in a row is a no-op. Designed for
- *   `pnpm setup` wiring in every fleet repo.
+ *   - If installed under a _different_ marketplace (foreign source) — uninstalls
+ *     it, then installs ours. Wheelhouse is the pin authority; foreign installs
+ *     are silently overriding our pin.
+ *   - If installed under our marketplace at the right SHA — no-op.
+ *   - If installed under our marketplace at a stale SHA — uninstalls
+ *   - reinstalls to bump.
+ *   - If not installed at all — installs.
  *
- *   Pin discipline is enforced by `.claude/hooks/marketplace-comment-guard/`:
- *   every `plugins[].source.sha` in `marketplace.json` must have a row
- *   in `.claude-plugin/README.md` with matching version + sha + ISO
- *   date.
+ *   3. Warns (does NOT auto-remove) about marketplaces that exist locally + only
+ *      serve plugins we now serve canonically. The user might intentionally
+ *      keep a dev-source override; let them remove it explicitly. Idempotent —
+ *      running twice in a row is a no-op. Designed for `pnpm setup` wiring in
+ *      every fleet repo. Pin discipline is enforced by
+ *      `.claude/hooks/marketplace-comment-guard/`: every `plugins[].source.sha`
+ *      in `marketplace.json` must have a row in `.claude-plugin/README.md` with
+ *      matching version + sha + ISO date.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -85,12 +81,11 @@ export interface MarketplaceManifest {
 }
 
 /**
- * Parse the plugin's `installPath` to extract the SHA prefix it was
- * pinned to (12 chars). Returns `null` for directory installs,
- * version-tagged installs, or any path shape we don't recognize as
- * SHA-pinned. Claude Code uses this dir-name shape for ref-less pins;
- * version-tagged pins use a dir name like `1.0.1` instead — see
- * `lookupInstalledSha` for the authoritative source.
+ * Parse the plugin's `installPath` to extract the SHA prefix it was pinned to
+ * (12 chars). Returns `null` for directory installs, version-tagged installs,
+ * or any path shape we don't recognize as SHA-pinned. Claude Code uses this
+ * dir-name shape for ref-less pins; version-tagged pins use a dir name like
+ * `1.0.1` instead — see `lookupInstalledSha` for the authoritative source.
  */
 export function extractInstalledSha(
   installPath: string | undefined,
@@ -98,19 +93,19 @@ export function extractInstalledSha(
   if (!installPath) return null
   const dirName = path.basename(installPath)
   const m = SHA_PINNED_DIR_NAME.exec(dirName)
-  return m ? m[1] ?? null : null
+  return m ? (m[1] ?? null) : null
 }
 
 /**
- * Look up the installed `gitCommitSha` for a plugin from Claude Code's
- * own state file `~/.claude/plugins/installed_plugins.json`. This is
- * the authoritative record of which commit a plugin was installed
- * from, regardless of whether the cache dir is SHA-prefixed
- * (`9cb4fe40-deadbeef/`) or version-tagged (`1.0.1/`).
+ * Look up the installed `gitCommitSha` for a plugin from Claude Code's own
+ * state file `~/.claude/plugins/installed_plugins.json`. This is the
+ * authoritative record of which commit a plugin was installed from, regardless
+ * of whether the cache dir is SHA-prefixed (`9cb4fe40-deadbeef/`) or
+ * version-tagged (`1.0.1/`).
  *
- * Returns the full 40-char SHA, or `null` if the file/entry is missing
- * or the `gitCommitSha` field is absent (some plugin sources don't
- * carry it — directory installs, for example).
+ * Returns the full 40-char SHA, or `null` if the file/entry is missing or the
+ * `gitCommitSha` field is absent (some plugin sources don't carry it —
+ * directory installs, for example).
  */
 export function lookupInstalledSha(
   installedPluginsJson: unknown,
@@ -134,9 +129,9 @@ export function lookupInstalledSha(
 }
 
 /**
- * Find an existing install of `pluginName` that came from a marketplace
- * *other than* ours. Plugin ids have the shape `<name>@<marketplace>`.
- * Returns the foreign install entry, or `undefined` if none.
+ * Find an existing install of `pluginName` that came from a marketplace _other
+ * than_ ours. Plugin ids have the shape `<name>@<marketplace>`. Returns the
+ * foreign install entry, or `undefined` if none.
  */
 export function findForeignInstall(
   pluginName: string,
@@ -153,10 +148,10 @@ export function findForeignInstall(
 }
 
 /**
- * Identify marketplaces that look orphaned — exist locally, aren't
- * ours, and only serve plugins our marketplace now serves canonically.
- * Returns the marketplace names; we warn the user rather than
- * auto-remove (a dev-source override is a legitimate deliberate state).
+ * Identify marketplaces that look orphaned — exist locally, aren't ours, and
+ * only serve plugins our marketplace now serves canonically. Returns the
+ * marketplace names; we warn the user rather than auto-remove (a dev-source
+ * override is a legitimate deliberate state).
  */
 export function findOrphanMarketplaces(
   marketplaces: MarketplaceListEntry[],
@@ -184,10 +179,10 @@ export function findOrphanMarketplaces(
 }
 
 /**
- * Run `claude` CLI synchronously; return stdout + exit code. Stderr
- * goes through to our own stderr so the user sees CLI errors in real
- * time. Fails loudly on non-zero exit codes — the install flow has no
- * graceful fallback if the CLI itself is broken.
+ * Run `claude` CLI synchronously; return stdout + exit code. Stderr goes
+ * through to our own stderr so the user sees CLI errors in real time. Fails
+ * loudly on non-zero exit codes — the install flow has no graceful fallback if
+ * the CLI itself is broken.
  */
 function runClaudeCli(args: string[]): string {
   const result = spawnSync('claude', args, {
@@ -234,11 +229,15 @@ function ensureMarketplace(): MarketplaceListEntry {
     // set, not whatever was committed when this machine first added the
     // marketplace. Cheap (Claude Code downloads a tarball snapshot, no
     // git clone) and idempotent.
-    logger.log(`Marketplace "${MARKETPLACE_NAME}" already added; refreshing snapshot…`)
+    logger.log(
+      `Marketplace "${MARKETPLACE_NAME}" already added; refreshing snapshot…`,
+    )
     runClaudeCli(['plugin', 'marketplace', 'update', MARKETPLACE_NAME])
     return existing
   }
-  logger.log(`Adding marketplace "${MARKETPLACE_NAME}" from ${MARKETPLACE_URL}…`)
+  logger.log(
+    `Adding marketplace "${MARKETPLACE_NAME}" from ${MARKETPLACE_URL}…`,
+  )
   runClaudeCli([
     'plugin',
     'marketplace',
@@ -258,10 +257,10 @@ function ensureMarketplace(): MarketplaceListEntry {
 }
 
 /**
- * Load `~/.claude/plugins/installed_plugins.json` — Claude Code's
- * authoritative state file for which commit each installed plugin came
- * from. Returns `null` if the file is absent or unparseable; the
- * reconciler falls back to path-prefix parsing in that case.
+ * Load `~/.claude/plugins/installed_plugins.json` — Claude Code's authoritative
+ * state file for which commit each installed plugin came from. Returns `null`
+ * if the file is absent or unparseable; the reconciler falls back to
+ * path-prefix parsing in that case.
  */
 function loadInstalledPluginsState(): unknown {
   const home = process.env['HOME'] ?? process.env['USERPROFILE']
@@ -317,10 +316,10 @@ function installPlugin(installId: string, pinDescription: string): void {
 
 /**
  * Resolve the installed SHA for a plugin. Prefer the authoritative
- * `gitCommitSha` field from `~/.claude/plugins/installed_plugins.json`;
- * fall back to parsing the cache dir name for ref-less SHA-prefix
- * installs. Returns the full 40-char SHA (or 12-char prefix from the
- * fallback path), or `null` if neither source resolves.
+ * `gitCommitSha` field from `~/.claude/plugins/installed_plugins.json`; fall
+ * back to parsing the cache dir name for ref-less SHA-prefix installs. Returns
+ * the full 40-char SHA (or 12-char prefix from the fallback path), or `null` if
+ * neither source resolves.
  */
 function resolveInstalledSha(
   ours: PluginListEntry,
@@ -332,15 +331,14 @@ function resolveInstalledSha(
 }
 
 /**
- * Reconcile a single plugin to the wheelhouse pin. Handles four cases:
- * foreign install (uninstall + install), missing (install), stale SHA
- * (uninstall + reinstall), and correct (no-op).
+ * Reconcile a single plugin to the wheelhouse pin. Handles four cases: foreign
+ * install (uninstall + install), missing (install), stale SHA (uninstall +
+ * reinstall), and correct (no-op).
  */
 function reconcilePlugin(plugin: MarketplacePlugin): void {
   const ourInstallId = `${plugin.name}@${MARKETPLACE_NAME}`
   const expectedSha = plugin.source.sha ?? null
-  const pinDescription =
-    plugin.source.sha ?? plugin.source.ref ?? '<no ref>'
+  const pinDescription = plugin.source.sha ?? plugin.source.ref ?? '<no ref>'
 
   let plugins = listPlugins()
 
@@ -367,7 +365,9 @@ function reconcilePlugin(plugin: MarketplacePlugin): void {
     if (!expectedSha) {
       // Manifest pin has no SHA — we can't drift-compare. Trust the
       // existing install.
-      logger.log(`Plugin ${ourInstallId} already installed (manifest has no SHA to compare).`)
+      logger.log(
+        `Plugin ${ourInstallId} already installed (manifest has no SHA to compare).`,
+      )
       return
     }
     const state = loadInstalledPluginsState()
@@ -375,7 +375,9 @@ function reconcilePlugin(plugin: MarketplacePlugin): void {
     const expectedPrefix = expectedSha.slice(0, 12)
     const installedPrefix = installedSha?.slice(0, 12) ?? null
     if (installedPrefix === expectedPrefix) {
-      logger.log(`Plugin ${ourInstallId} already installed at pinned SHA ${expectedPrefix}.`)
+      logger.log(
+        `Plugin ${ourInstallId} already installed at pinned SHA ${expectedPrefix}.`,
+      )
       return
     }
     // Drift: our install is at a different SHA. Reinstall.

@@ -137,10 +137,7 @@ const rule = {
 
     // Check whether `useNode` is nested inside a ForStatement that
     // was reported with `iterName`. Walks the parent chain.
-    function insideFlaggedLoopFor(
-      useNode: AstNode,
-      iterName: string,
-    ): boolean {
+    function insideFlaggedLoopFor(useNode: AstNode, iterName: string): boolean {
       let cur: AstNode | undefined = useNode.parent
       while (cur) {
         if (cur.type === 'ForStatement') {

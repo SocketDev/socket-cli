@@ -31,9 +31,7 @@ test('extractInstalledSha returns 12-char prefix for SHA-pinned cache path', () 
 })
 
 test('extractInstalledSha handles content-hash of various lengths', () => {
-  const got = extractInstalledSha(
-    '/x/cache/m/p/abcdef012345-fedcba98',
-  )
+  const got = extractInstalledSha('/x/cache/m/p/abcdef012345-fedcba98')
   assert.equal(got, 'abcdef012345')
 })
 
@@ -66,10 +64,7 @@ test('extractInstalledSha rejects shapes that almost-match but are not 12 + 8+',
   assert.equal(extractInstalledSha('/x/cache/m/p/zzzzzzzzzzzz-deadbeef'), null)
 })
 
-const fakePlugin = (
-  id: string,
-  installPath?: string,
-): PluginListEntry => ({
+const fakePlugin = (id: string, installPath?: string): PluginListEntry => ({
   id,
   scope: 'user',
   enabled: true,
@@ -88,7 +83,10 @@ test('findForeignInstall finds plugin under non-canonical marketplace', () => {
 
 test('findForeignInstall returns undefined when plugin is under our marketplace', () => {
   const plugins = [
-    fakePlugin('codex@socket-wheelhouse', '/x/cache/socket-wheelhouse/codex/9cb4fe409919-aa'),
+    fakePlugin(
+      'codex@socket-wheelhouse',
+      '/x/cache/socket-wheelhouse/codex/9cb4fe409919-aa',
+    ),
   ]
   const got = findForeignInstall('codex', plugins, OUR)
   assert.equal(got, undefined)
@@ -163,9 +161,7 @@ test('findOrphanMarketplaces does NOT flag marketplace serving non-overlapping p
 })
 
 test('findOrphanMarketplaces never flags our own marketplace', () => {
-  const marketplaces: MarketplaceListEntry[] = [
-    { name: OUR, source: 'github' },
-  ]
+  const marketplaces: MarketplaceListEntry[] = [{ name: OUR, source: 'github' }]
   const plugins = [fakePlugin('codex@socket-wheelhouse')]
   const got = findOrphanMarketplaces(
     marketplaces,
@@ -224,9 +220,15 @@ test('lookupInstalledSha rejects malformed gitCommitSha values', () => {
 
 test('lookupInstalledSha handles null / non-object input', () => {
   assert.equal(lookupInstalledSha(null, 'codex@socket-wheelhouse'), null)
-  assert.equal(lookupInstalledSha('not-an-object', 'codex@socket-wheelhouse'), null)
+  assert.equal(
+    lookupInstalledSha('not-an-object', 'codex@socket-wheelhouse'),
+    null,
+  )
   assert.equal(lookupInstalledSha({}, 'codex@socket-wheelhouse'), null)
-  assert.equal(lookupInstalledSha({ plugins: null }, 'codex@socket-wheelhouse'), null)
+  assert.equal(
+    lookupInstalledSha({ plugins: null }, 'codex@socket-wheelhouse'),
+    null,
+  )
 })
 
 test('lookupInstalledSha walks multiple scope entries to find a valid SHA', () => {

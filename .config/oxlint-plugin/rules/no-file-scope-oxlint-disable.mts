@@ -1,36 +1,29 @@
 /**
- * @file Forbid file-scope `oxlint-disable <rule>` comments — every
- *   exemption must be justified per call site via
- *   `oxlint-disable-next-line <rule> -- <reason>`.
+ * @file Forbid file-scope `oxlint-disable <rule>` comments — every exemption
+ *   must be justified per call site via `oxlint-disable-next-line <rule> --
+ *   <reason>`. Why: a file-scope `/* oxlint-disable
+ *   socket/no-console-prefer-logger *\/` block at the top of a file silently
+ *   exempts the entire file from a fleet rule. The exemption applies to lines
+ *   the author never thought about — including future edits — and the reason
+ *   field at the top is easy to forget by the time someone adds a new call
+ *   below. Inline `oxlint-disable-next-line socket/<rule> -- <reason>` forces
+ *   the author to write a fresh justification per call site, which surfaces in
+ *   code review and in `git blame` next to the actual disabled code. Allowed:
  *
- *   Why: a file-scope `/* oxlint-disable socket/no-console-prefer-logger *\/`
- *   block at the top of a file silently exempts the entire file from a
- *   fleet rule. The exemption applies to lines the author never thought
- *   about — including future edits — and the reason field at the top is
- *   easy to forget by the time someone adds a new call below.
- *
- *   Inline `oxlint-disable-next-line socket/<rule> -- <reason>` forces the
- *   author to write a fresh justification per call site, which surfaces
- *   in code review and in `git blame` next to the actual disabled code.
- *
- *   Allowed:
  *   - `// oxlint-disable-next-line <rule> -- <reason>` (per call site)
  *   - `/* oxlint-disable-next-line <rule> *\/` block form, also per call
- *   - File-scope disable for **plugin-internal rules** where the file
- *     itself defines the rule and intentionally contains the banned
- *     shape as lookup-table data (e.g. `no-status-emoji.mts` containing
- *     the emoji it bans). Matched by file path: any file under
- *     `.config/oxlint-plugin/rules/` is exempt from this rule.
- *
- *   Banned:
+ *   - File-scope disable for **plugin-internal rules** where the file itself
+ *     defines the rule and intentionally contains the banned shape as
+ *     lookup-table data (e.g. `no-status-emoji.mts` containing the emoji it
+ *     bans). Matched by file path: any file under
+ *     `.config/oxlint-plugin/rules/` is exempt from this rule. Banned:
  *   - `/* oxlint-disable <rule> *\/` at file scope (no `-next-line`)
  *   - `// oxlint-disable <rule>` at file scope (no `-next-line`)
  *   - Block `oxlint-enable` toggles that come paired with file-scope
- *     `oxlint-disable` blocks — same anti-pattern.
- *
- *   No autofix: the rule reports each file-scope disable; the human
- *   moves each one to the call site that needs it (or removes it if
- *   the code can be rewritten to satisfy the rule).
+ *     `oxlint-disable` blocks — same anti-pattern. No autofix: the rule reports
+ *     each file-scope disable; the human moves each one to the call site that
+ *     needs it (or removes it if the code can be rewritten to satisfy the
+ *     rule).
  */
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
@@ -62,7 +55,7 @@ const rule = {
     fixable: undefined,
     messages: {
       fileScopeDisable:
-        'File-scope `oxlint-disable {{rule}}` silently exempts the whole file from a fleet rule. Move the disable to `oxlint-disable-next-line {{rule}} -- <reason>` on the specific line that needs it. If the entire file legitimately can\'t comply, the file probably needs a refactor instead.',
+        "File-scope `oxlint-disable {{rule}}` silently exempts the whole file from a fleet rule. Move the disable to `oxlint-disable-next-line {{rule}} -- <reason>` on the specific line that needs it. If the entire file legitimately can't comply, the file probably needs a refactor instead.",
     },
     schema: [],
   },

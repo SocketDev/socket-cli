@@ -12,12 +12,7 @@
 // owns its own tmpdir to avoid cross-pollution.
 
 import { spawnSync } from 'node:child_process'
-import {
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
 import test from 'node:test'
@@ -177,8 +172,7 @@ test('accepts inline ref with line range', () => {
     }),
     files: {
       'src/parser.go': '',
-      'src/foo.rs':
-        '// Lock-step with Go: src/parser.go:6450-6457\nfn x() {}',
+      'src/foo.rs': '// Lock-step with Go: src/parser.go:6450-6457\nfn x() {}',
     },
   })
   const { exitCode } = runGate(repo)
@@ -238,10 +232,8 @@ test('skips SKIP_DIRS (node_modules, dist, target)', () => {
       // These should be IGNORED — stale ref inside node_modules/ shouldn't fail the gate.
       'src/node_modules/junk/file.go':
         '//! Lock-step from Rust: doesnotexist.rs\npackage x',
-      'src/dist/x.go':
-        '//! Lock-step from Rust: doesnotexist.rs\npackage x',
-      'src/target/x.go':
-        '//! Lock-step from Rust: doesnotexist.rs\npackage x',
+      'src/dist/x.go': '//! Lock-step from Rust: doesnotexist.rs\npackage x',
+      'src/target/x.go': '//! Lock-step from Rust: doesnotexist.rs\npackage x',
     },
   })
   const { exitCode } = runGate(repo)

@@ -1,55 +1,36 @@
 #!/usr/bin/env node
 /**
- * @file Lock-step header byte-equality gate. Mantra: the four impls
- *   of a quadruplet agree about WHAT THE FILE IS FOR. The `BEGIN
- *   LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block names that
- *   contract; every member of the quadruplet carries the same block,
- *   byte-for-byte (after stripping the `// ` comment prefix). Drift
- *   on the contract is a different failure mode from a stale path
- *   reference (which `check-lock-step-refs.mts` catches) — this gate
- *   is the _intent_ tripwire.
+ * @file Lock-step header byte-equality gate. Mantra: the four impls of a
+ *   quadruplet agree about WHAT THE FILE IS FOR. The `BEGIN LOCK-STEP HEADER` /
+ *   `END LOCK-STEP HEADER` block names that contract; every member of the
+ *   quadruplet carries the same block, byte-for-byte (after stripping the `// `
+ *   comment prefix). Drift on the contract is a different failure mode from a
+ *   stale path reference (which `check-lock-step-refs.mts` catches) — this gate
+ *   is the _intent_ tripwire. Opt-in per repo: uses the same
+ *   `.config/lock-step-refs.json` as the path gate. Without the config, the
+ *   gate is a no-op. With the config, the gate walks every scanned source file,
+ *   looks for a `BEGIN LOCK-STEP HEADER` marker on the canonical side (a file
+ *   whose header contains one or more `Lock-step with <Lang>: <path>` refs),
+ *   extracts the header content, then opens each named peer and demands its
+ *   header block be byte-identical. "Canonical side" is determined by the
+ *   header content itself:
  *
- *   Opt-in per repo: uses the same `.config/lock-step-refs.json` as
- *   the path gate. Without the config, the gate is a no-op. With the
- *   config, the gate walks every scanned source file, looks for a
- *   `BEGIN LOCK-STEP HEADER` marker on the canonical side (a file
- *   whose header contains one or more `Lock-step with <Lang>: <path>`
- *   refs), extracts the header content, then opens each named peer
- *   and demands its header block be byte-identical.
- *
- *   "Canonical side" is determined by the header content itself:
- *
- *     - A file with `Lock-step with <Lang>: <path>` is canonical for
- *       that peer. (The peer should reciprocate with
- *       `Lock-step from <Lang>: <my-path>`, but the gate doesn't rely
- *       on that — symmetry is a §5 rule, not a §7 rule.)
- *     - A file with only `Lock-step from <Lang>: <path>` is a port
- *       and is checked against its canonical source.
- *
- *   Header format (single-line `// ` across every language):
- *
- *     // BEGIN LOCK-STEP HEADER
- *     // Class Parsing (Declarations, Expressions, Elements, Methods)
- *     //
- *     // Lock-step with Go: src/parser/class.go
- *     // Lock-step with C++: src/parser/class.cpp
- *     // END LOCK-STEP HEADER
- *
- *   Comparison strips the `// ` prefix from each line; an empty
- *   comment line (`//`) is preserved as an empty content line. The
- *   content between BEGIN and END is the contract.
- *
- *   Usage:
- *
- *     node scripts/check-lock-step-header.mts          # report + fail
- *     node scripts/check-lock-step-header.mts --json   # machine-readable
- *     node scripts/check-lock-step-header.mts --quiet  # silent on clean
- *
- *   Exit codes:
- *
- *     0 — clean (no quadruplets diverged, or config absent)
- *     1 — at least one quadruplet has a header diff
- *     2 — gate itself crashed
+ *   - A file with `Lock-step with <Lang>: <path>` is canonical for that peer.
+ *     (The peer should reciprocate with `Lock-step from <Lang>: <my-path>`, but
+ *     the gate doesn't rely on that — symmetry is a §5 rule, not a §7 rule.)
+ *   - A file with only `Lock-step from <Lang>: <path>` is a port and is checked
+ *     against its canonical source. Header format (single-line `// ` across
+ *     every language): // BEGIN LOCK-STEP HEADER // Class Parsing
+ *     (Declarations, Expressions, Elements, Methods) // // Lock-step with Go:
+ *     src/parser/class.go // Lock-step with C++: src/parser/class.cpp // END
+ *     LOCK-STEP HEADER Comparison strips the `// ` prefix from each line; an
+ *     empty comment line (`//`) is preserved as an empty content line. The
+ *     content between BEGIN and END is the contract. Usage: node
+ *     scripts/check-lock-step-header.mts # report + fail node
+ *     scripts/check-lock-step-header.mts --json # machine-readable node
+ *     scripts/check-lock-step-header.mts --quiet # silent on clean Exit codes:
+ *     0 — clean (no quadruplets diverged, or config absent) 1 — at least one
+ *     quadruplet has a header diff 2 — gate itself crashed
  */
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
@@ -172,7 +153,8 @@ function extractHeader(file: string): HeaderBlock | undefined {
     const stripped = stripCommentPrefix(raw)
     bodyLines.push(stripped)
   }
-  const withRe = /Lock-step with ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)/g
+  const withRe =
+    /Lock-step with ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)/g
   const withRefs: Array<{ lang: string; refPath: string }> = []
   for (const line of bodyLines) {
     withRe.lastIndex = 0
@@ -239,7 +221,9 @@ function bodyEqual(a: readonly string[], b: readonly string[]): boolean {
 function formatDiff(d: Diff, repoRoot: string): string {
   const out: string[] = []
   const rel = (p: string) => path.relative(repoRoot, p)
-  out.push(`\n${rel(d.canonical)} (canonical) ↔ ${rel(d.peer)} (${d.lang} peer):`)
+  out.push(
+    `\n${rel(d.canonical)} (canonical) ↔ ${rel(d.peer)} (${d.lang} peer):`,
+  )
   if (d.reason === 'peer-not-found') {
     out.push(`  peer path doesn't exist on disk: ${rel(d.peer)}`)
     return out.join('\n')
@@ -274,9 +258,7 @@ function main(): void {
   try {
     config = loadConfig(repoRoot)
   } catch (e) {
-    process.stderr.write(
-      `check-lock-step-header: ${(e as Error).message}\n`,
-    )
+    process.stderr.write(`check-lock-step-header: ${(e as Error).message}\n`)
     process.exitCode = 2
     return
   }
@@ -307,12 +289,7 @@ function main(): void {
     }
     canonicalCount += 1
     for (const ref of header.withRefs) {
-      const peerPath = resolveRefPath(
-        config,
-        repoRoot,
-        ref.lang,
-        ref.refPath,
-      )
+      const peerPath = resolveRefPath(config, repoRoot, ref.lang, ref.refPath)
       if (!peerPath) {
         diffs.push({
           canonical: file,
