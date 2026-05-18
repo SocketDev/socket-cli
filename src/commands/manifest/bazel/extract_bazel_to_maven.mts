@@ -9,7 +9,6 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getErrorCause } from '../../../utils/errors.mts'
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
 import {
   parseBazelBuildOutput,
@@ -30,6 +29,7 @@ import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
 } from './bazel-workspace-detect.mts'
+import { getErrorCause } from '../../../utils/errors.mts'
 
 import type { ExtractedArtifact } from './bazel-build-parser.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
