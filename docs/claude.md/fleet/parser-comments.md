@@ -91,6 +91,48 @@ Two cheap defenses:
 - Reference paths, not symbols. `parser.go:6450-6457` survives a method rename; `parseClassBody` doesn't.
 - Add a `scripts/check-lock-step-refs.mts` gate that greps every `Lock-step with <Lang>:` comment, resolves the path against the right impl root, and fails CI if the path no longer exists. Line ranges are advisory and can drift; path existence is enforceable.
 
+## 7. Lock-step header — byte-identical intent across the quadruplet
+
+Cross-references catch path rot. They don't catch _semantic_ drift — the case where the four impls quietly start disagreeing about what the file is _for_. The convention for that is a top-of-file **Lock-step header** block, byte-identical across every member of the quadruplet:
+
+```rust
+// BEGIN LOCK-STEP HEADER
+// Class Parsing (Declarations, Expressions, Elements, Methods)
+//
+// Lock-step with Go: src/parser/class.go
+// Lock-step with C++: src/parser/class.cpp
+// Lock-step with TS: src/parser/class.ts
+// END LOCK-STEP HEADER
+```
+
+```go
+// BEGIN LOCK-STEP HEADER
+// Class Parsing (Declarations, Expressions, Elements, Methods)
+//
+// Lock-step with Go: src/parser/class.go
+// Lock-step with C++: src/parser/class.cpp
+// Lock-step with TS: src/parser/class.ts
+// END LOCK-STEP HEADER
+```
+
+```cpp
+// BEGIN LOCK-STEP HEADER
+// Class Parsing (Declarations, Expressions, Elements, Methods)
+//
+// Lock-step with Go: src/parser/class.go
+// Lock-step with C++: src/parser/class.cpp
+// Lock-step with TS: src/parser/class.ts
+// END LOCK-STEP HEADER
+```
+
+Rules:
+
+- **Single-line `// ` syntax across every language** — no `//!` / `///` / `/** */` mixing. Strip the leading `// `, byte-compare. Languages that need a doc-comment for tooling (Rust's `//!` for `rustdoc`, JSDoc for TypeScript) put that separately — the Lock-step header is its own block and lives alongside.
+- **Mandatory: name + cross-refs.** First line is the file's purpose. Body lists `Lock-step with <Lang>: <path>` for every peer in the quadruplet, and `Lock-step from <Lang>: <path>` if the file is a port. The path forms are the same ones validated in §5.
+- **No timestamps, no authors, no per-impl prose.** Anything that legitimately differs between impls goes _outside_ the header (in language-specific doc comments, `// PORT NOTE:` blocks, etc.). The header is the contract; divergence is contraband.
+
+The gate (`scripts/check-lock-step-header.mts`, registered in the same opt-in `.config/lock-step-refs.json` as §5–6) walks the quadruplets named by each canonical-side header, extracts the `BEGIN LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block from each peer, and fails CI on any byte-diff. When the canonical impl needs to revise the contract, every peer must update in the same commit.
+
 ## Scope
 
 This exception applies to:

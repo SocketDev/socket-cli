@@ -143,30 +143,27 @@ describe('socket/no-cached-for-on-iterable', () => {
       ],
       invalid: [
         {
-          name: 'new Set() binding — bare init (cached-for + indexed body)',
+          name: 'new Set() binding — bare init (cached-for + indexed body, single report)',
           code:
             'const items = new Set()\n' +
             'for (let i = 0, { length } = items; i < length; i += 1) {\n' +
             '  const item = items[i]!\n' +
             '  void item\n' +
             '}\n',
-          // Both findings fire: the loop shape AND the items[i] read.
-          errors: [
-            { messageId: 'noCachedForOnIterable' },
-            { messageId: 'indexedAccessOnIterable' },
-          ],
+          // Only the cached-for shape is reported. The body's
+          // `items[i]` read is suppressed because the enclosing
+          // for-loop already fired — fixing the loop fixes the
+          // body access by construction.
+          errors: [{ messageId: 'noCachedForOnIterable' }],
         },
         {
-          name: 'Set<string> annotation (cached-for + indexed body)',
+          name: 'Set<string> annotation (cached-for + indexed body, single report)',
           code:
             'declare const items: Set<string>\n' +
             'for (let i = 0, { length } = items; i < length; i += 1) {\n' +
             '  void items[i]\n' +
             '}\n',
-          errors: [
-            { messageId: 'noCachedForOnIterable' },
-            { messageId: 'indexedAccessOnIterable' },
-          ],
+          errors: [{ messageId: 'noCachedForOnIterable' }],
         },
         {
           name: 'ReadonlySet<string> annotation',
@@ -175,10 +172,8 @@ describe('socket/no-cached-for-on-iterable', () => {
             'for (let i = 0, { length } = items; i < length; i += 1) {\n' +
             '  void items[i]\n' +
             '}\n',
-          errors: [
-            { messageId: 'noCachedForOnIterable' },
-            { messageId: 'indexedAccessOnIterable' },
-          ],
+          // Body's indexed access suppressed; loop is the single report.
+          errors: [{ messageId: 'noCachedForOnIterable' }],
         },
         {
           name: 'new Map() binding',
@@ -187,10 +182,7 @@ describe('socket/no-cached-for-on-iterable', () => {
             'for (let i = 0, { length } = m; i < length; i += 1) {\n' +
             '  void m[i]\n' +
             '}\n',
-          errors: [
-            { messageId: 'noCachedForOnIterable' },
-            { messageId: 'indexedAccessOnIterable' },
-          ],
+          errors: [{ messageId: 'noCachedForOnIterable' }],
         },
         {
           name: 'Map<K, V> annotation',
@@ -199,10 +191,7 @@ describe('socket/no-cached-for-on-iterable', () => {
             'for (let i = 0, { length } = m; i < length; i += 1) {\n' +
             '  void m[i]\n' +
             '}\n',
-          errors: [
-            { messageId: 'noCachedForOnIterable' },
-            { messageId: 'indexedAccessOnIterable' },
-          ],
+          errors: [{ messageId: 'noCachedForOnIterable' }],
         },
         {
           name: 'WeakSet<T> annotation',
@@ -287,17 +276,29 @@ describe('socket/no-cached-for-on-iterable', () => {
           errors: [{ messageId: 'indexedAccessOnIterable' }],
         },
         {
-          name: 'cached-for on iterable PLUS indexed read in body — both fire',
+          name: 'cached-for + indexed body — body access SUPPRESSED (single report)',
+          // The cached-for loop is the single root cause. Suppressing
+          // the body's `items[i]` finding keeps the fix-path obvious:
+          // rewrite the loop to `for...of`, and the indexed access
+          // disappears automatically.
           code:
             'const items = new Set<string>()\n' +
             'for (let i = 0, { length } = items; i < length; i += 1) {\n' +
             '  const v = items[i]\n' +
             '  void v\n' +
             '}\n',
-          errors: [
-            { messageId: 'noCachedForOnIterable' },
-            { messageId: 'indexedAccessOnIterable' },
-          ],
+          errors: [{ messageId: 'noCachedForOnIterable' }],
+        },
+        {
+          name: 'standalone indexed access on a Set (outside any for-loop) still fires',
+          // Proves the suppression is *scoped to enclosing flagged
+          // loops only* — it doesn't blanket-suppress indexed access
+          // on Sets in general.
+          code:
+            'const items = new Set<string>()\n' +
+            'const first = items[0]\n' +
+            'void first\n',
+          errors: [{ messageId: 'indexedAccessOnIterable' }],
         },
         {
           name: 'scope shadowing: outer Set IS flagged in outer scope (inner shadow does not exempt)',

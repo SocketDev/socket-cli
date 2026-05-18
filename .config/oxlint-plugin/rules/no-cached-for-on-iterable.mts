@@ -121,6 +121,39 @@ const rule = {
     // array binding).
     const resolveKind = createKindResolver()
 
+    // Track ForStatements that already fired `noCachedForOnIterable`
+    // for a given iterable name. When a MemberExpression visitor
+    // later sees `iterName[i]` or `iterName.length` *inside* one
+    // of these loops, we suppress the secondary finding — the
+    // single root cause (the loop shape) is already reported, and
+    // emitting both findings creates one noise-per-iteration of
+    // body access for the user to ignore. The body fix follows
+    // from fixing the loop, so the secondary report is redundant.
+    //
+    // Keyed by the ForStatement AST node identity (Map<AstNode,
+    // string>); lookup walks the use-site's parent chain to find
+    // an enclosing flagged loop with the matching iterName.
+    const flaggedLoops = new Map<AstNode, string>()
+
+    // Check whether `useNode` is nested inside a ForStatement that
+    // was reported with `iterName`. Walks the parent chain.
+    function insideFlaggedLoopFor(
+      useNode: AstNode,
+      iterName: string,
+    ): boolean {
+      let cur: AstNode | undefined = useNode.parent
+      while (cur) {
+        if (cur.type === 'ForStatement') {
+          const flaggedName = flaggedLoops.get(cur)
+          if (flaggedName === iterName) {
+            return true
+          }
+        }
+        cur = cur.parent
+      }
+      return false
+    }
+
     return {
       ForStatement(node: AstNode) {
         const iterName = matchCachedForInit(node.init)
@@ -131,6 +164,7 @@ const rule = {
         if (!FLAGGED_KINDS.has(kind)) {
           return
         }
+        flaggedLoops.set(node, iterName)
         context.report({
           node: node.init,
           messageId: 'noCachedForOnIterable',
@@ -147,6 +181,22 @@ const rule = {
         const name = node.object.name as string
         const kind = resolveKind(node, name)
         if (!FLAGGED_KINDS.has(kind)) {
+          return
+        }
+        // Suppress when inside an enclosing flagged for-loop that
+        // matched this same iterable name — the cached-for finding
+        // already covers the root cause; the body access is just
+        // a downstream symptom that gets fixed by fixing the loop.
+        //
+        // NOTE: this depends on visitor order. Oxlint walks the
+        // tree top-down, so the enclosing ForStatement is visited
+        // before its body's MemberExpressions. The flaggedLoops
+        // map is populated in time for the body's lookups. If a
+        // future oxlint version changes traversal order, this
+        // suppression becomes a no-op (we'd dual-fire again, which
+        // is the current noisy behavior — not a correctness
+        // regression).
+        if (insideFlaggedLoopFor(node, name)) {
           return
         }
         // `setVar.length` — direct property read; always undefined.
