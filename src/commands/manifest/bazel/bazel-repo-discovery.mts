@@ -3,6 +3,8 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { getErrorCause } from '../../../utils/errors.mts'
+
 // Maximum size (bytes) we will read for any single Bazel workspace file.
 // Prevents DoS via maliciously large MODULE.bazel / WORKSPACE / .bzl files.
 const MAX_WORKSPACE_FILE_BYTES = 5 * 1024 * 1024
@@ -252,7 +254,7 @@ export async function validateMavenRepo(
     if (verbose) {
       logger.log(
         `[VERBOSE] discovery: probe @${repoName}: REJECT (probe threw):`,
-        e instanceof Error ? e.message : String(e),
+        getErrorCause(e),
       )
     }
     return { valid: false, stdout: '' }

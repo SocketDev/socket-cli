@@ -6,7 +6,7 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 
-import { InputError } from '../../../utils/errors.mts'
+import { InputError, getErrorCause } from '../../../utils/errors.mts'
 
 // Validates that --bazel-output-base is a path we can use as Bazel's output_base.
 // Throws InputError if:
@@ -40,7 +40,7 @@ export function validateOutputBase(outputBase: string, cwd: string): void {
     mkdirSync(resolved, { recursive: true })
   } catch (e) {
     throw new InputError(
-      `--bazel-output-base could not be created at ${resolved}: ${(e as Error).message}`,
+      `--bazel-output-base could not be created at ${resolved}: ${getErrorCause(e)}`,
     )
   }
 }

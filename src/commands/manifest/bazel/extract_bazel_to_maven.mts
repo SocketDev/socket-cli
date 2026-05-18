@@ -9,6 +9,7 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { getErrorCause } from '../../../utils/errors.mts'
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
 import {
   parseBazelBuildOutput,
@@ -453,8 +454,7 @@ export async function extractBazelToMaven(
     // Always surface the error message; users should not have to
     // re-run a multi-minute bazel build with --verbose just to see whether
     // the failure was a missing dependency, permission error, or network blip.
-    const msg = e instanceof Error ? e.message : String(e)
-    logger.fail(`Unexpected error in bazel2maven: ${msg}`)
+    logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)
     if (verbose) {
       logger.group('[VERBOSE] error:')
       logger.log(e)
