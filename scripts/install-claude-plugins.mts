@@ -88,8 +88,9 @@ export interface MarketplaceManifest {
  * Parse the plugin's `installPath` to extract the SHA prefix it was
  * pinned to (12 chars). Returns `null` for directory installs,
  * version-tagged installs, or any path shape we don't recognize as
- * SHA-pinned. Used to detect drift between manifest pin and on-disk
- * install.
+ * SHA-pinned. Claude Code uses this dir-name shape for ref-less pins;
+ * version-tagged pins use a dir name like `1.0.1` instead — see
+ * `lookupInstalledSha` for the authoritative source.
  */
 export function extractInstalledSha(
   installPath: string | undefined,
@@ -98,6 +99,38 @@ export function extractInstalledSha(
   const dirName = path.basename(installPath)
   const m = SHA_PINNED_DIR_NAME.exec(dirName)
   return m ? m[1] ?? null : null
+}
+
+/**
+ * Look up the installed `gitCommitSha` for a plugin from Claude Code's
+ * own state file `~/.claude/plugins/installed_plugins.json`. This is
+ * the authoritative record of which commit a plugin was installed
+ * from, regardless of whether the cache dir is SHA-prefixed
+ * (`9cb4fe40-deadbeef/`) or version-tagged (`1.0.1/`).
+ *
+ * Returns the full 40-char SHA, or `null` if the file/entry is missing
+ * or the `gitCommitSha` field is absent (some plugin sources don't
+ * carry it — directory installs, for example).
+ */
+export function lookupInstalledSha(
+  installedPluginsJson: unknown,
+  installId: string,
+): string | null {
+  if (!installedPluginsJson || typeof installedPluginsJson !== 'object') {
+    return null
+  }
+  const plugins = (installedPluginsJson as { plugins?: unknown }).plugins
+  if (!plugins || typeof plugins !== 'object') return null
+  const entries = (plugins as Record<string, unknown>)[installId]
+  if (!Array.isArray(entries)) return null
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') continue
+    const sha = (entry as { gitCommitSha?: unknown }).gitCommitSha
+    if (typeof sha === 'string' && /^[0-9a-f]{40}$/.test(sha)) {
+      return sha
+    }
+  }
+  return null
 }
 
 /**
@@ -196,9 +229,13 @@ function listPlugins(): PluginListEntry[] {
 function ensureMarketplace(): MarketplaceListEntry {
   const existing = listMarketplaces().find(m => m.name === MARKETPLACE_NAME)
   if (existing) {
-    logger.log(
-      `Marketplace "${MARKETPLACE_NAME}" already added (source: ${existing.source}).`,
-    )
+    // Marketplace already added — but the local snapshot may be stale
+    // relative to upstream. Pull a fresh copy so we read today's pinned
+    // set, not whatever was committed when this machine first added the
+    // marketplace. Cheap (Claude Code downloads a tarball snapshot, no
+    // git clone) and idempotent.
+    logger.log(`Marketplace "${MARKETPLACE_NAME}" already added; refreshing snapshot…`)
+    runClaudeCli(['plugin', 'marketplace', 'update', MARKETPLACE_NAME])
     return existing
   }
   logger.log(`Adding marketplace "${MARKETPLACE_NAME}" from ${MARKETPLACE_URL}…`)
@@ -218,6 +255,29 @@ function ensureMarketplace(): MarketplaceListEntry {
     )
   }
   return added
+}
+
+/**
+ * Load `~/.claude/plugins/installed_plugins.json` — Claude Code's
+ * authoritative state file for which commit each installed plugin came
+ * from. Returns `null` if the file is absent or unparseable; the
+ * reconciler falls back to path-prefix parsing in that case.
+ */
+function loadInstalledPluginsState(): unknown {
+  const home = process.env['HOME'] ?? process.env['USERPROFILE']
+  if (!home || !path.isAbsolute(home)) return null
+  const stateFile = path.join(
+    home,
+    '.claude',
+    'plugins',
+    'installed_plugins.json',
+  )
+  if (!existsSync(stateFile)) return null
+  try {
+    return JSON.parse(readFileSync(stateFile, 'utf8'))
+  } catch {
+    return null
+  }
 }
 
 function loadMarketplaceManifest(
@@ -256,13 +316,29 @@ function installPlugin(installId: string, pinDescription: string): void {
 }
 
 /**
+ * Resolve the installed SHA for a plugin. Prefer the authoritative
+ * `gitCommitSha` field from `~/.claude/plugins/installed_plugins.json`;
+ * fall back to parsing the cache dir name for ref-less SHA-prefix
+ * installs. Returns the full 40-char SHA (or 12-char prefix from the
+ * fallback path), or `null` if neither source resolves.
+ */
+function resolveInstalledSha(
+  ours: PluginListEntry,
+  state: unknown,
+): string | null {
+  const fromState = lookupInstalledSha(state, ours.id)
+  if (fromState) return fromState
+  return extractInstalledSha(ours.installPath)
+}
+
+/**
  * Reconcile a single plugin to the wheelhouse pin. Handles four cases:
  * foreign install (uninstall + install), missing (install), stale SHA
  * (uninstall + reinstall), and correct (no-op).
  */
 function reconcilePlugin(plugin: MarketplacePlugin): void {
   const ourInstallId = `${plugin.name}@${MARKETPLACE_NAME}`
-  const expectedShaPrefix = plugin.source.sha?.slice(0, 12) ?? null
+  const expectedSha = plugin.source.sha ?? null
   const pinDescription =
     plugin.source.sha ?? plugin.source.ref ?? '<no ref>'
 
@@ -281,23 +357,30 @@ function reconcilePlugin(plugin: MarketplacePlugin): void {
     plugins = listPlugins()
   }
 
-  // (2) Our install present? Check SHA.
+  // (2) Our install present? Check SHA against installed_plugins.json's
+  // gitCommitSha field (authoritative) with cache-dir-name parsing as
+  // fallback. Both SHA forms can compare: the authoritative one is full
+  // 40-char, the fallback is 12-char prefix, so compare on a shared
+  // 12-char prefix.
   const ours = plugins.find(p => p.id === ourInstallId)
   if (ours) {
-    const installedShaPrefix = extractInstalledSha(ours.installPath)
-    if (!expectedShaPrefix) {
+    if (!expectedSha) {
       // Manifest pin has no SHA — we can't drift-compare. Trust the
       // existing install.
       logger.log(`Plugin ${ourInstallId} already installed (manifest has no SHA to compare).`)
       return
     }
-    if (installedShaPrefix === expectedShaPrefix) {
-      logger.log(`Plugin ${ourInstallId} already installed at pinned SHA ${expectedShaPrefix}.`)
+    const state = loadInstalledPluginsState()
+    const installedSha = resolveInstalledSha(ours, state)
+    const expectedPrefix = expectedSha.slice(0, 12)
+    const installedPrefix = installedSha?.slice(0, 12) ?? null
+    if (installedPrefix === expectedPrefix) {
+      logger.log(`Plugin ${ourInstallId} already installed at pinned SHA ${expectedPrefix}.`)
       return
     }
     // Drift: our install is at a different SHA. Reinstall.
     logger.log(
-      `Plugin ${ourInstallId} drift: installed at ${installedShaPrefix ?? '<unknown>'}, manifest pins ${expectedShaPrefix}. Reinstalling.`,
+      `Plugin ${ourInstallId} drift: installed at ${installedPrefix ?? '<unknown>'}, manifest pins ${expectedPrefix}. Reinstalling.`,
     )
     uninstallPlugin(ourInstallId)
     installPlugin(ourInstallId, pinDescription)
