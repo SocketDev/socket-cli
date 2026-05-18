@@ -65,7 +65,7 @@ async function runHook(
       transcript_path: transcript.transcriptPath,
     }
     if (options.stopHookActive) {
-      payload.stop_hook_active = true
+      payload['stop_hook_active'] = true
     }
     child.stdin.end(JSON.stringify(payload))
     let stderr = ''

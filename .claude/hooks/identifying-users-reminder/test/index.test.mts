@@ -1,4 +1,3 @@
-// @ts-expect-error - node:test types via @types/node@catalog work at runtime
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'

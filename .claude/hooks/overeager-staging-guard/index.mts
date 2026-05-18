@@ -178,7 +178,7 @@ function addTouchedFromBash(command: string, touched: Set<string>): void {
   }
 }
 
-function getRepoDir(payload: ToolInput): string {
+function getRepoDir(): string {
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
 }
 
@@ -202,7 +202,7 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  const repoDir = getRepoDir(payload)
+  const repoDir = getRepoDir()
   const transcriptPath = payload.transcript_path
 
   // ── Layer 1: block `git add -A` / `.` / `-u` ─────────────────────

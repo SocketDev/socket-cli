@@ -477,7 +477,6 @@ const rule = {
           handled = true
           // Compute fix: replace the call. Rebuild the template body.
           const indent = indentOf(stmt)
-          const newFirst = firstCooked.replace(/^\n+/, '')
           const src = sourceCode.getText()
           const start = node.range?.[0] ?? node.start
           const end = node.range?.[1] ?? node.end
