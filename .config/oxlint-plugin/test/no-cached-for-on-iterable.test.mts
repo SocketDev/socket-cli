@@ -86,26 +86,53 @@ describe('socket/no-cached-for-on-iterable', () => {
             '  void i\n' +
             '}\n',
         },
+        {
+          name: 'set.size read is correct — not flagged',
+          code:
+            'const items = new Set<string>()\n' +
+            'const n = items.size\n' +
+            'void n\n',
+        },
+        {
+          name: 'map[someKey] with non-numeric-looking identifier is left alone',
+          // The rule deliberately stays conservative: `map[someKey]`
+          // could be a typo for `map.get(someKey)`, but it could also
+          // be a Record / plain-object access aliased through Map<>.
+          // Only flag when the index strongly looks like a counter
+          // (i / j / k / index / etc.).
+          code:
+            'declare const m: Map<string, number>\n' +
+            'declare const someKey: string\n' +
+            'const v = m[someKey]\n' +
+            'void v\n',
+        },
       ],
       invalid: [
         {
-          name: 'new Set() binding — bare init',
+          name: 'new Set() binding — bare init (cached-for + indexed body)',
           code:
             'const items = new Set()\n' +
             'for (let i = 0, { length } = items; i < length; i += 1) {\n' +
             '  const item = items[i]!\n' +
             '  void item\n' +
             '}\n',
-          errors: [{ messageId: 'noCachedForOnIterable' }],
+          // Both findings fire: the loop shape AND the items[i] read.
+          errors: [
+            { messageId: 'noCachedForOnIterable' },
+            { messageId: 'indexedAccessOnIterable' },
+          ],
         },
         {
-          name: 'Set<string> annotation',
+          name: 'Set<string> annotation (cached-for + indexed body)',
           code:
             'declare const items: Set<string>\n' +
             'for (let i = 0, { length } = items; i < length; i += 1) {\n' +
             '  void items[i]\n' +
             '}\n',
-          errors: [{ messageId: 'noCachedForOnIterable' }],
+          errors: [
+            { messageId: 'noCachedForOnIterable' },
+            { messageId: 'indexedAccessOnIterable' },
+          ],
         },
         {
           name: 'ReadonlySet<string> annotation',
@@ -114,7 +141,10 @@ describe('socket/no-cached-for-on-iterable', () => {
             'for (let i = 0, { length } = items; i < length; i += 1) {\n' +
             '  void items[i]\n' +
             '}\n',
-          errors: [{ messageId: 'noCachedForOnIterable' }],
+          errors: [
+            { messageId: 'noCachedForOnIterable' },
+            { messageId: 'indexedAccessOnIterable' },
+          ],
         },
         {
           name: 'new Map() binding',
@@ -123,7 +153,10 @@ describe('socket/no-cached-for-on-iterable', () => {
             'for (let i = 0, { length } = m; i < length; i += 1) {\n' +
             '  void m[i]\n' +
             '}\n',
-          errors: [{ messageId: 'noCachedForOnIterable' }],
+          errors: [
+            { messageId: 'noCachedForOnIterable' },
+            { messageId: 'indexedAccessOnIterable' },
+          ],
         },
         {
           name: 'Map<K, V> annotation',
@@ -132,7 +165,10 @@ describe('socket/no-cached-for-on-iterable', () => {
             'for (let i = 0, { length } = m; i < length; i += 1) {\n' +
             '  void m[i]\n' +
             '}\n',
-          errors: [{ messageId: 'noCachedForOnIterable' }],
+          errors: [
+            { messageId: 'noCachedForOnIterable' },
+            { messageId: 'indexedAccessOnIterable' },
+          ],
         },
         {
           name: 'WeakSet<T> annotation',
@@ -180,6 +216,54 @@ describe('socket/no-cached-for-on-iterable', () => {
             '  }\n' +
             '}\n',
           errors: [{ messageId: 'noCachedForOnIterable' }],
+        },
+        {
+          name: 'set.length read returns undefined',
+          // `Set.size` is the right name; reading `.length` quietly
+          // returns undefined and is almost always a typo.
+          code:
+            'const items = new Set<string>()\n' +
+            'const n = items.length\n' +
+            'void n\n',
+          errors: [{ messageId: 'lengthOnIterable' }],
+        },
+        {
+          name: 'map.length read returns undefined',
+          code:
+            'declare const m: Map<string, number>\n' +
+            'const n = m.length\n' +
+            'void n\n',
+          errors: [{ messageId: 'lengthOnIterable' }],
+        },
+        {
+          name: 'set[i] indexed read (numeric literal)',
+          code:
+            'const items = new Set<string>()\n' +
+            'const first = items[0]\n' +
+            'void first\n',
+          errors: [{ messageId: 'indexedAccessOnIterable' }],
+        },
+        {
+          name: 'set[index] indexed read (counter identifier)',
+          code:
+            'declare const items: Set<string>\n' +
+            'declare const index: number\n' +
+            'const v = items[index]\n' +
+            'void v\n',
+          errors: [{ messageId: 'indexedAccessOnIterable' }],
+        },
+        {
+          name: 'cached-for on iterable PLUS indexed read in body — both fire',
+          code:
+            'const items = new Set<string>()\n' +
+            'for (let i = 0, { length } = items; i < length; i += 1) {\n' +
+            '  const v = items[i]\n' +
+            '  void v\n' +
+            '}\n',
+          errors: [
+            { messageId: 'noCachedForOnIterable' },
+            { messageId: 'indexedAccessOnIterable' },
+          ],
         },
       ],
     })

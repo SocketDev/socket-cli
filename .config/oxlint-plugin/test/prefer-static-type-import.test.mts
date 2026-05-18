@@ -24,15 +24,26 @@ describe('socket/prefer-static-type-import', () => {
           code: 'const fs: typeof import("node:fs") = require("node:fs")\n',
         },
       ],
-      // The 3 invalid cases below depend on the rule's `TSImportType`
-      // visitor firing. In current oxlint the visitor name appears to
-      // have changed (no findings emitted on a fixture whose AST
-      // clearly contains an inline-import type). Tests left in place,
-      // but as empty `invalid:` until the rule's visitor is updated.
-      // Tracked alongside the wheelhouse rule-tester migration —
-      // re-enable once the visitor matches the current oxlint
-      // emitter.
-      invalid: [],
+      invalid: [
+        {
+          name: 'inline import expression with qualifier',
+          code: 'export type Foo = { spinner?: import("../spinner/types").Spinner | undefined }\n',
+          errors: [{ messageId: 'preferStaticTypeImport' }],
+        },
+        {
+          name: 'inline import expression in type alias',
+          code: 'export type Wrap = import("../objects/types").Remap<{ a: 1 }>\n',
+          errors: [{ messageId: 'preferStaticTypeImport' }],
+        },
+        {
+          name: 'multiple inline imports fire per occurrence',
+          code: 'export type T = { a: import("./a").A; b: import("./b").B }\n',
+          errors: [
+            { messageId: 'preferStaticTypeImport' },
+            { messageId: 'preferStaticTypeImport' },
+          ],
+        },
+      ],
     })
   })
 })

@@ -78,16 +78,22 @@ const rule = {
           return
         }
 
-        // The argument is the literal `'mod'` source. Older AST shapes
-        // expose it as `node.argument.literal.value`; newer shapes use
-        // `node.argument.value` directly. Cover both.
+        // Source-literal field name varies by AST version:
+        //   - Older ESTree-ish: `node.argument.literal.value` (TSLiteralType wrapper)
+        //   - Mid: `node.argument.value` (direct string literal)
+        //   - Current oxlint: `node.source.value` (StringLiteral child named
+        //     `source`, mirroring ImportDeclaration's `source` field)
+        // Cover all three so the rule survives further AST drift.
         const argument = node.argument
+        const sourceNode = node.source
         const source =
-          argument && argument.type === 'TSLiteralType' && argument.literal
-            ? argument.literal.value
-            : argument && typeof argument.value === 'string'
-              ? argument.value
-              : undefined
+          sourceNode && typeof sourceNode.value === 'string'
+            ? sourceNode.value
+            : argument && argument.type === 'TSLiteralType' && argument.literal
+              ? argument.literal.value
+              : argument && typeof argument.value === 'string'
+                ? argument.value
+                : undefined
         if (typeof source !== 'string') {
           return
         }
@@ -106,17 +112,28 @@ const rule = {
           return
         }
 
-        // Qualifiers can be nested (e.g. `import('mod').A.B`) — walk
-        // to the leaf and pick the leftmost identifier as the named
-        // import the user wants.
-        let leftmost: AstNode = qualifier
-        while (leftmost.left) {
-          leftmost = leftmost.left
+        // Qualifiers can be nested (`import('mod').A.B`). Two shapes:
+        //   - Older: TSQualifiedName with `.left` (recursive) and `.right`
+        //     (Identifier); walk left to the leftmost ident.
+        //   - Current oxlint: the qualifier is itself an Identifier when
+        //     non-nested (no `.left`/`.right`), exposing `.name` directly.
+        // Try the current shape first, then fall back to the walk.
+        let name: string | undefined
+        if (
+          qualifier.type === 'Identifier' &&
+          typeof qualifier.name === 'string'
+        ) {
+          name = qualifier.name
+        } else {
+          let leftmost: AstNode = qualifier
+          while (leftmost.left) {
+            leftmost = leftmost.left
+          }
+          name =
+            leftmost.type === 'Identifier' && typeof leftmost.name === 'string'
+              ? leftmost.name
+              : undefined
         }
-        const name =
-          leftmost.type === 'Identifier' && typeof leftmost.name === 'string'
-            ? leftmost.name
-            : undefined
         if (!name) {
           return
         }

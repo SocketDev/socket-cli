@@ -131,6 +131,10 @@ const rule = {
     messages: {
       noCachedForOnIterable:
         '`{{name}}` is a {{kind}} — cached-length `for` is a silent no-op (no `.length`, not integer-indexable). Use `for (const item of {{name}}) { … }` instead. (Do NOT materialize with `Array.from({{name}})` just to keep the cached-length shape — that adds a wasted allocation. `for...of` is the canonical fix for sets / maps / iterables.)',
+      lengthOnIterable:
+        '`{{name}}.length` reads `undefined` — {{kind}} has `.size`, not `.length`. Either rename to `.size`, or convert `{{name}}` to an array first if the semantics demand `.length`.',
+      indexedAccessOnIterable:
+        '`{{name}}[…]` returns `undefined` — {{kind}} isn\'t integer-indexable. Use `for (const item of {{name}})` (or one of the entries / keys / values iterators) to read elements.',
     },
     schema: [],
   },
@@ -157,6 +161,70 @@ const rule = {
           messageId: 'noCachedForOnIterable',
           data: { name: iterName, kind },
         })
+      },
+      MemberExpression(node: AstNode) {
+        // Only flag when the object is a bare Identifier resolving
+        // to a known Set/Map/Iterable. Anything else (member chain,
+        // call result) is too noisy without type info.
+        if (!node.object || node.object.type !== 'Identifier') {
+          return
+        }
+        const name = node.object.name as string
+        const kind = kinds.get(name) ?? 'unknown'
+        if (!FLAGGED_KINDS.has(kind)) {
+          return
+        }
+        // `setVar.length` — direct property read; always undefined.
+        // Skip when used as the LHS of an assignment (extremely
+        // unlikely on a Set but cheap to be safe) or when used
+        // inside a member chain we can't reason about.
+        if (
+          !node.computed &&
+          node.property &&
+          node.property.type === 'Identifier' &&
+          node.property.name === 'length'
+        ) {
+          // Skip the destructure shape `{ length } = setVar` — that's
+          // the for-loop init the ForStatement visitor already
+          // reports on, so we'd double-fire here. The destructure's
+          // member access doesn't go through MemberExpression in any
+          // oxlint version we've seen, but cover it defensively.
+          if (
+            node.parent &&
+            node.parent.type === 'AssignmentPattern' &&
+            node.parent.left === node
+          ) {
+            return
+          }
+          context.report({
+            node,
+            messageId: 'lengthOnIterable',
+            data: { name, kind },
+          })
+          return
+        }
+        // `setVar[<idx>]` — computed property access. Restrict to
+        // shapes where the index looks numeric (number literal,
+        // Identifier counter — `i` / `j` / `index`). A bare
+        // `setVar[someKey]` could be a Map-key lookup misshaping a
+        // get(), so be conservative: only flag when the surface
+        // strongly suggests array-style indexed read.
+        if (node.computed && node.property) {
+          const p = node.property
+          const looksNumeric =
+            (p.type === 'Literal' && typeof p.value === 'number') ||
+            (p.type === 'NumericLiteral' && typeof p.value === 'number') ||
+            (p.type === 'Identifier' &&
+              typeof p.name === 'string' &&
+              /^(i|j|k|n|idx|index|cur|cursor|pos)$/.test(p.name))
+          if (looksNumeric) {
+            context.report({
+              node,
+              messageId: 'indexedAccessOnIterable',
+              data: { name, kind },
+            })
+          }
+        }
       },
     }
   },

@@ -17,6 +17,29 @@
 
 import { runStopReminder } from '../_shared/stop-reminder.mts'
 
+// Deferral-verb fragment shared by every bare-phrase pattern that
+// the assistant might quote descriptively in a summary. Phrases
+// like "out of scope" or "unrelated to the task" appear in
+// "rule docs describe X" prose just as often as in actual
+// deferrals; pairing them with a co-located deferral verb in
+// the regex eliminates the false positive at the cost of
+// missing some legitimate excuses that don't say `skip` /
+// `leave` / `defer` in the same sentence. Worth it: false
+// positives erode trust in the hook faster than false negatives.
+const DEFER = String.raw`(skip|skipping|skipped|leave|leaving|left|defer|deferring|deferred|ignore|ignoring|ignored|won't|wont|cannot|can't|cant|not (going|gonna) to (fix|address|touch))`
+
+/**
+ * Build a regex that fires when `phraseRe` appears within ~60 chars
+ * (either side) of a deferral verb. Use for bare phrases whose
+ * surface form alone is ambiguous (descriptive vs. deferral).
+ */
+function withDeferralVerb(phraseRe: string): RegExp {
+  return new RegExp(
+    `${phraseRe}[^.?!\\n]{0,60}\\b${DEFER}\\b|\\b${DEFER}\\b[^.?!\\n]{0,60}${phraseRe}`,
+    'i',
+  )
+}
+
 await runStopReminder({
   name: 'excuse-detector',
   disabledEnvVar: 'SOCKET_EXCUSE_DETECTOR_DISABLED',
@@ -30,43 +53,48 @@ await runStopReminder({
   patterns: [
     {
       label: 'pre-existing (deferral shape)',
-      // The phrase "pre-existing" appears both as an excuse
-      // ("this is pre-existing, skipping it") AND as plain
-      // description ("pre-existing test-fixture bugs were fixed").
-      // Only the deferral shape should fire. Heuristic: require a
-      // deferral verb (skip/leave/defer/ignore/can't/won't/not
-      // fixing/not my…) within ~60 chars on either side.
-      regex:
-        /\bpre[- ]?existing\b[^.?!\n]{0,60}\b(skip|skipping|skipped|leave|leaving|left|defer|deferring|deferred|ignore|ignoring|ignored|not (related|fixing|going|gonna|touching)|won't|wont|cannot|can't|cant)\b|\b(skip|skipping|skipped|leave|leaving|left|defer|deferring|deferred|ignore|ignoring|ignored|not (related|fixing|going|gonna|touching)|won't|wont|cannot|can't|cant)\b[^.?!\n]{0,60}\bpre[- ]?existing\b/i,
-      why: 'CLAUDE.md "No pre-existing excuse": if you see a lint error, type error, test failure, broken comment, or stale comment anywhere in your reading window — fix it. (Only fires when paired with a deferral verb like `skip`/`leave`/`defer` — bare descriptive uses are not flagged.)',
+      // Bare "pre-existing" matches both "this is pre-existing, skipping it"
+      // (deferral) and "pre-existing test-fixture bugs were fixed"
+      // (descriptive). Require a deferral verb in range.
+      regex: withDeferralVerb(String.raw`\bpre[- ]?existing\b`),
+      why: 'CLAUDE.md "No pre-existing excuse": if you see a lint error, type error, test failure, broken comment, or stale comment anywhere in your reading window — fix it. (Only fires when paired with a deferral verb in range.)',
     },
     {
-      label: 'not related to my',
-      regex: /\b(not |un)?related to my\b/i,
-      why: 'CLAUDE.md "Unrelated issues are critical": an unrelated bug is not a reason to defer — it is a reason to treat it as critical and fix it immediately.',
+      label: 'not related to my (deferral shape)',
+      // Without a deferral verb in range this fires on descriptive
+      // prose ("the fix is not related to my prior changes — it's
+      // its own commit"). Require a verb.
+      regex: withDeferralVerb(String.raw`\b(not |un)?related to my\b`),
+      why: 'CLAUDE.md "Unrelated issues are critical": an unrelated bug is not a reason to defer — fix it immediately. (Only fires when paired with a deferral verb in range.)',
     },
     {
-      label: 'unrelated to the task',
-      regex: /\bunrelated to (the |this )?task\b/i,
-      why: 'CLAUDE.md "Unrelated issues are critical": same as above.',
+      label: 'unrelated to the task (deferral shape)',
+      regex: withDeferralVerb(String.raw`\bunrelated to (the |this )?task\b`),
+      why: 'CLAUDE.md "Unrelated issues are critical": same as above. (Only fires when paired with a deferral verb in range.)',
     },
     {
-      label: 'out of scope',
-      regex: /\b(out of|outside)( (the|this))? scope\b/i,
-      why: 'CLAUDE.md "No pre-existing excuse": the only exceptions are genuinely large refactors (state the trade-off and ask) or files belonging to another session.',
+      label: 'out of scope (deferral shape)',
+      // Common descriptive shape: "the rule's out-of-scope handling
+      // is X". Require a deferral verb so we don't fire on docs.
+      regex: withDeferralVerb(String.raw`\b(out of|outside)( (the|this))? scope\b`),
+      why: 'CLAUDE.md "No pre-existing excuse": the only exceptions are genuinely large refactors (state the trade-off and ask). (Only fires when paired with a deferral verb in range.)',
     },
     {
-      label: 'separate concern',
-      regex: /\bseparate concern\b/i,
-      why: 'CLAUDE.md "Unrelated issues are critical": fix the unrelated bug first, in its own commit, then resume the original task.',
+      label: 'separate concern (deferral shape)',
+      regex: withDeferralVerb(String.raw`\bseparate concern\b`),
+      why: 'CLAUDE.md "Unrelated issues are critical": fix the unrelated bug first, in its own commit, then resume the original task. (Only fires when paired with a deferral verb in range.)',
     },
     {
       label: 'leave it for later',
+      // Already deferral-shaped by construction ("leave" is the verb);
+      // no extra DEFER pairing needed.
       regex: /\bleave (it|that|this) for later\b/i,
       why: 'CLAUDE.md "Completion": never leave TODO/FIXME/XXX/shims/stubs/placeholders — finish 100%.',
     },
     {
       label: 'not my issue',
+      // Already deferral-shaped; "not my X" is the surface form of
+      // the deferral itself.
       regex: /\bnot my (issue|problem|bug)\b/i,
       why: 'CLAUDE.md "Unrelated issues are critical": same as "unrelated".',
     },

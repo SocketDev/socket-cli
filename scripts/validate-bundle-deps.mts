@@ -39,7 +39,7 @@ async function findDistFiles(distPath: string): Promise<string[]> {
     const entries = await fs.readdir(distPath, { withFileTypes: true })
 
     for (let i = 0, { length } = entries; i < length; i += 1) {
-      const entry = entries[i]
+      const entry = entries[i]!
       const fullPath = path.join(distPath, entry.name)
 
       if (entry.isDirectory()) {
@@ -432,7 +432,7 @@ async function main(): Promise<void> {
       logger.error('')
 
       for (let i = 0, { length } = violations; i < length; i += 1) {
-        const violation = violations[i]
+        const violation = violations[i]!
         logger.error(`  ${violation.message}`)
         logger.error(`  ${violation.fix}`)
         logger.error('')
@@ -444,7 +444,7 @@ async function main(): Promise<void> {
       logger.error('')
 
       for (let i = 0, { length } = warnings; i < length; i += 1) {
-        const warning = warnings[i]
+        const warning = warnings[i]!
         logger.log(`  ${warning.message}`)
         logger.log(`  ${warning.fix}`)
         logger.log('')

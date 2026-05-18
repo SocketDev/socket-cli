@@ -75,7 +75,7 @@ const loadAllowlistFromJson = (
   }
   const out: AllowlistEntry[] = []
   for (let i = 0; i < arr.length; i += 1) {
-    const e = arr[i]
+    const e = arr[i]!
     if (typeof e !== 'object' || e === null) {
       process.stderr.write(
         `[check-paths] pathsAllowlist[${i}] in ${configPath} is not an object; skipping.\n`,

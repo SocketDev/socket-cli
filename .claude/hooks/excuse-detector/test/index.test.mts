@@ -160,10 +160,10 @@ test('detects "not related to my rename"', async () => {
     {
       type: 'assistant',
       content:
-        'Pre-existing test bugs from the null→undefined autofix (not related to my rename).',
+        "Pre-existing test bugs from the null→undefined autofix, skipping — not related to my rename, I'll defer them.",
     },
   ])
-  // Should hit BOTH patterns
+  // Should hit BOTH patterns (each paired with a deferral verb).
   assertBlock(result, /pre-existing/)
   assert.match(result.stdout, /related to my/)
 })
@@ -182,7 +182,7 @@ test('detects "out of scope"', async () => {
   const result = await runHook([
     {
       type: 'assistant',
-      content: 'Refactoring that module is out of scope here.',
+      content: "Refactoring that module is out of scope — I'll skip it.",
     },
   ])
   assertBlock(result, /out of scope/)
@@ -192,7 +192,7 @@ test('detects "separate concern"', async () => {
   const result = await runHook([
     {
       type: 'assistant',
-      content: 'That is a separate concern.',
+      content: "That's a separate concern, leaving it for the next pass.",
     },
   ])
   assertBlock(result, /separate concern/)
@@ -305,6 +305,34 @@ test('still fires on phrases asserted in plain prose (not quoted)', async () => 
   // (deferral verb in range) and "out of scope" (bare phrase).
   assertBlock(result, /pre-existing/)
   assert.match(result.stdout, /out of scope/)
+})
+
+test('does NOT fire on descriptive "out of scope" (no deferral verb)', async () => {
+  // Pure description of what the rule docs say — no skip / leave /
+  // defer verb in range. Should not fire.
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content:
+        'The rule documents an out of scope branch for files belonging to another session. Summary done.',
+    },
+  ])
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
+})
+
+test('does NOT fire on descriptive "unrelated to the task" (no deferral verb)', async () => {
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content:
+        'The test fixture appears unrelated to the task on its surface, so I rewrote it to match.',
+    },
+  ])
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
 })
 
 test('does NOT fire on descriptive "pre-existing X was fixed"', async () => {
