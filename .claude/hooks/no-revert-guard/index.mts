@@ -203,6 +203,30 @@ async function main(): Promise<void> {
     return
   }
 
+  // Allowlist: fleet-sync cascade commands run in batches across every
+  // repo and would otherwise need a fresh bypass phrase per repo. The
+  // caller marks intent by setting `FLEET_SYNC=1` inline (the same way
+  // CI=true is set inline). The sentinel is opt-in per command — no
+  // global env-var poisoning — and only allows the two operations the
+  // cascade actually needs:
+  //
+  //   1. `git commit --no-verify -m "chore(sync): cascade fleet template@<sha>"`
+  //      — the commit message MUST start with `chore(sync): cascade fleet template@`.
+  //   2. `git push --no-verify origin <ref>` — any branch / direct push.
+  //
+  // Anything else with `FLEET_SYNC=1` still falls through to the normal
+  // checks below, so the sentinel can't be used as a blanket bypass for
+  // unrelated destructive work.
+  if (/(?:^|\s)FLEET_SYNC\s*=\s*1\b/.test(command)) {
+    const isCascadeCommit =
+      /\bgit\s+commit\b/.test(command) &&
+      /chore\(sync\):\s*cascade\s+fleet\s+template@/.test(command)
+    const isCascadePush = /\bgit\s+push\b/.test(command)
+    if (isCascadeCommit || isCascadePush) {
+      return
+    }
+  }
+
   // Find the first matching destructive pattern.
   let triggered: { check: GuardCheck; matchedSubstring: string } | undefined
   for (const check of CHECKS) {

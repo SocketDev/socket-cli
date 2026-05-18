@@ -360,3 +360,82 @@ test('multi-line user turn with phrase embedded works', async () => {
   )
   assert.strictEqual(result.code, 0)
 })
+
+// ── FLEET_SYNC=1 cascade allowlist ──────────────────────────────────
+
+test('FLEET_SYNC=1 allows the cascade commit without bypass phrase', async () => {
+  const result = await runHook({
+    tool_input: {
+      command:
+        'FLEET_SYNC=1 git commit --no-verify -m "chore(sync): cascade fleet template@abc1234"',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+})
+
+test('FLEET_SYNC=1 allows the cascade push without bypass phrase', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'FLEET_SYNC=1 git push --no-verify origin HEAD:main',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+})
+
+test('FLEET_SYNC=1 with a non-cascade commit message is still blocked', async () => {
+  const result = await runHook({
+    tool_input: {
+      command:
+        'FLEET_SYNC=1 git commit --no-verify -m "feat: sneak this past"',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.ok(result.stderr.includes('Allow no-verify bypass'))
+})
+
+test('FLEET_SYNC=1 does NOT relax non-git destructive ops (e.g. stash)', async () => {
+  const result = await runHook({
+    tool_input: { command: 'FLEET_SYNC=1 git stash' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.ok(result.stderr.includes('Allow stash bypass'))
+})
+
+test('FLEET_SYNC=1 does NOT relax git reset --hard', async () => {
+  const result = await runHook({
+    tool_input: { command: 'FLEET_SYNC=1 git reset --hard HEAD~1' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.ok(result.stderr.includes('Allow revert bypass'))
+})
+
+test('no FLEET_SYNC sentinel: cascade commit still requires the bypass phrase', async () => {
+  const result = await runHook({
+    tool_input: {
+      command:
+        'git commit --no-verify -m "chore(sync): cascade fleet template@abc1234"',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.ok(result.stderr.includes('Allow no-verify bypass'))
+})
+
+test('FLEET_SYNC=0 (explicit off) does NOT activate the allowlist', async () => {
+  const result = await runHook({
+    tool_input: {
+      command:
+        'FLEET_SYNC=0 git commit --no-verify -m "chore(sync): cascade fleet template@abc1234"',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.ok(result.stderr.includes('Allow no-verify bypass'))
+})

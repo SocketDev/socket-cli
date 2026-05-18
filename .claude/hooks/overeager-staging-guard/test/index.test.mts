@@ -276,3 +276,34 @@ test('empty command is ignored', () => {
   const r = runHook('', { cwd: tmpRepo })
   assert.equal(r.code, 0)
 })
+
+// ─── FLEET_SYNC=1 sentinel ────────────────────────────────────────
+
+test('FLEET_SYNC=1 allows `git add -u`', () => {
+  const r = runHook('FLEET_SYNC=1 git add -u', { cwd: tmpRepo })
+  assert.equal(r.code, 0)
+  assert.equal(r.stderr, '')
+})
+
+test('FLEET_SYNC=1 allows `git add -A`', () => {
+  const r = runHook('FLEET_SYNC=1 git add -A', { cwd: tmpRepo })
+  assert.equal(r.code, 0)
+  assert.equal(r.stderr, '')
+})
+
+test('FLEET_SYNC=1 allows `git add .`', () => {
+  const r = runHook('FLEET_SYNC=1 git add .', { cwd: tmpRepo })
+  assert.equal(r.code, 0)
+  assert.equal(r.stderr, '')
+})
+
+test('no FLEET_SYNC: `git add -u` still blocked', () => {
+  const r = runHook('git add -u', { cwd: tmpRepo })
+  assert.equal(r.code, 2)
+  assert.match(r.stderr, /Blocked: git add -u/)
+})
+
+test('FLEET_SYNC=0 (explicit off): `git add -u` still blocked', () => {
+  const r = runHook('FLEET_SYNC=0 git add -u', { cwd: tmpRepo })
+  assert.equal(r.code, 2)
+})

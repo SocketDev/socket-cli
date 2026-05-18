@@ -208,6 +208,13 @@ async function main(): Promise<void> {
   // ── Layer 1: block `git add -A` / `.` / `-u` ─────────────────────
   const broad = detectBroadGitAdd(command)
   if (broad) {
+    // Fleet-sync sentinel: cascade scripts run `git add -u` inside a
+    // worktree they just created off origin/main — no parallel-session
+    // hazard because the worktree is empty otherwise. Same opt-in
+    // sentinel the no-revert-guard recognizes (`FLEET_SYNC=1` prefix).
+    if (/(?:^|\s)FLEET_SYNC\s*=\s*1\b/.test(command)) {
+      process.exit(0)
+    }
     if (
       transcriptPath &&
       bypassPhrasePresent(transcriptPath, BYPASS_PHRASES, 3)
