@@ -20,6 +20,7 @@ import { readLastAssistantText, readStdin, stripCodeFences } from './transcript.
 
 interface StopPayload {
   readonly transcript_path?: string | undefined
+  readonly stop_hook_active?: boolean | undefined
 }
 
 export interface RuleViolation {
@@ -49,7 +50,16 @@ export interface ReminderConfig {
    * only the regex hits. A buggy extra-check must not block the rest
    * of the warning surface.
    */
-  readonly extraCheck?: (text: string) => readonly ReminderHit[] | Promise<readonly ReminderHit[]>
+  readonly extraCheck?:
+    | ((text: string) => readonly ReminderHit[] | Promise<readonly ReminderHit[]>)
+    | undefined
+  /**
+   * When true, hits trigger a blocking Stop-hook decision so the
+   * assistant must continue the turn and address the matched phrase
+   * rather than ending on the excuse. The block is suppressed when
+   * Claude Code reports `stop_hook_active: true` to avoid loops.
+   */
+  readonly blocking?: boolean | undefined
 }
 
 /**
@@ -117,7 +127,23 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
     lines.push('', `  ${config.closingHint}`)
   }
   lines.push('')
-  process.stderr.write(lines.join('\n') + '\n')
+  const message = lines.join('\n')
+
+  // Blocking mode: emit a Stop-hook block decision so Claude must
+  // continue the turn and address the matched phrase. Suppressed
+  // when `stop_hook_active` is already set, to avoid loops.
+  if (config.blocking && !payload.stop_hook_active) {
+    const reason =
+      message +
+      '\nFix the underlying issue now (or, if it truly cannot be fixed in this session, ' +
+      'say so explicitly with the trade-off — do not end the turn on the excuse phrase).'
+    process.stdout.write(
+      JSON.stringify({ decision: 'block', reason }) + '\n',
+    )
+    process.exit(0)
+  }
+
+  process.stderr.write(message + '\n')
   process.exit(0)
 }
 

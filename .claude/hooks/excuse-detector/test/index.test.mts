@@ -18,6 +18,7 @@ const HOOK = path.join(here, '..', 'index.mts')
 interface Result {
   readonly code: number
   readonly stderr: string
+  readonly stdout: string
 }
 
 interface TranscriptEntry {
@@ -25,7 +26,14 @@ interface TranscriptEntry {
   readonly content: string
 }
 
-async function runHook(entries: TranscriptEntry[]): Promise<Result> {
+interface RunHookOptions {
+  readonly stopHookActive?: boolean | undefined
+}
+
+async function runHook(
+  entries: TranscriptEntry[],
+  options: RunHookOptions = {},
+): Promise<Result> {
   const dir = mkdtempSync(path.join(tmpdir(), 'excuse-detector-test-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   const lines = entries.map(e =>
@@ -34,14 +42,22 @@ async function runHook(entries: TranscriptEntry[]): Promise<Result> {
   writeFileSync(transcriptPath, lines.join('\n') + '\n')
   try {
     const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-    child.stdin.end(JSON.stringify({ transcript_path: transcriptPath }))
+    const payload: Record<string, unknown> = { transcript_path: transcriptPath }
+    if (options.stopHookActive) {
+      payload.stop_hook_active = true
+    }
+    child.stdin.end(JSON.stringify(payload))
     let stderr = ''
+    let stdout = ''
     child.stderr.on('data', chunk => {
       stderr += chunk.toString('utf8')
     })
+    child.stdout.on('data', chunk => {
+      stdout += chunk.toString('utf8')
+    })
     return await new Promise<Result>(resolve => {
       child.on('exit', code => {
-        resolve({ code: code ?? 0, stderr })
+        resolve({ code: code ?? 0, stderr, stdout })
       })
     })
   } finally {
@@ -53,17 +69,36 @@ test('no transcript path: exits clean', async () => {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
   child.stdin.end(JSON.stringify({}))
   let stderr = ''
+  let stdout = ''
   child.stderr.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
+  child.stdout.on('data', chunk => {
+    stdout += chunk.toString('utf8')
+  })
   const result = await new Promise<Result>(resolve => {
     child.on('exit', code => {
-      resolve({ code: code ?? 0, stderr })
+      resolve({ code: code ?? 0, stderr, stdout })
     })
   })
   assert.strictEqual(result.code, 0)
   assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
 })
+
+// Helper: assert a hit ended up in stdout as a Stop-hook block JSON.
+// In blocking mode the hook writes JSON to stdout and nothing to stderr.
+function assertBlock(result: Result, pattern: RegExp): void {
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+  assert.match(result.stdout, pattern)
+  const parsed = JSON.parse(result.stdout) as {
+    decision?: string | undefined
+    reason?: string | undefined
+  }
+  assert.strictEqual(parsed.decision, 'block')
+  assert.match(parsed.reason ?? '', pattern)
+}
 
 test('clean assistant turn: no warning', async () => {
   const result = await runHook([
@@ -75,6 +110,7 @@ test('clean assistant turn: no warning', async () => {
   ])
   assert.strictEqual(result.code, 0)
   assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
 })
 
 test('detects "pre-existing"', async () => {
@@ -84,9 +120,8 @@ test('detects "pre-existing"', async () => {
       content: 'The lint error is pre-existing so I skipped it.',
     },
   ])
-  assert.strictEqual(result.code, 0)
-  assert.match(result.stderr, /pre-existing/)
-  assert.match(result.stderr, /excuse-detector/)
+  assertBlock(result, /pre-existing/)
+  assert.match(result.stdout, /excuse-detector/)
 })
 
 test('detects "preexisting" (no hyphen)', async () => {
@@ -96,8 +131,7 @@ test('detects "preexisting" (no hyphen)', async () => {
       content: 'These are preexisting failures, leaving them.',
     },
   ])
-  assert.strictEqual(result.code, 0)
-  assert.match(result.stderr, /pre-existing/)
+  assertBlock(result, /pre-existing/)
 })
 
 test('detects "not related to my rename"', async () => {
@@ -108,10 +142,9 @@ test('detects "not related to my rename"', async () => {
         'Pre-existing test bugs from the null→undefined autofix (not related to my rename).',
     },
   ])
-  assert.strictEqual(result.code, 0)
   // Should hit BOTH patterns
-  assert.match(result.stderr, /pre-existing/)
-  assert.match(result.stderr, /related to my/)
+  assertBlock(result, /pre-existing/)
+  assert.match(result.stdout, /related to my/)
 })
 
 test('detects "unrelated to the task"', async () => {
@@ -121,8 +154,7 @@ test('detects "unrelated to the task"', async () => {
       content: 'This typo is unrelated to the task, skipping.',
     },
   ])
-  assert.strictEqual(result.code, 0)
-  assert.match(result.stderr, /unrelated to the task/)
+  assertBlock(result, /unrelated to the task/)
 })
 
 test('detects "out of scope"', async () => {
@@ -132,8 +164,7 @@ test('detects "out of scope"', async () => {
       content: 'Refactoring that module is out of scope here.',
     },
   ])
-  assert.strictEqual(result.code, 0)
-  assert.match(result.stderr, /out of scope/)
+  assertBlock(result, /out of scope/)
 })
 
 test('detects "separate concern"', async () => {
@@ -143,8 +174,7 @@ test('detects "separate concern"', async () => {
       content: 'That is a separate concern.',
     },
   ])
-  assert.strictEqual(result.code, 0)
-  assert.match(result.stderr, /separate concern/)
+  assertBlock(result, /separate concern/)
 })
 
 test('detects "leave it for later"', async () => {
@@ -154,8 +184,7 @@ test('detects "leave it for later"', async () => {
       content: "I'll leave it for later.",
     },
   ])
-  assert.strictEqual(result.code, 0)
-  assert.match(result.stderr, /leave it for later/)
+  assertBlock(result, /leave it for later/)
 })
 
 test('detects "not my issue"', async () => {
@@ -165,8 +194,7 @@ test('detects "not my issue"', async () => {
       content: 'The CI failure is not my issue.',
     },
   ])
-  assert.strictEqual(result.code, 0)
-  assert.match(result.stderr, /not my issue/)
+  assertBlock(result, /not my issue/)
 })
 
 test('scans only the LAST assistant turn', async () => {
@@ -180,9 +208,28 @@ test('scans only the LAST assistant turn', async () => {
     { type: 'assistant', content: 'Tests pass, diff is clean.' },
   ])
   // The first assistant turn mentions "pre-existing" but the LAST one
-  // is clean — the hook should not warn.
+  // is clean — the hook should not warn or block.
   assert.strictEqual(result.code, 0)
   assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
+})
+
+test('stop_hook_active: true falls back to informational stderr (no block)', async () => {
+  const result = await runHook(
+    [
+      {
+        type: 'assistant',
+        content: 'The lint error is pre-existing so I skipped it.',
+      },
+    ],
+    { stopHookActive: true },
+  )
+  assert.strictEqual(result.code, 0)
+  // No block JSON on stdout — we already gave Claude one chance.
+  assert.strictEqual(result.stdout, '')
+  // Still surface the warning informationally.
+  assert.match(result.stderr, /pre-existing/)
+  assert.match(result.stderr, /excuse-detector/)
 })
 
 test('respects SOCKET_EXCUSE_DETECTOR_DISABLED', async () => {
@@ -202,16 +249,21 @@ test('respects SOCKET_EXCUSE_DETECTOR_DISABLED', async () => {
     })
     child.stdin.end(JSON.stringify({ transcript_path: transcriptPath }))
     let stderr = ''
+    let stdout = ''
     child.stderr.on('data', chunk => {
       stderr += chunk.toString('utf8')
     })
+    child.stdout.on('data', chunk => {
+      stdout += chunk.toString('utf8')
+    })
     const result = await new Promise<Result>(resolve => {
       child.on('exit', code => {
-        resolve({ code: code ?? 0, stderr })
+        resolve({ code: code ?? 0, stderr, stdout })
       })
     })
     assert.strictEqual(result.code, 0)
     assert.strictEqual(result.stderr, '')
+    assert.strictEqual(result.stdout, '')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -239,16 +291,19 @@ test('handles array-of-blocks content shape', async () => {
     const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
     child.stdin.end(JSON.stringify({ transcript_path: transcriptPath }))
     let stderr = ''
+    let stdout = ''
     child.stderr.on('data', chunk => {
       stderr += chunk.toString('utf8')
     })
+    child.stdout.on('data', chunk => {
+      stdout += chunk.toString('utf8')
+    })
     const result = await new Promise<Result>(resolve => {
       child.on('exit', code => {
-        resolve({ code: code ?? 0, stderr })
+        resolve({ code: code ?? 0, stderr, stdout })
       })
     })
-    assert.strictEqual(result.code, 0)
-    assert.match(result.stderr, /pre-existing/)
+    assertBlock(result, /pre-existing/)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -258,12 +313,16 @@ test('fails open on malformed payload', async () => {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
   child.stdin.end('not valid json')
   let stderr = ''
+  let stdout = ''
   child.stderr.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
+  child.stdout.on('data', chunk => {
+    stdout += chunk.toString('utf8')
+  })
   const result = await new Promise<Result>(resolve => {
     child.on('exit', code => {
-      resolve({ code: code ?? 0, stderr })
+      resolve({ code: code ?? 0, stderr, stdout })
     })
   })
   assert.strictEqual(result.code, 0)

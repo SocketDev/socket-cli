@@ -3,9 +3,15 @@
 //
 // Scans the assistant's most recent turn for excuse-shaped phrases
 // that violate CLAUDE.md's "No 'pre-existing' excuse" and "Fix > defer"
-// rules. Stop hooks are informational only — the warning fires AFTER
-// the assistant's output so the user can call it out before the next
-// turn.
+// rules.
+//
+// Runs in BLOCKING mode: when a match is found, the hook emits a
+// Stop-hook block decision so Claude must continue the turn and
+// address the matched phrase (e.g. fix the "pre-existing" TS errors)
+// rather than ending the turn on the excuse. The block is suppressed
+// when `stop_hook_active` is set, so this can fire at most once per
+// stop chain — Claude is given one forced chance to fix or to state
+// the trade-off explicitly.
 //
 // Disabled via SOCKET_EXCUSE_DETECTOR_DISABLED env var.
 
@@ -14,6 +20,7 @@ import { runStopReminder } from '../_shared/stop-reminder.mts'
 await runStopReminder({
   name: 'excuse-detector',
   disabledEnvVar: 'SOCKET_EXCUSE_DETECTOR_DISABLED',
+  blocking: true,
   patterns: [
     {
       label: 'pre-existing',
@@ -86,5 +93,5 @@ await runStopReminder({
     },
   ],
   closingHint:
-    'These phrases usually precede a deferral. Read the surrounding text and decide: is the fix actually out of scope (rare), or is the assistant rationalizing avoiding work? If the latter, push back and demand the fix in the next turn.',
+    'These phrases usually precede a deferral. The Stop hook will block once so Claude must act on the matched item — either fix it now, or state the trade-off explicitly with the user\'s constraint.',
 })
