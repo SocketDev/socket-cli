@@ -447,6 +447,7 @@ packages/build-infra/release-assets.schema.json linguist-generated=true
 scripts/ai-lint-fix.mts linguist-generated=true
 scripts/ai-lint-fix/cli.mts linguist-generated=true
 scripts/ai-lint-fix/rule-guidance.mts linguist-generated=true
+scripts/check-lock-step-refs.mts linguist-generated=true
 scripts/check-paths.mts linguist-generated=true
 scripts/check-paths/allowlist.mts linguist-generated=true
 scripts/check-paths/cli.mts linguist-generated=true

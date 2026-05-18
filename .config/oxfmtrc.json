@@ -65,6 +65,7 @@
     "**/scripts/ai-lint-fix.mts",
     "**/scripts/ai-lint-fix/cli.mts",
     "**/scripts/ai-lint-fix/rule-guidance.mts",
+    "**/scripts/check-lock-step-refs.mts",
     "**/scripts/check-paths.mts",
     "**/scripts/check-paths/allowlist.mts",
     "**/scripts/check-paths/cli.mts",

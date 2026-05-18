@@ -1,7 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "import"],
-  "jsPlugins": ["./oxlint-plugin/index.mts"],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "import"
+  ],
+  "jsPlugins": [
+    "./oxlint-plugin/index.mts"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -18,6 +24,7 @@
       }
     ],
     "eslint/no-new": "error",
+    "eslint/no-underscore-dangle": "off",
     "eslint/no-proto": "error",
     "eslint/no-shadow": "off",
     "eslint/no-unmodified-loop-condition": "off",
@@ -163,6 +170,7 @@
     "**/scripts/ai-lint-fix.mts",
     "**/scripts/ai-lint-fix/cli.mts",
     "**/scripts/ai-lint-fix/rule-guidance.mts",
+    "**/scripts/check-lock-step-refs.mts",
     "**/scripts/check-paths.mts",
     "**/scripts/check-paths/allowlist.mts",
     "**/scripts/check-paths/cli.mts",
