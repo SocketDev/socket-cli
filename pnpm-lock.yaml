@@ -740,6 +740,8 @@ importers:
 
   .claude/hooks/marketplace-comment-guard: {}
 
+  .claude/hooks/minify-mcp-output: {}
+
   .claude/hooks/new-hook-claude-md-guard:
     devDependencies:
       '@types/node':
