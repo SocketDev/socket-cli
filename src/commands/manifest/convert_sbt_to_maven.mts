@@ -1,8 +1,28 @@
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
+
 import { safeReadFile } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
+import { getErrorCause } from '../../utils/errors.mts'
+
+// Walk up from a pom path to find a `target` directory ancestor and return
+// its parent (the project root). Returns undefined if no `target` ancestor
+// is found, which means we cannot safely lift the file out of the ignored
+// build dir.
+function findProjectRootAboveTarget(pomPath: string): string | undefined {
+  let dir = path.dirname(pomPath)
+  const { root } = path.parse(dir)
+  while (dir !== root) {
+    if (path.basename(dir) === 'target') {
+      return path.dirname(dir)
+    }
+    dir = path.dirname(dir)
+  }
+  return undefined
+}
 
 export async function convertSbtToMaven({
   bin,
@@ -92,18 +112,47 @@ export async function convertSbtToMaven({
       logger.info('Exiting now...')
       return
     } else {
-      // if (verbose) {
-      //   logger.log(
-      //     `Moving manifest file from \`${loc.replace(/^\/home\/[^/]*?\//, '~/')}\` to \`${out}\``
-      //   )
-      // } else {
-      //   logger.log('Moving output pom file')
-      // }
-      // TODO: Do we prefer fs-extra? Renaming can be gnarly on windows and fs-extra's version is better.
-      // await renamep(loc, out)
-      logger.success(`Generated ${poms.length} pom files`)
-      poms.forEach(fn => logger.log('-', fn))
-      logger.success(`OK`)
+      // sbt writes poms inside each project's `target/` directory, which is
+      // typically gitignored. Copy them out to a sibling of `target/` so
+      // downstream SBOM/scan steps see them.
+      const copied: string[] = []
+      const outBasename = path.basename(out) || 'pom.xml'
+      for (const pomPath of poms) {
+        let destPath: string
+        if (poms.length === 1 && out !== outBasename) {
+          // Honor the full `--out` path verbatim when exactly one pom was
+          // produced and the user (or default) supplied a path, not just a
+          // bare filename.
+          destPath = path.resolve(cwd, out)
+        } else {
+          const projectRoot = findProjectRootAboveTarget(pomPath)
+          if (!projectRoot) {
+            logger.warn(
+              `Could not locate \`target/\` ancestor for \`${pomPath}\`, leaving in place`,
+            )
+            continue
+          }
+          destPath = path.join(projectRoot, outBasename)
+        }
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await fs.mkdir(path.dirname(destPath), { recursive: true })
+          // eslint-disable-next-line no-await-in-loop
+          await fs.copyFile(pomPath, destPath)
+          copied.push(destPath)
+        } catch (e) {
+          logger.warn(
+            `Failed to copy \`${pomPath}\` to \`${destPath}\`: ${getErrorCause(e)}`,
+          )
+        }
+      }
+      logger.success(
+        `Generated ${copied.length} pom file${copied.length === 1 ? '' : 's'}`,
+      )
+      logger.log('Reported exports:')
+      for (const fn of copied) {
+        logger.log('-', fn)
+      }
     }
   } catch (e) {
     process.exitCode = 1

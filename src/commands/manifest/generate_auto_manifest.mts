@@ -40,7 +40,7 @@ export async function generateAutoManifest({
       // Note: `sbt` is more likely to be resolved against PATH env
       bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
       cwd,
-      out: sockJson.defaults?.manifest?.sbt?.outfile ?? './socket.sbt.pom.xml',
+      out: sockJson.defaults?.manifest?.sbt?.outfile ?? './pom.xml',
       sbtOpts:
         sockJson.defaults?.manifest?.sbt?.sbtOpts
           ?.split(' ')

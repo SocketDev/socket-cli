@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`socket manifest bazel [beta]`** — Generate Bazel JVM SBOM manifests by running `bazel query` against discovered Maven repos in a Bazel workspace. Closes the inline-Maven-declaration gap that lockfile-only parsing misses for repos like envoy, ray, tensorflow, tink-java, and or-tools. Auto-detects Bzlmod and legacy `WORKSPACE`.
 - **`socket scan create --auto-manifest`** now covers Bazel workspaces in addition to Gradle/Scala/Kotlin/Conda. Repos with `MODULE.bazel`, `WORKSPACE`, or `WORKSPACE.bazel` are detected automatically and their Maven dependencies extracted as part of the standard scan-create flow.
 
+## [1.1.96](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.96) - 2026-05-15
+
+### Changed
+- Updated the Coana CLI to v `15.2.8`.
+
+## [1.1.95](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.95) - 2026-05-15
+
+### Changed
+- Updated the Coana CLI to v `15.2.7`.
+
+## [1.1.94](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.94) - 2026-05-12
+
+### Fixed
+- `socket manifest scala` now copies sbt-generated `.pom` files out of each subproject's `target/` directory to the project root as `pom.xml`, so Socket scan (which discovers `**/pom.xml` and respects `.gitignore`) picks them up automatically. Use `--out` to override the destination filename.
+
 ## [1.1.93](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.93) - 2026-05-08
 
 ### Changed
