@@ -33,7 +33,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -51,10 +51,6 @@ const CACHE_TTL_THRESHOLD_SECONDS = 28800
 
 function isMac(): boolean {
   return os.platform() === 'darwin'
-}
-
-function isLinux(): boolean {
-  return os.platform() === 'linux'
 }
 
 function readGpgAgentConf(): string | undefined {
