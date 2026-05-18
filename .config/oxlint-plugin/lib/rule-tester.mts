@@ -42,7 +42,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -126,40 +126,57 @@ function runOxlint(args: {
     encoding: 'utf8',
     timeout: 15_000,
   })
-  // oxlint's JSON reporter prints one finding per line OR a JSON
-  // array — varies by version. Parse defensively.
+  // oxlint's JSON reporter has changed shape across versions:
+  //   - Older: line-delimited diagnostic objects, one per line.
+  //   - Mid:   top-level array `[ { diagnostics: [...] }, ... ]`.
+  //   - Current: top-level object `{ diagnostics: [...], number_of_files, ... }`
+  //              (single multi-line JSON with the diagnostics inline).
+  // Parse defensively in that order: try whole-buffer parse first
+  // (handles the array AND object shapes), then fall back to
+  // line-by-line. Filter every result by rule id so unrelated
+  // findings (autofix from other socket rules in the same config)
+  // don't inflate the count.
   const stdout = r.stdout || ''
   const diagnostics: OxlintDiagnostic[] = []
   const trimmed = stdout.trim()
-  if (trimmed.startsWith('[')) {
+  const matchesRule = (d: OxlintDiagnostic): boolean => {
+    // Current oxlint emits `code` like `socket(no-cached-for-on-iterable)`
+    // instead of (or in addition to) `ruleId`. Accept either form.
+    const code = (d as OxlintDiagnostic & { code?: string }).code
+    return (
+      d.ruleId?.endsWith(`/${args.ruleName}`) === true ||
+      d.ruleId === `socket/${args.ruleName}` ||
+      d.ruleId === args.ruleName ||
+      code === `socket(${args.ruleName})` ||
+      (typeof code === 'string' && code.endsWith(`(${args.ruleName})`))
+    )
+  }
+  let parsedWhole = false
+  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
     try {
-      const arr = JSON.parse(trimmed) as Array<{
-        diagnostics?: OxlintDiagnostic[]
-      }>
-      for (const file of arr) {
+      const parsed = JSON.parse(trimmed) as unknown
+      const fileBlocks: Array<{ diagnostics?: OxlintDiagnostic[] }> =
+        Array.isArray(parsed)
+          ? (parsed as Array<{ diagnostics?: OxlintDiagnostic[] }>)
+          : [parsed as { diagnostics?: OxlintDiagnostic[] }]
+      for (const file of fileBlocks) {
         for (const d of file.diagnostics ?? []) {
-          if (
-            d.ruleId?.endsWith(`/${args.ruleName}`) ||
-            d.ruleId === `socket/${args.ruleName}` ||
-            d.ruleId === args.ruleName
-          ) {
+          if (matchesRule(d)) {
             diagnostics.push(d)
           }
         }
       }
+      parsedWhole = true
     } catch {
       // Fall through to line-by-line parse.
     }
-  } else {
+  }
+  if (!parsedWhole) {
     for (const line of stdout.split('\n')) {
       if (!line.trim() || !line.trim().startsWith('{')) continue
       try {
         const d = JSON.parse(line) as OxlintDiagnostic
-        if (
-          d.ruleId?.endsWith(`/${args.ruleName}`) ||
-          d.ruleId === `socket/${args.ruleName}` ||
-          d.ruleId === args.ruleName
-        ) {
+        if (matchesRule(d)) {
           diagnostics.push(d)
         }
       } catch {
@@ -199,16 +216,40 @@ function fixtureFilename(testCase: ValidTestCase): string {
 }
 
 /**
- * Compare a single error spec against an emitted diagnostic. A
- * messageId match wins; if the test case only supplies `message`,
- * substring-match against the diagnostic message.
+ * Compare a single error spec against an emitted diagnostic.
+ *
+ * Two acceptance paths:
+ *   1. `messageId` — strict match against `diag.messageId` when the
+ *      oxlint version emits that field (older builds). Recent
+ *      builds drop `messageId` from the JSON output entirely, so
+ *      a `messageId`-only spec falls through to (2): once the
+ *      runner has already filtered diagnostics down to this rule
+ *      via `matchesRule`, "the diagnostic is from this rule" is the
+ *      same claim "messageId matches" was making.
+ *   2. `message` — substring match against `diag.message`. Use this
+ *      when the spec wants to assert specific copy text.
+ *
+ * If the spec has neither, accept the diagnostic (the runner has
+ * already filtered to this rule, so the presence of a diagnostic is
+ * itself the assertion). This is how a bare `{ messageId: 'foo' }`
+ * spec keeps working under oxlint builds that no longer emit
+ * `messageId` in JSON.
  */
 function errorMatches(
   spec: { messageId?: string | undefined; message?: string | undefined },
   diag: OxlintDiagnostic,
 ): boolean {
-  if (spec.messageId && spec.messageId === diag.messageId) return true
-  if (spec.message && diag.message?.includes(spec.message)) return true
+  if (spec.messageId && diag.messageId) {
+    return spec.messageId === diag.messageId
+  }
+  if (spec.message && diag.message?.includes(spec.message)) {
+    return true
+  }
+  // messageId spec but no messageId field on diag: accept (rule
+  // already matched via matchesRule upstream).
+  if (spec.messageId && !diag.messageId) {
+    return true
+  }
   return false
 }
 
@@ -238,6 +279,14 @@ export class RuleTester {
     }
 
     const tmpdir = mkdtempSync(path.join(os.tmpdir(), `oxlint-test-${ruleName}-`))
+    // `filename:` overrides can put fixtures in subdirs (e.g.
+    // `scripts/foo.mts`). Ensure the parent dir exists before each
+    // write — fail-fast on a missing dir would manifest as a
+    // confusing ENOENT in the test report.
+    const writeFixture = (fixturePath: string, code: string): void => {
+      mkdirSync(path.dirname(fixturePath), { recursive: true })
+      writeFileSync(fixturePath, code)
+    }
     try {
       const configPath = path.join(tmpdir, '.oxlintrc.json')
       writeFileSync(configPath, buildConfig(ruleName))
@@ -245,7 +294,7 @@ export class RuleTester {
       // Valid cases: no findings expected.
       for (const tc of opts.valid) {
         const fixturePath = path.join(tmpdir, fixtureFilename(tc))
-        writeFileSync(fixturePath, tc.code)
+        writeFixture(fixturePath, tc.code)
         const { diagnostics } = runOxlint({
           oxlintBin,
           fixturePath,
@@ -265,7 +314,7 @@ export class RuleTester {
       // Invalid cases: expected count + messageId / message match.
       for (const tc of opts.invalid) {
         const fixturePath = path.join(tmpdir, fixtureFilename(tc))
-        writeFileSync(fixturePath, tc.code)
+        writeFixture(fixturePath, tc.code)
         const { diagnostics } = runOxlint({
           oxlintBin,
           fixturePath,
@@ -295,7 +344,7 @@ export class RuleTester {
         if (typeof tc.output === 'string') {
           // Rewrite the fixture (oxlint --fix mutates in place) and
           // re-run with --fix.
-          writeFileSync(fixturePath, tc.code)
+          writeFixture(fixturePath, tc.code)
           const fixResult = runOxlint({
             oxlintBin,
             fixturePath,

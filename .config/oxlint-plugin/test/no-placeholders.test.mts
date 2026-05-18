@@ -26,8 +26,13 @@ describe('socket/no-placeholders', () => {
           errors: [{ messageId: 'throwPlaceholder' }],
         },
         {
-          name: 'empty body stub',
-          code: 'export function foo() {}\n',
+          name: 'empty body stub with placeholder marker',
+          // The rule only fires on an empty body when paired with a
+          // body-marker comment. "placeholder" triggers
+          // STUB_BODY_MARKER_RE (the body-marker scan) but not
+          // COMMENT_MARKER_RE (the standalone TODO scan), so the
+          // case isolates the `emptyBody` finding.
+          code: 'export function foo() {\n  // placeholder\n}\n',
           errors: [{ messageId: 'emptyBody' }],
         },
       ],

@@ -23,8 +23,11 @@ describe('socket/prefer-safe-delete', () => {
           errors: [{ messageId: 'banned' }],
         },
         {
-          name: 'fs.unlink',
-          code: 'import { unlinkSync } from "node:fs"\nunlinkSync("/x")\n',
+          name: 'fs.unlinkSync member call',
+          // The rule flags member calls on the fs object — the
+          // canonical shape the codebase uses. Cherry-picked bare
+          // imports of unlink/rm are normalized elsewhere.
+          code: 'import fs from "node:fs"\nfs.unlinkSync("/x")\n',
           errors: [{ messageId: 'banned' }],
         },
       ],

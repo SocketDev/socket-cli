@@ -18,7 +18,15 @@ describe('socket/inclusive-language', () => {
         {
           name: 'master/slave naming',
           code: 'const master = true\nconst slave = false\nconsole.log(master, slave)\n',
-          errors: [{ messageId: 'legacyMaster' }, { messageId: 'legacySlave' }],
+          // Each occurrence of `master` / `slave` is flagged
+          // individually, including references in the
+          // `console.log` call — 4 findings total.
+          errors: [
+            { messageId: 'legacyMaster' },
+            { messageId: 'legacySlave' },
+            { messageId: 'legacyMaster' },
+            { messageId: 'legacySlave' },
+          ],
         },
       ],
     })

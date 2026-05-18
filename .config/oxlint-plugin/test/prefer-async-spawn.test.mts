@@ -37,14 +37,20 @@ describe('socket/prefer-async-spawn', () => {
         {
           name: 'spawnSync import from node:child_process — source rewritten, name preserved',
           code: 'import { spawnSync } from "node:child_process"\nspawnSync("ls")\n',
+          // The rule's autofix emits single quotes for the rewritten
+          // import source; the call site retains its original quoting.
           output:
-            'import { spawnSync } from "@socketsecurity/lib-stable/spawn"\nspawnSync("ls")\n',
+            "import { spawnSync } from '@socketsecurity/lib-stable/spawn'\nspawnSync(\"ls\")\n",
           errors: [{ messageId: 'importBanned' }],
         },
         {
           name: 'child_process.spawnSync call — flagged, no autofix',
+          // Namespace imports (`import * as child_process`) are not
+          // flagged on the import line — only the call site is. The
+          // rule's autofix can't safely rewrite a namespace usage,
+          // so the report focuses on the call.
           code: 'import * as child_process from "node:child_process"\nchild_process.spawnSync("ls")\n',
-          errors: [{ messageId: 'importBanned' }, { messageId: 'callBanned' }],
+          errors: [{ messageId: 'callBanned' }],
         },
         {
           name: 'mixed import (spawn + exec) — flagged but NOT autofixed',

@@ -16,6 +16,7 @@
 import exportTopLevelFunctions from './rules/export-top-level-functions.mts'
 import inclusiveLanguage from './rules/inclusive-language.mts'
 import maxFileLines from './rules/max-file-lines.mts'
+import noCachedForOnIterable from './rules/no-cached-for-on-iterable.mts'
 import noConsolePreferLogger from './rules/no-console-prefer-logger.mts'
 import noDefaultExport from './rules/no-default-export.mts'
 import noDynamicImportOutsideBundle from './rules/no-dynamic-import-outside-bundle.mts'
@@ -57,6 +58,7 @@ const plugin = {
     'export-top-level-functions': exportTopLevelFunctions,
     'inclusive-language': inclusiveLanguage,
     'max-file-lines': maxFileLines,
+    'no-cached-for-on-iterable': noCachedForOnIterable,
     'no-console-prefer-logger': noConsolePreferLogger,
     'no-default-export': noDefaultExport,
     'no-dynamic-import-outside-bundle': noDynamicImportOutsideBundle,

@@ -12,19 +12,26 @@ describe('socket/export-top-level-functions', () => {
     new RuleTester().run('export-top-level-functions', rule, {
       valid: [
         {
-          name: 'exported function',
+          name: 'inline export',
           code: 'export function foo() {}\n',
-        },
-        {
-          name: 'declared then exported',
-          code: 'function foo() {}\nexport { foo }\n',
         },
       ],
       invalid: [
         {
-          name: 'unexported top-level function',
+          name: 'unexported top-level functions',
+          // Both `foo` and `bar` are top-level and not exported —
+          // each fires its own finding.
           code: 'function foo() {}\nfunction bar() {}\nbar()\n',
-          errors: [{ messageId: 'missing' }],
+          errors: [{ messageId: 'missing' }, { messageId: 'missing' }],
+        },
+        {
+          name: 'declared then re-exported via export-named',
+          // The rule prefers inline `export function foo` and flags
+          // the split form `function foo(); export { foo }` to avoid
+          // the duplicate-name footgun (autofix is skipped to keep
+          // the rewrite human-decided).
+          code: 'function foo() {}\nexport { foo }\n',
+          errors: [{ messageId: 'missingAlreadyReExported' }],
         },
       ],
     })

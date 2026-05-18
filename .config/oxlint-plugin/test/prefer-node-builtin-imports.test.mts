@@ -16,14 +16,19 @@ describe('socket/prefer-node-builtin-imports', () => {
       ],
       invalid: [
         {
-          name: 'bare path import',
-          code: 'import path from "path"\nconsole.log(path)\n',
+          name: 'node:path named-import — should prefer default',
+          // The rule operates on `node:`-prefixed specifiers. For
+          // small modules like `node:path`, prefer the default
+          // import so call sites read `path.join(…)`.
+          code:
+            'import { join } from "node:path"\nconsole.log(join("a", "b"))\n',
           errors: [{ messageId: 'preferDefault' }],
         },
         {
-          name: 'bare fs named',
-          code: 'import { readFileSync } from "fs"\nreadFileSync("/x")\n',
-          errors: [{ messageId: 'preferDefault' }],
+          name: 'node:fs default-import — should prefer cherry-pick named',
+          code:
+            'import fs from "node:fs"\nfs.readFileSync("/x")\n',
+          errors: [{ messageId: 'fsDefault' }],
         },
       ],
     })

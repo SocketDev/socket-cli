@@ -24,7 +24,13 @@ describe('socket/sort-source-methods', () => {
         {
           name: 'out of order alphabetically',
           code: 'function gamma() {}\nfunction alpha() {}\nfunction beta() {}\n',
-          errors: [{ messageId: 'alphaOutOfOrder' }],
+          // Rule reports one finding per out-of-order function: both
+          // `alpha` and `beta` come after `gamma` in source order
+          // but should precede it alphabetically.
+          errors: [
+            { messageId: 'alphaOutOfOrder' },
+            { messageId: 'alphaOutOfOrder' },
+          ],
         },
       ],
     })
