@@ -66,17 +66,17 @@ function applyStages(text: string): string {
 // ---------- Tool-response walker ----------
 
 /**
- * Walk an MCP tool_response value and compress text content in place.
- * Returns the same structure with strings minified. Non-text content
- * (images, structured data we don't recognize) passes through
- * unchanged.
+ * Walk an MCP tool_response value and compress text content in place. Returns
+ * the same structure with strings minified. Non-text content (images,
+ * structured data we don't recognize) passes through unchanged.
  *
  * Shapes we handle:
- *   - string → minified string.
- *   - { type: "text", text: string } → minified text.
- *   - { content: <recurse> }
- *   - { type: "text", text: string }[] (typical MCP shape).
- *   - other → passes through.
+ *
+ * - String → minified string.
+ * - { type: "text", text: string } → minified text.
+ * - { content: <recurse> }
+ * - { type: "text", text: string }[] (typical MCP shape).
+ * - Other → passes through.
  */
 export function compressMCPOutput(value: unknown): unknown {
   if (typeof value === 'string') {

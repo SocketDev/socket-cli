@@ -28,10 +28,7 @@
 
 // Path-recognition helpers shared with sibling rules. See
 // `../lib/fleet-paths.mts` for the rationale behind each exemption.
-import {
-  isPathsModule,
-  isPluginInternalPath,
-} from '../lib/fleet-paths.mts'
+import { isPathsModule, isPluginInternalPath } from '../lib/fleet-paths.mts'
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 const FILE_SCOPE_DISABLE_RE =

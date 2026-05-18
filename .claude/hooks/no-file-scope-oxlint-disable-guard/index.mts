@@ -154,7 +154,7 @@ async function main(): Promise<void> {
   lines.push('     justification next to the code it covers.')
   lines.push('')
   lines.push(
-    'If the entire file legitimately can\'t comply, the file needs a refactor',
+    "If the entire file legitimately can't comply, the file needs a refactor",
   )
   lines.push('— not a blanket exemption.')
   process.stderr.write(lines.join('\n') + '\n')

@@ -66,9 +66,7 @@ test('compressMCPOutput: minifies text blocks in arrays', () => {
 
 test('compressMCPOutput: walks into nested content fields', () => {
   const got = compressMCPOutput({
-    content: [
-      { type: 'text', text: '     1\tfoo\n' },
-    ],
+    content: [{ type: 'text', text: '     1\tfoo\n' }],
   })
   assert.deepEqual(got, {
     content: [{ type: 'text', text: 'foo\n' }],
@@ -129,9 +127,7 @@ test('hook: emits updatedMCPToolOutput for MCP tool with text content', () => {
   const { stdout, exitCode } = runHook({
     hook_event_name: 'PostToolUse',
     tool_name: 'mcp__github__list_repos',
-    tool_response: [
-      { type: 'text', text: '     1\tfoo\n     2\tbar\n' },
-    ],
+    tool_response: [{ type: 'text', text: '     1\tfoo\n     2\tbar\n' }],
   })
   assert.equal(exitCode, 0)
   const parsed = JSON.parse(stdout) as {
@@ -141,7 +137,10 @@ test('hook: emits updatedMCPToolOutput for MCP tool with text content', () => {
     }
   }
   assert.equal(parsed.hookSpecificOutput.hookEventName, 'PostToolUse')
-  assert.equal(parsed.hookSpecificOutput.updatedMCPToolOutput[0]!.text, 'foo\nbar\n')
+  assert.equal(
+    parsed.hookSpecificOutput.updatedMCPToolOutput[0]!.text,
+    'foo\nbar\n',
+  )
 })
 
 test('hook: emits updatedMCPToolOutput for MCP tool with string-shaped response', () => {

@@ -19,11 +19,11 @@ with `mcp__`. For built-in tools, use the proxy instead.
 
 ## Stages (identical to socket-token-minifier)
 
-| Stage         | What it does                                                       |
-| ------------- | ------------------------------------------------------------------ |
-| `minify`      | `JSON.stringify` without indent on JSON-shaped strings.            |
-| `strip-lines` | Removes `   42\t` cat -n style line prefixes.                      |
-| `whitespace`  | Collapses 3+ blank lines to a single blank line.                   |
+| Stage         | What it does                                            |
+| ------------- | ------------------------------------------------------- |
+| `minify`      | `JSON.stringify` without indent on JSON-shaped strings. |
+| `strip-lines` | Removes `   42\t` cat -n style line prefixes.           |
+| `whitespace`  | Collapses 3+ blank lines to a single blank line.        |
 
 All are deterministic, information-preserving transforms. No semantic
 compression, no ML, no Python.

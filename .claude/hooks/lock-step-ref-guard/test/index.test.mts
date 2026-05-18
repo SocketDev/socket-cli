@@ -19,10 +19,12 @@ function makeTranscript(userText?: string): string {
   return transcriptPath
 }
 
-function makeRepo(opts: {
-  configContent?: string
-  existingFiles?: readonly string[]
-} = {}): string {
+function makeRepo(
+  opts: {
+    configContent?: string
+    existingFiles?: readonly string[]
+  } = {},
+): string {
   const root = mkdtempSync(path.join(tmpdir(), 'lsrg-repo-'))
   if (opts.configContent !== undefined) {
     mkdirSync(path.join(root, '.config'), { recursive: true })
@@ -118,7 +120,11 @@ test('ACCEPTS canonical "Lock-step with Go: parser.go" (no config)', () => {
 test('ACCEPTS file-level "//! Lock-step from Rust: crates/parser/src/class.rs"', () => {
   const content =
     '//! Lock-step from Rust: crates/parser/src/class.rs\npackage parser'
-  const { stderr, exitCode } = runHook('Write', '/repo/src/parser/class.go', content)
+  const { stderr, exitCode } = runHook(
+    'Write',
+    '/repo/src/parser/class.go',
+    content,
+  )
   assert.equal(exitCode, 0)
   assert.equal(stderr, '')
 })
@@ -143,7 +149,8 @@ test('FLAGS stale path when config opts in', () => {
       extensions: ['.go'],
     }),
   })
-  const content = '// Lock-step with Rust: crates/parser-stmt/src/foo.rs\nconst x = 1'
+  const content =
+    '// Lock-step with Rust: crates/parser-stmt/src/foo.rs\nconst x = 1'
   const { stderr, exitCode } = runHook(
     'Write',
     path.join(repo, 'src/foo.go'),
@@ -157,7 +164,8 @@ test('FLAGS stale path when config opts in', () => {
 
 test('ACCEPTS stale path when config absent (opt-in disabled)', () => {
   const repo = makeRepo() // no config
-  const content = '// Lock-step with Rust: crates/parser-stmt/src/foo.rs\nconst x = 1'
+  const content =
+    '// Lock-step with Rust: crates/parser-stmt/src/foo.rs\nconst x = 1'
   const { stderr, exitCode } = runHook(
     'Write',
     path.join(repo, 'src/foo.go'),
