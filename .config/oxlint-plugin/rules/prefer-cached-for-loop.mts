@@ -111,6 +111,7 @@
 
 /** @type {import('eslint').Rule.RuleModule} */
 
+import { FLAGGED_KINDS, trackKinds } from '../lib/iterable-kind.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const rule = {
@@ -137,7 +138,15 @@ const rule = {
       ? context.getSourceCode()
       : context.sourceCode
 
+    // Track Set/Map/Iterable bindings so we DON'T rewrite their
+    // for...of into the cached-length shape — that would silently
+    // no-op the loop (no .length, not integer-indexable) and is
+    // exactly the bug socket/no-cached-for-on-iterable catches.
+    // Shared with that rule via lib/iterable-kind.mts.
+    const { kinds, visitors: kindVisitors } = trackKinds()
+
     return {
+      ...kindVisitors,
       CallExpression(node: AstNode) {
         // Match `<iter>.forEach(cb)` patterns.
         const callee = node.callee
@@ -334,6 +343,16 @@ const rule = {
         // Skip silently rather than nag.
         const iter = node.right
         if (iter.type !== 'Identifier') {
+          return
+        }
+        // SKIP when the iterable is a known Set / Map / Iterable —
+        // rewriting `for (const item of setVar)` to the cached-length
+        // shape produces a silent no-op (Set has no .length, isn't
+        // integer-indexable). The companion rule
+        // socket/no-cached-for-on-iterable would then flag what THIS
+        // rule just wrote. Skip silently rather than fight ourselves.
+        const iterKind = kinds.get(iter.name) ?? 'unknown'
+        if (FLAGGED_KINDS.has(iterKind)) {
           return
         }
         if (node.body.type !== 'BlockStatement') {

@@ -361,20 +361,16 @@ async function validateBundleDeps(): Promise<ValidationResult> {
     const externals = await extractExternalPackages(file)
     const bundled = await extractBundledPackages(file)
 
-    // externals + bundled are Set<string> — materialize to arrays for
-    // indexed iteration (Set has .size, not .length; isn't indexable).
-    const externalsArr = Array.from(externals)
-    for (let j = 0, { length: el } = externalsArr; j < el; j += 1) {
-      const ext = externalsArr[j]!
+    // externals + bundled are Set<string> — use for...of, the
+    // canonical fix for set / map / iterable iteration.
+    for (const ext of externals) {
       const packageName = getPackageName(ext)
       if (packageName && !BUILTIN_MODULES.has(packageName)) {
         allExternals.add(packageName)
       }
     }
 
-    const bundledArr = Array.from(bundled)
-    for (let j = 0, { length: bl } = bundledArr; j < bl; j += 1) {
-      const bun = bundledArr[j]!
+    for (const bun of bundled) {
       allBundled.add(bun)
     }
   }
@@ -383,10 +379,8 @@ async function validateBundleDeps(): Promise<ValidationResult> {
   const warnings: Warning[] = []
 
   // Validate external packages are in dependencies or peerDependencies.
-  // allExternals is a Set; same materialization as above.
-  const allExternalsArr = Array.from(allExternals)
-  for (let i = 0, { length } = allExternalsArr; i < length; i += 1) {
-    const packageName = allExternalsArr[i]!
+  // allExternals / allBundled are Sets — use for...of.
+  for (const packageName of allExternals) {
     if (!dependencies.has(packageName) && !peerDependencies.has(packageName)) {
       violations.push({
         type: 'external-not-in-deps',
@@ -400,9 +394,7 @@ async function validateBundleDeps(): Promise<ValidationResult> {
   }
 
   // Validate bundled packages are in devDependencies (not dependencies)
-  const allBundledArr = Array.from(allBundled)
-  for (let i = 0, { length } = allBundledArr; i < length; i += 1) {
-    const packageName = allBundledArr[i]!
+  for (const packageName of allBundled) {
     if (dependencies.has(packageName)) {
       violations.push({
         type: 'bundled-in-deps',

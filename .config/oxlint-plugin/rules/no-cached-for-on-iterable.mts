@@ -63,138 +63,22 @@
  * rule all had a clear `new Set(...)` / `: Set<T>` annotation in
  * scope; the high-signal cases are the ones we catch.
  *
- * No autofix: the right rewrite depends on intent. If the loop
- * needs index access, the human must materialize via
- * `Array.from(X)`. If it only needs item access, `for (const item
- * of X)` is correct. Auto-choosing the wrong one would silently
- * change semantics (e.g. `Array.from(map)` returns entry pairs,
- * not values). Report-only; pair with a clear remediation hint.
+ * Canonical fix: `for (const item of X) { … }`. This is THE fix
+ * for sets / maps / iterables in this codebase — short, no extra
+ * allocation, and reads as "iterate the set." Do NOT materialize
+ * with `Array.from(X)` just to keep the cached-length shape going:
+ * that's a workaround, not a fix, and it allocates a throwaway
+ * array on every call.
+ *
+ * No autofix: while `for...of` is almost always correct, the
+ * rule can't safely rewrite when the loop body mutates the
+ * collection mid-iteration or relies on a frozen snapshot.
+ * Report-only; the canonical replacement is one line and the
+ * diagnostic message names it explicitly.
  */
 
+import { FLAGGED_KINDS, trackKinds } from '../lib/iterable-kind.mts'
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
-
-// Type-annotation strings that mark a binding as a known collection
-// kind. Matched against the source-code slice of the annotation —
-// keeps the rule simple at the cost of false positives on shadowed
-// generic names (acceptable: the fleet doesn't shadow these).
-const SET_TYPE_NAMES = new Set([
-  'Set',
-  'ReadonlySet',
-  'WeakSet',
-])
-
-const MAP_TYPE_NAMES = new Set([
-  'Map',
-  'ReadonlyMap',
-  'WeakMap',
-])
-
-const ITERABLE_TYPE_NAMES = new Set([
-  'Iterable',
-  'AsyncIterable',
-  'IterableIterator',
-])
-
-const ARRAY_TYPE_NAMES = new Set([
-  'Array',
-  'ReadonlyArray',
-])
-
-type Kind = 'set' | 'map' | 'iterable' | 'array' | 'unknown'
-
-// The non-array kinds — these are the ones we flag.
-const FLAGGED_KINDS: ReadonlySet<Kind> = new Set(['set', 'map', 'iterable'])
-
-/**
- * Classify a TS type-annotation AST node into a Kind. Recognizes the
- * shallow forms (`Set<…>`, `Map<…>`, etc.); generic wrappers like
- * `Promise<Set<…>>` are not unwrapped — they resolve to `unknown`,
- * which is the safe (skip-silently) outcome.
- */
-function classifyTypeAnnotation(annotation: AstNode | undefined): Kind {
-  if (!annotation || !annotation.typeAnnotation) {
-    return 'unknown'
-  }
-  const t = annotation.typeAnnotation
-  // `: T[]` → array.
-  if (t.type === 'TSArrayType') {
-    return 'array'
-  }
-  // `: Set<T>` / `: Map<K, V>` / `: Iterable<T>` / `: Array<T>` etc.
-  if (t.type === 'TSTypeReference') {
-    const name =
-      t.typeName && t.typeName.type === 'Identifier'
-        ? t.typeName.name
-        : undefined
-    if (!name) {
-      return 'unknown'
-    }
-    if (SET_TYPE_NAMES.has(name)) {
-      return 'set'
-    }
-    if (MAP_TYPE_NAMES.has(name)) {
-      return 'map'
-    }
-    if (ITERABLE_TYPE_NAMES.has(name)) {
-      return 'iterable'
-    }
-    if (ARRAY_TYPE_NAMES.has(name)) {
-      return 'array'
-    }
-  }
-  return 'unknown'
-}
-
-/**
- * Classify the initializer expression a `VariableDeclarator` is
- * bound to.
- */
-function classifyInit(init: AstNode | undefined): Kind {
-  if (!init) {
-    return 'unknown'
-  }
-  // `[…]` array literal → array (we'll skip these).
-  if (init.type === 'ArrayExpression') {
-    return 'array'
-  }
-  // `new Set(...)`, `new Map(...)`, etc.
-  if (init.type === 'NewExpression' && init.callee.type === 'Identifier') {
-    const name = init.callee.name as string
-    if (SET_TYPE_NAMES.has(name)) {
-      return 'set'
-    }
-    if (MAP_TYPE_NAMES.has(name)) {
-      return 'map'
-    }
-    if (ARRAY_TYPE_NAMES.has(name)) {
-      return 'array'
-    }
-  }
-  // `Array.from(...)` / `Array.of(...)` / `Object.keys/values/entries(...)`
-  // → array. These are common materialization sites and worth
-  // catching as negative signals so the rule doesn't fire on
-  // post-fix code.
-  if (
-    init.type === 'CallExpression' &&
-    init.callee.type === 'MemberExpression' &&
-    init.callee.object.type === 'Identifier' &&
-    !init.callee.computed &&
-    init.callee.property.type === 'Identifier'
-  ) {
-    const objName = init.callee.object.name as string
-    const propName = init.callee.property.name as string
-    if (objName === 'Array' && (propName === 'from' || propName === 'of')) {
-      return 'array'
-    }
-    if (
-      objName === 'Object' &&
-      (propName === 'keys' || propName === 'values' || propName === 'entries')
-    ) {
-      return 'array'
-    }
-  }
-  return 'unknown'
-}
 
 /**
  * The cached-for-loop init shape we're looking for:
@@ -246,58 +130,19 @@ const rule = {
     fixable: undefined,
     messages: {
       noCachedForOnIterable:
-        '`{{name}}` is a {{kind}} — cached-length `for` is a silent no-op (no `.length`, not integer-indexable). Use `Array.from({{name}})` for indexed iteration, or `for (const item of {{name}})` for sequential access.',
+        '`{{name}}` is a {{kind}} — cached-length `for` is a silent no-op (no `.length`, not integer-indexable). Use `for (const item of {{name}}) { … }` instead. (Do NOT materialize with `Array.from({{name}})` just to keep the cached-length shape — that adds a wasted allocation. `for...of` is the canonical fix for sets / maps / iterables.)',
     },
     schema: [],
   },
 
   create(context: RuleContext) {
-    // Per-file map: identifier name → known kind.
-    const kinds = new Map<string, Kind>()
-
-    // Helper: record a kind for an identifier name; only overwrite if
-    // the new info is more specific (unknown loses to everything else).
-    function record(name: string | undefined, kind: Kind): void {
-      if (!name || kind === 'unknown') {
-        return
-      }
-      kinds.set(name, kind)
-    }
+    // Per-file kind map + the visitors that populate it. Shared with
+    // prefer-cached-for-loop via lib/iterable-kind.mts so both rules
+    // agree on what "this binding is a Set/Map/Iterable" means.
+    const { kinds, visitors } = trackKinds()
 
     return {
-      // Catch:
-      //   const s = new Set()
-      //   const s: Set<string> = …
-      //   const s: Set<string> = new Set()
-      //   const arr: string[] = []
-      //   const arr = [1, 2, 3]
-      VariableDeclarator(node: AstNode) {
-        if (!node.id || node.id.type !== 'Identifier') {
-          return
-        }
-        const name = node.id.name as string
-        // Type annotation takes priority — explicit > inferred.
-        const annotated = classifyTypeAnnotation(node.id.typeAnnotation)
-        if (annotated !== 'unknown') {
-          record(name, annotated)
-          return
-        }
-        record(name, classifyInit(node.init))
-      },
-
-      // Catch annotated parameters:
-      //   function f(items: Set<string>) { … }
-      //   const f = (items: Map<string, number>) => { … }
-      FunctionDeclaration(node: AstNode) {
-        recordParams(node.params, record)
-      },
-      FunctionExpression(node: AstNode) {
-        recordParams(node.params, record)
-      },
-      ArrowFunctionExpression(node: AstNode) {
-        recordParams(node.params, record)
-      },
-
+      ...visitors,
       ForStatement(node: AstNode) {
         const iterName = matchCachedForInit(node.init)
         if (!iterName) {
@@ -315,24 +160,6 @@ const rule = {
       },
     }
   },
-}
-
-function recordParams(
-  params: AstNode[] | undefined,
-  record: (name: string | undefined, kind: Kind) => void,
-): void {
-  if (!params) {
-    return
-  }
-  for (let i = 0, { length } = params; i < length; i += 1) {
-    const p = params[i]
-    if (!p || p.type !== 'Identifier') {
-      continue
-    }
-    const name = p.name as string
-    const annotated = classifyTypeAnnotation(p.typeAnnotation)
-    record(name, annotated)
-  }
 }
 
 export default rule
