@@ -4,7 +4,7 @@
   "title": "socket-wheelhouse per-repo config",
   "description": "Per-repo socket-wheelhouse config. Two valid locations: `.config/socket-wheelhouse.json` (primary) or `.socket-wheelhouse.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
   "type": "object",
-  "required": ["schemaVersion", "repoName", "layout", "native"],
+  "required": ["layout", "native", "repoName", "schemaVersion"],
   "properties": {
     "$schema": {
       "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-wheelhouse-schema.json` — both the config and its schema live side-by-side in `.config/`.",
