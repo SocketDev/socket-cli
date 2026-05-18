@@ -298,13 +298,32 @@ test('still fires on phrases asserted in plain prose (not quoted)', async () => 
     {
       type: 'assistant',
       content:
-        'I noticed a lint error but it is pre-existing and out of scope for this task.',
+        "I noticed a lint error but it is pre-existing — I won't fix it; the typo is out of scope for this task.",
     },
   ])
-  // Neither "pre-existing" nor "out of scope" is quoted here — both
-  // are assertions, both should fire.
+  // Two trigger phrases: "pre-existing" paired with "won't fix"
+  // (deferral verb in range) and "out of scope" (bare phrase).
   assertBlock(result, /pre-existing/)
   assert.match(result.stdout, /out of scope/)
+})
+
+test('does NOT fire on descriptive "pre-existing X was fixed"', async () => {
+  // The deferral-shape regex requires a deferral verb near
+  // "pre-existing" (skip / leave / defer / can't / won't / etc.).
+  // Plain descriptive uses where the assistant is reporting work
+  // ("pre-existing bugs were fixed", "the pre-existing TS error is
+  // now resolved") must not fire — they're describing fixes, not
+  // deferring them.
+  const result = await runHook([
+    {
+      type: 'assistant',
+      content:
+        'Summary: 8 pre-existing test-fixture bugs fixed. The pre-existing RuleTester bug that affected every rule is resolved.',
+    },
+  ])
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+  assert.strictEqual(result.stdout, '')
 })
 
 test('respects SOCKET_EXCUSE_DETECTOR_DISABLED', async () => {
@@ -350,7 +369,7 @@ test('handles array-of-blocks content shape', async () => {
           { type: 'text', text: 'first block' },
           {
             type: 'text',
-            text: 'second block has a pre-existing reference',
+            text: 'second block: the lint error is pre-existing so I skipped it',
           },
         ],
       },

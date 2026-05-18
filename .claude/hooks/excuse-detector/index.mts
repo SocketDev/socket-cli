@@ -29,9 +29,16 @@ await runStopReminder({
   stripQuotedSpans: true,
   patterns: [
     {
-      label: 'pre-existing',
-      regex: /\bpre[- ]?existing\b/i,
-      why: 'CLAUDE.md "No pre-existing excuse": if you see a lint error, type error, test failure, broken comment, or stale comment anywhere in your reading window — fix it.',
+      label: 'pre-existing (deferral shape)',
+      // The phrase "pre-existing" appears both as an excuse
+      // ("this is pre-existing, skipping it") AND as plain
+      // description ("pre-existing test-fixture bugs were fixed").
+      // Only the deferral shape should fire. Heuristic: require a
+      // deferral verb (skip/leave/defer/ignore/can't/won't/not
+      // fixing/not my…) within ~60 chars on either side.
+      regex:
+        /\bpre[- ]?existing\b[^.?!\n]{0,60}\b(skip|skipping|skipped|leave|leaving|left|defer|deferring|deferred|ignore|ignoring|ignored|not (related|fixing|going|gonna|touching)|won't|wont|cannot|can't|cant)\b|\b(skip|skipping|skipped|leave|leaving|left|defer|deferring|deferred|ignore|ignoring|ignored|not (related|fixing|going|gonna|touching)|won't|wont|cannot|can't|cant)\b[^.?!\n]{0,60}\bpre[- ]?existing\b/i,
+      why: 'CLAUDE.md "No pre-existing excuse": if you see a lint error, type error, test failure, broken comment, or stale comment anywhere in your reading window — fix it. (Only fires when paired with a deferral verb like `skip`/`leave`/`defer` — bare descriptive uses are not flagged.)',
     },
     {
       label: 'not related to my',
