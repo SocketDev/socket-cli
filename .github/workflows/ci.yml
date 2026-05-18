@@ -108,7 +108,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@acfb0136c5c85334783e5e335a78b864e73f4fd9 # main (2026-05-15)
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@edae625d0f450d02890a9bbd313368c27f0f8183 # main (2026-05-15)
         with:
           checkout: 'false'
 
@@ -167,7 +167,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@acfb0136c5c85334783e5e335a78b864e73f4fd9 # main (2026-05-15)
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@edae625d0f450d02890a9bbd313368c27f0f8183 # main (2026-05-15)
         with:
           checkout: 'false'
 
@@ -233,7 +233,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@acfb0136c5c85334783e5e335a78b864e73f4fd9 # main (2026-05-15)
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@edae625d0f450d02890a9bbd313368c27f0f8183 # main (2026-05-15)
         with:
           checkout: 'false'
           node-version: ${{ matrix.node-version }}
@@ -316,7 +316,7 @@ jobs:
           export default { text, view, renderToString, renderToStringWithWidth, printComponent, eprintComponent, getTerminalSize, TuiRenderer, init }
           CODE
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@acfb0136c5c85334783e5e335a78b864e73f4fd9 # main (2026-05-15)
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@edae625d0f450d02890a9bbd313368c27f0f8183 # main (2026-05-15)
         with:
           checkout: 'false'
           node-version: ${{ matrix.node-version }}
