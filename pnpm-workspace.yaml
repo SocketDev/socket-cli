@@ -127,7 +127,7 @@ catalog:
   nanotar: 0.2.1
   nock: 14.0.10
   npm-package-arg: 13.0.0
-  npm-run-all2: 8.0.4
+  npm-run-all2: 9.0.0
   octokit: 5.0.5
   onnxruntime-web: 1.23.0
   open: 10.2.0
@@ -189,6 +189,12 @@ minimumReleaseAgeExclude:
   # via pnpm-workspace.yaml `overrides`; pulling it through the
   # minimum-release-age gate as an explicit security exception.
   - 'hono@4.12.18'
+  - 'npm-run-all2@9.0.0'
+  # @npmcli/read-package-json-fast 6.0.0 (2026-05-15) is npm-run-all2 9's
+  # ESM-only major transitive. Bypassed alongside the parent bump so the
+  # lockfile resolves cleanly today rather than waiting 4 days for the
+  # natural soak clearance on 2026-05-22.
+  - 'read-package-json-fast@6.0.0'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we

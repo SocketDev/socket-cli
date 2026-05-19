@@ -217,6 +217,10 @@
 .claude/hooks/no-token-in-dotenv-guard/package.json linguist-generated=true
 .claude/hooks/no-token-in-dotenv-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/no-token-in-dotenv-guard/tsconfig.json linguist-generated=true
+.claude/hooks/no-underscore-identifier-guard/README.md linguist-generated=true
+.claude/hooks/no-underscore-identifier-guard/index.mts linguist-generated=true
+.claude/hooks/no-underscore-identifier-guard/package.json linguist-generated=true
+.claude/hooks/no-underscore-identifier-guard/tsconfig.json linguist-generated=true
 .claude/hooks/node-modules-staging-guard/README.md linguist-generated=true
 .claude/hooks/node-modules-staging-guard/index.mts linguist-generated=true
 .claude/hooks/node-modules-staging-guard/package.json linguist-generated=true
@@ -433,6 +437,7 @@
 .config/oxlint-plugin/rules/prefer-static-type-import.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-undefined-over-null.mts linguist-generated=true
 .config/oxlint-plugin/rules/socket-api-token-env.mts linguist-generated=true
+.config/oxlint-plugin/rules/sort-boolean-chains.mts linguist-generated=true
 .config/oxlint-plugin/rules/sort-equality-disjunctions.mts linguist-generated=true
 .config/oxlint-plugin/rules/sort-named-imports.mts linguist-generated=true
 .config/oxlint-plugin/rules/sort-regex-alternations.mts linguist-generated=true
@@ -473,6 +478,7 @@
 .config/oxlint-plugin/test/prefer-static-type-import.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-undefined-over-null.test.mts linguist-generated=true
 .config/oxlint-plugin/test/socket-api-token-env.test.mts linguist-generated=true
+.config/oxlint-plugin/test/sort-boolean-chains.test.mts linguist-generated=true
 .config/oxlint-plugin/test/sort-equality-disjunctions.test.mts linguist-generated=true
 .config/oxlint-plugin/test/sort-named-imports.test.mts linguist-generated=true
 .config/oxlint-plugin/test/sort-regex-alternations.test.mts linguist-generated=true
