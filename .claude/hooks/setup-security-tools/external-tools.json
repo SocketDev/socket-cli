@@ -7,9 +7,44 @@
       "integrity": "sha512-R98OO1Ujyk2lezDLb+iQmMhF6FwTJCHajy3G4FCB6x7wkSTqR9f8+eAelC5KDzYDsGSbc0sOZvjXOOPRBtMpDg=="
     },
     "cdxgen": {
-      "description": "CycloneDX SBOM generator (consumed by socket scan sbom)",
-      "purl": "pkg:npm/%40cyclonedx/cdxgen@12.0.0",
-      "integrity": "sha512-RRXEZ1eKHcU+Y/2AnfIg30EQRbOmlEpaJddmMVetpXeYpnxDy/yjBM67jXNKkA4iZYjZzfWe7I5GuxckRmuoqg=="
+      "description": "CycloneDX SBOM generator — slim SEA binary (no bundled bun/deno; smaller + faster than the npm flavor). Consumed by `socket scan sbom`.",
+      "version": "12.4.1",
+      "repository": "github:CycloneDX/cdxgen",
+      "release": "asset",
+      "checksums": {
+        "darwin-arm64": {
+          "asset": "cdxgen-darwin-arm64-slim",
+          "sha256": "0505e99b41aafd058f7f4d374c8cc6efbb74fc64cdb1abdb57ea404889df9039"
+        },
+        "darwin-x64": {
+          "asset": "cdxgen-darwin-amd64-slim",
+          "sha256": "bd1fb6c6025ebe17ae285a1b0bbf7b8e75a527196c31b4af1920d054312dca2b"
+        },
+        "linux-arm64": {
+          "asset": "cdxgen-linux-arm64-slim",
+          "sha256": "4ccfef914c899b11b253804092f347f641eb81f7b38a70bec588d329764d63fe"
+        },
+        "linux-arm64-musl": {
+          "asset": "cdxgen-linux-arm64-musl-slim",
+          "sha256": "4f46b4b13c2237bb1155ac736fd0ecedb2d746bee28560bf0e53033bce07a0e0"
+        },
+        "linux-x64": {
+          "asset": "cdxgen-linux-amd64-slim",
+          "sha256": "7a01b6214982fdcd05547226fadc1ccd768ed0e179ec37443431fe855779b7c0"
+        },
+        "linux-x64-musl": {
+          "asset": "cdxgen-linux-amd64-musl-slim",
+          "sha256": "37fb567f2ac3dd281e9a5d8d040d73f9da0f5bfff6fe059e07d7f2f942de69c8"
+        },
+        "win-arm64": {
+          "asset": "cdxgen-windows-arm64-slim.exe",
+          "sha256": "82ce353118cfc20bac972c0c5f34bfa4fb31d05e0391ffdd964335392b1c17c1"
+        },
+        "win-x64": {
+          "asset": "cdxgen-windows-amd64-slim.exe",
+          "sha256": "3378eadfbf1e6463c5dbe4ff7d1ad160a4866c04d91e61ff43482fe83bc9118c"
+        }
+      }
     },
     "synp": {
       "description": "yarn.lock <-> package-lock.json converter (cross-PM interop)",

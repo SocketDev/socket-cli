@@ -246,10 +246,18 @@ async function setupNpmTool(opts: NpmToolInstallOptions): Promise<boolean> {
 // ── cdxgen ──
 
 export async function setupCdxgen(): Promise<boolean> {
-  return setupNpmTool({
+  // cdxgen ships per-platform SEA binaries (slim variant by default —
+  // no bundled bun/deno runtimes, ~3× smaller than the full flavor).
+  // Falls through to the generic GitHub-release-tool helper. Platforms
+  // that aren't in the asset map quietly skip via the helper's
+  // "unsupported platform" warning path — none today (the slim matrix
+  // covers all 8 fleet targets).
+  return installGitHubReleaseTool({
     name: 'cdxgen',
     displayName: 'cdxgen',
     tool: CDXGEN,
+    binaryNameInArchive: 'cdxgen',
+    finalBinaryName: 'cdxgen',
   })
 }
 
