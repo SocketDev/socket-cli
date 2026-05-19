@@ -282,37 +282,49 @@ describeOrSkip('socket-facts.init.gradle', () => {
     const appOut = path.join(fixture, 'app/.socket.facts.json')
     const libOut = path.join(fixture, 'lib/.socket.facts.json')
 
-    it('emits one facts file per project', async () => {
+    it('emits a single facts file at the build root', async () => {
       clean(rootOut, appOut, libOut)
       await runFacts(fixture)
-      expect(existsSync(rootOut)).toBe(true)
-      expect(existsSync(appOut)).toBe(true)
-      expect(existsSync(libOut)).toBe(true)
+      expect(existsSync(rootOut), 'root facts file exists').toBe(true)
+      // Per-subproject files are deliberately NOT emitted — the single
+      // root file aggregates everything from every subproject's
+      // collector.
+      expect(existsSync(appOut), 'app/ subproject file NOT emitted').toBe(false)
+      expect(existsSync(libOut), 'lib/ subproject file NOT emitted').toBe(false)
     })
 
-    it('represents project dependencies as a single artifact', async () => {
-      const appFacts = readFacts(appOut)
-      // `implementation project(':lib')` should appear once, not split across
-      // Gradle variants (java-classes-directory vs jar).
-      const libEntries = findById(
-        appFacts,
-        c => c.namespace === 'com.example.socket' && c.name === 'lib',
+    it('drops intra-project dependencies', async () => {
+      const facts = readFacts(rootOut)
+      // `implementation project(':lib')` and the `:app` / `:lib` projects
+      // themselves should not appear in components. Their externals are
+      // picked up via each subproject's own collector instead.
+      const intraProject = findById(
+        facts,
+        c => c.namespace === 'com.example.socket',
       )
       expect(
-        libEntries.length,
-        `expected one entry for project(:lib), got ${libEntries.length}: ${JSON.stringify(libEntries.map(e => e.id))}`,
-      ).toBe(1)
+        intraProject.length,
+        `intra-project deps should be dropped, got ${JSON.stringify(intraProject.map(e => e.id))}`,
+      ).toBe(0)
     })
 
-    it('does not mark prod deps as dev in multi-module builds', async () => {
-      const appFacts = readFacts(appOut)
+    it('aggregates externals from every subproject', async () => {
+      const facts = readFacts(rootOut)
+      // guava is api-declared on :lib — surfaces via :lib's collector.
+      const guava = findById(
+        facts,
+        c => c.namespace === 'com.google.guava' && c.name === 'guava',
+      )
+      expect(guava.length, 'guava (lib api)').toBeGreaterThan(0)
+      // slf4j is implementation-declared on :app — surfaces via :app's
+      // collector.
       const slf4j = findById(
-        appFacts,
+        facts,
         c => c.namespace === 'org.slf4j' && c.name === 'slf4j-api',
       )
-      expect(slf4j.length).toBeGreaterThan(0)
+      expect(slf4j.length, 'slf4j (app impl)').toBeGreaterThan(0)
       for (const c of slf4j) {
-        expect(c.dev).not.toBe(true)
+        expect(c.dev, 'slf4j is prod, not dev').not.toBe(true)
       }
     })
   })
