@@ -17,8 +17,10 @@ import noCachedForOnIterable from './rules/no-cached-for-on-iterable.mts'
 import noConsolePreferLogger from './rules/no-console-prefer-logger.mts'
 import noDefaultExport from './rules/no-default-export.mts'
 import noDynamicImportOutsideBundle from './rules/no-dynamic-import-outside-bundle.mts'
+import noEslintBiomeConfigRef from './rules/no-eslint-biome-config-ref.mts'
 import noFetchPreferHttpRequest from './rules/no-fetch-prefer-http-request.mts'
 import noFileScopeOxlintDisable from './rules/no-file-scope-oxlint-disable.mts'
+import noInlineDeferAsync from './rules/no-inline-defer-async.mts'
 import noInlineLogger from './rules/no-inline-logger.mts'
 import noLoggerNewlineLiteral from './rules/no-logger-newline-literal.mts'
 import noNpxDlx from './rules/no-npx-dlx.mts'
@@ -66,8 +68,10 @@ const plugin = {
     'no-console-prefer-logger': noConsolePreferLogger,
     'no-default-export': noDefaultExport,
     'no-dynamic-import-outside-bundle': noDynamicImportOutsideBundle,
+    'no-eslint-biome-config-ref': noEslintBiomeConfigRef,
     'no-fetch-prefer-http-request': noFetchPreferHttpRequest,
     'no-file-scope-oxlint-disable': noFileScopeOxlintDisable,
+    'no-inline-defer-async': noInlineDeferAsync,
     'no-inline-logger': noInlineLogger,
     'no-logger-newline-literal': noLoggerNewlineLiteral,
     'no-npx-dlx': noNpxDlx,
