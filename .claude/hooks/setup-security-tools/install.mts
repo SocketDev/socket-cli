@@ -374,23 +374,25 @@ async function main(): Promise<void> {
   logger.log(`janus:       ${janusOk ? 'ready' : 'FAILED'}`)
   logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
   logger.log(`SFW:         ${sfwOk ? 'ready' : 'FAILED'}`)
-  logger.log(`synp:        ${synpOk ? 'ready' : 'FAILED'}`)
-  logger.log(`Trivy:       ${trivyOk ? 'ready' : 'FAILED'}`)
   logger.log(`TruffleHog:  ${trufflehogOk ? 'ready' : 'FAILED'}`)
+  logger.log(`Trivy:       ${trivyOk ? 'ready' : 'FAILED'}`)
+  logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
   logger.log(`uv:          ${uvOk ? 'ready' : 'FAILED'}`)
-  logger.log(`Zizmor:      ${zizmorOk ? 'ready' : 'FAILED'}`)
+  logger.log(`janus:       ${janusOk ? 'ready' : 'FAILED'}`)
+  logger.log(`cdxgen:      ${cdxgenOk ? 'ready' : 'FAILED'}`)
+  logger.log(`synp:        ${synpOk ? 'ready' : 'FAILED'}`)
 
   const allOk =
     agentshieldOk &&
-    cdxgenOk &&
-    janusOk &&
-    opengrepOk &&
+    zizmorOk &&
     sfwOk &&
-    synpOk &&
-    trivyOk &&
     trufflehogOk &&
+    trivyOk &&
+    opengrepOk &&
     uvOk &&
-    zizmorOk
+    janusOk &&
+    cdxgenOk &&
+    synpOk
   if (allOk) {
     logger.log('\nAll security tools ready.')
   } else {
