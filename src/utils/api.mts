@@ -20,6 +20,7 @@
  */
 
 import { Agent as HttpsAgent, request as httpsRequest } from 'node:https'
+import { ReadableStream } from 'node:stream/web'
 
 import { messageWithCauses } from 'pony-cause'
 
@@ -151,29 +152,44 @@ function _httpsRequestFetch(
           )
           return
         }
-        const chunks: Buffer[] = []
-        res.on('data', (chunk: Buffer) => chunks.push(chunk))
-        res.on('end', () => {
-          const body = Buffer.concat(chunks)
-          const responseHeaders = new Headers()
-          for (const [key, value] of Object.entries(res.headers)) {
-            if (typeof value === 'string') {
-              responseHeaders.set(key, value)
-            } else if (Array.isArray(value)) {
-              for (const v of value) {
-                responseHeaders.append(key, v)
-              }
+        // Build response headers immediately on receipt.
+        const responseHeaders = new Headers()
+        for (const [key, value] of Object.entries(res.headers)) {
+          if (typeof value === 'string') {
+            responseHeaders.set(key, value)
+          } else if (Array.isArray(value)) {
+            for (const v of value) {
+              responseHeaders.append(key, v)
             }
           }
-          resolve(
-            new Response(body, {
-              status: statusCode ?? 0,
-              statusText: res.statusMessage ?? '',
-              headers: responseHeaders,
-            }),
-          )
+        }
+        // Resolve with a streaming body as soon as headers are available,
+        // matching fetch() semantics. Callers that pipe response.body (e.g.
+        // streamDownloadWithFetch) receive a live ReadableStream rather than
+        // a fully-buffered Buffer.
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            res.on('data', (chunk: Buffer) => {
+              controller.enqueue(chunk)
+            })
+            res.on('end', () => {
+              controller.close()
+            })
+            res.on('error', (err: Error) => {
+              controller.error(err)
+            })
+          },
+          cancel() {
+            res.destroy()
+          },
         })
-        res.on('error', reject)
+        resolve(
+          new Response(body, {
+            status: statusCode ?? 0,
+            statusText: res.statusMessage ?? '',
+            headers: responseHeaders,
+          }),
+        )
       },
     )
     if (init.body) {
