@@ -20,7 +20,7 @@
     "socket-registry — Layer 4 (_local-not-for-reuse-*.yml) SHAs are not valid pins for",
     "external consumers."
   ],
-  "propagationSha": "5c06f15d39c5538513a9b7842ddb07d1b042f5d3",
-  "propagationShaUpdatedAt": "2026-05-18",
-  "propagationShaCommitSubject": "chore(ci): cascade-internal — bump workflow callers to b4f01e26"
+  "propagationSha": "27eee5cbe49334ac7e0e2f69dcdfdd501300e04f",
+  "propagationShaUpdatedAt": "2026-05-19",
+  "propagationShaCommitSubject": "chore(sync): apply remaining canonical fleet drift fixes"
 }
