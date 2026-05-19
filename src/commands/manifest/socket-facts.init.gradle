@@ -84,23 +84,30 @@ allprojects { project ->
         id
       }
 
-      def coordFromArtifact = { dep, artifact ->
-        [
-          groupId   : dep.moduleGroup ?: '',
-          artifactId: dep.moduleName,
-          version   : dep.moduleVersion ?: '',
-          classifier: artifact?.classifier ?: '',
-          // `extension` is what Gradle reports as the file extension of the
-          // resolved artifact (jar/aar/pom/...). For Gradle-internal variants
-          // exposed as directories (e.g. `java-classes-directory`) the
-          // artifact is skipped earlier — see the `findAll` below.
-          ext       : artifact?.extension ?: '',
-        ]
-      }
+      // Internal Gradle artifact types we don't want as `qualifiers.ext` —
+      // these represent on-disk directories for project deps rather than
+      // packaged jars/aars. Filtering by type name (not by file.isDirectory(),
+      // which forces artifact download) means we never trigger a fetch.
+      def INTERNAL_ARTIFACT_TYPES = [
+        'java-classes-directory',
+        'java-resources-directory',
+        'android-classes-directory',
+        'android-resources-directory',
+      ] as Set
 
-      // Walk a resolved dependency, emitting nodes for itself and its
-      // transitive closure. `cache` is keyed by ResolvedDependency identity
-      // and short-circuits revisits in diamond/cyclic graphs.
+      // Walk a resolved dependency, emitting one node per ResolvedDependency
+      // and recursing through its children. `cache` is keyed by
+      // ResolvedDependency identity and short-circuits revisits in
+      // diamond/cyclic graphs.
+      //
+      // CRITICAL: we read `artifact.type` and `artifact.classifier` to
+      // populate qualifiers, but we never touch `artifact.file`. Accessing
+      // `getFile()` triggers Gradle to *download* the underlying artifact —
+      // catastrophic on large builds that declare distribution archives
+      // (.deb / .tar.gz / .zip) as dependencies (e.g. elasticsearch's
+      // packaging configurations pull 100+ MB binaries). The metadata path
+      // gives us ext/classifier without any I/O beyond the POM/GMM that
+      // resolution already needed.
       def visit
       visit = { dep, boolean isProd, boolean isNonTooling, Map cache ->
         if (cache.containsKey(dep)) {
@@ -110,15 +117,26 @@ allprojects { project ->
         def producedIds = [] as Set
         cache[dep] = producedIds
 
-        // Skip Gradle-internal directory variants (e.g. `java-classes-directory`
-        // emitted on `compileClasspath` for project deps). The corresponding
-        // jar variant under `runtimeClasspath` is what we want to surface.
-        def artifacts = dep.moduleArtifacts.findAll { !it.file.isDirectory() }
+        def artifacts = dep.moduleArtifacts.findAll { a ->
+          !INTERNAL_ARTIFACT_TYPES.contains(a.type)
+        }
         if (artifacts.isEmpty()) {
-          producedIds << upsertNode(coordFromArtifact(dep, null), isProd, isNonTooling)
+          producedIds << upsertNode([
+            groupId   : dep.moduleGroup ?: '',
+            artifactId: dep.moduleName,
+            version   : dep.moduleVersion ?: '',
+            classifier: '',
+            ext       : '',
+          ], isProd, isNonTooling)
         } else {
           artifacts.each { a ->
-            producedIds << upsertNode(coordFromArtifact(dep, a), isProd, isNonTooling)
+            producedIds << upsertNode([
+              groupId   : dep.moduleGroup ?: '',
+              artifactId: dep.moduleName,
+              version   : dep.moduleVersion ?: '',
+              classifier: a.classifier ?: '',
+              ext       : a.extension ?: a.type ?: '',
+            ], isProd, isNonTooling)
           }
         }
 
