@@ -79,6 +79,15 @@ async function copyInitGradle() {
   await fs.copyFile(filepath, destPath)
 }
 
+async function copySocketFactsInitGradle() {
+  const filepath = path.join(
+    constants.srcPath,
+    'commands/manifest/socket-facts.init.gradle',
+  )
+  const destPath = path.join(constants.distPath, 'socket-facts.init.gradle')
+  await fs.copyFile(filepath, destPath)
+}
+
 async function copyBashCompletion() {
   const filepath = path.join(
     constants.srcPath,
@@ -458,6 +467,7 @@ export default async () => {
           async writeBundle() {
             await Promise.all([
               copyInitGradle(),
+              copySocketFactsInitGradle(),
               copyBashCompletion(),
               updatePackageJson(),
               // Remove dist/vendor.js.map file.

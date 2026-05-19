@@ -61,6 +61,7 @@ export interface SocketJson {
       gradle?: {
         disabled?: boolean | undefined
         bin?: string | undefined
+        facts?: boolean | undefined
         gradleOpts?: string | undefined
         verbose?: boolean | undefined
       }

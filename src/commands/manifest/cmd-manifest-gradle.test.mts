@@ -24,6 +24,7 @@ describe('socket manifest gradle', async () => {
 
           Options
             --bin               Location of gradlew binary to use, default: CWD/gradlew
+            --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
             --verbose           Print debug messages
 

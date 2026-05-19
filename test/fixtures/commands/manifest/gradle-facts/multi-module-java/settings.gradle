@@ -1,0 +1,4 @@
+rootProject.name = 'multi-module-java'
+
+include 'lib'
+include 'app'

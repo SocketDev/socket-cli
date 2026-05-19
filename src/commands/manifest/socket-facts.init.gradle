@@ -1,0 +1,226 @@
+// Gradle init script that emits a `*.socket.facts.json` file per project,
+// describing the resolved compile/runtime dependency graph.
+//
+// Schema matches the canonical SocketFacts shape consumed by depscan
+// (`workspaces/lib/src/socket-facts/socket-facts-schema.ts`):
+//
+//     { components: SF_Artifact[] }
+//
+// Each Maven SF_Artifact is `{ type: 'maven', namespace, name, version?,
+// qualifiers? } & { id, direct?, dev?, dependencies? }`. `qualifiers` is
+// strict on `{ classifier?, ext? }` — anything else is dropped.
+//
+// Invoke via:
+//   ./gradlew --init-script socket-facts.init.gradle socketFacts
+//
+// Phase discipline (matters for older Gradle compatibility):
+//   - configuration phase : register `socketFacts` on every project
+//   - afterEvaluate       : capture project coordinates once plugins are done
+//                           applying (group/version aren't reliably set before)
+//   - execution / doLast  : resolve configurations through LenientConfiguration
+//                           so unresolved deps are reported, not fatal.
+
+import groovy.json.JsonOutput
+
+// Match the canonical Coana / depscan filename so the pipeline glob
+// (`**/*.socket.facts.json`) picks both pre- and post-reachability versions
+// of the file out of a scan tarball.
+ext.SOCKET_FACTS_FILENAME = '.socket.facts.json'
+
+allprojects { project ->
+  // `tasks.create` (eager) keeps compatibility with Gradle versions predating
+  // the lazy `tasks.register` API (4.9+).
+  project.tasks.create('socketFacts') {
+    group = 'socket'
+    description = 'Generates a Socket facts JSON file for this project'
+    // Dependency resolution depends on state Gradle's up-to-date tracking
+    // can't represent reliably.
+    outputs.upToDateWhen { false }
+
+    def rootCoord
+
+    project.afterEvaluate {
+      rootCoord = [
+        groupId   : project.group?.toString() ?: '',
+        artifactId: project.name,
+        version   : project.version?.toString() ?: '',
+        classifier: '',
+        ext       : '',
+      ]
+    }
+
+    doLast {
+      // `id` deliberately omits `ext` so we dedupe Gradle's variant artifacts
+      // (e.g. `java-classes-directory` + `jar` for the same project dep) into
+      // a single component. Classifier stays in the id since it identifies a
+      // distinct artifact (sources, javadoc, etc.).
+      def coordId = { coord ->
+        def parts = [coord.groupId, coord.artifactId]
+        if (coord.classifier) parts << coord.classifier
+        parts << coord.version
+        parts.join(':')
+      }
+
+      // Single source of truth: id -> { coord, children, prod }.
+      // `prod=true` once the artifact has been observed in a non-test
+      // configuration; final `dev` is `!prod`.
+      def nodes = [:]
+      def directIds = [] as Set
+
+      def upsertNode = { Map coord, boolean isProd ->
+        def id = coordId(coord)
+        def node = nodes[id]
+        if (node == null) {
+          node = [coord: coord, children: [] as Set, prod: false]
+          nodes[id] = node
+        } else if (!node.coord.ext && coord.ext) {
+          // Upgrade to the variant whose Gradle artifact has a real packaging
+          // extension. Compile classpath visits often arrive with no ext (a
+          // project dep exposes only its classes-directory variant there);
+          // the runtime classpath visit then fills in the canonical jar/aar.
+          node.coord = coord
+        }
+        if (isProd) {
+          node.prod = true
+        }
+        id
+      }
+
+      def coordFromArtifact = { dep, artifact ->
+        [
+          groupId   : dep.moduleGroup ?: '',
+          artifactId: dep.moduleName,
+          version   : dep.moduleVersion ?: '',
+          classifier: artifact?.classifier ?: '',
+          // `extension` is what Gradle reports as the file extension of the
+          // resolved artifact (jar/aar/pom/...). For Gradle-internal variants
+          // exposed as directories (e.g. `java-classes-directory`) the
+          // artifact is skipped earlier — see the `findAll` below.
+          ext       : artifact?.extension ?: '',
+        ]
+      }
+
+      // Walk a resolved dependency, emitting nodes for itself and its
+      // transitive closure. `cache` is keyed by ResolvedDependency identity
+      // and short-circuits revisits in diamond/cyclic graphs.
+      def visit
+      visit = { dep, boolean isProd, Map cache ->
+        if (cache.containsKey(dep)) {
+          return cache[dep]
+        }
+        // Pre-populate the cache to break cycles before we recurse.
+        def producedIds = [] as Set
+        cache[dep] = producedIds
+
+        // Skip Gradle-internal directory variants (e.g. `java-classes-directory`
+        // emitted on `compileClasspath` for project deps). The corresponding
+        // jar variant under `runtimeClasspath` is what we want to surface.
+        def artifacts = dep.moduleArtifacts.findAll { !it.file.isDirectory() }
+        if (artifacts.isEmpty()) {
+          producedIds << upsertNode(coordFromArtifact(dep, null), isProd)
+        } else {
+          artifacts.each { a ->
+            producedIds << upsertNode(coordFromArtifact(dep, a), isProd)
+          }
+        }
+
+        def childIds = [] as Set
+        dep.children.each { child ->
+          childIds.addAll(visit(child, isProd, cache))
+        }
+        producedIds.each { pid ->
+          nodes[pid].children.addAll(childIds)
+        }
+        producedIds
+      }
+
+      // Configuration selection by name pattern. We match the conventional
+      // suffixes used across Gradle plugins for resolvable classpath configs:
+      // Java (`compileClasspath`, `runtimeClasspath`,
+      // `testCompileClasspath`, `testRuntimeClasspath`), Kotlin Gradle Plugin
+      // (`jvmMainCompileClasspath`, `linuxX64MainRuntimeClasspath`, ...) and
+      // AGP per-variant (`debugCompileClasspath`, `releaseRuntimeClasspath`,
+      // `debugUnitTestRuntimeClasspath`, ...). A future revision should
+      // switch to Gradle data-model discovery (source sets, KMP compilations,
+      // AGP variants), but until we have fixtures covering each of those, a
+      // name-based whitelist gives us broad coverage with one code path.
+      def isClasspath = { String name ->
+        def lower = name.toLowerCase()
+        lower.endsWith('compileclasspath') || lower.endsWith('runtimeclasspath')
+      }
+      def isTestClasspath = { String name -> name.toLowerCase().contains('test') }
+
+      def targetConfigs = project.configurations.findAll {
+        it.canBeResolved && isClasspath(it.name)
+      }
+
+      def rootId = coordId(rootCoord)
+      nodes[rootId] = [coord: rootCoord, children: [] as Set, prod: true]
+
+      targetConfigs.each { cfg ->
+        def isProd = !isTestClasspath(cfg.name)
+        def lenient = cfg.resolvedConfiguration.lenientConfiguration
+        def cache = [:]
+        lenient.firstLevelModuleDependencies.each { dep ->
+          def ids = visit(dep, isProd, cache)
+          nodes[rootId].children.addAll(ids)
+          directIds.addAll(ids)
+        }
+        lenient.unresolvedModuleDependencies.each { dep ->
+          def coord = [
+            groupId   : dep.selector.group ?: '',
+            artifactId: dep.selector.name,
+            version   : dep.selector.version ?: '',
+            classifier: '',
+            ext       : '',
+          ]
+          def id = upsertNode(coord, isProd)
+          nodes[rootId].children.add(id)
+          directIds.add(id)
+        }
+      }
+
+      def components = nodes.collect { id, node ->
+        def coord = node.coord
+        def component = [
+          type     : 'maven',
+          namespace: coord.groupId,
+          name     : coord.artifactId,
+        ]
+        if (coord.version) {
+          component.version = coord.version
+        }
+        def qualifiers = [:]
+        if (coord.classifier) {
+          qualifiers.classifier = coord.classifier
+        }
+        if (coord.ext) {
+          qualifiers.ext = coord.ext
+        }
+        if (!qualifiers.isEmpty()) {
+          component.qualifiers = qualifiers
+        }
+        component.id = id
+        if (directIds.contains(id)) {
+          component.direct = true
+        }
+        if (!node.prod) {
+          component.dev = true
+        }
+        if (!node.children.isEmpty()) {
+          component.dependencies = (node.children as List).sort()
+        }
+        component
+      }
+
+      def outputDir = project.findProperty('socket.outputDirectory')
+        ? new File(project.findProperty('socket.outputDirectory').toString())
+        : project.projectDir
+      outputDir.mkdirs()
+      def fileName = project.findProperty('socket.outputFile') ?: SOCKET_FACTS_FILENAME
+      def outFile = new File(outputDir, fileName.toString())
+      outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson([components: components]))
+      println "Socket facts file written to: ${outFile.absolutePath}"
+    }
+  }
+}
