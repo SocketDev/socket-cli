@@ -12,7 +12,7 @@
 //   - tsgo / tsc type-check daemons
 //   - type-coverage workers
 //   - esbuild service processes
-//   - Socket Firewall wrappers (`~/.socket/_wheelhouse/bin/sfw`) — each pnpm /
+//   - Socket Firewall wrappers (`~/.socket/sfw/bin/sfw`) — each pnpm /
 //     yarn invocation goes through one, and the wrapper sometimes
 //     outlives its pnpm child. On a busy day this can pile up to
 //     hundreds of orphans holding ~200MB RSS each (20+GB total).
@@ -74,7 +74,7 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     rx: /esbuild\/(bin|lib)\/.*\bservice\b/,
   },
   // Socket Firewall command wrappers. Three deployment layouts:
-  //   - ~/.socket/_wheelhouse/bin/sfw[-<version>]            (current dev install)
+  //   - ~/.socket/sfw/bin/sfw[-<version>]            (current dev install)
   //   - ~/.socket/_dlx/<hash>/sfw                    (planned: dlxBinary cache)
   //   - ${RUNNER_TEMP}/sfw-bin/sfw[.exe]             (CI runner install)
   // Path component is invariant across home prefixes (/Users/<u>/ vs

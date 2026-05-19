@@ -5,25 +5,18 @@
  * @socketsecurity/lib-stable's downloadBinary helper. Matches the CI install
  *   path: same version source, same binary integrity check (SHA-256 inline),
  *   same on-disk layout (~/.socket/_dlx/<hash>/sfw). The dev-only piece is a
- *   stable shim symlink at ~/.socket/_wheelhouse/bin/sfw → _dlx-hashed path so
- *   existing shims in ~/.socket/_wheelhouse/shims/ continue to resolve.
- *
- *   Detects + migrates a pre-existing ~/.socket/sfw/ install in place on first
- *   run (rename to ~/.socket/_wheelhouse/). The `_` prefix matches the npm /
- *   lib-stable convention for "managed internal cache" (compare to _dlx,
- *   _cacache, etc.) — `sfw/` was the lone non-prefixed sibling, now
- *   regularized.
- *
- *   Reads version + per-platform sha256 from the repo's root
- *   `external-tools.json` under `tools.sfw-free` / `tools.sfw-enterprise`.
- *   That file is the single fleet source of truth — every consumer of
- *   external tooling reads the same entries. Usage: pnpm run install:sfw #
- *   free flavor pnpm run install:sfw -- --enterprise # requires
- *   SOCKET_API_TOKEN pnpm run install:sfw -- --force # ignore cache,
- *   redownload pnpm run install:sfw -- --quiet.
+ *   stable shim symlink at ~/.socket/sfw/bin/sfw → _dlx-hashed path so existing
+ *   shims in ~/.socket/sfw/shims/ continue to resolve. Reads version +
+ *   per-platform sha256 from the repo's root `external-tools.json` under
+ *   `tools.sfw-free` / `tools.sfw-enterprise`. That file is the single fleet
+ *   source of truth — every consumer of external tooling reads the same
+ *   entries. Usage: pnpm run install:sfw # free flavor pnpm run install:sfw --
+ *   --enterprise # requires SOCKET_API_KEY (or SOCKET_API_TOKEN) pnpm run
+ *   install:sfw -- --force # ignore cache, redownload pnpm run install:sfw --
+ *   --quiet.
  */
 
-import { existsSync, promises as fsPromises, readFileSync, renameSync } from 'node:fs'
+import { existsSync, promises as fsPromises, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -32,9 +25,8 @@ import { parseArgs } from 'node:util'
 import { WIN32, getArch } from '@socketsecurity/lib-stable/constants/platform'
 import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { safeDelete, safeMkdirSync } from '@socketsecurity/lib-stable/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getSocketAppDir, getUserHomeDir } from '@socketsecurity/lib-stable/paths/socket'
 
 const logger = getDefaultLogger()
 
@@ -45,26 +37,28 @@ const __dirname = path.dirname(__filename)
 const REPO_ROOT = path.join(__dirname, '..')
 const EXTERNAL_TOOLS_PATH = path.join(REPO_ROOT, 'external-tools.json')
 
-// Resolve the user-home wheelhouse umbrella via the canonical lib-stable
-// helper (getSocketAppDir('wheelhouse') → ~/.socket/_wheelhouse/). Cross-
-// platform via getUserHomeDir() which handles HOME / USERPROFILE / fallback.
-const WHEELHOUSE_DIR = getSocketAppDir('wheelhouse')
-const WHEELHOUSE_BIN_DIR = path.join(WHEELHOUSE_DIR, 'bin')
-// One-time migration: if a pre-rename ~/.socket/sfw/ install exists AND the
-// new ~/.socket/_wheelhouse/ doesn't, rename the directory in place. Keeps
-// existing shims valid (each will be regenerated on next setup pass to point
-// at the new path). Idempotent: skips when either condition fails. Older
-// fleet machines won't break across the rename.
-const LEGACY_SFW_DIR = path.join(getUserHomeDir(), '.socket', 'sfw')
-if (existsSync(LEGACY_SFW_DIR) && !existsSync(WHEELHOUSE_DIR)) {
-  logger.log(`Migrating legacy ${LEGACY_SFW_DIR} → ${WHEELHOUSE_DIR}…`)
-  renameSync(LEGACY_SFW_DIR, WHEELHOUSE_DIR)
+// HOME on POSIX, USERPROFILE on Windows. Both can be set to an empty
+// string in degenerate shells (`HOME= some-cmd`) or to a non-absolute
+// stub like `~`, which would resolve `path.join(HOME, ...)` to a path
+// rooted at the current working directory — silently installing sfw
+// somewhere unexpected. Insist on an absolute path before accepting
+// either value.
+const resolveHome = (): string | undefined => {
+  for (const candidate of [process.env['HOME'], process.env['USERPROFILE']]) {
+    if (candidate && path.isAbsolute(candidate)) {
+      return candidate
+    }
+  }
+  return undefined
 }
-// Ensure the expected subdir layout exists. safeMkdirSync is recursive +
-// EEXIST-safe by default.
-safeMkdirSync(WHEELHOUSE_BIN_DIR)
-
-const SFW_BIN_DIR = WHEELHOUSE_BIN_DIR
+const HOME = resolveHome()
+if (!HOME) {
+  logger.fail(
+    'HOME / USERPROFILE not set to an absolute path — cannot resolve install dir',
+  )
+  process.exit(1)
+}
+const SFW_BIN_DIR = path.join(HOME, '.socket', 'sfw', 'bin')
 
 interface ToolEntry {
   version: string
@@ -107,8 +101,14 @@ async function main(): Promise<void> {
     strict: false,
   })
 
-  if (values['enterprise'] && !process.env['SOCKET_API_TOKEN']) {
-    logger.fail('--enterprise requires SOCKET_API_TOKEN in env')
+  if (
+    values['enterprise'] &&
+    !process.env['SOCKET_API_KEY'] &&
+    !process.env['SOCKET_API_TOKEN']
+  ) {
+    logger.fail(
+      '--enterprise requires SOCKET_API_KEY (or SOCKET_API_TOKEN) in env',
+    )
     process.exit(1)
     return
   }
@@ -176,9 +176,9 @@ async function main(): Promise<void> {
     logger.log(`  ${downloaded ? 'downloaded' : 'cached'}: ${binaryPath}`)
   }
 
-  // Stable shim entry point: ~/.socket/_wheelhouse/bin/sfw → _dlx-hashed path.
-  // The shims in ~/.socket/_wheelhouse/shims/ exec this symlink so the
-  // _dlx hash is invisible to PATH-prepending consumers. Refresh on every
+  // Stable shim entry point: ~/.socket/sfw/bin/sfw → _dlx-hashed path.
+  // The shims in ~/.socket/sfw/shims/ exec this symlink so the _dlx
+  // hash is invisible to PATH-prepending consumers. Refresh on every
   // install so a version bump updates the link target.
   await fsPromises.mkdir(SFW_BIN_DIR, { recursive: true })
   const linkPath = path.join(SFW_BIN_DIR, binaryName)

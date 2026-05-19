@@ -2,9 +2,12 @@
  * @file Single source of truth for "what's the Socket API token?" Resolution
  *   order (first hit wins):
  *
- *   1. `SOCKET_API_TOKEN` env var (canonical fleet name).
- *   2. `SOCKET_API_KEY` env var (legacy alias; deprecated, kept readable for one
- *      cycle so existing dev setups don't break in lockstep with the rename).
+ *   1. `SOCKET_API_KEY` env var (primary — universally supported across Socket
+ *      tools; what setup-security-tools' install.mts writes to both the OS
+ *      keychain and the shell-rc bridge).
+ *   2. `SOCKET_API_TOKEN` env var (forward-canonical name targeted by fleet docs /
+ *      workflow inputs / .env.example; accepted so consumers that set the
+ *      forward-canonical name explicitly still resolve a value).
  *   3. OS keychain (macOS Keychain / Linux libsecret / Windows CredentialManager).
  *      Returns `undefined` when no token is found. Never throws — callers
  *      decide how to react (use free SFW, skip auth-gated install, prompt).
@@ -19,19 +22,22 @@
  *      keychain" dialog. A pre-commit hook + commit-msg hook + post-commit
  *      invocation can fire three keychain reads in 200ms — each one its own
  *      prompt. The cache collapses N reads per process to 1. Also propagates
- *      the resolved token into `process.env.SOCKET_API_TOKEN` so child
- *      processes (spawned by the same hook chain) inherit it instead of
- *      re-querying.
+ *      the resolved token into `process.env.SOCKET_API_KEY` so child processes
+ *      (spawned by the same hook chain) inherit it instead of re-querying.
  */
 
 import { readTokenFromKeychain } from './token-storage.mts'
 
-const CANONICAL = 'SOCKET_API_TOKEN'
-const LEGACY = 'SOCKET_API_KEY'
+const PRIMARY = 'SOCKET_API_KEY'
+const FORWARD_CANONICAL = 'SOCKET_API_TOKEN'
 
 export interface TokenLookup {
   readonly token: string | undefined
-  readonly source: 'env-canonical' | 'env-legacy' | 'keychain' | undefined
+  readonly source:
+    | 'env-primary'
+    | 'env-forward-canonical'
+    | 'keychain'
+    | undefined
 }
 
 // Module-scope cache: the result of the FIRST findApiToken() call is
@@ -46,20 +52,17 @@ export function findApiToken(): TokenLookup {
     return cached === null ? { token: undefined, source: undefined } : cached
   }
 
-  // 1. Env (canonical first, then legacy alias).
-  const envCanonical = process.env[CANONICAL]
-  if (envCanonical) {
-    // Mirror to the legacy slot if it's empty — keeps spawned children
-    // that resolve the legacy name working without their own keychain
-    // round-trip. See the keychain branch below for the same shape.
-    propagateToEnv(envCanonical)
-    cached = { token: envCanonical, source: 'env-canonical' }
+  // 1. Env — primary slot first, then forward-canonical fallback.
+  const envPrimary = process.env[PRIMARY]
+  if (envPrimary) {
+    propagateToEnv(envPrimary)
+    cached = { token: envPrimary, source: 'env-primary' }
     return cached
   }
-  const envLegacy = process.env[LEGACY]
-  if (envLegacy) {
-    propagateToEnv(envLegacy)
-    cached = { token: envLegacy, source: 'env-legacy' }
+  const envForwardCanonical = process.env[FORWARD_CANONICAL]
+  if (envForwardCanonical) {
+    propagateToEnv(envForwardCanonical)
+    cached = { token: envForwardCanonical, source: 'env-forward-canonical' }
     return cached
   }
 
@@ -76,22 +79,22 @@ export function findApiToken(): TokenLookup {
 }
 
 /**
- * Populate BOTH `SOCKET_API_TOKEN` and `SOCKET_API_KEY` in `process.env` so any
- * spawned child — whether it resolves the canonical or the legacy name —
- * inherits the value and skips its own keychain read. Mirrors the WRITE_SLOTS
- * behavior in token-storage.mts: writes paint both slots, reads only the
- * canonical one. The keychain-side legacy slot stays untouched here; this is
- * purely an in-process env mirror.
+ * Populate BOTH `SOCKET_API_KEY` (primary) and `SOCKET_API_TOKEN`
+ * (forward-canonical) in `process.env` so any spawned child resolves a value
+ * under whichever name it reads. The keychain-side mirror was removed at the
+ * storage layer (one stored slot = one macOS Keychain auth prompt), but env
+ * propagation here is free in-process and helps consumers that haven't migrated
+ * to SOCKET_API_KEY yet.
  *
  * Idempotent — already-set values are left alone (so the user's explicit env
  * value isn't clobbered by a keychain read).
  */
 function propagateToEnv(token: string): void {
-  if (!process.env[CANONICAL]) {
-    process.env[CANONICAL] = token
+  if (!process.env[PRIMARY]) {
+    process.env[PRIMARY] = token
   }
-  if (!process.env[LEGACY]) {
-    process.env[LEGACY] = token
+  if (!process.env[FORWARD_CANONICAL]) {
+    process.env[FORWARD_CANONICAL] = token
   }
 }
 

@@ -8,7 +8,7 @@
 //
 // What it checks:
 //
-//   1. SFW shim integrity. Walks `~/.socket/_wheelhouse/shims/*` and reports
+//   1. SFW shim integrity. Walks `~/.socket/sfw/shims/*` and reports
 //      shims whose dlx-cached binary target no longer exists on disk.
 //      Cache eviction (manifest rebuild, manual cleanup) leaves
 //      shims pointing at vanished hashes — every `pnpm` / `npm` /
@@ -42,8 +42,6 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-
-import { getSocketAppDir } from '@socketsecurity/lib-stable/paths/socket'
 
 interface Finding {
   readonly kind:
@@ -84,12 +82,7 @@ const TOKEN_401_RE =
  * the repair conditions weren't met / the script failed.
  */
 function repairShims(home: string): Finding[] {
-  // Use the lib-stable helper for cross-platform consistency and to
-  // honor the canonical "_wheelhouse" umbrella. The home arg is
-  // accepted for backwards-compat with the existing call site but
-  // ignored in favor of the lib-stable resolution.
-  void home
-  const sfwDir = getSocketAppDir('wheelhouse')
+  const sfwDir = path.join(home, '.socket', 'sfw')
   const shimsDir = path.join(sfwDir, 'shims')
   const sfwBin = path.join(sfwDir, 'bin', 'sfw')
   const regen = path.join(sfwDir, 'regenerate-shims.sh')
@@ -137,7 +130,11 @@ function repairShims(home: string): Finding[] {
 }
 
 async function checkShims(): Promise<Finding[]> {
-  const shimsDir = path.join(getSocketAppDir('wheelhouse'), 'shims')
+  const home = process.env['HOME']
+  if (!home) {
+    return []
+  }
+  const shimsDir = path.join(home, '.socket', 'sfw', 'shims')
   if (!existsSync(shimsDir)) {
     return []
   }
@@ -183,7 +180,11 @@ async function checkShims(): Promise<Finding[]> {
 }
 
 function checkEdition(): Finding[] {
-  const shimPath = path.join(getSocketAppDir('wheelhouse'), 'shims', 'pnpm')
+  const home = process.env['HOME']
+  if (!home) {
+    return []
+  }
+  const shimPath = path.join(home, '.socket', 'sfw', 'shims', 'pnpm')
   if (!existsSync(shimPath)) {
     return []
   }
@@ -202,7 +203,7 @@ function checkEdition(): Finding[] {
       {
         kind: 'edition-mismatch',
         message:
-          'SOCKET_API_TOKEN is set but the SFW shim is the free build. ' +
+          'SOCKET_API_KEY is set but the SFW shim is the free build. ' +
           'Run `node .claude/hooks/setup-security-tools/install.mts` to ' +
           'switch to sfw-enterprise (org-aware malware scanning + private ' +
           'package data).',
@@ -270,7 +271,7 @@ async function checkToken401(transcriptPath: string): Promise<Finding[]> {
         {
           kind: 'token-401',
           message:
-            'Socket API returned 401 — the configured SOCKET_API_TOKEN ' +
+            'Socket API returned 401 — the configured SOCKET_API_KEY ' +
             'is invalid, expired, or lacks the required permissions. ' +
             'Run `node .claude/hooks/setup-security-tools/install.mts ' +
             '--rotate` to re-prompt and overwrite the keychain entry.',

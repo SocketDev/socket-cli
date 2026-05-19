@@ -14,8 +14,8 @@
  *      must exist and gpg-agent must cache it.
  *   4. macOS: pinentry-program points at pinentry-mac (offers "Save in Keychain"
  *      so subsequent signs don't even hit gpg).
- *   5. SOCKET_API_TOKEN present in env OR wired via shell-rc-bridge block (so
- *      hooks read env instead of hitting the keychain).
+ *   5. SOCKET_API_KEY present in env OR wired via shell-rc-bridge block (so hooks
+ *      read env instead of hitting the keychain).
  *   6. macOS: keychain has the Socket token entry with ACL set to "any app" (-T
  *      '') so subsequent reads don't trigger the "this app wants to access your
  *      keychain" dialog. Invocation: node
@@ -280,14 +280,13 @@ function checkCommitGpgsign(): CheckResult {
 
 function checkSocketTokenInEnv(): CheckResult {
   const env =
-    process.env['SOCKET_API_TOKEN'] ||
-    // oxlint-disable-next-line socket/socket-api-token-env -- audit script: must check the legacy alias because that's literally what's being audited (whether the legacy form is still in play vs the canonical one).
-    process.env['SOCKET_API_KEY']
+    // oxlint-disable-next-line socket/socket-api-token-env -- audit script: must check the primary slot because that's literally what's being audited (whether the install hook's primary export is wired up).
+    process.env['SOCKET_API_KEY'] || process.env['SOCKET_API_TOKEN']
   if (env) {
-    const source = process.env['SOCKET_API_TOKEN']
-      ? 'SOCKET_API_TOKEN'
-      : // oxlint-disable-next-line socket/socket-api-token-env -- audit script: reports which name was found, including the legacy alias.
+    const source = process.env['SOCKET_API_KEY']
+      ? // oxlint-disable-next-line socket/socket-api-token-env -- audit script: reports which name was found, including the primary slot.
         'SOCKET_API_KEY'
+      : 'SOCKET_API_TOKEN'
     return {
       name: 'Socket API token in env',
       ok: true,
@@ -323,7 +322,7 @@ function checkSocketTokenInEnv(): CheckResult {
     name: 'Socket API token in env',
     ok: false,
     detail:
-      'SOCKET_API_TOKEN is not in the current env AND no shell-rc-bridge block is wired up. Hooks fall through to the keychain, which prompts on first access.',
+      'SOCKET_API_KEY is not in the current env AND no shell-rc-bridge block is wired up. Hooks fall through to the keychain, which prompts on first access.',
     fix:
       'node .claude/hooks/setup-security-tools/install.mts\n' +
       '  # installs the shell-rc-bridge block; exports the token in every fresh shell',
@@ -338,13 +337,13 @@ function checkKeychainTokenAcl(): CheckResult {
       detail: 'skipped (non-macOS).',
     }
   }
-  // `security find-generic-password -s socket-cli -a SOCKET_API_TOKEN -g`
+  // `security find-generic-password -s socket-cli -a SOCKET_API_KEY -g`
   // would print the entry. We don't want to trigger a Keychain unlock
   // dialog by reading the password — instead, just check whether the
   // entry exists via the non-password-fetching form.
   const r = spawnSync(
     'security',
-    ['find-generic-password', '-s', 'socket-cli', '-a', 'SOCKET_API_TOKEN'],
+    ['find-generic-password', '-s', 'socket-cli', '-a', 'SOCKET_API_KEY'],
     { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (r.status !== 0) {
@@ -352,7 +351,7 @@ function checkKeychainTokenAcl(): CheckResult {
       name: 'macOS Keychain token ACL',
       ok: false,
       detail:
-        'No socket-cli/SOCKET_API_TOKEN entry in the Keychain. Tools that fall back to keychain (when env is empty) will prompt for input on first use.',
+        'No socket-cli/SOCKET_API_KEY entry in the Keychain. Tools that fall back to keychain (when env is empty) will prompt for input on first use.',
       fix:
         'node .claude/hooks/setup-security-tools/install.mts\n' +
         '  # prompts for the token interactively and persists it to the Keychain with -T "" (any app can read).',
@@ -365,7 +364,7 @@ function checkKeychainTokenAcl(): CheckResult {
     name: 'macOS Keychain token ACL',
     ok: true,
     detail:
-      'socket-cli/SOCKET_API_TOKEN entry present. Assumes ACL=any app (-T "") from setup-security-tools — if you still get Keychain prompts, open Keychain Access → search "socket-cli" → click "Always Allow" once for /usr/bin/security.',
+      'socket-cli/SOCKET_API_KEY entry present. Assumes ACL=any app (-T "") from setup-security-tools — if you still get Keychain prompts, open Keychain Access → search "socket-cli" → click "Always Allow" once for /usr/bin/security.',
   }
 }
 
