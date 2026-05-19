@@ -2,26 +2,30 @@
  * @file Sort all-identifier boolean chains alphanumerically. Per CLAUDE.md
  *   "Sorting" rule, a chain like `agentshieldOk && zizmorOk && sfwOk` reads
  *   with the identifier names in alpha order: `agentshieldOk && sfwOk &&
- *   zizmorOk`. The runtime is short-circuit-insensitive to operand order _when
- *   every operand is a plain identifier_ (no calls, no member access with
- *   getters) — so reordering doesn't change semantics. Sorting reduces diff
- *   churn when adding a new flag and makes "is everything ready?" checks
- *   visually consistent. Detects: chains of `&&` or `||` whose operands are ALL
- *   bare Identifiers (length ≥ 2, no duplicates, uniform operator across the
- *   flattened chain). Skipped (not reported, autofix-safe stays narrow):
+ *   zizmorOk`. The runtime is short-circuit-insensitive to operand order
+ *   *when every operand is a plain identifier* (no calls, no member access
+ *   with getters) — so reordering doesn't change semantics. Sorting reduces
+ *   diff churn when adding a new flag and makes "is everything ready?"
+ *   checks visually consistent.
  *
- *   - Any operand isn't a bare `Identifier` (Calls / member-access / literals /
- *     negations / nested non-uniform logical exprs short-circuit, and a
+ *   Detects: chains of `&&` or `||` whose operands are ALL bare Identifiers
+ *   (length ≥ 2, no duplicates, uniform operator across the flattened chain).
+ *
+ *   Skipped (not reported, autofix-safe stays narrow):
+ *
+ *   - Any operand isn't a bare `Identifier` (Calls / member-access / literals
+ *     / negations / nested non-uniform logical exprs short-circuit, and a
  *     `getter` on a member-access can have side effects — reordering would be
  *     observable).
  *   - Duplicate identifiers in the chain (rare, but rewriting through the
  *     duplicate would silently drop one).
  *   - Comments live between operands (autofix would relocate them).
- *   - Chain length < 2 (nothing to sort). Why a separate rule from
- *     sort-equality-disjunctions: that rule sorts the right-hand string-literal
- *     of an equality chain (`x === 'a' || x === 'b'`); this rule sorts the
- *     bare-identifier operands of a pure-identifier chain. Structurally
- *     different ASTs, semantically different safety arguments.
+ *   - Chain length < 2 (nothing to sort).
+ *
+ *   Why a separate rule from sort-equality-disjunctions: that rule sorts the
+ *   right-hand string-literal of an equality chain (`x === 'a' || x === 'b'`);
+ *   this rule sorts the bare-identifier operands of a pure-identifier chain.
+ *   Structurally different ASTs, semantically different safety arguments.
  */
 
 /**
@@ -53,9 +57,9 @@ const rule = {
       : context.sourceCode
 
     /**
-     * Flatten a left-associative LogicalExpression chain into leaf nodes. `(a
-     * && b) && c` and `a && (b && c)` both flatten to [a, b, c]. Caller checks
-     * operator uniformity.
+     * Flatten a left-associative LogicalExpression chain into leaf nodes.
+     * `(a && b) && c` and `a && (b && c)` both flatten to [a, b, c]. Caller
+     * checks operator uniformity.
      */
     function flatten(node: AstNode, op: string, out: AstNode[]): void {
       if (node.type === 'LogicalExpression' && node.operator === op) {
