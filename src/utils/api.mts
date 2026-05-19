@@ -72,12 +72,11 @@ function getHttpsAgent(): HttpsAgent | undefined {
   return _httpsAgent
 }
 
-// Wrapper around fetch using node:https.request for all calls.
-// This avoids undici's default 300 s bodyTimeout, which would otherwise fire
-// on large streaming responses before the body has fully transferred. Behaviour
-// matches the SDK, which also uses node:https.request with no body timeout.
-// Passes the custom HTTPS agent when extra CA certificates are configured via
-// SSL_CERT_FILE, otherwise uses Node's default agent. Follows redirects like fetch().
+// All outbound API requests use node:https.request rather than global fetch.
+// This ensures no body timeout is applied — large streaming ND-JSON responses
+// (e.g. full scan results) can transfer without a hard deadline. When
+// SSL_CERT_FILE is configured, a custom HttpsAgent carrying the extra CA
+// certificates is passed; otherwise the default agent is used.
 export type ApiFetchInit = {
   body?: string | undefined
   headers?: Record<string, string> | undefined
