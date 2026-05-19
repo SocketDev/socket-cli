@@ -1,24 +1,22 @@
 /**
  * @file Wire a keychain → environment bridge into the user's shell rc file so
- *   every new shell session exports `SOCKET_API_KEY` from the OS keychain.
- *   `SOCKET_API_KEY` is universally supported across Socket tools (CLI, SDK,
- *   sfw, fleet scripts) — one env var covers the whole surface with no fallback
- *   chain. Why a shell-rc block instead of a wrapper script: sfw and other
- *   Socket clients read their token from `process.env`, but the OS keychain
- *   (macOS Keychain, Linux libsecret, Windows CredentialManager) only hands the
- *   token out on explicit request. Nothing bridges the two automatically — so
- *   unless the user manually exports the value from the keychain each session,
- *   every Socket tool launches with an empty token and the API returns 401. The
- *   block is delimited by canonical sentinels so re-running the install script
- *   updates the block in place (no duplicate appends). The block is small
- *   enough that the user can read it before sourcing. macOS only for now — zsh
- *   and bash. Linux's `secret-tool` works the same way but the rc-detection on
- *   Linux distros varies more (system vs user profile, multiple bash variants).
- *   Windows uses PowerShell profiles; the equivalent is
- *   `$PROFILE.CurrentUserAllHosts`. Both are tractable but out of scope for
- *   this baseline. Read paths are silent (best-effort). Write paths surface
- *   clear errors so the install script can tell the user when the rc file
- *   couldn't be touched (read-only home dir, immutable rc, etc.).
+ *   every new shell session exports `SOCKET_API_TOKEN` AND `SOCKET_API_KEY`
+ *   from the OS keychain. Why a shell-rc block instead of a wrapper script: sfw
+ *   and other Socket clients read their token from `process.env`, but the OS
+ *   keychain (macOS Keychain, Linux libsecret, Windows CredentialManager) only
+ *   hands the token out on explicit request. Nothing bridges the two
+ *   automatically — so unless the user manually exports the value from the
+ *   keychain each session, every Socket tool launches with an empty token and
+ *   the API returns 401. The block is delimited by canonical sentinels so
+ *   re-running the install script updates the block in place (no duplicate
+ *   appends). The block is small enough that the user can read it before
+ *   sourcing. macOS only for now — zsh and bash. Linux's `secret-tool` works
+ *   the same way but the rc-detection on Linux distros varies more (system vs
+ *   user profile, multiple bash variants). Windows uses PowerShell profiles;
+ *   the equivalent is `$PROFILE.CurrentUserAllHosts`. Both are tractable but
+ *   out of scope for this baseline. Read paths are silent (best-effort). Write
+ *   paths surface clear errors so the install script can tell the user when the
+ *   rc file couldn't be touched (read-only home dir, immutable rc, etc.).
  */
 
 import {
@@ -63,9 +61,9 @@ function buildBlockBody(token: string): string {
   const quoted = shellSingleQuote(token)
   return `# Token persisted by setup-security-tools install.mts.
 # Rotate via: node .claude/hooks/setup-security-tools/install.mts --rotate
-# Keychain copy still lives at: security find-generic-password -s socket-cli -a SOCKET_API_KEY
-# SOCKET_API_KEY is universally supported across Socket tools (CLI, SDK, sfw,
-# fleet scripts) — one env var covers the whole surface with no fallback chain.
+# Keychain copy still lives at: security find-generic-password -s socket-cli -a SOCKET_API_TOKEN
+export SOCKET_API_TOKEN=${quoted}
+# sfw + older socket-cli builds read the legacy env-var name.
 export SOCKET_API_KEY=${quoted}`
 }
 
@@ -124,11 +122,11 @@ export interface BridgeWriteResult {
  * instruction the user can paste).
  *
  * Takes the literal token value and embeds it as a static `export
- * SOCKET_API_KEY='...'` in the managed block. NO keychain lookup runs from the
- * shell — every shell startup would otherwise hit a macOS Keychain auth prompt,
- * and Claude Code's Bash tool spawns a fresh shell per command, so the user
- * gets a continuous prompt stream until they revoke. (Incident memory:
- * feedback_keychain_prompts.md, 2026-05-15.)
+ * SOCKET_API_TOKEN='...'` (and SOCKET_API_KEY mirror) in the managed block. NO
+ * keychain lookup runs from the shell — every shell startup would otherwise hit
+ * a macOS Keychain auth prompt, and Claude Code's Bash tool spawns a fresh
+ * shell per command, so the user gets a continuous prompt stream until they
+ * revoke. (Incident memory: feedback_keychain_prompts.md, 2026-05-15.)
  *
  * The keychain is still the canonical store — the rc block is a one-time
  * materialization. Next rotate writes a new block.

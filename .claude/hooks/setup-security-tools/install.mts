@@ -4,7 +4,7 @@
  *   (AgentShield, Zizmor, SFW). Runs interactively. Differs from `index.mts`
  *   (the Stop hook):
  *
- *   - This script PROMPTS for missing config (e.g. SOCKET_API_KEY) and persists
+ *   - This script PROMPTS for missing config (e.g. SOCKET_API_TOKEN) and persists
  *     to the OS keychain.
  *   - It DOWNLOADS missing or stale binaries.
  *   - It REPAIRS broken SFW shims (entries pointing to dlx-cache hashes that no
@@ -18,7 +18,7 @@
  *     persisting a token. Invocation: node
  *     .claude/hooks/setup-security-tools/install.mts node
  *     .claude/hooks/setup-security-tools/install.mts --rotate Flags: --rotate
- *     Re-prompt for SOCKET_API_KEY and overwrite the keychain entry, ignoring
+ *     Re-prompt for SOCKET_API_TOKEN and overwrite the keychain entry, ignoring
  *     env/.env/keychain lookup. Use to rotate a leaked or expired token without
  *     manually clearing the keychain first. --update-token Alias for --rotate.
  *     Exit codes: 0 — all tools installed + verified. 1 — at least one tool
@@ -131,15 +131,15 @@ async function promptAndPersist(
 ): Promise<string | undefined> {
   if (getCI()) {
     logger.log(
-      'CI environment detected — skipping the SOCKET_API_KEY prompt. ' +
+      'CI environment detected — skipping the SOCKET_API_TOKEN prompt. ' +
         'Falling back to sfw-free.',
     )
     return undefined
   }
   if (!process.stdin.isTTY) {
     logger.log(
-      'No TTY — skipping the SOCKET_API_KEY prompt. ' +
-        'Falling back to sfw-free. Set SOCKET_API_KEY in env or run ' +
+      'No TTY — skipping the SOCKET_API_TOKEN prompt. ' +
+        'Falling back to sfw-free. Set SOCKET_API_TOKEN in env or run ' +
         'this script interactively to persist it to the OS keychain.',
     )
     return undefined
@@ -157,7 +157,7 @@ async function promptAndPersist(
   logger.log('')
   if (reason === 'rotate') {
     logger.log(
-      `Rotating SOCKET_API_KEY — the keychain entry will be overwritten ` +
+      `Rotating SOCKET_API_TOKEN — the keychain entry will be overwritten ` +
         `via ${kc.toolName}.`,
     )
   } else {
@@ -174,7 +174,7 @@ async function promptAndPersist(
         : ' and use sfw-free.'),
   )
   logger.log('')
-  const answer = await promptSecret('SOCKET_API_KEY (input hidden): ')
+  const answer = await promptSecret('SOCKET_API_TOKEN (input hidden): ')
   if (!answer) {
     if (reason === 'rotate') {
       logger.log('No token entered. Keychain unchanged.')
@@ -186,7 +186,9 @@ async function promptAndPersist(
   try {
     writeTokenToKeychain(answer)
     if (reason === 'rotate') {
-      logger.success(`SOCKET_API_KEY rotated and persisted via ${kc.toolName}.`)
+      logger.success(
+        `SOCKET_API_TOKEN rotated and persisted via ${kc.toolName}.`,
+      )
     }
   } catch (e) {
     logger.error(
@@ -213,7 +215,7 @@ function wireBridgeIntoShellRc(token: string): void {
   } catch (e) {
     logger.warn(
       `Failed to write the shell-rc env block: ${(e as Error).message}. ` +
-        'You will need to export SOCKET_API_KEY manually for Socket tools to pick it up.',
+        'You will need to export SOCKET_API_KEY manually for sfw to pick it up.',
     )
   }
 }
@@ -232,10 +234,12 @@ function reportBridgeOutcome(bridge: BridgeWriteResult | undefined): void {
     // shell triggers an auth prompt on macOS.
     logger.log('')
     logger.log(
-      'Add this to your shell rc / .zshenv so SOCKET_API_KEY is exported ' +
-        'each session (every Socket tool reads it without a fallback chain):',
+      'Add this to your shell rc / .zshenv so SOCKET_API_KEY/TOKEN ' +
+        'are exported each session (sfw + older socket-cli builds ' +
+        'read SOCKET_API_KEY):',
     )
-    logger.log("  export SOCKET_API_KEY='<your-token>'")
+    logger.log("  export SOCKET_API_TOKEN='<your-token>'")
+    logger.log('  export SOCKET_API_KEY="$SOCKET_API_TOKEN"')
     return
   }
   if (bridge.outcome === 'unchanged') {
@@ -247,14 +251,14 @@ function reportBridgeOutcome(bridge: BridgeWriteResult | undefined): void {
       `Updated the shell-rc env block at ${bridge.rcPath}. ` +
         'Run `source ' +
         bridge.rcPath +
-        '` (or open a new shell) so SOCKET_API_KEY gets exported.',
+        '` (or open a new shell) so SOCKET_API_KEY/TOKEN get exported.',
     )
   } else {
     logger.success(
       `Wrote the shell-rc env block to ${bridge.rcPath}. ` +
         'Run `source ' +
         bridge.rcPath +
-        '` (or open a new shell) so SOCKET_API_KEY gets exported.',
+        '` (or open a new shell) so SOCKET_API_KEY/TOKEN get exported.',
     )
   }
 }
@@ -296,7 +300,7 @@ async function main(): Promise<void> {
       const lookup = findApiToken()
       apiToken = lookup.token
       if (apiToken && lookup.source) {
-        logger.log(`Keeping existing SOCKET_API_KEY (via ${lookup.source}).`)
+        logger.log(`Keeping existing SOCKET_API_TOKEN (via ${lookup.source}).`)
       }
     }
   } else {
@@ -304,16 +308,16 @@ async function main(): Promise<void> {
     const lookup = findApiToken()
     apiToken = lookup.token
     if (apiToken && lookup.source) {
-      logger.log(`SOCKET_API_KEY: found via ${lookup.source}.`)
+      logger.log(`SOCKET_API_TOKEN: found via ${lookup.source}.`)
     } else {
       apiToken = await offerTokenPrompt()
     }
   }
 
   // Wire the literal token into the shell rc unconditionally. The
-  // token may have come from env/keychain (no prompt fired) —
+  // token may have come from env/.env/keychain (no prompt fired) —
   // without this block, every NEW shell session launches with an
-  // empty SOCKET_API_KEY and Socket tools return 401. We embed the
+  // empty SOCKET_API_KEY and the sfw shim returns 401. We embed the
   // token VALUE directly in the rc instead of calling `security
   // find-generic-password` from the shell, because the latter
   // triggers a macOS Keychain auth prompt on every new shell

@@ -389,7 +389,8 @@ test('FLEET_SYNC=1 allows the cascade push without bypass phrase', async () => {
 test('FLEET_SYNC=1 with a non-cascade commit message is still blocked', async () => {
   const result = await runHook({
     tool_input: {
-      command: 'FLEET_SYNC=1 git commit --no-verify -m "feat: sneak this past"',
+      command:
+        'FLEET_SYNC=1 git commit --no-verify -m "feat: sneak this past"',
     },
     tool_name: 'Bash',
   })

@@ -31,7 +31,7 @@ node .claude/hooks/setup-security-tools/index.mts
 After the script completes, add the SFW shim directory to PATH:
 
 ```bash
-export PATH="$HOME/.socket/sfw/shims:$PATH"
+export PATH="$HOME/.socket/_wheelhouse/shims:$PATH"
 ```
 
 ## Notes
@@ -40,6 +40,6 @@ export PATH="$HOME/.socket/sfw/shims:$PATH"
 - AgentShield needs `pnpm install` (it's a devDep)
 - Zizmor is cached at `~/.socket/zizmor/bin/`
 - SFW binary is cached via dlx at `~/.socket/_dlx/`
-- SFW shims are shared across repos at `~/.socket/sfw/shims/`
+- SFW shims are shared across repos at `~/.socket/_wheelhouse/shims/`
 - `.env.local` must NEVER be committed
 - `/update` will check for new versions of these tools via `node .claude/hooks/setup-security-tools/update.mts`

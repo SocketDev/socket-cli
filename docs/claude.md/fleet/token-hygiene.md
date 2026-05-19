@@ -16,13 +16,7 @@ When a doc / test / comment needs to show an example user-home path, use the can
 
 ## Socket API token env var
 
-Two layers, on purpose:
-
-1. **Fleet-canonical name (forward-looking) — `SOCKET_API_TOKEN`.** This is what new `.env.example` files, fleet docs, workflow inputs, action `env:` blocks, and CI secrets target. `SOCKET_SECURITY_API_TOKEN` and `SOCKET_SECURITY_API_KEY` remain accepted aliases for one cycle (deprecation grace period).
-
-2. **Local-dev primary slot — `SOCKET_API_KEY`.** Every Socket tool (CLI, SDK, sfw, fleet scripts) reads `SOCKET_API_KEY` without a fallback chain, so picking it as the one stored / exported slot means a single read covers the whole surface. The setup-security-tools install hook stores the token under keychain account `SOCKET_API_KEY` and exports `SOCKET_API_KEY` from the `~/.zshenv` shell-rc-bridge block. Bootstrap hooks read both — `SOCKET_API_KEY` first, `SOCKET_API_TOKEN` as a forward-canonical fallback — so a consumer setting either works.
-
-Don't confuse any of these with `SOCKET_CLI_API_TOKEN` (socket-cli's separate setting).
+The canonical fleet name is `SOCKET_API_TOKEN`. The legacy names `SOCKET_API_KEY`, `SOCKET_SECURITY_API_TOKEN`, and `SOCKET_SECURITY_API_KEY` are accepted as aliases for one cycle (deprecation grace period) — bootstrap hooks read all four and normalize to `SOCKET_API_TOKEN` going forward. New `.env.example` files, docs, workflow inputs, and action env exports use `SOCKET_API_TOKEN`. Don't confuse with `SOCKET_CLI_API_TOKEN` (socket-cli's separate setting).
 
 ## Cross-repo path references
 

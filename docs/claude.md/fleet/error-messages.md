@@ -28,7 +28,7 @@ sentence.
 | ✗     | `Error: invalid argument`                                                                                                                                                        | No where, no rule, no fix.                            |
 | ✓     | `orgSlug is required`                                                                                                                                                            | Rule + where (`orgSlug`), saw (missing), implies fix. |
 | ✗     | `Error: request failed`                                                                                                                                                          | No status, no hint what to check.                     |
-| ✓     | `Socket API rejected the token (401); check SOCKET_API_KEY`                                                                                                                      | Rule (401), where (token), fix (check env var).       |
+| ✓     | `Socket API rejected the token (401); check SOCKET_API_TOKEN`                                                                                                                    | Rule (401), where (token), fix (check env var).       |
 
 ## Validator / config / build-tool errors (verbose)
 
