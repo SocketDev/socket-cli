@@ -1,7 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "import"],
-  "jsPlugins": ["./oxlint-plugin/index.mts"],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "import"
+  ],
+  "jsPlugins": [
+    "./oxlint-plugin/index.mts"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -181,6 +187,7 @@
     "**/scripts/check-paths/types.mts",
     "**/scripts/check-paths/walk.mts",
     "**/scripts/check-prompt-less-setup.mts",
+    "**/scripts/check-soak-exclude-dates.mts",
     "**/scripts/fix.mts",
     "**/scripts/install-claude-plugins.mts",
     "**/scripts/install-git-hooks.mts",
