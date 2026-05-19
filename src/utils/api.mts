@@ -72,9 +72,12 @@ function getHttpsAgent(): HttpsAgent | undefined {
   return _httpsAgent
 }
 
-// Wrapper around fetch that supports extra CA certificates via SSL_CERT_FILE.
-// Uses node:https.request with a custom agent when extra CA certs are needed,
-// falling back to regular fetch() otherwise. Follows redirects like fetch().
+// Wrapper around fetch using node:https.request for all calls.
+// This avoids undici's default 300 s bodyTimeout, which would otherwise fire
+// on large streaming responses before the body has fully transferred. Behaviour
+// matches the SDK, which also uses node:https.request with no body timeout.
+// Passes the custom HTTPS agent when extra CA certificates are configured via
+// SSL_CERT_FILE, otherwise uses Node's default agent. Follows redirects like fetch().
 export type ApiFetchInit = {
   body?: string | undefined
   headers?: Record<string, string> | undefined
@@ -85,7 +88,7 @@ export type ApiFetchInit = {
 function _httpsRequestFetch(
   url: string,
   init: ApiFetchInit,
-  agent: HttpsAgent,
+  agent: HttpsAgent | undefined,
   redirectCount: number,
 ): Promise<Response> {
   return new Promise((resolve, reject) => {
@@ -186,11 +189,7 @@ export async function apiFetch(
   url: string,
   init: ApiFetchInit = {},
 ): Promise<Response> {
-  const agent = getHttpsAgent()
-  if (!agent) {
-    return await fetch(url, init as globalThis.RequestInit)
-  }
-  return await _httpsRequestFetch(url, init, agent, 0)
+  return await _httpsRequestFetch(url, init, getHttpsAgent(), 0)
 }
 
 export type CommandRequirements = {
