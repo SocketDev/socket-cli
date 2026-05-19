@@ -1,9 +1,11 @@
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -433,5 +435,169 @@ describe('extractBazelToMaven', () => {
     } finally {
       logSpy.mockRestore()
     }
+  })
+})
+
+describe('SOCKET_BAZEL_FORCE_QUERY_FALLBACK', () => {
+  // These tests pit two parsers against each other by giving each a
+  // coordinate the other does not produce, then assert which one ran by
+  // checking which coordinate landed in the manifest.
+  // - unsorted_deps.json (fast path) → `com.example:from-json:9.9.9`
+  // - cached probe stdout (regex fallback) → `com.example:from-regex:1.0.0`
+  const FAST_PATH_JSON = JSON.stringify({
+    artifacts: [
+      {
+        coordinates: 'com.example:from-json:9.9.9',
+        url: 'https://example.invalid/from-json-9.9.9.jar',
+        sha256:
+          '1111111111111111111111111111111111111111111111111111111111111111',
+        deps: [],
+      },
+    ],
+  })
+
+  const FALLBACK_PROBE_STDOUT = [
+    'jvm_import(',
+    '  name = "com_example_from_regex",',
+    '  jars = ["@maven//:from-regex-1.0.0.jar"],',
+    '  maven_coordinates = "com.example:from-regex:1.0.0",',
+    '  deps = [],',
+    ')',
+    '',
+  ].join('\n')
+
+  let tmp: string
+  let originalEnv: string | undefined
+
+  beforeEach(() => {
+    tmp = mkdtempSync(path.join(os.tmpdir(), 'bazel-extract-fallback-'))
+    // Place unsorted_deps.json under <bazelOutputBase>/external/maven/.
+    // This is what bazelExternalDir resolves to when bazelOutputBase is set.
+    const externalRepoDir = path.join(tmp, 'external', 'maven')
+    mkdirSync(externalRepoDir, { recursive: true })
+    writeFileSync(
+      path.join(externalRepoDir, 'unsorted_deps.json'),
+      FAST_PATH_JSON,
+      'utf8',
+    )
+    vi.mocked(detectWorkspaceMode).mockReturnValue({
+      bzlmod: true,
+      workspace: false,
+    })
+    vi.mocked(discoverMavenRepos).mockResolvedValue(
+      new Map([['maven', FALLBACK_PROBE_STDOUT]]),
+    )
+    originalEnv = process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK']
+    process.exitCode = 0
+  })
+
+  afterEach(() => {
+    if (originalEnv === undefined) {
+      delete process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK']
+    } else {
+      process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK'] = originalEnv
+    }
+    rmSync(tmp, { recursive: true, force: true })
+    vi.resetAllMocks()
+    process.exitCode = 0
+  })
+
+  it('uses the unsorted_deps.json fast path when the env var is unset', async () => {
+    delete process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK']
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: tmp,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(result.ok).toBe(true)
+    const manifest = JSON.parse(
+      readFileSync(path.join(tmp, 'maven_install.json'), 'utf8'),
+    )
+    // The JSON parser ran: from-json coord is present, from-regex is absent.
+    expect(manifest.artifacts['com.example:from-json']).toBeDefined()
+    expect(manifest.artifacts['com.example:from-regex']).toBeUndefined()
+  })
+
+  it('skips the unsorted_deps.json fast path and uses the regex fallback when the env var is "1"', async () => {
+    process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK'] = '1'
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: tmp,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(result.ok).toBe(true)
+    const manifest = JSON.parse(
+      readFileSync(path.join(tmp, 'maven_install.json'), 'utf8'),
+    )
+    // The regex parser ran: from-regex coord is present, from-json is absent.
+    expect(manifest.artifacts['com.example:from-regex']).toBeDefined()
+    expect(manifest.artifacts['com.example:from-json']).toBeUndefined()
+  })
+
+  it.each([
+    ['unset', undefined],
+    ['empty string', ''],
+    ['"0"', '0'],
+    ['"false"', 'false'],
+  ])('treats %s as falsy and uses the fast path', async (_label, value) => {
+    if (value === undefined) {
+      delete process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK']
+    } else {
+      process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK'] = value
+    }
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: tmp,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(result.ok).toBe(true)
+    const manifest = JSON.parse(
+      readFileSync(path.join(tmp, 'maven_install.json'), 'utf8'),
+    )
+    expect(manifest.artifacts['com.example:from-json']).toBeDefined()
+    expect(manifest.artifacts['com.example:from-regex']).toBeUndefined()
+  })
+
+  it.each([
+    ['"1"', '1'],
+    ['"true"', 'true'],
+    ['"YES"', 'YES'],
+  ])('treats %s as truthy and forces the fallback', async (_label, value) => {
+    process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK'] = value
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: tmp,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(result.ok).toBe(true)
+    const manifest = JSON.parse(
+      readFileSync(path.join(tmp, 'maven_install.json'), 'utf8'),
+    )
+    expect(manifest.artifacts['com.example:from-regex']).toBeDefined()
+    expect(manifest.artifacts['com.example:from-json']).toBeUndefined()
   })
 })
