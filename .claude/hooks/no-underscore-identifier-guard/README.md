@@ -6,21 +6,21 @@ underscore-prefixed **identifier** (`_resetX`, `_internal`, `_cache`, etc.).
 ## Why
 
 Privacy in TypeScript is handled by module boundaries (not exporting) or by
-the `_internal/` *directory* pattern — not by leading underscores on symbol
+the `_internal/` _directory_ pattern — not by leading underscores on symbol
 names. The underscore-as-internal-marker convention is borrowed from other
 languages where it has runtime meaning; in TS it's purely decorative and
 adds noise to `git blame` and IDE autocomplete.
 
 ## What's banned
 
-| Form | Example |
-| --- | --- |
-| Variable | `const _cache = new Map()` |
-| Function | `function _doResolve() {}` |
-| Class | `class _Helper {}` |
-| Interface | `interface _Options {}` |
-| Type alias | `type _Internal = ...` |
-| Re-export | `export { _foo }` |
+| Form       | Example                    |
+| ---------- | -------------------------- |
+| Variable   | `const _cache = new Map()` |
+| Function   | `function _doResolve() {}` |
+| Class      | `class _Helper {}`         |
+| Interface  | `interface _Options {}`    |
+| Type alias | `type _Internal = ...`     |
+| Re-export  | `export { _foo }`          |
 
 ## What's allowed
 

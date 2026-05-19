@@ -175,9 +175,7 @@ async function main(): Promise<void> {
   }
 
   const text =
-    payload.tool_input?.content ??
-    payload.tool_input?.new_string ??
-    ''
+    payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
   if (!text) {
     process.exit(0)
   }
