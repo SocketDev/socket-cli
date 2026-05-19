@@ -1,0 +1,35 @@
+// Kotlin Multiplatform fixture for socket-facts.init.gradle. Exercises
+// per-target compile/runtime configurations (jvmMainCompileClasspath,
+// jsTestRuntimeClasspath, etc.) that the Java SourceSetContainer doesn't
+// surface, but which our name-pattern selection (`*CompileClasspath` /
+// `*RuntimeClasspath`) still picks up.
+plugins {
+    id 'org.jetbrains.kotlin.multiplatform' version '1.9.25'
+}
+
+group = 'com.example.socket.kmp'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+kotlin {
+    jvm()
+    js {
+        nodejs()
+    }
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation 'org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2'
+            }
+        }
+        jvmMain {
+            dependencies {
+                implementation 'org.slf4j:slf4j-api:1.7.36'
+            }
+        }
+    }
+}

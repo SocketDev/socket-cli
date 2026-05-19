@@ -181,6 +181,36 @@ describeOrSkip('socket-facts.init.gradle', () => {
     })
   })
 
+  describe('kotlin-multiplatform fixture', () => {
+    const fixture = path.join(fixturesRoot, 'kotlin-multiplatform')
+    const output = path.join(fixture, '.socket.facts.json')
+
+    it('captures per-target classpaths from kotlin.targets', async () => {
+      clean(output)
+      await runFacts(fixture)
+      expect(existsSync(output)).toBe(true)
+      const facts = readFacts(output)
+      // commonMain dep — should resolve into both jvm and js target variants.
+      const serializationCore = findById(
+        facts,
+        c =>
+          c.namespace === 'org.jetbrains.kotlinx' &&
+          c.name.startsWith('kotlinx-serialization-core'),
+      )
+      expect(
+        serializationCore.length,
+        `expected kotlinx-serialization-core in at least one target variant: ${facts.components.map(c => c.id).join(', ')}`,
+      ).toBeGreaterThan(0)
+      // jvmMain-only dep — should be present, exercising the per-target
+      // classpath name pattern (`jvmMainRuntimeClasspath` and friends).
+      const slf4j = findById(
+        facts,
+        c => c.namespace === 'org.slf4j' && c.name === 'slf4j-api',
+      )
+      expect(slf4j.length, 'jvmMain slf4j-api present').toBeGreaterThan(0)
+    })
+  })
+
   describe('android-library fixture', () => {
     const fixture = path.join(fixturesRoot, 'android-library')
     const output = path.join(fixture, '.socket.facts.json')
