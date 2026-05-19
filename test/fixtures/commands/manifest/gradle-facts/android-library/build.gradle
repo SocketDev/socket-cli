@@ -1,0 +1,32 @@
+// Minimal AGP fixture for socket-facts.init.gradle. Exercises Android's
+// per-variant compile/runtime classpath configurations (debugCompileClasspath,
+// releaseRuntimeClasspath, debugUnitTestRuntimeClasspath, ...) that the Java
+// SourceSetContainer doesn't surface.
+//
+// Requires:
+//   - JDK 17+
+//   - Gradle 8.7+ (matched to the AGP version below)
+//   - An Android SDK reachable via ANDROID_HOME / ANDROID_SDK_ROOT or
+//     local.properties (gitignored).
+plugins {
+    id 'com.android.library' version '8.7.3'
+}
+
+android {
+    namespace 'com.example.socket.androidlib'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.annotation:annotation:1.7.1'
+    testImplementation 'junit:junit:4.13.2'
+}

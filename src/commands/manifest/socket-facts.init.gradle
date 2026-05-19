@@ -128,18 +128,26 @@ allprojects { project ->
       // `testCompileClasspath`, `testRuntimeClasspath`), Kotlin Gradle Plugin
       // (`jvmMainCompileClasspath`, `linuxX64MainRuntimeClasspath`, ...) and
       // AGP per-variant (`debugCompileClasspath`, `releaseRuntimeClasspath`,
-      // `debugUnitTestRuntimeClasspath`, ...). A future revision should
-      // switch to Gradle data-model discovery (source sets, KMP compilations,
-      // AGP variants), but until we have fixtures covering each of those, a
-      // name-based whitelist gives us broad coverage with one code path.
+      // `debugUnitTestRuntimeClasspath`, ...).
+      //
+      // We exclude AGP's instrumented-test classpaths (`*AndroidTest*`)
+      // because their variant resolution requires consumer attributes
+      // (target SDK, device/host runtime) that an init-script-driven
+      // resolution doesn't set, and they produce ambiguity errors at
+      // resolution time. Unit-test classpaths (`*UnitTest*`) resolve fine.
+      // A future revision should switch to Gradle data-model discovery
+      // (source sets, KMP compilations, AGP variants).
       def isClasspath = { String name ->
         def lower = name.toLowerCase()
         lower.endsWith('compileclasspath') || lower.endsWith('runtimeclasspath')
       }
+      def isAndroidInstrumentedTest = { String name ->
+        name.toLowerCase().contains('androidtest')
+      }
       def isTestClasspath = { String name -> name.toLowerCase().contains('test') }
 
       def targetConfigs = project.configurations.findAll {
-        it.canBeResolved && isClasspath(it.name)
+        it.canBeResolved && isClasspath(it.name) && !isAndroidInstrumentedTest(it.name)
       }
 
       // The project being scanned is the SBOM target itself, not one of its
@@ -149,20 +157,29 @@ allprojects { project ->
       // first-level edges so consumers don't need a synthetic root node.
       targetConfigs.each { cfg ->
         def isProd = !isTestClasspath(cfg.name)
-        def lenient = cfg.resolvedConfiguration.lenientConfiguration
-        def cache = [:]
-        lenient.firstLevelModuleDependencies.each { dep ->
-          directIds.addAll(visit(dep, isProd, cache))
-        }
-        lenient.unresolvedModuleDependencies.each { dep ->
-          def coord = [
-            groupId   : dep.selector.group ?: '',
-            artifactId: dep.selector.name,
-            version   : dep.selector.version ?: '',
-            classifier: '',
-            ext       : '',
-          ]
-          directIds.add(upsertNode(coord, isProd))
+        // Per-configuration try/catch: AGP-style configurations can fail with
+        // "variant ambiguity" when resolved from an init-script context that
+        // doesn't carry the consumer attributes AGP sets internally. We log
+        // and continue so a single ambiguous config doesn't sink the whole
+        // facts file — the other classpaths still produce useful output.
+        try {
+          def lenient = cfg.resolvedConfiguration.lenientConfiguration
+          def cache = [:]
+          lenient.firstLevelModuleDependencies.each { dep ->
+            directIds.addAll(visit(dep, isProd, cache))
+          }
+          lenient.unresolvedModuleDependencies.each { dep ->
+            def coord = [
+              groupId   : dep.selector.group ?: '',
+              artifactId: dep.selector.name,
+              version   : dep.selector.version ?: '',
+              classifier: '',
+              ext       : '',
+            ]
+            directIds.add(upsertNode(coord, isProd))
+          }
+        } catch (Exception e) {
+          println "[socket-facts] skipping ${cfg.name}: ${e.message?.readLines()?.first()}"
         }
       }
 

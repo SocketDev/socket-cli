@@ -181,6 +181,37 @@ describeOrSkip('socket-facts.init.gradle', () => {
     })
   })
 
+  describe('android-library fixture', () => {
+    const fixture = path.join(fixturesRoot, 'android-library')
+    const output = path.join(fixture, '.socket.facts.json')
+
+    const androidSdk =
+      process.env['ANDROID_HOME'] || process.env['ANDROID_SDK_ROOT']
+    const androidDescribeOrSkip = androidSdk ? describe : describe.skip
+
+    androidDescribeOrSkip('with ANDROID_HOME set', () => {
+      it('resolves Android variant classpaths (debug + release)', async () => {
+        clean(output)
+        await runFacts(fixture)
+        expect(existsSync(output)).toBe(true)
+        const facts = readFacts(output)
+        // The androidx.annotation dep is declared as `implementation` and
+        // should appear via debug/release runtime classpaths. Its
+        // qualifiers.ext should be 'jar' or 'aar' (annotation 1.7.1 ships
+        // both — Android uses the aar via variant resolution).
+        const annotation = findById(
+          facts,
+          c => c.namespace === 'androidx.annotation' && c.name === 'annotation',
+        )
+        expect(
+          annotation.length,
+          `androidx.annotation:annotation present (got ${facts.components.length} components total)`,
+        ).toBeGreaterThan(0)
+        expect(annotation.some(c => c.direct === true)).toBe(true)
+      })
+    })
+  })
+
   describe('multi-module-java fixture', () => {
     const fixture = path.join(fixturesRoot, 'multi-module-java')
     const rootOut = path.join(fixture, '.socket.facts.json')

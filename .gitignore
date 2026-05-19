@@ -26,6 +26,7 @@ test/fixtures/commands/manifest/gradle-facts/**/.gradle/
 test/fixtures/commands/manifest/gradle-facts/**/build/
 test/fixtures/commands/manifest/gradle-facts/**/.socket.facts.json
 test/fixtures/commands/manifest/gradle-facts/**/pom.xml
+test/fixtures/commands/manifest/gradle-facts/**/local.properties
 
 /.claude/*
 !/.claude/agents/
