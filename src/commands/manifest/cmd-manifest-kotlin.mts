@@ -3,6 +3,7 @@ import path from 'node:path'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
@@ -32,6 +33,11 @@ const config: CliCommandConfig = {
     bin: {
       type: 'string',
       description: 'Location of gradlew binary to use, default: CWD/gradlew',
+    },
+    facts: {
+      type: 'boolean',
+      description:
+        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph instead of generating `pom.xml` files',
     },
     gradleOpts: {
       type: 'string',
@@ -115,7 +121,7 @@ async function run(
     sockJson?.defaults?.manifest?.gradle,
   )
 
-  let { bin, gradleOpts, verbose } = cli.flags
+  let { bin, facts, gradleOpts, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -143,6 +149,14 @@ async function run(
       logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
     } else {
       verbose = false
+    }
+  }
+  if (facts === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.facts !== undefined) {
+      facts = sockJson.defaults?.manifest?.gradle?.facts
+      logger.info(`Using default --facts from ${SOCKET_JSON}:`, facts)
+    } else {
+      facts = false
     }
   }
 
@@ -180,13 +194,25 @@ async function run(
     return
   }
 
+  const parsedGradleOpts = String(gradleOpts || '')
+    .split(' ')
+    .map(s => s.trim())
+    .filter(Boolean)
+
+  if (facts) {
+    await convertGradleToFacts({
+      bin: String(bin),
+      cwd,
+      gradleOpts: parsedGradleOpts,
+      verbose: Boolean(verbose),
+    })
+    return
+  }
+
   await convertGradleToMaven({
     bin: String(bin),
     cwd,
-    gradleOpts: String(gradleOpts || '')
-      .split(' ')
-      .map(s => s.trim())
-      .filter(Boolean),
+    gradleOpts: parsedGradleOpts,
     verbose: Boolean(verbose),
   })
 }
