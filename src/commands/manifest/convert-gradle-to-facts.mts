@@ -53,12 +53,7 @@ export async function convertGradleToFacts({
       logger.log('[VERBOSE] Executing:', [bin], ', args:', commandArgs)
     }
     logger.log(`Generating Socket facts from \`${bin}\` on \`${cwd}\` ...`)
-    const output = await execGradleWithSpinner(rBin, commandArgs, cwd)
-    if (verbose) {
-      logger.group('[VERBOSE] gradle stdout:')
-      logger.log(output.stdout)
-      logger.groupEnd()
-    }
+    const output = await execGradle(rBin, commandArgs, cwd, verbose)
     if (output.code) {
       process.exitCode = 1
       logger.fail(`Gradle exited with exit code ${output.code}`)
@@ -70,6 +65,15 @@ export async function convertGradleToFacts({
       return
     }
     logger.success('Executed gradle successfully')
+    if (verbose) {
+      // Output already streamed; the "Reported exports:" summary lines were
+      // visible inline. No need to repeat them from a captured stdout.
+      logger.log('')
+      logger.log(
+        'Next step is to generate a Scan by running the `socket scan create` command on the same directory.',
+      )
+      return
+    }
     logger.log('Reported exports:')
     output.stdout.replace(
       /^Socket facts file written to: (.*)/gm,
@@ -96,23 +100,35 @@ export async function convertGradleToFacts({
   }
 }
 
-async function execGradleWithSpinner(
+async function execGradle(
   bin: string,
   commandArgs: string[],
   cwd: string,
+  verbose: boolean,
 ): Promise<{ code: number; stdout: string; stderr: string }> {
-  const { spinner } = constants
+  // When verbose, stream gradle stdout/stderr directly to the user's
+  // terminal — no spinner, no capture. The trade-off is that the post-run
+  // "Reported exports:" summary is skipped (the lines were already visible
+  // inline). For huge builds where the user wants to see progress, this is
+  // the right default. Non-verbose runs still get the spinner + summary.
+  if (verbose) {
+    logger.info(
+      '(Running gradle with output streaming. This can take a while.)',
+    )
+    const output = await spawn(bin, commandArgs, { cwd, stdio: 'inherit' })
+    return { code: output.code, stdout: '', stderr: '' }
+  }
 
+  const { spinner } = constants
   let pass = false
   try {
     logger.info(
-      '(Running gradle can take a while, it depends on how long gradlew has to run)',
+      '(Running gradle can take a while, depending on the size of the project)',
     )
     logger.info(
-      '(It will show no output, you can use --verbose to see its output)',
+      '(No live output. Pass --verbose to stream gradle output instead.)',
     )
     spinner.start(`Running gradlew...`)
-
     const output = await spawn(bin, commandArgs, { cwd })
     pass = true
     const { code, stderr, stdout } = output
