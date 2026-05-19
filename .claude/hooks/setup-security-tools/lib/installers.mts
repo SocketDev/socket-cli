@@ -80,6 +80,7 @@ const TRUFFLEHOG = config.tools['trufflehog']!
 const TRIVY = config.tools['trivy']!
 const OPENGREP = config.tools['opengrep']!
 const UV = config.tools['uv']!
+const JANUS = config.tools['janus']!
 
 // ── Shared helpers ──
 
@@ -308,6 +309,12 @@ interface InstallGitHubToolOptions {
   /** Optional path within the archive where the binary lives. Defaults
    *  to the archive root. */
   pathInArchive?: string | undefined
+  /** Optional absolute directory to install the final binary into. When
+   *  set, the binary is copied here (creating parent dirs as needed)
+   *  instead of landing alongside the dlx-cached archive. Use for
+   *  shared cross-fleet locations (e.g. `~/.socket/_wheelhouse/<tool>/`)
+   *  so multiple consumers reuse the same install. */
+  installDir?: string | undefined
 }
 
 /**
@@ -364,10 +371,9 @@ async function installGitHubReleaseTool(
   )
 
   const ext = process.platform === 'win32' ? '.exe' : ''
-  const finalBinPath = path.join(
-    path.dirname(downloadPath),
-    `${finalBinaryName}${ext}`,
-  )
+  const finalDir = opts.installDir ?? path.dirname(downloadPath)
+  await fs.mkdir(finalDir, { recursive: true })
+  const finalBinPath = path.join(finalDir, `${finalBinaryName}${ext}`)
   if (existsSync(finalBinPath)) {
     logger.log(`Cached: ${finalBinPath}`)
     return true
@@ -466,6 +472,38 @@ export async function setupOpengrep(): Promise<boolean> {
     tool: OPENGREP,
     binaryNameInArchive: isWindows ? 'opengrep-core' : 'opengrep',
     finalBinaryName: 'opengrep',
+  })
+}
+
+// ── janus ──
+
+export async function setupJanus(): Promise<boolean> {
+  // janus ships darwin-arm64 only at v1.22.0. On every other platform,
+  // skip the install with a quiet log rather than emitting a warning —
+  // janus isn't a fleet-critical dependency, just a tool some Socket
+  // workflows opt into. Install lands in the shared
+  // ~/.socket/_wheelhouse/janus/<version>/ dir so every fleet member's
+  // hook reuses the same binary.
+  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+  if (!JANUS.checksums?.[platformKey]) {
+    logger.log('=== janus ===')
+    logger.log(`Skipped: no janus build for ${platformKey} (mac-arm64 only)`)
+    return true
+  }
+  const installDir = path.join(
+    getSocketHomePath(),
+    '_wheelhouse',
+    'janus',
+    JANUS.version!,
+    platformKey,
+  )
+  return installGitHubReleaseTool({
+    name: 'janus',
+    displayName: 'janus',
+    tool: JANUS,
+    binaryNameInArchive: 'janus',
+    finalBinaryName: 'janus',
+    installDir,
   })
 }
 
@@ -755,14 +793,16 @@ async function main(): Promise<void> {
   logger.log('')
   const sfwOk = await setupSfw(apiToken)
   logger.log('')
-  // socket-basics SAST + secrets stack — non-fatal if any individual
-  // tool fails (the basics workflow degrades cleanly when a scanner is
-  // absent). Install in parallel since they don't share state.
-  const [trufflehogOk, trivyOk, opengrepOk, uvOk] = await Promise.all([
+  // socket-basics SAST + secrets stack + janus (shared wheelhouse) —
+  // non-fatal if any individual tool fails (the basics workflow degrades
+  // cleanly when a scanner is absent; janus is opt-in and mac-only).
+  // Install in parallel since they don't share state.
+  const [trufflehogOk, trivyOk, opengrepOk, uvOk, janusOk] = await Promise.all([
     setupTrufflehog(),
     setupTrivy(),
     setupOpengrep(),
     setupUv(),
+    setupJanus(),
   ])
   logger.log('')
 
@@ -774,6 +814,7 @@ async function main(): Promise<void> {
   logger.log(`Trivy:       ${trivyOk ? 'ready' : 'FAILED'}`)
   logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
   logger.log(`uv:          ${uvOk ? 'ready' : 'FAILED'}`)
+  logger.log(`janus:       ${janusOk ? 'ready' : 'FAILED'}`)
 
   const allOk =
     agentshieldOk &&
@@ -782,7 +823,8 @@ async function main(): Promise<void> {
     trufflehogOk &&
     trivyOk &&
     opengrepOk &&
-    uvOk
+    uvOk &&
+    janusOk
   if (allOk) {
     logger.log('\nAll security tools ready.')
   } else {

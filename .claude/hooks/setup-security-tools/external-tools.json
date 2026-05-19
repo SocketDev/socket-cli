@@ -214,6 +214,19 @@
           "sha256": "9ee74df98582f37fdd6069e1caac80d2616f9a489f5dbb2b1c152f30be69c58e"
         }
       }
+    },
+    "janus": {
+      "description": "janus — divmain/janus single-binary tool. Installed under the shared Socket Wheelhouse dir so every fleet member sees the same binary. Currently darwin-arm64 only; other platforms will be added as upstream ships builds.",
+      "version": "1.22.0",
+      "repository": "github:divmain/janus",
+      "release": "asset",
+      "installDir": "wheelhouse",
+      "checksums": {
+        "darwin-arm64": {
+          "asset": "janus-aarch64-apple-darwin.tar.gz",
+          "sha256": "bb00f2b8b97e612fc42688e369529f453f3701c7bb4abcf6b0fd7024c38da521"
+        }
+      }
     }
   }
 }
