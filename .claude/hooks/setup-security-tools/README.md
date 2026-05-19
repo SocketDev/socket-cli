@@ -51,13 +51,15 @@ package manager — that transparently route commands through the
 firewall. You make sure that directory is at the front of your PATH;
 nothing else changes about how you use the tools.
 
-**Free vs. Enterprise**: if `SOCKET_API_TOKEN` is set in your env,
+**Free vs. Enterprise**: if `SOCKET_API_KEY` is set in your env,
 `.env`, or `.env.local`, the script installs the enterprise SFW
 build (which adds gem, bundler, nuget, and go support). Otherwise
 it installs the free build (npm, yarn, pnpm, pip, pip3, uv, cargo).
-The legacy name `SOCKET_API_KEY` is still recognized as an alias
-for one cycle so existing dev setups don't break in lockstep with
-the rename — pass either name and the bootstrap reads it.
+`SOCKET_API_KEY` is the primary slot because every Socket tool
+reads it without a fallback chain. `SOCKET_API_TOKEN` (the
+forward-canonical name used in fleet docs / workflow inputs) is
+accepted as a secondary read — pass either and the bootstrap
+resolves it.
 
 ## How to use
 
@@ -67,9 +69,9 @@ pnpm run setup
 
 (That's wired in `package.json` to `node .claude/hooks/setup-security-tools/index.mts`.)
 
-The script will detect whether you have a `SOCKET_API_TOKEN` (or the
-deprecated `SOCKET_API_KEY` alias), ask if unsure, then download
-whatever isn't already cached.
+The script will detect whether you have a `SOCKET_API_KEY` (or the
+forward-canonical `SOCKET_API_TOKEN` alternative), ask if unsure,
+then download whatever isn't already cached.
 
 ## Where each tool lands
 

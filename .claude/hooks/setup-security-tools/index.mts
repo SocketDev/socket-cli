@@ -203,7 +203,7 @@ function checkEdition(): Finding[] {
       {
         kind: 'edition-mismatch',
         message:
-          'SOCKET_API_TOKEN is set but the SFW shim is the free build. ' +
+          'SOCKET_API_KEY is set but the SFW shim is the free build. ' +
           'Run `node .claude/hooks/setup-security-tools/install.mts` to ' +
           'switch to sfw-enterprise (org-aware malware scanning + private ' +
           'package data).',
@@ -271,7 +271,7 @@ async function checkToken401(transcriptPath: string): Promise<Finding[]> {
         {
           kind: 'token-401',
           message:
-            'Socket API returned 401 — the configured SOCKET_API_TOKEN ' +
+            'Socket API returned 401 — the configured SOCKET_API_KEY ' +
             'is invalid, expired, or lacks the required permissions. ' +
             'Run `node .claude/hooks/setup-security-tools/install.mts ' +
             '--rotate` to re-prompt and overwrite the keychain entry.',

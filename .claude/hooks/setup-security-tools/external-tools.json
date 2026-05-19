@@ -6,6 +6,16 @@
       "purl": "pkg:npm/ecc-agentshield@1.4.0",
       "integrity": "sha512-R98OO1Ujyk2lezDLb+iQmMhF6FwTJCHajy3G4FCB6x7wkSTqR9f8+eAelC5KDzYDsGSbc0sOZvjXOOPRBtMpDg=="
     },
+    "cdxgen": {
+      "description": "CycloneDX SBOM generator (consumed by socket scan sbom)",
+      "purl": "pkg:npm/%40cyclonedx/cdxgen@12.0.0",
+      "integrity": "sha512-RRXEZ1eKHcU+Y/2AnfIg30EQRbOmlEpaJddmMVetpXeYpnxDy/yjBM67jXNKkA4iZYjZzfWe7I5GuxckRmuoqg=="
+    },
+    "synp": {
+      "description": "yarn.lock <-> package-lock.json converter (cross-PM interop)",
+      "purl": "pkg:npm/synp@1.9.14",
+      "integrity": "sha512-0e4u7KtrCrMqvuXvDN4nnHSEQbPlONtJuoolRWzut0PfuT2mEOvIFnYFHEpn5YPIOv7S5Ubher0b04jmYRQOzQ=="
+    },
     "zizmor": {
       "description": "GitHub Actions security scanner",
       "version": "1.23.1",

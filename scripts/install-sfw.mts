@@ -11,8 +11,9 @@
  *   `tools.sfw-free` / `tools.sfw-enterprise`. That file is the single fleet
  *   source of truth — every consumer of external tooling reads the same
  *   entries. Usage: pnpm run install:sfw # free flavor pnpm run install:sfw --
- *   --enterprise # requires SOCKET_API_TOKEN pnpm run install:sfw -- --force #
- *   ignore cache, redownload pnpm run install:sfw -- --quiet.
+ *   --enterprise # requires SOCKET_API_KEY (or SOCKET_API_TOKEN) pnpm run
+ *   install:sfw -- --force # ignore cache, redownload pnpm run install:sfw --
+ *   --quiet.
  */
 
 import { existsSync, promises as fsPromises, readFileSync } from 'node:fs'
@@ -100,8 +101,14 @@ async function main(): Promise<void> {
     strict: false,
   })
 
-  if (values['enterprise'] && !process.env['SOCKET_API_TOKEN']) {
-    logger.fail('--enterprise requires SOCKET_API_TOKEN in env')
+  if (
+    values['enterprise'] &&
+    !process.env['SOCKET_API_KEY'] &&
+    !process.env['SOCKET_API_TOKEN']
+  ) {
+    logger.fail(
+      '--enterprise requires SOCKET_API_KEY (or SOCKET_API_TOKEN) in env',
+    )
     process.exit(1)
     return
   }

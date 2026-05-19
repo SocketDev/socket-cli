@@ -7,7 +7,7 @@
  *   to `DPAPI`-encrypted file under `%APPDATA%\\socket-cli\\token.enc` when
  *   neither CredentialManager module nor cmdkey-readback is available. The
  *   token is stored under service name `socket-cli` with account
- *   `SOCKET_API_TOKEN` so it co-exists with other Socket credentials (e.g.
+ *   `SOCKET_API_KEY` so it co-exists with other Socket credentials (e.g.
  *   CLI-managed publish tokens) without collision. **Never read from or write
  *   to a plain file.** The point of this module is to keep the token off the
  *   filesystem entirely. The fallback DPAPI file on Windows is encrypted under
@@ -24,35 +24,29 @@ import path from 'node:path'
 
 const SERVICE = 'socket-cli'
 
-// Canonical fleet slot. Listed first so reads find this entry before
-// the legacy alias, and writes overwrite this entry primarily. The
-// string is the exact account label stored in the platform keychain
-// (`security`'s `-a`, secret-tool's `user`, CredentialManager's
-// account/UserName) AND the env-var name fleet code looks for.
-const SOCKET_API_TOKEN = 'SOCKET_API_TOKEN'
+// Primary slot — universally supported across Socket tools. The string is
+// the exact account label stored in the platform keychain (`security`'s
+// `-a`, secret-tool's `user`, CredentialManager's account/UserName) AND
+// the env-var name every Socket consumer reads. One stored slot, one read.
+const SOCKET_API_KEY = 'SOCKET_API_KEY'
 
-// Legacy alias slot. The on-disk string stays `SOCKET_API_KEY` so sfw
-// (and earlier socket-cli builds) reading the legacy env-var name still
-// resolve a stored value. Writing both slots keeps unmigrated consumers
-// working without a wrapper script. The TS identifier name calls out
-// that this is the legacy form — fleet code should reach for
-// SOCKET_API_TOKEN, never this slot directly.
-const LEGACY_SOCKET_KEY = 'SOCKET_API_KEY'
+// Forward-canonical name. `SOCKET_API_TOKEN` is what fleet docs / workflow
+// inputs / .env.example point at, but the runtime keychain only stores the
+// value under SOCKET_API_KEY (universal support, fewer macOS Keychain ACL
+// prompts during rotation). This constant exists only so DELETE_SLOTS can
+// purge stale `SOCKET_API_TOKEN` keychain entries left by older versions
+// of this hook that mirrored to both slots.
+const FORWARD_CANONICAL_TOKEN = 'SOCKET_API_TOKEN'
 
-// Writes loop in this order so the canonical slot lands first and
-// the legacy alias mirrors it.
-const WRITE_SLOTS = [SOCKET_API_TOKEN, LEGACY_SOCKET_KEY] as const
+// Single write slot. Each `security add-generic-password` call on macOS
+// triggers a Keychain auth prompt — writing one slot keeps rotation to a
+// single prompt. Reads target the same slot.
+const WRITE_SLOTS = [SOCKET_API_KEY] as const
+const READ_SLOTS = [SOCKET_API_KEY] as const
 
-// Reads ONLY hit the canonical slot. The legacy slot is a write-only
-// compatibility mirror — consumers that still resolve `SOCKET_API_KEY`
-// via env get the value from `SOCKET_API_KEY` directly (or from the
-// `LEGACY_SOCKET_KEY` write that happens alongside the canonical one
-// at install time). Reading both on every lookup doubles the number
-// of macOS Keychain ACL prompts for no benefit — when the canonical
-// slot is populated (which install.mts guarantees), the legacy slot
-// is just a duplicate of the same value, and when the canonical
-// slot is empty the legacy slot is empty too (writes always pair).
-const READ_SLOTS = [SOCKET_API_TOKEN] as const
+// Delete clears BOTH slots so a rotate/wipe purges any stale
+// FORWARD_CANONICAL_TOKEN entry left by older versions of this hook.
+const DELETE_SLOTS = [SOCKET_API_KEY, FORWARD_CANONICAL_TOKEN] as const
 
 type Platform = 'darwin' | 'linux' | 'win32' | 'other'
 
@@ -70,10 +64,8 @@ function detectPlatform(): Platform {
  * never throw, so callers can fall through to the next source (env, .env,
  * prompt) cleanly.
  *
- * Tries the canonical account name first, then the legacy alias. The
- * fall-through means an existing keychain entry under SOCKET_API_KEY (from a
- * manual `security add` or a pre-migration install) keeps working until the
- * next write rebuilds both entries.
+ * Reads the primary `SOCKET_API_KEY` slot only. One stored slot, one read, one
+ * macOS Keychain ACL check.
  */
 export function readTokenFromKeychain(): string | undefined {
   const platform_ = detectPlatform()
@@ -104,10 +96,10 @@ export function readTokenFromKeychain(): string | undefined {
  * the caller is in a user-initiated setup flow and should see why persistence
  * failed, not silently continue.
  *
- * Writes the token under BOTH the canonical account (`SOCKET_API_TOKEN`) and
- * the legacy alias (`SOCKET_API_KEY`) so consumers that still read the legacy
- * env-var name (sfw, older socket-cli builds) find it without a wrapper script.
- * The two entries always hold the same value.
+ * Writes the token under the primary account (`SOCKET_API_KEY`) only. Every
+ * Socket tool reads SOCKET_API_KEY without a fallback chain, so one stored slot
+ * covers the whole surface — and one slot keeps macOS rotation to a single
+ * Keychain auth prompt.
  */
 export function writeTokenToKeychain(token: string): void {
   if (!token || typeof token !== 'string') {
@@ -139,15 +131,14 @@ export function writeTokenToKeychain(token: string): void {
 
 /**
  * Remove the token from the platform's secure store. Idempotent — succeeds
- * whether the entry exists or not. Clears both the canonical account and the
- * legacy alias.
+ * whether the entry exists or not. Clears both the primary account
+ * (`SOCKET_API_KEY`) and the forward-canonical mirror (`SOCKET_API_TOKEN`), so
+ * a rotate/wipe purges stale entries left by older versions of this hook that
+ * mirrored to both slots.
  */
 export function deleteTokenFromKeychain(): void {
   const platform_ = detectPlatform()
-  // Delete loops through BOTH slots so a rotate/wipe clears the
-  // legacy mirror too (otherwise the legacy entry would persist
-  // until something overwrites it).
-  for (const slot of WRITE_SLOTS) {
+  for (const slot of DELETE_SLOTS) {
     switch (platform_) {
       case 'darwin':
         deleteMacOS(slot)
@@ -455,7 +446,7 @@ export function keychainAvailable(): {
       return {
         available: false,
         toolName: 'n/a',
-        installHint: `Platform ${platform()} is not supported. Set SOCKET_API_TOKEN in your shell rc.`,
+        installHint: `Platform ${platform()} is not supported. Set SOCKET_API_KEY in your shell rc.`,
       }
   }
 }

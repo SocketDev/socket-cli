@@ -8,8 +8,9 @@
 //    correct binary, verifies SHA-256, cached via the dlx system.
 // 3. SFW (Socket Firewall) — intercepts package manager commands to scan
 //    for malware. Downloads binary, verifies SHA-256, creates PATH shims.
-//    Enterprise vs free determined by SOCKET_API_TOKEN (canonical) or
-//    SOCKET_API_KEY (deprecated alias) in env / .env / .env.local.
+//    Enterprise vs free determined by SOCKET_API_KEY (primary; universally
+//    supported) or SOCKET_API_TOKEN (forward-canonical; accepted as secondary)
+//    in env / .env / .env.local.
 
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -73,6 +74,8 @@ const rawConfig = JSON.parse(readFileSync(configPath, 'utf8'))
 const config = parseSchema(configSchema, rawConfig)
 
 const AGENTSHIELD = config.tools['agentshield']!
+const CDXGEN = config.tools['cdxgen']!
+const SYNP = config.tools['synp']!
 const ZIZMOR = config.tools['zizmor']!
 const SFW_FREE = config.tools['sfw-free']!
 const SFW_ENTERPRISE = config.tools['sfw-enterprise']!
@@ -85,11 +88,11 @@ const JANUS = config.tools['janus']!
 // ── Shared helpers ──
 
 function findApiToken(): string | undefined {
-  // SOCKET_API_TOKEN is the canonical env var; SOCKET_API_KEY is the
-  // deprecated alias kept readable for one cycle so existing dev
-  // setups don't break in lockstep with the rename.
+  // SOCKET_API_KEY is the primary slot (universally supported across Socket
+  // tools); SOCKET_API_TOKEN is the forward-canonical name accepted as a
+  // secondary read.
   const envToken =
-    process.env['SOCKET_API_TOKEN'] ?? process.env['SOCKET_API_KEY']
+    process.env['SOCKET_API_KEY'] ?? process.env['SOCKET_API_TOKEN']
   if (envToken) return envToken
   const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
   for (const filename of ['.env.local', '.env']) {
@@ -98,8 +101,8 @@ function findApiToken(): string | undefined {
       try {
         const content = readFileSync(filepath, 'utf8')
         const match =
-          /^SOCKET_API_TOKEN\s*=\s*(.+)$/m.exec(content) ??
-          /^SOCKET_API_KEY\s*=\s*(.+)$/m.exec(content)
+          /^SOCKET_API_KEY\s*=\s*(.+)$/m.exec(content) ??
+          /^SOCKET_API_TOKEN\s*=\s*(.+)$/m.exec(content)
         if (match) {
           return match[1]!
             .replace(/\s*#.*$/, '') // Strip inline comments.
@@ -188,6 +191,76 @@ export async function setupAgentShield(): Promise<boolean> {
     logger.log(installed ? `Installed: ${binaryPath}` : `Cached: ${binaryPath}`)
   }
   return true
+}
+
+// ── Generic npm-tool installer (shared by cdxgen + synp) ──
+
+interface NpmToolInstallOptions {
+  /** Logical tool name (used for log banner + bin name). */
+  readonly name: string
+  /** Human-readable display name for log output. */
+  readonly displayName: string
+  /** Tool config entry from external-tools.json (must carry `purl`). */
+  readonly tool: (typeof config.tools)[string]
+}
+
+/**
+ * Install an npm-only tool via dlx. Mirrors the upper half of
+ * `setupAgentShield()` — purl → package spec → `downloadPackage`. No
+ * version-mismatch verification: the dlx layer SRI-verifies the tarball
+ * against the `integrity` from external-tools.json, which is the
+ * authoritative answer (binary --version self-reports can drift from
+ * package.json — see the AgentShield comment for the documented case).
+ */
+async function setupNpmTool(opts: NpmToolInstallOptions): Promise<boolean> {
+  const { displayName, name, tool } = opts
+  logger.log(`=== ${displayName} ===`)
+  if (!tool.purl) {
+    logger.warn(`${displayName}: missing purl in external-tools.json`)
+    return false
+  }
+  const purl = PackageURL.fromString(tool.purl)
+  if (purl.type !== 'npm') {
+    throw new Error(
+      `${displayName}: unsupported PURL type "${purl.type}" — only npm is supported`,
+    )
+  }
+  const npmPackage = purl.namespace
+    ? `${purl.namespace}/${purl.name}`
+    : purl.name!
+  const version = tool.version ?? purl.version
+  const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
+  logger.log(`Installing ${packageSpec} via dlx...`)
+  const { binaryPath, installed } = await downloadPackage({
+    package: packageSpec,
+    binaryName: name,
+  })
+  logger.log(
+    installed
+      ? `Installed: ${binaryPath}${version ? ` (${version})` : ''}`
+      : `Cached: ${binaryPath}${version ? ` (${version})` : ''}`,
+  )
+  return true
+}
+
+// ── cdxgen ──
+
+export async function setupCdxgen(): Promise<boolean> {
+  return setupNpmTool({
+    name: 'cdxgen',
+    displayName: 'cdxgen',
+    tool: CDXGEN,
+  })
+}
+
+// ── synp ──
+
+export async function setupSynp(): Promise<boolean> {
+  return setupNpmTool({
+    name: 'synp',
+    displayName: 'synp',
+    tool: SYNP,
+  })
 }
 
 // ── Zizmor ──
@@ -293,45 +366,57 @@ export async function setupZizmor(): Promise<boolean> {
 type ToolEntry = (typeof config.tools)[string]
 
 interface InstallGitHubToolOptions {
-  /** Logical tool name (used for log banner + cache key). */
+  /**
+   * Logical tool name (used for log banner + cache key).
+   */
   name: string
-  /** Display name for human-readable logs. */
+  /**
+   * Display name for human-readable logs.
+   */
   displayName: string
-  /** Tool config entry from external-tools.json. */
+  /**
+   * Tool config entry from external-tools.json.
+   */
   tool: ToolEntry
-  /** Name of the binary inside the archive (without extension). For
-   *  bare-binary assets (no archive), pass the same string used as the
-   *  asset name — the helper detects and skips extraction. */
+  /**
+   * Name of the binary inside the archive (without extension). For bare-binary
+   * assets (no archive), pass the same string used as the asset name — the
+   * helper detects and skips extraction.
+   */
   binaryNameInArchive: string
-  /** Final binary name on disk (without extension). Usually same as
-   *  `binaryNameInArchive`. */
+  /**
+   * Final binary name on disk (without extension). Usually same as
+   * `binaryNameInArchive`.
+   */
   finalBinaryName: string
-  /** Optional path within the archive where the binary lives. Defaults
-   *  to the archive root. */
+  /**
+   * Optional path within the archive where the binary lives. Defaults to the
+   * archive root.
+   */
   pathInArchive?: string | undefined
-  /** Optional absolute directory to install the final binary into. When
-   *  set, the binary is copied here (creating parent dirs as needed)
-   *  instead of landing alongside the dlx-cached archive. Use for
-   *  shared cross-fleet locations (e.g. `~/.socket/_wheelhouse/<tool>/`)
-   *  so multiple consumers reuse the same install. */
+  /**
+   * Optional absolute directory to install the final binary into. When set, the
+   * binary is copied here (creating parent dirs as needed) instead of landing
+   * alongside the dlx-cached archive. Use for shared cross-fleet locations
+   * (e.g. `~/.socket/_wheelhouse/<tool>/`) so multiple consumers reuse the same
+   * install.
+   */
   installDir?: string | undefined
 }
 
 /**
- * Common path for tools downloaded from GitHub Releases: PATH check →
- * download + sha256-verify → cache hit / extract → chmod 0o755.
+ * Common path for tools downloaded from GitHub Releases: PATH check → download
+ * + sha256-verify → cache hit / extract → chmod 0o755.
  *
- * Handles three archive shapes:
- *   - `.tar.gz` / `.tgz` → tar xzf
- *   - `.zip`            → PowerShell Expand-Archive (Windows) or unzip
- *   - bare binary       → copy as-is (used by opengrep manylinux/osx assets)
+ * Handles three archive shapes: - `.tar.gz` / `.tgz` → tar xzf - `.zip` →
+ * PowerShell Expand-Archive (Windows) or unzip - bare binary → copy as-is (used
+ * by opengrep manylinux/osx assets)
  */
 async function installGitHubReleaseTool(
   options: InstallGitHubToolOptions,
 ): Promise<boolean> {
   const opts = { __proto__: null, ...options } as InstallGitHubToolOptions
-  const { binaryNameInArchive, displayName, finalBinaryName, name, tool } =
-    opts
+  const { binaryNameInArchive, displayName, finalBinaryName, name, tool } = opts
   logger.log(`=== ${displayName} ===`)
 
   // Check PATH first (e.g. brew install).
@@ -530,9 +615,9 @@ export async function setupUv(): Promise<boolean> {
 }
 
 /**
- * Variant of `installGitHubReleaseTool` for projects that don't tag
- * with a `v` prefix (astral-sh/uv). Takes an explicit `tag` field
- * instead of synthesizing one from `tool.version`.
+ * Variant of `installGitHubReleaseTool` for projects that don't tag with a `v`
+ * prefix (astral-sh/uv). Takes an explicit `tag` field instead of synthesizing
+ * one from `tool.version`.
  */
 async function installGitHubReleaseToolWithTag(
   options: InstallGitHubToolOptions & { tag: string },
@@ -540,14 +625,8 @@ async function installGitHubReleaseToolWithTag(
   const opts = { __proto__: null, ...options } as InstallGitHubToolOptions & {
     tag: string
   }
-  const {
-    binaryNameInArchive,
-    displayName,
-    finalBinaryName,
-    name,
-    tag,
-    tool,
-  } = opts
+  const { binaryNameInArchive, displayName, finalBinaryName, name, tag, tool } =
+    opts
   logger.log(`=== ${displayName} ===`)
 
   const systemBin = whichSync(finalBinaryName, { nothrow: true })
@@ -691,29 +770,30 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
     ]
     if (isEnterprise) {
       // Read API token from env at runtime — never embed secrets in
-      // scripts. SOCKET_API_TOKEN is canonical; SOCKET_API_KEY is the
-      // deprecated alias kept for one cycle. Whichever name is set
-      // gets exported under both so downstream tools see the value
+      // scripts. SOCKET_API_KEY is the primary slot (universally
+      // supported); SOCKET_API_TOKEN is the forward-canonical name
+      // accepted as a secondary read. Whichever name is set gets
+      // exported under both so downstream tools see the value
       // regardless of which name they read.
       bashLines.push(
-        'if [ -z "$SOCKET_API_TOKEN" ] && [ -n "$SOCKET_API_KEY" ]; then',
-        '  SOCKET_API_TOKEN="$SOCKET_API_KEY"',
+        'if [ -z "$SOCKET_API_KEY" ] && [ -n "$SOCKET_API_TOKEN" ]; then',
+        '  SOCKET_API_KEY="$SOCKET_API_TOKEN"',
         'fi',
-        'if [ -z "$SOCKET_API_TOKEN" ]; then',
+        'if [ -z "$SOCKET_API_KEY" ]; then',
         '  for f in .env.local .env; do',
         '    if [ -f "$f" ]; then',
-        '      _val="$(grep -m1 "^SOCKET_API_TOKEN\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^[\"\\x27]\\(.*\\)[\"\\x27]$/\\1/")"',
+        '      _val="$(grep -m1 "^SOCKET_API_KEY\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^[\"\\x27]\\(.*\\)[\"\\x27]$/\\1/")"',
         '      if [ -z "$_val" ]; then',
-        '        _val="$(grep -m1 "^SOCKET_API_KEY\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^[\"\\x27]\\(.*\\)[\"\\x27]$/\\1/")"',
+        '        _val="$(grep -m1 "^SOCKET_API_TOKEN\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^[\"\\x27]\\(.*\\)[\"\\x27]$/\\1/")"',
         '      fi',
-        '      if [ -n "$_val" ]; then SOCKET_API_TOKEN="$_val"; break; fi',
+        '      if [ -n "$_val" ]; then SOCKET_API_KEY="$_val"; break; fi',
         '    fi',
         '  done',
         'fi',
-        'if [ -n "$SOCKET_API_TOKEN" ]; then',
-        '  export SOCKET_API_TOKEN',
-        '  SOCKET_API_KEY="$SOCKET_API_TOKEN"',
+        'if [ -n "$SOCKET_API_KEY" ]; then',
         '  export SOCKET_API_KEY',
+        '  SOCKET_API_TOKEN="$SOCKET_API_KEY"',
+        '  export SOCKET_API_TOKEN',
         'fi',
       )
     }
@@ -733,25 +813,26 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
       let cmdApiTokenBlock = ''
       if (isEnterprise) {
         // Read API token from .env files at runtime — mirrors the bash
-        // shim logic. SOCKET_API_TOKEN is canonical; SOCKET_API_KEY is
-        // the deprecated alias kept for one cycle.
+        // shim logic. SOCKET_API_KEY is the primary slot (universally
+        // supported); SOCKET_API_TOKEN is the forward-canonical name
+        // accepted as a secondary read.
         cmdApiTokenBlock =
-          `if not defined SOCKET_API_TOKEN (\r\n` +
-          `  if defined SOCKET_API_KEY set "SOCKET_API_TOKEN=%SOCKET_API_KEY%"\r\n` +
+          `if not defined SOCKET_API_KEY (\r\n` +
+          `  if defined SOCKET_API_TOKEN set "SOCKET_API_KEY=%SOCKET_API_TOKEN%"\r\n` +
           `)\r\n` +
-          `if not defined SOCKET_API_TOKEN (\r\n` +
+          `if not defined SOCKET_API_KEY (\r\n` +
           `  for %%F in (.env.local .env) do (\r\n` +
           `    if exist "%%F" (\r\n` +
-          `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_TOKEN" "%%F"') do (\r\n` +
-          `        set "SOCKET_API_TOKEN=%%B"\r\n` +
-          `      )\r\n` +
           `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_KEY" "%%F"') do (\r\n` +
-          `        if not defined SOCKET_API_TOKEN set "SOCKET_API_TOKEN=%%B"\r\n` +
+          `        set "SOCKET_API_KEY=%%B"\r\n` +
+          `      )\r\n` +
+          `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_TOKEN" "%%F"') do (\r\n` +
+          `        if not defined SOCKET_API_KEY set "SOCKET_API_KEY=%%B"\r\n` +
           `      )\r\n` +
           `    )\r\n` +
           `  )\r\n` +
           `)\r\n` +
-          `if defined SOCKET_API_TOKEN set "SOCKET_API_KEY=%SOCKET_API_TOKEN%"\r\n`
+          `if defined SOCKET_API_KEY set "SOCKET_API_TOKEN=%SOCKET_API_KEY%"\r\n`
       }
       const cmdContent =
         `@echo off\r\n` +
@@ -793,17 +874,22 @@ async function main(): Promise<void> {
   logger.log('')
   const sfwOk = await setupSfw(apiToken)
   logger.log('')
-  // socket-basics SAST + secrets stack + janus (shared wheelhouse) —
-  // non-fatal if any individual tool fails (the basics workflow degrades
-  // cleanly when a scanner is absent; janus is opt-in and mac-only).
-  // Install in parallel since they don't share state.
-  const [trufflehogOk, trivyOk, opengrepOk, uvOk, janusOk] = await Promise.all([
-    setupTrufflehog(),
-    setupTrivy(),
-    setupOpengrep(),
-    setupUv(),
-    setupJanus(),
-  ])
+  // socket-basics SAST + secrets stack + janus (shared wheelhouse) +
+  // npm-only tools (cdxgen, synp) — non-fatal if any individual tool
+  // fails (the basics workflow degrades cleanly when a scanner is
+  // absent; janus is opt-in and mac-only; cdxgen + synp are consumed
+  // by socket-cli scan/lockfile codepaths). Install in parallel since
+  // they don't share state.
+  const [trufflehogOk, trivyOk, opengrepOk, uvOk, janusOk, cdxgenOk, synpOk] =
+    await Promise.all([
+      setupTrufflehog(),
+      setupTrivy(),
+      setupOpengrep(),
+      setupUv(),
+      setupJanus(),
+      setupCdxgen(),
+      setupSynp(),
+    ])
   logger.log('')
 
   logger.log('=== Summary ===')
@@ -815,6 +901,8 @@ async function main(): Promise<void> {
   logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
   logger.log(`uv:          ${uvOk ? 'ready' : 'FAILED'}`)
   logger.log(`janus:       ${janusOk ? 'ready' : 'FAILED'}`)
+  logger.log(`cdxgen:      ${cdxgenOk ? 'ready' : 'FAILED'}`)
+  logger.log(`synp:        ${synpOk ? 'ready' : 'FAILED'}`)
 
   const allOk =
     agentshieldOk &&
@@ -824,7 +912,9 @@ async function main(): Promise<void> {
     trivyOk &&
     opengrepOk &&
     uvOk &&
-    janusOk
+    janusOk &&
+    cdxgenOk &&
+    synpOk
   if (allOk) {
     logger.log('\nAll security tools ready.')
   } else {

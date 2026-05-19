@@ -27,7 +27,13 @@ PROJECTS="${PROJECTS:-$HOME/projects}"
 # socket-hook: allow cross-repo
 WH_SCRIPT="${PROJECTS}/socket-wheelhouse/scripts/sync-scaffolding/cli.mts"
 
-PATH="/Users/jdalton/.nvm/versions/node/v26.1.0/bin:$PATH"
+# Prepend the active Node version's bin dir to PATH so the `node` invoked by
+# the wheelhouse CLI matches the operator's expected toolchain (avoids the
+# pre-commit hook's "wrong Node" fallback). Honors NVM_BIN when set; otherwise
+# leaves PATH alone so a Volta / homebrew / system Node still resolves.
+if [ -n "$NVM_BIN" ]; then
+  PATH="$NVM_BIN:$PATH"
+fi
 
 if [ ! -f "$FLEET_REPOS_FILE" ]; then
   echo "fleet-repos.txt not found at $FLEET_REPOS_FILE" >&2

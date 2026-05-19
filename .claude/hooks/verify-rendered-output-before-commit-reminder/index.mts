@@ -212,7 +212,9 @@ async function main(): Promise<void> {
   }
 
   const lines: string[] = []
-  lines.push('[verify-rendered-output-before-commit-reminder] About to commit UI/render files')
+  lines.push(
+    '[verify-rendered-output-before-commit-reminder] About to commit UI/render files',
+  )
   lines.push('')
   lines.push('  UI files staged:')
   for (const f of uiStaged.slice(0, 5)) {
