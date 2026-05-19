@@ -1,0 +1,10 @@
+socket-addon
+socket-btm
+socket-cli
+socket-lib
+socket-mcp
+socket-packageurl-js
+socket-registry
+socket-sdk-js
+socket-sdxgen
+socket-stuie
