@@ -517,7 +517,7 @@ describe('SOCKET_BAZEL_FORCE_QUERY_FALLBACK', () => {
 
     expect(result.ok).toBe(true)
     const manifest = JSON.parse(
-      readFileSync(path.join(tmp, '_whole_repo', 'maven_install.json'), 'utf8'),
+      readFileSync(path.join(tmp, 'maven_install.json'), 'utf8'),
     )
     // The JSON parser ran: from-json coord is present, from-regex is absent.
     expect(manifest.artifacts['com.example:from-json']).toBeDefined()
@@ -539,7 +539,7 @@ describe('SOCKET_BAZEL_FORCE_QUERY_FALLBACK', () => {
 
     expect(result.ok).toBe(true)
     const manifest = JSON.parse(
-      readFileSync(path.join(tmp, '_whole_repo', 'maven_install.json'), 'utf8'),
+      readFileSync(path.join(tmp, 'maven_install.json'), 'utf8'),
     )
     // The regex parser ran: from-regex coord is present, from-json is absent.
     expect(manifest.artifacts['com.example:from-regex']).toBeDefined()
@@ -551,61 +551,53 @@ describe('SOCKET_BAZEL_FORCE_QUERY_FALLBACK', () => {
     ['empty string', ''],
     ['"0"', '0'],
     ['"false"', 'false'],
-  ])(
-    'treats %s as falsy and uses the fast path',
-    async (_label, value) => {
-      if (value === undefined) {
-        delete process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK']
-      } else {
-        process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK'] = value
-      }
-
-      const result = await extractBazelToMaven({
-        bazelFlags: undefined,
-        bazelOutputBase: tmp,
-        bazelRc: undefined,
-        bin: undefined,
-        cwd: tmp,
-        out: tmp,
-        verbose: false,
-      })
-
-      expect(result.ok).toBe(true)
-      const manifest = JSON.parse(
-        readFileSync(
-          path.join(tmp, '_whole_repo', 'maven_install.json'),
-          'utf8',
-        ),
-      )
-      expect(manifest.artifacts['com.example:from-json']).toBeDefined()
-      expect(manifest.artifacts['com.example:from-regex']).toBeUndefined()
-    },
-  )
-
-  it.each([['"1"', '1'], ['"true"', 'true'], ['"YES"', 'YES']])(
-    'treats %s as truthy and forces the fallback',
-    async (_label, value) => {
+  ])('treats %s as falsy and uses the fast path', async (_label, value) => {
+    if (value === undefined) {
+      delete process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK']
+    } else {
       process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK'] = value
+    }
 
-      const result = await extractBazelToMaven({
-        bazelFlags: undefined,
-        bazelOutputBase: tmp,
-        bazelRc: undefined,
-        bin: undefined,
-        cwd: tmp,
-        out: tmp,
-        verbose: false,
-      })
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: tmp,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
 
-      expect(result.ok).toBe(true)
-      const manifest = JSON.parse(
-        readFileSync(
-          path.join(tmp, '_whole_repo', 'maven_install.json'),
-          'utf8',
-        ),
-      )
-      expect(manifest.artifacts['com.example:from-regex']).toBeDefined()
-      expect(manifest.artifacts['com.example:from-json']).toBeUndefined()
-    },
-  )
+    expect(result.ok).toBe(true)
+    const manifest = JSON.parse(
+      readFileSync(path.join(tmp, 'maven_install.json'), 'utf8'),
+    )
+    expect(manifest.artifacts['com.example:from-json']).toBeDefined()
+    expect(manifest.artifacts['com.example:from-regex']).toBeUndefined()
+  })
+
+  it.each([
+    ['"1"', '1'],
+    ['"true"', 'true'],
+    ['"YES"', 'YES'],
+  ])('treats %s as truthy and forces the fallback', async (_label, value) => {
+    process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK'] = value
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: tmp,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(result.ok).toBe(true)
+    const manifest = JSON.parse(
+      readFileSync(path.join(tmp, 'maven_install.json'), 'utf8'),
+    )
+    expect(manifest.artifacts['com.example:from-regex']).toBeDefined()
+    expect(manifest.artifacts['com.example:from-json']).toBeUndefined()
+  })
 })
