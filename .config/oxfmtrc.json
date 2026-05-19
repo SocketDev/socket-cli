@@ -83,7 +83,7 @@
     "**/scripts/install-claude-plugins.mts",
     "**/scripts/install-git-hooks.mts",
     "**/scripts/install-sfw.mts",
-    "**/scripts/install-token-minifier.mts",
+    "**/scripts/janus.mts",
     "**/scripts/lint-github-settings.mts",
     "**/scripts/lockstep-emit-schema.mts",
     "**/scripts/lockstep-schema.mts",
