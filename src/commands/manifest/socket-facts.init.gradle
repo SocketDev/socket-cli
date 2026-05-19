@@ -49,17 +49,24 @@ allprojects { project ->
         parts.join(':')
       }
 
-      // Single source of truth: id -> { coord, children, prod }.
-      // `prod=true` once the artifact has been observed in a non-test
-      // configuration; final `dev` is `!prod`.
+      // Single source of truth: id -> { coord, children, prod, nonTooling }.
+      // We accumulate two independent "seen as non-X" flags across all the
+      // configurations an artifact appears in:
+      //   - `prod`       — seen in a non-test configuration → `dev = !prod`
+      //   - `nonTooling` — seen in a compile/runtime classpath (not in
+      //                    annotation-processor / linter / build-tooling
+      //                    configurations) → `tooling = !nonTooling`
+      // The "any non-X clears X" rule means a dep that appears as both a
+      // production classpath dep and an annotation processor will be emitted
+      // as `dev: undefined, tooling: undefined` (neither flag set).
       def nodes = [:]
       def directIds = [] as Set
 
-      def upsertNode = { Map coord, boolean isProd ->
+      def upsertNode = { Map coord, boolean isProd, boolean isNonTooling ->
         def id = coordId(coord)
         def node = nodes[id]
         if (node == null) {
-          node = [coord: coord, children: [] as Set, prod: false]
+          node = [coord: coord, children: [] as Set, prod: false, nonTooling: false]
           nodes[id] = node
         } else if (!node.coord.ext && coord.ext) {
           // Upgrade to the variant whose Gradle artifact has a real packaging
@@ -70,6 +77,9 @@ allprojects { project ->
         }
         if (isProd) {
           node.prod = true
+        }
+        if (isNonTooling) {
+          node.nonTooling = true
         }
         id
       }
@@ -92,7 +102,7 @@ allprojects { project ->
       // transitive closure. `cache` is keyed by ResolvedDependency identity
       // and short-circuits revisits in diamond/cyclic graphs.
       def visit
-      visit = { dep, boolean isProd, Map cache ->
+      visit = { dep, boolean isProd, boolean isNonTooling, Map cache ->
         if (cache.containsKey(dep)) {
           return cache[dep]
         }
@@ -105,16 +115,16 @@ allprojects { project ->
         // jar variant under `runtimeClasspath` is what we want to surface.
         def artifacts = dep.moduleArtifacts.findAll { !it.file.isDirectory() }
         if (artifacts.isEmpty()) {
-          producedIds << upsertNode(coordFromArtifact(dep, null), isProd)
+          producedIds << upsertNode(coordFromArtifact(dep, null), isProd, isNonTooling)
         } else {
           artifacts.each { a ->
-            producedIds << upsertNode(coordFromArtifact(dep, a), isProd)
+            producedIds << upsertNode(coordFromArtifact(dep, a), isProd, isNonTooling)
           }
         }
 
         def childIds = [] as Set
         dep.children.each { child ->
-          childIds.addAll(visit(child, isProd, cache))
+          childIds.addAll(visit(child, isProd, isNonTooling, cache))
         }
         producedIds.each { pid ->
           nodes[pid].children.addAll(childIds)
@@ -122,13 +132,18 @@ allprojects { project ->
         producedIds
       }
 
-      // Configuration selection by name pattern. We match the conventional
-      // suffixes used across Gradle plugins for resolvable classpath configs:
-      // Java (`compileClasspath`, `runtimeClasspath`,
-      // `testCompileClasspath`, `testRuntimeClasspath`), Kotlin Gradle Plugin
-      // (`jvmMainCompileClasspath`, `linuxX64MainRuntimeClasspath`, ...) and
-      // AGP per-variant (`debugCompileClasspath`, `releaseRuntimeClasspath`,
-      // `debugUnitTestRuntimeClasspath`, ...).
+      // We walk every resolvable configuration the project exposes — not just
+      // compile/runtime classpaths — so tooling deps (annotation processors,
+      // linters, code-gen plugins) land in the output too. Each artifact gets
+      // two flags:
+      //
+      //   - `dev`     ← inverse of "seen in any non-test configuration"
+      //   - `tooling` ← inverse of "seen in any compile/runtime classpath"
+      //
+      // An artifact only carries `tooling: true` when it ONLY appears in
+      // non-classpath configurations (annotation processors et al). Downstream
+      // reachability scanners skip tooling-only artifacts; everything else is
+      // still scanned for general (non-reachability) alerts.
       //
       // We exclude AGP's instrumented-test classpaths (`*AndroidTest*`)
       // because their variant resolution requires consumer attributes
@@ -144,10 +159,10 @@ allprojects { project ->
       def isAndroidInstrumentedTest = { String name ->
         name.toLowerCase().contains('androidtest')
       }
-      def isTestClasspath = { String name -> name.toLowerCase().contains('test') }
+      def isTestConfig = { String name -> name.toLowerCase().contains('test') }
 
       def targetConfigs = project.configurations.findAll {
-        it.canBeResolved && isClasspath(it.name) && !isAndroidInstrumentedTest(it.name)
+        it.canBeResolved && !isAndroidInstrumentedTest(it.name)
       }
 
       // The project being scanned is the SBOM target itself, not one of its
@@ -156,7 +171,8 @@ allprojects { project ->
       // dependency"). We emit only the deps; `directIds` carries the
       // first-level edges so consumers don't need a synthetic root node.
       targetConfigs.each { cfg ->
-        def isProd = !isTestClasspath(cfg.name)
+        def isProd = !isTestConfig(cfg.name)
+        def isNonTooling = isClasspath(cfg.name)
         // Per-configuration try/catch: AGP-style configurations can fail with
         // "variant ambiguity" when resolved from an init-script context that
         // doesn't carry the consumer attributes AGP sets internally. We log
@@ -166,7 +182,7 @@ allprojects { project ->
           def lenient = cfg.resolvedConfiguration.lenientConfiguration
           def cache = [:]
           lenient.firstLevelModuleDependencies.each { dep ->
-            directIds.addAll(visit(dep, isProd, cache))
+            directIds.addAll(visit(dep, isProd, isNonTooling, cache))
           }
           lenient.unresolvedModuleDependencies.each { dep ->
             def coord = [
@@ -176,7 +192,7 @@ allprojects { project ->
               classifier: '',
               ext       : '',
             ]
-            directIds.add(upsertNode(coord, isProd))
+            directIds.add(upsertNode(coord, isProd, isNonTooling))
           }
         } catch (Exception e) {
           println "[socket-facts] skipping ${cfg.name}: ${e.message?.readLines()?.first()}"
@@ -209,6 +225,9 @@ allprojects { project ->
         }
         if (!node.prod) {
           component.dev = true
+        }
+        if (!node.nonTooling) {
+          component.tooling = true
         }
         if (!node.children.isEmpty()) {
           component.dependencies = (node.children as List).sort()

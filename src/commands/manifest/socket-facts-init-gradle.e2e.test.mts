@@ -20,6 +20,7 @@ type FactsArtifact = {
   id: string
   direct?: boolean
   dev?: boolean
+  tooling?: boolean
   dependencies?: string[]
 }
 
@@ -142,6 +143,39 @@ describeOrSkip('socket-facts.init.gradle', () => {
       )
       expect(junit.length).toBeGreaterThan(0)
       expect(junit.some(c => c.dev === true)).toBe(true)
+    })
+
+    it('flags annotation-processor deps as tooling, prod deps not as tooling', async () => {
+      const facts = readFacts(output)
+      // Lombok is declared on `annotationProcessor` only — must carry
+      // tooling: true.
+      const lombok = findById(
+        facts,
+        c => c.namespace === 'org.projectlombok' && c.name === 'lombok',
+      )
+      expect(lombok.length, 'lombok artifact present').toBeGreaterThan(0)
+      expect(lombok.some(c => c.tooling === true)).toBe(true)
+      // Guava is `api` (production) — must NOT carry tooling.
+      const guava = findById(
+        facts,
+        c => c.namespace === 'com.google.guava' && c.name === 'guava',
+      )
+      expect(guava.length).toBeGreaterThan(0)
+      for (const c of guava) {
+        expect(
+          c.tooling,
+          `guava should not be tooling: ${JSON.stringify(c)}`,
+        ).not.toBe(true)
+      }
+      // Junit is `testImplementation` — must be dev:true but not tooling.
+      const junit = findById(
+        facts,
+        c => c.namespace === 'junit' && c.name === 'junit',
+      )
+      expect(junit.length).toBeGreaterThan(0)
+      for (const c of junit) {
+        expect(c.tooling).not.toBe(true)
+      }
     })
 
     it('records dependency edges by artifact id', async () => {
