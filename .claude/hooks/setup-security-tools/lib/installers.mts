@@ -196,21 +196,27 @@ export async function setupAgentShield(): Promise<boolean> {
 // ── Generic npm-tool installer (shared by cdxgen + synp) ──
 
 interface NpmToolInstallOptions {
-  /** Logical tool name (used for log banner + bin name). */
+  /**
+   * Logical tool name (used for log banner + bin name).
+   */
   readonly name: string
-  /** Human-readable display name for log output. */
+  /**
+   * Human-readable display name for log output.
+   */
   readonly displayName: string
-  /** Tool config entry from external-tools.json (must carry `purl`). */
+  /**
+   * Tool config entry from external-tools.json (must carry `purl`).
+   */
   readonly tool: (typeof config.tools)[string]
 }
 
 /**
  * Install an npm-only tool via dlx. Mirrors the upper half of
  * `setupAgentShield()` — purl → package spec → `downloadPackage`. No
- * version-mismatch verification: the dlx layer SRI-verifies the tarball
- * against the `integrity` from external-tools.json, which is the
- * authoritative answer (binary --version self-reports can drift from
- * package.json — see the AgentShield comment for the documented case).
+ * version-mismatch verification: the dlx layer SRI-verifies the tarball against
+ * the `integrity` from external-tools.json, which is the authoritative answer
+ * (binary --version self-reports can drift from package.json — see the
+ * AgentShield comment for the documented case).
  */
 async function setupNpmTool(opts: NpmToolInstallOptions): Promise<boolean> {
   const { displayName, name, tool } = opts
@@ -888,41 +894,41 @@ async function main(): Promise<void> {
   // absent; janus is opt-in and mac-only; cdxgen + synp are consumed
   // by socket-cli scan/lockfile codepaths). Install in parallel since
   // they don't share state.
-  const [trufflehogOk, trivyOk, opengrepOk, uvOk, janusOk, cdxgenOk, synpOk] =
+  const [cdxgenOk, janusOk, opengrepOk, synpOk, trivyOk, trufflehogOk, uvOk] =
     await Promise.all([
-      setupTrufflehog(),
-      setupTrivy(),
-      setupOpengrep(),
-      setupUv(),
-      setupJanus(),
       setupCdxgen(),
+      setupJanus(),
+      setupOpengrep(),
       setupSynp(),
+      setupTrivy(),
+      setupTrufflehog(),
+      setupUv(),
     ])
   logger.log('')
 
   logger.log('=== Summary ===')
   logger.log(`AgentShield: ${agentshieldOk ? 'ready' : 'NOT AVAILABLE'}`)
-  logger.log(`Zizmor:      ${zizmorOk ? 'ready' : 'FAILED'}`)
-  logger.log(`SFW:         ${sfwOk ? 'ready' : 'FAILED'}`)
-  logger.log(`TruffleHog:  ${trufflehogOk ? 'ready' : 'FAILED'}`)
-  logger.log(`Trivy:       ${trivyOk ? 'ready' : 'FAILED'}`)
-  logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
-  logger.log(`uv:          ${uvOk ? 'ready' : 'FAILED'}`)
-  logger.log(`janus:       ${janusOk ? 'ready' : 'FAILED'}`)
   logger.log(`cdxgen:      ${cdxgenOk ? 'ready' : 'FAILED'}`)
+  logger.log(`janus:       ${janusOk ? 'ready' : 'FAILED'}`)
+  logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
+  logger.log(`SFW:         ${sfwOk ? 'ready' : 'FAILED'}`)
   logger.log(`synp:        ${synpOk ? 'ready' : 'FAILED'}`)
+  logger.log(`Trivy:       ${trivyOk ? 'ready' : 'FAILED'}`)
+  logger.log(`TruffleHog:  ${trufflehogOk ? 'ready' : 'FAILED'}`)
+  logger.log(`uv:          ${uvOk ? 'ready' : 'FAILED'}`)
+  logger.log(`Zizmor:      ${zizmorOk ? 'ready' : 'FAILED'}`)
 
   const allOk =
     agentshieldOk &&
-    zizmorOk &&
-    sfwOk &&
-    trufflehogOk &&
-    trivyOk &&
-    opengrepOk &&
-    uvOk &&
-    janusOk &&
     cdxgenOk &&
-    synpOk
+    janusOk &&
+    opengrepOk &&
+    sfwOk &&
+    synpOk &&
+    trivyOk &&
+    trufflehogOk &&
+    uvOk &&
+    zizmorOk
   if (allOk) {
     logger.log('\nAll security tools ready.')
   } else {
@@ -930,7 +936,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e: unknown) => {
-  logger.error(errorMessage(e))
-  process.exitCode = 1
-})
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((e: unknown) => {
+    logger.error(errorMessage(e))
+    process.exitCode = 1
+  })
+}

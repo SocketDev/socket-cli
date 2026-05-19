@@ -337,13 +337,17 @@ async function main(): Promise<void> {
     )
   }
 
-  // Hand off to the original installer modules. We re-export the
-  // three setup* functions from index.mts so install.mts owns the
-  // orchestration + this script just sequences them.
   const installers = (await import('./lib/installers.mts')) as {
     setupAgentShield: () => Promise<boolean>
     setupZizmor: () => Promise<boolean>
     setupSfw: (apiToken: string | undefined) => Promise<boolean>
+    setupTrufflehog: () => Promise<boolean>
+    setupTrivy: () => Promise<boolean>
+    setupOpengrep: () => Promise<boolean>
+    setupUv: () => Promise<boolean>
+    setupJanus: () => Promise<boolean>
+    setupCdxgen: () => Promise<boolean>
+    setupSynp: () => Promise<boolean>
   }
 
   const agentshieldOk = await installers.setupAgentShield()
@@ -352,13 +356,42 @@ async function main(): Promise<void> {
   logger.log('')
   const sfwOk = await installers.setupSfw(apiToken)
   logger.log('')
+  const [trufflehogOk, trivyOk, opengrepOk, uvOk, janusOk, cdxgenOk, synpOk] =
+    await Promise.all([
+      installers.setupTrufflehog(),
+      installers.setupTrivy(),
+      installers.setupOpengrep(),
+      installers.setupUv(),
+      installers.setupJanus(),
+      installers.setupCdxgen(),
+      installers.setupSynp(),
+    ])
+  logger.log('')
 
   logger.log('=== Summary ===')
   logger.log(`AgentShield: ${agentshieldOk ? 'ready' : 'NOT AVAILABLE'}`)
-  logger.log(`Zizmor:      ${zizmorOk ? 'ready' : 'FAILED'}`)
+  logger.log(`cdxgen:      ${cdxgenOk ? 'ready' : 'FAILED'}`)
+  logger.log(`janus:       ${janusOk ? 'ready' : 'FAILED'}`)
+  logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
   logger.log(`SFW:         ${sfwOk ? 'ready' : 'FAILED'}`)
+  logger.log(`synp:        ${synpOk ? 'ready' : 'FAILED'}`)
+  logger.log(`Trivy:       ${trivyOk ? 'ready' : 'FAILED'}`)
+  logger.log(`TruffleHog:  ${trufflehogOk ? 'ready' : 'FAILED'}`)
+  logger.log(`uv:          ${uvOk ? 'ready' : 'FAILED'}`)
+  logger.log(`Zizmor:      ${zizmorOk ? 'ready' : 'FAILED'}`)
 
-  if (agentshieldOk && zizmorOk && sfwOk) {
+  const allOk =
+    agentshieldOk &&
+    cdxgenOk &&
+    janusOk &&
+    opengrepOk &&
+    sfwOk &&
+    synpOk &&
+    trivyOk &&
+    trufflehogOk &&
+    uvOk &&
+    zizmorOk
+  if (allOk) {
     logger.log('\nAll security tools ready.')
   } else {
     logger.warn('\nSome tools not available. See above.')
