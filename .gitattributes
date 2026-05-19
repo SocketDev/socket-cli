@@ -133,6 +133,11 @@
 .claude/hooks/marketplace-comment-guard/package.json linguist-generated=true
 .claude/hooks/marketplace-comment-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/marketplace-comment-guard/tsconfig.json linguist-generated=true
+.claude/hooks/minify-mcp-output/README.md linguist-generated=true
+.claude/hooks/minify-mcp-output/index.mts linguist-generated=true
+.claude/hooks/minify-mcp-output/package.json linguist-generated=true
+.claude/hooks/minify-mcp-output/test/index.test.mts linguist-generated=true
+.claude/hooks/minify-mcp-output/tsconfig.json linguist-generated=true
 .claude/hooks/new-hook-claude-md-guard/README.md linguist-generated=true
 .claude/hooks/new-hook-claude-md-guard/index.mts linguist-generated=true
 .claude/hooks/new-hook-claude-md-guard/package.json linguist-generated=true
@@ -323,6 +328,7 @@
 .claude/skills/worktree-management/SKILL.md linguist-generated=true
 .config/lockstep.schema.json linguist-generated=true
 .config/oxlint-plugin/index.mts linguist-generated=true
+.config/oxlint-plugin/lib/fleet-paths.mts linguist-generated=true
 .config/oxlint-plugin/lib/iterable-kind.mts linguist-generated=true
 .config/oxlint-plugin/lib/rule-tester.mts linguist-generated=true
 .config/oxlint-plugin/lib/rule-types.mts linguist-generated=true
@@ -499,6 +505,7 @@ scripts/socket-wheelhouse-emit-schema.mts linguist-generated=true
 scripts/socket-wheelhouse-schema.mts linguist-generated=true
 scripts/test/check-lock-step-header.test.mts linguist-generated=true
 scripts/test/check-lock-step-refs.test.mts linguist-generated=true
+scripts/test/install-claude-plugins.test.mts linguist-generated=true
 scripts/test/install-git-hooks.test.mts linguist-generated=true
 scripts/update.mts linguist-generated=true
 scripts/validate-bundle-deps.mts linguist-generated=true
