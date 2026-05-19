@@ -8,7 +8,7 @@
 #   - socket-registry  → .github/actions/setup/action.yml grep-reads
 #                        this list into SFW_CUSTOM_REGISTRIES in CI.
 #   - socket-btm et al → scripts/install-sfw.mts writes the env to
-#                        ~/.socket/sfw/env.sh so local sfw gets the
+#                        ~/.socket/_wheelhouse/env.sh so local sfw gets the
 #                        same set the CI shared worker uses.
 #
 # Edit ONLY in socket-wheelhouse/template/.config/sfw-bypass-list.txt

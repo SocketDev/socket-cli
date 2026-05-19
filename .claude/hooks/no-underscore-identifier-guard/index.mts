@@ -101,6 +101,19 @@ function isGeneratedPath(filePath: string): boolean {
   )
 }
 
+// Hook/lint test files and oxlint-plugin rule files legitimately contain
+// banned identifier *strings* as fixture data. Exempt them so the rule
+// can have its own tests without bypass phrases.
+function isPluginOrHookTestPath(filePath: string): boolean {
+  return (
+    filePath.includes('/.claude/hooks/no-underscore-identifier-guard/') ||
+    filePath.includes(
+      '/.config/oxlint-plugin/rules/no-underscore-identifier.',
+    ) ||
+    filePath.includes('/.config/oxlint-plugin/test/no-underscore-identifier')
+  )
+}
+
 function findBannedIdentifiers(text: string): Finding[] {
   const findings: Finding[] = []
   const lines = text.split('\n')
@@ -164,8 +177,13 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  // Allowlist: _internal/ dirs + generated output paths.
-  if (isInternalDirPath(filePath) || isGeneratedPath(filePath)) {
+  // Allowlist: _internal/ dirs, generated output, this rule's own
+  // test/lint fixtures.
+  if (
+    isInternalDirPath(filePath) ||
+    isGeneratedPath(filePath) ||
+    isPluginOrHookTestPath(filePath)
+  ) {
     process.exit(0)
   }
 

@@ -8,7 +8,7 @@
 //
 // What it checks:
 //
-//   1. SFW shim integrity. Walks `~/.socket/sfw/shims/*` and reports
+//   1. SFW shim integrity. Walks `~/.socket/_wheelhouse/shims/*` and reports
 //      shims whose dlx-cached binary target no longer exists on disk.
 //      Cache eviction (manifest rebuild, manual cleanup) leaves
 //      shims pointing at vanished hashes — every `pnpm` / `npm` /
@@ -42,6 +42,8 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+
+import { getSocketAppDir } from '@socketsecurity/lib-stable/paths/socket'
 
 interface Finding {
   readonly kind:
@@ -82,7 +84,12 @@ const TOKEN_401_RE =
  * the repair conditions weren't met / the script failed.
  */
 function repairShims(home: string): Finding[] {
-  const sfwDir = path.join(home, '.socket', 'sfw')
+  // Use the lib-stable helper for cross-platform consistency and to
+  // honor the canonical "_wheelhouse" umbrella. The home arg is
+  // accepted for backwards-compat with the existing call site but
+  // ignored in favor of the lib-stable resolution.
+  void home
+  const sfwDir = getSocketAppDir('wheelhouse')
   const shimsDir = path.join(sfwDir, 'shims')
   const sfwBin = path.join(sfwDir, 'bin', 'sfw')
   const regen = path.join(sfwDir, 'regenerate-shims.sh')
@@ -130,11 +137,7 @@ function repairShims(home: string): Finding[] {
 }
 
 async function checkShims(): Promise<Finding[]> {
-  const home = process.env['HOME']
-  if (!home) {
-    return []
-  }
-  const shimsDir = path.join(home, '.socket', 'sfw', 'shims')
+  const shimsDir = path.join(getSocketAppDir('wheelhouse'), 'shims')
   if (!existsSync(shimsDir)) {
     return []
   }
@@ -180,11 +183,7 @@ async function checkShims(): Promise<Finding[]> {
 }
 
 function checkEdition(): Finding[] {
-  const home = process.env['HOME']
-  if (!home) {
-    return []
-  }
-  const shimPath = path.join(home, '.socket', 'sfw', 'shims', 'pnpm')
+  const shimPath = path.join(getSocketAppDir('wheelhouse'), 'shims', 'pnpm')
   if (!existsSync(shimPath)) {
     return []
   }

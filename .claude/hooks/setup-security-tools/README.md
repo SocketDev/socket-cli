@@ -46,7 +46,7 @@ registry between your last `pnpm install` and now.
 
 **How it's installed**: as a native binary, downloaded from GitHub,
 SHA-256 verified, cached at `~/.socket/_dlx/`. The script also writes
-small wrapper scripts ("shims") at `~/.socket/sfw/shims/` — one per
+small wrapper scripts ("shims") at `~/.socket/_wheelhouse/shims/` — one per
 package manager — that transparently route commands through the
 firewall. You make sure that directory is at the front of your PATH;
 nothing else changes about how you use the tools.
@@ -80,7 +80,7 @@ then download whatever isn't already cached.
 | AgentShield | `~/.socket/_dlx/<hash>/agentshield` | Yes                    |
 | zizmor      | `~/.socket/_dlx/<hash>/zizmor`      | Yes                    |
 | SFW binary  | `~/.socket/_dlx/<hash>/sfw`         | Yes                    |
-| SFW shims   | `~/.socket/sfw/shims/npm`, etc.     | Yes                    |
+| SFW shims   | `~/.socket/_wheelhouse/shims/npm`, etc.     | Yes                    |
 
 `<hash>` in `_dlx/<hash>/` is a content-addressed directory keyed off
 the pinned version + sha256, so multiple versions can coexist
@@ -137,9 +137,9 @@ version you have via Homebrew. The pin lives in `external-tools.json`.
 for package managers found on your `PATH` at install time. Install
 npm/pnpm/whatever first, then re-run setup.
 
-**SFW shims not intercepting** — Make sure `~/.socket/sfw/shims` is
+**SFW shims not intercepting** — Make sure `~/.socket/_wheelhouse/shims` is
 at the _front_ of your `PATH`. Run `which npm` — it should point at
-the shim under `~/.socket/sfw/shims/`, not the real binary.
+the shim under `~/.socket/_wheelhouse/shims/`, not the real binary.
 
 ## Cross-fleet sync
 
