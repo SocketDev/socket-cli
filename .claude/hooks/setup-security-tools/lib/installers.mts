@@ -882,22 +882,17 @@ async function main(): Promise<void> {
   logger.log('')
   const sfwOk = await setupSfw(apiToken)
   logger.log('')
-  // socket-basics SAST + secrets stack + janus (shared wheelhouse) +
-  // npm-only tools (cdxgen, synp) — non-fatal if any individual tool
-  // fails (the basics workflow degrades cleanly when a scanner is
-  // absent; janus is opt-in and mac-only; cdxgen + synp are consumed
-  // by socket-cli scan/lockfile codepaths). Install in parallel since
-  // they don't share state.
-  const [trufflehogOk, trivyOk, opengrepOk, uvOk, janusOk, cdxgenOk, synpOk] =
-    await Promise.all([
-      setupTrufflehog(),
-      setupTrivy(),
-      setupOpengrep(),
-      setupUv(),
-      setupJanus(),
-      setupCdxgen(),
-      setupSynp(),
-    ])
+  // socket-basics SAST + secrets stack + janus (shared wheelhouse) —
+  // non-fatal if any individual tool fails (the basics workflow degrades
+  // cleanly when a scanner is absent; janus is opt-in and mac-only).
+  // Install in parallel since they don't share state.
+  const [trufflehogOk, trivyOk, opengrepOk, uvOk, janusOk] = await Promise.all([
+    setupTrufflehog(),
+    setupTrivy(),
+    setupOpengrep(),
+    setupUv(),
+    setupJanus(),
+  ])
   logger.log('')
 
   logger.log('=== Summary ===')
@@ -909,8 +904,6 @@ async function main(): Promise<void> {
   logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
   logger.log(`uv:          ${uvOk ? 'ready' : 'FAILED'}`)
   logger.log(`janus:       ${janusOk ? 'ready' : 'FAILED'}`)
-  logger.log(`cdxgen:      ${cdxgenOk ? 'ready' : 'FAILED'}`)
-  logger.log(`synp:        ${synpOk ? 'ready' : 'FAILED'}`)
 
   const allOk =
     agentshieldOk &&
@@ -920,9 +913,7 @@ async function main(): Promise<void> {
     trivyOk &&
     opengrepOk &&
     uvOk &&
-    janusOk &&
-    cdxgenOk &&
-    synpOk
+    janusOk
   if (allOk) {
     logger.log('\nAll security tools ready.')
   } else {
