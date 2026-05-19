@@ -76,6 +76,10 @@ const AGENTSHIELD = config.tools['agentshield']!
 const ZIZMOR = config.tools['zizmor']!
 const SFW_FREE = config.tools['sfw-free']!
 const SFW_ENTERPRISE = config.tools['sfw-enterprise']!
+const TRUFFLEHOG = config.tools['trufflehog']!
+const TRIVY = config.tools['trivy']!
+const OPENGREP = config.tools['opengrep']!
+const UV = config.tools['uv']!
 
 // ── Shared helpers ──
 
@@ -283,6 +287,313 @@ export async function setupZizmor(): Promise<boolean> {
   return true
 }
 
+// ── Generic GitHub-release tool installer ──
+
+type ToolEntry = (typeof config.tools)[string]
+
+interface InstallGitHubToolOptions {
+  /** Logical tool name (used for log banner + cache key). */
+  name: string
+  /** Display name for human-readable logs. */
+  displayName: string
+  /** Tool config entry from external-tools.json. */
+  tool: ToolEntry
+  /** Name of the binary inside the archive (without extension). For
+   *  bare-binary assets (no archive), pass the same string used as the
+   *  asset name — the helper detects and skips extraction. */
+  binaryNameInArchive: string
+  /** Final binary name on disk (without extension). Usually same as
+   *  `binaryNameInArchive`. */
+  finalBinaryName: string
+  /** Optional path within the archive where the binary lives. Defaults
+   *  to the archive root. */
+  pathInArchive?: string | undefined
+}
+
+/**
+ * Common path for tools downloaded from GitHub Releases: PATH check →
+ * download + sha256-verify → cache hit / extract → chmod 0o755.
+ *
+ * Handles three archive shapes:
+ *   - `.tar.gz` / `.tgz` → tar xzf
+ *   - `.zip`            → PowerShell Expand-Archive (Windows) or unzip
+ *   - bare binary       → copy as-is (used by opengrep manylinux/osx assets)
+ */
+async function installGitHubReleaseTool(
+  options: InstallGitHubToolOptions,
+): Promise<boolean> {
+  const opts = { __proto__: null, ...options } as InstallGitHubToolOptions
+  const { binaryNameInArchive, displayName, finalBinaryName, name, tool } =
+    opts
+  logger.log(`=== ${displayName} ===`)
+
+  // Check PATH first (e.g. brew install).
+  const systemBin = whichSync(finalBinaryName, { nothrow: true })
+  if (systemBin && typeof systemBin === 'string') {
+    logger.log(`Found on PATH: ${systemBin}`)
+    return true
+  }
+
+  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+  const platformEntry = tool.checksums?.[platformKey]
+  if (!platformEntry) {
+    logger.warn(`${displayName}: unsupported platform ${platformKey}`)
+    return false
+  }
+  const { asset, sha256: expectedSha } = platformEntry
+  const repo = tool.repository?.replace(/^[^:]+:/, '') ?? ''
+  // Most GitHub release URLs use a `v` prefix on the tag (`v1.2.3`); a
+  // few projects don't (`uv` uses `0.10.11`). The tool config's
+  // `version` field is the bare semver — prepend `v` unless it already
+  // starts with one. astral-sh/uv is the lone exception and is handled
+  // by setupUv() passing the literal tag.
+  const tagPrefix = tool.version?.startsWith('v') ? '' : 'v'
+  const tag = `${tagPrefix}${tool.version}`
+  const url = `https://github.com/${repo}/releases/download/${tag}/${asset}`
+
+  logger.log(`Downloading ${displayName} v${tool.version} (${asset})...`)
+  const { binaryPath: downloadPath, downloaded } = await downloadBinary({
+    url,
+    name: `${name}-${tool.version}-${asset}`,
+    sha256: expectedSha,
+  })
+  logger.log(
+    downloaded
+      ? 'Download complete, checksum verified.'
+      : `Using cached: ${downloadPath}`,
+  )
+
+  const ext = process.platform === 'win32' ? '.exe' : ''
+  const finalBinPath = path.join(
+    path.dirname(downloadPath),
+    `${finalBinaryName}${ext}`,
+  )
+  if (existsSync(finalBinPath)) {
+    logger.log(`Cached: ${finalBinPath}`)
+    return true
+  }
+
+  const isTar = asset.endsWith('.tar.gz') || asset.endsWith('.tgz')
+  const isZip = asset.endsWith('.zip')
+  // Bare-binary assets (opengrep's manylinux/osx variants) — the asset
+  // IS the binary, no extraction needed. Copy + chmod and exit.
+  if (!isTar && !isZip) {
+    await fs.copyFile(downloadPath, finalBinPath)
+    await fs.chmod(finalBinPath, 0o755)
+    logger.log(`Installed to ${finalBinPath}`)
+    return true
+  }
+
+  const extractDir = await fs.mkdtemp(path.join(tmpdir(), `${name}-extract-`))
+  try {
+    if (isZip) {
+      if (process.platform === 'win32') {
+        await spawn(
+          'powershell',
+          [
+            '-NoProfile',
+            '-Command',
+            `Expand-Archive -Path '${downloadPath}' -DestinationPath '${extractDir}' -Force`,
+          ],
+          { stdio: 'pipe' },
+        )
+      } else {
+        await spawn('unzip', ['-q', downloadPath, '-d', extractDir], {
+          stdio: 'pipe',
+        })
+      }
+    } else {
+      await spawn('tar', ['xzf', downloadPath, '-C', extractDir], {
+        stdio: 'pipe',
+      })
+    }
+    const extractedRel = opts.pathInArchive
+      ? path.join(opts.pathInArchive, `${binaryNameInArchive}${ext}`)
+      : `${binaryNameInArchive}${ext}`
+    const extractedBin = path.join(extractDir, extractedRel)
+    if (!existsSync(extractedBin)) {
+      throw new Error(`Binary not found after extraction: ${extractedBin}`)
+    }
+    await fs.copyFile(extractedBin, finalBinPath)
+    await fs.chmod(finalBinPath, 0o755)
+  } finally {
+    await safeDelete(extractDir).catch(e => {
+      const msg = e instanceof Error ? e.message : String(e)
+      logger.warn(`cleanup of extract dir failed (${extractDir}): ${msg}`)
+    })
+  }
+
+  logger.log(`Installed to ${finalBinPath}`)
+  return true
+}
+
+// ── TruffleHog ──
+
+export async function setupTrufflehog(): Promise<boolean> {
+  return installGitHubReleaseTool({
+    name: 'trufflehog',
+    displayName: 'TruffleHog',
+    tool: TRUFFLEHOG,
+    binaryNameInArchive: 'trufflehog',
+    finalBinaryName: 'trufflehog',
+  })
+}
+
+// ── Trivy ──
+
+export async function setupTrivy(): Promise<boolean> {
+  return installGitHubReleaseTool({
+    name: 'trivy',
+    displayName: 'Trivy',
+    tool: TRIVY,
+    binaryNameInArchive: 'trivy',
+    finalBinaryName: 'trivy',
+  })
+}
+
+// ── OpenGrep ──
+
+export async function setupOpengrep(): Promise<boolean> {
+  // OpenGrep ships bare-binary assets for Linux/macOS (e.g.
+  // `opengrep_manylinux_x86`) and a zipped binary for Windows (named
+  // `opengrep-core_windows_x86.zip` containing `opengrep-core.exe`).
+  // The bare-binary case is auto-detected by extension; we just need
+  // the right `binaryNameInArchive` for the Windows zip case.
+  const isWindows = process.platform === 'win32'
+  return installGitHubReleaseTool({
+    name: 'opengrep',
+    displayName: 'OpenGrep',
+    tool: OPENGREP,
+    binaryNameInArchive: isWindows ? 'opengrep-core' : 'opengrep',
+    finalBinaryName: 'opengrep',
+  })
+}
+
+// ── uv ──
+
+export async function setupUv(): Promise<boolean> {
+  // astral-sh/uv tags releases without a `v` prefix (`0.10.11`, not
+  // `v0.10.11`), so the generic helper's `v`-prepend would 404. The
+  // tarball also wraps the binary one level deep: e.g.
+  // `uv-x86_64-apple-darwin/uv`. Pin the tag literally and tell the
+  // helper which subdirectory holds the binary.
+  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+  const platformEntry = UV.checksums?.[platformKey]
+  const pathInArchive = platformEntry?.asset.replace(/\.(tar\.gz|zip)$/, '')
+  return installGitHubReleaseToolWithTag({
+    name: 'uv',
+    displayName: 'uv (Python package manager)',
+    tool: UV,
+    binaryNameInArchive: 'uv',
+    finalBinaryName: 'uv',
+    pathInArchive,
+    tag: UV.version!,
+  })
+}
+
+/**
+ * Variant of `installGitHubReleaseTool` for projects that don't tag
+ * with a `v` prefix (astral-sh/uv). Takes an explicit `tag` field
+ * instead of synthesizing one from `tool.version`.
+ */
+async function installGitHubReleaseToolWithTag(
+  options: InstallGitHubToolOptions & { tag: string },
+): Promise<boolean> {
+  const opts = { __proto__: null, ...options } as InstallGitHubToolOptions & {
+    tag: string
+  }
+  const {
+    binaryNameInArchive,
+    displayName,
+    finalBinaryName,
+    name,
+    tag,
+    tool,
+  } = opts
+  logger.log(`=== ${displayName} ===`)
+
+  const systemBin = whichSync(finalBinaryName, { nothrow: true })
+  if (systemBin && typeof systemBin === 'string') {
+    logger.log(`Found on PATH: ${systemBin}`)
+    return true
+  }
+
+  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+  const platformEntry = tool.checksums?.[platformKey]
+  if (!platformEntry) {
+    logger.warn(`${displayName}: unsupported platform ${platformKey}`)
+    return false
+  }
+  const { asset, sha256: expectedSha } = platformEntry
+  const repo = tool.repository?.replace(/^[^:]+:/, '') ?? ''
+  const url = `https://github.com/${repo}/releases/download/${tag}/${asset}`
+
+  logger.log(`Downloading ${displayName} ${tag} (${asset})...`)
+  const { binaryPath: downloadPath, downloaded } = await downloadBinary({
+    url,
+    name: `${name}-${tag}-${asset}`,
+    sha256: expectedSha,
+  })
+  logger.log(
+    downloaded
+      ? 'Download complete, checksum verified.'
+      : `Using cached: ${downloadPath}`,
+  )
+
+  const ext = process.platform === 'win32' ? '.exe' : ''
+  const finalBinPath = path.join(
+    path.dirname(downloadPath),
+    `${finalBinaryName}${ext}`,
+  )
+  if (existsSync(finalBinPath)) {
+    logger.log(`Cached: ${finalBinPath}`)
+    return true
+  }
+
+  const isZip = asset.endsWith('.zip')
+  const extractDir = await fs.mkdtemp(path.join(tmpdir(), `${name}-extract-`))
+  try {
+    if (isZip) {
+      if (process.platform === 'win32') {
+        await spawn(
+          'powershell',
+          [
+            '-NoProfile',
+            '-Command',
+            `Expand-Archive -Path '${downloadPath}' -DestinationPath '${extractDir}' -Force`,
+          ],
+          { stdio: 'pipe' },
+        )
+      } else {
+        await spawn('unzip', ['-q', downloadPath, '-d', extractDir], {
+          stdio: 'pipe',
+        })
+      }
+    } else {
+      await spawn('tar', ['xzf', downloadPath, '-C', extractDir], {
+        stdio: 'pipe',
+      })
+    }
+    const extractedRel = opts.pathInArchive
+      ? path.join(opts.pathInArchive, `${binaryNameInArchive}${ext}`)
+      : `${binaryNameInArchive}${ext}`
+    const extractedBin = path.join(extractDir, extractedRel)
+    if (!existsSync(extractedBin)) {
+      throw new Error(`Binary not found after extraction: ${extractedBin}`)
+    }
+    await fs.copyFile(extractedBin, finalBinPath)
+    await fs.chmod(finalBinPath, 0o755)
+  } finally {
+    await safeDelete(extractDir).catch(e => {
+      const msg = e instanceof Error ? e.message : String(e)
+      logger.warn(`cleanup of extract dir failed (${extractDir}): ${msg}`)
+    })
+  }
+
+  logger.log(`Installed to ${finalBinPath}`)
+  return true
+}
+
 // ── SFW ──
 
 export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
@@ -444,13 +755,35 @@ async function main(): Promise<void> {
   logger.log('')
   const sfwOk = await setupSfw(apiToken)
   logger.log('')
+  // socket-basics SAST + secrets stack — non-fatal if any individual
+  // tool fails (the basics workflow degrades cleanly when a scanner is
+  // absent). Install in parallel since they don't share state.
+  const [trufflehogOk, trivyOk, opengrepOk, uvOk] = await Promise.all([
+    setupTrufflehog(),
+    setupTrivy(),
+    setupOpengrep(),
+    setupUv(),
+  ])
+  logger.log('')
 
   logger.log('=== Summary ===')
   logger.log(`AgentShield: ${agentshieldOk ? 'ready' : 'NOT AVAILABLE'}`)
   logger.log(`Zizmor:      ${zizmorOk ? 'ready' : 'FAILED'}`)
   logger.log(`SFW:         ${sfwOk ? 'ready' : 'FAILED'}`)
+  logger.log(`TruffleHog:  ${trufflehogOk ? 'ready' : 'FAILED'}`)
+  logger.log(`Trivy:       ${trivyOk ? 'ready' : 'FAILED'}`)
+  logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
+  logger.log(`uv:          ${uvOk ? 'ready' : 'FAILED'}`)
 
-  if (agentshieldOk && zizmorOk && sfwOk) {
+  const allOk =
+    agentshieldOk &&
+    zizmorOk &&
+    sfwOk &&
+    trufflehogOk &&
+    trivyOk &&
+    opengrepOk &&
+    uvOk
+  if (allOk) {
     logger.log('\nAll security tools ready.')
   } else {
     logger.warn('\nSome tools not available. See above.')
