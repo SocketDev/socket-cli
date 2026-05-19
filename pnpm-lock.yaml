@@ -955,6 +955,12 @@ importers:
         specifier: 'catalog:'
         version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
 
+  .claude/hooks/socket-token-minifier-start:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: 'catalog:'
+        version: '@socketsecurity/lib@5.28.0(typescript@5.9.3)'
+
   .claude/hooks/stale-process-sweeper: {}
 
   .claude/hooks/token-guard: {}
