@@ -37,18 +37,6 @@ allprojects { project ->
     // can't represent reliably.
     outputs.upToDateWhen { false }
 
-    def rootCoord
-
-    project.afterEvaluate {
-      rootCoord = [
-        groupId   : project.group?.toString() ?: '',
-        artifactId: project.name,
-        version   : project.version?.toString() ?: '',
-        classifier: '',
-        ext       : '',
-      ]
-    }
-
     doLast {
       // `id` deliberately omits `ext` so we dedupe Gradle's variant artifacts
       // (e.g. `java-classes-directory` + `jar` for the same project dep) into
@@ -154,17 +142,17 @@ allprojects { project ->
         it.canBeResolved && isClasspath(it.name)
       }
 
-      def rootId = coordId(rootCoord)
-      nodes[rootId] = [coord: rootCoord, children: [] as Set, prod: true]
-
+      // The project being scanned is the SBOM target itself, not one of its
+      // own dependencies — including it as a component would surface as an
+      // orphan in downstream tooling ("not reachable from any direct
+      // dependency"). We emit only the deps; `directIds` carries the
+      // first-level edges so consumers don't need a synthetic root node.
       targetConfigs.each { cfg ->
         def isProd = !isTestClasspath(cfg.name)
         def lenient = cfg.resolvedConfiguration.lenientConfiguration
         def cache = [:]
         lenient.firstLevelModuleDependencies.each { dep ->
-          def ids = visit(dep, isProd, cache)
-          nodes[rootId].children.addAll(ids)
-          directIds.addAll(ids)
+          directIds.addAll(visit(dep, isProd, cache))
         }
         lenient.unresolvedModuleDependencies.each { dep ->
           def coord = [
@@ -174,9 +162,7 @@ allprojects { project ->
             classifier: '',
             ext       : '',
           ]
-          def id = upsertNode(coord, isProd)
-          nodes[rootId].children.add(id)
-          directIds.add(id)
+          directIds.add(upsertNode(coord, isProd))
         }
       }
 
