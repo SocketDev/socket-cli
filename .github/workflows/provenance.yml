@@ -26,11 +26,15 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      # `contents: write` needed to create the v<version> tag via gh api
+      # at the end of this job. Token is scoped to the dedicated tag step
+      # via GH_TOKEN env; never persisted in `.git/config` (checkout keeps
+      # persist-credentials: false so build/install steps can't reach it).
+      contents: write
       id-token: write # NPM trusted publishing via OIDC
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-20)
         with:
           persist-credentials: false
 
@@ -201,7 +205,9 @@ jobs:
         run: pnpm install --loglevel error
 
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
-      - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
+      - name: Publish socket
+        id: publish_socket
+        run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         continue-on-error: true
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
@@ -225,3 +231,50 @@ jobs:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # zizmor: ignore[secrets-outside-env]
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+
+      # Create v<version> git tag at the published commit SHA after a
+      # successful socket-package publish, idempotently. GitHub Release
+      # Immutability ("Disallow assets and tags from being modified once a
+      # release is published") freezes tags once bound to a Release, so:
+      #   - existing tag at same SHA → no-op
+      #   - existing tag at different SHA → hard-fail (operator recovery
+      #     required)
+      # Gated on the first publish step (publish_socket — the `socket` npm
+      # package) actually succeeding; the cli / cli-with-sentry publishes
+      # use `continue-on-error: true` and don't gate the tag.
+      #
+      # Uses gh api (not `git push`) so the token only lives in this step's
+      # env, never written to `.git/config` by an earlier `actions/checkout`
+      # with persist-credentials: true (which would leak it to every later
+      # step including `pnpm install` postinstall scripts).
+      - name: Tag release (idempotent)
+        if: steps.publish_socket.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          PUBLISHED_SHA=$(git rev-parse HEAD)
+          PUBLISHED_VERSION=$(node -p "require('./package.json').version")
+          TAG="v$PUBLISHED_VERSION"
+
+          # Look up any existing tag via the API. 200 → exists; 404 → absent.
+          EXISTING_JSON=$(gh api "repos/$REPO/git/ref/tags/$TAG" 2>/dev/null || echo "")
+          if [ -n "$EXISTING_JSON" ]; then
+            EXISTING_SHA=$(echo "$EXISTING_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).object.sha")
+            if [ "$EXISTING_SHA" = "$PUBLISHED_SHA" ]; then
+              echo "Tag $TAG already exists at $PUBLISHED_SHA — no-op."
+              exit 0
+            fi
+            echo "::error::Tag $TAG exists at $EXISTING_SHA but publish SHA is $PUBLISHED_SHA."
+            echo "::error::Release immutability is enabled; this requires manual recovery:"
+            echo "::error::  1. Delete any GitHub Release tied to $TAG"
+            echo "::error::  2. Delete the tag via the API"
+            echo "::error::  3. Re-run this workflow"
+            exit 1
+          fi
+
+          gh api "repos/$REPO/git/refs" \
+            -X POST \
+            -f "ref=refs/tags/$TAG" \
+            -f "sha=$PUBLISHED_SHA"
+          echo "Created tag $TAG at $PUBLISHED_SHA"
