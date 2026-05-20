@@ -80,7 +80,7 @@ describe('socket whoami (e2e, auth required)', () => {
   })
 
   it.skipIf(!RUN || !hasAuth)('whoami exits 0 with auth present', async () => {
-    const result = await executeCliCommand(['whoami'])
+    const result = await executeCliInScratch(['whoami'])
     expect(result.code).toBe(0)
   })
 })

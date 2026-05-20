@@ -35,7 +35,8 @@ describe('socket npm wrapper (e2e)', () => {
   })
 
   it.skipIf(!RUN)('npm info exits 0', async () => {
-    const result = await executeCliCommand(['npm', 'info'])
+    // Scratch so npm's ~/.npm cache isn't written into the dev's home.
+    const result = await executeCliInScratch(['npm', 'info'])
     expect(result.code).toBe(0)
   })
 })
@@ -52,19 +53,21 @@ describe('socket npx wrapper (e2e)', () => {
   })
 
   it.skipIf(!RUN)('npx cowsay moo exits 0', async () => {
-    const result = await executeCliCommand(['npx', 'cowsay', 'moo'])
+    // npx downloads cowsay into npm cache — pin to scratch.
+    const result = await executeCliInScratch(['npx', 'cowsay', 'moo'])
     expect(result.code).toBe(0)
   })
 
   it.skipIf(!RUN)('npx socket --dry-run exits 0', async () => {
-    const result = await executeCliCommand(['npx', 'socket', '--dry-run'])
+    const result = await executeCliInScratch(['npx', 'socket', '--dry-run'])
     expect(result.code).toBe(0)
   })
 })
 
 describe('socket raw-npm (e2e)', () => {
   it.skipIf(!RUN)('raw-npm (no args) exits 1', async () => {
-    const result = await executeCliCommand(['raw-npm'])
+    // raw-npm may invoke real npm which writes to ~/.npm; scratch isolates.
+    const result = await executeCliInScratch(['raw-npm'])
     expect(result.code).toBe(1)
   })
 
@@ -79,7 +82,7 @@ describe('socket raw-npm (e2e)', () => {
   })
 
   it.skipIf(!RUN)('raw-npm info exits 0', async () => {
-    const result = await executeCliCommand(['raw-npm', 'info'])
+    const result = await executeCliInScratch(['raw-npm', 'info'])
     expect(result.code).toBe(0)
   })
 })
@@ -96,12 +99,12 @@ describe('socket raw-npx (e2e)', () => {
   })
 
   it.skipIf(!RUN)('raw-npx cowsay moo exits 0', async () => {
-    const result = await executeCliCommand(['raw-npx', 'cowsay', 'moo'])
+    const result = await executeCliInScratch(['raw-npx', 'cowsay', 'moo'])
     expect(result.code).toBe(0)
   })
 
   it.skipIf(!RUN)('raw-npx socket --dry-run exits 0', async () => {
-    const result = await executeCliCommand(['raw-npx', 'socket', '--dry-run'])
+    const result = await executeCliInScratch(['raw-npx', 'socket', '--dry-run'])
     expect(result.code).toBe(0)
   })
 })
@@ -174,12 +177,14 @@ describe('socket optimize (e2e)', () => {
 
 describe('socket cdxgen (e2e)', () => {
   it.skipIf(!RUN)('cdxgen (no args, no real cdxgen on PATH) exits 1', async () => {
-    const result = await executeCliCommand(['cdxgen'])
+    // cdxgen may write SBOM artifacts into cwd if it succeeds; scratch keeps
+    // them out of the dev's repo.
+    const result = await executeCliInScratch(['cdxgen'])
     expect(result.code).toBe(1)
   })
 })
 
-describe('socket organization dependencies (e2e, auth required)', () => {
+describe('socket organization dependencies (e2e, auth required, scratch-isolated)', () => {
   it.skipIf(!RUN)('organization dependencies --help exits 0', async () => {
     const result = await executeCliCommand(['organization', 'dependencies', '--help'])
     expect(result.code).toBe(0)
@@ -191,35 +196,35 @@ describe('socket organization dependencies (e2e, auth required)', () => {
   })
 
   it.skipIf(!RUN)('organization dependencies exits 0', async () => {
-    const result = await executeCliCommand(['organization', 'dependencies'])
+    const result = await executeCliInScratch(['organization', 'dependencies'])
     expect(result.code).toBe(0)
   })
 
   it.skipIf(!RUN)('organization dependencies --json conforms to contract', async () => {
-    const result = await executeCliCommand(['organization', 'dependencies', '--json'])
+    const result = await executeCliInScratch(['organization', 'dependencies', '--json'])
     expect(result.code).toBe(0)
     validateSocketJsonContract(result.stdout, 0)
   })
 
   it.skipIf(!RUN)('organization dependencies --markdown exits 0', async () => {
-    const result = await executeCliCommand(['organization', 'dependencies', '--markdown'])
+    const result = await executeCliInScratch(['organization', 'dependencies', '--markdown'])
     expect(result.code).toBe(0)
   })
 
   it.skipIf(!RUN)('organization dependencies --limit 1 exits 0', async () => {
-    const result = await executeCliCommand(['organization', 'dependencies', '--limit', '1'])
+    const result = await executeCliInScratch(['organization', 'dependencies', '--limit', '1'])
     expect(result.code).toBe(0)
   })
 
   it.skipIf(!RUN)('organization dependencies --offset 5 exits 0', async () => {
-    const result = await executeCliCommand(['organization', 'dependencies', '--offset', '5'])
+    const result = await executeCliInScratch(['organization', 'dependencies', '--offset', '5'])
     expect(result.code).toBe(0)
   })
 
   it.skipIf(!RUN)(
     'organization dependencies --limit 1 --offset 10 exits 0',
     async () => {
-      const result = await executeCliCommand([
+      const result = await executeCliInScratch([
         'organization', 'dependencies', '--limit', '1', '--offset', '10',
       ])
       expect(result.code).toBe(0)

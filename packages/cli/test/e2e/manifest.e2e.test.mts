@@ -10,7 +10,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { ENV } from '../../src/constants/env.mts'
-import { executeCliCommand } from '../helpers/cli-execution.mts'
+import {
+  executeCliCommand,
+  executeCliInScratch,
+} from '../helpers/cli-execution.mts'
 
 const RUN = ENV.RUN_E2E_TESTS
 
@@ -34,7 +37,9 @@ describe('socket manifest (e2e)', () => {
 
   describe('manifest auto', () => {
     it.skipIf(!RUN)('manifest auto (no path) exits 1', async () => {
-      const result = await executeCliCommand(['manifest', 'auto'])
+      // Scratch cwd so the generator's filesystem walk doesn't traverse the
+      // dev's socket-cli repo looking for build files.
+      const result = await executeCliInScratch(['manifest', 'auto'])
       expect(result.code).toBe(1)
     })
 
@@ -51,7 +56,7 @@ describe('socket manifest (e2e)', () => {
 
   describe('manifest conda', () => {
     it.skipIf(!RUN)('manifest conda (no env file) exits 1', async () => {
-      const result = await executeCliCommand(['manifest', 'conda'])
+      const result = await executeCliInScratch(['manifest', 'conda'])
       expect(result.code).toBe(1)
     })
 
@@ -68,7 +73,7 @@ describe('socket manifest (e2e)', () => {
 
   describe('manifest gradle', () => {
     it.skipIf(!RUN)('manifest gradle (no project) exits 1', async () => {
-      const result = await executeCliCommand(['manifest', 'gradle'])
+      const result = await executeCliInScratch(['manifest', 'gradle'])
       expect(result.code).toBe(1)
     })
 
@@ -88,7 +93,7 @@ describe('socket manifest (e2e)', () => {
 
   describe('manifest kotlin', () => {
     it.skipIf(!RUN)('manifest kotlin (no project) exits 1', async () => {
-      const result = await executeCliCommand(['manifest', 'kotlin'])
+      const result = await executeCliInScratch(['manifest', 'kotlin'])
       expect(result.code).toBe(1)
     })
 
@@ -105,7 +110,7 @@ describe('socket manifest (e2e)', () => {
 
   describe('manifest scala', () => {
     it.skipIf(!RUN)('manifest scala (no project) exits 1', async () => {
-      const result = await executeCliCommand(['manifest', 'scala'])
+      const result = await executeCliInScratch(['manifest', 'scala'])
       expect(result.code).toBe(1)
     })
 

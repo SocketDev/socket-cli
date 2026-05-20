@@ -121,31 +121,31 @@ describe('socket organization (e2e)', () => {
     })
   })
 
-  describe('list / policy / quota (auth required)', () => {
+  describe('list / policy / quota (auth required, scratch-isolated)', () => {
     it.skipIf(!RUN || !hasAuth)('organization list exits 0', async () => {
-      const result = await executeCliCommand(['organization', 'list'])
+      const result = await executeCliInScratch(['organization', 'list'])
       expect(result.code).toBe(0)
     })
 
     it.skipIf(!RUN || !hasAuth)('organization policy license exits 0', async () => {
-      const result = await executeCliCommand(['organization', 'policy', 'license'])
+      const result = await executeCliInScratch(['organization', 'policy', 'license'])
       expect(result.code).toBe(0)
     })
 
     it.skipIf(!RUN || !hasAuth)('organization policy security exits 0', async () => {
-      const result = await executeCliCommand(['organization', 'policy', 'security'])
+      const result = await executeCliInScratch(['organization', 'policy', 'security'])
       expect(result.code).toBe(0)
     })
 
     it.skipIf(!RUN || !hasAuth)('organization quota exits 0', async () => {
-      const result = await executeCliCommand(['organization', 'quota'])
+      const result = await executeCliInScratch(['organization', 'quota'])
       expect(result.code).toBe(0)
     })
 
     it.skipIf(!RUN || !hasAuth)(
       'organization policy security --markdown exits 0',
       async () => {
-        const result = await executeCliCommand(['organization', 'policy', 'security', '--markdown'])
+        const result = await executeCliInScratch(['organization', 'policy', 'security', '--markdown'])
         expect(result.code).toBe(0)
       },
     )
@@ -153,7 +153,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy security --json conforms to contract',
       async () => {
-        const result = await executeCliCommand(['organization', 'policy', 'security', '--json'])
+        const result = await executeCliInScratch(['organization', 'policy', 'security', '--json'])
         expect(result.code).toBe(0)
         validateSocketJsonContract(result.stdout, 0)
       },
@@ -162,7 +162,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy license --markdown exits 0',
       async () => {
-        const result = await executeCliCommand(['organization', 'policy', 'license', '--markdown'])
+        const result = await executeCliInScratch(['organization', 'policy', 'license', '--markdown'])
         expect(result.code).toBe(0)
       },
     )
@@ -170,21 +170,21 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy license --json conforms to contract',
       async () => {
-        const result = await executeCliCommand(['organization', 'policy', 'license', '--json'])
+        const result = await executeCliInScratch(['organization', 'policy', 'license', '--json'])
         expect(result.code).toBe(0)
         validateSocketJsonContract(result.stdout, 0)
       },
     )
   })
 
-  describe('--org <real-default-org> (auth required)', () => {
+  describe('--org <real-default-org> (auth required, scratch-isolated)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy security --org <real> exits 0',
       async () => {
         if (!defaultOrg) {
           return
         }
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'organization', 'policy', 'security', '--org', defaultOrg,
         ])
         expect(result.code).toBe(0)
@@ -197,7 +197,7 @@ describe('socket organization (e2e)', () => {
         if (!defaultOrg) {
           return
         }
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'organization', 'policy', 'license', '--org', defaultOrg,
         ])
         expect(result.code).toBe(0)
@@ -205,11 +205,11 @@ describe('socket organization (e2e)', () => {
     )
   })
 
-  describe('--org trash (invalid org, auth required)', () => {
+  describe('--org trash (invalid org, auth required, scratch-isolated)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy security --org trash exits 1',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'organization', 'policy', 'security', '--org', 'trash',
         ])
         expect(result.code).toBe(1)
@@ -219,7 +219,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy security --org trash --markdown exits 1',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'organization', 'policy', 'security', '--org', 'trash', '--markdown',
         ])
         expect(result.code).toBe(1)
@@ -229,7 +229,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy security --org trash --json conforms to error contract',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'organization', 'policy', 'security', '--org', 'trash', '--json',
         ])
         expect(result.code).toBe(1)
@@ -240,7 +240,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy license --org trash exits 1',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'organization', 'policy', 'license', '--org', 'trash',
         ])
         expect(result.code).toBe(1)
@@ -250,7 +250,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy license --org trash --markdown exits 1',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'organization', 'policy', 'license', '--org', 'trash', '--markdown',
         ])
         expect(result.code).toBe(1)
@@ -260,7 +260,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'organization policy license --org trash --json conforms to error contract',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'organization', 'policy', 'license', '--org', 'trash', '--json',
         ])
         expect(result.code).toBe(1)
@@ -269,13 +269,13 @@ describe('socket organization (e2e)', () => {
     )
   })
 
-  describe('config-driven org resolution (auth required)', () => {
+  describe('config-driven org resolution (auth required, scratch-isolated)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'policy security with no defaultOrg in config exits 1 (--no-interactive)',
       async () => {
         // No `defaultOrg` in the injected config and --no-interactive prevents
         // the CLI from prompting; failure is the expected outcome.
-        const result = await executeCliCommand(
+        const result = await executeCliInScratch(
           ['organization', 'policy', 'security', '--json', '--no-interactive'],
           { config: {} },
         )
@@ -287,7 +287,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'policy license with no defaultOrg in config exits 1 (--no-interactive)',
       async () => {
-        const result = await executeCliCommand(
+        const result = await executeCliInScratch(
           ['organization', 'policy', 'license', '--json', '--no-interactive'],
           { config: {} },
         )
@@ -299,7 +299,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'policy security with defaultOrg=fake_org in config exits 1 (--no-interactive)',
       async () => {
-        const result = await executeCliCommand(
+        const result = await executeCliInScratch(
           ['organization', 'policy', 'security', '--json', '--no-interactive'],
           { config: { defaultOrg: 'fake_org' } },
         )
@@ -311,7 +311,7 @@ describe('socket organization (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'policy license with defaultOrg=fake_org in config exits 1 (--no-interactive)',
       async () => {
-        const result = await executeCliCommand(
+        const result = await executeCliInScratch(
           ['organization', 'policy', 'license', '--json', '--no-interactive'],
           { config: { defaultOrg: 'fake_org' } },
         )

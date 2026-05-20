@@ -52,7 +52,9 @@ describe('socket config (e2e)', () => {
     })
 
     it.skipIf(!RUN)('config get defaultOrg exits 0', async () => {
-      const result = await executeCliCommand(['config', 'get', 'defaultOrg'])
+      // Scratch HOME so even a stray `~/.config/socket/...` read can't leak
+      // into the test assertion.
+      const result = await executeCliInScratch(['config', 'get', 'defaultOrg'])
       expect(result.code).toBe(0)
     })
   })

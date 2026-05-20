@@ -34,44 +34,44 @@ describe('socket analytics (e2e)', () => {
     })
   })
 
-  describe('default / org / repo / time-window (auth required)', () => {
+  describe('default / org / repo / time-window (auth required, scratch-isolated)', () => {
     it.skipIf(!RUN)('analytics (default scope) exits 0', async () => {
-      const result = await executeCliCommand(['analytics'])
+      const result = await executeCliInScratch(['analytics'])
       expect(result.code).toBe(0)
     })
 
     it.skipIf(!RUN)('analytics --markdown exits 0', async () => {
-      const result = await executeCliCommand(['analytics', '--markdown'])
+      const result = await executeCliInScratch(['analytics', '--markdown'])
       expect(result.code).toBe(0)
     })
 
     it.skipIf(!RUN)('analytics --json conforms to contract', async () => {
-      const result = await executeCliCommand(['analytics', '--json'])
+      const result = await executeCliInScratch(['analytics', '--json'])
       expect(result.code).toBe(0)
       validateSocketJsonContract(result.stdout, 0)
     })
 
     it.skipIf(!RUN)('analytics org --json conforms to contract', async () => {
-      const result = await executeCliCommand(['analytics', 'org', '--json'])
+      const result = await executeCliInScratch(['analytics', 'org', '--json'])
       expect(result.code).toBe(0)
       validateSocketJsonContract(result.stdout, 0)
     })
 
     it.skipIf(!RUN)('analytics repo socket-cli --json conforms to contract', async () => {
-      const result = await executeCliCommand(['analytics', 'repo', 'socket-cli', '--json'])
+      const result = await executeCliInScratch(['analytics', 'repo', 'socket-cli', '--json'])
       expect(result.code).toBe(0)
       validateSocketJsonContract(result.stdout, 0)
     })
 
     it.skipIf(!RUN)('analytics org 7 --markdown exits 0', async () => {
-      const result = await executeCliCommand(['analytics', 'org', '7', '--markdown'])
+      const result = await executeCliInScratch(['analytics', 'org', '7', '--markdown'])
       expect(result.code).toBe(0)
     })
 
     it.skipIf(!RUN)(
       'analytics repo socket-cli 30 --markdown exits 0',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'analytics', 'repo', 'socket-cli', '30', '--markdown',
         ])
         expect(result.code).toBe(0)
@@ -79,7 +79,7 @@ describe('socket analytics (e2e)', () => {
     )
 
     it.skipIf(!RUN)('analytics 90 --json conforms to contract', async () => {
-      const result = await executeCliCommand(['analytics', '90', '--json'])
+      const result = await executeCliInScratch(['analytics', '90', '--json'])
       expect(result.code).toBe(0)
       validateSocketJsonContract(result.stdout, 0)
     })
@@ -116,7 +116,7 @@ describe('socket analytics (e2e)', () => {
     it.skipIf(!RUN)(
       'analytics repo veryunknownrepo --json (unknown repo) exits 1',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'analytics', 'repo', 'veryunknownrepo', '--json',
         ])
         expect(result.code).toBe(1)

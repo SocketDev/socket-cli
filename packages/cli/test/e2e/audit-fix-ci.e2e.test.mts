@@ -30,7 +30,7 @@ describe('socket audit-log (e2e, auth required)', () => {
   })
 
   it.skipIf(!RUN)('audit-log exits 0', async () => {
-    const result = await executeCliCommand(['audit-log'])
+    const result = await executeCliInScratch(['audit-log'])
     expect(result.code).toBe(0)
   })
 })

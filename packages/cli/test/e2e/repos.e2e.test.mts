@@ -19,6 +19,7 @@ import { ENV } from '../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
 import {
   executeCliCommand,
+  executeCliInScratch,
   validateSocketJsonContract,
 } from '../helpers/cli-execution.mts'
 
@@ -91,11 +92,11 @@ describe('socket repos (e2e)', () => {
     })
   })
 
-  describe('error paths (auth required, read-only)', () => {
+  describe('error paths (auth required, read-only, scratch-isolated)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'repos view <nonexistent> --json conforms to error contract',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'repos', 'view', 'cli_donotcreate', '--json',
         ])
         expect(result.code).toBe(1)
@@ -106,7 +107,7 @@ describe('socket repos (e2e)', () => {
     it.skipIf(!RUN || !hasAuth)(
       'repos update <nonexistent> --homepage evil --json conforms to error contract',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'repos', 'update', 'cli_donotcreate', '--homepage', 'evil', '--json',
         ])
         expect(result.code).toBe(1)
@@ -126,7 +127,7 @@ describe('socket repos (e2e)', () => {
       }
       // Best-effort cleanup; the round-trip's own `del` step is primary.
       try {
-        await executeCliCommand(['repos', 'del', repoName])
+        await executeCliInScratch(['repos', 'del', repoName])
       } catch {
         // Repo may already be deleted by the round-trip's del step.
       }
@@ -135,7 +136,7 @@ describe('socket repos (e2e)', () => {
     it.skipIf(!RUN || !hasAuth || !RUN_DESTRUCTIVE)(
       'creates a uniquely-named repo',
       async () => {
-        const result = await executeCliCommand(['repos', 'create', repoName])
+        const result = await executeCliInScratch(['repos', 'create', repoName])
         expect(result.code).toBe(0)
       },
     )
@@ -143,7 +144,7 @@ describe('socket repos (e2e)', () => {
     it.skipIf(!RUN || !hasAuth || !RUN_DESTRUCTIVE)(
       'updates the homepage on the created repo',
       async () => {
-        const result = await executeCliCommand([
+        const result = await executeCliInScratch([
           'repos', 'update', repoName, '--homepage', 'socket.dev',
         ])
         expect(result.code).toBe(0)
@@ -153,7 +154,7 @@ describe('socket repos (e2e)', () => {
     it.skipIf(!RUN || !hasAuth || !RUN_DESTRUCTIVE)(
       'views the created repo',
       async () => {
-        const result = await executeCliCommand(['repos', 'view', repoName])
+        const result = await executeCliInScratch(['repos', 'view', repoName])
         expect(result.code).toBe(0)
       },
     )
@@ -161,7 +162,7 @@ describe('socket repos (e2e)', () => {
     it.skipIf(!RUN || !hasAuth || !RUN_DESTRUCTIVE)(
       'deletes the created repo',
       async () => {
-        const result = await executeCliCommand(['repos', 'del', repoName])
+        const result = await executeCliInScratch(['repos', 'del', repoName])
         expect(result.code).toBe(0)
       },
     )
