@@ -11,7 +11,6 @@ import { VITEST } from '../../env/vitest.mts'
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { mdTable } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
-import { displayAuditLogWithIocraft } from './AuditLogRenderer.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -158,39 +157,17 @@ export async function outputAuditLog(
     return
   }
 
-  if (outputKind === OUTPUT_MARKDOWN) {
-    logger.log(
-      await outputAsMarkdown(result.data, {
-        logType,
-        orgSlug,
-        page,
-        perPage,
-      }),
-    )
-    return
-  }
-
-  outputWithIocraft(result.data, orgSlug)
-}
-
-/**
- * Display audit log using iocraft.
- */
-export function outputWithIocraft(
-  data: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
-  orgSlug: string,
-): void {
-  displayAuditLogWithIocraft({
-    orgSlug,
-    results: data.results.map((entry: AuditLogEvent) => ({
-      created_at: entry.created_at || '',
-      event_id: entry.event_id || '',
-      formatted_created_at: entry.created_at || '',
-      ip_address: entry.ip_address || '',
-      payload: entry.payload ?? {},
-      type: entry.type || '',
-      user_agent: entry.user_agent || '',
-      user_email: entry.user_email || '',
-    })),
-  })
+  // Default + OUTPUT_MARKDOWN: render the markdown table. (Previously
+  // OUTPUT_MARKDOWN and the default branched separately, with the
+  // default going through an iocraft TUI renderer; the renderer was
+  // retired alongside iocraft itself, and markdown is the natural
+  // plain-text fallback.)
+  logger.log(
+    await outputAsMarkdown(result.data, {
+      logType,
+      orgSlug,
+      page,
+      perPage,
+    }),
+  )
 }

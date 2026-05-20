@@ -7,7 +7,6 @@ import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { mdTableStringNumber } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
 import { fileLink } from '../../util/terminal/link.mts'
-import { displayAnalyticsWithIocraft } from './AnalyticsRenderer.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -214,25 +213,24 @@ export async function outputAnalytics(
   const fdata =
     scope === 'org' ? formatDataOrg(result.data) : formatDataRepo(result.data)
 
-  if (outputKind === 'markdown') {
-    const serialized = renderMarkdown(fdata, time, repo)
+  // Default + OUTPUT_MARKDOWN: render the markdown report. The
+  // previous default branched through an iocraft TUI renderer; the
+  // renderer was retired alongside iocraft itself, and markdown is the
+  // natural plain-text fallback.
+  const serialized = renderMarkdown(fdata, time, repo)
 
-    // Write markdown output to file if filepath is specified.
-    if (filepath) {
-      try {
-        await fs.writeFile(filepath, serialized, 'utf8')
-        debugFileOp('write', filepath)
-        logger.success(`Data successfully written to ${fileLink(filepath)}`)
-      } catch (e) {
-        debugFileOp('write', filepath, e)
-        logger.error(e)
-      }
-    } else {
-      logger.log(serialized)
+  // Write markdown output to file if filepath is specified.
+  if (filepath) {
+    try {
+      await fs.writeFile(filepath, serialized, 'utf8')
+      debugFileOp('write', filepath)
+      logger.success(`Data successfully written to ${fileLink(filepath)}`)
+    } catch (e) {
+      debugFileOp('write', filepath, e)
+      logger.error(e)
     }
   } else {
-    // Use iocraft for TUI rendering.
-    displayAnalyticsWithIocraft(fdata)
+    logger.log(serialized)
   }
 }
 
