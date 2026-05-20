@@ -315,7 +315,7 @@ async function queryReachedPypiLabels(
   Array<import('./bazel-pypi-parser.mts').ReachedPypiLabel>
 > {
   const queryStr = 'deps(kind("py_library|py_binary|py_test", //...))'
-  const result = await runBazelQuery(queryStr, queryOpts)
+  const result = await runBazelQuery(queryStr, queryOpts, 'label')
   if (result.code !== 0) {
     if (verbose) {
       logger.log(
@@ -332,7 +332,7 @@ async function queryReachedPypiLabels(
 // entries. For each reached label, if the lockfile missed it, resolve the
 // actual target via `--output=build` and extract pypi_name/pypi_version.
 async function buildSpokeTagLookup(
-  reached: Array<import('./bazel-pypi-parser.mts').ReachedPypiLabel>,
+  reached: import('./bazel-pypi-parser.mts').ReachedPypiLabel[],
   queryOpts: BazelQueryOptions,
   verbose: boolean,
 ): Promise<
