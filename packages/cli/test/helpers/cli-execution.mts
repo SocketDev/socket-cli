@@ -452,15 +452,32 @@ export interface CliInScratchOptions extends CliExecutionOptions {
 }
 
 /**
- * Execute Socket CLI inside an isolated scratch directory. Creates a unique
- * `os.tmpdir()/socket-e2e-<n>` cwd for the run and an isolated `HOME` so the
- * CLI never reaches the developer's real Socket config / credentials / scan
- * output dir. Cleans up after itself even on failure.
+ * Execute Socket CLI inside a fully isolated scratch directory. Pins
+ * **everything** the CLI or its spawned subprocesses might read or write
+ * outside of cwd into the scratch tree, so an e2e run never touches the
+ * developer's system:
  *
- * Use this for any e2e test whose command-under-test would otherwise mutate
- * real account state, write into `~/.config/...`, or scribble files into the
- * cwd. Non-destructive commands (`--help`, `--dry-run`, etc.) don't need it —
- * use `executeCliCommand` for those.
+ * - `cwd` → fresh `os.tmpdir()/socket-e2e-<n>/`
+ * - `HOME` / `USERPROFILE` → fresh `os.tmpdir()/socket-e2e-home-<n>/`
+ * - `XDG_CONFIG_HOME` → `<scratchHome>/.config`
+ * - `XDG_CACHE_HOME` → `<scratchHome>/.cache`
+ * - `XDG_DATA_HOME` → `<scratchHome>/.local/share`
+ * - `XDG_STATE_HOME` → `<scratchHome>/.local/state`
+ * - `NPM_CONFIG_CACHE` / `npm_config_cache` → `<scratchHome>/.npm`
+ * - `NPM_CONFIG_PREFIX` / `npm_config_prefix` → `<scratchHome>/.npm-global`
+ * - `NPM_CONFIG_USERCONFIG` / `npm_config_userconfig` → `<scratchHome>/.npmrc`
+ * - `PNPM_HOME` → `<scratchHome>/.pnpm`
+ * - `YARN_CACHE_FOLDER` → `<scratchHome>/.yarn-cache`
+ * - `PIP_CACHE_DIR` → `<scratchHome>/.pip-cache`
+ * - `CARGO_HOME` → `<scratchHome>/.cargo`
+ * - `GRADLE_USER_HOME` → `<scratchHome>/.gradle`
+ *
+ * Anything not pinned by the helper (the developer's `SOCKET_API_KEY` env,
+ * the real OS keychain for credentials) is **read-only** from the CLI's
+ * perspective — the CLI may read the token but the scratch HOME ensures
+ * it can't persist a new one back into the dev's config.
+ *
+ * Cleans up the scratch trees via `safeDelete()` even on failure.
  *
  * @example
  *   const result = await executeCliInScratch(['scan', 'create', '.'], {
@@ -493,9 +510,31 @@ export async function executeCliInScratch(
       cwd: callerCwd ?? scratchCwd,
       env: {
         ...process.env,
+        // Home dir pins.
         HOME: scratchHome,
         USERPROFILE: scratchHome,
+        // XDG base-directory spec.
         XDG_CONFIG_HOME: path.join(scratchHome, '.config'),
+        XDG_CACHE_HOME: path.join(scratchHome, '.cache'),
+        XDG_DATA_HOME: path.join(scratchHome, '.local', 'share'),
+        XDG_STATE_HOME: path.join(scratchHome, '.local', 'state'),
+        // npm / npx pins. Both the lowercase `npm_config_*` and uppercase
+        // `NPM_CONFIG_*` forms are honored by npm; set both so neither
+        // wins from process.env spillover.
+        npm_config_cache: path.join(scratchHome, '.npm'),
+        NPM_CONFIG_CACHE: path.join(scratchHome, '.npm'),
+        npm_config_prefix: path.join(scratchHome, '.npm-global'),
+        NPM_CONFIG_PREFIX: path.join(scratchHome, '.npm-global'),
+        npm_config_userconfig: path.join(scratchHome, '.npmrc'),
+        NPM_CONFIG_USERCONFIG: path.join(scratchHome, '.npmrc'),
+        // Sibling package managers.
+        PNPM_HOME: path.join(scratchHome, '.pnpm'),
+        YARN_CACHE_FOLDER: path.join(scratchHome, '.yarn-cache'),
+        // Non-JS toolchains the manifest generators may invoke.
+        PIP_CACHE_DIR: path.join(scratchHome, '.pip-cache'),
+        CARGO_HOME: path.join(scratchHome, '.cargo'),
+        GRADLE_USER_HOME: path.join(scratchHome, '.gradle'),
+        // Caller-supplied env wins.
         ...callerEnv,
       },
     })
