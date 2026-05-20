@@ -34,7 +34,7 @@ The `FLEET_SYNC=1` sentinel is recognized by the wheelhouse `no-revert-guard` + 
 
 ### Mode 2 — `registry-pins`
 
-Propagates a `socket-registry` pin chain through the fleet. Different shape — uses `scripts/cascade-registry-pins.mts --sha <M'>` to walk the per-repo workflow pins. Documented here for completeness; the cascade script in `lib/cascade-template.sh` covers Mode 1, and a future `lib/cascade-registry-pins.sh` will cover Mode 2.
+Propagates a `socket-registry` pin chain through the fleet. Different shape — uses `scripts/cascade-registry-pins.mts --sha <M'>` to walk the per-repo workflow pins. Documented here for completeness; the cascade script in `lib/cascade-template.mts` covers Mode 1, and a future `lib/cascade-registry-pins.mts` will cover Mode 2.
 
 For now, the registry-pin cascade is two steps documented inline:
 
@@ -50,7 +50,7 @@ Skipping Step 1 means Step 3 propagates a SHA whose dependency graph still pins 
 
 ```bash
 # Mode 1 — propagate wheelhouse template SHA
-bash .claude/skills/cascading-fleet/lib/cascade-template.sh <template-sha>
+node .claude/skills/cascading-fleet/lib/cascade-template.mts <template-sha>
 ```
 
 The script reads the fleet-repo list from `lib/fleet-repos.txt` (single source of truth), iterates, and writes a per-repo result line to stdout. Output also tees to `/tmp/cascade-<sha>.log` for post-hoc inspection.
