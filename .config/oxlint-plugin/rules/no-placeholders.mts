@@ -29,7 +29,7 @@
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
-const COMMENT_MARKER_RE = /\b(TODO|FIXME|XXX|HACK|TBD|STUB|WIP|UNIMPLEMENTED)\b/
+const COMMENT_MARKER_RE = /\b(FIXME|HACK|STUB|TBD|TODO|UNIMPLEMENTED|WIP|XXX)\b/
 
 const STUB_BODY_MARKER_RE =
   /\b(TODO|FIXME|XXX|HACK|TBD|STUB|WIP|UNIMPLEMENTED|not\s+implemented|unimplemented|placeholder|stub)\b/i
@@ -75,7 +75,8 @@ const rule = {
      */
     function isExplicitNoop(fnNode: AstNode): boolean {
       const leading = sourceCode.getCommentsBefore(fnNode)
-      for (const c of leading) {
+      for (let i = 0, { length } = leading; i < length; i += 1) {
+        const c = leading[i]!
         if (/@noop\b/.test(c.value)) {
           return true
         }
@@ -88,7 +89,8 @@ const rule = {
         const declStmt = parent.parent
         if (declStmt) {
           const above = sourceCode.getCommentsBefore(declStmt)
-          for (const c of above) {
+          for (let i = 0, { length } = above; i < length; i += 1) {
+            const c = above[i]!
             if (/@noop\b/.test(c.value)) {
               return true
             }
@@ -134,7 +136,8 @@ const rule = {
       const inner = sourceCode.getCommentsInside
         ? sourceCode.getCommentsInside(blockNode)
         : []
-      for (const c of inner) {
+      for (let i = 0, { length } = inner; i < length; i += 1) {
+        const c = inner[i]!
         if (STUB_BODY_MARKER_RE.test(c.value)) {
           return c
         }
@@ -198,7 +201,8 @@ const rule = {
     return {
       Program() {
         const comments = sourceCode.getAllComments()
-        for (const comment of comments) {
+        for (let i = 0, { length } = comments; i < length; i += 1) {
+          const comment = comments[i]!
           const match = COMMENT_MARKER_RE.exec(comment.value)
           if (!match) {
             continue
@@ -221,7 +225,7 @@ const rule = {
           !arg ||
           arg.type !== 'NewExpression' ||
           arg.callee.type !== 'Identifier' ||
-          !/^(Error|TypeError|RangeError)$/.test(arg.callee.name)
+          !/^(Error|RangeError|TypeError)$/.test(arg.callee.name)
         ) {
           return
         }
@@ -259,4 +263,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

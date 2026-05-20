@@ -7,11 +7,17 @@
 // `@socketsecurity/lib-stable/paths/normalize` instead, then write the regex
 // against `/` only.
 //
-// Why: cross-platform path matching is the canonical use case for
-// `normalizePath`. Hand-rolled `[/\\]` patterns get out of sync with
-// each other across a codebase, are slower to read, and tend to grow
-// `\\\\` escapes for path strings that have themselves been
-// regex-escaped first. Normalize, then match a single separator.
+// AST-based detector — uses `findRegexLiterals` from the vendored
+// acorn-wasm to walk the AST and inspect each `Literal { regex }`
+// node's `pattern` directly. The previous regex-driven scanner had to
+// reconstruct the regex-literal grammar by hand (a regex matching
+// regex literals is famously hard) and false-positived on `//` inside
+// comments and `/.../` in string literals. AST-walk skips all of that
+// intrinsically.
+//
+// For `new RegExp("...")` constructor calls, walks CallExpression
+// nodes whose callee is `Identifier(RegExp)` (via the AST helper's
+// CallExpression visitor).
 //
 // Scope: TypeScript / JavaScript source code blocks in the last
 // assistant message. Markdown / READMEs / docs are skipped because
@@ -21,6 +27,8 @@
 
 import process from 'node:process'
 
+import { findRegexLiterals, walkSimple } from '../_shared/acorn/index.mts'
+import type { AcornNode } from '../_shared/acorn/index.mts'
 import {
   bypassPhrasePresent,
   extractCodeFences,
@@ -40,101 +48,106 @@ interface Finding {
 const BYPASS_PHRASE = 'Allow path-regex-normalize bypass'
 const BYPASS_LOOKBACK_USER_TURNS = 8
 
-// Languages we care about — source files where regexes against paths
-// are likely to be runtime code. Markdown / yaml / json are excluded
-// because regexes in those are usually illustrative or config.
 const CODE_LANGS = new Set([
   '',
+  'cjs',
+  'cts',
   'js',
   'jsx',
+  'mjs',
+  'mts',
   'ts',
   'tsx',
-  'mjs',
-  'cjs',
-  'mts',
-  'cts',
 ])
 
-// Two separator forms inline in a single regex. Match either:
-//   /[/\\]/, /[\\/]/, /[\\\\/]/  → character classes with both
-//   `\\\\` and `/` literals in the same regex source
-//
-// We approximate by scanning the *body* of regex literals for any of:
-//   - `[/\\]` or `[\\/]` (character class with both separators)
-//   - `[\\\\` followed later by `/` (escaped-backslash class + slash literal)
+// Three forms of a dual-separator character class inside a regex
+// pattern. The patterns are matched against the RAW regex source
+// (what the AST helper reports as `pattern`), not against JS string
+// escaping.
 const DUAL_SEP_RE_PATTERNS: readonly RegExp[] = [
-  /\[\\\\?\/\]/, // `[/\]` / `[\\/]`
-  /\[\\\\\/\]/, // `[\\/]` inside a regex string
-  /\[\/\\\\\]/, // `[/\\]` inside a regex string (one of the most common)
+  /\[\\?\/\]/, // `[/]` or `[\/]` alone (rare; included for completeness)
+  /\[\/\\\\\]/, // `[/\\]` — slash + escaped backslash
+  /\[\\\\\/\]/, // `[\\/]` — escaped backslash + slash
 ]
 
-// Hint signal: the regex (or nearby code) mentions a path-flavored
-// fragment, suggesting this is path matching, not generic backslash
-// handling.
+// Path-flavored token signal — if any of these appear in the same
+// code block as the dual-sep regex, we trigger. Otherwise the regex
+// is probably matching something else (HTTP path, URL, etc.).
 const PATH_FLAVOR_RE =
   /(\.cache|node_modules|\/build\/|\bpaths?\.|os\.homedir|process\.cwd|fileURLToPath|path\.join|path\.resolve|path\.sep|normalize)/
 
-/**
- * Find regex literals in `code` that match both path separators inline. Returns
- * a list of findings (pattern + reason). Includes only regexes appearing within
- * ~10 lines of path-flavored code.
- */
-function findDualSeparatorRegexes(code: string): Finding[] {
+export function findFindings(code: string): Finding[] {
   const findings: Finding[] = []
 
-  // Match `/pattern/flags` regex literals (best-effort — JS doesn't
-  // make this trivial without a real lexer).
-  const regexLiteralRe = /\/((?:\\.|\[[^\]]*\]|[^/\n])+)\/[a-z]*/g
-  for (const match of code.matchAll(regexLiteralRe)) {
-    const body = match[1]
-    if (!body) continue
-    let isDual = false
-    for (let i = 0, { length } = DUAL_SEP_RE_PATTERNS; i < length; i += 1) {
-      const p = DUAL_SEP_RE_PATTERNS[i]!
-      if (p.test(body)) {
-        isDual = true
-        break
-      }
+  // Quick early-out: if the block contains no path-flavored token at
+  // all, no point parsing.
+  if (!PATH_FLAVOR_RE.test(code)) {
+    return findings
+  }
+
+  // Regex literals via AST.
+  const regexLiterals = findRegexLiterals(code)
+  for (let i = 0, { length } = regexLiterals; i < length; i += 1) {
+    const r = regexLiterals[i]!
+    if (!isDualSeparator(r.pattern)) {
+      continue
     }
-    if (!isDual) continue
-
-    // Confirm path context: look at a 400-char window around the match
-    // for any path-flavored token.
-    const idx = match.index ?? 0
-    const start = Math.max(0, idx - 200)
-    const end = Math.min(code.length, idx + (match[0]?.length ?? 0) + 200)
-    const window = code.slice(start, end)
-    if (!PATH_FLAVOR_RE.test(window)) continue
-
     findings.push({
-      pattern: match[0]!,
+      pattern: `/${r.pattern}/${r.flags}`,
       reason:
         'Dual path-separator regex. Normalize the input with `normalizePath` from `@socketsecurity/lib-stable/paths/normalize` first, then match `/` only.',
     })
   }
 
-  // Also catch `new RegExp("[/\\\\]")` / `new RegExp('[\\\\/]')` —
-  // strings passed to the RegExp constructor where the escaped
-  // backslash form is more obvious.
-  const newRegexpRe =
-    /new\s+RegExp\(\s*(['"`])([^'"`]*?(?:\\\\)+[/].*?|[^'"`]*?\/(?:\\\\)+.*?|[^'"`]*?\[(?:\/\\\\|\\\\\/)\][^'"`]*?)\1/g
-  for (const match of code.matchAll(newRegexpRe)) {
-    const body = match[2]
-    if (!body) continue
-    if (!body.includes('\\\\') || !body.includes('/')) continue
-    const idx = match.index ?? 0
-    const start = Math.max(0, idx - 200)
-    const end = Math.min(code.length, idx + (match[0]?.length ?? 0) + 200)
-    const window = code.slice(start, end)
-    if (!PATH_FLAVOR_RE.test(window)) continue
-    findings.push({
-      pattern: match[0]!,
-      reason:
-        '`new RegExp(...)` with both separators in the pattern string. Normalize the input first; the regex stays single-separator.',
-    })
-  }
+  // `new RegExp("...")` constructor — walk CallExpression / NewExpression
+  // with callee = Identifier(RegExp). The first arg is the pattern
+  // string; the second (optional) is flags.
+  walkSimple(code, {
+    NewExpression(node: AcornNode) {
+      const callee = node['callee'] as AcornNode | undefined
+      if (
+        !callee ||
+        callee.type !== 'Identifier' ||
+        (callee['name'] as string) !== 'RegExp'
+      ) {
+        return
+      }
+      const args = (node['arguments'] as AcornNode[] | undefined) ?? []
+      const first = args[0]
+      if (
+        !first ||
+        first.type !== 'Literal' ||
+        typeof first['value'] !== 'string'
+      ) {
+        return
+      }
+      const pattern = first['value'] as string
+      // The constructor takes the pattern as a STRING — backslash
+      // escapes are JS-string escapes, so `"[/\\\\]"` in source
+      // becomes `"[/\\]"` as the value, then `[/\\]` as the regex.
+      // We test against the value (already one level of unescaping).
+      if (!isDualSeparator(pattern)) {
+        return
+      }
+      findings.push({
+        pattern: `new RegExp(${JSON.stringify(pattern)})`,
+        reason:
+          '`new RegExp(...)` with both separators in the pattern string. Normalize the input first; the regex stays single-separator.',
+      })
+    },
+  })
 
   return findings
+}
+
+export function isDualSeparator(pattern: string): boolean {
+  for (let i = 0, { length } = DUAL_SEP_RE_PATTERNS; i < length; i += 1) {
+    const p = DUAL_SEP_RE_PATTERNS[i]!
+    if (p.test(pattern)) {
+      return true
+    }
+  }
+  return false
 }
 
 async function main(): Promise<void> {
@@ -169,8 +182,10 @@ async function main(): Promise<void> {
   const aggregate: Finding[] = []
   for (let i = 0, { length } = codeBlocks; i < length; i += 1) {
     const block = codeBlocks[i]!
-    if (!CODE_LANGS.has((block.lang ?? '').toLowerCase())) continue
-    const findings = findDualSeparatorRegexes(block.body)
+    if (!CODE_LANGS.has((block.lang ?? '').toLowerCase())) {
+      continue
+    }
+    const findings = findFindings(block.body)
     for (let fi = 0, { length: flen } = findings; fi < flen; fi += 1) {
       aggregate.push(findings[fi]!)
     }

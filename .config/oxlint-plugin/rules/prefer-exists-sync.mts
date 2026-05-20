@@ -30,8 +30,8 @@ import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const ACCESS_METHODS = new Set(['access', 'accessSync'])
-const STAT_METHODS = new Set(['stat', 'statSync', 'lstat', 'lstatSync'])
-const WRAPPER_NAMES = new Set(['fileExists', 'pathExists', 'isFile', 'isDir'])
+const STAT_METHODS = new Set(['lstat', 'lstatSync', 'stat', 'statSync'])
+const WRAPPER_NAMES = new Set(['fileExists', 'isDir', 'isFile', 'pathExists'])
 
 const EXISTS_SYNC_IMPORT_LINE = "import { existsSync } from 'node:fs'"
 
@@ -166,4 +166,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

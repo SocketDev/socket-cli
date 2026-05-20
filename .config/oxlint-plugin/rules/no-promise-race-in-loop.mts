@@ -16,14 +16,14 @@
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
-const RACE_METHODS = new Set(['race', 'any'])
+const RACE_METHODS = new Set(['any', 'race'])
 
 const LOOP_TYPES = new Set([
-  'ForStatement',
-  'ForOfStatement',
-  'ForInStatement',
-  'WhileStatement',
   'DoWhileStatement',
+  'ForInStatement',
+  'ForOfStatement',
+  'ForStatement',
+  'WhileStatement',
 ])
 
 function isInsideLoop(node: AstNode) {
@@ -35,9 +35,9 @@ function isInsideLoop(node: AstNode) {
     // Function boundaries break the chain — a function defined inside
     // a loop and invoked elsewhere isn't "in" the loop.
     if (
+      current.type === 'ArrowFunctionExpression' ||
       current.type === 'FunctionDeclaration' ||
-      current.type === 'FunctionExpression' ||
-      current.type === 'ArrowFunctionExpression'
+      current.type === 'FunctionExpression'
     ) {
       return false
     }
@@ -98,4 +98,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

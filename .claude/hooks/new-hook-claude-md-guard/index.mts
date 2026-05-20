@@ -39,7 +39,7 @@ import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface PreToolUsePayload {
   readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly file_path?: unknown } | undefined
+  readonly tool_input?: { readonly file_path?: unknown | undefined } | undefined
   readonly transcript_path?: string | undefined
   readonly cwd?: string | undefined
 }
@@ -67,7 +67,7 @@ const WHEELHOUSE_ONLY_HOOKS: ReadonlySet<string> = new Set([
   'new-hook-claude-md-guard',
 ])
 
-function findCanonicalClaudeMd(
+export function findCanonicalClaudeMd(
   filePath: string,
   cwd: string | undefined,
 ): string | undefined {
@@ -98,7 +98,7 @@ function findCanonicalClaudeMd(
   return undefined
 }
 
-function readPayload(raw: string): PreToolUsePayload | undefined {
+export function readPayload(raw: string): PreToolUsePayload | undefined {
   try {
     return JSON.parse(raw) as PreToolUsePayload
   } catch {
@@ -116,7 +116,7 @@ async function main(): Promise<void> {
     process.exit(0)
   }
   const toolName = payload.tool_name
-  if (toolName !== 'Write' && toolName !== 'Edit') {
+  if (toolName !== 'Edit' && toolName !== 'Write') {
     process.exit(0)
   }
   const filePath = payload.tool_input?.['file_path']

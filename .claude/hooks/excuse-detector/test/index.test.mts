@@ -4,9 +4,12 @@
 // writes a fake transcript to a temp dir, passes its path on stdin,
 // captures stderr + exit code.
 
-import { spawn } from 'node:child_process'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -38,7 +41,7 @@ function setupTranscript(rawContent: string): {
   readonly transcriptPath: string
   readonly cleanup: () => void
 } {
-  const dir = mkdtempSync(path.join(tmpdir(), 'excuse-detector-test-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'excuse-detector-test-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   writeFileSync(transcriptPath, rawContent)
   return {
@@ -69,17 +72,17 @@ async function runHook(
     if (options.stopHookActive) {
       payload['stop_hook_active'] = true
     }
-    child.stdin.end(JSON.stringify(payload))
+    child.stdin!.end(JSON.stringify(payload))
     let stderr = ''
     let stdout = ''
-    child.stderr.on('data', chunk => {
+    child.process.stderr!.on('data', chunk => {
       stderr += chunk.toString('utf8')
     })
-    child.stdout.on('data', chunk => {
+    child.process.stdout!.on('data', chunk => {
       stdout += chunk.toString('utf8')
     })
     return await new Promise<Result>(resolve => {
-      child.on('exit', code => {
+      child.process.on('exit', code => {
         resolve({ code: code ?? 0, stderr, stdout })
       })
     })
@@ -90,17 +93,17 @@ async function runHook(
 
 test('no transcript path: exits clean', async () => {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify({}))
+  child.stdin!.end(JSON.stringify({}))
   let stderr = ''
   let stdout = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
-  child.stdout.on('data', chunk => {
+  child.process.stdout!.on('data', chunk => {
     stdout += chunk.toString('utf8')
   })
   const result = await new Promise<Result>(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr, stdout })
     })
   })
@@ -368,19 +371,19 @@ test('respects SOCKET_EXCUSE_DETECTOR_DISABLED', async () => {
       stdio: 'pipe',
       env: { ...process.env, SOCKET_EXCUSE_DETECTOR_DISABLED: '1' },
     })
-    child.stdin.end(
+    child.stdin!.end(
       JSON.stringify({ transcript_path: transcript.transcriptPath }),
     )
     let stderr = ''
     let stdout = ''
-    child.stderr.on('data', chunk => {
+    child.process.stderr!.on('data', chunk => {
       stderr += chunk.toString('utf8')
     })
-    child.stdout.on('data', chunk => {
+    child.process.stdout!.on('data', chunk => {
       stdout += chunk.toString('utf8')
     })
     const result = await new Promise<Result>(resolve => {
-      child.on('exit', code => {
+      child.process.on('exit', code => {
         resolve({ code: code ?? 0, stderr, stdout })
       })
     })
@@ -409,19 +412,19 @@ test('handles array-of-blocks content shape', async () => {
   )
   try {
     const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-    child.stdin.end(
+    child.stdin!.end(
       JSON.stringify({ transcript_path: transcript.transcriptPath }),
     )
     let stderr = ''
     let stdout = ''
-    child.stderr.on('data', chunk => {
+    child.process.stderr!.on('data', chunk => {
       stderr += chunk.toString('utf8')
     })
-    child.stdout.on('data', chunk => {
+    child.process.stdout!.on('data', chunk => {
       stdout += chunk.toString('utf8')
     })
     const result = await new Promise<Result>(resolve => {
-      child.on('exit', code => {
+      child.process.on('exit', code => {
         resolve({ code: code ?? 0, stderr, stdout })
       })
     })
@@ -433,17 +436,17 @@ test('handles array-of-blocks content shape', async () => {
 
 test('fails open on malformed payload', async () => {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end('not valid json')
+  child.stdin!.end('not valid json')
   let stderr = ''
   let stdout = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
-  child.stdout.on('data', chunk => {
+  child.process.stdout!.on('data', chunk => {
     stdout += chunk.toString('utf8')
   })
   const result = await new Promise<Result>(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr, stdout })
     })
   })

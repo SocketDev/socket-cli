@@ -31,6 +31,7 @@
 
 import process from 'node:process'
 
+import { findThrowNew } from '../_shared/acorn/index.mts'
 import {
   extractCodeFences,
   readLastAssistantText,
@@ -51,11 +52,11 @@ interface StopPayload {
 // no colon (a colon usually signals a field-path prefix like
 // "user.email: must be lowercase"), no period sentences, no quoted
 // values.
-const VAGUE_MESSAGE_PATTERNS: readonly {
+const VAGUE_MESSAGE_PATTERNS: ReadonlyArray<{
   label: string
   regex: RegExp
   hint: string
-}[] = [
+}> = [
   {
     label: 'bare "invalid"',
     regex:
@@ -91,25 +92,25 @@ const VAGUE_MESSAGE_PATTERNS: readonly {
   {
     label: 'bare "bad" / "wrong" / "incorrect"',
     regex:
-      /^(bad|wrong|incorrect|invalid format)(\s+(value|input|argument|format|data))?\.?$/i,
+      /^(bad|wrong|incorrect|invalid format)(\s+(argument|data|format|input|value))?\.?$/i,
     hint: 'Same as "invalid" — describe the rule the value violated, not how you feel about it.',
   },
 ]
 
-// Capture every throw expression that constructs a *Error class with
-// a string-literal message. Three forms:
-//   throw new Error("msg")
-//   throw new TypeError('msg')
-//   throw new RangeError(`msg`)
+// AST-based detector — walks every `throw new <Ctor>(...)` via the
+// shared acorn helper. The previous version had to parse the throw
+// shape with a single complex regex that:
+//   1. Couldn't handle interpolated template literals (it relied on
+//      the body containing no quote characters at all).
+//   2. Could false-positive on string literals containing the literal
+//      text `throw new Error("...")`.
 //
-// Groups: 1 = error class name, 2 = quote char, 3 = message body.
-// We require the closing quote to match the opening; multi-line
-// template literals work as long as the body is followed by the
-// same `quote`. (We intentionally don't try to handle interpolated
-// templates with ${...} inside — those messages are dynamic, the
-// hook is for static-string violations.)
-const THROW_NEW_ERROR_RE =
-  /\bthrow\s+new\s+(\w*Error|TemporalError)\s*\(\s*(['"`])([^'"`\n]{0,200})\2\s*[,)]/g
+// AST eliminates both. We accept any constructor matching `/Error$/`
+// or the literal `TemporalError`, then inspect the first argument; if
+// it's a string Literal, we grade it.
+
+// Match any Error-suffixed class plus the legacy TemporalError name.
+const ERROR_CLASS_RE = /(?:Error|TemporalError)$/
 
 interface MessageFinding {
   readonly errorClass: string
@@ -118,7 +119,9 @@ interface MessageFinding {
   readonly hint: string
 }
 
-function gradeMessages(codeBlocks: readonly CodeFence[]): MessageFinding[] {
+export function gradeMessages(
+  codeBlocks: readonly CodeFence[],
+): MessageFinding[] {
   const findings: MessageFinding[] = []
   for (
     let bi = 0, { length: blocksLen } = codeBlocks;
@@ -126,13 +129,14 @@ function gradeMessages(codeBlocks: readonly CodeFence[]): MessageFinding[] {
     bi += 1
   ) {
     const block = codeBlocks[bi]!.body
-    // Reset the regex's lastIndex each block (global flag preserves it).
-    THROW_NEW_ERROR_RE.lastIndex = 0
-    let match: RegExpExecArray | null
-    while ((match = THROW_NEW_ERROR_RE.exec(block)) !== null) {
-      const errorClass = match[1]!
-      const message = (match[3] ?? '').trim()
+    const throwSites = findThrowNew(block, ERROR_CLASS_RE)
+    for (let i = 0, { length } = throwSites; i < length; i += 1) {
+      const site = throwSites[i]!
+      const message = (site.message ?? '').trim()
       if (message.length === 0) {
+        // Non-string-Literal first arg (template literal with
+        // interpolation, an identifier, etc.) — out of scope; this
+        // hook only grades static-string violations.
         continue
       }
       // Skip messages that contain a colon (suggests field-path prefix)
@@ -144,8 +148,6 @@ function gradeMessages(codeBlocks: readonly CodeFence[]): MessageFinding[] {
       ) {
         continue
       }
-      // Skip long messages — they may have the four ingredients spread
-      // across a sentence. The hook targets the trivially-vague cases.
       if (message.length > 40) {
         continue
       }
@@ -157,7 +159,7 @@ function gradeMessages(codeBlocks: readonly CodeFence[]): MessageFinding[] {
         const pattern = VAGUE_MESSAGE_PATTERNS[pi]!
         if (pattern.regex.test(message)) {
           findings.push({
-            errorClass,
+            errorClass: site.ctorName,
             message,
             label: pattern.label,
             hint: pattern.hint,

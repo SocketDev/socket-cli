@@ -61,30 +61,12 @@ const VITEST_CONFIG_CANDIDATES = [
   'template/vitest.config.mts',
 ]
 
-function findVitestConfig(startDir: string): string | undefined {
-  let cur = startDir
-  for (let depth = 0; depth < 10; depth += 1) {
-    for (const rel of VITEST_CONFIG_CANDIDATES) {
-      const p = path.join(cur, rel)
-      if (existsSync(p)) {
-        return p
-      }
-    }
-    const parent = path.dirname(cur)
-    if (parent === cur) {
-      break
-    }
-    cur = parent
-  }
-  return undefined
-}
-
 // Extract `include: [...]` string-literal entries from a vitest config.
 // Permissive parse — we look for the literal pattern `include: [...]` (or
 // `include:[...]`) and pull every quoted string out of the matched bracket
 // body. If the config uses dynamic globs (variable references, spreads,
 // or function calls), we return undefined and fail open.
-function extractIncludeGlobs(configText: string): string[] | undefined {
+export function extractIncludeGlobs(configText: string): string[] | undefined {
   const m = /include\s*:\s*\[([^\]]*)\]/.exec(configText)
   if (!m) {
     return undefined
@@ -108,10 +90,35 @@ function extractIncludeGlobs(configText: string): string[] | undefined {
   return globs
 }
 
+export function fileImportsNodeTest(text: string): boolean {
+  // Detect `import test from 'node:test'`, `import { test } from 'node:test'`,
+  // or `from "node:test"`. Conservative; ignores `from 'node:test/...'`.
+  return /from\s+['"`]node:test['"`]/.test(text)
+}
+
+export function findVitestConfig(startDir: string): string | undefined {
+  let cur = startDir
+  for (let depth = 0; depth < 10; depth += 1) {
+    for (let i = 0, { length } = VITEST_CONFIG_CANDIDATES; i < length; i += 1) {
+      const rel = VITEST_CONFIG_CANDIDATES[i]!
+      const p = path.join(cur, rel)
+      if (existsSync(p)) {
+        return p
+      }
+    }
+    const parent = path.dirname(cur)
+    if (parent === cur) {
+      break
+    }
+    cur = parent
+  }
+  return undefined
+}
+
 // Convert a vitest-style glob to a regex. Supports `**`, `*`, `?`, and
 // brace alternation `{a,b}`. Not a full minimatch — covers the patterns
 // actually seen in fleet vitest configs.
-function globToRegex(glob: string): RegExp {
+export function globToRegex(glob: string): RegExp {
   let re = ''
   for (let i = 0; i < glob.length; i += 1) {
     const c = glob[i]!
@@ -146,7 +153,7 @@ function globToRegex(glob: string): RegExp {
   return new RegExp('^' + re + '$')
 }
 
-function globToRegexBody(glob: string): string {
+export function globToRegexBody(glob: string): string {
   // Lightweight inner conversion used inside brace alternation; reuses
   // globToRegex's main loop but returns just the body. To keep the code
   // small, we run the main converter and strip the anchors.
@@ -154,13 +161,10 @@ function globToRegexBody(glob: string): string {
   return r.replace(/^\^/, '').replace(/\$$/, '')
 }
 
-function fileImportsNodeTest(text: string): boolean {
-  // Detect `import test from 'node:test'`, `import { test } from 'node:test'`,
-  // or `from "node:test"`. Conservative; ignores `from 'node:test/...'`.
-  return /from\s+['"`]node:test['"`]/.test(text)
-}
-
-function relPathFromRepoRoot(filePath: string, configPath: string): string {
+export function relPathFromRepoRoot(
+  filePath: string,
+  configPath: string,
+): string {
   // configPath is `<repo>/.config/vitest.config.mts` or
   // `<repo>/vitest.config.mts` etc. — strip the trailing config dir to get
   // the repo root.
@@ -195,7 +199,7 @@ async function main(): Promise<void> {
     process.exit(0)
   }
   const filePath = payload.tool_input?.file_path
-  if (!filePath || !/\.(mts|mjs|ts|js|cts|cjs)$/.test(filePath)) {
+  if (!filePath || !/\.(cjs|cts|js|mjs|mts|ts)$/.test(filePath)) {
     process.exit(0)
   }
 
@@ -238,7 +242,8 @@ async function main(): Promise<void> {
 
   const relPath = relPathFromRepoRoot(filePath, configPath)
   const matched: string[] = []
-  for (const glob of globs) {
+  for (let i = 0, { length } = globs; i < length; i += 1) {
+    const glob = globs[i]!
     try {
       const re = globToRegex(glob)
       if (re.test(relPath)) {

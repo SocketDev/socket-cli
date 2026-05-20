@@ -19,7 +19,8 @@ export const checkRuleF = (): void => {
   // when the same shape appears in 2+ files, demote them to Rule F so
   // the message is more accurate.
   const byShape = new Map<string, Finding[]>()
-  for (const f of findings) {
+  for (let i = 0, { length } = findings; i < length; i += 1) {
+    const f = findings[i]!
     if (f.rule !== 'A') {
       continue
     }
@@ -46,7 +47,8 @@ export const checkRuleF = (): void => {
     if (distinctFiles.size < 2) {
       continue
     }
-    for (const f of list) {
+    for (let i = 0, { length } = list; i < length; i += 1) {
+      const f = list[i]!
       f.rule = 'F'
       f.message = `Same path shape constructed in ${distinctFiles.size} files (${list.length} places): ${shape.slice(0, 100)}`
       f.fix =

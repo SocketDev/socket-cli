@@ -15,10 +15,10 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { platform, tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
-const IS_MACOS = platform() === 'darwin'
+const IS_MACOS = os.platform() === 'darwin'
 
 const FAKE_TOKEN = 'sk-test-aaaabbbbccccddddeeeeffff'
 
@@ -26,7 +26,7 @@ function withFakeHome(
   fn: (rcPath: string) => Promise<void> | void,
 ): () => Promise<void> {
   return async () => {
-    const fake = mkdtempSync(path.join(tmpdir(), 'shell-rc-bridge-test-'))
+    const fake = mkdtempSync(path.join(os.tmpdir(), 'shell-rc-bridge-test-'))
     const prevHome = process.env['HOME']
     const prevShell = process.env['SHELL']
     process.env['HOME'] = fake

@@ -104,38 +104,11 @@ const PLAN_HEADING_TOKENS = ['plan', 'roadmap', 'migration plan', 'design doc']
  * Lowercased filename without extension. Returns empty string for paths without
  * a basename.
  */
-function basenameStem(filePath: string): string {
+export function basenameStem(filePath: string): string {
   const base = path.basename(filePath)
   const dot = base.lastIndexOf('.')
   const stem = dot > 0 ? base.slice(0, dot) : base
   return stem.toLowerCase()
-}
-
-function filenameLooksLikePlan(filePath: string): boolean {
-  const stem = basenameStem(filePath)
-  if (!stem) {
-    return false
-  }
-  return PLAN_FILENAME_TOKENS.some(token => stem.includes(token))
-}
-
-function contentLooksLikePlan(content: string | undefined): boolean {
-  if (!content) {
-    return false
-  }
-  // First non-blank line.
-  let firstLine = ''
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim()
-    if (trimmed) {
-      firstLine = trimmed.toLowerCase()
-      break
-    }
-  }
-  if (!firstLine.startsWith('#')) {
-    return false
-  }
-  return PLAN_HEADING_TOKENS.some(token => firstLine.includes(token))
 }
 
 /**
@@ -152,7 +125,7 @@ function contentLooksLikePlan(content: string | undefined): boolean {
  * of repo context — including the case where a script under /tmp tries to write
  * into a project tree.
  */
-function classifyPath(filePath: string): string {
+export function classifyPath(filePath: string): string {
   const normalized = filePath.replace(/\\/g, '/')
   const segs = normalized.split('/')
 
@@ -199,6 +172,33 @@ function classifyPath(filePath: string): string {
   return 'irrelevant'
 }
 
+export function contentLooksLikePlan(content: string | undefined): boolean {
+  if (!content) {
+    return false
+  }
+  // First non-blank line.
+  let firstLine = ''
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (trimmed) {
+      firstLine = trimmed.toLowerCase()
+      break
+    }
+  }
+  if (!firstLine.startsWith('#')) {
+    return false
+  }
+  return PLAN_HEADING_TOKENS.some(token => firstLine.includes(token))
+}
+
+export function filenameLooksLikePlan(filePath: string): boolean {
+  const stem = basenameStem(filePath)
+  if (!stem) {
+    return false
+  }
+  return PLAN_FILENAME_TOKENS.some(token => stem.includes(token))
+}
+
 async function main(): Promise<number> {
   const raw = await readStdin()
   if (!raw.trim()) {
@@ -216,7 +216,7 @@ async function main(): Promise<number> {
   }
 
   const tool = payload.tool_name
-  if (tool !== 'Edit' && tool !== 'Write' && tool !== 'MultiEdit') {
+  if (tool !== 'Edit' && tool !== 'MultiEdit' && tool !== 'Write') {
     return 0
   }
 

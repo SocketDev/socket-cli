@@ -71,7 +71,8 @@ const rule = {
         const leadingComments = sourceCode
           .getAllComments()
           .filter((c: AstNode) => c.loc.start.line <= 5)
-        for (const c of leadingComments) {
+        for (let i = 0, { length } = leadingComments; i < length; i += 1) {
+          const c = leadingComments[i]!
           if (BYPASS_RE.test(c.value)) {
             return
           }
@@ -90,4 +91,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

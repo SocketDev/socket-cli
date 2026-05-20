@@ -105,7 +105,8 @@ const rule = {
           .join(', ')
 
         let fixerAttached = false
-        for (const spec of typeSpecifiers) {
+        for (let i = 0, { length } = typeSpecifiers; i < length; i += 1) {
+          const spec = typeSpecifiers[i]!
           const name =
             spec.imported && spec.imported.name
               ? spec.imported.name
@@ -114,7 +115,7 @@ const rule = {
             node: AstNode
             messageId: string
             data: { name: string; source: string }
-            fix?: (fixer: RuleFixer) => unknown
+            fix?: ((fixer: RuleFixer) => unknown) | undefined
           } = {
             node: spec,
             messageId: 'preferSeparateTypeImport',
@@ -192,4 +193,5 @@ function specifierText(
   return body
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

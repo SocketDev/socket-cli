@@ -36,18 +36,18 @@ await runStopReminder({
     {
       label: 'option A (depth/correctness) … option B (speed/shipped)',
       regex:
-        /\boption\s+a\b[^.?!\n]{0,80}\b(depth|correctness|proper|thorough)\b[\s\S]{0,200}\boption\s+b\b[^.?!\n]{0,80}\b(speed|fast|ship|breadth)\b/i,
+        /\boption\s+a\b[^.?!\n]{0,80}\b(correctness|depth|proper|thorough)\b[\s\S]{0,200}\boption\s+b\b[^.?!\n]{0,80}\b(breadth|fast|ship|speed)\b/i,
       why: 'Speed-vs-depth choice menu. Per CLAUDE.md "Default to perfectionist when you have latitude" — pick depth and execute.',
     },
     {
       label: 'maximally useful vs maximally shipped',
       regex:
-        /\bmaximally\s+(useful|correct|thorough)\b[\s\S]{0,80}\bmaximally\s+(shipped|fast|quick)\b/i,
+        /\bmaximally\s+(correct|thorough|useful)\b[\s\S]{0,80}\bmaximally\s+(fast|quick|shipped)\b/i,
       why: 'Same pattern — re-litigating perfectionist-vs-velocity. User already chose perfectionist.',
     },
     {
       label: 'ship-it precision / ship-it-now',
-      regex: /\bship[- ]it[- ]?(now|precision|fast|version)\b/i,
+      regex: /\bship[- ]it[- ]?(fast|now|precision|version)\b/i,
       why: 'Velocity-framed; CLAUDE.md says perfectionist default. Use unless user explicitly time-boxed.',
     },
     {
@@ -58,7 +58,7 @@ await runStopReminder({
     {
       label: 'speed vs depth / fast vs right / now vs correct',
       regex:
-        /\b(speed|fast|quick|now)\s+vs\.?\s+(depth|right|correct|proper|thorough)\b/i,
+        /\b(fast|now|quick|speed)\s+vs\.?\s+(correct|depth|proper|right|thorough)\b/i,
       why: 'Same speed-vs-quality framing; perfectionist is the default unless user opted out.',
     },
     {
@@ -69,7 +69,7 @@ await runStopReminder({
     {
       label: 'plow through vs do it right',
       regex:
-        /\bplow\s+(through|ahead)\b[\s\S]{0,80}\b(properly|carefully|right|correctly)\b/i,
+        /\bplow\s+(ahead|through)\b[\s\S]{0,80}\b(carefully|correctly|properly|right)\b/i,
       why: 'Same pattern (velocity vs care). Default perfectionist.',
     },
   ],

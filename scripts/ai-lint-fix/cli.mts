@@ -236,7 +236,7 @@ function renderRuleGuidance(findings: OxlintMessage[]): string {
     }
   }
   const entries = [...seen]
-    .sort()
+    .toSorted()
     .map(id => {
       const guidance = RULE_GUIDANCE[id]
       if (!guidance) {

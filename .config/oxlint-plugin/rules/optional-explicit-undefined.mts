@@ -49,7 +49,7 @@ const rule = {
   create(context: RuleContext) {
     // Plugin runs against all extensions; we only enforce on TS files.
     const filename = context.filename ?? context.getFilename?.() ?? ''
-    if (!/\.(?:ts|cts|mts)$/.test(filename)) {
+    if (!/\.(?:cts|mts|ts)$/.test(filename)) {
       return {}
     }
 
@@ -83,9 +83,15 @@ const rule = {
      */
     function keyName(node: AstNode) {
       const k = node.key
-      if (!k) return 'property'
-      if (k.type === 'Identifier') return k.name
-      if (k.type === 'Literal' && typeof k.value === 'string') return k.value
+      if (!k) {
+        return 'property'
+      }
+      if (k.type === 'Identifier') {
+        return k.name
+      }
+      if (k.type === 'Literal' && typeof k.value === 'string') {
+        return k.value
+      }
       return 'property'
     }
 
@@ -95,9 +101,13 @@ const rule = {
      */
     function typeText(node: AstNode) {
       const ann = node.typeAnnotation?.typeAnnotation
-      if (!ann || !ann.range) return 'T'
+      if (!ann || !ann.range) {
+        return 'T'
+      }
       const src = context.sourceCode ?? context.getSourceCode?.()
-      if (!src) return 'T'
+      if (!src) {
+        return 'T'
+      }
       return src.text.slice(ann.range[0], ann.range[1])
     }
 
@@ -111,8 +121,8 @@ const rule = {
      */
     function needsParens(ann: AstNode): boolean {
       return (
-        ann.type === 'TSFunctionType' ||
         ann.type === 'TSConstructorType' ||
+        ann.type === 'TSFunctionType' ||
         ann.type === 'TSIntersectionType'
       )
     }
@@ -137,7 +147,7 @@ const rule = {
       // the outer union; for `(...) => Foo | undefined` we want to
       // accept that as already-correct.
       if (
-        (ann.type === 'TSFunctionType' || ann.type === 'TSConstructorType') &&
+        (ann.type === 'TSConstructorType' || ann.type === 'TSFunctionType') &&
         hasUndefined(ann.returnType?.typeAnnotation)
       ) {
         return
@@ -172,4 +182,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

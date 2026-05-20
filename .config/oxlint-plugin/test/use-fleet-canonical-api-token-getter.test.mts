@@ -47,7 +47,7 @@ describe('socket/use-fleet-canonical-api-token-getter', () => {
           name: 'process.env.SOCKET_API_KEY (legacy)',
           code: 'const t = process.env.SOCKET_API_KEY\n',
           errors: [
-            { messageId: 'directEnv', data: { name: 'SOCKET_API_KEY' } },
+            { messageId: 'directEnv', data: { name: 'SOCKET_API_TOKEN' } },
           ],
         },
       ],

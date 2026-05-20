@@ -27,7 +27,7 @@ await runStopReminder({
   patterns: [
     {
       label: 'AI attribution: Generated with Claude',
-      regex: /generated with (?:claude|anthropic)/i,
+      regex: /generated with (?:anthropic|claude)/i,
       why: 'The fleet forbids AI attribution in commit/PR text. Remove the line.',
     },
     {

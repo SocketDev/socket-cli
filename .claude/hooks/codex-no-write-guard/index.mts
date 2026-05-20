@@ -57,9 +57,10 @@ const WRITE_INTENT_VERBS = [
   'modify',
 ]
 
-function hasWriteIntent(text: string): string | undefined {
+export function hasWriteIntent(text: string): string | undefined {
   const lower = text.toLowerCase()
-  for (const verb of WRITE_INTENT_VERBS) {
+  for (let i = 0, { length } = WRITE_INTENT_VERBS; i < length; i += 1) {
+    const verb = WRITE_INTENT_VERBS[i]!
     const re = new RegExp(`\\b${verb}(?:s|ing|ed)?\\b`)
     if (re.test(lower)) {
       return verb
@@ -68,7 +69,7 @@ function hasWriteIntent(text: string): string | undefined {
   return undefined
 }
 
-function isCodexBashCommand(command: string): boolean {
+export function isCodexBashCommand(command: string): boolean {
   return /(?:^|[\s;&|(`])codex\b/.test(command)
 }
 

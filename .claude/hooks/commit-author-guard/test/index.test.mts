@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -19,7 +19,7 @@ interface FakeRepo {
 function makeFakeRepo(
   canonicalEmail = 'john.david.dalton@gmail.com',
 ): FakeRepo {
-  const root = mkdtempSync(path.join(tmpdir(), 'authorguard-'))
+  const root = mkdtempSync(path.join(os.tmpdir(), 'authorguard-'))
   const home = path.join(root, 'home')
   mkdirSync(path.join(home, '.claude'), { recursive: true })
   // Init a git repo so `git config user.email` calls don't error out.
@@ -60,11 +60,11 @@ function runHook(
   extraEnv: Record<string, string> = {},
 ): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
-    encoding: 'utf8',
     env: { ...process.env, HOME: home, ...extraEnv },
   })
-  return { stderr: result.stderr, exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
 test('BLOCKS --author override with wrong email', () => {
@@ -317,7 +317,7 @@ test('fails open when no canonical email is configured anywhere', () => {
   // path is checked separately — here we just ensure the JSON path
   // missing means we use the global config (which may or may not be set).
   // The hook should not block when it has no canonical to enforce.
-  const root = mkdtempSync(path.join(tmpdir(), 'authorguard-empty-'))
+  const root = mkdtempSync(path.join(os.tmpdir(), 'authorguard-empty-'))
   const home = path.join(root, 'home')
   mkdirSync(path.join(home, '.claude'), { recursive: true })
   const repo = path.join(root, 'repo')
@@ -333,12 +333,12 @@ test('fails open when no canonical email is configured anywhere', () => {
     // fails open; if it's set to the user's real email, this test's
     // imposter email gets blocked. Either way, the hook should not crash.
     const result = spawnSync('node', [HOOK_PATH], {
+      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: JSON.stringify({
         tool_name: 'Bash',
         tool_input: { command: 'git commit -m "fix"' },
         cwd: repo,
       }),
-      encoding: 'utf8',
       env: { ...process.env, HOME: home },
     })
     // Exit code is either 0 (fail open) or 2 (real global config caught it);

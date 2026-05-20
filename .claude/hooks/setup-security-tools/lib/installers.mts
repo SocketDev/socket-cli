@@ -13,7 +13,7 @@
 //    in env / .env / .env.local.
 
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -87,13 +87,28 @@ const JANUS = config.tools['janus']!
 
 // ── Shared helpers ──
 
-function findApiToken(): string | undefined {
-  // SOCKET_API_KEY is the primary slot (universally supported across Socket
-  // tools); SOCKET_API_TOKEN is the forward-canonical name accepted as a
-  // secondary read.
+export async function checkZizmorVersion(binPath: string): Promise<boolean> {
+  try {
+    const result = await spawn(binPath, ['--version'], { stdio: 'pipe' })
+    const output =
+      typeof result.stdout === 'string'
+        ? result.stdout.trim()
+        : result.stdout.toString().trim()
+    return ZIZMOR.version ? output.includes(ZIZMOR.version) : false
+  } catch {
+    return false
+  }
+}
+
+export function findApiToken(): string | undefined {
+  // SOCKET_API_TOKEN is the canonical fleet name; SOCKET_API_KEY remains
+  // universally supported across Socket tools (CLI, SDK, sfw, fleet scripts)
+  // as the legacy alias.
   const envToken =
-    process.env['SOCKET_API_KEY'] ?? process.env['SOCKET_API_TOKEN']
-  if (envToken) return envToken
+    process.env['SOCKET_API_TOKEN'] ?? process.env['SOCKET_API_KEY']
+  if (envToken) {
+    return envToken
+  }
   const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
   for (const filename of ['.env.local', '.env']) {
     const filepath = path.join(projectDir, filename)
@@ -125,257 +140,6 @@ function findApiToken(): string | undefined {
   }
   return undefined
 }
-
-// ── AgentShield ──
-
-export async function setupAgentShield(): Promise<boolean> {
-  logger.log('=== AgentShield ===')
-  const purl = PackageURL.fromString(AGENTSHIELD.purl!)
-  if (purl.type !== 'npm') {
-    throw new Error(
-      `Unsupported PURL type "${purl.type}" — only npm is supported`,
-    )
-  }
-  const npmPackage = purl.namespace
-    ? `${purl.namespace}/${purl.name}`
-    : purl.name!
-  const version = AGENTSHIELD.version ?? purl.version
-  const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
-
-  logger.log(`Installing ${packageSpec} via dlx...`)
-  const { binaryPath, installed } = await downloadPackage({
-    package: packageSpec,
-    binaryName: 'agentshield',
-  })
-
-  // Verify the installed package matches the pinned version.
-  //
-  // Don't trust the binary's --version self-report: ecc-agentshield's
-  // compiled bundle has a hardcoded version string that has drifted
-  // from the published package.json (e.g. binary reports "1.5.0"
-  // while npm latest + published package.json both say "1.4.0").
-  // That's an upstream packaging issue; the authoritative answer
-  // is the dlx-cached package.json, which is what npm actually
-  // delivered after integrity-hash verification.
-  if (version) {
-    const pkgJsonPath = path.join(
-      path.dirname(binaryPath),
-      '..',
-      'ecc-agentshield',
-      'package.json',
-    )
-    let installedVersion: string | undefined
-    try {
-      const pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf8')) as {
-        version?: unknown
-      }
-      if (typeof pkgJson.version === 'string') {
-        installedVersion = pkgJson.version
-      }
-    } catch {
-      // Fall through — treat as unverifiable rather than fail.
-    }
-    if (installedVersion && installedVersion !== version) {
-      logger.warn(
-        `Version mismatch: pinned ${version}, installed ${installedVersion}`,
-      )
-      return false
-    }
-    const reportedVersion = installedVersion ?? version
-    logger.log(
-      installed
-        ? `Installed: ${binaryPath} (${reportedVersion})`
-        : `Cached: ${binaryPath} (${reportedVersion})`,
-    )
-  } else {
-    logger.log(installed ? `Installed: ${binaryPath}` : `Cached: ${binaryPath}`)
-  }
-  return true
-}
-
-// ── Generic npm-tool installer (shared by cdxgen + synp) ──
-
-interface NpmToolInstallOptions {
-  /**
-   * Logical tool name (used for log banner + bin name).
-   */
-  readonly name: string
-  /**
-   * Human-readable display name for log output.
-   */
-  readonly displayName: string
-  /**
-   * Tool config entry from external-tools.json (must carry `purl`).
-   */
-  readonly tool: (typeof config.tools)[string]
-}
-
-/**
- * Install an npm-only tool via dlx. Mirrors the upper half of
- * `setupAgentShield()` — purl → package spec → `downloadPackage`. No
- * version-mismatch verification: the dlx layer SRI-verifies the tarball against
- * the `integrity` from external-tools.json, which is the authoritative answer
- * (binary --version self-reports can drift from package.json — see the
- * AgentShield comment for the documented case).
- */
-async function setupNpmTool(opts: NpmToolInstallOptions): Promise<boolean> {
-  const { displayName, name, tool } = opts
-  logger.log(`=== ${displayName} ===`)
-  if (!tool.purl) {
-    logger.warn(`${displayName}: missing purl in external-tools.json`)
-    return false
-  }
-  const purl = PackageURL.fromString(tool.purl)
-  if (purl.type !== 'npm') {
-    throw new Error(
-      `${displayName}: unsupported PURL type "${purl.type}" — only npm is supported`,
-    )
-  }
-  const npmPackage = purl.namespace
-    ? `${purl.namespace}/${purl.name}`
-    : purl.name!
-  const version = tool.version ?? purl.version
-  const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
-  logger.log(`Installing ${packageSpec} via dlx...`)
-  const { binaryPath, installed } = await downloadPackage({
-    package: packageSpec,
-    binaryName: name,
-  })
-  logger.log(
-    installed
-      ? `Installed: ${binaryPath}${version ? ` (${version})` : ''}`
-      : `Cached: ${binaryPath}${version ? ` (${version})` : ''}`,
-  )
-  return true
-}
-
-// ── cdxgen ──
-
-export async function setupCdxgen(): Promise<boolean> {
-  // cdxgen ships per-platform SEA binaries (slim variant by default —
-  // no bundled bun/deno runtimes, ~3× smaller than the full flavor).
-  // Falls through to the generic GitHub-release-tool helper. Platforms
-  // that aren't in the asset map quietly skip via the helper's
-  // "unsupported platform" warning path — none today (the slim matrix
-  // covers all 8 fleet targets).
-  return installGitHubReleaseTool({
-    name: 'cdxgen',
-    displayName: 'cdxgen',
-    tool: CDXGEN,
-    binaryNameInArchive: 'cdxgen',
-    finalBinaryName: 'cdxgen',
-  })
-}
-
-// ── synp ──
-
-export async function setupSynp(): Promise<boolean> {
-  return setupNpmTool({
-    name: 'synp',
-    displayName: 'synp',
-    tool: SYNP,
-  })
-}
-
-// ── Zizmor ──
-
-async function checkZizmorVersion(binPath: string): Promise<boolean> {
-  try {
-    const result = await spawn(binPath, ['--version'], { stdio: 'pipe' })
-    const output =
-      typeof result.stdout === 'string'
-        ? result.stdout.trim()
-        : result.stdout.toString().trim()
-    return ZIZMOR.version ? output.includes(ZIZMOR.version) : false
-  } catch {
-    return false
-  }
-}
-
-export async function setupZizmor(): Promise<boolean> {
-  logger.log('=== Zizmor ===')
-
-  // Check PATH first (e.g. brew install).
-  const systemBin = whichSync('zizmor', { nothrow: true })
-  if (systemBin && typeof systemBin === 'string') {
-    if (await checkZizmorVersion(systemBin)) {
-      logger.log(`Found on PATH: ${systemBin} (v${ZIZMOR.version})`)
-      return true
-    }
-    logger.log(`Found on PATH but wrong version (need v${ZIZMOR.version})`)
-  }
-
-  // Download archive via dlx (handles caching + checksum).
-  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = ZIZMOR.checksums?.[platformKey]
-  if (!platformEntry) {
-    throw new Error(`Unsupported platform: ${platformKey}`)
-  }
-  const { asset, sha256: expectedSha } = platformEntry
-  const repo = ZIZMOR.repository?.replace(/^[^:]+:/, '') ?? ''
-  const url = `https://github.com/${repo}/releases/download/v${ZIZMOR.version}/${asset}`
-
-  logger.log(`Downloading zizmor v${ZIZMOR.version} (${asset})...`)
-  const { binaryPath: archivePath, downloaded } = await downloadBinary({
-    url,
-    name: `zizmor-${ZIZMOR.version}-${asset}`,
-    sha256: expectedSha,
-  })
-  logger.log(
-    downloaded
-      ? 'Download complete, checksum verified.'
-      : `Using cached archive: ${archivePath}`,
-  )
-
-  // Extract binary from the cached archive.
-  const ext = process.platform === 'win32' ? '.exe' : ''
-  const binPath = path.join(path.dirname(archivePath), `zizmor${ext}`)
-  if (existsSync(binPath) && (await checkZizmorVersion(binPath))) {
-    logger.log(`Cached: ${binPath} (v${ZIZMOR.version})`)
-    return true
-  }
-
-  const isZip = asset.endsWith('.zip')
-  // mkdtemp is collision-safe, unlike Date.now()-only naming.
-  const extractDir = await fs.mkdtemp(path.join(tmpdir(), 'zizmor-extract-'))
-  try {
-    if (isZip) {
-      await spawn(
-        'powershell',
-        [
-          '-NoProfile',
-          '-Command',
-          `Expand-Archive -Path '${archivePath}' -DestinationPath '${extractDir}' -Force`,
-        ],
-        { stdio: 'pipe' },
-      )
-    } else {
-      await spawn('tar', ['xzf', archivePath, '-C', extractDir], {
-        stdio: 'pipe',
-      })
-    }
-    const extractedBin = path.join(extractDir, `zizmor${ext}`)
-    if (!existsSync(extractedBin))
-      throw new Error(`Binary not found after extraction: ${extractedBin}`)
-    await fs.copyFile(extractedBin, binPath)
-    await fs.chmod(binPath, 0o755)
-  } finally {
-    // Cleanup is fail-open by design — a tempdir we couldn't delete
-    // (EPERM / EBUSY / ENOTEMPTY) shouldn't prevent the install from
-    // reporting success — but the silent swallow loses the signal,
-    // and orphaned tempdirs accumulate on the user's machine. Log
-    // and continue.
-    await safeDelete(extractDir).catch(e => {
-      const msg = e instanceof Error ? e.message : String(e)
-      logger.warn(`cleanup of extract dir failed (${extractDir}): ${msg}`)
-    })
-  }
-
-  logger.log(`Installed to ${binPath}`)
-  return true
-}
-
-// ── Generic GitHub-release tool installer ──
 
 type ToolEntry = (typeof config.tools)[string]
 
@@ -426,7 +190,7 @@ interface InstallGitHubToolOptions {
  * PowerShell Expand-Archive (Windows) or unzip - bare binary → copy as-is (used
  * by opengrep manylinux/osx assets)
  */
-async function installGitHubReleaseTool(
+export async function installGitHubReleaseTool(
   options: InstallGitHubToolOptions,
 ): Promise<boolean> {
   const opts = { __proto__: null, ...options } as InstallGitHubToolOptions
@@ -489,7 +253,7 @@ async function installGitHubReleaseTool(
     return true
   }
 
-  const extractDir = await fs.mkdtemp(path.join(tmpdir(), `${name}-extract-`))
+  const extractDir = await fs.mkdtemp(path.join(os.tmpdir(), `${name}-extract-`))
   try {
     if (isZip) {
       if (process.platform === 'win32') {
@@ -532,108 +296,12 @@ async function installGitHubReleaseTool(
   return true
 }
 
-// ── TruffleHog ──
-
-export async function setupTrufflehog(): Promise<boolean> {
-  return installGitHubReleaseTool({
-    name: 'trufflehog',
-    displayName: 'TruffleHog',
-    tool: TRUFFLEHOG,
-    binaryNameInArchive: 'trufflehog',
-    finalBinaryName: 'trufflehog',
-  })
-}
-
-// ── Trivy ──
-
-export async function setupTrivy(): Promise<boolean> {
-  return installGitHubReleaseTool({
-    name: 'trivy',
-    displayName: 'Trivy',
-    tool: TRIVY,
-    binaryNameInArchive: 'trivy',
-    finalBinaryName: 'trivy',
-  })
-}
-
-// ── OpenGrep ──
-
-export async function setupOpengrep(): Promise<boolean> {
-  // OpenGrep ships bare-binary assets for Linux/macOS (e.g.
-  // `opengrep_manylinux_x86`) and a zipped binary for Windows (named
-  // `opengrep-core_windows_x86.zip` containing `opengrep-core.exe`).
-  // The bare-binary case is auto-detected by extension; we just need
-  // the right `binaryNameInArchive` for the Windows zip case.
-  const isWindows = process.platform === 'win32'
-  return installGitHubReleaseTool({
-    name: 'opengrep',
-    displayName: 'OpenGrep',
-    tool: OPENGREP,
-    binaryNameInArchive: isWindows ? 'opengrep-core' : 'opengrep',
-    finalBinaryName: 'opengrep',
-  })
-}
-
-// ── janus ──
-
-export async function setupJanus(): Promise<boolean> {
-  // janus ships darwin-arm64 only at v1.22.0. On every other platform,
-  // skip the install with a quiet log rather than emitting a warning —
-  // janus isn't a fleet-critical dependency, just a tool some Socket
-  // workflows opt into. Install lands in the shared
-  // ~/.socket/_wheelhouse/janus/<version>/ dir so every fleet member's
-  // hook reuses the same binary.
-  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  if (!JANUS.checksums?.[platformKey]) {
-    logger.log('=== janus ===')
-    logger.log(`Skipped: no janus build for ${platformKey} (mac-arm64 only)`)
-    return true
-  }
-  const installDir = path.join(
-    getSocketHomePath(),
-    '_wheelhouse',
-    'janus',
-    JANUS.version!,
-    platformKey,
-  )
-  return installGitHubReleaseTool({
-    name: 'janus',
-    displayName: 'janus',
-    tool: JANUS,
-    binaryNameInArchive: 'janus',
-    finalBinaryName: 'janus',
-    installDir,
-  })
-}
-
-// ── uv ──
-
-export async function setupUv(): Promise<boolean> {
-  // astral-sh/uv tags releases without a `v` prefix (`0.10.11`, not
-  // `v0.10.11`), so the generic helper's `v`-prepend would 404. The
-  // tarball also wraps the binary one level deep: e.g.
-  // `uv-x86_64-apple-darwin/uv`. Pin the tag literally and tell the
-  // helper which subdirectory holds the binary.
-  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = UV.checksums?.[platformKey]
-  const pathInArchive = platformEntry?.asset.replace(/\.(tar\.gz|zip)$/, '')
-  return installGitHubReleaseToolWithTag({
-    name: 'uv',
-    displayName: 'uv (Python package manager)',
-    tool: UV,
-    binaryNameInArchive: 'uv',
-    finalBinaryName: 'uv',
-    pathInArchive,
-    tag: UV.version!,
-  })
-}
-
 /**
  * Variant of `installGitHubReleaseTool` for projects that don't tag with a `v`
  * prefix (astral-sh/uv). Takes an explicit `tag` field instead of synthesizing
  * one from `tool.version`.
  */
-async function installGitHubReleaseToolWithTag(
+export async function installGitHubReleaseToolWithTag(
   options: InstallGitHubToolOptions & { tag: string },
 ): Promise<boolean> {
   const opts = { __proto__: null, ...options } as InstallGitHubToolOptions & {
@@ -682,7 +350,7 @@ async function installGitHubReleaseToolWithTag(
   }
 
   const isZip = asset.endsWith('.zip')
-  const extractDir = await fs.mkdtemp(path.join(tmpdir(), `${name}-extract-`))
+  const extractDir = await fs.mkdtemp(path.join(os.tmpdir(), `${name}-extract-`))
   try {
     if (isZip) {
       if (process.platform === 'win32') {
@@ -725,7 +393,188 @@ async function installGitHubReleaseToolWithTag(
   return true
 }
 
-// ── SFW ──
+export async function setupAgentShield(): Promise<boolean> {
+  logger.log('=== AgentShield ===')
+  const purl = PackageURL.fromString(AGENTSHIELD.purl!)
+  if (purl.type !== 'npm') {
+    throw new Error(
+      `Unsupported PURL type "${purl.type}" — only npm is supported`,
+    )
+  }
+  const npmPackage = purl.namespace
+    ? `${purl.namespace}/${purl.name}`
+    : purl.name!
+  const version = AGENTSHIELD.version ?? purl.version
+  const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
+
+  logger.log(`Installing ${packageSpec} via dlx...`)
+  const { binaryPath, installed } = await downloadPackage({
+    package: packageSpec,
+    binaryName: 'agentshield',
+  })
+
+  // Verify the installed package matches the pinned version.
+  //
+  // Don't trust the binary's --version self-report: ecc-agentshield's
+  // compiled bundle has a hardcoded version string that has drifted
+  // from the published package.json (e.g. binary reports "1.5.0"
+  // while npm latest + published package.json both say "1.4.0").
+  // That's an upstream packaging issue; the authoritative answer
+  // is the dlx-cached package.json, which is what npm actually
+  // delivered after integrity-hash verification.
+  if (version) {
+    const pkgJsonPath = path.join(
+      path.dirname(binaryPath),
+      '..',
+      'ecc-agentshield',
+      'package.json',
+    )
+    let installedVersion: string | undefined
+    try {
+      const pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf8')) as {
+        version?: unknown | undefined
+      }
+      if (typeof pkgJson.version === 'string') {
+        installedVersion = pkgJson.version
+      }
+    } catch {
+      // Fall through — treat as unverifiable rather than fail.
+    }
+    if (installedVersion && installedVersion !== version) {
+      logger.warn(
+        `Version mismatch: pinned ${version}, installed ${installedVersion}`,
+      )
+      return false
+    }
+    const reportedVersion = installedVersion ?? version
+    logger.log(
+      installed
+        ? `Installed: ${binaryPath} (${reportedVersion})`
+        : `Cached: ${binaryPath} (${reportedVersion})`,
+    )
+  } else {
+    logger.log(installed ? `Installed: ${binaryPath}` : `Cached: ${binaryPath}`)
+  }
+  return true
+}
+
+export async function setupCdxgen(): Promise<boolean> {
+  // cdxgen ships per-platform SEA binaries (slim variant by default —
+  // no bundled bun/deno runtimes, ~3× smaller than the full flavor).
+  // Falls through to the generic GitHub-release-tool helper. Platforms
+  // that aren't in the asset map quietly skip via the helper's
+  // "unsupported platform" warning path — none today (the slim matrix
+  // covers all 8 fleet targets).
+  return installGitHubReleaseTool({
+    name: 'cdxgen',
+    displayName: 'cdxgen',
+    tool: CDXGEN,
+    binaryNameInArchive: 'cdxgen',
+    finalBinaryName: 'cdxgen',
+  })
+}
+
+export async function setupJanus(): Promise<boolean> {
+  // janus ships darwin-arm64 only at v1.22.0. On every other platform,
+  // skip the install with a quiet log rather than emitting a warning —
+  // janus isn't a fleet-critical dependency, just a tool some Socket
+  // workflows opt into. Install lands in the shared
+  // ~/.socket/_wheelhouse/janus/<version>/ dir so every fleet member's
+  // hook reuses the same binary.
+  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+  if (!JANUS.checksums?.[platformKey]) {
+    logger.log('=== janus ===')
+    logger.log(`Skipped: no janus build for ${platformKey} (mac-arm64 only)`)
+    return true
+  }
+  const installDir = path.join(
+    getSocketHomePath(),
+    '_wheelhouse',
+    'janus',
+    JANUS.version!,
+    platformKey,
+  )
+  return installGitHubReleaseTool({
+    name: 'janus',
+    displayName: 'janus',
+    tool: JANUS,
+    binaryNameInArchive: 'janus',
+    finalBinaryName: 'janus',
+    installDir,
+  })
+}
+
+interface NpmToolInstallOptions {
+  /**
+   * Logical tool name (used for log banner + bin name).
+   */
+  readonly name: string
+  /**
+   * Human-readable display name for log output.
+   */
+  readonly displayName: string
+  /**
+   * Tool config entry from external-tools.json (must carry `purl`).
+   */
+  readonly tool: (typeof config.tools)[string]
+}
+
+/**
+ * Install an npm-only tool via dlx. Mirrors the upper half of
+ * `setupAgentShield()` — purl → package spec → `downloadPackage`. No
+ * version-mismatch verification: the dlx layer SRI-verifies the tarball against
+ * the `integrity` from external-tools.json, which is the authoritative answer
+ * (binary --version self-reports can drift from package.json — see the
+ * AgentShield comment for the documented case).
+ */
+export async function setupNpmTool(
+  opts: NpmToolInstallOptions,
+): Promise<boolean> {
+  const { displayName, name, tool } = opts
+  logger.log(`=== ${displayName} ===`)
+  if (!tool.purl) {
+    logger.warn(`${displayName}: missing purl in external-tools.json`)
+    return false
+  }
+  const purl = PackageURL.fromString(tool.purl)
+  if (purl.type !== 'npm') {
+    throw new Error(
+      `${displayName}: unsupported PURL type "${purl.type}" — only npm is supported`,
+    )
+  }
+  const npmPackage = purl.namespace
+    ? `${purl.namespace}/${purl.name}`
+    : purl.name!
+  const version = tool.version ?? purl.version
+  const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
+  logger.log(`Installing ${packageSpec} via dlx...`)
+  const { binaryPath, installed } = await downloadPackage({
+    package: packageSpec,
+    binaryName: name,
+  })
+  logger.log(
+    installed
+      ? `Installed: ${binaryPath}${version ? ` (${version})` : ''}`
+      : `Cached: ${binaryPath}${version ? ` (${version})` : ''}`,
+  )
+  return true
+}
+
+export async function setupOpengrep(): Promise<boolean> {
+  // OpenGrep ships bare-binary assets for Linux/macOS (e.g.
+  // `opengrep_manylinux_x86`) and a zipped binary for Windows (named
+  // `opengrep-core_windows_x86.zip` containing `opengrep-core.exe`).
+  // The bare-binary case is auto-detected by extension; we just need
+  // the right `binaryNameInArchive` for the Windows zip case.
+  const isWindows = process.platform === 'win32'
+  return installGitHubReleaseTool({
+    name: 'opengrep',
+    displayName: 'OpenGrep',
+    tool: OPENGREP,
+    binaryNameInArchive: isWindows ? 'opengrep-core' : 'opengrep',
+    finalBinaryName: 'opengrep',
+  })
+}
 
 export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
   const isEnterprise = !!apiToken
@@ -772,9 +621,12 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
     .join(path.delimiter)
   const sfwBin = normalizePath(binaryPath)
   const created: string[] = []
-  for (const cmd of ecosystems) {
+  for (let i = 0, { length } = ecosystems; i < length; i += 1) {
+    const cmd = ecosystems[i]!
     let realBin = whichSync(cmd, { nothrow: true, path: cleanPath })
-    if (!realBin || typeof realBin !== 'string') continue
+    if (!realBin || typeof realBin !== 'string') {
+      continue
+    }
     realBin = normalizePath(realBin)
 
     // Bash shim (macOS/Linux/Windows Git Bash).
@@ -796,9 +648,9 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
         'if [ -z "$SOCKET_API_KEY" ]; then',
         '  for f in .env.local .env; do',
         '    if [ -f "$f" ]; then',
-        '      _val="$(grep -m1 "^SOCKET_API_KEY\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^[\"\\x27]\\(.*\\)[\"\\x27]$/\\1/")"',
+        '      _val="$(grep -m1 "^SOCKET_API_KEY\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^["\\x27]\\(.*\\)["\\x27]$/\\1/")"',
         '      if [ -z "$_val" ]; then',
-        '        _val="$(grep -m1 "^SOCKET_API_TOKEN\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^[\"\\x27]\\(.*\\)[\"\\x27]$/\\1/")"',
+        '        _val="$(grep -m1 "^SOCKET_API_TOKEN\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^["\\x27]\\(.*\\)["\\x27]$/\\1/")"',
         '      fi',
         '      if [ -n "$_val" ]; then SOCKET_API_KEY="$_val"; break; fi',
         '    fi',
@@ -875,10 +727,141 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
   return !!created.length
 }
 
-// ── Main ──
+export async function setupSynp(): Promise<boolean> {
+  return setupNpmTool({
+    name: 'synp',
+    displayName: 'synp',
+    tool: SYNP,
+  })
+}
+
+export async function setupTrivy(): Promise<boolean> {
+  return installGitHubReleaseTool({
+    name: 'trivy',
+    displayName: 'Trivy',
+    tool: TRIVY,
+    binaryNameInArchive: 'trivy',
+    finalBinaryName: 'trivy',
+  })
+}
+
+export async function setupTrufflehog(): Promise<boolean> {
+  return installGitHubReleaseTool({
+    name: 'trufflehog',
+    displayName: 'TruffleHog',
+    tool: TRUFFLEHOG,
+    binaryNameInArchive: 'trufflehog',
+    finalBinaryName: 'trufflehog',
+  })
+}
+
+export async function setupUv(): Promise<boolean> {
+  // astral-sh/uv tags releases without a `v` prefix (`0.10.11`, not
+  // `v0.10.11`), so the generic helper's `v`-prepend would 404. The
+  // tarball also wraps the binary one level deep: e.g.
+  // `uv-x86_64-apple-darwin/uv`. Pin the tag literally and tell the
+  // helper which subdirectory holds the binary.
+  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+  const platformEntry = UV.checksums?.[platformKey]
+  const pathInArchive = platformEntry?.asset.replace(/\.(tar\.gz|zip)$/, '')
+  return installGitHubReleaseToolWithTag({
+    name: 'uv',
+    displayName: 'uv (Python package manager)',
+    tool: UV,
+    binaryNameInArchive: 'uv',
+    finalBinaryName: 'uv',
+    pathInArchive,
+    tag: UV.version!,
+  })
+}
+
+export async function setupZizmor(): Promise<boolean> {
+  logger.log('=== Zizmor ===')
+
+  // Check PATH first (e.g. brew install).
+  const systemBin = whichSync('zizmor', { nothrow: true })
+  if (systemBin && typeof systemBin === 'string') {
+    if (await checkZizmorVersion(systemBin)) {
+      logger.log(`Found on PATH: ${systemBin} (v${ZIZMOR.version})`)
+      return true
+    }
+    logger.log(`Found on PATH but wrong version (need v${ZIZMOR.version})`)
+  }
+
+  // Download archive via dlx (handles caching + checksum).
+  const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
+  const platformEntry = ZIZMOR.checksums?.[platformKey]
+  if (!platformEntry) {
+    throw new Error(`Unsupported platform: ${platformKey}`)
+  }
+  const { asset, sha256: expectedSha } = platformEntry
+  const repo = ZIZMOR.repository?.replace(/^[^:]+:/, '') ?? ''
+  const url = `https://github.com/${repo}/releases/download/v${ZIZMOR.version}/${asset}`
+
+  logger.log(`Downloading zizmor v${ZIZMOR.version} (${asset})...`)
+  const { binaryPath: archivePath, downloaded } = await downloadBinary({
+    url,
+    name: `zizmor-${ZIZMOR.version}-${asset}`,
+    sha256: expectedSha,
+  })
+  logger.log(
+    downloaded
+      ? 'Download complete, checksum verified.'
+      : `Using cached archive: ${archivePath}`,
+  )
+
+  // Extract binary from the cached archive.
+  const ext = process.platform === 'win32' ? '.exe' : ''
+  const binPath = path.join(path.dirname(archivePath), `zizmor${ext}`)
+  if (existsSync(binPath) && (await checkZizmorVersion(binPath))) {
+    logger.log(`Cached: ${binPath} (v${ZIZMOR.version})`)
+    return true
+  }
+
+  const isZip = asset.endsWith('.zip')
+  // mkdtemp is collision-safe, unlike Date.now()-only naming.
+  const extractDir = await fs.mkdtemp(path.join(os.tmpdir(), 'zizmor-extract-'))
+  try {
+    if (isZip) {
+      await spawn(
+        'powershell',
+        [
+          '-NoProfile',
+          '-Command',
+          `Expand-Archive -Path '${archivePath}' -DestinationPath '${extractDir}' -Force`,
+        ],
+        { stdio: 'pipe' },
+      )
+    } else {
+      await spawn('tar', ['xzf', archivePath, '-C', extractDir], {
+        stdio: 'pipe',
+      })
+    }
+    const extractedBin = path.join(extractDir, `zizmor${ext}`)
+    if (!existsSync(extractedBin)) {
+      throw new Error(`Binary not found after extraction: ${extractedBin}`)
+    }
+    await fs.copyFile(extractedBin, binPath)
+    await fs.chmod(binPath, 0o755)
+  } finally {
+    // Cleanup is fail-open by design — a tempdir we couldn't delete
+    // (EPERM / EBUSY / ENOTEMPTY) shouldn't prevent the install from
+    // reporting success — but the silent swallow loses the signal,
+    // and orphaned tempdirs accumulate on the user's machine. Log
+    // and continue.
+    await safeDelete(extractDir).catch(e => {
+      const msg = e instanceof Error ? e.message : String(e)
+      logger.warn(`cleanup of extract dir failed (${extractDir}): ${msg}`)
+    })
+  }
+
+  logger.log(`Installed to ${binPath}`)
+  return true
+}
 
 async function main(): Promise<void> {
-  logger.log('Setting up Socket security tools...\n')
+  logger.log('Setting up Socket security tools...')
+  logger.log('')
 
   const apiToken = findApiToken()
 
@@ -930,9 +913,11 @@ async function main(): Promise<void> {
     uvOk &&
     zizmorOk
   if (allOk) {
-    logger.log('\nAll security tools ready.')
+    logger.log('')
+    logger.log('All security tools ready.')
   } else {
-    logger.warn('\nSome tools not available. See above.')
+    logger.error('')
+    logger.warn('Some tools not available. See above.')
   }
 }
 

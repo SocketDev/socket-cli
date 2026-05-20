@@ -9,7 +9,7 @@
  */
 
 import { promises as fs } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import process, { execPath } from 'node:process'
 import { afterEach, describe, it } from 'node:test'
@@ -56,7 +56,7 @@ async function makeTranscript(
   transcriptPath: string
   cleanup: () => Promise<void>
 }> {
-  const dir = await fs.mkdtemp(path.join(tmpdir(), 'rwg-transcript-'))
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'rwg-transcript-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   const userTurn = JSON.stringify({
     type: 'user',
@@ -89,7 +89,7 @@ async function makeWorkflowFixture(
   filename: string,
   body: string,
 ): Promise<{ projectDir: string; cleanup: () => Promise<void> }> {
-  const projectDir = await fs.mkdtemp(path.join(tmpdir(), 'rwg-fixture-'))
+  const projectDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rwg-fixture-'))
   const wfDir = path.join(projectDir, '.github', 'workflows')
   await fs.mkdir(wfDir, { recursive: true })
   await fs.writeFile(path.join(wfDir, filename), body, 'utf8')
@@ -392,7 +392,7 @@ describe('release-workflow-guard hook', () => {
       // basename. That's the "user runs the dispatch from inside the
       // checkout" common case — the file is locally readable.
       const targetProjectDir = await fs.mkdtemp(
-        path.join(tmpdir(), 'rwg-fixture-target-'),
+        path.join(os.tmpdir(), 'rwg-fixture-target-'),
       )
       const matchingName = path.basename(targetProjectDir)
       const wfDir = path.join(targetProjectDir, '.github', 'workflows')
@@ -416,7 +416,7 @@ describe('release-workflow-guard hook', () => {
       // project (where the hook is "rooted") and a target repo with
       // the workflow file. Cross-repo dispatch should resolve via
       // the sibling-clone fallback.
-      const parentDir = await fs.mkdtemp(path.join(tmpdir(), 'rwg-fleet-'))
+      const parentDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rwg-fleet-'))
       const currentProject = path.join(parentDir, 'current')
       const siblingProject = path.join(parentDir, 'sibling-target')
       await fs.mkdir(currentProject, { recursive: true })
@@ -447,7 +447,7 @@ describe('release-workflow-guard hook', () => {
       // run ...` — A's hook process never has cwd=B (the chained
       // shell does, but the hook runs before that), so resolution
       // must parse the inline cd to find B.
-      const parentDir = await fs.mkdtemp(path.join(tmpdir(), 'rwg-cd-'))
+      const parentDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rwg-cd-'))
       const projectA = path.join(parentDir, 'project-a')
       const projectB = path.join(parentDir, 'project-b')
       await fs.mkdir(projectA, { recursive: true })
@@ -481,7 +481,7 @@ describe('release-workflow-guard hook', () => {
       // the YAML there. This matches the cross-session scenario where
       // one Claude session has CLAUDE_PROJECT_DIR pinned but the user
       // `cd`-ed into a sibling clone before dispatching.
-      const parentDir = await fs.mkdtemp(path.join(tmpdir(), 'rwg-cwd-'))
+      const parentDir = await fs.mkdtemp(path.join(os.tmpdir(), 'rwg-cwd-'))
       const projectA = path.join(parentDir, 'project-a')
       const projectB = path.join(parentDir, 'project-b')
       await fs.mkdir(projectA, { recursive: true })
@@ -541,7 +541,8 @@ describe('release-workflow-guard hook', () => {
     let cleanups: Array<() => Promise<void>> = []
 
     afterEach(async () => {
-      for (const cleanup of cleanups) {
+      for (let i = 0, { length } = cleanups; i < length; i += 1) {
+        const cleanup = cleanups[i]!
         await cleanup()
       }
       cleanups = []
@@ -703,7 +704,7 @@ describe('release-workflow-guard hook', () => {
       // Create a sibling project named "socket-other" alongside the
       // primary fixture; place a stubs.yml in the sibling. The hook
       // must read the sibling, not the primary.
-      const projectsRoot = await fs.mkdtemp(path.join(tmpdir(), 'rwg-roots-'))
+      const projectsRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'rwg-roots-'))
       const primaryDir = path.join(projectsRoot, 'socket-btm')
       const siblingDir = path.join(projectsRoot, 'socket-other')
       await fs.mkdir(path.join(primaryDir, '.github', 'workflows'), {
@@ -734,7 +735,8 @@ describe('release-workflow-guard hook', () => {
     let cleanups: Array<() => Promise<void>> = []
 
     afterEach(async () => {
-      for (const cleanup of cleanups) {
+      for (let i = 0, { length } = cleanups; i < length; i += 1) {
+        const cleanup = cleanups[i]!
         await cleanup()
       }
       cleanups = []

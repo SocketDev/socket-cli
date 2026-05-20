@@ -75,12 +75,12 @@ then download whatever isn't already cached.
 
 ## Where each tool lands
 
-| Tool        | Location                            | Persists across repos? |
-| ----------- | ----------------------------------- | ---------------------- |
-| AgentShield | `~/.socket/_dlx/<hash>/agentshield` | Yes                    |
-| zizmor      | `~/.socket/_dlx/<hash>/zizmor`      | Yes                    |
-| SFW binary  | `~/.socket/_dlx/<hash>/sfw`         | Yes                    |
-| SFW shims   | `~/.socket/_wheelhouse/shims/npm`, etc.     | Yes                    |
+| Tool        | Location                                | Persists across repos? |
+| ----------- | --------------------------------------- | ---------------------- |
+| AgentShield | `~/.socket/_dlx/<hash>/agentshield`     | Yes                    |
+| zizmor      | `~/.socket/_dlx/<hash>/zizmor`          | Yes                    |
+| SFW binary  | `~/.socket/_dlx/<hash>/sfw`             | Yes                    |
+| SFW shims   | `~/.socket/_wheelhouse/shims/npm`, etc. | Yes                    |
 
 `<hash>` in `_dlx/<hash>/` is a content-addressed directory keyed off
 the pinned version + sha256, so multiple versions can coexist

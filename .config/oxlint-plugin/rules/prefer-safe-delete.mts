@@ -31,13 +31,13 @@ import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 const DELETE_METHODS = new Set([
   'rm',
   'rmSync',
-  'unlink',
-  'unlinkSync',
   'rmdir',
   'rmdirSync',
+  'unlink',
+  'unlinkSync',
 ])
 
-const SYNC_METHODS = new Set(['rmSync', 'unlinkSync', 'rmdirSync'])
+const SYNC_METHODS = new Set(['rmSync', 'rmdirSync', 'unlinkSync'])
 
 /**
  * @type {import('eslint').Rule.RuleModule}
@@ -99,7 +99,8 @@ const rule = {
       if (args.length === 0 || args.length > 2) {
         return false
       }
-      for (const a of args) {
+      for (let i = 0, { length } = args; i < length; i += 1) {
+        const a = args[i]!
         if (a.type === 'SpreadElement') {
           return false
         }
@@ -107,8 +108,8 @@ const rule = {
       if (args.length === 2) {
         const second = args[1]
         if (
-          second.type === 'FunctionExpression' ||
-          second.type === 'ArrowFunctionExpression'
+          second.type === 'ArrowFunctionExpression' ||
+          second.type === 'FunctionExpression'
         ) {
           return false
         }
@@ -149,7 +150,7 @@ const rule = {
 
         // Match common fs aliases. Conservative — we'd rather miss a
         // case than flag `someChild.unlink()` on an unrelated object.
-        if (!/^(fs|fsPromises|promises|fsp)$/.test(objName)) {
+        if (!/^(fs|fsPromises|fsp|promises)$/.test(objName)) {
           return
         }
 
@@ -191,4 +192,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

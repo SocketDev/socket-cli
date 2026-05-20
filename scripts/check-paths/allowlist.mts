@@ -41,27 +41,32 @@ const loadAllowlistFromJson = (
     path.join(repoRoot, '.socket-wheelhouse.json'),
   ]
   let configPath: string | undefined
-  for (const c of candidates) {
+  for (let i = 0, { length } = candidates; i < length; i += 1) {
+    const c = candidates[i]!
     if (existsSync(c)) {
       configPath = c
       break
     }
   }
-  if (!configPath) return undefined
+  if (!configPath) {
+    return undefined
+  }
   let raw: string
   try {
     raw = readFileSync(configPath, 'utf8')
   } catch {
     return undefined
   }
-  let cfg: { pathsAllowlist?: unknown }
+  let cfg: { pathsAllowlist?: unknown | undefined }
   try {
     cfg = JSON.parse(raw)
   } catch {
     return undefined
   }
   const arr = cfg.pathsAllowlist
-  if (arr === undefined) return undefined
+  if (arr === undefined) {
+    return undefined
+  }
   if (!Array.isArray(arr)) {
     process.stderr.write(
       `[check-paths] pathsAllowlist in ${configPath} must be an array; ignoring.\n`,
@@ -85,10 +90,18 @@ const loadAllowlistFromJson = (
       continue
     }
     const entry: AllowlistEntry = { reason: obj['reason'] }
-    if (typeof obj['file'] === 'string') entry.file = obj['file']
-    if (typeof obj['pattern'] === 'string') entry.pattern = obj['pattern']
-    if (typeof obj['rule'] === 'string') entry.rule = obj['rule']
-    if (typeof obj['line'] === 'number') entry.line = obj['line']
+    if (typeof obj['file'] === 'string') {
+      entry.file = obj['file']
+    }
+    if (typeof obj['pattern'] === 'string') {
+      entry.pattern = obj['pattern']
+    }
+    if (typeof obj['rule'] === 'string') {
+      entry.rule = obj['rule']
+    }
+    if (typeof obj['line'] === 'number') {
+      entry.line = obj['line']
+    }
     if (typeof obj['snippet_hash'] === 'string') {
       entry.snippet_hash = obj['snippet_hash']
     }
@@ -184,7 +197,7 @@ export const loadAllowlist = (repoRoot: string): AllowlistEntry[] => {
       if (current === null) {
         return
       }
-      if (trimmed === '|' || trimmed === '>') {
+      if (trimmed === '>' || trimmed === '|') {
         blockKey = key
         blockKind = trimmed as '|' | '>'
         blockIndent = indentOf(lines[i + 1] ?? '') || indentOf(line) + 2

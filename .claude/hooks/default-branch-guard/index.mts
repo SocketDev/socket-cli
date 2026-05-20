@@ -31,7 +31,7 @@ import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface PreToolUsePayload {
   readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: unknown } | undefined
+  readonly tool_input?: { readonly command?: unknown | undefined } | undefined
   readonly transcript_path?: string | undefined
 }
 
@@ -49,27 +49,28 @@ const BYPASS_PHRASES = [
 //
 // Each pattern's regex must include enough context to distinguish
 // scripting from interactive use.
-const SCRIPT_CONTEXT_PATTERNS: readonly { label: string; regex: RegExp }[] = [
-  {
-    label: 'BASE=main / BASE=master literal assignment',
-    regex: /\bBASE\s*=\s*(["']?)(main|master)\1\b/,
-  },
-  {
-    label: '--base main / --base=main literal value',
-    regex: /--base[\s=](["']?)(main|master)\1\b/,
-  },
-  {
-    label: 'DEFAULT_BRANCH=main literal assignment',
-    regex: /\b(DEFAULT_BRANCH|MAIN_BRANCH)\s*=\s*(["']?)(main|master)\2\b/,
-  },
-]
+const SCRIPT_CONTEXT_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> =
+  [
+    {
+      label: 'BASE=main / BASE=master literal assignment',
+      regex: /\bBASE\s*=\s*(["']?)(main|master)\1\b/,
+    },
+    {
+      label: '--base main / --base=main literal value',
+      regex: /--base[\s=](["']?)(main|master)\1\b/,
+    },
+    {
+      label: 'DEFAULT_BRANCH=main literal assignment',
+      regex: /\b(DEFAULT_BRANCH|MAIN_BRANCH)\s*=\s*(["']?)(main|master)\2\b/,
+    },
+  ]
 
 // Heredoc / file-write detection: when the command writes a script
 // (e.g. via cat > file.sh, tee, redirect), be stricter — any reference
 // to `main..HEAD` / `main...HEAD` inside the writeable body counts as
 // scripting context.
 const SCRIPT_WRITE_RE =
-  /(cat\s*>\s*|tee\s+|>\s*)\S+\.(sh|mjs|mts|js|ts|bash|zsh|fish)\b/
+  /(cat\s*>\s*|tee\s+|>\s*)\S+\.(bash|fish|js|mjs|mts|sh|ts|zsh)\b/
 
 const TRIPLE_DOT_BRANCH_RE = /\b(main|master)\.{2,3}HEAD\b/
 

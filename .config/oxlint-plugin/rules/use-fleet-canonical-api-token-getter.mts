@@ -32,20 +32,20 @@ function isProcessEnv(node: AstNode): boolean {
   if (node.type !== 'MemberExpression') {
     return false
   }
-  const obj = (node as { object?: AstNode }).object
-  const prop = (node as { property?: AstNode }).property
+  const obj = (node as { object?: AstNode | undefined }).object
+  const prop = (node as { property?: AstNode | undefined }).property
   if (!obj || !prop) {
     return false
   }
   if (
     obj.type !== 'Identifier' ||
-    (obj as { name?: string }).name !== 'process'
+    (obj as { name?: string | undefined }).name !== 'process'
   ) {
     return false
   }
   if (
     prop.type !== 'Identifier' ||
-    (prop as { name?: string }).name !== 'env'
+    (prop as { name?: string | undefined }).name !== 'env'
   ) {
     return false
   }
@@ -74,8 +74,10 @@ const rule = {
       : context.sourceCode
 
     const filename =
-      (context as { filename?: string }).filename ??
-      (context as { getFilename?: () => string }).getFilename?.() ??
+      (context as { filename?: string | undefined }).filename ??
+      (
+        context as { getFilename?: (() => string) | undefined }
+      ).getFilename?.() ??
       ''
 
     if (/[\\/]src[\\/]secrets[\\/]/.test(filename)) {
@@ -84,14 +86,16 @@ const rule = {
 
     function hasBypassComment(node: AstNode): boolean {
       const comments = sourceCode.getCommentsBefore?.(node) ?? []
-      for (const c of comments) {
-        if (BYPASS_RE.test((c as { value?: string }).value ?? '')) {
+      for (let i = 0, { length } = comments; i < length; i += 1) {
+        const c = comments[i]!
+        if (BYPASS_RE.test((c as { value?: string | undefined }).value ?? '')) {
           return true
         }
       }
       const trailing = sourceCode.getCommentsAfter?.(node) ?? []
-      for (const c of trailing) {
-        if (BYPASS_RE.test((c as { value?: string }).value ?? '')) {
+      for (let i = 0, { length } = trailing; i < length; i += 1) {
+        const c = trailing[i]!
+        if (BYPASS_RE.test((c as { value?: string | undefined }).value ?? '')) {
           return true
         }
       }
@@ -111,24 +115,24 @@ const rule = {
 
     return {
       MemberExpression(node: AstNode) {
-        const obj = (node as { object?: AstNode }).object
+        const obj = (node as { object?: AstNode | undefined }).object
         if (!obj || !isProcessEnv(obj)) {
           return
         }
-        const prop = (node as { property?: AstNode }).property
+        const prop = (node as { property?: AstNode | undefined }).property
         if (!prop) {
           return
         }
-        const computed = (node as { computed?: boolean }).computed
+        const computed = (node as { computed?: boolean | undefined }).computed
         if (!computed && prop.type === 'Identifier') {
-          const name = (prop as { name?: string }).name ?? ''
+          const name = (prop as { name?: string | undefined }).name ?? ''
           if (FLAGGED_PROPERTIES.has(name)) {
             reportName(node, name)
           }
           return
         }
         if (computed && prop.type === 'Literal') {
-          const v = (prop as { value?: unknown }).value
+          const v = (prop as { value?: unknown | undefined }).value
           if (typeof v === 'string' && FLAGGED_PROPERTIES.has(v)) {
             reportName(node, v)
           }
@@ -138,4 +142,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

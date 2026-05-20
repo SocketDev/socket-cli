@@ -1,27 +1,33 @@
 /**
  * @file Sort all-identifier boolean chains alphanumerically. Per CLAUDE.md
- *   "Sorting" rule, a chain like `agentshieldOk && zizmorOk && sfwOk` reads
- *   with the identifier names in alpha order: `agentshieldOk && sfwOk &&
+ *   "Sorting" rule, a flag-list chain like `agentshieldOk && zizmorOk && sfwOk`
+ *   reads with the identifier names in alpha order: `agentshieldOk && sfwOk &&
  *   zizmorOk`. The runtime is short-circuit-insensitive to operand order _when
  *   every operand is a plain identifier_ (no calls, no member access with
  *   getters) — so reordering doesn't change semantics. Sorting reduces diff
  *   churn when adding a new flag and makes "is everything ready?" checks
- *   visually consistent. Detects: chains of `&&` or `||` whose operands are ALL
- *   bare Identifiers (length ≥ 2, no duplicates, uniform operator across the
- *   flattened chain). Skipped (not reported, autofix-safe stays narrow):
+ *   visually consistent. Scope: lists of flags, not guard pairs. The rule ONLY
+ *   fires on chains of length ≥ 3. Two-operand chains like `useHttp &&
+ *   oauthEnabled` are guard patterns — the order carries narrative ("in HTTP
+ *   mode, did OAuth get enabled?") that alpha-sort destroys. Three or more bare
+ *   identifiers in a single chain is the structural signal that it's a flag
+ *   list, not a guard. Detects: chains of `&&` or `||` whose operands are ALL
+ *   bare Identifiers (length ≥ 3, no duplicates, uniform operator across the
+ *   flattened chain). Skipped (not reported):
  *
+ *   - Length 2 — guard patterns; narrative order is intentional.
  *   - Any operand isn't a bare `Identifier` (Calls / member-access / literals /
  *     negations / nested non-uniform logical exprs short-circuit, and a
  *     `getter` on a member-access can have side effects — reordering would be
  *     observable).
  *   - Duplicate identifiers in the chain (rare, but rewriting through the
  *     duplicate would silently drop one).
- *   - Comments live between operands (autofix would relocate them).
- *   - Chain length < 2 (nothing to sort). Why a separate rule from
- *     sort-equality-disjunctions: that rule sorts the right-hand string-literal
- *     of an equality chain (`x === 'a' || x === 'b'`); this rule sorts the
- *     bare-identifier operands of a pure-identifier chain. Structurally
- *     different ASTs, semantically different safety arguments.
+ *   - Comments live between operands (autofix would relocate them). Why a
+ *     separate rule from sort-equality-disjunctions: that rule sorts the
+ *     right-hand string-literal of an equality chain (`x === 'a' || x ===
+ *     'b'`); this rule sorts the bare-identifier operands of a pure-identifier
+ *     chain. Structurally different ASTs, semantically different safety
+ *     arguments.
  */
 
 /**
@@ -103,7 +109,10 @@ const rule = {
 
       const leaves: AstNode[] = []
       flatten(rootNode, op, leaves)
-      if (leaves.length < 2) {
+      // Length 2 chains are guard patterns (`useHttp && oauthEnabled`)
+      // where order carries narrative; only length 3+ chains are flag
+      // lists where alpha-sort is unambiguously a readability win.
+      if (leaves.length < 3) {
         return
       }
 
@@ -112,7 +121,8 @@ const rule = {
       // matters; calls are excluded because they're side-effecting; literals
       // and unary expressions don't fit the "list of flags" shape.
       const names: string[] = []
-      for (const leaf of leaves) {
+      for (let i = 0, { length } = leaves; i < length; i += 1) {
+        const leaf = leaves[i]!
         if (leaf.type !== 'Identifier') {
           return
         }
@@ -125,7 +135,7 @@ const rule = {
         return
       }
 
-      const sortedNames = [...names].sort()
+      const sortedNames = [...names].toSorted()
       const actualOrder = names.join(', ')
       const expectedOrder = sortedNames.join(', ')
 
@@ -166,4 +176,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

@@ -1,6 +1,6 @@
 // node --test specs for the actionlint-on-workflow-edit hook.
 
-import { spawn, spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from '@socketsecurity/lib-stable/spawn'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -13,13 +13,13 @@ type Result = { code: number; stderr: string }
 
 async function runHook(payload: Record<string, unknown>): Promise<Result> {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })

@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
 function makeTranscript(userText?: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'pcg-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'pcg-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   writeFileSync(
     transcriptPath,
@@ -23,7 +23,10 @@ function runHook(
   tool: 'Edit' | 'Write' | 'Read',
   filePath: string,
   content: string,
-  options: { transcriptPath?: string; env?: Record<string, string> } = {},
+  options: {
+    transcriptPath?: string | undefined
+    env?: Record<string, string> | undefined
+  } = {},
 ): { stderr: string; exitCode: number } {
   const payload: Record<string, unknown> = {
     tool_name: tool,
@@ -33,11 +36,11 @@ function runHook(
     payload['transcript_path'] = options.transcriptPath
   }
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
-    encoding: 'utf8',
     env: { ...process.env, ...(options.env ?? {}) },
   })
-  return { stderr: result.stderr, exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
 test('FLAGS bare "See the @fileoverview JSDoc above."', () => {
@@ -193,19 +196,19 @@ test('handles block comments — pointer + claim in /* … */ passes', () => {
 
 test('does not crash on malformed payload', () => {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: 'not-json',
-    encoding: 'utf8',
   })
   assert.equal(result.status, 0)
 })
 
 test('does not crash when content is missing', () => {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({
       tool_name: 'Write',
       tool_input: { file_path: '/repo/src/foo.ts' },
     }),
-    encoding: 'utf8',
   })
   assert.equal(result.status, 0)
 })

@@ -39,14 +39,14 @@ interface StopPayload {
   readonly transcript_path?: string | undefined
 }
 
-const STOP_PATTERNS: readonly { label: string; regex: RegExp }[] = [
+const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
     label: 'stopping here / stop here',
     regex: /\b(stopping here|i'?ll\s+stop\s+here|i'?m\s+stopping)\b/i,
   },
   {
     label: 'honest/natural/clean stopping point',
-    regex: /\b(honest|natural|clean|good)\s+stopping\s+point\b/i,
+    regex: /\b(clean|good|honest|natural)\s+stopping\s+point\b/i,
   },
   {
     label: 'pausing here',
@@ -58,12 +58,12 @@ const STOP_PATTERNS: readonly { label: string; regex: RegExp }[] = [
     // your call." — the queue equivalent of "I'll wait for you to say
     // what's next." Pick the next item instead.
     regex:
-      /\b(holding\s+(here|off|for|pending|until)|i'?m\s+holding|i'?ll\s+hold|will\s+hold)\b/i,
+      /\b(holding\s+(for|here|off|pending|until)|i'?m\s+holding|i'?ll\s+hold|will\s+hold)\b/i,
   },
   {
     label: 'waiting for direction / next direction',
     regex:
-      /\b(waiting\s+(for|on)\s+(your|the|next)\s+(direction|call|input|decision|word|go-ahead|signal)|wait(ing)?\s+for\s+(you|your)\s+to\s+(decide|pick|choose|say|tell|direct))\b/i,
+      /\b(waiting\s+(for|on)\s+(next|the|your)\s+(call|decision|direction|go-ahead|input|signal|word)|wait(ing)?\s+for\s+(you|your)\s+to\s+(choose|decide|direct|pick|say|tell))\b/i,
   },
   {
     label: 'ready when you (are) / let me know when',
@@ -82,25 +82,25 @@ const STOP_PATTERNS: readonly { label: string; regex: RegExp }[] = [
   {
     label: 'pick a/the next item',
     regex:
-      /\bpick\s+(a|the|one|which|specific)\b[^.?!\n]{0,30}(item|one|task)/i,
+      /\bpick\s+(a|one|specific|the|which)\b[^.?!\n]{0,30}(item|one|task)/i,
   },
   {
     label: 'want me to pick / take them in order',
     regex:
-      /\b(want\s+me\s+to\s+pick|take\s+(them|these|those)\s+in\s+order|which\s+(one|item|task)\s+(first|next)|should\s+i\s+start\s+with)\b/i,
+      /\b(want\s+me\s+to\s+pick|take\s+(them|these|those)\s+in\s+order|which\s+(item|one|task)\s+(first|next)|should\s+i\s+start\s+with)\b/i,
   },
   {
     label: 'pick one and continue / one or in order menu',
-    regex: /\bpick\s+(one|a|the)\s+and\s+continue\b/i,
+    regex: /\bpick\s+(a|one|the)\s+and\s+continue\b/i,
   },
   {
     label: 'or take them in order',
-    regex: /\bor\s+take\s+(them|these|all)\s+in\s+order\??/i,
+    regex: /\bor\s+take\s+(all|them|these)\s+in\s+order\??/i,
   },
   {
     label: 'stop(ping) for this session',
     regex:
-      /\b(stop(ping)?|stopping\s+work)\s+(for\s+(this|the)|in\s+this)\s+session\b/i,
+      /\b(stop(ping)?|stopping\s+work)\s+(for\s+(the|this)|in\s+this)\s+session\b/i,
   },
   {
     label: 'session totals / final session state',
@@ -108,7 +108,7 @@ const STOP_PATTERNS: readonly { label: string; regex: RegExp }[] = [
   },
   {
     label: 'remaining queue / open queue (followed by a list)',
-    regex: /\b(remaining|open)\s+queue\b[^.?!\n]{0,30}:\s*\n?\s*[-*•]/i,
+    regex: /\b(open|remaining)\s+queue\b[^.?!\n]{0,30}:\s*\n?\s*[-*•]/i,
   },
   {
     label: 'turn ends with menu question after listing pending items',
@@ -145,7 +145,7 @@ async function main(): Promise<void> {
   const text = stripCodeFences(rawText)
 
   // Check if any STOP pattern fires.
-  const hits: { label: string; snippet: string }[] = []
+  const hits: Array<{ label: string; snippet: string }> = []
   for (let i = 0, { length } = STOP_PATTERNS; i < length; i += 1) {
     const pattern = STOP_PATTERNS[i]!
     const match = pattern.regex.exec(text)

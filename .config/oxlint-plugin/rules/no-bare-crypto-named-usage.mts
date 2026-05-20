@@ -83,16 +83,19 @@ const rule = {
     return {
       ImportDeclaration(node: AstNode) {
         if (
-          (node as { source?: { value?: string } }).source?.value !==
-          'node:crypto'
+          (node as { source?: { value?: string | undefined } | undefined })
+            .source?.value !== 'node:crypto'
         ) {
           return
         }
-        const specs = (node as { specifiers?: AstNode[] }).specifiers ?? []
-        for (const spec of specs) {
+        const specs =
+          (node as { specifiers?: AstNode[] | undefined }).specifiers ?? []
+        for (let i = 0, { length } = specs; i < length; i += 1) {
+          const spec = specs[i]!
           if (
             spec.type === 'ImportDefaultSpecifier' &&
-            (spec as { local?: { name?: string } }).local?.name === 'crypto'
+            (spec as { local?: { name?: string | undefined } | undefined })
+              .local?.name === 'crypto'
           ) {
             hasDefaultCryptoImport = true
             return
@@ -103,11 +106,12 @@ const rule = {
         if (!hasDefaultCryptoImport) {
           return
         }
-        const name = (node as { name?: string }).name
+        const name = (node as { name?: string | undefined }).name
         if (!name || !CRYPTO_NAMED_EXPORTS.has(name)) {
           return
         }
-        const parent = (node as unknown as { parent?: AstNode }).parent
+        const parent = (node as unknown as { parent?: AstNode | undefined })
+          .parent
         if (!parent) {
           return
         }
@@ -116,29 +120,31 @@ const rule = {
         }
         if (
           parent.type === 'MemberExpression' &&
-          (parent as { property?: AstNode }).property === node &&
-          !(parent as { computed?: boolean }).computed
+          (parent as { property?: AstNode | undefined }).property === node &&
+          !(parent as { computed?: boolean | undefined }).computed
         ) {
           return
         }
         if (
           parent.type === 'Property' &&
-          (parent as { key?: AstNode }).key === node &&
-          !(parent as { computed?: boolean }).computed
+          (parent as { key?: AstNode | undefined }).key === node &&
+          !(parent as { computed?: boolean | undefined }).computed
         ) {
           return
         }
         if (
           parent.type === 'VariableDeclarator' &&
-          (parent as { id?: AstNode }).id === node
+          (parent as { id?: AstNode | undefined }).id === node
         ) {
           return
         }
         if (
-          (parent.type === 'FunctionDeclaration' ||
-            parent.type === 'FunctionExpression' ||
-            parent.type === 'ArrowFunctionExpression') &&
-          Array.isArray((parent as { params?: AstNode[] }).params) &&
+          (parent.type === 'ArrowFunctionExpression' ||
+            parent.type === 'FunctionDeclaration' ||
+            parent.type === 'FunctionExpression') &&
+          Array.isArray(
+            (parent as { params?: AstNode[] | undefined }).params,
+          ) &&
           (parent as { params: AstNode[] }).params.includes(node)
         ) {
           return
@@ -156,4 +162,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

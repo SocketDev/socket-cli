@@ -141,7 +141,7 @@ const rule = {
           if (next === value) {
             // Defensive — if our replace-all became a no-op, don't
             // ship an empty fix.
-            return null
+            return undefined
           }
           // Preserve the original quote style.
           const raw = sourceCode.getText(node)
@@ -193,4 +193,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

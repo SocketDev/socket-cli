@@ -29,7 +29,7 @@ const __dirname = path.dirname(__filename)
 // ---------------------------------------------------------------------------
 
 export interface ToolConfig {
-  description?: string
+  description?: string | undefined
   tag: string
   checksums: Record<string, string>
 }
@@ -37,10 +37,10 @@ export interface ToolConfig {
 export type EmbeddedChecksums = Record<string, ToolConfig>
 
 export interface VerifyResult {
-  actual?: string
-  expected?: string
-  source?: string
-  skipped?: boolean
+  actual?: string | undefined
+  expected?: string | undefined
+  source?: string | undefined
+  skipped?: boolean | undefined
   valid: boolean
 }
 
@@ -55,27 +55,16 @@ export interface VerifyResult {
 
 let embeddedChecksums: EmbeddedChecksums | undefined | null
 
-export function getEmbeddedChecksums(): EmbeddedChecksums | undefined {
-  if (embeddedChecksums === null) {
-    return undefined
+/**
+ * Compute SHA256 hash of a file as lowercase hex.
+ */
+export async function computeFileHash(filePath: string): Promise<string> {
+  const hash = crypto.createHash('sha256')
+  const stream = createReadStream(filePath)
+  for await (const chunk of stream) {
+    hash.update(chunk)
   }
-  if (embeddedChecksums === undefined) {
-    try {
-      const checksumPath = path.join(
-        __dirname,
-        '..',
-        '..',
-        'release-assets.json',
-      )
-      embeddedChecksums = JSON.parse(
-        readFileSync(checksumPath, 'utf8'),
-      ) as EmbeddedChecksums
-    } catch {
-      embeddedChecksums = null
-      return undefined
-    }
-  }
-  return embeddedChecksums
+  return hash.digest('hex')
 }
 
 export function getEmbeddedChecksum(
@@ -97,20 +86,27 @@ export function getEmbeddedChecksum(
   return { checksum, tag: toolConfig.tag }
 }
 
-// ---------------------------------------------------------------------------
-// Format primitives.
-// ---------------------------------------------------------------------------
-
-/**
- * Compute SHA256 hash of a file as lowercase hex.
- */
-export async function computeFileHash(filePath: string): Promise<string> {
-  const hash = crypto.createHash('sha256')
-  const stream = createReadStream(filePath)
-  for await (const chunk of stream) {
-    hash.update(chunk)
+export function getEmbeddedChecksums(): EmbeddedChecksums | undefined {
+  if (embeddedChecksums === null) {
+    return undefined
   }
-  return hash.digest('hex')
+  if (embeddedChecksums === undefined) {
+    try {
+      const checksumPath = path.join(
+        __dirname,
+        '..',
+        '..',
+        'release-assets.json',
+      )
+      embeddedChecksums = JSON.parse(
+        readFileSync(checksumPath, 'utf8'),
+      ) as EmbeddedChecksums
+    } catch {
+      embeddedChecksums = undefined
+      return undefined
+    }
+  }
+  return embeddedChecksums
 }
 
 /**
@@ -136,15 +132,11 @@ export function parseChecksums(content: string): Record<string, string> {
   return checksums
 }
 
-// ---------------------------------------------------------------------------
-// Verify.
-// ---------------------------------------------------------------------------
-
 interface VerifyOptions {
   filePath: string
   assetName: string
   tool: string
-  quiet?: boolean
+  quiet?: boolean | undefined
 }
 
 /**

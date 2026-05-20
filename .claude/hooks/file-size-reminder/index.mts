@@ -41,7 +41,7 @@ const HARD_CAP_LINES = 1000
 
 // Tool names that write or modify file content. Read / Glob / Grep
 // don't change a file, so they don't trigger this hook.
-const FILE_WRITING_TOOLS = new Set(['Write', 'Edit', 'NotebookEdit'])
+const FILE_WRITING_TOOLS = new Set(['Edit', 'NotebookEdit', 'Write'])
 
 // Path patterns we skip — generated, vendored, or otherwise
 // exempt from the cap. Tested as substring matches against the
@@ -77,22 +77,41 @@ const SKIP_PATH_SUBSTRINGS: readonly string[] = [
   '.map',
 ]
 
-interface SizeHit {
-  readonly path: string
-  readonly lines: number
-  readonly cap: 'soft' | 'hard'
-}
-
-function isExempt(absPath: string): boolean {
-  for (let i = 0, { length } = SKIP_PATH_SUBSTRINGS; i < length; i += 1) {
-    if (absPath.includes(SKIP_PATH_SUBSTRINGS[i]!)) {
-      return true
+export function collectHits(
+  events: ReadonlyArray<{ name: string; input: Record<string, unknown> }>,
+): SizeHit[] {
+  const seen = new Set<string>()
+  const hits: SizeHit[] = []
+  for (let i = 0, { length } = events; i < length; i += 1) {
+    const event = events[i]!
+    if (!FILE_WRITING_TOOLS.has(event.name)) {
+      continue
+    }
+    const pathField = event.input['file_path'] ?? event.input['notebook_path']
+    if (typeof pathField !== 'string') {
+      continue
+    }
+    if (seen.has(pathField)) {
+      continue
+    }
+    seen.add(pathField)
+    if (isExempt(pathField)) {
+      continue
+    }
+    const lines = countLines(pathField)
+    if (lines === undefined) {
+      continue
+    }
+    if (lines > HARD_CAP_LINES) {
+      hits.push({ path: pathField, lines, cap: 'hard' })
+    } else if (lines > SOFT_CAP_LINES) {
+      hits.push({ path: pathField, lines, cap: 'soft' })
     }
   }
-  return false
+  return hits
 }
 
-function countLines(absPath: string): number | undefined {
+export function countLines(absPath: string): number | undefined {
   try {
     if (!existsSync(absPath)) {
       return undefined
@@ -129,38 +148,19 @@ function countLines(absPath: string): number | undefined {
   }
 }
 
-function collectHits(
-  events: readonly { name: string; input: Record<string, unknown> }[],
-): SizeHit[] {
-  const seen = new Set<string>()
-  const hits: SizeHit[] = []
-  for (let i = 0, { length } = events; i < length; i += 1) {
-    const event = events[i]!
-    if (!FILE_WRITING_TOOLS.has(event.name)) {
-      continue
-    }
-    const pathField = event.input['file_path'] ?? event.input['notebook_path']
-    if (typeof pathField !== 'string') {
-      continue
-    }
-    if (seen.has(pathField)) {
-      continue
-    }
-    seen.add(pathField)
-    if (isExempt(pathField)) {
-      continue
-    }
-    const lines = countLines(pathField)
-    if (lines === undefined) {
-      continue
-    }
-    if (lines > HARD_CAP_LINES) {
-      hits.push({ path: pathField, lines, cap: 'hard' })
-    } else if (lines > SOFT_CAP_LINES) {
-      hits.push({ path: pathField, lines, cap: 'soft' })
+interface SizeHit {
+  readonly path: string
+  readonly lines: number
+  readonly cap: 'soft' | 'hard'
+}
+
+export function isExempt(absPath: string): boolean {
+  for (let i = 0, { length } = SKIP_PATH_SUBSTRINGS; i < length; i += 1) {
+    if (absPath.includes(SKIP_PATH_SUBSTRINGS[i]!)) {
+      return true
     }
   }
-  return hits
+  return false
 }
 
 async function main(): Promise<void> {

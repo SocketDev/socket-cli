@@ -74,7 +74,7 @@ type ToolInput = {
 const BYPASS_PHRASE = 'Allow paths-mts-inherit bypass'
 const BYPASS_LOOKBACK_USER_TURNS = 8
 
-const PATHS_MTS_RE = /(^|\/)paths\.(?:mts|cts)$/
+const PATHS_MTS_RE = /(^|\/)paths\.(?:cts|mts)$/
 const EXPORT_STAR_RE =
   /^\s*export\s+\*\s+from\s+['"]([^'"]+\/paths\.m?ts)['"];?\s*$/m
 
@@ -85,7 +85,7 @@ const EXPORT_STAR_RE =
  *
  * Stops at the first ancestor found OR at the filesystem root.
  */
-function findAncestorPathsMts(filePath: string): string | undefined {
+export function findAncestorPathsMts(filePath: string): string | undefined {
   const fileDir = path.dirname(path.resolve(filePath))
   // Skip the current file's own dir — we want a STRICT ancestor.
   let cur = path.dirname(fileDir)
@@ -98,7 +98,9 @@ function findAncestorPathsMts(filePath: string): string | undefined {
       }
     }
     const parent = path.dirname(cur)
-    if (parent === cur) break
+    if (parent === cur) {
+      break
+    }
     cur = parent
   }
   return undefined
@@ -106,7 +108,9 @@ function findAncestorPathsMts(filePath: string): string | undefined {
 
 async function main(): Promise<number> {
   const raw = await readStdin()
-  if (!raw.trim()) return 0
+  if (!raw.trim()) {
+    return 0
+  }
 
   let payload: ToolInput
   try {
@@ -119,24 +123,30 @@ async function main(): Promise<number> {
   }
 
   const tool = payload.tool_name
-  if (tool !== 'Edit' && tool !== 'Write' && tool !== 'MultiEdit') {
+  if (tool !== 'Edit' && tool !== 'MultiEdit' && tool !== 'Write') {
     return 0
   }
 
   const filePath = payload.tool_input?.file_path
-  if (!filePath) return 0
-  if (!PATHS_MTS_RE.test(filePath)) return 0
+  if (!filePath) {
+    return 0
+  }
+  if (!PATHS_MTS_RE.test(filePath)) {
+    return 0
+  }
 
   // Only enforce on `<...>/scripts/paths.{mts,cts}` (the canonical
   // location). A `paths.mts` outside a `scripts/` dir is some other
   // file with the same name; not our concern.
-  if (!/\/scripts\/paths\.(?:mts|cts)$/.test(filePath)) {
+  if (!/\/scripts\/paths\.(?:cts|mts)$/.test(filePath)) {
     return 0
   }
 
   // Repo-root paths.mts has no ancestor — exempt.
   const ancestor = findAncestorPathsMts(filePath)
-  if (!ancestor) return 0
+  if (!ancestor) {
+    return 0
+  }
 
   // The new content we're about to write. Edit uses `new_string`
   // (a fragment); Write uses `content` (the full file). For Edit,

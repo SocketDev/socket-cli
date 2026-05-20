@@ -26,7 +26,7 @@ import process from 'node:process'
 import { containsOutsideQuotes } from '../_shared/bash-quote-mask.mts'
 
 interface ToolInput {
-  readonly tool_input?: { readonly command?: string } | undefined
+  readonly tool_input?: { readonly command?: string | undefined } | undefined
   readonly tool_name?: string | undefined
 }
 

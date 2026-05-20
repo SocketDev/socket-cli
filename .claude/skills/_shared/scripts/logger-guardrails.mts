@@ -57,25 +57,25 @@ export type CheckLoggerGuardrailsOptions = {
   /**
    * Repo root. Defaults to process.cwd().
    */
-  readonly cwd?: string
+  readonly cwd?: string | undefined
   /**
    * Globs to scan, relative to cwd.
    */
-  readonly include?: readonly string[]
+  readonly include?: readonly string[] | undefined
   /**
    * Globs to skip.
    */
-  readonly exclude?: readonly string[]
+  readonly exclude?: readonly string[] | undefined
   /**
    * File extensions to scan.
    */
-  readonly extensions?: readonly string[]
+  readonly extensions?: readonly string[] | undefined
   /**
    * Globs that ARE bundled. Dynamic `import()` is allowed inside these (the
    * bundler resolves the import statically at build time). Default is `src/**`
    * + `.config/**` (bundler configs).
    */
-  readonly bundledRoots?: readonly string[]
+  readonly bundledRoots?: readonly string[] | undefined
 }
 
 export type CheckLoggerGuardrailsResult = {
@@ -101,7 +101,7 @@ const DEFAULT_BUNDLED_ROOTS = ['src/', '.config/']
 const STATUS_EMOJI = ['✓', '✔', '❌', '✗', '⚠', '⚠️', '❗', '✅', '❎', '☑']
 
 const CONSOLE_CALL_RE =
-  /\bconsole\s*\.\s*(?:log|error|warn|info|debug|trace)\s*\(/g
+  /\bconsole\s*\.\s*(?:debug|error|info|log|trace|warn)\s*\(/g
 
 const INLINE_LOGGER_RE = /\bgetDefaultLogger\s*\(\s*\)\s*\.\s*[a-zA-Z_$]/g
 
@@ -145,7 +145,8 @@ export async function checkLoggerGuardrails(
 
   const violations: GuardrailViolation[] = []
 
-  for (const file of matched) {
+  for (let i = 0, { length } = matched; i < length; i += 1) {
+    const file = matched[i]!
     if (!existsSync(file)) {
       continue
     }
@@ -161,7 +162,8 @@ export async function checkLoggerGuardrails(
       }
 
       // (1) Status-symbol emoji.
-      for (const emoji of STATUS_EMOJI) {
+      for (let i = 0, { length } = STATUS_EMOJI; i < length; i += 1) {
+        const emoji = STATUS_EMOJI[i]!
         const col = line.indexOf(emoji)
         if (col >= 0) {
           violations.push({

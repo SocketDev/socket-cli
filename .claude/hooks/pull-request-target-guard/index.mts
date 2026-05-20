@@ -62,7 +62,7 @@ interface ToolInput {
 const BYPASS_PHRASE = 'Allow pr-target-execution bypass'
 
 // Workflow-file shape.
-function isWorkflowPath(filePath: string): boolean {
+export function isWorkflowPath(filePath: string): boolean {
   return /\/\.github\/workflows\/[^/]+\.ya?ml$/.test(filePath)
 }
 
@@ -99,25 +99,25 @@ const FORK_CHECKOUT_RE =
 const EXECUTE_PATTERNS: ReadonlyArray<{
   re: RegExp
   cmd: string
-  safeIf?: RegExp
+  safeIf?: RegExp | undefined
 }> = [
   // Node package managers — `prepare`/`postinstall` scripts run by
   // default. --ignore-scripts neutralizes the install-script vector
   // but a build step on the next line can still execute fork code.
   {
-    re: /\b(?:npm|pnpm|yarn|bun)\s+(?:install|i|ci|add)\b/,
+    re: /\b(?:bun|npm|pnpm|yarn)\s+(?:add|ci|i|install)\b/,
     cmd: 'package-manager install',
     safeIf: /--ignore-scripts\b/,
   },
   // Node build steps (no install-script bypass; the build itself
   // runs fork-controlled code).
   {
-    re: /\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?build\b/,
+    re: /\b(?:bun|npm|pnpm|yarn)\s+(?:run\s+)?build\b/,
     cmd: 'node build',
   },
   // Generic `npm test` / `pnpm test` etc.
   {
-    re: /\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?test\b/,
+    re: /\b(?:bun|npm|pnpm|yarn)\s+(?:run\s+)?test\b/,
     cmd: 'node test',
   },
   // Python.
@@ -130,7 +130,7 @@ const EXECUTE_PATTERNS: ReadonlyArray<{
     cmd: 'python setup.py',
   },
   {
-    re: /\bpoetry\s+(?:install|build)\b/,
+    re: /\bpoetry\s+(?:build|install)\b/,
     cmd: 'poetry install/build',
   },
   // Ruby.
@@ -140,17 +140,17 @@ const EXECUTE_PATTERNS: ReadonlyArray<{
   },
   // Rust.
   {
-    re: /\bcargo\s+(?:build|test|run|install)\b/,
+    re: /\bcargo\s+(?:build|install|run|test)\b/,
     cmd: 'cargo build/test/run/install',
   },
   // Go.
   {
-    re: /\bgo\s+(?:build|test|run|install|generate)\b/,
+    re: /\bgo\s+(?:build|generate|install|run|test)\b/,
     cmd: 'go build/test/run/install',
   },
   // Make / generic build runners.
   {
-    re: /\b(?:make|gmake|ninja|just|task)\s+\w*/,
+    re: /\b(?:gmake|just|make|ninja|task)\s+\w*/,
     cmd: 'make / build runner',
   },
   // `bash <(curl ...)` and `sh -c "$(curl ...)"` install patterns.
@@ -201,7 +201,8 @@ export function findUnsafeForkExecution(content: string): Finding[] {
     // line.
     const runHit = /^\s*-?\s*run\s*:\s*(.*)/.exec(line)
     const bodyLine = runHit ? runHit[1]! : line
-    for (const ep of EXECUTE_PATTERNS) {
+    for (let i = 0, { length } = EXECUTE_PATTERNS; i < length; i += 1) {
+      const ep = EXECUTE_PATTERNS[i]!
       if (!ep.re.test(bodyLine)) {
         continue
       }
@@ -270,7 +271,8 @@ process.stdin.on('end', () => {
     )
     lines.push('       (checks out the FORK code — attacker-controlled)')
     lines.push('    3. Subsequent execute-fork-code step(s):')
-    for (const f of findings) {
+    for (let i = 0, { length } = findings; i < length; i += 1) {
+      const f = findings[i]!
       lines.push(`         Line ${f.line} (${f.cmd}): ${f.snippet}`)
     }
     lines.push('')

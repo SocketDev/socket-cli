@@ -42,7 +42,7 @@ import {
 // preference: socket-wheelhouse first (canonical), then aliases that
 // appeared in the fleet historically. Returns the absolute path to
 // template/CLAUDE.md if found, otherwise undefined.
-function findWheelhouseClaudeMd(cwd: string): string | undefined {
+export function findWheelhouseClaudeMd(cwd: string): string | undefined {
   const candidates = [
     'socket-wheelhouse',
     'socket-repo-template', // legacy alias
@@ -69,33 +69,35 @@ interface StopPayload {
   readonly transcript_path?: string | undefined
 }
 
-const REPEAT_FINDING_PATTERNS: readonly { label: string; regex: RegExp }[] = [
-  {
-    label: 'again',
-    regex: /\b(hit this )?again\b|\bonce more\b/i,
-  },
-  {
-    label: 'second/third time',
-    regex: /\b(second|third|fourth|fifth|nth|n-th) time\b/i,
-  },
-  {
-    label: 'same X as before / before in this session',
-    // Up to ~40 chars between "same" and "as/we saw" so we can match
-    // "same monthCode resolution bug as we saw before" (multi-word X)
-    // but not entire sentences.
-    regex:
-      /\bsame\s+[^.?!\n]{1,40}?\s+(as|we saw)\s+(before|earlier|previously|last time)\b/i,
-  },
-  {
-    label: "we've seen this before",
-    regex:
-      /\b(we'?ve|i'?ve|we have|i have)\s+seen\s+this\s+(before|already)\b/i,
-  },
-  {
-    label: 'recurring / keeps happening',
-    regex: /\b(recurring|keeps happening|kept happening|repeated|repeating)\b/i,
-  },
-]
+const REPEAT_FINDING_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> =
+  [
+    {
+      label: 'again',
+      regex: /\b(hit this )?again\b|\bonce more\b/i,
+    },
+    {
+      label: 'second/third time',
+      regex: /\b(fifth|fourth|n-th|nth|second|third) time\b/i,
+    },
+    {
+      label: 'same X as before / before in this session',
+      // Up to ~40 chars between "same" and "as/we saw" so we can match
+      // "same monthCode resolution bug as we saw before" (multi-word X)
+      // but not entire sentences.
+      regex:
+        /\bsame\s+[^.?!\n]{1,40}?\s+(as|we saw)\s+(before|earlier|previously|last time)\b/i,
+    },
+    {
+      label: "we've seen this before",
+      regex:
+        /\b(we'?ve|i'?ve|we have|i have)\s+seen\s+this\s+(already|before)\b/i,
+    },
+    {
+      label: 'recurring / keeps happening',
+      regex:
+        /\b(recurring|keeps happening|kept happening|repeated|repeating)\b/i,
+    },
+  ]
 
 // Paths that signal rule promotion when edited in the same turn.
 const RULE_SURFACE_PATTERNS: readonly RegExp[] = [
@@ -110,7 +112,7 @@ interface RepeatFindingHit {
   readonly snippet: string
 }
 
-function detectRepeatFindings(text: string): RepeatFindingHit[] {
+export function detectRepeatFindings(text: string): RepeatFindingHit[] {
   const stripped = stripCodeFences(text)
   const found: RepeatFindingHit[] = []
   for (let i = 0, { length } = REPEAT_FINDING_PATTERNS; i < length; i += 1) {
@@ -127,7 +129,7 @@ function detectRepeatFindings(text: string): RepeatFindingHit[] {
   return found
 }
 
-function hasRulePromotionEvidence(
+export function hasRulePromotionEvidence(
   toolUses: ReturnType<typeof readLastAssistantToolUses>,
   text: string,
 ): boolean {

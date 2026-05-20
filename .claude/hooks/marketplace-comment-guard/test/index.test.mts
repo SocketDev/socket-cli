@@ -1,33 +1,41 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import fs from 'node:fs'
+// prefer-async-spawn: sync-required — test flow is sync.
+// prefer-spawn-over-execsync: required — uses encoding/input options
+// not exposed on the lib spawnSync wrapper.
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
 function runHook(payload: object): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
-    encoding: 'utf8',
   })
-  return { stderr: result.stderr, exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
 function makeFixture(
-  marketplaceJson: string | null,
-  readme: string | null,
+  marketplaceJson: string | undefined,
+  readme: string | undefined,
 ): { dir: string; jsonPath: string; readmePath: string } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mc-guard-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'mc-guard-'))
   const pluginDir = path.join(dir, '.claude-plugin')
-  fs.mkdirSync(pluginDir, { recursive: true })
+  mkdirSync(pluginDir, { recursive: true })
   const jsonPath = path.join(pluginDir, 'marketplace.json')
   const readmePath = path.join(pluginDir, 'README.md')
-  if (marketplaceJson !== null) fs.writeFileSync(jsonPath, marketplaceJson)
-  if (readme !== null) fs.writeFileSync(readmePath, readme)
+  if (marketplaceJson !== undefined) {
+    writeFileSync(jsonPath, marketplaceJson)
+  }
+  if (readme !== undefined) {
+    writeFileSync(readmePath, readme)
+  }
   return { dir, jsonPath, readmePath }
 }
 
@@ -83,7 +91,7 @@ test('SKIPS non-Edit/Write tools', () => {
 })
 
 test('BLOCKS Write of marketplace.json when sibling README is missing', () => {
-  const { dir, jsonPath } = makeFixture(null, null)
+  const { dir, jsonPath } = makeFixture(undefined, undefined)
   try {
     const { stderr, exitCode } = runHook({
       tool_name: 'Write',
@@ -92,12 +100,12 @@ test('BLOCKS Write of marketplace.json when sibling README is missing', () => {
     assert.equal(exitCode, 2)
     assert.match(stderr, /sibling file missing/)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })
 
 test('ALLOWS Write of consistent marketplace.json + on-disk README', () => {
-  const { dir, jsonPath } = makeFixture(null, VALID_README)
+  const { dir, jsonPath } = makeFixture(undefined, VALID_README)
   try {
     const { exitCode } = runHook({
       tool_name: 'Write',
@@ -105,13 +113,13 @@ test('ALLOWS Write of consistent marketplace.json + on-disk README', () => {
     })
     assert.equal(exitCode, 0)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })
 
 test('BLOCKS Write of marketplace.json when README sha is stale', () => {
   const staleReadme = VALID_README.replace(SHA, SHA_OTHER)
-  const { dir, jsonPath } = makeFixture(null, staleReadme)
+  const { dir, jsonPath } = makeFixture(undefined, staleReadme)
   try {
     const { stderr, exitCode } = runHook({
       tool_name: 'Write',
@@ -120,13 +128,13 @@ test('BLOCKS Write of marketplace.json when README sha is stale', () => {
     assert.equal(exitCode, 2)
     assert.match(stderr, /sha .* does not match/)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })
 
 test('BLOCKS Write of marketplace.json when README version is stale', () => {
   const staleReadme = VALID_README.replace('v1.0.1', 'v1.0.0')
-  const { dir, jsonPath } = makeFixture(null, staleReadme)
+  const { dir, jsonPath } = makeFixture(undefined, staleReadme)
   try {
     const { stderr, exitCode } = runHook({
       tool_name: 'Write',
@@ -135,7 +143,7 @@ test('BLOCKS Write of marketplace.json when README version is stale', () => {
     assert.equal(exitCode, 2)
     assert.match(stderr, /version .* does not match/)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })
 
@@ -145,7 +153,7 @@ test('BLOCKS Write of marketplace.json when README has no row for a plugin', () 
 | plugin | version | sha | date | notes |
 |--------|---------|-----|------|-------|
 `
-  const { dir, jsonPath } = makeFixture(null, noRowReadme)
+  const { dir, jsonPath } = makeFixture(undefined, noRowReadme)
   try {
     const { stderr, exitCode } = runHook({
       tool_name: 'Write',
@@ -154,13 +162,13 @@ test('BLOCKS Write of marketplace.json when README has no row for a plugin', () 
     assert.equal(exitCode, 2)
     assert.match(stderr, /no row in README pin table/)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })
 
 test('BLOCKS Write of marketplace.json when README date is malformed', () => {
   const badDateReadme = VALID_README.replace('2026-05-18', 'May 18 2026')
-  const { dir, jsonPath } = makeFixture(null, badDateReadme)
+  const { dir, jsonPath } = makeFixture(undefined, badDateReadme)
   try {
     const { stderr, exitCode } = runHook({
       tool_name: 'Write',
@@ -169,12 +177,12 @@ test('BLOCKS Write of marketplace.json when README date is malformed', () => {
     assert.equal(exitCode, 2)
     assert.match(stderr, /not ISO-8601/)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })
 
 test('BLOCKS Write of malformed marketplace.json', () => {
-  const { dir, jsonPath } = makeFixture(null, VALID_README)
+  const { dir, jsonPath } = makeFixture(undefined, VALID_README)
   try {
     const { stderr, exitCode } = runHook({
       tool_name: 'Write',
@@ -183,12 +191,12 @@ test('BLOCKS Write of malformed marketplace.json', () => {
     assert.equal(exitCode, 2)
     assert.match(stderr, /not parseable JSON/)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })
 
 test('ALLOWS Write of README with consistent on-disk marketplace.json', () => {
-  const { dir, readmePath } = makeFixture(VALID_JSON, null)
+  const { dir, readmePath } = makeFixture(VALID_JSON, undefined)
   try {
     const { exitCode } = runHook({
       tool_name: 'Write',
@@ -196,7 +204,7 @@ test('ALLOWS Write of README with consistent on-disk marketplace.json', () => {
     })
     assert.equal(exitCode, 0)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })
 
@@ -214,7 +222,7 @@ test('BLOCKS Edit of README that removes a plugin row', () => {
     assert.equal(exitCode, 2)
     assert.match(stderr, /no row in README pin table for plugin "codex"/)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })
 
@@ -236,6 +244,6 @@ test('ALLOWS Edit of README that bumps a row in sync with a JSON bump (simulated
     })
     assert.equal(exitCode, 0)
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true })
+    safeDeleteSync(dir)
   }
 })

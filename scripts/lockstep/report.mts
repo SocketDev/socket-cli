@@ -26,7 +26,8 @@ export interface AreaSummary {
 
 export function summarize(reports: Report[]): AreaSummary[] {
   const byArea = new Map<string, AreaSummary>()
-  for (const r of reports) {
+  for (let i = 0, { length } = reports; i < length; i += 1) {
+    const r = reports[i]!
     let s = byArea.get(r.area)
     if (!s) {
       s = { area: r.area, total: 0, ok: 0, drift: 0, error: 0 }
@@ -35,7 +36,7 @@ export function summarize(reports: Report[]): AreaSummary[] {
     s.total += 1
     s[r.severity] += 1
   }
-  return [...byArea.values()].sort((a, b) => a.area.localeCompare(b.area))
+  return [...byArea.values()].toSorted((a, b) => a.area.localeCompare(b.area))
 }
 
 export function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
@@ -43,7 +44,8 @@ export function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
     `lockstep — ${reports.length} row(s) across ${summaries.length} area(s)`,
   )
   logger.info('')
-  for (const s of summaries) {
+  for (let i = 0, { length } = summaries; i < length; i += 1) {
+    const s = summaries[i]!
     const label = s.area.padEnd(24)
     const parts = `total=${String(s.total).padStart(3)}  ok=${String(s.ok).padStart(3)}  drift=${String(s.drift).padStart(3)}  error=${String(s.error).padStart(3)}`
     logger.info(`  ${label}${parts}`)
@@ -52,7 +54,8 @@ export function emitHuman(reports: Report[], summaries: AreaSummary[]): number {
 
   let hadError = false
   let hadDrift = false
-  for (const r of reports) {
+  for (let i = 0, { length } = reports; i < length; i += 1) {
+    const r = reports[i]!
     const banner = `[${r.area}/${r.id}] (${r.kind})`
     if (r.kind === 'file-fork') {
       logger.info(banner)

@@ -1,8 +1,11 @@
 // node --test specs for the minimum-release-age-guard hook.
 
-import { spawn } from 'node:child_process'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -14,7 +17,7 @@ const HOOK = path.join(here, '..', 'index.mts')
 type Result = { code: number; stderr: string }
 
 function tmpYaml(content: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'mra-guard-test-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'mra-guard-test-'))
   const p = path.join(dir, 'pnpm-workspace.yaml')
   writeFileSync(p, content)
   return p
@@ -22,13 +25,13 @@ function tmpYaml(content: string): string {
 
 async function runHook(payload: Record<string, unknown>): Promise<Result> {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })
@@ -85,7 +88,7 @@ test('Edit adds a new exclude entry — blocked', async () => {
     },
   })
   assert.strictEqual(r.code, 2)
-  assert.ok(r.stderr.includes('pkg-b'))
+  assert.ok(String(r.stderr).includes('pkg-b'))
 })
 
 test('Write adds a fresh exclude — blocked', async () => {
@@ -98,12 +101,12 @@ test('Write adds a fresh exclude — blocked', async () => {
     },
   })
   assert.strictEqual(r.code, 2)
-  assert.ok(r.stderr.includes('sketchy-pkg'))
+  assert.ok(String(r.stderr).includes('sketchy-pkg'))
 })
 
 test('Edit with bypass phrase in transcript — passes', async () => {
   const filePath = tmpYaml('minimumReleaseAge:\n  exclude:\n    - pkg-a\n')
-  const dir = mkdtempSync(path.join(tmpdir(), 'mra-guard-tx-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'mra-guard-tx-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   writeFileSync(
     transcriptPath,

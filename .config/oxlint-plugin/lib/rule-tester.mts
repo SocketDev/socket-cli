@@ -34,7 +34,7 @@
  *   })
  */
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -74,6 +74,13 @@ export interface InvalidTestCase extends ValidTestCase {
   readonly errors: ReadonlyArray<{
     readonly messageId?: string | undefined
     readonly message?: string | undefined
+    /**
+     * Template-substitution data for messageId-keyed message strings. Mirrors
+     * ESLint's RuleTester `data` field — when the rule's messages dict has
+     * placeholders like `{{name}}`, the test passes the substitution values
+     * here.
+     */
+    readonly data?: Record<string, unknown> | undefined
   }>
   /**
    * Expected source after autofix. If provided, the tester reruns `oxlint
@@ -84,8 +91,8 @@ export interface InvalidTestCase extends ValidTestCase {
 }
 
 export interface RunOpts {
-  readonly valid: ReadonlyArray<ValidTestCase>
-  readonly invalid: ReadonlyArray<InvalidTestCase>
+  readonly valid: readonly ValidTestCase[]
+  readonly invalid: readonly InvalidTestCase[]
 }
 
 /**
@@ -94,8 +101,10 @@ export interface RunOpts {
  * false-fail before `pnpm install` completes the bin link).
  */
 function resolveOxlintBinary(): string | undefined {
-  const r = spawnSync('which', ['oxlint'], { encoding: 'utf8' })
-  if (r.status === 0 && r.stdout.trim()) return r.stdout.trim()
+  const r = spawnSync('which', ['oxlint'], {})
+  if (r.status === 0 && String(r.stdout).trim()) {
+    return String(r.stdout).trim()
+  }
   return undefined
 }
 
@@ -117,10 +126,11 @@ function runOxlint(args: {
   fix: boolean
 }): { diagnostics: OxlintDiagnostic[]; output?: string | undefined } {
   const cliArgs = ['--config', args.configPath, '-f', 'json']
-  if (args.fix) cliArgs.push('--fix')
+  if (args.fix) {
+    cliArgs.push('--fix')
+  }
   cliArgs.push(args.fixturePath)
   const r = spawnSync(args.oxlintBin, cliArgs, {
-    encoding: 'utf8',
     timeout: 15_000,
   })
   // oxlint's JSON reporter has changed shape across versions:
@@ -133,13 +143,13 @@ function runOxlint(args: {
   // line-by-line. Filter every result by rule id so unrelated
   // findings (autofix from other socket rules in the same config)
   // don't inflate the count.
-  const stdout = r.stdout || ''
+  const stdout = String(r.stdout || '')
   const diagnostics: OxlintDiagnostic[] = []
   const trimmed = stdout.trim()
   const matchesRule = (d: OxlintDiagnostic): boolean => {
     // Current oxlint emits `code` like `socket(no-cached-for-on-iterable)`
     // instead of (or in addition to) `ruleId`. Accept either form.
-    const code = (d as OxlintDiagnostic & { code?: string }).code
+    const code = (d as OxlintDiagnostic & { code?: string | undefined }).code
     return (
       d.ruleId?.endsWith(`/${args.ruleName}`) === true ||
       d.ruleId === `socket/${args.ruleName}` ||
@@ -152,11 +162,13 @@ function runOxlint(args: {
   if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
     try {
       const parsed = JSON.parse(trimmed) as unknown
-      const fileBlocks: Array<{ diagnostics?: OxlintDiagnostic[] }> =
-        Array.isArray(parsed)
-          ? (parsed as Array<{ diagnostics?: OxlintDiagnostic[] }>)
-          : [parsed as { diagnostics?: OxlintDiagnostic[] }]
-      for (const file of fileBlocks) {
+      const fileBlocks: Array<{
+        diagnostics?: OxlintDiagnostic[] | undefined
+      }> = Array.isArray(parsed)
+        ? (parsed as Array<{ diagnostics?: OxlintDiagnostic[] | undefined }>)
+        : [parsed as { diagnostics?: OxlintDiagnostic[] | undefined }]
+      for (let i = 0, { length } = fileBlocks; i < length; i += 1) {
+        const file = fileBlocks[i]!
         for (const d of file.diagnostics ?? []) {
           if (matchesRule(d)) {
             diagnostics.push(d)
@@ -170,7 +182,9 @@ function runOxlint(args: {
   }
   if (!parsedWhole) {
     for (const line of stdout.split('\n')) {
-      if (!line.trim() || !line.trim().startsWith('{')) continue
+      if (!line.trim() || !line.trim().startsWith('{')) {
+        continue
+      }
       try {
         const d = JSON.parse(line) as OxlintDiagnostic
         if (matchesRule(d)) {
@@ -246,8 +260,8 @@ function errorMatches(
 }
 
 interface RuleModule {
-  readonly meta?: unknown
-  readonly create?: (context: unknown) => unknown
+  readonly meta?: unknown | undefined
+  readonly create?: ((context: unknown) => unknown) | undefined
 }
 
 export class RuleTester {

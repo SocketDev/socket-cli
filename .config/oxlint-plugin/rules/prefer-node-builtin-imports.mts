@@ -88,7 +88,8 @@ const rule = {
       programBody: AstNode[],
       localName: string,
     ): boolean {
-      for (const stmt of programBody) {
+      for (let i = 0, { length } = programBody; i < length; i += 1) {
+        const stmt = programBody[i]!
         if (stmt.type === 'ImportDeclaration') {
           for (const spec of stmt.specifiers) {
             if (
@@ -231,7 +232,7 @@ const rule = {
             }
           }
 
-          const sorted = [...accessed].sort()
+          const sorted = [...accessed].toSorted()
           const newImport = `import { ${sorted.join(', ')} } from 'node:fs'`
 
           context.report({
@@ -239,7 +240,8 @@ const rule = {
             messageId,
             fix(fixer: RuleFixer) {
               const fixes = [fixer.replaceText(node, newImport)]
-              for (const ref of memberRefs) {
+              for (let i = 0, { length } = memberRefs; i < length; i += 1) {
+                const ref = memberRefs[i]!
                 // Replace `fs.X` with bare `X`. We need the entire
                 // member expression, not just the object.
                 fixes.push(fixer.replaceText(ref, ref.property.name))
@@ -399,4 +401,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

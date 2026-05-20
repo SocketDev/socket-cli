@@ -1,8 +1,8 @@
 // node --test specs for the verify-rendered-output-before-commit-reminder hook.
 
-import { spawn, spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -14,11 +14,12 @@ const HOOK = path.join(here, '..', 'index.mts')
 type Result = { code: number; stderr: string }
 
 function mkRepoWithStaged(stagedFiles: string[]): string {
-  const repo = mkdtempSync(path.join(tmpdir(), 'commit-rebuild-test-'))
+  const repo = mkdtempSync(path.join(os.tmpdir(), 'commit-rebuild-test-'))
   spawnSync('git', ['init', '-q'], { cwd: repo })
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repo })
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: repo })
-  for (const f of stagedFiles) {
+  for (let i = 0, { length } = stagedFiles; i < length; i += 1) {
+    const f = stagedFiles[i]!
     const p = path.join(repo, f)
     mkdirSync(path.dirname(p), { recursive: true })
     writeFileSync(p, 'x')
@@ -28,7 +29,7 @@ function mkRepoWithStaged(stagedFiles: string[]): string {
 }
 
 function mkTranscript(entries: object[]): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'commit-rebuild-tx-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'commit-rebuild-tx-'))
   const p = path.join(dir, 'session.jsonl')
   writeFileSync(p, entries.map(e => JSON.stringify(e)).join('\n') + '\n')
   return p
@@ -36,13 +37,13 @@ function mkTranscript(entries: object[]): string {
 
 async function runHook(payload: Record<string, unknown>): Promise<Result> {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })
@@ -100,7 +101,7 @@ test('commit with UI files + recent build + no verify — reminder fires', async
     ]),
   })
   assert.strictEqual(r.code, 0)
-  assert.ok(r.stderr.includes('verify-rendered-output-before-commit-reminder'))
+  assert.ok(String(r.stderr).includes('verify-rendered-output-before-commit-reminder'))
 })
 
 test('commit with UI files + build + later user verify — no reminder', async () => {

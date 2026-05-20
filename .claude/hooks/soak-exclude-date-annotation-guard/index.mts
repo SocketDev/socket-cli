@@ -64,12 +64,14 @@ const ANNOTATION_RE =
   /^\s*#\s+published:\s+(\d{4}-\d{2}-\d{2})\s+\|\s+removable:\s+(\d{4}-\d{2}-\d{2})\s*$/
 
 interface Hook {
-  tool_name?: string
-  tool_input?: {
-    file_path?: string
-    new_string?: string
-    content?: string
-  }
+  tool_name?: string | undefined
+  tool_input?:
+    | {
+        file_path?: string | undefined
+        new_string?: string | undefined
+        content?: string | undefined
+      }
+    | undefined
 }
 
 interface OrphanReport {
@@ -79,11 +81,11 @@ interface OrphanReport {
 }
 
 /**
- * Walk the proposed file content and find every per-package
- * exact-pin entry inside the soak-exclude block that lacks the canonical
- * `# published: ... | removable: ...` annotation immediately above it.
+ * Walk the proposed file content and find every per-package exact-pin entry
+ * inside the soak-exclude block that lacks the canonical `# published: ... |
+ * removable: ...` annotation immediately above it.
  */
-function findOrphanEntries(text: string): OrphanReport[] {
+export function findOrphanEntries(text: string): OrphanReport[] {
   const lines = text.split('\n')
   const orphans: OrphanReport[] = []
   let inBlock = false
@@ -168,12 +170,12 @@ function main(): void {
             .map(o => `    line ${o.line}: ${o.name}@${o.version}`)
             .join('\n') +
           '\n\n' +
-          'Fix: prepend a comment line directly above each `- \'<pkg>@<version>\'` bullet:\n' +
+          "Fix: prepend a comment line directly above each `- '<pkg>@<version>'` bullet:\n" +
           '\n' +
           '  # published: <YYYY-MM-DD> | removable: <YYYY-MM-DD>\n' +
           "  - 'pkg@1.2.3'\n" +
           '\n' +
-          '`published` is the version\'s npm publish date (`npm view pkg@1.2.3 time`).\n' +
+          "`published` is the version's npm publish date (`npm view pkg@1.2.3 time`).\n" +
           '`removable` is `published + 7d` — the natural soak-clear date.\n' +
           `\nExample for an entry added today (${today}):\n` +
           `  # published: ${today} | removable: ${exampleRemovable}\n` +

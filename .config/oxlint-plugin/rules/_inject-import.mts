@@ -61,9 +61,9 @@ export function summarizeImportTarget(
           localName &&
           spec.local &&
           spec.local.name === localName &&
-          (spec.type === 'ImportSpecifier' ||
-            spec.type === 'ImportDefaultSpecifier' ||
-            spec.type === 'ImportNamespaceSpecifier')
+          (spec.type === 'ImportDefaultSpecifier' ||
+            spec.type === 'ImportNamespaceSpecifier' ||
+            spec.type === 'ImportSpecifier')
         ) {
           hasLocal = true
         }

@@ -54,26 +54,17 @@ const FILE_SCOPE_DISABLE_RE =
 
 // Plugin-internal rule + test files are exempt — the banned shape is
 // lookup-table data in the rule definition or test fixture.
-const EXEMPT_PATH_SUFFIXES: ReadonlyArray<string> = [
+const EXEMPT_PATH_SUFFIXES: readonly string[] = [
   '.config/oxlint-plugin/rules/',
   '.config/oxlint-plugin/test/',
 ]
-
-function isExemptPath(filePath: string): boolean {
-  for (let i = 0, { length } = EXEMPT_PATH_SUFFIXES; i < length; i += 1) {
-    if (filePath.includes(EXEMPT_PATH_SUFFIXES[i]!)) {
-      return true
-    }
-  }
-  return false
-}
 
 interface Finding {
   readonly line: number
   readonly text: string
 }
 
-function findFileScopeDisables(text: string): Finding[] {
+export function findFileScopeDisables(text: string): Finding[] {
   const findings: Finding[] = []
   const lines = text.split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
@@ -85,7 +76,16 @@ function findFileScopeDisables(text: string): Finding[] {
   return findings
 }
 
-async function readStdin(): Promise<string> {
+export function isExemptPath(filePath: string): boolean {
+  for (let i = 0, { length } = EXEMPT_PATH_SUFFIXES; i < length; i += 1) {
+    if (filePath.includes(EXEMPT_PATH_SUFFIXES[i]!)) {
+      return true
+    }
+  }
+  return false
+}
+
+export async function readStdin(): Promise<string> {
   const chunks: Buffer[] = []
   for await (const chunk of process.stdin) {
     chunks.push(chunk as Buffer)

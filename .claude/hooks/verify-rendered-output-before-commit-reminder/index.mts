@@ -18,7 +18,7 @@
 //
 // No-op when the staged set is purely non-UI source.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
@@ -33,14 +33,14 @@ interface ToolInput {
 
 // Files whose changes likely affect rendered output.
 const UI_FILE_RE =
-  /\.(html|htm|css|scss|sass|less|svelte|vue|astro|njk|ejs|hbs|handlebars)$/i
+  /\.(astro|css|ejs|handlebars|hbs|htm|html|less|njk|sass|scss|svelte|vue)$/i
 
 // Build-script patterns. Conservative — match the common fleet shapes:
 // `pnpm run build`, `pnpm build`, `node scripts/<name>.mts`, `pnpm tour`,
 // `pnpm site`, `pnpm docs:build`.
 const BUILD_COMMAND_RES = [
-  /\bpnpm\s+(?:run\s+)?(?:build|tour|site|docs:build|docs:dev|render)\b/,
-  /\bnode\s+(?:[^&;|]*\/)?scripts\/(?:build|tour|render|generate-site|emit-html)/,
+  /\bpnpm\s+(?:run\s+)?(?:build|docs:build|docs:dev|render|site|tour)\b/,
+  /\bnode\s+(?:[^&;|]*\/)?scripts\/(?:build|emit-html|generate-site|render|tour)/,
 ]
 
 // User signals that mean "the build is verified, go ahead and commit."
@@ -49,57 +49,11 @@ const VERIFY_PATTERNS = [
   /\bship it\b/i,
   /\bverified\b/i,
   /\bconfirmed\b/i,
-  /\brebuild looks (?:correct|right|good)\b/i,
+  /\brebuild looks (?:correct|good|right)\b/i,
   /\bbuild is (?:correct|good)\b/i,
-  /\brender(?:ed)? (?:looks )?(?:correct|right|good)\b/i,
+  /\brender(?:ed)? (?:looks )?(?:correct|good|right)\b/i,
   /\bpush(?:\s|$|\.)/i,
 ]
-
-function isGitCommit(command: string): boolean {
-  return /\bgit\s+commit\b/.test(command)
-}
-
-function stagedFiles(cwd: string): string[] {
-  const r = spawnSync('git', ['diff', '--cached', '--name-only'], {
-    cwd,
-    encoding: 'utf8',
-    timeout: 5_000,
-  })
-  if (r.status !== 0) {
-    return []
-  }
-  return r.stdout
-    .split('\n')
-    .map(s => s.trim())
-    .filter(Boolean)
-}
-
-interface TranscriptEntry {
-  type?: string
-  message?: {
-    content?: unknown
-  }
-  toolUseResult?: unknown
-}
-
-function readTranscript(transcriptPath: string): TranscriptEntry[] {
-  let raw: string
-  try {
-    raw = readFileSync(transcriptPath, 'utf8')
-  } catch {
-    return []
-  }
-  const out: TranscriptEntry[] = []
-  for (const line of raw.split(/\r?\n/)) {
-    if (!line.trim()) continue
-    try {
-      out.push(JSON.parse(line) as TranscriptEntry)
-    } catch {
-      // skip
-    }
-  }
-  return out
-}
 
 interface Analysis {
   buildCommand: string | undefined
@@ -107,29 +61,36 @@ interface Analysis {
   verifyIndex: number
 }
 
-function analyzeTranscript(entries: TranscriptEntry[]): Analysis {
+export function analyzeTranscript(entries: TranscriptEntry[]): Analysis {
   let buildCommand: string | undefined
   let buildIndex = -1
   let verifyIndex = -1
   for (let i = 0; i < entries.length; i += 1) {
     const e = entries[i]!
     const msg = e.message
-    if (!msg) continue
+    if (!msg) {
+      continue
+    }
     const content = msg.content
     // Build invocation — find in assistant tool_use Bash calls.
     if (Array.isArray(content)) {
-      for (const part of content) {
-        if (part === null || typeof part !== 'object') continue
-        const name = (part as { name?: unknown }).name
-        const input = (part as { input?: unknown }).input
+      for (let i = 0, { length } = content; i < length; i += 1) {
+        const part = content[i]!
+        if (part === null || typeof part !== 'object') {
+          continue
+        }
+        const name = (part as { name?: unknown | undefined }).name
+        const input = (part as { input?: unknown | undefined }).input
         if (
           name === 'Bash' &&
           input &&
           typeof input === 'object' &&
-          typeof (input as { command?: unknown }).command === 'string'
+          typeof (input as { command?: unknown | undefined }).command ===
+            'string'
         ) {
           const cmd = (input as { command: string }).command
-          for (const re of BUILD_COMMAND_RES) {
+          for (let i = 0, { length } = BUILD_COMMAND_RES; i < length; i += 1) {
+            const re = BUILD_COMMAND_RES[i]!
             if (re.test(cmd)) {
               buildCommand = cmd
               buildIndex = i
@@ -149,13 +110,14 @@ function analyzeTranscript(entries: TranscriptEntry[]): Analysis {
           .map(seg =>
             typeof seg === 'string'
               ? seg
-              : typeof (seg as { text?: unknown }).text === 'string'
+              : typeof (seg as { text?: unknown | undefined }).text === 'string'
                 ? (seg as { text: string }).text
                 : '',
           )
           .join('\n')
       }
-      for (const re of VERIFY_PATTERNS) {
+      for (let i = 0, { length } = VERIFY_PATTERNS; i < length; i += 1) {
+        const re = VERIFY_PATTERNS[i]!
         if (re.test(text)) {
           verifyIndex = i
           break
@@ -164,6 +126,55 @@ function analyzeTranscript(entries: TranscriptEntry[]): Analysis {
     }
   }
   return { buildCommand, buildIndex, verifyIndex }
+}
+
+export function isGitCommit(command: string): boolean {
+  return /\bgit\s+commit\b/.test(command)
+}
+
+interface TranscriptEntry {
+  type?: string | undefined
+  message?:
+    | {
+        content?: unknown | undefined
+      }
+    | undefined
+  toolUseResult?: unknown | undefined
+}
+
+export function readTranscript(transcriptPath: string): TranscriptEntry[] {
+  let raw: string
+  try {
+    raw = readFileSync(transcriptPath, 'utf8')
+  } catch {
+    return []
+  }
+  const out: TranscriptEntry[] = []
+  for (const line of raw.split(/\r?\n/)) {
+    if (!line.trim()) {
+      continue
+    }
+    try {
+      out.push(JSON.parse(line) as TranscriptEntry)
+    } catch {
+      // skip
+    }
+  }
+  return out
+}
+
+export function stagedFiles(cwd: string): string[] {
+  const r = spawnSync('git', ['diff', '--cached', '--name-only'], {
+    cwd,
+    timeout: 5_000,
+  })
+  if (r.status !== 0) {
+    return []
+  }
+  return String(r.stdout)
+    .split('\n')
+    .map((s: string) => s.trim())
+    .filter(Boolean)
 }
 
 async function main(): Promise<void> {

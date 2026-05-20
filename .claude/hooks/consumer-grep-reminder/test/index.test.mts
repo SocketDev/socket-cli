@@ -1,8 +1,11 @@
 // node --test specs for the consumer-grep-reminder hook.
 
-import { spawn } from 'node:child_process'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 import { mkdirSync, mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -13,8 +16,8 @@ const HOOK = path.join(here, '..', 'index.mts')
 
 type Result = { code: number; stderr: string }
 
-function mkRepo(opts: { consumerDirs?: string[] } = {}): string {
-  const repo = mkdtempSync(path.join(tmpdir(), 'consumer-grep-test-'))
+function mkRepo(opts: { consumerDirs?: string[] | undefined } = {}): string {
+  const repo = mkdtempSync(path.join(os.tmpdir(), 'consumer-grep-test-'))
   mkdirSync(path.join(repo, '.git'), { recursive: true })
   for (const d of opts.consumerDirs ?? []) {
     mkdirSync(path.join(repo, d), { recursive: true })
@@ -24,13 +27,13 @@ function mkRepo(opts: { consumerDirs?: string[] } = {}): string {
 
 async function runHook(payload: Record<string, unknown>): Promise<Result> {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })
@@ -70,8 +73,8 @@ test('Edit removing CSS class in repo WITH upstream/ — reminder fires', async 
     },
   })
   assert.strictEqual(r.code, 0)
-  assert.ok(r.stderr.includes('consumer-grep-reminder'))
-  assert.ok(r.stderr.includes('foo-bar'))
+  assert.ok(String(r.stderr).includes('consumer-grep-reminder'))
+  assert.ok(String(r.stderr).includes('foo-bar'))
 })
 
 test('Edit removing CSS class in repo WITHOUT consumer subtree — no reminder', async () => {
@@ -99,7 +102,7 @@ test('Edit removing data-attribute in repo with vendor/ — reminder fires', asy
     },
   })
   assert.strictEqual(r.code, 0)
-  assert.ok(r.stderr.includes('data-hydrate-target'))
+  assert.ok(String(r.stderr).includes('data-hydrate-target'))
 })
 
 test('Edit removing a named export with third_party/ — reminder fires', async () => {
@@ -114,5 +117,5 @@ test('Edit removing a named export with third_party/ — reminder fires', async 
     },
   })
   assert.strictEqual(r.code, 0)
-  assert.ok(r.stderr.includes('oldApi'))
+  assert.ok(String(r.stderr).includes('oldApi'))
 })

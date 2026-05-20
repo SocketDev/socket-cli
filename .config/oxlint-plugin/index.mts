@@ -42,9 +42,11 @@ import preferNodeBuiltinImports from './rules/prefer-node-builtin-imports.mts'
 import preferNodeModulesDotCache from './rules/prefer-node-modules-dot-cache.mts'
 import preferSafeDelete from './rules/prefer-safe-delete.mts'
 import preferSeparateTypeImport from './rules/prefer-separate-type-import.mts'
+import preferSpawnOverExecsync from './rules/prefer-spawn-over-execsync.mts'
 import preferStaticTypeImport from './rules/prefer-static-type-import.mts'
 import preferUndefinedOverNull from './rules/prefer-undefined-over-null.mts'
 import socketApiTokenEnv from './rules/socket-api-token-env.mts'
+import noStructuredClonePreferJson from './rules/no-structured-clone-prefer-json.mts'
 import sortBooleanChains from './rules/sort-boolean-chains.mts'
 import sortEqualityDisjunctions from './rules/sort-equality-disjunctions.mts'
 import sortNamedImports from './rules/sort-named-imports.mts'
@@ -95,9 +97,11 @@ const plugin = {
     'prefer-node-modules-dot-cache': preferNodeModulesDotCache,
     'prefer-safe-delete': preferSafeDelete,
     'prefer-separate-type-import': preferSeparateTypeImport,
+    'prefer-spawn-over-execsync': preferSpawnOverExecsync,
     'prefer-static-type-import': preferStaticTypeImport,
     'prefer-undefined-over-null': preferUndefinedOverNull,
     'socket-api-token-env': socketApiTokenEnv,
+    'no-structured-clone-prefer-json': noStructuredClonePreferJson,
     'sort-boolean-chains': sortBooleanChains,
     'sort-equality-disjunctions': sortEqualityDisjunctions,
     'sort-named-imports': sortNamedImports,

@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
+import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -21,11 +25,11 @@ test('parses without syntax errors (node --check)', async () => {
       stdio: ['ignore', 'ignore', 'pipe'],
     })
     let stderr = ''
-    child.stderr.on('data', d => {
+    child.process.stderr!.on('data', d => {
       stderr += d.toString()
     })
-    child.on('error', reject)
-    child.on('exit', c => {
+    child.process.on('error', reject)
+    child.process.on('exit', c => {
       if (c !== 0) {
         reject(new Error(`node --check exited ${c}; stderr=${stderr}`))
         return
@@ -54,8 +58,7 @@ test('module imports without throwing (does NOT invoke main)', async () => {
 
 test('surfaces token-401 finding when transcript contains the Socket API 401 error', async () => {
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs')
-  const { tmpdir } = await import('node:os')
-  const dir = mkdtempSync(path.join(tmpdir(), 'setup-security-tools-test-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'setup-security-tools-test-'))
   try {
     const transcriptPath = path.join(dir, 'transcript.jsonl')
     // Synthetic Claude Code transcript: a single assistant turn
@@ -91,11 +94,13 @@ test('surfaces token-401 finding when transcript contains the Socket API 401 err
         env: { ...process.env, HOME: '' },
       })
       let stderrChunks = ''
-      child.stderr!.on('data', d => {
+      child.process.stderr!.on('data', d => {
         stderrChunks += d.toString()
       })
-      child.on('error', reject)
-      child.on('exit', c => resolve({ code: c ?? -1, stderr: stderrChunks }))
+      child.process.on('error', reject)
+      child.process.on('exit', c =>
+        resolve({ code: c ?? -1, stderr: stderrChunks }),
+      )
       child.stdin!.write(stopPayload)
       child.stdin!.end()
     })
@@ -110,8 +115,7 @@ test('surfaces token-401 finding when transcript contains the Socket API 401 err
 
 test('stays quiet when the transcript has no 401 error', async () => {
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs')
-  const { tmpdir } = await import('node:os')
-  const dir = mkdtempSync(path.join(tmpdir(), 'setup-security-tools-test-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'setup-security-tools-test-'))
   try {
     const transcriptPath = path.join(dir, 'transcript.jsonl')
     const assistantTurn = {
@@ -130,11 +134,11 @@ test('stays quiet when the transcript has no 401 error', async () => {
           env: { ...process.env, HOME: '' },
         })
         let stderrChunks = ''
-        child.stderr!.on('data', d => {
+        child.process.stderr!.on('data', d => {
           stderrChunks += d.toString()
         })
-        child.on('error', reject)
-        child.on('exit', () => resolve({ stderr: stderrChunks }))
+        child.process.on('error', reject)
+        child.process.on('exit', () => resolve({ stderr: stderrChunks }))
         child.stdin!.write(stopPayload)
         child.stdin!.end()
       },

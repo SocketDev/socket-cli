@@ -20,7 +20,7 @@
 // Fires only on cargo / build-prod commands, so a no-op in repos that
 // don't use cargo.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import process from 'node:process'
 
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
@@ -48,7 +48,7 @@ interface BuildPattern {
 const BUILD_PATTERNS: BuildPattern[] = [
   {
     label: 'cargo build --release',
-    cmdRe: /\bcargo\s+(?:build|b)\b[^&;|]*?(?:--release|\s-r\b)/,
+    cmdRe: /\bcargo\s+(?:b|build)\b[^&;|]*?(?:--release|\s-r\b)/,
     pgrepPattern: 'cargo (build|b).*(--release|-r)',
   },
   {
@@ -63,11 +63,12 @@ const BUILD_PATTERNS: BuildPattern[] = [
   },
 ]
 
-function commandMatchesBuild(command: string): BuildPattern | undefined {
+export function commandMatchesBuild(command: string): BuildPattern | undefined {
   // Exempt cargo check + bare cargo build (no --release) explicitly.
   // The matching regex already requires --release / -r, so this is just
   // documentation — the false-positive surface is bounded.
-  for (const p of BUILD_PATTERNS) {
+  for (let i = 0, { length } = BUILD_PATTERNS; i < length; i += 1) {
+    const p = BUILD_PATTERNS[i]!
     if (p.cmdRe.test(command)) {
       return p
     }
@@ -75,15 +76,14 @@ function commandMatchesBuild(command: string): BuildPattern | undefined {
   return undefined
 }
 
-function countInFlight(pgrepPattern: string): number {
+export function countInFlight(pgrepPattern: string): number {
   const r = spawnSync('pgrep', ['-f', pgrepPattern], {
-    encoding: 'utf8',
     timeout: 5_000,
   })
   if (r.status !== 0) {
     return 0
   }
-  return r.stdout.split('\n').filter(Boolean).length
+  return String(r.stdout).split('\n').filter(Boolean).length
 }
 
 async function main(): Promise<void> {

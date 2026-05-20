@@ -1,8 +1,8 @@
 // node --test specs for the pr-vs-push-default-reminder hook.
 
-import { spawn, spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -14,7 +14,7 @@ const HOOK = path.join(here, '..', 'index.mts')
 type Result = { code: number; stderr: string }
 
 function mkRepoOnBranch(branch: string): string {
-  const repo = mkdtempSync(path.join(tmpdir(), 'pr-vs-push-test-'))
+  const repo = mkdtempSync(path.join(os.tmpdir(), 'pr-vs-push-test-'))
   spawnSync('git', ['init', '-q', '-b', branch], { cwd: repo })
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repo })
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: repo })
@@ -25,7 +25,7 @@ function mkRepoOnBranch(branch: string): string {
 }
 
 function mkTranscript(userTurns: string[]): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'pr-vs-push-tx-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'pr-vs-push-tx-'))
   const p = path.join(dir, 'session.jsonl')
   const lines = userTurns.map(t =>
     JSON.stringify({ type: 'user', message: { content: t } }),
@@ -36,13 +36,13 @@ function mkTranscript(userTurns: string[]): string {
 
 async function runHook(payload: Record<string, unknown>): Promise<Result> {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })
@@ -78,7 +78,7 @@ test('gh pr create on main with no PR directive — reminder fires', async () =>
     transcript_path: mkTranscript(['fix this']),
   })
   assert.strictEqual(r.code, 0)
-  assert.ok(r.stderr.includes('About to open a PR from main'))
+  assert.ok(String(r.stderr).includes('About to open a PR from main'))
 })
 
 test('gh pr create on main with "open a PR" directive — no reminder', async () => {
@@ -114,5 +114,5 @@ test('gh pr create on master (legacy) without directive — reminder fires', asy
     transcript_path: mkTranscript(['ship it']),
   })
   assert.strictEqual(r.code, 0)
-  assert.ok(r.stderr.includes('About to open a PR'))
+  assert.ok(String(r.stderr).includes('About to open a PR'))
 })

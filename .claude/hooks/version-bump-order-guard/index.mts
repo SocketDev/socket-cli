@@ -21,14 +21,14 @@
 // Bypass: "Allow version-bump-order bypass" in a recent user turn, or
 // SOCKET_VERSION_BUMP_ORDER_GUARD_DISABLED=1.
 
-import { execSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import process from 'node:process'
 
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface PreToolUsePayload {
   readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: unknown } | undefined
+  readonly tool_input?: { readonly command?: unknown | undefined } | undefined
   readonly transcript_path?: string | undefined
   readonly cwd?: string | undefined
 }
@@ -74,27 +74,30 @@ async function main(): Promise<void> {
   }
 
   // Read the most-recent commit subject from HEAD.
-  const opts = payload.cwd
-    ? { encoding: 'utf8' as const, cwd: payload.cwd }
-    : { encoding: 'utf8' as const }
-  let headSubject = ''
-  try {
-    headSubject = execSync('git log -1 --pretty=%s', opts).trim()
-  } catch {
+  const opts = payload.cwd ? { cwd: payload.cwd } : {}
+  const subjectResult = spawnSync(
+    'git',
+    ['log', '-1', '--pretty=%s'],
+    opts,
+  )
+  if (subjectResult.status !== 0) {
     // Not a git repo or git unavailable — fail open.
     process.exit(0)
   }
+  const headSubject = String(subjectResult.stdout).trim()
   if (BUMP_SUBJECT_RE.test(headSubject)) {
     process.exit(0)
   }
 
   // Look up whether CHANGELOG.md was touched in HEAD.
   let changelogTouched = false
-  try {
-    const files = execSync('git show --name-only --pretty= HEAD', opts).trim()
-    changelogTouched = /\bCHANGELOG\.md\b/i.test(files)
-  } catch {
-    // ignore
+  const filesResult = spawnSync(
+    'git',
+    ['show', '--name-only', '--pretty=', 'HEAD'],
+    opts,
+  )
+  if (filesResult.status === 0) {
+    changelogTouched = /\bCHANGELOG\.md\b/i.test(String(filesResult.stdout))
   }
 
   const lines = [

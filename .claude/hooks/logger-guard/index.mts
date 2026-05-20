@@ -11,190 +11,77 @@
 // Why this rule:
 //
 //   The fleet's source code uses `getDefaultLogger()` from
-//   `@socketsecurity/lib-stable/logger` for every output. Direct stream writes
-//   bypass:
-//     - Color/theme handling
-//     - Indentation tracking
-//     - Stream redirection in tests
-//     - Counter increments used by spinners
-//   so they produce inconsistent output that breaks layout-sensitive
-//   workflows (spinner clears, footer rendering).
+//   `@socketsecurity/lib-stable/logger` for every output. Direct stream
+//   writes bypass color/theme handling, indentation tracking, stream
+//   redirection in tests, and spinner-counter increments — producing
+//   inconsistent output that breaks layout-sensitive workflows.
 //
 // Scope:
 //
 //   - Fires only on `Edit` and `Write` tool calls.
-//   - Only inspects files under `src/` with .ts/.mts/.tsx/.cts
-//     extensions. Hooks (.claude/hooks/), git-hooks (.git-hooks/),
-//     scripts (scripts/), tests, fixtures, and external/ vendored code
-//     are exempt — see EXEMPT_PATH_PATTERNS.
-//   - Lines marked `# socket-hook: allow console` are exempt (canonical
-//     opt-out marker, same as path-guard / token-guard / npx-guard).
-//     The legacy spelling `allow logger` is accepted as an alias for
-//     one cycle (deprecation grace period).
-//   - Lines that look like documentation (comment lines, JSDoc tags,
-//     fully backticked code spans) are exempt — handled by the shared
-//     `looksLikeDocumentation` heuristic in `_helpers.mts`.
+//   - Only inspects `.ts` / `.mts` / `.cts` / `.tsx` source files.
+//     Hooks, git-hooks, scripts, tests, fixtures, external/vendored
+//     code are exempt — see EXEMPT_PATH_PATTERNS.
+//   - Lines marked `// socket-hook: allow console` are exempt.
+//
+// AST-based detector (vendored acorn-wasm in `../_shared/acorn/`).
+// Replaced the regex implementation that had to compensate for
+// string-literal / comment / template-literal false positives via
+// `looksLikeDocumentation` heuristics — the parser handles all of
+// that intrinsically because it only reaches CallExpression nodes
+// for actual calls, not text-shapes that look like calls.
 //
 // The hook fails OPEN on its own bugs (exit 0 + stderr log) so a bad
 // hook deploy can't brick the session.
 
 import process from 'node:process'
 
+import { findMemberCalls } from '../_shared/acorn/index.mts'
+import type { MemberCallSite } from '../_shared/acorn/index.mts'
 import { lineIsSuppressed } from '../_shared/markers.mts'
 import { readStdin } from '../_shared/transcript.mts'
 
-// Files exempt from the rule. Comments explain why each is excluded.
 const EXEMPT_PATH_PATTERNS: RegExp[] = [
-  // Hook code itself runs early in the lifecycle and may need to log
-  // to stderr before the lib is fully resolvable. Treat hooks as
-  // "system code" with their own conventions.
   /\.claude\/hooks\//,
-  // Git hooks (.git-hooks/_helpers.mts, pre-commit, etc.) run before
-  // workspace deps are guaranteed to be installed.
   /\.git-hooks\//,
-  // Build scripts often produce direct stdout for human-readable
-  // build output (progress, summary). Migrate these case-by-case
-  // outside of this hook's scope.
   /(^|\/)scripts\//,
-  // Test files commonly use console.* to capture / assert output.
-  /\.(test|spec)\.(m?[jt]s|tsx?|cts|mts)$/,
+  /\.(spec|test)\.(m?[jt]s|tsx?|cts|mts)$/,
   /(^|\/)tests?\//,
   /(^|\/)fixtures\//,
-  // Vendored upstream sources — never modified for local conventions.
   /(^|\/)external\//,
   /(^|\/)vendor\//,
   /(^|\/)upstream\//,
-  // The hook itself.
-  /\.claude\/hooks\/logger-guard\//,
 ]
 
-const LOGGER_LEAK_RE =
-  /\b(process\.std(?:err|out)\.write|console\.(?:log|error|warn|info|debug))\s*\(/
-
-const COMMENT_LINE_RE = /^\s*(\*|\/\/|#)/
-const JSDOC_TAG_RE = /@(example|param|returns?|see|link)\b/
-// Accept `#`, `//`, or `/*` comment prefixes — same as the git pre-
-// commit/pre-push scanners. This hook is invoked on TS/JS edits where
-// Marker regex + suppression logic live in `_shared/markers.mts` so
-// this hook and the parallel scanner in `.git-hooks/_helpers.mts`
-// never drift on the alias map. See that module for the canonical
-// `RULE_ALIASES` definition.
-function isMarkerSuppressed(line: string): boolean {
-  return lineIsSuppressed(line, 'console')
-}
-
-function isInsideBackticks(line: string): boolean {
-  // Find every backtick-delimited span on the line and test if every
-  // logger-leak match sits within one. Conservative: any match outside
-  // a backtick span fails the check.
-  const spans: Array<[number, number]> = []
-  for (let i = 0; i < line.length; i += 1) {
-    if (line[i] === '`') {
-      const end = line.indexOf('`', i + 1)
-      if (end < 0) {
-        break
-      }
-      spans.push([i, end])
-      i = end
-    }
-  }
-  if (spans.length === 0) {
-    return false
-  }
-  const re = new RegExp(LOGGER_LEAK_RE.source, 'g')
-  let m: RegExpExecArray | null
-  while ((m = re.exec(line)) !== null) {
-    const start = m.index
-    const end = start + m[0].length
-    const inside = spans.some(([s, e]) => start > s && end <= e)
-    if (!inside) {
-      return false
-    }
-  }
-  return true
-}
-
-function looksLikeDocumentation(line: string): boolean {
-  if (isMarkerSuppressed(line)) {
-    return true
-  }
-  if (COMMENT_LINE_RE.test(line)) {
-    return true
-  }
-  if (JSDOC_TAG_RE.test(line)) {
-    return true
-  }
-  if (isInsideBackticks(line)) {
-    return true
-  }
-  return false
-}
-
-function suggestReplacement(line: string): string {
-  return line
-    .replace(/\bprocess\.stderr\.write\s*\(/g, 'logger.error(')
-    .replace(/\bprocess\.stdout\.write\s*\(/g, 'logger.info(')
-    .replace(/\bconsole\.error\s*\(/g, 'logger.error(')
-    .replace(/\bconsole\.warn\s*\(/g, 'logger.warn(')
-    .replace(/\bconsole\.info\s*\(/g, 'logger.info(')
-    .replace(/\bconsole\.debug\s*\(/g, 'logger.debug(')
-    .replace(/\bconsole\.log\s*\(/g, 'logger.info(')
-}
-
-interface Hit {
-  lineNumber: number
-  line: string
-  suggested: string
-}
-
-function scan(source: string): Hit[] {
-  const hits: Hit[] = []
-  const lines = source.split('\n')
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i]!
-    if (!LOGGER_LEAK_RE.test(line)) {
-      continue
-    }
-    if (looksLikeDocumentation(line)) {
-      continue
-    }
-    hits.push({
-      lineNumber: i + 1,
-      line,
-      suggested: suggestReplacement(line),
-    })
-  }
-  return hits
-}
-
-function isInScope(filePath: string): boolean {
-  if (!filePath) {
-    return false
-  }
-  if (!/\.(m?ts|tsx|cts)$/.test(filePath)) {
-    return false
-  }
-  for (const re of EXEMPT_PATH_PATTERNS) {
-    if (re.test(filePath)) {
-      return false
-    }
-  }
-  return true
-}
+// The forbidden calls and the canonical logger replacement for each.
+// Two-segment chains (`console.log`) and three-segment chains
+// (`process.stderr.write`) — `findMemberCalls` handles both.
+const FORBIDDEN_CALLS: Array<{
+  object: string
+  property: string
+  replacement: string
+}> = [
+  { object: 'console', property: 'log', replacement: 'logger.info' },
+  { object: 'console', property: 'error', replacement: 'logger.error' },
+  { object: 'console', property: 'warn', replacement: 'logger.warn' },
+  { object: 'console', property: 'info', replacement: 'logger.info' },
+  { object: 'console', property: 'debug', replacement: 'logger.debug' },
+  { object: 'process.stderr', property: 'write', replacement: 'logger.error' },
+  { object: 'process.stdout', property: 'write', replacement: 'logger.info' },
+]
 
 interface ToolInput {
-  tool_name?: string
-  tool_input?: {
-    file_path?: string
-    new_string?: string
-    content?: string
-  }
+  tool_name?: string | undefined
+  tool_input?:
+    | {
+        file_path?: string | undefined
+        new_string?: string | undefined
+        content?: string | undefined
+      }
+    | undefined
 }
 
-function emitBlock(filePath: string, hits: Hit[]): void {
-  // Hook itself logs to stderr (no lib import at module load — keep
-  // hooks self-contained for fast startup). The rule only applies to
-  // source code; this output is informational for the agent.
+export function emitBlock(filePath: string, hits: Hit[]): void {
   const out: string[] = []
   out.push('')
   out.push('[logger-guard] Blocked: direct stream write found')
@@ -203,8 +90,10 @@ function emitBlock(filePath: string, hits: Hit[]): void {
   )
   out.push(`  File:    ${filePath}`)
   for (const h of hits.slice(0, 3)) {
-    out.push(`  Line ${h.lineNumber}: ${h.line.trim()}`)
-    out.push(`  Fix:           ${h.suggested.trim()}`)
+    out.push(`  Line ${h.line}: ${h.text}`)
+    out.push(
+      `  Fix:           replace \`${h.fullCall}(\` with \`${h.replacement}(\``,
+    )
   }
   if (hits.length > 3) {
     out.push(`  …and ${hits.length - 3} more.`)
@@ -214,6 +103,62 @@ function emitBlock(filePath: string, hits: Hit[]): void {
   )
   out.push('')
   process.stderr.write(out.join('\n'))
+}
+
+interface Hit {
+  line: number
+  text: string
+  fullCall: string
+  replacement: string
+}
+
+export function isInScope(filePath: string): boolean {
+  if (!filePath) {
+    return false
+  }
+  if (!/\.(m?ts|tsx|cts)$/.test(filePath)) {
+    return false
+  }
+  for (let i = 0, { length } = EXEMPT_PATH_PATTERNS; i < length; i += 1) {
+    const re = EXEMPT_PATH_PATTERNS[i]!
+    if (re.test(filePath)) {
+      return false
+    }
+  }
+  return true
+}
+
+export function scan(source: string): Hit[] {
+  const hits: Hit[] = []
+  const lines = source.split('\n')
+  for (let i = 0, { length } = FORBIDDEN_CALLS; i < length; i += 1) {
+    const spec = FORBIDDEN_CALLS[i]!
+    const matches: MemberCallSite[] = findMemberCalls(
+      source,
+      spec.object,
+      spec.property,
+    )
+    for (let i = 0, { length } = matches; i < length; i += 1) {
+      const m = matches[i]!
+      // Per-line allow marker: `// socket-hook: allow console`. The
+      // marker has to appear on the same source line as the call.
+      const sourceLine = lines[m.line - 1] ?? ''
+      if (lineIsSuppressed(sourceLine, 'console')) {
+        continue
+      }
+      hits.push({
+        line: m.line,
+        text: m.text,
+        fullCall: `${spec.object}.${spec.property}`,
+        replacement: spec.replacement,
+      })
+    }
+  }
+  // Multiple FORBIDDEN_CALLS iterations may produce out-of-order
+  // results when several different calls land on different lines.
+  // Sort by line for readable output.
+  hits.sort((a, b) => a.line - b.line)
+  return hits
 }
 
 async function main(): Promise<void> {
@@ -248,7 +193,6 @@ async function main(): Promise<void> {
 }
 
 main().catch(e => {
-  // Fail open on hook bugs.
   process.stderr.write(
     `[logger-guard] hook error (continuing): ${(e as Error).message}\n`,
   )

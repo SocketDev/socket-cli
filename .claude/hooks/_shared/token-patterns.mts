@@ -26,17 +26,17 @@
  */
 
 // ── Socket fleet ─────────────────────────────────────────────────────
-export const SOCKET_FLEET_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
-  /^SOCKET_API_(?:TOKEN|KEY)$/,
-  /^SOCKET_CLI_API_(?:TOKEN|KEY)$/,
-  /^SOCKET_SECURITY_API_(?:TOKEN|KEY)$/,
+export const SOCKET_FLEET_TOKEN_PATTERNS: readonly RegExp[] = [
+  /^SOCKET_API_(?:KEY|TOKEN)$/,
+  /^SOCKET_CLI_API_(?:KEY|TOKEN)$/,
+  /^SOCKET_SECURITY_API_(?:KEY|TOKEN)$/,
 ]
 
 // ── LLM providers ────────────────────────────────────────────────────
 // Each entry uses the vendor's published env-var name. CLAUDE_API_KEY
 // is included alongside ANTHROPIC_API_KEY because the older `claude`
 // CLI variants still ship docs referencing it.
-export const LLM_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
+export const LLM_TOKEN_PATTERNS: readonly RegExp[] = [
   /^ANTHROPIC_API_KEY$/,
   /^CLAUDE_API_KEY$/,
   /^OPENAI_API_KEY$/,
@@ -56,65 +56,65 @@ export const LLM_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
 ]
 
 // ── Source control / code hosting ───────────────────────────────────
-export const VCS_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
+export const VCS_TOKEN_PATTERNS: readonly RegExp[] = [
   /^GH_TOKEN$/,
-  /^GITHUB_(?:TOKEN|PAT)$/,
-  /^GITLAB_(?:TOKEN|PAT|PRIVATE_TOKEN)$/,
-  /^BITBUCKET_(?:TOKEN|APP_PASSWORD)$/,
+  /^GITHUB_(?:PAT|TOKEN)$/,
+  /^GITLAB_(?:PAT|PRIVATE_TOKEN|TOKEN)$/,
+  /^BITBUCKET_(?:APP_PASSWORD|TOKEN)$/,
 ]
 
 // ── Product tracking / docs ──────────────────────────────────────────
-export const PRODUCT_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
-  /^LINEAR_API_(?:TOKEN|KEY)$/,
-  /^NOTION_(?:TOKEN|API_KEY|API_TOKEN|INTEGRATION_TOKEN)$/,
-  /^JIRA_API_(?:TOKEN|KEY)$/,
-  /^ATLASSIAN_API_(?:TOKEN|KEY)$/,
-  /^CONFLUENCE_API_(?:TOKEN|KEY)$/,
-  /^ASANA_(?:TOKEN|API_TOKEN|PERSONAL_ACCESS_TOKEN|ACCESS_TOKEN)$/,
-  /^TRELLO_(?:TOKEN|API_TOKEN|API_KEY)$/,
-  /^MONDAY_API_(?:TOKEN|KEY)$/,
+export const PRODUCT_TOKEN_PATTERNS: readonly RegExp[] = [
+  /^LINEAR_API_(?:KEY|TOKEN)$/,
+  /^NOTION_(?:API_KEY|API_TOKEN|INTEGRATION_TOKEN|TOKEN)$/,
+  /^JIRA_API_(?:KEY|TOKEN)$/,
+  /^ATLASSIAN_API_(?:KEY|TOKEN)$/,
+  /^CONFLUENCE_API_(?:KEY|TOKEN)$/,
+  /^ASANA_(?:ACCESS_TOKEN|API_TOKEN|PERSONAL_ACCESS_TOKEN|TOKEN)$/,
+  /^TRELLO_(?:API_KEY|API_TOKEN|TOKEN)$/,
+  /^MONDAY_API_(?:KEY|TOKEN)$/,
 ]
 
 // ── Chat / comms ─────────────────────────────────────────────────────
-export const CHAT_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
-  /^SLACK_(?:TOKEN|BOT_TOKEN|USER_TOKEN|APP_TOKEN|WEBHOOK_URL|SIGNING_SECRET)$/,
-  /^DISCORD_(?:TOKEN|BOT_TOKEN|WEBHOOK_URL)$/,
+export const CHAT_TOKEN_PATTERNS: readonly RegExp[] = [
+  /^SLACK_(?:APP_TOKEN|BOT_TOKEN|SIGNING_SECRET|TOKEN|USER_TOKEN|WEBHOOK_URL)$/,
+  /^DISCORD_(?:BOT_TOKEN|TOKEN|WEBHOOK_URL)$/,
   /^TELEGRAM_BOT_TOKEN$/,
-  /^TWILIO_(?:AUTH_TOKEN|API_KEY|API_SECRET)$/,
+  /^TWILIO_(?:API_KEY|API_SECRET|AUTH_TOKEN)$/,
 ]
 
 // ── Cloud providers ──────────────────────────────────────────────────
-export const CLOUD_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
-  /^AWS_(?:ACCESS|SECRET)_(?:KEY_ID|ACCESS_KEY)$/,
+export const CLOUD_TOKEN_PATTERNS: readonly RegExp[] = [
+  /^AWS_(?:ACCESS|SECRET)_(?:ACCESS_KEY|KEY_ID)$/,
   /^AWS_SESSION_TOKEN$/,
   /^GCP_API_KEY$/,
   /^GOOGLE_(?:APPLICATION_CREDENTIALS|CLIENT_SECRET)$/,
-  /^AZURE_(?:CLIENT_SECRET|API_KEY)$/,
+  /^AZURE_(?:API_KEY|CLIENT_SECRET)$/,
   /^DO_(?:ACCESS|API)_TOKEN$/,
-  /^CLOUDFLARE_(?:API_TOKEN|API_KEY)$/,
+  /^CLOUDFLARE_(?:API_KEY|API_TOKEN)$/,
   /^FLY_API_TOKEN$/,
   /^HEROKU_API_KEY$/,
 ]
 
 // ── Package registries ──────────────────────────────────────────────
-export const REGISTRY_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
+export const REGISTRY_TOKEN_PATTERNS: readonly RegExp[] = [
   /^NPM_TOKEN$/,
   /^NODE_AUTH_TOKEN$/,
-  /^PYPI_(?:TOKEN|API_TOKEN)$/,
+  /^PYPI_(?:API_TOKEN|TOKEN)$/,
   /^CARGO_REGISTRY_TOKEN$/,
   /^RUBYGEMS_(?:API_KEY|HOST)$/,
-  /^MAVEN_(?:USERNAME|PASSWORD)$/,
+  /^MAVEN_(?:PASSWORD|USERNAME)$/,
 ]
 
 // ── Payments / billing ──────────────────────────────────────────────
-export const PAYMENT_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
-  /^STRIPE_(?:SECRET|API|RESTRICTED|PUBLISHABLE)_KEY$/,
+export const PAYMENT_TOKEN_PATTERNS: readonly RegExp[] = [
+  /^STRIPE_(?:API|PUBLISHABLE|RESTRICTED|SECRET)_KEY$/,
   /^SQUARE_ACCESS_TOKEN$/,
-  /^PAYPAL_(?:CLIENT_SECRET|API_KEY)$/,
+  /^PAYPAL_(?:API_KEY|CLIENT_SECRET)$/,
 ]
 
 // ── Email / messaging providers ─────────────────────────────────────
-export const EMAIL_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
+export const EMAIL_TOKEN_PATTERNS: readonly RegExp[] = [
   /^SENDGRID_API_KEY$/,
   /^MAILGUN_API_KEY$/,
   /^POSTMARK_(?:API_TOKEN|SERVER_TOKEN)$/,
@@ -123,28 +123,28 @@ export const EMAIL_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
 ]
 
 // ── Observability ───────────────────────────────────────────────────
-export const OBSERVABILITY_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
+export const OBSERVABILITY_TOKEN_PATTERNS: readonly RegExp[] = [
   /^DATADOG_(?:API_KEY|APP_KEY)$/,
   /^SENTRY_(?:AUTH_TOKEN|DSN)$/,
-  /^NEW_RELIC_(?:LICENSE_KEY|API_KEY)$/,
+  /^NEW_RELIC_(?:API_KEY|LICENSE_KEY)$/,
   /^HONEYCOMB_API_KEY$/,
   /^GRAFANA_API_KEY$/,
-  /^LOGTAIL_(?:TOKEN|API_KEY)$/,
+  /^LOGTAIL_(?:API_KEY|TOKEN)$/,
 ]
 
 // ── CI providers ────────────────────────────────────────────────────
-export const CI_TOKEN_PATTERNS: ReadonlyArray<RegExp> = [
-  /^CIRCLECI_(?:TOKEN|API_TOKEN)$/,
+export const CI_TOKEN_PATTERNS: readonly RegExp[] = [
+  /^CIRCLECI_(?:API_TOKEN|TOKEN)$/,
   /^TRAVIS_API_TOKEN$/,
   /^BUILDKITE_API_TOKEN$/,
-  /^DRONE_(?:TOKEN|API_TOKEN)$/,
+  /^DRONE_(?:API_TOKEN|TOKEN)$/,
 ]
 
 /**
  * Flat union of every named category above. Default catalog for consumers that
  * don't need per-category granularity.
  */
-export const ALL_TOKEN_KEY_PATTERNS: ReadonlyArray<RegExp> = [
+export const ALL_TOKEN_KEY_PATTERNS: readonly RegExp[] = [
   ...SOCKET_FLEET_TOKEN_PATTERNS,
   ...LLM_TOKEN_PATTERNS,
   ...VCS_TOKEN_PATTERNS,
@@ -169,7 +169,7 @@ export const ALL_TOKEN_KEY_PATTERNS: ReadonlyArray<RegExp> = [
  * bare `KEY=`/`TOKEN=` keys (which are usually loop indices, not secrets).
  */
 export const GENERIC_TOKEN_SUFFIX_RE =
-  /^[A-Z_]*(?:API|AUTH|ACCESS|SECRET|PRIVATE|CLIENT|BOT|WEBHOOK|SESSION)_(?:TOKEN|KEY|SECRET)$/
+  /^[A-Z_]*(?:ACCESS|API|AUTH|BOT|CLIENT|PRIVATE|SECRET|SESSION|WEBHOOK)_(?:KEY|SECRET|TOKEN)$/
 
 /**
  * Convenience: returns true if the given key name matches any pattern in
@@ -178,7 +178,8 @@ export const GENERIC_TOKEN_SUFFIX_RE =
  * GENERIC_TOKEN_SUFFIX_RE.test(key)`.
  */
 export function isTokenKey(key: string): boolean {
-  for (const re of ALL_TOKEN_KEY_PATTERNS) {
+  for (let i = 0, { length } = ALL_TOKEN_KEY_PATTERNS; i < length; i += 1) {
+    const re = ALL_TOKEN_KEY_PATTERNS[i]!
     if (re.test(key)) {
       return true
     }
@@ -197,7 +198,7 @@ export function isTokenKey(key: string): boolean {
  * commit-message body would otherwise trip every commit; token-guard pairs this
  * list with `containsOutsideQuotes()` to skip in-string fragments.
  */
-export const SENSITIVE_NAME_FRAGMENTS: ReadonlyArray<string> = [
+export const SENSITIVE_NAME_FRAGMENTS: readonly string[] = [
   'TOKEN',
   'SECRET',
   'PASSWORD',

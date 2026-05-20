@@ -66,7 +66,7 @@ interface ToolInput {
 // Each regex captures the offending identifier in group 1 for the
 // error message. We intentionally require at least one alpha char
 // AFTER the underscore — bare `_` is allowed (throwaway).
-const BANNED_DECL_PATTERNS: ReadonlyArray<RegExp> = [
+const BANNED_DECL_PATTERNS: readonly RegExp[] = [
   // const/let/var _foo
   /\b(?:const|let|var)\s+(_[A-Za-z][A-Za-z0-9_]*)\b/g,
   // function _foo / async function _foo
@@ -83,43 +83,13 @@ const BANNED_DECL_PATTERNS: ReadonlyArray<RegExp> = [
 
 const BYPASS_PHRASE = 'Allow underscore-identifier bypass'
 
-interface Finding {
-  readonly line: number
-  readonly identifier: string
-  readonly text: string
-}
-
-function isInternalDirPath(filePath: string): boolean {
-  return filePath.includes('/_internal/')
-}
-
-function isGeneratedPath(filePath: string): boolean {
-  return (
-    filePath.includes('/dist/') ||
-    filePath.includes('/build/') ||
-    filePath.includes('/node_modules/')
-  )
-}
-
-// Hook/lint test files and oxlint-plugin rule files legitimately contain
-// banned identifier *strings* as fixture data. Exempt them so the rule
-// can have its own tests without bypass phrases.
-function isPluginOrHookTestPath(filePath: string): boolean {
-  return (
-    filePath.includes('/.claude/hooks/no-underscore-identifier-guard/') ||
-    filePath.includes(
-      '/.config/oxlint-plugin/rules/no-underscore-identifier.',
-    ) ||
-    filePath.includes('/.config/oxlint-plugin/test/no-underscore-identifier')
-  )
-}
-
-function findBannedIdentifiers(text: string): Finding[] {
+export function findBannedIdentifiers(text: string): Finding[] {
   const findings: Finding[] = []
   const lines = text.split('\n')
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i]!
-    for (const pattern of BANNED_DECL_PATTERNS) {
+    for (let i = 0, { length } = BANNED_DECL_PATTERNS; i < length; i += 1) {
+      const pattern = BANNED_DECL_PATTERNS[i]!
       pattern.lastIndex = 0
       let match: RegExpExecArray | null
       while ((match = pattern.exec(line)) !== null) {
@@ -134,7 +104,7 @@ function findBannedIdentifiers(text: string): Finding[] {
   return findings
 }
 
-function hasRecentBypass(): boolean {
+export function hasRecentBypass(): boolean {
   // Bypass detection is delegated to the harness's transcript reader —
   // we can't see the user turn from here without parsing the env.
   // The harness sets CLAUDE_RECENT_USER_TURNS when a bypass phrase
@@ -146,7 +116,38 @@ function hasRecentBypass(): boolean {
   return turns.includes(BYPASS_PHRASE)
 }
 
-async function readStdin(): Promise<string> {
+export function isGeneratedPath(filePath: string): boolean {
+  return (
+    filePath.includes('/dist/') ||
+    filePath.includes('/build/') ||
+    filePath.includes('/node_modules/')
+  )
+}
+
+interface Finding {
+  readonly line: number
+  readonly identifier: string
+  readonly text: string
+}
+
+export function isInternalDirPath(filePath: string): boolean {
+  return filePath.includes('/_internal/')
+}
+
+// Hook/lint test files and oxlint-plugin rule files legitimately contain
+// banned identifier *strings* as fixture data. Exempt them so the rule
+// can have its own tests without bypass phrases.
+export function isPluginOrHookTestPath(filePath: string): boolean {
+  return (
+    filePath.includes('/.claude/hooks/no-underscore-identifier-guard/') ||
+    filePath.includes(
+      '/.config/oxlint-plugin/rules/no-underscore-identifier.',
+    ) ||
+    filePath.includes('/.config/oxlint-plugin/test/no-underscore-identifier')
+  )
+}
+
+export async function readStdin(): Promise<string> {
   const chunks: Buffer[] = []
   for await (const chunk of process.stdin) {
     chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
@@ -188,7 +189,7 @@ async function main(): Promise<void> {
   }
 
   // Only police TS/JS source.
-  if (!/\.(?:m|c)?[jt]sx?$/.test(filePath)) {
+  if (!/\.(?:c|m)?[jt]sx?$/.test(filePath)) {
     process.exit(0)
   }
 

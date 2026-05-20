@@ -38,26 +38,34 @@ const BYPASS_PHRASE = 'Allow node-modules-staging bypass'
 // Tokenize the command on whitespace; split on `&&`/`||`/`;`/`|` so we
 // don't merge chained commands. The git invocation may be wrapped by
 // env-var assignments (`FOO=bar git add ...`).
-function findGitAddForceInvocations(command: string): string[][] {
+export function findGitAddForceInvocations(command: string): string[][] {
   const out: string[][] = []
   const segments = command.split(/(?:&&|\|\||;|\n)/)
-  for (const segment of segments) {
+  for (let i = 0, { length } = segments; i < length; i += 1) {
+    const segment = segments[i]!
     const tokens = segment.trim().split(/\s+/)
-    let i = 0
-    while (i < tokens.length && tokens[i]!.includes('=')) {
-      i += 1
+    // `j` for the inner cursor — outer loop already owns `i`.
+    let j = 0
+    while (j < tokens.length && tokens[j]!.includes('=')) {
+      j += 1
     }
-    if (tokens[i] !== 'git') continue
-    if (tokens[i + 1] !== 'add') continue
-    const rest = tokens.slice(i + 2)
-    const hasForce = rest.some(arg => arg === '-f' || arg === '--force')
-    if (!hasForce) continue
+    if (tokens[j] !== 'git') {
+      continue
+    }
+    if (tokens[j + 1] !== 'add') {
+      continue
+    }
+    const rest = tokens.slice(j + 2)
+    const hasForce = rest.some(arg => arg === '--force' || arg === '-f')
+    if (!hasForce) {
+      continue
+    }
     out.push(rest)
   }
   return out
 }
 
-function isForbiddenPath(arg: string): boolean {
+export function isForbiddenPath(arg: string): boolean {
   // `-f` / `--force` are flag-only, not paths.
   if (arg.startsWith('-')) {
     return false
@@ -114,8 +122,10 @@ async function main(): Promise<void> {
   }
 
   const blockedArgs: string[] = []
-  for (const restArgs of forced) {
-    for (const arg of restArgs) {
+  for (let i = 0, { length } = forced; i < length; i += 1) {
+    const restArgs = forced[i]!
+    for (let i = 0, { length } = restArgs; i < length; i += 1) {
+      const arg = restArgs[i]!
       if (isForbiddenPath(arg)) {
         blockedArgs.push(arg)
       }

@@ -3,18 +3,15 @@
  * @file Whole-file commit-time gate that mirrors the edit-time
  *   `.claude/hooks/soak-exclude-date-annotation-guard/`. Scans the repo's
  *   `pnpm-workspace.yaml` `minimumReleaseAgeExclude:` block and reports any
- *   per-package exact-pin entry missing the canonical
- *   `# published: YYYY-MM-DD | removable: YYYY-MM-DD` annotation.
+ *   per-package exact-pin entry missing the canonical `# published: YYYY-MM-DD
+ *   | removable: YYYY-MM-DD` annotation. Why the second surface (hook +
+ *   script): defense in depth. The hook blocks Edit/Write in-session; this
+ *   script catches anything that lands via a non-Claude path (manual `git
+ *   checkout`, external editor, etc.). Reports stale entries too — any line
+ *   whose `removable:` date is in the past is a cleanup candidate. Reporting is
+ *   informational only (exit 0 on stale entries; exit 1 only on missing
+ *   annotation). Exit codes:
  *
- *   Why the second surface (hook + script): defense in depth. The hook
- *   blocks Edit/Write in-session; this script catches anything that lands
- *   via a non-Claude path (manual `git checkout`, external editor, etc.).
- *
- *   Reports stale entries too — any line whose `removable:` date is in the
- *   past is a cleanup candidate. Reporting is informational only (exit 0
- *   on stale entries; exit 1 only on missing annotation).
- *
- *   Exit codes:
  *   - 0 — clean (no missing annotations; stale entries logged as warnings)
  *   - 1 — at least one missing annotation
  */
@@ -22,6 +19,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 const SECTION_HEADER = /^minimumReleaseAgeExclude:\s*$/
 const ANY_TOP_LEVEL_KEY = /^[A-Za-z_][\w-]*:\s*(\S.*)?$/
@@ -91,7 +89,11 @@ function scan(text: string, todayISO: string): Finding[] {
 }
 
 function main(): void {
-  const repoRoot = process.cwd()
+  // Anchor on this script's location and walk up to the repo root
+  // (the dir containing pnpm-workspace.yaml). process.cwd() is unstable
+  // because the script may be invoked from any working directory.
+  const here = path.dirname(fileURLToPath(import.meta.url))
+  const repoRoot = path.resolve(here, '..')
   const yamlPath = path.join(repoRoot, 'pnpm-workspace.yaml')
   let content: string
   try {
@@ -111,7 +113,8 @@ function main(): void {
         `entr${stale.length === 1 ? 'y' : 'ies'} ` +
         `(removable: date in the past) — candidates for cleanup:\n`,
     )
-    for (const f of stale) {
+    for (let i = 0, { length } = stale; i < length; i += 1) {
+      const f = stale[i]!
       process.stderr.write(
         `  line ${f.line}: ${f.name}@${f.version} (removable ${f.removable})\n`,
       )
@@ -126,7 +129,8 @@ function main(): void {
       `[check-soak-exclude-dates] ${missing.length} missing soak-bypass ` +
         `annotation${missing.length === 1 ? '' : 's'}:\n`,
     )
-    for (const f of missing) {
+    for (let i = 0, { length } = missing; i < length; i += 1) {
+      const f = missing[i]!
       process.stderr.write(`  line ${f.line}: ${f.name}@${f.version}\n`)
     }
     process.stderr.write(

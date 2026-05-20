@@ -19,7 +19,7 @@ await runStopReminder({
   patterns: [
     {
       label: 'first, we (will|are)',
-      regex: /\bfirst,? we (will|are|need|should)\b/i,
+      regex: /\bfirst,? we (are|need|should|will)\b/i,
       why: 'Teacher-tone narration. Drop the step-by-step framing in comments.',
     },
     {

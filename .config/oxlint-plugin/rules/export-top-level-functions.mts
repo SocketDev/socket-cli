@@ -16,6 +16,9 @@
  *     function`).
  */
 
+import path from 'node:path'
+
+import { detectSourceType } from '../lib/detect-source-type.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const SCRIPT_ENTRY_NAMES = new Set(['main'])
@@ -78,6 +81,36 @@ const rule = {
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode
+
+    // Skip CommonJS files. Rewriting `function getObject(idx) { … }`
+    // to `export function getObject(idx) { … }` inside a CJS module
+    // makes the file syntactically ESM — `require()` of it then
+    // throws `SyntaxError: Unexpected token 'export'`. Worked example:
+    // wasm-bindgen `--target nodejs` output (`acorn-bindgen.cjs`)
+    // uses `module.exports` for the public surface plus local
+    // `function` declarations for internal helpers; the autofix
+    // catastrophically rewrote them. The detector uses Node's
+    // `--experimental-detect-module` algorithm: file extension is
+    // authoritative for `.cjs` / `.cts` / `.mjs` / `.mts`; ambiguous
+    // `.js` / `.ts` falls through to a content sniff.
+    const filename: string =
+      typeof context.filename === 'string'
+        ? context.filename
+        : typeof context.getFilename === 'function'
+          ? context.getFilename()
+          : ''
+    const extension = filename ? path.extname(filename) : ''
+    const sourceText: string =
+      typeof sourceCode.getText === 'function'
+        ? sourceCode.getText()
+        : typeof sourceCode.text === 'string'
+          ? sourceCode.text
+          : ''
+    const kind = detectSourceType(sourceText, { extension })
+    if (kind === 'cjs') {
+      return {}
+    }
+
     let exportedNames: Set<string> | undefined
 
     return {
@@ -118,4 +151,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

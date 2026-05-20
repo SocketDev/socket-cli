@@ -15,7 +15,7 @@
 // Skipped when the branch isn't main/master (feature branches always
 // PR via the wheelhouse push-fallback policy).
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
@@ -42,26 +42,38 @@ const PR_DIRECTIVE_PATTERNS = [
 // Recent user-turn window.
 const TURN_WINDOW = 6
 
-function currentBranch(cwd: string): string | undefined {
+export function currentBranch(cwd: string): string | undefined {
   const r = spawnSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
     cwd,
-    encoding: 'utf8',
     timeout: 5_000,
   })
-  if (r.status !== 0) return undefined
-  return r.stdout.trim()
+  if (r.status !== 0) {
+    return undefined
+  }
+  return String(r.stdout).trim()
 }
 
-function isGhPrCreate(command: string): boolean {
+export function hasPrDirective(turns: string[]): boolean {
+  for (let i = 0, { length } = turns; i < length; i += 1) {
+    const text = turns[i]!
+    for (let i = 0, { length } = PR_DIRECTIVE_PATTERNS; i < length; i += 1) {
+      const re = PR_DIRECTIVE_PATTERNS[i]!
+      if (re.test(text)) {return true}
+    }
+  }
+  return false
+}
+
+export function isGhPrCreate(command: string): boolean {
   return /\bgh\s+pr\s+create\b/.test(command)
 }
 
 interface TranscriptEntry {
-  type?: string
-  message?: { content?: unknown }
+  type?: string | undefined
+  message?: { content?: unknown | undefined } | undefined
 }
 
-function readRecentUserTurnTexts(
+export function readRecentUserTurnTexts(
   transcriptPath: string,
   window: number,
 ): string[] {
@@ -73,14 +85,18 @@ function readRecentUserTurnTexts(
   }
   const turns: string[] = []
   for (const line of raw.split(/\r?\n/)) {
-    if (!line.trim()) continue
+    if (!line.trim()) {
+      continue
+    }
     let entry: TranscriptEntry
     try {
       entry = JSON.parse(line) as TranscriptEntry
     } catch {
       continue
     }
-    if (entry.type !== 'user') continue
+    if (entry.type !== 'user') {
+      continue
+    }
     const c = entry.message?.content
     if (typeof c === 'string') {
       turns.push(c)
@@ -90,7 +106,7 @@ function readRecentUserTurnTexts(
           .map(seg =>
             typeof seg === 'string'
               ? seg
-              : typeof (seg as { text?: unknown }).text === 'string'
+              : typeof (seg as { text?: unknown | undefined }).text === 'string'
                 ? (seg as { text: string }).text
                 : '',
           )
@@ -99,15 +115,6 @@ function readRecentUserTurnTexts(
     }
   }
   return turns.slice(-window)
-}
-
-function hasPrDirective(turns: string[]): boolean {
-  for (const text of turns) {
-    for (const re of PR_DIRECTIVE_PATTERNS) {
-      if (re.test(text)) return true
-    }
-  }
-  return false
 }
 
 async function main(): Promise<void> {

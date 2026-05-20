@@ -61,8 +61,8 @@ const rule = {
         // `export default class Name {}` — drop the `default` keyword
         // and emit the declaration as a named export.
         if (
-          (decl.type === 'FunctionDeclaration' ||
-            decl.type === 'ClassDeclaration') &&
+          (decl.type === 'ClassDeclaration' ||
+            decl.type === 'FunctionDeclaration') &&
           decl.id &&
           decl.id.type === 'Identifier'
         ) {
@@ -104,4 +104,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

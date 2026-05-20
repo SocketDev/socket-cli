@@ -94,7 +94,8 @@ function walk(dir: string, exts: readonly string[]): string[] {
   } catch {
     return out
   }
-  for (const entry of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
     if (SKIP_DIRS.has(entry)) {
       continue
     }
@@ -156,7 +157,8 @@ function extractHeader(file: string): HeaderBlock | undefined {
   const withRe =
     /Lock-step with ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)/g
   const withRefs: Array<{ lang: string; refPath: string }> = []
-  for (const line of bodyLines) {
+  for (let i = 0, { length } = bodyLines; i < length; i += 1) {
+    const line = bodyLines[i]!
     withRe.lastIndex = 0
     let m: RegExpExecArray | null
     while ((m = withRe.exec(line)) !== null) {
@@ -198,7 +200,8 @@ function resolveRefPath(
     path.join(repoRoot, refPath),
     ...roots.map(r => path.join(repoRoot, r, refPath)),
   ]
-  for (const c of candidates) {
+  for (let i = 0, { length } = candidates; i < length; i += 1) {
+    const c = candidates[i]!
     if (existsSync(c)) {
       return c
     }
@@ -282,7 +285,8 @@ function main(): void {
   // ref) and check each peer they name.
   const diffs: Diff[] = []
   let canonicalCount = 0
-  for (const file of allFiles) {
+  for (let i = 0, { length } = allFiles; i < length; i += 1) {
+    const file = allFiles[i]!
     const header = extractHeader(file)
     if (!header || header.withRefs.length === 0) {
       continue
@@ -350,7 +354,8 @@ function main(): void {
     process.stderr.write(
       `check-lock-step-header: ${diffs.length} quadruplet diff(s) across ${canonicalCount} canonical header(s)`,
     )
-    for (const d of diffs) {
+    for (let i = 0, { length } = diffs; i < length; i += 1) {
+      const d = diffs[i]!
       process.stderr.write(formatDiff(d, repoRoot))
     }
     process.stderr.write('\n')

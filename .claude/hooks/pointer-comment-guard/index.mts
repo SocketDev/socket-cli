@@ -48,15 +48,16 @@
 
 import process from 'node:process'
 
+import { splitLines, walkComments } from '../_shared/acorn/index.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface PreToolUsePayload {
   readonly tool_name?: string | undefined
   readonly tool_input?:
     | {
-        readonly file_path?: unknown
-        readonly content?: unknown
-        readonly new_string?: unknown
+        readonly file_path?: unknown | undefined
+        readonly content?: unknown | undefined
+        readonly new_string?: unknown | undefined
       }
     | undefined
   readonly transcript_path?: string | undefined
@@ -68,7 +69,7 @@ const BYPASS_PHRASES = [
   'Allow pointercomment bypass',
 ] as const
 
-const SOURCE_EXT_RE = /\.(?:m|c)?[jt]sx?$/
+const SOURCE_EXT_RE = /\.(?:c|m)?[jt]sx?$/
 
 // A line is a "comment" line if it starts (after optional whitespace
 // and `*` for block-comment continuation) with `//` or is inside a
@@ -104,65 +105,72 @@ interface Comment {
   readonly lineNumber: number
 }
 
-// Split source into comment blocks. A "block" is one logical comment:
-// a `/* … */` span, or a run of consecutive `//` lines. Returns each
-// block as a single string (with `//` / `*` markers stripped) plus
-// the 1-based line number where the block opens.
-function extractCommentBlocks(source: string): Comment[] {
-  const lines = source.split('\n')
+// Split source into comment blocks via the AST walker. A "block" is
+// one logical comment: a `/* … */` span (one CommentSite from the
+// walker), or a run of consecutive `//` lines (we merge those here
+// since the walker reports each line-comment separately).
+//
+// The previous hand-rolled lexer walked the source line-by-line
+// tracking `/*` / `*/` state and `//` runs. The AST walker does the
+// state-tracking for us (it knows about string-literal regions, so a
+// `//` inside a string doesn't get mistaken for a comment opener).
+export function extractCommentBlocks(source: string): Comment[] {
+  const all = walkComments(source, { comments: true })
   const blocks: Comment[] = []
-  let inBlock = false
-  let buf: string[] = []
-  let bufStart = 0
-  let lineRun: string[] = []
-  let lineRunStart = 0
-
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const raw = lines[i]!
-    const trimmed = raw.trimStart()
-    if (inBlock) {
-      const endIdx = trimmed.indexOf('*/')
-      if (endIdx === -1) {
-        buf.push(trimmed.replace(/^\*\s?/, ''))
-      } else {
-        buf.push(trimmed.slice(0, endIdx).replace(/^\*\s?/, ''))
-        blocks.push({ text: buf.join('\n').trim(), lineNumber: bufStart })
-        buf = []
-        inBlock = false
+  let lineRunStartLine: number | undefined
+  let lineRunStartOffset: number | undefined
+  let lineRunEnd: number | undefined
+  let lineRunBuf: string[] = []
+  const flushLineRun = (): void => {
+    if (lineRunStartLine === undefined || lineRunBuf.length === 0) {
+      return
+    }
+    blocks.push({
+      text: lineRunBuf.join('\n').trim(),
+      lineNumber: lineRunStartLine,
+    })
+    lineRunStartLine = undefined
+    lineRunStartOffset = undefined
+    lineRunEnd = undefined
+    lineRunBuf = []
+  }
+  for (let i = 0; i < all.length; i += 1) {
+    const c = all[i]!
+    if (c.kind === 'Line') {
+      // Contiguous if there's no significant content between the prior
+      // line-comment's end and this one's start. We approximate by
+      // checking the prior end is followed only by whitespace + a
+      // single newline, and the next non-whitespace position is `//`.
+      const adjacent =
+        lineRunEnd !== undefined &&
+        /^[\t \r]*\n[\t ]*\/\//.test(source.slice(lineRunEnd, c.start + 2))
+      if (!adjacent) {
+        flushLineRun()
       }
+      if (lineRunStartLine === undefined) {
+        lineRunStartLine = c.line
+        lineRunStartOffset = c.start
+      }
+      lineRunBuf.push(c.value.trimStart())
+      lineRunEnd = c.end
       continue
     }
-    if (trimmed.startsWith('/*')) {
-      // Single-line /* … */ block.
-      const endIdx = trimmed.indexOf('*/', 2)
-      if (endIdx !== -1) {
-        const inner = trimmed.slice(2, endIdx).trim()
-        if (inner) {
-          blocks.push({ text: inner, lineNumber: i + 1 })
-        }
-      } else {
-        inBlock = true
-        bufStart = i + 1
-        buf.push(trimmed.slice(2).replace(/^\*\s?/, ''))
-      }
-      continue
-    }
-    if (trimmed.startsWith('//')) {
-      const content = trimmed.slice(2).trimStart()
-      if (lineRun.length === 0) {
-        lineRunStart = i + 1
-      }
-      lineRun.push(content)
-      continue
-    }
-    if (lineRun.length > 0) {
-      blocks.push({ text: lineRun.join('\n').trim(), lineNumber: lineRunStart })
-      lineRun = []
+    // Block comment — flush any pending line-run first, then add the
+    // block as its own entry with leading `*` decorators stripped per
+    // line.
+    flushLineRun()
+    const cleaned = splitLines(c.value)
+      .map(l => l.replace(/^\s*\*\s?/, ''))
+      .join('\n')
+      .trim()
+    if (cleaned) {
+      blocks.push({ text: cleaned, lineNumber: c.line })
     }
   }
-  if (lineRun.length > 0) {
-    blocks.push({ text: lineRun.join('\n').trim(), lineNumber: lineRunStart })
-  }
+  flushLineRun()
+  // lineRunStartOffset is kept for symmetry with the line-run merge
+  // window; we don't currently expose it on Comment.
+  void lineRunStartOffset
   return blocks
 }
 
@@ -171,7 +179,7 @@ interface Hit {
   readonly preview: string
 }
 
-function findPointerOnlyComments(blocks: readonly Comment[]): Hit[] {
+export function findPointerOnlyComments(blocks: readonly Comment[]): Hit[] {
   const hits: Hit[] = []
   for (let i = 0, { length } = blocks; i < length; i += 1) {
     const block = blocks[i]!

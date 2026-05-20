@@ -238,7 +238,7 @@ const rule = {
             (p.type === 'NumericLiteral' && typeof p.value === 'number') ||
             (p.type === 'Identifier' &&
               typeof p.name === 'string' &&
-              /^(i|j|k|n|idx|index|cur|cursor|pos)$/.test(p.name))
+              /^(cur|cursor|i|idx|index|j|k|n|pos)$/.test(p.name))
           if (looksNumeric) {
             context.report({
               node,
@@ -252,4 +252,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

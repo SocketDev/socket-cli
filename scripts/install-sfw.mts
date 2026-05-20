@@ -23,7 +23,12 @@
  *   ignore cache, redownload pnpm run install:sfw -- --quiet.
  */
 
-import { existsSync, promises as fsPromises, readFileSync, renameSync } from 'node:fs'
+import {
+  existsSync,
+  promises as fsPromises,
+  readFileSync,
+  renameSync,
+} from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -34,7 +39,10 @@ import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { safeDelete, safeMkdirSync } from '@socketsecurity/lib-stable/fs'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getSocketAppDir, getUserHomeDir } from '@socketsecurity/lib-stable/paths/socket'
+import {
+  getSocketAppDir,
+  getUserHomeDir,
+} from '@socketsecurity/lib-stable/paths/socket'
 
 const logger = getDefaultLogger()
 
@@ -68,9 +76,9 @@ const SFW_BIN_DIR = WHEELHOUSE_BIN_DIR
 
 interface ToolEntry {
   version: string
-  repository?: string
-  release?: string
-  checksums?: Record<string, { asset: string; sha256: string }>
+  repository?: string | undefined
+  release?: string | undefined
+  checksums?: Record<string, { asset: string; sha256: string }> | undefined
 }
 
 interface ExternalToolsFile {

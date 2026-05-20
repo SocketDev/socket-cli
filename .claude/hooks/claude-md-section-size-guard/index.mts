@@ -68,45 +68,13 @@ const DEFAULT_MAX_BODY_LINES = 8
 const FLEET_BEGIN_MARKER = '<!-- BEGIN FLEET-CANONICAL'
 const FLEET_END_MARKER = '<!-- END FLEET-CANONICAL'
 
-type ToolInput = {
-  tool_input?:
-    | {
-        content?: string | undefined
-        file_path?: string | undefined
-        new_string?: string | undefined
-        old_string?: string | undefined
-      }
-    | undefined
-  tool_name?: string | undefined
-}
-
-function isClaudeMd(filePath: string | undefined): boolean {
-  if (!filePath) {
-    return false
-  }
-  const base = filePath.split('/').pop() ?? ''
-  return base === 'CLAUDE.md'
-}
-
-function getMaxBodyLines(): number {
-  const env = process.env['CLAUDE_MD_FLEET_SECTION_MAX_LINES']
-  if (!env) {
-    return DEFAULT_MAX_BODY_LINES
-  }
-  const n = Number.parseInt(env, 10)
-  if (!Number.isFinite(n) || n <= 0) {
-    return DEFAULT_MAX_BODY_LINES
-  }
-  return n
-}
-
 /**
  * Apply an Edit's `old_string` → `new_string` substitution against on-disk
  * content. Returns the post-edit content, or undefined if the substitution
  * can't be applied cleanly (no match, multiple matches without replace_all, or
  * the file doesn't exist).
  */
-function applyEditToFile(
+export function applyEditToFile(
   filePath: string,
   oldString: string | undefined,
   newString: string | undefined,
@@ -136,7 +104,7 @@ function applyEditToFile(
   return onDisk.slice(0, idx) + newString + onDisk.slice(idx + oldString.length)
 }
 
-function extractFleetBlock(content: string): string | undefined {
+export function extractFleetBlock(content: string): string | undefined {
   const beginIdx = content.indexOf(FLEET_BEGIN_MARKER)
   const endIdx = content.indexOf(FLEET_END_MARKER)
   if (beginIdx === -1 || endIdx === -1 || endIdx < beginIdx) {
@@ -157,7 +125,7 @@ interface SectionTooLong {
  * of the input. Headings at `##` or `#` level are NOT inspected — only `### `
  * (third-level) since that's the rule-level heading in the fleet block.
  */
-function findTooLongSections(
+export function findTooLongSections(
   fleetBlock: string,
   maxBodyLines: number,
 ): SectionTooLong[] {
@@ -195,6 +163,38 @@ function findTooLongSections(
   flushIfTooLong()
 
   return findings
+}
+
+export function getMaxBodyLines(): number {
+  const env = process.env['CLAUDE_MD_FLEET_SECTION_MAX_LINES']
+  if (!env) {
+    return DEFAULT_MAX_BODY_LINES
+  }
+  const n = Number.parseInt(env, 10)
+  if (!Number.isFinite(n) || n <= 0) {
+    return DEFAULT_MAX_BODY_LINES
+  }
+  return n
+}
+
+type ToolInput = {
+  tool_input?:
+    | {
+        content?: string | undefined
+        file_path?: string | undefined
+        new_string?: string | undefined
+        old_string?: string | undefined
+      }
+    | undefined
+  tool_name?: string | undefined
+}
+
+export function isClaudeMd(filePath: string | undefined): boolean {
+  if (!filePath) {
+    return false
+  }
+  const base = filePath.split('/').pop() ?? ''
+  return base === 'CLAUDE.md'
 }
 
 async function main(): Promise<number> {
@@ -270,7 +270,8 @@ async function main(): Promise<number> {
   lines.push(`File:           ${filePath}`)
   lines.push(`Cap:            ${maxLines} body lines per ### section`)
   lines.push(``)
-  for (const t of tooLong) {
+  for (let i = 0, { length } = tooLong; i < length; i += 1) {
+    const t = tooLong[i]!
     lines.push(
       `  ### ${t.heading} — ${t.bodyLineCount} body lines (${t.bodyLineCount - maxLines} over)`,
     )

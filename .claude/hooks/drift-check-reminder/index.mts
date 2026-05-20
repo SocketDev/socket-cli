@@ -49,7 +49,7 @@ const CASCADE_ACK_RE =
 // a passing mention. The simplest proxy: look for verbs that imply
 // "I just changed this" in the assistant turn.
 const EDIT_VERB_RE =
-  /\b(updated|edited|modified|bumped|added|removed|cascaded|landed|committed|changed)\b/i
+  /\b(added|bumped|cascaded|changed|committed|edited|landed|modified|removed|updated)\b/i
 
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()

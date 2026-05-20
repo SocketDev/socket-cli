@@ -26,7 +26,7 @@ export type LibStubOptions = {
    * Replacement code. Defaults to `module.exports = {}`. Override only if you
    * need a non-empty stub (rare).
    */
-  readonly stubCode?: string
+  readonly stubCode?: string | undefined
 }
 
 export function createLibStubPlugin(options: LibStubOptions): Plugin {

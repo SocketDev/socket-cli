@@ -43,12 +43,12 @@ export interface ToolCallPayload {
  */
 export interface ToolInput {
   // Edit/Write
-  readonly file_path?: unknown
-  readonly content?: unknown
-  readonly new_string?: unknown
-  readonly old_string?: unknown
+  readonly file_path?: unknown | undefined
+  readonly content?: unknown | undefined
+  readonly new_string?: unknown | undefined
+  readonly old_string?: unknown | undefined
   // Bash
-  readonly command?: unknown
+  readonly command?: unknown | undefined
 }
 
 /**

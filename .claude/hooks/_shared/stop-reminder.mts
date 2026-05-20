@@ -21,6 +21,21 @@ import {
   stripQuotedSpans,
 } from './transcript.mts'
 
+/**
+ * Pull a ~80-char snippet around the match for the warning message.
+ */
+export function extractSnippet(
+  text: string,
+  index: number,
+  length: number,
+): string {
+  const start = Math.max(0, index - 30)
+  const end = Math.min(text.length, index + length + 30)
+  const prefix = start > 0 ? '…' : ''
+  const suffix = end < text.length ? '…' : ''
+  return prefix + text.slice(start, end).replace(/\s+/g, ' ').trim() + suffix
+}
+
 interface StopPayload {
   readonly transcript_path?: string | undefined
   readonly stop_hook_active?: boolean | undefined
@@ -160,15 +175,4 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
 
   process.stderr.write(message + '\n')
   process.exit(0)
-}
-
-/**
- * Pull a ~80-char snippet around the match for the warning message.
- */
-function extractSnippet(text: string, index: number, length: number): string {
-  const start = Math.max(0, index - 30)
-  const end = Math.min(text.length, index + length + 30)
-  const prefix = start > 0 ? '…' : ''
-  const suffix = end < text.length ? '…' : ''
-  return prefix + text.slice(start, end).replace(/\s+/g, ' ').trim() + suffix
 }

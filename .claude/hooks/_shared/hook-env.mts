@@ -36,17 +36,6 @@ export function hookDisableEnvVar(slug: string): string {
 }
 
 /**
- * True when the canonical disable env is set to a truthy value. The fleet
- * treats any non-empty value as "disabled" — `=1`, `=true`, `=yes`, all the
- * same. An explicit `=0` or `=false` is also still non-empty, so technically
- * "disabled"; if a user wants to enable after a session-wide disable, they
- * should `unset` the var.
- */
-export function isHookDisabled(slug: string): boolean {
-  return Boolean(process.env[hookDisableEnvVar(slug)])
-}
-
-/**
  * Write one or more lines to stderr, each prefixed with `[<slug>] `. Trailing
  * newlines are added automatically. Empty-string args are written as bare
  * newlines (useful for visual separation).
@@ -64,4 +53,15 @@ export function hookLog(slug: string, ...lines: readonly string[]): void {
       process.stderr.write(`${prefix}${ln}\n`)
     }
   }
+}
+
+/**
+ * True when the canonical disable env is set to a truthy value. The fleet
+ * treats any non-empty value as "disabled" — `=1`, `=true`, `=yes`, all the
+ * same. An explicit `=0` or `=false` is also still non-empty, so technically
+ * "disabled"; if a user wants to enable after a session-wide disable, they
+ * should `unset` the var.
+ */
+export function isHookDisabled(slug: string): boolean {
+  return Boolean(process.env[hookDisableEnvVar(slug)])
 }

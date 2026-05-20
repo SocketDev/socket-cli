@@ -26,18 +26,20 @@
 // The hook fails OPEN on its own bugs (exit 0 + stderr log) so a bad
 // hook deploy can't brick the session.
 
-import fs from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 interface Hook {
-  tool_name?: string
-  tool_input?: {
-    file_path?: string
-    new_string?: string
-    old_string?: string
-    content?: string
-  }
+  tool_name?: string | undefined
+  tool_input?:
+    | {
+        file_path?: string | undefined
+        new_string?: string | undefined
+        old_string?: string | undefined
+        content?: string | undefined
+      }
+    | undefined
 }
 
 interface PluginPin {
@@ -54,61 +56,37 @@ interface BadPin {
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
-function isGuardedPath(p: string): { kind: 'json' | 'readme' } | null {
-  if (p.endsWith('/.claude-plugin/marketplace.json')) return { kind: 'json' }
-  if (p.endsWith('/.claude-plugin/README.md')) return { kind: 'readme' }
-  return null
-}
-
-function siblingPath(filePath: string, kind: 'json' | 'readme'): string {
-  const dir = path.dirname(filePath)
-  return kind === 'json'
-    ? path.join(dir, 'README.md')
-    : path.join(dir, 'marketplace.json')
-}
-
-function reconstructAfterEdit(
-  filePath: string,
-  tool: 'Edit' | 'Write',
-  input: Hook['tool_input'],
-): string | null {
-  if (tool === 'Write') {
-    return input?.content ?? ''
-  }
-  // Edit: apply old_string → new_string to the current on-disk content.
-  const oldStr = input?.old_string ?? ''
-  const newStr = input?.new_string ?? ''
-  let current: string
-  try {
-    current = fs.readFileSync(filePath, 'utf8')
-  } catch {
-    return null
-  }
-  const idx = current.indexOf(oldStr)
-  if (idx === -1) return null
-  return current.slice(0, idx) + newStr + current.slice(idx + oldStr.length)
-}
-
-function extractPluginPins(marketplaceJson: string): PluginPin[] | null {
+export function extractPluginPins(
+  marketplaceJson: string,
+): PluginPin[] | undefined {
   let parsed: unknown
   try {
     parsed = JSON.parse(marketplaceJson)
   } catch {
-    return null
+    return undefined
   }
-  if (!parsed || typeof parsed !== 'object') return null
-  const plugins = (parsed as { plugins?: unknown }).plugins
-  if (!Array.isArray(plugins)) return []
+  if (!parsed || typeof parsed !== 'object') {
+    return undefined
+  }
+  const plugins = (parsed as { plugins?: unknown | undefined }).plugins
+  if (!Array.isArray(plugins)) {
+    return []
+  }
   const pins: PluginPin[] = []
-  for (const entry of plugins) {
-    if (!entry || typeof entry !== 'object') continue
+  for (let i = 0, { length } = plugins; i < length; i += 1) {
+    const entry = plugins[i]!
+    if (!entry || typeof entry !== 'object') {
+      continue
+    }
     const e = entry as Record<string, unknown>
-    const name = typeof e.name === 'string' ? e.name : null
-    const src = e.source
-    if (!src || typeof src !== 'object') continue
+    const name = typeof e['name'] === 'string' ? e['name'] : undefined
+    const src = e['source']
+    if (!src || typeof src !== 'object') {
+      continue
+    }
     const s = src as Record<string, unknown>
-    const ref = typeof s.ref === 'string' ? s.ref : null
-    const sha = typeof s.sha === 'string' ? s.sha : null
+    const ref = typeof s['ref'] === 'string' ? s['ref'] : undefined
+    const sha = typeof s['sha'] === 'string' ? s['sha'] : undefined
     if (name && ref && sha) {
       pins.push({ name, ref, sha })
     }
@@ -127,35 +105,86 @@ interface ReadmeRow {
 // the pipe-separated table shape with at least 4 columns; the first
 // four are plugin / version / sha / date. Trailing columns (by, notes)
 // are ignored by the guard.
-function extractReadmeRows(readme: string): ReadmeRow[] {
+export function extractReadmeRows(readme: string): ReadmeRow[] {
   const rows: ReadmeRow[] = []
   for (const rawLine of readme.split('\n')) {
     const line = rawLine.trim()
-    if (!line.startsWith('|') || !line.endsWith('|')) continue
+    if (!line.startsWith('|') || !line.endsWith('|')) {
+      continue
+    }
     // Strip leading + trailing | and split.
     const cells = line
       .slice(1, -1)
       .split('|')
       .map(c => c.trim())
-    if (cells.length < 4) continue
+    if (cells.length < 4) {
+      continue
+    }
     const [plugin, version, sha, date] = cells
+    if (!plugin || !version || !sha || !date) {
+      continue
+    }
     // Skip header row and divider row.
     if (plugin === 'plugin' || /^-+$/.test(plugin.replace(/[\s:-]/g, '-'))) {
       continue
     }
-    if (!plugin || !version || !sha || !date) continue
     rows.push({ plugin, version, sha, date })
   }
   return rows
 }
 
-function validate(pins: PluginPin[], rows: ReadmeRow[]): BadPin[] {
+export function isGuardedPath(
+  p: string,
+): { kind: 'json' | 'readme' } | undefined {
+  if (p.endsWith('/.claude-plugin/marketplace.json')) {
+    return { kind: 'json' }
+  }
+  if (p.endsWith('/.claude-plugin/README.md')) {
+    return { kind: 'readme' }
+  }
+  return undefined
+}
+
+export function reconstructAfterEdit(
+  filePath: string,
+  tool: 'Edit' | 'Write',
+  input: Hook['tool_input'],
+): string | undefined {
+  if (tool === 'Write') {
+    return input?.content ?? ''
+  }
+  // Edit: apply old_string → new_string to the current on-disk content.
+  const oldStr = input?.old_string ?? ''
+  const newStr = input?.new_string ?? ''
+  let current: string
+  try {
+    current = readFileSync(filePath, 'utf8')
+  } catch {
+    return undefined
+  }
+  const idx = current.indexOf(oldStr)
+  if (idx === -1) {
+    return undefined
+  }
+  return current.slice(0, idx) + newStr + current.slice(idx + oldStr.length)
+}
+
+export function siblingPath(filePath: string, kind: 'json' | 'readme'): string {
+  const dir = path.dirname(filePath)
+  return kind === 'json'
+    ? path.join(dir, 'README.md')
+    : path.join(dir, 'marketplace.json')
+}
+
+export function validate(pins: PluginPin[], rows: ReadmeRow[]): BadPin[] {
   const bad: BadPin[] = []
   const byPlugin = new Map<string, ReadmeRow>()
-  for (const row of rows) {
+  for (let i = 0, { length } = rows; i < length; i += 1) {
+    const row = rows[i]!
     byPlugin.set(row.plugin, row)
   }
-  for (const pin of pins) {
+  for (let i = 0, { length } = pins; i < length; i += 1) {
+    const pin = pins[i]!
     const row = byPlugin.get(pin.name)
     if (!row) {
       bad.push({
@@ -208,21 +237,27 @@ function main() {
         process.exit(0)
       }
       const filePath = payload.tool_input?.file_path
-      if (!filePath) process.exit(0)
+      if (!filePath) {
+        process.exit(0)
+      }
       const kind = isGuardedPath(filePath)
-      if (!kind) process.exit(0)
+      if (!kind) {
+        process.exit(0)
+      }
 
       const reconstructed = reconstructAfterEdit(
         filePath,
         tool,
         payload.tool_input,
       )
-      if (reconstructed === null) process.exit(0)
+      if (reconstructed === undefined) {
+        process.exit(0)
+      }
 
       const sibling = siblingPath(filePath, kind.kind)
       let siblingContent: string
       try {
-        siblingContent = fs.readFileSync(sibling, 'utf8')
+        siblingContent = readFileSync(sibling, 'utf8')
       } catch {
         // Sibling missing — block, the pair must exist together.
         process.stderr.write(
@@ -240,7 +275,7 @@ function main() {
       const readme = kind.kind === 'readme' ? reconstructed : siblingContent
 
       const pins = extractPluginPins(marketplaceJson)
-      if (pins === null) {
+      if (pins === undefined) {
         process.stderr.write(
           `[marketplace-comment-guard] refusing edit: marketplace.json is not parseable JSON.\n` +
             `  File: ${kind.kind === 'json' ? filePath : sibling}\n\n` +
@@ -251,7 +286,9 @@ function main() {
 
       const rows = extractReadmeRows(readme)
       const bad = validate(pins, rows)
-      if (bad.length === 0) process.exit(0)
+      if (bad.length === 0) {
+        process.exit(0)
+      }
 
       process.stderr.write(
         `[marketplace-comment-guard] refusing edit: ` +

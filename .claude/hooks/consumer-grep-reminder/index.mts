@@ -55,20 +55,31 @@ const CONSUMER_DIRS = [
 // Patterns whose removal triggers the reminder. Conservative — only
 // signals when the removed token is unambiguous (a quoted selector,
 // a class/attribute literal, an exported name).
-const REMOVAL_PATTERNS: { name: string; re: RegExp }[] = [
+const REMOVAL_PATTERNS: Array<{ name: string; re: RegExp }> = [
   // CSS class selector: `.foo-bar` (with hyphen — bare `.foo` matches
   // too many things)
   { name: 'CSS class', re: /\.[a-z][a-zA-Z0-9-]*-[a-zA-Z0-9-]+/g },
   // HTML attribute literal: `data-foo`, `aria-bar`
-  { name: 'HTML attribute', re: /\b(?:data|aria)-[a-zA-Z0-9-]+/g },
+  { name: 'HTML attribute', re: /\b(?:aria|data)-[a-zA-Z0-9-]+/g },
   // Named export: `export const foo = ...` / `export function foo`
   {
     name: 'named export',
-    re: /\bexport\s+(?:const|let|var|function|class)\s+(\w+)/g,
+    re: /\bexport\s+(?:class|const|function|let|var)\s+(\w+)/g,
   },
 ]
 
-function findRemovedTokens(
+export function findConsumerDirs(repoRoot: string): string[] {
+  const found: string[] = []
+  for (let i = 0, { length } = CONSUMER_DIRS; i < length; i += 1) {
+    const dir = CONSUMER_DIRS[i]!
+    if (existsSync(path.join(repoRoot, dir))) {
+      found.push(dir)
+    }
+  }
+  return found
+}
+
+export function findRemovedTokens(
   oldStr: string,
   newStr: string,
 ): Map<string, string[]> {
@@ -98,17 +109,10 @@ function findRemovedTokens(
   return removed
 }
 
-function findConsumerDirs(repoRoot: string): string[] {
-  const found: string[] = []
-  for (const dir of CONSUMER_DIRS) {
-    if (existsSync(path.join(repoRoot, dir))) {
-      found.push(dir)
-    }
-  }
-  return found
-}
-
-function findRepoRoot(filePath: string, cwd: string | undefined): string {
+export function findRepoRoot(
+  filePath: string,
+  cwd: string | undefined,
+): string {
   // Walk up from filePath until we find a .git directory; fall back to cwd.
   let dir = path.dirname(filePath)
   for (let depth = 0; depth < 10; depth += 1) {
@@ -184,7 +188,8 @@ async function main(): Promise<void> {
   }
   lines.push('')
   lines.push('  Repo has consumer-bearing subtree(s):')
-  for (const d of dirs) {
+  for (let i = 0, { length } = dirs; i < length; i += 1) {
+    const d = dirs[i]!
     lines.push(`    ${d}/`)
   }
   lines.push('')
@@ -194,7 +199,8 @@ async function main(): Promise<void> {
   lines.push('  found 0 hits; an upstream bundle hydrated from it and the page')
   lines.push('  went blank. Grep every consumer subtree before continuing:')
   lines.push('')
-  for (const d of dirs) {
+  for (let i = 0, { length } = dirs; i < length; i += 1) {
+    const d = dirs[i]!
     lines.push(
       `    rg -nF '${[...removed.values()].flat()[0] ?? '<token>'}' ${d}/`,
     )

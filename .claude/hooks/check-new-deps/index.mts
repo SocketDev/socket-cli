@@ -74,7 +74,9 @@ const cache = new Map<string, CacheEntry>()
 
 function cacheGet(key: string): CacheEntry | undefined {
   const entry = cache.get(key)
-  if (!entry) return
+  if (!entry) {
+    return
+  }
   if (Date.now() > entry.expiresAt) {
     cache.delete(key)
     return
@@ -87,7 +89,9 @@ function cacheSet(key: string, result: CheckResult | undefined): void {
   if (cache.size >= MAX_CACHE_SIZE) {
     const now = Date.now()
     for (const [k, v] of cache) {
-      if (now > v.expiresAt) cache.delete(k)
+      if (now > v.expiresAt) {
+        cache.delete(k)
+      }
     }
   }
   // If still over capacity, drop the oldest entries (FIFO).
@@ -95,7 +99,9 @@ function cacheSet(key: string, result: CheckResult | undefined): void {
     const excess = cache.size - MAX_CACHE_SIZE + 1
     let dropped = 0
     for (const k of cache.keys()) {
-      if (dropped >= excess) break
+      if (dropped >= excess) {
+        break
+      }
       cache.delete(k)
       dropped++
     }
@@ -144,7 +150,7 @@ const extractors: Record<string, Extractor> = {
     // `key = ["derive"]` array values don't match even in fragment mode.
     const deps: Dep[] = []
     const depSectionRe =
-      /^\[(?:(?:dev-|build-)?dependencies(?:\.[^\]]+)?|target\.[^\]]+\.(?:dev-|build-)?dependencies(?:\.[^\]]+)?)\]\s*$/gm
+      /^\[(?:(?:build-|dev-)?dependencies(?:\.[^\]]+)?|target\.[^\]]+\.(?:build-|dev-)?dependencies(?:\.[^\]]+)?)\]\s*$/gm
     const anySectionRe = /^\[/gm
     const lineRe =
       /^(\w[\w-]*)\s*=\s*(?:\{[^}]*version\s*=\s*"[^"]*"|\s*"[^"]*")/gm
@@ -274,14 +280,16 @@ const extractors: Record<string, Extractor> = {
 // --- core ---
 
 // Orchestrates the full check: extract deps, diff against old, query API.
-async function check(hook: HookInput): Promise<number> {
+export async function check(hook: HookInput): Promise<number> {
   // Normalize backslashes and collapse segments for cross-platform paths.
   const filePath = normalizePath(hook.tool_input?.file_path || '')
 
   // GitHub Actions workflows live under .github/workflows/*.yml
   const isWorkflow = /\.github\/workflows\/.*\.ya?ml$/.test(filePath)
   const extractor = isWorkflow ? extractGitHubActions : findExtractor(filePath)
-  if (!extractor) return 0
+  if (!extractor) {
+    return 0
+  }
 
   // Edit provides new_string; Write provides content.
   const newContent =
@@ -289,11 +297,15 @@ async function check(hook: HookInput): Promise<number> {
   const oldContent = hook.tool_input?.old_string ?? ''
 
   const newDeps = extractor(newContent)
-  if (newDeps.length === 0) return 0
+  if (newDeps.length === 0) {
+    return 0
+  }
 
   // Diff-aware: only check deps added in this edit, not pre-existing.
   const deps = oldContent ? diffDeps(newDeps, extractor(oldContent)) : newDeps
-  if (deps.length === 0) return 0
+  if (deps.length === 0) {
+    return 0
+  }
 
   // Check all deps via SDK checkMalware().
   const { blocked, notFound, ok } = await checkDepsBatch(deps)
@@ -304,7 +316,8 @@ async function check(hook: HookInput): Promise<number> {
 
   if (blocked.length > 0) {
     logger.error(`Socket: blocked ${blocked.length} dep(s):`)
-    for (const b of blocked) {
+    for (let i = 0, { length } = blocked; i < length; i += 1) {
+      const b = blocked[i]!
       logger.error(`  ${b.purl}: ${b.reason}`)
     }
     return 2
@@ -321,7 +334,8 @@ async function checkDepsBatch(deps: Dep[]): Promise<BatchOutcome> {
 
   // Partition deps into cached vs uncached.
   const uncached: Array<{ dep: Dep; purl: string }> = []
-  for (const dep of deps) {
+  for (let i = 0, { length } = deps; i < length; i += 1) {
+    const dep = deps[i]!
     const purl = stringify(dep as unknown as PackageURL)
     const cached = cacheGet(purl)
     if (cached) {
@@ -335,7 +349,9 @@ async function checkDepsBatch(deps: Dep[]): Promise<BatchOutcome> {
     uncached.push({ dep, purl })
   }
 
-  if (!uncached.length) return { blocked, notFound, ok }
+  if (!uncached.length) {
+    return { blocked, notFound, ok }
+  }
 
   try {
     // Process in chunks to respect API batch size limit.
@@ -365,11 +381,14 @@ async function checkDepsBatch(deps: Dep[]): Promise<BatchOutcome> {
 
       const seenKeys = new Set<string>()
       const pkgs: MalwareCheckPackage[] = result.data
-      for (const pkg of pkgs) {
+      for (let i = 0, { length } = pkgs; i < length; i += 1) {
+        const pkg = pkgs[i]!
         const ns = pkg.namespace ? `${pkg.namespace}/` : ''
         const key = `${pkg.type}:${ns}${pkg.name}`
         const purl = purlByKey.get(key)
-        if (!purl) continue
+        if (!purl) {
+          continue
+        }
         seenKeys.add(key)
 
         // Check for malware alerts.
@@ -396,9 +415,13 @@ async function checkDepsBatch(deps: Dep[]): Promise<BatchOutcome> {
       // 404 from the firewall API (the SDK drops them silently).
       // Slopsquatting tip-off lives here.
       for (const key of requestedKeys) {
-        if (seenKeys.has(key)) continue
+        if (seenKeys.has(key)) {
+          continue
+        }
         const purl = purlByKey.get(key)
-        if (purl) notFound.add(purl)
+        if (purl) {
+          notFound.add(purl)
+        }
       }
     }
   } catch (e) {
@@ -418,7 +441,9 @@ function diffDeps(newDeps: Dep[], oldDeps: Dep[]): Dep[] {
 // Match file path suffix against the extractors map.
 function findExtractor(filePath: string): Extractor | undefined {
   for (const [suffix, fn] of Object.entries(extractors)) {
-    if (filePath.endsWith(suffix)) return fn
+    if (filePath.endsWith(suffix)) {
+      return fn
+    }
   }
 }
 
@@ -426,7 +451,7 @@ function findExtractor(filePath: string): Extractor | undefined {
 
 // Higher-order function: takes a regex and a match→Dep transform,
 // returns an Extractor that applies matchAll and collects results.
-function extract(
+export function extract(
   re: RegExp,
   transform: (m: RegExpExecArray) => Dep | undefined,
 ): Extractor {
@@ -434,7 +459,9 @@ function extract(
     const deps: Dep[] = []
     for (const m of content.matchAll(re)) {
       const dep = transform(m as RegExpExecArray)
-      if (dep) deps.push(dep)
+      if (dep) {
+        deps.push(dep)
+      }
     }
     return deps
   }
@@ -496,7 +523,7 @@ function extractMaven(content: string): Dep[] {
   }
   // Gradle shorthand: implementation/api/compile 'group:artifact:ver'
   for (const m of content.matchAll(
-    /(?:implementation|api|compile)\s+['"]([^:'"]+):([^:'"]+)(?::[^'"]*)?['"]/g,
+    /(?:api|compile|implementation)\s+['"]([^:'"]+):([^:'"]+)(?::[^'"]*)?['"]/g,
   )) {
     deps.push({
       type: 'maven',
@@ -556,13 +583,19 @@ function extractNpmLockfile(content: string): Dep[] {
 }
 
 // Deduplicated npm dep insertion using parseNpmSpecifier.
-function addNpmDep(raw: string, deps: Dep[], seen: Set<string>): void {
-  if (seen.has(raw)) return
+export function addNpmDep(raw: string, deps: Dep[], seen: Set<string>): void {
+  if (seen.has(raw)) {
+    return
+  }
   seen.add(raw)
-  if (raw.startsWith('.') || raw.startsWith('/')) return
+  if (raw.startsWith('.') || raw.startsWith('/')) {
+    return
+  }
   if (raw.startsWith('@') || /^[a-z]/.test(raw)) {
     const { namespace, name } = parseNpmSpecifier(raw)
-    if (name) deps.push({ type: 'npm', namespace, name })
+    if (name) {
+      deps.push({ type: 'npm', namespace, name })
+    }
   }
 }
 
@@ -575,18 +608,24 @@ function extractNpm(content: string): Dep[] {
     const raw = m[1]!
     const val = m[2]!
     // Skip builtins, relative, and absolute paths.
-    if (raw.startsWith('node:') || raw.startsWith('.') || raw.startsWith('/'))
+    if (raw.startsWith('node:') || raw.startsWith('.') || raw.startsWith('/')) {
       continue
+    }
     // Value must look like a version specifier: semver, range, workspace:,
     // catalog:, npm:, *, latest, or starts with ^~><=.
-    if (!/^[\^~><=*]|^\d|^workspace:|^catalog:|^npm:|^latest$/.test(val))
+    if (!/^[\^~><=*]|^\d|^workspace:|^catalog:|^npm:|^latest$/.test(val)) {
       continue
+    }
     // Only lowercase or scoped names are real deps.
     // Exclude known package.json metadata fields that look like deps.
-    if (PACKAGE_JSON_METADATA_KEYS.has(raw)) continue
+    if (PACKAGE_JSON_METADATA_KEYS.has(raw)) {
+      continue
+    }
     if (raw.startsWith('@') || /^[a-z]/.test(raw)) {
       const { namespace, name } = parseNpmSpecifier(raw)
-      if (name) deps.push({ type: 'npm', namespace, name })
+      if (name) {
+        deps.push({ type: 'npm', namespace, name })
+      }
     }
   }
   return deps
@@ -594,33 +633,33 @@ function extractNpm(content: string): Dep[] {
 
 // package.json metadata fields that match the "key": "value" dep pattern but aren't deps.
 const PACKAGE_JSON_METADATA_KEYS = new Set([
-  'name',
-  'version',
+  'access',
+  'author',
+  'browser',
+  'bugs',
+  'cpu',
   'description',
+  'engines',
+  'exports',
+  'homepage',
+  'jsdelivr',
+  'license',
   'main',
   'module',
-  'browser',
+  'name',
+  'os',
+  'publishConfig',
+  'repository',
+  'sideEffects',
+  'type',
   'types',
   'typings',
-  'license',
-  'homepage',
-  'repository',
-  'bugs',
-  'author',
-  'type',
-  'engines',
-  'os',
-  'cpu',
-  'publishConfig',
-  'access',
-  'sideEffects',
   'unpkg',
-  'jsdelivr',
-  'exports',
+  'version',
 ])
 
 // Pipfile.lock: JSON with "default" and "develop" sections keyed by package name.
-function extractPipfileLock(content: string): Dep[] {
+export function extractPipfileLock(content: string): Dep[] {
   const deps: Dep[] = []
   try {
     const lock = JSON.parse(content) as Record<string, Record<string, unknown>>
@@ -651,7 +690,7 @@ function extractPypi(content: string): Dep[] {
   const seen = new Set<string>()
   // requirements.txt style: package name at line start, followed by
   // version specifier, extras bracket, or end of line.
-  for (const m of content.matchAll(/^([a-zA-Z][\w.-]+)\s*(?:[>=<!~\[;]|$)/gm)) {
+  for (const m of content.matchAll(/^([a-zA-Z][\w.-]+)\s*(?:[>=<!~[;]|$)/gm)) {
     const name = m[1]!.toLowerCase()
     if (!seen.has(name)) {
       seen.add(name)
@@ -659,7 +698,7 @@ function extractPypi(content: string): Dep[] {
     }
   }
   // Quoted strings with version specifiers (pyproject.toml, setup.py).
-  for (const m of content.matchAll(/["']([a-zA-Z][\w.-]+)\s*[>=<!~\[]/g)) {
+  for (const m of content.matchAll(/["']([a-zA-Z][\w.-]+)\s*[>=<!~[]/g)) {
     const name = m[1]!.toLowerCase()
     if (!seen.has(name)) {
       seen.add(name)
@@ -724,7 +763,9 @@ if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '')) {
   try {
     // Read the full JSON blob from stdin (piped by Claude Code).
     let input = ''
-    for await (const chunk of process.stdin) input += chunk
+    for await (const chunk of process.stdin) {
+      input += chunk
+    }
     const hook: HookInput = JSON.parse(input)
 
     if (hook.tool_name !== 'Edit' && hook.tool_name !== 'Write') {

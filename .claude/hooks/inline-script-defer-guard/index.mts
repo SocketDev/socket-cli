@@ -50,14 +50,14 @@ const BYPASS_PHRASE = 'Allow inline-defer bypass'
 // File extensions where we check the full text content. For other
 // extensions, only the new_string is checked (template strings embedded
 // in TS/JS source).
-const HTML_EXT_RE = /\.(html|htm|njk|ejs|hbs|handlebars|svelte|vue|astro)$/i
+const HTML_EXT_RE = /\.(astro|ejs|handlebars|hbs|htm|html|njk|svelte|vue)$/i
 
 const SOURCE_EXT_RE = /\.(m?[jt]sx?|cts|cjs)$/i
 
 // Match each `<script ...>` opener and capture its attribute body.
 const SCRIPT_OPENER_RE = /<script\b([^>]*)>/gi
 
-function findInlineDeferOrAsync(text: string):
+export function findInlineDeferOrAsync(text: string):
   | {
       attrs: string
     }
@@ -67,7 +67,7 @@ function findInlineDeferOrAsync(text: string):
   SCRIPT_OPENER_RE.lastIndex = 0
   while ((m = SCRIPT_OPENER_RE.exec(text)) !== null) {
     const attrs = m[1] ?? ''
-    if (!/\b(defer|async)\b/i.test(attrs)) {
+    if (!/\b(async|defer)\b/i.test(attrs)) {
       continue
     }
     // If src= is present (anywhere in the tag), the defer/async IS valid.
@@ -79,7 +79,7 @@ function findInlineDeferOrAsync(text: string):
   return undefined
 }
 
-function readFileSafe(p: string): string {
+export function readFileSafe(p: string): string {
   try {
     return readFileSync(p, 'utf8')
   } catch {

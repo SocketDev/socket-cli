@@ -60,7 +60,24 @@ const GO_AHEAD_PATTERNS = [
 // smaller windows lose context. 3 is a balance.
 const RECENT_TURN_WINDOW = 3
 
-function readRecentUserTurns(transcriptPath: string, window: number): string[] {
+export function matchesGoAhead(text: string): boolean {
+  const trimmed = text.trim()
+  if (!trimmed) {
+    return false
+  }
+  for (let i = 0, { length } = GO_AHEAD_PATTERNS; i < length; i += 1) {
+    const re = GO_AHEAD_PATTERNS[i]!
+    if (re.test(trimmed)) {
+      return true
+    }
+  }
+  return false
+}
+
+export function readRecentUserTurns(
+  transcriptPath: string,
+  window: number,
+): string[] {
   let raw: string
   try {
     raw = readFileSync(transcriptPath, 'utf8')
@@ -81,10 +98,12 @@ function readRecentUserTurns(transcriptPath: string, window: number): string[] {
     if (entry === null || typeof entry !== 'object') {
       continue
     }
-    if ((entry as { type?: string }).type !== 'user') {
+    if ((entry as { type?: string | undefined }).type !== 'user') {
       continue
     }
-    const msg = (entry as { message?: { content?: unknown } }).message
+    const msg = (
+      entry as { message?: { content?: unknown | undefined } | undefined }
+    ).message
     if (!msg) {
       continue
     }
@@ -97,7 +116,7 @@ function readRecentUserTurns(transcriptPath: string, window: number): string[] {
         .map(seg =>
           typeof seg === 'string'
             ? seg
-            : typeof (seg as { text?: unknown }).text === 'string'
+            : typeof (seg as { text?: unknown | undefined }).text === 'string'
               ? (seg as { text: string }).text
               : '',
         )
@@ -106,19 +125,6 @@ function readRecentUserTurns(transcriptPath: string, window: number): string[] {
     }
   }
   return turns.slice(-window)
-}
-
-function matchesGoAhead(text: string): boolean {
-  const trimmed = text.trim()
-  if (!trimmed) {
-    return false
-  }
-  for (const re of GO_AHEAD_PATTERNS) {
-    if (re.test(trimmed)) {
-      return true
-    }
-  }
-  return false
 }
 
 async function main(): Promise<void> {

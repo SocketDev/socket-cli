@@ -34,29 +34,10 @@
 //
 // Disabled via `SOCKET_NO_ORPHANED_STAGING_DISABLED=1`.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import process from 'node:process'
 
-function getProjectDir(): string | undefined {
-  // Prefer the harness-supplied env (correct even when cwd has been
-  // chdir'd by a tool). Fall back to cwd.
-  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
-}
-
-function listStagedFiles(repoDir: string): string[] {
-  const r = spawnSync('git', ['diff', '--cached', '--name-only'], {
-    cwd: repoDir,
-    encoding: 'utf8',
-    timeout: 5_000,
-  })
-  if (r.status !== 0) return []
-  return r.stdout
-    .split('\n')
-    .map(s => s.trim())
-    .filter(Boolean)
-}
-
-async function drainStdin(): Promise<void> {
+export async function drainStdin(): Promise<void> {
   // Stop payloads carry transcript_path; this hook doesn't need it,
   // but the stdin must be drained so the harness doesn't pipe-stall.
   await new Promise<void>(resolve => {
@@ -71,6 +52,26 @@ async function drainStdin(): Promise<void> {
   })
 }
 
+export function getProjectDir(): string | undefined {
+  // Prefer the harness-supplied env (correct even when cwd has been
+  // chdir'd by a tool). Fall back to cwd.
+  return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
+}
+
+export function listStagedFiles(repoDir: string): string[] {
+  const r = spawnSync('git', ['diff', '--cached', '--name-only'], {
+    cwd: repoDir,
+    timeout: 5_000,
+  })
+  if (r.status !== 0) {
+    return []
+  }
+  return String(r.stdout)
+    .split('\n')
+    .map((s: string) => s.trim())
+    .filter(Boolean)
+}
+
 async function main(): Promise<void> {
   if (process.env['SOCKET_NO_ORPHANED_STAGING_DISABLED']) {
     return
@@ -78,10 +79,14 @@ async function main(): Promise<void> {
   await drainStdin()
 
   const repoDir = getProjectDir()
-  if (!repoDir) return
+  if (!repoDir) {
+    return
+  }
 
   const staged = listStagedFiles(repoDir)
-  if (staged.length === 0) return
+  if (staged.length === 0) {
+    return
+  }
 
   process.stderr.write(
     '[no-orphaned-staging] Turn ended with staged-but-uncommitted files:\n',

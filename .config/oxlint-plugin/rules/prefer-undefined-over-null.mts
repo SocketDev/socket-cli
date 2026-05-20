@@ -310,10 +310,10 @@ const rule = {
       while (cur) {
         // Boundary nodes — stop walking here.
         if (
-          cur.type === 'FunctionDeclaration' ||
-          cur.type === 'FunctionExpression' ||
           cur.type === 'ArrowFunctionExpression' ||
           cur.type === 'BlockStatement' ||
+          cur.type === 'FunctionDeclaration' ||
+          cur.type === 'FunctionExpression' ||
           cur.type === 'Program'
         ) {
           // For functions, the return-type annotation lives on the
@@ -423,4 +423,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

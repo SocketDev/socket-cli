@@ -45,27 +45,37 @@ const COMMENT_RE = /^#\s+[a-z0-9]+([a-z0-9-]*[a-z0-9])?-[^\s]/
 interface Hook {
   // tool_name and tool_input shape — keeping it loose because the
   // PreToolUse payload schema isn't versioned beyond JSON-with-body.
-  tool_name?: string
-  tool_input?: {
-    file_path?: string
-    new_string?: string
-    content?: string
-  }
+  tool_name?: string | undefined
+  tool_input?:
+    | {
+        file_path?: string | undefined
+        new_string?: string | undefined
+        content?: string | undefined
+      }
+    | undefined
 }
 
 // Read newline-separated lines for analysis.
-function findOrphanSubmoduleSections(text: string): string[] {
+export function findOrphanSubmoduleSections(text: string): string[] {
   const lines = text.split('\n')
   const orphans: string[] = []
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
-    if (!line) continue
+    if (!line) {
+      continue
+    }
     const match = SUBMODULE_RE.exec(line)
-    if (!match) continue
+    if (!match) {
+      continue
+    }
     // Allow marker on the [submodule] line or the line above is
     // a one-off escape hatch.
-    if (line.includes(ALLOW_MARKER)) continue
-    if (i > 0 && lines[i - 1]?.includes(ALLOW_MARKER)) continue
+    if (line.includes(ALLOW_MARKER)) {
+      continue
+    }
+    if (i > 0 && lines[i - 1]?.includes(ALLOW_MARKER)) {
+      continue
+    }
     // The previous line must be a comment matching `# <slug>-<ver>`.
     const prev = i > 0 ? lines[i - 1] : ''
     if (!prev || !COMMENT_RE.test(prev)) {

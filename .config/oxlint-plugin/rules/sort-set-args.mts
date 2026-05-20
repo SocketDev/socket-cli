@@ -11,7 +11,7 @@
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
-const SET_NAMES = new Set(['Set', 'SafeSet'])
+const SET_NAMES = new Set(['SafeSet', 'Set'])
 
 function isSortableElement(node: AstNode) {
   return (
@@ -78,7 +78,7 @@ const rule = {
         if (!allSortable) {
           // Check if it's already sorted by raw text — if so, no report.
           const raws = els.map((e: AstNode) => (e ? e.raw || '' : ''))
-          const sortedRaws = [...raws].sort()
+          const sortedRaws = [...raws].toSorted()
           if (raws.every((r: string, i: number) => r === sortedRaws[i])) {
             return
           }
@@ -90,7 +90,7 @@ const rule = {
           return
         }
 
-        const sorted = [...els].sort(compareSortable)
+        const sorted = [...els].toSorted(compareSortable)
         const isSorted = sorted.every((s, i) => s === els[i])
         if (isSorted) {
           return
@@ -115,4 +115,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

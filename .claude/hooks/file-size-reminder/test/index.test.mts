@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -49,14 +49,14 @@ function writeLines(filePath: string, n: number): void {
 
 function runHook(transcriptPath: string): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({ transcript_path: transcriptPath }),
-    encoding: 'utf8',
   })
-  return { stderr: result.stderr, exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
 test('flags soft-cap violation (501-1000 lines)', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'fsize-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'fsize-'))
   try {
     const target = path.join(dir, 'big.mts')
     writeLines(target, 750)
@@ -74,7 +74,7 @@ test('flags soft-cap violation (501-1000 lines)', () => {
 })
 
 test('flags hard-cap violation (>1000 lines)', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'fsize-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'fsize-'))
   try {
     const target = path.join(dir, 'huge.mts')
     writeLines(target, 1500)
@@ -90,7 +90,7 @@ test('flags hard-cap violation (>1000 lines)', () => {
 })
 
 test('does not flag files at or under soft cap', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'fsize-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'fsize-'))
   try {
     const target = path.join(dir, 'small.mts')
     writeLines(target, 500)
@@ -106,7 +106,7 @@ test('does not flag files at or under soft cap', () => {
 })
 
 test('skips node_modules paths', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'fsize-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'fsize-'))
   try {
     const realDir = path.join(dir, 'node_modules', 'pkg')
     mkdirSync(realDir, { recursive: true })
@@ -124,7 +124,7 @@ test('skips node_modules paths', () => {
 })
 
 test('skips Read / Glob tool uses', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'fsize-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'fsize-'))
   try {
     const target = path.join(dir, 'big.mts')
     writeLines(target, 2000)
@@ -142,7 +142,7 @@ test('skips Read / Glob tool uses', () => {
 })
 
 test('handles missing file gracefully (no crash)', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'fsize-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'fsize-'))
   try {
     const transcript = makeTranscript(dir, [
       {
@@ -159,7 +159,7 @@ test('handles missing file gracefully (no crash)', () => {
 })
 
 test('deduplicates multiple edits to the same file', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'fsize-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'fsize-'))
   try {
     const target = path.join(dir, 'multi.mts')
     writeLines(target, 600)
@@ -178,7 +178,7 @@ test('deduplicates multiple edits to the same file', () => {
 })
 
 test('disabled env var short-circuits', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'fsize-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'fsize-'))
   try {
     const target = path.join(dir, 'big.mts')
     writeLines(target, 1500)
@@ -186,8 +186,8 @@ test('disabled env var short-circuits', () => {
       { name: 'Write', input: { file_path: target, content: '...' } },
     ])
     const result = spawnSync('node', [HOOK_PATH], {
+      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: JSON.stringify({ transcript_path: transcript }),
-      encoding: 'utf8',
       env: { ...process.env, SOCKET_FILE_SIZE_REMINDER_DISABLED: '1' },
     })
     assert.equal(result.status, 0)

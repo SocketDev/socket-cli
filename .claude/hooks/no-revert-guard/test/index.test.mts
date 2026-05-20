@@ -3,9 +3,12 @@
 // Spawns the hook as a subprocess (matches the production runtime),
 // pipes a JSON payload on stdin, captures stderr + exit code.
 
-import { spawn } from 'node:child_process'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -22,19 +25,19 @@ async function runHook(
 ): Promise<Result> {
   let transcriptPath: string | undefined
   if (transcript !== undefined) {
-    const dir = mkdtempSync(path.join(tmpdir(), 'no-revert-guard-test-'))
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'no-revert-guard-test-'))
     transcriptPath = path.join(dir, 'session.jsonl')
     writeFileSync(transcriptPath, transcript)
     payload['transcript_path'] = transcriptPath
   }
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })
@@ -394,7 +397,7 @@ test('FLEET_SYNC=1 with a non-cascade commit message is still blocked', async ()
     tool_name: 'Bash',
   })
   assert.strictEqual(result.code, 2)
-  assert.ok(result.stderr.includes('Allow no-verify bypass'))
+  assert.ok(String(result.stderr).includes('Allow no-verify bypass'))
 })
 
 test('FLEET_SYNC=1 does NOT relax non-git destructive ops (e.g. stash)', async () => {
@@ -403,7 +406,7 @@ test('FLEET_SYNC=1 does NOT relax non-git destructive ops (e.g. stash)', async (
     tool_name: 'Bash',
   })
   assert.strictEqual(result.code, 2)
-  assert.ok(result.stderr.includes('Allow stash bypass'))
+  assert.ok(String(result.stderr).includes('Allow stash bypass'))
 })
 
 test('FLEET_SYNC=1 does NOT relax git reset --hard', async () => {
@@ -412,7 +415,7 @@ test('FLEET_SYNC=1 does NOT relax git reset --hard', async () => {
     tool_name: 'Bash',
   })
   assert.strictEqual(result.code, 2)
-  assert.ok(result.stderr.includes('Allow revert bypass'))
+  assert.ok(String(result.stderr).includes('Allow revert bypass'))
 })
 
 test('no FLEET_SYNC sentinel: cascade commit still requires the bypass phrase', async () => {
@@ -424,7 +427,7 @@ test('no FLEET_SYNC sentinel: cascade commit still requires the bypass phrase', 
     tool_name: 'Bash',
   })
   assert.strictEqual(result.code, 2)
-  assert.ok(result.stderr.includes('Allow no-verify bypass'))
+  assert.ok(String(result.stderr).includes('Allow no-verify bypass'))
 })
 
 test('FLEET_SYNC=0 (explicit off) does NOT activate the allowlist', async () => {
@@ -436,5 +439,5 @@ test('FLEET_SYNC=0 (explicit off) does NOT activate the allowlist', async () => 
     tool_name: 'Bash',
   })
   assert.strictEqual(result.code, 2)
-  assert.ok(result.stderr.includes('Allow no-verify bypass'))
+  assert.ok(String(result.stderr).includes('Allow no-verify bypass'))
 })

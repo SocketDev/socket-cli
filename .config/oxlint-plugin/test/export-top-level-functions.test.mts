@@ -15,6 +15,26 @@ describe('socket/export-top-level-functions', () => {
           name: 'inline export',
           code: 'export function foo() {}\n',
         },
+        {
+          // Skip the autofix entirely on CJS files — rewriting
+          // `function foo() {}` to `export function foo() {}` in a
+          // CJS module makes the file syntactically ESM and breaks
+          // `require()` at load time. The .cjs extension is the
+          // authoritative signal.
+          name: 'cjs file is skipped (filename hint)',
+          filename: 'fixture.cjs',
+          code: 'function foo() {}\nmodule.exports = { foo }\n',
+        },
+        {
+          // Same skip via content sniff when the extension is ambiguous
+          // — wasm-bindgen `--target nodejs` output is the worked
+          // example. `module.exports` + internal `function` is CJS.
+          name: 'cjs file is skipped (content sniff on .js)',
+          filename: 'fixture.js',
+          code:
+            'function getObject(idx) { return idx }\n' +
+            'module.exports.getObject = getObject\n',
+        },
       ],
       invalid: [
         {

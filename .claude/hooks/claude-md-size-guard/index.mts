@@ -48,67 +48,13 @@ const DEFAULT_CAP_BYTES = 40 * 1024
 const FLEET_BEGIN_MARKER = '<!-- BEGIN FLEET-CANONICAL'
 const FLEET_END_MARKER = '<!-- END FLEET-CANONICAL'
 
-type ToolInput = {
-  tool_input?:
-    | {
-        content?: string | undefined
-        file_path?: string | undefined
-        new_string?: string | undefined
-        old_string?: string | undefined
-      }
-    | undefined
-  tool_name?: string | undefined
-}
-
-function isClaudeMd(filePath: string | undefined): boolean {
-  if (!filePath) {
-    return false
-  }
-  const base = filePath.split('/').pop() ?? ''
-  return base === 'CLAUDE.md'
-}
-
-function getCap(): number {
-  const env = process.env['CLAUDE_MD_FLEET_BLOCK_BYTES']
-  if (!env) {
-    return DEFAULT_CAP_BYTES
-  }
-  const n = Number.parseInt(env, 10)
-  if (!Number.isFinite(n) || n <= 0) {
-    return DEFAULT_CAP_BYTES
-  }
-  return n
-}
-
-/**
- * Extract the fleet-canonical block from a CLAUDE.md text. Returns undefined if
- * the markers aren't present (per-repo CLAUDE.md may not have them, in which
- * case the cap doesn't apply).
- */
-function extractFleetBlock(text: string): string | undefined {
-  const beginIdx = text.indexOf(FLEET_BEGIN_MARKER)
-  if (beginIdx === -1) {
-    return undefined
-  }
-  const endIdx = text.indexOf(FLEET_END_MARKER, beginIdx)
-  if (endIdx === -1) {
-    return undefined
-  }
-  // Include both markers in the measured block.
-  const blockEnd = text.indexOf('-->', endIdx)
-  if (blockEnd === -1) {
-    return undefined
-  }
-  return text.slice(beginIdx, blockEnd + 3)
-}
-
 /**
  * Compute the post-edit text. For Write, that's just `content`. For Edit,
  * splice the on-disk file: replace `old_string` with `new_string` once. If the
  * on-disk file isn't readable or `old_string` doesn't match exactly, return
  * undefined (caller fails open).
  */
-function computePostEditText(
+export function computePostEditText(
   toolName: string,
   filePath: string,
   newString: string | undefined,
@@ -145,7 +91,7 @@ function computePostEditText(
   return raw.slice(0, idx) + newString + raw.slice(idx + oldString.length)
 }
 
-function emitBlock(
+export function emitBlock(
   filePath: string,
   blockBytes: number,
   capBytes: number,
@@ -178,6 +124,60 @@ function emitBlock(
   lines.push('  See `docs/references/bypass-phrases.md` for an example of the')
   lines.push('  one-paragraph + reference shape.')
   process.stderr.write(lines.join('\n') + '\n')
+}
+
+/**
+ * Extract the fleet-canonical block from a CLAUDE.md text. Returns undefined if
+ * the markers aren't present (per-repo CLAUDE.md may not have them, in which
+ * case the cap doesn't apply).
+ */
+export function extractFleetBlock(text: string): string | undefined {
+  const beginIdx = text.indexOf(FLEET_BEGIN_MARKER)
+  if (beginIdx === -1) {
+    return undefined
+  }
+  const endIdx = text.indexOf(FLEET_END_MARKER, beginIdx)
+  if (endIdx === -1) {
+    return undefined
+  }
+  // Include both markers in the measured block.
+  const blockEnd = text.indexOf('-->', endIdx)
+  if (blockEnd === -1) {
+    return undefined
+  }
+  return text.slice(beginIdx, blockEnd + 3)
+}
+
+export function getCap(): number {
+  const env = process.env['CLAUDE_MD_FLEET_BLOCK_BYTES']
+  if (!env) {
+    return DEFAULT_CAP_BYTES
+  }
+  const n = Number.parseInt(env, 10)
+  if (!Number.isFinite(n) || n <= 0) {
+    return DEFAULT_CAP_BYTES
+  }
+  return n
+}
+
+type ToolInput = {
+  tool_input?:
+    | {
+        content?: string | undefined
+        file_path?: string | undefined
+        new_string?: string | undefined
+        old_string?: string | undefined
+      }
+    | undefined
+  tool_name?: string | undefined
+}
+
+export function isClaudeMd(filePath: string | undefined): boolean {
+  if (!filePath) {
+    return false
+  }
+  const base = filePath.split('/').pop() ?? ''
+  return base === 'CLAUDE.md'
 }
 
 async function main(): Promise<void> {

@@ -51,17 +51,18 @@ interface NlpDoc {
 }
 type NlpFn = (text: string) => NlpDoc
 
-let cachedNlp: NlpFn | null | undefined
-async function loadCompromise(): Promise<NlpFn | null> {
+let cachedNlp: NlpFn | undefined
+export async function loadCompromise(): Promise<NlpFn | undefined> {
   if (cachedNlp !== undefined) {
     return cachedNlp
   }
   try {
     const mod = await import('compromise')
-    const candidate = (mod as { default?: unknown }).default ?? mod
-    cachedNlp = typeof candidate === 'function' ? (candidate as NlpFn) : null
+    const candidate = (mod as { default?: unknown | undefined }).default ?? mod
+    cachedNlp =
+      typeof candidate === 'function' ? (candidate as NlpFn) : undefined
   } catch {
-    cachedNlp = null
+    cachedNlp = undefined
   }
   return cachedNlp
 }
@@ -76,9 +77,9 @@ async function loadCompromise(): Promise<NlpFn | null> {
 //   - (i|we) + (could|might|may)
 //   - sentence-initial perhaps/maybe + we/I/it
 const HEDGE_VERB_REGEX =
-  /\b(i|we)\s+(could|might|may)\s+(go|do|try|use|pick|choose|approach|consider)\b/i
+  /\b(i|we)\s+(could|may|might)\s+(approach|choose|consider|do|go|pick|try|use)\b/i
 
-async function detectModalHedges(
+export async function detectModalHedges(
   text: string,
 ): Promise<readonly ReminderHit[]> {
   const nlp = await loadCompromise()
@@ -115,7 +116,7 @@ async function detectModalHedges(
     const sentenceDoc = nlp(sentence)
     const verbs = sentenceDoc.verbs().out('array')
     const hasJudgmentVerb = verbs.some(v =>
-      /\b(go|do|try|use|pick|choose|approach|consider)\b/i.test(v),
+      /\b(approach|choose|consider|do|go|pick|try|use)\b/i.test(v),
     )
     if (!hasJudgmentVerb) {
       continue
@@ -131,7 +132,11 @@ async function detectModalHedges(
   return hits
 }
 
-function extractSnippet(text: string, index: number, length: number): string {
+export function extractSnippet(
+  text: string,
+  index: number,
+  length: number,
+): string {
   const start = Math.max(0, index - 30)
   const end = Math.min(text.length, index + length + 30)
   const prefix = start > 0 ? '…' : ''
@@ -153,7 +158,7 @@ const FIXED_HEDGE_PATTERNS: readonly RuleViolation[] = [
   {
     label: 'either approach works / either way works',
     regex:
-      /\b(either\s+(approach|way|option|path)\s+works|either\s+is\s+fine)\b/i,
+      /\b(either\s+(approach|option|path|way)\s+works|either\s+is\s+fine)\b/i,
     why: 'False-equivalence hedging. Even when paths are close, name the one with the smaller blast radius and pick it.',
   },
   {

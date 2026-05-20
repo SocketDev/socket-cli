@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -15,7 +15,7 @@ interface FakeRepo {
 }
 
 function makeRepoWithHeadSubject(subject: string): FakeRepo {
-  const root = mkdtempSync(path.join(tmpdir(), 'bumporder-'))
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bumporder-'))
   spawnSync('git', ['init', '-q'], { cwd: root })
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: root })
   spawnSync('git', ['config', 'user.name', 'tester'], { cwd: root })
@@ -30,7 +30,7 @@ function makeRepoWithHeadSubject(subject: string): FakeRepo {
 }
 
 function makeTranscript(userText?: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'bumporder-tx-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'bumporder-tx-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   writeFileSync(
     transcriptPath,
@@ -46,16 +46,16 @@ function runHook(
   extraEnv: Record<string, string> = {},
 ): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({
       tool_name: 'Bash',
       tool_input: { command },
       transcript_path: transcriptPath,
       cwd,
     }),
-    encoding: 'utf8',
     env: { ...process.env, ...extraEnv },
   })
-  return { stderr: result.stderr, exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
 test('BLOCKS git tag vX.Y.Z when HEAD subject is not a bump', () => {
@@ -112,11 +112,11 @@ test('ALLOWS git tag with non-version label (no enforcement)', () => {
 
 test('IGNORES non-Bash tools', () => {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({
       tool_name: 'Write',
       tool_input: { command: 'git tag v1.0.0' },
     }),
-    encoding: 'utf8',
   })
   assert.equal(result.status, 0)
 })
@@ -145,7 +145,7 @@ test('disabled env var short-circuits', () => {
 })
 
 test('fails open when not in a git repo', () => {
-  const root = mkdtempSync(path.join(tmpdir(), 'bumporder-nogit-'))
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bumporder-nogit-'))
   try {
     const { exitCode } = runHook('git tag v1.0.0', root)
     assert.equal(exitCode, 0)

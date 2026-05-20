@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -15,7 +15,7 @@ interface Turn {
 }
 
 function makeTranscript(turns: readonly Turn[]): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'stopguard-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'stopguard-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   const lines: string[] = []
   for (let i = 0, { length } = turns; i < length; i += 1) {
@@ -31,11 +31,11 @@ function runHook(
   extraEnv: Record<string, string> = {},
 ): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({ transcript_path: transcriptPath }),
-    encoding: 'utf8',
     env: { ...process.env, ...extraEnv },
   })
-  return { stderr: result.stderr, exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
 test('FLAGS "stopping here" without user authorization', () => {
@@ -347,16 +347,16 @@ test('disabled env var short-circuits', () => {
 
 test('does not crash on missing transcript_path', () => {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({}),
-    encoding: 'utf8',
   })
   assert.equal(result.status, 0)
 })
 
 test('does not crash on malformed payload', () => {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: 'not-json',
-    encoding: 'utf8',
   })
   assert.equal(result.status, 0)
 })

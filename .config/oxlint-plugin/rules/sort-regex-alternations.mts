@@ -91,7 +91,7 @@ function findAlternationGroups(pattern: string): AlternationGroup[] {
         prefix += '?'
         prefixEnd++
         const next = pattern[prefixEnd]
-        if (next === ':' || next === '=' || next === '!') {
+        if (next === '!' || next === ':' || next === '=') {
           prefix += next
           prefixEnd++
         } else if (next === '<') {
@@ -99,7 +99,7 @@ function findAlternationGroups(pattern: string): AlternationGroup[] {
           prefixEnd++
           // Read named capture name or lookbehind anchor.
           const after = pattern[prefixEnd]
-          if (after === '=' || after === '!') {
+          if (after === '!' || after === '=') {
             prefix += after
             prefixEnd++
           } else {
@@ -154,17 +154,17 @@ function findAlternationGroups(pattern: string): AlternationGroup[] {
 function sortAlternativesIfSimple(
   pattern: string,
   group: AlternationGroup,
-): { actual: string[]; sorted: string[] } | null {
+): { actual: string[]; sorted: string[] } | undefined {
   const alts = group.altsRanges.map((r: AltRange) =>
     pattern.slice(r.start, r.end),
   )
   const allSimple = alts.every((a: string) => SIMPLE_ALT_ELEMENT_RE.test(a))
   if (!allSimple) {
-    return null
+    return undefined
   }
-  const sorted = [...alts].sort()
+  const sorted = [...alts].toSorted()
   if (alts.every((a: string, i: number) => a === sorted[i])) {
-    return null
+    return undefined
   }
   return { actual: alts, sorted }
 }
@@ -205,14 +205,15 @@ const rule = {
       }
       const pattern = node.regex.pattern
       const groups = findAlternationGroups(pattern)
-      for (const group of groups) {
+      for (let i = 0, { length } = groups; i < length; i += 1) {
+        const group = groups[i]!
         const result = sortAlternativesIfSimple(pattern, group)
         if (!result) {
           // Not simple: still flag if alternation is unsorted (caller picks).
           const alts = group.altsRanges.map((r: AltRange) =>
             pattern.slice(r.start, r.end),
           )
-          const sortedRaw = [...alts].sort()
+          const sortedRaw = [...alts].toSorted()
           if (alts.every((a: string, i: number) => a === sortedRaw[i])) {
             continue
           }
@@ -255,4 +256,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

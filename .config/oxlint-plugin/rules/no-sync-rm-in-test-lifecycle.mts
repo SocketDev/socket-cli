@@ -27,7 +27,7 @@ const LIFECYCLE_HOOK_NAMES = new Set([
   'beforeEach',
 ])
 
-const SYNC_FS_METHODS = new Set(['rmSync', 'unlinkSync', 'rmdirSync'])
+const SYNC_FS_METHODS = new Set(['rmSync', 'rmdirSync', 'unlinkSync'])
 
 const FS_OBJECT_NAMES = /^(fs|fsPromises|fsp|promises)$/
 
@@ -39,28 +39,30 @@ function calleeKind(
   | undefined {
   if (
     callee.type === 'Identifier' &&
-    (callee as { name?: string }).name === 'safeDeleteSync'
+    (callee as { name?: string | undefined }).name === 'safeDeleteSync'
   ) {
     return { kind: 'fn', text: 'safeDeleteSync' }
   }
   if (callee.type === 'MemberExpression') {
-    const prop = (callee as { property?: AstNode }).property
+    const prop = (callee as { property?: AstNode | undefined }).property
     if (!prop || prop.type !== 'Identifier') {
       return undefined
     }
-    const propName = (prop as { name?: string }).name
+    const propName = (prop as { name?: string | undefined }).name
     if (!propName || !SYNC_FS_METHODS.has(propName)) {
       return undefined
     }
-    const obj = (callee as { object?: AstNode }).object
+    const obj = (callee as { object?: AstNode | undefined }).object
     const objName =
       obj?.type === 'Identifier'
-        ? (obj as { name?: string }).name
+        ? (obj as { name?: string | undefined }).name
         : obj?.type === 'MemberExpression' &&
-            (obj as { property?: AstNode }).property?.type === 'Identifier'
+            (obj as { property?: AstNode | undefined }).property?.type ===
+              'Identifier'
           ? (
-              (obj as { property?: { name?: string } }).property as {
-                name?: string
+              (obj as { property?: { name?: string | undefined } | undefined })
+                .property as {
+                name?: string | undefined
               }
             ).name
           : undefined
@@ -90,17 +92,26 @@ const rule = {
 
   create(context: RuleContext) {
     const hookStack: string[] = []
+    // Side-channel map keyed by AST node identity — avoids mutating the
+    // node itself (mutation triggers no-underscore-identifier via the
+    // `_lifecycleHookName` field name, and risks colliding with other
+    // rules walking the same tree). WeakMap retains nothing past the
+    // single rule run.
+    const hookNameByCallExpr = new WeakMap<AstNode, string>()
 
     return {
       CallExpression(node: AstNode) {
-        const cal = (node as { callee?: AstNode }).callee
+        const cal = (node as { callee?: AstNode | undefined }).callee
         if (
           cal?.type === 'Identifier' &&
-          LIFECYCLE_HOOK_NAMES.has((cal as { name?: string }).name ?? '')
+          LIFECYCLE_HOOK_NAMES.has(
+            (cal as { name?: string | undefined }).name ?? '',
+          )
         ) {
-          ;(
-            node as unknown as { _lifecycleHookName?: string }
-          )._lifecycleHookName = (cal as { name?: string }).name
+          const calName = (cal as { name?: string | undefined }).name
+          if (calName) {
+            hookNameByCallExpr.set(node, calName)
+          }
           return
         }
 
@@ -123,29 +134,32 @@ const rule = {
       },
 
       'FunctionExpression, ArrowFunctionExpression'(node: AstNode) {
-        const parent = (node as unknown as { parent?: AstNode }).parent
+        const parent = (node as unknown as { parent?: AstNode | undefined })
+          .parent
         if (!parent || parent.type !== 'CallExpression') {
           return
         }
-        const hookName = (parent as { _lifecycleHookName?: string })
-          ._lifecycleHookName
+        const hookName = hookNameByCallExpr.get(parent)
         if (!hookName) {
           return
         }
-        const args = (parent as { arguments?: AstNode[] }).arguments ?? []
+        const args =
+          (parent as { arguments?: AstNode[] | undefined }).arguments ?? []
         if (args[0] === node) {
           hookStack.push(hookName)
         }
       },
       'FunctionExpression:exit, ArrowFunctionExpression:exit'(node: AstNode) {
-        const parent = (node as unknown as { parent?: AstNode }).parent
+        const parent = (node as unknown as { parent?: AstNode | undefined })
+          .parent
         if (!parent || parent.type !== 'CallExpression') {
           return
         }
-        if (!(parent as { _lifecycleHookName?: string })._lifecycleHookName) {
+        if (!hookNameByCallExpr.has(parent)) {
           return
         }
-        const args = (parent as { arguments?: AstNode[] }).arguments ?? []
+        const args =
+          (parent as { arguments?: AstNode[] | undefined }).arguments ?? []
         if (args[0] === node) {
           hookStack.pop()
         }
@@ -154,4 +168,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

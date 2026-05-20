@@ -38,9 +38,13 @@ function findInlineDeferOrAsync(text: string): Match | undefined {
   let m: RegExpExecArray | null
   while ((m = SCRIPT_OPENER_RE.exec(text)) !== null) {
     const attrs = m[1] ?? ''
-    const attrMatch = /\b(defer|async)\b/i.exec(attrs)
-    if (!attrMatch) continue
-    if (/\bsrc\s*=/.test(attrs)) continue
+    const attrMatch = /\b(async|defer)\b/i.exec(attrs)
+    if (!attrMatch) {
+      continue
+    }
+    if (/\bsrc\s*=/.test(attrs)) {
+      continue
+    }
     return {
       opener: m[0],
       attr: attrMatch[1]!.toLowerCase() as 'defer' | 'async',
@@ -80,7 +84,9 @@ const rule = {
       innerStart: number,
     ): void {
       const found = findInlineDeferOrAsync(text)
-      if (!found) return
+      if (!found) {
+        return
+      }
 
       context.report({
         node,
@@ -102,7 +108,7 @@ const rule = {
           )
           const m = attrRe.exec(openerSrc)
           if (!m) {
-            return null
+            return undefined
           }
           const removeStart = openerStart + m.index
           const removeEnd = removeStart + m[0].length
@@ -113,21 +119,36 @@ const rule = {
 
     return {
       Literal(node: AstNode) {
-        const v = (node as { value?: unknown }).value
-        if (typeof v !== 'string') return
-        if (!v.includes('<script')) return
-        const raw = (node as { raw?: string }).raw ?? ''
-        const range = (node as { range?: [number, number] }).range
-        if (!range) return
+        const v = (node as { value?: unknown | undefined }).value
+        if (typeof v !== 'string') {
+          return
+        }
+        if (!v.includes('<script')) {
+          return
+        }
+        const range = (node as { range?: [number, number] | undefined }).range
+        if (!range) {
+          return
+        }
         // Skip the leading quote char.
         checkLiteralText(node, v, range[0] + 1)
       },
       TemplateElement(node: AstNode) {
-        const v = (node as { value?: { cooked?: string; raw?: string } }).value
+        const v = (
+          node as {
+            value?:
+              | { cooked?: string | undefined; raw?: string | undefined }
+              | undefined
+          }
+        ).value
         const cooked = v?.cooked ?? v?.raw ?? ''
-        if (!cooked.includes('<script')) return
-        const range = (node as { range?: [number, number] }).range
-        if (!range) return
+        if (!cooked.includes('<script')) {
+          return
+        }
+        const range = (node as { range?: [number, number] | undefined }).range
+        if (!range) {
+          return
+        }
         // TemplateElement range covers the inner cooked text (no quote chars).
         checkLiteralText(node, cooked, range[0])
       },
@@ -135,4 +156,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

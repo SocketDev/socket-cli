@@ -25,17 +25,17 @@ import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
-const TRUTHY_LITERALS = new Set(['true', '1'])
+const TRUTHY_LITERALS = new Set(['1', 'true'])
 
 function isSocketGetterCall(node: AstNode): boolean {
   if (node.type !== 'CallExpression') {
     return false
   }
-  const callee = (node as { callee?: AstNode }).callee
+  const callee = (node as { callee?: AstNode | undefined }).callee
   if (!callee || callee.type !== 'Identifier') {
     return false
   }
-  const name = (callee as { name?: string }).name
+  const name = (callee as { name?: string | undefined }).name
   if (!name) {
     return false
   }
@@ -46,7 +46,7 @@ function isTruthyStringLiteral(node: AstNode): boolean {
   if (node.type !== 'Literal') {
     return false
   }
-  const v = (node as { value?: unknown }).value
+  const v = (node as { value?: unknown | undefined }).value
   return typeof v === 'string' && TRUTHY_LITERALS.has(v)
 }
 
@@ -112,18 +112,18 @@ const rule = {
 
     return {
       UnaryExpression(node: AstNode) {
-        if ((node as { operator?: string }).operator !== '!') {
+        if ((node as { operator?: string | undefined }).operator !== '!') {
           return
         }
-        const arg = (node as { argument?: AstNode }).argument
+        const arg = (node as { argument?: AstNode | undefined }).argument
         if (
           !arg ||
           arg.type !== 'UnaryExpression' ||
-          (arg as { operator?: string }).operator !== '!'
+          (arg as { operator?: string | undefined }).operator !== '!'
         ) {
           return
         }
-        const inner = (arg as { argument?: AstNode }).argument
+        const inner = (arg as { argument?: AstNode | undefined }).argument
         if (!inner || !isSocketGetterCall(inner)) {
           return
         }
@@ -131,15 +131,16 @@ const rule = {
       },
 
       CallExpression(node: AstNode) {
-        const callee = (node as { callee?: AstNode }).callee
+        const callee = (node as { callee?: AstNode | undefined }).callee
         if (
           !callee ||
           callee.type !== 'Identifier' ||
-          (callee as { name?: string }).name !== 'Boolean'
+          (callee as { name?: string | undefined }).name !== 'Boolean'
         ) {
           return
         }
-        const args = (node as { arguments?: AstNode[] }).arguments ?? []
+        const args =
+          (node as { arguments?: AstNode[] | undefined }).arguments ?? []
         if (args.length !== 1) {
           return
         }
@@ -151,12 +152,12 @@ const rule = {
       },
 
       BinaryExpression(node: AstNode) {
-        const op = (node as { operator?: string }).operator
-        if (op !== '===' && op !== '==') {
+        const op = (node as { operator?: string | undefined }).operator
+        if (op !== '==' && op !== '===') {
           return
         }
-        const left = (node as { left?: AstNode }).left
-        const right = (node as { right?: AstNode }).right
+        const left = (node as { left?: AstNode | undefined }).left
+        const right = (node as { right?: AstNode | undefined }).right
         if (!left || !right) {
           return
         }
@@ -172,4 +173,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

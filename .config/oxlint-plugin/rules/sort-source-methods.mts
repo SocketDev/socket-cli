@@ -29,21 +29,21 @@ const SCRIPT_ENTRY_NAMES = new Set(['main'])
  * above. Reordering them is safe because they're erased at compile time (no
  * runtime side effects, no declaration-order semantics).
  */
-function isTypeOnlyStatement(node: AstNode) {
+export function isTypeOnlyStatement(node: AstNode) {
   if (!node) {
     return false
   }
   if (
-    node.type === 'TSTypeAliasDeclaration' ||
-    node.type === 'TSInterfaceDeclaration'
+    node.type === 'TSInterfaceDeclaration' ||
+    node.type === 'TSTypeAliasDeclaration'
   ) {
     return true
   }
   if (
     node.type === 'ExportNamedDeclaration' &&
     node.declaration &&
-    (node.declaration.type === 'TSTypeAliasDeclaration' ||
-      node.declaration.type === 'TSInterfaceDeclaration')
+    (node.declaration.type === 'TSInterfaceDeclaration' ||
+      node.declaration.type === 'TSTypeAliasDeclaration')
   ) {
     return true
   }
@@ -59,7 +59,7 @@ function isTypeOnlyStatement(node: AstNode) {
   return false
 }
 
-function declVisibility(node: AstNode) {
+export function declVisibility(node: AstNode) {
   // ExportNamedDeclaration wrapping a FunctionDeclaration.
   if (
     node.type === 'ExportNamedDeclaration' &&
@@ -96,7 +96,7 @@ interface FunctionEntry {
   end: number
 }
 
-function sortKey(entry: FunctionEntry): string {
+export function sortKey(entry: FunctionEntry): string {
   if (entry.isEntrypoint) {
     // '~' (0x7E) is the highest printable ASCII char, so this sort key
     // pins the entrypoint to the end of any group.
@@ -111,7 +111,10 @@ function sortKey(entry: FunctionEntry): string {
  * line is treated as a free-standing comment and stays put). Falls back to the
  * node's own start when there are no leading comments.
  */
-function leadingCommentStart(sourceCode: AstNode, node: AstNode): number {
+export function leadingCommentStart(
+  sourceCode: AstNode,
+  node: AstNode,
+): number {
   const comments = sourceCode.getCommentsBefore
     ? sourceCode.getCommentsBefore(node)
     : []
@@ -142,7 +145,7 @@ function leadingCommentStart(sourceCode: AstNode, node: AstNode): number {
  * Useful for capturing c8-ignore-stop markers that pair with a start above the
  * function — those need to travel with the function when reordered.
  */
-function trailingCommentEnd(
+export function trailingCommentEnd(
   sourceCode: AstNode,
   node: AstNode,
   nextNodeStart: number | undefined,
@@ -155,7 +158,8 @@ function trailingCommentEnd(
   if (!comments || comments.length === 0) {
     return latest
   }
-  for (const c of comments) {
+  for (let i = 0, { length } = comments; i < length; i += 1) {
+    const c = comments[i]!
     if (nextNodeStart !== undefined && c.range[0] >= nextNodeStart) {
       break
     }
@@ -202,8 +206,8 @@ const rule = {
         // First pass: collect entries + detect violations.
         const entries: FunctionEntry[] = []
         let lastVisibilityRank = -1
-        let lastNameInGroup = null
-        let currentVisibility = null
+        let lastNameInGroup = undefined
+        let currentVisibility = undefined
         const violations = []
 
         // First find the next program-body node after each function, so
@@ -289,7 +293,7 @@ const rule = {
 
         // Build the fix once, applied via the first violation. ESLint
         // dedupes overlapping fixes, so attaching it once is enough.
-        const sorted = entries.slice().sort((a, b) => {
+        const sorted = entries.slice().toSorted((a, b) => {
           const ka = sortKey(a)
           const kb = sortKey(b)
           if (ka < kb) {
@@ -303,7 +307,7 @@ const rule = {
 
         const orderedByPosition = entries
           .slice()
-          .sort((a, b) => a.start - b.start)
+          .toSorted((a, b) => a.start - b.start)
         const sourceText = sourceCode.text
         const rangeStart = orderedByPosition[0]!.start
         const rangeEnd = orderedByPosition[orderedByPosition.length - 1]!.end
@@ -322,7 +326,8 @@ const rule = {
           }
           if (stmt.range[0] >= rangeStart && stmt.range[1] <= rangeEnd) {
             // Statement is sandwiched between functions; skip autofix.
-            for (const v of violations) {
+            for (let i = 0, { length } = violations; i < length; i += 1) {
+              const v = violations[i]!
               context.report(v)
             }
             return
@@ -336,7 +341,8 @@ const rule = {
         // reported without a fix so the user sees what's wrong even
         // when applying without --fix.
         let fixerAttached = false
-        for (const v of violations) {
+        for (let i = 0, { length } = violations; i < length; i += 1) {
+          const v = violations[i]!
           if (!fixerAttached) {
             context.report({
               ...v,
@@ -357,4 +363,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

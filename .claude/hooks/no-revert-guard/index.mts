@@ -41,7 +41,7 @@ import process from 'node:process'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
-  tool_input?: { command?: string } | undefined
+  tool_input?: { command?: string | undefined } | undefined
   tool_name?: string | undefined
   transcript_path?: string | undefined
 }
@@ -63,7 +63,7 @@ const CHECKS: readonly GuardCheck[] = [
     // (with optional leading whitespace) so we don't match inside
     // arbitrary strings.
     pattern:
-      /(?:^|[\s;&|(`])git\s+(?:checkout\s+(?:--?[a-z]+\s+)*(?:--\s|\S+\s+--\s)|restore(?!\s+--staged\b)|reset\s+--hard|stash\s+(?:drop|pop|clear)|clean\s+-[a-z]*f|rm\s+-r?f?\s)/,
+      /(?:^|[\s;&|(`])git\s+(?:checkout\s+(?:--?[a-z]+\s+)*(?:--\s|\S+\s+--\s)|restore(?!\s+--staged\b)|reset\s+--hard|stash\s+(?:clear|drop|pop)|clean\s+-[a-z]*f|rm\s+-r?f?\s)/,
   },
   {
     bypassPhrase: 'Allow no-verify bypass',
@@ -158,7 +158,7 @@ const CHECKS: readonly GuardCheck[] = [
   },
 ]
 
-function emitBlock(
+export function emitBlock(
   command: string,
   match: GuardCheck,
   matchedSubstring: string,
@@ -229,7 +229,8 @@ async function main(): Promise<void> {
 
   // Find the first matching destructive pattern.
   let triggered: { check: GuardCheck; matchedSubstring: string } | undefined
-  for (const check of CHECKS) {
+  for (let i = 0, { length } = CHECKS; i < length; i += 1) {
+    const check = CHECKS[i]!
     const m = command.match(check.pattern)
     if (m) {
       triggered = { check, matchedSubstring: m[0].trim() }

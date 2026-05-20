@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -14,10 +14,10 @@ function runHook(payload: object): {
   exitCode: number
 } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
-    encoding: 'utf8',
   })
-  return { stdout: result.stdout, exitCode: result.status ?? -1 }
+  return { stdout: String(result.stdout), exitCode: result.status ?? -1 }
 }
 
 // ---------- isMCPToolName ----------
@@ -84,7 +84,7 @@ test('compressMCPOutput: passes through non-text blocks', () => {
 test('compressMCPOutput: passes through primitives that aren’t strings', () => {
   assert.equal(compressMCPOutput(42), 42)
   assert.equal(compressMCPOutput(true), true)
-  assert.equal(compressMCPOutput(null), null)
+  assert.equal(compressMCPOutput(undefined), null)
 })
 
 test('compressMCPOutput: minifies JSON-shaped strings', () => {
@@ -158,9 +158,9 @@ test('hook: emits updatedMCPToolOutput for MCP tool with string-shaped response'
 
 test('hook: fails open on malformed stdin', () => {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: '{not json',
-    encoding: 'utf8',
   })
   assert.equal(result.status, 0)
-  assert.equal(result.stdout.trim(), '')
+  assert.equal(String(result.stdout).trim(), '')
 })

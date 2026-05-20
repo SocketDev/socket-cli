@@ -52,7 +52,7 @@ date). `removable` is `published + 7d`, the natural soak-clear date.
 For a legitimate one-off where the annotation truly doesn't apply:
 
 ```yaml
-  - 'pkg@1.2.3' # socket-hook: allow soak-exclude-no-date-annotation
+- 'pkg@1.2.3' # socket-hook: allow soak-exclude-no-date-annotation
 ```
 
 Don't reach for this — add the annotation instead.

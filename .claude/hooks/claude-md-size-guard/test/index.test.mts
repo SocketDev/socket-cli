@@ -1,8 +1,11 @@
 // node --test specs for the claude-md-size-guard hook.
 
-import { spawn } from 'node:child_process'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -21,13 +24,13 @@ async function runHook(
     stdio: 'pipe',
     env: { ...process.env, ...envOverride },
   })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })
@@ -103,7 +106,7 @@ test('cap override via env var', async () => {
 test('Edit splice that grows fleet block over cap is blocked', async () => {
   // Write a small base file to disk, then propose an Edit that adds
   // 50KB of body inside the fleet block.
-  const dir = mkdtempSync(path.join(tmpdir(), 'claude-md-size-guard-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'claude-md-size-guard-'))
   const file = path.join(dir, 'CLAUDE.md')
   const baseBlock = fleetBlock(1_000)
   writeFileSync(file, baseBlock)
@@ -123,7 +126,7 @@ test('Edit splice that grows fleet block over cap is blocked', async () => {
 })
 
 test('Edit splice that keeps fleet block under cap is allowed', async () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'claude-md-size-guard-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'claude-md-size-guard-'))
   const file = path.join(dir, 'CLAUDE.md')
   writeFileSync(file, fleetBlock(1_000))
   const oldStr = '<!-- END FLEET-CANONICAL -->'

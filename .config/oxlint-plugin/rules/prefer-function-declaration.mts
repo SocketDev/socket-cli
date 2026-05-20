@@ -74,8 +74,8 @@ const rule = {
         const isTopLevel =
           (parent && parent.type === 'Program') ||
           (parent &&
-            (parent.type === 'ExportNamedDeclaration' ||
-              parent.type === 'ExportDefaultDeclaration') &&
+            (parent.type === 'ExportDefaultDeclaration' ||
+              parent.type === 'ExportNamedDeclaration') &&
             parent.parent &&
             parent.parent.type === 'Program')
         if (!isTopLevel) {
@@ -248,8 +248,8 @@ function referencesThis(node: AstNode) {
     // Don't recurse into nested function-like nodes — they bind
     // their own `this`, so a `this` inside them doesn't count.
     if (
-      item.type === 'FunctionExpression' ||
-      item.type === 'FunctionDeclaration'
+      item.type === 'FunctionDeclaration' ||
+      item.type === 'FunctionExpression'
     ) {
       continue
     }
@@ -263,4 +263,5 @@ function referencesThis(node: AstNode) {
   return false
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

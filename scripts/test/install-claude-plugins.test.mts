@@ -219,14 +219,14 @@ test('lookupInstalledSha rejects malformed gitCommitSha values', () => {
 })
 
 test('lookupInstalledSha handles null / non-object input', () => {
-  assert.equal(lookupInstalledSha(null, 'codex@socket-wheelhouse'), null)
+  assert.equal(lookupInstalledSha(undefined, 'codex@socket-wheelhouse'), null)
   assert.equal(
     lookupInstalledSha('not-an-object', 'codex@socket-wheelhouse'),
     null,
   )
   assert.equal(lookupInstalledSha({}, 'codex@socket-wheelhouse'), null)
   assert.equal(
-    lookupInstalledSha({ plugins: null }, 'codex@socket-wheelhouse'),
+    lookupInstalledSha({ plugins: undefined }, 'codex@socket-wheelhouse'),
     null,
   )
 })

@@ -63,7 +63,7 @@ function buildDetectorRegex() {
   const stems = [
     ...SUBSTITUTIONS.map(([legacy]) => legacy),
     ...REPORT_ONLY_TERMS,
-  ].sort()
+  ].toSorted()
   return new RegExp(`\\b(${stems.join('|')})\\w*`, 'gi')
 }
 
@@ -188,7 +188,8 @@ const rule = {
       let rebuilt = ''
       let cursor = 0
       let mutated = false
-      for (const h of hits) {
+      for (let i = 0, { length } = hits; i < length; i += 1) {
+        const h = hits[i]!
         rebuilt += node.name.slice(cursor, h.start)
         const replacement = REPORT_ONLY.has(h.stem)
           ? undefined
@@ -206,7 +207,8 @@ const rule = {
       if (!mutated) {
         // All hits are report-only (master/slave) — emit one report
         // for each.
-        for (const h of hits) {
+        for (let i = 0, { length } = hits; i < length; i += 1) {
+          const h = hits[i]!
           let messageId = 'legacy'
           if (h.stem === 'master') {
             messageId = 'legacyMaster'
@@ -254,7 +256,8 @@ const rule = {
         let rebuilt = ''
         let cursor = 0
         let mutated = false
-        for (const h of hits) {
+        for (let i = 0, { length } = hits; i < length; i += 1) {
+          const h = hits[i]!
           rebuilt += node.value.slice(cursor, h.start)
           const replacement = REPORT_ONLY.has(h.stem)
             ? undefined
@@ -270,7 +273,8 @@ const rule = {
         rebuilt += node.value.slice(cursor)
 
         if (!mutated) {
-          for (const h of hits) {
+          for (let i = 0, { length } = hits; i < length; i += 1) {
+            const h = hits[i]!
             let messageId = 'legacy'
             if (h.stem === 'master') {
               messageId = 'legacyMaster'
@@ -314,7 +318,8 @@ const rule = {
         // bypass comment + ignorePatterns handle external-API and
         // vendored cases.
         const comments = sourceCode.getAllComments()
-        for (const comment of comments) {
+        for (let i = 0, { length } = comments; i < length; i += 1) {
+          const comment = comments[i]!
           if (BYPASS_RE.test(comment.value)) {
             continue
           }
@@ -326,7 +331,8 @@ const rule = {
           let rebuilt = ''
           let cursor = 0
           let mutated = false
-          for (const h of hits) {
+          for (let j = 0, hitsLength = hits.length; j < hitsLength; j += 1) {
+            const h = hits[j]!
             rebuilt += comment.value.slice(cursor, h.start)
             const replacement = REPORT_ONLY.has(h.stem)
               ? undefined
@@ -342,7 +348,8 @@ const rule = {
           rebuilt += comment.value.slice(cursor)
 
           if (!mutated) {
-            for (const h of hits) {
+            for (let j = 0, hitsLength = hits.length; j < hitsLength; j += 1) {
+              const h = hits[j]!
               let messageId = 'legacy'
               if (h.stem === 'master') {
                 messageId = 'legacyMaster'
@@ -384,4 +391,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

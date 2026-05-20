@@ -19,10 +19,11 @@
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
+// oxlint-disable-next-line socket/socket-api-token-env -- this rule DEFINES the legacy-alias set; the strings here are rule data, not env-var consumers.
 const LEGACY_ALIASES = new Set([
   'SOCKET_API_KEY',
-  'SOCKET_SECURITY_API_TOKEN',
   'SOCKET_SECURITY_API_KEY',
+  'SOCKET_SECURITY_API_TOKEN',
 ])
 
 const CANONICAL = 'SOCKET_API_TOKEN'
@@ -55,12 +56,27 @@ const rule = {
       : context.sourceCode
 
     function hasBypassComment(node: AstNode) {
-      const before = sourceCode.getCommentsBefore(node)
-      const after = sourceCode.getCommentsAfter(node)
-      for (const c of [...before, ...after]) {
-        if (BYPASS_RE.test(c.value)) {
-          return true
+      // Walk up: literal -> array element -> array/declaration. The bypass
+      // comment can sit on the literal itself OR on any ancestor up to (and
+      // including) the nearest statement. This lets the entire alias-lookup
+      // array carry one bypass instead of needing one per element.
+      let cursor: AstNode | undefined = node
+      while (cursor) {
+        const before = sourceCode.getCommentsBefore(cursor)
+        const after = sourceCode.getCommentsAfter(cursor)
+        for (const c of [...before, ...after]) {
+          if (BYPASS_RE.test(c.value)) {
+            return true
+          }
         }
+        if (
+          cursor.type === 'ExpressionStatement' ||
+          cursor.type === 'VariableDeclaration' ||
+          cursor.type === 'ExportNamedDeclaration'
+        ) {
+          break
+        }
+        cursor = cursor.parent
       }
       return false
     }
@@ -142,4 +158,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

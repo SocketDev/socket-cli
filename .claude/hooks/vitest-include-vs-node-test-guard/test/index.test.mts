@@ -1,8 +1,11 @@
 // node --test specs for the vitest-include-vs-node-test-guard hook.
 
-import { spawn } from 'node:child_process'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -23,7 +26,7 @@ function makeFixture(opts: FixtureOpts): {
   repoRoot: string
   testFile: string
 } {
-  const repoRoot = mkdtempSync(path.join(tmpdir(), 'vit-guard-test-'))
+  const repoRoot = mkdtempSync(path.join(os.tmpdir(), 'vit-guard-test-'))
   mkdirSync(path.join(repoRoot, '.config'), { recursive: true })
   writeFileSync(
     path.join(repoRoot, '.config', 'vitest.config.mts'),
@@ -37,13 +40,13 @@ function makeFixture(opts: FixtureOpts): {
 
 async function runHook(payload: Record<string, unknown>): Promise<Result> {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })
@@ -89,7 +92,7 @@ test('node:test file under vitest include — blocked', async () => {
     cwd: repoRoot,
   })
   assert.strictEqual(r.code, 2)
-  assert.ok(r.stderr.includes('scripts/**/*.test.*'))
+  assert.ok(String(r.stderr).includes('scripts/**/*.test.*'))
 })
 
 test('node:test file outside vitest include — passes', async () => {
@@ -115,7 +118,7 @@ test('bypass phrase passes', async () => {
     testFilePath: 'scripts/test/foo.test.mts',
     testFileContent: '',
   })
-  const txDir = mkdtempSync(path.join(tmpdir(), 'vit-guard-tx-'))
+  const txDir = mkdtempSync(path.join(os.tmpdir(), 'vit-guard-tx-'))
   const transcriptPath = path.join(txDir, 'session.jsonl')
   writeFileSync(
     transcriptPath,

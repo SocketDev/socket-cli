@@ -5,7 +5,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -22,12 +22,12 @@ interface RunResult {
 
 function runHook(payload: object): RunResult {
   const r = spawnSync('node', [HOOK], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
-    encoding: 'utf8',
   })
   return {
     code: typeof r.status === 'number' ? r.status : 0,
-    stderr: r.stderr || '',
+    stderr: String(r.stderr || ''),
   }
 }
 
@@ -169,12 +169,18 @@ describe('paths-mts-inherit-guard', () => {
   })
 
   test('fails open on invalid JSON', () => {
-    const r = spawnSync('node', [HOOK], { input: 'not json', encoding: 'utf8' })
+    const r = spawnSync('node', [HOOK], {
+      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
+      input: 'not json',
+    })
     assert.equal(r.status, 0)
   })
 
   test('fails open on empty stdin', () => {
-    const r = spawnSync('node', [HOOK], { input: '', encoding: 'utf8' })
+    const r = spawnSync('node', [HOOK], {
+      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
+      input: '',
+    })
     assert.equal(r.status, 0)
   })
 

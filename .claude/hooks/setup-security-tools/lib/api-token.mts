@@ -28,7 +28,7 @@
 
 import { readTokenFromKeychain } from './token-storage.mts'
 
-const PRIMARY = 'SOCKET_API_KEY'
+const PRIMARY = 'SOCKET_API_TOKEN'
 const FORWARD_CANONICAL = 'SOCKET_API_TOKEN'
 
 export interface TokenLookup {
@@ -46,6 +46,15 @@ export interface TokenLookup {
 // from `undefined` which means "not yet looked." Otherwise a
 // not-found case would re-hit the keychain on every call.
 let cached: TokenLookup | null | undefined
+
+/**
+ * Clear the module cache. Test-only escape hatch — production code should never
+ * call this. Used by `--rotate` flows that need to re-prompt after wiping the
+ * keychain entry.
+ */
+export function _resetApiTokenCacheForTesting(): void {
+  cached = undefined
+}
 
 export function findApiToken(): TokenLookup {
   if (cached !== undefined) {
@@ -74,7 +83,7 @@ export function findApiToken(): TokenLookup {
     return cached
   }
 
-  cached = null
+  cached = undefined
   return { token: undefined, source: undefined }
 }
 
@@ -89,20 +98,11 @@ export function findApiToken(): TokenLookup {
  * Idempotent — already-set values are left alone (so the user's explicit env
  * value isn't clobbered by a keychain read).
  */
-function propagateToEnv(token: string): void {
+export function propagateToEnv(token: string): void {
   if (!process.env[PRIMARY]) {
     process.env[PRIMARY] = token
   }
   if (!process.env[FORWARD_CANONICAL]) {
     process.env[FORWARD_CANONICAL] = token
   }
-}
-
-/**
- * Clear the module cache. Test-only escape hatch — production code should never
- * call this. Used by `--rotate` flows that need to re-prompt after wiping the
- * keychain entry.
- */
-export function _resetApiTokenCacheForTesting(): void {
-  cached = undefined
 }

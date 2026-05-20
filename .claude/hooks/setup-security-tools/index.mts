@@ -38,7 +38,7 @@
 // Fails open on every error (exit 0 + stderr log). The hook must
 // not block the conversation on its own bugs.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -75,68 +75,42 @@ interface Finding {
 const TOKEN_401_RE =
   /SOCKET_API_(?:KEY|TOKEN) validation got status of 401 from the Socket API/
 
-/**
- * Silently auto-repair an empty/missing SFW shims directory when the SFW binary
- * + the regenerate script are both present. This handles the common failure
- * shape where shims got renamed/moved (`shims.broken-backup/`) and the operator
- * forgot to re-run the regenerator. Returns a single 'auto-repaired' finding on
- * success (so the user sees one tidy notice instead of nothing) — or nothing if
- * the repair conditions weren't met / the script failed.
- */
-function repairShims(home: string): Finding[] {
-  // Use the lib-stable helper for cross-platform consistency and to
-  // honor the canonical "_wheelhouse" umbrella. The home arg is
-  // accepted for backwards-compat with the existing call site but
-  // ignored in favor of the lib-stable resolution.
-  void home
-  const sfwDir = getSocketAppDir('wheelhouse')
-  const shimsDir = path.join(sfwDir, 'shims')
-  const sfwBin = path.join(sfwDir, 'bin', 'sfw')
-  const regen = path.join(sfwDir, 'regenerate-shims.sh')
-
-  // Both the binary and the regen script must exist. If either is
-  // missing the repair can't run; the diagnostic path will surface
-  // the install command instead.
-  if (!existsSync(sfwBin) || !existsSync(regen)) {
+export function checkEdition(): Finding[] {
+  const shimPath = path.join(getSocketAppDir('wheelhouse'), 'shims', 'pnpm')
+  if (!existsSync(shimPath)) {
     return []
   }
-
-  // Repair triggers when shims/ is missing OR empty. A populated
-  // shims/ dir is handled by checkShims() (which reports broken
-  // individual shims).
-  let isEmpty = true
-  if (existsSync(shimsDir)) {
-    try {
-      const entries = require('node:fs').readdirSync(shimsDir) as string[]
-      isEmpty = entries.length === 0
-    } catch {
-      // Unreadable dir — treat as broken; let regen recreate it.
-      isEmpty = true
-    }
-  }
-  if (!isEmpty) {
+  let content = ''
+  try {
+    content = require('node:fs').readFileSync(shimPath, 'utf8') as string
+  } catch {
     return []
   }
-
-  const r = spawnSync('bash', [regen], { encoding: 'utf8' })
-  if (r.status !== 0) {
-    // Failed — fall through to checkShims() which will report the
-    // missing/broken state and the install command. Don't double-
-    // report here.
-    return []
+  const isFree = content.includes('sfw-free')
+  const isEnt = content.includes('sfw-enterprise')
+  const tokenPresent =
+    !!process.env['SOCKET_API_KEY'] || !!process.env['SOCKET_API_TOKEN']
+  if (isFree && tokenPresent) {
+    return [
+      {
+        kind: 'edition-mismatch',
+        message:
+          'SOCKET_API_KEY is set but the SFW shim is the free build. ' +
+          'Run `node .claude/hooks/setup-security-tools/install.mts` to ' +
+          'switch to sfw-enterprise (org-aware malware scanning + private ' +
+          'package data).',
+      },
+    ]
   }
-
-  return [
-    {
-      kind: 'auto-repaired',
-      message:
-        'SFW shims were missing/empty — auto-repaired via ' +
-        `${regen}. ${r.stdout.trim().split('\n').pop() ?? ''}`.trim(),
-    },
-  ]
+  // No findings for the enterprise-without-token shape — having an
+  // enterprise shim provisioned ahead of token setup is common during
+  // onboarding and the operator will fix it when their key arrives.
+  // Listing it as a "finding" would just create noise.
+  void isEnt
+  return []
 }
 
-async function checkShims(): Promise<Finding[]> {
+export async function checkShims(): Promise<Finding[]> {
   const shimsDir = path.join(getSocketAppDir('wheelhouse'), 'shims')
   if (!existsSync(shimsDir)) {
     return []
@@ -148,7 +122,8 @@ async function checkShims(): Promise<Finding[]> {
     return []
   }
   const broken: string[] = []
-  for (const name of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const name = entries[i]!
     const shimPath = path.join(shimsDir, name)
     let content: string
     try {
@@ -156,7 +131,7 @@ async function checkShims(): Promise<Finding[]> {
     } catch {
       continue
     }
-    const m = content.match(/"([^"]*\/_dlx\/[^"]+\/sfw-(?:free|enterprise))"/)
+    const m = content.match(/"([^"]*\/_dlx\/[^"]+\/sfw-(?:enterprise|free))"/)
     if (!m) {
       continue
     }
@@ -182,41 +157,6 @@ async function checkShims(): Promise<Finding[]> {
   ]
 }
 
-function checkEdition(): Finding[] {
-  const shimPath = path.join(getSocketAppDir('wheelhouse'), 'shims', 'pnpm')
-  if (!existsSync(shimPath)) {
-    return []
-  }
-  let content = ''
-  try {
-    content = require('node:fs').readFileSync(shimPath, 'utf8') as string
-  } catch {
-    return []
-  }
-  const isFree = content.includes('sfw-free')
-  const isEnt = content.includes('sfw-enterprise')
-  const tokenPresent =
-    !!process.env['SOCKET_API_TOKEN'] || !!process.env['SOCKET_API_KEY']
-  if (isFree && tokenPresent) {
-    return [
-      {
-        kind: 'edition-mismatch',
-        message:
-          'SOCKET_API_KEY is set but the SFW shim is the free build. ' +
-          'Run `node .claude/hooks/setup-security-tools/install.mts` to ' +
-          'switch to sfw-enterprise (org-aware malware scanning + private ' +
-          'package data).',
-      },
-    ]
-  }
-  // No findings for the enterprise-without-token shape — having an
-  // enterprise shim provisioned ahead of token setup is common during
-  // onboarding and the operator will fix it when their key arrives.
-  // Listing it as a "finding" would just create noise.
-  void isEnt
-  return []
-}
-
 /**
  * Scan the most recent assistant turn for the Socket API 401- validation error.
  * The transcript path comes from the Stop payload piped to the hook; if it's
@@ -226,7 +166,9 @@ function checkEdition(): Finding[] {
  * but can grow); we walk in reverse so we stop at the last assistant turn
  * instead of dragging through old context.
  */
-async function checkToken401(transcriptPath: string): Promise<Finding[]> {
+export async function checkToken401(
+  transcriptPath: string,
+): Promise<Finding[]> {
   if (!existsSync(transcriptPath)) {
     return []
   }
@@ -246,7 +188,10 @@ async function checkToken401(transcriptPath: string): Promise<Finding[]> {
     if (!line) {
       continue
     }
-    let entry: { type?: string; message?: { content?: unknown } }
+    let entry: {
+      type?: string | undefined
+      message?: { content?: unknown | undefined } | undefined
+    }
     try {
       entry = JSON.parse(line)
     } catch {
@@ -281,6 +226,67 @@ async function checkToken401(transcriptPath: string): Promise<Finding[]> {
   return []
 }
 
+/**
+ * Silently auto-repair an empty/missing SFW shims directory when the SFW binary
+ * + the regenerate script are both present. This handles the common failure
+ * shape where shims got renamed/moved (`shims.broken-backup/`) and the operator
+ * forgot to re-run the regenerator. Returns a single 'auto-repaired' finding on
+ * success (so the user sees one tidy notice instead of nothing) — or nothing if
+ * the repair conditions weren't met / the script failed.
+ */
+export function repairShims(home: string): Finding[] {
+  // Use the lib-stable helper for cross-platform consistency and to
+  // honor the canonical "_wheelhouse" umbrella. The home arg is
+  // accepted for backwards-compat with the existing call site but
+  // ignored in favor of the lib-stable resolution.
+  void home
+  const sfwDir = getSocketAppDir('wheelhouse')
+  const shimsDir = path.join(sfwDir, 'shims')
+  const sfwBin = path.join(sfwDir, 'bin', 'sfw')
+  const regen = path.join(sfwDir, 'regenerate-shims.sh')
+
+  // Both the binary and the regen script must exist. If either is
+  // missing the repair can't run; the diagnostic path will surface
+  // the install command instead.
+  if (!existsSync(sfwBin) || !existsSync(regen)) {
+    return []
+  }
+
+  // Repair triggers when shims/ is missing OR empty. A populated
+  // shims/ dir is handled by checkShims() (which reports broken
+  // individual shims).
+  let isEmpty = true
+  if (existsSync(shimsDir)) {
+    try {
+      const entries = require('node:fs').readdirSync(shimsDir) as string[]
+      isEmpty = entries.length === 0
+    } catch {
+      // Unreadable dir — treat as broken; let regen recreate it.
+      isEmpty = true
+    }
+  }
+  if (!isEmpty) {
+    return []
+  }
+
+  const r = spawnSync('bash', [regen], {})
+  if (r.status !== 0) {
+    // Failed — fall through to checkShims() which will report the
+    // missing/broken state and the install command. Don't double-
+    // report here.
+    return []
+  }
+
+  return [
+    {
+      kind: 'auto-repaired',
+      message:
+        'SFW shims were missing/empty — auto-repaired via ' +
+        `${regen}. ${String(r.stdout).trim().split('\n').pop() ?? ''}`.trim(),
+    },
+  ]
+}
+
 async function main(): Promise<void> {
   if (process.env['SOCKET_SETUP_SECURITY_TOOLS_DISABLED']) {
     return
@@ -301,7 +307,9 @@ async function main(): Promise<void> {
   let transcriptPath: string | undefined
   if (payloadRaw) {
     try {
-      const payload = JSON.parse(payloadRaw) as { transcript_path?: string }
+      const payload = JSON.parse(payloadRaw) as {
+        transcript_path?: string | undefined
+      }
       if (typeof payload.transcript_path === 'string') {
         transcriptPath = payload.transcript_path
       }
@@ -333,7 +341,8 @@ async function main(): Promise<void> {
     return
   }
   process.stderr.write('[setup-security-tools] Health check:\n')
-  for (const f of findings) {
+  for (let i = 0, { length } = findings; i < length; i += 1) {
+    const f = findings[i]!
     process.stderr.write(`  • ${f.message}\n`)
   }
 }

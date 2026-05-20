@@ -144,12 +144,12 @@ const BACKENDS: Readonly<Record<BackendName, BackendDescriptor>> = {
 
 type RoleSpec = {
   readonly buildPrompt: (ctx: ReviewContext) => string
-  readonly headingForVerify?: string
+  readonly headingForVerify?: string | undefined
   readonly preferenceOrder: readonly BackendName[]
   // Wall-clock cap per spawn for this role. Heavyweight investigation
   // passes (discovery, discovery-secondary, remediation) cap at 15min
   // per docs/claude.md/fleet/agent-delegation.md — rescue-tier work.
-  // Verify is a sanity check on an already-written report, so 5min.
+  // Verify is a quick check on an already-written report, so 5min.
   // Spawn rejects on timeout; the catch in runBackend logs cleanly.
   readonly timeoutMs: number
 }
@@ -321,7 +321,110 @@ const ALL_ROLES: readonly Role[] = [
   'verify',
 ]
 
-function parseArgs(argv: readonly string[]): Args {
+export async function appendSkipNote(
+  reportPath: string,
+  role: Role,
+  reason: string,
+): Promise<void> {
+  const existing = existsSync(reportPath)
+    ? await fs.readFile(reportPath, 'utf8')
+    : ''
+  const note = `> Skipped pass: **${role}** — ${reason}`
+  await fs.writeFile(reportPath, `${existing.trimEnd()}\n\n${note}\n`)
+}
+
+export async function appendVerificationSection(
+  reportPath: string,
+  section: string,
+  backend: BackendName,
+): Promise<void> {
+  // Some backends ignore the "include the agent name in the heading"
+  // instruction; if the section starts with `## Verification` or
+  // similar, prepend the backend name for attribution.
+  const titled = section.replace(
+    /^## (Claude |Codex |Kimi |Opencode )?Verification\b/i,
+    `## ${capitalize(backend)} Verification`,
+  )
+  const existing = await fs.readFile(reportPath, 'utf8')
+  await fs.writeFile(
+    reportPath,
+    `${existing.trimEnd()}\n\n---\n\n${titled.trimEnd()}\n`,
+  )
+}
+
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+export async function detectAvailableBackends(): Promise<
+  ReadonlySet<BackendName>
+> {
+  // Fan out the `which` lookups instead of awaiting one at a time.
+  // Cheap parallelism — N filesystem stats run concurrently rather
+  // than serially.
+  const names = Object.keys(BACKENDS) as BackendName[]
+  const results = await Promise.all(
+    names.map(async name => ({
+      name,
+      available: await isCommandAvailable(BACKENDS[name].bin),
+    })),
+  )
+  return new Set(results.filter(r => r.available).map(r => r.name))
+}
+
+export async function git(
+  args: readonly string[],
+  cwd?: string,
+): Promise<string> {
+  const result = await spawn('git', args as string[], {
+    cwd,
+    stdio: 'pipe',
+    stdioString: true,
+  })
+  return String(result.stdout ?? '').trim()
+}
+
+export function isBackendName(s: string): s is BackendName {
+  return s in BACKENDS
+}
+
+export async function isCommandAvailable(bin: string): Promise<boolean> {
+  // Use `which` from @socketsecurity/lib/bin instead of spawning
+  // `command -v` with shell: true. The shell:true variant invokes
+  // cmd.exe on Windows and mangles `command -v`; `which` is
+  // cross-platform and avoids the shell entirely.
+  return (await which(bin)) !== null
+}
+
+export function isRole(s: string): s is Role {
+  return s in ROLES
+}
+
+// Strip claude-style "Updated <path>\n\n```markdown\n…\n```" wrappers
+// some agents add even when asked not to. Lifted-and-portable parser.
+export function normalizeMarkdown(text: string): string {
+  if (!text) {
+    return ''
+  }
+  const lines = text.split(/\r?\n/)
+  if (lines.length === 0) {
+    return text
+  }
+  const firstStartsWithUpdated = /^Updated\s+\[/.test(lines[0] ?? '')
+  const thirdIsCodeFence =
+    lines[2] === '```' || lines[2] === '```markdown' || lines[2] === '```md'
+  let lastNonEmpty = lines.length - 1
+  while (lastNonEmpty >= 0 && lines[lastNonEmpty]!.trim() === '') {
+    lastNonEmpty--
+  }
+  const lastIsClosingFence = lines[lastNonEmpty] === '```'
+  if (firstStartsWithUpdated && thirdIsCodeFence && lastIsClosingFence) {
+    return lines.slice(3, lastNonEmpty).join('\n').trimEnd() + '\n'
+  }
+  return text
+}
+
+export function parseArgs(argv: readonly string[]): Args {
   let baseRef: string | undefined
   let cleanupTemp = false
   let outputPath: string | undefined
@@ -372,7 +475,7 @@ function parseArgs(argv: readonly string[]): Args {
       passOverrides.set(role, backend)
       continue
     }
-    if (arg === '-h' || arg === '--help') {
+    if (arg === '--help' || arg === '-h') {
       printHelp()
       process.exit(0)
     }
@@ -388,66 +491,7 @@ function parseArgs(argv: readonly string[]): Args {
   }
 }
 
-function isRole(s: string): s is Role {
-  return s in ROLES
-}
-
-function isBackendName(s: string): s is BackendName {
-  return s in BACKENDS
-}
-
-function printHelp(): void {
-  logger.info(`Usage: node .claude/skills/reviewing-code/run.mts [options]
-
-Options:
-  --base <ref>            Base ref to review against (default: origin/HEAD or origin/main)
-  --output <path>         Output markdown path (default: docs/<branch-slug>-review-findings.md)
-  --skip-verify           Skip the verify pass entirely
-  --only <roles>          Comma-separated subset of roles to run (discovery,discovery-secondary,remediation,verify)
-  --pass <role>=<backend> Override the backend for a specific role (codex, claude, opencode, kimi)
-  --cleanup-temp          Remove the temp directory on exit (default: keep for inspection)
-  -h, --help              Show this help`)
-}
-
-async function git(args: readonly string[], cwd?: string): Promise<string> {
-  const result = await spawn('git', args as string[], {
-    cwd,
-    stdio: 'pipe',
-    stdioString: true,
-  })
-  return String(result.stdout ?? '').trim()
-}
-
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-async function isCommandAvailable(bin: string): Promise<boolean> {
-  // Use `which` from @socketsecurity/lib/bin instead of spawning
-  // `command -v` with shell: true. The shell:true variant invokes
-  // cmd.exe on Windows and mangles `command -v`; `which` is
-  // cross-platform and avoids the shell entirely.
-  return (await which(bin)) !== null
-}
-
-async function detectAvailableBackends(): Promise<ReadonlySet<BackendName>> {
-  // Fan out the `which` lookups instead of awaiting one at a time.
-  // Cheap parallelism — N filesystem stats run concurrently rather
-  // than serially.
-  const names = Object.keys(BACKENDS) as BackendName[]
-  const results = await Promise.all(
-    names.map(async name => ({
-      name,
-      available: await isCommandAvailable(BACKENDS[name].bin),
-    })),
-  )
-  return new Set(results.filter(r => r.available).map(r => r.name))
-}
-
-function pickBackend(
+export function pickBackend(
   role: Role,
   available: ReadonlySet<BackendName>,
   override: BackendName | undefined,
@@ -473,7 +517,54 @@ function pickBackend(
   return undefined
 }
 
-async function runBackend(
+export function printHelp(): void {
+  // oxlint-disable-next-line socket/no-logger-newline-literal -- CLI help text is intentionally a single multi-line block; splitting would garble the columnar formatting users expect.
+  logger.info(`Usage: node .claude/skills/reviewing-code/run.mts [options]
+
+Options:
+  --base <ref>            Base ref to review against (default: origin/HEAD or origin/main)
+  --output <path>         Output markdown path (default: docs/<branch-slug>-review-findings.md)
+  --skip-verify           Skip the verify pass entirely
+  --only <roles>          Comma-separated subset of roles to run (discovery,discovery-secondary,remediation,verify)
+  --pass <role>=<backend> Override the backend for a specific role (codex, claude, opencode, kimi)
+  --cleanup-temp          Remove the temp directory on exit (default: keep for inspection)
+  -h, --help              Show this help`)
+}
+
+export async function resolveBaseRef(
+  provided: string | undefined,
+  cwd: string,
+): Promise<string> {
+  if (provided) {
+    return provided
+  }
+  // Default-branch fallback per CLAUDE.md: symbolic-ref → origin/main → origin/master.
+  try {
+    const headRef = await git(
+      ['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD'],
+      cwd,
+    )
+    if (headRef.length > 0) {
+      return headRef
+    }
+  } catch {
+    // fall through
+  }
+  for (const branch of ['main', 'master']) {
+    try {
+      await git(
+        ['show-ref', '--verify', '--quiet', `refs/remotes/origin/${branch}`],
+        cwd,
+      )
+      return `origin/${branch}`
+    } catch {
+      // try next
+    }
+  }
+  return 'origin/main'
+}
+
+export async function runBackend(
   backend: BackendName,
   promptText: string,
   tempDir: string,
@@ -529,69 +620,17 @@ async function runBackend(
   return { ok: output.trim().length > 0, output, logPath: logFile }
 }
 
-// Strip claude-style "Updated <path>\n\n```markdown\n…\n```" wrappers
-// some agents add even when asked not to. Lifted-and-portable parser.
-function normalizeMarkdown(text: string): string {
-  if (!text) {
-    return ''
-  }
-  const lines = text.split(/\r?\n/)
-  if (lines.length === 0) {
-    return text
-  }
-  const firstStartsWithUpdated = /^Updated\s+\[/.test(lines[0] ?? '')
-  const thirdIsCodeFence =
-    lines[2] === '```markdown' || lines[2] === '```md' || lines[2] === '```'
-  let lastNonEmpty = lines.length - 1
-  while (lastNonEmpty >= 0 && lines[lastNonEmpty]!.trim() === '') {
-    lastNonEmpty--
-  }
-  const lastIsClosingFence = lines[lastNonEmpty] === '```'
-  if (firstStartsWithUpdated && thirdIsCodeFence && lastIsClosingFence) {
-    return lines.slice(3, lastNonEmpty).join('\n').trimEnd() + '\n'
-  }
-  return text
-}
-
-async function appendVerificationSection(
-  reportPath: string,
-  section: string,
-  backend: BackendName,
-): Promise<void> {
-  // Some backends ignore the "include the agent name in the heading"
-  // instruction; if the section starts with `## Verification` or
-  // similar, prepend the backend name for attribution.
-  const titled = section.replace(
-    /^## (Claude |Codex |Kimi |Opencode )?Verification\b/i,
-    `## ${capitalize(backend)} Verification`,
-  )
-  const existing = await fs.readFile(reportPath, 'utf8')
-  await fs.writeFile(
-    reportPath,
-    `${existing.trimEnd()}\n\n---\n\n${titled.trimEnd()}\n`,
-  )
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1)
-}
-
-async function appendSkipNote(
-  reportPath: string,
-  role: Role,
-  reason: string,
-): Promise<void> {
-  const existing = existsSync(reportPath)
-    ? await fs.readFile(reportPath, 'utf8')
-    : ''
-  const note = `> Skipped pass: **${role}** — ${reason}`
-  await fs.writeFile(reportPath, `${existing.trimEnd()}\n\n${note}\n`)
+export function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
 
-  // Sanity: must be in a git repo.
+  // Quick: must be in a git repo.
   let repoRoot: string
   try {
     repoRoot = await git(['rev-parse', '--show-toplevel'])
@@ -647,7 +686,8 @@ async function main(): Promise<void> {
     return true
   })
 
-  for (const role of rolesToRun) {
+  for (let i = 0, { length } = rolesToRun; i < length; i += 1) {
+    const role = rolesToRun[i]!
     const passLabel = `${rolesToRun.indexOf(role) + 1}-${role}`
     const backend = pickBackend(role, available, args.passOverrides.get(role))
     if (!backend) {
@@ -708,39 +748,6 @@ async function main(): Promise<void> {
   if (!args.cleanupTemp) {
     logger.info(`Temp dir:  ${tempDir}`)
   }
-}
-
-async function resolveBaseRef(
-  provided: string | undefined,
-  cwd: string,
-): Promise<string> {
-  if (provided) {
-    return provided
-  }
-  // Default-branch fallback per CLAUDE.md: symbolic-ref → origin/main → origin/master.
-  try {
-    const headRef = await git(
-      ['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD'],
-      cwd,
-    )
-    if (headRef.length > 0) {
-      return headRef
-    }
-  } catch {
-    // fall through
-  }
-  for (const branch of ['main', 'master']) {
-    try {
-      await git(
-        ['show-ref', '--verify', '--quiet', `refs/remotes/origin/${branch}`],
-        cwd,
-      )
-      return `origin/${branch}`
-    } catch {
-      // try next
-    }
-  }
-  return 'origin/main'
 }
 
 main().catch(e => {

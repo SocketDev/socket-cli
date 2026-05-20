@@ -31,13 +31,13 @@
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const CHILD_PROCESS_SPECIFIERS = new Set([
-  'node:child_process',
   'child_process',
+  'node:child_process',
 ])
 
 const LIB_SPECIFIER = '@socketsecurity/lib-stable/spawn'
 
-const BANNED_NAMES = new Set(['spawnSync', 'spawn'])
+const BANNED_NAMES = new Set(['spawn', 'spawnSync'])
 
 const BYPASS_RE = /prefer-async-spawn:\s*sync-required/
 
@@ -104,7 +104,7 @@ const rule = {
       if (others.length > 0) {
         // Mixed line — leave it alone; a partial rewrite could lose
         // the non-banned import.
-        return null
+        return undefined
       }
       // Replace only the source-string token. node.source covers the
       // quoted specifier (incl. the quotes); replacing just that keeps
@@ -132,7 +132,8 @@ const rule = {
           return
         }
 
-        for (const spec of banned) {
+        for (let i = 0, { length } = banned; i < length; i += 1) {
+          const spec = banned[i]!
           context.report({
             node: spec,
             messageId: 'importBanned',
@@ -176,7 +177,7 @@ const rule = {
         if (!objName) {
           return
         }
-        if (!/^(child_process|childProcess|cp)$/.test(objName)) {
+        if (!/^(childProcess|child_process|cp)$/.test(objName)) {
           return
         }
         if (hasBypassComment(node)) {
@@ -200,4 +201,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

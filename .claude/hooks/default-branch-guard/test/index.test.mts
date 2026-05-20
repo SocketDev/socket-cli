@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
 function makeTranscript(userText?: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'defbranch-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'defbranch-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   writeFileSync(
     transcriptPath,
@@ -25,15 +25,15 @@ function runHook(
   extraEnv: Record<string, string> = {},
 ): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({
       tool_name: 'Bash',
       tool_input: { command },
       transcript_path: transcriptPath,
     }),
-    encoding: 'utf8',
     env: { ...process.env, ...extraEnv },
   })
-  return { stderr: result.stderr, exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
 test('BLOCKS BASE=main literal assignment', () => {
@@ -89,11 +89,11 @@ test('ALLOWS the canonical lookup pattern', () => {
 
 test('IGNORES non-Bash tools', () => {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({
       tool_name: 'Write',
       tool_input: { command: 'BASE=main' },
     }),
-    encoding: 'utf8',
   })
   assert.equal(result.status, 0)
 })

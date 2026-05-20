@@ -6,7 +6,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, test } from 'node:test'
@@ -21,12 +21,12 @@ interface RunResult {
 
 function runHook(payload: object): RunResult {
   const r = spawnSync('node', [HOOK], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
-    encoding: 'utf8',
   })
   return {
     code: typeof r.status === 'number' ? r.status : 0,
-    stderr: r.stderr || '',
+    stderr: String(r.stderr || ''),
   }
 }
 
@@ -149,19 +149,25 @@ EOF
         'and again spencermountain/compromise#1203"',
     )
     assert.equal(r.code, 2)
-    const matches = r.stderr.match(/spencermountain\/compromise#1203/g) || []
+    const matches = String(r.stderr).match(/spencermountain\/compromise#1203/g) || []
     // Ref appears in 'Refs found:' bullet — one bullet, not two.
     // (May also appear in narrative text once.)
     assert.ok(matches.length <= 2, `expected dedup; saw ${matches.length}`)
   })
 
   test('fails open on invalid JSON', () => {
-    const r = spawnSync('node', [HOOK], { input: 'not json', encoding: 'utf8' })
+    const r = spawnSync('node', [HOOK], {
+      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
+      input: 'not json',
+    })
     assert.equal(r.status, 0)
   })
 
   test('fails open on empty stdin', () => {
-    const r = spawnSync('node', [HOOK], { input: '', encoding: 'utf8' })
+    const r = spawnSync('node', [HOOK], {
+      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
+      input: '',
+    })
     assert.equal(r.status, 0)
   })
 })

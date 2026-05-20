@@ -98,13 +98,19 @@ const rule = {
           : typeof node.value === 'string'
             ? node.value
             : ''
-      if (!raw) return false
+      if (!raw) {
+        return false
+      }
       // Normalize backslashes → forward slashes, collapse `.` / `..` segments,
       // preserve UNC/namespace prefixes. Lets us use a single-separator
       // regex below instead of `[/\\]` duplicated everywhere.
       const norm = normalizePath(raw)
-      if (!REPO_CACHE_STRING_RE.test(norm)) return false
-      if (isNodeModulesCache(norm)) return false
+      if (!REPO_CACHE_STRING_RE.test(norm)) {
+        return false
+      }
+      if (isNodeModulesCache(norm)) {
+        return false
+      }
       return true
     }
 
@@ -120,7 +126,9 @@ const rule = {
      * - `process.env.HOME` / `process.env['HOME']` / same for XDG vars
      */
     function isHomeDirExpression(node: AstNode) {
-      if (!node) return false
+      if (!node) {
+        return false
+      }
       // `home` / `homedir` / `userHome` / `appData` identifier.
       if (node.type === 'Identifier' && HOME_IDENT_RE.test(node.name)) {
         return true
@@ -153,7 +161,9 @@ const rule = {
               : prop.type === 'Literal' && typeof prop.value === 'string'
                 ? prop.value
                 : ''
-          if (key && HOME_ENV_RE.test(key)) return true
+          if (key && HOME_ENV_RE.test(key)) {
+            return true
+          }
         }
       }
       return false
@@ -165,7 +175,9 @@ const rule = {
      * left-to-right.
      */
     function checkPathJoin(node: AstNode) {
-      if (node.type !== 'CallExpression') return
+      if (node.type !== 'CallExpression') {
+        return
+      }
       const callee = node.callee
       if (
         callee.type !== 'MemberExpression' ||
@@ -208,7 +220,9 @@ const rule = {
      * Visit Literal / TemplateElement nodes and flag repo-root .cache paths.
      */
     function checkLiteral(node: AstNode) {
-      if (!isRepoRootCacheString(node)) return
+      if (!isRepoRootCacheString(node)) {
+        return
+      }
       const value =
         node.type === 'TemplateElement' ? node.value?.cooked : node.value
       context.report({
@@ -226,4 +240,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

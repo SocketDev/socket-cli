@@ -1,4 +1,7 @@
-import { spawn } from 'node:child_process'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
@@ -10,9 +13,9 @@ const HOOK = path.resolve(__dirname, '..', 'index.mts')
 interface Payload {
   tool_name: 'Edit' | 'Write' | string
   tool_input: {
-    file_path?: string
-    new_string?: string
-    content?: string
+    file_path?: string | undefined
+    new_string?: string | undefined
+    content?: string | undefined
   }
 }
 
@@ -22,14 +25,14 @@ function runHook(payload: Payload): Promise<{ code: number; stderr: string }> {
       stdio: ['pipe', 'ignore', 'pipe'],
     })
     let stderr = ''
-    child.stderr.on('data', d => {
+    child.process.stderr!.on('data', d => {
       stderr += d.toString()
     })
-    child.on('error', reject)
-    child.on('exit', code => {
+    child.process.on('error', reject)
+    child.process.on('exit', code => {
       resolve({ code: code ?? -1, stderr })
     })
-    child.stdin.end(JSON.stringify(payload))
+    child.stdin!.end(JSON.stringify(payload))
   })
 }
 

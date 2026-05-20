@@ -52,9 +52,9 @@ interface PreToolUsePayload {
   readonly tool_name?: string | undefined
   readonly tool_input?:
     | {
-        readonly file_path?: unknown
-        readonly content?: unknown
-        readonly new_string?: unknown
+        readonly file_path?: unknown | undefined
+        readonly content?: unknown | undefined
+        readonly new_string?: unknown | undefined
       }
     | undefined
   readonly transcript_path?: string | undefined
@@ -75,13 +75,13 @@ const BYPASS_PHRASES = [
 ] as const
 
 const SOURCE_EXT_RE =
-  /\.(?:rs|go|cpp|hpp|hh|h|ts|mts|cts|tsx|py|zig|js|mjs|cjs|jsx)$/
+  /\.(?:cjs|cpp|cts|go|h|hh|hpp|js|jsx|mjs|mts|py|rs|ts|tsx|zig)$/
 
 // Canonical form: `Lock-step (with|from) <Lang>: <path>[:<lineno>]`.
 // Path must contain `.` or `/` so prose like "Lock-step with Go: JSON
 // parser" doesn't false-positive.
 const CANONICAL_RE =
-  /Lock-step (with|from) ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)(?::(\d+(?:-\d+)?))?/g
+  /Lock-step (from|with) ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)(?::(\d+(?:-\d+)?))?/g
 
 // Note form is rationale-only; we accept it but don't validate.
 const NOTE_RE = /Lock-step note:/
@@ -93,10 +93,10 @@ const NOTE_RE = /Lock-step note:/
 // 2. Missing `with`/`from`/`note` discriminator: `Lock-step Rust: …`.
 // 3. Hyphen-in-Lang gone wrong: `Lock-step with: …` (no lang).
 // 4. Comma instead of colon: `Lock-step with Rust, src/foo.rs`.
-const MALFORMED_PATTERNS: readonly {
+const MALFORMED_PATTERNS: ReadonlyArray<{
   readonly re: RegExp
   readonly hint: string
-}[] = [
+}> = [
   {
     re: /\blockstep\b/i,
     hint:
@@ -110,141 +110,26 @@ const MALFORMED_PATTERNS: readonly {
       'so the audit grep is uniform',
   },
   {
-    re: /Lock-step (?!(?:with|from|note)\b)[A-Z]/,
+    re: /Lock-step (?!(?:from|note|with)\b)[A-Z]/,
     hint:
       'missing discriminator — write "Lock-step with <Lang>:" or ' +
       '"Lock-step from <Lang>:" or "Lock-step note:"',
   },
   {
-    re: /Lock-step (?:with|from) :/,
+    re: /Lock-step (?:from|with) :/,
     hint:
       'missing <Lang> token — write "Lock-step with Go: <path>" ' +
       'not "Lock-step with : <path>"',
   },
   {
-    re: /Lock-step (?:with|from) [A-Za-z][A-Za-z0-9+#-]*,\s/,
+    re: /Lock-step (?:from|with) [A-Za-z][A-Za-z0-9+#-]*,\s/,
     hint:
       'use ":" between <Lang> and <path>, not "," — ' +
       '"Lock-step with Go: parser.go" not "Lock-step with Go, parser.go"',
   },
 ]
 
-interface MatchedRef {
-  readonly form: 'with' | 'from'
-  readonly lang: string
-  readonly refPath: string
-  readonly lineNumber: number
-  readonly preview: string
-}
-
-interface MalformedHit {
-  readonly lineNumber: number
-  readonly preview: string
-  readonly hint: string
-}
-
-interface StaleHit {
-  readonly lineNumber: number
-  readonly preview: string
-  readonly reason: 'unknown-lang' | 'path-not-found'
-  readonly lang: string
-  readonly refPath: string
-}
-
-function findCanonicalRefs(content: string): MatchedRef[] {
-  const hits: MatchedRef[] = []
-  const lines = content.split('\n')
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i]!
-    CANONICAL_RE.lastIndex = 0
-    let match: RegExpExecArray | null
-    while ((match = CANONICAL_RE.exec(line)) !== null) {
-      hits.push({
-        form: match[1] as 'with' | 'from',
-        lang: match[2]!,
-        refPath: match[3]!,
-        lineNumber: i + 1,
-        preview: line.trim().slice(0, 100),
-      })
-    }
-  }
-  return hits
-}
-
-function findMalformed(
-  content: string,
-  canonical: readonly MatchedRef[],
-  noteLines: ReadonlySet<number>,
-): MalformedHit[] {
-  const canonicalLines = new Set(canonical.map(h => h.lineNumber))
-  const hits: MalformedHit[] = []
-  const lines = content.split('\n')
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const lineNumber = i + 1
-    // If a line already contains a canonical ref or a Lock-step note,
-    // don't also flag it as malformed. Heuristic: a single line can
-    // have BOTH a canonical ref and a typo elsewhere, but in practice
-    // the typos we catch are alternative spellings on the SAME phrase
-    // — flagging both would be noise.
-    if (canonicalLines.has(lineNumber) || noteLines.has(lineNumber)) {
-      continue
-    }
-    const line = lines[i]!
-    for (let p = 0, { length: pLen } = MALFORMED_PATTERNS; p < pLen; p += 1) {
-      const { re, hint } = MALFORMED_PATTERNS[p]!
-      if (re.test(line)) {
-        hits.push({
-          lineNumber,
-          preview: line.trim().slice(0, 100),
-          hint,
-        })
-        break
-      }
-    }
-  }
-  return hits
-}
-
-function findNoteLines(content: string): Set<number> {
-  const out = new Set<number>()
-  const lines = content.split('\n')
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    if (NOTE_RE.test(lines[i]!)) {
-      out.add(i + 1)
-    }
-  }
-  return out
-}
-
-function loadConfig(repoRoot: string): LockStepConfig | undefined {
-  const configFile = path.join(repoRoot, '.config', 'lock-step-refs.json')
-  if (!existsSync(configFile)) {
-    return undefined
-  }
-  let raw: string
-  try {
-    raw = readFileSync(configFile, 'utf8')
-  } catch {
-    return undefined
-  }
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    if (
-      parsed &&
-      typeof parsed === 'object' &&
-      'roots' in parsed &&
-      'scan' in parsed &&
-      'extensions' in parsed
-    ) {
-      return parsed as LockStepConfig
-    }
-  } catch {
-    // Malformed config — let the CI gate report it; hook stays silent.
-  }
-  return undefined
-}
-
-function checkStale(
+export function checkStale(
   refs: readonly MatchedRef[],
   config: LockStepConfig,
   repoRoot: string,
@@ -285,6 +170,121 @@ function checkStale(
     }
   }
   return hits
+}
+
+interface MatchedRef {
+  readonly form: 'with' | 'from'
+  readonly lang: string
+  readonly refPath: string
+  readonly lineNumber: number
+  readonly preview: string
+}
+
+interface MalformedHit {
+  readonly lineNumber: number
+  readonly preview: string
+  readonly hint: string
+}
+
+interface StaleHit {
+  readonly lineNumber: number
+  readonly preview: string
+  readonly reason: 'unknown-lang' | 'path-not-found'
+  readonly lang: string
+  readonly refPath: string
+}
+
+export function findCanonicalRefs(content: string): MatchedRef[] {
+  const hits: MatchedRef[] = []
+  const lines = content.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    CANONICAL_RE.lastIndex = 0
+    let match: RegExpExecArray | null
+    while ((match = CANONICAL_RE.exec(line)) !== null) {
+      hits.push({
+        form: match[1] as 'with' | 'from',
+        lang: match[2]!,
+        refPath: match[3]!,
+        lineNumber: i + 1,
+        preview: line.trim().slice(0, 100),
+      })
+    }
+  }
+  return hits
+}
+
+export function findMalformed(
+  content: string,
+  canonical: readonly MatchedRef[],
+  noteLines: ReadonlySet<number>,
+): MalformedHit[] {
+  const canonicalLines = new Set(canonical.map(h => h.lineNumber))
+  const hits: MalformedHit[] = []
+  const lines = content.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const lineNumber = i + 1
+    // If a line already contains a canonical ref or a Lock-step note,
+    // don't also flag it as malformed. Heuristic: a single line can
+    // have BOTH a canonical ref and a typo elsewhere, but in practice
+    // the typos we catch are alternative spellings on the SAME phrase
+    // — flagging both would be noise.
+    if (canonicalLines.has(lineNumber) || noteLines.has(lineNumber)) {
+      continue
+    }
+    const line = lines[i]!
+    for (let p = 0, { length: pLen } = MALFORMED_PATTERNS; p < pLen; p += 1) {
+      const { re, hint } = MALFORMED_PATTERNS[p]!
+      if (re.test(line)) {
+        hits.push({
+          lineNumber,
+          preview: line.trim().slice(0, 100),
+          hint,
+        })
+        break
+      }
+    }
+  }
+  return hits
+}
+
+export function findNoteLines(content: string): Set<number> {
+  const out = new Set<number>()
+  const lines = content.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    if (NOTE_RE.test(lines[i]!)) {
+      out.add(i + 1)
+    }
+  }
+  return out
+}
+
+export function loadConfig(repoRoot: string): LockStepConfig | undefined {
+  const configFile = path.join(repoRoot, '.config', 'lock-step-refs.json')
+  if (!existsSync(configFile)) {
+    return undefined
+  }
+  let raw: string
+  try {
+    raw = readFileSync(configFile, 'utf8')
+  } catch {
+    return undefined
+  }
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      'roots' in parsed &&
+      'scan' in parsed &&
+      'extensions' in parsed
+    ) {
+      return parsed as LockStepConfig
+    }
+  } catch {
+    // Malformed config — let the CI gate report it; hook stays silent.
+  }
+  return undefined
 }
 
 async function main(): Promise<void> {

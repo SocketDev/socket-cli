@@ -32,6 +32,14 @@ describe('socket/sort-boolean-chains', () => {
           code: 'export const r = (a: boolean) => a\n',
         },
         {
+          name: 'two-operand guard pair — narrative order preserved',
+          code: 'export const r = (useHttp: boolean, oauthEnabled: boolean) => useHttp && oauthEnabled\n',
+        },
+        {
+          name: 'two-operand reversed guard pair — still not sorted',
+          code: 'export const r = (b: boolean, a: boolean) => b && a\n',
+        },
+        {
           name: 'duplicates skipped',
           code: 'export const r = (b: boolean, a: boolean) => b && a && b\n',
         },

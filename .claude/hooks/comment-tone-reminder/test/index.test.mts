@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -13,7 +13,7 @@ function makeTranscript(assistantText: string): {
   path: string
   cleanup: () => void
 } {
-  const dir = mkdtempSync(path.join(tmpdir(), 'comment-tone-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'comment-tone-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   const lines = [
     JSON.stringify({ role: 'user', content: 'hi' }),
@@ -32,12 +32,12 @@ function runHook(transcriptPath: string): {
   exitCode: number
 } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({ transcript_path: transcriptPath }),
-    encoding: 'utf8',
   })
   return {
-    stdout: result.stdout,
-    stderr: result.stderr,
+    stdout: String(result.stdout),
+    stderr: String(result.stderr),
     exitCode: result.status ?? -1,
   }
 }
@@ -107,8 +107,8 @@ test('disabled env var short-circuits', () => {
   const { path: p, cleanup } = makeTranscript('Note that we should skip this.')
   try {
     const result = spawnSync('node', [HOOK_PATH], {
+      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: JSON.stringify({ transcript_path: p }),
-      encoding: 'utf8',
       env: { ...process.env, SOCKET_COMMENT_TONE_REMINDER_DISABLED: '1' },
     })
     assert.equal(result.status, 0)

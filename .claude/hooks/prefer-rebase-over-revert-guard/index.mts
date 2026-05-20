@@ -30,13 +30,13 @@
 //
 // Fails open on any internal error (exit 0 + stderr log).
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import process from 'node:process'
 
 import { containsOutsideQuotes } from '../_shared/bash-quote-mask.mts'
 
 interface ToolInput {
-  readonly tool_input?: { readonly command?: string } | undefined
+  readonly tool_input?: { readonly command?: string | undefined } | undefined
   readonly tool_name?: string | undefined
 }
 
@@ -48,7 +48,7 @@ interface ToolInput {
  * Handles common shapes: git revert HEAD git revert HEAD~3 git revert abc1234
  * git revert <sha>..<sha> git revert --no-commit HEAD.
  */
-function extractRef(command: string): string | undefined {
+export function extractRef(command: string): string | undefined {
   const m = command.match(
     /\bgit\s+revert\s+([^\s;&|`]+(?:\s+[^\s;&|`-][^\s;&|`]*)?)/,
   )
@@ -71,7 +71,7 @@ function extractRef(command: string): string | undefined {
  * the local branch has no upstream we can't tell, so return undefined (= "don't
  * fire the reminder, we'd false-positive on a brand-new branch").
  */
-function isRefPushed(ref: string): boolean | undefined {
+export function isRefPushed(ref: string): boolean | undefined {
   // Run all probes in the current working directory — same dir the
   // user's `git revert` would run in.
   const opts = { encoding: 'utf8' as const, stdio: 'pipe' as const }
@@ -85,7 +85,7 @@ function isRefPushed(ref: string): boolean | undefined {
   if (upstream.status !== 0) {
     return undefined
   }
-  const upstreamRef = upstream.stdout.trim()
+  const upstreamRef = String(upstream.stdout).trim()
   if (!upstreamRef) {
     return undefined
   }
@@ -99,7 +99,7 @@ function isRefPushed(ref: string): boolean | undefined {
   if (targetSha.status !== 0) {
     return undefined
   }
-  const sha = targetSha.stdout.trim()
+  const sha = String(targetSha.stdout).trim()
   if (!sha) {
     return undefined
   }

@@ -31,7 +31,7 @@
 // Stop hooks receive JSON on stdin (we don't read it; the body
 // shape is irrelevant to our work) and exit code is advisory.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import process from 'node:process'
 
 // Process-name patterns that indicate a stale test/build worker.
@@ -77,8 +77,8 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
   //   - ~/.socket/_wheelhouse/bin/sfw[-<version>]            (current dev install)
   //   - ~/.socket/_dlx/<hash>/sfw                    (planned: dlxBinary cache)
   //   - ${RUNNER_TEMP}/sfw-bin/sfw[.exe]             (CI runner install)
-  // Path component is invariant across home prefixes (/Users/<u>/ vs
-  // /home/<u>/). The CI path uses RUNNER_TEMP which varies per OS but
+  // Path component is invariant across home prefixes (/Users/<user>/ vs
+  // /home/<user>/). The CI path uses RUNNER_TEMP which varies per OS but
   // the trailing `/sfw-bin/sfw` is stable.
   //
   // Orphan-only (the parent-alive branch in sweep()) — a live-parent
@@ -101,7 +101,7 @@ interface ProcRow {
 
 // Convert ps `etime` field ([dd-]hh:mm:ss or mm:ss) to seconds.
 // Examples: "05:23" → 323, "1:02:30" → 3750, "2-04:00:00" → 187200.
-function parseEtime(etime: string): number {
+export function parseEtime(etime: string): number {
   let rest = etime
   let days = 0
   const dashIdx = rest.indexOf('-')
@@ -123,14 +123,14 @@ function parseEtime(etime: string): number {
   return days * 86400 + hours * 3600 + mins * 60 + secs
 }
 
-function listProcesses(): ProcRow[] {
+export function listProcesses(): ProcRow[] {
   // -A: all processes, -o: custom format, no truncation. macOS + Linux
   // both support `pcpu` (instantaneous CPU%) and `etime` (elapsed time).
   // Windows isn't supported (Stop hook is unix-only in practice).
   const result = spawnSync(
     'ps',
     ['-A', '-o', 'pid=,ppid=,rss=,pcpu=,etime=,command='],
-    { encoding: 'utf8' },
+    {},
   )
   if (result.status !== 0 || !result.stdout) {
     return []
@@ -138,7 +138,7 @@ function listProcesses(): ProcRow[] {
   const rows: ProcRow[] = []
   // `ps -A` is unix-only (see comment above), so the output uses LF
   // line endings — no CRLF normalization needed here.
-  for (const line of result.stdout.split('\n')) {
+  for (const line of String(result.stdout).split('\n')) {
     if (!line.trim()) {
       continue
     }
@@ -170,7 +170,7 @@ function listProcesses(): ProcRow[] {
   return rows
 }
 
-function isAlive(pid: number): boolean {
+export function isAlive(pid: number): boolean {
   if (pid <= 1) {
     // PID 0 / 1 are the kernel / init — if our parent is one of those,
     // we're definitely an orphan, but `kill -0 1` would mislead.
@@ -184,7 +184,7 @@ function isAlive(pid: number): boolean {
   }
 }
 
-function classify(row: ProcRow): string | undefined {
+export function classify(row: ProcRow): string | undefined {
   for (const { name, rx } of STALE_PATTERNS) {
     if (rx.test(row.command)) {
       return name
@@ -212,7 +212,7 @@ const STUCK_MIN_ELAPSED_SEC = 300
 const STUCK_MIN_PCPU = 50
 const STUCK_MIN_RSS_KB = 500 * 1024
 
-function sweep(): {
+export function sweep(): {
   killed: Array<{
     name: string
     pid: number
@@ -232,7 +232,8 @@ function sweep(): {
   }> = []
   let skipped = 0
 
-  for (const row of rows) {
+  for (let i = 0, { length } = rows; i < length; i += 1) {
+    const row = rows[i]!
     // Never touch ourselves or our parent (Claude Code).
     if (row.pid === myPid || row.pid === myPpid) {
       continue
@@ -292,7 +293,7 @@ function main() {
   }
 }
 
-function runSweep() {
+export function runSweep() {
   let result: ReturnType<typeof sweep>
   try {
     result = sweep()

@@ -2,7 +2,10 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -13,13 +16,13 @@ type Result = { code: number; stderr: string }
 
 async function runHook(payload: Record<string, unknown>): Promise<Result> {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })
@@ -292,14 +295,14 @@ test('bypass phrase in CLAUDE_RECENT_USER_TURNS env allows the edit', async () =
       CLAUDE_RECENT_USER_TURNS: 'Allow underscore-identifier bypass',
     },
   })
-  child.stdin.end(
+  child.stdin!.end(
     JSON.stringify({
       tool_input: { content: 'const _foo = 1', file_path: F },
       tool_name: 'Write',
     }),
   )
   const code = await new Promise<number>(resolve => {
-    child.on('exit', c => resolve(c ?? 0))
+    child.process.on('exit', c => resolve(c ?? 0))
   })
   assert.strictEqual(code, 0)
 })
@@ -308,9 +311,9 @@ test('bypass phrase in CLAUDE_RECENT_USER_TURNS env allows the edit', async () =
 
 test('malformed JSON fails open (exit 0)', async () => {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end('not-json{')
+  child.stdin!.end('not-json{')
   const code = await new Promise<number>(resolve => {
-    child.on('exit', c => resolve(c ?? 0))
+    child.process.on('exit', c => resolve(c ?? 0))
   })
   assert.strictEqual(code, 0)
 })

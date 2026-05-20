@@ -70,36 +70,11 @@ const DOTENV_BASENAME_RE = /^\.env(\..+)?$|^\.envrc$/
 
 // Placeholders that mean "the human will fill this in" — these
 // don't trip the guard because they're scaffold content, not real
-// secrets. Tight whitelist; anything else fires.
+// secrets. Tight allowlist; anything else fires.
 const PLACEHOLDER_RE =
   /^(?:|<[^>]+>|x{3,}|TODO|REPLACE[_-]?ME|your[_-]?token|your[_-]?key|\$\{[A-Z_][A-Z0-9_]*\}|\$\([^)]+\))$/i
 
 const BYPASS_PHRASE = 'Allow dotenv-token bypass'
-
-interface Hit {
-  readonly line: number
-  readonly key: string
-  readonly snippet: string
-}
-
-function isDotenvPath(filePath: string): boolean {
-  return DOTENV_BASENAME_RE.test(path.basename(filePath))
-}
-
-/**
- * Match either a known token-bearing vendor key OR a generic
- * `<X>_(?:TOKEN|KEY|SECRET)` suffix. A dotenv is the most leak-prone place a
- * secret can live, so both passes apply here even though elsewhere
- * (token-guard) we prefer the named-vendor list alone.
- */
-function isLeakyTokenKey(key: string): boolean {
-  return isTokenKey(key) || GENERIC_TOKEN_SUFFIX_RE.test(key)
-}
-
-function isPlaceholder(value: string): boolean {
-  const stripped = value.replace(/^["']|["']$/g, '').trim()
-  return PLACEHOLDER_RE.test(stripped)
-}
 
 /**
  * Scan a dotenv body for `<token-key>=<real-value>` patterns. Returns one hit
@@ -138,6 +113,31 @@ export function findTokenLeaks(content: string): Hit[] {
     })
   }
   return hits
+}
+
+interface Hit {
+  readonly line: number
+  readonly key: string
+  readonly snippet: string
+}
+
+export function isDotenvPath(filePath: string): boolean {
+  return DOTENV_BASENAME_RE.test(path.basename(filePath))
+}
+
+/**
+ * Match either a known token-bearing vendor key OR a generic
+ * `<X>_(?:TOKEN|KEY|SECRET)` suffix. A dotenv is the most leak-prone place a
+ * secret can live, so both passes apply here even though elsewhere
+ * (token-guard) we prefer the named-vendor list alone.
+ */
+export function isLeakyTokenKey(key: string): boolean {
+  return isTokenKey(key) || GENERIC_TOKEN_SUFFIX_RE.test(key)
+}
+
+export function isPlaceholder(value: string): boolean {
+  const stripped = value.replace(/^["']|["']$/g, '').trim()
+  return PLACEHOLDER_RE.test(stripped)
 }
 
 let payloadRaw = ''
@@ -179,7 +179,8 @@ process.stdin.on('end', () => {
     )
     lines.push(`  File: ${filePath}`)
     lines.push('')
-    for (const h of hits) {
+    for (let i = 0, { length } = hits; i < length; i += 1) {
+      const h = hits[i]!
       lines.push(`  Line ${h.line}: ${h.snippet}`)
       lines.push(`    Key:   ${h.key}`)
     }

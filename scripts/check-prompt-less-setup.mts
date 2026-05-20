@@ -26,7 +26,7 @@
  *      signing/keychain prompt surprises you.
  */
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -219,7 +219,6 @@ function checkCommitGpgsign(): CheckResult {
     'git',
     ['config', '--global', '--get', 'commit.gpgsign'],
     {
-      encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   )
@@ -242,7 +241,7 @@ function checkCommitGpgsign(): CheckResult {
   const keyR = spawnSync(
     'git',
     ['config', '--global', '--get', 'user.signingkey'],
-    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    { stdio: ['ignore', 'pipe', 'pipe'] },
   )
   const key = typeof keyR.stdout === 'string' ? keyR.stdout.trim() : ''
   if (!key) {
@@ -258,7 +257,6 @@ function checkCommitGpgsign(): CheckResult {
   }
   // Confirm gpg can find the key without prompting.
   const checkR = spawnSync('gpg', ['--list-secret-keys', key], {
-    encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   if (checkR.status !== 0) {
@@ -344,7 +342,7 @@ function checkKeychainTokenAcl(): CheckResult {
   const r = spawnSync(
     'security',
     ['find-generic-password', '-s', 'socket-cli', '-a', 'SOCKET_API_KEY'],
-    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    { stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (r.status !== 0) {
     return {

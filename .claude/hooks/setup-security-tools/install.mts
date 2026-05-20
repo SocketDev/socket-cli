@@ -46,48 +46,12 @@ const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /**
- * Read a secret from the TTY without echoing it. Wraps node:readline with
- * custom output muting — typed characters never appear on screen and never end
- * up in shell history.
- *
- * Caller must verify `process.stdin.isTTY` before invoking.
- */
-async function promptSecret(prompt: string): Promise<string> {
-  // Custom output stream that swallows everything written to stdout
-  // during the prompt — that's how readline echoes typed characters,
-  // and we want them invisible.
-  const muted = new (class extends (await import('node:stream')).Writable {
-    override _write(_chunk: unknown, _enc: unknown, cb: () => void): void {
-      cb()
-    }
-  })()
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: muted,
-    terminal: true,
-  })
-  // The prompt itself is written directly to stderr so it shows up
-  // even though readline's echo is muted.
-  process.stderr.write(prompt)
-  try {
-    return await new Promise<string>(resolve => {
-      rl.question('', answer => {
-        process.stderr.write('\n')
-        resolve(answer.trim())
-      })
-    })
-  } finally {
-    rl.close()
-  }
-}
-
-/**
  * Walk an existing SFW shim and report whether its dlx-cached binary target
  * still exists. A shim is "broken" when the dlx cache has been evicted (cleanup
  * script, manual delete, manifest rebuild) and the shim points at a path that
  * no longer resolves.
  */
-async function findBrokenShims(): Promise<string[]> {
+export async function findBrokenShims(): Promise<string[]> {
   const shimsDir = path.join(
     process.env['HOME'] ?? '',
     '.socket',
@@ -99,7 +63,8 @@ async function findBrokenShims(): Promise<string[]> {
   }
   const broken: string[] = []
   const entries = await fs.readdir(shimsDir)
-  for (const entry of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
     const shimPath = path.join(shimsDir, entry)
     let content: string
     try {
@@ -109,7 +74,7 @@ async function findBrokenShims(): Promise<string[]> {
     }
     // Each shim has the form: exec "<dlx-path>/sfw-{free,enterprise}" ...
     // Pull out the dlx target and check existsSync.
-    const m = content.match(/"([^"]*\/_dlx\/[^"]+\/sfw-(?:free|enterprise))"/)
+    const m = content.match(/"([^"]*\/_dlx\/[^"]+\/sfw-(?:enterprise|free))"/)
     if (!m) {
       continue
     }
@@ -121,12 +86,31 @@ async function findBrokenShims(): Promise<string[]> {
   return broken
 }
 
+export async function offerTokenPrompt(): Promise<string | undefined> {
+  return promptAndPersist('missing')
+}
+
+interface CliArgs {
+  rotate: boolean
+}
+
+export function parseArgs(argv: readonly string[]): CliArgs {
+  let rotate = false
+  for (let i = 0, { length } = argv; i < length; i += 1) {
+    const arg = argv[i]!
+    if (arg === '--rotate' || arg === '--update-token') {
+      rotate = true
+    }
+  }
+  return { rotate }
+}
+
 /**
  * Shared prompt-and-persist body used by both the "no token found" and the
  * explicit `--rotate` paths. The `reason` strings differ but the gating + the
  * prompt + the keychain write are identical.
  */
-async function promptAndPersist(
+export async function promptAndPersist(
   reason: 'missing' | 'rotate',
 ): Promise<string | undefined> {
   if (getCI()) {
@@ -199,22 +183,38 @@ async function promptAndPersist(
 }
 
 /**
- * Write (or refresh) the keychain → shell-env bridge block in the user's shell
- * rc. Idempotent: re-running install.mts on an already- wired rc is a no-op.
- * Called from main() on every invocation so the bridge gets installed whether
- * or not the user just entered a fresh token via the prompt — keychain hits
- * from env/.env/keychain still need the bridge to actually reach the shell of
- * every NEW session.
+ * Read a secret from the TTY without echoing it. Wraps node:readline with
+ * custom output muting — typed characters never appear on screen and never end
+ * up in shell history.
+ *
+ * Caller must verify `process.stdin.isTTY` before invoking.
  */
-function wireBridgeIntoShellRc(token: string): void {
+export async function promptSecret(prompt: string): Promise<string> {
+  // Custom output stream that swallows everything written to stdout
+  // during the prompt — that's how readline echoes typed characters,
+  // and we want them invisible.
+  const muted = new (class extends (await import('node:stream')).Writable {
+    override _write(_chunk: unknown, _enc: unknown, cb: () => void): void {
+      cb()
+    }
+  })()
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: muted,
+    terminal: true,
+  })
+  // The prompt itself is written directly to stderr so it shows up
+  // even though readline's echo is muted.
+  process.stderr.write(prompt)
   try {
-    const bridge = installShellRcBridge(token)
-    reportBridgeOutcome(bridge)
-  } catch (e) {
-    logger.warn(
-      `Failed to write the shell-rc env block: ${(e as Error).message}. ` +
-        'You will need to export SOCKET_API_KEY manually for Socket tools to pick it up.',
-    )
+    return await new Promise<string>(resolve => {
+      rl.question('', answer => {
+        process.stderr.write('\n')
+        resolve(answer.trim())
+      })
+    })
+  } finally {
+    rl.close()
   }
 }
 
@@ -224,7 +224,9 @@ function wireBridgeIntoShellRc(token: string): void {
  * readable and gives the rotate path the same instruction without duplicating
  * the prose.
  */
-function reportBridgeOutcome(bridge: BridgeWriteResult | undefined): void {
+export function reportBridgeOutcome(
+  bridge: BridgeWriteResult | undefined,
+): void {
   if (!bridge) {
     // Non-macOS or no rc detectable — fall through to a manual line
     // the user can paste. We hand the user a literal-export template
@@ -259,27 +261,30 @@ function reportBridgeOutcome(bridge: BridgeWriteResult | undefined): void {
   }
 }
 
-async function offerTokenPrompt(): Promise<string | undefined> {
-  return promptAndPersist('missing')
-}
-
-interface CliArgs {
-  rotate: boolean
-}
-
-function parseArgs(argv: readonly string[]): CliArgs {
-  let rotate = false
-  for (const arg of argv) {
-    if (arg === '--rotate' || arg === '--update-token') {
-      rotate = true
-    }
+/**
+ * Write (or refresh) the keychain → shell-env bridge block in the user's shell
+ * rc. Idempotent: re-running install.mts on an already- wired rc is a no-op.
+ * Called from main() on every invocation so the bridge gets installed whether
+ * or not the user just entered a fresh token via the prompt — keychain hits
+ * from env/.env/keychain still need the bridge to actually reach the shell of
+ * every NEW session.
+ */
+export function wireBridgeIntoShellRc(token: string): void {
+  try {
+    const bridge = installShellRcBridge(token)
+    reportBridgeOutcome(bridge)
+  } catch (e) {
+    logger.warn(
+      `Failed to write the shell-rc env block: ${(e as Error).message}. ` +
+        'You will need to export SOCKET_API_KEY manually for Socket tools to pick it up.',
+    )
   }
-  return { rotate }
 }
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
-  logger.log('Socket security tools — install / verify\n')
+  logger.log('Socket security tools — install / verify')
+  logger.log('')
 
   let apiToken: string | undefined
   if (args.rotate) {
@@ -392,9 +397,11 @@ async function main(): Promise<void> {
     uvOk &&
     zizmorOk
   if (allOk) {
-    logger.log('\nAll security tools ready.')
+    logger.log('')
+    logger.log('All security tools ready.')
   } else {
-    logger.warn('\nSome tools not available. See above.')
+    logger.error('')
+    logger.warn('Some tools not available. See above.')
     process.exitCode = 1
   }
 }

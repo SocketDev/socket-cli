@@ -107,6 +107,10 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/soak-exclude-date-annotation-guard/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/no-structured-clone-prefer-json-guard/index.mts"
           }
         ]
       },

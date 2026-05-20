@@ -36,9 +36,9 @@
 // Bypass: type "Allow commit-author bypass" in a recent user message,
 // or set SOCKET_COMMIT_AUTHOR_GUARD_DISABLED=1.
 
-import { execSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { existsSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -46,7 +46,7 @@ import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface PreToolUsePayload {
   readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: unknown } | undefined
+  readonly tool_input?: { readonly command?: unknown | undefined } | undefined
   readonly transcript_path?: string | undefined
   readonly cwd?: string | undefined
 }
@@ -68,43 +68,7 @@ const BYPASS_PHRASES = [
   'Allow commitauthor bypass',
 ] as const
 
-function readAllowedAuthors(): AllowedAuthors {
-  // Source (a): ~/.claude/git-authors.json
-  const configPath = path.join(homedir(), '.claude', 'git-authors.json')
-  if (existsSync(configPath)) {
-    try {
-      const raw = JSON.parse(readFileSync(configPath, 'utf8')) as {
-        canonical?: GitAuthor
-        aliases?: GitAuthor[]
-      }
-      const canonical = raw.canonical ?? {}
-      const aliases = Array.isArray(raw.aliases) ? raw.aliases : []
-      return { canonical, aliases }
-    } catch {
-      // Fall through to git-config fallback.
-    }
-  }
-  // Source (b): global git config
-  let email: string | undefined
-  let name: string | undefined
-  try {
-    email = execSync('git config --global user.email', {
-      encoding: 'utf8',
-    }).trim()
-  } catch {
-    // unset
-  }
-  try {
-    name = execSync('git config --global user.name', {
-      encoding: 'utf8',
-    }).trim()
-  } catch {
-    // unset
-  }
-  return { canonical: { name, email }, aliases: [] }
-}
-
-function isAllowedAuthor(
+export function isAllowedAuthor(
   candidate: GitAuthor,
   allowed: AllowedAuthors,
 ): boolean {
@@ -125,6 +89,15 @@ function isAllowedAuthor(
   return false
 }
 
+// Detect whether the command is `git commit ...` (not push, not log).
+// Also returns true for `git -c ... commit ...` and other forms with
+// flags before the subcommand.
+export function isGitCommit(command: string): boolean {
+  // Match `git` (optionally with -c flags between) followed by `commit`.
+  // Negative lookahead avoids `git config commit.gpgsign`.
+  return /\bgit\b(?:\s+-c\s+[^\s]+)*\s+commit(?:\s|$)/.test(command)
+}
+
 // Parse a `git commit ...` command for explicit author overrides.
 // Three forms we recognize:
 //
@@ -133,7 +106,7 @@ function isAllowedAuthor(
 //   -c user.email=email@example -c user.name=Name
 //
 // Returns the override author if any, otherwise undefined.
-function parseAuthorOverride(command: string): GitAuthor | undefined {
+export function parseAuthorOverride(command: string): GitAuthor | undefined {
   // --author="Name <email>"  or  --author='Name <email>'
   const authorEq = /--author=(['"]?)([^'"<>]+)\s*<([^>]+)>\1/i.exec(command)
   if (authorEq) {
@@ -156,35 +129,56 @@ function parseAuthorOverride(command: string): GitAuthor | undefined {
   return undefined
 }
 
+export function readAllowedAuthors(): AllowedAuthors {
+  // Source (a): ~/.claude/git-authors.json
+  const configPath = path.join(os.homedir(), '.claude', 'git-authors.json')
+  if (existsSync(configPath)) {
+    try {
+      const raw = JSON.parse(readFileSync(configPath, 'utf8')) as {
+        canonical?: GitAuthor | undefined
+        aliases?: GitAuthor[] | undefined
+      }
+      const canonical = raw.canonical ?? {}
+      const aliases = Array.isArray(raw.aliases) ? raw.aliases : []
+      return { canonical, aliases }
+    } catch {
+      // Fall through to git-config fallback.
+    }
+  }
+  // Source (b): global git config
+  let email: string | undefined
+  let name: string | undefined
+  const emailResult = spawnSync('git', [
+    'config',
+    '--global',
+    'user.email',
+  ])
+  if (emailResult.status === 0) {
+    email = String(emailResult.stdout).trim() || undefined
+  }
+  const nameResult = spawnSync('git', ['config', '--global', 'user.name'])
+  if (nameResult.status === 0) {
+    name = String(nameResult.stdout).trim() || undefined
+  }
+  return { canonical: { name, email }, aliases: [] }
+}
+
 // Read the local checkout's user.email + user.name. Falls through to
 // undefined on failure. Used when the command has no explicit override
 // — we need to know what git would use by default.
-function readCheckoutAuthor(cwd: string | undefined): GitAuthor {
+export function readCheckoutAuthor(cwd: string | undefined): GitAuthor {
   let email: string | undefined
   let name: string | undefined
-  const opts = cwd
-    ? { encoding: 'utf8' as const, cwd }
-    : { encoding: 'utf8' as const }
-  try {
-    email = execSync('git config user.email', opts).trim()
-  } catch {
-    // unset
+  const opts = cwd ? { cwd } : {}
+  const emailResult = spawnSync('git', ['config', 'user.email'], opts)
+  if (emailResult.status === 0) {
+    email = String(emailResult.stdout).trim() || undefined
   }
-  try {
-    name = execSync('git config user.name', opts).trim()
-  } catch {
-    // unset
+  const nameResult = spawnSync('git', ['config', 'user.name'], opts)
+  if (nameResult.status === 0) {
+    name = String(nameResult.stdout).trim() || undefined
   }
   return { name, email }
-}
-
-// Detect whether the command is `git commit ...` (not push, not log).
-// Also returns true for `git -c ... commit ...` and other forms with
-// flags before the subcommand.
-function isGitCommit(command: string): boolean {
-  // Match `git` (optionally with -c flags between) followed by `commit`.
-  // Negative lookahead avoids `git config commit.gpgsign`.
-  return /\bgit\b(?:\s+-c\s+[^\s]+)*\s+commit(?:\s|$)/.test(command)
 }
 
 async function main(): Promise<void> {

@@ -35,7 +35,7 @@
  * quotes and the body).
  */
 export function buildQuoteMask(s: string): boolean[] {
-  const mask = new Array<boolean>(s.length).fill(false)
+  const mask: boolean[] = Array.from({ length: s.length }, () => false)
   let inSingle = false
   let inDouble = false
   for (let i = 0; i < s.length; i += 1) {
@@ -75,24 +75,11 @@ export function buildQuoteMask(s: string): boolean[] {
 }
 
 /**
- * Replace heredoc bodies with empty strings of equivalent length so the
- * surrounding indices stay valid. Recognizes: <<EOF ... \nEOF <<-EOF ... \nEOF
- * (tab-stripped form) <<'EOF' ... \nEOF (quoted delimiter, no interpolation)
- * <<"EOF" ... \nEOF.
- *
- * The closing delimiter must appear at column 0 (POSIX), but we accept any
- * leading whitespace as a small concession to the tab-stripped `<<-` form.
+ * Convenience predicate: true when `pattern` matches `s` at an unquoted,
+ * non-heredoc position. Wraps matchOutsideQuotes.
  */
-export function stripHeredocBodies(s: string): string {
-  return s.replace(
-    /<<-?\s*['"]?(\w+)['"]?([\s\S]*?)\n\s*\1\b/g,
-    (full, _delim, body) => {
-      // Replace the body with spaces so indices in the outer string
-      // stay aligned. The opening line + delimiter line are kept so
-      // callers can still see the `<<EOF` token if they care.
-      return full.replace(body, ' '.repeat(body.length))
-    },
-  )
+export function containsOutsideQuotes(s: string, pattern: RegExp): boolean {
+  return matchOutsideQuotes(s, pattern) !== undefined
 }
 
 /**
@@ -126,9 +113,22 @@ export function matchOutsideQuotes(
 }
 
 /**
- * Convenience predicate: true when `pattern` matches `s` at an unquoted,
- * non-heredoc position. Wraps matchOutsideQuotes.
+ * Replace heredoc bodies with empty strings of equivalent length so the
+ * surrounding indices stay valid. Recognizes: <<EOF ... \nEOF <<-EOF ... \nEOF
+ * (tab-stripped form) <<'EOF' ... \nEOF (quoted delimiter, no interpolation)
+ * <<"EOF" ... \nEOF.
+ *
+ * The closing delimiter must appear at column 0 (POSIX), but we accept any
+ * leading whitespace as a small concession to the tab-stripped `<<-` form.
  */
-export function containsOutsideQuotes(s: string, pattern: RegExp): boolean {
-  return matchOutsideQuotes(s, pattern) !== undefined
+export function stripHeredocBodies(s: string): string {
+  return s.replace(
+    /<<-?\s*['"]?(\w+)['"]?([\s\S]*?)\n\s*\1\b/g,
+    (full, _delim, body) => {
+      // Replace the body with spaces so indices in the outer string
+      // stay aligned. The opening line + delimiter line are kept so
+      // callers can still see the `<<EOF` token if they care.
+      return full.replace(body, ' '.repeat(body.length))
+    },
+  )
 }

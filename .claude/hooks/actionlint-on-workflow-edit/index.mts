@@ -13,26 +13,25 @@
 // No-op when actionlint isn't on PATH — most fleet machines have it via
 // brew, CI runners have it preinstalled, but downstreams may not.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import process from 'node:process'
 
 import { readStdin } from '../_shared/transcript.mts'
+
+export function actionlintAvailable(): boolean {
+  const r = spawnSync('command', ['-v', 'actionlint'], {
+    timeout: 2_000,
+  })
+  return r.status === 0 && String(r.stdout ?? '').trim().length > 0
+}
 
 interface ToolInput {
   readonly tool_name?: string | undefined
   readonly tool_input?: { readonly file_path?: string | undefined } | undefined
 }
 
-function isWorkflowYaml(filePath: string): boolean {
+export function isWorkflowYaml(filePath: string): boolean {
   return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(filePath)
-}
-
-function actionlintAvailable(): boolean {
-  const r = spawnSync('command', ['-v', 'actionlint'], {
-    encoding: 'utf8',
-    timeout: 2_000,
-  })
-  return r.status === 0 && (r.stdout?.trim().length ?? 0) > 0
 }
 
 async function main(): Promise<void> {
@@ -64,7 +63,6 @@ async function main(): Promise<void> {
   }
 
   const r = spawnSync('actionlint', [filePath], {
-    encoding: 'utf8',
     timeout: 10_000,
   })
   if (r.status === 0) {
@@ -79,15 +77,15 @@ async function main(): Promise<void> {
       `  File: ${filePath}`,
       '',
       '  Output:',
-      ...(r.stdout ?? '')
+      ...String(r.stdout ?? '')
         .trim()
         .split('\n')
-        .map(l => `    ${l}`),
+        .map((l: string) => `    ${l}`),
       ...(r.stderr
-        ? r.stderr
+        ? String(r.stderr)
             .trim()
             .split('\n')
-            .map(l => `    ${l}`)
+            .map((l: string) => `    ${l}`)
         : []),
       '',
       '  Fix the workflow before relying on it firing in CI. actionlint',

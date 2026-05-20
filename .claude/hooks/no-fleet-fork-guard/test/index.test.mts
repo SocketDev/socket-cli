@@ -8,9 +8,12 @@
 // exercise the "is this a fleet repo?" walk-up logic without
 // depending on actual fleet-repo checkouts.
 
-import { spawn } from 'node:child_process'
+// prefer-async-spawn: streaming-stdio-required — test spawns child
+// subprocess and pipes stdin/stdout/stderr; Node spawn returns the
+// ChildProcess streaming surface the lib promise wrapper does not.
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
@@ -27,19 +30,19 @@ async function runHook(
 ): Promise<Result> {
   let transcriptPath: string | undefined
   if (transcript !== undefined) {
-    const dir = mkdtempSync(path.join(tmpdir(), 'no-fleet-fork-test-'))
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'no-fleet-fork-test-'))
     transcriptPath = path.join(dir, 'session.jsonl')
     writeFileSync(transcriptPath, transcript)
     payload['transcript_path'] = transcriptPath
   }
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end(JSON.stringify(payload))
+  child.stdin!.end(JSON.stringify(payload))
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   return new Promise(resolve => {
-    child.on('exit', code => {
+    child.process.on('exit', code => {
       resolve({ code: code ?? 0, stderr })
     })
   })
@@ -62,7 +65,7 @@ interface RepoSetup {
 function makeFakeFleetRepo(
   setup: RepoSetup = { hasFleetCanonical: true },
 ): string {
-  const repo = mkdtempSync(path.join(tmpdir(), 'fake-fleet-repo-'))
+  const repo = mkdtempSync(path.join(os.tmpdir(), 'fake-fleet-repo-'))
   writeFileSync(path.join(repo, 'package.json'), '{"name":"fake-fleet"}\n')
   const claudeMarker = setup.hasFleetCanonical
     ? '<!-- BEGIN FLEET-CANONICAL -->\nrules go here\n<!-- END FLEET-CANONICAL -->\n'
@@ -103,7 +106,7 @@ test('Edit on a non-canonical path inside a fleet repo passes', async () => {
 
 test('Edit on a canonical path outside a fleet repo passes', async () => {
   // Tmp dir without CLAUDE.md → the walk-up never finds a fleet root.
-  const dir = mkdtempSync(path.join(tmpdir(), 'non-fleet-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'non-fleet-'))
   try {
     const file = path.join(dir, '.config/oxlint-plugin/rules/foo.mts')
     mkdirSync(path.dirname(file), { recursive: true })
@@ -278,7 +281,7 @@ test('paths under socket-wheelhouse/template/ always pass', async () => {
   // Even if Claude tries to spell out a path that would otherwise
   // match a canonical prefix, anything under .../socket-wheelhouse/
   // template/ is allowed since that IS the canonical home.
-  const repo = mkdtempSync(path.join(tmpdir(), 'fake-srt-'))
+  const repo = mkdtempSync(path.join(os.tmpdir(), 'fake-srt-'))
   try {
     const file = path.join(
       repo,
@@ -298,13 +301,13 @@ test('paths under socket-wheelhouse/template/ always pass', async () => {
 
 test('malformed JSON payload fails open with stderr log', async () => {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end('not-json{{{')
+  child.stdin!.end('not-json{{{')
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   const result = await new Promise<Result>(resolve => {
-    child.on('exit', code => resolve({ code: code ?? 0, stderr }))
+    child.process.on('exit', code => resolve({ code: code ?? 0, stderr }))
   })
   assert.strictEqual(result.code, 0)
   assert.match(result.stderr, /fail-open/)
@@ -312,13 +315,13 @@ test('malformed JSON payload fails open with stderr log', async () => {
 
 test('empty stdin passes through', async () => {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
-  child.stdin.end('')
+  child.stdin!.end('')
   let stderr = ''
-  child.stderr.on('data', chunk => {
+  child.process.stderr!.on('data', chunk => {
     stderr += chunk.toString('utf8')
   })
   const result = await new Promise<Result>(resolve => {
-    child.on('exit', code => resolve({ code: code ?? 0, stderr }))
+    child.process.on('exit', code => resolve({ code: code ?? 0, stderr }))
   })
   assert.strictEqual(result.code, 0)
 })

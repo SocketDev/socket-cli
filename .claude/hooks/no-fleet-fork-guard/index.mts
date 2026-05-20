@@ -57,7 +57,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
-  tool_input?: { file_path?: string } | undefined
+  tool_input?: { file_path?: string | undefined } | undefined
   tool_name?: string | undefined
   transcript_path?: string | undefined
 }
@@ -105,7 +105,7 @@ const TEMPLATE_PATH_TOKENS = [
  * FLEET-CANONICAL marker. Returns the repo root path or undefined if the file
  * is outside a fleet repo.
  */
-function findFleetRepoRoot(filePath: string): string | undefined {
+export function findFleetRepoRoot(filePath: string): string | undefined {
   let cur = path.dirname(filePath)
   const root = path.parse(cur).root
   while (cur && cur !== root) {
@@ -130,19 +130,20 @@ function findFleetRepoRoot(filePath: string): string | undefined {
   return undefined
 }
 
-function isInsideTemplate(filePath: string): boolean {
-  const normalized = filePath.replace(/\\/g, '/')
-  return TEMPLATE_PATH_TOKENS.some(token => normalized.includes(token))
-}
-
-function isCanonicalRelativePath(rel: string): boolean {
+export function isCanonicalRelativePath(rel: string): boolean {
   const normalized = rel.replace(/\\/g, '/')
-  for (const prefix of CANONICAL_PREFIXES) {
+  for (let i = 0, { length } = CANONICAL_PREFIXES; i < length; i += 1) {
+    const prefix = CANONICAL_PREFIXES[i]!
     if (normalized.startsWith(prefix)) {
       return true
     }
   }
   return CANONICAL_FILES.includes(normalized)
+}
+
+export function isInsideTemplate(filePath: string): boolean {
+  const normalized = filePath.replace(/\\/g, '/')
+  return TEMPLATE_PATH_TOKENS.some(token => normalized.includes(token))
 }
 
 async function main(): Promise<number> {
@@ -162,7 +163,7 @@ async function main(): Promise<number> {
   }
 
   const tool = payload.tool_name
-  if (tool !== 'Edit' && tool !== 'Write' && tool !== 'MultiEdit') {
+  if (tool !== 'Edit' && tool !== 'MultiEdit' && tool !== 'Write') {
     return 0
   }
 

@@ -42,17 +42,12 @@ interface ToolInput {
 
 const BYPASS_PHRASE = 'Allow workflow-yaml-multiline-body bypass'
 
-function isWorkflowYaml(filePath: string): boolean {
-  // .github/workflows/*.yml or .github/workflows/*.yaml.
-  return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(filePath)
-}
-
 // Detect a multi-line `--body "..."` argument to gh. The match is
 // conservative: we look for the literal `--body "` opener, then scan to
 // the matching closing `"` (respecting backslash escapes), and check
 // whether the captured body contains a newline or a YAML-hazardous
 // character at a position that would break the surrounding YAML scalar.
-function findUnsafeBody(text: string): string | undefined {
+export function findUnsafeBody(text: string): string | undefined {
   // Iterate through every `--body "` occurrence.
   const opener = /--body\s+"/g
   let m: RegExpExecArray | null
@@ -97,7 +92,12 @@ function findUnsafeBody(text: string): string | undefined {
   return undefined
 }
 
-function readFileSafe(p: string): string {
+export function isWorkflowYaml(filePath: string): boolean {
+  // .github/workflows/*.yml or .github/workflows/*.yaml.
+  return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(filePath)
+}
+
+export function readFileSafe(p: string): string {
   try {
     return readFileSync(p, 'utf8')
   } catch {

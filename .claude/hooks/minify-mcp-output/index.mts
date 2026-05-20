@@ -27,19 +27,23 @@
 import process from 'node:process'
 
 interface Payload {
-  hook_event_name?: string
-  tool_name?: string
-  tool_response?: unknown
+  hook_event_name?: string | undefined
+  tool_name?: string | undefined
+  tool_response?: unknown | undefined
   // Plus session_id, cwd, etc. — we don't care.
 }
 
 // ---------- Inlined stages (synced with packages/socket-token-minifier/src/stages/) ----------
 
-function minify(text: string): string {
+export function minify(text: string): string {
   const trimmed = text.trimStart()
-  if (trimmed.length === 0) return text
+  if (trimmed.length === 0) {
+    return text
+  }
   const first = trimmed.charCodeAt(0)
-  if (first !== 0x7b && first !== 0x5b) return text
+  if (first !== 0x7b && first !== 0x5b) {
+    return text
+  }
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
@@ -50,16 +54,16 @@ function minify(text: string): string {
 }
 
 const LINE_PREFIX_RE = /^[ \t]*\d+\t/gm
-function stripLines(text: string): string {
+export function stripLines(text: string): string {
   return text.replace(LINE_PREFIX_RE, '')
 }
 
 const BLANK_RUN_RE = /\n(?:[ \t]*\n){2,}/g
-function whitespace(text: string): string {
+export function whitespace(text: string): string {
   return text.replace(BLANK_RUN_RE, '\n\n')
 }
 
-function applyStages(text: string): string {
+export function applyStages(text: string): string {
   return whitespace(stripLines(minify(text)))
 }
 

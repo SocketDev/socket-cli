@@ -7,7 +7,7 @@
  *   (manifest is broken). Exit codes map 0 / 2 / 1 respectively.
  */
 
-import type { PortStatus, LockstepManifest } from './schema.mts'
+import type { LockstepManifest, PortStatus } from './schema.mts'
 
 export type Manifest = LockstepManifest
 

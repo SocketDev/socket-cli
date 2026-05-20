@@ -38,7 +38,8 @@ function isForbiddenString(s: string): string | undefined {
   if (FORBIDDEN_REFS.includes(s)) {
     return s
   }
-  for (const re of FORBIDDEN_PACKAGE_RES) {
+  for (let i = 0, { length } = FORBIDDEN_PACKAGE_RES; i < length; i += 1) {
+    const re = FORBIDDEN_PACKAGE_RES[i]!
     if (re.test(s)) {
       return s
     }
@@ -65,10 +66,14 @@ const rule = {
   create(context: RuleContext) {
     return {
       Literal(node: AstNode) {
-        const v = (node as { value?: unknown }).value
-        if (typeof v !== 'string') return
+        const v = (node as { value?: unknown | undefined }).value
+        if (typeof v !== 'string') {
+          return
+        }
         const hit = isForbiddenString(v)
-        if (!hit) return
+        if (!hit) {
+          return
+        }
         context.report({
           node,
           messageId: 'staleConfig',
@@ -76,11 +81,17 @@ const rule = {
         })
       },
       TemplateElement(node: AstNode) {
-        const v = (node as { value?: { cooked?: string } }).value
+        const v = (
+          node as { value?: { cooked?: string | undefined } | undefined }
+        ).value
         const cooked = v?.cooked
-        if (typeof cooked !== 'string') return
+        if (typeof cooked !== 'string') {
+          return
+        }
         const hit = isForbiddenString(cooked)
-        if (!hit) return
+        if (!hit) {
+          return
+        }
         context.report({
           node,
           messageId: 'staleConfig',
@@ -91,4 +102,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

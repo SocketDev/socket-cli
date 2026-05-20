@@ -73,7 +73,7 @@ type Finding = {
 //      matching prose like "Lock-step with Go: JSON parser")
 //   4: optional `:start[-end]` line range (discarded for path resolution)
 const LOCK_STEP_RE =
-  /Lock-step (with|from) ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)(?::(\d+(?:-\d+)?))?/g
+  /Lock-step (from|with) ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)(?::(\d+(?:-\d+)?))?/g
 
 function loadConfig(repoRoot: string): Config | undefined {
   const configFile = path.join(repoRoot, CONFIG_PATH)
@@ -116,7 +116,8 @@ function walk(dir: string, exts: readonly string[]): string[] {
   } catch {
     return out
   }
-  for (const entry of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
     if (SKIP_DIRS.has(entry)) {
       continue
     }
@@ -155,7 +156,8 @@ function resolveRef(
   if (existsSync(repoRelative)) {
     return { found: true, knownLang: true }
   }
-  for (const root of roots) {
+  for (let i = 0, { length } = roots; i < length; i += 1) {
+    const root = roots[i]!
     const candidate = path.join(repoRoot, root, refPath)
     if (existsSync(candidate)) {
       return { found: true, knownLang: true }
@@ -211,7 +213,8 @@ function formatFindings(
   repoRoot: string,
 ): string {
   const grouped = new Map<string, Finding[]>()
-  for (const f of findings) {
+  for (let i = 0, { length } = findings; i < length; i += 1) {
+    const f = findings[i]!
     const key = f.file
     let arr = grouped.get(key)
     if (!arr) {
@@ -224,7 +227,8 @@ function formatFindings(
   for (const [file, fileFindings] of grouped) {
     const rel = path.relative(repoRoot, file)
     lines.push(`\n${rel}:`)
-    for (const f of fileFindings) {
+    for (let i = 0, { length } = fileFindings; i < length; i += 1) {
+      const f = fileFindings[i]!
       const tag =
         f.reason === 'unknown-lang'
           ? `unknown <Lang> token "${f.lang}" (add to .config/lock-step-refs.json roots)`
@@ -270,7 +274,8 @@ function main(): void {
     allFiles.push(...walk(full, config.extensions))
   }
   const findings: Finding[] = []
-  for (const file of allFiles) {
+  for (let i = 0, { length } = allFiles; i < length; i += 1) {
+    const file = allFiles[i]!
     findings.push(...scanFile(file, config, repoRoot))
   }
   if (values.json) {

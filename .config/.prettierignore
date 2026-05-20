@@ -1,0 +1,33 @@
+# Format-ignore (but track) — files we keep byte-identical with their
+# upstream / vendored source. oxfmt reads this file when pointed at it
+# via `--ignore-path .config/.prettierignore` (default is the CWD's
+# .gitignore + .prettierignore). The lint runner threads the flag in
+# so the convention works from any working directory.
+#
+# `.claude/` is treated like node_modules — never formatted, never
+# linted, no matter whether the files are git-tracked. Hooks, skills,
+# vendored AST tooling, settings — all opaque to the formatter.
+**/.claude/**
+.claude/**
+
+# Vendored acorn.wasm binary blob + the wasm-bindgen CJS glue. The
+# glue (`acorn-bindgen.cjs`) is wasm-bindgen output we ship verbatim
+# (after a single string rewrite of the wasm filename). It must NOT
+# be touched by oxfmt or oxlint --fix: the
+# `socket/export-top-level-functions` autofix rewrites internal
+# helpers like `function getObject(idx) { ... }` into
+# `export function getObject(idx) { ... }`, turning the CJS module
+# into syntactically-ESM. The first `require()` then fails with
+# `SyntaxError: Unexpected token 'export'`. Past incident: cascaded
+# to two fleet repos before the break surfaced.
+#
+# The generators we DO own (`acorn-wasm-sync.{mts,cts}`,
+# `acorn-wasm-embed.{mts,cts}`) are not listed here on purpose —
+# the ultrathink build emits them already formatted+linted per fleet
+# rules so they participate in the regular lint pass like any other
+# JS source. Only the raw wasm blob + the bindgen glue skip the
+# formatter. Marked `binary` in .gitattributes for the wasm blob too
+# so PR diffs collapse.
+template/.claude/hooks/_shared/acorn/acorn.wasm
+template/.claude/hooks/_shared/acorn/acorn-bindgen.cjs
+.claude/hooks/_shared/acorn/acorn-bindgen.cjs

@@ -18,12 +18,8 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { validateSchema } from '@socketsecurity/lib-stable/schema/validate'
 
-import {
-  LockstepManifestSchema,
-  type Row,
-  type Site,
-  type Upstream,
-} from './schema.mts'
+import { LockstepManifestSchema } from './schema.mts'
+import type { Row, Site, Upstream } from './schema.mts'
 
 import type { Manifest } from './types.mts'
 
@@ -71,7 +67,8 @@ export function loadManifestTree(rootManifestPath: string): {
 
   const includes = rootManifest.includes ?? []
   const baseDir = path.dirname(rootManifestPath)
-  for (const rel of includes) {
+  for (let i = 0, { length } = includes; i < length; i += 1) {
+    const rel = includes[i]!
     const subPath = path.resolve(baseDir, rel)
     const sub = readManifest(subPath)
     const area =

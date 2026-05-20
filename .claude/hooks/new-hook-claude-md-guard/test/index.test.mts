@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -18,7 +18,7 @@ interface FakeRepo {
 }
 
 function makeFakeRepo(claudeMdContent: string): FakeRepo {
-  const root = mkdtempSync(path.join(tmpdir(), 'newhook-'))
+  const root = mkdtempSync(path.join(os.tmpdir(), 'newhook-'))
   const templatePath = path.join(root, 'template')
   mkdirSync(path.join(templatePath, '.claude', 'hooks'), { recursive: true })
   const claudeMdPath = path.join(templatePath, 'CLAUDE.md')
@@ -45,10 +45,10 @@ function makeTranscript(dir: string, bypassPhrase?: string): string {
 
 function runHook(payload: object): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
-    encoding: 'utf8',
   })
-  return { stderr: result.stderr, exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
 test('BLOCKS when adding a new hook without CLAUDE.md reference', () => {
@@ -220,12 +220,12 @@ test('disabled env var short-circuits', () => {
   const repo = makeFakeRepo('# no reference')
   try {
     const result = spawnSync('node', [HOOK_PATH], {
+      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: JSON.stringify({
         tool_name: 'Write',
         tool_input: { file_path: repo.hookIndexPath('my-new-hook') },
         transcript_path: makeTranscript(repo.root),
       }),
-      encoding: 'utf8',
       env: { ...process.env, SOCKET_NEW_HOOK_CLAUDE_MD_GUARD_DISABLED: '1' },
     })
     assert.equal(result.status, 0)

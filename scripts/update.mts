@@ -26,7 +26,7 @@ async function run(cmd: string, args: string[]): Promise<boolean> {
     await spawn(cmd, args, { stdio: 'inherit' })
     return true
   } catch (e) {
-    process.exitCode = (e as { code?: number }).code ?? 1
+    process.exitCode = (e as { code?: number | undefined }).code ?? 1
     return false
   }
 }

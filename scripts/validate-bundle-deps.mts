@@ -364,14 +364,16 @@ async function validateBundleDeps(): Promise<ValidationResult> {
 
     // externals + bundled are Set<string> — use for...of, the
     // canonical fix for set / map / iterable iteration.
-    for (const ext of externals) {
+    for (let i = 0, { length } = externals; i < length; i += 1) {
+      const ext = externals[i]!
       const packageName = getPackageName(ext)
       if (packageName && !BUILTIN_MODULES.has(packageName)) {
         allExternals.add(packageName)
       }
     }
 
-    for (const bun of bundled) {
+    for (let i = 0, { length } = bundled; i < length; i += 1) {
+      const bun = bundled[i]!
       allBundled.add(bun)
     }
   }

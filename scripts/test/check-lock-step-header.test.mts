@@ -9,10 +9,10 @@
 // whose header lists peers + the peer files themselves, vary the
 // peers' headers, and inspect exit code + stderr.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
@@ -26,7 +26,7 @@ interface RepoSpec {
 }
 
 function makeRepo(spec: RepoSpec): string {
-  const root = mkdtempSync(path.join(tmpdir(), 'clsh-'))
+  const root = mkdtempSync(path.join(os.tmpdir(), 'clsh-'))
   if (spec.configContent !== undefined) {
     mkdirSync(path.join(root, '.config'), { recursive: true })
     writeFileSync(
@@ -48,11 +48,10 @@ function runGate(
 ): { stdout: string; stderr: string; exitCode: number } {
   const result = spawnSync('node', [SCRIPT_PATH, ...args], {
     cwd,
-    encoding: 'utf8',
   })
   return {
-    stdout: result.stdout,
-    stderr: result.stderr,
+    stdout: String(result.stdout),
+    stderr: String(result.stderr),
     exitCode: result.status ?? -1,
   }
 }

@@ -40,7 +40,7 @@
 //   SOCKET_AUTH_ROTATION_DISABLED        default: unset
 //     If set to a truthy value, skip the hook entirely.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import {
   existsSync,
   mkdirSync,
@@ -49,7 +49,7 @@ import {
   utimesSync,
   writeFileSync,
 } from 'node:fs'
-import { homedir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -70,7 +70,7 @@ const PREFIX = '[auth-rotation-reminder]'
 
 // ── Paths ───────────────────────────────────────────────────────────
 
-const STATE_DIR = path.join(homedir(), '.claude', 'hooks', 'auth-rotation')
+const STATE_DIR = path.join(os.homedir(), '.claude', 'hooks', 'auth-rotation')
 const STATE_FILE = path.join(STATE_DIR, 'last-run')
 const GLOBAL_SNOOZE = path.join(STATE_DIR, 'snooze')
 const GLOBAL_SKIP_LIST = path.join(STATE_DIR, 'services-skip')
@@ -94,7 +94,7 @@ interface SnoozeStatus {
   cleaned: string[]
 }
 
-async function checkSnoozes(): Promise<SnoozeStatus> {
+export async function checkSnoozes(): Promise<SnoozeStatus> {
   const status: SnoozeStatus = { active: false, cleaned: [] }
   const cleanFile = async (file: string, reason: string): Promise<void> => {
     try {
@@ -141,7 +141,7 @@ async function checkSnoozes(): Promise<SnoozeStatus> {
 
 // ── Skip-list ───────────────────────────────────────────────────────
 
-function loadSkipIds(): Set<string> {
+export function loadSkipIds(): Set<string> {
   const skipIds = new Set<string>(DEFAULT_SKIP_IDS)
   for (const file of [GLOBAL_SKIP_LIST, PROJECT_SKIP_LIST]) {
     if (!existsSync(file)) {
@@ -171,15 +171,15 @@ function loadSkipIds(): Set<string> {
 // The patterns target the WARNING text (i.e., what the assistant
 // said about a leak), not the token value itself. token-guard handles
 // pre-leak blocking; this is "the leak happened, surface it now."
-const LEAK_WARNING_PATTERNS: ReadonlyArray<RegExp> = [
+const LEAK_WARNING_PATTERNS: readonly RegExp[] = [
   /\brotate the token\b/i,
   /\brotate (?:the )?(?:api )?key\b/i,
   /\bleaked into (?:the )?transcript\b/i,
   /\btoken (?:value )?(?:was )?(?:briefly )?visible (?:to me )?(?:at one point )?(?:in )?(?:the )?(?:tool output|transcript|context)\b/i,
   // Bright-red rotation banner shape the security-incident block uses.
-  /[⚠️!]+\s*Rotate the token\b/i,
+  /(?:⚠️|⚠|!)+\s*Rotate the token\b/i,
   // "appears in transcript" / "in conversation transcript"
-  /\b(?:appeared|present|exposed) in (?:the )?(?:conversation )?transcript\b/i,
+  /\b(?:appeared|exposed|present) in (?:the )?(?:conversation )?transcript\b/i,
   // "security incident notice" — used by my Token-Hygiene memory
   // template when surfacing a leak.
   /\bsecurity incident notice\b/i,
@@ -199,13 +199,15 @@ interface LeakDetection {
  * Caller passes in the raw stdin payload because `main()` already captured it
  * (Node's stdin is single-use).
  */
-function detectLeakWarning(stdinPayload: string): LeakDetection {
+export function detectLeakWarning(stdinPayload: string): LeakDetection {
   if (!stdinPayload) {
     return { triggered: false, matchedPattern: undefined }
   }
-  let payload: { transcript_path?: string }
+  let payload: { transcript_path?: string | undefined }
   try {
-    payload = JSON.parse(stdinPayload) as { transcript_path?: string }
+    payload = JSON.parse(stdinPayload) as {
+      transcript_path?: string | undefined
+    }
   } catch {
     return { triggered: false, matchedPattern: undefined }
   }
@@ -221,7 +223,8 @@ function detectLeakWarning(stdinPayload: string): LeakDetection {
   // Strip code fences so a regex matching inside an example block
   // doesn't fire (those are docs / show-don't-tell, not incidents).
   const stripped = stripCodeFences(text)
-  for (const pat of LEAK_WARNING_PATTERNS) {
+  for (let i = 0, { length } = LEAK_WARNING_PATTERNS; i < length; i += 1) {
+    const pat = LEAK_WARNING_PATTERNS[i]!
     const m = stripped.match(pat)
     if (m) {
       return { triggered: true, matchedPattern: m[0] }
@@ -232,7 +235,7 @@ function detectLeakWarning(stdinPayload: string): LeakDetection {
 
 // ── Throttle ────────────────────────────────────────────────────────
 
-function intervalMs(): number {
+export function intervalMs(): number {
   const raw = process.env['SOCKET_AUTH_ROTATION_INTERVAL_HOURS']
   const hours = raw === undefined ? 1 : Number.parseFloat(raw)
   if (!Number.isFinite(hours) || hours < 0) {
@@ -241,7 +244,7 @@ function intervalMs(): number {
   return Math.round(hours * 60 * 60 * 1000)
 }
 
-function withinThrottle(): boolean {
+export function withinThrottle(): boolean {
   const interval = intervalMs()
   if (interval === 0) {
     return false
@@ -257,7 +260,7 @@ function withinThrottle(): boolean {
   }
 }
 
-function touchStateFile(): void {
+export function touchStateFile(): void {
   try {
     mkdirSync(STATE_DIR, { recursive: true })
     if (!existsSync(STATE_FILE)) {
@@ -279,7 +282,7 @@ interface RotationResult {
   skippedMissing: string[]
 }
 
-function isOnPath(binary: string): boolean {
+export function isOnPath(binary: string): boolean {
   // `command -v` is portable across sh/bash/zsh and exits 0 if found.
   const r = spawnSync('sh', ['-c', `command -v ${binary} >/dev/null 2>&1`], {
     stdio: 'ignore',
@@ -287,7 +290,7 @@ function isOnPath(binary: string): boolean {
   return r.status === 0
 }
 
-function isAuthenticated(s: Service): boolean {
+export function isAuthenticated(s: Service): boolean {
   const r = spawnSync(s.detectCmd[0]!, s.detectCmd.slice(1) as string[], {
     stdio: 'ignore',
     timeout: 5000,
@@ -295,7 +298,10 @@ function isAuthenticated(s: Service): boolean {
   return r.status === 0
 }
 
-function runLogout(s: Service): { ok: boolean; reason?: string } {
+export function runLogout(s: Service): {
+  ok: boolean
+  reason?: string | undefined
+} {
   const r = spawnSync(s.logoutCmd[0]!, s.logoutCmd.slice(1) as string[], {
     stdio: 'ignore',
     timeout: 10_000,
@@ -309,13 +315,14 @@ function runLogout(s: Service): { ok: boolean; reason?: string } {
   return { ok: false, reason: `exit code ${r.status}` }
 }
 
-function rotateAll(skipIds: Set<string>): RotationResult {
+export function rotateAll(skipIds: Set<string>): RotationResult {
   const result: RotationResult = {
     loggedOut: [],
     failed: [],
     skippedMissing: [],
   }
-  for (const service of SERVICES) {
+  for (let i = 0, { length } = SERVICES; i < length; i += 1) {
+    const service = SERVICES[i]!
     if (skipIds.has(service.id)) {
       continue
     }
@@ -343,13 +350,14 @@ function rotateAll(skipIds: Set<string>): RotationResult {
 
 // ── Output ──────────────────────────────────────────────────────────
 
-function reportSnoozeCleaned(cleaned: string[]): void {
-  for (const file of cleaned) {
+export function reportSnoozeCleaned(cleaned: string[]): void {
+  for (let i = 0, { length } = cleaned; i < length; i += 1) {
+    const file = cleaned[i]!
     logger.error(`${PREFIX} cleared expired snooze: ${file}`)
   }
 }
 
-function reportRotation(result: RotationResult): void {
+export function reportRotation(result: RotationResult): void {
   const parts: string[] = []
   if (result.loggedOut.length > 0) {
     parts.push(
@@ -376,7 +384,7 @@ function reportRotation(result: RotationResult): void {
 
 // ── Main ────────────────────────────────────────────────────────────
 
-async function run(stdinPayload: string): Promise<void> {
+export async function run(stdinPayload: string): Promise<void> {
   if (process.env['CI']) {
     return
   }

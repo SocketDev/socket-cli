@@ -62,7 +62,8 @@ const rule = {
      * Find any banned emoji in a string. Returns the first match.
      */
     function findEmoji(value: string): string | undefined {
-      for (const emoji of EMOJI) {
+      for (let i = 0, { length } = EMOJI; i < length; i += 1) {
+        const emoji = EMOJI[i]!
         if (value.includes(emoji)) {
           return emoji
         }
@@ -132,7 +133,7 @@ const rule = {
         objectName === 'console' &&
         ['log', 'error', 'warn', 'info'].includes(propName)
       const isLoggerLog =
-        objectName === 'logger' && (propName === 'log' || propName === 'info')
+        objectName === 'logger' && (propName === 'info' || propName === 'log')
 
       if (!isConsole && !isLoggerLog) {
         return undefined
@@ -195,4 +196,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

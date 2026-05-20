@@ -54,39 +54,21 @@ const USES_RE = /^\s*-?\s*uses:\s+([^\s@]+)@([0-9a-f]{40})(\s*#[^\n]*)?\s*$/
 // don't tolerate sloppy trailing junk.
 const COMMENT_RE = /^#\s+\S[^()]*\s+\(\d{4}-\d{2}-\d{2}\)\s*$/
 
-interface Hook {
-  tool_name?: string
-  tool_input?: {
-    file_path?: string
-    new_string?: string
-    content?: string
-  }
-}
-
-interface BadLine {
-  line: string
-  reason: string
-}
-
-function isWorkflowYamlPath(p: string): boolean {
-  // Workflows: .github/workflows/*.{yml,yaml}
-  // Local actions: .github/actions/<name>/action.{yml,yaml}
-  if (!p.includes('/.github/')) return false
-  if (!/\.(ya?ml)$/.test(p)) return false
-  return (
-    /\/\.github\/workflows\/[^/]+\.(ya?ml)$/.test(p) ||
-    /\/\.github\/actions\/[^/]+\/action\.(ya?ml)$/.test(p)
-  )
-}
-
-function findBadUsesLines(text: string): BadLine[] {
+export function findBadUsesLines(text: string): BadLine[] {
   const lines = text.split('\n')
   const bad: BadLine[] = []
-  for (const line of lines) {
-    if (!line) continue
-    if (line.includes(ALLOW_MARKER)) continue
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    if (!line) {
+      continue
+    }
+    if (line.includes(ALLOW_MARKER)) {
+      continue
+    }
     const m = USES_RE.exec(line)
-    if (!m) continue
+    if (!m) {
+      continue
+    }
     const comment = (m[3] ?? '').trim()
     if (!comment) {
       bad.push({ line: line.trim(), reason: 'no comment on uses:' })
@@ -100,6 +82,37 @@ function findBadUsesLines(text: string): BadLine[] {
     }
   }
   return bad
+}
+
+interface Hook {
+  tool_name?: string | undefined
+  tool_input?:
+    | {
+        file_path?: string | undefined
+        new_string?: string | undefined
+        content?: string | undefined
+      }
+    | undefined
+}
+
+interface BadLine {
+  line: string
+  reason: string
+}
+
+export function isWorkflowYamlPath(p: string): boolean {
+  // Workflows: .github/workflows/*.{yml,yaml}
+  // Local actions: .github/actions/<name>/action.{yml,yaml}
+  if (!p.includes('/.github/')) {
+    return false
+  }
+  if (!/\.(ya?ml)$/.test(p)) {
+    return false
+  }
+  return (
+    /\/\.github\/workflows\/[^/]+\.(ya?ml)$/.test(p) ||
+    /\/\.github\/actions\/[^/]+\/action\.(ya?ml)$/.test(p)
+  )
 }
 
 function main() {

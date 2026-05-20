@@ -17,12 +17,12 @@
 // some builders.
 export const STAGE_SEGMENTS = new Set([
   'Compressed',
-  'downloaded',
   'Final',
   'Optimized',
   'Release',
   'Stripped',
   'Synced',
+  'downloaded',
   'wasm',
 ])
 
@@ -44,13 +44,15 @@ export const MODE_SEGMENTS = new Set(['dev', 'prod', 'shared'])
 // `node scripts/sync-scaffolding.mts --all --fix` from
 // socket-wheelhouse.
 export const KNOWN_SIBLING_PACKAGES = new Set([
-  // socket-btm
+  'acorn',
   'bin-infra',
   'binflate',
   'binject',
   'binpress',
   'build-infra',
+  'cli',
   'codet5-models-builder',
+  'core',
   'curl-builder',
   'ink-builder',
   'iocraft-builder',
@@ -60,21 +62,15 @@ export const KNOWN_SIBLING_PACKAGES = new Set([
   'models',
   'napi-go',
   'node-smol-builder',
+  'npm',
   'onnxruntime-builder',
   'opentui-builder',
-  'stubs-builder',
-  'ultraviolet-builder',
-  'yoga-layout-builder',
-  // socket-cli
-  'cli',
   'package-builder',
-  // stuie
-  'core',
   'react',
   'renderer',
+  'stubs-builder',
   'ultraviolet',
+  'ultraviolet-builder',
   'yoga',
-  // socket-registry / ultrathink
-  'acorn',
-  'npm',
+  'yoga-layout-builder',
 ])

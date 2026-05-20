@@ -39,7 +39,7 @@ import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
   tool_name?: string | undefined
-  tool_input?: { command?: string } | undefined
+  tool_input?: { command?: string | undefined } | undefined
   transcript_path?: string | undefined
 }
 
@@ -50,8 +50,8 @@ const BYPASS_LOOKBACK_USER_TURNS = 8
 // where GitHub will auto-link an issue token.
 const PUBLIC_MESSAGE_COMMANDS: RegExp[] = [
   /\bgit\s+commit\b/,
-  /\bgh\s+pr\s+(create|edit|comment|review)\b/,
-  /\bgh\s+issue\s+(create|edit|comment)\b/,
+  /\bgh\s+pr\s+(comment|create|edit|review)\b/,
+  /\bgh\s+issue\s+(comment|create|edit)\b/,
   /\bgh\s+release\s+(create|edit)\b/,
 ]
 
@@ -82,19 +82,6 @@ const OWNER_REPO_REF_RE =
 const GITHUB_URL_RE =
   /https?:\/\/github\.com\/([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\/([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\/(?:issues|pull)\/(\d+)/g
 
-interface ExternalRef {
-  kind: 'token' | 'url'
-  owner: string
-  repo: string
-  num: string
-  raw: string
-}
-
-function isPublicMessageCommand(command: string): boolean {
-  const normalized = command.replace(/\s+/g, ' ')
-  return PUBLIC_MESSAGE_COMMANDS.some(re => re.test(normalized))
-}
-
 /**
  * Extract the textual message body from a shell command. Covers the three
  * common forms:
@@ -110,7 +97,7 @@ function isPublicMessageCommand(command: string): boolean {
  * Returns all extracted message bodies joined by newlines so the caller can run
  * one regex pass over the combined text.
  */
-function extractMessageBodies(command: string): string {
+export function extractMessageBodies(command: string): string {
   const out: string[] = []
 
   // Match -m or --message and capture the following quoted or
@@ -125,7 +112,7 @@ function extractMessageBodies(command: string): string {
   //   --message text
   //   --body "..."
   const flagRe =
-    /(?:^|\s)(?:-m|--message|--body|--body-text)(?:\s+|=)("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\S+)/g
+    /(?:^|\s)(?:--body|--body-text|--message|-m)(?:\s+|=)("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\S+)/g
   let match: RegExpExecArray | null
   while ((match = flagRe.exec(command)) !== null) {
     const raw = match[1]!
@@ -149,32 +136,11 @@ function extractMessageBodies(command: string): string {
 }
 
 /**
- * Strip a single layer of shell quoting from a token. Handles single quotes,
- * double quotes, and unquoted text. We don't attempt full shell-quote
- * unescaping — for the leak we're guarding against, the literal content is what
- * GitHub sees, and any escaped char that's inside `<owner>/<repo>#<num>` would
- * prevent the auto-link anyway.
- */
-function unquoteShell(token: string): string {
-  if (token.length >= 2) {
-    const first = token[0]
-    const last = token[token.length - 1]
-    if (first === '"' && last === '"') {
-      return token.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\')
-    }
-    if (first === "'" && last === "'") {
-      return token.slice(1, -1)
-    }
-  }
-  return token
-}
-
-/**
  * Walk the message text and collect every external-org reference. Returns an
  * empty array when the text only references same-repo (`#123`) or
  * SocketDev-owned (`SocketDev/socket-lib#42`) issues.
  */
-function findExternalRefs(text: string): ExternalRef[] {
+export function findExternalRefs(text: string): ExternalRef[] {
   const out: ExternalRef[] = []
 
   let m: RegExpExecArray | null
@@ -212,6 +178,40 @@ function findExternalRefs(text: string): ExternalRef[] {
   }
 
   return out
+}
+
+interface ExternalRef {
+  kind: 'token' | 'url'
+  owner: string
+  repo: string
+  num: string
+  raw: string
+}
+
+export function isPublicMessageCommand(command: string): boolean {
+  const normalized = command.replace(/\s+/g, ' ')
+  return PUBLIC_MESSAGE_COMMANDS.some(re => re.test(normalized))
+}
+
+/**
+ * Strip a single layer of shell quoting from a token. Handles single quotes,
+ * double quotes, and unquoted text. We don't attempt full shell-quote
+ * unescaping — for the leak we're guarding against, the literal content is what
+ * GitHub sees, and any escaped char that's inside `<owner>/<repo>#<num>` would
+ * prevent the auto-link anyway.
+ */
+export function unquoteShell(token: string): string {
+  if (token.length >= 2) {
+    const first = token[0]
+    const last = token[token.length - 1]
+    if (first === '"' && last === '"') {
+      return token.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+    }
+    if (first === "'" && last === "'") {
+      return token.slice(1, -1)
+    }
+  }
+  return token
 }
 
 async function main(): Promise<number> {
@@ -265,7 +265,8 @@ async function main(): Promise<number> {
   // ref repeated three times in a HEREDOC body doesn't print three
   // times.
   const dedup = new Map<string, ExternalRef>()
-  for (const r of refs) {
+  for (let i = 0, { length } = refs; i < length; i += 1) {
+    const r = refs[i]!
     if (!dedup.has(r.raw)) {
       dedup.set(r.raw, r)
     }

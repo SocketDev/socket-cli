@@ -19,20 +19,8 @@
  */
 
 import { existsSync } from 'node:fs'
-import { homedir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
-
-/**
- * Test whether `dir` is a socket-wheelhouse checkout. Looks for the
- * `template/CLAUDE.md` byte-canonical marker — every wheelhouse has this file,
- * downstream repos don't.
- */
-function isWheelhouseRoot(dir: string): boolean {
-  if (!existsSync(dir)) {
-    return false
-  }
-  return existsSync(path.join(dir, 'template', 'CLAUDE.md'))
-}
 
 /**
  * Walk the candidate list and return the first hit. Cheap — at most 5 file-stat
@@ -58,10 +46,11 @@ export function findWheelhouseRoot(
     // 4. Worktree layout — wheelhouse is two levels up.
     path.join(startDir, '..', '..', 'socket-wheelhouse'),
     // 5. Documented fleet layout under $HOME.
-    path.join(homedir(), 'projects', 'socket-wheelhouse'),
+    path.join(os.homedir(), 'projects', 'socket-wheelhouse'),
   ]
 
-  for (const candidate of candidates) {
+  for (let i = 0, { length } = candidates; i < length; i += 1) {
+    const candidate = candidates[i]!
     if (isWheelhouseRoot(candidate)) {
       return path.resolve(candidate)
     }
@@ -81,4 +70,16 @@ export function findWheelhouseTemplateClaudeMd(
     return undefined
   }
   return path.join(root, 'template', 'CLAUDE.md')
+}
+
+/**
+ * Test whether `dir` is a socket-wheelhouse checkout. Looks for the
+ * `template/CLAUDE.md` byte-canonical marker — every wheelhouse has this file,
+ * downstream repos don't.
+ */
+export function isWheelhouseRoot(dir: string): boolean {
+  if (!existsSync(dir)) {
+    return false
+  }
+  return existsSync(path.join(dir, 'template', 'CLAUDE.md'))
 }

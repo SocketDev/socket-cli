@@ -15,17 +15,19 @@ export interface Dep {
 // Shape of the JSON blob Claude Code pipes to the hook via stdin.
 export interface HookInput {
   tool_name: string
-  tool_input?: {
-    file_path?: string
-    new_string?: string
-    old_string?: string
-    content?: string
-  }
+  tool_input?:
+    | {
+        file_path?: string | undefined
+        new_string?: string | undefined
+        old_string?: string | undefined
+        content?: string | undefined
+      }
+    | undefined
   // Optional context Claude Code passes when invoking a hook. We only
   // read the basename of transcript_path to scope the audit log to
   // session; the file itself is never opened.
-  transcript_path?: string
-  session_id?: string
+  transcript_path?: string | undefined
+  session_id?: string | undefined
 }
 
 // Verdict recorded for each checked dep in the audit log. Kept narrow
@@ -35,8 +37,8 @@ export type Verdict = 'allow' | 'block' | 'notfound' | 'unknown'
 // Result of checking a single dep against the Socket.dev API.
 export interface CheckResult {
   purl: string
-  blocked?: boolean
-  reason?: string
+  blocked?: boolean | undefined
+  reason?: string | undefined
 }
 
 // Per-batch outcome breakdown so the caller can route into audit

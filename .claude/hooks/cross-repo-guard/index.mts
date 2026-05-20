@@ -99,71 +99,18 @@ const EXEMPT_PATH_PATTERNS: RegExp[] = [
 const SOCKET_HOOK_MARKER_RE =
   /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
 
-function isMarkerSuppressed(line: string): boolean {
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
-  if (!m) {
-    return false
-  }
-  return !m[1] || m[1] === 'cross-repo'
-}
-
-function isInScope(filePath: string): boolean {
-  if (!filePath) {
-    return false
-  }
-  for (const re of EXEMPT_PATH_PATTERNS) {
-    if (re.test(filePath)) {
-      return false
-    }
-  }
-  return true
-}
-
-function repoNameFromPath(filePath: string): string | undefined {
-  // `/Users/<user>/projects/socket-lib/src/foo.ts` → `socket-lib`.
-  // Best-effort: take the segment after `/projects/` if present.
-  const m = filePath.match(/\/projects\/([^/]+)/)
-  return m?.[1]
-}
-
-interface Hit {
-  lineNumber: number
-  line: string
-  matched: string
-}
-
-function scan(source: string, currentRepoName?: string): Hit[] {
-  const hits: Hit[] = []
-  const lines = source.split('\n')
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i]!
-    const m = line.match(CROSS_REPO_ANY_RE)
-    if (!m) {
-      continue
-    }
-    // A repo's own paths are fine — only flag escapes.
-    const matched = m[0]
-    if (currentRepoName && matched.includes(`/${currentRepoName}`)) {
-      continue
-    }
-    if (isMarkerSuppressed(line)) {
-      continue
-    }
-    hits.push({ lineNumber: i + 1, line, matched })
-  }
-  return hits
-}
-
 interface ToolInput {
-  tool_name?: string
-  tool_input?: {
-    file_path?: string
-    new_string?: string
-    content?: string
-  }
+  tool_name?: string | undefined
+  tool_input?:
+    | {
+        file_path?: string | undefined
+        new_string?: string | undefined
+        content?: string | undefined
+      }
+    | undefined
 }
 
-function emitBlock(filePath: string, hits: Hit[]): void {
+export function emitBlock(filePath: string, hits: Hit[]): void {
   const lines: string[] = []
   lines.push('[cross-repo-guard] Blocked: cross-repo path reference found')
   lines.push(
@@ -184,6 +131,62 @@ function emitBlock(filePath: string, hits: Hit[]): void {
     '  Opt-out for one line (rare): append `// socket-hook: allow cross-repo`.',
   )
   logger.error(lines.join('\n'))
+}
+
+export function isInScope(filePath: string): boolean {
+  if (!filePath) {
+    return false
+  }
+  for (let i = 0, { length } = EXEMPT_PATH_PATTERNS; i < length; i += 1) {
+    const re = EXEMPT_PATH_PATTERNS[i]!
+    if (re.test(filePath)) {
+      return false
+    }
+  }
+  return true
+}
+
+export function isMarkerSuppressed(line: string): boolean {
+  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  if (!m) {
+    return false
+  }
+  return !m[1] || m[1] === 'cross-repo'
+}
+
+export function repoNameFromPath(filePath: string): string | undefined {
+  // `/Users/<user>/projects/socket-lib/src/foo.ts` → `socket-lib`.
+  // Best-effort: take the segment after `/projects/` if present.
+  const m = filePath.match(/\/projects\/([^/]+)/)
+  return m?.[1]
+}
+
+interface Hit {
+  lineNumber: number
+  line: string
+  matched: string
+}
+
+export function scan(source: string, currentRepoName?: string): Hit[] {
+  const hits: Hit[] = []
+  const lines = source.split('\n')
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i]!
+    const m = line.match(CROSS_REPO_ANY_RE)
+    if (!m) {
+      continue
+    }
+    // A repo's own paths are fine — only flag escapes.
+    const matched = m[0]
+    if (currentRepoName && matched.includes(`/${currentRepoName}`)) {
+      continue
+    }
+    if (isMarkerSuppressed(line)) {
+      continue
+    }
+    hits.push({ lineNumber: i + 1, line, matched })
+  }
+  return hits
 }
 
 async function main(): Promise<void> {

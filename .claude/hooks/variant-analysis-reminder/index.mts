@@ -46,7 +46,7 @@ interface StopPayload {
 // where Critical/High is the finding's severity, not just a passing
 // adjective. Case-sensitive on the severity word but tolerant of
 // surrounding punctuation.
-const SEVERITY_PATTERNS: readonly { label: string; regex: RegExp }[] = [
+const SEVERITY_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
     label: 'Critical/High severity label',
     regex: /\b(?:severity[:\s]+|grade[:\s]+|●\s*)?(Critical|High)\b(?=[:\s,])/g,
@@ -59,10 +59,10 @@ const SEVERITY_PATTERNS: readonly { label: string; regex: RegExp }[] = [
 
 // Tool-use names that count as "variant search."
 const VARIANT_SEARCH_TOOLS: ReadonlySet<string> = new Set([
-  'Grep',
+  'Agent',
   'Glob',
+  'Grep',
   'Read',
-  'Agent', // delegated search is also variant analysis
 ])
 
 interface DetectedSeverity {
@@ -70,7 +70,7 @@ interface DetectedSeverity {
   readonly snippet: string
 }
 
-function detectSeverityMentions(text: string): DetectedSeverity[] {
+export function detectSeverityMentions(text: string): DetectedSeverity[] {
   const stripped = stripCodeFences(text)
   const found: DetectedSeverity[] = []
   for (let i = 0, { length } = SEVERITY_PATTERNS; i < length; i += 1) {

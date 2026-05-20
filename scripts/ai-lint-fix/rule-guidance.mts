@@ -1,5 +1,3 @@
-/* oxlint-disable socket/inclusive-language -- AI-fix rule guidance documents the legacy terms each rule scans for. */
-
 /**
  * @file Rule allowlist + per-rule prompt guidance for the AI-fix orchestrator.
  *   Kept separate from `cli.mts` because:
@@ -24,38 +22,15 @@
 // The deterministic linter already handled the unambiguous shapes;
 // what remains is the structural-rewrite set.
 export const AI_HANDLED_RULES: ReadonlySet<string> = new Set([
-  // master/slave — context decides main/primary/controller vs
-  // replica/worker. Other forms (whitelist/blacklist/etc.) auto-fix.
   'socket/inclusive-language',
-  // Literal username in a user-home path. In source: substitute a
-  // placeholder / env-var / delete. In WASM or generated bundles:
-  // the bundler is leaking the path — fix the build config.
-  'socket/personal-path-placeholders',
-  // fs.access / fs.stat existence checks. AI rewrites the try/catch
-  // → if/else and preserves metadata calls when the result is
-  // destructured. Wrapper-name shapes (fileExists / pathExists /
-  // isFile / isDir) auto-fix deterministically.
-  'socket/prefer-exists-sync',
-  // node:fs default/namespace where references are "weird" (computed
-  // access, passed as a value, reassigned). Plain `fs.X` shapes
-  // auto-fix via scope rename.
-  'socket/prefer-node-builtin-imports',
-  // spawnSync where the call site isn't already in async context or
-  // its return value is consumed (assignment, property access).
-  // await/expression-statement shapes auto-fix.
-  'socket/prefer-async-spawn',
-  // null whose surrounding type annotation also mentions null. AI
-  // flips BOTH the annotation and the value in lockstep through the
-  // function signatures / interfaces / return types involved.
-  // Cross-file ripple is handled by per-file passes on the next run.
-  'socket/prefer-undefined-over-null',
-  // File splitting needs to choose natural seams.
   'socket/max-file-lines',
-  // Placeholder finishes need actual implementation.
-  'socket/no-placeholders',
-  // No-fetch needs httpJson/httpText/httpRequest decision based on
-  // how the response is consumed.
   'socket/no-fetch-prefer-http-request',
+  'socket/no-placeholders',
+  'socket/personal-path-placeholders',
+  'socket/prefer-async-spawn',
+  'socket/prefer-exists-sync',
+  'socket/prefer-node-builtin-imports',
+  'socket/prefer-undefined-over-null',
 ])
 
 /**

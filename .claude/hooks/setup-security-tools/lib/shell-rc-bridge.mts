@@ -27,7 +27,7 @@ import {
   readFileSync,
   writeFileSync,
 } from 'node:fs'
-import { homedir, platform } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -38,20 +38,6 @@ const BLOCK_BEGIN = '# BEGIN socket-cli env (managed)'
 const BLOCK_END = '# END socket-cli env'
 
 /**
- * Single-quote a value for safe inclusion in a POSIX shell `export` statement.
- * The token is a base64-ish opaque string in practice but single-quoting also
- * handles any future format that includes dollar-signs, backticks, or
- * backslashes without surprise expansion.
- *
- * POSIX single-quoted strings can contain anything except a single quote. To
- * embed a literal single quote, close the quoted span, insert an escaped quote,
- * and reopen: `it's` → `'it'\''s'`.
- */
-function shellSingleQuote(value: string): string {
-  return `'${value.replace(/'/g, "'\\''")}'`
-}
-
-/**
  * Build the managed block body. Takes the literal token value so the shell
  * never calls `security find-generic-password` (which prompts for the user's
  * macOS login password on every new shell — see the 2026-05-15 incident in
@@ -59,7 +45,7 @@ function shellSingleQuote(value: string): string {
  *
  * The exports use single-quotes for safe POSIX-shell escaping.
  */
-function buildBlockBody(token: string): string {
+export function buildBlockBody(token: string): string {
   const quoted = shellSingleQuote(token)
   return `# Token persisted by setup-security-tools install.mts.
 # Rotate via: node .claude/hooks/setup-security-tools/install.mts --rotate
@@ -70,45 +56,14 @@ export SOCKET_API_KEY=${quoted}`
 }
 
 /**
- * Pick the shell rc file to edit. Honors $SHELL when set; defaults to the most
- * common file for the active user's shell.
- *
- * Why .zshenv (not .zshrc) for zsh: ~/.zshrc is only sourced for interactive
- * shells. Tools that spawn zsh non-interactively (Claude Code's Bash tool, IDE
- * integrations, CI runners) skip .zshrc and therefore miss the bridge.
- * ~/.zshenv runs for every zsh invocation regardless of interactive / login
- * state, which is what an env-var export actually wants. The only downside is
- * the file runs on more shells than strictly needed — but a keychain lookup of
- * a single string is cheap (~5ms) and any consumer that doesn't care just
- * ignores the var.
- *
- * For bash: ~/.bashrc is interactive, ~/.bash_profile is login. Bash's BASH_ENV
- * is the closest analog to .zshenv but it requires the env var to be set ahead
- * of time, which doesn't help us. Settle for ~/.bashrc when present, fall back
- * to ~/.bash_profile. Non-interactive bash callers still need a wrapper script
- * for now.
- *
- * Returns `undefined` when no rc file is sensible — caller falls through to
- * "tell the user what to add manually."
+ * Escape characters that have special meaning in a JavaScript regex. Used for
+ * the sentinel-matching regex above — the sentinels contain literal parens and
+ * `→` which both round-trip safely, but a future sentinel rename might add a
+ * regex metachar so the escape is here to prevent that from breaking the
+ * matcher silently.
  */
-function pickRcFile(): string | undefined {
-  const home = homedir()
-  const shell = process.env['SHELL'] ?? ''
-  if (/zsh$/.test(shell)) {
-    return path.join(home, '.zshenv')
-  }
-  if (/bash$/.test(shell)) {
-    const bashrc = path.join(home, '.bashrc')
-    if (existsSync(bashrc)) {
-      return bashrc
-    }
-    const bashProfile = path.join(home, '.bash_profile')
-    if (existsSync(bashProfile)) {
-      return bashProfile
-    }
-    return bashrc
-  }
-  return undefined
+export function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 export interface BridgeWriteResult {
@@ -146,7 +101,7 @@ export function installShellRcBridge(
       'installShellRcBridge: token must be a non-empty string',
     )
   }
-  if (platform() !== 'darwin') {
+  if (os.platform() !== 'darwin') {
     return undefined
   }
   const rcPath = pickRcFile()
@@ -205,12 +160,68 @@ export function installShellRcBridge(
 }
 
 /**
+ * Pick the shell rc file to edit. Honors $SHELL when set; defaults to the most
+ * common file for the active user's shell.
+ *
+ * Why .zshenv (not .zshrc) for zsh: ~/.zshrc is only sourced for interactive
+ * shells. Tools that spawn zsh non-interactively (Claude Code's Bash tool, IDE
+ * integrations, CI runners) skip .zshrc and therefore miss the bridge.
+ * ~/.zshenv runs for every zsh invocation regardless of interactive / login
+ * state, which is what an env-var export actually wants. The only downside is
+ * the file runs on more shells than strictly needed — but a keychain lookup of
+ * a single string is cheap (~5ms) and any consumer that doesn't care just
+ * ignores the var.
+ *
+ * For bash: ~/.bashrc is interactive, ~/.bash_profile is login. Bash's BASH_ENV
+ * is the closest analog to .zshenv but it requires the env var to be set ahead
+ * of time, which doesn't help us. Settle for ~/.bashrc when present, fall back
+ * to ~/.bash_profile. Non-interactive bash callers still need a wrapper script
+ * for now.
+ *
+ * Returns `undefined` when no rc file is sensible — caller falls through to
+ * "tell the user what to add manually."
+ */
+export function pickRcFile(): string | undefined {
+  const home = os.homedir()
+  const shell = process.env['SHELL'] ?? ''
+  if (shell.endsWith('zsh')) {
+    return path.join(home, '.zshenv')
+  }
+  if (shell.endsWith('bash')) {
+    const bashrc = path.join(home, '.bashrc')
+    if (existsSync(bashrc)) {
+      return bashrc
+    }
+    const bashProfile = path.join(home, '.bash_profile')
+    if (existsSync(bashProfile)) {
+      return bashProfile
+    }
+    return bashrc
+  }
+  return undefined
+}
+
+/**
+ * Single-quote a value for safe inclusion in a POSIX shell `export` statement.
+ * The token is a base64-ish opaque string in practice but single-quoting also
+ * handles any future format that includes dollar-signs, backticks, or
+ * backslashes without surprise expansion.
+ *
+ * POSIX single-quoted strings can contain anything except a single quote. To
+ * embed a literal single quote, close the quoted span, insert an escaped quote,
+ * and reopen: `it's` → `'it'\''s'`.
+ */
+export function shellSingleQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`
+}
+
+/**
  * Remove the keychain-bridge block from the user's shell rc. Used by a future
  * `--unbridge` path; not wired into install.mts yet. Returns `true` when a
  * block was removed, `false` when no block was present.
  */
 export function uninstallShellRcBridge(): boolean {
-  if (platform() !== 'darwin') {
+  if (os.platform() !== 'darwin') {
     return false
   }
   const rcPath = pickRcFile()
@@ -231,15 +242,4 @@ export function uninstallShellRcBridge(): boolean {
       existing.slice(match.index + match[0].length),
   )
   return true
-}
-
-/**
- * Escape characters that have special meaning in a JavaScript regex. Used for
- * the sentinel-matching regex above — the sentinels contain literal parens and
- * `→` which both round-trip safely, but a future sentinel rename might add a
- * regex metachar so the escape is here to prevent that from breaking the
- * matcher silently.
- */
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }

@@ -13,49 +13,47 @@
 //
 // What the hook checks (subset of the gate's rules — diff-local only):
 //
-//   Rule A — Multi-stage path construction: a `path.join(...)` call or
-//   string-template that stitches together two or more "stage" segments
-//   like `'Final'`, `'Release'`, `'Stripped'`, `'Compressed'`,
-//   `'Optimized'`, `'Synced'`, `'wasm'`, `'downloaded'` together with
-//   `'build'` / `'out'` / a mode (`'dev'`/`'prod'`) or platform-arch.
-//   Outside a `paths.mts` file, this is always a violation: the
-//   construction belongs in a helper, every consumer imports the
-//   computed value.
+//   Rule A — Multi-stage path construction: a `path.join(...)` /
+//   `path.resolve(...)` call or string-template that stitches together
+//   two or more "stage" segments together with build / out / mode /
+//   platform-arch context. Outside a `paths.mts` file this is a
+//   violation: the construction belongs in a helper, every consumer
+//   imports the computed value.
 //
 //   Rule B — Cross-package traversal: `path.join(*, '..', '<sibling
 //   package>', 'build', ...)` reaches into a sibling's build output
 //   without going through its `exports`. Forces consumers to declare a
-//   workspace dep and import the sibling's `paths.mts`. The R28 yoga/
-//   ink bug — ink hand-building yoga's wasm path and missing the
-//   `wasm/` segment — is exactly the failure mode this prevents.
+//   workspace dep and import the sibling's `paths.mts`.
 //
 // What the hook does NOT check (the gate handles repo-wide concerns):
 //
 //   Rule C — workflow YAML repetition (gate scans .yml files).
 //   Rule D — comment-encoded paths (gate scans comments + JSDoc).
-//   Rule F — same path reconstructed in multiple files (needs whole-
-//   repo state).
-//   Rule G — Makefile / Dockerfile / shell-script paths (different
-//   tool, gate covers).
+//   Rule F — same path reconstructed in multiple files.
+//   Rule G — Makefile / Dockerfile / shell-script paths.
+//
+// AST-based detector (vendored acorn-wasm). Replaces the prior
+// regex+paren-balance string scanner that the previous file's
+// `extractPathCalls` had to roll by hand because regex couldn't
+// handle nested parens in argument lists like
+// `path.join(getDir(x), 'Final')`. The AST visitor sees those calls
+// natively, with arguments resolved as Literal / NewExpression /
+// CallExpression / TemplateLiteral nodes; we only treat string-Literal
+// arguments as path segments (every other shape is a computed value
+// that doesn't participate in the rule).
 //
 // Scope:
-//
 //   - Fires only on `Edit` and `Write` tool calls.
-//   - Skips files NOT ending in `.mts` or `.cts`. TS path code lives
-//     there; .ts/.mjs/.js sources in `additions/` have different
-//     constraints per CLAUDE.md.
-//   - Skips when the target itself is a `paths.mts` (canonical
-//     constructor), the gate (`scripts/check-paths.mts`), or this hook
-//     — those files legitimately enumerate stage segments.
+//   - Only `.mts` / `.cts` source files.
+//   - Skips `paths.mts` itself (canonical constructor) and the gate /
+//     hook implementations that enumerate stage tokens.
 //
-// Control flow uses a `BlockError` thrown from check helpers so every
-// short-circuit path goes through a single `process.exitCode = 2` drop
-// at the top-level catch — no scattered `process.exit(2)` that can race
-// with buffered stderr. The hook fails OPEN on its own bugs (exit 0 +
-// log) so a bad deploy of the hook can't brick the session.
+// The hook fails OPEN on its own bugs (exit 0 + stderr log).
 
 import process from 'node:process'
 
+import { findTemplateLiterals } from '../_shared/acorn/index.mts'
+import type { TemplateLiteralSite } from '../_shared/acorn/index.mts'
 import {
   BUILD_ROOT_SEGMENTS,
   KNOWN_SIBLING_PACKAGES,
@@ -63,20 +61,12 @@ import {
   STAGE_SEGMENTS,
 } from './segments.mts'
 
-// File-path patterns that are exempt from the hook entirely. Edits to
-// these files legitimately need to enumerate path segments.
 const EXEMPT_FILE_PATTERNS: RegExp[] = [
-  // Any paths.mts is the canonical constructor.
-  /(^|\/)paths\.(mts|cts)$/,
-  // The gate itself and this hook — both enumerate the patterns to
-  // detect them. The gate was split into a `check-paths/` directory of
-  // helper modules; every file under that dir legitimately enumerates
-  // stage / build-root / mode tokens for scanning purposes.
+  /(^|\/)paths\.(cts|mts)$/,
   /scripts\/check-paths\.mts$/,
   /scripts\/check-paths\//,
-  /\.claude\/hooks\/path-guard\/index\.(mts|cts)$/,
+  /\.claude\/hooks\/path-guard\/index\.(cts|mts)$/,
   /\.claude\/hooks\/path-guard\/test\//,
-  // Existing path-scanning gates that intentionally enumerate.
   /scripts\/check-consistency\.mts$/,
 ]
 
@@ -93,102 +83,139 @@ class BlockError extends Error {
   }
 }
 
-const stdin = (): Promise<string> =>
-  new Promise(resolve => {
+interface ToolInput {
+  tool_name?: string | undefined
+  tool_input?:
+    | {
+        file_path?: string | undefined
+        new_string?: string | undefined
+        content?: string | undefined
+      }
+    | undefined
+}
+
+export function stdin(): Promise<string> {
+  return new Promise<string>(resolve => {
     let buf = ''
     process.stdin.setEncoding('utf8')
     process.stdin.on('data', chunk => (buf += chunk))
     process.stdin.on('end', () => resolve(buf))
   })
-
-type ToolInput = {
-  tool_name?: string
-  tool_input?: {
-    file_path?: string
-    new_string?: string
-    content?: string
-  }
 }
 
-const isInScope = (filePath: string): boolean => {
+export function isInScope(filePath: string) {
   if (!filePath) {
     return false
   }
-  // Only inspect TypeScript-Module / CommonJS-Module sources. Per
-  // the user's directive, allowlist by extension.
   if (!filePath.endsWith('.mts') && !filePath.endsWith('.cts')) {
     return false
   }
   return !EXEMPT_FILE_PATTERNS.some(re => re.test(filePath))
 }
 
-// Extract every `path.join(...)` and `path.resolve(...)` call from
-// the diff and return its argument substring. Uses paren-balancing so
-// deeply nested arguments like `path.join(getDir(child(x)), 'Final')`
-// are captured correctly — a regex-only approach silently missed any
-// argument with 2+ levels of nested parentheses.
-const extractPathCalls = (
-  source: string,
-): Array<{ snippet: string; literals: string[] }> => {
-  const calls: Array<{ snippet: string; literals: string[] }> = []
-  const callRe = /\bpath\.(?:join|resolve)\s*\(/g
-  let m: RegExpExecArray | null
-  while ((m = callRe.exec(source)) !== null) {
-    const callStart = m.index
-    const argsStart = callRe.lastIndex
-    let depth = 1
-    let i = argsStart
-    let inString: '"' | "'" | '`' | null = null
-    while (i < source.length && depth > 0) {
-      const ch = source[i]!
-      if (inString) {
-        if (ch === '\\') {
-          i += 2
-          continue
-        }
-        if (ch === inString) {
-          inString = null
-        }
-      } else {
-        if (ch === '"' || ch === "'" || ch === '`') {
-          inString = ch
-        } else if (ch === '(') {
-          depth += 1
-        } else if (ch === ')') {
-          depth -= 1
-          if (depth === 0) {
-            break
-          }
-        }
-      }
-      i += 1
-    }
-    if (depth !== 0) {
-      continue
-    }
-    const args = source.slice(argsStart, i)
-    const litRe = /(['"])((?:\\.|(?!\1)[^\\])*)\1/g
-    const literals: string[] = []
-    let lit: RegExpExecArray | null
-    while ((lit = litRe.exec(args)) !== null) {
-      const value = lit[2]
-      if (value !== undefined) {
-        literals.push(value)
-      }
-    }
-    calls.push({ snippet: source.slice(callStart, i + 1), literals })
-    callRe.lastIndex = i + 1
-  }
-  return calls
+/**
+ * Collect string-literal arguments from each `path.join` / `path.resolve` call.
+ * We deliberately only consume the `firstStringArg` + the
+ * `allStringLiteralArgs` flag from the AST helper's MemberCallSite, then walk
+ * the call again at the source level only as a fallback for displaying the
+ * snippet — we never parse arguments by hand.
+ *
+ * To get ALL string-literal args (not just the first), we re-parse the
+ * arguments via `findMemberCalls`'s nature: it visits one CallExpression at a
+ * time. Since the public surface returns only `firstStringArg`, here we walk
+ * again with a custom visitor that inspects each argument. This keeps the
+ * public helper API narrow while letting path-guard get the full literal list
+ * it needs.
+ */
+import { walkSimple } from '../_shared/acorn/index.mts'
+import type { AcornNode } from '../_shared/acorn/index.mts'
+
+interface PathCall {
+  /**
+   * All string-Literal arguments in source order.
+   */
+  literals: string[]
+  /**
+   * Whether ANY argument was a non-string node (Identifier / CallExpression /
+   * etc.).
+   */
+  hasComputedArg: boolean
+  /**
+   * Source snippet around the call for the block message.
+   */
+  snippet: string
+  /**
+   * 1-based line of the call.
+   */
+  line: number
 }
 
-const checkRuleA = (calls: ReturnType<typeof extractPathCalls>): void => {
-  for (const call of calls) {
+export function collectPathCalls(source: string): PathCall[] {
+  const lines = source.split('\n')
+  const out: PathCall[] = []
+  // Match both `path.join(...)` and `path.resolve(...)` via two passes.
+  for (const property of ['join', 'resolve']) {
+    walkSimple(source, {
+      CallExpression(node: AcornNode) {
+        const callee = node['callee'] as AcornNode | undefined
+        if (!callee || callee.type !== 'MemberExpression') {
+          return
+        }
+        const obj = callee['object'] as AcornNode | undefined
+        if (
+          !obj ||
+          obj.type !== 'Identifier' ||
+          (obj['name'] as string) !== 'path'
+        ) {
+          return
+        }
+        const prop = callee['property'] as AcornNode | undefined
+        if (
+          !prop ||
+          prop.type !== 'Identifier' ||
+          (prop['name'] as string) !== property
+        ) {
+          return
+        }
+        const args = (node['arguments'] as AcornNode[] | undefined) ?? []
+        const literals: string[] = []
+        let hasComputedArg = false
+        for (let i = 0, { length } = args; i < length; i += 1) {
+          const a = args[i]!
+          if (a.type === 'Literal' && typeof a['value'] === 'string') {
+            literals.push(a['value'] as string)
+          } else {
+            hasComputedArg = true
+          }
+        }
+        const start = node['start'] as number | undefined
+        const end = node['end'] as number | undefined
+        if (typeof start !== 'number' || typeof end !== 'number') {
+          return
+        }
+        const line = source.slice(0, start).split('\n').length /* 1-based */
+        const snippet = source.slice(start, end)
+        const trimmedLine = lines[line - 1]?.trim() ?? ''
+        out.push({
+          literals,
+          hasComputedArg,
+          // Prefer the single-line text when the call fits on one
+          // line; otherwise show the slice (truncated by BlockError).
+          snippet: snippet.includes('\n') ? snippet : trimmedLine,
+          line,
+        })
+      },
+    })
+  }
+  return out
+}
+
+export function checkRuleA(calls: PathCall[]) {
+  for (let i = 0, { length } = calls; i < length; i += 1) {
+    const call = calls[i]!
     const stages = call.literals.filter(l => STAGE_SEGMENTS.has(l))
     const buildRoots = call.literals.filter(l => BUILD_ROOT_SEGMENTS.has(l))
     const modes = call.literals.filter(l => MODE_SEGMENTS.has(l))
-    // Trigger if: 2+ stage segments OR (1 stage + 1 build-root + 1 mode).
-    // Both shapes indicate a hand-built build-output path.
     const twoStages = stages.length >= 2
     const stagePlusContext =
       stages.length >= 1 && buildRoots.length >= 1 && modes.length >= 1
@@ -202,13 +229,9 @@ const checkRuleA = (calls: ReturnType<typeof extractPathCalls>): void => {
   }
 }
 
-const checkRuleB = (calls: ReturnType<typeof extractPathCalls>): void => {
-  for (const call of calls) {
-    // A sibling package name *immediately after* a `..` literal (no
-    // path segment in between) plus build context elsewhere in the
-    // call indicates cross-package traversal. The previous "sticky
-    // sawDotDot" form fired falsely when '..' appeared early and an
-    // unrelated sibling-named segment appeared much later.
+export function checkRuleB(calls: PathCall[]) {
+  for (let i = 0, { length } = calls; i < length; i += 1) {
+    const call = calls[i]!
     const hasBuildContext = call.literals.some(
       l => BUILD_ROOT_SEGMENTS.has(l) || STAGE_SEGMENTS.has(l),
     )
@@ -231,34 +254,22 @@ const checkRuleB = (calls: ReturnType<typeof extractPathCalls>): void => {
   }
 }
 
-// Backtick template-literal detection. Path construction via
-// `${buildDir}/out/Final/${binary}` follows the same shape as
-// path.join() and constitutes the same Rule A violation. Placeholders
-// (${...}) are stripped to a sentinel that won't match any segment
-// set, so segments composed entirely of interpolation contribute
-// nothing to the trigger.
-const TEMPLATE_LITERAL_RE =
-  /`((?:\\.|(?:\$\{(?:[^{}]|\{[^{}]*\})*\})|(?!`)[^\\])*)`/g
-
-const checkRuleATemplate = (source: string): void => {
-  TEMPLATE_LITERAL_RE.lastIndex = 0
-  let m: RegExpExecArray | null
-  while ((m = TEMPLATE_LITERAL_RE.exec(source)) !== null) {
-    const body = m[1] ?? ''
-    if (!body.includes('/')) {
+export function checkRuleATemplate(templates: TemplateLiteralSite[]) {
+  for (let i = 0, { length } = templates; i < length; i += 1) {
+    const tpl = templates[i]!
+    // Skip templates with no `/` separator — they can't be path-shaped.
+    if (!tpl.segments.includes('/')) {
       continue
     }
-    const stripped = body.replace(/\$\{(?:[^{}]|\{[^{}]*\})*\}/g, '\x00')
-    const segments = stripped
+    // Replace `\0` expression sentinels with empty (they don't
+    // contribute path segments); split on `/`; filter empty.
+    const segments = tpl.segments
+      .replace(/\x00/g, '')
       .split('/')
-      .filter(s => s.length > 0 && s !== '\x00')
+      .filter(s => s.length > 0)
     const stages = segments.filter(s => STAGE_SEGMENTS.has(s))
     const buildRoots = segments.filter(s => BUILD_ROOT_SEGMENTS.has(s))
     const modes = segments.filter(s => MODE_SEGMENTS.has(s))
-    // Template literal trigger is tighter than path.join() because
-    // backtick strings often appear in patch fixtures, error messages,
-    // and other multi-line content that incidentally contains stage
-    // tokens like `wasm`. Require the canonical build-output shape.
     const hasBuildAndOut =
       buildRoots.includes('build') && buildRoots.includes('out')
     const hasOut = buildRoots.includes('out')
@@ -271,22 +282,25 @@ const checkRuleATemplate = (source: string): void => {
       throw new BlockError(
         'A — multi-stage path constructed inline via template literal',
         'Construct this path in the owning `paths.mts` (or a build-infra helper) and import the computed value here. 1 path, 1 reference.',
-        m[0],
+        tpl.text,
       )
     }
   }
 }
 
-const check = (source: string): void => {
-  const calls = extractPathCalls(source)
+export function check(source: string) {
+  const calls = collectPathCalls(source)
   if (calls.length > 0) {
     checkRuleA(calls)
     checkRuleB(calls)
   }
-  checkRuleATemplate(source)
+  const templates = findTemplateLiterals(source)
+  if (templates.length > 0) {
+    checkRuleATemplate(templates)
+  }
 }
 
-const emitBlock = (filePath: string, err: BlockError): void => {
+export function emitBlock(filePath: string, err: BlockError) {
   process.stderr.write(
     `\n[path-guard] Blocked: ${err.rule}\n` +
       `  Mantra: 1 path, 1 reference\n` +
@@ -296,7 +310,7 @@ const emitBlock = (filePath: string, err: BlockError): void => {
   )
 }
 
-const main = async (): Promise<void> => {
+async function main() {
   const raw = await stdin()
   if (!raw) {
     return
@@ -314,15 +328,11 @@ const main = async (): Promise<void> => {
   if (!isInScope(filePath)) {
     return
   }
-  // Edit tool sends `new_string` (the replacement); Write sends
-  // `content` (the full file). Either is the text we'd be putting on
-  // disk.
   const source =
     payload.tool_input?.new_string ?? payload.tool_input?.content ?? ''
   if (!source) {
     return
   }
-
   try {
     check(source)
   } catch (e) {
@@ -336,8 +346,6 @@ const main = async (): Promise<void> => {
 }
 
 main().catch(e => {
-  // Never block a tool call due to a bug in the hook itself. Log it
-  // so we notice, but fail open.
   process.stderr.write(`[path-guard] hook error (allowing): ${e}\n`)
   process.exitCode = 0
 })

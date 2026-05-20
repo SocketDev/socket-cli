@@ -29,7 +29,7 @@ export interface Service {
   optional: boolean
   // Optional human-readable doc URL surfaced when the hook reports the
   // logout. Empty when no canonical doc page exists.
-  docUrl?: string
+  docUrl?: string | undefined
 }
 
 // Default skip-list seeds. Devs can extend via the per-user

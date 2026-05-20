@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { mkdtempSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
 function makeTranscript(assistantText: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'planreview-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'planreview-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   writeFileSync(
     transcriptPath,
@@ -23,10 +23,10 @@ function makeTranscript(assistantText: string): string {
 
 function runHook(transcriptPath: string): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({ transcript_path: transcriptPath }),
-    encoding: 'utf8',
   })
-  return { stderr: result.stderr, exitCode: result.status ?? -1 }
+  return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
 }
 
 test('FLAGS "Here\'s the plan" without numbered list', () => {
@@ -78,8 +78,8 @@ test('does NOT fire on plain non-plan prose', () => {
 test('disabled env var short-circuits', () => {
   const t = makeTranscript("Here's the plan: do stuff.")
   const result = spawnSync('node', [HOOK_PATH], {
+    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({ transcript_path: t }),
-    encoding: 'utf8',
     env: { ...process.env, SOCKET_PLAN_REVIEW_REMINDER_DISABLED: '1' },
   })
   assert.equal(result.status, 0)

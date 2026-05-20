@@ -82,14 +82,18 @@ function depIdentity(dep: Dep): string {
 // surface a 404 warning and the only thing we kept around is the PURL.
 function depFromPurl(
   purl: string,
-): { type: string; namespace?: string; name: string } | undefined {
+): { type: string; namespace?: string | undefined; name: string } | undefined {
   // PURL shape: pkg:type/[namespace/]name[@version]
-  if (!purl.startsWith('pkg:')) return undefined
+  if (!purl.startsWith('pkg:')) {
+    return undefined
+  }
   const noScheme = purl.slice(4)
   const atIdx = noScheme.indexOf('@')
   const versionless = atIdx === -1 ? noScheme : noScheme.slice(0, atIdx)
   const slashIdx = versionless.indexOf('/')
-  if (slashIdx === -1) return undefined
+  if (slashIdx === -1) {
+    return undefined
+  }
   const type = versionless.slice(0, slashIdx)
   const rest = versionless.slice(slashIdx + 1)
   const lastSlash = rest.lastIndexOf('/')
@@ -107,8 +111,12 @@ function depFromPurl(
 // is a UUID like "abc1234.jsonl"; we strip the extension so audit
 // consumers can join across hook invocations on a clean session id.
 function deriveSessionId(hook: HookInput): string | undefined {
-  if (hook.session_id) return hook.session_id
-  if (!hook.transcript_path) return undefined
+  if (hook.session_id) {
+    return hook.session_id
+  }
+  if (!hook.transcript_path) {
+    return undefined
+  }
   const base = path.basename(hook.transcript_path)
   const dotIdx = base.lastIndexOf('.')
   return dotIdx === -1 ? base : base.slice(0, dotIdx)
@@ -125,10 +133,13 @@ function buildAuditRecords(
   const repo = path.basename(process.cwd())
   const ts = Date.now()
   const blockedByPurl = new Map<string, CheckResult>()
-  for (const b of outcome.blocked) blockedByPurl.set(b.purl, b)
+  for (const b of outcome.blocked) {
+    blockedByPurl.set(b.purl, b)
+  }
 
   const records: AuditRecord[] = []
-  for (const dep of deps) {
+  for (let i = 0, { length } = deps; i < length; i += 1) {
+    const dep = deps[i]!
     const purl = stringify(dep as unknown as PackageURL)
     const blockedHit = blockedByPurl.get(purl)
     let verdict: Verdict
@@ -164,7 +175,9 @@ function buildAuditRecords(
 // atomic for writes < PIPE_BUF (4 KiB) — our records are well under
 // that. The whole function is wrapped to swallow disk-full / EACCES.
 async function appendAuditRecords(records: AuditRecord[]): Promise<void> {
-  if (!records.length) return
+  if (!records.length) {
+    return
+  }
   try {
     await fsp.mkdir(AUDIT_LOG_DIR, { recursive: true })
     // Join into one write so the OS only sees one append syscall per
@@ -187,7 +200,9 @@ async function appendAuditRecords(records: AuditRecord[]): Promise<void> {
 // PURLs that crossed the threshold this call — the caller writes
 // the warning to stderr.
 async function bumpNotFoundCounters(notFound: Set<string>): Promise<string[]> {
-  if (!notFound.size) return []
+  if (!notFound.size) {
+    return []
+  }
   const crossed: string[] = []
   let cache: TtlCache
   try {
@@ -200,7 +215,9 @@ async function bumpNotFoundCounters(notFound: Set<string>): Promise<string[]> {
   }
   for (const purl of notFound) {
     const dep = depFromPurl(purl)
-    if (!dep) continue
+    if (!dep) {
+      continue
+    }
     const key = depIdentity({
       type: dep.type,
       name: dep.name,
@@ -315,10 +332,13 @@ function suggestSimilarName(
   bad: string,
 ): string | undefined {
   const candidates = KNOWN_GOOD_NAMES[ecosystem]
-  if (!candidates) return undefined
+  if (!candidates) {
+    return undefined
+  }
   const target = bad.toLowerCase()
   let best: { name: string; dist: number } | undefined
-  for (const c of candidates) {
+  for (let i = 0, { length } = candidates; i < length; i += 1) {
+    const c = candidates[i]!
     const d = levenshtein(target, c.toLowerCase())
     if (d <= 2 && (!best || d < best.dist)) {
       best = { name: c, dist: d }
@@ -330,16 +350,26 @@ function suggestSimilarName(
 // Iterative Levenshtein with a single rolling row. We bail early
 // once the running min in the row exceeds 2, since that's our cap.
 function levenshtein(a: string, b: string): number {
-  if (a === b) return 0
-  if (!a.length) return b.length
-  if (!b.length) return a.length
+  if (a === b) {
+    return 0
+  }
+  if (!a.length) {
+    return b.length
+  }
+  if (!b.length) {
+    return a.length
+  }
   const aLen = a.length
   const bLen = b.length
   // Eager length-difference prune: if |a|-|b| > 2 the answer is > 2.
-  if (Math.abs(aLen - bLen) > 2) return Math.abs(aLen - bLen)
-  let prev = new Array<number>(bLen + 1)
-  let curr = new Array<number>(bLen + 1)
-  for (let j = 0; j <= bLen; j++) prev[j] = j
+  if (Math.abs(aLen - bLen) > 2) {
+    return Math.abs(aLen - bLen)
+  }
+  let prev: number[] = Array.from({ length: bLen + 1 }, () => 0)
+  let curr: number[] = Array.from({ length: bLen + 1 }, () => 0)
+  for (let j = 0; j <= bLen; j++) {
+    prev[j] = j
+  }
   for (let i = 1; i <= aLen; i++) {
     curr[0] = i
     let rowMin = curr[0]!
@@ -351,9 +381,13 @@ function levenshtein(a: string, b: string): number {
       const sub = prev[j - 1]! + cost
       const v = del < ins ? (del < sub ? del : sub) : ins < sub ? ins : sub
       curr[j] = v
-      if (v < rowMin) rowMin = v
+      if (v < rowMin) {
+        rowMin = v
+      }
     }
-    if (rowMin > 2) return rowMin
+    if (rowMin > 2) {
+      return rowMin
+    }
     const tmp = prev
     prev = curr
     curr = tmp
@@ -381,9 +415,12 @@ async function recordCheckOutcome(
   }
   try {
     const crossed = await bumpNotFoundCounters(outcome.notFound)
-    for (const purl of crossed) {
+    for (let i = 0, { length } = crossed; i < length; i += 1) {
+      const purl = crossed[i]!
       const dep = depFromPurl(purl)
-      if (!dep) continue
+      if (!dep) {
+        continue
+      }
       const suggestion = suggestSimilarName(dep.type, dep.name)
       const hint = suggestion ? ` (did you mean "${suggestion}"?)` : ''
       process.stderr.write(

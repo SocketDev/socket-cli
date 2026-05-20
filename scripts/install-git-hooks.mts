@@ -10,7 +10,7 @@
  *     into this repo yet).
  */
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -40,11 +40,10 @@ function main(): void {
     ['config', '--local', '--get', 'core.hooksPath'],
     {
       cwd: REPO_ROOT,
-      encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   )
-  if (current.status === 0 && current.stdout.trim() === HOOKS_DIR) {
+  if (current.status === 0 && String(current.stdout).trim() === HOOKS_DIR) {
     return
   }
 
@@ -53,13 +52,12 @@ function main(): void {
     ['config', '--local', 'core.hooksPath', HOOKS_DIR],
     {
       cwd: REPO_ROOT,
-      encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   )
   if (set.status !== 0) {
     process.stderr.write(
-      `[install-git-hooks] failed to set core.hooksPath: ${set.stderr.trim()}\n`,
+      `[install-git-hooks] failed to set core.hooksPath: ${String(set.stderr).trim()}\n`,
     )
     process.exitCode = 1
   }

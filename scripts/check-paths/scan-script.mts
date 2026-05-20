@@ -15,7 +15,7 @@ import path from 'node:path'
 import { pushFinding } from './state.mts'
 
 export const SCRIPT_HAND_BUILT_RE =
-  /build\/\$?\{?(?:BUILD_MODE|MODE|prod|dev)\}?\/[\w${}.-]*\/out\/(?:Final|Release|Stripped|Compressed|Optimized|Synced)/g
+  /build\/\$?\{?(?:BUILD_MODE|MODE|dev|prod)\}?\/[\w${}.-]*\/out\/(?:Compressed|Final|Optimized|Release|Stripped|Synced)/g
 
 export const scanScriptFile = (repoRoot: string, relPath: string): void => {
   const full = path.join(repoRoot, relPath)
@@ -61,7 +61,8 @@ export const scanScriptFile = (repoRoot: string, relPath: string): void => {
   // times within the SAME Dockerfile stage (or anywhere in non-
   // Dockerfile scripts, where stages don't apply).
   const grouped = new Map<string, Hit[]>()
-  for (const h of hits) {
+  for (let i = 0, { length } = hits; i < length; i += 1) {
+    const h = hits[i]!
     const key = `${h.stage}::${h.pathStr}`
     const list = grouped.get(key) ?? []
     list.push(h)
@@ -71,7 +72,8 @@ export const scanScriptFile = (repoRoot: string, relPath: string): void => {
     if (list.length < 2) {
       continue
     }
-    for (const hit of list) {
+    for (let i = 0, { length } = list; i < length; i += 1) {
+      const hit = list[i]!
       pushFinding({
         rule: 'G',
         file: relPath,

@@ -26,7 +26,7 @@
  *      matching version + sha + ISO date.
  */
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -50,24 +50,24 @@ const SHA_PINNED_DIR_NAME = /^([0-9a-f]{12})-[0-9a-f]{8,}$/
 export interface MarketplaceListEntry {
   name: string
   source: string
-  installLocation?: string
+  installLocation?: string | undefined
 }
 
 export interface PluginListEntry {
   id: string
-  version?: string
-  scope?: string
-  enabled?: boolean
-  installPath?: string
+  version?: string | undefined
+  scope?: string | undefined
+  enabled?: boolean | undefined
+  installPath?: string | undefined
 }
 
 export interface MarketplacePluginSource {
   source: string
-  url?: string
-  path?: string
-  ref?: string
-  sha?: string
-  commit?: string
+  url?: string | undefined
+  path?: string | undefined
+  ref?: string | undefined
+  sha?: string | undefined
+  commit?: string | undefined
 }
 
 export interface MarketplacePlugin {
@@ -76,8 +76,8 @@ export interface MarketplacePlugin {
 }
 
 export interface MarketplaceManifest {
-  name?: string
-  plugins?: MarketplacePlugin[]
+  name?: string | undefined
+  plugins?: MarketplacePlugin[] | undefined
 }
 
 /**
@@ -89,11 +89,13 @@ export interface MarketplaceManifest {
  */
 export function extractInstalledSha(
   installPath: string | undefined,
-): string | null {
-  if (!installPath) return null
+): string | undefined {
+  if (!installPath) {
+    return undefined
+  }
   const dirName = path.basename(installPath)
   const m = SHA_PINNED_DIR_NAME.exec(dirName)
-  return m ? (m[1] ?? null) : null
+  return m ? (m[1] ?? undefined) : undefined
 }
 
 /**
@@ -110,22 +112,30 @@ export function extractInstalledSha(
 export function lookupInstalledSha(
   installedPluginsJson: unknown,
   installId: string,
-): string | null {
+): string | undefined {
   if (!installedPluginsJson || typeof installedPluginsJson !== 'object') {
-    return null
+    return undefined
   }
-  const plugins = (installedPluginsJson as { plugins?: unknown }).plugins
-  if (!plugins || typeof plugins !== 'object') return null
+  const plugins = (installedPluginsJson as { plugins?: unknown | undefined })
+    .plugins
+  if (!plugins || typeof plugins !== 'object') {
+    return undefined
+  }
   const entries = (plugins as Record<string, unknown>)[installId]
-  if (!Array.isArray(entries)) return null
-  for (const entry of entries) {
-    if (!entry || typeof entry !== 'object') continue
-    const sha = (entry as { gitCommitSha?: unknown }).gitCommitSha
+  if (!Array.isArray(entries)) {
+    return undefined
+  }
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
+    if (!entry || typeof entry !== 'object') {
+      continue
+    }
+    const sha = (entry as { gitCommitSha?: unknown | undefined }).gitCommitSha
     if (typeof sha === 'string' && /^[0-9a-f]{40}$/.test(sha)) {
       return sha
     }
   }
-  return null
+  return undefined
 }
 
 /**
@@ -139,9 +149,14 @@ export function findForeignInstall(
   ourMarketplace: string,
 ): PluginListEntry | undefined {
   const ourId = `${pluginName}@${ourMarketplace}`
-  for (const p of plugins) {
-    if (!p.id.startsWith(`${pluginName}@`)) continue
-    if (p.id === ourId) continue
+  for (let i = 0, { length } = plugins; i < length; i += 1) {
+    const p = plugins[i]!
+    if (!p.id.startsWith(`${pluginName}@`)) {
+      continue
+    }
+    if (p.id === ourId) {
+      continue
+    }
     return p
   }
   return undefined
@@ -160,8 +175,11 @@ export function findOrphanMarketplaces(
   plugins: PluginListEntry[],
 ): string[] {
   const orphans: string[] = []
-  for (const mkt of marketplaces) {
-    if (mkt.name === ourMarketplace) continue
+  for (let i = 0, { length } = marketplaces; i < length; i += 1) {
+    const mkt = marketplaces[i]!
+    if (mkt.name === ourMarketplace) {
+      continue
+    }
     // Find every plugin installed from this marketplace.
     const installedFromHere = plugins
       .filter(p => p.id.endsWith(`@${mkt.name}`))
@@ -186,7 +204,6 @@ export function findOrphanMarketplaces(
  */
 function runClaudeCli(args: string[]): string {
   const result = spawnSync('claude', args, {
-    encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'inherit'],
   })
   if (result.error) {
@@ -200,7 +217,7 @@ function runClaudeCli(args: string[]): string {
       `claude ${args.join(' ')} exited with status ${result.status}`,
     )
   }
-  return result.stdout
+  return String(result.stdout)
 }
 
 function listMarketplaces(): MarketplaceListEntry[] {
@@ -264,18 +281,22 @@ function ensureMarketplace(): MarketplaceListEntry {
  */
 function loadInstalledPluginsState(): unknown {
   const home = process.env['HOME'] ?? process.env['USERPROFILE']
-  if (!home || !path.isAbsolute(home)) return null
+  if (!home || !path.isAbsolute(home)) {
+    return undefined
+  }
   const stateFile = path.join(
     home,
     '.claude',
     'plugins',
     'installed_plugins.json',
   )
-  if (!existsSync(stateFile)) return null
+  if (!existsSync(stateFile)) {
+    return undefined
+  }
   try {
     return JSON.parse(readFileSync(stateFile, 'utf8'))
   } catch {
-    return null
+    return undefined
   }
 }
 
@@ -324,9 +345,11 @@ function installPlugin(installId: string, pinDescription: string): void {
 function resolveInstalledSha(
   ours: PluginListEntry,
   state: unknown,
-): string | null {
+): string | undefined {
   const fromState = lookupInstalledSha(state, ours.id)
-  if (fromState) return fromState
+  if (fromState) {
+    return fromState
+  }
   return extractInstalledSha(ours.installPath)
 }
 
@@ -337,7 +360,7 @@ function resolveInstalledSha(
  */
 function reconcilePlugin(plugin: MarketplacePlugin): void {
   const ourInstallId = `${plugin.name}@${MARKETPLACE_NAME}`
-  const expectedSha = plugin.source.sha ?? null
+  const expectedSha = plugin.source.sha ?? undefined
   const pinDescription = plugin.source.sha ?? plugin.source.ref ?? '<no ref>'
 
   let plugins = listPlugins()
@@ -373,7 +396,7 @@ function reconcilePlugin(plugin: MarketplacePlugin): void {
     const state = loadInstalledPluginsState()
     const installedSha = resolveInstalledSha(ours, state)
     const expectedPrefix = expectedSha.slice(0, 12)
-    const installedPrefix = installedSha?.slice(0, 12) ?? null
+    const installedPrefix = installedSha?.slice(0, 12) ?? undefined
     if (installedPrefix === expectedPrefix) {
       logger.log(
         `Plugin ${ourInstallId} already installed at pinned SHA ${expectedPrefix}.`,
@@ -411,7 +434,8 @@ function warnOrphanMarketplaces(
     ourPluginNames,
     plugins,
   )
-  for (const name of orphans) {
+  for (let i = 0, { length } = orphans; i < length; i += 1) {
+    const name = orphans[i]!
     logger.warn(
       `Marketplace "${name}" appears to only serve plugins we now pin via ` +
         `"${MARKETPLACE_NAME}". Consider \`claude plugin marketplace remove ${name}\` ` +
@@ -431,7 +455,8 @@ function main(): void {
       `marketplace "${MARKETPLACE_NAME}" has no plugins listed — nothing to install.`,
     )
   }
-  for (const plugin of plugins) {
+  for (let i = 0, { length } = plugins; i < length; i += 1) {
+    const plugin = plugins[i]!
     reconcilePlugin(plugin)
   }
 

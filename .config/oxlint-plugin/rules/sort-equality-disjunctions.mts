@@ -79,7 +79,7 @@ const rule = {
       if (node.type !== 'BinaryExpression') {
         return undefined
       }
-      if (node.operator !== '===' && node.operator !== '!==') {
+      if (node.operator !== '!==' && node.operator !== '===') {
         return undefined
       }
       // Right side must be a plain string-literal Identifier-comparand pattern.
@@ -140,7 +140,7 @@ const rule = {
 
       const op = rootNode.operator
       // We only process || and && chains.
-      if (op !== '||' && op !== '&&') {
+      if (op !== '&&' && op !== '||') {
         return
       }
 
@@ -157,7 +157,8 @@ const rule = {
         rightValue: string
       }
       const clauses: Clause[] = []
-      for (const leaf of leaves) {
+      for (let i = 0, { length } = leaves; i < length; i += 1) {
+        const leaf = leaves[i]!
         const c = asEqualityClause(leaf)
         if (!c) {
           // Mixed shape — skip the whole chain. The rule only
@@ -193,7 +194,7 @@ const rule = {
       }
 
       // Compute the sorted order.
-      const sortedClauses = [...clauses].sort((a, b) => {
+      const sortedClauses = [...clauses].toSorted((a, b) => {
         if (a.rightValue < b.rightValue) {
           return -1
         }
@@ -251,4 +252,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- oxlint plugin contract requires default-exported rule object.
 export default rule

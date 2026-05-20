@@ -49,11 +49,11 @@
 
 import type { AstNode } from './rule-types.mts'
 
-const SET_TYPE_NAMES = new Set(['Set', 'ReadonlySet', 'WeakSet'])
+const SET_TYPE_NAMES = new Set(['ReadonlySet', 'Set', 'WeakSet'])
 const MAP_TYPE_NAMES = new Set(['Map', 'ReadonlyMap', 'WeakMap'])
 const ITERABLE_TYPE_NAMES = new Set([
-  'Iterable',
   'AsyncIterable',
+  'Iterable',
   'IterableIterator',
 ])
 const ARRAY_TYPE_NAMES = new Set(['Array', 'ReadonlyArray'])
@@ -63,33 +63,30 @@ export type Kind = 'set' | 'map' | 'iterable' | 'array' | 'unknown'
 // Non-array kinds — the ones flagged by no-cached-for-on-iterable
 // and the ones prefer-cached-for-loop must skip.
 export const FLAGGED_KINDS: ReadonlySet<Kind> = new Set([
-  'set',
-  'map',
   'iterable',
+  'map',
+  'set',
 ])
 
 const SCOPE_NODE_TYPES = new Set([
-  'Program',
-  'BlockStatement',
-  'ForStatement',
-  'ForOfStatement',
-  'ForInStatement',
-  'FunctionDeclaration',
-  'FunctionExpression',
   'ArrowFunctionExpression',
-  'TSDeclareFunction',
+  'BlockStatement',
   'CatchClause',
-  // Class body has its own lexical environment for method `this` etc.,
-  // but doesn't host `let`/`const` declarations at the body level (only
-  // method definitions). Including it doesn't hurt.
   'ClassDeclaration',
   'ClassExpression',
+  'ForInStatement',
+  'ForOfStatement',
+  'ForStatement',
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'Program',
+  'TSDeclareFunction',
 ])
 
 const FUNCTION_NODE_TYPES = new Set([
+  'ArrowFunctionExpression',
   'FunctionDeclaration',
   'FunctionExpression',
-  'ArrowFunctionExpression',
   'TSDeclareFunction',
 ])
 
@@ -170,7 +167,7 @@ export function classifyInit(init: AstNode | undefined): Kind {
     }
     if (
       objName === 'Object' &&
-      (propName === 'keys' || propName === 'values' || propName === 'entries')
+      (propName === 'entries' || propName === 'keys' || propName === 'values')
     ) {
       return 'array'
     }
@@ -252,7 +249,7 @@ function findInScope(scope: AstNode, name: string): Kind | undefined {
   }
 
   // for (const X of …) / for (const X in …) — declaration is in scope.left.
-  if (scope.type === 'ForOfStatement' || scope.type === 'ForInStatement') {
+  if (scope.type === 'ForInStatement' || scope.type === 'ForOfStatement') {
     const left: AstNode | undefined = scope.left
     if (left && left.type === 'VariableDeclaration') {
       const k = findInVariableDeclaration(left, name)
@@ -264,7 +261,7 @@ function findInScope(scope: AstNode, name: string): Kind | undefined {
   }
 
   // Program or BlockStatement: scan body for declarations.
-  if (scope.type === 'Program' || scope.type === 'BlockStatement') {
+  if (scope.type === 'BlockStatement' || scope.type === 'Program') {
     const body: AstNode[] | undefined = scope.body
     if (!body) {
       return undefined

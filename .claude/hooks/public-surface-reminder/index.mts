@@ -24,10 +24,12 @@
 import { readFileSync } from 'node:fs'
 
 type ToolInput = {
-  tool_name?: string
-  tool_input?: {
-    command?: string
-  }
+  tool_name?: string | undefined
+  tool_input?:
+    | {
+        command?: string | undefined
+      }
+    | undefined
 }
 
 // Commands that can publish content outside the local machine.
@@ -35,13 +37,13 @@ type ToolInput = {
 const PUBLIC_SURFACE_PATTERNS: RegExp[] = [
   /\bgit\s+commit\b/,
   /\bgit\s+push\b/,
-  /\bgh\s+pr\s+(create|edit|comment|review)\b/,
-  /\bgh\s+issue\s+(create|edit|comment)\b/,
-  /\bgh\s+api\b[^|]*-X\s*(POST|PATCH|PUT)\b/i,
+  /\bgh\s+pr\s+(comment|create|edit|review)\b/,
+  /\bgh\s+issue\s+(comment|create|edit)\b/,
+  /\bgh\s+api\b[^|]*-X\s*(PATCH|POST|PUT)\b/i,
   /\bgh\s+release\s+(create|edit)\b/,
 ]
 
-function isPublicSurface(command: string): boolean {
+export function isPublicSurface(command: string): boolean {
   const normalized = command.replace(/\s+/g, ' ')
   return PUBLIC_SURFACE_PATTERNS.some(re => re.test(normalized))
 }

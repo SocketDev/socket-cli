@@ -18,7 +18,7 @@
 // resolve REPO_ROOT to the real repo and write to the real git config
 // instead of the tmpdir, which is what we want to verify.
 
-import { spawnSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import {
   copyFileSync,
   mkdirSync,
@@ -27,7 +27,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import path from 'node:path'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
@@ -52,7 +52,7 @@ interface TmpRepo {
 }
 
 function makeTmpRepo(): TmpRepo {
-  const dir = mkdtempSync(path.join(tmpdir(), 'install-git-hooks-test-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'install-git-hooks-test-'))
   // Mirror the real on-disk layout: <repo-root>/scripts/install-git-hooks.mts.
   // The installer derives REPO_ROOT as `path.dirname(import.meta.url)/..`,
   // so placing the copy under `<dir>/scripts/` makes REPO_ROOT === dir.
@@ -79,15 +79,13 @@ function makeTmpRepo(): TmpRepo {
 // minimal identity and disables `core.hooksPath` inheritance via
 // --local writes only.
 function gitInit(dir: string): void {
-  const r = spawnSync('git', ['init', '--quiet', dir], { encoding: 'utf8' })
+  const r = spawnSync('git', ['init', '--quiet', dir], {})
   assert.strictEqual(r.status, 0, `git init failed: ${r.stderr}`)
 }
 
 function readLocalConfig(dir: string, key: string): string | undefined {
-  const r = spawnSync('git', ['-C', dir, 'config', '--local', '--get', key], {
-    encoding: 'utf8',
-  })
-  return r.status === 0 ? r.stdout.trim() : undefined
+  const r = spawnSync('git', ['-C', dir, 'config', '--local', '--get', key], {})
+  return r.status === 0 ? String(r.stdout).trim() : undefined
 }
 
 function runInstaller(
@@ -96,9 +94,8 @@ function runInstaller(
 ): { code: number; stderr: string } {
   const r = spawnSync(process.execPath, [installerPath], {
     cwd,
-    encoding: 'utf8',
   })
-  return { code: r.status ?? 0, stderr: r.stderr ?? '' }
+  return { code: r.status ?? 0, stderr: String(r.stderr) ?? '' }
 }
 
 test('install-git-hooks: sets core.hooksPath when .git + .git-hooks both present', () => {

@@ -53,14 +53,15 @@ const BYPASS_PHRASE = 'Allow minimumReleaseAge bypass'
 //
 // Returns the set of `- <name>` entries under the exclude list. Empty set
 // when the block isn't present.
-function extractExcludeNames(yamlText: string): Set<string> {
+export function extractExcludeNames(yamlText: string): Set<string> {
   const lines = yamlText.split(/\r?\n/)
   const out = new Set<string>()
   let inMra = false
   let mraIndent = -1
   let inExclude = false
   let excludeIndent = -1
-  for (const raw of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const raw = lines[i]!
     const line = raw.replace(/\s+#.*$/, '')
     const trimmed = line.trim()
     if (!trimmed) {
@@ -108,7 +109,7 @@ function extractExcludeNames(yamlText: string): Set<string> {
   return out
 }
 
-function readFileSafe(p: string): string {
+export function readFileSafe(p: string): string {
   try {
     return readFileSync(p, 'utf8')
   } catch {

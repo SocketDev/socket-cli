@@ -57,50 +57,7 @@ const CANONICAL_PATTERNS: readonly string[] = [
   'github/codeql-action/upload-sarif@*',
 ]
 
-interface PermissionsResponse {
-  enabled: boolean
-  allowed_actions: 'all' | 'local_only' | 'selected'
-  sha_pinning_required?: boolean
-}
-
-interface SelectedActionsResponse {
-  github_owned_allowed: boolean
-  verified_allowed: boolean
-  patterns_allowed: string[]
-}
-
-interface RepoFinding {
-  repo: string
-  ok: boolean
-  // Each detail line is one fixable item. Empty when ok=true.
-  details: string[]
-}
-
-async function gh(args: readonly string[]): Promise<string> {
-  const r = await spawn('gh', args as string[], {
-    stdio: 'pipe',
-    stdioString: true,
-    timeout: 30_000,
-  })
-  return String(r.stdout ?? '').trim()
-}
-
-async function fetchPermissions(repo: string): Promise<PermissionsResponse> {
-  const raw = await gh(['api', `repos/${repo}/actions/permissions`])
-  return JSON.parse(raw) as PermissionsResponse
-}
-
-async function fetchSelectedActions(
-  repo: string,
-): Promise<SelectedActionsResponse> {
-  const raw = await gh([
-    'api',
-    `repos/${repo}/actions/permissions/selected-actions`,
-  ])
-  return JSON.parse(raw) as SelectedActionsResponse
-}
-
-async function auditOne(repo: string): Promise<RepoFinding> {
+export async function auditOne(repo: string): Promise<RepoFinding> {
   const details: string[] = []
   let perms: PermissionsResponse
   try {
@@ -225,7 +182,52 @@ async function auditOne(repo: string): Promise<RepoFinding> {
   return { repo, ok: !failedRequired, details }
 }
 
-function parseArgs(argv: readonly string[]): {
+export async function fetchPermissions(
+  repo: string,
+): Promise<PermissionsResponse> {
+  const raw = await gh(['api', `repos/${repo}/actions/permissions`])
+  return JSON.parse(raw) as PermissionsResponse
+}
+
+export async function fetchSelectedActions(
+  repo: string,
+): Promise<SelectedActionsResponse> {
+  const raw = await gh([
+    'api',
+    `repos/${repo}/actions/permissions/selected-actions`,
+  ])
+  return JSON.parse(raw) as SelectedActionsResponse
+}
+
+interface PermissionsResponse {
+  enabled: boolean
+  allowed_actions: 'all' | 'local_only' | 'selected'
+  sha_pinning_required?: boolean | undefined
+}
+
+interface SelectedActionsResponse {
+  github_owned_allowed: boolean
+  verified_allowed: boolean
+  patterns_allowed: string[]
+}
+
+interface RepoFinding {
+  repo: string
+  ok: boolean
+  // Each detail line is one fixable item. Empty when ok=true.
+  details: string[]
+}
+
+export async function gh(args: readonly string[]): Promise<string> {
+  const r = await spawn('gh', args as string[], {
+    stdio: 'pipe',
+    stdioString: true,
+    timeout: 30_000,
+  })
+  return String(r.stdout ?? '').trim()
+}
+
+export function parseArgs(argv: readonly string[]): {
   repos: string[]
   json: boolean
 } {
@@ -235,8 +237,9 @@ function parseArgs(argv: readonly string[]): {
     const a = argv[i]!
     if (a === '--json') {
       json = true
-    } else if (a === '-h' || a === '--help') {
+    } else if (a === '--help' || a === '-h') {
       logger.info(
+        // oxlint-disable-next-line socket/no-logger-newline-literal -- CLI help text is intentionally a single multi-line block; splitting would garble the columnar formatting users expect.
         `Usage: node run.mts [--json] <owner/repo>...
 
 Audits GH Actions permissions + allowlist against the fleet baseline.

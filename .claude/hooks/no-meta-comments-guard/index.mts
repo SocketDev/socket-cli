@@ -41,6 +41,8 @@
 
 import process from 'node:process'
 
+import { splitLines, walkComments } from '../_shared/acorn/index.mts'
+
 interface ToolInput {
   readonly tool_input?:
     | {
@@ -71,21 +73,21 @@ interface MetaCommentFinding {
 // rest of the sentence.
 const TASK_PATTERNS: ReadonlyArray<{
   readonly re: RegExp
-  readonly stripPrefix?: RegExp
+  readonly stripPrefix?: RegExp | undefined
 }> = [
   // `// Plan: ...` / `// Task: ...` / `// Note from plan: ...`
   {
-    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:plan|task|note from (?:plan|task|brief))\s*:/i,
+    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:plan|task|note from (?:brief|plan|task))\s*:/i,
     stripPrefix:
-      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:plan|task|note from (?:plan|task|brief))\s*:\s*/i,
+      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:plan|task|note from (?:brief|plan|task))\s*:\s*/i,
   },
   // `// Per the task ...` / `// Per the plan ...` / `// As requested ...`
   {
-    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:per the (?:task|plan|brief|spec|user|request)|as requested|per the user('s)? request)\b/i,
+    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:per the (?:brief|plan|request|spec|task|user)|as requested|per the user('s)? request)\b/i,
   },
   // `// TODO from the brief` / `// FIXME per plan`
   {
-    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:TODO|FIXME|XXX)\s+(?:from|per)\s+(?:the\s+)?(?:plan|task|brief|spec|user|request)\b/i,
+    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:FIXME|TODO|XXX)\s+(?:from|per)\s+(?:the\s+)?(?:brief|plan|request|spec|task|user)\b/i,
   },
   // Phase / tier / step markers — `// Tier 1 ...`, `// Phase 10a:
   // ...`, `// Step 3 - ...`. These leak the roadmap shape into source
@@ -93,14 +95,14 @@ const TASK_PATTERNS: ReadonlyArray<{
   // by whitespace + number) OR as `Phase NNN:` / `Step NNN -` colon /
   // dash labels.
   {
-    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:tier|phase|step|milestone|sprint|iteration)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
+    re: /(^|\n)\s*(?:\/\/|\/\*|\*|#|-)\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
     stripPrefix:
-      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:tier|phase|step|milestone|sprint|iteration)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i,
+      /^(\s*(?:\/\/|\/\*|\*|#|-)\s*)(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i,
   },
 ]
 
 // Removed-code references.
-const REMOVED_CODE_PATTERNS: ReadonlyArray<RegExp> = [
+const REMOVED_CODE_PATTERNS: readonly RegExp[] = [
   // `// removed X` / `// removed: X`
   /(^|\n)\s*(?:\/\/|\/\*|\*|#)\s*removed\b/i,
   // `// previously X` / `// previously called X`
@@ -118,7 +120,7 @@ const REMOVED_CODE_PATTERNS: ReadonlyArray<RegExp> = [
  * a stripped `// plan: use the cache` reads as `// Use the cache`. Skips the
  * comment marker tokens so they don't count as "first letter".
  */
-function uppercaseFirstLetterAfterMarker(line: string): string {
+export function uppercaseFirstLetterAfterMarker(line: string): string {
   const m = line.match(/^(\s*(?:\/\/|\/\*|\*|#|-)\s*)([a-zA-Z])/)
   if (!m) {
     return line
@@ -128,13 +130,116 @@ function uppercaseFirstLetterAfterMarker(line: string): string {
   return prefix + firstChar.toUpperCase() + line.slice(prefix.length + 1)
 }
 
+// Body-only versions of the patterns (no comment-marker prefix —
+// the AST walker already gives us the body text). The same TASK_PATTERNS
+// and REMOVED_CODE_PATTERNS above retain the marker-prefixed form so the
+// non-JS lexical path below can still use them.
+const TASK_BODY_PATTERNS: ReadonlyArray<{
+  readonly re: RegExp
+  readonly stripBody?: RegExp | undefined
+}> = [
+  {
+    re: /^\s*(?:plan|task|note from (?:brief|plan|task))\s*:/i,
+    stripBody: /^\s*(?:plan|task|note from (?:brief|plan|task))\s*:\s*/i,
+  },
+  {
+    re: /^\s*(?:per the (?:brief|plan|request|spec|task|user)|as requested|per the user('s)? request)\b/i,
+  },
+  {
+    re: /^\s*(?:FIXME|TODO|XXX)\s+(?:from|per)\s+(?:the\s+)?(?:brief|plan|request|spec|task|user)\b/i,
+  },
+  {
+    re: /^\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
+    stripBody:
+      /^\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i,
+  },
+]
+
+const REMOVED_CODE_BODY_PATTERNS: readonly RegExp[] = [
+  /^\s*removed\b/i,
+  /^\s*previously\b/i,
+  /^\s*used\s+to\b/i,
+  /^\s*no\s+longer\b/i,
+  /^\s*formerly\b/i,
+]
+
 /**
- * Walk the text, find every meta-comment finding. Returns the line number
- * (1-indexed) so the error message can name the exact site.
+ * AST-based detector for JS/TS/JSX/TSX source. Uses `walkComments` from the
+ * shared acorn helper to walk just the comment tokens — string-literal mentions
+ * of `Plan:` / `Task:` etc. don't trigger.
  */
-function findMetaComments(text: string): MetaCommentFinding[] {
+export function findMetaCommentsAst(text: string): MetaCommentFinding[] {
   const findings: MetaCommentFinding[] = []
-  const lines = text.split('\n')
+  const lines = splitLines(text)
+  for (const c of walkComments(text, { comments: true })) {
+    // Block comments may have multiple meaningful lines; check each
+    // line of the body individually so the suggestion can name the
+    // exact offending line.
+    const bodyLines = splitLines(c.value)
+    for (let li = 0; li < bodyLines.length; li += 1) {
+      const body = bodyLines[li]!
+      // Strip leading ` *` / `*` decorators that JSDoc-style blocks use.
+      const cleaned = body.replace(/^\s*\*\s?/, '')
+      const lineNum = c.line + li
+      const sourceLine = (lines[lineNum - 1] ?? '').trim()
+      let matched = false
+      for (const { re, stripBody } of TASK_BODY_PATTERNS) {
+        if (!re.test(cleaned)) {
+          continue
+        }
+        const stripped = stripBody
+          ? cleaned.replace(stripBody, '').trim()
+          : cleaned.trim()
+        const suggestion = uppercaseFirstLetterAfterMarker(
+          c.kind === 'Line' ? `// ${stripped}` : `* ${stripped}`,
+        )
+        findings.push({
+          kind: 'task',
+          line: lineNum,
+          snippet: sourceLine,
+          suggestion:
+            suggestion ||
+            '(remove the comment entirely — it has no runtime content)',
+        })
+        matched = true
+        break
+      }
+      if (matched) {
+        continue
+      }
+      for (
+        let i = 0, { length } = REMOVED_CODE_BODY_PATTERNS;
+        i < length;
+        i += 1
+      ) {
+        const re = REMOVED_CODE_BODY_PATTERNS[i]!
+        if (!re.test(cleaned)) {
+          continue
+        }
+        findings.push({
+          kind: 'removed-code',
+          line: lineNum,
+          snippet: sourceLine,
+          suggestion:
+            '(remove the comment — code that no longer exists is git-history territory, not source comments)',
+        })
+        break
+      }
+    }
+  }
+  return findings
+}
+
+/**
+ * Lexical-regex fallback for non-JS sources (C++, Rust, Go, Python, shell). The
+ * acorn-wasm parser only understands JS/TS, so for those languages we keep the
+ * marker-anchored regex scan. False-positives on string-literal mentions of `//
+ * Plan:` etc. are possible but rare in practice for those language
+ * conventions.
+ */
+export function findMetaCommentsLexical(text: string): MetaCommentFinding[] {
+  const findings: MetaCommentFinding[] = []
+  const lines = splitLines(text)
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i]!
@@ -142,12 +247,6 @@ function findMetaComments(text: string): MetaCommentFinding[] {
       if (!re.test(`\n${line}`)) {
         continue
       }
-      // Build the suggestion. For task-style comments we strip the
-      // meta prefix (`Plan:` / `Task:`) and uppercase the first
-      // letter of the remainder so the rewritten comment reads as a
-      // normal sentence. For free-form patterns without a stripPrefix
-      // (e.g. `// Per the task ...`) we surface the bare body for the
-      // operator to rewrite.
       const stripped = stripPrefix
         ? line.replace(stripPrefix, '$1').replace(/\s+/g, ' ').trim()
         : line
@@ -165,7 +264,8 @@ function findMetaComments(text: string): MetaCommentFinding[] {
       })
       break
     }
-    for (const re of REMOVED_CODE_PATTERNS) {
+    for (let i = 0, { length } = REMOVED_CODE_PATTERNS; i < length; i += 1) {
+      const re = REMOVED_CODE_PATTERNS[i]!
       if (!re.test(`\n${line}`)) {
         continue
       }
@@ -180,6 +280,17 @@ function findMetaComments(text: string): MetaCommentFinding[] {
     }
   }
   return findings
+}
+
+const JS_TS_FILE_RE = /\.(?:[cm]?[jt]sx?)$/
+
+export function findMetaComments(
+  text: string,
+  filePath: string,
+): MetaCommentFinding[] {
+  return JS_TS_FILE_RE.test(filePath)
+    ? findMetaCommentsAst(text)
+    : findMetaCommentsLexical(text)
 }
 
 let payloadRaw = ''
@@ -212,7 +323,7 @@ process.stdin.on('end', () => {
       process.exit(0)
     }
 
-    const findings = findMetaComments(text)
+    const findings = findMetaComments(text, filePath)
     if (findings.length === 0) {
       process.exit(0)
     }
@@ -221,7 +332,8 @@ process.stdin.on('end', () => {
     lines.push('[no-meta-comments-guard] Blocked: meta-comment(s) in source.')
     lines.push(`  File: ${filePath}`)
     lines.push('')
-    for (const f of findings) {
+    for (let i = 0, { length } = findings; i < length; i += 1) {
+      const f = findings[i]!
       lines.push(`  Line ${f.line} (${f.kind}):`)
       lines.push(`    Saw:     ${f.snippet}`)
       lines.push(`    Suggest: ${f.suggestion}`)
