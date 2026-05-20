@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`socket manifest bazel [beta]`** — Generate Bazel JVM SBOM manifests by running `bazel query` against discovered Maven repos in a Bazel workspace. Closes the inline-Maven-declaration gap that lockfile-only parsing misses for repos like envoy, ray, tensorflow, tink-java, and or-tools. Auto-detects Bzlmod and legacy `WORKSPACE`.
 - **`socket scan create --auto-manifest`** now covers Bazel workspaces in addition to Gradle/Scala/Kotlin/Conda. Repos with `MODULE.bazel`, `WORKSPACE`, or `WORKSPACE.bazel` are detected automatically and their Maven dependencies extracted as part of the standard scan-create flow.
 
+## [1.1.98](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.98) - 2026-05-20
+
+### Changed
+- `socket scan create --reach` now uploads the reachability facts file as brotli on the wire, shrinking mono-repo upload sizes by roughly 85% with no change to the on-disk or stored format. Faster scan submissions on slow connections.
+
 ## [1.1.97](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.97) - 2026-05-18
 
 ### Changed
