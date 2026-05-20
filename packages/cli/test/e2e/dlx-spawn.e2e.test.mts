@@ -6,6 +6,7 @@ import { ENV } from '../../src/constants/env.mts'
 import { spawnDlx } from '../../src/util/dlx/spawn.mts'
 import { findUp } from '../../src/util/fs/find-up.mts'
 import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
+import { withScratchHome } from '../helpers/cli-execution.mts'
 
 describe('dlx e2e tests', () => {
   let hasAuth = false
@@ -45,22 +46,26 @@ describe('dlx e2e tests', () => {
           version: '1.6.0', // Pinned version for consistency.
         }
 
-        // Run cowsay with a test message.
-        const result = await spawnDlx(packageSpec, [
-          'Hello from Socket CLI tests!',
-        ])
+        // Scratch HOME so spawnDlx installs to <scratch>/.socket/_dlx rather
+        // than the dev's ~/.socket/_dlx.
+        await withScratchHome(async () => {
+          // Run cowsay with a test message.
+          const result = await spawnDlx(packageSpec, [
+            'Hello from Socket CLI tests!',
+          ])
 
-        // Verify it succeeded.
-        expect(result.spawnPromise).toBeDefined()
-        const spawnResult = await result.spawnPromise
-        expect(spawnResult.code).toBe(0)
-        if (spawnResult.stdout) {
-          // Cowsay should output our message in a speech bubble.
-          expect(spawnResult.stdout).toContain('Hello from Socket CLI tests!')
-          // Should have the cow ASCII art.
-          expect(spawnResult.stdout).toMatch(/\\\s+/)
-          expect(spawnResult.stdout).toMatch(/\^__\^/)
-        }
+          // Verify it succeeded.
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult.code).toBe(0)
+          if (spawnResult.stdout) {
+            // Cowsay should output our message in a speech bubble.
+            expect(spawnResult.stdout).toContain('Hello from Socket CLI tests!')
+            // Should have the cow ASCII art.
+            expect(spawnResult.stdout).toMatch(/\\\s+/)
+            expect(spawnResult.stdout).toMatch(/\^__\^/)
+          }
+        })
       },
       30000, // 30 second timeout for download.
     )
@@ -80,33 +85,36 @@ describe('dlx e2e tests', () => {
         // by checking our unit tests pass and the actual execution works.
 
         // Try to run a simple pnpm dlx command directly to ensure it works.
-        try {
-          const r = spawnSync(
-            'pnpm',
-            ['exec', 'cowsay@1.6.0', 'Direct test'],
-            { stdio: 'pipe', stdioString: true },
-          )
-          if (r.status !== 0) {
-            throw new Error(String(r.stderr ?? r.stdout ?? ''))
-          }
-          expect(String(r.stdout)).toContain('Direct test')
-
-          // Verify that adding unsupported flags would fail.
-          // For example, --ignore-scripts is only for pnpm install, not dlx.
-          expect(() => {
-            const r2 = spawnSync(
+        // Scratch HOME so pnpm's store + cache land outside the dev's home.
+        await withScratchHome(async () => {
+          try {
+            const r = spawnSync(
               'pnpm',
-              ['exec', '--ignore-scripts', 'cowsay@1.6.0', 'Should fail'],
+              ['exec', 'cowsay@1.6.0', 'Direct test'],
               { stdio: 'pipe', stdioString: true },
             )
-            if (r2.status !== 0) {
-              throw new Error(String(r2.stderr ?? r2.stdout ?? ''))
+            if (r.status !== 0) {
+              throw new Error(String(r.stderr ?? r.stdout ?? ''))
             }
-          }).toThrow()
-        } catch (e) {
-          // If pnpm is not available globally, skip this part.
-          logger.log('Could not run direct pnpm test:', e.message)
-        }
+            expect(String(r.stdout)).toContain('Direct test')
+
+            // Verify that adding unsupported flags would fail.
+            // For example, --ignore-scripts is only for pnpm install, not dlx.
+            expect(() => {
+              const r2 = spawnSync(
+                'pnpm',
+                ['exec', '--ignore-scripts', 'cowsay@1.6.0', 'Should fail'],
+                { stdio: 'pipe', stdioString: true },
+              )
+              if (r2.status !== 0) {
+                throw new Error(String(r2.stderr ?? r2.stdout ?? ''))
+              }
+            }).toThrow()
+          } catch (e) {
+            // If pnpm is not available globally, skip this part.
+            logger.log('Could not run direct pnpm test:', e.message)
+          }
+        })
       },
       15000,
     )
@@ -132,15 +140,17 @@ describe('dlx e2e tests', () => {
           version: '1.6.0',
         }
 
-        // Force npm agent.
-        const result = await spawnDlx(packageSpec, ['Moo from npm!'], {
-          agent: 'npm',
-        })
+        await withScratchHome(async () => {
+          // Force npm agent.
+          const result = await spawnDlx(packageSpec, ['Moo from npm!'], {
+            agent: 'npm',
+          })
 
-        expect(result.ok).toBe(true)
-        if (result.ok && result.data) {
-          expect(result.data).toContain('Moo from npm!')
-        }
+          expect(result.ok).toBe(true)
+          if (result.ok && result.data) {
+            expect(result.data).toContain('Moo from npm!')
+          }
+        })
       },
       30000,
     )
@@ -151,19 +161,21 @@ describe('dlx e2e tests', () => {
       'executes @coana-tech/cli via dlx with correct binary name',
       async () => {
         const { spawnCoanaDlx } = await import('../../src/util/dlx/spawn.mts')
-        const result = await spawnCoanaDlx(['--help'])
+        await withScratchHome(async () => {
+          const result = await spawnCoanaDlx(['--help'])
 
-        // Coana should succeed - if it fails, it indicates a real issue.
-        expect(result).toBeDefined()
-        expect(result.ok).toBe(true)
+          // Coana should succeed - if it fails, it indicates a real issue.
+          expect(result).toBeDefined()
+          expect(result.ok).toBe(true)
 
-        if (result.ok && result.data) {
-          // Verify we got output from coana binary.
-          expect(result.data).toContain('coana')
-        } else {
-          // If coana fails, the test should fail to catch real issues.
-          throw new Error(`Coana execution failed: ${result.message}`)
-        }
+          if (result.ok && result.data) {
+            // Verify we got output from coana binary.
+            expect(result.data).toContain('coana')
+          } else {
+            // If coana fails, the test should fail to catch real issues.
+            throw new Error(`Coana execution failed: ${result.message}`)
+          }
+        })
       },
       30000,
     )
@@ -182,16 +194,18 @@ describe('dlx e2e tests', () => {
           expect(resolution.details.binaryName).toBe('coana')
         }
 
-        // Verify execution works with resolved binary name.
-        const result = await spawnCoanaDlx(['--version'])
+        await withScratchHome(async () => {
+          // Verify execution works with resolved binary name.
+          const result = await spawnCoanaDlx(['--version'])
 
-        expect(result).toBeDefined()
-        expect(result.ok).toBe(true)
+          expect(result).toBeDefined()
+          expect(result.ok).toBe(true)
 
-        if (result.ok && result.data) {
-          // Version output should contain coana information.
-          expect(result.data).toBeTruthy()
-        }
+          if (result.ok && result.data) {
+            // Version output should contain coana information.
+            expect(result.data).toBeTruthy()
+          }
+        })
       },
       30000,
     )
@@ -202,14 +216,16 @@ describe('dlx e2e tests', () => {
       'executes synp via dlx',
       async () => {
         const { spawnSynpDlx } = await import('./spawn.mts')
-        const result = await spawnSynpDlx(['--help'])
+        await withScratchHome(async () => {
+          const result = await spawnSynpDlx(['--help'])
 
-        expect(result.spawnPromise).toBeDefined()
-        const spawnResult = await result.spawnPromise
-        expect(spawnResult.code).toBe(0)
-        if (spawnResult.stdout) {
-          expect(spawnResult.stdout).toContain('synp')
-        }
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult.code).toBe(0)
+          if (spawnResult.stdout) {
+            expect(spawnResult.stdout).toContain('synp')
+          }
+        })
       },
       30000,
     )
@@ -218,24 +234,26 @@ describe('dlx e2e tests', () => {
       'handles error from spawn',
       async () => {
         const { spawnSynpDlx } = await import('./spawn.mts')
-        // Pass invalid args to trigger an error.
-        const result = await spawnSynpDlx([
-          '--invalid-flag-that-does-not-exist',
-        ])
+        await withScratchHome(async () => {
+          // Pass invalid args to trigger an error.
+          const result = await spawnSynpDlx([
+            '--invalid-flag-that-does-not-exist',
+          ])
 
-        // The command should fail with invalid flags.
-        // Just verify we get a result with spawnPromise.
-        expect(result).toBeDefined()
-        expect(result.spawnPromise).toBeDefined()
+          // The command should fail with invalid flags.
+          // Just verify we get a result with spawnPromise.
+          expect(result).toBeDefined()
+          expect(result.spawnPromise).toBeDefined()
 
-        // The spawnPromise may throw or return with non-zero exit code
-        try {
-          const spawnResult = await result.spawnPromise
-          expect(spawnResult.code).toBeGreaterThan(0) // Should fail with non-zero exit code
-        } catch (e) {
-          // Command failed as expected - this is valid behavior
-          expect(error).toBeDefined()
-        }
+          // The spawnPromise may throw or return with non-zero exit code
+          try {
+            const spawnResult = await result.spawnPromise
+            expect(spawnResult.code).toBeGreaterThan(0) // Should fail with non-zero exit code
+          } catch (e) {
+            // Command failed as expected - this is valid behavior
+            expect(error).toBeDefined()
+          }
+        })
       },
       30000,
     )
@@ -250,11 +268,13 @@ describe('dlx e2e tests', () => {
           version: '1.6.0',
         }
 
-        const result = await spawnDlx(packageSpec, ['--help'])
+        await withScratchHome(async () => {
+          const result = await spawnDlx(packageSpec, ['--help'])
 
-        expect(result.spawnPromise).toBeDefined()
-        const spawnResult = await result.spawnPromise
-        expect(spawnResult).toBeDefined()
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult).toBeDefined()
+        })
       },
       30000,
     )
@@ -267,13 +287,15 @@ describe('dlx e2e tests', () => {
           version: '1.6.0',
         }
 
-        const result = await spawnDlx(packageSpec, ['Test with force'], {
-          force: true,
-        })
+        await withScratchHome(async () => {
+          const result = await spawnDlx(packageSpec, ['Test with force'], {
+            force: true,
+          })
 
-        expect(result.spawnPromise).toBeDefined()
-        const spawnResult = await result.spawnPromise
-        expect(spawnResult).toBeDefined()
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult).toBeDefined()
+        })
       },
       30000,
     )
@@ -286,13 +308,15 @@ describe('dlx e2e tests', () => {
           version: '^1.6.0', // Range version should trigger silent.
         }
 
-        const result = await spawnDlx(packageSpec, ['Silent test'], {
-          silent: true,
-        })
+        await withScratchHome(async () => {
+          const result = await spawnDlx(packageSpec, ['Silent test'], {
+            silent: true,
+          })
 
-        expect(result.spawnPromise).toBeDefined()
-        const spawnResult = await result.spawnPromise
-        expect(spawnResult).toBeDefined()
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult).toBeDefined()
+        })
       },
       30000,
     )

@@ -43,7 +43,10 @@ import { spawn } from '@socketsecurity/lib/spawn'
 
 import { ENV } from '../../src/constants/env.mts'
 import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
-import { executeCliCommand } from '../helpers/cli-execution.mts'
+import {
+  executeCliCommand,
+  executeCliInScratch,
+} from '../helpers/cli-execution.mts'
 
 const logger = getDefaultLogger()
 
@@ -540,7 +543,8 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
           return
         }
 
-        const result = await executeCliCommand(['config', 'list'], {
+        // Scratch HOME so the test can't read the dev's real Socket config.
+        const result = await executeCliInScratch(['config', 'list'], {
           binPath: binary.path,
         })
 
@@ -554,7 +558,9 @@ export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
             return
           }
 
-          const result = await executeCliCommand(['whoami'], {
+          // Scratch HOME so the API call uses the env-supplied token but
+          // can't persist anything back into the dev's config / keychain.
+          const result = await executeCliInScratch(['whoami'], {
             binPath: binary.path,
           })
 

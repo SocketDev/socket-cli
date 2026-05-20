@@ -543,3 +543,76 @@ export async function executeCliInScratch(
     await safeDelete(scratchHome)
   }
 }
+
+/**
+ * Run a block with `HOME` / `USERPROFILE` swapped to a fresh scratch tmpdir
+ * for the duration of `fn`. Restores the original env on exit and
+ * `safeDelete()`s the scratch tree.
+ *
+ * Use this when an e2e test calls socket-cli internals directly (in-process)
+ * — e.g. `spawnDlx()` — rather than spawning the CLI binary. The
+ * `executeCliInScratch` helper covers the spawn-the-binary path; this is the
+ * sibling for the in-process path.
+ *
+ * Concurrency note: vitest runs tests within a single file serially by
+ * default. Each worker has its own Node process so env mutation here doesn't
+ * race against other test files. Don't use this in a file that opts into
+ * `it.concurrent`.
+ *
+ * @example
+ *   await withScratchHome(async () => {
+ *     const result = await spawnDlx({ name: 'cowsay', version: '1.6.0' }, ['moo'])
+ *     expect((await result.spawnPromise).code).toBe(0)
+ *   })
+ */
+export async function withScratchHome<T>(fn: () => Promise<T>): Promise<T> {
+  const scratchHome = mkdtempSync(path.join(tmpdir(), 'socket-e2e-home-'))
+  const prevHome = process.env['HOME']
+  const prevUserProfile = process.env['USERPROFILE']
+  const prevXdgConfigHome = process.env['XDG_CONFIG_HOME']
+  const prevXdgCacheHome = process.env['XDG_CACHE_HOME']
+  const prevXdgDataHome = process.env['XDG_DATA_HOME']
+  const prevXdgStateHome = process.env['XDG_STATE_HOME']
+  const prevNpmCache = process.env['npm_config_cache']
+  const prevNpmCacheUpper = process.env['NPM_CONFIG_CACHE']
+  const prevNpmPrefix = process.env['npm_config_prefix']
+  const prevNpmPrefixUpper = process.env['NPM_CONFIG_PREFIX']
+  const prevPnpmHome = process.env['PNPM_HOME']
+  const prevYarnCache = process.env['YARN_CACHE_FOLDER']
+  try {
+    process.env['HOME'] = scratchHome
+    process.env['USERPROFILE'] = scratchHome
+    process.env['XDG_CONFIG_HOME'] = path.join(scratchHome, '.config')
+    process.env['XDG_CACHE_HOME'] = path.join(scratchHome, '.cache')
+    process.env['XDG_DATA_HOME'] = path.join(scratchHome, '.local', 'share')
+    process.env['XDG_STATE_HOME'] = path.join(scratchHome, '.local', 'state')
+    process.env['npm_config_cache'] = path.join(scratchHome, '.npm')
+    process.env['NPM_CONFIG_CACHE'] = path.join(scratchHome, '.npm')
+    process.env['npm_config_prefix'] = path.join(scratchHome, '.npm-global')
+    process.env['NPM_CONFIG_PREFIX'] = path.join(scratchHome, '.npm-global')
+    process.env['PNPM_HOME'] = path.join(scratchHome, '.pnpm')
+    process.env['YARN_CACHE_FOLDER'] = path.join(scratchHome, '.yarn-cache')
+    return await fn()
+  } finally {
+    const restore = (key: string, value: string | undefined): void => {
+      if (value === undefined) {
+        delete process.env[key]
+      } else {
+        process.env[key] = value
+      }
+    }
+    restore('HOME', prevHome)
+    restore('USERPROFILE', prevUserProfile)
+    restore('XDG_CONFIG_HOME', prevXdgConfigHome)
+    restore('XDG_CACHE_HOME', prevXdgCacheHome)
+    restore('XDG_DATA_HOME', prevXdgDataHome)
+    restore('XDG_STATE_HOME', prevXdgStateHome)
+    restore('npm_config_cache', prevNpmCache)
+    restore('NPM_CONFIG_CACHE', prevNpmCacheUpper)
+    restore('npm_config_prefix', prevNpmPrefix)
+    restore('NPM_CONFIG_PREFIX', prevNpmPrefixUpper)
+    restore('PNPM_HOME', prevPnpmHome)
+    restore('YARN_CACHE_FOLDER', prevYarnCache)
+    await safeDelete(scratchHome)
+  }
+}
