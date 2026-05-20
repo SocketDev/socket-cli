@@ -12,7 +12,7 @@
  *     EnvironmentVariables.getTestVariables(vars)
  */
 
-import { execSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
@@ -50,10 +50,14 @@ export class EnvironmentVariables {
     // Get current git commit hash.
     let gitHash = ''
     try {
-      gitHash = execSync('git rev-parse --short HEAD', {
+      const r = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
         cwd: rootPath,
-        encoding: 'utf-8',
-      }).trim()
+        stdio: 'pipe',
+        stdioString: true,
+      })
+      if (r.status === 0 && typeof r.stdout === 'string') {
+        gitHash = r.stdout.trim()
+      }
     } catch {}
 
     // Get external tool versions from bundle-tools.json.

@@ -157,7 +157,7 @@ describe('constants', () => {
   })
 
   it('ENV object contains expected environment variables', async () => {
-    const _constants = (await import('../../src/constants.mts')).constants
+    const constants = (await import('../../src/constants.mts')).constants
 
     expect(ENV).toBeDefined()
     expect(typeof ENV).toBe('object')

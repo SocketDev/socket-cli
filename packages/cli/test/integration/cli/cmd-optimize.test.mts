@@ -59,10 +59,10 @@ import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 const binCliPath = getBinCliPath()
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
-const _npmFixtureDir = path.join(fixtureBaseDir, NPM)
+const npmFixtureDir = path.join(fixtureBaseDir, NPM)
 const pnpmFixtureDir = path.join(fixtureBaseDir, PNPM)
 
-export async function _createTempFixture(sourceDir: string): Promise<string> {
+export async function createTempFixture(sourceDir: string): Promise<string> {
   // Create a temporary directory with a unique name.
   const tempDir = path.join(
     tmpdir(),

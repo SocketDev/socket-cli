@@ -117,7 +117,7 @@ export async function performReachabilityAnalysis(
 
   let tarHash: string | undefined
 
-  if (uploadManifests && orgSlug && packagePaths) {
+  if (orgSlug && packagePaths && uploadManifests) {
     // Setup SDK for uploading manifests
     const sockSdkCResult = await setupSdk()
     if (!sockSdkCResult.ok) {

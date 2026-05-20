@@ -76,12 +76,12 @@ const logger = getDefaultLogger()
 const TOKEN_VISIBLE_LENGTH = 5
 
 // Cached extra CA certificates for SSL_CERT_FILE support.
-let _extraCaCerts: string[] | undefined
+let extraCaCerts: string[] | undefined
 
-let _extraCaCertsResolved = false
+let extraCaCertsResolved = false
 
 // This Socket API token should be stored globally for the duration of the CLI execution.
-let _defaultToken: string | undefined
+let defaultToken: string | undefined
 
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
@@ -94,17 +94,17 @@ export function getDefaultApiBaseUrl(): string | undefined {
 
 export function getDefaultApiToken(): string | undefined {
   if (getSocketCliNoApiToken()) {
-    _defaultToken = undefined
-    return _defaultToken
+    defaultToken = undefined
+    return defaultToken
   }
 
   const key =
     getSocketApiToken() ||
     getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
-    _defaultToken
+    defaultToken
 
-  _defaultToken = isNonEmptyString(key) ? key : undefined
-  return _defaultToken
+  defaultToken = isNonEmptyString(key) ? key : undefined
+  return defaultToken
 }
 
 // The Socket API server that should be used for operations.
@@ -122,10 +122,10 @@ export function getDefaultProxyUrl(): string | undefined {
 // This function reads the certificate file manually and combines it with the
 // default root certificates for use in HTTPS agents.
 export function getExtraCaCerts(): string[] | undefined {
-  if (_extraCaCertsResolved) {
-    return _extraCaCerts
+  if (extraCaCertsResolved) {
+    return extraCaCerts
   }
-  _extraCaCertsResolved = true
+  extraCaCertsResolved = true
   // Node.js already loaded extra CA certs at startup.
   if (process.env['NODE_EXTRA_CA_CERTS']) {
     return undefined
@@ -139,8 +139,8 @@ export function getExtraCaCerts(): string[] | undefined {
     const extraCerts = readFileSync(certPath, 'utf-8')
     // Combine default root certificates with extra certificates. Specifying ca
     // in an agent replaces the default trust store, so both must be included.
-    _extraCaCerts = [...rootCertificates, extraCerts]
-    return _extraCaCerts
+    extraCaCerts = [...rootCertificates, extraCerts]
+    return extraCaCerts
   } catch (e) {
     debugLib(`Failed to read certificate file: ${certPath}`)
     return undefined
@@ -167,7 +167,7 @@ export function hasDefaultApiToken(): boolean {
 }
 
 export function invalidateDefaultApiToken(): void {
-  _defaultToken = undefined
+  defaultToken = undefined
 }
 
 export type SetupSdkOptions = {
@@ -188,7 +188,7 @@ export async function setupSdk(
       message:
         'Enter your Socket.dev API token (not saved, use socket login to persist)',
     })
-    _defaultToken = apiToken
+    defaultToken = apiToken
   }
   /* c8 ignore stop */
 

@@ -29,7 +29,7 @@ import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
 
-const _fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
 
 describe('socket scan reach - validation tests', () => {
   describe('output path tests', () => {

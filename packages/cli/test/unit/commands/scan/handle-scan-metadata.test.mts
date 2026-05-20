@@ -104,7 +104,7 @@ describe('handleOrgScanMetadata', () => {
     await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
     await import('../../../../src/commands/scan/output-scan-metadata.mts')
     const mockFetch = mockFetchScanMetadata
-    const _mockOutput = mockOutputScanMetadata
+    const mockOutput = mockOutputScanMetadata
 
     const scanIds = [
       'scan-abc123',

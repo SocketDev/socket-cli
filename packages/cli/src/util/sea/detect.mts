@@ -27,7 +27,7 @@ const require = createRequire(import.meta.url)
 /**
  * Cached SEA detection result.
  */
-let _isSea: boolean | undefined
+let isSea: boolean | undefined
 
 /**
  * Detect if self-update is allowed for the current binary. Self-update is ONLY
@@ -58,14 +58,14 @@ export function getSeaBinaryPath(): string | undefined {
  * native API with caching for performance.
  */
 export function isSeaBinary(): boolean {
-  if (_isSea === undefined) {
+  if (isSea === undefined) {
     try {
       // Use Node.js 24+ native SEA detection API.
       const seaModule = require('node:sea')
-      _isSea = seaModule.isSea()
+      isSea = seaModule.isSea()
     } catch {
-      _isSea = false
+      isSea = false
     }
   }
-  return _isSea ?? false
+  return isSea ?? false
 }

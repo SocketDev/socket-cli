@@ -29,23 +29,23 @@ export function exitWithBinPathError(binName: string): never {
   throw new Error('process.exit called')
 }
 
-let _pnpmBinPath: string | undefined
+let pnpmBinPath: string | undefined
 export function getPnpmBinPath(): string {
-  if (_pnpmBinPath === undefined) {
-    _pnpmBinPath = getPnpmBinPathDetails().path
-    if (!_pnpmBinPath) {
+  if (pnpmBinPath === undefined) {
+    pnpmBinPath = getPnpmBinPathDetails().path
+    if (!pnpmBinPath) {
       exitWithBinPathError('pnpm')
     }
   }
-  return _pnpmBinPath
+  return pnpmBinPath
 }
 
-let _pnpmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
+let pnpmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
 export function getPnpmBinPathDetails(): ReturnType<
   typeof findBinPathDetailsSync
 > {
-  if (_pnpmBinPathDetails === undefined) {
-    _pnpmBinPathDetails = findBinPathDetailsSync('pnpm')
+  if (pnpmBinPathDetails === undefined) {
+    pnpmBinPathDetails = findBinPathDetailsSync('pnpm')
   }
-  return _pnpmBinPathDetails
+  return pnpmBinPathDetails
 }

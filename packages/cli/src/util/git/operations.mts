@@ -46,7 +46,7 @@ import type { CResult } from '../../types.mjs'
 import type { SpawnOptions } from '@socketsecurity/lib/spawn'
 
 // Cache git executable path
-let _gitPath: string | undefined = undefined
+let gitPath: string | undefined = undefined
 
 // Listed in order of check preference.
 const COMMON_DEFAULT_BRANCH_NAMES = [
@@ -136,16 +136,16 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
 }
 
 export async function getGitPath(): Promise<string> {
-  if (!_gitPath) {
+  if (!gitPath) {
     const result = await whichReal('git', { nothrow: true })
     if (!result || Array.isArray(result)) {
       throw new Error(
         `git executable not found on PATH (whichReal returned ${Array.isArray(result) ? 'multiple matches' : 'null'}); install git (e.g. \`brew install git\`, \`apt install git\`) and make sure it is reachable on PATH`,
       )
     }
-    _gitPath = result
+    gitPath = result
   }
-  return _gitPath
+  return gitPath
 }
 
 export type RepoInfo = {

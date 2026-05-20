@@ -27,9 +27,9 @@ type RawSpaceSizeFlags = {
   maxSemiSpaceSize: number
 }
 
-let _rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
+let rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
 
-let _maxOldSpaceSizeFlag: number | undefined
+let maxOldSpaceSizeFlag: number | undefined
 
 // Ensure export because dist/flags.js is required in src/constants.mts.
 // eslint-disable-next-line n/exports-style
@@ -38,14 +38,14 @@ if (typeof exports === 'object' && exports !== null) {
   exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
 }
 
-let _maxSemiSpaceSizeFlag: number | undefined
+let maxSemiSpaceSizeFlag: number | undefined
 
 export function getMaxOldSpaceSizeFlag(): number {
-  if (_maxOldSpaceSizeFlag === undefined) {
+  if (maxOldSpaceSizeFlag === undefined) {
     const rawFlag = getRawSpaceSizeFlags().maxOldSpaceSize
     // Check if flag was explicitly set (> 0).
     if (rawFlag > 0) {
-      _maxOldSpaceSizeFlag = rawFlag
+      maxOldSpaceSizeFlag = rawFlag
     } else {
       const match = /(?<=--max-old-space-size=)\d+/.exec(
         NODE_OPTIONS ?? '',
@@ -54,17 +54,17 @@ export function getMaxOldSpaceSizeFlag(): number {
         const parsed = Number(match)
         /* c8 ignore start - regex (\d+) guarantees a numeric string; defensive guard */
         if (Number.isNaN(parsed) || parsed < 0) {
-          _maxOldSpaceSizeFlag = 0
+          maxOldSpaceSizeFlag = 0
           /* c8 ignore stop */
         } else {
-          _maxOldSpaceSizeFlag = parsed
+          maxOldSpaceSizeFlag = parsed
         }
       }
     }
     // Only apply default if no value was set (null/undefined, not 0).
-    if (_maxOldSpaceSizeFlag == null) {
+    if (maxOldSpaceSizeFlag == null) {
       // Default value determined by available system memory.
-      _maxOldSpaceSizeFlag = Math.floor(
+      maxOldSpaceSizeFlag = Math.floor(
         // Total system memory in MiB.
         (os.totalmem() / 1_024 / 1_024) *
           // Set 75% of total memory (safe buffer to avoid system pressure).
@@ -72,13 +72,13 @@ export function getMaxOldSpaceSizeFlag(): number {
       )
     }
   }
-  return _maxOldSpaceSizeFlag
+  return maxOldSpaceSizeFlag
 }
 
 export function getMaxSemiSpaceSizeFlag(): number {
-  if (_maxSemiSpaceSizeFlag === undefined) {
-    _maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
-    if (!_maxSemiSpaceSizeFlag) {
+  if (maxSemiSpaceSizeFlag === undefined) {
+    maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
+    if (!maxSemiSpaceSizeFlag) {
       const match = /(?<=--max-semi-space-size=)\d+/.exec(
         NODE_OPTIONS ?? '',
       )?.[0]
@@ -86,16 +86,16 @@ export function getMaxSemiSpaceSizeFlag(): number {
         const parsed = Number(match)
         /* c8 ignore start - regex (\d+) guarantees a numeric string; defensive guard */
         if (Number.isNaN(parsed) || parsed < 0) {
-          _maxSemiSpaceSizeFlag = 0
+          maxSemiSpaceSizeFlag = 0
           /* c8 ignore stop */
         } else {
-          _maxSemiSpaceSizeFlag = parsed
+          maxSemiSpaceSizeFlag = parsed
         }
       } else {
-        _maxSemiSpaceSizeFlag = 0
+        maxSemiSpaceSizeFlag = 0
       }
     }
-    if (!_maxSemiSpaceSizeFlag) {
+    if (!maxSemiSpaceSizeFlag) {
       const maxOldSpaceSize = getMaxOldSpaceSizeFlag()
       // Dynamically scale semi-space size based on max-old-space-size.
       // https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib
@@ -104,15 +104,15 @@ export function getMaxSemiSpaceSizeFlag(): number {
         // generation size. This helps stay within safe memory limits on
         // constrained systems or CI.
         if (maxOldSpaceSize <= 512) {
-          _maxSemiSpaceSizeFlag = 4
+          maxSemiSpaceSizeFlag = 4
         } else if (maxOldSpaceSize <= 1_024) {
-          _maxSemiSpaceSizeFlag = 8
+          maxSemiSpaceSizeFlag = 8
         } else if (maxOldSpaceSize <= 2_048) {
-          _maxSemiSpaceSizeFlag = 16
+          maxSemiSpaceSizeFlag = 16
         } else if (maxOldSpaceSize <= 4_096) {
-          _maxSemiSpaceSizeFlag = 32
+          maxSemiSpaceSizeFlag = 32
         } else {
-          _maxSemiSpaceSizeFlag = 64
+          maxSemiSpaceSizeFlag = 64
         }
       } else {
         // For large heaps (> 8 GiB), compute semi-space size using a log-scaled
@@ -132,15 +132,15 @@ export function getMaxSemiSpaceSizeFlag(): number {
         // (e.g. large arrays, buffers).
         const log2OldSpace = Math.log2(maxOldSpaceSize)
         const scaledSemiSpace = Math.floor(log2OldSpace) * 8
-        _maxSemiSpaceSizeFlag = scaledSemiSpace
+        maxSemiSpaceSizeFlag = scaledSemiSpace
       }
     }
   }
-  return _maxSemiSpaceSizeFlag
+  return maxSemiSpaceSizeFlag
 }
 
 export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
-  if (_rawSpaceSizeFlags === undefined) {
+  if (rawSpaceSizeFlags === undefined) {
     const cli = meow({
       argv: process.argv.slice(2),
       // Prevent meow from potentially exiting early.
@@ -174,12 +174,12 @@ export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
     }
     /* c8 ignore stop */
 
-    _rawSpaceSizeFlags = {
+    rawSpaceSizeFlags = {
       maxOldSpaceSize,
       maxSemiSpaceSize,
     }
   }
-  return _rawSpaceSizeFlags!
+  return rawSpaceSizeFlags!
 }
 
 /**
@@ -188,9 +188,9 @@ export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
  * @internal
  */
 export function resetFlagCache(): void {
-  _rawSpaceSizeFlags = undefined
-  _maxOldSpaceSizeFlag = undefined
-  _maxSemiSpaceSizeFlag = undefined
+  rawSpaceSizeFlags = undefined
+  maxOldSpaceSizeFlag = undefined
+  maxSemiSpaceSizeFlag = undefined
 }
 // Ensure export because dist/flags.js is required in src/constants.mts.
 // eslint-disable-next-line n/exports-style

@@ -98,7 +98,7 @@ export async function detectNodejsCdxgenSources(
       findUp(NODE_MODULES, { cwd, onlyDirectories: true }),
     ])
   return {
-    hasLockfile: Boolean(pnpmLockPath || npmLockPath || yarnLockPath),
+    hasLockfile: Boolean(npmLockPath || pnpmLockPath || yarnLockPath),
     hasNodeModules: Boolean(nodeModulesPath),
   }
 }

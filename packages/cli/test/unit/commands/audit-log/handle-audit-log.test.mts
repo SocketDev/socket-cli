@@ -34,12 +34,12 @@ import {
 const mockFetchAuditLog = vi.hoisted(() => vi.fn())
 const mockOutputAuditLog = vi.hoisted(() => vi.fn())
 const mockGetDefaultLogger = vi.hoisted(() => vi.fn())
-const _mockLog = vi.hoisted(() => vi.fn())
-const _mockInfo = vi.hoisted(() => vi.fn())
-const _mockWarn = vi.hoisted(() => vi.fn())
-const _mockError = vi.hoisted(() => vi.fn())
-const _mockFail = vi.hoisted(() => vi.fn())
-const _mockSuccess = vi.hoisted(() => vi.fn())
+const mockLog = vi.hoisted(() => vi.fn())
+const mockInfo = vi.hoisted(() => vi.fn())
+const mockWarn = vi.hoisted(() => vi.fn())
+const mockError = vi.hoisted(() => vi.fn())
+const mockFail = vi.hoisted(() => vi.fn())
+const mockSuccess = vi.hoisted(() => vi.fn())
 
 vi.mock('../../../../src/commands/audit-log/fetch-audit-log.mts', () => ({
   fetchAuditLog: mockFetchAuditLog,

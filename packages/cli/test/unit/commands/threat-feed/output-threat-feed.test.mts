@@ -203,7 +203,7 @@ describe('outputThreatFeed', () => {
   })
 
   it('handles threat results data formatting', async () => {
-    const _mockMsAtHome = vi.mocked(msAtHome)
+    const mockMsAtHome = vi.mocked(msAtHome)
 
     const threatResults: ThreatResult[] = [
       {

@@ -160,7 +160,7 @@ describe('postinstallWrapper', () => {
     const { confirm } = await import('@socketsecurity/lib/stdio/prompts')
     const mockCheckSetup = vi.mocked(checkSocketWrapperSetup)
     const mockConfirm = vi.mocked(confirm)
-    const _mockAddWrapper = vi.mocked(addSocketWrapper)
+    const mockAddWrapper = vi.mocked(addSocketWrapper)
 
     mockExistsSync.mockImplementation(
       (path: string) => path === '/home/user/.bashrc',

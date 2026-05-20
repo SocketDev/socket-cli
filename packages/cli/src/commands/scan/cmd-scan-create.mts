@@ -433,12 +433,12 @@ export async function run(
     reachabilityFlags['reachDisableAnalytics']?.default
 
   const isUsingAnyReachabilityFlags =
-    isUsingNonDefaultMemoryLimit ||
-    isUsingNonDefaultTimeout ||
-    isUsingNonDefaultConcurrency ||
-    isUsingNonDefaultAnalytics ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
+    isUsingNonDefaultAnalytics ||
+    isUsingNonDefaultConcurrency ||
+    isUsingNonDefaultMemoryLimit ||
+    isUsingNonDefaultTimeout ||
     reachEnableAnalysisSplitting ||
     reachLazyMode ||
     reachSkipCache

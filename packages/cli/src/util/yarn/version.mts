@@ -4,9 +4,9 @@ import { spawnSync } from '@socketsecurity/lib/spawn'
 import { FLAG_VERSION } from '../../constants/cli.mts'
 import { getYarnBinPath } from '../yarn/paths.mts'
 
-let _isYarnBerry: boolean | undefined
+let cachedIsYarnBerry: boolean | undefined
 export function isYarnBerry(): boolean {
-  if (_isYarnBerry === undefined) {
+  if (cachedIsYarnBerry === undefined) {
     try {
       const yarnBinPath = getYarnBinPath()
       const result = spawnSync(yarnBinPath, [FLAG_VERSION], {
@@ -27,13 +27,13 @@ export function isYarnBerry(): boolean {
           parts.length > 0 && parts[0] && /^\d+$/.test(parts[0])
             ? Number.parseInt(parts[0], 10)
             : 0
-        _isYarnBerry = majorVersion >= 2
+        cachedIsYarnBerry = majorVersion >= 2
       } else {
-        _isYarnBerry = false
+        cachedIsYarnBerry = false
       }
     } catch {
-      _isYarnBerry = false
+      cachedIsYarnBerry = false
     }
   }
-  return _isYarnBerry
+  return cachedIsYarnBerry
 }

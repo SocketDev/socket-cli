@@ -103,16 +103,16 @@ if (typeof exports === 'object' && exports !== null) {
   exports.getConfigValueOrUndef = getConfigValueOrUndef
 }
 
-let _cachedConfig: LocalConfig | undefined
+let cachedConfig: LocalConfig | undefined
 
-let _cachedConfigMtime: number | undefined
+let cachedConfigMtime: number | undefined
 
-let _cachedConfigPath: string | undefined
+let cachedConfigPath: string | undefined
 
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
-let _configFromFlag = false
+let configFromFlag = false
 
-let _pendingSave = false
+let pendingSave = false
 
 export type FoundSocketYml = {
   path: string
@@ -183,8 +183,8 @@ export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
 export function getConfigValues(retryCount = 0): LocalConfig {
   // Order: env var > --config flag > file.
   // If config is from flag/env override, skip file-based caching.
-  if (_configFromFlag && _cachedConfig !== undefined) {
-    return _cachedConfig
+  if (configFromFlag && cachedConfig !== undefined) {
+    return cachedConfig
   }
 
   const socketAppDataPath = getSocketAppDataPath()
@@ -196,13 +196,13 @@ export function getConfigValues(retryCount = 0): LocalConfig {
       const currentMtime = stats.mtimeMs
 
       // Invalidate cache if not yet loaded, file modified, or path changed.
-      // On first run, _cachedConfig is undefined, triggering initial load.
+      // On first run, cachedConfig is undefined, triggering initial load.
       if (
-        _cachedConfig === undefined ||
-        _cachedConfigMtime !== currentMtime ||
-        _cachedConfigPath !== configFilePath
+        cachedConfig === undefined ||
+        cachedConfigMtime !== currentMtime ||
+        cachedConfigPath !== configFilePath
       ) {
-        _cachedConfig = {} as LocalConfig
+        cachedConfig = {} as LocalConfig
         const raw = safeReadFileSync(configFilePath)
 
         // Verify mtime hasn't changed during read to prevent TOCTOU race.
@@ -237,7 +237,7 @@ export function getConfigValues(retryCount = 0): LocalConfig {
               // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
               for (const key of Object.keys(parsed)) {
                 if (isSupportedConfigKey(key)) {
-                  ;(_cachedConfig as Record<string, unknown>)[key] = parsed[key]
+                  ;(cachedConfig as Record<string, unknown>)[key] = parsed[key]
                 }
               }
             }
@@ -249,24 +249,24 @@ export function getConfigValues(retryCount = 0): LocalConfig {
           }
           /* c8 ignore stop */
         }
-        _cachedConfigMtime = currentMtime
-        _cachedConfigPath = configFilePath
+        cachedConfigMtime = currentMtime
+        cachedConfigPath = configFilePath
       }
     } catch {
       // File doesn't exist - clear cache and create directory.
-      if (_cachedConfig === undefined || _cachedConfigPath !== configFilePath) {
-        _cachedConfig = {} as LocalConfig
-        _cachedConfigMtime = undefined
-        _cachedConfigPath = configFilePath
+      if (cachedConfig === undefined || cachedConfigPath !== configFilePath) {
+        cachedConfig = {} as LocalConfig
+        cachedConfigMtime = undefined
+        cachedConfigPath = configFilePath
         safeMkdirSync(socketAppDataPath, { recursive: true })
       }
     }
     /* c8 ignore start - socketAppDataPath undefined fallback; tests always have HOME set so getSocketAppDataPath returns a path */
-  } else if (_cachedConfig === undefined) {
-    _cachedConfig = {} as LocalConfig
+  } else if (cachedConfig === undefined) {
+    cachedConfig = {} as LocalConfig
   }
   /* c8 ignore stop */
-  return _cachedConfig
+  return cachedConfig
 }
 
 export function getSupportedConfigEntries() {
@@ -278,7 +278,7 @@ export function getSupportedConfigKeys() {
 }
 
 export function isConfigFromFlag() {
-  return _configFromFlag
+  return configFromFlag
 }
 
 export function isSensitiveConfigKey(key: string): key is keyof LocalConfig {
@@ -322,8 +322,8 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
     }
   } catch {
     // Force set an empty config to prevent accidentally using system settings.
-    _cachedConfig = {} as LocalConfig
-    _configFromFlag = true
+    cachedConfig = {} as LocalConfig
+    configFromFlag = true
 
     return {
       ok: false,
@@ -334,15 +334,15 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   }
 
   // Only copy supported config keys to prevent prototype pollution.
-  _cachedConfig = {} as LocalConfig
+  cachedConfig = {} as LocalConfig
   const configObj = config as Record<string, unknown>
   // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const key of Object.keys(configObj)) {
     if (isSupportedConfigKey(key)) {
-      ;(_cachedConfig as Record<string, unknown>)[key] = configObj[key]
+      ;(cachedConfig as Record<string, unknown>)[key] = configObj[key]
     }
   }
-  _configFromFlag = true
+  configFromFlag = true
 
   return { ok: true, data: undefined }
 }
@@ -350,11 +350,11 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 export function overrideConfigApiToken(apiToken: unknown) {
   debugNs('notice', 'override: Socket API token (not stored)')
   // Set token to the local cached config and mark it read-only so it doesn't persist.
-  _cachedConfig = {
-    ..._cachedConfig,
+  cachedConfig = {
+    ...cachedConfig,
     ...(apiToken === undefined ? {} : { apiToken: String(apiToken) }),
   } as LocalConfig
-  _configFromFlag = true
+  configFromFlag = true
 }
 
 /**
@@ -364,10 +364,10 @@ export function overrideConfigApiToken(apiToken: unknown) {
  * @internal
  */
 export function resetConfigForTesting(): void {
-  _cachedConfig = undefined
-  _cachedConfigMtime = undefined
-  _cachedConfigPath = undefined
-  _configFromFlag = false
+  cachedConfig = undefined
+  cachedConfigMtime = undefined
+  cachedConfigPath = undefined
+  configFromFlag = false
 }
 
 export function updateConfigValue<Key extends keyof LocalConfig>(
@@ -398,7 +398,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     localConfig[key] = value
   }
 
-  if (_configFromFlag) {
+  if (configFromFlag) {
     return {
       ok: true,
       message: `Config key '${key}' was ${wasDeleted ? 'deleted' : 'updated'}`,
@@ -406,10 +406,10 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     }
   }
 
-  if (!_pendingSave) {
-    _pendingSave = true
+  if (!pendingSave) {
+    pendingSave = true
     process.nextTick(() => {
-      _pendingSave = false
+      pendingSave = false
       const socketAppDataPath = getSocketAppDataPath()
       if (socketAppDataPath) {
         safeMkdirSync(socketAppDataPath, { recursive: true })
@@ -436,12 +436,12 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
           Buffer.from(jsonContent).toString('base64'),
         )
         // Invalidate mtime cache AFTER write completes to prevent stale reads.
-        _cachedConfigMtime = undefined
+        cachedConfigMtime = undefined
         // Update mtime cache with new value.
         try {
           const stats = statSync(configFilePath)
-          _cachedConfigMtime = stats.mtimeMs
-          _cachedConfigPath = configFilePath
+          cachedConfigMtime = stats.mtimeMs
+          cachedConfigPath = configFilePath
         } catch {
           // Keep mtime undefined if stat fails.
         }

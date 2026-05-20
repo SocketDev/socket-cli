@@ -489,9 +489,9 @@ describe('rich-progress', () => {
 
     it('should handle empty file list', () => {
       const originalWrite = process.stderr.write
-      let _output = ''
+      let output = ''
       process.stderr.write = (chunk: string | Buffer): boolean => {
-        _output += chunk.toString()
+        output += chunk.toString()
         return true
       }
 

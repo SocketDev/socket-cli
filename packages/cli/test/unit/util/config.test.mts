@@ -39,7 +39,7 @@ import {
 } from '../../../src/util/config.mts'
 import { testPath } from '../../../test/utils.mts'
 
-const _fixtureBaseDir = path.join(testPath, 'fixtures/util/config')
+const fixtureBaseDir = path.join(testPath, 'fixtures/util/config')
 
 describe('util/config', () => {
   describe('updateConfigValue', () => {

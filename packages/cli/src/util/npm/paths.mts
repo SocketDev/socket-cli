@@ -27,36 +27,36 @@ export function exitWithBinPathError(binName: string): never {
   throw new Error('process.exit called')
 }
 
-let _npmBinPath: string | undefined
+let npmBinPath: string | undefined
 export function getNpmBinPath(): string {
-  if (_npmBinPath === undefined) {
-    _npmBinPath = getNpmBinPathDetails().path
-    if (!_npmBinPath) {
+  if (npmBinPath === undefined) {
+    npmBinPath = getNpmBinPathDetails().path
+    if (!npmBinPath) {
       exitWithBinPathError(NPM)
     }
   }
-  return _npmBinPath
+  return npmBinPath
 }
 
-let _npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
+let npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
 export function getNpmBinPathDetails(): ReturnType<
   typeof findBinPathDetailsSync
 > {
-  if (_npmBinPathDetails === undefined) {
-    _npmBinPathDetails = findBinPathDetailsSync(NPM)
+  if (npmBinPathDetails === undefined) {
+    npmBinPathDetails = findBinPathDetailsSync(NPM)
   }
-  return _npmBinPathDetails
+  return npmBinPathDetails
 }
 
-let _npmDirPath: string | undefined
+let npmDirPath: string | undefined
 export function getNpmDirPath() {
-  if (_npmDirPath === undefined) {
+  if (npmDirPath === undefined) {
     const npmBinPath = getNpmBinPath()
-    _npmDirPath = npmBinPath ? findNpmDirPathSync(npmBinPath) : undefined
-    if (!_npmDirPath) {
-      _npmDirPath = SOCKET_CLI_NPM_PATH || undefined
+    npmDirPath = npmBinPath ? findNpmDirPathSync(npmBinPath) : undefined
+    if (!npmDirPath) {
+      npmDirPath = SOCKET_CLI_NPM_PATH || undefined
     }
-    if (!_npmDirPath) {
+    if (!npmDirPath) {
       let message = 'Unable to find npm CLI install directory.'
       if (npmBinPath) {
         message += `\nSearched parent directories of ${path.dirname(npmBinPath)}.`
@@ -73,41 +73,41 @@ export function getNpmDirPath() {
       throw new Error('process.exit called')
     }
   }
-  return _npmDirPath
+  return npmDirPath
 }
 
-let _npmRequire: NodeJS.Require | undefined
+let npmRequire: NodeJS.Require | undefined
 export function getNpmRequire(): NodeJS.Require {
-  if (_npmRequire === undefined) {
+  if (npmRequire === undefined) {
     const npmDirPath = getNpmDirPath()
     const npmNmPath = path.join(npmDirPath, `${NODE_MODULES}/npm`)
-    _npmRequire = Module.createRequire(
+    npmRequire = Module.createRequire(
       path.join(
         existsSync(npmNmPath) ? npmNmPath : npmDirPath,
         '<placeholder-basename>',
       ),
     )
   }
-  return _npmRequire
+  return npmRequire
 }
 
-let _npxBinPath: string | undefined
+let npxBinPath: string | undefined
 export function getNpxBinPath(): string {
-  if (_npxBinPath === undefined) {
-    _npxBinPath = getNpxBinPathDetails().path
-    if (!_npxBinPath) {
+  if (npxBinPath === undefined) {
+    npxBinPath = getNpxBinPathDetails().path
+    if (!npxBinPath) {
       exitWithBinPathError('npx')
     }
   }
-  return _npxBinPath
+  return npxBinPath
 }
 
-let _npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
+let npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
 export function getNpxBinPathDetails(): ReturnType<
   typeof findBinPathDetailsSync
 > {
-  if (_npxBinPathDetails === undefined) {
-    _npxBinPathDetails = findBinPathDetailsSync('npx')
+  if (npxBinPathDetails === undefined) {
+    npxBinPathDetails = findBinPathDetailsSync('npx')
   }
-  return _npxBinPathDetails
+  return npxBinPathDetails
 }

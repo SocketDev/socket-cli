@@ -18,23 +18,23 @@ export function exitWithBinPathError(binName: string): never {
   throw new Error('process.exit called')
 }
 
-let _yarnBinPath: string | undefined
+let yarnBinPath: string | undefined
 export function getYarnBinPath(): string {
-  if (_yarnBinPath === undefined) {
-    _yarnBinPath = getYarnBinPathDetails().path
-    if (!_yarnBinPath) {
+  if (yarnBinPath === undefined) {
+    yarnBinPath = getYarnBinPathDetails().path
+    if (!yarnBinPath) {
       exitWithBinPathError(YARN)
     }
   }
-  return _yarnBinPath
+  return yarnBinPath
 }
 
-let _yarnBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
+let yarnBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
 export function getYarnBinPathDetails(): ReturnType<
   typeof findBinPathDetailsSync
 > {
-  if (_yarnBinPathDetails === undefined) {
-    _yarnBinPathDetails = findBinPathDetailsSync(YARN)
+  if (yarnBinPathDetails === undefined) {
+    yarnBinPathDetails = findBinPathDetailsSync(YARN)
   }
-  return _yarnBinPathDetails
+  return yarnBinPathDetails
 }

@@ -488,7 +488,7 @@ describe('withGitHubRetry', () => {
       .mockRejectedValueOnce(createRequestError(500, 'Error'))
       .mockResolvedValue({ data: 'success' })
 
-    const _startTime = Date.now()
+    const startTime = Date.now()
     const resultPromise = withGitHubRetry(operation, 'backoff test', 4)
 
     // First retry after 1s.

@@ -423,7 +423,7 @@ export async function run(
     const isGhsa = upperInput.startsWith('GHSA-')
     const isCve = upperInput.startsWith('CVE-')
     const isPurl = rawInput.startsWith('pkg:')
-    if (isGhsa || isCve || isPurl) {
+    if (isCve || isGhsa || isPurl) {
       // `handle-fix.mts` validates IDs with case-sensitive format regexes:
       //   * GHSA — prefix must be uppercase, body segments lowercase [a-z0-9]
       //   * CVE  — prefix must be uppercase, body is all digits (case-free)

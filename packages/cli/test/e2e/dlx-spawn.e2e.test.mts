@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
@@ -81,19 +81,27 @@ describe('dlx e2e tests', () => {
 
         // Try to run a simple pnpm dlx command directly to ensure it works.
         try {
-          const output = execSync('pnpm exec cowsay@1.6.0 "Direct test"', {
-            encoding: 'utf8',
-            stdio: 'pipe',
-          })
-          expect(output).toContain('Direct test')
+          const r = spawnSync(
+            'pnpm',
+            ['exec', 'cowsay@1.6.0', 'Direct test'],
+            { stdio: 'pipe', stdioString: true },
+          )
+          if (r.status !== 0) {
+            throw new Error(String(r.stderr ?? r.stdout ?? ''))
+          }
+          expect(String(r.stdout)).toContain('Direct test')
 
           // Verify that adding unsupported flags would fail.
           // For example, --ignore-scripts is only for pnpm install, not dlx.
           expect(() => {
-            execSync('pnpm exec --ignore-scripts cowsay@1.6.0 "Should fail"', {
-              encoding: 'utf8',
-              stdio: 'pipe',
-            })
+            const r2 = spawnSync(
+              'pnpm',
+              ['exec', '--ignore-scripts', 'cowsay@1.6.0', 'Should fail'],
+              { stdio: 'pipe', stdioString: true },
+            )
+            if (r2.status !== 0) {
+              throw new Error(String(r2.stderr ?? r2.stdout ?? ''))
+            }
           }).toThrow()
         } catch (e) {
           // If pnpm is not available globally, skip this part.
@@ -109,7 +117,7 @@ describe('dlx e2e tests', () => {
       'successfully runs npm/pnpm exec with cowsay',
       async () => {
         // Force npm by not finding any pnpm/yarn lockfiles.
-        const _npmLock = await findUp('package-lock.json')
+        const npmLock = await findUp('package-lock.json')
         const pnpmLock = await findUp('pnpm-lock.yaml')
         const yarnLock = await findUp('yarn.lock')
 

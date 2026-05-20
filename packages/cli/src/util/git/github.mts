@@ -78,9 +78,9 @@ interface CacheEntry {
 // LRU cache with max size to prevent unbounded memory growth.
 const inflightRequests = new LRUCache<string, Promise<unknown>>({ max: 100 })
 
-let _octokit: Octokit | undefined
+let octokit: Octokit | undefined
 
-let _octokitGraphql: typeof OctokitGraphql | undefined
+let octokitGraphql: typeof OctokitGraphql | undefined
 
 export async function cacheFetch<T>(
   key: string,
@@ -272,7 +272,7 @@ export async function fetchGhsaDetails(
 }
 
 export function getOctokit(): Octokit {
-  if (_octokit === undefined) {
+  if (octokit === undefined) {
     if (!SOCKET_CLI_GITHUB_TOKEN) {
       debugNs('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
@@ -281,23 +281,23 @@ export function getOctokit(): Octokit {
       ...(GITHUB_API_URL ? { baseUrl: GITHUB_API_URL } : {}),
     }
     debugDirNs('inspect', { octokitOptions })
-    _octokit = new Octokit(octokitOptions)
+    octokit = new Octokit(octokitOptions)
   }
-  return _octokit
+  return octokit
 }
 
 export function getOctokitGraphql(): typeof OctokitGraphql {
-  if (!_octokitGraphql) {
+  if (!octokitGraphql) {
     if (!SOCKET_CLI_GITHUB_TOKEN) {
       debugNs('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
-    _octokitGraphql = OctokitGraphql.defaults({
+    octokitGraphql = OctokitGraphql.defaults({
       headers: {
         authorization: `token ${SOCKET_CLI_GITHUB_TOKEN}`,
       },
     })
   }
-  return _octokitGraphql
+  return octokitGraphql
 }
 
 /**

@@ -43,6 +43,7 @@ type AuthenticatedRequest = IncomingMessage & { auth?: AuthInfo | undefined }
 // exactOptionalPropertyTypes. Cast our internal type to this at the
 // call boundary when handing off; that's the narrow constraint, not
 // our internal shape.
+// oxlint-disable-next-line socket/optional-explicit-undefined -- SDK target type uses `auth?: AuthInfo` (no `| undefined`); under exactOptionalPropertyTypes the bare-undefined form rejects this assignment. Pair to the SDK shape, not the local AuthenticatedRequest.
 type McpHandleRequest = IncomingMessage & { auth?: AuthInfo }
 
 interface Session {

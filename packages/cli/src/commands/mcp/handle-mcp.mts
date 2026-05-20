@@ -36,15 +36,15 @@ export async function handleMcp(opts: HandleMcpOptions): Promise<void> {
     const clientId = opts.oauthClientId ?? ''
     const clientSecret = opts.oauthClientSecret ?? ''
     const partial =
-      (issuer || clientId || clientSecret) &&
-      !(issuer && clientId && clientSecret)
+      (clientId || clientSecret || issuer) &&
+      !(clientId && clientSecret && issuer)
     if (partial) {
       logger.error(
         'Incomplete OAuth configuration for HTTP mode. Set SOCKET_OAUTH_ISSUER, SOCKET_OAUTH_INTROSPECTION_CLIENT_ID, and SOCKET_OAUTH_INTROSPECTION_CLIENT_SECRET together.',
       )
       process.exit(1)
     }
-    const oauthEnabled = Boolean(issuer && clientId && clientSecret)
+    const oauthEnabled = Boolean(clientId && clientSecret && issuer)
     if (!oauthEnabled && !baseConfig.getApiToken()) {
       logger.error(
         'No SOCKET_API_TOKEN configured and OAuth is not enabled. Run `socket login` or set OAuth env vars (SOCKET_OAUTH_ISSUER, SOCKET_OAUTH_INTROSPECTION_CLIENT_ID, SOCKET_OAUTH_INTROSPECTION_CLIENT_SECRET) before starting HTTP mode.',
