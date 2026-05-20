@@ -67,7 +67,20 @@ export async function compressSocketFactsForUpload(
   scanPaths: string[],
 ): Promise<CompressedScanPaths> {
   const brPaths: string[] = []
-  const paths = await Promise.all(
+  const cleanup = async () => {
+    const targets = brPaths.splice(0)
+    // `recursive: true` defends against the (defensive) case where a sibling
+    // path was somehow created as a directory — `rm` would otherwise throw
+    // on the first such entry and skip the rest. `force: true` no-ops on
+    // missing paths so the function stays idempotent.
+    await Promise.all(targets.map(t => rm(t, { recursive: true, force: true })))
+  }
+  // Use `allSettled` (not `all`) so a failure in one entry doesn't leak the
+  // others' in-flight pipelines past our `catch`. If we used `all`, the
+  // first rejection would bubble out while sibling pipelines were still
+  // writing bytes — `cleanup()` would race with those writes and could
+  // remove a `.br` only to have it re-created after we returned.
+  const results = await Promise.allSettled(
     scanPaths.map(async p => {
       if (path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON) {
         return p
@@ -76,21 +89,29 @@ export async function compressSocketFactsForUpload(
         return p
       }
       const brPath = `${p}.br`
+      // Track the sibling path BEFORE the pipeline starts so a
+      // partially-written `.br` is removed even if the pipeline rejects.
+      // `rm({ force: true })` no-ops on missing files, so tracking before
+      // creation is safe.
+      brPaths.push(brPath)
       await pipeline(
         createReadStream(p),
         createBrotliCompress(),
         createWriteStream(brPath),
       )
-      brPaths.push(brPath)
       return brPath
     }),
   )
-  const cleanup = async () => {
-    const targets = brPaths.splice(0)
-    await Promise.all(
-      targets.map(t => rm(t, { force: true })),
-    )
+  const failure = results.find(
+    (r): r is PromiseRejectedResult => r.status === 'rejected',
+  )
+  if (failure) {
+    // All pipelines have settled, so cleanup() can safely remove every
+    // `.br` we tracked (succeeded or partial) without racing live writes.
+    await cleanup()
+    throw failure.reason
   }
+  const paths = results.map(r => (r as PromiseFulfilledResult<string>).value)
   return { paths, cleanup }
 }
 

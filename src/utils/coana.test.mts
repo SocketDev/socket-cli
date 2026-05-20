@@ -138,6 +138,33 @@ describe('coana facts-file utils', () => {
       await expect(result.cleanup()).resolves.not.toThrow()
       rmSync(wrapDir, { recursive: true, force: true })
     })
+
+    it('removes partial .br siblings if compression fails mid-batch', async () => {
+      // Two facts files; B's `.br` destination is pre-occupied by a
+      // directory so `createWriteStream` open() fails with EISDIR. The
+      // whole batch rejects, but A's `.br` must not be orphaned.
+      const { mkdirSync } = await import('node:fs')
+      const wrapDirA = mkdtempSync(path.join(tmpdir(), 'socket-coana-wrap-a-'))
+      const wrapDirB = mkdtempSync(path.join(tmpdir(), 'socket-coana-wrap-b-'))
+      const factsA = path.join(wrapDirA, '.socket.facts.json')
+      const factsB = path.join(wrapDirB, '.socket.facts.json')
+      writeFileSync(factsA, JSON.stringify({ tier1ReachabilityScanId: 'A' }))
+      writeFileSync(factsB, JSON.stringify({ tier1ReachabilityScanId: 'B' }))
+      mkdirSync(`${factsB}.br`, { recursive: true })
+
+      try {
+        await expect(
+          compressSocketFactsForUpload([factsA, factsB]),
+        ).rejects.toThrow()
+        // A's sibling must not be on disk; sources must still exist.
+        expect(existsSync(`${factsA}.br`)).toBe(false)
+        expect(existsSync(factsA)).toBe(true)
+        expect(existsSync(factsB)).toBe(true)
+      } finally {
+        rmSync(wrapDirA, { recursive: true, force: true })
+        rmSync(wrapDirB, { recursive: true, force: true })
+      }
+    })
   })
 
   describe('extractTier1ReachabilityScanId', () => {
