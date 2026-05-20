@@ -39,7 +39,7 @@ import constants, {
   HTTP_STATUS_UNAUTHORIZED,
 } from '../constants.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
-import { getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
+import { getCliUserAgent, getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -437,6 +437,7 @@ async function queryApi(path: string, apiToken: string) {
     method: 'GET',
     headers: {
       Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+      'User-Agent': getCliUserAgent(),
     },
   })
   return result
@@ -622,6 +623,7 @@ export async function sendApiRequest<T>(
       headers: {
         Authorization: `Basic ${btoa(`${apiToken}:`)}`,
         'Content-Type': 'application/json',
+        'User-Agent': getCliUserAgent(),
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
     }

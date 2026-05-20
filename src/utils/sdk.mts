@@ -50,6 +50,26 @@ import { trackCliEvent } from './telemetry/integration.mts'
 import type { CResult } from '../types.mts'
 import type { RequestInfo, ResponseInfo } from '@socketsecurity/sdk'
 
+// Lazy-evaluated full CLI user agent for direct (non-SDK) API calls.
+// Includes the CLI product token, Node.js version, and OS platform/arch.
+// e.g. "socket/1.1.96 node/v22.0.0 linux/arm64"
+let _cliUserAgent: string | undefined
+export function getCliUserAgent(): string {
+  if (!_cliUserAgent) {
+    const name = constants.ENV.INLINED_SOCKET_CLI_NAME.replace('@', '').replace(
+      '/',
+      '-',
+    )
+    const version = constants.ENV.INLINED_SOCKET_CLI_VERSION
+    _cliUserAgent = [
+      `${name}/${version}`,
+      `node/${process.version}`,
+      `${process.platform}/${process.arch}`,
+    ].join(' ')
+  }
+  return _cliUserAgent
+}
+
 const TOKEN_PREFIX = 'sktsec_'
 const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
 const TOKEN_VISIBLE_LENGTH = 5
