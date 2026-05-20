@@ -1,0 +1,51 @@
+// markdownlint-cli2 configuration for fleet repos.
+//
+// Loaded by `pnpm run lint` (template/scripts/lint.mts invokes
+// markdownlint-cli2 with `-c .config/.markdownlint-cli2.jsonc`).
+//
+// Two concerns:
+//   1. Stock markdownlint rules — disable a handful that bite real prose
+//      without adding value, leave the rest at defaults.
+//   2. Fleet-canonical custom rules under markdownlint-rules/ — these
+//      enforce the fleet's README hygiene contract (no private-repo
+//      mentions, no relative-path commands, README skeleton structure).
+{
+  "config": {
+    "default": true,
+    // MD013 (line-length) bites code-block-heavy READMEs without warning.
+    // Disabled fleet-wide; reviewers catch genuinely-too-long prose.
+    "MD013": false,
+    // MD033 (no inline HTML) bites our <details> collapsed Development
+    // sections and Socket-badge img tags. Allow specific tags only.
+    "MD033": { "allowed_elements": ["details", "summary", "img", "br"] },
+    // MD041 (first-line-h1) is the contract; keep it on.
+    // MD024 (no-duplicate-heading) — siblings-only mode so that ### subsections
+    // can repeat under different ## parents (common in API docs).
+    "MD024": { "siblings_only": true }
+  },
+  // Globs: every *.md / *.mdx under the repo, except generated output,
+  // node_modules, vendored upstream trees, and CHANGELOG.md (auto-generated).
+  "globs": ["**/*.md", "**/*.mdx"],
+  "ignores": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/vendor/**",
+    "**/upstream/**",
+    "**/third_party/**",
+    "**/CHANGELOG.md",
+    // .claude/ markdown is internal scaffolding (hook READMEs, agent
+    // role files, skill SKILL.mds, command reminders) — scoped docs
+    // with their own shape conventions. Excluded from the public-
+    // facing markdown lint surface.
+    "**/.claude/**"
+  ],
+  // Custom rule plugins live under markdownlint-rules/, byte-identical
+  // across the fleet via sync-scaffolding manifest registration.
+  "customRules": [
+    "./markdownlint-rules/socket-no-private-wheelhouse-leak.mjs",
+    "./markdownlint-rules/socket-no-relative-sibling-script.mjs",
+    "./markdownlint-rules/socket-readme-required-sections.mjs"
+  ]
+}
