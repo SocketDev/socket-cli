@@ -1,7 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "import"],
-  "jsPlugins": ["./oxlint-plugin/index.mts"],
+  "plugins": [
+    "typescript",
+    "unicorn",
+    "import"
+  ],
+  "jsPlugins": [
+    "./oxlint-plugin/index.mts"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -150,7 +156,7 @@
     "**/*.d.ts.map",
     "**/*.tsbuildinfo",
     "#fleet-canonical-begin (managed by socket-wheelhouse sync)",
-    "**/.claude/worktrees/**",
+    "**/.claude/**",
     "**/.config/oxlint-plugin/**",
     "**/.config/rolldown/**",
     "**/.git-hooks/**",
@@ -158,6 +164,10 @@
     "**/vendor/**",
     "**/wasm_exec.js",
     "**/.config/lockstep.schema.json",
+    "**/.config/markdownlint-rules/_shared/wheelhouse-self-skip.mjs",
+    "**/.config/markdownlint-rules/socket-no-private-wheelhouse-leak.mjs",
+    "**/.config/markdownlint-rules/socket-no-relative-sibling-script.mjs",
+    "**/.config/markdownlint-rules/socket-readme-required-sections.mjs",
     "**/.config/socket-registry-pins.json",
     "**/.config/socket-wheelhouse-schema.json",
     "**/.config/taze.config.mts",

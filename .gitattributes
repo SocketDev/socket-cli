@@ -184,6 +184,11 @@
 .claude/hooks/new-hook-claude-md-guard/package.json linguist-generated=true
 .claude/hooks/new-hook-claude-md-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/new-hook-claude-md-guard/tsconfig.json linguist-generated=true
+.claude/hooks/no-blind-keychain-read-guard/README.md linguist-generated=true
+.claude/hooks/no-blind-keychain-read-guard/index.mts linguist-generated=true
+.claude/hooks/no-blind-keychain-read-guard/package.json linguist-generated=true
+.claude/hooks/no-blind-keychain-read-guard/test/index.test.mts linguist-generated=true
+.claude/hooks/no-blind-keychain-read-guard/tsconfig.json linguist-generated=true
 .claude/hooks/no-experimental-strip-types-guard/README.md linguist-generated=true
 .claude/hooks/no-experimental-strip-types-guard/index.mts linguist-generated=true
 .claude/hooks/no-experimental-strip-types-guard/package.json linguist-generated=true
@@ -385,6 +390,7 @@
 .claude/skills/auditing-gha-settings/run.mts linguist-generated=true
 .claude/skills/cascading-fleet/SKILL.md linguist-generated=true
 .claude/skills/cascading-fleet/lib/cascade-template.sh linguist-generated=true
+.claude/skills/cascading-fleet/lib/fleet-repos.json linguist-generated=true
 .claude/skills/cascading-fleet/lib/fleet-repos.txt linguist-generated=true
 .claude/skills/driving-cursor-bugbot/SKILL.md linguist-generated=true
 .claude/skills/driving-cursor-bugbot/reference.md linguist-generated=true
@@ -417,8 +423,13 @@
 .claude/skills/updating/SKILL.md linguist-generated=true
 .claude/skills/updating/reference.md linguist-generated=true
 .claude/skills/worktree-management/SKILL.md linguist-generated=true
+.config/.markdownlint-cli2.jsonc linguist-generated=true
 .config/.prettierignore linguist-generated=true
 .config/lockstep.schema.json linguist-generated=true
+.config/markdownlint-rules/_shared/wheelhouse-self-skip.mjs linguist-generated=true
+.config/markdownlint-rules/socket-no-private-wheelhouse-leak.mjs linguist-generated=true
+.config/markdownlint-rules/socket-no-relative-sibling-script.mjs linguist-generated=true
+.config/markdownlint-rules/socket-readme-required-sections.mjs linguist-generated=true
 .config/oxlint-plugin/index.mts linguist-generated=true
 .config/oxlint-plugin/lib/detect-source-type.mts linguist-generated=true
 .config/oxlint-plugin/lib/fleet-paths.mts linguist-generated=true
