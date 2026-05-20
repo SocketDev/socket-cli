@@ -4,6 +4,12 @@
  *   and assertion capabilities.
  */
 
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+
+import { safeDelete } from '@socketsecurity/lib/fs'
+
 import { constants } from '../../src/constants.mts'
 import { spawnSocketCli } from '../utils.mts'
 
@@ -350,4 +356,151 @@ export async function expectCliSuccess(
   }
 
   return result
+}
+
+/**
+ * Shape of the Socket CLI's `--json` response contract. Mirrors the
+ * `validate_json` shell helper that was in `test/smoke.sh` so e2e tests can
+ * assert the contract programmatically.
+ *
+ * The contract:
+ * - `ok: true` payloads MUST include a non-null `data` field. `message` is
+ *   optional, `cause`/`code` are absent.
+ * - `ok: false` payloads MUST include a non-empty `message` string. `data` is
+ *   optional; `cause`/`code` are optional but, when `code` is present, it
+ *   must be a number.
+ */
+export interface SocketJsonOk<T = unknown> {
+  ok: true
+  data: T
+  message?: string
+}
+export interface SocketJsonErr {
+  ok: false
+  data?: unknown
+  message: string
+  cause?: string
+  code?: number
+}
+export type SocketJsonContract<T = unknown> = SocketJsonOk<T> | SocketJsonErr
+
+/**
+ * Validate that `stdout` is JSON matching the Socket CLI's `--json` contract,
+ * given the `expectedExitCode` the command actually returned. Returns the
+ * parsed payload on success; throws with a diagnostic message on contract
+ * violation.
+ *
+ * The contract being asserted is the same one `test/smoke.sh::validate_json`
+ * enforced before being ported to TypeScript.
+ *
+ * @example
+ *   const result = await executeCliCommand(['scan', 'list', '--json'])
+ *   const payload = validateSocketJsonContract(result.stdout, 0)
+ *   expect(payload.ok).toBe(true)
+ */
+export function validateSocketJsonContract<T = unknown>(
+  stdout: string,
+  expectedExitCode: number,
+): SocketJsonContract<T> {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(stdout) as unknown
+  } catch (e) {
+    throw new Error(
+      `Socket JSON contract violation: command output is not valid JSON (${(e as Error).message}); stdout may contain progress text mixed with the payload.\nstdout: ${stdout}`,
+    )
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error(`Socket JSON contract violation: payload is not an object.\nstdout: ${stdout}`)
+  }
+  const obj = parsed as Record<string, unknown>
+  const ok = obj['ok']
+  if (typeof ok !== 'boolean') {
+    throw new Error(`Socket JSON contract violation: "ok" must be a boolean (got ${typeof ok}).\nstdout: ${stdout}`)
+  }
+  if (expectedExitCode === 0 && ok !== true) {
+    throw new Error(`Socket JSON contract violation: exit code 0 but "ok" is ${ok} (expected true).\nstdout: ${stdout}`)
+  }
+  if (expectedExitCode !== 0 && ok !== false) {
+    throw new Error(`Socket JSON contract violation: exit code ${expectedExitCode} but "ok" is ${ok} (expected false).\nstdout: ${stdout}`)
+  }
+  if (ok === true && (obj['data'] === undefined || obj['data'] === null)) {
+    throw new Error(`Socket JSON contract violation: ok:true must include a non-null "data" field (return an empty object/array if no payload).\nstdout: ${stdout}`)
+  }
+  if (ok === false) {
+    const message = obj['message']
+    if (typeof message !== 'string' || message.length === 0) {
+      throw new Error(`Socket JSON contract violation: ok:false must include a non-empty "message" string.\nstdout: ${stdout}`)
+    }
+  }
+  if (obj['code'] !== undefined && typeof obj['code'] !== 'number') {
+    throw new Error(`Socket JSON contract violation: "code" must be a number when present (got ${typeof obj['code']}).\nstdout: ${stdout}`)
+  }
+  return obj as SocketJsonContract<T>
+}
+
+/**
+ * Options for {@link executeCliInScratch}.
+ */
+export interface CliInScratchOptions extends CliExecutionOptions {
+  /**
+   * Files to seed into the scratch cwd before running. Keyed by relative path;
+   * each value is the file body written verbatim. Use for fixtures the
+   * command-under-test needs to read.
+   */
+  seedFiles?: Record<string, string> | undefined
+}
+
+/**
+ * Execute Socket CLI inside an isolated scratch directory. Creates a unique
+ * `os.tmpdir()/socket-e2e-<n>` cwd for the run and an isolated `HOME` so the
+ * CLI never reaches the developer's real Socket config / credentials / scan
+ * output dir. Cleans up after itself even on failure.
+ *
+ * Use this for any e2e test whose command-under-test would otherwise mutate
+ * real account state, write into `~/.config/...`, or scribble files into the
+ * cwd. Non-destructive commands (`--help`, `--dry-run`, etc.) don't need it —
+ * use `executeCliCommand` for those.
+ *
+ * @example
+ *   const result = await executeCliInScratch(['scan', 'create', '.'], {
+ *     seedFiles: { 'package.json': '{"name":"test","version":"0.0.0"}' },
+ *   })
+ *   expect(result.code).toBe(0)
+ */
+export async function executeCliInScratch(
+  args: string[],
+  options?: CliInScratchOptions | undefined,
+): Promise<CliExecutionResult> {
+  const { seedFiles, env: callerEnv, cwd: callerCwd, ...rest } = {
+    __proto__: null,
+    ...options,
+  } as CliInScratchOptions
+
+  const scratchCwd = mkdtempSync(path.join(tmpdir(), 'socket-e2e-'))
+  const scratchHome = mkdtempSync(path.join(tmpdir(), 'socket-e2e-home-'))
+  try {
+    if (seedFiles) {
+      const { writeFileSync, mkdirSync } = await import('node:fs')
+      for (const [relPath, body] of Object.entries(seedFiles)) {
+        const full = path.join(scratchCwd, relPath)
+        mkdirSync(path.dirname(full), { recursive: true })
+        writeFileSync(full, body)
+      }
+    }
+    return await executeCliCommand(args, {
+      ...rest,
+      cwd: callerCwd ?? scratchCwd,
+      env: {
+        ...process.env,
+        HOME: scratchHome,
+        USERPROFILE: scratchHome,
+        XDG_CONFIG_HOME: path.join(scratchHome, '.config'),
+        ...callerEnv,
+      },
+    })
+  } finally {
+    await safeDelete(scratchCwd)
+    await safeDelete(scratchHome)
+  }
 }
