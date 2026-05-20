@@ -340,8 +340,16 @@ const rule = {
         // integer-indexable). The companion rule
         // socket/no-cached-for-on-iterable would then flag what THIS
         // rule just wrote. Skip silently rather than fight ourselves.
+        //
+        // Also skip when the kind can't be determined from the AST
+        // (e.g. `await fn()` / `someCall()` initializers without a
+        // type annotation). Without type info we can't prove the
+        // iterable is integer-indexable, and autofixing produces
+        // broken code (Set.length / Set[i]) on the wrong guess.
+        // Require explicit array shape (literal, type annotation,
+        // Array.from, Object.keys/values/entries) to opt in.
         const iterKind = resolveKind(node, iter.name as string)
-        if (FLAGGED_KINDS.has(iterKind)) {
+        if (FLAGGED_KINDS.has(iterKind) || iterKind === 'unknown') {
           return
         }
         if (node.body.type !== 'BlockStatement') {

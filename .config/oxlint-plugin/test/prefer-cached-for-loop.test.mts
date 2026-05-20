@@ -19,6 +19,14 @@ describe('socket/prefer-cached-for-loop', () => {
           name: 'for-of',
           code: 'for (const x of [1,2,3]) {}\n',
         },
+        {
+          name: 'for-of over awaited value — unknown kind, skip autofix',
+          code:
+            'async function f() {\n' +
+            '  const items = await getThings()\n' +
+            '  for (const x of items) { console.log(x) }\n' +
+            '}\n',
+        },
       ],
       invalid: [
         {

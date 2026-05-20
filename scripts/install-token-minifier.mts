@@ -94,7 +94,7 @@ interface CatalogYamlMap {
  * line-shaped (key: value) and we only need the @socketsecurity/* entries the
  * proxy actually references.
  */
-function readNeededCatalogEntries(): CatalogYamlMap {
+export function readNeededCatalogEntries(): CatalogYamlMap {
   const yamlPath = path.join(WHEELHOUSE_ROOT, 'pnpm-workspace.yaml')
   const text = readFileSync(yamlPath, 'utf8')
   const lines = text.split('\n')
@@ -140,7 +140,7 @@ function readNeededCatalogEntries(): CatalogYamlMap {
  * catalog aliases the package source declares. Keeps imports of
  * `@socketsecurity/lib-stable/...` resolvable from inside the install.
  */
-function writeInstallWorkspaceYaml(catalog: CatalogYamlMap): void {
+export function writeInstallWorkspaceYaml(catalog: CatalogYamlMap): void {
   const lines = ['catalog:']
   for (const [k, v] of Object.entries(catalog)) {
     // Quote values that aren't bare versions (e.g. `npm:foo@1.0.0`).
@@ -161,7 +161,7 @@ function writeInstallWorkspaceYaml(catalog: CatalogYamlMap): void {
  * Stripping `bin`/`exports` keeps pnpm from trying to wire global binaries at
  * install time — we drop our own shim explicitly.
  */
-function writeInstallPackageJson(sourceVersion: string): void {
+export function writeInstallPackageJson(sourceVersion: string): void {
   const sourcePkg = JSON.parse(
     readFileSync(path.join(PKG_SOURCE_DIR, 'package.json'), 'utf8'),
   )
@@ -190,7 +190,7 @@ function writeInstallPackageJson(sourceVersion: string): void {
  * `fs.cp` with recursive + force is the cross-platform equivalent of `cp -r`.
  * Force overwrites stale files on reinstall.
  */
-function copySource(): void {
+export function copySource(): void {
   // Use sync fs API for consistency with the rest of the script — this
   // is a one-shot install, not a hot path. `cpSync` exists since
   // Node 20; the recursive option is required for directories.
@@ -207,14 +207,14 @@ function copySource(): void {
  * when the recorded x-source-version in the dest's package.json differs from
  * the source.
  */
-function readSourceVersion(): string {
+export function readSourceVersion(): string {
   const pkg = JSON.parse(
     readFileSync(path.join(PKG_SOURCE_DIR, 'package.json'), 'utf8'),
   )
   return pkg.version ?? '0.0.0'
 }
 
-function readInstalledVersion(): string | undefined {
+export function readInstalledVersion(): string | undefined {
   const installedPkgPath = path.join(INSTALL_DIR, 'package.json')
   if (!existsSync(installedPkgPath)) {
     return undefined
@@ -227,7 +227,7 @@ function readInstalledVersion(): string | undefined {
   }
 }
 
-function pnpmInstallAtDest(quiet: boolean): void {
+export function pnpmInstallAtDest(quiet: boolean): void {
   const result = spawnSync(
     'pnpm',
     [
@@ -248,7 +248,7 @@ function pnpmInstallAtDest(quiet: boolean): void {
   }
 }
 
-function writeBinShim(): void {
+export function writeBinShim(): void {
   // Shim execs the proxy's top-level bin/ entry. Source lives at
   // INSTALL_DIR/bin/, NOT under node_modules/ — so Node 22+ can strip
   // types from the .mts file at runtime. `node` is on PATH on every

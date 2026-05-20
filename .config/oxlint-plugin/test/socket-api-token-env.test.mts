@@ -18,9 +18,9 @@ describe('socket/socket-api-token-env', () => {
         {
           name: 'alias-lookup array with declaration-level bypass comment',
           code:
-            "// socket-api-token-env: bootstrap -- alias-normalization shim.\n" +
+            '// socket-api-token-env: bootstrap -- alias-normalization shim.\n' +
             "const ALIASES = ['SOCKET_API_TOKEN', 'SOCKET_API_KEY', 'SOCKET_SECURITY_API_TOKEN'] as const\n" +
-            "console.log(ALIASES)\n",
+            'console.log(ALIASES)\n',
         },
       ],
       invalid: [
