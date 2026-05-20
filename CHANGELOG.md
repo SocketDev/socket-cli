@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - **`socket manifest bazel [beta]`** — Generate Bazel JVM SBOM manifests by running `bazel query` against discovered Maven repos in a Bazel workspace. Closes the inline-Maven-declaration gap that lockfile-only parsing misses for repos like envoy, ray, tensorflow, tink-java, and or-tools. Auto-detects Bzlmod and legacy `WORKSPACE`.
 - **`socket scan create --auto-manifest`** now covers Bazel workspaces in addition to Gradle/Scala/Kotlin/Conda. Repos with `MODULE.bazel`, `WORKSPACE`, or `WORKSPACE.bazel` are detected automatically and their Maven dependencies extracted as part of the standard scan-create flow.
+- **Bazel PyPI extraction** — `socket manifest bazel` now generates `requirements.txt` for Python Bazel workspaces via the new repeatable `--ecosystem pypi` flag, or via auto-detection when no `--ecosystem` flag is supplied. Discovers custom `rules_python` pip hub names, queries `py_library` / `py_binary` / `py_test` dependencies, resolves canonical pinned versions from `requirements_lock.txt`, and emits PEP 503-normalized `name==version` lines. Supports both Bzlmod (`pip.parse`) and legacy `WORKSPACE` (`pip_parse` / `pip_install`) configurations. `socket scan create --auto-manifest` picks up the generated PyPI manifest alongside Maven.
 
 ## [1.1.101](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.101) - 2026-05-22
 
