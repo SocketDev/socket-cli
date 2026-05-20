@@ -46,7 +46,7 @@ export interface SocketJson {
         bazelRc?: string | undefined
         bin?: string | undefined
         disabled?: boolean | undefined
-        ecosystem?: string | undefined
+        ecosystem?: string | readonly string[] | undefined
         out?: string | undefined
         verbose?: boolean | undefined
       }
