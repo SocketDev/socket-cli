@@ -20,6 +20,7 @@
  */
 
 import { Agent as HttpsAgent, request as httpsRequest } from 'node:https'
+import { ReadableStream } from 'node:stream/web'
 
 import { messageWithCauses } from 'pony-cause'
 
@@ -72,9 +73,11 @@ function getHttpsAgent(): HttpsAgent | undefined {
   return _httpsAgent
 }
 
-// Wrapper around fetch that supports extra CA certificates via SSL_CERT_FILE.
-// Uses node:https.request with a custom agent when extra CA certs are needed,
-// falling back to regular fetch() otherwise. Follows redirects like fetch().
+// All outbound API requests use node:https.request rather than global fetch.
+// This ensures no body timeout is applied — large streaming ND-JSON responses
+// (e.g. full scan results) can transfer without a hard deadline. When
+// SSL_CERT_FILE is configured, a custom HttpsAgent carrying the extra CA
+// certificates is passed; otherwise the default agent is used.
 export type ApiFetchInit = {
   body?: string | undefined
   headers?: Record<string, string> | undefined
@@ -85,7 +88,7 @@ export type ApiFetchInit = {
 function _httpsRequestFetch(
   url: string,
   init: ApiFetchInit,
-  agent: HttpsAgent,
+  agent: HttpsAgent | undefined,
   redirectCount: number,
 ): Promise<Response> {
   return new Promise((resolve, reject) => {
@@ -149,29 +152,44 @@ function _httpsRequestFetch(
           )
           return
         }
-        const chunks: Buffer[] = []
-        res.on('data', (chunk: Buffer) => chunks.push(chunk))
-        res.on('end', () => {
-          const body = Buffer.concat(chunks)
-          const responseHeaders = new Headers()
-          for (const [key, value] of Object.entries(res.headers)) {
-            if (typeof value === 'string') {
-              responseHeaders.set(key, value)
-            } else if (Array.isArray(value)) {
-              for (const v of value) {
-                responseHeaders.append(key, v)
-              }
+        // Build response headers immediately on receipt.
+        const responseHeaders = new Headers()
+        for (const [key, value] of Object.entries(res.headers)) {
+          if (typeof value === 'string') {
+            responseHeaders.set(key, value)
+          } else if (Array.isArray(value)) {
+            for (const v of value) {
+              responseHeaders.append(key, v)
             }
           }
-          resolve(
-            new Response(body, {
-              status: statusCode ?? 0,
-              statusText: res.statusMessage ?? '',
-              headers: responseHeaders,
-            }),
-          )
+        }
+        // Resolve with a streaming body as soon as headers are available,
+        // matching fetch() semantics. Callers that pipe response.body (e.g.
+        // streamDownloadWithFetch) receive a live ReadableStream rather than
+        // a fully-buffered Buffer.
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            res.on('data', (chunk: Buffer) => {
+              controller.enqueue(chunk)
+            })
+            res.on('end', () => {
+              controller.close()
+            })
+            res.on('error', (err: Error) => {
+              controller.error(err)
+            })
+          },
+          cancel() {
+            res.destroy()
+          },
         })
-        res.on('error', reject)
+        resolve(
+          new Response(body, {
+            status: statusCode ?? 0,
+            statusText: res.statusMessage ?? '',
+            headers: responseHeaders,
+          }),
+        )
       },
     )
     if (init.body) {
@@ -186,11 +204,7 @@ export async function apiFetch(
   url: string,
   init: ApiFetchInit = {},
 ): Promise<Response> {
-  const agent = getHttpsAgent()
-  if (!agent) {
-    return await fetch(url, init as globalThis.RequestInit)
-  }
-  return await _httpsRequestFetch(url, init, agent, 0)
+  return await _httpsRequestFetch(url, init, getHttpsAgent(), 0)
 }
 
 export type CommandRequirements = {

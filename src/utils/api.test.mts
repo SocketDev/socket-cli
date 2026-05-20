@@ -6,8 +6,9 @@
  * direct API calls when NODE_EXTRA_CA_CERTS is not set at process startup.
  *
  * Test Coverage:
- * - apiFetch falls back to regular fetch when no extra CA certs are needed.
- * - apiFetch uses node:https.request with custom agent when CA certs are set.
+ * - apiFetch always uses node:https.request (no undici body timeout).
+ * - apiFetch passes a custom HttpsAgent when CA certs are set via SSL_CERT_FILE.
+ * - apiFetch passes no agent (undefined) when no CA certs are configured.
  * - Response object construction from https.request output.
  * - POST requests with JSON body through https.request path.
  * - Error propagation from https.request failures.
@@ -113,18 +114,46 @@ describe('apiFetch with extra CA certificates', () => {
     globalThis.fetch = originalFetch
   })
 
-  it('should use regular fetch when no extra CA certs are needed', async () => {
-    const mockResponse = new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      statusText: 'OK',
-    })
-    globalThis.fetch = vi.fn().mockResolvedValue(mockResponse)
+  it('should use https.request with no agent when no extra CA certs are needed', async () => {
+    const mockReq = {
+      end: vi.fn(),
+      on: vi.fn(),
+      write: vi.fn(),
+    }
+
+    mockHttpsRequest.mockImplementation(
+      (_url: string, _opts: unknown, callback: RequestCallback) => {
+        setTimeout(() => {
+          const mockRes = {
+            headers: { 'content-type': 'text/plain' },
+            on: vi.fn(),
+            statusCode: 200,
+            statusMessage: 'OK',
+          }
+          const handlers: Record<string, Function> = {}
+          mockRes.on.mockImplementation((event: string, handler: Function) => {
+            handlers[event] = handler
+            return mockRes
+          })
+          callback(mockRes)
+          handlers['data']?.(Buffer.from('response body'))
+          handlers['end']?.()
+        }, 0)
+        return mockReq
+      },
+    )
 
     const { queryApiSafeText } = await import('./api.mts')
     const result = await queryApiSafeText('test/path', 'test request')
 
-    expect(globalThis.fetch).toHaveBeenCalled()
-    expect(mockHttpsRequest).not.toHaveBeenCalled()
+    // Always uses https.request — no undici body timeout.
+    expect(mockHttpsRequest).toHaveBeenCalled()
+    // No custom HttpsAgent created when CA certs are not configured.
+    expect(MockHttpsAgent).not.toHaveBeenCalled()
+    // agent is undefined when no CA certs are configured.
+    const callArgs = mockHttpsRequest.mock.calls[0]
+    expect(callArgs[1]).toEqual(expect.objectContaining({ agent: undefined }))
+    expect(result.ok).toBe(true)
   })
 
   it('should use https.request when extra CA certs are available', async () => {
