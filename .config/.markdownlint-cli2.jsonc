@@ -21,7 +21,7 @@
     // MD041 (first-line-h1) is the contract; keep it on.
     // MD024 (no-duplicate-heading) — siblings-only mode so that ### subsections
     // can repeat under different ## parents (common in API docs).
-    "MD024": { "siblings_only": true }
+    "MD024": { "siblings_only": true },
   },
   // Globs: every *.md / *.mdx under the repo, except generated output,
   // node_modules, vendored upstream trees, and CHANGELOG.md (auto-generated).
@@ -39,13 +39,13 @@
     // role files, skill SKILL.mds, command reminders) — scoped docs
     // with their own shape conventions. Excluded from the public-
     // facing markdown lint surface.
-    "**/.claude/**"
+    "**/.claude/**",
   ],
   // Custom rule plugins live under markdownlint-rules/, byte-identical
   // across the fleet via sync-scaffolding manifest registration.
   "customRules": [
     "./markdownlint-rules/socket-no-private-wheelhouse-leak.mjs",
     "./markdownlint-rules/socket-no-relative-sibling-script.mjs",
-    "./markdownlint-rules/socket-readme-required-sections.mjs"
-  ]
+    "./markdownlint-rules/socket-readme-required-sections.mjs",
+  ],
 }

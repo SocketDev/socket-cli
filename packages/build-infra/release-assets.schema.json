@@ -29,7 +29,7 @@
         },
         "tag": {
           "type": "string",
-          "description": "Full release tag, including the tool prefix (e.g. `iocraft-20260424-18f0f46`).",
+          "description": "Full release tag, including the tool prefix (e.g. `lief-20260507-76c1796`).",
           "minLength": 1
         },
         "checksums": {

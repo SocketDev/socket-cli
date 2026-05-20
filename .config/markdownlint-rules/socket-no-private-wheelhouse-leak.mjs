@@ -1,21 +1,16 @@
 /**
  * @file Flag mentions of `socket-wheelhouse` in public-facing markdown.
- *
  *   socket-wheelhouse is a private repo. Public READMEs / docs / release notes
  *   that link to it leak the internal tooling layout to users who can't access
  *   the link anyway. Whatever the markdown is trying to teach should be
- *   rewritten to not require the reference.
+ *   rewritten to not require the reference. Detects:
  *
- *   Detects:
- *     - The literal token `socket-wheelhouse` (case-insensitive) anywhere
- *       in a line.
- *     - `https://github.com/SocketDev/socket-wheelhouse...` URL forms.
- *
- *   Skips fenced code blocks because those are intentional examples
- *   (and fenced-block scanning would false-positive on the very
- *   markdownlint config that references this file).
- *
- *   No autofix: the right rewrite is contextual.
+ *   - The literal token `socket-wheelhouse` (case-insensitive) anywhere in a
+ *     line.
+ *   - `https://github.com/SocketDev/socket-wheelhouse...` URL forms. Skips fenced
+ *     code blocks because those are intentional examples (and fenced-block
+ *     scanning would false-positive on the very markdownlint config that
+ *     references this file). No autofix: the right rewrite is contextual.
  */
 
 import { isInsideWheelhouse } from './_shared/wheelhouse-self-skip.mjs'
@@ -23,7 +18,9 @@ import { isInsideWheelhouse } from './_shared/wheelhouse-self-skip.mjs'
 const RULE_NAME = 'socket-no-private-wheelhouse-leak'
 const FORBIDDEN_TOKEN_RE = /socket-wheelhouse/i
 
-/** @type {import("markdownlint").Rule} */
+/**
+ * @type {import('markdownlint').Rule}
+ */
 const rule = {
   names: [RULE_NAME, 'socket/no-private-wheelhouse-leak'],
   description:
@@ -60,4 +57,5 @@ const rule = {
   },
 }
 
+// oxlint-disable-next-line socket/no-default-export -- markdownlint-cli2 loads custom rules via dynamic import and expects the default export to be the rule object.
 export default rule

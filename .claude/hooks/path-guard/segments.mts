@@ -54,8 +54,6 @@ export const KNOWN_SIBLING_PACKAGES = new Set([
   'codet5-models-builder',
   'core',
   'curl-builder',
-  'ink-builder',
-  'iocraft-builder',
   'libpq-builder',
   'lief-builder',
   'minilm-builder',

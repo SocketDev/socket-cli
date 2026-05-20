@@ -73,11 +73,10 @@ The hook recognizes Rule B traversals only when the next segment
 after `..` is a known fleet package name:
 
 `binflate`, `binject`, `binpress`, `bin-infra`, `build-infra`,
-`codet5-models-builder`, `curl-builder`, `iocraft-builder`,
-`ink-builder`, `libpq-builder`, `lief-builder`, `minilm-builder`,
-`models`, `napi-go`, `node-smol-builder`, `onnxruntime-builder`,
-`opentui-builder`, `stubs-builder`, `ultraviolet-builder`,
-`yoga-layout-builder`
+`codet5-models-builder`, `curl-builder`, `libpq-builder`,
+`lief-builder`, `minilm-builder`, `models`, `napi-go`,
+`node-smol-builder`, `onnxruntime-builder`, `opentui-builder`,
+`stubs-builder`, `ultraviolet-builder`, `yoga-layout-builder`
 
 When a new package joins the workspace, add it to
 `KNOWN_SIBLING_PACKAGES` in `index.mts`.

@@ -48,7 +48,7 @@ interface GetChecksumsOptions {
    */
   repoConfig: RepoConfig
   /**
-   * Tool name prefix used in the producing repo's release tag (e.g. `iocraft`).
+   * Tool name prefix used in the producing repo's release tag (e.g. `lief`).
    */
   tool: string
   /**
