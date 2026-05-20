@@ -4,7 +4,7 @@ PreToolUse hook that caps the body length of individual `### ` sections inside t
 
 ## What it does
 
-Complements `claude-md-size-guard` (40KB byte cap on the whole block) by enforcing a per-section line cap inside the block. Each `### Section heading` inside the `<!-- BEGIN/END FLEET-CANONICAL -->` markers gets at most **8 body lines** (configurable via `CLAUDE_MD_FLEET_SECTION_MAX_LINES`).
+Complements `claude-md-size-guard` (48KB byte cap on the whole block) by enforcing a per-section line cap inside the block. Each `### Section heading` inside the `<!-- BEGIN/END FLEET-CANONICAL -->` markers gets at most **8 body lines** (configurable via `CLAUDE_MD_FLEET_SECTION_MAX_LINES`).
 
 Sections that exceed 8 lines should have a long-form companion at `docs/claude.md/fleet/<topic>.md` and the inline body should shrink to 1-2 sentences plus a link. The cap was 20 initially (during the bootstrap when several fleet sections were 12-19 lines); it tightened to 8 once those sections were outsourced.
 
@@ -24,7 +24,7 @@ When a section exceeds the cap, the hook prints:
 
 ## Why a per-section cap, not just the byte cap
 
-The failure mode this hook addresses: an operator can grow a single rule from 2 lines to 60 lines of detailed prose without ever tripping the 40KB byte cap — until enough other sections accrete that an unrelated 1-line addition breaks the build. The per-section cap catches this directly, at the moment the long content is written, when the operator has the long-form text in hand and can immediately drop it into a `docs/claude.md/fleet/<topic>.md` companion.
+The failure mode this hook addresses: an operator can grow a single rule from 2 lines to 60 lines of detailed prose without ever tripping the 48KB byte cap — until enough other sections accrete that an unrelated 1-line addition breaks the build. The per-section cap catches this directly, at the moment the long content is written, when the operator has the long-form text in hand and can immediately drop it into a `docs/claude.md/fleet/<topic>.md` companion.
 
 ## Override
 

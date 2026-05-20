@@ -1,10 +1,10 @@
 # claude-md-size-guard
 
-PreToolUse Edit/Write hook that blocks CLAUDE.md edits which would push the **fleet-canonical block** (between `<!-- BEGIN FLEET-CANONICAL -->` / `<!-- END FLEET-CANONICAL -->` markers) above 40 KB.
+PreToolUse Edit/Write hook that blocks CLAUDE.md edits which would push the **fleet-canonical block** (between `<!-- BEGIN FLEET-CANONICAL -->` / `<!-- END FLEET-CANONICAL -->` markers) above 48 KB.
 
 ## Why
 
-The fleet block is byte-identical across every `socket-*` repo. Every byte added there costs N copies of in-context tokens fleet-wide. Per-repo content outside the markers is paid once. Capping the fleet block at 40 KB:
+The fleet block is byte-identical across every `socket-*` repo. Every byte added there costs N copies of in-context tokens fleet-wide. Per-repo content outside the markers is paid once. Capping the fleet block at 48 KB:
 
 - Forces new fleet rules to be **terse + reference-deferred** (link to `docs/references/<topic>.md`).
 - Leaves headroom for per-repo content. Per-repo CLAUDE.md additions are NOT capped here.
@@ -16,7 +16,7 @@ The hook fires on Edit/Write tool calls. For Write, it inspects `content`. For E
 
 ## Cap
 
-- **Default:** 40 KB (40 960 bytes).
+- **Default:** 48 KB (49 152 bytes). Sized to leave per-repo CLAUDE.md additions ample room outside the fleet block.
 - **Override:** set `CLAUDE_MD_FLEET_BLOCK_BYTES=<n>` in env (rarely needed; bumping the cap should be a deliberate fleet-wide decision).
 
 ## Failing open

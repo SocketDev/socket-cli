@@ -64,17 +64,17 @@ test('Write of small fleet block is allowed', async () => {
   assert.strictEqual(result.code, 0)
 })
 
-test('Write of fleet block at exactly 40KB is allowed', async () => {
+test('Write of fleet block at exactly 48KB is allowed', async () => {
   const result = await runHook({
-    tool_input: { content: fleetBlock(40 * 1024), file_path: 'CLAUDE.md' },
+    tool_input: { content: fleetBlock(48 * 1024), file_path: 'CLAUDE.md' },
     tool_name: 'Write',
   })
   assert.strictEqual(result.code, 0)
 })
 
-test('Write of fleet block over 40KB is blocked', async () => {
+test('Write of fleet block over 48KB is blocked', async () => {
   const result = await runHook({
-    tool_input: { content: fleetBlock(45 * 1024), file_path: 'CLAUDE.md' },
+    tool_input: { content: fleetBlock(53 * 1024), file_path: 'CLAUDE.md' },
     tool_name: 'Write',
   })
   assert.strictEqual(result.code, 2)

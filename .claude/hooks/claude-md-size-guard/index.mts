@@ -2,7 +2,7 @@
 // Claude Code PreToolUse hook — claude-md-size-guard.
 //
 // Blocks Edit/Write tool calls that would push the CLAUDE.md
-// fleet-canonical block above the 40KB size cap. The fleet block lives
+// fleet-canonical block above the 48KB size cap. The fleet block lives
 // between `<!-- BEGIN FLEET-CANONICAL -->` and `<!-- END FLEET-CANONICAL -->`
 // markers; everything outside is per-repo content owned by the host
 // repo (different cap, evaluated separately).
@@ -24,8 +24,9 @@
 //      remediation (move detail into `docs/references/<topic>.md`).
 //
 // Cap policy:
-//   - Default: 40 KB (40_960 bytes). Override per-repo by setting
-//     `CLAUDE_MD_FLEET_BLOCK_BYTES` in the env (rarely needed).
+//   - Default: 48 KB (49_152 bytes). Sized to leave room for per-repo
+//     CLAUDE.md additions outside the fleet block. Override per-repo by
+//     setting `CLAUDE_MD_FLEET_BLOCK_BYTES` in the env (rarely needed).
 //   - Whole-file cap: NOT enforced here. Per-repo content can grow
 //     freely; this hook only protects the fleet block.
 //
@@ -44,7 +45,7 @@ import process from 'node:process'
 
 import { readStdin } from '../_shared/transcript.mts'
 
-const DEFAULT_CAP_BYTES = 40 * 1024
+const DEFAULT_CAP_BYTES = 48 * 1024
 const FLEET_BEGIN_MARKER = '<!-- BEGIN FLEET-CANONICAL'
 const FLEET_END_MARKER = '<!-- END FLEET-CANONICAL'
 
