@@ -1,13 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "unicorn",
-    "import"
-  ],
-  "jsPlugins": [
-    "./oxlint-plugin/index.mts"
-  ],
+  "plugins": ["typescript", "unicorn", "import"],
+  "jsPlugins": ["./oxlint-plugin/index.mts"],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -56,6 +50,7 @@
     "socket/no-promise-race": "error",
     "socket/no-promise-race-in-loop": "error",
     "socket/no-status-emoji": "error",
+    "socket/no-structured-clone-prefer-json": "error",
     "socket/no-underscore-identifier": "error",
     "socket/optional-explicit-undefined": "error",
     "socket/personal-path-placeholders": "error",
@@ -67,6 +62,7 @@
     "socket/prefer-node-modules-dot-cache": "error",
     "socket/prefer-safe-delete": "error",
     "socket/prefer-separate-type-import": "error",
+    "socket/prefer-spawn-over-execsync": "error",
     "socket/prefer-static-type-import": "error",
     "socket/prefer-undefined-over-null": "error",
     "socket/socket-api-token-env": "error",
@@ -192,6 +188,7 @@
     "**/scripts/install-claude-plugins.mts",
     "**/scripts/install-git-hooks.mts",
     "**/scripts/install-sfw.mts",
+    "**/scripts/install-token-minifier.mts",
     "**/scripts/janus.mts",
     "**/scripts/lint-github-settings.mts",
     "**/scripts/lockstep-emit-schema.mts",

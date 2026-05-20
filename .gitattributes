@@ -11,7 +11,13 @@
 .claude/commands/security-scan.md linguist-generated=true
 .claude/commands/setup-security-tools.md linguist-generated=true
 .claude/commands/squash-history.md linguist-generated=true
+.claude/commands/update-security.md linguist-generated=true
 .claude/hooks/_shared/README.md linguist-generated=true
+.claude/hooks/_shared/acorn/README.md linguist-generated=true
+.claude/hooks/_shared/acorn/acorn-bindgen.cjs linguist-generated=true
+.claude/hooks/_shared/acorn/acorn-wasm-sync.mts linguist-generated=true
+.claude/hooks/_shared/acorn/acorn.wasm linguist-generated=true
+.claude/hooks/_shared/acorn/index.mts linguist-generated=true
 .claude/hooks/_shared/bash-quote-mask.mts linguist-generated=true
 .claude/hooks/_shared/hook-env.mts linguist-generated=true
 .claude/hooks/_shared/markers.mts linguist-generated=true
@@ -212,6 +218,11 @@
 .claude/hooks/no-revert-guard/package.json linguist-generated=true
 .claude/hooks/no-revert-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/no-revert-guard/tsconfig.json linguist-generated=true
+.claude/hooks/no-structured-clone-prefer-json-guard/README.md linguist-generated=true
+.claude/hooks/no-structured-clone-prefer-json-guard/index.mts linguist-generated=true
+.claude/hooks/no-structured-clone-prefer-json-guard/package.json linguist-generated=true
+.claude/hooks/no-structured-clone-prefer-json-guard/test/index.test.mts linguist-generated=true
+.claude/hooks/no-structured-clone-prefer-json-guard/tsconfig.json linguist-generated=true
 .claude/hooks/no-token-in-dotenv-guard/README.md linguist-generated=true
 .claude/hooks/no-token-in-dotenv-guard/index.mts linguist-generated=true
 .claude/hooks/no-token-in-dotenv-guard/package.json linguist-generated=true
@@ -220,6 +231,7 @@
 .claude/hooks/no-underscore-identifier-guard/README.md linguist-generated=true
 .claude/hooks/no-underscore-identifier-guard/index.mts linguist-generated=true
 .claude/hooks/no-underscore-identifier-guard/package.json linguist-generated=true
+.claude/hooks/no-underscore-identifier-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/no-underscore-identifier-guard/tsconfig.json linguist-generated=true
 .claude/hooks/node-modules-staging-guard/README.md linguist-generated=true
 .claude/hooks/node-modules-staging-guard/index.mts linguist-generated=true
@@ -312,6 +324,10 @@
 .claude/hooks/soak-exclude-date-annotation-guard/package.json linguist-generated=true
 .claude/hooks/soak-exclude-date-annotation-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/soak-exclude-date-annotation-guard/tsconfig.json linguist-generated=true
+.claude/hooks/socket-token-minifier-start/README.md linguist-generated=true
+.claude/hooks/socket-token-minifier-start/index.mts linguist-generated=true
+.claude/hooks/socket-token-minifier-start/package.json linguist-generated=true
+.claude/hooks/socket-token-minifier-start/tsconfig.json linguist-generated=true
 .claude/hooks/stale-process-sweeper/README.md linguist-generated=true
 .claude/hooks/stale-process-sweeper/index.mts linguist-generated=true
 .claude/hooks/stale-process-sweeper/package.json linguist-generated=true
@@ -396,11 +412,15 @@
 .claude/skills/squashing-history/reference.md linguist-generated=true
 .claude/skills/updating-lockstep/SKILL.md linguist-generated=true
 .claude/skills/updating-lockstep/reference.md linguist-generated=true
+.claude/skills/updating-security/SKILL.md linguist-generated=true
+.claude/skills/updating-security/reference.md linguist-generated=true
 .claude/skills/updating/SKILL.md linguist-generated=true
 .claude/skills/updating/reference.md linguist-generated=true
 .claude/skills/worktree-management/SKILL.md linguist-generated=true
+.config/.prettierignore linguist-generated=true
 .config/lockstep.schema.json linguist-generated=true
 .config/oxlint-plugin/index.mts linguist-generated=true
+.config/oxlint-plugin/lib/detect-source-type.mts linguist-generated=true
 .config/oxlint-plugin/lib/fleet-paths.mts linguist-generated=true
 .config/oxlint-plugin/lib/iterable-kind.mts linguist-generated=true
 .config/oxlint-plugin/lib/rule-tester.mts linguist-generated=true
@@ -427,7 +447,9 @@
 .config/oxlint-plugin/rules/no-promise-race-in-loop.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-promise-race.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-status-emoji.mts linguist-generated=true
+.config/oxlint-plugin/rules/no-structured-clone-prefer-json.mts linguist-generated=true
 .config/oxlint-plugin/rules/no-sync-rm-in-test-lifecycle.mts linguist-generated=true
+.config/oxlint-plugin/rules/no-underscore-identifier.mts linguist-generated=true
 .config/oxlint-plugin/rules/optional-explicit-undefined.mts linguist-generated=true
 .config/oxlint-plugin/rules/personal-path-placeholders.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-async-spawn.mts linguist-generated=true
@@ -439,6 +461,7 @@
 .config/oxlint-plugin/rules/prefer-node-modules-dot-cache.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-safe-delete.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-separate-type-import.mts linguist-generated=true
+.config/oxlint-plugin/rules/prefer-spawn-over-execsync.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-static-type-import.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-undefined-over-null.mts linguist-generated=true
 .config/oxlint-plugin/rules/socket-api-token-env.mts linguist-generated=true
@@ -468,7 +491,9 @@
 .config/oxlint-plugin/test/no-promise-race-in-loop.test.mts linguist-generated=true
 .config/oxlint-plugin/test/no-promise-race.test.mts linguist-generated=true
 .config/oxlint-plugin/test/no-status-emoji.test.mts linguist-generated=true
+.config/oxlint-plugin/test/no-structured-clone-prefer-json.test.mts linguist-generated=true
 .config/oxlint-plugin/test/no-sync-rm-in-test-lifecycle.test.mts linguist-generated=true
+.config/oxlint-plugin/test/no-underscore-identifier.test.mts linguist-generated=true
 .config/oxlint-plugin/test/optional-explicit-undefined.test.mts linguist-generated=true
 .config/oxlint-plugin/test/personal-path-placeholders.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-async-spawn.test.mts linguist-generated=true
@@ -480,6 +505,7 @@
 .config/oxlint-plugin/test/prefer-node-modules-dot-cache.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-safe-delete.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-separate-type-import.test.mts linguist-generated=true
+.config/oxlint-plugin/test/prefer-spawn-over-execsync.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-static-type-import.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-undefined-over-null.test.mts linguist-generated=true
 .config/oxlint-plugin/test/socket-api-token-env.test.mts linguist-generated=true
@@ -574,6 +600,7 @@ scripts/fix.mts linguist-generated=true
 scripts/install-claude-plugins.mts linguist-generated=true
 scripts/install-git-hooks.mts linguist-generated=true
 scripts/install-sfw.mts linguist-generated=true
+scripts/install-token-minifier.mts linguist-generated=true
 scripts/janus.mts linguist-generated=true
 scripts/lint-github-settings.mts linguist-generated=true
 scripts/lockstep-emit-schema.mts linguist-generated=true
@@ -601,4 +628,8 @@ scripts/validate-bundle-deps.mts linguist-generated=true
 scripts/validate-config-paths.mts linguist-generated=true
 scripts/validate-esbuild-minify.mts linguist-generated=true
 scripts/validate-file-size.mts linguist-generated=true
+
+# Vendored binary blobs (no diff, no merge, no text-mode).
+.claude/hooks/_shared/acorn/acorn.wasm binary
+template/.claude/hooks/_shared/acorn/acorn.wasm binary
 # ─── END fleet-canonical ────────────────────────────────────────
