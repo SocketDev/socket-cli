@@ -330,38 +330,36 @@ jobs:
       # Needed to push the tag.
       contents: write
     steps:
-      - name: Checkout at published SHA
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
-        with:
-          ref: ${{ needs.publish.outputs.published_sha }}
-          fetch-depth: 1
-          persist-credentials: true
-
+      # Uses gh api (not `git push`) so GITHUB_TOKEN only lives in this
+      # step's env, never written to `.git/config`. No checkout needed —
+      # tag creation goes straight against the published SHA via API.
       - name: Tag release (idempotent)
         env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           PUBLISHED_SHA: ${{ needs.publish.outputs.published_sha }}
           PUBLISHED_VERSION: ${{ needs.publish.outputs.published_version }}
         run: |
           TAG="v$PUBLISHED_VERSION"
-          # Fetch the tag explicitly so we see existing state even on shallow clones.
-          git fetch origin "refs/tags/$TAG:refs/tags/$TAG" 2>/dev/null || true
 
-          if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then
-            EXISTING=$(git rev-list -n1 "refs/tags/$TAG")
-            if [ "$EXISTING" = "$PUBLISHED_SHA" ]; then
+          # Look up any existing tag via the API. 200 → exists; 404 → absent.
+          EXISTING_JSON=$(gh api "repos/$REPO/git/ref/tags/$TAG" 2>/dev/null || echo "")
+          if [ -n "$EXISTING_JSON" ]; then
+            EXISTING_SHA=$(echo "$EXISTING_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).object.sha")
+            if [ "$EXISTING_SHA" = "$PUBLISHED_SHA" ]; then
               echo "Tag $TAG already exists at $PUBLISHED_SHA — no-op."
               exit 0
             fi
-            echo "::error::Tag $TAG exists at $EXISTING but publish SHA is $PUBLISHED_SHA."
+            echo "::error::Tag $TAG exists at $EXISTING_SHA but publish SHA is $PUBLISHED_SHA."
             echo "::error::Release immutability is enabled; this requires manual recovery:"
             echo "::error::  1. Delete any GitHub Release tied to $TAG"
-            echo "::error::  2. git push --delete origin $TAG  (only if no Release exists)"
+            echo "::error::  2. Delete the tag via the API"
             echo "::error::  3. Re-run this workflow"
             exit 1
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$TAG" "$PUBLISHED_SHA" -m "$TAG"
-          git push origin "$TAG"
-          echo "Created and pushed tag $TAG at $PUBLISHED_SHA"
+          gh api "repos/$REPO/git/refs" \
+            -X POST \
+            -f "ref=refs/tags/$TAG" \
+            -f "sha=$PUBLISHED_SHA"
+          echo "Created tag $TAG at $PUBLISHED_SHA"
