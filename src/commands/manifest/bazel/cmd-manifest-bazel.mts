@@ -4,9 +4,11 @@ import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './extract_bazel_to_maven.mts'
+import { extractBazelToPypi } from './extract_bazel_to_pypi.mts'
 import constants, { SOCKET_JSON } from '../../../constants.mts'
 import { commonFlags } from '../../../flags.mts'
 import { checkCommandInput } from '../../../utils/check-input.mts'
+import { InputError } from '../../../utils/errors.mts'
 import { getOutputKind } from '../../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../../utils/output-formatting.mts'
@@ -221,13 +223,105 @@ async function run(
     return
   }
 
-  await extractBazelToMaven({
-    bazelFlags: bazelFlags as string | undefined,
-    bazelOutputBase: bazelOutputBase as string | undefined,
-    bazelRc: bazelRc as string | undefined,
-    bin: bazel as string | undefined,
-    cwd,
-    out: out as string,
-    verbose: Boolean(verbose),
-  })
+  // Ecosystem dispatch: auto-detect both maven and pypi when no --ecosystem
+  // flag is given; otherwise validate and dispatch to the requested ecosystems.
+  const wasExplicitEcosystemSelection =
+    Array.isArray(ecosystem) && ecosystem.length > 0
+  const ecosystems: string[] =
+    wasExplicitEcosystemSelection ? (ecosystem as string[]) : ['maven', 'pypi']
+
+  for (const eco of ecosystems) {
+    if (!['maven', 'pypi'].includes(eco)) {
+      throw new InputError(
+        `Unsupported --ecosystem value: ${eco}. Supported values: maven, pypi.`,
+      )
+    }
+  }
+
+  type EcosystemOutcome = {
+    ecosystem: 'maven' | 'pypi'
+    ok: boolean
+    noEcosystemFound?: boolean | undefined
+    hardFailure?: boolean
+    manifestPath?: string | undefined
+  }
+  const outcomes: EcosystemOutcome[] = []
+
+  for (const eco of ecosystems) {
+    if (eco === 'maven') {
+      const mavenResult = await extractBazelToMaven({
+        bazelFlags: bazelFlags as string | undefined,
+        bazelOutputBase: bazelOutputBase as string | undefined,
+        bazelRc: bazelRc as string | undefined,
+        bin: bazel as string | undefined,
+        cwd,
+        out: out as string,
+        verbose: Boolean(verbose),
+      })
+      outcomes.push({
+        ecosystem: 'maven',
+        ok: mavenResult.ok,
+        manifestPath: mavenResult.manifestPath,
+      })
+    } else if (eco === 'pypi') {
+      const pypiResult = await extractBazelToPypi({
+        bazelFlags: bazelFlags as string | undefined,
+        bazelOutputBase: bazelOutputBase as string | undefined,
+        bazelRc: bazelRc as string | undefined,
+        bin: bazel as string | undefined,
+        cwd,
+        out: out as string,
+        verbose: Boolean(verbose),
+        explicitEcosystem: wasExplicitEcosystemSelection,
+      })
+      outcomes.push({
+        ecosystem: 'pypi',
+        ok: pypiResult.ok,
+        noEcosystemFound: pypiResult.noEcosystemFound,
+        manifestPath: pypiResult.manifestPath,
+      })
+    }
+  }
+
+  // Outcome matrix (auto-detect mode only).
+  if (!wasExplicitEcosystemSelection) {
+    const successes = outcomes.filter(o => o.ok && o.manifestPath)
+    const hardFailures = outcomes.filter(
+      o => !o.ok && !o.noEcosystemFound,
+    )
+    const noDiscoveries = outcomes.filter(
+      o => o.noEcosystemFound,
+    )
+
+    if (successes.length) {
+      if (hardFailures.length) {
+        for (const f of hardFailures) {
+          logger.warn(
+            `${f.ecosystem} extraction failed, but other ecosystem(s) succeeded.`,
+          )
+        }
+      }
+      return
+    }
+
+    if (!hardFailures.length && noDiscoveries.length === outcomes.length) {
+      throw new InputError(
+        'No supported Bazel ecosystems detected (maven, pypi). Ensure rules_jvm_external, rules_python pip_parse/pip_install/pip_repository, or pip.parse is configured.',
+      )
+    }
+
+    if (hardFailures.length) {
+      throw new InputError(
+        `Bazel auto-manifest generation failed for all attempted ecosystems: ${hardFailures.map(f => f.ecosystem).join(', ')}.`,
+      )
+    }
+  } else {
+    // Explicit mode: narrow and strict.
+    const pypiOutcome = outcomes.find(o => o.ecosystem === 'pypi')
+    if (pypiOutcome?.noEcosystemFound) {
+      throw new InputError(
+        'No Python/PyPI Bazel rules found. Ensure rules_python pip_parse, pip_install, pip_repository, or pip.parse is configured in MODULE.bazel or WORKSPACE.',
+      )
+    }
+  }
 }
