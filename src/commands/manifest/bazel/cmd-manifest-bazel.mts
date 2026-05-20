@@ -290,44 +290,46 @@ async function run(
     }
   }
 
-  // Outcome matrix (auto-detect mode only).
+  // Outcome matrix.
+  // Hard failures are non-ok outcomes that did not report
+  // noEcosystemFound: the ecosystem was detected (or the runner crashed),
+  // but extraction failed. They must always cause a non-zero exit, even
+  // when another ecosystem succeeded, so CI consumers can detect the
+  // failure.
+  const hardFailures = outcomes.filter(o => !o.ok && !o.noEcosystemFound)
+  const noDiscoveries = outcomes.filter(o => o.noEcosystemFound)
+  const successes = outcomes.filter(o => o.ok && o.manifestPath)
+
   if (!wasExplicitEcosystemSelection) {
-    const successes = outcomes.filter(o => o.ok && o.manifestPath)
-    const hardFailures = outcomes.filter(
-      o => !o.ok && !o.noEcosystemFound,
-    )
-    const noDiscoveries = outcomes.filter(
-      o => o.noEcosystemFound,
-    )
+    // Auto-detect mode: a hard failure on any attempted ecosystem must
+    // surface as a non-zero exit even when another ecosystem succeeded.
+    if (hardFailures.length) {
+      throw new InputError(
+        `Bazel auto-manifest generation hit hard failure(s) in ecosystem(s): ${hardFailures.map(f => f.ecosystem).join(', ')}.`,
+      )
+    }
 
     if (successes.length) {
-      if (hardFailures.length) {
-        for (const f of hardFailures) {
-          logger.warn(
-            `${f.ecosystem} extraction failed, but other ecosystem(s) succeeded.`,
-          )
-        }
-      }
       return
     }
 
-    if (!hardFailures.length && noDiscoveries.length === outcomes.length) {
+    if (noDiscoveries.length === outcomes.length) {
       throw new InputError(
         'No supported Bazel ecosystems detected (maven, pypi). Ensure rules_jvm_external, rules_python pip_parse/pip_install/pip_repository, or pip.parse is configured.',
       )
     }
-
-    if (hardFailures.length) {
+  } else {
+    // Explicit mode: strict. Every requested ecosystem must succeed.
+    // A noEcosystemFound or a hard failure on any requested ecosystem
+    // produces a non-zero exit.
+    if (noDiscoveries.length) {
       throw new InputError(
-        `Bazel auto-manifest generation failed for all attempted ecosystems: ${hardFailures.map(f => f.ecosystem).join(', ')}.`,
+        `No Bazel rules found for explicitly requested ecosystem(s): ${noDiscoveries.map(f => f.ecosystem).join(', ')}.`,
       )
     }
-  } else {
-    // Explicit mode: narrow and strict.
-    const pypiOutcome = outcomes.find(o => o.ecosystem === 'pypi')
-    if (pypiOutcome?.noEcosystemFound) {
+    if (hardFailures.length) {
       throw new InputError(
-        'No Python/PyPI Bazel rules found. Ensure rules_python pip_parse, pip_install, pip_repository, or pip.parse is configured in MODULE.bazel or WORKSPACE.',
+        `Bazel manifest generation failed for explicitly requested ecosystem(s): ${hardFailures.map(f => f.ecosystem).join(', ')}.`,
       )
     }
   }
