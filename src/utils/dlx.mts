@@ -207,6 +207,10 @@ export async function spawnCoanaDlx(
 
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+    // Forwarded to the Coana CLI so it can append our product token to its
+    // outbound axios User-Agent header. Format mirrors Coana's base UA:
+    // `socket/<version> node/<nodeVersion> <platform>/<arch>`.
+    SOCKET_CALLER_USER_AGENT: `socket/${constants.ENV.INLINED_SOCKET_CLI_VERSION} node/${process.version} ${process.platform}/${process.arch}`,
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
