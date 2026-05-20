@@ -13,7 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.99](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.99) - 2026-05-20
 
 ### Changed
-- Forward a `SOCKET_CALLER_USER_AGENT` env var (`socket/<version> node/<nodeVersion> <platform>/<arch>`) to the Coana CLI on spawn. Coana appends this to its outbound axios `User-Agent` so backend traffic identifies the originating Socket CLI alongside the Coana version. Requires `@coana-tech/cli >= 15.3.1`.
+- Updated the Coana CLI to v `15.3.1`.
+- Forward a `SOCKET_CALLER_USER_AGENT` env var (`socket/<version> node/<nodeVersion> <platform>/<arch>`) to the Coana CLI on spawn. Coana appends this to its outbound axios `User-Agent` so backend traffic identifies the originating Socket CLI alongside the Coana version.
 
 ## [1.1.98](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.98) - 2026-05-20
 
