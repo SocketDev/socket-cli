@@ -19,8 +19,8 @@ numpy==2.4.4
 packaging==26.1
 pandas==2.3.3
 pluggy==1.6.0
-pydantic-core==2.46.3
 pydantic==2.13.3
+pydantic-core==2.46.3
 pygments==2.20.0
 pytest==8.4.2
 python-dateutil==2.9.0.post0
