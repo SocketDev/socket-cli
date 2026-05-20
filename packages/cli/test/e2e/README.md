@@ -5,8 +5,23 @@ End-to-end tests for all Socket CLI commands across multiple binary types.
 ## Test Files
 
 - **`binary-test-suite.e2e.test.mts`** - Comprehensive test suite for all 73 commands
-- **`critical-commands.e2e.test.mts`** - Critical command smoke tests
 - **`dlx-spawn.e2e.test.mts`** - DLX execution tests
+
+Per-domain smoke files (ported from the retired `smoke.sh`):
+
+- **`analytics.e2e.test.mts`** - `socket analytics`
+- **`audit-fix-ci.e2e.test.mts`** - `socket audit-log`, `socket fix`, `socket ci`
+- **`auth.e2e.test.mts`** - `socket login`, `socket logout`, `socket whoami`
+- **`cli-help.e2e.test.mts`** - top-level `--version` / `--help`
+- **`config.e2e.test.mts`** - `socket config`
+- **`manifest.e2e.test.mts`** - `socket manifest` generators
+- **`oops.e2e.test.mts`** - `socket oops`
+- **`organization.e2e.test.mts`** - `socket organization`
+- **`package.e2e.test.mts`** - `socket package`
+- **`package-managers.e2e.test.mts`** - `socket npm`, `npx`, `raw-npm`, `raw-npx`, `wrapper`, `optimize`, `cdxgen`, `dependencies`
+- **`repos.e2e.test.mts`** - `socket repos` (destructive round-trip behind `RUN_E2E_DESTRUCTIVE=1`)
+- **`scan.e2e.test.mts`** - `socket scan`
+- **`threat-feed.e2e.test.mts`** - `socket threat-feed`
 
 ## Coverage Summary
 
