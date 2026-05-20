@@ -347,21 +347,23 @@ export async function discoverPypiHubs(
     )
   }
   // Seed with the default hub name first (so it appears first in output if
-  // validated). Dedup via Set before validation.
-  const seen = new Set<string>([DEFAULT_PYPI_HUB_SEED])
+  // validated). Parsed candidates overwrite the seed when they share the same
+  // hub name so metadata (requirements_lock, python_version) is preserved.
+  const seen = new Set<string>()
   const candidates: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> =
-    [
-      {
-        hubName: DEFAULT_PYPI_HUB_SEED,
-        source: 'default-seed',
-        workspaceMode: 'unknown',
-      },
-    ]
+    []
   for (const c of parsed) {
     if (!seen.has(c.hubName)) {
       seen.add(c.hubName)
       candidates.push(c)
     }
+  }
+  if (!seen.has(DEFAULT_PYPI_HUB_SEED)) {
+    candidates.unshift({
+      hubName: DEFAULT_PYPI_HUB_SEED,
+      source: 'default-seed',
+      workspaceMode: 'unknown',
+    })
   }
   if (verbose) {
     logger.log(

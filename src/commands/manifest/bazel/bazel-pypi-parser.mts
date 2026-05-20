@@ -239,37 +239,35 @@ export function parsePypiTagsFromBuildOutput(
 }
 
 // Extract hub package labels from `bazel query` output that match
-// `@<hub>//<name>:pkg` patterns.
+// `@<hub>//<name>:pkg` patterns (both line-start and embedded in
+// `--output=build` deps arrays).
 export function filterReachedPypiPackages(
   queryOutput: string,
   hubName: string,
 ): ReachedPypiLabel[] {
   const out: ReachedPypiLabel[] = []
   const prefix = `@${hubName}//`
-  for (const line of queryOutput.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed.startsWith(prefix)) {
-      continue
-    }
-    // Expected forms:
-    //   @pypi//requests:pkg
-    //   @pypi//some_package:pkg
-    const colon = trimmed.lastIndexOf(':')
-    if (colon < 0) {
-      continue
-    }
-    const pkgPart = trimmed.slice(prefix.length, colon)
+  // Match from the start of a label token (preceded by whitespace, quote, or
+  // start of line) to improve robustness across output formats.
+  const labelRe = new RegExp(
+    `(?:^|[\\s"])${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^\\s:"]+):pkg`,
+    'g',
+  )
+  let m: RegExpExecArray | null
+  while ((m = labelRe.exec(queryOutput)) !== null) {
+    const pkgPart = m[1]
     if (!pkgPart) {
       continue
     }
     const bazelName = pkgPart
     const normalized = normalizePypiName(bazelNameToPypiName(bazelName))
+    const apparentLabel = `${prefix}${bazelName}:pkg`
     out.push({
       hubName,
-      originalLabel: trimmed,
+      originalLabel: apparentLabel,
       bazelName,
       normalizedName: normalized,
-      apparentLabel: trimmed,
+      apparentLabel,
     })
   }
   return out

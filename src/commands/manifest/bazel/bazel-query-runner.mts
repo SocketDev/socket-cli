@@ -56,9 +56,13 @@ function buildBazelModShowVisibleReposArgv(opts: BazelQueryOptions): string[] {
   ]
 }
 
-function buildBazelArgv(queryStr: string, opts: BazelQueryOptions): string[] {
+function buildBazelArgv(
+  queryStr: string,
+  opts: BazelQueryOptions,
+  output = 'build',
+): string[] {
   // Startup flags MUST precede the `query` subcommand.
-  // Bazel argv shape: <startup> query <queryFlags> <invocationFlags> <queryStr> --output=build <userFlags>
+  // Bazel argv shape: <startup> query <queryFlags> <invocationFlags> <queryStr> --output=<output> <userFlags>
   const startup: string[] = []
   if (opts.bazelRc) {
     startup.push(`--bazelrc=${opts.bazelRc}`)
@@ -75,7 +79,7 @@ function buildBazelArgv(queryStr: string, opts: BazelQueryOptions): string[] {
     ...queryFlags,
     ...opts.invocationFlags,
     queryStr,
-    '--output=build',
+    `--output=${output}`,
     ...userFlags,
   ]
 }
@@ -111,8 +115,9 @@ function normalizeSpawnError(error: unknown): BazelQueryResult {
 export async function runBazelQuery(
   queryStr: string,
   opts: BazelQueryOptions,
+  output?: string,
 ): Promise<BazelQueryResult> {
-  const argv = buildBazelArgv(queryStr, opts)
+  const argv = buildBazelArgv(queryStr, opts, output)
   if (opts.verbose) {
     logger.log('[VERBOSE] Executing:', opts.bin, ', args:', argv)
   }

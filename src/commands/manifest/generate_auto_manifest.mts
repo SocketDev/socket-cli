@@ -3,6 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { extractBazelToPypi } from './bazel/extract_bazel_to_pypi.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
@@ -86,27 +87,79 @@ export async function generateAutoManifest({
 
   if (!sockJson?.defaults?.manifest?.bazel?.disabled && detected.bazel) {
     const bazelConfig = sockJson?.defaults?.manifest?.bazel
+    type EcosystemOutcome = {
+      ecosystem: 'maven' | 'pypi'
+      ok: boolean
+      noEcosystemFound?: boolean
+      hardFailure?: boolean
+      manifestPath?: string | undefined
+    }
+    const outcomes: EcosystemOutcome[] = []
+
     logger.log(
       'Detected a Bazel workspace, extracting Maven dependencies via bazel query...',
     )
-    const bazelResult = await extractBazelToMaven({
+    const mavenResult = await extractBazelToMaven({
       bazelFlags: bazelConfig?.bazelFlags,
       bazelOutputBase: bazelConfig?.bazelOutputBase,
       bazelRc: bazelConfig?.bazelRc,
       bin: bazelConfig?.bazel ?? bazelConfig?.bin,
       cwd,
-      // Auto-manifest writes into a sibling directory instead of the repo root
-      // so scan discovery can pick it up without colliding with a checked-in
-      // rules_jvm_external lockfile or repo-root gitignore patterns.
       out: bazelConfig?.out ?? cwd,
       outLayout: 'flat',
       verbose: Boolean(bazelConfig?.verbose) || verbose,
     })
-    if (!bazelResult.ok) {
+    outcomes.push({
+      ecosystem: 'maven',
+      ok: mavenResult.ok,
+      manifestPath: mavenResult.manifestPath,
+    })
+
+    logger.log('Extracting PyPI dependencies via bazel query...')
+    const pypiResult = await extractBazelToPypi({
+      bazelFlags: bazelConfig?.bazelFlags,
+      bazelOutputBase: bazelConfig?.bazelOutputBase,
+      bazelRc: bazelConfig?.bazelRc,
+      bin: bazelConfig?.bazel ?? bazelConfig?.bin,
+      cwd,
+      out: bazelConfig?.out ?? cwd,
+      outLayout: 'flat',
+      verbose: Boolean(bazelConfig?.verbose) || verbose,
+    })
+    outcomes.push({
+      ecosystem: 'pypi',
+      ok: pypiResult.ok,
+      noEcosystemFound: Boolean(pypiResult.noEcosystemFound),
+      manifestPath: pypiResult.manifestPath,
+    })
+
+    // Auto-manifest outcome matrix: one ecosystem success means overall
+    // success; both hard-fail means throw; both no-discovery is informational.
+    const successes = outcomes.filter(
+      o => o.ok && o.manifestPath,
+    )
+    const hardFailures = outcomes.filter(
+      o => !o.ok && !o.noEcosystemFound,
+    )
+    const noDiscoveries = outcomes.filter(
+      o => o.noEcosystemFound,
+    )
+
+    if (successes.length) {
+      for (const s of successes) {
+        generatedFiles.push(s.manifestPath!)
+      }
+      if (hardFailures.length) {
+        for (const f of hardFailures) {
+          logger.warn(
+            `${f.ecosystem} extraction failed, but other ecosystem(s) succeeded.`,
+          )
+        }
+      }
+    } else if (!hardFailures.length && noDiscoveries.length === outcomes.length) {
+      logger.info('No supported Bazel ecosystems detected (maven, pypi).')
+    } else if (hardFailures.length) {
       throw new Error('Bazel auto-manifest generation failed')
-    }
-    if (bazelResult.manifestPath) {
-      generatedFiles.push(bazelResult.manifestPath)
     }
   }
 
