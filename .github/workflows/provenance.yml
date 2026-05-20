@@ -131,6 +131,11 @@ jobs:
     permissions:
       contents: read
       id-token: write # NPM trusted publishing via OIDC
+    outputs:
+      # Captured only when `socket` (the v<version>-tagged npm package) is
+      # actually published. Empty otherwise; tag-release job no-ops on empty.
+      published_sha: ${{ steps.capture_sha.outputs.published_sha }}
+      published_version: ${{ steps.capture_sha.outputs.published_version }}
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
@@ -263,6 +268,22 @@ jobs:
           cd "$PKG_DIR"
           npm publish --provenance --access public --no-git-checks --tag "$TAG"
 
+      # Capture the SHA the `socket` package was published from so the
+      # downstream tag-release job can point v<version> at it. Only runs
+      # when `socket` actually published (its tag is what v<version>
+      # represents); cli-only or cli-sentry-only publishes don't create a
+      # v<version> tag.
+      - name: Capture published SHA
+        id: capture_sha
+        if: ${{ inputs.socket && !inputs.dry-run }}
+        env:
+          VERSION: ${{ steps.version.outputs.cli_version }}
+        run: |
+          PUBLISHED_SHA=$(git rev-parse HEAD)
+          echo "published_sha=$PUBLISHED_SHA" >> "$GITHUB_OUTPUT"
+          echo "published_version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Captured published SHA: $PUBLISHED_SHA for socket@$VERSION"
+
       - name: Summary
         # zizmor: ignore[template-injection]
         run: |
@@ -289,3 +310,58 @@ jobs:
               echo "- @socketsecurity/cli-with-sentry" >> $GITHUB_STEP_SUMMARY
             fi
           fi
+
+  # Create v<version> git tag at the published commit SHA after a successful
+  # socket-package publish, idempotently. GitHub Release Immutability
+  # ("Disallow assets and tags from being modified once a release is
+  # published") freezes tags once bound to a Release, so:
+  #   - existing tag at same SHA → no-op
+  #   - existing tag at different SHA → hard-fail (operator recovery required)
+  # See socket-registry/.claude/plans/tag-after-publish.md for the full design.
+  # Inlined here (not via socket-registry workflow_call) because socket-cli's
+  # publish is multi-package and needs its own SHA-capture wiring.
+  tag-release:
+    name: Verify and tag release
+    needs: publish
+    if: ${{ needs.publish.result == 'success' && needs.publish.outputs.published_sha != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Needed to push the tag.
+      contents: write
+    steps:
+      - name: Checkout at published SHA
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          ref: ${{ needs.publish.outputs.published_sha }}
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Tag release (idempotent)
+        env:
+          PUBLISHED_SHA: ${{ needs.publish.outputs.published_sha }}
+          PUBLISHED_VERSION: ${{ needs.publish.outputs.published_version }}
+        run: |
+          TAG="v$PUBLISHED_VERSION"
+          # Fetch the tag explicitly so we see existing state even on shallow clones.
+          git fetch origin "refs/tags/$TAG:refs/tags/$TAG" 2>/dev/null || true
+
+          if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then
+            EXISTING=$(git rev-list -n1 "refs/tags/$TAG")
+            if [ "$EXISTING" = "$PUBLISHED_SHA" ]; then
+              echo "Tag $TAG already exists at $PUBLISHED_SHA — no-op."
+              exit 0
+            fi
+            echo "::error::Tag $TAG exists at $EXISTING but publish SHA is $PUBLISHED_SHA."
+            echo "::error::Release immutability is enabled; this requires manual recovery:"
+            echo "::error::  1. Delete any GitHub Release tied to $TAG"
+            echo "::error::  2. git push --delete origin $TAG  (only if no Release exists)"
+            echo "::error::  3. Re-run this workflow"
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" "$PUBLISHED_SHA" -m "$TAG"
+          git push origin "$TAG"
+          echo "Created and pushed tag $TAG at $PUBLISHED_SHA"
