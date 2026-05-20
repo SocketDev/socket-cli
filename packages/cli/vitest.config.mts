@@ -109,16 +109,6 @@ export default defineConfig({
       '**/*.e2e.test.mts',
       // Exclude integration tests (run separately via scripts/integration.mts).
       'test/integration/**',
-      // Exclude iocraft-dependent tests in CI (requires native module).
-      ...(isCI
-        ? [
-            '**/AnalyticsRenderer.test.mts',
-            '**/AuditLogRenderer.test.mts',
-            '**/ThreatFeedRenderer.test.mts',
-            '**/iocraft-new-features.test.mts',
-            '**/iocraft-properties.test.mts',
-          ]
-        : []),
     ],
     reporters: ['default'],
     setupFiles: ['./test/setup.mts'],
@@ -180,19 +170,6 @@ export default defineConfig({
         // Explicit root-level exclusions
         '/scripts/**',
         '/test/**',
-        // iocraft renderers — being replaced by stuie. The native
-        // iocraft module isn't available in CI and stuie isn't
-        // published yet, so coverage measurement is excluded until
-        // the migration lands. The Renderer.mts files here are all
-        // doomed; the replacement (stuie) renderers will be tested
-        // fresh once stuie is published. Only the *Renderer.mts
-        // files are excluded — the surrounding output-*.mts files
-        // contain non-iocraft logic (markdown / JSON formatters)
-        // that's still tested directly.
-        'src/util/terminal/iocraft.mts',
-        'src/commands/analytics/AnalyticsRenderer.mts',
-        'src/commands/audit-log/AuditLogRenderer.mts',
-        'src/commands/threat-feed/ThreatFeedRenderer.mts',
       ],
       include: ['src/**/*.mts', 'src/**/*.ts'],
       clean: true,

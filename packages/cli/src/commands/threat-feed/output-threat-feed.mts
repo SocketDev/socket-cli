@@ -1,13 +1,36 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
 import { getPurlObject } from '../../util/purl/parse.mts'
-import { displayThreatFeedWithIocraft } from './ThreatFeedRenderer.mts'
 
 import type { ThreadFeedResponse } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+
 const logger = getDefaultLogger()
+
+export function formatThreatFeedTable(data: ThreadFeedResponse): string {
+  const rows = data.results.map(r => {
+    const purlObj = getPurlObject(r.purl, { throws: false })
+    return {
+      created: r.createdAt,
+      ecosystem: purlObj?.type ?? '',
+      name: purlObj?.name ?? '',
+      version: purlObj?.version ?? '',
+      threat: r.threatType,
+      description: r.description,
+    }
+  })
+  return mdTable(rows as unknown as Array<Record<string, string>>, [
+    'created',
+    'ecosystem',
+    'name',
+    'version',
+    'threat',
+    'description',
+  ])
+}
 
 export async function outputThreatFeed(
   result: CResult<ThreadFeedResponse>,
@@ -31,24 +54,5 @@ export async function outputThreatFeed(
     return
   }
 
-  outputWithIocraft(result.data)
-}
-
-/**
- * Display threat feed using iocraft.
- */
-export function outputWithIocraft(data: ThreadFeedResponse): void {
-  displayThreatFeedWithIocraft({
-    results: data.results.map(result => {
-      const purlObj = getPurlObject(result.purl, { throws: false })
-      return {
-        ...result,
-        parsed: {
-          ecosystem: purlObj?.type || '',
-          name: purlObj?.name || '',
-          version: purlObj?.version || '',
-        },
-      }
-    }),
-  })
+  logger.log(formatThreatFeedTable(result.data))
 }
