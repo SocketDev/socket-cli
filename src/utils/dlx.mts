@@ -33,7 +33,7 @@ import constants, {
 } from '../constants.mts'
 import { getErrorCause } from './errors.mts'
 import { findUp } from './fs.mts'
-import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
+import { getCliUserAgent, getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import { isYarnBerry } from './yarn-version.mts'
 
 import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
@@ -207,6 +207,8 @@ export async function spawnCoanaDlx(
 
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+    // Pass the CLI's full user agent so coana can append it to its own UA.
+    SOCKET_CALLER_USER_AGENT: getCliUserAgent(),
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
