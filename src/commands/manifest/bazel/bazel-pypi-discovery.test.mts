@@ -484,5 +484,20 @@ describe('bazel-pypi-discovery', () => {
         rmSync(dir, { recursive: true, force: true })
       }
     })
+
+    it('ignores oversized top-level .bzl files', () => {
+      const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-pypi-'))
+      try {
+        // Write a 6MB .bzl file (exceeds MAX_WORKSPACE_FILE_BYTES = 5MB).
+        // The oversized file should be silently dropped by safeReadFile,
+        // not parsed for legacy pip_parse/pip_install/pip_repository hits.
+        const bigContent = 'x'.repeat(6 * 1024 * 1024)
+        writeFileSync(path.join(dir, 'pip_repo.bzl'), bigContent)
+        const result = parsePypiHubCandidates(dir)
+        expect(result).toEqual([])
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    })
   })
 })
