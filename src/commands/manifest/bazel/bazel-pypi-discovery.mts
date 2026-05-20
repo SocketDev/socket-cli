@@ -110,16 +110,25 @@ function listLegacyStarlarkFiles(cwd: string): string[] {
 }
 
 // Returns deduplicated list of items, capped at MAX_CANDIDATES.
+// Precedence: the first occurrence of a given hubName wins. Callers
+// must order inputs so the preferred source comes first (e.g., Bzlmod
+// hits before legacy WORKSPACE hits during migration).
 // Throws a clear error if the cap is exceeded so callers do not silently
-// truncate.
+// truncate. Emits a verbose warning when a later entry is dropped due to
+// a name collision so users can see implicit precedence at work.
 function dedupCapped(
   items: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>>,
+  verbose?: boolean,
 ): Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> {
-  const seen = new Set<string>()
+  const seen = new Map<
+    string,
+    Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>
+  >()
   const out: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> = []
   for (const item of items) {
-    if (!seen.has(item.hubName)) {
-      seen.add(item.hubName)
+    const existing = seen.get(item.hubName)
+    if (!existing) {
+      seen.set(item.hubName, item)
       out.push(item)
       if (out.length >= MAX_CANDIDATES) {
         throw new Error(
@@ -127,6 +136,12 @@ function dedupCapped(
             'This exceeds the safety ceiling; aborting discovery.',
         )
       }
+    } else if (verbose) {
+      logger.log(
+        `[VERBOSE] discovery: dropping duplicate pip hub candidate '${item.hubName}' ` +
+          `(kept first occurrence from ${existing.source}/${existing.workspaceMode}, ` +
+          `dropped ${item.source}/${item.workspaceMode}).`,
+      )
     }
   }
   return out
@@ -168,6 +183,12 @@ function extractHubInfoFromArgBlob(
 
 // Step 1: parse candidate pip hub names from Bzlmod MODULE.bazel and legacy
 // WORKSPACE / .bzl entry points.
+//
+// Precedence: Bzlmod (MODULE.bazel pip.parse) hits are pushed first, then
+// legacy (pip_parse / pip_install / pip_repository) hits. dedupCapped keeps
+// the first occurrence, so during migration scenarios where both
+// MODULE.bazel and WORKSPACE define a hub with the same name, the Bzlmod
+// entry wins implicitly. Pass verbose=true to surface dropped duplicates.
 export function parsePypiHubCandidates(
   cwd: string,
   verbose?: boolean,
@@ -272,7 +293,7 @@ export function parsePypiHubCandidates(
     }
   }
 
-  return dedupCapped(candidates)
+  return dedupCapped(candidates, verbose)
 }
 
 // Step 2: validate a candidate by running the probe and confirming
@@ -328,21 +349,29 @@ export async function discoverPypiHubs(
   nativeCandidates?: string[],
   verbose?: boolean,
 ): Promise<Map<string, PypiHubInfo>> {
-  const parsed =
+  // Always run the static parse so MODULE.bazel pip.parse metadata
+  // (requirements_lock, python_version) is available for downstream
+  // lockfile resolution. When nativeCandidates is provided, the parsed
+  // metadata enriches each native candidate; bare native candidates with
+  // no static metadata fall back to source: 'visible-repos'.
+  const parsedAll = parsePypiHubCandidates(cwd, verbose)
+  const parsedByName = new Map(parsedAll.map(c => [c.hubName, c] as const))
+  const parsed: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> =
     nativeCandidates && nativeCandidates.length
       ? nativeCandidates.map(
-          (hubName): Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'> => ({
-            hubName,
-            source: 'visible-repos',
-            workspaceMode: 'unknown',
-          }),
+          hubName =>
+            parsedByName.get(hubName) ?? {
+              hubName,
+              source: 'visible-repos',
+              workspaceMode: 'unknown',
+            },
         )
-      : parsePypiHubCandidates(cwd, verbose)
+      : parsedAll
   if (verbose) {
     logger.log(
       '[VERBOSE] discovery: candidate source:',
       nativeCandidates && nativeCandidates.length
-        ? `bzlmod visible-repos (${nativeCandidates.length})`
+        ? `bzlmod visible-repos (${nativeCandidates.length}, enriched with ${parsedAll.length} static parse hit(s))`
         : `static parse (${parsed.length})`,
     )
   }
