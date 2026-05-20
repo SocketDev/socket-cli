@@ -17,7 +17,11 @@ vi.mock('../../../constants.mts', () => ({
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { buildProbeFor, runBazelQuery } from './bazel-query-runner.mts'
+import {
+  buildProbeFor,
+  buildPypiProbeFor,
+  runBazelQuery,
+} from './bazel-query-runner.mts'
 import constants from '../../../constants.mts'
 
 describe('runBazelQuery', () => {
@@ -216,5 +220,52 @@ describe('buildProbeFor', () => {
       stdout: expect.stringContaining('maven_coordinates'),
       code: 0,
     })
+  })
+})
+
+describe('buildPypiProbeFor', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({
+      code: 0,
+      stdout: '@pypi//requests:pkg\n@pypi//flask:pkg\n',
+      stderr: '',
+    })
+  })
+
+  it('builds a hub-wide query for a pip hub name', async () => {
+    const probe = buildPypiProbeFor({
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+    })
+    const result = await probe('pypi')
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toContain('@pypi//...')
+    expect(result).toEqual({
+      stdout: expect.stringContaining('@pypi//requests:pkg'),
+      code: 0,
+    })
+  })
+
+  it('returns non-zero code when the hub has no :pkg targets', async () => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({
+      code: 0,
+      stdout: '',
+      stderr: '',
+    })
+    const probe = buildPypiProbeFor({
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+    })
+    const result = await probe('empty_hub')
+    expect(result.code).toBe(0)
+    expect(result.stdout).toBe('')
   })
 })

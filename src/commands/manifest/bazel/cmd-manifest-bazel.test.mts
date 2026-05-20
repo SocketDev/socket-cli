@@ -17,4 +17,46 @@ describe('socket manifest bazel', async () => {
       expect(code, 'dry-run should exit with code 0').toBe(0)
     },
   )
+
+  cmdit(
+    [
+      'manifest',
+      'bazel',
+      '--ecosystem',
+      'pypi',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{}',
+    ],
+    'should accept --ecosystem pypi with dry-run',
+    async cmd => {
+      const { code } = await spawnSocketCli(binCliPath, cmd)
+      expect(
+        code,
+        'dry-run with --ecosystem pypi should exit with code 0',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'manifest',
+      'bazel',
+      '--ecosystem',
+      'maven',
+      '--ecosystem',
+      'pypi',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{}',
+    ],
+    'should accept repeatable --ecosystem with dry-run',
+    async cmd => {
+      const { code } = await spawnSocketCli(binCliPath, cmd)
+      expect(
+        code,
+        'dry-run with repeatable --ecosystem should exit with code 0',
+      ).toBe(0)
+    },
+  )
 })

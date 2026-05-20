@@ -20,7 +20,7 @@ import type {
 const config: CliCommandConfig = {
   commandName: 'bazel',
   description:
-    '[beta] Bazel JVM SBOM support — generate manifest files (`maven_install.json`) for a Bazel/Maven project',
+    '[beta] Bazel SBOM support — generate manifest files for a Bazel project (Maven, PyPI)',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -36,12 +36,17 @@ const config: CliCommandConfig = {
     },
     bazelOutputBase: {
       type: 'string',
-      description:
-        'Bazel --output_base for read-only-cache CI environments',
+      description: 'Bazel --output_base for read-only-cache CI environments',
     },
     bazelRc: {
       type: 'string',
       description: 'Path to additional .bazelrc fragments forwarded to bazel',
+    },
+    ecosystem: {
+      type: 'string',
+      isMultiple: true,
+      description:
+        'Ecosystem(s) to extract; repeatable. Supported: maven, pypi. Default: auto-detect all supported ecosystems.',
     },
     out: {
       type: 'string',
@@ -60,12 +65,16 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags)}
 
-    [beta] Generates Bazel JVM SBOM manifests (\`maven_install.json\`-shaped)
-    by running \`bazel query\` against discovered Maven repos. Output is
-    consumed by \`socket scan create\`'s server-side parser.
+    [beta] Generates Bazel SBOM manifests for Maven (\`maven_install.json\`)
+    and PyPI (\`requirements.txt\`) by running \`bazel query\` against
+    discovered dependency repos. Output is consumed by
+    \`socket scan create\`'s server-side parser.
 
-    Note: this command generates Maven dependency manifests for Bazel JVM
-    workspaces. It does not run reachability analysis.
+    --ecosystem may be repeated to select which ecosystems to extract.
+    When omitted, all detected ecosystems are generated automatically.
+
+    Note: this command generates dependency manifests for Bazel workspaces.
+    It does not run reachability analysis.
 
     To generate AND upload in one step, use \`socket scan create --auto-manifest\`
     instead — it detects Bazel workspaces, runs the same extraction, and uploads
@@ -73,6 +82,8 @@ const config: CliCommandConfig = {
 
     Examples
       $ ${command} .
+      $ ${command} --ecosystem pypi .
+      $ ${command} --ecosystem maven --ecosystem pypi .
       $ ${command} --bazel=/usr/local/bin/bazelisk .
   `,
 }
@@ -115,9 +126,16 @@ async function run(
     sockJson?.defaults?.manifest?.bazel,
   )
 
-  let { bazel, bazelFlags, bazelOutputBase, bazelRc, out, verbose } = cli.flags
+  let { bazel, bazelFlags, bazelOutputBase, bazelRc, ecosystem, out, verbose } =
+    cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
+  if (!ecosystem) {
+    if (sockJson.defaults?.manifest?.bazel?.ecosystem) {
+      ecosystem = sockJson.defaults?.manifest?.bazel?.ecosystem
+      logger.info(`Using default --ecosystem from ${SOCKET_JSON}:`, ecosystem)
+    }
+  }
   if (!bazel) {
     const defaultBazel =
       sockJson.defaults?.manifest?.bazel?.bazel ??

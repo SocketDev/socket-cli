@@ -178,3 +178,18 @@ export function buildProbeFor(opts: BazelQueryOptions): RepoProbe {
     return { stdout: result.stdout, code: result.code }
   }
 }
+
+/**
+ * Build a `RepoProbe` for validating pip hub candidates.
+ * Queries the hub for package targets (e.g. `@<hub>//...`) and returns
+ * stdout so the caller can check for `:pkg` labels or alias rules.
+ * Does NOT require `pypi_name=` tags in the hub output, because those
+ * tags live on spoke repos, not the hub alias layer.
+ */
+export function buildPypiProbeFor(opts: BazelQueryOptions): RepoProbe {
+  return async (hubName: string) => {
+    const queryStr = `@${hubName}//...`
+    const result = await runBazelQuery(queryStr, opts)
+    return { stdout: result.stdout, code: result.code }
+  }
+}
