@@ -26,10 +26,14 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024
 // Allowlisted large files: fleet-canonical assets whose size is bounded by
 // the upstream they ship, not by repo authoring. acorn.wasm is the AST
 // parser shared by AST-based oxlint plugin rules + hooks; its ~3MB is the
-// upstream build artifact. Adding a path here is intentional — it should
-// only happen for files the fleet jointly owns, not per-repo binary leaks.
+// upstream build artifact. Two paths because socket-lib vendors its own
+// copy at vendor/acorn-wasm/ (so the lib package's own AST helpers can
+// load without a node_modules round-trip). Adding a path here is
+// intentional — it should only happen for files the fleet jointly owns,
+// not per-repo binary leaks.
 const ALLOWED_LARGE_FILES = new Set<string>([
   '.claude/hooks/_shared/acorn/acorn.wasm',
+  'vendor/acorn-wasm/acorn.wasm',
 ])
 
 // Directories to skip

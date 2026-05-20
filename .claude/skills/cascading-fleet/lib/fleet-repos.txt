@@ -6,5 +6,5 @@ socket-mcp
 socket-packageurl-js
 socket-registry
 socket-sdk-js
-socket-sdxgen
-socket-stuie
+sdxgen
+stuie

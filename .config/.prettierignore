@@ -31,3 +31,17 @@
 template/.claude/hooks/_shared/acorn/acorn.wasm
 template/.claude/hooks/_shared/acorn/acorn-bindgen.cjs
 .claude/hooks/_shared/acorn/acorn-bindgen.cjs
+
+# Vendored / upstream trees — kept byte-identical with their source
+# of truth. Per CLAUDE.md "Untracked-by-default for vendored / build-
+# copied trees": these are someone else's source, not ours, and the
+# formatter would happily rewrite (e.g.) an upstream HTML test
+# fixture or shipped third-party JS into our local style.
+**/upstream/**
+upstream/**
+**/vendor/**
+vendor/**
+**/third_party/**
+third_party/**
+**/external/**
+external/**

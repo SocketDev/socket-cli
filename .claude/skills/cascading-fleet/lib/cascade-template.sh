@@ -53,15 +53,46 @@ echo "══ Cascade ${TEMPLATE_SHA} ══"
 echo "Log: $LOG_FILE"
 echo
 
+# Resolve a canonical fleet repo name to a local primary checkout.
+# Mirrors scripts/sync-scaffolding/discover.mts directoryAliasesFor():
+# canonical `socket-<x>` also resolves to `~/projects/<x>/`; canonical
+# `<x>` (no socket- prefix — sdxgen, stuie, ultrathink) also resolves
+# to `~/projects/socket-<x>/`. First primary checkout wins. Echoes
+# the resolved absolute path, or empty when no primary checkout exists.
+resolveLocalCheckout() {
+  local canonical="$1"
+  local candidate
+  # Exact canonical name first.
+  candidate="${PROJECTS}/${canonical}"
+  if [ -d "${candidate}/.git" ]; then
+    echo "$candidate"
+    return 0
+  fi
+  # Alias: socket-<x> ⇄ <x>.
+  case "$canonical" in
+    socket-*)
+      candidate="${PROJECTS}/${canonical#socket-}"
+      ;;
+    *)
+      candidate="${PROJECTS}/socket-${canonical}"
+      ;;
+  esac
+  if [ -d "${candidate}/.git" ]; then
+    echo "$candidate"
+    return 0
+  fi
+  return 1
+}
+
 while IFS= read -r repo; do
   [ -z "$repo" ] && continue
   case "$repo" in '#'*) continue ;; esac
 
-  src="${PROJECTS}/${repo}"
+  src="$(resolveLocalCheckout "$repo")"
   wt="/tmp/cascade-${repo}-$$"
   echo "── ${repo} ──"
 
-  if [ ! -d "${src}/.git" ]; then
+  if [ -z "$src" ]; then
     RESULTS+=("${repo}|skip:no-git")
     continue
   fi
