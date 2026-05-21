@@ -143,7 +143,7 @@ const OPENGREP_ASSETS: Record<string, string> = {
   'win32-x64': 'opengrep-core_windows_x86.zip',
 }
 
-function getTrivyAssetName(version: string): string | undefined {
+export function getTrivyAssetName(version: string): string | undefined {
   const platform = os.platform()
   const arch = os.arch()
   const platformKey = `${platform}-${arch}`
@@ -152,7 +152,7 @@ function getTrivyAssetName(version: string): string | undefined {
   return pattern ? pattern(version) : undefined
 }
 
-function getTrufflehogAssetName(version: string): string | undefined {
+export function getTrufflehogAssetName(version: string): string | undefined {
   const platform = os.platform()
   const arch = os.arch()
   const platformKey = `${platform}-${arch}`

@@ -46,7 +46,7 @@ export type ReportLeafNode = {
   manifest: string[]
 }
 
-function addAlert(
+export function addAlert(
   art: SocketArtifact,
   violations: ViolationsMap,
   fold: FOLD_SETTING,
@@ -102,7 +102,7 @@ function addAlert(
   }
 }
 
-function createLeaf(
+export function createLeaf(
   art: SocketArtifact,
   alert: NonNullable<SocketArtifact['alerts']>[number],
   policyAction: REPORT_LEVEL,

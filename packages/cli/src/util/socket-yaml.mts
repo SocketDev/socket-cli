@@ -52,11 +52,11 @@ class SocketValidationError extends Error {
   }
 }
 
-function asBoolean(value: unknown): boolean | undefined {
+export function asBoolean(value: unknown): boolean | undefined {
   return typeof value === 'boolean' ? value : undefined
 }
 
-function asBooleanRecord(value: unknown): { [k: string]: boolean } {
+export function asBooleanRecord(value: unknown): { [k: string]: boolean } {
   if (!isPlainObject(value)) {
     return {}
   }
@@ -69,14 +69,14 @@ function asBooleanRecord(value: unknown): { [k: string]: boolean } {
   return out
 }
 
-function asStringArray(value: unknown): string[] {
+export function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return []
   }
   return value.filter((v): v is string => typeof v === 'string')
 }
 
-function buildGithub(value: unknown): SocketYmlGitHub {
+export function buildGithub(value: unknown): SocketYmlGitHub {
   if (!isPlainObject(value)) {
     return {}
   }
@@ -114,7 +114,7 @@ export function isPlainObject(
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function looksLikeV1(content: Record<string, unknown>): boolean {
+export function looksLikeV1(content: Record<string, unknown>): boolean {
   // V1 had no `version` field. If `version` is present, treat as v2+.
   if ('version' in content) {
     return false
@@ -130,7 +130,7 @@ function looksLikeV1(content: Record<string, unknown>): boolean {
   )
 }
 
-function migrateV1(content: SocketYmlV1Shape): SocketYml {
+export function migrateV1(content: SocketYmlV1Shape): SocketYml {
   const github: SocketYmlGitHub = {}
   if ('enabled' in content && typeof content.enabled === 'boolean') {
     github.enabled = content.enabled

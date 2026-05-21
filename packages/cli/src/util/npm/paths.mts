@@ -39,7 +39,7 @@ export function getNpmBinPath(): string {
 }
 
 let npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-function getNpmBinPathDetails(): ReturnType<
+export function getNpmBinPathDetails(): ReturnType<
   typeof findBinPathDetailsSync
 > {
   if (npmBinPathDetails === undefined) {
@@ -103,7 +103,7 @@ export function getNpxBinPath(): string {
 }
 
 let npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-function getNpxBinPathDetails(): ReturnType<
+export function getNpxBinPathDetails(): ReturnType<
   typeof findBinPathDetailsSync
 > {
   if (npxBinPathDetails === undefined) {

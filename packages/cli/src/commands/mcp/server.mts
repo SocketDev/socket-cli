@@ -108,6 +108,6 @@ export function createConfiguredServer(config: ServerConfig): Server {
 // Convert TypeBox schema to a JSON Schema literal for MCP wire output.
 // TypeBox values are JSON Schema natively; cloning produces a plain
 // object the SDK serializes without zod-specific machinery.
-function schemaToJsonSchema(schema: object): Record<string, unknown> {
+export function schemaToJsonSchema(schema: object): Record<string, unknown> {
   return JSON.parse(JSON.stringify(schema))
 }

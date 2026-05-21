@@ -35,7 +35,7 @@ type ErrorDisplayOptions = {
  * can't just `messageWithCauses(error)` — we decorate first, then delegate
  * cause walking to socket-lib.
  */
-function appendCauseChain(baseMessage: string, cause: unknown): string {
+export function appendCauseChain(baseMessage: string, cause: unknown): string {
   if (!cause) {
     return baseMessage
   }

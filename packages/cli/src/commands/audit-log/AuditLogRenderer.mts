@@ -154,7 +154,7 @@ export function displayAuditLogWithIocraft({
 /**
  * Format audit log entry as JSON with compact payload.
  */
-function formatEntry(entry: AuditLogEntry): string {
+export function formatEntry(entry: AuditLogEntry): string {
   const obj = { ...entry, payload: 'REPLACEME' }
   const json = JSON.stringify(obj, null, 2).replace(
     /"payload": "REPLACEME"/,

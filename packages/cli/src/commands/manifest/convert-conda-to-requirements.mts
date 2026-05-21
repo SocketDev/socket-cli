@@ -172,6 +172,6 @@ export function convertCondaToRequirementsFromInput(input: string): string {
   return prepareContent(keeping.join('\n'))
 }
 
-function prepareContent(content: string): string {
+export function prepareContent(content: string): string {
   return stripAnsi(content.trim())
 }

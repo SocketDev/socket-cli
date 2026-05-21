@@ -42,7 +42,7 @@ export function formatSeverityCount(
   return joinAnd(summary)
 }
 
-function getDesiredSeverities(
+export function getDesiredSeverities(
   lowestToInclude: SocketSdkAlert['severity'] | undefined,
 ): Array<SocketSdkAlert['severity']> {
   const result: Array<SocketSdkAlert['severity']> = []

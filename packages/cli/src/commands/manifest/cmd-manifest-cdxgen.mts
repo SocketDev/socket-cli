@@ -34,10 +34,10 @@ interface CdxgenFlags {
 // Socket CLI's custom meow implementation would provide consistency with other
 // commands but requires significant work to map all cdxgen flags and maintain
 // compatibility with cdxgen's complex option structure.
-function arrayToLower(arg: string[]): string[] {
+export function arrayToLower(arg: string[]): string[] {
   return arg.map(toLower)
 }
-function toLower(arg: string): string {
+export function toLower(arg: string): string {
   return arg.toLowerCase()
 }
 

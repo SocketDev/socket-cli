@@ -152,7 +152,7 @@ export async function convertGradleToMaven({
   }
 }
 
-async function execGradleWithSpinner(
+export async function execGradleWithSpinner(
   bin: string,
   commandArgs: string[],
   cwd: string,

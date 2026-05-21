@@ -215,7 +215,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
 // silently persist a blank default-branch name on the repo record.
 // Detect that before meow parses so we can stop with an actionable
 // error instead of saving junk data.
-function findEmptyDefaultBranch(
+export function findEmptyDefaultBranch(
   argv: readonly string[],
 ): 'bare' | 'empty-value' | undefined {
   for (let i = 0; i < argv.length; i += 1) {

@@ -63,7 +63,7 @@ export async function run(
   await runRawNpm(argv)
 }
 
-async function runRawNpm(
+export async function runRawNpm(
   argv: string[] | readonly string[],
 ): Promise<void> {
   process.exitCode = 1

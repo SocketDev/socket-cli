@@ -37,7 +37,7 @@ export function extractOwner(owner: string): string | undefined {
  * @returns Sanitized name that complies with repository naming rules, or empty
  *   string if no valid characters.
  */
-function sanitizeName(name: string): string {
+export function sanitizeName(name: string): string {
   if (!name) {
     return ''
   }

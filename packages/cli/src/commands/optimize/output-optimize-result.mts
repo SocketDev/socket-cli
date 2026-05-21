@@ -7,7 +7,7 @@ import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 
-function createActionMessage(
+export function createActionMessage(
   verb: string,
   overrideCount: number,
   workspaceCount: number,

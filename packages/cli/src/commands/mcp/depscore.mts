@@ -91,7 +91,7 @@ export function formatScore(jsonData: ArtifactData): string {
 // tool calls; HTTP+OAuth mode constructs one per distinct token.
 const sdkCache = new Map<string, SocketSdk>()
 
-async function getSdk(apiToken: string): Promise<SocketSdk> {
+export async function getSdk(apiToken: string): Promise<SocketSdk> {
   const cached = sdkCache.get(apiToken)
   if (cached) {
     return cached

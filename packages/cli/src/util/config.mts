@@ -181,7 +181,7 @@ export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
   return localConfig[keyResult.data as Key]
 }
 
-function getConfigValues(retryCount = 0): LocalConfig {
+export function getConfigValues(retryCount = 0): LocalConfig {
   // Order: env var > --config flag > file.
   // If config is from flag/env override, skip file-based caching.
   if (configFromFlag && cachedConfig !== undefined) {

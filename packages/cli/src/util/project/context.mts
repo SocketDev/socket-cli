@@ -18,7 +18,7 @@ interface ProjectContext {
 /**
  * Detect the framework being used.
  */
-async function detectFramework(
+export async function detectFramework(
   root: string,
 ): Promise<string | undefined> {
   const pkgPath = path.join(root, 'package.json')

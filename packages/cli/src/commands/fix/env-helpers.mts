@@ -42,7 +42,7 @@ export function checkCiEnvVars(): MissingEnvVars {
   return { missing, present }
 }
 
-function ciRepoInfo(): RepoInfo | undefined {
+export function ciRepoInfo(): RepoInfo | undefined {
   if (!GITHUB_REPOSITORY) {
     debug('miss: GITHUB_REPOSITORY env var')
     return undefined

@@ -228,7 +228,7 @@ export async function lsYarnClassic(
   return ''
 }
 
-async function npmQuery(
+export async function npmQuery(
   npmExecPath: string,
   cwd: string,
 ): Promise<string> {

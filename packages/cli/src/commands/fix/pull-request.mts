@@ -205,7 +205,7 @@ type ContextualPrMatch = {
   match: PrMatch
 }
 
-async function getSocketFixPrsWithContext(
+export async function getSocketFixPrsWithContext(
   owner: string,
   repo: string,
   options?: SocketPrsOptions | undefined,
