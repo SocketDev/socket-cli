@@ -21,7 +21,7 @@
 // Bypass: "Allow version-bump-order bypass" in a recent user turn, or
 // SOCKET_VERSION_BUMP_ORDER_GUARD_DISABLED=1.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 import process from 'node:process'
 
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'

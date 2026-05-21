@@ -59,13 +59,13 @@ export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
 <process>
   1. List every spawn-family callsite in the file: \`spawnSync(\`, \`spawn(\`, \`child_process.spawnSync(\`, \`cp.spawnSync(\`. Note which names are actually used.
   2. For each callsite, decide: (a) keep sync semantics — use \`spawnSync\` from the lib (drop-in, same args, same return shape \`{ status, stdout, stderr }\`); or (b) convert to async — use \`spawn\` from the lib (returns a Promise of \`{ code, stdout, stderr }\`, requires \`await\`, requires async enclosing context, return shape uses \`.code\` not \`.status\`). Default to (a) unless you can verify (b) is safe — sync → async is a contract change.
-  3. Update the import line. If every callsite stays sync: \`import { spawnSync } from '@socketsecurity/lib-stable/spawn'\`. If every callsite becomes async: \`import { spawn } from '@socketsecurity/lib-stable/spawn'\`. If mixed: \`import { spawn, spawnSync } from '@socketsecurity/lib-stable/spawn'\`.
-  4. Self-verify before stopping: re-read the file. Confirm EVERY \`spawnSync(\` callsite is satisfied by the new import (either the name is in the import list OR you converted that callsite to \`await spawn(\`). A file with \`import { spawn } from '@socketsecurity/lib-stable/spawn'\` and a body containing \`spawnSync(\` is broken — fix it before you declare done.
+  3. Update the import line. If every callsite stays sync: \`import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'\`. If every callsite becomes async: \`import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'\`. If mixed: \`import { spawn, spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'\`.
+  4. Self-verify before stopping: re-read the file. Confirm EVERY \`spawnSync(\` callsite is satisfied by the new import (either the name is in the import list OR you converted that callsite to \`await spawn(\`). A file with \`import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'\` and a body containing \`spawnSync(\` is broken — fix it before you declare done.
 </process>
 
 <good-fix description="Sync caller; safest path is keeping sync semantics by importing spawnSync from the lib.">
 - import { spawnSync } from 'node:child_process'
-+ import { spawnSync } from '@socketsecurity/lib-stable/spawn'
++ import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 
   function run(cmd) {
     const r = spawnSync(cmd, [], { encoding: 'utf8' })
@@ -75,7 +75,7 @@ export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
 
 <bad-fix description="What you must NOT do: rename the import without updating callsites.">
 - import { spawnSync } from 'node:child_process'
-+ import { spawn } from '@socketsecurity/lib-stable/spawn'
++ import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
   function run(cmd) {
     const r = spawnSync(cmd, [], { encoding: 'utf8' })  // ❌ spawnSync is no longer imported — runtime ReferenceError
@@ -85,7 +85,7 @@ export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
 
 <good-fix description="Async caller; can switch to lib's async spawn AND update return-shape access.">
 - import { spawnSync } from 'node:child_process'
-+ import { spawn } from '@socketsecurity/lib-stable/spawn'
++ import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
   async function run(cmd) {
     const r = await spawn(cmd, [], { stdio: 'pipe' })

@@ -20,7 +20,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { spawn } from '@socketsecurity/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn/spawn'
 
 /**
  * Result of a resolver. `args` is the full argv passed to `pnpm exec`,

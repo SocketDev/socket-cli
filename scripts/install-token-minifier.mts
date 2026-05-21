@@ -34,10 +34,10 @@ import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { safeMkdirSync } from '@socketsecurity/lib-stable/fs'
+import { safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { getSocketAppDir } from '@socketsecurity/lib-stable/paths/socket'
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 
 const logger = getDefaultLogger()
 

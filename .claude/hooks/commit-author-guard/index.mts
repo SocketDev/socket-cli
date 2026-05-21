@@ -36,7 +36,7 @@
 // Bypass: type "Allow commit-author bypass" in a recent user message,
 // or set SOCKET_COMMIT_AUTHOR_GUARD_DISABLED=1.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

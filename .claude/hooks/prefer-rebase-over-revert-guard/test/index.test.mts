@@ -11,7 +11,7 @@
 // prefer-async-spawn: streaming-stdio-required — test spawns child
 // subprocess and pipes stdin/stdout/stderr; Node spawn returns the
 // ChildProcess streaming surface the lib promise wrapper does not.
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'

@@ -17,7 +17,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib/errors'
-import { safeMkdir } from '@socketsecurity/lib/fs'
+import { safeMkdir } from '@socketsecurity/lib/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
 import { getLatestRelease } from '@socketsecurity/lib/releases/github-api'
 import { downloadReleaseAsset } from '@socketsecurity/lib/releases/github-downloads'

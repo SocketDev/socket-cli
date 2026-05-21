@@ -34,14 +34,14 @@
  *   })
  */
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { safeDeleteSync } from '@socketsecurity/lib-stable/fs'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 const logger = getDefaultLogger()
 

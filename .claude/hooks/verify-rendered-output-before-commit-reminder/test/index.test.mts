@@ -1,6 +1,6 @@
 // node --test specs for the verify-rendered-output-before-commit-reminder hook.
 
-import { spawn, spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawn, spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

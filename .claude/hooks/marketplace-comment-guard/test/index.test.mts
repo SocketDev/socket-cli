@@ -3,12 +3,12 @@ import assert from 'node:assert/strict'
 // prefer-async-spawn: sync-required — test flow is sync.
 // prefer-spawn-over-execsync: required — uses encoding/input options
 // not exposed on the lib spawnSync wrapper.
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { safeDeleteSync } from '@socketsecurity/lib-stable/fs'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK_PATH = path.join(__dirname, '..', 'index.mts')

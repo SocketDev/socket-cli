@@ -29,7 +29,7 @@ import { isBuiltin } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 // Probe for node:smol-power. Lives in socket-btm's node-smol binary
 // — `isBuiltin()` returns true on those builds and false on system

@@ -22,7 +22,7 @@
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { spawn } from '@socketsecurity/lib/spawn/spawn'
 
 const logger = getDefaultLogger()
 

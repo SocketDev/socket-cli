@@ -40,7 +40,7 @@
 //   SOCKET_AUTH_ROTATION_DISABLED        default: unset
 //     If set to a truthy value, skip the hook entirely.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 import {
   existsSync,
   mkdirSync,
@@ -54,7 +54,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import {

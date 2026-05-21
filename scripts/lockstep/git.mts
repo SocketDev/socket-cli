@@ -10,7 +10,7 @@
  *   helpers write to.
  */
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import type { Upstream } from './schema.mts'
 import type { DriftCommit, Manifest } from './types.mts'

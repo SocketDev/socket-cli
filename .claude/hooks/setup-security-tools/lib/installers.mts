@@ -21,15 +21,15 @@ import { fileURLToPath } from 'node:url'
 import { PackageURL } from '@socketregistry/packageurl-js-stable'
 import { Type } from '@sinclair/typebox'
 
-import { whichSync } from '@socketsecurity/lib-stable/bin'
+import { whichSync } from '@socketsecurity/lib-stable/bin/which'
 import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
 import { downloadPackage } from '@socketsecurity/lib-stable/dlx/package'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { getSocketHomePath } from '@socketsecurity/lib-stable/paths/socket'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 import { parseSchema } from '@socketsecurity/lib-stable/schema/parse'
 
 const logger = getDefaultLogger()

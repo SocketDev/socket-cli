@@ -9,7 +9,7 @@
 // whose header lists peers + the peer files themselves, vary the
 // peers' headers, and inspect exit code + stderr.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'

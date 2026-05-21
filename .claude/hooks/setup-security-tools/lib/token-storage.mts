@@ -17,7 +17,7 @@
  *   persistence failed.
  */
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 import {
   existsSync,
   mkdirSync,
