@@ -12,7 +12,7 @@ import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 import type { Logger } from '@socketsecurity/lib-stable/logger'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
-export type UpdateDependenciesOptions = {
+type UpdateDependenciesOptions = {
   cmdName?: string | undefined
   logger?: Logger | undefined
   spinner?: SpinnerInstance | undefined

@@ -70,7 +70,7 @@ export async function run(
   await runRawNpx(argv)
 }
 
-export async function runRawNpx(
+async function runRawNpx(
   argv: string[] | readonly string[],
 ): Promise<void> {
   process.exitCode = 1

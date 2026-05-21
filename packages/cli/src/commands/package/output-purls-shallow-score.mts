@@ -140,7 +140,7 @@ type AlertStringOptions = {
   colorize?: boolean | undefined
 }
 
-export function getAlertString(
+function getAlertString(
   alerts: DedupedArtifact['alerts'],
   options?: AlertStringOptions | undefined,
 ): string {

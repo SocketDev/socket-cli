@@ -13,11 +13,6 @@ import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
 import type { Agent, EnvDetails } from '../../util/ecosystem/environment.mjs'
 import type { PackageJson } from '@socketsecurity/lib-stable/packages/operations'
 
-export type GetOverrides = (
-  pkgEnvDetails: EnvDetails,
-  pkgJson?: PackageJson | undefined,
-) => GetOverridesResult
-
 export type GetOverridesResult = { type: Agent; overrides: Overrides }
 
 export function getOverridesData(

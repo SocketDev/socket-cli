@@ -8,7 +8,7 @@ import { updateDependencies } from './update-dependencies.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
-export type OptimizeConfig = {
+type OptimizeConfig = {
   pin: boolean
   prod: boolean
 }
