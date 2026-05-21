@@ -19,7 +19,7 @@ import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
 /**
  * Result from CLI execution with enhanced utilities.
  */
-export interface CliExecutionResult {
+interface CliExecutionResult {
   /**
    * Exit code from the CLI command.
    */
@@ -54,7 +54,7 @@ export interface CliExecutionResult {
 /**
  * Options for CLI execution.
  */
-export interface CliExecutionOptions extends SpawnOptions {
+interface CliExecutionOptions extends SpawnOptions {
   /**
    * Whether to automatically add --config {} to isolate from user config
    * (default: true)
@@ -72,38 +72,6 @@ export interface CliExecutionOptions extends SpawnOptions {
    * Timeout in milliseconds (default: 30000)
    */
   timeout?: number | undefined
-}
-
-/**
- * Batch execute multiple CLI commands in sequence.
- *
- * @example
- *   ```typescript
- *   const results = await executeBatchCliCommands([
- *     ['config', 'get', 'apiToken'],
- *     ['config', 'get', 'defaultOrg'],
- *   ])
- *   ```
- *
- * @param commands - Array of command argument arrays.
- * @param options - Execution options applied to all commands.
- *
- * @returns Array of CLI execution results
- */
-export async function executeBatchCliCommands(
-  commands: string[][],
-  options?: CliExecutionOptions | undefined,
-): Promise<CliExecutionResult[]> {
-  const results: CliExecutionResult[] = []
-
-  for (let i = 0, { length } = commands; i < length; i += 1) {
-    const args = commands[i]!
-    // eslint-disable-next-line no-await-in-loop
-    const result = await executeCliCommand(args, options)
-    results.push(result)
-  }
-
-  return results
 }
 
 /**
@@ -173,193 +141,6 @@ export async function executeCliCommand(
 }
 
 /**
- * Execute Socket CLI command and parse JSON output.
- *
- * @example
- *   ```typescript
- *   const { data, result } = await executeCliJson(['scan', 'create'])
- *   expect(data.id).toBeDefined()
- *   ```
- *
- * @param args - Command arguments (--json flag added automatically)
- * @param options - Execution options.
- *
- * @returns Parsed JSON data and execution result
- */
-export async function executeCliJson<T = unknown>(
-  args: string[],
-  options?: CliExecutionOptions | undefined,
-): Promise<{ data: T; result: CliExecutionResult }> {
-  const finalArgs = args.includes('--json') ? args : [...args, '--json']
-
-  const result = await executeCliCommand(finalArgs, options)
-
-  try {
-    const data = JSON.parse(result.stdout) as T
-    return { data, result }
-  } catch (e) {
-    throw new Error(
-      `Failed to parse JSON from CLI output\nCommand: ${args.join(' ')}\nstdout: ${result.stdout}\nError: ${e instanceof Error ? e.message : String(e)}`,
-    )
-  }
-}
-
-/**
- * Execute Socket CLI command with multiple retry attempts. Useful for commands
- * that may have transient failures.
- *
- * @example
- *   ```typescript
- *   const result = await executeCliWithRetry(['scan', 'create'], 3, 2000)
- *   ```
- *
- * @param args - Command arguments.
- * @param maxRetries - Maximum number of retry attempts (default: 3)
- * @param retryDelay - Delay between retries in ms (default: 1000)
- * @param options - Execution options.
- *
- * @returns CLI execution result
- */
-export async function executeCliWithRetry(
-  args: string[],
-  maxRetries = 3,
-  retryDelay = 1000,
-  options?: CliExecutionOptions | undefined,
-): Promise<CliExecutionResult> {
-  let lastError: Error | undefined
-  let attempts = 0
-
-  while (attempts < maxRetries) {
-    attempts++
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      return await executeCliCommand(args, options)
-    } catch (e) {
-      lastError = e instanceof Error ? e : new Error(String(e))
-
-      if (attempts < maxRetries) {
-        // Wait before retrying
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise(resolve => setTimeout(resolve, retryDelay))
-      }
-    }
-  }
-
-  throw new Error(
-    `CLI command failed after ${maxRetries} attempts\nCommand: ${args.join(' ')}\nLast error: ${lastError?.message}`,
-  )
-}
-
-/**
- * Execute CLI command and capture timing information.
- *
- * @example
- *   ```typescript
- *   const { result, duration } = await executeCli WithTiming(['scan', 'create'])
- *   expect(duration).toBeLessThan(5000)
- *   ```
- *
- * @param args - Command arguments.
- * @param options - Execution options.
- *
- * @returns Execution result with timing information
- */
-export async function executeCliWithTiming(
-  args: string[],
-  options?: CliExecutionOptions | undefined,
-): Promise<{
-  result: CliExecutionResult
-  duration: number
-  startTime: number
-  endTime: number
-}> {
-  const startTime = Date.now()
-  const result = await executeCliCommand(args, options)
-  const endTime = Date.now()
-  const duration = endTime - startTime
-
-  return {
-    duration,
-    endTime,
-    result,
-    startTime,
-  }
-}
-
-/**
- * Execute Socket CLI command expecting failure (non-zero exit code).
- *
- * @example
- *   ```typescript
- *   const result = await expectCliError(['scan'], 1)
- *   expect(result.stderr).toContain('error')
- *   ```
- *
- * @param args - Command arguments.
- * @param expectedCode - Expected exit code (default: any non-zero)
- * @param options - Execution options.
- *
- * @returns CLI execution result
- *
- * @throws Error if command succeeds
- */
-export async function expectCliError(
-  args: string[],
-  expectedCode?: number | undefined,
-  options?: CliExecutionOptions | undefined,
-): Promise<CliExecutionResult> {
-  const result = await executeCliCommand(args, options)
-
-  if (result.status) {
-    throw new Error(
-      `Expected CLI command to fail but it succeeded\nCommand: ${args.join(' ')}\nstdout: ${result.stdout}`,
-    )
-  }
-
-  if (expectedCode !== undefined && result.code !== expectedCode) {
-    throw new Error(
-      `Expected exit code ${expectedCode} but got ${result.code}\nCommand: ${args.join(' ')}\nstderr: ${result.stderr}`,
-    )
-  }
-
-  return result
-}
-
-/**
- * Execute Socket CLI command expecting success (exit code 0).
- *
- * @example
- *   ```typescript
- *   const result = await expectCliSuccess(['wrapper', '--help'])
- *   expect(result.stdout).toContain('Usage')
- *   ```
- *
- * @param args - Command arguments.
- * @param options - Execution options.
- *
- * @returns CLI execution result
- *
- * @throws Error if command fails
- */
-export async function expectCliSuccess(
-  args: string[],
-  options?: CliExecutionOptions | undefined,
-): Promise<CliExecutionResult> {
-  const result = await executeCliCommand(args, {
-    expectedExitCode: 0,
-    ...options,
-  })
-
-  if (!result.status) {
-    throw new Error(
-      `Expected CLI command to succeed but got exit code ${result.code}\nCommand: ${args.join(' ')}\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
-    )
-  }
-
-  return result
-}
-
-/**
  * Shape of the Socket CLI's `--json` response contract. Mirrors the
  * `validate_json` shell helper that was in `test/smoke.sh` so e2e tests can
  * assert the contract programmatically.
@@ -371,19 +152,19 @@ export async function expectCliSuccess(
  *   optional; `cause`/`code` are optional but, when `code` is present, it
  *   must be a number.
  */
-export interface SocketJsonOk<T = unknown> {
+interface SocketJsonOk<T = unknown> {
   ok: true
   data: T
   message?: string | undefined
 }
-export interface SocketJsonErr {
+interface SocketJsonErr {
   ok: false
   data?: unknown | undefined
   message: string
   cause?: string | undefined
   code?: number | undefined
 }
-export type SocketJsonContract<T = unknown> = SocketJsonOk<T> | SocketJsonErr
+type SocketJsonContract<T = unknown> = SocketJsonOk<T> | SocketJsonErr
 
 /**
  * Validate that `stdout` is JSON matching the Socket CLI's `--json` contract,
@@ -443,7 +224,7 @@ export function validateSocketJsonContract<T = unknown>(
 /**
  * Options for {@link executeCliInScratch}.
  */
-export interface CliInScratchOptions extends CliExecutionOptions {
+interface CliInScratchOptions extends CliExecutionOptions {
   /**
    * Files to seed into the scratch cwd before running. Keyed by relative path;
    * each value is the file body written verbatim. Use for fixtures the
