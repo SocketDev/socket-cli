@@ -31,7 +31,7 @@ import { createPrProvider } from '../../util/git/provider-factory.mts'
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/lib-stable/fs/types'
 
-export type GQL_MERGE_STATE_STATUS =
+type GQL_MERGE_STATE_STATUS =
   | 'BEHIND'
   | 'BLOCKED'
   | 'CLEAN'
@@ -41,7 +41,7 @@ export type GQL_MERGE_STATE_STATUS =
   | 'UNKNOWN'
   | 'UNSTABLE'
 
-export type GQL_PR_STATE = 'OPEN' | 'CLOSED' | 'MERGED'
+type GQL_PR_STATE = 'OPEN' | 'CLOSED' | 'MERGED'
 
 export type PrMatch = {
   author: string
@@ -151,7 +151,7 @@ export type PrAutoMergeState = {
   details?: string[] | undefined
 }
 
-export type SocketPrsOptions = {
+type SocketPrsOptions = {
   author?: string | undefined
   ghsaId?: string | undefined
   states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[] | undefined
@@ -339,14 +339,14 @@ async function getSocketFixPrsWithContext(
   return contextualMatches
 }
 
-export type OpenSocketFixPrOptions = {
+type OpenSocketFixPrOptions = {
   baseBranch?: string | undefined
   cwd?: string | undefined
   ghsaDetails?: Map<string, GhsaDetails> | undefined
   retries?: number | undefined
 }
 
-export type OpenPrResult =
+type OpenPrResult =
   | { ok: true; pr: OctokitResponse<Pr> }
   | { ok: false; reason: 'already_exists'; error: RequestError }
   | {
