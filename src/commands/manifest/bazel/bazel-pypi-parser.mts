@@ -177,6 +177,17 @@ export function parseRequirementsLock(
     }
     const bazelName = rawName.replace(/-/g, '_')
     const normalized = normalizePypiName(rawName)
+    const existing = out.get(normalized)
+    if (existing) {
+      if (existing.version !== version) {
+        throw new Error(
+          `Conflicting versions for normalized PyPI package ${normalized}: ` +
+            `${existing.originalLine ?? existing.name + '==' + existing.version} ` +
+            `conflicts with ${line}.`,
+        )
+      }
+      continue
+    }
     out.set(normalized, {
       name: rawName,
       version,

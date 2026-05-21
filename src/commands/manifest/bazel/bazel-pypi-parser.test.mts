@@ -79,6 +79,19 @@ https://example.com/pkg.tar.gz
       }),
     )
   })
+
+  it('rejects conflicting duplicate normalized names with original lines', () => {
+    const text = 'foo-bar==1.0.0\nFoo_Bar==2.0.0\n'
+    expect(() => parseRequirementsLock(text)).toThrow(
+      /foo-bar==1\.0\.0 conflicts with Foo_Bar==2\.0\.0/,
+    )
+  })
+
+  it('keeps the first duplicate normalized name when the version matches', () => {
+    const result = parseRequirementsLock('foo-bar==1.0.0\nFoo_Bar==1.0.0\n')
+    expect(result.size).toBe(1)
+    expect(result.get('foo-bar')?.originalLine).toBe('foo-bar==1.0.0')
+  })
 })
 
 describe('parsePypiTagsFromBuildOutput', () => {
