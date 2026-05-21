@@ -8,7 +8,7 @@
 /**
  * Get the value from a literal node.
  */
-export function getLiteralValue(t, node) {
+function getLiteralValue(t, node) {
   if (t.isNullLiteral(node)) {
     return undefined
   }
@@ -18,7 +18,7 @@ export function getLiteralValue(t, node) {
 /**
  * Check if a node is a literal value.
  */
-export function isLiteralValue(t, node) {
+function isLiteralValue(t, node) {
   return (
     t.isNumericLiteral(node) ||
     t.isStringLiteral(node) ||

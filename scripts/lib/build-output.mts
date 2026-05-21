@@ -46,14 +46,14 @@ export function printHeader(title: string): void {
 /**
  * Print info message.
  */
-export function printInfo(message: string): void {
+function printInfo(message: string): void {
   logger.log(`ℹ️  ${message}`)
 }
 
 /**
  * Print step with description.
  */
-export function printStep(
+function printStep(
   step: number,
   total: number,
   description: string,
@@ -71,7 +71,7 @@ export function printSuccess(message: string): void {
 /**
  * Print warning with suggestions.
  */
-export function printWarning(
+function printWarning(
   title: string,
   message: string,
   suggestions: string[] = [],

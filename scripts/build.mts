@@ -119,7 +119,7 @@ const BUILD_PACKAGES: BuildPackageConfig[] = [
 /**
  * Build SEA binary for current platform.
  */
-export async function buildCurrentPlatformSea(): Promise<{ success: boolean }> {
+async function buildCurrentPlatformSea(): Promise<{ success: boolean }> {
   const { arch, platform } = await import('node:os')
   const currentPlatform = platform()
   const currentArch = arch()
@@ -159,7 +159,7 @@ export async function buildCurrentPlatformSea(): Promise<{ success: boolean }> {
 /**
  * Build a single package.
  */
-export async function buildPackage(
+async function buildPackage(
   pkg: BuildPackageConfig,
   force: boolean,
 ): Promise<BuildResult> {
@@ -209,7 +209,7 @@ export async function buildPackage(
 /**
  * Build SEA binary for a specific platform.
  */
-export async function buildPlatformSea(
+async function buildPlatformSea(
   platform: string,
   arch: string,
   libc: string | undefined,
@@ -334,7 +334,7 @@ export async function buildTarget(
  * Compute a SHA-256 signature over the contents of files matched by the
  * package's input globs. Files are sorted to keep the hash deterministic.
  */
-export function computeBuildSignature(pkg: BuildPackageConfig): string {
+function computeBuildSignature(pkg: BuildPackageConfig): string {
   const files = fg.sync(pkg.inputs, {
     cwd: rootDir,
     onlyFiles: true,
@@ -362,7 +362,7 @@ export function computeBuildSignature(pkg: BuildPackageConfig): string {
  * Rebuild triggers: 1. --force 2. Missing build output 3. Missing signature
  * sidecar 4. Current input signature differs from the recorded one.
  */
-export function needsBuild(pkg: BuildPackageConfig, force: boolean): boolean {
+function needsBuild(pkg: BuildPackageConfig, force: boolean): boolean {
   if (force) {
     return true
   }
@@ -440,7 +440,7 @@ export function parseArgs(): ParsedArgs {
   }
 }
 
-export function readSignature(pkg: BuildPackageConfig): string | null {
+function readSignature(pkg: BuildPackageConfig): string | null {
   const file = signaturePath(pkg)
   if (!existsSync(file)) {
     return undefined
@@ -451,7 +451,7 @@ export function readSignature(pkg: BuildPackageConfig): string | null {
 /**
  * Run multiple targeted builds in parallel.
  */
-export async function runParallelBuilds(
+async function runParallelBuilds(
   targetsToBuild: string[],
   buildArgs: string[],
 ): Promise<void> {
@@ -522,7 +522,7 @@ export async function runParallelBuilds(
 /**
  * Run multiple targeted builds sequentially.
  */
-export async function runSequentialBuilds(
+async function runSequentialBuilds(
   targetsToBuild: string[],
   buildArgs: string[],
 ): Promise<void> {
@@ -608,7 +608,7 @@ export async function runSequentialBuilds(
  * Inherits CLI flags from runPipelineCli: --force, --clean, --clean-stage,
  * --from-stage, --cache-key, --prod, --dev.
  */
-export async function runSmartBuild(force: boolean): Promise<void> {
+async function runSmartBuild(force: boolean): Promise<void> {
   // The orchestrator reads --force/--clean/... off process.argv itself; we
   // only pass `force` here so the SEA stage knows whether to run.
   const cliPkg = BUILD_PACKAGES[0]!
@@ -683,7 +683,7 @@ export async function runSmartBuild(force: boolean): Promise<void> {
 /**
  * Run a targeted build for a specific package or platform.
  */
-export async function runTargetedBuild(
+async function runTargetedBuild(
   target: string,
   buildArgs: string[],
 ): Promise<void> {
@@ -793,11 +793,11 @@ export function showHelp(): void {
 /**
  * Path to the sidecar signature file written alongside the build output.
  */
-export function signaturePath(pkg: BuildPackageConfig): string {
+function signaturePath(pkg: BuildPackageConfig): string {
   return path.join(rootDir, `${pkg.outputCheck}.build-signature`)
 }
 
-export function writeSignature(
+function writeSignature(
   pkg: BuildPackageConfig,
   signature: string,
 ): void {

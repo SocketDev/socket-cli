@@ -44,7 +44,7 @@ interface PackagesToTestResult {
 /**
  * Get packages to test and determine affected packages.
  */
-export async function getPackagesToTest(
+async function getPackagesToTest(
   options: TestOptions,
 ): Promise<PackagesToTestResult> {
   const { all, changed, staged } = options
@@ -96,7 +96,7 @@ export async function getPackagesToTest(
 /**
  * Run tests on a specific package with pretty output.
  */
-export async function runPackageTest(
+async function runPackageTest(
   pkg: PackageInfo,
   testArgs: string[] = [],
   quiet: boolean = false,

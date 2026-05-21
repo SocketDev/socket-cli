@@ -159,7 +159,7 @@ async function detectWindows(): Promise<boolean> {
  * node-smol binary; falls back to a per-platform path (shellout on macOS /
  * Windows, direct sysfs reads on Linux) on system Node.
  */
-export async function isOnAcPower(): Promise<boolean> {
+async function isOnAcPower(): Promise<boolean> {
   const native = await getSmolPower()
   if (native) {
     return native.isOnAcPower()

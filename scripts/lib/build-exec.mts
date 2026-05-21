@@ -36,7 +36,7 @@ interface DownloadOptions {
 /**
  * Download file with retry and verification.
  */
-export async function downloadWithRetry(
+async function downloadWithRetry(
   url: string,
   outputPath: string,
   options: DownloadOptions = {},
@@ -127,7 +127,7 @@ export async function exec(
 /**
  * Execute a command silently (no output).
  */
-export async function execSilent(
+async function execSilent(
   command: string,
   args: string[] = [],
   options: ExecOptions = {},

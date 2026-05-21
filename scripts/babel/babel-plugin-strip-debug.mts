@@ -6,14 +6,14 @@
 /**
  * Check if a node is a DEBUG identifier.
  */
-export function isDebugIdentifier(t, node, debugIds) {
+function isDebugIdentifier(t, node, debugIds) {
   return t.isIdentifier(node) && debugIds.has(node.name)
 }
 
 /**
  * Check if test expression is a debug check.
  */
-export function isDebugTest(t, test, debugIds) {
+function isDebugTest(t, test, debugIds) {
   // Simple: if (DEBUG)
   if (isDebugIdentifier(t, test, debugIds)) {
     return true

@@ -81,7 +81,7 @@ interface CdnViolation {
 /**
  * Check file contents for CDN references.
  */
-export async function checkFileForCdnRefs(
+async function checkFileForCdnRefs(
   filePath: string,
 ): Promise<CdnViolation[]> {
   // Skip this validator script itself (it mentions CDN domains by necessity)
@@ -127,7 +127,7 @@ export async function checkFileForCdnRefs(
 /**
  * Recursively find all text files to scan.
  */
-export async function findTextFiles(
+async function findTextFiles(
   dir: string,
   files: string[] = [],
 ): Promise<string[]> {
@@ -160,7 +160,7 @@ export async function findTextFiles(
 /**
  * Check if file should be scanned.
  */
-export function shouldScanFile(filename: string): boolean {
+function shouldScanFile(filename: string): boolean {
   const ext = path.extname(filename).toLowerCase()
   return TEXT_EXTENSIONS.has(ext)
 }
@@ -168,7 +168,7 @@ export function shouldScanFile(filename: string): boolean {
 /**
  * Validate all files for CDN references.
  */
-export async function validateNoCdnRefs(): Promise<CdnViolation[]> {
+async function validateNoCdnRefs(): Promise<CdnViolation[]> {
   const files = await findTextFiles(rootPath)
   const allViolations = []
 

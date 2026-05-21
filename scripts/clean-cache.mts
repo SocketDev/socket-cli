@@ -51,7 +51,7 @@ interface CacheEntry {
 /**
  * Analyze cache directory and determine what to clean.
  */
-export function analyzeCacheDir(cacheDir: string): CacheEntry[] {
+function analyzeCacheDir(cacheDir: string): CacheEntry[] {
   const entries: CacheEntry[] = []
 
   try {
@@ -84,7 +84,7 @@ export function analyzeCacheDir(cacheDir: string): CacheEntry[] {
 /**
  * Find all .cache directories in packages.
  */
-export function findCacheDirs(): CacheDirInfo[] {
+function findCacheDirs(): CacheDirInfo[] {
   const cacheDirs: CacheDirInfo[] = []
   const packagesDir = join(ROOT_DIR, 'packages')
 
@@ -111,7 +111,7 @@ export function findCacheDirs(): CacheDirInfo[] {
 /**
  * Format bytes to human readable.
  */
-export function formatSize(bytes: number): string {
+function formatSize(bytes: number): string {
   if (bytes < 1024) {
     return `${bytes} B`
   }
@@ -127,7 +127,7 @@ export function formatSize(bytes: number): string {
 /**
  * Get directory size recursively.
  */
-export function getDirSize(dir: string): number {
+function getDirSize(dir: string): number {
   let size = 0
   try {
     const items = readdirSync(dir)

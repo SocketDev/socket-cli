@@ -204,7 +204,7 @@ Strict Mode Transformation Stats:
  *
  * @returns {number | undefined} Decimal value or undefined if not octal
  */
-export function convertOctalLiteral(value) {
+function convertOctalLiteral(value) {
   // Match legacy octal: starts with 0, followed by octal digits (0-7)
   const octalMatch = /^0([0-7]+)$/.exec(value)
   if (!octalMatch) {
@@ -222,7 +222,7 @@ export function convertOctalLiteral(value) {
  *
  * @returns {string} Transformed string
  */
-export function transformOctalEscapes(str) {
+function transformOctalEscapes(str) {
   // Common octal escapes and their replacements
   const commonOctals = {
     // Null (allowed in strict mode if not followed by digit)

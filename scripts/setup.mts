@@ -89,7 +89,7 @@ interface PrerequisiteOptions {
 /**
  * Check prerequisite.
  */
-export async function checkPrerequisite({
+async function checkPrerequisite({
   command,
   minVersion,
   name,
@@ -139,7 +139,7 @@ export function compareVersions(a: VersionInfo, b: VersionInfo): number {
 /**
  * Check and optionally install gh CLI.
  */
-export async function ensureGhCli(): Promise<boolean> {
+async function ensureGhCli(): Promise<boolean> {
   if (await hasCommand('gh')) {
     const version = await getVersion('gh')
     logger.log(`gh CLI ${version} (optional)`)
@@ -225,7 +225,7 @@ export async function ensureGhCli(): Promise<boolean> {
 /**
  * Generate cli-with-sentry package from template.
  */
-export async function generateCliSentryPackage(): Promise<boolean> {
+async function generateCliSentryPackage(): Promise<boolean> {
   if (!quiet) {
     logger.log('Generating cli-with-sentry package from template...')
   }
@@ -252,7 +252,7 @@ export async function generateCliSentryPackage(): Promise<boolean> {
 /**
  * Generate socketbin packages from template.
  */
-export async function generateSocketbinPackages(): Promise<boolean> {
+async function generateSocketbinPackages(): Promise<boolean> {
   if (!quiet) {
     logger.log('Generating socketbin packages from template...')
   }
@@ -279,7 +279,7 @@ export async function generateSocketbinPackages(): Promise<boolean> {
 /**
  * Get version of a command.
  */
-export async function getVersion(
+async function getVersion(
   command: string,
   args: string[] = ['--version'],
 ): Promise<string | undefined> {
@@ -299,7 +299,7 @@ export async function getVersion(
 /**
  * Check if a command is available.
  */
-export async function hasCommand(command: string): Promise<boolean> {
+async function hasCommand(command: string): Promise<boolean> {
   try {
     const result = await spawn(command, ['--version'], {
       stdio: 'pipe',
@@ -313,7 +313,7 @@ export async function hasCommand(command: string): Promise<boolean> {
 /**
  * Install Chocolatey (Windows).
  */
-export async function installChocolatey(): Promise<boolean> {
+async function installChocolatey(): Promise<boolean> {
   if (!WIN32) {
     logger.warn('Chocolatey is only available on Windows')
     return false
@@ -342,7 +342,7 @@ export async function installChocolatey(): Promise<boolean> {
 /**
  * Install Homebrew (macOS/Linux).
  */
-export async function installHomebrew(): Promise<boolean> {
+async function installHomebrew(): Promise<boolean> {
   if (WIN32) {
     logger.warn('Homebrew is not available on Windows')
     return false
@@ -370,7 +370,7 @@ export async function installHomebrew(): Promise<boolean> {
 /**
  * Install a package using Chocolatey (Windows).
  */
-export async function installWithChocolatey(
+async function installWithChocolatey(
   packageName: string,
 ): Promise<boolean> {
   if (!(await hasCommand('choco'))) {
@@ -397,7 +397,7 @@ export async function installWithChocolatey(
 /**
  * Install a package using Homebrew (macOS/Linux).
  */
-export async function installWithHomebrew(
+async function installWithHomebrew(
   packageName: string,
 ): Promise<boolean> {
   if (!(await hasCommand('brew'))) {
@@ -423,7 +423,7 @@ export async function installWithHomebrew(
 /**
  * Parse version string to compare.
  */
-export function parseVersion(versionString: string): VersionInfo | undefined {
+function parseVersion(versionString: string): VersionInfo | undefined {
   const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
   if (!match) {
     return undefined

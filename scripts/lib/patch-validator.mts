@@ -70,7 +70,7 @@ export function compareVersions(v1: string, v2: string): number {
 /**
  * Analyze what a patch modifies.
  */
-export function analyzePatchContent(patchContent: string): PatchAnalysis {
+function analyzePatchContent(patchContent: string): PatchAnalysis {
   const analysis: PatchAnalysis = {
     modifiesV8Includes: false,
     modifiesSEA: false,
@@ -117,7 +117,7 @@ export function analyzePatchContent(patchContent: string): PatchAnalysis {
 /**
  * Check for patch conflicts.
  */
-export function checkPatchConflicts(
+function checkPatchConflicts(
   patches: PatchInfo[],
   nodeVersion: string,
 ): PatchConflict[] {
@@ -166,7 +166,7 @@ export function checkPatchConflicts(
 /**
  * Check if patch is compatible with Node version.
  */
-export function isPatchCompatible(
+function isPatchCompatible(
   metadata: PatchMetadata,
   nodeVersion: string,
 ): CompatibilityResult {
@@ -209,7 +209,7 @@ export function isPatchCompatible(
 /**
  * Parse patch metadata from header comments.
  */
-export function parsePatchMetadata(patchContent: string): PatchMetadata {
+function parsePatchMetadata(patchContent: string): PatchMetadata {
   const lines = patchContent.split('\n')
   const metadata: PatchMetadata = {
     description: undefined,
@@ -252,7 +252,7 @@ export function parsePatchMetadata(patchContent: string): PatchMetadata {
 /**
  * Test if a patch will apply cleanly (dry-run).
  */
-export async function testPatchApplication(
+async function testPatchApplication(
   patchPath: string,
   targetDir: string,
   stripLevel: number = 1,
@@ -290,7 +290,7 @@ export async function testPatchApplication(
 /**
  * Validate patch file before applying.
  */
-export async function validatePatch(
+async function validatePatch(
   patchPath: string,
   nodeVersion: string,
 ): Promise<ValidationResult> {
