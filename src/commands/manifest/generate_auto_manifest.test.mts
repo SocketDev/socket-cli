@@ -178,10 +178,12 @@ describe('generateAutoManifest — bazel branch', () => {
         outputKind: 'text',
         verbose: false,
       }),
-    ).rejects.toThrow('Bazel auto-manifest generation failed')
+    ).rejects.toThrow(
+      'Bazel auto-manifest generation failed for ecosystem(s): pypi',
+    )
   })
 
-  it('does NOT throw when Maven fails but PyPI succeeds', async () => {
+  it('throws when Maven hard-fails even if PyPI succeeds', async () => {
     vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
       artifactCount: 0,
       ok: false,
@@ -192,16 +194,16 @@ describe('generateAutoManifest — bazel branch', () => {
       ok: true,
     })
 
-    const result = await generateAutoManifest({
-      cwd: '/tmp/repo',
-      detected: { ...baseDetected, bazel: true, count: 1 },
-      outputKind: 'text',
-      verbose: false,
-    })
-
-    expect(result.generatedFiles).toEqual([
-      '/tmp/repo/.socket-auto-manifest/requirements.txt',
-    ])
+    await expect(
+      generateAutoManifest({
+        cwd: '/tmp/repo',
+        detected: { ...baseDetected, bazel: true, count: 1 },
+        outputKind: 'text',
+        verbose: false,
+      }),
+    ).rejects.toThrow(
+      'Bazel auto-manifest generation failed for ecosystem(s): maven',
+    )
   })
 
   it('does NOT throw when both ecosystems have no discovery', async () => {

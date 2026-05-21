@@ -156,6 +156,17 @@ describe('parsePypiTagsFromBuildOutput', () => {
     expect(result).not.toBeNull()
     expect(result?.name).toBe('charset-normalizer')
   })
+
+  it('extracts one-character package names from tags', () => {
+    const text = 'tags = ["pypi_name=x", "pypi_version=1.0.0"]'
+    const result = parsePypiTagsFromBuildOutput(text)
+    expect(result).toEqual({
+      name: 'x',
+      version: '1.0.0',
+      bazelName: 'x',
+      source: 'spoke-tag',
+    })
+  })
 })
 
 describe('filterReachedPypiPackages', () => {

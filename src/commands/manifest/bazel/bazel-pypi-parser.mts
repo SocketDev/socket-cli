@@ -231,7 +231,7 @@ export function readRequirementsLockFile(
 
 // Extract `pypi_name=` and `pypi_version=` tags from `--output=build` text of a
 // spoke target. Returns null when either tag is missing.
-const PYPI_NAME_TAG_RE = /pypi_name=\s*([A-Za-z0-9][A-Za-z0-9._-]+)/
+const PYPI_NAME_TAG_RE = /pypi_name=\s*([A-Za-z0-9][A-Za-z0-9._-]*)/
 const PYPI_VERSION_TAG_RE = /pypi_version=\s*([A-Za-z0-9._+!]+)/
 
 export function parsePypiTagsFromBuildOutput(
