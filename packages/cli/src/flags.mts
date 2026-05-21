@@ -139,7 +139,7 @@ export function getMaxSemiSpaceSizeFlag(): number {
   return maxSemiSpaceSizeFlag
 }
 
-export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
+function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
   if (rawSpaceSizeFlags === undefined) {
     const cli = meow({
       argv: process.argv.slice(2),
