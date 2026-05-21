@@ -226,7 +226,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<DlxSpawnResult> {
  * configurations we did not hard-gate (non-default lifecycle, custom
  * `--filter`/`--only` wiping all components, ecosystem mismatch, etc.).
  */
-export async function warnIfEmptyComponents(
+async function warnIfEmptyComponents(
   outputPath: string,
   argvMutable: ArgvObject,
 ): Promise<void> {
