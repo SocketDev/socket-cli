@@ -5,7 +5,7 @@ import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-export type FetchCreateRepoConfig = {
+type FetchCreateRepoConfig = {
   defaultBranch: string
   description: string
   homepage: string
@@ -14,7 +14,7 @@ export type FetchCreateRepoConfig = {
   visibility: 'private' | 'public'
 }
 
-export type FetchCreateRepoOptions = {
+type FetchCreateRepoOptions = {
   commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }

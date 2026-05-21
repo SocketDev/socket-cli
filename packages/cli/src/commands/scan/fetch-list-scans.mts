@@ -5,7 +5,7 @@ import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-export type FetchOrgFullScanListConfig = {
+type FetchOrgFullScanListConfig = {
   branch: string
   direction: string
   from_time: string
@@ -16,7 +16,7 @@ export type FetchOrgFullScanListConfig = {
   sort: string
 }
 
-export type FetchOrgFullScanListOptions = {
+type FetchOrgFullScanListOptions = {
   commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }

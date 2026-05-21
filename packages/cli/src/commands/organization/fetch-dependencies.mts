@@ -5,12 +5,12 @@ import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-export type FetchDependenciesConfig = {
+type FetchDependenciesConfig = {
   limit: number
   offset: number
 }
 
-export type FetchDependenciesOptions = {
+type FetchDependenciesOptions = {
   commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }

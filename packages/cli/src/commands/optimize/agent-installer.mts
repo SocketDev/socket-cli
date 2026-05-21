@@ -29,12 +29,12 @@ import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
-export interface AgentInstallOptions extends SpawnOption {
+interface AgentInstallOptions extends SpawnOption {
   args?: string[] | readonly string[] | undefined
   spinner?: SpinnerInstance | undefined
 }
 
-export type AgentSpawnResult = ReturnType<typeof spawn>
+type AgentSpawnResult = ReturnType<typeof spawn>
 
 /**
  * Execute package installation with the detected package manager agent. Handles

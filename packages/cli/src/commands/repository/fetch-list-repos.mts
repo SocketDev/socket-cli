@@ -5,7 +5,7 @@ import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-export type FetchListReposConfig = {
+type FetchListReposConfig = {
   direction: string
   orgSlug: string
   page: number
@@ -13,7 +13,7 @@ export type FetchListReposConfig = {
   sort: string
 }
 
-export type FetchListReposOptions = {
+type FetchListReposOptions = {
   commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
