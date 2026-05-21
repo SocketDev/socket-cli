@@ -17,6 +17,7 @@
   "dependencies": {
     "@babel/parser": "catalog:",
     "@babel/traverse": "catalog:",
+    "@sinclair/typebox": "catalog:",
     "@socketsecurity/lib": "catalog:",
     "@socketsecurity/lib-stable": "catalog:",
     "magic-string": "catalog:"
