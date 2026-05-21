@@ -35,6 +35,10 @@ function isSandboxed(): boolean {
   }
 }
 
+function normalizeFinalNewline(text: string): string {
+  return text.replace(/\r\n/g, '\n').replace(/\n?$/, '\n')
+}
+
 describe.skipIf(isSandboxed())(
   'extract_bazel_to_pypi — constructed fixture',
   () => {
@@ -65,7 +69,9 @@ describe.skipIf(isSandboxed())(
       expect(result.manifestPath).toBeDefined()
       expect(existsSync(result.manifestPath!)).toBe(true)
 
-      const actualContent = readFileSync(result.manifestPath!, 'utf8')
+      const actualContent = normalizeFinalNewline(
+        readFileSync(result.manifestPath!, 'utf8'),
+      )
       const actualLines = actualContent.split('\n').filter(l => l.trim() !== '')
 
       const oraclePath = path.resolve(
@@ -80,17 +86,10 @@ describe.skipIf(isSandboxed())(
         'python-pypi',
         'requirements.expected.txt',
       )
-      const expectedContent = readFileSync(oraclePath, 'utf8')
-      const expectedLines = expectedContent
-        .split('\n')
-        .filter(l => l.trim() !== '')
-
-      expect(actualLines.length).toBe(expectedLines.length)
-
-      const actualSet = new Set(actualLines)
-      for (const expectedLine of expectedLines) {
-        expect(actualSet).toContain(expectedLine)
-      }
+      const expectedContent = normalizeFinalNewline(
+        readFileSync(oraclePath, 'utf8'),
+      )
+      expect(actualContent).toBe(expectedContent)
 
       // Verify sorted order (sort by package name only, matching sortPackageLines).
       const sorted = [...actualLines].sort((a, b) => {
