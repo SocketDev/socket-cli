@@ -36,7 +36,7 @@ const nodejsPlatformTypes = new Set([
   'typescript',
 ])
 
-export type ArgvObject = {
+type ArgvObject = {
   [key: string]: boolean | null | number | string | Array<string | number>
 }
 
@@ -77,7 +77,7 @@ export function argvObjectToArray(argvObj: ArgvObject): string[] {
  * Result of probing a cwd for Node.js SBOM inputs that cdxgen needs in the
  * default `pre-build` + `install-deps: false` mode.
  */
-export type NodejsCdxgenSources = {
+type NodejsCdxgenSources = {
   hasLockfile: boolean
   hasNodeModules: boolean
 }

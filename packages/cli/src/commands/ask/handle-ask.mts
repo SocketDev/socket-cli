@@ -30,13 +30,13 @@ const logger = getDefaultLogger()
 // semantic-match fallback (currently a no-op; see onnx-match.mts).
 const PATTERN_MATCH_THRESHOLD = 0.6
 
-export interface HandleAskOptions {
+interface HandleAskOptions {
   query: string
   execute: boolean
   explain: boolean
 }
 
-export interface ParsedIntent {
+interface ParsedIntent {
   action: string
   command: string[]
   confidence: number
