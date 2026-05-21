@@ -14,14 +14,14 @@ export function getNodeDisableSigusr1Flags(): string[] {
 /**
  * Get Node major version number.
  */
-export function getNodeMajorVersion(): number {
+function getNodeMajorVersion(): number {
   return Number.parseInt(process.version.slice(1).split('.')[0] || '0', 10)
 }
 
 /**
  * Get Node minor version number.
  */
-export function getNodeMinorVersion(): number {
+function getNodeMinorVersion(): number {
   return Number.parseInt(process.version.slice(1).split('.')[1] || '0', 10)
 }
 
@@ -29,7 +29,7 @@ export function getNodeMinorVersion(): number {
  * Check if --disable-sigusr1 flag is supported. Supported in v22.14.0+,
  * v23.7.0+, v24.8.0+ (stable in v22.20.0+, v24.8.0+).
  */
-export function supportsDisableSigusr1(): boolean {
+function supportsDisableSigusr1(): boolean {
   const major = getNodeMajorVersion()
   const minor = getNodeMinorVersion()
 
