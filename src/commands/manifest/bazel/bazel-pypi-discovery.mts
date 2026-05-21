@@ -25,17 +25,18 @@ const USE_EXTENSION_PIP_RE =
 
 // Extract hub_name, requirements_lock, and python_version from a pip.parse
 // argument blob. Bounded character classes and length caps.
-const HUB_NAME_ATTR_RE = /hub_name\s*=\s*"([A-Za-z0-9_]{1,129})"/
-const REQUIREMENTS_LOCK_ATTR_RE = /requirements_lock\s*=\s*"([^"]{1,512})"/
-const PYTHON_VERSION_ATTR_RE = /python_version\s*=\s*"([0-9._+!]{1,32})"/
+const HUB_NAME_ATTR_RE = /hub_name\s*=\s*(["'])([A-Za-z0-9_]{1,129})\1/
+const REQUIREMENTS_LOCK_ATTR_RE =
+  /requirements_lock\s*=\s*(["'])([^"']{1,512})\1/
+const PYTHON_VERSION_ATTR_RE = /python_version\s*=\s*(["'])([0-9._+!]{1,32})\1/
 
 // Legacy WORKSPACE patterns: pip_parse, pip_install, pip_repository.
 // Bounded: matches up to ~8KB of argument list.
 const PIP_PARSE_NAME_RE = /pip_parse\s*\(\s*([^)]{0,8192})\)/g
 const PIP_INSTALL_NAME_RE = /pip_install\s*\(\s*([^)]{0,8192})\)/g
 const PIP_REPOSITORY_NAME_RE = /pip_repository\s*\(\s*([^)]{0,8192})\)/g
-const NAME_ATTR_RE = /name\s*=\s*"([A-Za-z0-9_]{1,129})"/
-const LEGACY_REQ_LOCK_RE = /requirements_lock\s*=\s*"([^"]{1,512})"/
+const NAME_ATTR_RE = /name\s*=\s*(["'])([A-Za-z0-9_]{1,129})\1/
+const LEGACY_REQ_LOCK_RE = /requirements_lock\s*=\s*(["'])([^"']{1,512})\1/
 
 // Hub validation: accept alias rules or `:pkg` targets in probe stdout.
 // Does NOT require `pypi_name=` (that marker lives on spoke repos).
@@ -153,19 +154,19 @@ function extractHubInfoFromArgBlob(
 ): Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'> | undefined {
   const hubMatch = HUB_NAME_ATTR_RE.exec(argBlob)
   const nameMatch = NAME_ATTR_RE.exec(argBlob)
-  const hubName = hubMatch?.[1] ?? nameMatch?.[1]
+  const hubName = hubMatch?.[2] ?? nameMatch?.[2]
   if (!hubName) {
     return undefined
   }
   const lockMatch =
     REQUIREMENTS_LOCK_ATTR_RE.exec(argBlob) ?? LEGACY_REQ_LOCK_RE.exec(argBlob)
-  const pythonVersion = PYTHON_VERSION_ATTR_RE.exec(argBlob)?.[1]
+  const pythonVersion = PYTHON_VERSION_ATTR_RE.exec(argBlob)?.[2]
   return {
     hubName,
     source,
     workspaceMode,
     pythonVersion,
-    requirementsLockLabel: lockMatch?.[1],
+    requirementsLockLabel: lockMatch?.[2],
   }
 }
 

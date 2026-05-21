@@ -112,6 +112,32 @@ describe('bazel-pypi-discovery', () => {
       }
     })
 
+    it('parses single-quoted bzlmod pip.parse attributes', () => {
+      const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-pypi-'))
+      try {
+        writeFileSync(
+          path.join(dir, 'MODULE.bazel'),
+          'pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")\n' +
+            'pip.parse(\n' +
+            "    hub_name = 'custom_pypi',\n" +
+            "    python_version = '3.12',\n" +
+            "    requirements_lock = '//:requirements_lock.txt',\n" +
+            ')\n',
+        )
+        const result = parsePypiHubCandidates(dir)
+        expect(result).toHaveLength(1)
+        expect(result[0]).toEqual({
+          hubName: 'custom_pypi',
+          source: 'MODULE.bazel',
+          workspaceMode: 'bzlmod',
+          pythonVersion: '3.12',
+          requirementsLockLabel: '//:requirements_lock.txt',
+        })
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    })
+
     it('parses pip_parse name from legacy WORKSPACE', () => {
       const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-pypi-'))
       try {
@@ -120,6 +146,29 @@ describe('bazel-pypi-discovery', () => {
           'pip_parse(\n' +
             '    name = "pypi",\n' +
             '    requirements_lock = "//:requirements_lock.txt",\n' +
+            ')\n',
+        )
+        const result = parsePypiHubCandidates(dir)
+        expect(result).toHaveLength(1)
+        expect(result[0]).toEqual({
+          hubName: 'pypi',
+          source: 'WORKSPACE',
+          workspaceMode: 'legacy',
+          requirementsLockLabel: '//:requirements_lock.txt',
+        })
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    })
+
+    it('parses single-quoted legacy pip_parse and lockfile attributes', () => {
+      const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-pypi-'))
+      try {
+        writeFileSync(
+          path.join(dir, 'WORKSPACE'),
+          'pip_parse(\n' +
+            "    name = 'pypi',\n" +
+            "    requirements_lock = '//:requirements_lock.txt',\n" +
             ')\n',
         )
         const result = parsePypiHubCandidates(dir)
@@ -144,6 +193,25 @@ describe('bazel-pypi-discovery', () => {
             '    name = "pypi",\n' +
             '    requirements = ["//:requirements.txt"],\n' +
             ')\n',
+        )
+        const result = parsePypiHubCandidates(dir)
+        expect(result).toHaveLength(1)
+        expect(result[0]).toEqual({
+          hubName: 'pypi',
+          source: 'WORKSPACE',
+          workspaceMode: 'legacy',
+        })
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    })
+
+    it('parses single-quoted pip_install name from legacy WORKSPACE', () => {
+      const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-pypi-'))
+      try {
+        writeFileSync(
+          path.join(dir, 'WORKSPACE'),
+          "pip_install(name = 'pypi', requirements = ['//:requirements.txt'])\n",
         )
         const result = parsePypiHubCandidates(dir)
         expect(result).toHaveLength(1)
