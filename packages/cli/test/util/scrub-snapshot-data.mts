@@ -7,7 +7,7 @@
  * across different systems or time periods.
  */
 
-export interface ScrubOptions {
+interface ScrubOptions {
   /**
    * Scrub absolute file paths (default: true).
    */
