@@ -40,7 +40,8 @@ https://example.com/pkg.tar.gz
   })
 
   it('normalizes underscores, dots, and hyphens for membership keys', () => {
-    const text = 'charset_normalizer==3.4.7\ntyping-extensions==4.15.0\nSome.Package==1.0.0\n'
+    const text =
+      'charset_normalizer==3.4.7\ntyping-extensions==4.15.0\nSome.Package==1.0.0\n'
     const result = parseRequirementsLock(text)
     expect(result.get('charset-normalizer')).toBeDefined()
     expect(result.get('typing-extensions')).toBeDefined()
@@ -201,7 +202,9 @@ describe('resolveRequirementsLockPath', () => {
   })
 
   it('rejects paths containing ..', () => {
-    expect(resolveRequirementsLockPath('//foo/../etc:pass', cwd)).toBeUndefined()
+    expect(
+      resolveRequirementsLockPath('//foo/../etc:pass', cwd),
+    ).toBeUndefined()
   })
 
   it('rejects absolute paths', () => {
@@ -209,9 +212,7 @@ describe('resolveRequirementsLockPath', () => {
   })
 
   it('rejects external repo labels', () => {
-    expect(
-      resolveRequirementsLockPath('@repo//path:file', cwd),
-    ).toBeUndefined()
+    expect(resolveRequirementsLockPath('@repo//path:file', cwd)).toBeUndefined()
   })
 
   it('returns undefined for undefined label', () => {
@@ -243,7 +244,12 @@ describe('collectPypiPackages', () => {
     ]
     const result = collectPypiPackages(reached, lockfile, undefined)
     expect(result).toEqual([
-      { name: 'requests', version: '2.33.1', source: 'lockfile', label: '@pypi//requests:pkg' },
+      {
+        name: 'requests',
+        version: '2.33.1',
+        source: 'lockfile',
+        label: '@pypi//requests:pkg',
+      },
     ])
   })
 
@@ -270,7 +276,12 @@ describe('collectPypiPackages', () => {
     ]
     const result = collectPypiPackages(reached, undefined, spoke)
     expect(result).toEqual([
-      { name: 'numpy', version: '2.4.4', source: 'spoke-tag', label: '@pypi//numpy:pkg' },
+      {
+        name: 'numpy',
+        version: '2.4.4',
+        source: 'spoke-tag',
+        label: '@pypi//numpy:pkg',
+      },
     ])
   })
 
@@ -322,8 +333,8 @@ describe('collectPypiPackages', () => {
         apparentLabel: '@pypi//missing:pkg',
       },
     ]
-    expect(() =>
-      collectPypiPackages(reached, undefined, undefined),
-    ).toThrow(/No version found/)
+    expect(() => collectPypiPackages(reached, undefined, undefined)).toThrow(
+      /No version found/,
+    )
   })
 })

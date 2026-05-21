@@ -135,15 +135,9 @@ export async function generateAutoManifest({
 
     // Auto-manifest outcome matrix: one ecosystem success means overall
     // success; both hard-fail means throw; both no-discovery is informational.
-    const successes = outcomes.filter(
-      o => o.ok && o.manifestPath,
-    )
-    const hardFailures = outcomes.filter(
-      o => !o.ok && !o.noEcosystemFound,
-    )
-    const noDiscoveries = outcomes.filter(
-      o => o.noEcosystemFound,
-    )
+    const successes = outcomes.filter(o => o.ok && o.manifestPath)
+    const hardFailures = outcomes.filter(o => !o.ok && !o.noEcosystemFound)
+    const noDiscoveries = outcomes.filter(o => o.noEcosystemFound)
 
     if (successes.length) {
       for (const s of successes) {
@@ -156,7 +150,10 @@ export async function generateAutoManifest({
           )
         }
       }
-    } else if (!hardFailures.length && noDiscoveries.length === outcomes.length) {
+    } else if (
+      !hardFailures.length &&
+      noDiscoveries.length === outcomes.length
+    ) {
       logger.info('No supported Bazel ecosystems detected (maven, pypi).')
     } else if (hardFailures.length) {
       throw new Error('Bazel auto-manifest generation failed')

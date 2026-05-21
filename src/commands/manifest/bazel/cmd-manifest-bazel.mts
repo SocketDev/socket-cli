@@ -291,8 +291,9 @@ async function run(
   // flag is given; otherwise validate and dispatch to the requested ecosystems.
   const wasExplicitEcosystemSelection =
     Array.isArray(ecosystem) && ecosystem.length > 0
-  const ecosystems: string[] =
-    wasExplicitEcosystemSelection ? (ecosystem as string[]) : ['maven', 'pypi']
+  const ecosystems: string[] = wasExplicitEcosystemSelection
+    ? (ecosystem as string[])
+    : ['maven', 'pypi']
 
   for (const eco of ecosystems) {
     if (!['maven', 'pypi'].includes(eco)) {
@@ -306,6 +307,7 @@ async function run(
 
   for (const eco of ecosystems) {
     if (eco === 'maven') {
+      // eslint-disable-next-line no-await-in-loop
       const mavenResult = await extractBazelToMaven({
         bazelFlags: bazelFlags as string | undefined,
         bazelOutputBase: bazelOutputBase as string | undefined,
@@ -321,6 +323,7 @@ async function run(
         manifestPath: mavenResult.manifestPath,
       })
     } else if (eco === 'pypi') {
+      // eslint-disable-next-line no-await-in-loop
       const pypiResult = await extractBazelToPypi({
         bazelFlags: bazelFlags as string | undefined,
         bazelOutputBase: bazelOutputBase as string | undefined,

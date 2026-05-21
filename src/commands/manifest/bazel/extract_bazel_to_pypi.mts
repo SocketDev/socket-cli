@@ -1,13 +1,11 @@
-import {
-  existsSync,
-  mkdirSync,
-  promises as fs,
-} from 'node:fs'
+import { existsSync, promises as fs, mkdirSync } from 'node:fs'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
+import { validateOutputBase } from './bazel-output-base-check.mts'
+import { discoverPypiHubs } from './bazel-pypi-discovery.mts'
 import {
   collectPypiPackages,
   filterReachedPypiPackages,
@@ -16,8 +14,6 @@ import {
   readRequirementsLockFile,
   resolveRequirementsLockPath,
 } from './bazel-pypi-parser.mts'
-import { discoverPypiHubs } from './bazel-pypi-discovery.mts'
-import { validateOutputBase } from './bazel-output-base-check.mts'
 import { provisionPythonShim } from './bazel-python-shim.mts'
 import {
   buildPypiProbeFor,
@@ -73,7 +69,7 @@ function sortPackageLines(
 export async function extractBazelToPypi(
   opts: ExtractBazelToPypiOptions,
 ): Promise<ExtractBazelToPypiResult> {
-  const { cwd, out, verbose, explicitEcosystem } = opts
+  const { cwd, explicitEcosystem, out, verbose } = opts
   logger.group('bazel2pypi:')
   logger.info(`- src dir: \`${cwd}\``)
   logger.info(`- out dir: \`${out}\``)
@@ -145,12 +141,7 @@ export async function extractBazelToPypi(
       }
     }
     const probe = buildPypiProbeFor(queryOpts)
-    const hubs = await discoverPypiHubs(
-      cwd,
-      probe,
-      nativeCandidates,
-      verbose,
-    )
+    const hubs = await discoverPypiHubs(cwd, probe, nativeCandidates, verbose)
     const hubNames = Array.from(hubs.keys())
     logger.info(
       `Discovered ${hubs.size} PyPI hub(s): ${hubNames.join(', ') || '(none)'}`,
@@ -177,11 +168,7 @@ export async function extractBazelToPypi(
       // eslint-disable-next-line no-await-in-loop
       const lockfileMap = await resolveHubLockfile(hubInfo, cwd, verbose)
       // eslint-disable-next-line no-await-in-loop
-      const reached = await queryReachedPypiLabels(
-        hubName,
-        queryOpts,
-        verbose,
-      )
+      const reached = await queryReachedPypiLabels(hubName, queryOpts, verbose)
       // eslint-disable-next-line no-await-in-loop
       const spokeTagLookup = await buildSpokeTagLookup(
         reached,
@@ -206,7 +193,6 @@ export async function extractBazelToPypi(
         }
       }
 
-      // eslint-disable-next-line no-await-in-loop
       const lines = collectPypiPackages(reached, lockfileMap, spokeTagLookup)
       for (const l of lines) {
         allLines.push({ name: l.name, version: l.version, source: l.source })
@@ -289,7 +275,10 @@ async function resolveHubLockfile(
   },
   cwd: string,
   verbose: boolean,
-): Promise<Map<string, import('./bazel-pypi-parser.mts').ExtractedPypiPackage> | undefined> {
+): Promise<
+  | Map<string, import('./bazel-pypi-parser.mts').ExtractedPypiPackage>
+  | undefined
+> {
   const resolved =
     hubInfo.requirementsLockPath ??
     resolveRequirementsLockPath(hubInfo.requirementsLockLabel, cwd)
@@ -311,9 +300,7 @@ async function queryReachedPypiLabels(
   hubName: string,
   queryOpts: BazelQueryOptions,
   verbose: boolean,
-): Promise<
-  Array<import('./bazel-pypi-parser.mts').ReachedPypiLabel>
-> {
+): Promise<Array<import('./bazel-pypi-parser.mts').ReachedPypiLabel>> {
   const queryStr = 'deps(kind("py_library|py_binary|py_test", //...))'
   const result = await runBazelQuery(queryStr, queryOpts, 'label')
   if (result.code !== 0) {
@@ -332,7 +319,7 @@ async function queryReachedPypiLabels(
 // entries. For each reached label, if the lockfile missed it, resolve the
 // actual target via `--output=build` and extract pypi_name/pypi_version.
 async function buildSpokeTagLookup(
-  reached: import('./bazel-pypi-parser.mts').ReachedPypiLabel[],
+  reached: Array<import('./bazel-pypi-parser.mts').ReachedPypiLabel>,
   queryOpts: BazelQueryOptions,
   verbose: boolean,
 ): Promise<
@@ -348,10 +335,10 @@ async function buildSpokeTagLookup(
       continue
     }
     // eslint-disable-next-line no-await-in-loop
-    const buildResult = await runBazelQuery(
-      `${label.apparentLabel}`,
-      { ...queryOpts, verbose: false },
-    )
+    const buildResult = await runBazelQuery(`${label.apparentLabel}`, {
+      ...queryOpts,
+      verbose: false,
+    })
     if (buildResult.code !== 0) {
       if (verbose) {
         logger.log(

@@ -115,8 +115,7 @@ export function resolveRequirementsLockPath(
 
 // Parses a single `name==version` line.
 // Group 1 = package name, Group 2 = version string (includes ==).
-const REQUIREMENT_LINE_RE =
-  /^([A-Za-z0-9][A-Za-z0-9._-]*)==([A-Za-z0-9._+!]+)/
+const REQUIREMENT_LINE_RE = /^([A-Za-z0-9][A-Za-z0-9._-]*)==([A-Za-z0-9._+!]+)/
 
 // Skippable line prefixes.
 function shouldSkipLine(line: string): boolean {

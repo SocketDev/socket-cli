@@ -1,9 +1,4 @@
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-} from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -40,92 +35,97 @@ function isSandboxed(): boolean {
   }
 }
 
-describe.skipIf(isSandboxed())('extract_bazel_to_pypi — constructed fixture', () => {
-  let tmp: string
+describe.skipIf(isSandboxed())(
+  'extract_bazel_to_pypi — constructed fixture',
+  () => {
+    let tmp: string
 
-  beforeEach(() => {
-    tmp = mkdtempSync(path.join(os.tmpdir(), 'pypi-constructed-'))
-  })
-
-  afterEach(() => {
-    rmSync(tmp, { recursive: true, force: true })
-  })
-
-  it('produces exact requirements.txt matching the committed oracle', async () => {
-    expect(existsSync(FIXTURE_DIR)).toBe(true)
-
-    const result = await extractBazelToPypi({
-      bazelFlags: undefined,
-      bazelOutputBase: undefined,
-      bazelRc: undefined,
-      bin: undefined,
-      cwd: FIXTURE_DIR,
-      out: tmp,
-      verbose: true,
+    beforeEach(() => {
+      tmp = mkdtempSync(path.join(os.tmpdir(), 'pypi-constructed-'))
     })
 
-    expect(result.ok).toBe(true)
-    expect(result.manifestPath).toBeDefined()
-    expect(existsSync(result.manifestPath!)).toBe(true)
-
-    const actualContent = readFileSync(result.manifestPath!, 'utf8')
-    const actualLines = actualContent
-      .split('\n')
-      .filter(l => l.trim() !== '')
-
-    const oraclePath = path.resolve(
-      import.meta.dirname,
-      '..',
-      '..',
-      '..',
-      '..',
-      'test',
-      'fixtures',
-      'manifest-bazel',
-      'python-pypi',
-      'requirements.expected.txt',
-    )
-    const expectedContent = readFileSync(oraclePath, 'utf8')
-    const expectedLines = expectedContent
-      .split('\n')
-      .filter(l => l.trim() !== '')
-
-    expect(actualLines.length).toBe(expectedLines.length)
-
-    const actualSet = new Set(actualLines)
-    for (const expectedLine of expectedLines) {
-      expect(actualSet).toContain(expectedLine)
-    }
-
-    // Verify sorted order (sort by package name only, matching sortPackageLines).
-    const sorted = [...actualLines].sort((a, b) => {
-      const aName = a.split('==')[0]!.toLowerCase()
-      const bName = b.split('==')[0]!.toLowerCase()
-      if (aName < bName) return -1
-      if (aName > bName) return 1
-      return a.localeCompare(b)
-    })
-    expect(actualLines).toEqual(sorted)
-  }, 60000)
-
-  it('explicit --ecosystem pypi mode also produces matching output', async () => {
-    expect(existsSync(FIXTURE_DIR)).toBe(true)
-
-    const result = await extractBazelToPypi({
-      bazelFlags: undefined,
-      bazelOutputBase: undefined,
-      bazelRc: undefined,
-      bin: undefined,
-      cwd: FIXTURE_DIR,
-      out: tmp,
-      verbose: true,
-      explicitEcosystem: true,
+    afterEach(() => {
+      rmSync(tmp, { recursive: true, force: true })
     })
 
-    expect(result.ok).toBe(true)
-    expect(result.manifestPath).toBeDefined()
-  }, 60000)
-})
+    it('produces exact requirements.txt matching the committed oracle', async () => {
+      expect(existsSync(FIXTURE_DIR)).toBe(true)
+
+      const result = await extractBazelToPypi({
+        bazelFlags: undefined,
+        bazelOutputBase: undefined,
+        bazelRc: undefined,
+        bin: undefined,
+        cwd: FIXTURE_DIR,
+        out: tmp,
+        verbose: true,
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.manifestPath).toBeDefined()
+      expect(existsSync(result.manifestPath!)).toBe(true)
+
+      const actualContent = readFileSync(result.manifestPath!, 'utf8')
+      const actualLines = actualContent.split('\n').filter(l => l.trim() !== '')
+
+      const oraclePath = path.resolve(
+        import.meta.dirname,
+        '..',
+        '..',
+        '..',
+        '..',
+        'test',
+        'fixtures',
+        'manifest-bazel',
+        'python-pypi',
+        'requirements.expected.txt',
+      )
+      const expectedContent = readFileSync(oraclePath, 'utf8')
+      const expectedLines = expectedContent
+        .split('\n')
+        .filter(l => l.trim() !== '')
+
+      expect(actualLines.length).toBe(expectedLines.length)
+
+      const actualSet = new Set(actualLines)
+      for (const expectedLine of expectedLines) {
+        expect(actualSet).toContain(expectedLine)
+      }
+
+      // Verify sorted order (sort by package name only, matching sortPackageLines).
+      const sorted = [...actualLines].sort((a, b) => {
+        const aName = a.split('==')[0]!.toLowerCase()
+        const bName = b.split('==')[0]!.toLowerCase()
+        if (aName < bName) {
+          return -1
+        }
+        if (aName > bName) {
+          return 1
+        }
+        return a.localeCompare(b)
+      })
+      expect(actualLines).toEqual(sorted)
+    }, 60000)
+
+    it('explicit --ecosystem pypi mode also produces matching output', async () => {
+      expect(existsSync(FIXTURE_DIR)).toBe(true)
+
+      const result = await extractBazelToPypi({
+        bazelFlags: undefined,
+        bazelOutputBase: undefined,
+        bazelRc: undefined,
+        bin: undefined,
+        cwd: FIXTURE_DIR,
+        out: tmp,
+        verbose: true,
+        explicitEcosystem: true,
+      })
+
+      expect(result.ok).toBe(true)
+      expect(result.manifestPath).toBeDefined()
+    }, 60000)
+  },
+)
 
 describe('extract_bazel_to_pypi — sandbox fallback', () => {
   it('returns noEcosystemFound when explicit mode has no Python rules', async () => {
@@ -133,7 +133,11 @@ describe('extract_bazel_to_pypi — sandbox fallback', () => {
     const noRulesDir = mkdtempSync(path.join(os.tmpdir(), 'no-python-rules-'))
     try {
       // Write a minimal MODULE.bazel so workspace detection passes.
-      writeFileSync(path.join(noRulesDir, 'MODULE.bazel'), 'module(name="test")\n', 'utf8')
+      writeFileSync(
+        path.join(noRulesDir, 'MODULE.bazel'),
+        'module(name="test")\n',
+        'utf8',
+      )
       const result = await extractBazelToPypi({
         bazelFlags: undefined,
         bazelOutputBase: undefined,

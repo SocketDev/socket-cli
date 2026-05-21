@@ -5,10 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getErrorCause } from '../../../utils/errors.mts'
 
-import type {
-  RepoProbe,
-  ValidationResult,
-} from './bazel-repo-discovery.mts'
+import type { RepoProbe, ValidationResult } from './bazel-repo-discovery.mts'
 
 // Maximum size (bytes) we will read for any single Bazel workspace file.
 // Prevents DoS via maliciously large MODULE.bazel / WORKSPACE / .bzl files.
@@ -29,22 +26,16 @@ const USE_EXTENSION_PIP_RE =
 // Extract hub_name, requirements_lock, and python_version from a pip.parse
 // argument blob. Bounded character classes and length caps.
 const HUB_NAME_ATTR_RE = /hub_name\s*=\s*"([A-Za-z0-9_]{1,129})"/
-const REQUIREMENTS_LOCK_ATTR_RE =
-  /requirements_lock\s*=\s*"([^"]{1,512})"/
-const PYTHON_VERSION_ATTR_RE =
-  /python_version\s*=\s*"([0-9._+!]{1,32})"/
+const REQUIREMENTS_LOCK_ATTR_RE = /requirements_lock\s*=\s*"([^"]{1,512})"/
+const PYTHON_VERSION_ATTR_RE = /python_version\s*=\s*"([0-9._+!]{1,32})"/
 
 // Legacy WORKSPACE patterns: pip_parse, pip_install, pip_repository.
 // Bounded: matches up to ~8KB of argument list.
-const PIP_PARSE_NAME_RE =
-  /pip_parse\s*\(\s*([^)]{0,8192})\)/g
-const PIP_INSTALL_NAME_RE =
-  /pip_install\s*\(\s*([^)]{0,8192})\)/g
-const PIP_REPOSITORY_NAME_RE =
-  /pip_repository\s*\(\s*([^)]{0,8192})\)/g
+const PIP_PARSE_NAME_RE = /pip_parse\s*\(\s*([^)]{0,8192})\)/g
+const PIP_INSTALL_NAME_RE = /pip_install\s*\(\s*([^)]{0,8192})\)/g
+const PIP_REPOSITORY_NAME_RE = /pip_repository\s*\(\s*([^)]{0,8192})\)/g
 const NAME_ATTR_RE = /name\s*=\s*"([A-Za-z0-9_]{1,129})"/
-const LEGACY_REQ_LOCK_RE =
-  /requirements_lock\s*=\s*"([^"]{1,512})"/
+const LEGACY_REQ_LOCK_RE = /requirements_lock\s*=\s*"([^"]{1,512})"/
 
 // Hub validation: accept alias rules or `:pkg` targets in probe stdout.
 // Does NOT require `pypi_name=` (that marker lives on spoke repos).
@@ -150,10 +141,7 @@ function dedupCapped(
 // Build a dynamic regex for `${binding}.parse(...)` given a validated binding
 // name (word characters only, so safe to embed). Bounded arg list.
 function buildPipParseRe(binding: string): RegExp {
-  return new RegExp(
-    `${binding}\\.parse\\s*\\(\\s*([^)]{0,8192})\\)`,
-    'g',
-  )
+  return new RegExp(`${binding}\\.parse\\s*\\(\\s*([^)]{0,8192})\\)`, 'g')
 }
 
 // Extract candidate hub fields from a pip.parse / pip_parse / pip_install /
@@ -169,8 +157,8 @@ function extractHubInfoFromArgBlob(
   if (!hubName) {
     return undefined
   }
-  const lockMatch = REQUIREMENTS_LOCK_ATTR_RE.exec(argBlob)
-    ?? LEGACY_REQ_LOCK_RE.exec(argBlob)
+  const lockMatch =
+    REQUIREMENTS_LOCK_ATTR_RE.exec(argBlob) ?? LEGACY_REQ_LOCK_RE.exec(argBlob)
   const pythonVersion = PYTHON_VERSION_ATTR_RE.exec(argBlob)?.[1]
   return {
     hubName,
@@ -193,8 +181,9 @@ export function parsePypiHubCandidates(
   cwd: string,
   verbose?: boolean,
 ): Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> {
-  const candidates: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> =
-    []
+  const candidates: Array<
+    Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>
+  > = []
 
   // Bzlmod path: parse MODULE.bazel for use_extension bindings to pip,
   // then match ${binding}.parse(...).
@@ -256,8 +245,9 @@ export function parsePypiHubCandidates(
     if (!content) {
       continue
     }
-    const fileHits: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> =
-      []
+    const fileHits: Array<
+      Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>
+    > = []
     const source: PypiHubInfo['source'] = file.endsWith('.bzl')
       ? '.bzl'
       : path.basename(file) === 'WORKSPACE.bazel'
@@ -379,8 +369,9 @@ export async function discoverPypiHubs(
   // validated). Parsed candidates overwrite the seed when they share the same
   // hub name so metadata (requirements_lock, python_version) is preserved.
   const seen = new Set<string>()
-  const candidates: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> =
-    []
+  const candidates: Array<
+    Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>
+  > = []
   for (const c of parsed) {
     if (!seen.has(c.hubName)) {
       seen.add(c.hubName)

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
+import { evaluateEcosystemOutcomes } from './cmd-manifest-bazel.mts'
 import constants, {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
 } from '../../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../../test/utils.mts'
-import { evaluateEcosystemOutcomes } from './cmd-manifest-bazel.mts'
 
 import type { EcosystemOutcome } from './cmd-manifest-bazel.mts'
 
@@ -64,10 +64,10 @@ describe('socket manifest bazel', async () => {
   )
 })
 
-describe('evaluateEcosystemOutcomes (auto-detect mode)', () => {
-  const auto = (outcomes: EcosystemOutcome[]) =>
-    evaluateEcosystemOutcomes(outcomes, false)
+const auto = (outcomes: EcosystemOutcome[]) =>
+  evaluateEcosystemOutcomes(outcomes, false)
 
+describe('evaluateEcosystemOutcomes (auto-detect mode)', () => {
   it('returns void when at least one ecosystem succeeds and none hard-failed', () => {
     expect(() =>
       auto([
@@ -113,10 +113,10 @@ describe('evaluateEcosystemOutcomes (auto-detect mode)', () => {
   })
 })
 
-describe('evaluateEcosystemOutcomes (explicit mode)', () => {
-  const explicit = (outcomes: EcosystemOutcome[]) =>
-    evaluateEcosystemOutcomes(outcomes, true)
+const explicit = (outcomes: EcosystemOutcome[]) =>
+  evaluateEcosystemOutcomes(outcomes, true)
 
+describe('evaluateEcosystemOutcomes (explicit mode)', () => {
   it('returns void when every requested ecosystem succeeded', () => {
     expect(() =>
       explicit([
@@ -136,18 +136,18 @@ describe('evaluateEcosystemOutcomes (explicit mode)', () => {
 
   it('throws InputError when a requested ecosystem reports noEcosystemFound', () => {
     expect(() =>
-      explicit([
-        { ecosystem: 'pypi', ok: false, noEcosystemFound: true },
-      ]),
-    ).toThrowError(/No Bazel rules found for explicitly requested ecosystem\(s\): pypi/)
+      explicit([{ ecosystem: 'pypi', ok: false, noEcosystemFound: true }]),
+    ).toThrowError(
+      /No Bazel rules found for explicitly requested ecosystem\(s\): pypi/,
+    )
   })
 
   it('throws InputError when a requested ecosystem hard-failed (Maven only)', () => {
     expect(() =>
-      explicit([
-        { ecosystem: 'maven', ok: false, noEcosystemFound: false },
-      ]),
-    ).toThrowError(/Bazel manifest generation failed for explicitly requested ecosystem\(s\): maven/)
+      explicit([{ ecosystem: 'maven', ok: false, noEcosystemFound: false }]),
+    ).toThrowError(
+      /Bazel manifest generation failed for explicitly requested ecosystem\(s\): maven/,
+    )
   })
 
   it('throws when Maven hard-fails even if pypi succeeded', () => {
@@ -160,6 +160,8 @@ describe('evaluateEcosystemOutcomes (explicit mode)', () => {
           manifestPath: '/tmp/requirements.txt',
         },
       ]),
-    ).toThrowError(/Bazel manifest generation failed for explicitly requested ecosystem\(s\): maven/)
+    ).toThrowError(
+      /Bazel manifest generation failed for explicitly requested ecosystem\(s\): maven/,
+    )
   })
 })

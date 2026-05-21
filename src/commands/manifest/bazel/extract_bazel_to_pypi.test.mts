@@ -1,9 +1,4 @@
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-} from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -45,11 +40,11 @@ vi.mock('./bazel-python-shim.mts', () => ({
 
 import { validateOutputBase } from './bazel-output-base-check.mts'
 import { discoverPypiHubs } from './bazel-pypi-discovery.mts'
-import { detectWorkspaceMode } from './bazel-workspace-detect.mts'
 import { runBazelQuery } from './bazel-query-runner.mts'
+import { detectWorkspaceMode } from './bazel-workspace-detect.mts'
 import {
-  extractBazelToPypi,
   type ExtractBazelToPypiResult,
+  extractBazelToPypi,
 } from './extract_bazel_to_pypi.mts'
 
 describe('extractBazelToPypi', () => {
@@ -123,10 +118,7 @@ describe('extractBazelToPypi', () => {
       ok: true,
     })
 
-    const content = readFileSync(
-      path.join(tmp, 'requirements.txt'),
-      'utf8',
-    )
+    const content = readFileSync(path.join(tmp, 'requirements.txt'), 'utf8')
     expect(content).toContain('requests==2.33.1')
   })
 
@@ -158,7 +150,11 @@ describe('extractBazelToPypi', () => {
       })
 
     const { writeFileSync } = await import('node:fs')
-    writeFileSync(path.join(tmp, 'requirements_lock.txt'), 'requests==2.33.1\n', 'utf8')
+    writeFileSync(
+      path.join(tmp, 'requirements_lock.txt'),
+      'requests==2.33.1\n',
+      'utf8',
+    )
 
     const result = await extractBazelToPypi({
       bazelFlags: undefined,
@@ -280,7 +276,8 @@ describe('extractBazelToPypi', () => {
             source: 'MODULE.bazel',
             workspaceMode: 'bzlmod',
             requirementsLockLabel: '//:requirements_lock.txt',
-            probeStdout: '@pypi//charset_normalizer:pkg\n@pypi//charset-normalizer:pkg',
+            probeStdout:
+              '@pypi//charset_normalizer:pkg\n@pypi//charset-normalizer:pkg',
           },
         ],
       ]),

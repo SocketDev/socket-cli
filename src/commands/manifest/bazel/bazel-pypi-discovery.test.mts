@@ -48,6 +48,16 @@ const selectivePypiProbe: RepoProbe = async name =>
     ? { stdout: '@pypi//requests:pkg\n', code: 0 }
     : { stdout: '', code: 0 }
 
+const aliasOnlyProbe: RepoProbe = async () => ({
+  stdout: 'alias(\n  name = "pkg",\n  actual = "//foo:bar",\n)\n',
+  code: 0,
+})
+
+const noPypiNameProbe: RepoProbe = async () => ({
+  stdout: 'alias(\n  name = "pkg",\n)\n',
+  code: 0,
+})
+
 describe('bazel-pypi-discovery', () => {
   describe('parsePypiHubCandidates', () => {
     it('parses single pip.parse from bzlmod-only', () => {
@@ -235,10 +245,6 @@ describe('bazel-pypi-discovery', () => {
     })
 
     it('accepts when probe stdout contains alias rule', async () => {
-      const aliasOnlyProbe: RepoProbe = async () => ({
-        stdout: 'alias(\n  name = "pkg",\n  actual = "//foo:bar",\n)\n',
-        code: 0,
-      })
       const r = await validatePypiHub('pypi', aliasOnlyProbe)
       expect(r.valid).toBe(true)
     })
@@ -250,22 +256,18 @@ describe('bazel-pypi-discovery', () => {
     })
 
     it('rejects on non-zero exit code', async () => {
-      expect(
-        (await validatePypiHub('crash', failingPypiProbe)).valid,
-      ).toBe(false)
+      expect((await validatePypiHub('crash', failingPypiProbe)).valid).toBe(
+        false,
+      )
     })
 
     it('rejects when probe throws', async () => {
-      expect(
-        (await validatePypiHub('boom', throwingPypiProbe)).valid,
-      ).toBe(false)
+      expect((await validatePypiHub('boom', throwingPypiProbe)).valid).toBe(
+        false,
+      )
     })
 
     it('does not require pypi_name= in hub stdout', async () => {
-      const noPypiNameProbe: RepoProbe = async () => ({
-        stdout: 'alias(\n  name = "pkg",\n)\n',
-        code: 0,
-      })
       const r = await validatePypiHub('pypi', noPypiNameProbe)
       expect(r.valid).toBe(true)
     })
@@ -282,10 +284,7 @@ describe('bazel-pypi-discovery', () => {
             'pip.parse(hub_name = "pip_test", requirements_lock = "//:req2.txt")\n',
         )
         const result = await discoverPypiHubs(dir, acceptingPypiProbe)
-        expect(Array.from(result.keys()).sort()).toEqual([
-          'pip_test',
-          'pypi',
-        ])
+        expect(Array.from(result.keys()).sort()).toEqual(['pip_test', 'pypi'])
         for (const info of result.values()) {
           expect(info.probeStdout).toContain(':pkg')
         }
@@ -439,7 +438,9 @@ describe('bazel-pypi-discovery', () => {
         let totalLen = 0
         while (totalLen < 1_000_000) {
           const line =
-            'pip.parse(hub_name = "x_' + lines.length + '", requirements_lock = "//:req.txt")'
+            'pip.parse(hub_name = "x_' +
+            lines.length +
+            '", requirements_lock = "//:req.txt")'
           lines.push(line)
           totalLen += line.length + 1
         }
