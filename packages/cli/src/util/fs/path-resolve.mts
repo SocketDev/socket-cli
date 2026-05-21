@@ -109,7 +109,7 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
   }
 }
 
-export type PackageFilesForScanOptions = {
+type PackageFilesForScanOptions = {
   cwd?: string | undefined
   config?: SocketYml | undefined
 }

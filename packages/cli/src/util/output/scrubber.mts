@@ -99,7 +99,7 @@ export interface ScrubberAdapter {
   classify?(line: string): 'payload' | 'drop' | 'noise' | undefined
 }
 
-export interface ScrubberOptions {
+interface ScrubberOptions {
   adapter?: ScrubberAdapter | undefined
   /**
    * Soft cap on internal buffer size, measured in UTF-16 code units (string

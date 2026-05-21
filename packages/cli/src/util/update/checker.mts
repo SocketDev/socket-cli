@@ -40,7 +40,7 @@ interface NpmCredentials {
   type: string
 }
 
-export interface UpdateCheckOptions {
+interface UpdateCheckOptions {
   authInfo?: AuthInfo | NpmCredentials | undefined
   name: string
   registryUrl?: string | undefined

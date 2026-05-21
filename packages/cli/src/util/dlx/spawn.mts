@@ -47,7 +47,7 @@ import type {
   SpawnResult,
 } from '@socketsecurity/lib-stable/spawn/types'
 
-export type DlxSpawnOptions = SpawnOptions & {
+type DlxSpawnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
 }
 

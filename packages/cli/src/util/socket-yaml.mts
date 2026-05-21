@@ -108,15 +108,6 @@ function buildGithub(value: unknown): SocketYmlGitHub {
   return out
 }
 
-export function getDefaultConfig(): SocketYml {
-  return {
-    githubApp: {},
-    issueRules: {},
-    projectIgnorePaths: [],
-    version: 2,
-  }
-}
-
 export function isPlainObject(
   value: unknown,
 ): value is Record<string, unknown> {

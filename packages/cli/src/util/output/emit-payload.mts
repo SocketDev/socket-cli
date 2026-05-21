@@ -22,7 +22,7 @@ import type { MachineModeFlags } from './mode.mts'
 
 const logger = getDefaultLogger()
 
-export interface EmitPayloadOptions {
+interface EmitPayloadOptions {
   flags: MachineModeFlags
 }
 

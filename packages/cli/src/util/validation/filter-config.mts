@@ -10,7 +10,7 @@
 
 import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 
-export type FilterConfig = {
+type FilterConfig = {
   [key: string]: boolean | string[]
 }
 

@@ -35,7 +35,7 @@ const NPM = 'npm'
 const SOCKET_CLI_GITHUB_REPO = 'socket-cli'
 const SOCKET_GITHUB_ORG = 'SocketDev'
 
-export interface UpdateNotificationOptions {
+interface UpdateNotificationOptions {
   name: string
   current: string
   latest: string

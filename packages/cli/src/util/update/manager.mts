@@ -43,7 +43,7 @@ const logger = getDefaultLogger()
 // Notification TTL: Show notification at most once per 7 days (604800000 ms).
 const NOTIFICATION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
-export interface UpdateManagerOptions {
+interface UpdateManagerOptions {
   authInfo?: AuthInfo | undefined
   name: string
   version: string

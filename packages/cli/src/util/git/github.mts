@@ -544,7 +544,7 @@ export async function prExistForBranch(
   return false
 }
 
-export async function readCache(
+async function readCache(
   key: string,
   // 5 minute in milliseconds time to live (TTL).
   ttlMs = 5 * 60 * 1000,

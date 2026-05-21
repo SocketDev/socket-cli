@@ -39,7 +39,7 @@ export type {
   URLResult,
 } from 'npm-package-arg'
 
-export type ParsedPackageSpec = {
+type ParsedPackageSpec = {
   name: string
   version: string | undefined
 }

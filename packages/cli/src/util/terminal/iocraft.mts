@@ -1018,7 +1018,7 @@ export function eprint(element: Element): void {
   io.eprintComponent(element as IocraftNs.ComponentNode)
 }
 
-export function getIocraft(): typeof iocraft {
+function getIocraft(): typeof iocraft {
   if (!iocraftInstance) {
     try {
       // Use createRequire to load native .node module from ESM.
