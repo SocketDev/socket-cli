@@ -297,6 +297,29 @@ describe('extractBazelToMaven', () => {
     expect(manifest.artifacts).toEqual({})
   })
 
+  it('reports hard failure when discovered repos extract zero artifacts', async () => {
+    vi.mocked(discoverMavenRepos).mockResolvedValue(
+      new Map([['maven', '# no parseable rules\n']]),
+    )
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(result).toEqual({
+      artifactCount: 0,
+      manifestPath: path.join(tmp, 'maven_install.json'),
+      ok: false,
+    })
+    expect(result.noEcosystemFound).toBeUndefined()
+  })
+
   it('iterates each discovered repo independently when one has no parseable rules', async () => {
     const sample = readFileSync(
       path.join(FIXTURES, 'jvm-import-sample.txt'),

@@ -461,13 +461,23 @@ export async function extractBazelToMaven(
     }
 
     if (!allArtifacts.length) {
-      if (verbose) {
-        logger.info('No Maven artifacts extracted.')
+      if (!repos.size) {
+        if (verbose) {
+          logger.info('No Maven artifacts extracted.')
+        }
+        return {
+          artifactCount: 0,
+          manifestPath,
+          noEcosystemFound: true,
+          ok: false,
+        }
       }
+      logger.fail(
+        `Discovered Maven repo(s) ${repoNames.join(', ')} but extracted zero artifacts.`,
+      )
       return {
         artifactCount: 0,
         manifestPath,
-        noEcosystemFound: true,
         ok: false,
       }
     }

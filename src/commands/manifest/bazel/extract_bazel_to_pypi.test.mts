@@ -381,6 +381,44 @@ describe('extractBazelToPypi', () => {
     expect(result.ok).toBe(false)
   })
 
+  it('returns failure when a lockfile has conflicting normalized entries', async () => {
+    vi.mocked(discoverPypiHubs).mockResolvedValue(
+      new Map([
+        [
+          'pypi',
+          {
+            hubName: 'pypi',
+            source: 'MODULE.bazel',
+            workspaceMode: 'bzlmod',
+            requirementsLockLabel: '//:requirements_lock.txt',
+            probeStdout: '@pypi//foo_bar:pkg',
+          },
+        ],
+      ]),
+    )
+
+    const { writeFileSync } = await import('node:fs')
+    writeFileSync(
+      path.join(tmp, 'requirements_lock.txt'),
+      'foo-bar==1.0.0\nFoo_Bar==2.0.0\n',
+      'utf8',
+    )
+
+    const result = await extractBazelToPypi({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(process.exitCode).toBe(0)
+    expect(result.ok).toBe(false)
+    expect(runBazelQuery).not.toHaveBeenCalled()
+  })
+
   it('does not query spoke tags for packages resolved by the lockfile', async () => {
     vi.mocked(discoverPypiHubs).mockResolvedValue(
       new Map([

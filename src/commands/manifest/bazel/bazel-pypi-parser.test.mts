@@ -112,6 +112,14 @@ describe('parseAliasActualFromBuildOutput', () => {
     ).toBe('@pypi_requests//:pkg')
   })
 
+  it('extracts canonical Bzlmod alias actual labels', () => {
+    expect(
+      parseAliasActualFromBuildOutput(
+        'alias(name = "pkg", actual = "@@rules_python~~pip~pypi_312_requests//:pkg")',
+      ),
+    ).toBe('@@rules_python~~pip~pypi_312_requests//:pkg')
+  })
+
   it('returns undefined when no alias actual is present', () => {
     expect(
       parseAliasActualFromBuildOutput('py_library(name = "pkg")'),

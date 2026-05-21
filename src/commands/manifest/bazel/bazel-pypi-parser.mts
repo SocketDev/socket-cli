@@ -117,7 +117,7 @@ export function resolveRequirementsLockPath(
 // Group 1 = package name, Group 2 = version string (includes ==).
 const REQUIREMENT_LINE_RE = /^([A-Za-z0-9][A-Za-z0-9._-]*)==([A-Za-z0-9._+!]+)/
 
-const BAZEL_STRING_LABEL_RE = /[A-Za-z0-9_@/.:+-]+/
+const BAZEL_STRING_LABEL_RE = /[@A-Za-z0-9_~/.:+-]+/
 
 const ALIAS_ACTUAL_RE = new RegExp(
   `actual\\s*=\\s*(["'])(${BAZEL_STRING_LABEL_RE.source})\\1`,
@@ -216,16 +216,17 @@ export function readRequirementsLockFile(
   if (!existsSync(resolvedPath)) {
     return undefined
   }
+  let text: string
   try {
     const stat = statSync(resolvedPath)
     if (stat.size > MAX_REQUIREMENTS_FILE_BYTES) {
       return undefined
     }
-    const text = readFileSync(resolvedPath, 'utf8')
-    return parseRequirementsLock(text)
+    text = readFileSync(resolvedPath, 'utf8')
   } catch {
     return undefined
   }
+  return parseRequirementsLock(text)
 }
 
 // Extract `pypi_name=` and `pypi_version=` tags from `--output=build` text of a
