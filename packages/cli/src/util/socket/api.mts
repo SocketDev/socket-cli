@@ -83,13 +83,13 @@ export function getDefaultApiBaseUrl(): string | undefined {
   return API_V0_URL
 }
 
-export type HandleApiCallOptions = {
+type HandleApiCallOptions = {
   description?: string | undefined
   spinner?: SpinnerInstance | undefined
   commandPath?: string | undefined
 }
 
-export type ApiCallResult<T extends SocketSdkOperations> = CResult<
+type ApiCallResult<T extends SocketSdkOperations> = CResult<
   SocketSdkSuccessResult<T>['data']
 >
 
@@ -420,7 +420,7 @@ export async function queryApiSafeText(
   }
 }
 
-export type SendApiRequestOptions = {
+type SendApiRequestOptions = {
   method: 'POST' | 'PUT'
   body?: unknown | undefined
   description?: string | undefined

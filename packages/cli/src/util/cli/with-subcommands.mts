@@ -63,7 +63,7 @@ export interface CliCommandContext {
   invokedAs?: string | undefined
 }
 
-export interface MeowConfig {
+interface MeowConfig {
   name: string
   argv: string[] | readonly string[]
   importMeta: ImportMeta
@@ -159,14 +159,14 @@ export function levenshteinDistance(a: string, b: string): number {
   return matrix[a.length]?.[b.length]!
 }
 
-export interface MeowOrExitConfig<F extends MeowFlags = MeowFlags> {
+interface MeowOrExitConfig<F extends MeowFlags = MeowFlags> {
   argv: string[] | readonly string[]
   config: CliCommandConfig<F>
   parentName: string
   importMeta: ImportMeta
 }
 
-export type MeowOrExitOptions = {
+type MeowOrExitOptions = {
   allowUnknownFlags?: boolean | undefined
 }
 

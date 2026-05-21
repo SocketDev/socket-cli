@@ -5,14 +5,14 @@ import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-export type FetchOrganizationOptions = {
+type FetchOrganizationOptions = {
   commandPath?: string | undefined
   description?: string | undefined
   sdk?: SocketSdk | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
 
-export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
+type EnterpriseOrganization = Omit<Organization, 'plan'> & {
   plan: `enterprise${string}`
 }
 
@@ -23,7 +23,7 @@ export type Organization =
 
 export type Organizations = Organization[]
 
-export type OrganizationsData = { organizations: Organizations }
+type OrganizationsData = { organizations: Organizations }
 
 export type OrganizationsCResult = CResult<OrganizationsData>
 
