@@ -5,7 +5,6 @@
   "description": "Shared build infrastructure utilities for Socket CLI",
   "type": "module",
   "exports": {
-    "./lib/checkpoint-manager": "./lib/checkpoint-manager.mts",
     "./lib/constants": "./lib/constants.mts",
     "./lib/esbuild-helpers": "./lib/esbuild-helpers.mts",
     "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mts",
