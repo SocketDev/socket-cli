@@ -37,7 +37,7 @@ const baseEnv = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
-export async function loadAddOverrides(opts: {
+async function loadAddOverrides(opts: {
   manifestEntries: Array<[string, unknown]>
   getMajor?: (v: string) => number | undefined
   safeNpa?: ((s: string) => unknown) | undefined

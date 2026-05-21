@@ -54,7 +54,7 @@ interface MockRequest extends EventEmitter {
 }
 
 // Helper to create mock request.
-export function createMockRequest(): MockRequest {
+function createMockRequest(): MockRequest {
   const req = new EventEmitter() as MockRequest
   req.destroy = vi.fn()
   req.end = vi.fn()
@@ -62,7 +62,7 @@ export function createMockRequest(): MockRequest {
 }
 
 // Helper to create mock response.
-export function createMockResponse(
+function createMockResponse(
   statusCode: number,
   headers: Record<string, string> = { 'content-type': 'application/json' },
 ): MockResponse {

@@ -49,7 +49,7 @@ class Sink extends Writable {
  * child-stdout chatter, concatenate as lines, pipe through the scrubber, and
  * return the scrubbed stdout / stderr.
  */
-export async function scrubCapturedOutput(
+async function scrubCapturedOutput(
   childChatterBefore: string[] = [],
   childChatterAfter: string[] = [],
 ): Promise<{ stdout: string; stderr: string }> {

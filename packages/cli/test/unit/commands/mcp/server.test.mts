@@ -60,7 +60,7 @@ type AnyServer = {
   >
 }
 
-export function getHandler(
+function getHandler(
   server: ReturnType<typeof createConfiguredServer>,
   schema: typeof ListToolsRequestSchema | typeof CallToolRequestSchema,
 ) {

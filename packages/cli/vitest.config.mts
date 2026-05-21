@@ -71,7 +71,7 @@ const isMacCI = isCI && process.platform === 'darwin'
 
 // Calculate optimal thread count based on environment.
 // macOS CI runners have limited memory, so use fewer threads to prevent SIGABRT.
-export function getMaxThreads(): number {
+function getMaxThreads(): number {
   if (isCoverageEnabled) {
     return 1
   }

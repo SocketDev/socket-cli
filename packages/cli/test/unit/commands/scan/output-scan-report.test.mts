@@ -684,7 +684,7 @@ describe('output-scan-report', () => {
   })
 })
 
-export function getHealthyReport(): ScanReport {
+function getHealthyReport(): ScanReport {
   return {
     alerts: new Map(),
     healthy: true,
@@ -697,7 +697,7 @@ export function getHealthyReport(): ScanReport {
   }
 }
 
-export function getUnhealthyReport(): ScanReport {
+function getUnhealthyReport(): ScanReport {
   return {
     alerts: new Map([
       [

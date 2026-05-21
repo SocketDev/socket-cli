@@ -75,7 +75,7 @@ const {
   runDepscore,
 } = await import('../../../../src/commands/mcp/depscore.mts')
 
-export function makeErr(status: number, message: string, cause?: string) {
+function makeErr(status: number, message: string, cause?: string) {
   return {
     success: false as const,
     status,
@@ -84,7 +84,7 @@ export function makeErr(status: number, message: string, cause?: string) {
   }
 }
 
-export function makeOk<T>(data: T) {
+function makeOk<T>(data: T) {
   return { success: true as const, status: 200, data }
 }
 

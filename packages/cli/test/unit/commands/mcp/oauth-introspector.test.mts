@@ -48,7 +48,7 @@ const CLIENT_ID = 'client-id'
 const CLIENT_SECRET = 'client-secret'
 const SCOPES = ['packages:list'] as const
 
-export function fakeResponse(opts: {
+function fakeResponse(opts: {
   status: number
   body?: unknown | undefined
   text?: string | undefined
@@ -100,7 +100,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-export function newIntrospector(scopes: readonly string[] = SCOPES) {
+function newIntrospector(scopes: readonly string[] = SCOPES) {
   return new OAuthIntrospector(ISSUER, CLIENT_ID, CLIENT_SECRET, scopes, log)
 }
 

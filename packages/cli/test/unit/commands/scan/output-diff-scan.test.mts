@@ -81,7 +81,7 @@ export function createErrorResult(
 }
 
 // Helper to create mock diff scan data.
-export function createMockDiffData(overrides = {}) {
+function createMockDiffData(overrides = {}) {
   return {
     diff_report_url: 'https://socket.dev/diff/123',
     directDependenciesChanged: true,

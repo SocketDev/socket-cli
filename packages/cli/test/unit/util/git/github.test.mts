@@ -47,7 +47,7 @@ vi.mock('@socketsecurity/lib-stable/debug/namespace', () => ({
 }))
 
 // Helper to create a GraphqlResponseError.
-export function createGraphqlError(
+function createGraphqlError(
   errors: Array<{ type?: string | undefined; message: string }>,
 ): GraphqlResponseError<unknown> {
   return new GraphqlResponseError(
@@ -58,7 +58,7 @@ export function createGraphqlError(
 }
 
 // Helper to create a RequestError with specific status.
-export function createRequestError(
+function createRequestError(
   status: number,
   message: string,
   headers: Record<string, string> = {},

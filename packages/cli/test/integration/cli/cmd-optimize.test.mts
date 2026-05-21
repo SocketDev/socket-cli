@@ -94,7 +94,7 @@ export async function createTempFixture(sourceDir: string): Promise<string> {
   return tempDir
 }
 
-export async function revertFixtureChanges() {
+async function revertFixtureChanges() {
   // Reset only the package.json and pnpm-lock.yaml files that tests modify.
   const cwd = process.cwd()
   // Git needs the paths relative to the repository root.

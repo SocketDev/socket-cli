@@ -70,7 +70,7 @@ vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
 }))
 
 // Helper to create mock alerts.
-export function createMockAlert(
+function createMockAlert(
   overrides: Partial<CompactSocketArtifactAlert> = {},
 ): CompactSocketArtifactAlert {
   return {
@@ -82,7 +82,7 @@ export function createMockAlert(
 }
 
 // Helper to create mock SocketPackageAlert.
-export function createMockSocketPackageAlert(
+function createMockSocketPackageAlert(
   overrides: Partial<SocketPackageAlert> = {},
 ): SocketPackageAlert {
   return {

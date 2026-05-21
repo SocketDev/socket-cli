@@ -147,7 +147,7 @@ export async function buildBinary(
 /**
  * Run the test suite for a specific binary type.
  */
-export function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
+function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
   const binary = BINARIES[binaryType]
 
   if (!binary.enabled) {
