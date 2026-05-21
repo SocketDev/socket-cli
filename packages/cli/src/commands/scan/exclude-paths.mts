@@ -121,7 +121,7 @@ export function normalizeExcludePath(path: string): string {
     : `${stripped}/**`
 }
 
-export function normalizeProjectIgnorePath(path: string): string {
+function normalizeProjectIgnorePath(path: string): string {
   return stripTrailingSlash(
     toPosixPath(path.startsWith('/') ? path.slice(1) : path),
   )
@@ -155,7 +155,7 @@ export function pathRelativeToTarget(
   return undefined
 }
 
-export function projectIgnorePathToReachExcludePaths(
+function projectIgnorePathToReachExcludePaths(
   path: string,
   targetPattern: string,
 ): string[] {
@@ -192,10 +192,10 @@ export function projectIgnorePathsToReachExcludePaths(
   )
 }
 
-export function stripTrailingSlash(path: string): string {
+function stripTrailingSlash(path: string): string {
   return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
 }
 
-export function toPosixPath(path: string): string {
+function toPosixPath(path: string): string {
   return path.replaceAll('\\', '/')
 }
