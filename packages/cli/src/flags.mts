@@ -6,13 +6,13 @@ import { defineFlags, meow } from './meow.mts'
 import type { MeowFlag as Flag } from './meow.mts'
 
 // Meow doesn't expose this.
-export type AnyFlag = StringFlag | BooleanFlag | NumberFlag
+type AnyFlag = StringFlag | BooleanFlag | NumberFlag
 
-export type BooleanFlag = Flag & { type: 'boolean' }
+type BooleanFlag = Flag & { type: 'boolean' }
 
-export type NumberFlag = Flag & { type: 'number' }
+type NumberFlag = Flag & { type: 'number' }
 
-export type StringFlag = Flag & { type: 'string' }
+type StringFlag = Flag & { type: 'string' }
 
 export type MeowFlag = AnyFlag & {
   description: string
