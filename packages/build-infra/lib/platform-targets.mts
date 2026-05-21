@@ -135,11 +135,6 @@ function getReleasePlatform(platform) {
 const VALID_PLATFORMS = ['darwin', 'linux', 'win32']
 
 /**
- * Valid release platforms (for file/folder/npm naming).
- */
-const VALID_RELEASE_PLATFORMS = ['darwin', 'linux', 'win']
-
-/**
  * Valid architectures.
  */
 const VALID_ARCHS = ['arm64', 'x64']

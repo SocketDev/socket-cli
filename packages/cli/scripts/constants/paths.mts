@@ -6,12 +6,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  NODE_MODULES,
-  PACKAGE_JSON,
-  PNPM_LOCK_YAML,
-  SOCKET_REGISTRY_PACKAGE_NAME,
-} from './packages.mts'
+import { NODE_MODULES } from './packages.mts'
 
 // Compute root path from this file's location.
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -23,15 +18,7 @@ export const externalPath = path.join(rootPath, 'external')
 export const srcPath = path.join(rootPath, 'src')
 
 // Package and lockfile paths.
-const rootPackageJsonPath = path.join(rootPath, PACKAGE_JSON)
-const rootPackageLockPath = path.join(rootPath, PNPM_LOCK_YAML)
 export const rootNodeModulesBinPath = path.join(rootPath, NODE_MODULES, '.bin')
-
-// Socket registry path (in external, not dist).
-const socketRegistryPath = path.join(
-  externalPath,
-  SOCKET_REGISTRY_PACKAGE_NAME,
-)
 
 // Cache directory paths.
 const SOCKET_CACHE_DIR = path.join(homedir(), '.socket')
