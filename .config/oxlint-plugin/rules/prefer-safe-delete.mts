@@ -1,16 +1,16 @@
 /**
  * @file Per CLAUDE.md "File deletion" rule: route every delete through
- *   `safeDelete()` / `safeDeleteSync()` from
- *   `@socketsecurity/lib-stable/fs/safe`. Never `fs.rm` / `fs.unlink` /
- *   `fs.rmdir` / `rm -rf` directly — even for one known file. Detects:
+ *   `safeDelete()` / `safeDeleteSync()` from `@socketsecurity/lib-stable/fs/safe`.
+ *   Never `fs.rm` / `fs.unlink` / `fs.rmdir` / `rm -rf` directly — even for one
+ *   known file. Detects:
  *
  *   - `fs.rm(...)` / `fs.rmSync(...)` / `fs.promises.rm(...)`
  *   - `fs.unlink(...)` / `fs.unlinkSync(...)`
  *   - `fs.rmdir(...)` / `fs.rmdirSync(...)` Autofix: rewrites the call to
  *     `safeDelete(path)` / `safeDeleteSync(path)` AND injects `import {
- *     safeDelete } from '@socketsecurity/lib-stable/fs/safe'` (or
- *     `safeDeleteSync`) when missing. The autofix is conservative — it only
- *     fires when the call shape is "obviously equivalent" to safeDelete:
+ *     safeDelete } from '@socketsecurity/lib-stable/fs/safe/safe'` (or `safeDeleteSync`)
+ *     when missing. The autofix is conservative — it only fires when the call
+ *     shape is "obviously equivalent" to safeDelete:
  *   - The first argument is a single expression (the path).
  *   - Any second argument is an options object literal (we drop it; safeDelete
  *     handles recursive/force internally).
@@ -79,7 +79,7 @@ const rule = {
       }
       s = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib-stable/fs/safe',
+        '@socketsecurity/lib-stable/fs/safe/safe',
         importName,
       )
       summaryCache.set(importName, s)
@@ -181,7 +181,7 @@ const rule = {
               ...appendImportFixes(
                 s,
                 fixer,
-                `import { ${replacement} } from '@socketsecurity/lib-stable/fs/safe'`,
+                `import { ${replacement} } from '@socketsecurity/lib-stable/fs/safe/safe'`,
                 undefined,
               ),
             ]

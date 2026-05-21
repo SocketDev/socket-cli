@@ -1,7 +1,7 @@
 /**
  * @file Per the fleet "Subprocesses" rule: prefer `spawn` from
- *   `@socketsecurity/lib-stable/spawn/spawn` over `execSync` / `execFileSync`
- *   from `node:child_process`. Two reasons:
+ *   `@socketsecurity/lib-stable/spawn/spawn` over `execSync` / `execFileSync` from
+ *   `node:child_process`. Two reasons:
  *
  *   1. Command-injection surface — `execSync(cmd)` runs `cmd` through a shell; any
  *      string concatenation into `cmd` is a potential injection vector.
@@ -24,8 +24,8 @@
  *   - Adjacent comment with `prefer-spawn-over-execsync: required` — for callers
  *     who genuinely need shell expansion (e.g. expanding env vars mid-command).
  *     Rare; document why.
- *   - Files inside `@socketsecurity/lib-stable/spawn/spawn` itself — handled at
- *     the .config/oxlintrc.json ignorePatterns level.
+ *   - Files inside `@socketsecurity/lib-stable/spawn/spawn` itself — handled at the
+ *     .config/oxlintrc.json ignorePatterns level.
  */
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
