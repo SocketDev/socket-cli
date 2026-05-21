@@ -23,7 +23,7 @@ const logger = getDefaultLogger()
  *
  * @returns {{ name: string; version: string }} Package info
  */
-export function preparePackageForPublish(packageDir, options = {}) {
+function preparePackageForPublish(packageDir, options = {}) {
   const { buildMethod, quiet, version } = options
   const pkgPath = join(packageDir, 'package.json')
 

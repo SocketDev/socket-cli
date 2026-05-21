@@ -25,7 +25,7 @@ const logger = getDefaultLogger()
 /**
  * Generate the main wrapper package.
  */
-export async function generateMainPackage() {
+async function generateMainPackage() {
   const packagePath = path.join(getBuildOutDir(), 'socketaddon-iocraft')
   const templatePath = SOCKETADDON_MAIN_TEMPLATE_DIR
 

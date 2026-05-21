@@ -12,10 +12,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Package-builder root directory.
-export const PACKAGE_BUILDER_ROOT = path.join(__dirname, '..')
+const PACKAGE_BUILDER_ROOT = path.join(__dirname, '..')
 
 // Template directories.
-export const TEMPLATES_DIR = path.join(PACKAGE_BUILDER_ROOT, 'templates')
+const TEMPLATES_DIR = path.join(PACKAGE_BUILDER_ROOT, 'templates')
 export const CLI_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-package')
 export const CLI_SENTRY_TEMPLATE_DIR = path.join(
   TEMPLATES_DIR,

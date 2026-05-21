@@ -18,7 +18,7 @@ const logger = getDefaultLogger()
 /**
  * Run a script and report results.
  */
-export async function runScript(scriptName, description) {
+async function runScript(scriptName, description) {
   logger.log('')
   logger.log(`▶ ${description}...`)
   logger.log('─'.repeat(50))
