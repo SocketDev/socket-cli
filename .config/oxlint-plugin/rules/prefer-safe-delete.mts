@@ -8,7 +8,7 @@
  *   - `fs.unlink(...)` / `fs.unlinkSync(...)`
  *   - `fs.rmdir(...)` / `fs.rmdirSync(...)` Autofix: rewrites the call to
  *     `safeDelete(path)` / `safeDeleteSync(path)` AND injects `import {
- *     safeDelete } from '@socketsecurity/lib-stable/fs/safe/safe'` (or
+ *     safeDelete } from '@socketsecurity/lib-stable/fs/safe'` (or
  *     `safeDeleteSync`) when missing. The autofix is conservative — it only
  *     fires when the call shape is "obviously equivalent" to safeDelete:
  *   - The first argument is a single expression (the path).
@@ -79,7 +79,7 @@ const rule = {
       }
       s = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib-stable/fs/safe/safe',
+        '@socketsecurity/lib-stable/fs/safe',
         importName,
       )
       summaryCache.set(importName, s)
@@ -181,7 +181,7 @@ const rule = {
               ...appendImportFixes(
                 s,
                 fixer,
-                `import { ${replacement} } from '@socketsecurity/lib-stable/fs/safe/safe'`,
+                `import { ${replacement} } from '@socketsecurity/lib-stable/fs/safe'`,
                 undefined,
               ),
             ]
