@@ -11,7 +11,7 @@ const logger = getDefaultLogger()
 
 type QuotaData = SocketSdkSuccessResult<'getQuota'>['data']
 
-export function formatRefresh(
+function formatRefresh(
   nextWindowRefresh: string | null | undefined,
 ): string {
   if (!nextWindowRefresh) {
@@ -42,7 +42,7 @@ export function formatRefresh(
   return `${date} (in ${Math.round(diffMs / 86_400_000)} d)`
 }
 
-export function formatUsageLine(data: QuotaData): string {
+function formatUsageLine(data: QuotaData): string {
   const remaining = data.quota
   const max = data.maxQuota
   if (!max) {
