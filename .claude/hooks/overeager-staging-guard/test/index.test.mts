@@ -36,7 +36,6 @@ function runHook(
     transcript_path: options.transcriptPath,
   }
   const r = spawnSync('node', [HOOK], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
     env: {
       ...process.env,
@@ -255,7 +254,6 @@ test('git commit silent when index files match transcript git-add history', () =
 
 test('non-Bash tool_name is ignored', () => {
   const r = spawnSync('node', [HOOK], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({
       tool_name: 'Edit',
       tool_input: { file_path: '/tmp/foo' },
@@ -266,7 +264,6 @@ test('non-Bash tool_name is ignored', () => {
 
 test('malformed payload is ignored (fail-open)', () => {
   const r = spawnSync('node', [HOOK], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: 'not-json',
   })
   assert.equal(r.status, 0)

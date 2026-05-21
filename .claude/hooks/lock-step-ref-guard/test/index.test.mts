@@ -62,7 +62,6 @@ function runHook(
     payload['cwd'] = options.cwd
   }
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
     env: { ...process.env, ...(options.env ?? {}) },
   })
@@ -282,7 +281,6 @@ test('BYPASS via SOCKET_LOCK_STEP_REF_GUARD_DISABLED=1', () => {
 
 test('exits 0 on invalid JSON payload', () => {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: 'not-json',
   })
   assert.equal(result.status, 0)
@@ -290,7 +288,6 @@ test('exits 0 on invalid JSON payload', () => {
 
 test('exits 0 on missing tool_input', () => {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({ tool_name: 'Write' }),
   })
   assert.equal(result.status, 0)

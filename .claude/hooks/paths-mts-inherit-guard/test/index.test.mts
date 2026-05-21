@@ -22,7 +22,6 @@ interface RunResult {
 
 function runHook(payload: object): RunResult {
   const r = spawnSync('node', [HOOK], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
   })
   return {
@@ -170,7 +169,6 @@ describe('paths-mts-inherit-guard', () => {
 
   test('fails open on invalid JSON', () => {
     const r = spawnSync('node', [HOOK], {
-      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: 'not json',
     })
     assert.equal(r.status, 0)
@@ -178,7 +176,6 @@ describe('paths-mts-inherit-guard', () => {
 
   test('fails open on empty stdin', () => {
     const r = spawnSync('node', [HOOK], {
-      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: '',
     })
     assert.equal(r.status, 0)

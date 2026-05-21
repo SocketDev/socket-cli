@@ -292,7 +292,6 @@ export function writeLinux(token: string, account: string): void {
     'secret-tool',
     ['store', '--label=Socket API token', 'service', SERVICE, 'user', account],
     {
-      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: token,
       stdio: ['pipe', 'pipe', 'pipe'],
     },
@@ -389,7 +388,6 @@ export function writeWindows(token: string, account: string): void {
     } catch { exit 1 }
   `
   const ps = spawnSync('powershell', ['-NoProfile', '-Command', psScript], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: token,
     stdio: ['pipe', 'pipe', 'pipe'],
   })
@@ -420,7 +418,6 @@ export function writeWindowsDpapiFile(token: string): void {
     [Convert]::ToBase64String($protected) | Set-Content -Path '${filePath.replace(/'/g, "''")}' -NoNewline
   `
   const ps = spawnSync('powershell', ['-NoProfile', '-Command', psScript], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: token,
     stdio: ['pipe', 'pipe', 'pipe'],
   })

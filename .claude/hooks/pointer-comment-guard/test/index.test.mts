@@ -36,7 +36,6 @@ function runHook(
     payload['transcript_path'] = options.transcriptPath
   }
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
     env: { ...process.env, ...(options.env ?? {}) },
   })
@@ -196,7 +195,6 @@ test('handles block comments — pointer + claim in /* … */ passes', () => {
 
 test('does not crash on malformed payload', () => {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: 'not-json',
   })
   assert.equal(result.status, 0)
@@ -204,7 +202,6 @@ test('does not crash on malformed payload', () => {
 
 test('does not crash when content is missing', () => {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({
       tool_name: 'Write',
       tool_input: { file_path: '/repo/src/foo.ts' },

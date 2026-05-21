@@ -30,7 +30,6 @@ const runHook = (
         : { file_path: filePath, content: source },
   })
   const result = spawnSync(process.execPath, [HOOK], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: payload,
   })
   return {
@@ -298,7 +297,6 @@ describe('path-guard — tool-name filter', () => {
 describe('path-guard — bug-tolerance (fails open)', () => {
   it('passes through invalid JSON payload', () => {
     const result = spawnSync(process.execPath, [HOOK], {
-      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: 'not json at all',
     })
     assert.equal(result.status, 0)
@@ -306,7 +304,6 @@ describe('path-guard — bug-tolerance (fails open)', () => {
 
   it('passes through empty stdin', () => {
     const result = spawnSync(process.execPath, [HOOK], {
-      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: '',
     })
     assert.equal(result.status, 0)

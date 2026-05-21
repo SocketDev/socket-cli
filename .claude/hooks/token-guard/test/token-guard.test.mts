@@ -31,7 +31,6 @@ function runHook(
     tool_input: { command },
   })
   const result = spawnSync(nodeBin, [hookScript], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input,
     timeout: 5_000,
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -196,7 +195,6 @@ describe('token-guard hook', () => {
   describe('fails open on malformed input', () => {
     it('empty stdin', () => {
       const r = spawnSync(nodeBin, [hookScript], {
-        // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
         input: '',
         timeout: 5_000,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -205,7 +203,6 @@ describe('token-guard hook', () => {
     })
     it('non-JSON stdin', () => {
       const r = spawnSync(nodeBin, [hookScript], {
-        // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
         input: 'not json',
         timeout: 5_000,
         stdio: ['pipe', 'pipe', 'pipe'],

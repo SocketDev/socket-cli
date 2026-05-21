@@ -45,7 +45,6 @@ function makeTranscript(dir: string, bypassPhrase?: string): string {
 
 function runHook(payload: object): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
   })
   return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
@@ -220,7 +219,6 @@ test('disabled env var short-circuits', () => {
   const repo = makeFakeRepo('# no reference')
   try {
     const result = spawnSync('node', [HOOK_PATH], {
-      // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
       input: JSON.stringify({
         tool_name: 'Write',
         tool_input: { file_path: repo.hookIndexPath('my-new-hook') },

@@ -25,7 +25,6 @@ function runHook(
   extraEnv: Record<string, string> = {},
 ): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({
       tool_name: 'Bash',
       tool_input: { command },
@@ -89,7 +88,6 @@ test('ALLOWS the canonical lookup pattern', () => {
 
 test('IGNORES non-Bash tools', () => {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({
       tool_name: 'Write',
       tool_input: { command: 'BASE=main' },

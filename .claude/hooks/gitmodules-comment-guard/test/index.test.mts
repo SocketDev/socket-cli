@@ -9,7 +9,6 @@ const HOOK_PATH = path.join(__dirname, '..', 'index.mts')
 
 function runHook(payload: object): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
   })
   return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
@@ -130,7 +129,6 @@ test('handles multiple submodules, blocks only the orphan', () => {
 
 test('fails open on malformed JSON', () => {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: 'not-json',
   })
   assert.equal(result.status, 0)

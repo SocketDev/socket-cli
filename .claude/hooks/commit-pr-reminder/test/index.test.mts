@@ -23,7 +23,6 @@ function makeTranscript(assistantText: string): string {
 
 function runHook(transcriptPath: string): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({ transcript_path: transcriptPath }),
   })
   return { stderr: String(result.stderr), exitCode: result.status ?? -1 }
@@ -72,7 +71,6 @@ test('does NOT fire on the word "generated" without "claude" nearby', () => {
 test('disabled env var short-circuits', () => {
   const t = makeTranscript('Generated with Claude Code')
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify({ transcript_path: t }),
     env: { ...process.env, SOCKET_COMMIT_PR_REMINDER_DISABLED: '1' },
   })

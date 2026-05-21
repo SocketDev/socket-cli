@@ -14,7 +14,6 @@ function runHook(payload: object): {
   exitCode: number
 } {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: JSON.stringify(payload),
   })
   return { stdout: String(result.stdout), exitCode: result.status ?? -1 }
@@ -158,7 +157,6 @@ test('hook: emits updatedMCPToolOutput for MCP tool with string-shaped response'
 
 test('hook: fails open on malformed stdin', () => {
   const result = spawnSync('node', [HOOK_PATH], {
-    // @ts-expect-error TS2353 -- lib v5 SpawnSyncOptions omits "input"; v6 exposes it. Runtime accepts it.
     input: '{not json',
   })
   assert.equal(result.status, 0)
