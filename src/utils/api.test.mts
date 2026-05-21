@@ -45,9 +45,13 @@ type RequestCallback = (
   },
 ) => void
 const mockHttpsRequest = vi.hoisted(() => vi.fn())
+const mockHttpRequest = vi.hoisted(() => vi.fn())
 const MockHttpsAgent = vi.hoisted(() =>
   vi.fn().mockImplementation(opts => ({ ...opts, _isHttpsAgent: true })),
 )
+vi.mock('node:http', () => ({
+  request: mockHttpRequest,
+}))
 vi.mock('node:https', () => ({
   Agent: MockHttpsAgent,
   request: mockHttpsRequest,
@@ -154,6 +158,48 @@ describe('apiFetch with extra CA certificates', () => {
     const callArgs = mockHttpsRequest.mock.calls[0]
     expect(callArgs[1]).toEqual(expect.objectContaining({ agent: undefined }))
     expect(result.ok).toBe(true)
+  })
+
+  it('should use http.request for plain HTTP API URLs', async () => {
+    const mockReq = {
+      end: vi.fn(),
+      on: vi.fn(),
+      write: vi.fn(),
+    }
+
+    mockHttpRequest.mockImplementation(
+      (_url: string, _opts: unknown, callback: RequestCallback) => {
+        setTimeout(() => {
+          const mockRes = {
+            headers: { 'content-type': 'text/plain' },
+            on: vi.fn(),
+            statusCode: 200,
+            statusMessage: 'OK',
+          }
+          const handlers: Record<string, Function> = {}
+          mockRes.on.mockImplementation((event: string, handler: Function) => {
+            handlers[event] = handler
+            return mockRes
+          })
+          callback(mockRes)
+          handlers['data']?.(Buffer.from('local response'))
+          handlers['end']?.()
+        }, 0)
+        return mockReq
+      },
+    )
+
+    const { apiFetch } = await import('./api.mts')
+    const response = await apiFetch('http://localhost:3000/v0/report')
+
+    expect(response.status).toBe(200)
+    expect(await response.text()).toBe('local response')
+    expect(mockHttpRequest).toHaveBeenCalledWith(
+      'http://localhost:3000/v0/report',
+      expect.objectContaining({ agent: undefined, method: 'GET' }),
+      expect.any(Function),
+    )
+    expect(mockHttpsRequest).not.toHaveBeenCalled()
   })
 
   it('should use https.request when extra CA certs are available', async () => {
