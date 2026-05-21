@@ -321,8 +321,7 @@ export class FileProgress {
 
     // Uses raw stderr.write for \r-based progress redraw — logger
     // appends newlines and can't replace the current line.
-    process.stderr.write(
-      // socket-hook: allow console
+    process.stderr.write( // socket-hook: allow console
       `\r${this.operation}: [${this.processed}/${this.total}] ${percentage}% ${colors.gray(`(${elapsed}s)`)} ${colors.cyan(file)}`,
     )
 
