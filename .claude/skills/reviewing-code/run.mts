@@ -17,11 +17,11 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { which } from '@socketsecurity/lib-stable/bin/which'
-import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { isSpawnError } from '@socketsecurity/lib-stable/spawn/errors'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { which } from '@socketsecurity/lib/bin/which'
+import { safeDelete } from '@socketsecurity/lib/fs/safe'
+import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { isSpawnError } from '@socketsecurity/lib/spawn/errors'
+import { spawn } from '@socketsecurity/lib/spawn/spawn'
 
 const logger = getDefaultLogger()
 

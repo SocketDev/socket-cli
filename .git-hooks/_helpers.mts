@@ -443,6 +443,110 @@ export const scanNpxDlx = (text: string): LineHit[] =>
     suggest: suggestNpxReplacement,
   })
 
+// ── pnpm-first docs scanner ────────────────────────────────────────
+//
+// Fleet rule: user-facing documentation that shows install commands
+// should LEAD with the pnpm form (`pnpm install <pkg>`, `pnpm add
+// <pkg>`). npm / yarn fallbacks are fine, but they should appear
+// after the pnpm form — or in a sibling code block introduced as a
+// fallback for users who don't have pnpm.
+//
+// This scanner walks fenced markdown code blocks (``` or ~~~) and
+// emits a warning for any fence whose first install-shape line is
+// npm/yarn rather than pnpm. Warning-only — never fails a commit.
+// Inline backtick spans (a single `npm install foo` in prose) are
+// NOT scanned; only block-level fences.
+//
+// Suppression: a line containing `socket-hook: allow pnpm-first`
+// anywhere in the fence (or just above it) skips that block.
+
+// Match shell install commands at line start (allowing leading
+// whitespace + `$` prompt). Captures the package manager so the
+// caller can tell which form was seen first.
+const PNPM_INSTALL_LINE_RE = /^\s*\$?\s*pnpm\s+(?:install|add|i)\b/
+const NPM_YARN_INSTALL_LINE_RE =
+  /^\s*\$?\s*(?:(npm)\s+(?:install|add|i)|(?:yarn)\s+(?:install|add)|(?:yarn))\s/
+
+// Markdown fence opener: ``` or ~~~ at line start, optionally followed
+// by an info string (language hint). We don't require closing match —
+// just count fences as we go and treat alternating opens/closes.
+const FENCE_OPEN_RE = /^\s*(?:```|~~~)/
+
+const PNPM_FIRST_SUPPRESS_RE = /socket-hook:\s*allow\s+pnpm-first\b/
+
+export const scanDocsPnpmFirst = (text: string): LineHit[] => {
+  const hits: LineHit[] = []
+  const lines = splitLines(text)
+  let inFence = false
+  let fenceStartLine = -1
+  let fenceHasPnpm = false
+  let fenceHasSuppress = false
+  let fenceFirstNpmYarnHit: LineHit | undefined
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!
+    if (FENCE_OPEN_RE.test(line)) {
+      // Closing fence: flush any pending hit if no pnpm form was seen
+      // and the block wasn't suppressed.
+      if (inFence) {
+        if (fenceFirstNpmYarnHit && !fenceHasPnpm && !fenceHasSuppress) {
+          hits.push(fenceFirstNpmYarnHit)
+        }
+        inFence = false
+        fenceStartLine = -1
+        fenceHasPnpm = false
+        fenceHasSuppress = false
+        fenceFirstNpmYarnHit = undefined
+      } else {
+        inFence = true
+        fenceStartLine = i + 1
+      }
+      continue
+    }
+    if (!inFence) {
+      // Suppression marker on a comment line just above the fence is
+      // also honored (some docs prefer keeping markers outside the
+      // rendered code block).
+      if (PNPM_FIRST_SUPPRESS_RE.test(line)) {
+        // Look ahead one line for a fence open; if it's there, mark
+        // the upcoming block as suppressed.
+        const next = lines[i + 1]
+        if (next !== undefined && FENCE_OPEN_RE.test(next)) {
+          fenceHasSuppress = true
+        }
+      }
+      continue
+    }
+    if (PNPM_FIRST_SUPPRESS_RE.test(line)) {
+      fenceHasSuppress = true
+      continue
+    }
+    if (PNPM_INSTALL_LINE_RE.test(line)) {
+      fenceHasPnpm = true
+      continue
+    }
+    if (
+      NPM_YARN_INSTALL_LINE_RE.test(line) &&
+      fenceFirstNpmYarnHit === undefined
+    ) {
+      fenceFirstNpmYarnHit = {
+        lineNumber: i + 1,
+        line,
+        suggested: line.replace(/\b(npm|yarn)\s+(install|add|i)\b/, 'pnpm $2'),
+      }
+    }
+  }
+  // Unclosed fence at EOF — flush whatever's pending.
+  if (inFence && fenceFirstNpmYarnHit && !fenceHasPnpm && !fenceHasSuppress) {
+    hits.push(fenceFirstNpmYarnHit)
+  }
+  // Reference fenceStartLine to suppress unused-variable lints; the
+  // value is useful for future enhancements (e.g. block-level
+  // diagnostics) but the current per-line LineHit shape carries the
+  // offending line number directly.
+  void fenceStartLine
+  return hits
+}
+
 // ── Logger leak scanner ────────────────────────────────────────────
 //
 // The fleet rule: source code uses `getDefaultLogger()` from
@@ -508,8 +612,9 @@ const FLEET_REPO_NAMES = [
   'socket-sdk-js',
   'socket-sdxgen',
   'socket-stuie',
+  'socket-vscode',
+  'socket-webext',
   'ultrathink',
-  'vscode-socket-security',
 ] as const
 
 // `../<repo>/…` or `../../<repo>/…` etc. — relative path that walks

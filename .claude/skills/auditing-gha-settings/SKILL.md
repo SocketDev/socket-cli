@@ -75,9 +75,10 @@ Or all-at-once with the canonical fleet list (manual today; the orchestrator ski
       SocketDev/socket-sdk-js \
       SocketDev/socket-sdxgen \
       SocketDev/socket-stuie \
+      SocketDev/socket-vscode \
+      SocketDev/socket-webext \
       SocketDev/socket-wheelhouse \
-      SocketDev/ultrathink \
-      SocketDev/vscode-socket-security
+      SocketDev/ultrathink
 
 For machine-readable output (one finding per repo):
 

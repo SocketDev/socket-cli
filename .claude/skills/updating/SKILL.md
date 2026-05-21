@@ -1,6 +1,6 @@
 ---
 name: updating
-description: Umbrella update skill for a Socket fleet repo. Runs `pnpm run update` (npm), validates `lockstep.json` via `pnpm run lockstep` (if present), optionally bumps submodules, checks workflow SHA pins, and resolves open Dependabot security alerts. Use when asked to update dependencies, sync upstreams, fix security advisories, or prepare for a release.
+description: Umbrella update skill for a Socket fleet repo. Runs `pnpm run update` (npm), validates `lockstep.json` via `pnpm run lockstep` (if present), optionally bumps submodules, checks workflow SHA pins, resolves open Dependabot security alerts, and refreshes the README coverage badge when applicable. Use when asked to update dependencies, sync upstreams, fix security advisories, refresh coverage, or prepare for a release.
 user-invocable: true
 allowed-tools: Task, Skill, Read, Edit, Grep, Glob, Bash(pnpm run:*), Bash(pnpm test:*), Bash(pnpm install:*), Bash(git:*), Bash(claude --version)
 ---
@@ -22,6 +22,7 @@ Umbrella update skill. Runs `pnpm run update` for npm deps, then adapts to whate
 - **Other submodules** — repo-specific `updating-*` sub-skills handle `.gitmodules` entries not claimed by a lockstep `version-pin` row.
 - **Workflow SHA pins** — `_local-not-for-reuse-*.yml` SHAs against the remote's default branch (per CLAUDE.md _Default branch fallback_); run `/updating-workflows` when stale.
 - **Security advisories** — open GitHub Dependabot alerts via `/update-security`. Direct deps bumped via `pnpm update`; transitives pinned via `pnpm.overrides`; unfixable advisories dismissed with documented reasons. Honors the 7-day soak gate.
+- **Coverage badge** — when a coverage script exists (`cover` / `coverage` / `test:cover`), `/update-coverage` runs the script and rewrites the README badge to match. Repos without a coverage script skip silently.
 
 This umbrella reads repo state first to discover what applies — sub-skills are only invoked when relevant.
 
@@ -35,8 +36,9 @@ This umbrella reads repo state first to discover what applies — sub-skills are
 | 4   | Apply drift          | 4a: lockstep auto-bumps (one commit per row). 4b: repo-specific `updating-*` sub-skills for non-lockstep submodules. |
 | 5   | Security advisories  | If `gh api .../dependabot/alerts?state=open` returns any rows, invoke `/update-security` (the `updating-security` sub-skill). Atomic commit per alert. |
 | 6   | Workflow SHA pins    | Compare pinned SHAs against `origin/$BASE`; report stale → `/updating-workflows`.                                    |
-| 7   | Final validation     | Interactive only: `pnpm run check --all && pnpm test && pnpm run build`. CI skips (validated separately).            |
-| 8   | Report               | Per-category summary: npm / lockstep / submodules / security / SHA pins / validation / next steps.                   |
+| 7   | Coverage badge       | If the repo declares a coverage script (`cover` / `coverage` / `test:cover`), invoke `/update-coverage` to refresh the README badge. Atomic commit if the percentage moved.|
+| 8   | Final validation     | Interactive only: `pnpm run check --all && pnpm test && pnpm run build`. CI skips (validated separately).            |
+| 9   | Report               | Per-category summary: npm / lockstep / submodules / security / SHA pins / coverage / validation / next steps.        |
 
 Full bash, exit-code tables, mode contracts, and failure recovery in [`reference.md`](reference.md).
 

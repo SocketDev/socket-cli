@@ -24,6 +24,7 @@ import {
   normalizePath,
   scanAwsKeys,
   scanCrossRepoPaths,
+  scanDocsPnpmFirst,
   scanGitHubTokens,
   scanLinearRefs,
   scanPersonalPaths,
@@ -584,4 +585,93 @@ test('gitOrThrow: throws on non-zero exit', () => {
     () => gitOrThrow('this-subcommand-does-not-exist'),
     /git this-subcommand-does-not-exist:/,
   )
+})
+
+// ── scanDocsPnpmFirst ─────────────────────────────────────────────
+
+test('scanDocsPnpmFirst: flags fence with only npm install', () => {
+  const md = ['# Install', '', '```sh', 'npm install lodash', '```'].join('\n')
+  const hits = scanDocsPnpmFirst(md)
+  assert.strictEqual(hits.length, 1)
+  assert.strictEqual(hits[0]!.line, 'npm install lodash')
+  assert.strictEqual(hits[0]!.suggested, 'pnpm install lodash')
+})
+
+test('scanDocsPnpmFirst: accepts fence with pnpm leading npm', () => {
+  const md = [
+    '```sh',
+    'pnpm install lodash',
+    '# or for npm users:',
+    'npm install lodash',
+    '```',
+  ].join('\n')
+  assert.strictEqual(scanDocsPnpmFirst(md).length, 0)
+})
+
+test('scanDocsPnpmFirst: flags yarn add without pnpm form', () => {
+  const md = ['```bash', 'yarn add typescript', '```'].join('\n')
+  const hits = scanDocsPnpmFirst(md)
+  assert.strictEqual(hits.length, 1)
+  assert.match(hits[0]!.line, /yarn add/)
+})
+
+test('scanDocsPnpmFirst: accepts tilde-fenced block', () => {
+  const md = ['~~~sh', 'pnpm add react', 'npm install react', '~~~'].join('\n')
+  assert.strictEqual(scanDocsPnpmFirst(md).length, 0)
+})
+
+test('scanDocsPnpmFirst: ignores inline backtick spans', () => {
+  // Inline `npm install foo` in prose is NOT a fenced block — out of
+  // scope for this scanner.
+  const md = 'Run `npm install lodash` to install lodash.'
+  assert.strictEqual(scanDocsPnpmFirst(md).length, 0)
+})
+
+test('scanDocsPnpmFirst: per-block suppression marker', () => {
+  const md = [
+    '```sh',
+    '# socket-hook: allow pnpm-first',
+    'npm install lodash',
+    '```',
+  ].join('\n')
+  assert.strictEqual(scanDocsPnpmFirst(md).length, 0)
+})
+
+test('scanDocsPnpmFirst: suppression marker on line above fence', () => {
+  const md = [
+    '<!-- socket-hook: allow pnpm-first -->',
+    '```sh',
+    'npm install lodash',
+    '```',
+  ].join('\n')
+  assert.strictEqual(scanDocsPnpmFirst(md).length, 0)
+})
+
+test('scanDocsPnpmFirst: handles multiple fences independently', () => {
+  const md = [
+    '```sh',
+    'pnpm add foo',
+    '```',
+    '',
+    'And here is a fallback:',
+    '',
+    '```sh',
+    'npm install foo',
+    '```',
+  ].join('\n')
+  // First fence has pnpm form → ok. Second fence is bare npm with no
+  // pnpm leader → one warning.
+  assert.strictEqual(scanDocsPnpmFirst(md).length, 1)
+})
+
+test('scanDocsPnpmFirst: handles $-prefixed prompt lines', () => {
+  const md = ['```sh', '$ npm install foo', '```'].join('\n')
+  assert.strictEqual(scanDocsPnpmFirst(md).length, 1)
+})
+
+test('scanDocsPnpmFirst: ignores non-install npm commands', () => {
+  // `npm run build` is not an install — out of scope for the leader
+  // rule (which is about how users *get* a package).
+  const md = ['```sh', 'npm run build', '```'].join('\n')
+  assert.strictEqual(scanDocsPnpmFirst(md).length, 0)
 })

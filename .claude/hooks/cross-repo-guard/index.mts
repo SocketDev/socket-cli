@@ -59,8 +59,9 @@ const FLEET_REPO_NAMES = [
   'socket-sdk-js',
   'socket-sdxgen',
   'socket-stuie',
+  'socket-vscode',
+  'socket-webext',
   'ultrathink',
-  'vscode-socket-security',
 ] as const
 
 const FLEET_RE_FRAGMENT = FLEET_REPO_NAMES.join('|')
