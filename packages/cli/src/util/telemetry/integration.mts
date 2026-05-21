@@ -92,7 +92,7 @@ export function buildContext(argv: string[]): TelemetryContext {
  *
  * @returns Duration in milliseconds.
  */
-export function calculateDuration(startTime: number): number {
+function calculateDuration(startTime: number): number {
   return Date.now() - startTime
 }
 
@@ -142,7 +142,7 @@ export function finalizeTelemetrySync(): void {
  *
  * @returns Error object.
  */
-export function normalizeError(error: unknown): Error {
+function normalizeError(error: unknown): Error {
   return isError(error) ? error : new Error(String(error))
 }
 
@@ -154,7 +154,7 @@ export function normalizeError(error: unknown): Error {
  *
  * @returns Normalized exit code.
  */
-export function normalizeExitCode(
+function normalizeExitCode(
   exitCode: string | number | null | undefined,
   defaultValue: number,
 ): number {
