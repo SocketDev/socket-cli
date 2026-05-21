@@ -11,7 +11,7 @@ import type { SocketSdk } from '@socketsecurity/sdk-stable'
 /**
  * Error options for creating error results.
  */
-export type ErrorOptions = {
+type ErrorOptions = {
   code?: number | undefined
   cause?: string | undefined
 }
@@ -35,17 +35,6 @@ export function createErrorResult(
 /**
  * Creates mock logger functions.
  */
-export function createLoggerMocks() {
-  return {
-    log: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fail: vi.fn(),
-    success: vi.fn(),
-  }
-}
-
 /**
  * Creates a mock Socket SDK with common methods.
  */
@@ -72,27 +61,6 @@ export function createMockSdk(overrides: Partial<SocketSdk> = {}): SocketSdk {
 }
 
 /**
- * Creates mock output utility functions.
- */
-export function createOutputMocks() {
-  return {
-    failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-    serializeResultJson: vi.fn(result => JSON.stringify(result)),
-  }
-}
-
-/**
- * Creates mock functions for SDK and API utilities.
- */
-export function createSdkMocks() {
-  return {
-    handleApiCall: vi.fn(),
-    setupSdk: vi.fn(),
-    withSdk: vi.fn(),
-  }
-}
-
-/**
  * Creates a successful CResult.
  */
 export function createSuccessResult<T>(data: T): CResult<T> {
@@ -100,74 +68,6 @@ export function createSuccessResult<T>(data: T): CResult<T> {
     ok: true,
     data,
   }
-}
-
-/**
- * Setup API call failure mock.
- */
-export async function setupApiCallFailure(
-  sdkMethod: string,
-  error: Error | string,
-  code = 404,
-): Promise<void> {
-  const { handleApiCall } = await import('../../src/util/socket/api.mts')
-  const { setupSdk } = await import('../../src/util/socket/sdk.mts')
-
-  const errorObj = typeof error === 'string' ? new Error(error) : error
-  const mockSdk = createMockSdk({
-    [sdkMethod]: vi.fn().mockRejectedValue(errorObj),
-  })
-
-  vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
-  vi.mocked(handleApiCall).mockResolvedValue(
-    createErrorResult(errorObj.message, { code }),
-  )
-}
-
-/**
- * Setup common module mocks for output operations.
- */
-export function setupOutputModuleMocks() {
-  vi.mock('@socketsecurity/lib-stable/logger', () => ({
-    getDefaultLogger: vi.fn(() => ({
-      fail: vi.fn(),
-      log: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      success: vi.fn(),
-    })),
-    logger: {
-      fail: vi.fn(),
-      log: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      success: vi.fn(),
-    },
-  }))
-
-  vi.mock('../../src/util/error/fail-msg-with-badge.mts', () => ({
-    failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-  }))
-
-  vi.mock('../../src/util/output/result-json.mts', () => ({
-    serializeResultJson: vi.fn(result => JSON.stringify(result)),
-  }))
-}
-
-/**
- * Setup common module mocks for SDK operations.
- */
-export function setupSdkModuleMocks() {
-  vi.mock('../../src/util/socket/api.mts', () => ({
-    handleApiCall: vi.fn(),
-  }))
-
-  vi.mock('../../src/util/socket/sdk.mts', () => ({
-    setupSdk: vi.fn(),
-    withSdk: vi.fn(),
-  }))
 }
 
 /**
@@ -182,23 +82,3 @@ export async function setupSdkSetupFailure(
   vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options))
 }
 
-/**
- * Setup successful SDK mock chain.
- */
-export async function setupSuccessfulSdkChain(
-  sdkMethod: string,
-  mockData: unknown,
-): Promise<void> {
-  const { handleApiCall } = await import('../../src/util/socket/api.mts')
-  const { setupSdk } = await import('../../src/util/socket/sdk.mts')
-
-  const mockSdk = createMockSdk({
-    [sdkMethod]: vi.fn().mockResolvedValue({
-      success: true,
-      data: mockData,
-    }),
-  })
-
-  vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
-  vi.mocked(handleApiCall).mockResolvedValue(createSuccessResult(mockData))
-}

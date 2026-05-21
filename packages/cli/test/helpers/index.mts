@@ -6,7 +6,6 @@
 export * from './cli-execution.mts'
 export * from './constants.mts'
 export * from './environment.mts'
-export * from './fixtures.mts'
 export * from './generate-report-test-helpers.mts'
 export * from './handle-test-helpers.mts'
 export * from './mock-setup.mts'
