@@ -11,7 +11,7 @@
 
 import { parse as yamlParse } from 'yaml'
 
-export type SocketYmlGitHub = {
+type SocketYmlGitHub = {
   authenticatedProjectReports?: boolean | undefined
   dependencyOverviewEnabled?: boolean | undefined
   enabled?: boolean | undefined
@@ -36,7 +36,7 @@ type SocketYmlV1Shape = {
   pullRequestAlertsEnabled?: boolean | undefined
 }
 
-export class SocketValidationError extends Error {
+class SocketValidationError extends Error {
   data: unknown
   validationErrors: string[]
 
@@ -52,11 +52,11 @@ export class SocketValidationError extends Error {
   }
 }
 
-export function asBoolean(value: unknown): boolean | undefined {
+function asBoolean(value: unknown): boolean | undefined {
   return typeof value === 'boolean' ? value : undefined
 }
 
-export function asBooleanRecord(value: unknown): { [k: string]: boolean } {
+function asBooleanRecord(value: unknown): { [k: string]: boolean } {
   if (!isPlainObject(value)) {
     return {}
   }
@@ -69,14 +69,14 @@ export function asBooleanRecord(value: unknown): { [k: string]: boolean } {
   return out
 }
 
-export function asStringArray(value: unknown): string[] {
+function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return []
   }
   return value.filter((v): v is string => typeof v === 'string')
 }
 
-export function buildGithub(value: unknown): SocketYmlGitHub {
+function buildGithub(value: unknown): SocketYmlGitHub {
   if (!isPlainObject(value)) {
     return {}
   }
@@ -123,7 +123,7 @@ export function isPlainObject(
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-export function looksLikeV1(content: Record<string, unknown>): boolean {
+function looksLikeV1(content: Record<string, unknown>): boolean {
   // V1 had no `version` field. If `version` is present, treat as v2+.
   if ('version' in content) {
     return false
@@ -139,7 +139,7 @@ export function looksLikeV1(content: Record<string, unknown>): boolean {
   )
 }
 
-export function migrateV1(content: SocketYmlV1Shape): SocketYml {
+function migrateV1(content: SocketYmlV1Shape): SocketYml {
   const github: SocketYmlGitHub = {}
   if ('enabled' in content && typeof content.enabled === 'boolean') {
     github.enabled = content.enabled
