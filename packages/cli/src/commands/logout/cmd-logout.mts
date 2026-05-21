@@ -26,7 +26,7 @@ const hidden = false
 
 // Helper functions.
 
-export function applyLogout(): void {
+function applyLogout(): void {
   updateConfigValue(CONFIG_KEY_API_TOKEN, undefined)
   updateConfigValue(CONFIG_KEY_API_BASE_URL, undefined)
   updateConfigValue(CONFIG_KEY_API_PROXY, undefined)
@@ -34,7 +34,7 @@ export function applyLogout(): void {
   invalidateDefaultApiToken()
 }
 
-export function attemptLogout(): void {
+function attemptLogout(): void {
   try {
     applyLogout()
     logger.success('Successfully logged out')
