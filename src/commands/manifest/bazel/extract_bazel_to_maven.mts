@@ -51,6 +51,7 @@ export type ExtractBazelOptions = {
 export type ExtractBazelResult = {
   artifactCount: number
   manifestPath?: string | undefined
+  noEcosystemFound?: boolean | undefined
   ok: boolean
 }
 
@@ -460,9 +461,15 @@ export async function extractBazelToMaven(
     }
 
     if (!allArtifacts.length) {
-      process.exitCode = 1
-      logger.fail('No Maven artifacts extracted. See warnings above.')
-      return { artifactCount: 0, manifestPath, ok: false }
+      if (verbose) {
+        logger.info('No Maven artifacts extracted.')
+      }
+      return {
+        artifactCount: 0,
+        manifestPath,
+        noEcosystemFound: true,
+        ok: false,
+      }
     }
     logger.success(
       `Wrote ${allArtifacts.length} artifact(s) to ${path.relative(cwd, manifestPath)}.`,
@@ -473,7 +480,6 @@ export async function extractBazelToMaven(
       ok: true,
     }
   } catch (e) {
-    process.exitCode = 1
     // Always surface the error message; users should not have to
     // re-run a multi-minute bazel build with --verbose just to see whether
     // the failure was a missing dependency, permission error, or network blip.

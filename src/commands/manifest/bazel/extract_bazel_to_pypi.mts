@@ -69,7 +69,7 @@ function sortPackageLines(
 export async function extractBazelToPypi(
   opts: ExtractBazelToPypiOptions,
 ): Promise<ExtractBazelToPypiResult> {
-  const { cwd, explicitEcosystem, out, verbose } = opts
+  const { cwd, out, verbose } = opts
   logger.group('bazel2pypi:')
   logger.info(`- src dir: \`${cwd}\``)
   logger.info(`- out dir: \`${out}\``)
@@ -148,15 +148,14 @@ export async function extractBazelToPypi(
     )
 
     if (!hubs.size) {
-      if (explicitEcosystem) {
-        return {
-          artifactCount: 0,
-          ok: false,
-          noEcosystemFound: true,
-        }
+      if (verbose) {
+        logger.info('No PyPI hubs discovered.')
       }
-      // Auto-detect mode: just return empty; caller decides what to do.
-      return { artifactCount: 0, ok: true }
+      return {
+        artifactCount: 0,
+        ok: false,
+        noEcosystemFound: true,
+      }
     }
 
     // Step 5: for each hub, resolve the requirements lockfile (fast path),
@@ -241,7 +240,6 @@ export async function extractBazelToPypi(
     }
 
     if (!allLines.length) {
-      process.exitCode = 1
       logger.fail('No PyPI packages extracted. See warnings above.')
       return { artifactCount: 0, manifestPath, ok: false }
     }
@@ -254,7 +252,6 @@ export async function extractBazelToPypi(
       ok: true,
     }
   } catch (e) {
-    process.exitCode = 1
     logger.fail(`Unexpected error in bazel2pypi: ${getErrorCause(e)}`)
     if (verbose) {
       logger.group('[VERBOSE] error:')

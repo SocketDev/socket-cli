@@ -81,6 +81,19 @@ describe('evaluateEcosystemOutcomes (auto-detect mode)', () => {
     ).not.toThrow()
   })
 
+  it('tolerates absent Maven when PyPI succeeds in auto mode', () => {
+    expect(() =>
+      auto([
+        { ecosystem: 'maven', ok: false, noEcosystemFound: true },
+        {
+          ecosystem: 'pypi',
+          ok: true,
+          manifestPath: '/tmp/requirements.txt',
+        },
+      ]),
+    ).not.toThrow()
+  })
+
   it('throws when a hard failure occurs even if another ecosystem succeeded', () => {
     expect(() =>
       auto([
@@ -147,6 +160,14 @@ describe('evaluateEcosystemOutcomes (explicit mode)', () => {
       explicit([{ ecosystem: 'maven', ok: false, noEcosystemFound: false }]),
     ).toThrowError(
       /Bazel manifest generation failed for explicitly requested ecosystem\(s\): maven/,
+    )
+  })
+
+  it('throws InputError when explicitly requested Maven is absent', () => {
+    expect(() =>
+      explicit([{ ecosystem: 'maven', ok: false, noEcosystemFound: true }]),
+    ).toThrowError(
+      /No Bazel rules found for explicitly requested ecosystem\(s\): maven/,
     )
   })
 

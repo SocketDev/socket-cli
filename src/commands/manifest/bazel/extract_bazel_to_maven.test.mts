@@ -268,7 +268,7 @@ describe('extractBazelToMaven', () => {
     expect(result.ok).toBe(true)
   })
 
-  it('sets process.exitCode = 1 and writes empty maven_install.json when no repos discovered', async () => {
+  it('reports noEcosystemFound without mutating process.exitCode when no repos discovered', async () => {
     vi.mocked(discoverMavenRepos).mockResolvedValue(new Map())
 
     const result = await extractBazelToMaven({
@@ -281,10 +281,11 @@ describe('extractBazelToMaven', () => {
       verbose: false,
     })
 
-    expect(process.exitCode).toBe(1)
+    expect(process.exitCode).toBe(0)
     expect(result).toEqual({
       artifactCount: 0,
       manifestPath: path.join(tmp, 'maven_install.json'),
+      noEcosystemFound: true,
       ok: false,
     })
     // Empty manifest is still written.
@@ -334,7 +335,7 @@ describe('extractBazelToMaven', () => {
     })
   })
 
-  it('sets process.exitCode = 1 when one group:artifact has conflicting versions', async () => {
+  it('returns failure without mutating process.exitCode when one group:artifact has conflicting versions', async () => {
     const conflictingStdout = [
       'jvm_import(',
       '  name = "com_example_demo_v1",',
@@ -359,7 +360,7 @@ describe('extractBazelToMaven', () => {
       verbose: false,
     })
 
-    expect(process.exitCode).toBe(1)
+    expect(process.exitCode).toBe(0)
     expect(result).toEqual({
       artifactCount: 0,
       ok: false,

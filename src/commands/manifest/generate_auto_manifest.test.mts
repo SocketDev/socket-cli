@@ -163,6 +163,7 @@ describe('generateAutoManifest — bazel branch', () => {
   it('throws when both Bazel ecosystems hard-fail', async () => {
     vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
       artifactCount: 0,
+      noEcosystemFound: true,
       ok: false,
     })
     vi.mocked(extractBazelToPypi).mockResolvedValueOnce({
@@ -206,7 +207,8 @@ describe('generateAutoManifest — bazel branch', () => {
   it('does NOT throw when both ecosystems have no discovery', async () => {
     vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
       artifactCount: 0,
-      ok: true,
+      noEcosystemFound: true,
+      ok: false,
     })
     vi.mocked(extractBazelToPypi).mockResolvedValueOnce({
       artifactCount: 0,

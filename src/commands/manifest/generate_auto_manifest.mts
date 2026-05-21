@@ -111,6 +111,7 @@ export async function generateAutoManifest({
     })
     outcomes.push({
       ecosystem: 'maven',
+      noEcosystemFound: Boolean(mavenResult.noEcosystemFound),
       ok: mavenResult.ok,
       manifestPath: mavenResult.manifestPath,
     })

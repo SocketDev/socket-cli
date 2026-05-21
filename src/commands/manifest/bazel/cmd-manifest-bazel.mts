@@ -320,6 +320,7 @@ async function run(
       outcomes.push({
         ecosystem: 'maven',
         ok: mavenResult.ok,
+        noEcosystemFound: mavenResult.noEcosystemFound,
         manifestPath: mavenResult.manifestPath,
       })
     } else if (eco === 'pypi') {

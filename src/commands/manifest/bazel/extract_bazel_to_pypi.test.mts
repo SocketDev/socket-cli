@@ -197,7 +197,7 @@ describe('extractBazelToPypi', () => {
     })
   })
 
-  it('returns ok=true with zero artifacts when no hubs and explicitEcosystem=false (auto)', async () => {
+  it('returns noEcosystemFound when no hubs in auto mode', async () => {
     vi.mocked(discoverPypiHubs).mockResolvedValue(new Map())
 
     const result = await extractBazelToPypi({
@@ -212,7 +212,8 @@ describe('extractBazelToPypi', () => {
 
     expect(result).toEqual({
       artifactCount: 0,
-      ok: true,
+      ok: false,
+      noEcosystemFound: true,
     })
   })
 
@@ -318,7 +319,7 @@ describe('extractBazelToPypi', () => {
     expect(matches?.length).toBe(1)
   })
 
-  it('sets process.exitCode = 1 when conflicting versions exist', async () => {
+  it('returns failure without mutating process.exitCode when conflicting versions exist', async () => {
     vi.mocked(discoverPypiHubs).mockResolvedValue(
       new Map([
         [
@@ -381,7 +382,7 @@ describe('extractBazelToPypi', () => {
       verbose: false,
     })
 
-    expect(process.exitCode).toBe(1)
+    expect(process.exitCode).toBe(0)
     expect(result.ok).toBe(false)
   })
 
