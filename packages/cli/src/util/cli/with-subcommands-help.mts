@@ -140,7 +140,7 @@ export function buildHelpLines(opts: BuildHelpLinesOptions): string[] {
   return lines
 }
 
-export function describeOrFallback(
+function describeOrFallback(
   cmd: CliSubcommand | undefined,
   fallback: string,
 ): string {
@@ -153,7 +153,7 @@ export function describeOrFallback(
  *
  * Hidden commands and commands without a bucket assignment are excluded.
  */
-export function groupCommandsByBucket(
+function groupCommandsByBucket(
   subcommands: Record<string, CliSubcommand>,
   buckets: CliBuckets,
 ): Map<CliBucket, string[]> {
@@ -181,11 +181,11 @@ export function groupCommandsByBucket(
   return grouped
 }
 
-export function hasHeroRows(bucket: CliBucket): boolean {
+function hasHeroRows(bucket: CliBucket): boolean {
   return bucket === 'main'
 }
 
-export function pushEnvironmentVariables(
+function pushEnvironmentVariables(
   lines: string[],
   argv: readonly string[],
 ): void {
@@ -239,7 +239,7 @@ export function pushEnvironmentVariables(
  * "hero" rows in the Main bucket that aren't standalone commands (e.g. `socket
  * scan create`, `socket npm/<purl>`).
  */
-export function pushRootBucketedLayout(
+function pushRootBucketedLayout(
   lines: string[],
   subcommands: Record<string, CliSubcommand>,
   buckets: CliBuckets,
