@@ -28,24 +28,11 @@ export type {
   SocketArtifactAlert,
 }
 
-export type CVE_ALERT_TYPE = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
+type CVE_ALERT_TYPE = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
 
-export type ArtifactAlertCve = Remap<
+type ArtifactAlertCve = Remap<
   Omit<CompactSocketArtifactAlert, 'type'> & {
     type: CVE_ALERT_TYPE
-  }
->
-
-export type ArtifactAlertCveFixable = Remap<
-  Omit<CompactSocketArtifactAlert, 'props' | 'type'> & {
-    type: CVE_ALERT_TYPE
-    props: CveProps
-  }
->
-
-export type ArtifactAlertUpgrade = Remap<
-  Omit<CompactSocketArtifactAlert, 'type'> & {
-    type: 'socketUpgradeAvailable'
   }
 >
 
