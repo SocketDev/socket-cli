@@ -49,9 +49,9 @@ function buildBazelModShowVisibleReposArgv(opts: BazelQueryOptions): string[] {
   return [
     ...startup,
     'mod',
-    'show_repo',
-    '--all_visible_repos',
-    '--output=streamed_jsonproto',
+    'dump_repo_mapping',
+    '',
+    '--output=json',
     ...userFlags,
   ]
 }
@@ -149,7 +149,7 @@ export async function runBazelQuery(
 /**
  * Bzlmod-native visible repository enumeration. This is only a candidate
  * source; callers must still validate each returned apparent repo name with a
- * semantic query for generated JVM Maven rules.
+ * semantic query for generated ecosystem rules.
  */
 export async function runBazelModShowVisibleRepos(
   opts: BazelQueryOptions,

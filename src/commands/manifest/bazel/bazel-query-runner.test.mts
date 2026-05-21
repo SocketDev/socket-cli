@@ -20,6 +20,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import {
   buildProbeFor,
   buildPypiProbeFor,
+  runBazelModShowVisibleRepos,
   runBazelQuery,
 } from './bazel-query-runner.mts'
 import constants from '../../../constants.mts'
@@ -189,6 +190,29 @@ describe('runBazelQuery', () => {
       invocationFlags: [],
     })
     expect(r).toEqual({ code: -1, stdout: '', stderr: 'missing bazel' })
+  })
+})
+
+describe('runBazelModShowVisibleRepos', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({ code: 0, stdout: '{}', stderr: '' })
+  })
+
+  it('uses the Bazel 7-compatible root repo mapping command', async () => {
+    await runBazelModShowVisibleRepos({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toEqual(['mod', 'dump_repo_mapping', '', '--output=json'])
+    expect(argv).not.toContain('--all_visible_repos')
+    expect(argv).not.toContain('--output=streamed_jsonproto')
   })
 })
 
