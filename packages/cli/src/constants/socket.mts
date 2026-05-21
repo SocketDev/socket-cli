@@ -9,7 +9,6 @@ export { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
 // Socket API URLs
 export const API_V0_URL = 'https://api.socket.dev/v0/'
 export const SOCKET_WEBSITE_URL = 'https://socket.dev'
-const SOCKET_CONTACT_URL = 'https://socket.dev/contact'
 export const SOCKET_DASHBOARD_URL = 'https://socket.dev/dashboard'
 export const SOCKET_PRICING_URL = 'https://socket.dev/pricing'
 export const SOCKET_SETTINGS_API_TOKENS_URL =

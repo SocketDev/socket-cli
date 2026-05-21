@@ -41,9 +41,6 @@ export const SOCKET_CLI_SEA_BUILD_DIR = path.join(
 )
 const SOCKET_CLI_SEA_BUILD_DIR_FALLBACK = '/tmp/socket-cli-sea-build'
 
-// Directory name constant.
-const CONSTANTS = 'constants'
-
 /**
  * Get all global cache directories.
  */
