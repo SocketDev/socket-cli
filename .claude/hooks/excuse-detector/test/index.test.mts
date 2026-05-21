@@ -66,6 +66,11 @@ async function runHook(
   const transcript = setupTranscript(rawContent)
   try {
     const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
+    // v6 lib-stable spawn returns an enriched Promise that rejects on
+    // non-zero exit; this test reads stderr + exit via manual listeners
+    // instead. Swallow the Promise rejection so it doesn't race the
+    // listener-based resolve and trigger "async activity after test ended".
+    void child.catch(() => undefined)
     const payload: Record<string, unknown> = {
       transcript_path: transcript.transcriptPath,
     }

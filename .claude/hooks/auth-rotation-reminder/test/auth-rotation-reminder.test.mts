@@ -36,6 +36,11 @@ function runHook(
         ...opts.env,
       },
     })
+    // v6 lib-stable spawn returns an enriched Promise that rejects on
+    // non-zero exit; this test reads stderr + exit via manual listeners
+    // instead. Swallow the Promise rejection so it doesn't race the
+    // listener-based resolve and trigger "async activity after test ended".
+    void child.catch(() => undefined)
     let stderr = ''
     child.process.stderr!.on('data', d => {
       stderr += d.toString()
