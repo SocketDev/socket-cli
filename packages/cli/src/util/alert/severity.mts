@@ -18,7 +18,7 @@ export const ALERT_SEVERITY = createEnum({
 export type SocketSdkAlertList =
   SocketSdkSuccessResult<'getIssuesByNPMPackage'>['data']
 
-export type SocketSdkAlert = SocketSdkAlertList[number]['value'] extends
+type SocketSdkAlert = SocketSdkAlertList[number]['value'] extends
   | (infer U)
   | undefined
   ? U
@@ -42,7 +42,7 @@ export function formatSeverityCount(
   return joinAnd(summary)
 }
 
-export function getDesiredSeverities(
+function getDesiredSeverities(
   lowestToInclude: SocketSdkAlert['severity'] | undefined,
 ): Array<SocketSdkAlert['severity']> {
   const result: Array<SocketSdkAlert['severity']> = []

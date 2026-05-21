@@ -63,7 +63,7 @@ export function debug(message: string): void {
 /**
  * DebugDir wrapper for telemetry service.
  */
-export function debugDirWrapper(
+function debugDirWrapper(
   obj: unknown,
   inspectOpts?: InspectOptions,
 ): void {
@@ -127,7 +127,7 @@ const inflightInit = new LRUCache<string, Promise<TelemetryService>>({
  *
  * @returns Promise that resolves or times out.
  */
-export function withTimeout<T>(
+function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
   errorMessage: string,

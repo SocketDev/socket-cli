@@ -46,7 +46,7 @@ import type { MeowFlag, MeowFlags } from '../../flags.mts'
 const HELP_INDENT = 2
 const HELP_PAD_NAME = 28
 
-export interface BuildHelpLinesOptions {
+interface BuildHelpLinesOptions {
   aliases: Record<string, CliAliases[string]>
   argv: readonly string[]
   /**
@@ -283,7 +283,7 @@ function pushRootBucketedLayout(
   }
 }
 
-export function pushSubcommandFlatList(
+function pushSubcommandFlatList(
   lines: string[],
   subcommands: Record<string, CliSubcommand>,
   aliases: Record<string, CliAliases[string]>,

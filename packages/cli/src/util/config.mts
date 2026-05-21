@@ -115,7 +115,7 @@ let configFromFlag = false
 
 let pendingSave = false
 
-export type FoundSocketYml = {
+type FoundSocketYml = {
   path: string
   parsed: SocketYml
 }
@@ -181,7 +181,7 @@ export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
   return localConfig[keyResult.data as Key]
 }
 
-export function getConfigValues(retryCount = 0): LocalConfig {
+function getConfigValues(retryCount = 0): LocalConfig {
   // Order: env var > --config flag > file.
   // If config is from flag/env override, skip file-based caching.
   if (configFromFlag && cachedConfig !== undefined) {

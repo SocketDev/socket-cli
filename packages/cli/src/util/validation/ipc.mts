@@ -8,14 +8,14 @@
 import crypto from 'node:crypto'
 import type { IpcStub } from '@socketsecurity/lib-stable/ipc/types'
 
-export interface IpcMessage<T = unknown> {
+interface IpcMessage<T = unknown> {
   data: T
   id: string
   timestamp: number
   type: string
 }
 
-export interface IpcHandshake extends IpcMessage<{
+interface IpcHandshake extends IpcMessage<{
   apiToken?: string | undefined
   appName: string
   pid: number

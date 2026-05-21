@@ -11,13 +11,13 @@ import { getNpmDirPath } from './paths.mts'
 import type { SemVer } from 'semver'
 
 // Flat npm config options returned by @npmcli/config.
-export type NpmFlatConfig = Record<string, unknown> & {
+type NpmFlatConfig = Record<string, unknown> & {
   nodeVersion?: string | undefined
   npmCommand?: string | undefined
   npmVersion?: string | undefined
 }
 
-export type NpmConfigOptions = {
+type NpmConfigOptions = {
   cwd?: string | undefined
   env?: Record<string, string> | undefined
   execPath?: string | undefined

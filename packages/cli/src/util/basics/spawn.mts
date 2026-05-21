@@ -118,7 +118,7 @@ export async function parseSocketFacts(factsPath: string): Promise<{
   }
 }
 
-export type SocketBasicsOptions = {
+type SocketBasicsOptions = {
   cacheDir?: string | undefined
   cwd: string
   languages?: string[] | undefined
@@ -131,7 +131,7 @@ export type SocketBasicsOptions = {
   timeout?: number | undefined
 }
 
-export type SocketBasicsResult = {
+type SocketBasicsResult = {
   factsPath: string | null
   findings: {
     containers?: number | undefined

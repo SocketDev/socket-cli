@@ -22,7 +22,7 @@ import {
 
 import type { CResult } from '../../types.mjs'
 
-export type ErrorDisplayOptions = {
+type ErrorDisplayOptions = {
   cause?: string | undefined
   showStack?: boolean | undefined
   title?: string | undefined
@@ -35,7 +35,7 @@ export type ErrorDisplayOptions = {
  * can't just `messageWithCauses(error)` — we decorate first, then delegate
  * cause walking to socket-lib.
  */
-export function appendCauseChain(baseMessage: string, cause: unknown): string {
+function appendCauseChain(baseMessage: string, cause: unknown): string {
   if (!cause) {
     return baseMessage
   }
