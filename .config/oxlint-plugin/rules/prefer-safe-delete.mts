@@ -1,8 +1,8 @@
 /**
  * @file Per CLAUDE.md "File deletion" rule: route every delete through
- *   `safeDelete()` / `safeDeleteSync()` from `@socketsecurity/lib-stable/fs/safe`.
- *   Never `fs.rm` / `fs.unlink` / `fs.rmdir` / `rm -rf` directly — even for one
- *   known file. Detects:
+ *   `safeDelete()` / `safeDeleteSync()` from
+ *   `@socketsecurity/lib-stable/fs/safe`. Never `fs.rm` / `fs.unlink` /
+ *   `fs.rmdir` / `rm -rf` directly — even for one known file. Detects:
  *
  *   - `fs.rm(...)` / `fs.rmSync(...)` / `fs.promises.rm(...)`
  *   - `fs.unlink(...)` / `fs.unlinkSync(...)`
