@@ -33,7 +33,6 @@ export async function outputScanMetadata(
     logger.log('')
     logger.log(`${mdKeyValue('Scan ID', scanId)}`)
     logger.log('')
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (
         [
@@ -55,7 +54,6 @@ export async function outputScanMetadata(
   } else {
     logger.log(`Scan ID: ${scanId}`)
     logger.log('')
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { 0: key, 1: value } of Object.entries(result.data)) {
       if (
         [

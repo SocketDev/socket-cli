@@ -98,9 +98,7 @@ const supportedConfigKeys = supportedConfigEntries.map(p => p[0])
 const MAX_CONFIG_READ_RETRIES = 3
 
 // Ensure export because dist/utils.js is required in src/constants.mts.
-// eslint-disable-next-line n/exports-style
 if (typeof exports === 'object' && exports !== null) {
-  // eslint-disable-next-line n/exports-style
   exports.getConfigValueOrUndef = getConfigValueOrUndef
 }
 
@@ -235,7 +233,6 @@ export function getConfigValues(retryCount = 0): LocalConfig {
             const parsed = JSON.parse(decoded)
             // Only copy supported config keys to prevent prototype pollution.
             if (parsed && typeof parsed === 'object') {
-              // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
               for (const key of Object.keys(parsed)) {
                 if (isSupportedConfigKey(key)) {
                   ;(cachedConfig as Record<string, unknown>)[key] = parsed[key]
@@ -337,7 +334,6 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   // Only copy supported config keys to prevent prototype pollution.
   cachedConfig = {} as LocalConfig
   const configObj = config as Record<string, unknown>
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const key of Object.keys(configObj)) {
     if (isSupportedConfigKey(key)) {
       ;(cachedConfig as Record<string, unknown>)[key] = configObj[key]

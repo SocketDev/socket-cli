@@ -112,7 +112,6 @@ describe('handleConfigAuto', () => {
       mockDiscoverConfigValue.mockResolvedValue(
         createSuccessResult(`${key}-value`),
       )
-      // eslint-disable-next-line no-await-in-loop
       await handleConfigAuto({ key, outputKind: 'json' })
       expect(discoverConfigValue).toHaveBeenCalledWith(key)
     }

@@ -217,7 +217,6 @@ describe('cmd-config-unset', () => {
           vi.clearAllMocks()
           mockCheckCommandInput.mockReturnValue(true)
 
-          // eslint-disable-next-line no-await-in-loop
           await cmdConfigUnset.run([key], importMeta, context)
 
           expect(mockHandleConfigUnset).toHaveBeenCalledWith({

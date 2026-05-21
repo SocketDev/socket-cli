@@ -159,7 +159,6 @@ describe('handlePurlDeepScore', () => {
         data: { name: 'test', version: '1.0.0', score: 85 },
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handlePurlDeepScore(purl, 'json')
 
       expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl)

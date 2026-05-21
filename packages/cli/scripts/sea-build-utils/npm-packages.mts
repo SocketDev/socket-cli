@@ -304,7 +304,6 @@ async function downloadNpmPackages() {
 
   // Collect npm packages from bundle-tools.json.
   const npmPackages = []
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
     if (toolConfig.packageManager === 'npm') {
       npmPackages.push({

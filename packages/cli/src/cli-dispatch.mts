@@ -105,6 +105,5 @@ async function main() {
 // Run the appropriate CLI.
 main().catch(error => {
   logger.error('Socket CLI Error:', error)
-  // eslint-disable-next-line n/no-process-exit -- Required for CLI error handling.
   process.exit(1)
 })

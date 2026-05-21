@@ -55,7 +55,6 @@ export class OAuthIntrospector {
           responseText,
           'OAuth metadata discovery',
         )
-        // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
         for (const field of [
           'authorization_endpoint',
           'introspection_endpoint',
@@ -376,7 +375,6 @@ export function reapIdleSessions<T extends { lastActivity: number }>(
   destroy: (id: string) => void,
   log: { info: (msg: string) => void },
 ): void {
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [id, session] of sessions.entries()) {
     if (now - session.lastActivity > ttlMs) {
       log.info(`Reaping idle session ${id}`)

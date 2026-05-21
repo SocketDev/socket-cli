@@ -219,7 +219,6 @@ const NetworkUtils = {
 
     while (attempts < maxAttempts) {
       try {
-        // eslint-disable-next-line no-await-in-loop
         const json = await NetworkUtils.fetch(
           latestUrl,
           authInfo ? { authInfo } : {},
@@ -249,7 +248,6 @@ const NetworkUtils = {
           `Attempt ${attempts} failed, retrying in ${delay}ms: ${errorMessage(e)}`,
         )
 
-        // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }

@@ -98,7 +98,6 @@ describe('handleDeleteRepo', () => {
     for (let i = 0, { length } = repoNames; i < length; i += 1) {
       const repoName = repoNames[i]
       mockFetchDeleteRepo.mockResolvedValue(createSuccessResult({}))
-      // eslint-disable-next-line no-await-in-loop
       await handleDeleteRepo('test-org', repoName, 'json')
       expect(mockFetchDeleteRepo).toHaveBeenCalledWith('test-org', repoName, {
         commandPath: 'socket repository del',

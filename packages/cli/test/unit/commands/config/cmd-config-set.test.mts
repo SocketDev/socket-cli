@@ -208,12 +208,10 @@ describe('cmd-config-set', () => {
           { key: 'apiProxy', value: 'https://proxy.example.com' },
         ]
 
-        // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
         for (const { key, value } of testCases) {
           vi.clearAllMocks()
           mockCheckCommandInput.mockReturnValue(true)
 
-          // eslint-disable-next-line no-await-in-loop
           await cmdConfigSet.run([key, value], importMeta, context)
 
           expect(mockHandleConfigSet).toHaveBeenCalledWith({

@@ -192,7 +192,6 @@ describe('handleThreatFeed', () => {
         data: [],
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleThreatFeed({
         direction: 'desc',
         ecosystem,
@@ -224,7 +223,6 @@ describe('handleThreatFeed', () => {
         data: [],
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleThreatFeed({
         direction: 'desc',
         ecosystem: 'npm',

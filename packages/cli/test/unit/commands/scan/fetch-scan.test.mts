@@ -211,7 +211,6 @@ describe('fetchScan', () => {
 
     for (let i = 0, { length } = testCases; i < length; i += 1) {
       const orgSlug = testCases[i]
-      // eslint-disable-next-line no-await-in-loop
       await fetchScan(orgSlug, 'scan-123')
 
       expect(mockQueryApiText).toHaveBeenCalledWith(

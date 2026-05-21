@@ -201,7 +201,6 @@ describe('cmd-config-get', () => {
           vi.clearAllMocks()
           mockCheckCommandInput.mockReturnValue(true)
 
-          // eslint-disable-next-line no-await-in-loop
           await cmdConfigGet.run([key], importMeta, context)
 
           expect(mockHandleConfigGet).toHaveBeenCalledWith({

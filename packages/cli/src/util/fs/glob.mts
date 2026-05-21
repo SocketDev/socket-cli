@@ -62,7 +62,6 @@ export function getSupportedFilePatterns(
   supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): string[] {
   const patterns: string[] = []
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const key of Object.keys(supportedFiles)) {
     const supported = supportedFiles[key]
     if (supported) {
@@ -154,7 +153,6 @@ export async function globWithGitIgnore(
   }
 
   let hasNegatedPattern = false
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- ignores is a Set (no .length / no numeric index)
   for (const p of ignores) {
     if (p.charCodeAt(0) === 33 /*'!'*/) {
       hasNegatedPattern = true

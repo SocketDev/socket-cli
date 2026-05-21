@@ -59,7 +59,6 @@ describe('commands', () => {
     })
 
     it('has command objects for all root commands', () => {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, command] of Object.entries(rootCommands)) {
         expect(command).toBeDefined()
         expect(typeof command).toBe('object')
@@ -72,7 +71,6 @@ describe('commands', () => {
     })
 
     it('has descriptions for all commands', () => {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, command] of Object.entries(rootCommands)) {
         expect(command).toHaveProperty('description')
         expect(typeof command.description).toBe('string')
@@ -97,7 +95,6 @@ describe('commands', () => {
     })
 
     it('all aliases have description and argv', () => {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, alias] of Object.entries(rootAliases)) {
         expect(alias).toHaveProperty('description')
         expect(alias).toHaveProperty('argv')
@@ -107,7 +104,6 @@ describe('commands', () => {
     })
 
     it('aliases point to valid root commands or subcommands', () => {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, alias] of Object.entries(rootAliases)) {
         const targetCommand = alias.argv[0]
         // Check if the target exists in rootCommands or is a known subcommand.
@@ -140,7 +136,6 @@ describe('commands', () => {
 
   describe('command structure', () => {
     it('all commands have consistent structure', () => {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, command] of Object.entries(rootCommands)) {
         // Check for required properties.
         expect(command).toHaveProperty('description')

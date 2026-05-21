@@ -80,7 +80,6 @@ export function generateMarkdownReport(
 ): string {
   const blocks: string[] = []
   const dupes: Set<string> = new Set()
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const artifact of artifacts.values()) {
     const block = `## ${formatReportCard(artifact, false)}`
     if (dupes.has(block)) {
@@ -120,7 +119,6 @@ export function generateTextReport(
     )
   }
   const dupes: Set<string> = new Set()
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const artifact of artifacts.values()) {
     const block = formatReportCard(artifact, true)
     if (dupes.has(block)) {

@@ -153,7 +153,6 @@ describe('handleScanView', () => {
         data: { id: 'scan-test', status },
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleScanView('org', 'scan-test', 'output.json', 'json')
 
       expect(outputScanView).toHaveBeenCalledWith(

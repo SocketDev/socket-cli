@@ -197,7 +197,6 @@ export class EnvironmentVariables {
 
     // Convert all values to JSON-stringified format for esbuild.
     const defines: Record<string, string> = {}
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [key, value] of Object.entries(envVars)) {
       defines[key] = JSON.stringify(value)
     }

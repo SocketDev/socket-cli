@@ -345,7 +345,6 @@ export async function run(
   if (result.signal) {
     process.kill(process.pid, result.signal)
   } else if (typeof result.code === 'number') {
-    // eslint-disable-next-line n/no-process-exit
     process.exit(result.code)
   }
 }

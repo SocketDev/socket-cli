@@ -97,7 +97,6 @@ describe('handleInstallCompletion', () => {
         value: `Completion for ${shell} installed`,
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleInstallCompletion(shell)
 
       expect(setupTabCompletion).toHaveBeenCalledWith(shell)

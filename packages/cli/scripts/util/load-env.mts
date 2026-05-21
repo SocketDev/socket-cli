@@ -20,7 +20,6 @@ export function loadEnvFile(filePath: string): Record<string, string> {
   } catch {
     return env
   }
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const line of content.split('\n')) {
     const trimmed = line.trim()
     // Skip comments and blank lines.

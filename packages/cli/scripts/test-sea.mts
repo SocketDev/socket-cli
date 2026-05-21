@@ -41,7 +41,6 @@ async function buildBlob(configPath) {
 async function displayToolInfo(toolPaths) {
   logger.log('External tools to bundle:')
   let totalToolSize = 0
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
     if (existsSync(toolPath)) {
       const stats = await fs.stat(toolPath)
@@ -438,7 +437,6 @@ async function runWithToolsMode(platform, toolPaths) {
 
   // Build assets object with security tools.
   const assets = { __proto__: null }
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
     if (existsSync(toolPath)) {
       assets[`external-tools/${toolName}`] = toolPath

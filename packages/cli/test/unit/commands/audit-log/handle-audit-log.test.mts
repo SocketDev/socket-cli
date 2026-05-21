@@ -223,7 +223,6 @@ describe('handleAuditLog', () => {
       const logType = logTypes[i]
       mockFetchAuditLog.mockResolvedValue(createSuccessResult([]))
 
-      // eslint-disable-next-line no-await-in-loop
       await handleAuditLog({
         logType,
         orgSlug: 'test-org',

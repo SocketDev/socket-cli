@@ -179,7 +179,6 @@ async function fetchGitHubReleaseChecksums(
  */
 export function parseChecksums(content) {
   const checksums = {}
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const line of content.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed) {

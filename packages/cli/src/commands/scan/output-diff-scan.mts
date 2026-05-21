@@ -132,7 +132,6 @@ export async function handleMarkdown(
     'This Scan was considered to be the "base" / "from" / "before" Scan.',
   )
   logger.log('')
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of Object.entries(data.before)) {
     if (key === 'pull_request' && !value) {
       continue
@@ -150,7 +149,6 @@ export async function handleMarkdown(
   logger.log('')
   logger.log('This Scan was considered to be the "head" / "to" / "after" Scan.')
   logger.log('')
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of Object.entries(data.after)) {
     if (key === 'pull_request' && !value) {
       continue

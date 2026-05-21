@@ -32,9 +32,7 @@ let rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
 let maxOldSpaceSizeFlag: number | undefined
 
 // Ensure export because dist/flags.js is required in src/constants.mts.
-// eslint-disable-next-line n/exports-style
 if (typeof exports === 'object' && exports !== null) {
-  // eslint-disable-next-line n/exports-style
   exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
 }
 
@@ -193,9 +191,7 @@ export function resetFlagCache(): void {
   maxSemiSpaceSizeFlag = undefined
 }
 // Ensure export because dist/flags.js is required in src/constants.mts.
-// eslint-disable-next-line n/exports-style
 if (typeof exports === 'object' && exports !== null) {
-  // eslint-disable-next-line n/exports-style
   exports.getMaxSemiSpaceSizeFlag = getMaxSemiSpaceSizeFlag
 }
 

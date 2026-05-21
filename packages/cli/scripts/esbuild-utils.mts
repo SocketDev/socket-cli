@@ -50,7 +50,6 @@ export function createBaseConfig(
  */
 function createDefineEntries(envVars: Record<string, string>) {
   const entries: Record<string, string> = {}
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [key, value] of Object.entries(envVars)) {
     // Dot notation: process.env.KEY
     entries[`process.env.${key}`] = value
@@ -104,7 +103,6 @@ export function envVarReplacementPlugin(envVars: Record<string, string>) {
 
           // Replace all forms of process.env["KEY"] access, even with mangled identifiers.
           // Pattern: <anything>.env["KEY"] where <anything> could be "import_node_process21.default" etc.
-          // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
           for (const [key, value] of Object.entries(envVars)) {
             // Match: <identifier>.env["KEY"] or <identifier>.env['KEY']
             const pattern = new RegExp(`(\\w+\\.)+env\\["${key}"\\]`, 'g')
@@ -154,7 +152,6 @@ export async function runBuild(config: BuildOptions, description = 'Build') {
 
     // If write: false, manually write outputFiles.
     if (result.outputFiles && result.outputFiles.length > 0) {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
       for (const output of result.outputFiles) {
         mkdirSync(path.dirname(output.path), { recursive: true })
         writeFileSync(output.path, output.contents)

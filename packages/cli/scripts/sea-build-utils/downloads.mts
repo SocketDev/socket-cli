@@ -1,7 +1,5 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
-/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/prefer-exists-sync -- fs.stat()/lstat() calls read .size / .isFile() for cache validation, size reporting, and chmod checks; not existence checks. */
 
 /**
@@ -149,7 +147,6 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 
   // Populate TOOL_REPOS from bundle-tools.json.
   // Filter by release === 'asset' to include all GitHub-released tools.
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
     if (toolConfig.release === 'asset') {
       const repoPath = toolConfig.repository.replace(/^[^:]+:/, '')
@@ -182,7 +179,6 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 
   // Download and extract each tool.
   const toolNames = []
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [toolName, assetName] of Object.entries(toolsForPlatform)) {
     const config = TOOL_REPOS[toolName]
 

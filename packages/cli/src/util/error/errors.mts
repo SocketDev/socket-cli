@@ -50,7 +50,6 @@ const getSentry = internals?.getSentry
 
 type EventHintOrCaptureContext =
   | { [key: string]: unknown }
-  // eslint-disable-next-line typescript-eslint/no-unsafe-function-type -- Sentry public API accepts a Function for captureContext.
   | Function
 
 /**
@@ -309,7 +308,6 @@ export function calculateStringSimilarity(str1: string, str2: string): number {
   }
 
   let overlap = 0
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- words1 is a Set (no .length / no numeric index)
   for (const word of words1) {
     if (words2.has(word)) {
       overlap += 1

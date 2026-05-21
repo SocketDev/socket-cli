@@ -169,7 +169,6 @@ export async function createTestWorkspace(
     const file = files[i]!
     const filePath = path.join(workspacePath, file.path)
     const fileDir = path.dirname(filePath)
-    // eslint-disable-next-line no-await-in-loop
     await safeMkdir(fileDir, { recursive: true })
 
     const content =
@@ -177,7 +176,6 @@ export async function createTestWorkspace(
         ? file.content
         : JSON.stringify(file.content, null, 2)
 
-    // eslint-disable-next-line no-await-in-loop
     await fs.writeFile(filePath, content, 'utf8')
   }
 

@@ -253,7 +253,6 @@ export async function extractExternalTools(
       // Another process is extracting, wait and check for completion.
       logger.info('Another process is extracting external tools, waiting...')
       for (let i = 0; i < 60; i++) {
-        // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => {
           setTimeout(resolve, 1_000)
         })
@@ -407,7 +406,6 @@ export async function extractExternalTools(
       if (existsSync(toolPathWithExt)) {
         try {
           // Quick validation - check if executable.
-          // eslint-disable-next-line no-await-in-loop
           // oxlint-disable-next-line socket/prefer-exists-sync -- fs.access(X_OK) checks executable permission, not existence.
           await fs.access(toolPathWithExt, fs.constants.X_OK)
           debug(
@@ -426,7 +424,6 @@ export async function extractExternalTools(
       }
 
       // Extract tool from VFS.
-      // eslint-disable-next-line no-await-in-loop
       const extractedPath = await extractTool(tool)
       toolPaths[tool] = extractedPath
     }

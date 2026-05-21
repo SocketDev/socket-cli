@@ -228,7 +228,6 @@ void (async () => {
   // Finalize telemetry before fatal exit.
   await finalizeTelemetry()
 
-  // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 })
 
@@ -256,7 +255,6 @@ process.on('uncaughtException', async err => {
       logger.fail('Error in uncaughtException handler:', e) // # socket-hook: allow logger
     }
   } finally {
-    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   }
 })
@@ -286,7 +284,6 @@ process.on('unhandledRejection', async (reason, promise) => {
       logger.fail('Error in unhandledRejection handler:', e) // # socket-hook: allow logger
     }
   } finally {
-    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   }
 })

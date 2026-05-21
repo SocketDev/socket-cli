@@ -119,10 +119,8 @@ describe('handleViewRepo', () => {
       ['company', 'internal-tool'],
     ]
 
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [org, repo] of testCases) {
       mockFetchViewRepo.mockResolvedValue(createSuccessResult({}))
-      // eslint-disable-next-line no-await-in-loop
       await handleViewRepo(org, repo, 'json')
       expect(mockFetchViewRepo).toHaveBeenCalledWith(org, repo, {
         commandPath: 'socket repository view',

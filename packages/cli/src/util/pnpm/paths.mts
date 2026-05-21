@@ -23,7 +23,6 @@ export function exitWithBinPathError(binName: string): never {
   )
   // The exit code 127 indicates that the command or binary being executed
   // could not be found.
-  // eslint-disable-next-line n/no-process-exit
   process.exit(127)
   // This line is never reached in production, but helps tests.
   throw new Error('process.exit called')

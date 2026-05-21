@@ -125,7 +125,7 @@ const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
  *
  * @returns {string} Release platform (darwin, linux, win).
  */
-function getReleasePlatform(platform) {
+export function getReleasePlatform(platform) {
   return platform === 'win32' ? 'win' : platform
 }
 
@@ -171,7 +171,7 @@ const VALID_ARCHS = ['arm64', 'x64']
  *
  * @returns {PlatformTargetInfo | null} Parsed info or null if invalid.
  */
-function parsePlatformTarget(target) {
+export function parsePlatformTarget(target) {
   if (!target || typeof target !== 'string') {
     return undefined
   }
@@ -212,7 +212,7 @@ function parsePlatformTarget(target) {
  * @returns {boolean} True if valid platform target.
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-function isPlatformTarget(target) {
+export function isPlatformTarget(target) {
   return PLATFORM_TARGETS.includes(target)
 }
 
@@ -227,7 +227,7 @@ function isPlatformTarget(target) {
  *   or undefined.
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-function getPlatformConfig(target) {
+export function getPlatformConfig(target) {
   return PLATFORM_CONFIGS.find(
     c =>
       `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` ===
@@ -246,7 +246,7 @@ function getPlatformConfig(target) {
  * @returns {string} Target string (e.g., "linux-x64-musl").
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-function formatPlatformTarget(platform, arch, libc) {
+export function formatPlatformTarget(platform, arch, libc) {
   const muslSuffix = libc === 'musl' ? '-musl' : ''
   return `${platform}-${arch}${muslSuffix}`
 }

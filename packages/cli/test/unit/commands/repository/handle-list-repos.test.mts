@@ -220,7 +220,6 @@ describe('handleListRepos', () => {
         data: { repos: [], nextPage: undefined },
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleListRepos({
         all: false,
         direction: 'asc',

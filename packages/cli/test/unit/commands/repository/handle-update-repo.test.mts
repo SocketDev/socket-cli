@@ -124,7 +124,6 @@ describe('handleUpdateRepo', () => {
 
     for (let i = 0, { length } = visibilities; i < length; i += 1) {
       const visibility = visibilities[i]
-      // eslint-disable-next-line no-await-in-loop
       await handleUpdateRepo(
         {
           orgSlug: 'test-org',

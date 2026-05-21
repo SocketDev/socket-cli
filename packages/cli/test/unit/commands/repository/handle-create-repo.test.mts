@@ -212,7 +212,6 @@ describe('handleCreateRepo', () => {
         data: { id: '1', name: 'repo', visibility },
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleCreateRepo(
         {
           orgSlug: 'org',

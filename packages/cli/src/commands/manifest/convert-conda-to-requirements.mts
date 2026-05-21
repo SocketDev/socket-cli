@@ -115,7 +115,6 @@ export function convertCondaToRequirementsFromInput(input: string): string {
   let delim = '-'
   let indent = ''
   const keeping: string[] = []
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const line of input.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed) {

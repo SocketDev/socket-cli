@@ -122,7 +122,6 @@ describe('handleConfigUnset', () => {
       const mockResult = createSuccessResult(undefined)
       mockUpdateConfigValue.mockReturnValue(mockResult)
 
-      // eslint-disable-next-line no-await-in-loop
       await handleConfigUnset({
         key: key as unknown,
         outputKind: 'json',

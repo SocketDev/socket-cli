@@ -287,7 +287,6 @@ describe('fetchCreateOrgFullScan', () => {
       ['org123', 'repo.with.dots'],
     ]
 
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [org, repo] of testCases) {
       const config = {
         branchName: 'main',
@@ -298,7 +297,6 @@ describe('fetchCreateOrgFullScan', () => {
         repoName: repo,
       }
 
-      // eslint-disable-next-line no-await-in-loop
       await fetchCreateOrgFullScan(['/path/to/package.json'], org, config)
 
       expect(mockSdk.createFullScan).toHaveBeenCalledWith(

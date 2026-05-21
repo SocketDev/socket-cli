@@ -181,7 +181,6 @@ describe('fetchAuditLog', () => {
         perPage: 100,
       }
 
-      // eslint-disable-next-line no-await-in-loop
       await fetchAuditLog(config)
 
       expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith(

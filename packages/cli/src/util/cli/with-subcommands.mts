@@ -287,7 +287,6 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
   // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
   if (versionFlag && !hasOwn(cliConfig.flags, 'version')) {
     logger.error('Unknown flag\n--version')
-    // eslint-disable-next-line n/no-process-exit
     process.exit(2)
     // This line is never reached in production, but helps tests.
     throw new Error('process.exit called')
@@ -641,7 +640,6 @@ export async function meowWithSubcommands(
   if (!helpFlag && dryRun) {
     logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     // Exit immediately to prevent tests from hanging waiting for stdin.
-    // eslint-disable-next-line n/no-process-exit -- Required for dry-run mode.
     process.exit(0)
     /* c8 ignore stop */
   } else {

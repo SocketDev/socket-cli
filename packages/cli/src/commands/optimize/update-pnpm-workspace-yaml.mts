@@ -54,7 +54,6 @@ export async function updatePnpmWorkspaceYamlOverrides(
     overridesNode = doc.get('overrides', true)
   } else {
     const map = overridesNode as YAMLMap<unknown, unknown>
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [key, value] of Object.entries(overrides)) {
       map.set(key, value)
     }

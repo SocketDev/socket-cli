@@ -80,7 +80,6 @@ export async function detectDefaultBranch(
     i += 1
   ) {
     const branch = COMMON_DEFAULT_BRANCH_NAMES[i]!
-    // eslint-disable-next-line no-await-in-loop
     if (await gitLocalBranchExists(branch, cwd)) {
       return branch
     }
@@ -92,7 +91,6 @@ export async function detectDefaultBranch(
     i += 1
   ) {
     const branch = COMMON_DEFAULT_BRANCH_NAMES[i]!
-    // eslint-disable-next-line no-await-in-loop
     if (await gitRemoteBranchExists(branch, cwd)) {
       return branch
     }

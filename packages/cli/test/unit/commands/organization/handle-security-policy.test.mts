@@ -115,7 +115,6 @@ describe('handleSecurityPolicy', () => {
     for (let i = 0, { length } = orgSlugs; i < length; i += 1) {
       const orgSlug = orgSlugs[i]
       mockFetchSecurityPolicy.mockResolvedValue(createSuccessResult({}))
-      // eslint-disable-next-line no-await-in-loop
       await handleSecurityPolicy(orgSlug, 'json')
       expect(fetchSecurityPolicy).toHaveBeenCalledWith(orgSlug, {
         commandPath: 'socket organization policy security',

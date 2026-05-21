@@ -158,7 +158,6 @@ export function meow<const F extends MeowFlags = MeowFlags>(
   // Convert meow flags to parseArgs options.
   const parseArgsOptions: Record<string, ParseArgsOptionsConfig> = {}
   const flagEntries = Object.entries(flags as MeowFlags)
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [name, flag] of flagEntries) {
     const type = flag.type === 'number' ? 'string' : flag.type || 'boolean'
     parseArgsOptions[name] = {
@@ -192,7 +191,6 @@ export function meow<const F extends MeowFlags = MeowFlags>(
   const flagValues = parsed.values as InferFlagValues<F>
 
   // Convert number flags.
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [name, flag] of flagEntries) {
     if (
       flag.type === 'number' &&
@@ -207,7 +205,6 @@ export function meow<const F extends MeowFlags = MeowFlags>(
 
   // Handle boolean defaults.
   if (booleanDefault !== undefined) {
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [name, flag] of flagEntries) {
       if (flag.type === 'boolean' && !(name in flagValues)) {
         ;(flagValues as Record<string, unknown>)[name] = booleanDefault
@@ -251,13 +248,11 @@ export function meow<const F extends MeowFlags = MeowFlags>(
 
   const showHelp = (exitCode = 2) => {
     logger.log(fullHelp)
-    // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(exitCode)
   }
 
   const showVersion = () => {
     logger.log(pkg['version'] || '0.0.0')
-    // eslint-disable-next-line n/no-process-exit -- Required for CLI exit behavior.
     process.exit(0)
   }
 

@@ -129,7 +129,6 @@ async function main(): Promise<void> {
       await downloadCli()
     } catch (e) {
       logger.error('Failed to download Socket CLI:', e)
-      // eslint-disable-next-line n/no-process-exit
       process.exit(1)
     }
   }
@@ -149,14 +148,12 @@ async function main(): Promise<void> {
 
   child.process.on('error', (error: Error) => {
     logger.error('Failed to spawn CLI:', error)
-    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })
 
   child.process.on(
     'exit',
     (code: number | null, signal: NodeJS.Signals | null) => {
-      // eslint-disable-next-line n/no-process-exit
       process.exit(code ?? (signal ? 1 : 0))
     },
   )
@@ -166,7 +163,6 @@ async function main(): Promise<void> {
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
     logger.error('Bootstrap error:', error)
-    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })
 }

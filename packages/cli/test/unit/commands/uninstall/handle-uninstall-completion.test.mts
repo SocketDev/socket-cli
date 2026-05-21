@@ -105,7 +105,6 @@ describe('handleUninstallCompletion', () => {
         value: `Completion for ${shell} uninstalled`,
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleUninstallCompletion(shell)
 
       expect(teardownTabCompletion).toHaveBeenCalledWith(shell)

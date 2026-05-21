@@ -52,7 +52,6 @@ export async function findUp(
       }
       const thePath = path.join(dir, name)
       try {
-        // eslint-disable-next-line no-await-in-loop
         // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isFile() / .isDirectory() metadata to distinguish file vs dir matches.
         const stats = await fs.stat(thePath)
         if (!onlyDirectories && stats.isFile()) {

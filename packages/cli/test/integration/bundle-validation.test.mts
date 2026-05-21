@@ -56,7 +56,6 @@ export async function checkBundledDependencies(content: string): Promise<{
     }
   } else {
     // If we have dependencies, check that they remain external (not bundled).
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const dep of Object.keys(dependencies)) {
       const escapedDep = dep.replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&')
       // Check if dependency code is bundled by looking for __toCommonJS pattern.
@@ -116,7 +115,6 @@ describe('Bundle validation', () => {
 
     if (result.hasIssue) {
       logger.fail('Found absolute paths in bundle:')
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
       for (const match of result.matches) {
         logger.fail(`  - ${match}`)
       }
@@ -135,7 +133,6 @@ describe('Bundle validation', () => {
 
     if (!result.hasNoBundledDeps) {
       logger.fail('Found bundled dependencies (should be external):')
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
       for (const dep of result.bundledDeps) {
         logger.fail(`  - ${dep}`)
       }

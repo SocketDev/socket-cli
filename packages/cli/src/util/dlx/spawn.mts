@@ -135,7 +135,6 @@ export async function downloadGitHubReleaseBinary(
     if (error.code === 'EEXIST') {
       // Another process is downloading; wait for completion.
       for (let i = 0; i < 60; i++) {
-        // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => {
           setTimeout(resolve, 1_000)
         })
@@ -145,7 +144,6 @@ export async function downloadGitHubReleaseBinary(
         // Check if lock holder is still alive.
         if (i % 5 === 4) {
           try {
-            // eslint-disable-next-line no-await-in-loop
             const lockPid = await fs.readFile(lockFile, 'utf8')
             const pid = Number.parseInt(lockPid.trim(), 10)
             if (!Number.isNaN(pid) && pid > 0) {
@@ -153,7 +151,6 @@ export async function downloadGitHubReleaseBinary(
                 process.kill(pid, 0)
               } catch {
                 // Process died, lock is stale - remove and retry.
-                // eslint-disable-next-line no-await-in-loop
                 await safeDelete(lockFile, { force: true })
                 return downloadGitHubReleaseBinary(spec)
               }

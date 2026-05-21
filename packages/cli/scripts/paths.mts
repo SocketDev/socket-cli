@@ -4,7 +4,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { existsSync } from 'node:fs'
 
-/* oxlint-disable-next-line socket/sort-source-methods -- helper used by PACKAGE_ROOT below. */
 function resolvePackageRoot(): string {
   let cur = path.dirname(fileURLToPath(import.meta.url))
   const root = path.parse(cur).root

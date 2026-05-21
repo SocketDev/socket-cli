@@ -105,7 +105,6 @@ export class PromiseQueue {
 
   private notifyIdle(): void {
     if (this.running === 0 && !this.queue.length) {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
       for (const resolve of this.idleResolvers) {
         resolve()
       }
@@ -132,7 +131,6 @@ export class PromiseQueue {
    * pending tasks are rejected with an error.
    */
   clear(): void {
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const task of this.queue) {
       task.reject(new Error('Task cancelled: queue cleared'))
     }

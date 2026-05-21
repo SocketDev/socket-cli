@@ -122,7 +122,6 @@ export async function extractBasicsTools(
       const vfsRelativePath = BASICS_TOOL_VFS_PATHS[tool]
       const vfsPath = `/snapshot/${vfsRelativePath}`
 
-      // eslint-disable-next-line no-await-in-loop
       const mountedPath = await processWithSmol.smol.mount(vfsPath)
 
       logger.success(`${tool}`)
@@ -171,7 +170,6 @@ export async function extractBasicsTools(
       }
       /* c8 ignore stop */
 
-      // eslint-disable-next-line no-await-in-loop
       const toolValidateResult = await spawn(toolPath, ['--version'], {
         stdio: 'pipe',
         timeout: 5_000,

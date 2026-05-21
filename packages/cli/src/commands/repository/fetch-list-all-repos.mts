@@ -38,7 +38,6 @@ export async function fetchListAllRepos(
         cause: `Either there are over 100 pages of results or the fetch has run into an infinite loop. Breaking it off now. nextPage=${nextPage}`,
       }
     }
-    // eslint-disable-next-line no-await-in-loop
     const orgRepoListCResult = await handleApiCall<'listRepositories'>(
       sockSdk.listRepositories(orgSlug, {
         ...(sort ? { sort: sort as 'name' | 'created_at' } : {}),

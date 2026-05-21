@@ -1,5 +1,3 @@
-/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/no-status-emoji -- test asserts on emoji output. */
 
 /**
  * Unit tests for wrapper command.
@@ -9,7 +7,6 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// oxlint-disable-next-line socket/prefer-node-builtin-imports -- type namespace needed for vi.importActual<typeof FsModule>
 import type * as FsModule from 'node:fs'
 import type * as PathsModule from '../../../../src/constants/paths.mts'
 

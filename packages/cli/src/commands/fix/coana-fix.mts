@@ -383,7 +383,6 @@ export async function coanaFix(
   const unprocessedIds: string[] = []
   for (let i = 0, { length } = ids; i < length; i += 1) {
     const ghsaId = ids[i]!
-    // eslint-disable-next-line no-await-in-loop
     const alreadyFixed = await isGhsaFixed(cwd, ghsaId)
     if (!alreadyFixed) {
       unprocessedIds.push(ghsaId)
@@ -404,7 +403,6 @@ export async function coanaFix(
     for (let i = 0, { length } = unprocessedIds; i < length; i += 1) {
       const ghsaId = unprocessedIds[i]!
       try {
-        // eslint-disable-next-line no-await-in-loop
         const cleaned = await cleanupSocketFixPrs(
           fixEnv.repoInfo.owner,
           fixEnv.repoInfo.repo,
@@ -431,7 +429,6 @@ export async function coanaFix(
     debug(`check: ${ghsaId}`)
 
     // Apply fix for single GHSA ID.
-    // eslint-disable-next-line no-await-in-loop
     const fixCResult = await spawnCoanaDlx(
       [
         ...coanaSilenceArgs,
@@ -470,7 +467,6 @@ export async function coanaFix(
     }
 
     // Check for modified files after applying the fix.
-    // eslint-disable-next-line no-await-in-loop
     const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
     const modifiedFiles = unstagedCResult.ok
       ? unstagedCResult.data.filter(relPath =>
@@ -489,7 +485,6 @@ export async function coanaFix(
 
     try {
       // Check for existing open PRs for this GHSA before creating a new one.
-      // eslint-disable-next-line no-await-in-loop
       const existingPrs = await getSocketFixPrs(
         fixEnv.repoInfo.owner,
         fixEnv.repoInfo.repo,
@@ -508,7 +503,6 @@ export async function coanaFix(
           const pr = existingPrs[j]!
           try {
             const octokit = getOctokit()
-            // eslint-disable-next-line no-await-in-loop
             await octokit.issues.createComment({
               owner: fixEnv.repoInfo.owner,
               repo: fixEnv.repoInfo.repo,
@@ -516,7 +510,6 @@ export async function coanaFix(
               body: 'Closing this PR as a newer fix is available.',
             })
 
-            // eslint-disable-next-line no-await-in-loop
             await octokit.pulls.update({
               owner: fixEnv.repoInfo.owner,
               repo: fixEnv.repoInfo.repo,
@@ -534,7 +527,6 @@ export async function coanaFix(
       }
 
       // Check if an open PR already exists for this GHSA.
-      // eslint-disable-next-line no-await-in-loop
       const existingOpenPrs = await getSocketFixPrs(
         fixEnv.repoInfo.owner,
         fixEnv.repoInfo.repo,
@@ -553,9 +545,7 @@ export async function coanaFix(
 
       // If branch exists but no open PR, delete the stale branch.
       // This handles cases where PR creation failed but branch was pushed.
-      // eslint-disable-next-line no-await-in-loop
       if (await gitRemoteBranchExists(branch, cwd)) {
-        // eslint-disable-next-line no-await-in-loop
         const shouldContinue = await cleanupStaleBranch(branch, ghsaId, cwd)
         if (!shouldContinue) {
           continue
@@ -578,11 +568,8 @@ export async function coanaFix(
       debug(`ghsa: ${ghsaId} details ${details ? 'found' : 'missing'}`)
 
       const pushed =
-        // eslint-disable-next-line no-await-in-loop
         (await gitCreateBranch(branch, cwd)) &&
-        // eslint-disable-next-line no-await-in-loop
         (await gitCheckoutBranch(branch, cwd)) &&
-        // eslint-disable-next-line no-await-in-loop
         (await gitCommit(
           getSocketFixCommitMessage(ghsaId, details),
           modifiedFiles,
@@ -592,31 +579,25 @@ export async function coanaFix(
             user: fixEnv.gitUser,
           },
         )) &&
-        // eslint-disable-next-line no-await-in-loop
         (await gitPushBranch(branch, cwd))
 
       if (!pushed) {
         logger.warn(`Push failed for ${ghsaId}, skipping PR creation.`)
         // Clean up branches after push failure.
         try {
-          // eslint-disable-next-line no-await-in-loop
           const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
-          // eslint-disable-next-line no-await-in-loop
           await cleanupErrorBranches(branch, cwd, remoteBranchExists)
         } catch (e) {
           debug('pr: failed to cleanup branches after push failure')
           debugDir(e)
         }
         // Clean up local state.
-        // eslint-disable-next-line no-await-in-loop
         await gitResetAndClean(fixEnv.baseBranch, cwd)
-        // eslint-disable-next-line no-await-in-loop
         await gitCheckoutBranch(fixEnv.baseBranch, cwd)
         continue
       }
 
       // Set up git remote.
-      // eslint-disable-next-line no-await-in-loop
       await setGitRemoteGithubRepoUrl(
         fixEnv.repoInfo.owner,
         fixEnv.repoInfo.repo,
@@ -624,7 +605,6 @@ export async function coanaFix(
         cwd,
       )
 
-      // eslint-disable-next-line no-await-in-loop
       const prResult = await openSocketFixPr(
         fixEnv.repoInfo.owner,
         fixEnv.repoInfo.repo,
@@ -654,13 +634,11 @@ export async function coanaFix(
         })
 
         // Mark GHSA as fixed in tracker.
-        // eslint-disable-next-line no-await-in-loop
         await markGhsaFixed(cwd, ghsaId, data.number, branch)
 
         if (autopilot) {
           logger.indent()
           spinner?.indent()
-          // eslint-disable-next-line no-await-in-loop
           const { details, enabled } = await enablePrAutoMerge(data)
           if (enabled) {
             logger.info(`Auto-merge enabled for ${prRef}.`)
@@ -675,7 +653,6 @@ export async function coanaFix(
         }
 
         // Clean up local branch only - keep remote branch for PR merge.
-        // eslint-disable-next-line no-await-in-loop
         await cleanupSuccessfulPrLocalBranch(branch, cwd)
       } else {
         // Handle PR creation failures.
@@ -688,33 +665,27 @@ export async function coanaFix(
           logger.error(
             `Failed to create PR for ${ghsaId}:\n${prResult.details}`,
           )
-          // eslint-disable-next-line no-await-in-loop
           await cleanupFailedPrBranches(branch, cwd)
         } else if (prResult.reason === 'permission_denied') {
           logger.error(
             `Failed to create PR for ${ghsaId}: Permission denied. Check SOCKET_CLI_GITHUB_TOKEN permissions.`,
           )
-          // eslint-disable-next-line no-await-in-loop
           await cleanupFailedPrBranches(branch, cwd)
         } else if (prResult.reason === 'network_error') {
           logger.error(
             `Failed to create PR for ${ghsaId}: Network error. Please try again.`,
           )
-          // eslint-disable-next-line no-await-in-loop
           await cleanupFailedPrBranches(branch, cwd)
         } else {
           logger.error(
             `Failed to create PR for ${ghsaId}: ${prResult.error.message}`,
           )
-          // eslint-disable-next-line no-await-in-loop
           await cleanupFailedPrBranches(branch, cwd)
         }
       }
 
       // Reset back to base branch for next iteration.
-      // eslint-disable-next-line no-await-in-loop
       await gitResetAndClean(fixEnv.baseBranch, cwd)
-      // eslint-disable-next-line no-await-in-loop
       await gitCheckoutBranch(fixEnv.baseBranch, cwd)
     } catch (e) {
       logger.warn(
@@ -723,18 +694,14 @@ export async function coanaFix(
       debugDir(e)
       // Clean up branches after unexpected error.
       try {
-        // eslint-disable-next-line no-await-in-loop
         const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
-        // eslint-disable-next-line no-await-in-loop
         await cleanupErrorBranches(branch, cwd, remoteBranchExists)
       } catch (cleanupError) {
         debug('pr: failed to cleanup branches during exception cleanup')
         debugDir(cleanupError)
       }
       // Clean up local state.
-      // eslint-disable-next-line no-await-in-loop
       await gitResetAndClean(fixEnv.baseBranch, cwd)
-      // eslint-disable-next-line no-await-in-loop
       await gitCheckoutBranch(fixEnv.baseBranch, cwd)
     }
 

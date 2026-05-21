@@ -55,10 +55,8 @@ export async function ensureCommandEmbeddings(): Promise<void> {
     scan: 'scan project for security vulnerabilities and issues',
   } as const
 
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [action, description] of Object.entries(commandDescriptions)) {
     if (description) {
-      // eslint-disable-next-line no-await-in-loop
       const embedding = await getEmbedding(description)
       /* c8 ignore start -- defensive: getEmbedding always returns undefined while the ONNX pipeline is disabled. */
       if (embedding) {
@@ -152,7 +150,6 @@ export async function onnxSemanticMatch(query: string): Promise<
   let bestAction = ''
   let bestScore = 0
 
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [action, embedding] of Object.entries(commandEmbeddings)) {
     const similarity = cosineSimilarity(queryEmbedding, embedding)
     if (similarity > bestScore) {

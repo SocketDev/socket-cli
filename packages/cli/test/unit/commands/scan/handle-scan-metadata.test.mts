@@ -116,7 +116,6 @@ describe('handleOrgScanMetadata', () => {
     for (let i = 0, { length } = scanIds; i < length; i += 1) {
       const scanId = scanIds[i]
       mockFetch.mockResolvedValue(createSuccessResult({}))
-      // eslint-disable-next-line no-await-in-loop
       await handleOrgScanMetadata('test-org', scanId, 'json')
       expect(mockFetch).toHaveBeenCalledWith('test-org', scanId, {
         commandPath: 'socket scan metadata',

@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
-/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/no-status-emoji -- dev script output; emoji prefixes provide at-a-glance build/test status. */
 
 /**
  * @file Setup script to install iocraft dev build into node_modules for local
@@ -33,7 +31,6 @@ const packages = {
 logger.log('Setting up iocraft dev build in node_modules...')
 logger.log('')
 
-// oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
 for (const [sourceDir, targetName] of Object.entries(packages)) {
   const sourcePath = join(packagesDir, sourceDir)
 
@@ -75,7 +72,6 @@ for (const [sourceDir, targetName] of Object.entries(packages)) {
   }
 
   // Copy LICENSE and README.
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const file of ['LICENSE', 'README.md']) {
     const source = join(sourcePath, file)
     if (existsSync(source)) {
@@ -134,7 +130,6 @@ if (!existsSync(iocraftScope)) {
 }
 
 // Symlink all platform packages into iocraft's node_modules.
-// oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
 for (const [sourceDir, targetName] of Object.entries(packages)) {
   if (targetName === '@socketaddon/iocraft') {
     continue // Skip main package.

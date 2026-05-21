@@ -259,7 +259,6 @@ describe('parseJsonObject', () => {
     // ever throws SyntaxError, but we test the branch with a stub.
     const origParse = JSON.parse
     JSON.parse = (() => {
-      // eslint-disable-next-line no-throw-literal -- Deliberately throwing a non-Error to exercise the String(e) branch.
       throw 'plain string'
     }) as typeof JSON.parse
     try {
@@ -661,7 +660,6 @@ describe('handleRequestSafely', () => {
     Object.defineProperty(res, 'headersSent', { value: false, writable: true })
     const log = { error: vi.fn() }
     await handleRequestSafely('POST', res, log, async () => {
-      // eslint-disable-next-line no-throw-literal -- exercising the non-Error path.
       throw 'plain string error'
     })
     expect(log.error).toHaveBeenCalledWith(

@@ -60,7 +60,6 @@ export function formatDataOrg(
   for (let i = 0, { length } = data; i < length; i += 1) {
     const entry = data[i]!
     const topFiveAlertTypes = entry.top_five_alert_types
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
       if (totalTopAlerts[type]) {
@@ -88,7 +87,6 @@ export function formatDataOrg(
   const topFiveAlertEntries = Object.entries(totalTopAlerts)
     .sort(([_keya, a], [_keyb, b]) => b - a)
     .slice(0, 5)
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of topFiveAlertEntries) {
     sortedTopFiveAlerts[key] = value
   }
@@ -115,7 +113,6 @@ export function formatDataRepo(
   for (let i = 0, { length } = data; i < length; i += 1) {
     const entry = data[i]!
     const topFiveAlertTypes = entry.top_five_alert_types
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
       if (totalTopAlerts[type]) {
@@ -136,7 +133,6 @@ export function formatDataRepo(
   const topFiveAlertEntries = Object.entries(totalTopAlerts)
     .sort(([_keya, a], [_keyb, b]) => b - a)
     .slice(0, 5)
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of topFiveAlertEntries) {
     sortedTopFiveAlerts[key] = value
   }

@@ -1,5 +1,3 @@
-/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/no-status-emoji -- test fixture: normalizes emoji output across Unicode/ASCII terminals. */
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

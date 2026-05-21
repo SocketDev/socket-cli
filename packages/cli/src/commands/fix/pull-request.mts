@@ -237,7 +237,6 @@ export async function getSocketFixPrsWithContext(
     // Include owner in cache key to avoid collisions with same repo name.
     const gqlCacheKey = `${owner}::${repo}-pr-graphql-snapshot-${states.join('-').toLowerCase()}`
     while (hasNextPage) {
-      // eslint-disable-next-line no-await-in-loop
       const gqlResp = (await cacheFetch(
         `${gqlCacheKey}-page-${pageIndex}`,
         /* c8 ignore start - cacheFetch factory only fires on cache miss; tests pass mocked cached values directly */

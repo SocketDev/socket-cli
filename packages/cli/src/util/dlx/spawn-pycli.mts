@@ -264,7 +264,6 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 
         // Lock is valid, wait for download to complete.
         for (let i = 0; i < 60; i++) {
-          // eslint-disable-next-line no-await-in-loop
           await new Promise(resolve => {
             setTimeout(resolve, 1_000)
           })
@@ -367,18 +366,15 @@ export async function ensureSocketPyCli(
 
       // Lock is valid, wait for installation to complete.
       for (let i = 0; i < 30; i++) {
-        // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => {
           setTimeout(resolve, 1_000)
         })
-        // eslint-disable-next-line no-await-in-loop
         if (await isSocketPyCliInstalled(pythonBin)) {
           return
         }
         // Periodically re-check if lock holder is still alive.
         if (i % 5 === 4) {
           try {
-            // eslint-disable-next-line no-await-in-loop
             const lockPid = await fs.readFile(lockFile, 'utf8')
             const pid = Number.parseInt(lockPid.trim(), 10)
             if (!Number.isNaN(pid) && pid > 0) {
@@ -388,7 +384,6 @@ export async function ensureSocketPyCli(
                 const pidErr = pidError as NodeJS.ErrnoException
                 if (pidErr.code !== 'EPERM') {
                   // Lock holder died during wait, retry.
-                  // eslint-disable-next-line no-await-in-loop
                   await safeDelete(lockFile, { force: true })
                   return ensureSocketPyCli(pythonBin, retryCount + 1)
                 }

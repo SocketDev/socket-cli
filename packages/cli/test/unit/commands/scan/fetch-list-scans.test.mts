@@ -205,7 +205,6 @@ describe('fetchOrgFullScanList', () => {
       { page: 100, perPage: 1 },
     ]
 
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { page, perPage } of testCases) {
       const config = {
         branch: 'main',
@@ -218,7 +217,6 @@ describe('fetchOrgFullScanList', () => {
         sort: 'created_at',
       }
 
-      // eslint-disable-next-line no-await-in-loop
       await fetchOrgFullScanList(config)
 
       expect(mockSdk.listFullScans).toHaveBeenCalledWith('test-org', {
@@ -246,7 +244,6 @@ describe('fetchOrgFullScanList', () => {
       { sort: 'status', direction: 'desc' },
     ]
 
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { direction, sort } of testCases) {
       const config = {
         branch: 'main',
@@ -259,7 +256,6 @@ describe('fetchOrgFullScanList', () => {
         sort,
       }
 
-      // eslint-disable-next-line no-await-in-loop
       await fetchOrgFullScanList(config)
 
       expect(mockSdk.listFullScans).toHaveBeenCalledWith('test-org', {

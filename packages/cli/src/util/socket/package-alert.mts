@@ -141,7 +141,6 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
   )
 
   let sockPkgAlerts: SocketPackageAlert[] = []
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const alert of artifact.alerts) {
     const action = alert.action ?? ''
     const enabledFlag = enabledState.get(alert.type)
@@ -323,7 +322,6 @@ export function getCveInfoFromAlertsMap(
   const filterConfig = toFilterConfig(getOwn(options, 'filter')) as CveFilter
 
   let infoByPartialPurl: CveInfoByPartialPurl | undefined = undefined
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
     const purlObj = getPurlObject(purl, { throws: false })
     if (!purlObj) {
@@ -506,7 +504,6 @@ export function logAlertsMap(
   }
 
   // If MIN_ABOVE_THE_FOLD_COUNT is NOT met add more from viewable pkg ids.
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: purl } of viewableAlertsByPurl.entries()) {
     if (aboveTheFoldPurls.size >= MIN_ABOVE_THE_FOLD_COUNT) {
       break
@@ -514,7 +511,6 @@ export function logAlertsMap(
     aboveTheFoldPurls.add(purl)
   }
   // If MIN_ABOVE_THE_FOLD_COUNT is STILL NOT met add more from hidden pkg ids.
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: purl, 1: hiddenAlerts } of hiddenAlertsByPurl.entries()) {
     if (aboveTheFoldPurls.size >= MIN_ABOVE_THE_FOLD_COUNT) {
       break
@@ -604,7 +600,6 @@ export function logAlertsMap(
     } else {
       output.write(`${prevAboveTheFold ? '\n' : ''}${hyperlink}:\n`)
     }
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- lines is a Set<string> (no .length / no numeric index)
     for (const line of lines) {
       output.write(`${line}\n`)
     }
@@ -634,7 +629,6 @@ export function logAlertsMap(
       middle: 0,
       low: 0,
     }
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { 0: purl, 1: alerts } of hiddenAlertsByPurl.entries()) {
       if (mentionedPurlsWithHiddenAlerts.has(purl)) {
         continue

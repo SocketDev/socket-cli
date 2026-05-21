@@ -48,7 +48,6 @@ if (existsSync(bundleToolsPath)) {
       INLINED_VERSION: '0.0.0-test',
       INLINED_VERSION_HASH: '0.0.0-test:abc1234:test',
     }
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [key, value] of Object.entries(toolVersions)) {
       if (!process.env[key] && value) {
         process.env[key] = value
@@ -71,7 +70,7 @@ const isMacCI = isCI && process.platform === 'darwin'
 
 // Calculate optimal thread count based on environment.
 // macOS CI runners have limited memory, so use fewer threads to prevent SIGABRT.
-function getMaxThreads(): number {
+export function getMaxThreads(): number {
   if (isCoverageEnabled) {
     return 1
   }

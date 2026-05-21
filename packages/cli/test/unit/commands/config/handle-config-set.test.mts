@@ -185,7 +185,6 @@ describe('handleConfigSet', () => {
         createSuccessResult(`value-for-${key}`),
       )
 
-      // eslint-disable-next-line no-await-in-loop
       await handleConfigSet({
         key: key as unknown,
         outputKind: 'json',

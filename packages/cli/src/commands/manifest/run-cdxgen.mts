@@ -45,7 +45,6 @@ export function argvObjectToArray(argvObj: ArgvObject): string[] {
     return [FLAG_HELP]
   }
   const result = []
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const { 0: key, 1: value } of Object.entries(argvObj)) {
     if (key === '--' || key === '_') {
       continue

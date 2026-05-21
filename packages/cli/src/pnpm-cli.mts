@@ -22,7 +22,6 @@ export async function runPnpmCli() {
   if (result.signal) {
     process.kill(process.pid, result.signal)
   } else if (typeof result.code === 'number') {
-    // eslint-disable-next-line n/no-process-exit
     process.exit(result.code)
   }
 }
@@ -31,7 +30,6 @@ export async function runPnpmCli() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   runPnpmCli().catch(error => {
     logger.error('Socket pnpm wrapper error:', error)
-    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   })
 }

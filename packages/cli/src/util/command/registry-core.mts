@@ -38,7 +38,6 @@ export class CommandRegistry implements ICommandRegistry {
 
     // Register aliases.
     if (command.aliases) {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
       for (const alias of command.aliases) {
         if (this.commands.has(alias)) {
           throw new Error(
@@ -66,7 +65,6 @@ export class CommandRegistry implements ICommandRegistry {
 
     // Remove all aliases.
     if (command.aliases) {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
       for (const alias of command.aliases) {
         this.commands.delete(alias)
       }
@@ -267,7 +265,6 @@ export class CommandRegistry implements ICommandRegistry {
     }
 
     // Initialize with defaults
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [name, def] of Object.entries(command.flags)) {
       if (def.default !== undefined) {
         flags[name] = def.default
@@ -339,7 +336,6 @@ export class CommandRegistry implements ICommandRegistry {
     }
 
     // Validate required flags
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [name, def] of Object.entries(command.flags)) {
       if (def.isRequired && flags[name] === undefined) {
         throw new Error(

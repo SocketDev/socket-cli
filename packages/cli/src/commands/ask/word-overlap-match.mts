@@ -127,7 +127,6 @@ export async function wordOverlapMatch(query: string): Promise<
   let bestAction = ''
   let bestScore = 0
 
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [commandName, commandData] of Object.entries(index.commands)) {
     if (
       !commandData ||

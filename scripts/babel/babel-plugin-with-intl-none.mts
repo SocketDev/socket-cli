@@ -345,12 +345,12 @@ export default function babelPluginWithIntlNone({ template, types: t }) {
         if (node.flags.includes('v')) {
           const pattern = node.pattern
           const newFlags = node.flags.replace('v', 'u')
-          let _transformed = false
+          let transformed = false
 
           // Check if pattern uses \p{...} that we can transform.
           if (pattern.includes('\\p{')) {
             // Continue to transformation below.
-            _transformed = true
+            transformed = true
           } else {
             // No \p{...} - just downgrade v→u flag.
             path.replaceWith(t.regExpLiteral(pattern, newFlags))

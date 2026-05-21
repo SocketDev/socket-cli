@@ -44,7 +44,6 @@ if (existsSync(externalToolsPath)) {
       INLINED_VERSION_HASH: '0.0.0-test:abc1234:test',
     }
 
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [key, value] of Object.entries(toolVersions)) {
       if (!process.env[key] && value) {
         process.env[key] = value

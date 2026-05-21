@@ -625,7 +625,6 @@ export async function withGitHubRetry<T>(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // eslint-disable-next-line no-await-in-loop
       const result = await operation()
       return { ok: true, data: result }
     } catch (e) {
@@ -656,7 +655,6 @@ export async function withGitHubRetry<T>(
       if (attempt < maxRetries) {
         const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
         debugNs('notice', `Retrying in ${delay}ms...`)
-        // eslint-disable-next-line no-await-in-loop
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }

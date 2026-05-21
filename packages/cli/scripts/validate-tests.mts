@@ -37,7 +37,6 @@ function formatResults(results) {
       continue
     }
 
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const issue of result.issues) {
       const message = `${result.file}: ${issue.message}`
       if (issue.severity === 'error') {
@@ -148,7 +147,6 @@ async function validateImportSyntax(testFile) {
       },
     ]
 
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const { fix, pattern, severity } of problematicPatterns) {
       if (pattern.test(content)) {
         issues.push({

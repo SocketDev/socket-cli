@@ -82,7 +82,6 @@ export function generateCommandHelp(command: CommandDefinition): string {
     lines.push('Options:')
     const flagEntries = Object.entries(command.flags)
 
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [name, def] of flagEntries) {
       const flagLine = formatFlag(name, def)
       lines.push(`  ${flagLine}`)
@@ -93,7 +92,6 @@ export function generateCommandHelp(command: CommandDefinition): string {
   // Examples
   if (command.examples && command.examples.length > 0) {
     lines.push('Examples:')
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
     for (const example of command.examples) {
       lines.push(`  ${example}`)
     }

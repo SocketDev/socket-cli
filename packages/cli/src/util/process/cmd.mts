@@ -87,7 +87,6 @@ export function filterFlags(
   const flagsToFilterSet = new Set<string>()
   const flagsWithValueSet = new Set<string>()
 
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [flagName, flag] of Object.entries(flagsToFilter)) {
     const longFlag = `--${camelToKebab(flagName)}`
     // Special case for negated booleans.

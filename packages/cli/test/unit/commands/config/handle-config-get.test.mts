@@ -122,7 +122,6 @@ describe('handleConfigGet', () => {
       const mockResult = createSuccessResult(`value-for-${key}`)
       mockGetConfigValue.mockReturnValue(mockResult)
 
-      // eslint-disable-next-line no-await-in-loop
       await handleConfigGet({
         key: key as unknown,
         outputKind: 'json',

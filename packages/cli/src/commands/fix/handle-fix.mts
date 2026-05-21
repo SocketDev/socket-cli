@@ -59,7 +59,6 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
         continue
       }
 
-      // eslint-disable-next-line no-await-in-loop
       const conversionResult = await convertCveToGhsa(trimmedId)
       if (conversionResult.ok) {
         validGhsas.push(conversionResult.data)
@@ -69,7 +68,6 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       }
     } else if (trimmedId.startsWith('pkg:')) {
       // Convert PURL to GHSAs
-      // eslint-disable-next-line no-await-in-loop
       const conversionResult = await convertPurlToGhsas(trimmedId)
       if (conversionResult.ok && conversionResult.data.length) {
         validGhsas.push(...conversionResult.data)

@@ -250,7 +250,6 @@ describe('flags', () => {
     })
 
     it('has descriptions for all flags', () => {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, flag] of Object.entries(commonFlags)) {
         expect(flag).toHaveProperty('description')
         expect(typeof flag.description).toBe('string')
@@ -290,7 +289,6 @@ describe('flags', () => {
     })
 
     it('has descriptions for all flags', () => {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, flag] of Object.entries(outputFlags)) {
         expect(flag).toHaveProperty('description')
         expect(typeof flag.description).toBe('string')
@@ -319,7 +317,6 @@ describe('flags', () => {
     })
 
     it('has descriptions for all flags', () => {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [, flag] of Object.entries(validationFlags)) {
         expect(flag).toHaveProperty('description')
         expect(typeof flag.description).toBe('string')

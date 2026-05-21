@@ -124,9 +124,7 @@ describe('fetchScanMetadata', () => {
       ['long.org.name', 'scan.with.dots'],
     ]
 
-    // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
     for (const [org, scanId] of testCases) {
-      // eslint-disable-next-line no-await-in-loop
       await fetchScanMetadata(org, scanId)
       expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(org, scanId)
     }

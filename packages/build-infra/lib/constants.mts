@@ -51,7 +51,7 @@ const CHECKPOINT_CHAINS = {
 /**
  * Validate a checkpoint chain at runtime.
  */
-function validateCheckpointChain(chain: string[], packageName: string) {
+export function validateCheckpointChain(chain: string[], packageName: string) {
   if (!Array.isArray(chain)) {
     throw new Error(`${packageName}: Checkpoint chain must be an array`)
   }
@@ -83,7 +83,7 @@ for (const [name, generator] of Object.entries(CHECKPOINT_CHAINS)) {
 /**
  * Resolve the build mode from CLI flags, env, or CI autodetect.
  */
-// oxlint-disable-next-line socket/sort-source-methods -- grouped by domain (build-mode resolver lives with the BUILD_MODES const it consumes); alphabetizing would separate them.
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (validate → resolve → consume); alphabetizing scatters the build-config lifecycle.
 export function getBuildMode(args?: string[] | Set<string>): string {
   if (args) {
     const has = Array.isArray(args)

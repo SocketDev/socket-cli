@@ -51,7 +51,6 @@ vi.mock('../../../../src/meow.mts', () => ({
     const argv = options?.argv || []
     const processedFlags = {}
     if (options?.flags) {
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
       for (const [key, flag] of Object.entries(options.flags)) {
         // Check if flag is present in argv.
         const flagName = `--${key}`

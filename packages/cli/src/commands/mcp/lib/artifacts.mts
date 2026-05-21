@@ -41,7 +41,6 @@ export function deduplicateArtifacts(
     group.push(artifact)
   }
   const results: ArtifactData[] = []
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- iterable is not a bare identifier (could be Map/Set/Generator/expression)
   for (const group of groups.values()) {
     results.push(selectBestArtifact(group, platform))
   }

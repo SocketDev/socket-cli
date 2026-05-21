@@ -144,7 +144,7 @@ const unicodePropertyMap = {
  * get a pattern from Babel's StringLiteral.value, backslashes are interpreted.
  * But when writing back into source code, we need to re-escape them.
  */
-function escapeForStringLiteral(str: string) {
+export function escapeForStringLiteral(str: string) {
   return (
     str
       // Backslash must be doubled.
@@ -159,7 +159,7 @@ function escapeForStringLiteral(str: string) {
 /**
  * Check if a regex pattern has unsupported Unicode features.
  */
-function hasUnsupportedUnicodeFeatures(pattern: string) {
+export function hasUnsupportedUnicodeFeatures(pattern: string) {
   // Check for \u{} escapes (require /u flag).
   if (/\\u\{[0-9a-fA-F]+\}/.test(pattern)) {
     return true
@@ -174,7 +174,7 @@ function hasUnsupportedUnicodeFeatures(pattern: string) {
 /**
  * Transform a regex pattern by replacing \p{Property} with character classes.
  */
-function transformRegexPattern(pattern: string) {
+export function transformRegexPattern(pattern: string) {
   let transformed = pattern
 
   // Replace \p{Property} with character class equivalents.

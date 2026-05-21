@@ -46,7 +46,6 @@ export class GitLabProvider implements PrProvider {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         debugDir({ attempt, base, head, projectId, title })
-        // eslint-disable-next-line no-await-in-loop
         const mr = (await this.gitlab.MergeRequests.create(
           projectId,
           head,
@@ -96,7 +95,6 @@ export class GitLabProvider implements PrProvider {
           const safeAttempt = Math.min(attempt, 14)
           const delay = Math.min(1000 * 2 ** (safeAttempt - 1), 10_000)
           debug(`mr: retrying in ${delay}ms...`)
-          // eslint-disable-next-line no-await-in-loop
           await sleep(delay)
         }
       }
@@ -163,7 +161,6 @@ export class GitLabProvider implements PrProvider {
       let hasMore = true
 
       while (hasMore) {
-        // eslint-disable-next-line no-await-in-loop
         const mrs = (await this.gitlab.MergeRequests.all({
           maxPages: 1,
           page,
