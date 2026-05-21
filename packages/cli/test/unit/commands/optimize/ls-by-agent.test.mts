@@ -21,11 +21,11 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib/constants/agents'
+} from '@socketsecurity/lib-stable/constants/agents'
 
 // Mock spawn.
 const mockSpawn = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn', () => ({
   spawn: mockSpawn,
 }))
 

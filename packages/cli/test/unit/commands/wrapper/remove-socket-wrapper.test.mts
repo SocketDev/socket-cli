@@ -38,7 +38,7 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -54,7 +54,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('successfully removes both aliases from file', async () => {
-    await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib-stable/logger')
 
     mockReadFileSync.mockReturnValue(
       'alias npm="socket npm"\nalias npx="socket npx"\nother content',
@@ -91,7 +91,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles read error gracefully', async () => {
-    await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib-stable/logger')
     const readError = new Error('Permission denied')
 
     mockReadFileSync.mockImplementation(() => {
@@ -108,7 +108,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles write error gracefully', async () => {
-    await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib-stable/logger')
     const writeError = new Error('Disk full')
 
     mockReadFileSync.mockReturnValue('alias npm="socket npm"')
@@ -123,7 +123,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles file with no socket aliases', async () => {
-    await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib-stable/logger')
 
     mockReadFileSync.mockReturnValue(
       'alias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin',
@@ -158,7 +158,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles empty file', async () => {
-    await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib-stable/logger')
 
     mockReadFileSync.mockReturnValue('')
 
@@ -198,7 +198,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles undefined error in read catch', async () => {
-    await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib-stable/logger')
 
     mockReadFileSync.mockImplementation(() => {
       throw undefined
@@ -213,7 +213,7 @@ describe('removeSocketWrapper', () => {
   })
 
   it('handles undefined error in write catch', async () => {
-    await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib-stable/logger')
 
     mockReadFileSync.mockReturnValue('alias npm="socket npm"')
     mockWriteFileSync.mockImplementation(() => {

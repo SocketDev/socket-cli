@@ -19,7 +19,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib/logger'
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
 import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
 // Mock the logger.
@@ -32,7 +32,7 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', async importOriginal => {
+vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
   const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,

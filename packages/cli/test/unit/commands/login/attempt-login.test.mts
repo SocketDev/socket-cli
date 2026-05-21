@@ -16,14 +16,14 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
 }))
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 const mockPassword = vi.hoisted(() => vi.fn())
 const mockSelect = vi.hoisted(() => vi.fn())
 const mockConfirm = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+vi.mock('@socketsecurity/lib-stable/stdio/prompts', () => ({
   password: mockPassword,
   select: mockSelect,
   confirm: mockConfirm,

@@ -49,18 +49,18 @@ describe('fetchScanData', () => {
       stop: vi.fn(),
     }
 
-    vi.doMock('@socketsecurity/lib/debug', () => ({
+    vi.doMock('@socketsecurity/lib-stable/debug', () => ({
       debug: vi.fn(),
       debugDir: vi.fn(),
       debugFn: vi.fn(),
     }))
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
 
-    vi.doMock('@socketsecurity/lib/spinner', () => ({
+    vi.doMock('@socketsecurity/lib-stable/spinner', () => ({
       getDefaultSpinner: () => mockSpinner,
     }))
 

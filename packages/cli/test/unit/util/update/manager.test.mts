@@ -21,7 +21,7 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   info: vi.fn(),
 }))
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
@@ -30,7 +30,7 @@ const mockDlxManifest = vi.hoisted(() => ({
   get: vi.fn(),
   set: vi.fn(),
 }))
-vi.mock('@socketsecurity/lib/dlx/manifest', () => ({
+vi.mock('@socketsecurity/lib-stable/dlx/manifest', () => ({
   dlxManifest: mockDlxManifest,
 }))
 

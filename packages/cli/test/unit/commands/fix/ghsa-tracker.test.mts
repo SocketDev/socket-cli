@@ -64,7 +64,7 @@ vi.mock('node:fs', async () => {
   }
 })
 
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs', () => ({
   readJson: mockReadJson,
   safeDelete: mockSafeDelete,
   safeMkdir: mockSafeMkdir,
@@ -125,7 +125,7 @@ describe('ghsa-tracker', () => {
 
   describe('loadGhsaTracker', () => {
     it('loads existing tracker file', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
+      const { readJson } = await import('@socketsecurity/lib-stable/fs')
       const mockTracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -171,7 +171,7 @@ describe('ghsa-tracker', () => {
 
   describe('saveGhsaTracker', () => {
     it('saves tracker to file', async () => {
-      const { safeMkdir, writeJson } = await import('@socketsecurity/lib/fs')
+      const { safeMkdir, writeJson } = await import('@socketsecurity/lib-stable/fs')
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -197,7 +197,7 @@ describe('ghsa-tracker', () => {
 
   describe('markGhsaFixed', () => {
     it('adds new GHSA fix record', async () => {
-      const { writeJson } = await import('@socketsecurity/lib/fs')
+      const { writeJson } = await import('@socketsecurity/lib-stable/fs')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
@@ -224,7 +224,7 @@ describe('ghsa-tracker', () => {
     })
 
     it('replaces existing GHSA fix record', async () => {
-      const { writeJson } = await import('@socketsecurity/lib/fs')
+      const { writeJson } = await import('@socketsecurity/lib-stable/fs')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -400,7 +400,7 @@ describe('ghsa-tracker', () => {
 
   describe('markGhsaFixed with locking', () => {
     it('uses custom branch name when provided', async () => {
-      const { writeJson } = await import('@socketsecurity/lib/fs')
+      const { writeJson } = await import('@socketsecurity/lib-stable/fs')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],

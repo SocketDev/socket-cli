@@ -20,11 +20,11 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib/words', () => ({
+vi.mock('@socketsecurity/lib-stable/words', () => ({
   pluralize: (word: string, options: { count: number }) =>
     options.count === 1 ? word : `${word}s`,
 }))

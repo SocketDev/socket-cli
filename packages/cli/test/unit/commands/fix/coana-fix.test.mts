@@ -134,7 +134,7 @@ vi.mock('../../../../src/commands/fix/pr-lifecycle-logger.mts', () => ({
   logPrEvent: mockLogPrEvent,
 }))
 
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs', () => ({
   readJsonSync: mockReadJsonSync,
   safeDelete: mockSafeDelete,
   safeReadFileSync: vi.fn(() => undefined),

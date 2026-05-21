@@ -3,7 +3,7 @@ import util from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
@@ -12,7 +12,7 @@ import { serializeResultJson } from '../../util/output/result-json.mjs'
 import { fileLink } from '../../util/terminal/link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export async function handleJson(

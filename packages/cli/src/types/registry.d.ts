@@ -5,5 +5,5 @@
  */
 
 // Declare the registry module and all its subpaths as valid modules
-declare module '@socketsecurity/lib/constants/*'
-declare module '@socketsecurity/registry/*'
+declare module '@socketsecurity/lib-stable/constants/*'
+declare module '@socketsecurity/registry-stable/*'

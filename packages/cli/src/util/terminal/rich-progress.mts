@@ -7,7 +7,7 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { onExit } from '@socketsecurity/lib/signal-exit'
+import { onExit } from '@socketsecurity/lib-stable/signal-exit'
 
 import type { Writable } from 'node:stream'
 

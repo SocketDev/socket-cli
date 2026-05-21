@@ -25,7 +25,7 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
@@ -47,7 +47,7 @@ vi.mock('../../../../src/util/telemetry/integration.mts', () => ({
 
 // Import after mocks.
 const { cmdPnpm } = await import('../../../../src/commands/pnpm/cmd-pnpm.mts')
-const { PNPM } = await import('@socketsecurity/lib/constants/agents')
+const { PNPM } = await import('@socketsecurity/lib-stable/constants/agents')
 
 describe('cmd-pnpm', () => {
   interface MockChildProcess extends Partial<EventEmitter> {

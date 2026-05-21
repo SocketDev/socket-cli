@@ -47,7 +47,7 @@ vi.mock(
   }),
 )
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
 }))

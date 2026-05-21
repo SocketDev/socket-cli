@@ -48,16 +48,16 @@ const mockCheckCommandInput = vi.hoisted(() => vi.fn())
 const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
 const mockPluralize = vi.hoisted(() => vi.fn(str => str))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib/constants/process', () => ({
+vi.mock('@socketsecurity/lib-stable/constants/process', () => ({
   getSpinner: mockGetSpinner,
 }))
 
-vi.mock('@socketsecurity/lib/words', () => ({
+vi.mock('@socketsecurity/lib-stable/words', () => ({
   pluralize: mockPluralize,
 }))
 

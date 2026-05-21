@@ -166,7 +166,7 @@ import { rmSync } from 'node:fs'
 rmSync(dir, { recursive: true })
 
 // Validates against dangerous deletions
-import { safeDelete } from '@socketsecurity/lib/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
 await safeDelete(dir)
 ```
 
@@ -567,7 +567,7 @@ CLAUDE.md mandates `@socketsecurity/lib/*` imports for spawn, fs operations. Soc
 import { spawn } from 'node:child_process'
 
 // Includes Socket security patterns
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { spawn } from '@socketsecurity/registry-stable/lib/spawn'
 ```
 
 **Severity**: Medium

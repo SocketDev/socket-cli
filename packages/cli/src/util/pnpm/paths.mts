@@ -12,7 +12,7 @@
  * PATH searches.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { findBinPathDetailsSync } from '../fs/path-resolve.mjs'
 

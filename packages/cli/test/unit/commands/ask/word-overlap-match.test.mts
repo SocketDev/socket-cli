@@ -21,7 +21,7 @@ vi.mock('node:fs', async importOriginal => {
   }
 })
 
-vi.mock('@socketsecurity/lib/env/home', () => ({
+vi.mock('@socketsecurity/lib-stable/env/home', () => ({
   getHome: mockGetHome,
 }))
 

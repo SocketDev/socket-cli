@@ -25,11 +25,11 @@ vi.mock('node:fs', () => ({
   promises: { readFile: mockReadFile },
 }))
 
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs', () => ({
   safeDeleteSync: mockSafeDeleteSync,
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 

@@ -108,7 +108,7 @@ minimumReleaseAge: 10080
   - .claude/hooks/*
 
 catalog:
-  '@socketsecurity/lib': 5.28.0
+  '@socketsecurity/lib-stable': 5.28.0
 
 # Soak window
 minimumReleaseAge: 10080
@@ -126,7 +126,7 @@ minimumReleaseAgeExclude:
     expect(content).toContain('packages:')
     expect(content).toContain('.claude/hooks/*')
     expect(content).toContain('catalog:')
-    expect(content).toContain("'@socketsecurity/lib': 5.28.0")
+    expect(content).toContain("'@socketsecurity/lib-stable': 5.28.0")
     expect(content).toContain('# Soak window')
     expect(content).toContain('minimumReleaseAge: 10080')
     expect(content).toContain("'@socketsecurity/*'")

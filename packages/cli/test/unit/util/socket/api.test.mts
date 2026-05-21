@@ -21,7 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   mockErrorResponse,
   mockSuccessResponse,
-} from '@socketsecurity/sdk/testing'
+} from '@socketsecurity/sdk-stable/testing'
 
 // Mock dependencies first.
 const mockSpinner = vi.hoisted(() => vi.fn())
@@ -43,7 +43,7 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -57,7 +57,7 @@ const mockGetDefaultSpinner = vi.hoisted(() =>
     successAndStop: mockSuccessAndStop,
   })),
 )
-vi.mock('@socketsecurity/lib/spinner', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner', () => ({
   Spinner: mockSpinner,
   getDefaultSpinner: mockGetDefaultSpinner,
 }))
@@ -77,7 +77,7 @@ vi.mock('../../../../src/util/error/errors.mts', () => ({
 
 // Mock httpRequest from socket-lib (replaces fetch).
 const mockHttpRequest = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/http-request', () => ({
+vi.mock('@socketsecurity/lib-stable/http-request', () => ({
   httpRequest: mockHttpRequest,
 }))
 

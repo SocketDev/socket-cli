@@ -20,13 +20,13 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   info: vi.fn(),
 }))
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 // Mock signal-exit.
 const mockOnExit = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/signal-exit', () => ({
+vi.mock('@socketsecurity/lib-stable/signal-exit', () => ({
   onExit: mockOnExit,
 }))
 

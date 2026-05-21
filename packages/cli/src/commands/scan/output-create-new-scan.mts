@@ -1,17 +1,17 @@
 import open from 'open'
 import terminalLink from 'terminal-link'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
+import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { mdHeader } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export type CreateNewScanOptions = {

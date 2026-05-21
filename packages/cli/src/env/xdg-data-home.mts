@@ -3,6 +3,6 @@
  * XDG Base Directory specification (Unix systems).
  */
 
-import { getXdgDataHome } from '@socketsecurity/lib/env/xdg'
+import { getXdgDataHome } from '@socketsecurity/lib-stable/env/xdg'
 
 export const XDG_DATA_HOME = getXdgDataHome()

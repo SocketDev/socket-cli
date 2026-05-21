@@ -5,11 +5,11 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { safeDelete } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { pluralize } from '@socketsecurity/lib/words'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { pluralize } from '@socketsecurity/lib-stable/words'
 
 import {
   cleanupErrorBranches,

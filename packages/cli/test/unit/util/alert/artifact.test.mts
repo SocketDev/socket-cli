@@ -19,7 +19,7 @@ import {
   ALERT_TYPE_MILD_CVE,
 } from '../../../../src/constants/alerts.mts'
 
-import type { CompactSocketArtifactAlert } from '@socketsecurity/sdk'
+import type { CompactSocketArtifactAlert } from '@socketsecurity/sdk-stable'
 
 describe('artifact', () => {
   describe('isArtifactAlertCve', () => {

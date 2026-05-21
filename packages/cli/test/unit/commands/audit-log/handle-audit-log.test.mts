@@ -47,7 +47,7 @@ vi.mock('../../../../src/commands/audit-log/fetch-audit-log.mts', () => ({
 vi.mock('../../../../src/commands/audit-log/output-audit-log.mts', () => ({
   outputAuditLog: mockOutputAuditLog,
 }))
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: mockGetDefaultLogger,
 }))
 

@@ -1,15 +1,15 @@
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
-import { getCI } from '@socketsecurity/lib/env/ci'
-import { getSocketApiToken } from '@socketsecurity/lib/env/socket'
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
 import {
   getSocketCliConfig,
   getSocketCliNoApiToken,
-} from '@socketsecurity/lib/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getOwn, hasOwn } from '@socketsecurity/lib/objects'
-import { indentString, trimNewlines } from '@socketsecurity/lib/strings'
+} from '@socketsecurity/lib-stable/env/socket-cli'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getOwn, hasOwn } from '@socketsecurity/lib-stable/objects'
+import { indentString, trimNewlines } from '@socketsecurity/lib-stable/strings'
 
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'

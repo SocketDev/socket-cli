@@ -82,11 +82,11 @@ vi.mock('../../../../src/util/semver.mts', () => ({
 }))
 
 const mockGetManifestData = vi.hoisted(() => vi.fn(() => []))
-vi.mock('@socketsecurity/registry', () => ({
+vi.mock('@socketsecurity/registry-stable', () => ({
   getManifestData: mockGetManifestData,
 }))
 
-vi.mock('@socketsecurity/lib/promises', () => ({
+vi.mock('@socketsecurity/lib-stable/promises', () => ({
   pEach: async (items: unknown[], fn: unknown, opts?: unknown) => {
     for (let i = 0, { length } = items; i < length; i += 1) {
       const item = items[i]

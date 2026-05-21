@@ -1,4 +1,4 @@
-import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib-stable/constants/core'
 
 import {
   FOLD_SETTING_FILE,
@@ -17,8 +17,8 @@ import { getSocketDevPackageOverviewUrlFromPurl } from '../../util/socket/url.mt
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../util/alert/artifact.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type AlertKey = string
 type EcoMap = Map<string, ReportLeafNode | PackageMap>

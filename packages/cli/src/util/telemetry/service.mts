@@ -42,14 +42,14 @@ import crypto from 'node:crypto'
 
 import { LRUCache } from 'lru-cache'
 
-import { debugDirNs, debugNs } from '@socketsecurity/lib/debug'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
 
 import { setupSdk } from '../socket/sdk.mts'
 
 import type { TelemetryEvent } from './types.mts'
-import type { InspectOptions } from '@socketsecurity/lib/debug'
-import { errorMessage } from '@socketsecurity/lib/errors'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { InspectOptions } from '@socketsecurity/lib-stable/debug'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type TelemetryConfig = SocketSdkSuccessResult<'getOrgTelemetryConfig'>['data']
 

@@ -19,7 +19,7 @@
 
 import { describe, expect } from 'vitest'
 
-import { NPX } from '@socketsecurity/lib/constants/agents'
+import { NPX } from '@socketsecurity/lib-stable/constants/agents'
 
 import {
   FLAG_CONFIG,

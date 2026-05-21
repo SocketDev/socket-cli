@@ -24,13 +24,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock @socketsecurity/lib/env/ci.
 const mockGetCI = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/env/ci', () => ({
+vi.mock('@socketsecurity/lib-stable/env/ci', () => ({
   getCI: mockGetCI,
 }))
 
 // Mock @socketsecurity/lib/env/socket-cli.
 const mockGetSocketCliGithubToken = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/env/socket-cli', async importOriginal => {
+vi.mock('@socketsecurity/lib-stable/env/socket-cli', async importOriginal => {
   const actual = (await importOriginal()) as typeof SocketCliModule
   return {
     ...actual,
@@ -75,14 +75,14 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
 }))
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 // Mock debug.
 const mockDebug = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn(() => false))
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: mockDebug,
   isDebug: mockIsDebug,
 }))
@@ -93,7 +93,7 @@ import {
   getFixEnv,
 } from '../../../../src/commands/fix/env-helpers.mts'
 
-import type * as SocketCliModule from '@socketsecurity/lib/env/socket-cli'
+import type * as SocketCliModule from '@socketsecurity/lib-stable/env/socket-cli'
 
 describe('env-helpers', () => {
   beforeEach(() => {

@@ -13,11 +13,11 @@
  * formatting - Handles kebab-case conversion for flags.
  */
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { isObject } from '@socketsecurity/lib/objects'
-import { naturalCompare } from '@socketsecurity/lib/sorts'
-import { indentString } from '@socketsecurity/lib/strings'
-import { pluralize } from '@socketsecurity/lib/words'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { isObject } from '@socketsecurity/lib-stable/objects'
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts'
+import { indentString } from '@socketsecurity/lib-stable/strings'
+import { pluralize } from '@socketsecurity/lib-stable/words'
 
 import { camelToKebab } from '../data/strings.mts'
 import {

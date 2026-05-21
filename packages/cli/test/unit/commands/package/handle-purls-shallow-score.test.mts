@@ -21,7 +21,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
 
 import { fetchPurlsShallowScore } from '../../../../src/commands/package/fetch-purls-shallow-score.mts'
 import { handlePurlsShallowScore } from '../../../../src/commands/package/handle-purls-shallow-score.mts'
@@ -46,7 +46,7 @@ vi.mock(
     outputPurlsShallowScore: mockOutputPurlsShallowScore,
   }),
 )
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   _debug: mock_debug,
   debug: mockDebug,
   debugDir: mockDebugDir,

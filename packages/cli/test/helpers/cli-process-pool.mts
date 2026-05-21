@@ -18,11 +18,11 @@
  *   ```
  */
 
-import { createEnvProxy } from '@socketsecurity/lib/env'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { createEnvProxy } from '@socketsecurity/lib-stable/env'
+import { spawn } from '@socketsecurity/lib-stable/spawn'
 
 import type { ChildProcess } from 'node:child_process'
-import type { SpawnOptions } from '@socketsecurity/lib/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
 
 interface PooledProcess {
   process: ChildProcess

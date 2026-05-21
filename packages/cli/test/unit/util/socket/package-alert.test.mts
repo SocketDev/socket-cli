@@ -40,7 +40,7 @@ import type { CompactSocketArtifactAlert } from '../../../../src/util/alert/arti
 
 // Mock getManifestData.
 const mockGetManifestData = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/registry', () => ({
+vi.mock('@socketsecurity/registry-stable', () => ({
   getManifestData: mockGetManifestData,
 }))
 
@@ -64,7 +64,7 @@ vi.mock('../../../../src/util/alert/translations.mts', () => ({
 }))
 
 // Mock debug.
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debugDirNs: vi.fn(),
   debugNs: vi.fn(),
 }))

@@ -19,7 +19,7 @@ import type {
 } from '../../../../src/util/cli/with-subcommands-shared.mts'
 import type { MeowFlags } from '../../../../src/flags.mts'
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => ({
     fail: vi.fn(),
     info: vi.fn(),

@@ -14,14 +14,14 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 const mockInput = vi.hoisted(() => vi.fn())
 const mockSelect = vi.hoisted(() => vi.fn())
 const mockConfirm = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+vi.mock('@socketsecurity/lib-stable/stdio/prompts', () => ({
   input: mockInput,
   select: mockSelect,
   confirm: mockConfirm,
@@ -30,7 +30,7 @@ vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
 const mockGetGithubApiUrl = vi.hoisted(() =>
   vi.fn(() => 'https://api.github.com'),
 )
-vi.mock('@socketsecurity/lib/env/github', async importOriginal => {
+vi.mock('@socketsecurity/lib-stable/env/github', async importOriginal => {
   const actual = (await importOriginal()) as Record<string, unknown>
   return {
     ...actual,

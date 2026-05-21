@@ -48,7 +48,7 @@ vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: mockGetDefaultLogger,
 }))
 

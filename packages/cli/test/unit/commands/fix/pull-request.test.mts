@@ -66,7 +66,7 @@ vi.mock('../../../../src/commands/fix/git.mts', () => ({
 }))
 
 // Mock debug.
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))

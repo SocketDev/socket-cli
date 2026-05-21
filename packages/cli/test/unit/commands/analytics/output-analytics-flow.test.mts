@@ -20,7 +20,7 @@ const mockWriteFile = vi.hoisted(() => vi.fn())
 const mockDisplayAnalyticsWithIocraft = vi.hoisted(() => vi.fn())
 const mockDebugFileOp = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 vi.mock('node:fs/promises', () => ({

@@ -56,12 +56,12 @@ vi.mock('../../../../src/util/git/github.mts', () => ({
   withGitHubRetry: mockWithGitHubRetry,
 }))
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: vi.fn(() => ({
     fail: vi.fn(),
     group: vi.fn(),

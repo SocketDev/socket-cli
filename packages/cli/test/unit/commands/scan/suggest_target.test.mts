@@ -18,7 +18,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock select prompt.
 const mockSelect = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+vi.mock('@socketsecurity/lib-stable/stdio/prompts', () => ({
   select: mockSelect,
 }))
 

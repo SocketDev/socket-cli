@@ -19,18 +19,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock spawn.
 const mockSpawn = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn', () => ({
   spawn: mockSpawn,
 }))
 
 // Mock select prompt.
 const mockSelect = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+vi.mock('@socketsecurity/lib-stable/stdio/prompts', () => ({
   select: mockSelect,
 }))
 
 // Mock stripAnsi.
-vi.mock('@socketsecurity/lib/strings', () => ({
+vi.mock('@socketsecurity/lib-stable/strings', () => ({
   stripAnsi: (str: string) => str,
 }))
 

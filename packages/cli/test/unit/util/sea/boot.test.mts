@@ -19,7 +19,7 @@ vi.mock('../../../../src/util/sea/detect.mts', () => ({
   isSeaBinary: vi.fn(),
 }))
 
-import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib/constants/socket'
+import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib-stable/constants/socket'
 
 import { isSeaBinary } from '../../../../src/util/sea/detect.mts'
 import {

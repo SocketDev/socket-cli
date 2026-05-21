@@ -99,7 +99,7 @@ describe('packages constants', () => {
     })
 
     it('has SOCKET_SECURITY_REGISTRY constant', () => {
-      expect(SOCKET_SECURITY_REGISTRY).toBe('@socketsecurity/registry')
+      expect(SOCKET_SECURITY_REGISTRY).toBe('@socketsecurity/registry-stable')
     })
   })
 

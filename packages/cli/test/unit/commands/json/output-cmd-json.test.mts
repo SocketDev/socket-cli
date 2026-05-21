@@ -21,14 +21,14 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 const mockSafeReadFileSync = vi.fn()
 const mockSafeStatsSync = vi.fn()
 
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs', () => ({
   safeReadFileSync: (...args: unknown[]) => mockSafeReadFileSync(...args),
   safeStatsSync: (...args: unknown[]) => mockSafeStatsSync(...args),
 }))

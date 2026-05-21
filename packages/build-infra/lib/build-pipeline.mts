@@ -31,9 +31,9 @@ import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { errorMessage } from '@socketsecurity/lib/errors'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
 
 import {
   cleanCheckpoint,
@@ -44,7 +44,7 @@ import { getBuildMode, validateCheckpointChain } from './constants.mts'
 import { validateExternalTools } from './external-tools-schema.mts'
 import { getCurrentPlatformArch } from './platform-mappings.mts'
 import { getNodeVersion } from './version-helpers.mts'
-import { safeDelete } from '@socketsecurity/lib/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
 
 const logger = getDefaultLogger()
 

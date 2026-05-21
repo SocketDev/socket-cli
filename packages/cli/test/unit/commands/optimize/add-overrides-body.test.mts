@@ -11,7 +11,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PackagesModule from '@socketsecurity/lib/packages'
+import type * as PackagesModule from '@socketsecurity/lib-stable/packages'
 
 const mockLogger = {
   fail: vi.fn(),
@@ -52,11 +52,11 @@ export async function loadAddOverrides(opts: {
   listPackages?: ((...args: unknown[]) => Promise<string>) | undefined
 }) {
   const { manifestEntries } = opts
-  vi.doMock('@socketsecurity/registry', () => ({
+  vi.doMock('@socketsecurity/registry-stable', () => ({
     getManifestData: (agent?: string) =>
       agent === 'npm' ? manifestEntries : [],
   }))
-  vi.doMock('@socketsecurity/lib/promises', () => ({
+  vi.doMock('@socketsecurity/lib-stable/promises', () => ({
     pEach: async (items: unknown[], fn: unknown) => {
       for (let i = 0, { length } = items; i < length; i += 1) {
         const item = items[i]
@@ -118,7 +118,7 @@ export async function loadAddOverrides(opts: {
     getMajor: opts.getMajor ?? vi.fn((v: string) => parseInt(v, 10)),
   }))
   if (opts.fetchPackageManifest) {
-    vi.doMock('@socketsecurity/lib/packages', async importOriginal => {
+    vi.doMock('@socketsecurity/lib-stable/packages', async importOriginal => {
       const actual = await importOriginal<typeof PackagesModule>()
       return {
         ...actual,

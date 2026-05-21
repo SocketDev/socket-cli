@@ -21,7 +21,7 @@ const mockGetDefaultApiToken = vi.hoisted(() => vi.fn())
 const mockGetDefaultProxyUrl = vi.hoisted(() => vi.fn())
 const mockGetErrorCause = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/dlx/package', () => ({
+vi.mock('@socketsecurity/lib-stable/dlx/package', () => ({
   dlxPackage: mockDlxPackage,
 }))
 

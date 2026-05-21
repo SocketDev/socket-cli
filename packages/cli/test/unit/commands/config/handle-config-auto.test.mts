@@ -38,7 +38,7 @@ const mockLogger = vi.hoisted(() => ({
 const mockDiscoverConfigValue = vi.hoisted(() => vi.fn())
 const mockOutputConfigAuto = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

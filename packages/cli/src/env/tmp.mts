@@ -3,6 +3,6 @@
  * systems).
  */
 
-import { getTmp } from '@socketsecurity/lib/env/temp-dir'
+import { getTmp } from '@socketsecurity/lib-stable/env/temp-dir'
 
 export const TMP = getTmp()

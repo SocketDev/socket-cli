@@ -30,16 +30,16 @@ const mockSpinner = vi.hoisted(() => ({
   stop: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
-vi.mock('@socketsecurity/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn', () => ({
   spawn: mockSpawn,
 }))
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs', () => ({
   safeReadFile: mockSafeReadFile,
 }))
-vi.mock('@socketsecurity/lib/spinner', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner', () => ({
   getDefaultSpinner: () => mockSpinner,
 }))
 

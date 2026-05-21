@@ -17,7 +17,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as FsLibType from '@socketsecurity/lib/fs'
+import type * as FsLibType from '@socketsecurity/lib-stable/fs'
 import type * as CreateScanFromGithub from '../../../../src/commands/scan/create-scan-from-github.mts'
 
 const mockOctokit = vi.hoisted(() => ({
@@ -36,12 +36,12 @@ vi.mock('../../../../src/util/git/github.mts', () => ({
   withGitHubRetry: mockWithGitHubRetry,
 }))
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: vi.fn(() => ({
     fail: vi.fn(),
     group: vi.fn(),
@@ -55,7 +55,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 
 const mockSelect = vi.hoisted(() => vi.fn())
 const mockConfirm = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+vi.mock('@socketsecurity/lib-stable/stdio/prompts', () => ({
   select: mockSelect,
   confirm: mockConfirm,
 }))
@@ -85,7 +85,7 @@ vi.mock('../../../../src/commands/repository/fetch-list-all-repos.mts', () => ({
 
 const mockSafeDelete = vi.hoisted(() => vi.fn())
 const mockSafeMkdirSync = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs', () => ({
   safeDelete: mockSafeDelete,
   safeMkdirSync: mockSafeMkdirSync,
 }))
@@ -607,7 +607,7 @@ describe('create-scan-from-github (coverage)', () => {
       // mockSafeDelete is the mocked safeDelete here; reach for the real
       // one via importActual to actually remove the tmpdir.
       const actualFs = await vi.importActual<typeof FsLibType>(
-        '@socketsecurity/lib/fs',
+        '@socketsecurity/lib-stable/fs',
       )
       await actualFs.safeDelete(dir, { force: true, recursive: true })
     })
@@ -624,7 +624,7 @@ describe('create-scan-from-github (coverage)', () => {
       // safeMkdirSync is mocked to no-op; route to the real one so the
       // subsequent fs.writeFile can land.
       const actualFs = await vi.importActual<typeof FsLibType>(
-        '@socketsecurity/lib/fs',
+        '@socketsecurity/lib-stable/fs',
       )
       mockSafeMkdirSync.mockImplementationOnce((p: string, opts: object) =>
         actualFs.safeMkdirSync(

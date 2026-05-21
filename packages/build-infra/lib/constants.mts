@@ -10,7 +10,7 @@
 
 import process from 'node:process'
 
-import { getCI } from '@socketsecurity/lib/env/ci'
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
 
 /**
  * Build stage directory names inside build/<mode>/.

@@ -25,7 +25,7 @@ const mockDebugNs = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn(() => false))
 const mockIsDebugNs = vi.hoisted(() => vi.fn(() => false))
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: mockDebug,
   debugCache: mockDebugCache,
   debugDir: mockDebugDir,
@@ -35,7 +35,7 @@ vi.mock('@socketsecurity/lib/debug', () => ({
   isDebugNs: mockIsDebugNs,
 }))
 
-import { debug, debugDir, debugNs } from '@socketsecurity/lib/debug'
+import { debug, debugDir, debugNs } from '@socketsecurity/lib-stable/debug'
 
 import {
   debugApiRequest,

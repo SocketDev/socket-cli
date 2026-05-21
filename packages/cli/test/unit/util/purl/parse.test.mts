@@ -14,7 +14,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { PackageURL } from '@socketregistry/packageurl-js'
+import { PackageURL } from '@socketregistry/packageurl-js-stable'
 
 import {
   createPurlObject,
@@ -27,7 +27,7 @@ const mockIsObjectObject = vi.hoisted(() =>
   vi.fn(obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj)),
 )
 
-vi.mock('@socketsecurity/lib/objects', () => ({
+vi.mock('@socketsecurity/lib-stable/objects', () => ({
   isObjectObject: mockIsObjectObject,
 }))
 

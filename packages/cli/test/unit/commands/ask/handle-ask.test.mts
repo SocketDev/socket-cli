@@ -32,13 +32,13 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
 const mockSpawn = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn', () => ({
   spawn: mockSpawn,
 }))
 
@@ -60,7 +60,7 @@ vi.mock('node:fs', async importOriginal => {
 })
 
 const mockGetHome = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/env/home', () => ({
+vi.mock('@socketsecurity/lib-stable/env/home', () => ({
   getHome: mockGetHome,
 }))
 

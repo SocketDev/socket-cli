@@ -15,11 +15,11 @@ const mockDetectExecutableType = vi.hoisted(() => vi.fn())
 const mockApplyMachineModeIfActive = vi.hoisted(() => vi.fn())
 const mockInferSubcommand = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn', () => ({
   spawn: mockSpawn,
 }))
 
-vi.mock('@socketsecurity/lib/dlx/detect', () => ({
+vi.mock('@socketsecurity/lib-stable/dlx/detect', () => ({
   detectExecutableType: mockDetectExecutableType,
 }))
 

@@ -12,17 +12,17 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/constants/agents', async importOriginal => {
+vi.mock('@socketsecurity/lib-stable/constants/agents', async importOriginal => {
   const actual = await importOriginal()
   return {
     ...actual,
@@ -285,7 +285,7 @@ describe('handleOptimize', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug')
     const { detectAndValidatePackageEnvironment } =
       await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =

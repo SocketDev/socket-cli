@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { resolveRealBinSync, whichRealSync } from '@socketsecurity/lib/bin'
-import { NPM } from '@socketsecurity/lib/constants/agents'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { isDirSync } from '@socketsecurity/lib/fs'
+import { resolveRealBinSync, whichRealSync } from '@socketsecurity/lib-stable/bin'
+import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isDirSync } from '@socketsecurity/lib-stable/fs'
 
 import {
   createSupportedFilesFilter,
@@ -14,7 +14,7 @@ import {
 import { NODE_MODULES } from '../../constants/packages.mts'
 
 import type { SocketYml } from '../socket-yaml.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export function findBinPathDetailsSync(binName: string): {
   name: string

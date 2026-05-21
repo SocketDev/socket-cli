@@ -108,7 +108,7 @@ import {
   errorStack,
   isError,
   isErrnoException,
-} from '@socketsecurity/lib/errors'
+} from '@socketsecurity/lib-stable/errors'
 ```
 
 ### `isError(value)` — replaces `value instanceof Error`

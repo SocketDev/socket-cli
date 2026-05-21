@@ -33,7 +33,7 @@ vi.mock('../../../../src/commands/repository/fetch-create-repo.mts', () => ({
 vi.mock('../../../../src/commands/repository/output-create-repo.mts', () => ({
   outputCreateRepo: mockOutputCreateRepo,
 }))
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
   isDebug: mockIsDebug,

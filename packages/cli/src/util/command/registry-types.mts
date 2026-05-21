@@ -5,7 +5,7 @@
  */
 
 import type { CResult } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 
 /**
  * Flag type definitions for command arguments.

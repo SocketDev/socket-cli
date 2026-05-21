@@ -53,26 +53,26 @@ vi.mock('browserslist', () => ({
 }))
 
 const mockWhichBin = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/bin', () => ({
+vi.mock('@socketsecurity/lib-stable/bin', () => ({
   whichReal: mockWhichBin,
 }))
 
 const mockReadFileBinary = vi.hoisted(() => vi.fn())
 const mockReadFileUtf8 = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs', () => ({
   readFileBinary: mockReadFileBinary,
   readFileUtf8: mockReadFileUtf8,
 }))
 
 const mockReadPackageJson = vi.hoisted(() => vi.fn())
 const mockToEditablePackageJson = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/packages', () => ({
+vi.mock('@socketsecurity/lib-stable/packages', () => ({
   readPackageJson: mockReadPackageJson,
   toEditablePackageJson: mockToEditablePackageJson,
 }))
 
 const mockSpawn = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn', () => ({
   spawn: mockSpawn,
 }))
 

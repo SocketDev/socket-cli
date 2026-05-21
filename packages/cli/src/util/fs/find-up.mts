@@ -16,7 +16,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { getAbortSignal } from '@socketsecurity/lib/constants/process'
+import { getAbortSignal } from '@socketsecurity/lib-stable/constants/process'
 
 export type FindUpOptions = {
   cwd?: string | undefined

@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 import { defineFlags } from '../../meow.mts'

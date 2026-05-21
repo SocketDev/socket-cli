@@ -1,5 +1,5 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { select } from '@socketsecurity/lib/stdio/prompts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { select } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { getConfigValue, updateConfigValue } from '../../util/config.mts'
 const logger = getDefaultLogger()

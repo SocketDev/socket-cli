@@ -34,7 +34,7 @@ const mockDebugDir = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn())
 const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-token'))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -43,7 +43,7 @@ vi.mock('../../../../src/util/socket/api.mjs', () => ({
   queryApiSafeText: mockQueryApiSafeText,
 }))
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
   isDebug: mockIsDebug,

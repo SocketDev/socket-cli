@@ -5,10 +5,10 @@
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { isPath } from '@socketsecurity/lib/paths/normalize'
-import { pluralize } from '@socketsecurity/lib/words'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { isPath } from '@socketsecurity/lib-stable/paths/normalize'
+import { pluralize } from '@socketsecurity/lib-stable/words'
 
 import {
   detectNodejsCdxgenSources,

@@ -8,12 +8,12 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { safeDelete } from '@socketsecurity/lib/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs'
 
 import { constants } from '../../src/constants.mts'
 import { spawnSocketCli } from '../utils.mts'
 
-import type { SpawnOptions } from '@socketsecurity/lib/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
 
 /**
  * Result from CLI execution with enhanced utilities.

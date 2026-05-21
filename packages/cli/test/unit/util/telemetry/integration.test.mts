@@ -72,7 +72,7 @@ vi.mock('node:os', () => ({
 }))
 
 // Mock debug.
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debugNs: vi.fn(),
 }))
 

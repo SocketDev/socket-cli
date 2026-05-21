@@ -25,7 +25,7 @@ vi.mock('../../../../src/constants/paths.mts', async importOriginal => {
 
 // Mock isDirSync.
 const mockIsDirSync = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs', () => ({
   isDirSync: mockIsDirSync,
   safeReadFile: vi.fn(),
 }))
@@ -38,7 +38,7 @@ import {
   pathsToGlobPatterns,
 } from '../../../../src/util/fs/glob.mts'
 
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock supported files data.
 const mockSupportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'] =
@@ -335,7 +335,7 @@ describe('util/fs/glob', () => {
 
   describe('getWorkspaceGlobs', () => {
     it('reads pnpm-workspace.yaml packages list for PNPM agent (lines 49-56)', async () => {
-      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
+      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib-stable/fs'))
       safeReadFile.mockResolvedValueOnce(
         'packages:\n  - "packages/*"\n  - "apps/*"\n',
       )
@@ -348,7 +348,7 @@ describe('util/fs/glob', () => {
     })
 
     it('returns empty array when pnpm-workspace.yaml is missing', async () => {
-      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
+      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib-stable/fs'))
       safeReadFile.mockResolvedValueOnce(undefined as unknown)
       const { getWorkspaceGlobs } =
         await import('../../../../src/util/fs/glob.mts')
@@ -357,7 +357,7 @@ describe('util/fs/glob', () => {
     })
 
     it('returns empty array when pnpm-workspace.yaml is malformed', async () => {
-      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
+      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib-stable/fs'))
       safeReadFile.mockResolvedValueOnce('this is not :::valid::: yaml{{{')
       const { getWorkspaceGlobs } =
         await import('../../../../src/util/fs/glob.mts')
@@ -368,7 +368,7 @@ describe('util/fs/glob', () => {
 
   describe('globWorkspace', () => {
     it('returns empty array when no workspace globs (line 299-300)', async () => {
-      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib/fs'))
+      const { safeReadFile } = vi.mocked(await import('@socketsecurity/lib-stable/fs'))
       // pnpm-workspace.yaml missing → empty workspaceGlobs → early-return [].
       safeReadFile.mockResolvedValueOnce(undefined as unknown)
       const { globWorkspace } = await import('../../../../src/util/fs/glob.mts')

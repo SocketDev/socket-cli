@@ -19,7 +19,7 @@ import { getPurlObject } from '../purl/parse.mts'
 
 import type { SocketArtifact } from '../alert/artifact.mts'
 import type { PURL_Type } from '../ecosystem/types.mjs'
-import type { PackageURL } from '@socketregistry/packageurl-js'
+import type { PackageURL } from '@socketregistry/packageurl-js-stable'
 
 export function getPkgFullNameFromPurl(
   purl: string | PackageURL | SocketArtifact,

@@ -6,7 +6,7 @@
 import { vi } from 'vitest'
 
 import type { CResult } from '../../src/types.mts'
-import type { SocketSdk } from '@socketsecurity/sdk'
+import type { SocketSdk } from '@socketsecurity/sdk-stable'
 
 /**
  * Error options for creating error results.
@@ -128,7 +128,7 @@ export async function setupApiCallFailure(
  * Setup common module mocks for output operations.
  */
 export function setupOutputModuleMocks() {
-  vi.mock('@socketsecurity/lib/logger', () => ({
+  vi.mock('@socketsecurity/lib-stable/logger', () => ({
     getDefaultLogger: vi.fn(() => ({
       fail: vi.fn(),
       log: vi.fn(),

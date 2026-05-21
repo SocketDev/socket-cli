@@ -13,7 +13,7 @@
  *   import { beforeEach, describe, expect, it, vi } from 'vitest'
  *
  *   // Mock declarations MUST be at top level
- *   vi.mock('@socketsecurity/lib/logger', () => ({
+ *   vi.mock('@socketsecurity/lib-stable/logger', () => ({
  *   logger: {
  *   fail: vi.fn(),
  *   log: vi.fn(),
@@ -34,7 +34,7 @@
  *   const { functionUnderTest } = await import('./module-under-test.mts')
  *
  *   // Use vi.importMock for mocked dependencies
- *   const { logger } = await vi.importMock('@socketsecurity/lib/logger')
+ *   const { logger } = await vi.importMock('@socketsecurity/lib-stable/logger')
  *   const { queryApiSafeJson } = await vi.importMock('../../util/socket/api.mjs')
  *
  *   const mockLog = vi.mocked(getDefaultLogger().log)

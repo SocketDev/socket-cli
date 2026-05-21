@@ -15,12 +15,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mockDownloadPackage = vi.hoisted(() =>
   vi.fn().mockResolvedValue(undefined),
 )
-vi.mock('@socketsecurity/lib/dlx/package', () => ({
+vi.mock('@socketsecurity/lib-stable/dlx/package', () => ({
   downloadPackage: mockDownloadPackage,
 }))
 
 const mockGetCI = vi.hoisted(() => vi.fn(() => false))
-vi.mock('@socketsecurity/lib/env/ci', () => ({
+vi.mock('@socketsecurity/lib-stable/env/ci', () => ({
   getCI: mockGetCI,
 }))
 

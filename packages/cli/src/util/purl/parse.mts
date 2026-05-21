@@ -15,8 +15,8 @@
  * See: https://github.com/package-url/purl-spec.
  */
 
-import { PackageURL } from '@socketregistry/packageurl-js'
-import { isObjectObject } from '@socketsecurity/lib/objects'
+import { PackageURL } from '@socketregistry/packageurl-js-stable'
+import { isObjectObject } from '@socketsecurity/lib-stable/objects'
 
 import type { SocketArtifact } from '../alert/artifact.mjs'
 import type { PURL_Type } from '../ecosystem/types.mjs'

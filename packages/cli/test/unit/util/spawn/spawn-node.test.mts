@@ -19,15 +19,15 @@ const mockSpawnSync = vi.hoisted(() => vi.fn())
 const mockIsSeaBinary = vi.hoisted(() => vi.fn())
 const mockSendBootstrapHandshake = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/bin', () => ({
+vi.mock('@socketsecurity/lib-stable/bin', () => ({
   whichRealSync: mockWhichRealSync,
 }))
 
-vi.mock('@socketsecurity/lib/constants/node', () => ({
+vi.mock('@socketsecurity/lib-stable/constants/node', () => ({
   getExecPath: mockGetExecPath,
 }))
 
-vi.mock('@socketsecurity/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn', () => ({
   spawn: mockSpawn,
   spawnSync: mockSpawnSync,
 }))

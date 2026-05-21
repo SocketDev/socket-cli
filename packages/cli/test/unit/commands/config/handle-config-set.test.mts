@@ -41,7 +41,7 @@ const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -52,7 +52,7 @@ vi.mock('../../../../src/commands/config/output-config-set.mts', () => ({
 vi.mock('../../../../src/util/config.mts', () => ({
   updateConfigValue: mockUpdateConfigValue,
 }))
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
   isDebug: mockIsDebug,
@@ -124,7 +124,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug')
 
     mockUpdateConfigValue.mockReturnValue(createSuccessResult('debug-value'))
 
@@ -146,7 +146,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debug } = await import('@socketsecurity/lib/debug')
+    const { debug } = await import('@socketsecurity/lib-stable/debug')
 
     mockUpdateConfigValue.mockReturnValue(createErrorResult('Failed'))
 

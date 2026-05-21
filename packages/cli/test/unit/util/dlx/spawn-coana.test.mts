@@ -23,11 +23,11 @@ const mockGetDefaultOrgSlug = vi.hoisted(() =>
 )
 const mockGetErrorCause = vi.hoisted(() => vi.fn((e: unknown) => String(e)))
 
-vi.mock('@socketsecurity/lib/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn', () => ({
   spawn: mockSpawn,
 }))
 
-vi.mock('@socketsecurity/lib/dlx/detect', () => ({
+vi.mock('@socketsecurity/lib-stable/dlx/detect', () => ({
   detectExecutableType: mockDetectExecutableType,
 }))
 

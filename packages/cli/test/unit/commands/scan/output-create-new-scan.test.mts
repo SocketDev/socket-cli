@@ -19,7 +19,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { outputCreateNewScan } from '../../../../src/commands/scan/output-create-new-scan.mts'
 
 import type { CResult } from '../../../../src/commands/scan/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -42,7 +42,7 @@ const mockSerializeResultJson = vi.hoisted(() =>
 const mockOpenDefault = vi.hoisted(() => vi.fn())
 const mockConfirmFn = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -63,7 +63,7 @@ vi.mock('terminal-link', () => ({
   default: vi.fn((text: string, url: string) => `[${text}](${url})`),
 }))
 
-vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+vi.mock('@socketsecurity/lib-stable/stdio/prompts', () => ({
   confirm: mockConfirmFn,
 }))
 

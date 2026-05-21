@@ -28,10 +28,10 @@ const mockGetSocketCliApiProxy = vi.hoisted(() => vi.fn())
 const mockGetSocketApiToken = vi.hoisted(() => vi.fn())
 const mockGetSocketCliNoApiToken = vi.hoisted(() => vi.fn())
 const mockGetSocketCliApiTimeout = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/env/socket', () => ({
+vi.mock('@socketsecurity/lib-stable/env/socket', () => ({
   getSocketApiToken: mockGetSocketApiToken,
 }))
-vi.mock('@socketsecurity/lib/env/socket-cli', () => ({
+vi.mock('@socketsecurity/lib-stable/env/socket-cli', () => ({
   getSocketCliApiBaseUrl: mockGetSocketCliApiBaseUrl,
   getSocketCliApiProxy: mockGetSocketCliApiProxy,
   getSocketCliNoApiToken: mockGetSocketCliNoApiToken,
@@ -59,7 +59,7 @@ class MockSocketSdk {
   }
 }
 const mockSocketSdkConstructor = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/sdk', () => ({
+vi.mock('@socketsecurity/sdk-stable', () => ({
   SocketSdk: class {
     constructor(apiToken: string, options: unknown) {
       mockSocketSdkConstructor(apiToken, options)

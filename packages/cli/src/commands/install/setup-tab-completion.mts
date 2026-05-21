@@ -8,8 +8,8 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { debug } from '@socketsecurity/lib/debug'
-import { safeMkdirSync } from '@socketsecurity/lib/fs'
+import { debug } from '@socketsecurity/lib-stable/debug'
+import { safeMkdirSync } from '@socketsecurity/lib-stable/fs'
 
 import { getCliVersionHash } from '../../env/cli-version-hash.mts'
 import { homePath } from '../../constants/paths.mts'

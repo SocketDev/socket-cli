@@ -39,7 +39,7 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
@@ -49,7 +49,7 @@ const mockSpinner = vi.hoisted(() => ({
   stop: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/spinner', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner', () => ({
   getDefaultSpinner: () => mockSpinner,
 }))
 

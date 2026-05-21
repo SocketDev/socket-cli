@@ -1,7 +1,7 @@
 import path from 'node:path'
 
-import { debug } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { debug } from '@socketsecurity/lib-stable/debug'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { outputManifest } from './output-manifest.mts'

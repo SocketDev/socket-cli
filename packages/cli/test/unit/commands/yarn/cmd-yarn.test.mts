@@ -25,7 +25,7 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
@@ -47,7 +47,7 @@ vi.mock('../../../../src/util/telemetry/integration.mts', () => ({
 
 // Import after mocks.
 const { cmdYarn } = await import('../../../../src/commands/yarn/cmd-yarn.mts')
-const { YARN } = await import('@socketsecurity/lib/constants/agents')
+const { YARN } = await import('@socketsecurity/lib-stable/constants/agents')
 
 describe('cmd-yarn', () => {
   interface MockChildProcess extends Partial<EventEmitter> {

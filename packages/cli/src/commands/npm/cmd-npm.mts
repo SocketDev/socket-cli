@@ -4,7 +4,7 @@
  * Defined via `defineHandoffCommand`. See util/cli/define-handoff.mts.
  */
 
-import { NPM } from '@socketsecurity/lib/constants/agents'
+import { NPM } from '@socketsecurity/lib-stable/constants/agents'
 
 import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 

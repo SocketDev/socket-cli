@@ -12,7 +12,7 @@
 import { existsSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { safeReadFile } from '@socketsecurity/lib/fs'
+import { safeReadFile } from '@socketsecurity/lib-stable/fs'
 import { isMap, parseDocument } from 'yaml'
 import type { Document, YAMLMap } from 'yaml'
 

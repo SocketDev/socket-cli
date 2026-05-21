@@ -32,7 +32,7 @@ const mockJoinAnd = vi.hoisted(() => vi.fn(arr => arr.join(' and ')))
 const mockCoanaFix = vi.hoisted(() => vi.fn())
 const mockOutputFixResult = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/arrays', () => ({
+vi.mock('@socketsecurity/lib-stable/arrays', () => ({
   joinAnd: mockJoinAnd,
 }))
 
@@ -48,7 +48,7 @@ const mockLogger = vi.hoisted(() => ({
 const mockConvertCveToGhsa = vi.hoisted(() => vi.fn())
 const mockConvertPurlToGhsas = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))

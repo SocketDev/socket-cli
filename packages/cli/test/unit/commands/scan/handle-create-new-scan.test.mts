@@ -22,7 +22,7 @@ import {
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
 import { handleCreateNewScan } from '../../../../src/commands/scan/handle-create-new-scan.mts'
-import { safeDeleteSync } from '@socketsecurity/lib/fs'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs'
 
 // Mock all the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -51,11 +51,11 @@ const mockSocketDocsLink = vi.hoisted(() => vi.fn())
 const mockDetectManifestActions = vi.hoisted(() => vi.fn())
 const mockGenerateAutoManifest = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
-vi.mock('@socketsecurity/lib/words', () => ({
+vi.mock('@socketsecurity/lib-stable/words', () => ({
   pluralize: vi.fn((word, count) => (count === 1 ? word : `${word}s`)),
 }))
 vi.mock('../../../../src/commands/scan/fetch-create-org-full-scan.mts', () => ({
@@ -82,7 +82,7 @@ vi.mock(
     performReachabilityAnalysis: mockPerformReachabilityAnalysis,
   }),
 )
-vi.mock('@socketsecurity/lib/constants/process', () => ({
+vi.mock('@socketsecurity/lib-stable/constants/process', () => ({
   getSpinner: () => ({
     start: mockStart,
     stop: mockStop,

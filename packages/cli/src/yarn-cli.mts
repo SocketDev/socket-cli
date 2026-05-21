@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { spawnSfw } from './util/dlx/spawn.mjs'
 

@@ -16,7 +16,7 @@ import { Readable, Writable } from 'node:stream'
 const stdoutLines: string[] = []
 const stderrLines: string[] = []
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => ({
     log: (...args: unknown[]) => {
       stdoutLines.push(args.map(String).join(' '))

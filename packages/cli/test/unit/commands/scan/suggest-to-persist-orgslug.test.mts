@@ -21,13 +21,13 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   info: vi.fn(),
 }))
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 // Mock select prompt.
 const mockSelect = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+vi.mock('@socketsecurity/lib-stable/stdio/prompts', () => ({
   select: mockSelect,
 }))
 

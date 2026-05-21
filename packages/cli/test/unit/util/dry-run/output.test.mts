@@ -9,7 +9,7 @@ const mockLog = vi.fn((...args: unknown[]) => {
   mockStderrLog(...args)
 })
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => ({
     log: (...args: unknown[]) => {
       mockStdoutLog(...args)

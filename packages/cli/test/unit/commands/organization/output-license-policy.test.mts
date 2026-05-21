@@ -46,7 +46,7 @@ describe('outputLicensePolicy', () => {
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -87,7 +87,7 @@ describe('outputLicensePolicy', () => {
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -124,7 +124,7 @@ describe('outputLicensePolicy', () => {
     const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -175,7 +175,7 @@ describe('outputLicensePolicy', () => {
     const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -216,7 +216,7 @@ describe('outputLicensePolicy', () => {
     const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -257,7 +257,7 @@ describe('outputLicensePolicy', () => {
     const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -296,7 +296,7 @@ describe('outputLicensePolicy', () => {
     const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -335,7 +335,7 @@ describe('outputLicensePolicy', () => {
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -366,7 +366,7 @@ describe('outputLicensePolicy', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
@@ -405,7 +405,7 @@ describe('outputLicensePolicy', () => {
         `${header.join(' | ')}\n${pairs.map(p => p.join(' | ')).join('\n')}`,
     )
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))

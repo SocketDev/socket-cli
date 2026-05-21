@@ -16,7 +16,7 @@ const mockLogger = vi.hoisted(() => ({
 }))
 const mockDisplayAuditLogWithIocraft = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 vi.mock('../../../../src/commands/audit-log/AuditLogRenderer.mts', () => ({

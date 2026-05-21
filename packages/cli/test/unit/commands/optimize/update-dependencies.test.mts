@@ -36,15 +36,15 @@ const mockDefaultSpinner = vi.hoisted(() => ({
 
 const mockRunAgentInstall = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib/spinner', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner', () => ({
   getDefaultSpinner: () => mockDefaultSpinner,
 }))
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))

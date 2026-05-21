@@ -28,7 +28,7 @@ vi.mock('node:fs', async importOriginal => {
 // Toggle the WIN32 export per test. Ships at module load, so we re-import
 // the SUT inside each branch that needs a different platform.
 const mockWin32 = vi.hoisted(() => ({ WIN32: false }))
-vi.mock('@socketsecurity/lib/constants/platform', () => mockWin32)
+vi.mock('@socketsecurity/lib-stable/constants/platform', () => mockWin32)
 
 import {
   preferWindowsCmdShim,

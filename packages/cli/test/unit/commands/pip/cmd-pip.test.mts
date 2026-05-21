@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CliCommandContext } from '../../../../src/util/cli/with-subcommands.mts'
 
 // Mock dependencies before imports.
-vi.mock('@socketsecurity/lib/bin', () => ({
+vi.mock('@socketsecurity/lib-stable/bin', () => ({
   whichReal: vi.fn(),
 }))
 
@@ -22,7 +22,7 @@ vi.mock('../../../../src/util/cli/with-subcommands.mjs', () => ({
 
 // Import modules after mocks are set up.
 const { cmdPip } = await import('../../../../src/commands/pip/cmd-pip.mts')
-const binModule = await import('@socketsecurity/lib/bin')
+const binModule = await import('@socketsecurity/lib-stable/bin')
 const spawnModule = await import('../../../../src/util/dlx/spawn.mts')
 const cmdModule = await import('../../../../src/util/process/cmd.mts')
 const meowModule = await import('../../../../src/util/cli/with-subcommands.mjs')

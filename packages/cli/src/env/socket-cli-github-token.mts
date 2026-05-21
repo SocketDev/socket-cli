@@ -4,7 +4,7 @@
  * set.
  */
 
-import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
+import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
 
 export function getGithubToken(): string {
   // Try Socket-specific env var first.

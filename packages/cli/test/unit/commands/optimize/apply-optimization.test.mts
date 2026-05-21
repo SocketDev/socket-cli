@@ -31,11 +31,11 @@ const mockSpinner = vi.hoisted(() => ({
 const mockAddOverrides = vi.hoisted(() => vi.fn())
 const mockUpdateDependencies = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib/spinner', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner', () => ({
   getDefaultSpinner: () => mockSpinner,
 }))
 

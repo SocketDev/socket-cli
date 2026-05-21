@@ -31,7 +31,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from '@socketsecurity/lib/logger'
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -39,7 +39,7 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', async importOriginal => {
+vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
   const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,

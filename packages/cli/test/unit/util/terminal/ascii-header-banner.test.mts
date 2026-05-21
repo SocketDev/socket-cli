@@ -22,20 +22,20 @@ vi.mock('yoctocolors-cjs', () => ({
 }))
 
 const mockGetCI = vi.hoisted(() => vi.fn(() => false))
-vi.mock('@socketsecurity/lib/env/ci', () => ({
+vi.mock('@socketsecurity/lib-stable/env/ci', () => ({
   getCI: mockGetCI,
 }))
 
 const mockGetSocketApiToken = vi.hoisted(() => vi.fn(() => ''))
 const mockGetSocketCliNoApiToken = vi.hoisted(() => vi.fn(() => false))
-vi.mock('@socketsecurity/lib/env/socket', () => ({
+vi.mock('@socketsecurity/lib-stable/env/socket', () => ({
   getSocketApiToken: mockGetSocketApiToken,
 }))
-vi.mock('@socketsecurity/lib/env/socket-cli', () => ({
+vi.mock('@socketsecurity/lib-stable/env/socket-cli', () => ({
   getSocketCliNoApiToken: mockGetSocketCliNoApiToken,
 }))
 
-vi.mock('@socketsecurity/lib/paths/normalize', () => ({
+vi.mock('@socketsecurity/lib-stable/paths/normalize', () => ({
   normalizePath: (p: string) => p,
 }))
 

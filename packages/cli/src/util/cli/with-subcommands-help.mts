@@ -20,8 +20,8 @@
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
-import { toSortedObject } from '@socketsecurity/lib/objects'
-import { naturalCompare } from '@socketsecurity/lib/sorts'
+import { toSortedObject } from '@socketsecurity/lib-stable/objects'
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts'
 
 import {
   FLAG_HELP_FULL,

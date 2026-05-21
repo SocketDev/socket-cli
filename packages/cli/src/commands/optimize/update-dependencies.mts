@@ -1,7 +1,7 @@
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
 
 import { runAgentInstall } from './agent-installer.mts'
 import { NPM_BUGGY_OVERRIDES_PATCHED_VERSION } from '../../constants/packages.mts'
@@ -9,8 +9,8 @@ import { cmdPrefixMessage } from '../../util/process/cmd.mts'
 
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
-import type { Logger } from '@socketsecurity/lib/logger'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Logger } from '@socketsecurity/lib-stable/logger'
+import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 
 export type UpdateDependenciesOptions = {
   cmdName?: string | undefined

@@ -47,6 +47,7 @@ catalog:
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
   '@socketregistry/packageurl-js': 'npm:@socketregistry/packageurl-js@1.4.2'
+  '@socketsecurity/lib': 6.0.0
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
   # name from inside the same package — Node ESM resolves it as a
   # self-reference. The 4 Socket-published packages each need a
@@ -56,8 +57,7 @@ catalog:
   # full rationale.
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.2'
   '@socketregistry/yocto-spinner': 1.0.25
-  '@socketsecurity/lib': 'npm:@socketsecurity/lib@5.28.0'
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@5.28.0'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.0.0'
   '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.2'
   '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.0.1'
@@ -216,9 +216,13 @@ overrides:
   '@octokit/request-error': 'catalog:'
   '@sigstore/sign': '4.1.0'
   '@socketregistry/packageurl-js': 'catalog:'
+  '@socketregistry/packageurl-js-stable': 'catalog:'
   '@socketsecurity/lib': 'catalog:'
+  '@socketsecurity/lib-stable': 'catalog:'
   '@socketsecurity/registry': 'catalog:'
+  '@socketsecurity/registry-stable': 'catalog:'
   '@socketsecurity/sdk': 'catalog:'
+  '@socketsecurity/sdk-stable': 'catalog:'
   'aggregate-error': 'catalog:'
   'ansi-regex': 'catalog:'
   'brace-expansion': 'catalog:'

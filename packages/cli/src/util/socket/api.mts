@@ -23,20 +23,20 @@
  * - Falls back to configured apiBaseUrl or default API_V0_URL
  */
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getSocketCliApiBaseUrl } from '@socketsecurity/lib/env/socket-cli'
-import { messageWithCauses } from '@socketsecurity/lib/errors'
-import { httpRequest } from '@socketsecurity/lib/http-request'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { getSocketCliApiBaseUrl } from '@socketsecurity/lib-stable/env/socket-cli'
+import { messageWithCauses } from '@socketsecurity/lib-stable/errors'
+import { httpRequest } from '@socketsecurity/lib-stable/http-request'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
 
 import { getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
 
 import type {
   HttpRequestOptions,
   HttpResponse,
-} from '@socketsecurity/lib/http-request'
+} from '@socketsecurity/lib-stable/http-request'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
@@ -48,12 +48,12 @@ import {
 } from '../error/errors.mts'
 
 import type { CResult } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { Spinner } from '@socketsecurity/lib-stable/spinner'
 import type {
   SocketSdkErrorResult,
   SocketSdkOperations,
   SocketSdkSuccessResult,
-} from '@socketsecurity/sdk'
+} from '@socketsecurity/sdk-stable'
 
 const logger = getDefaultLogger()
 
