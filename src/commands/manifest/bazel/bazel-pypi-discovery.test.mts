@@ -293,7 +293,7 @@ describe('bazel-pypi-discovery', () => {
       }
     })
 
-    it('uses native visible repo candidates when provided', async () => {
+    it('does not treat bare visible repo candidates as PyPI hubs', async () => {
       const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-pypi-'))
       try {
         writeFileSync(
@@ -304,10 +304,7 @@ describe('bazel-pypi-discovery', () => {
         const result = await discoverPypiHubs(dir, acceptingPypiProbe, [
           'native_pypi',
         ])
-        expect(Array.from(result.keys()).sort()).toEqual([
-          'native_pypi',
-          'pypi',
-        ])
+        expect(Array.from(result.keys())).toEqual(['pypi'])
       } finally {
         rmSync(dir, { recursive: true, force: true })
       }

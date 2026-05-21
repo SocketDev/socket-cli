@@ -341,27 +341,17 @@ export async function discoverPypiHubs(
 ): Promise<Map<string, PypiHubInfo>> {
   // Always run the static parse so MODULE.bazel pip.parse metadata
   // (requirements_lock, python_version) is available for downstream
-  // lockfile resolution. When nativeCandidates is provided, the parsed
-  // metadata enriches each native candidate; bare native candidates with
-  // no static metadata fall back to source: 'visible-repos'.
+  // lockfile resolution. Native repo-mapping candidates are intentionally
+  // corroborating data only: many non-PyPI repositories expose alias or :pkg
+  // targets, so bare visible repos are too broad to probe as PyPI hubs.
   const parsedAll = parsePypiHubCandidates(cwd, verbose)
-  const parsedByName = new Map(parsedAll.map(c => [c.hubName, c] as const))
   const parsed: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> =
-    nativeCandidates && nativeCandidates.length
-      ? nativeCandidates.map(
-          hubName =>
-            parsedByName.get(hubName) ?? {
-              hubName,
-              source: 'visible-repos',
-              workspaceMode: 'unknown',
-            },
-        )
-      : parsedAll
+    parsedAll
   if (verbose) {
     logger.log(
       '[VERBOSE] discovery: candidate source:',
       nativeCandidates && nativeCandidates.length
-        ? `bzlmod visible-repos (${nativeCandidates.length}, enriched with ${parsedAll.length} static parse hit(s))`
+        ? `static parse (${parsed.length}) with bzlmod visible-repos (${nativeCandidates.length}) as corroboration`
         : `static parse (${parsed.length})`,
     )
   }
