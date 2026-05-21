@@ -78,7 +78,7 @@ type ValueOrUndefined<F extends MeowFlag, V> = F['default'] extends undefined
       ? V | undefined
       : V
     : V | undefined
-export type InferFlagValue<F extends MeowFlag> = ValueOrUndefined<
+type InferFlagValue<F extends MeowFlag> = ValueOrUndefined<
   F,
   ValueOrArray<F, ValueOfFlagType<F>>
 >
@@ -87,7 +87,7 @@ export type InferFlagValue<F extends MeowFlag> = ValueOrUndefined<
 // schema (e.g. `cli.flags['json']` on a command whose schema only spreads
 // `commonFlags`). The index signature returns `unknown`, preserving the
 // old runtime behavior; the known-key entries get the precise primitive.
-export type InferFlagValues<F extends MeowFlags> = {
+type InferFlagValues<F extends MeowFlags> = {
   [K in keyof F]: InferFlagValue<F[K]>
 } & {
   [extraKey: string]: unknown
@@ -108,7 +108,7 @@ export interface MeowOptions<F extends MeowFlags = MeowFlags> {
   readonly helpIndent?: number | undefined
 }
 
-export interface MeowResult<F extends MeowFlags = MeowFlags> {
+interface MeowResult<F extends MeowFlags = MeowFlags> {
   readonly input: readonly string[]
   readonly flags: InferFlagValues<F>
   readonly unknownFlags: readonly string[]
