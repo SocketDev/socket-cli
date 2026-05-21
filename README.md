@@ -5,95 +5,81 @@
 ![Coverage](https://img.shields.io/badge/coverage-75.08%25-brightgreen)
 
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
+[![Follow @socket.dev on Bluesky](https://img.shields.io/badge/Follow-@socket.dev-1DA1F2?style=social&logo=bluesky)](https://bsky.app/profile/socket.dev)
 
-CLI for [Socket.dev](https://socket.dev) security analysis. For user documentation, see the [`socket` package on npm](https://socket.dev/npm/package/socket).
+CLI for [Socket.dev](https://socket.dev) — bring Socket's supply-chain security analysis to your terminal and CI.
 
-## Getting Started
+## Why this repo exists
 
-### Prerequisites
+Socket CLI is the command-line interface to [Socket.dev](https://socket.dev), letting you scan dependencies, audit packages, and gate installs from your terminal or CI. This repository is the source for the published `socket` package on npm; end-user documentation lives on [socket.dev](https://docs.socket.dev) and the [`socket` npm page](https://socket.dev/npm/package/socket).
 
-- **Node.js** 25.8.1+ (see `.node-version`)
-- **pnpm** 10.22+ (see `packageManager` in `package.json`)
+## Install
 
-### Setup
+```sh
+npm install -g socket
+```
 
-```bash
+Then run:
+
+```sh
+socket --help
+```
+
+## Usage
+
+```sh
+# Scan a package
+socket package npm/express@4.18.0
+
+# Scan your project's dependencies
+socket scan create
+
+# Audit an install before it runs
+socket npm install
+```
+
+See [the Socket docs](https://docs.socket.dev) for the full command reference.
+
+## Development
+
+<details>
+<summary>Contributor commands</summary>
+
+```sh
 git clone https://github.com/SocketDev/socket-cli.git
 cd socket-cli
 pnpm install
 pnpm run build
-```
-
-### Running the CLI
-
-```bash
-# Run the built CLI
-node packages/cli/dist/index.js --help
-
-# Or use watch mode during development
-pnpm dev
-```
-
-### Running Tests
-
-```bash
-# Run all tests
 pnpm test
-
-# Run unit tests for a specific file
-pnpm --filter @socketsecurity/cli run test:unit src/commands/scan/cmd-scan.test.mts
-
-# Run with pattern matching
-pnpm --filter @socketsecurity/cli run test:unit src/commands/scan/cmd-scan.test.mts -t "pattern"
 ```
 
-### Code Quality
+Requires Node.js (see `.node-version`) and pnpm (see the `packageManager` field in `package.json`).
 
-```bash
-pnpm run check        # Run lint + typecheck
-pnpm run fix          # Auto-fix linting and formatting
+| Command                  | Description                       |
+| ------------------------ | --------------------------------- |
+| `pnpm run build`         | Smart build (skips unchanged)     |
+| `pnpm run build --force` | Force rebuild everything          |
+| `pnpm run build:cli`     | Build CLI package only            |
+| `pnpm run build:sea`     | Build SEA binaries                |
+| `pnpm dev`               | Watch mode (auto-rebuild)         |
+| `pnpm test`              | Run all tests                     |
+| `pnpm testu`             | Update test snapshots             |
+| `pnpm run check`         | Lint + typecheck                  |
+| `pnpm run fix`           | Auto-fix lint + formatting        |
+
+Run the built CLI from source:
+
+```sh
+node packages/cli/dist/index.js --help
 ```
 
-## Project Structure
+Enable debug logging:
 
-```
-socket-cli/
-├── packages/
-│   ├── cli/                    # Main CLI package (@socketsecurity/cli)
-│   │   ├── src/
-│   │   │   ├── commands/       # Command implementations
-│   │   │   ├── util/          # Shared utilities
-│   │   │   └── cli.mts         # Entry point
-│   │   └── dist/               # Built output
-│   ├── build-infra/            # Build system and tooling
-│   └── package-builder/        # Package generation templates
-├── scripts/                    # Monorepo scripts
-└── test/                       # Shared test utilities
-```
-
-## Development Commands
-
-| Command                  | Description                   |
-| ------------------------ | ----------------------------- |
-| `pnpm run build`         | Smart build (skips unchanged) |
-| `pnpm run build --force` | Force rebuild everything      |
-| `pnpm run build:cli`     | Build CLI package only        |
-| `pnpm run build:sea`     | Build SEA binaries            |
-| `pnpm dev`               | Watch mode (auto-rebuild)     |
-| `pnpm test`              | Run all tests                 |
-| `pnpm testu`             | Update test snapshots         |
-| `pnpm run check`         | Lint + typecheck              |
-| `pnpm run fix`           | Auto-fix issues               |
-
-## Debug Logging
-
-```bash
+```sh
 SOCKET_CLI_DEBUG=1 node packages/cli/dist/index.js <command>
 ```
 
-## Environment Variables
-
-Key variables for development:
+Key development environment variables:
 
 | Variable                  | Description                |
 | ------------------------- | -------------------------- |
@@ -103,7 +89,7 @@ Key variables for development:
 | `SOCKET_CLI_API_BASE_URL` | Override API endpoint      |
 | `SOCKET_CLI_NO_API_TOKEN` | Disable default API token  |
 
-## Further Reading
+Further contributor reading:
 
 - [`docs/build-guide.md`](docs/build-guide.md) — build pipeline, SEA binaries, cache management
 - [`docs/bundle-tools.md`](docs/bundle-tools.md) — how bundled tools (opengrep, trivy, etc.) are integrated
@@ -111,17 +97,8 @@ Key variables for development:
 - [`packages/build-infra/README.md`](packages/build-infra/README.md) — shared build tooling
 - [`packages/package-builder/README.md`](packages/package-builder/README.md) — template-based package generation
 
-## See Also
+</details>
 
-- [Socket API Reference](https://docs.socket.dev/reference)
-- [Socket GitHub App](https://github.com/apps/socket-security)
-- [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js)
+## License
 
-<br/>
-<div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/socket-logo-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="assets/socket-logo-light.png">
-    <img width="420" height="120" alt="Socket Logo" src="assets/socket-logo-light.png">
-  </picture>
-</div>
+MIT
