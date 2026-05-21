@@ -17,15 +17,13 @@ type Result = { code: number; stderr: string }
 async function runHook(payload: Record<string, unknown>): Promise<Result> {
   const child = spawn(process.execPath, [HOOK], { stdio: 'pipe' })
   child.stdin!.end(JSON.stringify(payload))
-  let stderr = ''
-  child.process.stderr!.on('data', chunk => {
-    stderr += chunk.toString('utf8')
-  })
-  return new Promise(resolve => {
-    child.process.on('exit', code => {
-      resolve({ code: code ?? 0, stderr })
-    })
-  })
+  try {
+    const r = await child
+    return { code: r.code ?? 0, stderr: String(r.stderr) }
+  } catch (e) {
+    const r = e as { code?: number | null; stderr?: unknown }
+    return { code: r.code ?? 1, stderr: String(r.stderr ?? '') }
+  }
 }
 
 test('non-Bash tool calls pass through silently', async () => {
