@@ -116,23 +116,38 @@ export async function generateAutoManifest({
       manifestPath: mavenResult.manifestPath,
     })
 
-    logger.log('Extracting PyPI dependencies via bazel query...')
-    const pypiResult = await extractBazelToPypi({
-      bazelFlags: bazelConfig?.bazelFlags,
-      bazelOutputBase: bazelConfig?.bazelOutputBase,
-      bazelRc: bazelConfig?.bazelRc,
-      bin: bazelConfig?.bazel ?? bazelConfig?.bin,
-      cwd,
-      out: bazelConfig?.out ?? cwd,
-      outLayout: 'flat',
-      verbose: Boolean(bazelConfig?.verbose) || verbose,
-    })
-    outcomes.push({
-      ecosystem: 'pypi',
-      ok: pypiResult.ok,
-      noEcosystemFound: Boolean(pypiResult.noEcosystemFound),
-      manifestPath: pypiResult.manifestPath,
-    })
+    const configuredEcosystems = bazelConfig?.ecosystem
+    const requestedEcosystems = Array.isArray(configuredEcosystems)
+      ? configuredEcosystems
+      : configuredEcosystems
+        ? [configuredEcosystems]
+        : []
+    const shouldRunPypi = requestedEcosystems.includes('pypi')
+
+    if (shouldRunPypi) {
+      logger.log('Extracting PyPI dependencies via bazel query...')
+      const pypiResult = await extractBazelToPypi({
+        bazelFlags: bazelConfig?.bazelFlags,
+        bazelOutputBase: bazelConfig?.bazelOutputBase,
+        bazelRc: bazelConfig?.bazelRc,
+        bin: bazelConfig?.bazel ?? bazelConfig?.bin,
+        cwd,
+        explicitEcosystem: true,
+        out: bazelConfig?.out ?? cwd,
+        outLayout: 'flat',
+        verbose: Boolean(bazelConfig?.verbose) || verbose,
+      })
+      outcomes.push({
+        ecosystem: 'pypi',
+        ok: pypiResult.ok,
+        noEcosystemFound: Boolean(pypiResult.noEcosystemFound),
+        manifestPath: pypiResult.manifestPath,
+      })
+    } else if (verbose) {
+      logger.info(
+        'Skipping Bazel PyPI auto-manifest extraction; set defaults.manifest.bazel.ecosystem to include "pypi" to opt in.',
+      )
+    }
 
     // Auto-manifest outcome matrix: hard failures are fatal, no-discovery is
     // informational, and successes are returned only when nothing hard-failed.
@@ -150,10 +165,8 @@ export async function generateAutoManifest({
       for (const s of successes) {
         generatedFiles.push(s.manifestPath!)
       }
-    } else if (
-      noDiscoveries.length === outcomes.length
-    ) {
-      logger.info('No supported Bazel ecosystems detected (maven, pypi).')
+    } else if (noDiscoveries.length === outcomes.length) {
+      logger.info('No supported Bazel Maven ecosystem detected.')
     }
   }
 

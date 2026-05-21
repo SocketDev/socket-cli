@@ -141,7 +141,7 @@ describe('generateAutoManifest — bazel branch', () => {
     )
   })
 
-  it('returns generated Bazel sidecar manifests', async () => {
+  it('returns generated Bazel Maven sidecar manifest by default', async () => {
     vi.mocked(extractBazelToPypi).mockResolvedValueOnce({
       artifactCount: 2,
       manifestPath: '/tmp/repo/.socket-auto-manifest/requirements.txt',
@@ -156,31 +156,52 @@ describe('generateAutoManifest — bazel branch', () => {
 
     expect(result.generatedFiles).toEqual([
       '/tmp/repo/.socket-auto-manifest/maven_install.json',
+    ])
+    expect(extractBazelToPypi).not.toHaveBeenCalled()
+  })
+
+  it('runs Bazel PyPI auto-manifest only when socket.json explicitly opts in', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: {
+        manifest: { bazel: { ecosystem: ['maven', 'pypi'] } },
+      },
+    } as SocketJson)
+    vi.mocked(extractBazelToPypi).mockResolvedValueOnce({
+      artifactCount: 2,
+      manifestPath: '/tmp/repo/.socket-auto-manifest/requirements.txt',
+      ok: true,
+    })
+    const result = await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, bazel: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
+    })
+
+    expect(extractBazelToPypi).toHaveBeenCalledWith(
+      expect.objectContaining({ explicitEcosystem: true }),
+    )
+    expect(result.generatedFiles).toEqual([
+      '/tmp/repo/.socket-auto-manifest/maven_install.json',
       '/tmp/repo/.socket-auto-manifest/requirements.txt',
     ])
   })
 
-  it('throws when both Bazel ecosystems hard-fail', async () => {
+  it('does not run PyPI by default when Maven has no discovery', async () => {
     vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
       artifactCount: 0,
       noEcosystemFound: true,
       ok: false,
     })
-    vi.mocked(extractBazelToPypi).mockResolvedValueOnce({
-      artifactCount: 0,
-      ok: false,
+    const result = await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, bazel: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
     })
 
-    await expect(
-      generateAutoManifest({
-        cwd: '/tmp/repo',
-        detected: { ...baseDetected, bazel: true, count: 1 },
-        outputKind: 'text',
-        verbose: false,
-      }),
-    ).rejects.toThrow(
-      'Bazel auto-manifest generation failed for ecosystem(s): pypi',
-    )
+    expect(result.generatedFiles).toEqual([])
+    expect(extractBazelToPypi).not.toHaveBeenCalled()
   })
 
   it('throws when Maven hard-fails even if PyPI succeeds', async () => {
@@ -188,12 +209,6 @@ describe('generateAutoManifest — bazel branch', () => {
       artifactCount: 0,
       ok: false,
     })
-    vi.mocked(extractBazelToPypi).mockResolvedValueOnce({
-      artifactCount: 2,
-      manifestPath: '/tmp/repo/.socket-auto-manifest/requirements.txt',
-      ok: true,
-    })
-
     await expect(
       generateAutoManifest({
         cwd: '/tmp/repo',
@@ -226,6 +241,7 @@ describe('generateAutoManifest — bazel branch', () => {
     })
 
     expect(result.generatedFiles).toEqual([])
+    expect(extractBazelToPypi).not.toHaveBeenCalled()
   })
 
   it('runs BOTH bazel and gradle branches when both are detected', async () => {

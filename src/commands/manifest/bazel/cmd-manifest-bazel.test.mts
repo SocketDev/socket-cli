@@ -124,6 +124,18 @@ describe('evaluateEcosystemOutcomes (auto-detect mode)', () => {
       ]),
     ).toThrowError(/hard failure\(s\) in ecosystem\(s\): maven, pypi/)
   })
+
+  it('supports Maven-only default auto mode', () => {
+    expect(() =>
+      auto([
+        {
+          ecosystem: 'maven',
+          ok: true,
+          manifestPath: '/tmp/maven_install.json',
+        },
+      ]),
+    ).not.toThrow()
+  })
 })
 
 const explicit = (outcomes: EcosystemOutcome[]) =>
