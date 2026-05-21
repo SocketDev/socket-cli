@@ -19,7 +19,7 @@ import nlp from 'compromise'
 import { getHome } from '@socketsecurity/lib-stable/env/home'
 
 // Minimum Jaccard similarity for word-overlap matching to win.
-export const WORD_OVERLAP_THRESHOLD = 0.3
+const WORD_OVERLAP_THRESHOLD = 0.3
 
 // Lazy-loaded ~3KB semantic index. `null` until loadSemanticIndex resolves.
 type SemanticIndex = {

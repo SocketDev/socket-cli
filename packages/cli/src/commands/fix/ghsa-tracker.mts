@@ -8,7 +8,7 @@ import { writeJson } from '@socketsecurity/lib-stable/fs/write-json'
 
 import { getSocketFixBranchName } from './git.mts'
 
-export type GhsaFixRecord = {
+type GhsaFixRecord = {
   branch: string
   fixedAt: string // ISO 8601
   ghsaId: string

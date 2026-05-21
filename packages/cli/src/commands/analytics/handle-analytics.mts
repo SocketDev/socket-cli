@@ -5,7 +5,7 @@ import { outputAnalytics } from './output-analytics.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-export type HandleAnalyticsConfig = {
+type HandleAnalyticsConfig = {
   filepath: string
   outputKind: OutputKind
   repo: string

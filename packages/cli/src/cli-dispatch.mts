@@ -22,7 +22,7 @@ import { waitForBootstrapHandshake } from './util/sea/boot.mjs'
 const logger = getDefaultLogger()
 
 // Detect how this binary was invoked.
-export function getInvocationMode(): string {
+function getInvocationMode(): string {
   // Check environment variable first (for explicit mode).
   const envMode = process.env['SOCKET_CLI_MODE']
   if (envMode) {

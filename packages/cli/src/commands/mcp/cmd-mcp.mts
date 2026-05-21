@@ -27,7 +27,7 @@ export const cmdMcp = {
 
 const DEFAULT_PORT = 3000
 
-export function parseRequiredScopes(raw: string): string[] {
+function parseRequiredScopes(raw: string): string[] {
   return raw
     .split(/\s+/u)
     .map(value => value.trim())

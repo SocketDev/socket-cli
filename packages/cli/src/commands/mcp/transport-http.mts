@@ -52,7 +52,7 @@ interface Session {
   transport: StreamableHTTPServerTransport
 }
 
-export interface HttpTransportConfig extends ServerConfig {
+interface HttpTransportConfig extends ServerConfig {
   oauthClientId: string
   oauthClientSecret: string
   oauthIssuer: string

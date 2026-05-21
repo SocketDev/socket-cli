@@ -6,7 +6,7 @@ import colors from 'yoctocolors-cjs'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 const logger = getDefaultLogger()
 
-export type PrLifecycleEvent =
+type PrLifecycleEvent =
   | 'created'
   | 'closed'
   | 'failed'

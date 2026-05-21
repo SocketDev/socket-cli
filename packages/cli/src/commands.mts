@@ -104,7 +104,7 @@ export const rootCommands = {
  * `rootCommands` would be a compile error (TypeScript narrows the keys). - A
  * command in `rootCommands` but not here = unbucketed, which is a valid state.
  */
-export type RootCommandBucket = 'main' | 'api' | 'tools' | 'config'
+type RootCommandBucket = 'main' | 'api' | 'tools' | 'config'
 
 export const rootCommandBuckets: Readonly<
   Partial<Record<keyof typeof rootCommands, RootCommandBucket>>

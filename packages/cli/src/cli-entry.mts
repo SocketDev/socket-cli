@@ -89,7 +89,7 @@ setupTelemetryExitHandlers()
  * Write manifest entry for CLI installed via bootstrap. Bootstrap passes spec
  * and cache dir via environment variables.
  */
-export async function writeBootstrapManifestEntry(): Promise<void> {
+async function writeBootstrapManifestEntry(): Promise<void> {
   const spec = getSocketCliBootstrapSpec()
   const cacheDir = getSocketCliBootstrapCacheDir()
 

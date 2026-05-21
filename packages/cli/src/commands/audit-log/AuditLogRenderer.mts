@@ -21,7 +21,7 @@ export interface AuditLogEntry {
   user_email: string
 }
 
-export interface AuditLogRendererProps {
+interface AuditLogRendererProps {
   orgSlug: string
   results: AuditLogEntry[]
 }

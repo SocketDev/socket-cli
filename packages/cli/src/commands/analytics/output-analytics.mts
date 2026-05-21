@@ -157,7 +157,7 @@ export function formatDate(date: string): string {
   return `${Months[month]} ${day}`
 }
 
-export type OutputAnalyticsConfig = {
+type OutputAnalyticsConfig = {
   filepath: string
   outputKind: OutputKind
   repo: string

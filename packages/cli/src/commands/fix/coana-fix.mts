@@ -60,7 +60,7 @@ import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
-export type GhsaFixResult = {
+type GhsaFixResult = {
   ghsaId: string
   fixed: boolean
   pullRequestLink?: string | undefined
