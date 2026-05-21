@@ -14,6 +14,15 @@ vi.mock('./bazel-bin-detect.mts', () => ({
 }))
 vi.mock('./bazel-pypi-discovery.mts', () => ({
   discoverPypiHubs: vi.fn(),
+  parseBazelModPipExtensionCandidates: vi.fn(() => [
+    {
+      hubName: 'pypi',
+      pythonVersion: '3.12',
+      requirementsLockLabel: '//:requirements_lock.txt',
+      source: 'bazel-mod-show-extension',
+      workspaceMode: 'bzlmod',
+    },
+  ]),
 }))
 const { probe } = vi.hoisted(() => ({
   probe: async () => ({ code: 0, stdout: '@pypi//requests:pkg\n' }),
@@ -25,6 +34,12 @@ vi.mock('./bazel-query-runner.mts', () => ({
     code: 0,
     stderr: '',
     stdout: '',
+  })),
+  runBazelModShowPipExtension: vi.fn(async () => ({
+    code: 0,
+    stderr: '',
+    stdout:
+      'pip.parse(hub_name="pypi", python_version="3.12", requirements_lock="//:requirements_lock.txt")\nuse_repo(pip, "pypi")\n',
   })),
   runBazelQuery: vi.fn(),
 }))
@@ -39,13 +54,18 @@ vi.mock('./bazel-python-shim.mts', () => ({
 }))
 
 import { validateOutputBase } from './bazel-output-base-check.mts'
-import { discoverPypiHubs } from './bazel-pypi-discovery.mts'
-import { runBazelQuery } from './bazel-query-runner.mts'
-import { detectWorkspaceMode } from './bazel-workspace-detect.mts'
 import {
-  type ExtractBazelToPypiResult,
-  extractBazelToPypi,
-} from './extract_bazel_to_pypi.mts'
+  discoverPypiHubs,
+  parseBazelModPipExtensionCandidates,
+} from './bazel-pypi-discovery.mts'
+import {
+  runBazelModShowPipExtension,
+  runBazelQuery,
+} from './bazel-query-runner.mts'
+import { detectWorkspaceMode } from './bazel-workspace-detect.mts'
+import { extractBazelToPypi } from './extract_bazel_to_pypi.mts'
+
+import type { ExtractBazelToPypiResult } from './extract_bazel_to_pypi.mts'
 
 describe('extractBazelToPypi', () => {
   let tmp: string
@@ -56,6 +76,15 @@ describe('extractBazelToPypi', () => {
       bzlmod: true,
       workspace: false,
     })
+    vi.mocked(parseBazelModPipExtensionCandidates).mockReturnValue([
+      {
+        hubName: 'pypi',
+        pythonVersion: '3.12',
+        requirementsLockLabel: '//:requirements_lock.txt',
+        source: 'bazel-mod-show-extension',
+        workspaceMode: 'bzlmod',
+      },
+    ])
     process.exitCode = 0
   })
 
@@ -524,5 +553,36 @@ describe('extractBazelToPypi', () => {
       verbose: false,
     })
     expect(vi.mocked(validateOutputBase)).toHaveBeenCalledWith(tmp, tmp)
+  })
+
+  it('passes bazel mod show_extension candidates into discovery first', async () => {
+    vi.mocked(discoverPypiHubs).mockResolvedValue(new Map())
+
+    await extractBazelToPypi({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(runBazelModShowPipExtension).toHaveBeenCalled()
+    expect(discoverPypiHubs).toHaveBeenCalledWith(
+      tmp,
+      expect.any(Function),
+      [],
+      false,
+      [
+        {
+          hubName: 'pypi',
+          pythonVersion: '3.12',
+          requirementsLockLabel: '//:requirements_lock.txt',
+          source: 'bazel-mod-show-extension',
+          workspaceMode: 'bzlmod',
+        },
+      ],
+    )
   })
 })

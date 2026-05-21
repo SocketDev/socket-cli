@@ -9,6 +9,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {
   discoverPypiHubs,
+  parseBazelModPipExtensionCandidates,
   parsePypiHubCandidates,
   validatePypiHub,
 } from './bazel-pypi-discovery.mts'
@@ -60,6 +61,30 @@ const noPypiNameProbe: RepoProbe = async () => ({
 
 describe('bazel-pypi-discovery', () => {
   describe('parsePypiHubCandidates', () => {
+    it('parses pip metadata from bazel mod show_extension output', () => {
+      const result = parseBazelModPipExtensionCandidates(
+        'pip.parse(hub_name="pypi", python_version="3.12", requirements_lock="//:requirements_lock.txt")\n' +
+          'use_repo(pip, "pypi")\n',
+      )
+      expect(result).toEqual([
+        {
+          hubName: 'pypi',
+          pythonVersion: '3.12',
+          requirementsLockLabel: '//:requirements_lock.txt',
+          source: 'bazel-mod-show-extension',
+          workspaceMode: 'bzlmod',
+        },
+      ])
+    })
+
+    it('filters show_extension pip.parse entries not exported by use_repo', () => {
+      const result = parseBazelModPipExtensionCandidates(
+        'pip.parse(hub_name="hidden", requirements_lock="//:req.txt")\n' +
+          'use_repo(pip, "pypi")\n',
+      )
+      expect(result).toEqual([])
+    })
+
     it('parses single pip.parse from bzlmod-only', () => {
       const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-pypi-'))
       try {
@@ -400,6 +425,35 @@ describe('bazel-pypi-discovery', () => {
         // No MODULE.bazel or WORKSPACE — only the default seed can match.
         const result = await discoverPypiHubs(dir, selectivePypiProbe)
         expect(Array.from(result.keys())).toEqual(['pypi'])
+      } finally {
+        rmSync(dir, { recursive: true, force: true })
+      }
+    })
+
+    it('prefers bazel command candidates over static MODULE parsing', async () => {
+      const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-pypi-'))
+      try {
+        writeFileSync(
+          path.join(dir, 'MODULE.bazel'),
+          'pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")\n' +
+            'pip.parse(hub_name = "static_pypi", requirements_lock = "//:req.txt")\n',
+        )
+        const result = await discoverPypiHubs(
+          dir,
+          acceptingPypiProbe,
+          undefined,
+          undefined,
+          [
+            {
+              hubName: 'pypi',
+              requirementsLockLabel: '//:requirements_lock.txt',
+              source: 'bazel-mod-show-extension',
+              workspaceMode: 'bzlmod',
+            },
+          ],
+        )
+        expect(Array.from(result.keys())).toEqual(['pypi'])
+        expect(result.get('pypi')?.source).toBe('bazel-mod-show-extension')
       } finally {
         rmSync(dir, { recursive: true, force: true })
       }

@@ -20,6 +20,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import {
   buildProbeFor,
   buildPypiProbeFor,
+  runBazelModShowPipExtension,
   runBazelModShowVisibleRepos,
   runBazelQuery,
 } from './bazel-query-runner.mts'
@@ -213,6 +214,32 @@ describe('runBazelModShowVisibleRepos', () => {
     expect(argv).toEqual(['mod', 'dump_repo_mapping', '', '--output=json'])
     expect(argv).not.toContain('--all_visible_repos')
     expect(argv).not.toContain('--output=streamed_jsonproto')
+  })
+})
+
+describe('runBazelModShowPipExtension', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({ code: 0, stdout: 'pip.parse()', stderr: '' })
+  })
+
+  it('uses the rules_python pip extension usage command', async () => {
+    await runBazelModShowPipExtension({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toEqual([
+      'mod',
+      'show_extension',
+      '@rules_python//python/extensions:pip.bzl%pip',
+      '--extension_usages=<root>',
+    ])
   })
 })
 

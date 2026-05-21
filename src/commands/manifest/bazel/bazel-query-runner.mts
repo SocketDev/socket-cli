@@ -56,6 +56,25 @@ function buildBazelModShowVisibleReposArgv(opts: BazelQueryOptions): string[] {
   ]
 }
 
+function buildBazelModShowPipExtensionArgv(opts: BazelQueryOptions): string[] {
+  const startup: string[] = []
+  if (opts.bazelRc) {
+    startup.push(`--bazelrc=${opts.bazelRc}`)
+  }
+  if (opts.bazelOutputBase) {
+    startup.push(`--output_base=${opts.bazelOutputBase}`)
+  }
+  const userFlags = splitBazelFlags(opts.bazelFlags)
+  return [
+    ...startup,
+    'mod',
+    'show_extension',
+    '@rules_python//python/extensions:pip.bzl%pip',
+    '--extension_usages=<root>',
+    ...userFlags,
+  ]
+}
+
 function buildBazelArgv(
   queryStr: string,
   opts: BazelQueryOptions,
@@ -155,6 +174,31 @@ export async function runBazelModShowVisibleRepos(
   opts: BazelQueryOptions,
 ): Promise<BazelQueryResult> {
   const argv = buildBazelModShowVisibleReposArgv(opts)
+  if (opts.verbose) {
+    logger.log('[VERBOSE] Executing:', opts.bin, ', args:', argv)
+  }
+  try {
+    const output = await spawn(opts.bin, argv, {
+      cwd: opts.cwd,
+      timeout: BAZEL_QUERY_TIMEOUT_MS,
+      ...(opts.env ? { env: opts.env } : {}),
+    })
+    const { code, stderr, stdout } = output
+    return { code, stdout, stderr }
+  } catch (e) {
+    return normalizeSpawnError(e)
+  }
+}
+
+/**
+ * Bzlmod-native rules_python pip extension usage inspection. This is the
+ * authoritative source for root-module pip.parse metadata when Bazel supports
+ * the command; callers keep bounded static parsing as fallback.
+ */
+export async function runBazelModShowPipExtension(
+  opts: BazelQueryOptions,
+): Promise<BazelQueryResult> {
+  const argv = buildBazelModShowPipExtensionArgv(opts)
   if (opts.verbose) {
     logger.log('[VERBOSE] Executing:', opts.bin, ', args:', argv)
   }

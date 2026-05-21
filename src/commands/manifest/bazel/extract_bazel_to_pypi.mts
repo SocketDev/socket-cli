@@ -5,7 +5,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
 import { validateOutputBase } from './bazel-output-base-check.mts'
-import { discoverPypiHubs } from './bazel-pypi-discovery.mts'
+import {
+  discoverPypiHubs,
+  parseBazelModPipExtensionCandidates,
+} from './bazel-pypi-discovery.mts'
 import {
   collectPypiPackages,
   filterReachedPypiPackages,
@@ -18,6 +21,7 @@ import {
 import { provisionPythonShim } from './bazel-python-shim.mts'
 import {
   buildPypiProbeFor,
+  runBazelModShowPipExtension,
   runBazelModShowVisibleRepos,
   runBazelQuery,
 } from './bazel-query-runner.mts'
@@ -28,6 +32,7 @@ import {
 } from './bazel-workspace-detect.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
 
+import type { PypiHubCandidate } from './bazel-pypi-discovery.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
 
 export type ExtractBazelToPypiOptions = {
@@ -123,8 +128,22 @@ export async function extractBazelToPypi(
     }
 
     // Step 4: discover validated PyPI hubs via the two-step recipe.
+    let bazelCommandCandidates: PypiHubCandidate[] | undefined
     let nativeCandidates: string[] | undefined
     if (mode.bzlmod) {
+      const extensionResult = await runBazelModShowPipExtension(queryOpts)
+      if (extensionResult.code === 0) {
+        bazelCommandCandidates = parseBazelModPipExtensionCandidates(
+          extensionResult.stdout,
+          verbose,
+        )
+      } else if (verbose) {
+        logger.log(
+          '[VERBOSE] bazel mod show_extension failed; falling back to bounded static candidate parsing:',
+          extensionResult.stderr,
+        )
+      }
+
       const visibleRepos = await runBazelModShowVisibleRepos(queryOpts)
       if (visibleRepos.code === 0) {
         nativeCandidates = parseVisibleRepoCandidates(visibleRepos.stdout)
@@ -142,7 +161,13 @@ export async function extractBazelToPypi(
       }
     }
     const probe = buildPypiProbeFor(queryOpts)
-    const hubs = await discoverPypiHubs(cwd, probe, nativeCandidates, verbose)
+    const hubs = await discoverPypiHubs(
+      cwd,
+      probe,
+      nativeCandidates,
+      verbose,
+      bazelCommandCandidates,
+    )
     const hubNames = Array.from(hubs.keys())
     logger.info(
       `Discovered ${hubs.size} PyPI hub(s): ${hubNames.join(', ') || '(none)'}`,

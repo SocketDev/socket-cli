@@ -37,6 +37,9 @@ const PIP_INSTALL_NAME_RE = /pip_install\s*\(\s*([^)]{0,8192})\)/g
 const PIP_REPOSITORY_NAME_RE = /pip_repository\s*\(\s*([^)]{0,8192})\)/g
 const NAME_ATTR_RE = /name\s*=\s*(["'])([A-Za-z0-9_]{1,129})\1/
 const LEGACY_REQ_LOCK_RE = /requirements_lock\s*=\s*(["'])([^"']{1,512})\1/
+const MOD_SHOW_PIP_PARSE_RE = /pip\.parse\s*\(\s*([^)]{0,8192})\)/g
+const MOD_SHOW_USE_REPO_RE =
+  /use_repo\s*\(\s*\w+\s*,\s*(["'])([A-Za-z0-9_]{1,129})\1\s*\)/g
 
 // Hub validation: accept alias rules or `:pkg` targets in probe stdout.
 // Does NOT require `pypi_name=` (that marker lives on spoke repos).
@@ -51,12 +54,59 @@ export type PypiHubInfo = {
     | '.bzl'
     | 'visible-repos'
     | 'default-seed'
+    | 'bazel-mod-show-extension'
   workspaceMode: 'bzlmod' | 'legacy' | 'unknown'
   pythonVersion?: string | undefined
   requirementsLockLabel?: string | undefined
   requirementsLockPath?: string | undefined
   probeStdout: string
   visibleRepoNames?: string[] | undefined
+}
+
+export type PypiHubCandidate = Omit<
+  PypiHubInfo,
+  'probeStdout' | 'visibleRepoNames'
+>
+
+export function parseBazelModPipExtensionCandidates(
+  stdout: string,
+  verbose?: boolean,
+): PypiHubCandidate[] {
+  const useRepoNames = new Set<string>()
+  for (const m of stdout.matchAll(MOD_SHOW_USE_REPO_RE)) {
+    useRepoNames.add(m[2] as string)
+  }
+
+  const candidates: PypiHubCandidate[] = []
+  for (const m of stdout.matchAll(MOD_SHOW_PIP_PARSE_RE)) {
+    const info = extractHubInfoFromArgBlob(
+      m[1] ?? '',
+      'bazel-mod-show-extension',
+      'bzlmod',
+    )
+    if (!info) {
+      continue
+    }
+    if (useRepoNames.size && !useRepoNames.has(info.hubName)) {
+      if (verbose) {
+        logger.log(
+          `[VERBOSE] discovery: dropping pip.parse hub '${info.hubName}' because show_extension did not report matching use_repo.`,
+        )
+      }
+      continue
+    }
+    candidates.push(info)
+  }
+
+  if (verbose) {
+    logger.log(
+      '[VERBOSE] discovery: bazel mod show_extension pip.parse hits:',
+      candidates.length,
+      'use_repo:',
+      Array.from(useRepoNames),
+    )
+  }
+  return dedupCapped(candidates, verbose)
 }
 
 // Reads file contents, refusing files that exceed MAX_WORKSPACE_FILE_BYTES.
@@ -109,14 +159,11 @@ function listLegacyStarlarkFiles(cwd: string): string[] {
 // truncate. Emits a verbose warning when a later entry is dropped due to
 // a name collision so users can see implicit precedence at work.
 function dedupCapped(
-  items: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>>,
+  items: PypiHubCandidate[],
   verbose?: boolean,
-): Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> {
-  const seen = new Map<
-    string,
-    Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>
-  >()
-  const out: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> = []
+): PypiHubCandidate[] {
+  const seen = new Map<string, PypiHubCandidate>()
+  const out: PypiHubCandidate[] = []
   for (const item of items) {
     const existing = seen.get(item.hubName)
     if (!existing) {
@@ -151,7 +198,7 @@ function extractHubInfoFromArgBlob(
   argBlob: string,
   source: PypiHubInfo['source'],
   workspaceMode: PypiHubInfo['workspaceMode'],
-): Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'> | undefined {
+): PypiHubCandidate | undefined {
   const hubMatch = HUB_NAME_ATTR_RE.exec(argBlob)
   const nameMatch = NAME_ATTR_RE.exec(argBlob)
   const hubName = hubMatch?.[2] ?? nameMatch?.[2]
@@ -181,10 +228,8 @@ function extractHubInfoFromArgBlob(
 export function parsePypiHubCandidates(
   cwd: string,
   verbose?: boolean,
-): Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> {
-  const candidates: Array<
-    Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>
-  > = []
+): PypiHubCandidate[] {
+  const candidates: PypiHubCandidate[] = []
 
   // Bzlmod path: parse MODULE.bazel for use_extension bindings to pip,
   // then match ${binding}.parse(...).
@@ -246,9 +291,7 @@ export function parsePypiHubCandidates(
     if (!content) {
       continue
     }
-    const fileHits: Array<
-      Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>
-    > = []
+    const fileHits: PypiHubCandidate[] = []
     const source: PypiHubInfo['source'] = file.endsWith('.bzl')
       ? '.bzl'
       : path.basename(file) === 'WORKSPACE.bazel'
@@ -339,30 +382,32 @@ export async function discoverPypiHubs(
   probe: RepoProbe,
   nativeCandidates?: string[],
   verbose?: boolean,
+  bazelCommandCandidates?: PypiHubCandidate[],
 ): Promise<Map<string, PypiHubInfo>> {
   // Always run the static parse so MODULE.bazel pip.parse metadata
   // (requirements_lock, python_version) is available for downstream
   // lockfile resolution. Native repo-mapping candidates are intentionally
   // corroborating data only: many non-PyPI repositories expose alias or :pkg
   // targets, so bare visible repos are too broad to probe as PyPI hubs.
-  const parsedAll = parsePypiHubCandidates(cwd, verbose)
-  const parsed: Array<Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>> =
-    parsedAll
+  const parsedAll = bazelCommandCandidates?.length
+    ? dedupCapped(bazelCommandCandidates, verbose)
+    : parsePypiHubCandidates(cwd, verbose)
+  const parsed: PypiHubCandidate[] = parsedAll
   if (verbose) {
     logger.log(
       '[VERBOSE] discovery: candidate source:',
-      nativeCandidates && nativeCandidates.length
-        ? `static parse (${parsed.length}) with bzlmod visible-repos (${nativeCandidates.length}) as corroboration`
-        : `static parse (${parsed.length})`,
+      bazelCommandCandidates?.length
+        ? `bazel mod show_extension (${parsed.length})`
+        : nativeCandidates && nativeCandidates.length
+          ? `static parse (${parsed.length}) with bzlmod visible-repos (${nativeCandidates.length}) as corroboration`
+          : `static parse (${parsed.length})`,
     )
   }
   // Seed with the default hub name first (so it appears first in output if
   // validated). Parsed candidates overwrite the seed when they share the same
   // hub name so metadata (requirements_lock, python_version) is preserved.
   const seen = new Set<string>()
-  const candidates: Array<
-    Omit<PypiHubInfo, 'probeStdout' | 'visibleRepoNames'>
-  > = []
+  const candidates: PypiHubCandidate[] = []
   for (const c of parsed) {
     if (!seen.has(c.hubName)) {
       seen.add(c.hubName)
