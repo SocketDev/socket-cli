@@ -79,7 +79,7 @@ const binByAgent = new Map<Agent, string>([
 
 export type Agent = (typeof AGENTS)[number]
 
-export type EnvBase = {
+type EnvBase = {
   agent: Agent
   agentExecPath: string
   agentSupported: boolean
@@ -114,18 +114,18 @@ export type EnvDetails = Readonly<
   >
 >
 
-export type DetectAndValidateOptions = {
+type DetectAndValidateOptions = {
   cmdName?: string | undefined
   logger?: Logger | undefined
   prod?: boolean | undefined
 }
 
-export type DetectOptions = {
+type DetectOptions = {
   cwd?: string | undefined
   onUnknown?: ((pkgManager: string | undefined) => void) | undefined
 }
 
-export type PartialEnvDetails = Readonly<
+type PartialEnvDetails = Readonly<
   Remap<
     EnvBase & {
       agentVersion: SemVer | undefined
