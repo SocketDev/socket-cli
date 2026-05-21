@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import trash from 'trash'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { JsonContent } from '@socketsecurity/registry/lib/fs'
@@ -27,13 +28,21 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
     const pnpm8BinPath = path.join(pnpm8FixtureDir, 'node_modules', '.bin')
 
     beforeEach(async () => {
-      // Reset fixtures to their committed state (package.json and pnpm-lock.yaml).
+      // Reset fixtures to their committed state (package.json and pnpm-lock.yaml)
+      // and remove untracked install artifacts left by prior runs.
       try {
         await spawn('git', ['checkout', 'HEAD', '--', '.'], {
           cwd: pnpm8FixtureDir,
           stdio: 'ignore',
         })
       } catch {}
+      const staleDirs = [
+        path.join(pnpm8FixtureDir, 'node_modules'),
+        path.join(pnpm8FixtureDir, '.cache'),
+      ]
+      await Promise.all(
+        staleDirs.filter(dir => existsSync(dir)).map(dir => trash(dir)),
+      )
       // Ensure pnpm v8 is installed in the fixture.
       // Skip if pnpm is not available globally (e.g., Windows CI).
       try {
@@ -54,13 +63,20 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
     })
 
     afterEach(async () => {
-      // Reset fixtures to their committed state after each test.
+      // Reset tracked fixture files and remove install artifacts.
       try {
         await spawn('git', ['checkout', 'HEAD', '--', '.'], {
           cwd: pnpm8FixtureDir,
           stdio: 'ignore',
         })
       } catch {}
+      const staleDirs = [
+        path.join(pnpm8FixtureDir, 'node_modules'),
+        path.join(pnpm8FixtureDir, '.cache'),
+      ]
+      await Promise.all(
+        staleDirs.filter(dir => existsSync(dir)).map(dir => trash(dir)),
+      )
     })
 
     it(
@@ -161,13 +177,21 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
     const pnpm9BinPath = path.join(pnpm9FixtureDir, 'node_modules', '.bin')
 
     beforeEach(async () => {
-      // Reset fixtures to their committed state (package.json and pnpm-lock.yaml).
+      // Reset fixtures to their committed state (package.json and pnpm-lock.yaml)
+      // and remove untracked install artifacts left by prior runs.
       try {
         await spawn('git', ['checkout', 'HEAD', '--', '.'], {
           cwd: pnpm9FixtureDir,
           stdio: 'ignore',
         })
       } catch {}
+      const staleDirs = [
+        path.join(pnpm9FixtureDir, 'node_modules'),
+        path.join(pnpm9FixtureDir, '.cache'),
+      ]
+      await Promise.all(
+        staleDirs.filter(dir => existsSync(dir)).map(dir => trash(dir)),
+      )
       // Ensure pnpm v9 is installed in the fixture.
       // Skip if pnpm is not available globally (e.g., Windows CI).
       try {
@@ -188,13 +212,20 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
     })
 
     afterEach(async () => {
-      // Reset fixtures to their committed state after each test.
+      // Reset tracked fixture files and remove install artifacts.
       try {
         await spawn('git', ['checkout', 'HEAD', '--', '.'], {
           cwd: pnpm9FixtureDir,
           stdio: 'ignore',
         })
       } catch {}
+      const staleDirs = [
+        path.join(pnpm9FixtureDir, 'node_modules'),
+        path.join(pnpm9FixtureDir, '.cache'),
+      ]
+      await Promise.all(
+        staleDirs.filter(dir => existsSync(dir)).map(dir => trash(dir)),
+      )
     })
 
     it(
