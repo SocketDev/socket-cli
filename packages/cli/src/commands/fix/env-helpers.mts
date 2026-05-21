@@ -42,7 +42,7 @@ export function checkCiEnvVars(): MissingEnvVars {
   return { missing, present }
 }
 
-export function ciRepoInfo(): RepoInfo | undefined {
+function ciRepoInfo(): RepoInfo | undefined {
   if (!GITHUB_REPOSITORY) {
     debug('miss: GITHUB_REPOSITORY env var')
     return undefined
@@ -58,7 +58,7 @@ export function ciRepoInfo(): RepoInfo | undefined {
   }
 }
 
-export interface FixEnv {
+interface FixEnv {
   baseBranch: string
   gitEmail: string | undefined
   githubToken: string | undefined
@@ -68,7 +68,7 @@ export interface FixEnv {
   repoInfo: RepoInfo | undefined
 }
 
-export interface MissingEnvVars {
+interface MissingEnvVars {
   missing: string[]
   present: string[]
 }
