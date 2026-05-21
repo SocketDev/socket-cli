@@ -24,7 +24,7 @@ const traverse =
  * https://tc39.es/ecma262/#table-binary-unicode-properties
  * https://tc39.es/ecma262/#table-binary-unicode-properties-of-strings.
  */
-export const unicodePropertyMap = {
+const unicodePropertyMap = {
   __proto__: null,
 
   // Special properties.
@@ -144,7 +144,7 @@ export const unicodePropertyMap = {
  * get a pattern from Babel's StringLiteral.value, backslashes are interpreted.
  * But when writing back into source code, we need to re-escape them.
  */
-export function escapeForStringLiteral(str: string) {
+function escapeForStringLiteral(str: string) {
   return (
     str
       // Backslash must be doubled.
@@ -159,7 +159,7 @@ export function escapeForStringLiteral(str: string) {
 /**
  * Check if a regex pattern has unsupported Unicode features.
  */
-export function hasUnsupportedUnicodeFeatures(pattern: string) {
+function hasUnsupportedUnicodeFeatures(pattern: string) {
   // Check for \u{} escapes (require /u flag).
   if (/\\u\{[0-9a-fA-F]+\}/.test(pattern)) {
     return true
@@ -174,7 +174,7 @@ export function hasUnsupportedUnicodeFeatures(pattern: string) {
 /**
  * Transform a regex pattern by replacing \p{Property} with character classes.
  */
-export function transformRegexPattern(pattern: string) {
+function transformRegexPattern(pattern: string) {
   let transformed = pattern
 
   // Replace \p{Property} with character class equivalents.

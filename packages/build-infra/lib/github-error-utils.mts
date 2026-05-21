@@ -32,7 +32,7 @@ const TRANSIENT_ERROR_PATTERNS = [
  *   { status: string; description: string; url: string } | undefined
  * >}
  */
-export async function checkGitHubStatus() {
+async function checkGitHubStatus() {
   try {
     const response = await httpRequest(
       'https://www.githubstatus.com/api/v2/status.json',
@@ -76,7 +76,7 @@ export function getErrorMessage(error) {
  *
  * @returns {boolean} True if the error appears to be transient.
  */
-export function isTransientError(error) {
+function isTransientError(error) {
   const message = getErrorMessage(error)
   return TRANSIENT_ERROR_PATTERNS.some(pattern => pattern.test(message))
 }

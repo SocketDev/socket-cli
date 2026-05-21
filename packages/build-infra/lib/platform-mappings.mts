@@ -22,7 +22,7 @@ const logger = getDefaultLogger()
  *
  * @type {Readonly<Record<string, string>>}
  */
-export const RELEASE_PLATFORM_MAP = Object.freeze({
+const RELEASE_PLATFORM_MAP = Object.freeze({
   __proto__: null,
   darwin: 'darwin',
   linux: 'linux',
@@ -34,7 +34,7 @@ export const RELEASE_PLATFORM_MAP = Object.freeze({
  *
  * @type {Readonly<Record<string, string>>}
  */
-export const RELEASE_ARCH_MAP = Object.freeze({
+const RELEASE_ARCH_MAP = Object.freeze({
   __proto__: null,
   arm64: 'arm64',
   ia32: 'x86',
@@ -55,7 +55,7 @@ export const RELEASE_ARCH_MAP = Object.freeze({
  *
  * @throws {Error} If platform/arch is unsupported.
  */
-export function getAssetPlatformArch(platform, arch, libc) {
+function getAssetPlatformArch(platform, arch, libc) {
   const releasePlatform = RELEASE_PLATFORM_MAP[platform]
   const releaseArch = RELEASE_ARCH_MAP[arch]
 
@@ -102,7 +102,7 @@ export function getAssetPlatformArch(platform, arch, libc) {
  * @returns {Promise<string>} Platform-arch string (e.g., 'win-x64',
  *   'linux-x64-musl').
  */
-export async function getCurrentPlatformArch() {
+async function getCurrentPlatformArch() {
   // If the workflow or Dockerfile set PLATFORM_ARCH explicitly, trust it.
   if (process.env.PLATFORM_ARCH) {
     return process.env.PLATFORM_ARCH
@@ -167,7 +167,7 @@ export function getPlatformArch(platform, arch, libc) {
  *
  * @returns {string | undefined} Requested glibc floor, or undefined.
  */
-export function getRequestedGlibcFloor(): string | undefined {
+function getRequestedGlibcFloor(): string | undefined {
   const raw = process.env.GLIBC_FLOOR
   if (!raw) {
     return undefined
@@ -214,7 +214,7 @@ export async function isMusl() {
  *
  * @returns {Promise<boolean>} True if tar supports --no-absolute-names.
  */
-export async function tarSupportsNoAbsoluteNames() {
+async function tarSupportsNoAbsoluteNames() {
   try {
     const result = await spawn('tar', ['--help'], { stdio: 'pipe' })
     return (result.stdout || '').includes('--no-absolute-names')
@@ -228,7 +228,7 @@ export async function tarSupportsNoAbsoluteNames() {
  *
  * @returns {Promise<boolean>} True if tar supports --overwrite.
  */
-export async function tarSupportsOverwrite() {
+async function tarSupportsOverwrite() {
   // BSD tar on macOS doesn't support --overwrite.
   // Quick platform check to avoid spawning tar unnecessarily.
   if (process.platform === 'darwin') {

@@ -15,7 +15,7 @@ import { getCI } from '@socketsecurity/lib-stable/env/ci'
 /**
  * Build stage directory names inside build/<mode>/.
  */
-export const BUILD_STAGES = {
+const BUILD_STAGES = {
   BUNDLED: 'Bundled',
   FINAL: 'Final',
   OPTIMIZED: 'Optimized',
@@ -29,7 +29,7 @@ export const BUILD_STAGES = {
 /**
  * Canonical checkpoint names. Each pipeline stage picks one.
  */
-export const CHECKPOINTS = {
+const CHECKPOINTS = {
   CLI: 'cli',
   FINALIZED: 'finalized',
   SEA: 'sea',
@@ -44,14 +44,14 @@ const VALID_CHECKPOINT_VALUES = new Set(Object.values(CHECKPOINTS))
  * The SEA binary is built only for --force / --prod today; the chain is
  * declared including SEA so --clean-stage=sea works when it runs.
  */
-export const CHECKPOINT_CHAINS = {
+const CHECKPOINT_CHAINS = {
   cli: () => [CHECKPOINTS.FINALIZED, CHECKPOINTS.SEA, CHECKPOINTS.CLI],
 }
 
 /**
  * Validate a checkpoint chain at runtime.
  */
-export function validateCheckpointChain(chain: string[], packageName: string) {
+function validateCheckpointChain(chain: string[], packageName: string) {
   if (!Array.isArray(chain)) {
     throw new Error(`${packageName}: Checkpoint chain must be an array`)
   }

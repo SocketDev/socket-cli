@@ -113,7 +113,7 @@ export const PLATFORM_CONFIGS = Object.freeze([
  * Valid platform targets for SEA builds (using releasePlatform for naming).
  * Format: <releasePlatform>-<arch>[-musl] Derived from PLATFORM_CONFIGS.
  */
-export const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
+const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
   c => `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}`,
 )
 
@@ -125,24 +125,24 @@ export const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
  *
  * @returns {string} Release platform (darwin, linux, win).
  */
-export function getReleasePlatform(platform) {
+function getReleasePlatform(platform) {
   return platform === 'win32' ? 'win' : platform
 }
 
 /**
  * Valid platforms (Node.js process.platform values).
  */
-export const VALID_PLATFORMS = ['darwin', 'linux', 'win32']
+const VALID_PLATFORMS = ['darwin', 'linux', 'win32']
 
 /**
  * Valid release platforms (for file/folder/npm naming).
  */
-export const VALID_RELEASE_PLATFORMS = ['darwin', 'linux', 'win']
+const VALID_RELEASE_PLATFORMS = ['darwin', 'linux', 'win']
 
 /**
  * Valid architectures.
  */
-export const VALID_ARCHS = ['arm64', 'x64']
+const VALID_ARCHS = ['arm64', 'x64']
 
 /**
  * Parsed platform target information.
@@ -176,7 +176,7 @@ export const VALID_ARCHS = ['arm64', 'x64']
  *
  * @returns {PlatformTargetInfo | null} Parsed info or null if invalid.
  */
-export function parsePlatformTarget(target) {
+function parsePlatformTarget(target) {
   if (!target || typeof target !== 'string') {
     return undefined
   }
@@ -217,7 +217,7 @@ export function parsePlatformTarget(target) {
  * @returns {boolean} True if valid platform target.
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-export function isPlatformTarget(target) {
+function isPlatformTarget(target) {
   return PLATFORM_TARGETS.includes(target)
 }
 
@@ -232,7 +232,7 @@ export function isPlatformTarget(target) {
  *   or undefined.
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-export function getPlatformConfig(target) {
+function getPlatformConfig(target) {
   return PLATFORM_CONFIGS.find(
     c =>
       `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` ===
@@ -251,7 +251,7 @@ export function getPlatformConfig(target) {
  * @returns {string} Target string (e.g., "linux-x64-musl").
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
-export function formatPlatformTarget(platform, arch, libc) {
+function formatPlatformTarget(platform, arch, libc) {
   const muslSuffix = libc === 'musl' ? '-musl' : ''
   return `${platform}-${arch}${muslSuffix}`
 }
