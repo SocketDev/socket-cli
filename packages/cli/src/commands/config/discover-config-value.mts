@@ -128,7 +128,7 @@ export async function discoverConfigValue(
   }
 }
 
-export async function getDefaultOrgFromToken(): Promise<
+async function getDefaultOrgFromToken(): Promise<
   string[] | string | undefined
 > {
   const orgsCResult = await fetchOrganization()
@@ -147,7 +147,7 @@ export async function getDefaultOrgFromToken(): Promise<
   return slugs
 }
 
-export async function getEnforceableOrgsFromToken(): Promise<
+async function getEnforceableOrgsFromToken(): Promise<
   string[] | undefined
 > {
   const orgsCResult = await fetchOrganization()
