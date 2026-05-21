@@ -187,23 +187,10 @@ async function run(
     sockJson?.defaults?.manifest?.bazel,
   )
 
-  let { bazel, bazelFlags, bazelOutputBase, bazelRc, ecosystem, out, verbose } =
-    cli.flags
+  const { ecosystem } = cli.flags
+  let { bazel, bazelFlags, bazelOutputBase, bazelRc, out, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
-  // The meow flag is isMultiple: true, so cli.flags.ecosystem is
-  // string[] | undefined. The SocketJson schema allows either a single
-  // string or an array, so normalize a string default to a one-element
-  // array before assigning.
-  if (!ecosystem) {
-    const rawEcosystem = sockJson.defaults?.manifest?.bazel?.ecosystem
-    if (rawEcosystem) {
-      ecosystem = Array.isArray(rawEcosystem)
-        ? [...rawEcosystem]
-        : [rawEcosystem as string]
-      logger.info(`Using default --ecosystem from ${SOCKET_JSON}:`, ecosystem)
-    }
-  }
   if (!bazel) {
     const defaultBazel =
       sockJson.defaults?.manifest?.bazel?.bazel ??

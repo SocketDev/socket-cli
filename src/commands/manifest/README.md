@@ -43,9 +43,9 @@ socket manifest bazel [options] [DIR=.]
 
 > **Upload**: This subcommand only generates manifests. To generate and
 > upload in one step, use `socket scan create --auto-manifest .` — it
-> detects the workspace, generates Bazel Maven manifests by default, and
-> uploads the result. Bazel PyPI auto-manifest generation requires an explicit
-> `defaults.manifest.bazel.ecosystem` config value that includes `pypi`.
+> detects the workspace, generates Bazel Maven manifests, and uploads the
+> result. Generate Bazel PyPI manifests explicitly with `socket manifest bazel
+> --ecosystem pypi`, then scan the generated output with `socket scan create`.
 
 ### Examples
 
@@ -89,7 +89,7 @@ When `--ecosystem pypi` is selected, the command:
   `requirements.txt` cannot represent both versions, and silently
   picking one would produce a misleading SBOM.
 
-### Unsupported PyPI Forms (Phase 02.1)
+### Unsupported PyPI Forms
 
 The PyPI extractor is intentionally narrow in this phase:
 
@@ -101,8 +101,9 @@ The PyPI extractor is intentionally narrow in this phase:
 - **Private corpus validation** requires authenticated GitHub access.
   When credentials are unavailable, the bazel-bench harness's private
   PyPI case skips cleanly with a distinct reason rather than failing.
-- **Whole-repo extraction.** Phase 02.1 is Tier 2 whole-repo scope.
-  Per-target PyPI slicing is deferred to Phase 4.
+- **Whole-repo extraction.** The initial PyPI implementation emits one
+  whole-workspace manifest. Per-target PyPI slicing is not currently
+  supported.
 
 ### Cross-Language Edges
 

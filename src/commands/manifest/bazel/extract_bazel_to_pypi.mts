@@ -33,6 +33,10 @@ import {
 import { getErrorCause } from '../../../utils/errors.mts'
 
 import type { PypiHubCandidate } from './bazel-pypi-discovery.mts'
+import type {
+  ExtractedPypiPackage,
+  ReachedPypiLabel,
+} from './bazel-pypi-parser.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
 
 export type ExtractBazelToPypiOptions = {
@@ -306,10 +310,7 @@ async function resolveHubLockfile(
   },
   cwd: string,
   verbose: boolean,
-): Promise<
-  | Map<string, import('./bazel-pypi-parser.mts').ExtractedPypiPackage>
-  | undefined
-> {
+): Promise<Map<string, ExtractedPypiPackage> | undefined> {
   const resolved =
     hubInfo.requirementsLockPath ??
     resolveRequirementsLockPath(hubInfo.requirementsLockLabel, cwd)
@@ -331,7 +332,7 @@ async function queryReachedPypiLabels(
   hubName: string,
   queryOpts: BazelQueryOptions,
   verbose: boolean,
-): Promise<Array<import('./bazel-pypi-parser.mts').ReachedPypiLabel>> {
+): Promise<ReachedPypiLabel[]> {
   const queryStr = 'deps(kind("py_library|py_binary|py_test", //...))'
   const result = await runBazelQuery(queryStr, queryOpts, 'label')
   if (result.code !== 0) {
@@ -350,16 +351,11 @@ async function queryReachedPypiLabels(
 // entries. For each reached label, if the lockfile missed it, resolve the
 // actual target via `--output=build` and extract pypi_name/pypi_version.
 async function buildSpokeTagLookup(
-  reached: Array<import('./bazel-pypi-parser.mts').ReachedPypiLabel>,
+  reached: ReachedPypiLabel[],
   queryOpts: BazelQueryOptions,
   verbose: boolean,
-): Promise<
-  Map<string, import('./bazel-pypi-parser.mts').ExtractedPypiPackage>
-> {
-  const lookup = new Map<
-    string,
-    import('./bazel-pypi-parser.mts').ExtractedPypiPackage
-  >()
+): Promise<Map<string, ExtractedPypiPackage>> {
+  const lookup = new Map<string, ExtractedPypiPackage>()
   for (const label of reached) {
     // Only query the spoke if we haven't already resolved it.
     if (lookup.has(label.normalizedName)) {

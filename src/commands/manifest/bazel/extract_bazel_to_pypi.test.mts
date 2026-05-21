@@ -1,4 +1,10 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -128,7 +134,6 @@ describe('extractBazelToPypi', () => {
 
     // Create a requirements_lock.txt in the temp dir.
     const lockPath = path.join(tmp, 'requirements_lock.txt')
-    const { writeFileSync } = await import('node:fs')
     writeFileSync(lockPath, 'requests==2.33.1\n', 'utf8')
 
     const result = await extractBazelToPypi({
@@ -178,7 +183,6 @@ describe('extractBazelToPypi', () => {
         stderr: '',
       })
 
-    const { writeFileSync } = await import('node:fs')
     writeFileSync(
       path.join(tmp, 'requirements_lock.txt'),
       'requests==2.33.1\n',
@@ -273,7 +277,6 @@ describe('extractBazelToPypi', () => {
         stderr: '',
       })
 
-    const { writeFileSync } = await import('node:fs')
     writeFileSync(
       path.join(tmp, 'requirements_lock.txt'),
       'requests==2.33.1\n',
@@ -324,7 +327,6 @@ describe('extractBazelToPypi', () => {
         stderr: '',
       })
 
-    const { writeFileSync } = await import('node:fs')
     writeFileSync(
       path.join(tmp, 'requirements_lock.txt'),
       'charset-normalizer==3.4.7\n',
@@ -389,7 +391,6 @@ describe('extractBazelToPypi', () => {
         stderr: '',
       })
 
-    const { writeFileSync } = await import('node:fs')
     writeFileSync(
       path.join(tmp, 'requirements_lock.txt'),
       'requests==2.33.1\n',
@@ -426,7 +427,6 @@ describe('extractBazelToPypi', () => {
       ]),
     )
 
-    const { writeFileSync } = await import('node:fs')
     writeFileSync(
       path.join(tmp, 'requirements_lock.txt'),
       'foo-bar==1.0.0\nFoo_Bar==2.0.0\n',
@@ -469,7 +469,6 @@ describe('extractBazelToPypi', () => {
       stderr: '',
     })
 
-    const { writeFileSync } = await import('node:fs')
     writeFileSync(
       path.join(tmp, 'requirements_lock.txt'),
       'requests==2.33.1\n',

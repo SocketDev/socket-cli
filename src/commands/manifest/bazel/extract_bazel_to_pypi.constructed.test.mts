@@ -125,32 +125,3 @@ describe.skipIf(isSandboxed())(
     }, 60000)
   },
 )
-
-describe('extract_bazel_to_pypi — sandbox fallback', () => {
-  it('returns noEcosystemFound when explicit mode has no Python rules', async () => {
-    const { writeFileSync } = await import('node:fs')
-    const noRulesDir = mkdtempSync(path.join(os.tmpdir(), 'no-python-rules-'))
-    try {
-      // Write a minimal MODULE.bazel so workspace detection passes.
-      writeFileSync(
-        path.join(noRulesDir, 'MODULE.bazel'),
-        'module(name="test")\n',
-        'utf8',
-      )
-      const result = await extractBazelToPypi({
-        bazelFlags: undefined,
-        bazelOutputBase: undefined,
-        bazelRc: undefined,
-        bin: undefined,
-        cwd: noRulesDir,
-        out: noRulesDir,
-        verbose: false,
-        explicitEcosystem: true,
-      })
-      expect(result.noEcosystemFound).toBe(true)
-      expect(result.ok).toBe(false)
-    } finally {
-      rmSync(noRulesDir, { recursive: true, force: true })
-    }
-  }, 60000)
-})
