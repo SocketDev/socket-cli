@@ -1,10 +1,11 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { resolveRealBinSync, whichRealSync } from '@socketsecurity/lib-stable/bin'
+import { resolveRealBinSync } from '@socketsecurity/lib-stable/bin/resolve'
+import { whichRealSync } from '@socketsecurity/lib-stable/bin/which'
 import { NPM } from '@socketsecurity/lib-stable/constants/agents'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { isDirSync } from '@socketsecurity/lib-stable/fs'
+import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
 
 import {
   createSupportedFilesFilter,

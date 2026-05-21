@@ -23,20 +23,18 @@
  * - Falls back to configured apiBaseUrl or default API_V0_URL
  */
 
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getSocketCliApiBaseUrl } from '@socketsecurity/lib-stable/env/socket-cli'
 import { messageWithCauses } from '@socketsecurity/lib-stable/errors'
-import { httpRequest } from '@socketsecurity/lib-stable/http-request'
+import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import { getDefaultApiToken, getExtraCaCerts } from './sdk.mts'
 
-import type {
-  HttpRequestOptions,
-  HttpResponse,
-} from '@socketsecurity/lib-stable/http-request'
+import type { HttpRequestOptions } from '@socketsecurity/lib-stable/http-request/request-types'
+import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
 import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
@@ -48,7 +46,7 @@ import {
 } from '../error/errors.mts'
 
 import type { CResult } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 import type {
   SocketSdkErrorResult,
   SocketSdkOperations,
@@ -87,7 +85,7 @@ export function getDefaultApiBaseUrl(): string | undefined {
 
 export type HandleApiCallOptions = {
   description?: string | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
   commandPath?: string | undefined
 }
 

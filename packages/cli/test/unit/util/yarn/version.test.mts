@@ -16,7 +16,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies before importing the module under test.
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawnSync: vi.fn(),
 }))
 
@@ -30,7 +30,7 @@ describe('yarn version utilities', () => {
 
   beforeEach(async () => {
     vi.resetModules()
-    const spawnModule = await import('@socketsecurity/lib-stable/spawn')
+    const spawnModule = await import('@socketsecurity/lib-stable/spawn/spawn')
     const pathsModule = await import('../../../../src/util/yarn/paths.mts')
     spawnSyncMock = spawnModule.spawnSync as ReturnType<typeof vi.fn>
     getYarnBinPathMock = pathsModule.getYarnBinPath as ReturnType<typeof vi.fn>
@@ -119,19 +119,6 @@ describe('yarn version utilities', () => {
       const result = isYarnBerry()
 
       expect(result).toBe(false)
-    })
-
-    it('handles Buffer stdout', async () => {
-      spawnSyncMock.mockReturnValue({
-        status: 0,
-        stdout: Buffer.from('3.0.0\n'),
-      })
-
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
-
-      expect(result).toBe(true)
     })
 
     it('handles invalid version string', async () => {

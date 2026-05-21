@@ -43,9 +43,11 @@ vi.mock('../../../../src/util/socket/api.mjs', () => ({
   queryApiSafeText: mockQueryApiSafeText,
 }))
 
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
+}))
+vi.mock('@socketsecurity/lib-stable/debug/namespace', () => ({
   isDebug: mockIsDebug,
 }))
 

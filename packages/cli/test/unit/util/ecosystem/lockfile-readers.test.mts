@@ -14,12 +14,12 @@ const mockReadFileUtf8 = vi.hoisted(() => vi.fn())
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockParseBunLockb = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/read-file', () => ({
   readFileBinary: mockReadFileBinary,
   readFileUtf8: mockReadFileUtf8,
 }))
 
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
 

@@ -1,4 +1,4 @@
-import { UNKNOWN_VALUE } from '@socketsecurity/lib-stable/constants/core'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib-stable/constants/sentinels'
 
 import {
   FOLD_SETTING_FILE,
@@ -17,7 +17,7 @@ import { getSocketDevPackageOverviewUrlFromPurl } from '../../util/socket/url.mt
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../util/alert/artifact.mts'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type AlertKey = string
@@ -137,7 +137,7 @@ export function generateReport(
     reportLevel: REPORT_LEVEL
     scanId: string
     short?: boolean | undefined
-    spinner?: Spinner | undefined
+    spinner?: SpinnerInstance | undefined
   },
 ): CResult<ScanReport | { healthy: boolean }> {
   const now = Date.now()

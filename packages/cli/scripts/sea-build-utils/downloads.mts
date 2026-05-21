@@ -21,15 +21,13 @@ import AdmZip from 'adm-zip'
 import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
-import {
-  httpDownload,
-  httpRequest,
-} from '@socketsecurity/lib-stable/http-request'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
+import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { ARCH_MAP, PLATFORM_MAP } from '../constants/platform-mappings.mts'
 import { PLATFORM_MAP_TOOLS } from '../constants/external-tools-platforms.mts'

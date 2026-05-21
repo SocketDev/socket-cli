@@ -3,7 +3,7 @@
 
 import { createRequire } from 'node:module'
 
-import { kInternalsSymbol } from '@socketsecurity/lib-stable/constants/core'
+import { kInternalsSymbol } from '@socketsecurity/lib-stable/constants/sentinels'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { getCliVersionHash } from './env/cli-version-hash.mts'

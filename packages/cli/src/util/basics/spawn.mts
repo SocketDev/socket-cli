@@ -8,10 +8,10 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { debug } from '@socketsecurity/lib-stable/debug'
+import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
@@ -25,7 +25,7 @@ import { getPyCliVersion } from '../../env/pycli-version.mts'
 
 import type { CResult } from '../../types.mts'
 
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 /**
  * Check if socket_basics is installed in the Python environment.
@@ -127,7 +127,7 @@ export type SocketBasicsOptions = {
   repoName: string
   scanContainers?: boolean | undefined
   scanSecrets?: boolean | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
   timeout?: number | undefined
 }
 

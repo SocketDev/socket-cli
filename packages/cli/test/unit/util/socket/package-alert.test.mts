@@ -64,7 +64,7 @@ vi.mock('../../../../src/util/alert/translations.mts', () => ({
 }))
 
 // Mock debug.
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debugDirNs: vi.fn(),
   debugNs: vi.fn(),
 }))

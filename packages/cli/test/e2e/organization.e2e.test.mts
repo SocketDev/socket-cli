@@ -40,7 +40,7 @@ describe('socket organization (e2e)', () => {
       })
       if (result.code === 0) {
         try {
-          const payload = JSON.parse(result.stdout) as { data?: string }
+          const payload = JSON.parse(result.stdout) as { data?: string | undefined }
           defaultOrg = typeof payload.data === 'string' ? payload.data : undefined
         } catch {
           // Leave undefined — per-org tests skip themselves below.

@@ -42,12 +42,12 @@ import crypto from 'node:crypto'
 
 import { LRUCache } from 'lru-cache'
 
-import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
 
 import { setupSdk } from '../socket/sdk.mts'
 
 import type { TelemetryEvent } from './types.mts'
-import type { InspectOptions } from '@socketsecurity/lib-stable/debug'
+import type { InspectOptions } from '@socketsecurity/lib-stable/debug/types'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 

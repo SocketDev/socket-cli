@@ -13,7 +13,7 @@ const mockSpawnToolVfs = vi.hoisted(() => vi.fn())
 const mockAreExternalToolsAvailable = vi.hoisted(() => vi.fn())
 const mockIsSeaBinary = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
 

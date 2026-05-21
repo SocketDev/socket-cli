@@ -57,8 +57,10 @@ const mockGetDefaultSpinner = vi.hoisted(() =>
     successAndStop: mockSuccessAndStop,
   })),
 )
-vi.mock('@socketsecurity/lib-stable/spinner', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner/spinner', () => ({
   Spinner: mockSpinner,
+}))
+vi.mock('@socketsecurity/lib-stable/spinner/registry', () => ({
   getDefaultSpinner: mockGetDefaultSpinner,
 }))
 
@@ -77,7 +79,7 @@ vi.mock('../../../../src/util/error/errors.mts', () => ({
 
 // Mock httpRequest from socket-lib (replaces fetch).
 const mockHttpRequest = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib-stable/http-request', () => ({
+vi.mock('@socketsecurity/lib-stable/http-request/request', () => ({
   httpRequest: mockHttpRequest,
 }))
 

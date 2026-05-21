@@ -3,8 +3,8 @@ import path from 'node:path'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
 
 import { distPath } from '../../constants/paths.mjs'
 
@@ -189,8 +189,8 @@ export async function execGradleWithSpinner(
     const { code, stderr, stdout } = output
     return {
       code,
-      stdout: typeof stdout === 'string' ? stdout : stdout.toString('utf8'),
-      stderr: typeof stderr === 'string' ? stderr : stderr.toString('utf8'),
+      stdout: stdout,
+      stderr: stderr,
     }
   } finally {
     if (pass) {

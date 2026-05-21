@@ -22,7 +22,7 @@ import {
   createSuccessResult,
 } from '../../../../../test/helpers/mocks.mts'
 import { handleCreateNewScan } from '../../../../src/commands/scan/handle-create-new-scan.mts'
-import { safeDeleteSync } from '@socketsecurity/lib-stable/fs'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 // Mock all the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -55,7 +55,7 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
-vi.mock('@socketsecurity/lib-stable/words', () => ({
+vi.mock('@socketsecurity/lib-stable/words/pluralize', () => ({
   pluralize: vi.fn((word, count) => (count === 1 ? word : `${word}s`)),
 }))
 vi.mock('../../../../src/commands/scan/fetch-create-org-full-scan.mts', () => ({
@@ -82,8 +82,8 @@ vi.mock(
     performReachabilityAnalysis: mockPerformReachabilityAnalysis,
   }),
 )
-vi.mock('@socketsecurity/lib-stable/constants/process', () => ({
-  getSpinner: () => ({
+vi.mock('@socketsecurity/lib-stable/spinner/registry', () => ({
+  getDefaultSpinner: () => ({
     start: mockStart,
     stop: mockStop,
     successAndStop: mockSuccessAndStop,

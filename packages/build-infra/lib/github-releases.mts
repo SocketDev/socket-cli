@@ -4,11 +4,12 @@
 
 import path from 'node:path'
 
-import { createTtlCache } from '@socketsecurity/lib-stable/cache-with-ttl'
-import { safeMkdir } from '@socketsecurity/lib-stable/fs'
-import { httpDownload, httpRequest } from '@socketsecurity/lib-stable/http-request'
+import { createTtlCache } from '@socketsecurity/lib-stable/ttl-cache/cache'
+import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
+import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { pRetry } from '@socketsecurity/lib-stable/promises'
+import { pRetry } from '@socketsecurity/lib-stable/promises/retry'
 
 const logger = getDefaultLogger()
 

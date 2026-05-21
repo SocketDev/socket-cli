@@ -24,7 +24,7 @@ import { chmod } from 'node:fs/promises'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 const logger = getDefaultLogger()
 

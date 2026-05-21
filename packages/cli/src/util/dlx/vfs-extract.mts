@@ -62,9 +62,9 @@ import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
-import { debug } from '@socketsecurity/lib-stable/debug'
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { debug } from '@socketsecurity/lib-stable/debug/output'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 

@@ -37,7 +37,7 @@ vi.mock('@gitbeaker/rest', () => {
 })
 
 // Mock debug.
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))

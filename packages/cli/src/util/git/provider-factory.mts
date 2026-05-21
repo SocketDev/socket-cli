@@ -1,4 +1,4 @@
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { GitHubProvider } from './github-provider.mts'
 import { GitLabProvider } from './gitlab-provider.mts'
@@ -41,9 +41,7 @@ export function getGitRemoteUrlSync(): string {
 
     if (result.status === 0 && result.stdout) {
       const remoteUrl =
-        typeof result.stdout === 'string'
-          ? result.stdout
-          : result.stdout.toString('utf8')
+        result.stdout
       return remoteUrl.trim().toLowerCase()
     }
   } catch {

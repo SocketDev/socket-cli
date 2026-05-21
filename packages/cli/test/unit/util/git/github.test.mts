@@ -36,11 +36,13 @@ import {
 } from '../../../../src/util/git/github.mts'
 
 // Mock debug utilities to suppress output during tests.
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
   debugDirNs: vi.fn(),
   debugNs: vi.fn(),
+}))
+vi.mock('@socketsecurity/lib-stable/debug/namespace', () => ({
   isDebugNs: vi.fn(() => false),
 }))
 

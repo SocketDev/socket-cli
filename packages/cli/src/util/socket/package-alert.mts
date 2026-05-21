@@ -18,10 +18,11 @@
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
-import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
-import { getOwn, hasOwn } from '@socketsecurity/lib-stable/objects'
-import { resolvePackageName } from '@socketsecurity/lib-stable/packages'
-import { naturalCompare } from '@socketsecurity/lib-stable/sorts'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
+import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
+import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
+import { resolvePackageName } from '@socketsecurity/lib-stable/packages/operations'
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
 import { getManifestData } from '@socketsecurity/registry-stable'
 
 import { getSocketDevPackageOverviewUrl } from './url.mts'
@@ -44,7 +45,7 @@ import type {
 } from '../alert/artifact.mts'
 import type { PURL_Type } from '../ecosystem/types.mjs'
 import type { SocketYml } from '../socket-yaml.mts'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 export const ALERT_SEVERITY_COLOR = createEnum({
   critical: 'magenta',
@@ -97,7 +98,7 @@ export type AddArtifactToAlertsMapOptions = {
   filter?: AlertFilter | undefined
   overrides?: { [key: string]: string } | undefined
   socketYml?: SocketYml | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
 }
 
 export async function addArtifactToAlertsMap<T extends AlertsByPurl>(

@@ -41,7 +41,7 @@
 
 import { Transform } from 'node:stream'
 
-import { ansiRegex } from '@socketsecurity/lib-stable/ansi'
+import { ansiRegex } from '@socketsecurity/lib-stable/ansi/strip'
 
 import { SENTINEL_BEGIN, SENTINEL_END } from './mode.mts'
 

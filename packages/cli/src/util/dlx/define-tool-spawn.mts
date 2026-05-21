@@ -16,7 +16,7 @@
  * `defineAutoDispatch` for the auto-dispatcher.
  */
 
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { downloadGitHubReleaseBinary, spawnToolVfs } from './spawn.mts'
 import { areExternalToolsAvailable } from './vfs-extract.mjs'
@@ -26,7 +26,7 @@ import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { BinaryResolution } from './resolve-binary.mts'
 import type { ExternalTool } from './vfs-extract.mts'
 import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnExtra } from '@socketsecurity/lib-stable/spawn/types'
 
 /**
  * Argument shape for every spawn function the factory emits.

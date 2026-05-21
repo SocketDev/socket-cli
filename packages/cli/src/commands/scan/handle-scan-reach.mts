@@ -1,6 +1,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
-import { pluralize } from '@socketsecurity/lib-stable/words'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 const logger = getDefaultLogger()
 

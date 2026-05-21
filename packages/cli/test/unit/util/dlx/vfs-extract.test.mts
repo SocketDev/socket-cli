@@ -52,7 +52,7 @@ vi.mock('node:fs', async () => {
   }
 })
 
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/safe', () => ({
   safeDelete: mockSafeDelete,
   safeMkdir: mockSafeMkdir,
 }))

@@ -31,11 +31,11 @@ vi.mock('node:fs', () => ({
 }))
 
 const mockSafeMkdirSync = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/safe', () => ({
   safeMkdirSync: mockSafeMkdirSync,
 }))
 
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: vi.fn(),
 }))
 

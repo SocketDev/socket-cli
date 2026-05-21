@@ -27,11 +27,11 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import {
   UNKNOWN_ERROR,
   kInternalsSymbol,
-} from '@socketsecurity/lib-stable/constants/core'
-import { debugNs } from '@socketsecurity/lib-stable/debug'
+} from '@socketsecurity/lib-stable/constants/sentinels'
+import { debugNs } from '@socketsecurity/lib-stable/debug/output'
 
-import { isErrnoException, isError } from '@socketsecurity/lib-stable/errors'
-export { isErrnoException } from '@socketsecurity/lib-stable/errors'
+import { isErrnoException, isError } from '@socketsecurity/lib-stable/errors/predicates'
+export { isErrnoException } from '@socketsecurity/lib-stable/errors/predicates'
 import {
   SOCKET_DASHBOARD_URL,
   SOCKET_PRICING_URL,
@@ -46,7 +46,7 @@ const constants = {
   [kInternalsSymbol]: {} as { getSentry?: () => SentryClient | undefined },
 }
 const internals = constants[kInternalsSymbol]
-const getSentry = internals.getSentry
+const getSentry = internals?.getSentry
 
 type EventHintOrCaptureContext =
   | { [key: string]: unknown }

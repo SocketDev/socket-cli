@@ -65,10 +65,12 @@ const {
 const mockDebugLog = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
   debugLog: mockDebugLog,
+}))
+vi.mock('@socketsecurity/lib-stable/debug/namespace', () => ({
   isDebug: mockIsDebug,
 }))
 

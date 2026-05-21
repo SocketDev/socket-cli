@@ -17,7 +17,7 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))
@@ -285,7 +285,7 @@ describe('handleOptimize', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug/output')
     const { detectAndValidatePackageEnvironment } =
       await import('../../../../src/util/ecosystem/environment.mts')
     const { applyOptimization } =

@@ -13,10 +13,10 @@ import { fileURLToPath } from 'node:url'
 
 import { Arborist } from '@npmcli/arborist'
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { getRootPath } from './downloads.mts'
 

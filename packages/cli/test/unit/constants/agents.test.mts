@@ -22,7 +22,7 @@ vi.mock('node:fs', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/lib-stable/bin', () => ({
+vi.mock('@socketsecurity/lib-stable/bin/which', () => ({
   whichReal: mockWhichReal,
 }))
 

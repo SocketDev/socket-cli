@@ -52,9 +52,11 @@ vi.mock('../../../../src/commands/config/output-config-set.mts', () => ({
 vi.mock('../../../../src/util/config.mts', () => ({
   updateConfigValue: mockUpdateConfigValue,
 }))
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
+}))
+vi.mock('@socketsecurity/lib-stable/debug/namespace', () => ({
   isDebug: mockIsDebug,
 }))
 
@@ -124,7 +126,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug')
+    const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug/output')
 
     mockUpdateConfigValue.mockReturnValue(createSuccessResult('debug-value'))
 
@@ -146,7 +148,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debug } = await import('@socketsecurity/lib-stable/debug')
+    const { debug } = await import('@socketsecurity/lib-stable/debug/output')
 
     mockUpdateConfigValue.mockReturnValue(createErrorResult('Failed'))
 

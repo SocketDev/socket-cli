@@ -3,7 +3,7 @@ import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type FetchCreateOrgFullScanConfigs = {
@@ -23,7 +23,7 @@ export type FetchCreateOrgFullScanOptions = {
   defaultBranch?: boolean | undefined
   pendingHead?: boolean | undefined
   sdkOpts?: SetupSdkOptions | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
   tmp?: boolean | undefined
 }
 

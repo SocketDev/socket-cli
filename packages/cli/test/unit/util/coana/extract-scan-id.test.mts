@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock dependencies.
 const mockReadJsonSync = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/read-json', () => ({
   readJsonSync: mockReadJsonSync,
 }))
 

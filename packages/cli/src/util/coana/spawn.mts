@@ -15,7 +15,7 @@ import { spawnNode } from '../spawn/spawn-node.mjs'
 import type { IpcObject } from '../ipc.mts'
 import type { CResult } from '../../types.mjs'
 import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
 
 export type CoanaSpawnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

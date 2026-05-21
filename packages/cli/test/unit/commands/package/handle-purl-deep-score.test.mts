@@ -37,9 +37,11 @@ vi.mock('../../../../src/commands/package/fetch-purl-deep-score.mts', () => ({
 vi.mock('../../../../src/commands/package/output-purls-deep-score.mts', () => ({
   outputPurlsDeepScore: mockOutputPurlsDeepScore,
 }))
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
+}))
+vi.mock('@socketsecurity/lib-stable/debug/namespace', () => ({
   isDebug: mockIsDebug,
 }))
 

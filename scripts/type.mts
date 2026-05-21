@@ -10,11 +10,11 @@ import type { PackageInfo } from './util/monorepo-helper.mts'
 
 import colors from 'yoctocolors-cjs'
 
-import { isQuiet } from '@socketsecurity/lib-stable/argv/flags'
+import { isQuiet } from '@socketsecurity/lib-stable/argv/flag-predicates'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 import { printFooter } from '@socketsecurity/lib-stable/stdio/footer'
 import { printHeader } from '@socketsecurity/lib-stable/stdio/header'
 

@@ -30,8 +30,9 @@ import {
 } from '../../../../src/util/fs/path-resolve.mts'
 import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
 
-import type * as BinModule from '@socketsecurity/lib-stable/bin'
-import type * as FsModule from '@socketsecurity/lib-stable/fs'
+import type * as BinResolveModule from '@socketsecurity/lib-stable/bin/resolve'
+import type * as BinWhichModule from '@socketsecurity/lib-stable/bin/which'
+import type * as FsInspectModule from '@socketsecurity/lib-stable/fs/inspect'
 
 const PACKAGE_JSON = 'package.json'
 
@@ -40,20 +41,29 @@ const mockWhichRealSync = vi.hoisted(() => vi.fn())
 const mockResolveRealBinSync = vi.hoisted(() => vi.fn((p: string) => p))
 
 // Mock dependencies for new tests.
-vi.mock('@socketsecurity/lib-stable/bin', async () => {
-  const actual = await vi.importActual<typeof BinModule>(
-    '@socketsecurity/lib-stable/bin',
+vi.mock('@socketsecurity/lib-stable/bin/resolve', async () => {
+  const actual = await vi.importActual<typeof BinResolveModule>(
+    '@socketsecurity/lib-stable/bin/resolve',
   )
   return {
     ...actual,
     resolveRealBinSync: mockResolveRealBinSync,
+  }
+})
+
+vi.mock('@socketsecurity/lib-stable/bin/which', async () => {
+  const actual = await vi.importActual<typeof BinWhichModule>(
+    '@socketsecurity/lib-stable/bin/which',
+  )
+  return {
+    ...actual,
     whichRealSync: mockWhichRealSync,
   }
 })
 
-vi.mock('@socketsecurity/lib-stable/fs', async () => {
-  const actual = await vi.importActual<typeof FsModule>(
-    '@socketsecurity/lib-stable/fs',
+vi.mock('@socketsecurity/lib-stable/fs/inspect', async () => {
+  const actual = await vi.importActual<typeof FsInspectModule>(
+    '@socketsecurity/lib-stable/fs/inspect',
   )
   return {
     ...actual,
@@ -435,7 +445,7 @@ describe('Path Resolve', () => {
     })
 
     it('finds npm directory in lib/node_modules structure', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs'))
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
 
       isDirSync.mockImplementation(p => {
         const pathStr = normalizePath(String(p))
@@ -458,7 +468,7 @@ describe('Path Resolve', () => {
     })
 
     it('finds npm directory with node_modules in current path', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs'))
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
 
       isDirSync.mockImplementation(p => {
         const pathStr = normalizePath(String(p))
@@ -476,7 +486,7 @@ describe('Path Resolve', () => {
     })
 
     it('finds npm directory with node_modules in parent path', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs'))
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
 
       isDirSync.mockImplementation(p => {
         const pathStr = normalizePath(String(p))
@@ -497,7 +507,7 @@ describe('Path Resolve', () => {
     })
 
     it('returns undefined when no npm directory found', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs'))
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
 
       isDirSync.mockReturnValue(false)
 
@@ -507,7 +517,7 @@ describe('Path Resolve', () => {
     })
 
     it('handles nvm directory structure', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs'))
+      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
 
       isDirSync.mockImplementation(p => {
         const pathStr = normalizePath(String(p))

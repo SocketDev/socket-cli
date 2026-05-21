@@ -14,8 +14,8 @@ import path from 'node:path'
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib-stable/fs'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib-stable/fs/read-file'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import {
   BUN,

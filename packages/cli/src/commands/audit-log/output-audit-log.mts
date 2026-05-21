@@ -1,4 +1,4 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import {

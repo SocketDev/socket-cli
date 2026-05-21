@@ -6,11 +6,11 @@ import { fileURLToPath } from 'node:url'
 
 import { it } from 'vitest'
 
-import { createEnvProxy } from '@socketsecurity/lib-stable/env'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
-import { stripAnsi } from '@socketsecurity/lib-stable/strings'
+import { createEnvProxy } from '@socketsecurity/lib-stable/env/proxy'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
 
 import { scrubSnapshotData } from './util/scrub-snapshot-data.mts'
 import type { ScrubOptions } from './util/scrub-snapshot-data.mts'

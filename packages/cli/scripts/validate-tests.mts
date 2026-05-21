@@ -7,7 +7,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { pEach } from '@socketsecurity/lib-stable/promises'
+import { pEach } from '@socketsecurity/lib-stable/promises/iterate'
 
 const logger = getDefaultLogger()
 

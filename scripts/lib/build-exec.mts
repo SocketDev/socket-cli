@@ -6,10 +6,10 @@
  *   script.
  */
 
-import type { SpawnStdioResult } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnStdioResult } from '@socketsecurity/lib-stable/spawn/types'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { saveBuildLog } from './build-helpers.mts'
 

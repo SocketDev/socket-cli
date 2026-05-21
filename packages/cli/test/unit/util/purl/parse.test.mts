@@ -27,8 +27,8 @@ const mockIsObjectObject = vi.hoisted(() =>
   vi.fn(obj => obj !== null && typeof obj === 'object' && !Array.isArray(obj)),
 )
 
-vi.mock('@socketsecurity/lib-stable/objects', () => ({
-  isObjectObject: mockIsObjectObject,
+vi.mock('@socketsecurity/lib-stable/objects/predicates', () => ({
+  isPlainObject: mockIsObjectObject,
 }))
 
 describe('purl utilities', () => {

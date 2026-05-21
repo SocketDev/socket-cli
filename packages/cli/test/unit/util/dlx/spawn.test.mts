@@ -47,7 +47,7 @@ vi.mock('adm-zip', () => ({
   default: mockAdmZipCtor,
 }))
 
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
 
@@ -60,16 +60,16 @@ vi.mock('@socketsecurity/lib-stable/dlx/binary', () => ({
   getDlxCachePath: mockGetDlxCachePath,
 }))
 
-vi.mock('@socketsecurity/lib-stable/arrays', () => ({
+vi.mock('@socketsecurity/lib-stable/arrays/join', () => ({
   joinAnd: (arr: string[]) => arr.join(', '),
 }))
 
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/safe', () => ({
   safeDelete: mockSafeDelete,
   safeMkdir: mockSafeMkdir,
 }))
 
-vi.mock('@socketsecurity/lib-stable/bin', () => ({
+vi.mock('@socketsecurity/lib-stable/bin/which', () => ({
   whichReal: mockWhichReal,
 }))
 

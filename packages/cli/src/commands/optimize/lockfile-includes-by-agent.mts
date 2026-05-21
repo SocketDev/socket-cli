@@ -6,7 +6,7 @@ import {
   YARN_CLASSIC,
 } from '@socketsecurity/lib-stable/constants/agents'
 import { EXT_LOCK } from '@socketsecurity/lib-stable/paths/exts'
-import { escapeRegExp } from '@socketsecurity/lib-stable/regexps'
+import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 

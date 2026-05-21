@@ -6,10 +6,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import {
-  getChangedFilesSync,
-  getStagedFilesSync,
-} from '@socketsecurity/lib-stable/git'
+import { getChangedFilesSync } from '@socketsecurity/lib-stable/git/changed'
+import { getStagedFilesSync } from '@socketsecurity/lib-stable/git/staged'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- module-level constant: script runs under pnpm test which always invokes from the package root.

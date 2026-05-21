@@ -6,7 +6,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { PACKAGE_ROOT } from '../paths.mts'

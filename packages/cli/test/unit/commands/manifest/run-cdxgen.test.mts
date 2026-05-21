@@ -25,7 +25,7 @@ vi.mock('node:fs', () => ({
   promises: { readFile: mockReadFile },
 }))
 
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/safe', () => ({
   safeDeleteSync: mockSafeDeleteSync,
 }))
 

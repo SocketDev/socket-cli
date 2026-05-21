@@ -11,11 +11,11 @@
  *   summary (hide detailed output)
  */
 
-import { isQuiet, isVerbose } from '@socketsecurity/lib-stable/argv/flags'
+import { isQuiet, isVerbose } from '@socketsecurity/lib-stable/argv/flag-predicates'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { PACKAGE_ROOT } from './paths.mts'
 

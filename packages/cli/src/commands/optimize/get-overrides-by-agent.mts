@@ -11,7 +11,7 @@ import {
 
 import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
 import type { Agent, EnvDetails } from '../../util/ecosystem/environment.mjs'
-import type { PackageJson } from '@socketsecurity/lib-stable/packages'
+import type { PackageJson } from '@socketsecurity/lib-stable/packages/operations'
 
 export type GetOverrides = (
   pkgEnvDetails: EnvDetails,

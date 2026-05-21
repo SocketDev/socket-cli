@@ -19,19 +19,19 @@ import {
   getNodeNoWarningsFlags,
 } from '@socketsecurity/lib-stable/constants/node'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getOwn } from '@socketsecurity/lib-stable/objects'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { cmdFlagsToString } from '../../util/process/cmd.mts'
 
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
 export interface AgentInstallOptions extends SpawnOption {
   args?: string[] | readonly string[] | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
 }
 
 export type AgentSpawnResult = ReturnType<typeof spawn>

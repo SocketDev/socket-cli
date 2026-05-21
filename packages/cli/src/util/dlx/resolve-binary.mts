@@ -5,7 +5,7 @@
 
 import os from 'node:os'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
 import { getCdxgenVersion } from '../../env/cdxgen-version.mts'
 import { getCoanaVersion } from '../../env/coana-version.mts'

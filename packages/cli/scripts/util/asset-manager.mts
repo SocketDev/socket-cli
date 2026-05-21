@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url'
 import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 

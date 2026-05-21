@@ -19,11 +19,11 @@ import https from 'node:https'
 import semver from 'semver'
 
 import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
-import { debug } from '@socketsecurity/lib-stable/debug'
+import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { onExit } from '@socketsecurity/lib-stable/signal-exit'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
+import { onExit } from '@socketsecurity/lib-stable/signal-exit/register'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'
 

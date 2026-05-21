@@ -10,7 +10,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

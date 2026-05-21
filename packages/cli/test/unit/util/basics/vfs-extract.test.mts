@@ -23,7 +23,7 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
 }))
 
 const mockSpawn = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
 

@@ -14,7 +14,7 @@
  */
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { escapeRegExp } from '@socketsecurity/lib-stable/regexps'
+import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 
 import { homePath } from '../../constants/paths.mts'
 

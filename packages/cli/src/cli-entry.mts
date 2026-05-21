@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Set global Socket theme for consistent CLI branding.
-import { isError } from '@socketsecurity/lib-stable/errors'
+import { isError } from '@socketsecurity/lib-stable/errors/predicates'
 import { setTheme } from '@socketsecurity/lib-stable/themes/context'
 setTheme('socket')
 
@@ -36,14 +36,14 @@ import {
   debug as debugNs,
   debugDir,
   debugDirNs,
-} from '@socketsecurity/lib-stable/debug'
+} from '@socketsecurity/lib-stable/debug/output'
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
 import {
   getSocketCliBootstrapCacheDir,
   getSocketCliBootstrapSpec,
 } from '@socketsecurity/lib-stable/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
 
 import { rootAliases, rootCommandBuckets, rootCommands } from './commands.mts'
 import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'

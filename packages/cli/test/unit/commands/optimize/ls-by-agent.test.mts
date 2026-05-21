@@ -25,7 +25,7 @@ import {
 
 // Mock spawn.
 const mockSpawn = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
 
@@ -85,17 +85,6 @@ describe('commands/optimize/ls-by-agent', () => {
       expect(result).toBe('')
     })
 
-    it('handles Buffer stdout', async () => {
-      mockSpawn.mockResolvedValueOnce({
-        stdout: Buffer.from('package1@1.0.0'),
-      })
-
-      const result = await lsBun(
-        createMockEnvDetails(BUN, '/usr/local/bin/bun'),
-      )
-
-      expect(result).toBe('package1@1.0.0')
-    })
   })
 
   describe('lsNpm', () => {

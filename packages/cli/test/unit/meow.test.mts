@@ -25,7 +25,7 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
 
 // Mock readPackageJsonSync.
 const mockReadPackageJsonSync = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib-stable/packages', () => ({
+vi.mock('@socketsecurity/lib-stable/packages/operations', () => ({
   readPackageJsonSync: mockReadPackageJsonSync,
 }))
 

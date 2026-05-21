@@ -1,4 +1,4 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 
 import { fetchDependencies } from './fetch-dependencies.mts'
 import { outputDependencies } from './output-dependencies.mts'

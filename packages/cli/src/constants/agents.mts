@@ -6,7 +6,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { whichReal } from '@socketsecurity/lib-stable/bin'
+import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 import {
   BUN,
   NPM,

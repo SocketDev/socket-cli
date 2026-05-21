@@ -19,7 +19,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock spawn.
 const mockSpawn = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
 
@@ -30,7 +30,7 @@ vi.mock('@socketsecurity/lib-stable/stdio/prompts', () => ({
 }))
 
 // Mock stripAnsi.
-vi.mock('@socketsecurity/lib-stable/strings', () => ({
+vi.mock('@socketsecurity/lib-stable/ansi/strip', () => ({
   stripAnsi: (str: string) => str,
 }))
 
@@ -132,19 +132,6 @@ describe('suggest_branch_slug', () => {
       const result = await suggestBranchSlug('main')
 
       expect(result).toBeUndefined()
-    })
-
-    it('handles stdout as Buffer', async () => {
-      mockSpawn.mockResolvedValue({
-        code: 0,
-        stdout: Buffer.from('feature-branch'),
-        stderr: '',
-      })
-      mockSelect.mockResolvedValue('feature-branch')
-
-      const result = await suggestBranchSlug('main')
-
-      expect(result).toBe('feature-branch')
     })
 
     it('trims whitespace from branch name', async () => {

@@ -24,7 +24,7 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib-stable/words', () => ({
+vi.mock('@socketsecurity/lib-stable/words/pluralize', () => ({
   pluralize: (word: string, options: { count: number }) =>
     options.count === 1 ? word : `${word}s`,
 }))

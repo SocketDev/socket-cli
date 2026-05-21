@@ -1,7 +1,7 @@
 import type { OutputKind } from '../../types.mts'
 import type { PURL_Type } from '../../util/ecosystem/types.mts'
 import type { RangeStyle } from '../../util/semver.mts'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 export type FixConfig = {
   all: boolean
@@ -26,6 +26,6 @@ export type FixConfig = {
   rangeStyle: RangeStyle
   showAffectedDirectDependencies: boolean
   silence: boolean
-  spinner: Spinner | undefined
+  spinner: SpinnerInstance | undefined
   unknownFlags: string[]
 }

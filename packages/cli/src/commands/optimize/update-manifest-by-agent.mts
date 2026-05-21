@@ -7,14 +7,14 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
 } from '@socketsecurity/lib-stable/constants/agents'
-import { hasKeys, isObject } from '@socketsecurity/lib-stable/objects'
+import { hasKeys, isObject } from '@socketsecurity/lib-stable/objects/predicates'
 
 import { updatePnpmWorkspaceYamlOverrides } from './update-pnpm-workspace-yaml.mts'
 
 import type { Overrides } from './types.mts'
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 import type { Agent } from '../../util/ecosystem/environment.mjs'
-import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages'
+import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
 
 const depFields = [
   'dependencies',

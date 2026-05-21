@@ -1,4 +1,4 @@
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 

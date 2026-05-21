@@ -26,13 +26,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ServerResponse } from 'node:http'
 import type { IncomingMessage } from 'node:http'
 
-import type * as HttpRequestModule from '@socketsecurity/lib-stable/http-request'
+import type * as HttpRequestModule from '@socketsecurity/lib-stable/http-request/request'
 
 const { mockHttpRequest } = vi.hoisted(() => ({
   mockHttpRequest: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib-stable/http-request', async importOriginal => {
+vi.mock('@socketsecurity/lib-stable/http-request/request', async importOriginal => {
   const actual = await importOriginal<typeof HttpRequestModule>()
   return {
     ...actual,

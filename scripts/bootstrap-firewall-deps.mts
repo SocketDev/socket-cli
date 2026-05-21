@@ -32,7 +32,7 @@
  *     must use the helpers as normal.
  */
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 
 import os from 'node:os'

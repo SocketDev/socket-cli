@@ -24,12 +24,12 @@ import os from 'node:os'
 import path from 'node:path'
 
 import AdmZip from 'adm-zip'
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib-stable/dlx/binary'
 import { dlxPackage } from '@socketsecurity/lib-stable/dlx/package'
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
-import { whichReal } from '@socketsecurity/lib-stable/bin'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 
 import type { GitHubReleaseSpec } from './resolve-binary.mjs'
 import {
@@ -45,7 +45,7 @@ import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/lib-stable/spawn'
+} from '@socketsecurity/lib-stable/spawn/types'
 
 export type DlxSpawnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

@@ -1,4 +1,4 @@
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-stable/constants/socket'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { confirm, password, select } from '@socketsecurity/lib-stable/stdio/prompts'

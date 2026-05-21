@@ -24,7 +24,7 @@ import path from 'node:path'
 import browserslist from 'browserslist'
 import semver from 'semver'
 
-import { whichReal } from '@socketsecurity/lib-stable/bin'
+import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 import {
   BUN,
   NPM,
@@ -36,14 +36,12 @@ import {
 } from '@socketsecurity/lib-stable/constants/agents'
 import { getMaintainedNodeVersions } from '@socketsecurity/lib-stable/constants/node'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
-import {
-  readPackageJson,
-  toEditablePackageJson,
-} from '@socketsecurity/lib-stable/packages'
-import { naturalCompare } from '@socketsecurity/lib-stable/sorts'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
+import { readPackageJson } from '@socketsecurity/lib-stable/packages/operations'
+import { toEditablePackageJson } from '@socketsecurity/lib-stable/packages/edit'
+import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import {
   getMinimumVersionByAgent,
@@ -62,8 +60,8 @@ import { cmdPrefixMessage } from '../process/cmd.mts'
 
 import type { CResult } from '../../types.mjs'
 import type { Logger } from '@socketsecurity/lib-stable/logger'
-import type { Remap } from '@socketsecurity/lib-stable/objects'
-import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages'
+import type { Remap } from '@socketsecurity/lib-stable/objects/types'
+import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
 import type { SemVer } from 'semver'
 
 const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'
@@ -529,9 +527,7 @@ export async function getAgentVersion(
       }
 
       stdout =
-        typeof result.stdout === 'string'
-          ? result.stdout
-          : result.stdout.toString()
+        result.stdout
       /* c8 ignore stop */
     } else {
       const result = await spawn(agentExecPath, [FLAG_VERSION], {
@@ -547,9 +543,7 @@ export async function getAgentVersion(
       }
 
       stdout =
-        typeof result.stdout === 'string'
-          ? result.stdout
-          : result.stdout.toString()
+        result.stdout
     }
 
     result =

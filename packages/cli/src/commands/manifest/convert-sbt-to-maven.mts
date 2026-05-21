@@ -1,10 +1,10 @@
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { safeReadFile } from '@socketsecurity/lib-stable/fs'
+import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
 
 import type { ManifestResult } from './output-manifest.mts'
 import type { CResult, OutputKind } from '../../types.mts'
@@ -67,16 +67,12 @@ export async function convertSbtToMaven({
         ok: false,
         message: 'There were errors while running sbt',
         cause:
-          typeof output.stderr === 'string'
-            ? output.stderr
-            : output.stderr.toString('utf8'),
+          output.stderr,
       }
     }
     const poms: string[] = []
     const stdoutStr =
-      typeof output.stdout === 'string'
-        ? output.stdout
-        : output.stdout.toString('utf8')
+      output.stdout
     stdoutStr.replace(/Wrote (.*?.pom)\n/g, (_all: string, fn: string) => {
       poms.push(fn)
       return fn

@@ -22,15 +22,17 @@
  * hash.
  */
 
-import { whichReal } from '@socketsecurity/lib-stable/bin'
-import { debug, debugDir, isDebug } from '@socketsecurity/lib-stable/debug'
+import { whichReal } from '@socketsecurity/lib-stable/bin/which'
+import { isDebug } from '@socketsecurity/lib-stable/debug/namespace'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import {
   getGithubBaseRef,
   getGithubRefName,
   getGithubRefType,
 } from '@socketsecurity/lib-stable/env/github'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { isSpawnError, spawn } from '@socketsecurity/lib-stable/spawn'
+import { isSpawnError } from '@socketsecurity/lib-stable/spawn/errors'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { FLAG_QUIET } from '../../constants/cli.mts'
 import { SOCKET_CLI_GIT_USER_EMAIL } from '../../env/socket-cli-git-user-email.mts'
@@ -43,7 +45,7 @@ import { debugGit } from '../debug.mts'
 import { extractName, extractOwner } from '../sanitize-names.mts'
 
 import type { CResult } from '../../types.mjs'
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
 
 // Cache git executable path
 let gitPath: string | undefined = undefined
@@ -121,9 +123,7 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
     }
 
     const originDetails =
-      typeof result.stdout === 'string'
-        ? result.stdout
-        : result.stdout.toString('utf8')
+      result.stdout
 
     const match = /(?<=HEAD branch: ).+/.exec(originDetails)
     if (match && match.length > 0 && match[0]) {
@@ -168,9 +168,7 @@ export async function getRepoInfo(
     }
 
     const remoteUrl =
-      typeof result.stdout === 'string'
-        ? result.stdout
-        : result.stdout.toString('utf8')
+      result.stdout
     info = parseGitRemoteUrl(remoteUrl)
     if (!info) {
       debug(`Unmatched git remote URL format: ${remoteUrl}`)
@@ -207,9 +205,7 @@ export async function gitBranch(
       ['symbolic-ref', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return typeof gitSymbolicRefResult.stdout === 'string'
-      ? gitSymbolicRefResult.stdout
-      : gitSymbolicRefResult.stdout.toString('utf8')
+    return gitSymbolicRefResult.stdout as string
   } catch (e) {
     // Expected in detached HEAD state, fallback to rev-parse.
     debugDir({ message: 'In detached HEAD state', error: e })
@@ -222,9 +218,7 @@ export async function gitBranch(
       ['rev-parse', '--short', 'HEAD'],
       stdioPipeOptions,
     )
-    return typeof gitRevParseResult.stdout === 'string'
-      ? gitRevParseResult.stdout
-      : gitRevParseResult.stdout.toString('utf8')
+    return gitRevParseResult.stdout as string
   } catch (e) {
     // Both methods failed, likely not in a git repo.
     debugDir({ message: 'Unable to determine git branch', error: e })
@@ -546,10 +540,7 @@ export async function gitUnstagedModifiedFiles(
       ['diff', '--name-only'],
       stdioPipeOptions,
     )
-    const changedFilesDetails =
-      typeof gitDiffResult.stdout === 'string'
-        ? gitDiffResult.stdout
-        : gitDiffResult.stdout.toString('utf8')
+    const changedFilesDetails = gitDiffResult.stdout as string
     const relPaths = changedFilesDetails.split('\n')
     return {
       ok: true,

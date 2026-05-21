@@ -1,6 +1,6 @@
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 import { select } from '@socketsecurity/lib-stable/stdio/prompts'
-import { stripAnsi } from '@socketsecurity/lib-stable/strings'
+import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 
 export async function suggestBranchSlug(
   repoDefaultBranch: string | undefined,
@@ -12,9 +12,7 @@ export async function suggestBranchSlug(
   }
 
   const stdoutStr =
-    typeof spawnResult.stdout === 'string'
-      ? spawnResult.stdout
-      : spawnResult.stdout.toString('utf8')
+    spawnResult.stdout
   const currentBranch = stripAnsi(stdoutStr.trim())
   if (currentBranch && spawnResult.code === 0) {
     const proceed = await select({

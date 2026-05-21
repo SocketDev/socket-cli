@@ -5,7 +5,7 @@
  */
 
 import type { CResult } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 /**
  * Flag type definitions for command arguments.
@@ -44,7 +44,7 @@ export interface CommandContext {
   command: CommandDefinition
   flags: FlagValues
   args: string[]
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
   outputKind?: string | undefined
 }
 

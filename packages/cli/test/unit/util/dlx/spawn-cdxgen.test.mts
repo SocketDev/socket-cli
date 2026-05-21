@@ -13,7 +13,7 @@ const mockSpawnDlx = vi.hoisted(() => vi.fn())
 const mockResolveCdxgen = vi.hoisted(() => vi.fn())
 const mockDetectExecutableType = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
 

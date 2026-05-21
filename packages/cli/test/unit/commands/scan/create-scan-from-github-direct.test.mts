@@ -33,7 +33,7 @@ vi.mock('../../../../src/util/git/github.mts', () => ({
   withGitHubRetry: mockWithGitHubRetry,
 }))
 
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))

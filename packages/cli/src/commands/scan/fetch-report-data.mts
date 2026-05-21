@@ -1,6 +1,6 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
 
 import { formatErrorWithDetail } from '../../util/error/errors.mjs'
 import {

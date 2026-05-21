@@ -6,7 +6,7 @@
  * when they don't.
  */
 
-import { debug } from '@socketsecurity/lib-stable/debug'
+import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import {

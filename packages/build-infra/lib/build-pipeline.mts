@@ -44,7 +44,7 @@ import { getBuildMode, validateCheckpointChain } from './constants.mts'
 import { validateExternalTools } from './external-tools-schema.mts'
 import { getCurrentPlatformArch } from './platform-mappings.mts'
 import { getNodeVersion } from './version-helpers.mts'
-import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 const logger = getDefaultLogger()
 

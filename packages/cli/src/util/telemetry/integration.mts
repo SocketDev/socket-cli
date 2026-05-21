@@ -46,9 +46,9 @@
 import os from 'node:os'
 import process from 'node:process'
 
-import { debugNs } from '@socketsecurity/lib-stable/debug'
-import { isError } from '@socketsecurity/lib-stable/errors'
-import { escapeRegExp } from '@socketsecurity/lib-stable/regexps'
+import { debugNs } from '@socketsecurity/lib-stable/debug/output'
+import { isError } from '@socketsecurity/lib-stable/errors/predicates'
+import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 
 import { TelemetryService } from './service.mts'
 import { CONFIG_KEY_DEFAULT_ORG, constants } from '../../constants.mts'

@@ -28,9 +28,11 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
 const mockSafeReadFileSync = vi.fn()
 const mockSafeStatsSync = vi.fn()
 
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/read-file', () => ({
   safeReadFileSync: (...args: unknown[]) => mockSafeReadFileSync(...args),
-  safeStatsSync: (...args: unknown[]) => mockSafeStatsSync(...args),
+}))
+vi.mock('@socketsecurity/lib-stable/fs/inspect', () => ({
+  safeStatSync: (...args: unknown[]) => mockSafeStatsSync(...args),
 }))
 
 import { outputCmdJson } from '../../../../src/commands/json/output-cmd-json.mts'
@@ -101,7 +103,7 @@ describe('output-cmd-json', () => {
       expect(process.exitCode).toBeUndefined()
     })
 
-    it('handles null safeStatsSync result', async () => {
+    it('handles null safeStatSync result', async () => {
       mockExistsSync.mockReturnValue(true)
       mockSafeStatsSync.mockReturnValue(undefined)
 

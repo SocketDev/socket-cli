@@ -32,7 +32,7 @@ const mockJoinAnd = vi.hoisted(() => vi.fn(arr => arr.join(' and ')))
 const mockCoanaFix = vi.hoisted(() => vi.fn())
 const mockOutputFixResult = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib-stable/arrays', () => ({
+vi.mock('@socketsecurity/lib-stable/arrays/join', () => ({
   joinAnd: mockJoinAnd,
 }))
 

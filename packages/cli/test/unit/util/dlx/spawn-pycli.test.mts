@@ -54,7 +54,7 @@ vi.mock('../../../../src/env/socket-cli-python-path.mts', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
 
@@ -63,11 +63,11 @@ vi.mock('@socketsecurity/lib-stable/dlx/binary', () => ({
   getDlxCachePath: mockGetDlxCachePath,
 }))
 
-vi.mock('@socketsecurity/lib-stable/bin', () => ({
+vi.mock('@socketsecurity/lib-stable/bin/which', () => ({
   whichReal: mockWhichReal,
 }))
 
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/safe', () => ({
   safeMkdir: mockSafeMkdir,
   safeDelete: mockSafeDelete,
 }))

@@ -18,10 +18,10 @@ import crypto from 'node:crypto'
 import os from 'node:os'
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { UPDATE_STORE_DIR } from '../../constants/paths.mts'
 import { getPythonMajorMinor } from '../../env/python-version.mts'

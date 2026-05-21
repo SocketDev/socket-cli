@@ -17,7 +17,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as FsLibType from '@socketsecurity/lib-stable/fs'
+import type * as FsLibType from '@socketsecurity/lib-stable/fs/safe'
 import type * as CreateScanFromGithub from '../../../../src/commands/scan/create-scan-from-github.mts'
 
 const mockOctokit = vi.hoisted(() => ({
@@ -36,7 +36,7 @@ vi.mock('../../../../src/util/git/github.mts', () => ({
   withGitHubRetry: mockWithGitHubRetry,
 }))
 
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))
@@ -85,7 +85,7 @@ vi.mock('../../../../src/commands/repository/fetch-list-all-repos.mts', () => ({
 
 const mockSafeDelete = vi.hoisted(() => vi.fn())
 const mockSafeMkdirSync = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/safe', () => ({
   safeDelete: mockSafeDelete,
   safeMkdirSync: mockSafeMkdirSync,
 }))
@@ -607,7 +607,7 @@ describe('create-scan-from-github (coverage)', () => {
       // mockSafeDelete is the mocked safeDelete here; reach for the real
       // one via importActual to actually remove the tmpdir.
       const actualFs = await vi.importActual<typeof FsLibType>(
-        '@socketsecurity/lib-stable/fs',
+        '@socketsecurity/lib-stable/fs/safe',
       )
       await actualFs.safeDelete(dir, { force: true, recursive: true })
     })
@@ -624,7 +624,7 @@ describe('create-scan-from-github (coverage)', () => {
       // safeMkdirSync is mocked to no-op; route to the real one so the
       // subsequent fs.writeFile can land.
       const actualFs = await vi.importActual<typeof FsLibType>(
-        '@socketsecurity/lib-stable/fs',
+        '@socketsecurity/lib-stable/fs/safe',
       )
       mockSafeMkdirSync.mockImplementationOnce((p: string, opts: object) =>
         actualFs.safeMkdirSync(

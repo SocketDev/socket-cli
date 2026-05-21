@@ -6,10 +6,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import {
-  getChangedFilesSync,
-  getStagedFilesSync,
-} from '@socketsecurity/lib-stable/git'
+import { getChangedFilesSync } from '@socketsecurity/lib-stable/git/changed'
+import { getStagedFilesSync } from '@socketsecurity/lib-stable/git/staged'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { PACKAGE_ROOT } from '../paths.mts'
@@ -433,9 +431,6 @@ export function mapSourceToTests(filepath) {
     }
     if (normalized.includes('src/util/terminal/link.mts')) {
       return ['src/util/terminal/link.test.mts']
-    }
-    if (normalized.includes('src/util/terminal/rich-progress.mts')) {
-      return ['src/util/terminal/rich-progress.test.mts']
     }
     if (normalized.includes('src/util/update/checker.mts')) {
       return ['src/util/update/checker.test.mts']

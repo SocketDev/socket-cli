@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner'
-import { pluralize } from '@socketsecurity/lib-stable/words'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 const logger = getDefaultLogger()
 
@@ -45,7 +45,7 @@ import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Remap } from '@socketsecurity/lib-stable/objects'
+import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean

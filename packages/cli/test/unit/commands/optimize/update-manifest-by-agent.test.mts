@@ -27,7 +27,7 @@ import {
   usesPnpmWorkspaceOverrides,
 } from '../../../../src/commands/optimize/update-manifest-by-agent.mts'
 
-import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages'
+import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
 
 describe('update-manifest-by-agent', () => {
   const createEditablePkgJson = (content: Record<string, unknown> = {}) => {

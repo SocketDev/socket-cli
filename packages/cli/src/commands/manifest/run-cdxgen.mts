@@ -6,7 +6,7 @@ import path from 'node:path'
 import colors from 'yoctocolors-cjs'
 
 import { NPM, PNPM, YARN } from '@socketsecurity/lib-stable/constants/agents'
-import { safeDeleteSync } from '@socketsecurity/lib-stable/fs'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { FLAG_HELP } from '../../constants/cli.mjs'

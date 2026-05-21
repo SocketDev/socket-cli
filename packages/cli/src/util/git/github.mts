@@ -40,11 +40,15 @@ import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 import { LRUCache } from 'lru-cache'
 
-import { debugDirNs, debugNs, isDebugNs } from '@socketsecurity/lib-stable/debug'
-import { errorMessage, isError } from '@socketsecurity/lib-stable/errors'
-import { readJson, safeMkdir, writeJson } from '@socketsecurity/lib-stable/fs'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
-import { parseUrl } from '@socketsecurity/lib-stable/url'
+import { isDebugNs } from '@socketsecurity/lib-stable/debug/namespace'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { isError } from '@socketsecurity/lib-stable/errors/predicates'
+import { readJson } from '@socketsecurity/lib-stable/fs/read-json'
+import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { writeJson } from '@socketsecurity/lib-stable/fs/write-json'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { parseUrl } from '@socketsecurity/lib-stable/url/parse'
 
 import { DISABLE_GITHUB_CACHE } from '../../env/disable-github-cache.mts'
 import { GITHUB_API_URL } from '../../env/github-api-url.mts'
@@ -55,8 +59,8 @@ import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type { CResult } from '../../types.mts'
 import type { components } from '@octokit/openapi-types'
-import type { JsonContent } from '@socketsecurity/lib-stable/fs'
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
+import type { JsonContent } from '@socketsecurity/lib-stable/fs/types'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
 
 export type Pr = components['schemas']['pull-request']
 

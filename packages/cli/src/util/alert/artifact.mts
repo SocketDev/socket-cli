@@ -9,7 +9,7 @@ import {
   ALERT_TYPE_MILD_CVE,
 } from '../../constants/alerts.mts'
 
-import type { Remap } from '@socketsecurity/lib-stable/objects'
+import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 import type {
   ALERT_ACTION,
   ALERT_TYPE,

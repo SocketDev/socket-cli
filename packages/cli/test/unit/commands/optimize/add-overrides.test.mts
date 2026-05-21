@@ -86,7 +86,7 @@ vi.mock('@socketsecurity/registry-stable', () => ({
   getManifestData: mockGetManifestData,
 }))
 
-vi.mock('@socketsecurity/lib-stable/promises', () => ({
+vi.mock('@socketsecurity/lib-stable/promises/iterate', () => ({
   pEach: async (items: unknown[], fn: unknown, opts?: unknown) => {
     for (let i = 0, { length } = items; i < length; i += 1) {
       const item = items[i]

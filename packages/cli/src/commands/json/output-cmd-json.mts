@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { safeReadFileSync, safeStatsSync } from '@socketsecurity/lib-stable/fs'
+import { safeStatSync } from '@socketsecurity/lib-stable/fs/inspect'
+import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { REDACTED } from '../../constants/cli.mts'
@@ -22,7 +23,7 @@ export async function outputCmdJson(cwd: string) {
     return
   }
 
-  if (!safeStatsSync(sockJsonPath)?.isFile()) {
+  if (!safeStatSync(sockJsonPath)?.isFile()) {
     logger.fail(
       `This is not a regular file (maybe a directory?): ${tildeSockJsonPath}`,
     )

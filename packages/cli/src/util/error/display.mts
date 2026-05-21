@@ -4,9 +4,10 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { isError, messageWithCauses } from '@socketsecurity/lib-stable/errors'
-import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger'
-import { stripAnsi } from '@socketsecurity/lib-stable/strings'
+import { messageWithCauses } from '@socketsecurity/lib-stable/errors'
+import { isError } from '@socketsecurity/lib-stable/errors/predicates'
+import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger/symbols'
+import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 
 import { debugDirNs, debugNs, isDebugNs } from '../debug.mts'
 import {

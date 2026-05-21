@@ -26,7 +26,7 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
 
 // Mock signal-exit.
 const mockOnExit = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib-stable/signal-exit', () => ({
+vi.mock('@socketsecurity/lib-stable/signal-exit/register', () => ({
   onExit: mockOnExit,
 }))
 

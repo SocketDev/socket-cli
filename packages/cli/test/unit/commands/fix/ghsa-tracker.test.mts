@@ -64,10 +64,14 @@ vi.mock('node:fs', async () => {
   }
 })
 
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/read-json', () => ({
   readJson: mockReadJson,
+}))
+vi.mock('@socketsecurity/lib-stable/fs/safe', () => ({
   safeDelete: mockSafeDelete,
   safeMkdir: mockSafeMkdir,
+}))
+vi.mock('@socketsecurity/lib-stable/fs/write-json', () => ({
   writeJson: mockWriteJson,
 }))
 
@@ -125,7 +129,7 @@ describe('ghsa-tracker', () => {
 
   describe('loadGhsaTracker', () => {
     it('loads existing tracker file', async () => {
-      const { readJson } = await import('@socketsecurity/lib-stable/fs')
+      const { readJson } = await import('@socketsecurity/lib-stable/fs/read-json')
       const mockTracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -171,7 +175,8 @@ describe('ghsa-tracker', () => {
 
   describe('saveGhsaTracker', () => {
     it('saves tracker to file', async () => {
-      const { safeMkdir, writeJson } = await import('@socketsecurity/lib-stable/fs')
+      const { safeMkdir } = await import('@socketsecurity/lib-stable/fs/safe')
+      const { writeJson } = await import('@socketsecurity/lib-stable/fs/write-json')
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -197,7 +202,7 @@ describe('ghsa-tracker', () => {
 
   describe('markGhsaFixed', () => {
     it('adds new GHSA fix record', async () => {
-      const { writeJson } = await import('@socketsecurity/lib-stable/fs')
+      const { writeJson } = await import('@socketsecurity/lib-stable/fs/write-json')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
@@ -224,7 +229,7 @@ describe('ghsa-tracker', () => {
     })
 
     it('replaces existing GHSA fix record', async () => {
-      const { writeJson } = await import('@socketsecurity/lib-stable/fs')
+      const { writeJson } = await import('@socketsecurity/lib-stable/fs/write-json')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -400,7 +405,7 @@ describe('ghsa-tracker', () => {
 
   describe('markGhsaFixed with locking', () => {
     it('uses custom branch name when provided', async () => {
-      const { writeJson } = await import('@socketsecurity/lib-stable/fs')
+      const { writeJson } = await import('@socketsecurity/lib-stable/fs/write-json')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],

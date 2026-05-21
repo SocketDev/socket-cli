@@ -10,7 +10,7 @@
  * identifiers.
  */
 
-import { readJsonSync } from '@socketsecurity/lib-stable/fs'
+import { readJsonSync } from '@socketsecurity/lib-stable/fs/read-json'
 
 export function extractTier1ReachabilityScanId(
   socketFactsFile: string,

@@ -7,7 +7,7 @@ import {
   YARN_CLASSIC,
 } from '@socketsecurity/lib-stable/constants/agents'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { FLAG_PROD } from '../../constants/cli.mts'
 
@@ -93,9 +93,7 @@ export async function lsBun(
         shell: WIN32,
       },
     )
-    return typeof result.stdout === 'string'
-      ? result.stdout
-      : result.stdout.toString('utf8')
+    return result.stdout
   } catch {}
   return ''
 }
@@ -141,9 +139,7 @@ export async function lsPnpm(
       },
     )
     stdout =
-      typeof result.stdout === 'string'
-        ? result.stdout
-        : result.stdout.toString('utf8')
+      result.stdout
   } catch {}
   return parsableToQueryStdout(stdout)
 }
@@ -171,9 +167,7 @@ export async function lsVlt(
       },
     )
     stdout =
-      typeof result.stdout === 'string'
-        ? result.stdout
-        : result.stdout.toString('utf8')
+      result.stdout
   } catch {}
   return cleanupQueryStdout(stdout)
 }
@@ -200,9 +194,7 @@ export async function lsYarnBerry(
         shell: WIN32,
       },
     )
-    return typeof result.stdout === 'string'
-      ? result.stdout
-      : result.stdout.toString('utf8')
+    return result.stdout
   } catch {}
   return ''
 }
@@ -231,9 +223,7 @@ export async function lsYarnClassic(
         shell: WIN32,
       },
     )
-    return typeof result.stdout === 'string'
-      ? result.stdout
-      : result.stdout.toString('utf8')
+    return result.stdout
   } catch {}
   return ''
 }
@@ -252,9 +242,7 @@ export async function npmQuery(
       shell: WIN32,
     })
     stdout =
-      typeof result.stdout === 'string'
-        ? result.stdout
-        : result.stdout.toString('utf8')
+      result.stdout
   } catch {}
   return cleanupQueryStdout(stdout)
 }

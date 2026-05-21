@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 /**
  * Creates a temporary copy of a fixture directory for testing. The temporary

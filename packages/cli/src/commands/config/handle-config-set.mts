@@ -1,4 +1,4 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 
 import { outputConfigSet } from './output-config-set.mts'
 import { updateConfigValue } from '../../util/config.mts'

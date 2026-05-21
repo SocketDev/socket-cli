@@ -2,7 +2,7 @@
  * @file Alert severity utilities for Socket CLI security scanning.
  */
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
 import { createEnum, pick } from '../data/objects.mts'
 

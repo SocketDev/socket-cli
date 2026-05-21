@@ -19,7 +19,7 @@ import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
 import type { PURL_Type } from '../../util/ecosystem/types.mjs'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 export type ReachabilityOptions = {
   excludePaths: string[]
@@ -49,7 +49,7 @@ export type ReachabilityAnalysisOptions = {
   packagePaths?: string[] | undefined
   reachabilityOptions: ReachabilityOptions
   repoName?: string | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
   target: string
   uploadManifests?: boolean | undefined
 }

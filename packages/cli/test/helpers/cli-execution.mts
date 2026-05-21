@@ -1,3 +1,4 @@
+/* max-file-lines: legitimate — comprehensive CLI execution test harness; splitting would scatter tightly coupled spawn / assertion / sandbox helpers. */
 /**
  * @file CLI execution test helpers for Socket CLI. Provides high-level
  *   utilities for executing CLI commands with comprehensive output validation
@@ -5,15 +6,15 @@
  */
 
 import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
-import { safeDelete } from '@socketsecurity/lib-stable/fs'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import { constants } from '../../src/constants.mts'
 import { spawnSocketCli } from '../utils.mts'
 
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
 
 /**
  * Result from CLI execution with enhanced utilities.
@@ -373,14 +374,14 @@ export async function expectCliSuccess(
 export interface SocketJsonOk<T = unknown> {
   ok: true
   data: T
-  message?: string
+  message?: string | undefined
 }
 export interface SocketJsonErr {
   ok: false
-  data?: unknown
+  data?: unknown | undefined
   message: string
-  cause?: string
-  code?: number
+  cause?: string | undefined
+  code?: number | undefined
 }
 export type SocketJsonContract<T = unknown> = SocketJsonOk<T> | SocketJsonErr
 
@@ -436,7 +437,7 @@ export function validateSocketJsonContract<T = unknown>(
   if (obj['code'] !== undefined && typeof obj['code'] !== 'number') {
     throw new Error(`Socket JSON contract violation: "code" must be a number when present (got ${typeof obj['code']}).\nstdout: ${stdout}`)
   }
-  return obj as SocketJsonContract<T>
+  return obj as unknown as SocketJsonContract<T>
 }
 
 /**
@@ -457,8 +458,8 @@ export interface CliInScratchOptions extends CliExecutionOptions {
  * outside of cwd into the scratch tree, so an e2e run never touches the
  * developer's system:
  *
- * - `cwd` → fresh `os.tmpdir()/socket-e2e-<n>/`
- * - `HOME` / `USERPROFILE` → fresh `os.tmpdir()/socket-e2e-home-<n>/`
+ * - `cwd` → fresh `os.os.tmpdir()/socket-e2e-<n>/`
+ * - `HOME` / `USERPROFILE` → fresh `os.os.tmpdir()/socket-e2e-home-<n>/`
  * - `XDG_CONFIG_HOME` → `<scratchHome>/.config`
  * - `XDG_CACHE_HOME` → `<scratchHome>/.cache`
  * - `XDG_DATA_HOME` → `<scratchHome>/.local/share`
@@ -494,8 +495,8 @@ export async function executeCliInScratch(
     ...options,
   } as CliInScratchOptions
 
-  const scratchCwd = mkdtempSync(path.join(tmpdir(), 'socket-e2e-'))
-  const scratchHome = mkdtempSync(path.join(tmpdir(), 'socket-e2e-home-'))
+  const scratchCwd = mkdtempSync(path.join(os.tmpdir(), 'socket-e2e-'))
+  const scratchHome = mkdtempSync(path.join(os.tmpdir(), 'socket-e2e-home-'))
   try {
     if (seedFiles) {
       const { writeFileSync, mkdirSync } = await import('node:fs')
@@ -515,6 +516,7 @@ export async function executeCliInScratch(
         USERPROFILE: scratchHome,
         // XDG base-directory spec.
         XDG_CONFIG_HOME: path.join(scratchHome, '.config'),
+        // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- per-test scratch HOME isolation: the cache must sit under the sandboxed HOME, not the repo root, so tests don't write to the real ~/.cache.
         XDG_CACHE_HOME: path.join(scratchHome, '.cache'),
         XDG_DATA_HOME: path.join(scratchHome, '.local', 'share'),
         XDG_STATE_HOME: path.join(scratchHome, '.local', 'state'),
@@ -566,7 +568,7 @@ export async function executeCliInScratch(
  *   })
  */
 export async function withScratchHome<T>(fn: () => Promise<T>): Promise<T> {
-  const scratchHome = mkdtempSync(path.join(tmpdir(), 'socket-e2e-home-'))
+  const scratchHome = mkdtempSync(path.join(os.tmpdir(), 'socket-e2e-home-'))
   const prevHome = process.env['HOME']
   const prevUserProfile = process.env['USERPROFILE']
   const prevXdgConfigHome = process.env['XDG_CONFIG_HOME']
@@ -583,6 +585,7 @@ export async function withScratchHome<T>(fn: () => Promise<T>): Promise<T> {
     process.env['HOME'] = scratchHome
     process.env['USERPROFILE'] = scratchHome
     process.env['XDG_CONFIG_HOME'] = path.join(scratchHome, '.config')
+    // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- per-test scratch HOME isolation: the cache must sit under the sandboxed HOME, not the repo root, so tests don't write to the real ~/.cache.
     process.env['XDG_CACHE_HOME'] = path.join(scratchHome, '.cache')
     process.env['XDG_DATA_HOME'] = path.join(scratchHome, '.local', 'share')
     process.env['XDG_STATE_HOME'] = path.join(scratchHome, '.local', 'state')

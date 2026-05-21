@@ -33,13 +33,13 @@ const mockSpinner = vi.hoisted(() => ({
 vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
-vi.mock('@socketsecurity/lib-stable/fs', () => ({
+vi.mock('@socketsecurity/lib-stable/fs/read-file', () => ({
   safeReadFile: mockSafeReadFile,
 }))
-vi.mock('@socketsecurity/lib-stable/spinner', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner/registry', () => ({
   getDefaultSpinner: () => mockSpinner,
 }))
 
@@ -72,20 +72,6 @@ describe('convertSbtToMaven', () => {
     expect(process.exitCode).toBe(1)
   })
 
-  it('handles Buffer stderr by decoding to utf8', async () => {
-    mockSpawn.mockResolvedValueOnce({
-      stdout: '',
-      stderr: Buffer.from('buffered err'),
-    })
-
-    const result = await convertSbtToMaven(baseOpts)
-
-    expect(result.ok).toBe(false)
-    if (!result.ok) {
-      expect(result.cause).toContain('buffered err')
-    }
-  })
-
   it('returns error when no poms were generated', async () => {
     mockSpawn.mockResolvedValueOnce({
       stdout: 'no relevant lines',
@@ -112,17 +98,6 @@ describe('convertSbtToMaven', () => {
     if (result.ok) {
       expect(result.data.files).toEqual(['/proj/a.pom', '/proj/b.pom'])
     }
-  })
-
-  it('handles Buffer stdout by decoding to utf8', async () => {
-    mockSpawn.mockResolvedValueOnce({
-      stdout: Buffer.from('Wrote /proj/foo.pom\n'),
-      stderr: '',
-    })
-
-    const result = await convertSbtToMaven(baseOpts)
-
-    expect(result.ok).toBe(true)
   })
 
   it('writes single-file pom to stdout when out=- and one pom exists', async () => {

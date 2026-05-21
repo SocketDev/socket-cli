@@ -1,7 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
-import { debug } from '@socketsecurity/lib-stable/debug'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
@@ -310,7 +310,7 @@ export function preProcess(
       }
 
       // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
-      artifact.alerts?.forEach(alert => {
+      artifact.alerts?.forEach((alert: { type: string; severity?: string | undefined }) => {
         const severity = alert.severity ?? ''
         const { type } = alert
         row.alerts.set(`${type}:${severity}`, {
@@ -321,7 +321,7 @@ export function preProcess(
     } else {
       const alerts = new Map<string, { type: string; severity: string }>()
       // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
-      artifact.alerts?.forEach(alert => {
+      artifact.alerts?.forEach((alert: { type: string; severity?: string | undefined }) => {
         const severity = alert.severity ?? ''
         const { type } = alert
         alerts.set(`${type}:${severity}`, {

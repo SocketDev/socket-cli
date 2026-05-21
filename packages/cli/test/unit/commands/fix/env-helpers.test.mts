@@ -82,8 +82,10 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
 // Mock debug.
 const mockDebug = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn(() => false))
-vi.mock('@socketsecurity/lib-stable/debug', () => ({
+vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
   debug: mockDebug,
+}))
+vi.mock('@socketsecurity/lib-stable/debug/namespace', () => ({
   isDebug: mockIsDebug,
 }))
 

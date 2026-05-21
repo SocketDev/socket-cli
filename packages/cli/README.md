@@ -583,7 +583,6 @@ Features:
 - `terminal/ascii-header.mts` - ASCII logo rendering
 - `terminal/colors.mts` - ANSI color utilities
 - `terminal/link.mts` - Hyperlink generation
-- `terminal/rich-progress.mts` - Progress bars
 
 **Update System**
 

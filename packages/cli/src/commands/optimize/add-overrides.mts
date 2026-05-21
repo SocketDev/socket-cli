@@ -3,9 +3,10 @@ import path from 'node:path'
 import semver from 'semver'
 
 import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
-import { hasOwn, toSortedObject } from '@socketsecurity/lib-stable/objects'
-import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages'
-import { pEach } from '@socketsecurity/lib-stable/promises'
+import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
+import { toSortedObject } from '@socketsecurity/lib-stable/objects/sort'
+import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages/manifest'
+import { pEach } from '@socketsecurity/lib-stable/promises/iterate'
 import { getManifestData } from '@socketsecurity/registry-stable'
 
 import { lsStdoutIncludes } from './deps-includes-by-agent.mts'
@@ -28,14 +29,14 @@ import type { GetOverridesResult } from './get-overrides-by-agent.mts'
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 import type { AliasResult } from '../../util/npm/package-arg.mts'
 import type { Logger } from '@socketsecurity/lib-stable/logger'
-import type { PackageJson } from '@socketsecurity/lib-stable/packages'
-import type { Spinner } from '@socketsecurity/lib-stable/spinner'
+import type { PackageJson } from '@socketsecurity/lib-stable/packages/operations'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 type AddOverridesOptions = {
   logger?: Logger | undefined
   pin?: boolean | undefined
   prod?: boolean | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
   state?: AddOverridesState | undefined
 }
 type AddOverridesState = {

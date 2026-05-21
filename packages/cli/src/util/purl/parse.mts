@@ -16,7 +16,7 @@
  */
 
 import { PackageURL } from '@socketregistry/packageurl-js-stable'
-import { isObjectObject } from '@socketsecurity/lib-stable/objects'
+import { isPlainObject } from '@socketsecurity/lib-stable/objects/predicates'
 
 import type { SocketArtifact } from '../alert/artifact.mjs'
 import type { PURL_Type } from '../ecosystem/types.mjs'
@@ -77,11 +77,11 @@ export function createPurlObject(
   options?: CreatePurlObjectOptions | undefined,
 ): PurlObject<PackageURL> | undefined {
   let opts: CreatePurlObjectOptions | undefined
-  if (isObjectObject(type)) {
+  if (isPlainObject(type)) {
     opts = { __proto__: null, ...type } as CreatePurlObjectOptions
     type = opts.type as string
     name = opts.name as string
-  } else if (isObjectObject(name)) {
+  } else if (isPlainObject(name)) {
     opts = { __proto__: null, ...name } as CreatePurlObjectOptions
     name = opts.name as string
   } else {

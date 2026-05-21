@@ -44,15 +44,18 @@ const mockLogger = vi.hoisted(() => ({
 }))
 
 vi.mock('@socketsecurity/lib-stable/logger', () => ({
-  LOG_SYMBOLS: {
-    success: '✓',
-    fail: '✗',
-  },
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib-stable/strings', () => ({
+vi.mock('@socketsecurity/lib-stable/logger/symbols', () => ({
+  LOG_SYMBOLS: {
+    success: '✓',
+    fail: '✗',
+  },
+}))
+
+vi.mock('@socketsecurity/lib-stable/ansi/strip', () => ({
   stripAnsi: vi.fn(str => str),
 }))
 
@@ -345,7 +348,7 @@ describe('checkCommandInput', () => {
 
     it('strips ANSI codes for JSON output', async () => {
       const { stripAnsi } = vi.mocked(
-        await import('@socketsecurity/lib-stable/strings'),
+        await import('@socketsecurity/lib-stable/ansi/strip'),
       )
       const { serializeResultJson } = vi.mocked(
         await import('../../../../src/util/output/result-json.mts'),

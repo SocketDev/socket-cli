@@ -1,4 +1,4 @@
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { handleApiCall } from '../../util/socket/api.mjs'

@@ -5,7 +5,7 @@
 
 import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 
-import { httpRequest } from '@socketsecurity/lib-stable/http-request'
+import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 
 import { getAuthHeaders } from './downloads.mts'
 

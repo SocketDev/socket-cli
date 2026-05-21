@@ -8,12 +8,13 @@ import process from 'node:process'
 
 import { fileURLToPath } from 'node:url'
 
-import { isQuiet } from '@socketsecurity/lib-stable/argv/flags'
+import { isQuiet } from '@socketsecurity/lib-stable/argv/flag-predicates'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib-stable/git'
+import { getChangedFiles } from '@socketsecurity/lib-stable/git/changed'
+import { getStagedFiles } from '@socketsecurity/lib-stable/git/staged'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 import { printFooter } from '@socketsecurity/lib-stable/stdio/footer'
 import { printHeader } from '@socketsecurity/lib-stable/stdio/header'
 

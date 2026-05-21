@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugDirNs } from '@socketsecurity/lib-stable/debug'
+import { debugDirNs } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { input, select } from '@socketsecurity/lib-stable/stdio/prompts'
 

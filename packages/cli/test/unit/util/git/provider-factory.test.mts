@@ -22,7 +22,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { mockSpawnSync } = vi.hoisted(() => ({ mockSpawnSync: vi.fn() }))
 
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawnSync: mockSpawnSync,
 }))
 
@@ -111,14 +111,6 @@ describe('getGitRemoteUrlSync', () => {
       stdout: '  HTTPS://Github.COM/Org/Repo.git  \n',
     })
     expect(getGitRemoteUrlSync()).toBe('https://github.com/org/repo.git')
-  })
-
-  it('handles Buffer stdout', () => {
-    mockSpawnSync.mockReturnValue({
-      status: 0,
-      stdout: Buffer.from('git@github.com:org/repo.git\n', 'utf8'),
-    })
-    expect(getGitRemoteUrlSync()).toBe('git@github.com:org/repo.git')
   })
 
   it('returns empty string when git config exits non-zero', () => {

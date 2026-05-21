@@ -20,7 +20,7 @@ import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib-stable/constants/socke
 
 import { isSeaBinary } from './detect.mts'
 
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
 
 /**
  * Find system Node.js binary in PATH (excluding the current SEA binary).

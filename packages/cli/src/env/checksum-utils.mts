@@ -7,7 +7,7 @@
  * validation logic.
  */
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
 export type Checksums = Record<string, string>
 

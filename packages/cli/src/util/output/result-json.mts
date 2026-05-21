@@ -1,6 +1,6 @@
-import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug'
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { isObject } from '@socketsecurity/lib-stable/objects'
+import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 
 import type { CResult } from '../../types.mjs'
 

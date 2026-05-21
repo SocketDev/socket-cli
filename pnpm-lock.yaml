@@ -985,6 +985,16 @@ importers:
         specifier: npm:@socketsecurity/lib@6.0.0
         version: '@socketsecurity/lib@6.0.0(typescript@5.9.3)'
 
+  .claude/hooks/squash-history-reminder:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.0.0
+        version: '@socketsecurity/lib@6.0.0(typescript@5.9.3)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/stale-process-sweeper: {}
 
   .claude/hooks/token-guard: {}

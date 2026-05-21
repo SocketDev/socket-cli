@@ -37,7 +37,7 @@ describe('buildPurl', () => {
     })
 
     it('splits @scope/name into namespace + name', () => {
-      expect(buildPurl('npm', '@socketsecurity/sdk-stable', '4.0.1')).toBe(
+      expect(buildPurl('npm', '@socketsecurity/sdk', '4.0.1')).toBe(
         'pkg:npm/%40socketsecurity/sdk@4.0.1',
       )
     })

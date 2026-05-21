@@ -7,9 +7,10 @@ import process from 'node:process'
 
 import type { PackageInfo } from './util/monorepo-helper.mts'
 
-import { isQuiet } from '@socketsecurity/lib-stable/argv/flags'
+import { isQuiet } from '@socketsecurity/lib-stable/argv/flag-predicates'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { getChangedFiles, getStagedFiles } from '@socketsecurity/lib-stable/git'
+import { getChangedFiles } from '@socketsecurity/lib-stable/git/changed'
+import { getStagedFiles } from '@socketsecurity/lib-stable/git/staged'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { printHeader } from '@socketsecurity/lib-stable/stdio/header'
 

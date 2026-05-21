@@ -41,10 +41,10 @@ const mockSpinner = vi.hoisted(() => ({
 vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
-vi.mock('@socketsecurity/lib-stable/spinner', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner/registry', () => ({
   getDefaultSpinner: () => mockSpinner,
 }))
 
@@ -131,18 +131,6 @@ describe('convertGradleToMaven', () => {
       expect(result.data.files).toEqual(['/proj/a.pom', '/proj/b.pom'])
       expect(result.data.type).toBe('gradle')
     }
-  })
-
-  it('handles Buffer stdout/stderr by decoding to utf8', async () => {
-    mockSpawn.mockResolvedValueOnce({
-      code: 0,
-      stdout: Buffer.from('POM file copied to: /proj/foo.pom\n'),
-      stderr: Buffer.from(''),
-    })
-
-    const result = await convertGradleToMaven(baseOpts)
-
-    expect(result.ok).toBe(true)
   })
 
   it('logs verbose stdout when --verbose is set', async () => {

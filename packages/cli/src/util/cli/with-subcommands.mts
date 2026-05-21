@@ -8,8 +8,10 @@ import {
   getSocketCliNoApiToken,
 } from '@socketsecurity/lib-stable/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getOwn, hasOwn } from '@socketsecurity/lib-stable/objects'
-import { indentString, trimNewlines } from '@socketsecurity/lib-stable/strings'
+import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
+import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
+import { indentString } from '@socketsecurity/lib-stable/strings/format'
+import { trimNewlines } from '@socketsecurity/lib-stable/strings/transform'
 
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'

@@ -23,7 +23,7 @@ const mockGetDefaultOrgSlug = vi.hoisted(() =>
 )
 const mockGetErrorCause = vi.hoisted(() => vi.fn((e: unknown) => String(e)))
 
-vi.mock('@socketsecurity/lib-stable/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
   spawn: mockSpawn,
 }))
 

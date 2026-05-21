@@ -53,11 +53,11 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
   logger: mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib-stable/constants/process', () => ({
-  getSpinner: mockGetSpinner,
+vi.mock('@socketsecurity/lib-stable/spinner/registry', () => ({
+  getDefaultSpinner: mockGetSpinner,
 }))
 
-vi.mock('@socketsecurity/lib-stable/words', () => ({
+vi.mock('@socketsecurity/lib-stable/words/pluralize', () => ({
   pluralize: mockPluralize,
 }))
 

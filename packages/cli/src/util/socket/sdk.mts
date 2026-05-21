@@ -34,7 +34,7 @@ import { rootCertificates } from 'node:tls'
 
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
-import { debug as debugLib } from '@socketsecurity/lib-stable/debug'
+import { debug as debugLib } from '@socketsecurity/lib-stable/debug/output'
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-stable/constants/socket'
 import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
@@ -46,9 +46,9 @@ import {
 } from '@socketsecurity/lib-stable/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { password } from '@socketsecurity/lib-stable/stdio/prompts'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings'
-import { isUrl } from '@socketsecurity/lib-stable/url'
-import { pluralize } from '@socketsecurity/lib-stable/words'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
+import { isUrl } from '@socketsecurity/lib-stable/url/predicates'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk-stable'
 
 import {

@@ -1,4 +1,4 @@
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { NPM } from '@socketsecurity/lib-stable/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 

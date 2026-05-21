@@ -1,5 +1,5 @@
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { spawnSync } from '@socketsecurity/lib-stable/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { FLAG_VERSION } from '../../constants/cli.mts'
 import { getYarnBinPath } from '../yarn/paths.mts'
@@ -17,10 +17,7 @@ export function isYarnBerry(): boolean {
       })
 
       if (result.status === 0 && result.stdout) {
-        const version =
-          typeof result.stdout === 'string'
-            ? result.stdout
-            : result.stdout.toString('utf8')
+        const version = result.stdout
         // Yarn Berry starts from version 2.x
         const parts = version.trim().split('.')
         const majorVersion =

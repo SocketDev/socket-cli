@@ -140,7 +140,7 @@ describe('socket scan (e2e)', () => {
       if (result.code === 0) {
         try {
           const payload = JSON.parse(result.stdout) as {
-            data?: { results?: Array<{ id?: string }> }
+            data?: { results?: Array<{ id?: string | undefined }> | undefined } | undefined
           }
           const results = payload.data?.results
           if (Array.isArray(results)) {

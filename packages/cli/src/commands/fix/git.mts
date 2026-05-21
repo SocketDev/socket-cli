@@ -1,4 +1,4 @@
-import { joinAnd } from '@socketsecurity/lib-stable/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 
