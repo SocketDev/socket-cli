@@ -21,7 +21,7 @@ import type { Mock } from 'vitest'
  *
  * @returns The mocked handleApiCall function
  */
-export async function getMockHandleApiCall(): Promise<Mock> {
+async function getMockHandleApiCall(): Promise<Mock> {
   const module = await vi.importMock<typeof ApiModule>(
     '../../src/util/socket/api.mts',
   )
@@ -34,7 +34,7 @@ export async function getMockHandleApiCall(): Promise<Mock> {
  *
  * @returns The mocked setupSdk function
  */
-export async function getMockSetupSdk(): Promise<Mock> {
+async function getMockSetupSdk(): Promise<Mock> {
   const module = await vi.importMock<typeof SdkModule>(
     '../../src/util/socket/sdk.mts',
   )
@@ -95,35 +95,6 @@ export async function setupSdkMockSuccess(
 
   setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
   handleApiCall.mockResolvedValue(createSuccessResult(mockData))
-
-  return {
-    mockHandleApi: handleApiCall,
-    mockSdk,
-    mockSetupSdk: setupSdk,
-  }
-}
-
-/**
- * Setup SDK mock with custom SDK object. For tests that need fine-grained
- * control over SDK methods. Note: Test files must call vi.mock() for the SDK
- * modules before using this helper.
- *
- * @param mockSdkMethods - Object with SDK methods to mock.
- * @param mockApiData - Data to return from handleApiCall.
- *
- * @returns Object with mockSdk, mockHandleApi, and mockSetupSdk
- */
-export async function setupSdkMockWithCustomSdk(
-  mockSdkMethods: Record<string, unknown>,
-  mockApiData: unknown,
-) {
-  const mockSdk = createMockSdk(mockSdkMethods)
-
-  const setupSdk = await getMockSetupSdk()
-  const handleApiCall = await getMockHandleApiCall()
-
-  setupSdk.mockResolvedValue(createSuccessResult(mockSdk))
-  handleApiCall.mockResolvedValue(createSuccessResult(mockApiData))
 
   return {
     mockHandleApi: handleApiCall,

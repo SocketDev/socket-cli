@@ -4,20 +4,13 @@
  *   management.
  */
 
-import { afterEach, beforeEach, vi } from 'vitest'
+import { beforeEach, vi } from 'vitest'
 
 /**
  * Clear all mocks manually.
  */
 export function clearAllMocks(): void {
   vi.clearAllMocks()
-}
-
-/**
- * Reset process.exitCode manually.
- */
-export function resetExitCode(): void {
-  process.exitCode = undefined
 }
 
 /**
@@ -29,26 +22,4 @@ export function setupTestEnvironment(): void {
     vi.clearAllMocks()
     process.exitCode = undefined
   })
-}
-
-/**
- * Setup and cleanup for a test with custom initialization.
- */
-export function setupTestWithCleanup(
-  setup?: () => void | Promise<void>,
-  cleanup?: () => void | Promise<void>,
-): void {
-  beforeEach(async () => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-    if (setup) {
-      await setup()
-    }
-  })
-
-  if (cleanup) {
-    afterEach(async () => {
-      await cleanup()
-    })
-  }
 }

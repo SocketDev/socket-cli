@@ -17,7 +17,7 @@
 
 import type { CResult } from '../src/types.mts'
 
-export interface MockAuthOptions {
+interface MockAuthOptions {
   /**
    * Whether the operation should succeed.
    */
@@ -36,7 +36,7 @@ export interface MockAuthOptions {
   responseData?: unknown | undefined
 }
 
-export interface MockLoginOptions extends MockAuthOptions {
+interface MockLoginOptions extends MockAuthOptions {
   /**
    * Mock email address for login.
    */
@@ -55,7 +55,7 @@ export interface MockLoginOptions extends MockAuthOptions {
   requireMfa?: boolean | undefined
 }
 
-export interface MockTokenOptions extends MockAuthOptions {
+interface MockTokenOptions extends MockAuthOptions {
   /**
    * The token to validate.
    */
@@ -70,7 +70,7 @@ export interface MockTokenOptions extends MockAuthOptions {
   expiresAt?: Date | undefined
 }
 
-export interface MockOrgOptions extends MockAuthOptions {
+interface MockOrgOptions extends MockAuthOptions {
   /**
    * List of organizations to return.
    */
@@ -503,6 +503,6 @@ export async function mockValidateSession(
 /**
  * Simulate a delay for realistic async behavior.
  */
-export function simulateDelay(ms: number): Promise<void> {
+function simulateDelay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }

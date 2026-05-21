@@ -44,45 +44,6 @@ export async function createTempFixture(
 }
 
 /**
- * Creates multiple temporary fixture copies at once.
- *
- * @param fixtures - Map of fixture name to fixture path.
- * @param cleanupHook - Optional function to register cleanup.
- *
- * @returns Map of fixture name to temporary path.
- */
-export async function createTempFixtures(
-  fixtures: Record<string, string>,
-  cleanupHook?: (cleanup: () => Promise<void>) => void,
-): Promise<Record<string, string>> {
-  const tempFixtures = Object.create(null) as Record<string, string>
-  const tempDirs: string[] = []
-
-  // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
-  for (const [name, fixturePath] of Object.entries(fixtures)) {
-    // eslint-disable-next-line no-await-in-loop
-    const tempDir = await createTempFixture(fixturePath)
-    tempFixtures[name] = tempDir
-    tempDirs.push(tempDir)
-  }
-
-  // Register cleanup for all temp directories.
-  if (cleanupHook) {
-    cleanupHook(async () => {
-      await Promise.allSettled(
-        tempDirs.map(dir =>
-          safeDelete(dir).catch(() => {
-            // Ignore cleanup errors.
-          }),
-        ),
-      )
-    })
-  }
-
-  return tempFixtures
-}
-
-/**
  * Helper to create a temporary fixture with automatic cleanup in afterEach.
  * Designed for use in test suites that use afterEach hooks.
  *
