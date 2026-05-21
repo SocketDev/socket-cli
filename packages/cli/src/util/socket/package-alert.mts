@@ -83,7 +83,7 @@ const MIN_ABOVE_THE_FOLD_ALERT_COUNT = 1
 
 const format = new ColorOrMarkdown(false)
 
-export type AlertFilter = {
+type AlertFilter = {
   actions?: ALERT_ACTION[] | undefined
   blocked?: boolean | undefined
   critical?: boolean | undefined
@@ -93,7 +93,7 @@ export type AlertFilter = {
   upgradable?: boolean | undefined
 }
 
-export type AddArtifactToAlertsMapOptions = {
+type AddArtifactToAlertsMapOptions = {
   consolidate?: boolean | undefined
   filter?: AlertFilter | undefined
   overrides?: { [key: string]: string } | undefined
@@ -298,11 +298,11 @@ export function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
           : 4
 }
 
-export type CveFilter = {
+type CveFilter = {
   upgradable?: boolean | undefined
 }
 
-export type CveInfoByAlertKey = Map<
+type CveInfoByAlertKey = Map<
   string,
   {
     firstPatchedVersionIdentifier: string
@@ -310,9 +310,9 @@ export type CveInfoByAlertKey = Map<
   }
 >
 
-export type CveInfoByPartialPurl = Map<string, CveInfoByAlertKey>
+type CveInfoByPartialPurl = Map<string, CveInfoByAlertKey>
 
-export type GetCveInfoByPackageOptions = {
+type GetCveInfoByPackageOptions = {
   filter?: CveFilter | undefined
 }
 
@@ -394,7 +394,7 @@ export function getCveInfoFromAlertsMap(
   return infoByPartialPurl
 }
 
-export type RiskCounts = {
+type RiskCounts = {
   critical: number
   high: number
   middle: number
@@ -453,7 +453,7 @@ export function getSeverityLabel(
   return severity === 'middle' ? 'moderate' : severity
 }
 
-export type LogAlertsMapOptions = {
+type LogAlertsMapOptions = {
   hideAt?: `${keyof typeof ALERT_SEVERITY}` | 'none' | undefined
   output?: NodeJS.WriteStream | undefined
 }
