@@ -57,7 +57,8 @@ const config: CliCommandConfig = {
     },
     verbose: {
       type: 'boolean',
-      description: 'Stream bazel stdout/stderr',
+      description:
+        'Emit bounded Bazel diagnostics with argv, duration, exit status, and output sizes',
     },
   },
   help: (command, config) => `

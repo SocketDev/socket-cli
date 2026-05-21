@@ -15,6 +15,7 @@ vi.mock('../../../constants.mts', () => ({
   },
 }))
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import {
@@ -191,6 +192,28 @@ describe('runBazelQuery', () => {
       invocationFlags: [],
     })
     expect(r).toEqual({ code: -1, stdout: '', stderr: 'missing bazel' })
+  })
+
+  it('emits bounded subprocess trace when verbose is true', async () => {
+    const logSpy = vi.spyOn(logger, 'log').mockImplementation(() => logger)
+    try {
+      // @ts-ignore — narrow return shape for the test's purposes.
+      mocked.mockResolvedValueOnce({ code: 7, stdout: 'OUT', stderr: 'ERR' })
+      await runBazelQuery('q', {
+        bin: 'bazel',
+        cwd: '/r',
+        invocationFlags: [],
+        verbose: true,
+      })
+      const text = logSpy.mock.calls
+        .map(args => args.map(a => String(a)).join(' '))
+        .join('\n')
+      expect(text).toContain('bazel subprocess trace')
+      expect(text).toContain('bazel stderr tail')
+      expect(text).toContain('bazel-query-failed')
+    } finally {
+      logSpy.mockRestore()
+    }
   })
 })
 

@@ -175,7 +175,9 @@ export async function extractBazelToPypi(
 
     if (!hubs.size) {
       if (verbose) {
-        logger.info('No PyPI hubs discovered.')
+        logger.info(
+          'No PyPI hubs discovered. failureCategory=no-supported-ecosystem',
+        )
       }
       return {
         artifactCount: 0,
@@ -270,7 +272,9 @@ export async function extractBazelToPypi(
     }
 
     if (!allLines.length) {
-      logger.fail('No PyPI packages extracted. See warnings above.')
+      logger.fail(
+        'No PyPI packages extracted. failureCategory=ecosystem-detected-but-empty. See warnings above.',
+      )
       return { artifactCount: 0, manifestPath, ok: false }
     }
     logger.success(

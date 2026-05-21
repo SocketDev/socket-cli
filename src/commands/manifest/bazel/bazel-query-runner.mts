@@ -25,6 +25,8 @@ export type BazelQueryResult = {
 // Default per-invocation timeout for bazel queries. Bazel cold-cache starts
 // can take several minutes; 10 minutes is generous while still bounding CI hangs.
 const BAZEL_QUERY_TIMEOUT_MS = 600_000
+const STDERR_TAIL_BYTES = 4_096
+const STDOUT_EXCERPT_BYTES = 1_024
 
 // Splits the user-supplied --bazel-flags string on whitespace.
 // Empty / undefined returns []. No shell parsing — quoted args with embedded
@@ -111,6 +113,58 @@ function numericExitCode(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
+function byteLength(value: string): number {
+  return Buffer.byteLength(value, 'utf8')
+}
+
+function excerpt(value: string, maxBytes: number): string {
+  if (byteLength(value) <= maxBytes) {
+    return value
+  }
+  return value.slice(0, maxBytes) + '\n[truncated]'
+}
+
+function logBazelTrace({
+  argv,
+  durationMs,
+  opts,
+  result,
+  step,
+}: {
+  argv: string[]
+  durationMs: number
+  opts: BazelQueryOptions
+  result: BazelQueryResult
+  step: string
+}): void {
+  if (!opts.verbose) {
+    return
+  }
+  const stderrBytes = byteLength(result.stderr)
+  const stdoutBytes = byteLength(result.stdout)
+  const category = result.code === 0 ? 'ok' : 'bazel-query-failed'
+  logger.log('[VERBOSE] bazel subprocess trace:', `category=${category}`, {
+    argv,
+    category,
+    code: result.code,
+    cwd: opts.cwd,
+    durationMs,
+    stderrBytes,
+    stdoutBytes,
+    step,
+    timedOut: false,
+    timeoutMs: BAZEL_QUERY_TIMEOUT_MS,
+  })
+  if (result.code !== 0 && result.stderr) {
+    logger.log(
+      '[VERBOSE] bazel stderr tail:',
+      excerpt(result.stderr.slice(-STDERR_TAIL_BYTES), STDERR_TAIL_BYTES),
+    )
+  } else if (result.stdout && stdoutBytes <= STDOUT_EXCERPT_BYTES) {
+    logger.log('[VERBOSE] bazel stdout excerpt:', result.stdout)
+  }
+}
+
 function normalizeSpawnError(error: unknown): BazelQueryResult {
   const e = error as {
     code?: unknown
@@ -140,6 +194,7 @@ export async function runBazelQuery(
   if (opts.verbose) {
     logger.log('[VERBOSE] Executing:', opts.bin, ', args:', argv)
   }
+  const startedAt = Date.now()
   const { spinner } = constants
   let result: BazelQueryResult | undefined
   try {
@@ -162,6 +217,15 @@ export async function runBazelQuery(
     } else {
       spinner.failAndStop(`bazel query failed (${truncated}).`)
     }
+    if (result) {
+      logBazelTrace({
+        argv,
+        durationMs: Date.now() - startedAt,
+        opts,
+        result,
+        step: `bazel query ${truncated}`,
+      })
+    }
   }
 }
 
@@ -177,6 +241,8 @@ export async function runBazelModShowVisibleRepos(
   if (opts.verbose) {
     logger.log('[VERBOSE] Executing:', opts.bin, ', args:', argv)
   }
+  const startedAt = Date.now()
+  let result: BazelQueryResult
   try {
     const output = await spawn(opts.bin, argv, {
       cwd: opts.cwd,
@@ -184,10 +250,18 @@ export async function runBazelModShowVisibleRepos(
       ...(opts.env ? { env: opts.env } : {}),
     })
     const { code, stderr, stdout } = output
-    return { code, stdout, stderr }
+    result = { code, stdout, stderr }
   } catch (e) {
-    return normalizeSpawnError(e)
+    result = normalizeSpawnError(e)
   }
+  logBazelTrace({
+    argv,
+    durationMs: Date.now() - startedAt,
+    opts,
+    result,
+    step: 'bazel mod dump_repo_mapping',
+  })
+  return result
 }
 
 /**
@@ -202,6 +276,8 @@ export async function runBazelModShowPipExtension(
   if (opts.verbose) {
     logger.log('[VERBOSE] Executing:', opts.bin, ', args:', argv)
   }
+  const startedAt = Date.now()
+  let result: BazelQueryResult
   try {
     const output = await spawn(opts.bin, argv, {
       cwd: opts.cwd,
@@ -209,10 +285,18 @@ export async function runBazelModShowPipExtension(
       ...(opts.env ? { env: opts.env } : {}),
     })
     const { code, stderr, stdout } = output
-    return { code, stdout, stderr }
+    result = { code, stdout, stderr }
   } catch (e) {
-    return normalizeSpawnError(e)
+    result = normalizeSpawnError(e)
   }
+  logBazelTrace({
+    argv,
+    durationMs: Date.now() - startedAt,
+    opts,
+    result,
+    step: 'bazel mod show_extension rules_python pip',
+  })
+  return result
 }
 
 /**

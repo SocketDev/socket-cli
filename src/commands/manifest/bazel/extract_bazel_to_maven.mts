@@ -463,7 +463,9 @@ export async function extractBazelToMaven(
     if (!allArtifacts.length) {
       if (!repos.size) {
         if (verbose) {
-          logger.info('No Maven artifacts extracted.')
+          logger.info(
+            'No Maven artifacts extracted. failureCategory=no-supported-ecosystem',
+          )
         }
         return {
           artifactCount: 0,
@@ -473,7 +475,7 @@ export async function extractBazelToMaven(
         }
       }
       logger.fail(
-        `Discovered Maven repo(s) ${repoNames.join(', ')} but extracted zero artifacts.`,
+        `Discovered Maven repo(s) ${repoNames.join(', ')} but extracted zero artifacts. failureCategory=ecosystem-detected-but-empty`,
       )
       return {
         artifactCount: 0,
