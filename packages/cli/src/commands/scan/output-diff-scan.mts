@@ -15,7 +15,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
-export async function handleJson(
+async function handleJson(
   data: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
   file: string,
   dashboardMessage: string,
@@ -43,7 +43,7 @@ export async function handleJson(
   }
 }
 
-export async function handleMarkdown(
+async function handleMarkdown(
   data: SocketSdkSuccessResult<'GetOrgDiffScan'>['data'],
 ) {
   const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`

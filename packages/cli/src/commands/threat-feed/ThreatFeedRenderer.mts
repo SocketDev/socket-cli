@@ -20,7 +20,7 @@ export interface ParsedThreatResult extends ThreatResult {
   }
 }
 
-export interface ThreatFeedRendererProps {
+interface ThreatFeedRendererProps {
   results: ParsedThreatResult[]
 }
 
@@ -230,7 +230,7 @@ export function displayThreatFeedWithIocraft({
 /**
  * Format time difference as human-readable string.
  */
-export function formatTimeDiff(dateStr: string): string {
+function formatTimeDiff(dateStr: string): string {
   const now = Date.now()
   const date = new Date(dateStr).getTime()
   const diff = now - date

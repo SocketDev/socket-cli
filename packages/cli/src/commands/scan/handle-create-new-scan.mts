@@ -30,7 +30,7 @@ import { runSocketBasics } from '../../util/basics/spawn.mts'
  *
  * @returns Filtered paths without .socket.facts.json files.
  */
-export function excludeFactsJson(paths: string[]): string[] {
+function excludeFactsJson(paths: string[]): string[] {
   return paths.filter(p => path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON)
 }
 import { compressSocketFactsForUpload } from '../../util/coana/compress-facts.mts'
@@ -47,7 +47,7 @@ import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 
-export type HandleCreateNewScanConfig = {
+type HandleCreateNewScanConfig = {
   autoManifest: boolean
   basics: boolean
   branchName: string

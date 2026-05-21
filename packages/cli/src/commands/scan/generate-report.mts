@@ -26,11 +26,8 @@ type FileMap = Map<string, ReportLeafNode | Map<AlertKey, ReportLeafNode>>
 type PackageMap = Map<string, ReportLeafNode | VersionMap>
 type VersionMap = Map<string, ReportLeafNode | FileMap>
 
-export type ViolationsMap = Map<string, EcoMap>
+type ViolationsMap = Map<string, EcoMap>
 
-export interface ShortScanReport {
-  healthy: boolean
-}
 export interface ScanReport {
   orgSlug: string
   scanId: string
