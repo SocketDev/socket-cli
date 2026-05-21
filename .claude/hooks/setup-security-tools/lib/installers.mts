@@ -90,10 +90,7 @@ const JANUS = config.tools['janus']!
 export async function checkZizmorVersion(binPath: string): Promise<boolean> {
   try {
     const result = await spawn(binPath, ['--version'], { stdio: 'pipe' })
-    const output =
-      typeof result.stdout === 'string'
-        ? result.stdout.trim()
-        : result.stdout.toString().trim()
+    const output = String(result.stdout).trim()
     return ZIZMOR.version ? output.includes(ZIZMOR.version) : false
   } catch {
     return false
