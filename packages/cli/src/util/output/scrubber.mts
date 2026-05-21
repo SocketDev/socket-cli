@@ -158,7 +158,7 @@ export function classifyLine(
  *    that's the final rendered state.
  * 4. Strip every ANSI escape (SGR, CSI cursor moves, OSC hyperlinks).
  */
-export function cleanLine(line: string): string {
+function cleanLine(line: string): string {
   let cleaned = line
   if (cleaned.charCodeAt(0) === 0xfeff) {
     cleaned = cleaned.slice(1)
@@ -275,7 +275,7 @@ export function createScrubber(options: ScrubberOptions = {}): Transform {
   })
 }
 
-export function isTraceEnabled(): boolean {
+function isTraceEnabled(): boolean {
   return process.env['SOCKET_SCRUB_TRACE'] === '1'
 }
 
