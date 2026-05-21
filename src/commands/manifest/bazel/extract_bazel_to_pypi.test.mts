@@ -351,11 +351,6 @@ describe('extractBazelToPypi', () => {
       })
       .mockResolvedValueOnce({
         code: 0,
-        stdout: 'pypi_name=requests\npypi_version=2.33.1',
-        stderr: '',
-      })
-      .mockResolvedValueOnce({
-        code: 0,
         stdout: '@other//requests:pkg',
         stderr: '',
       })
@@ -384,6 +379,99 @@ describe('extractBazelToPypi', () => {
 
     expect(process.exitCode).toBe(0)
     expect(result.ok).toBe(false)
+  })
+
+  it('does not query spoke tags for packages resolved by the lockfile', async () => {
+    vi.mocked(discoverPypiHubs).mockResolvedValue(
+      new Map([
+        [
+          'pypi',
+          {
+            hubName: 'pypi',
+            source: 'MODULE.bazel',
+            workspaceMode: 'bzlmod',
+            requirementsLockLabel: '//:requirements_lock.txt',
+            probeStdout: '@pypi//requests:pkg',
+          },
+        ],
+      ]),
+    )
+    vi.mocked(runBazelQuery).mockResolvedValueOnce({
+      code: 0,
+      stdout: '@pypi//requests:pkg',
+      stderr: '',
+    })
+
+    const { writeFileSync } = await import('node:fs')
+    writeFileSync(
+      path.join(tmp, 'requirements_lock.txt'),
+      'requests==2.33.1\n',
+      'utf8',
+    )
+
+    const result = await extractBazelToPypi({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(runBazelQuery).toHaveBeenCalledTimes(1)
+  })
+
+  it('resolves hub aliases to spoke targets before parsing PyPI metadata', async () => {
+    vi.mocked(discoverPypiHubs).mockResolvedValue(
+      new Map([
+        [
+          'pypi',
+          {
+            hubName: 'pypi',
+            source: 'MODULE.bazel',
+            workspaceMode: 'bzlmod',
+            probeStdout: '@pypi//requests:pkg',
+          },
+        ],
+      ]),
+    )
+    vi.mocked(runBazelQuery)
+      .mockResolvedValueOnce({
+        code: 0,
+        stdout: '@pypi//requests:pkg',
+        stderr: '',
+      })
+      .mockResolvedValueOnce({
+        code: 0,
+        stdout: 'alias(name = "pkg", actual = "@pypi_requests//:pkg")',
+        stderr: '',
+      })
+      .mockResolvedValueOnce({
+        code: 0,
+        stdout: 'pypi_name=requests\npypi_version=2.33.1',
+        stderr: '',
+      })
+
+    const result = await extractBazelToPypi({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(readFileSync(result.manifestPath!, 'utf8')).toBe(
+      'requests==2.33.1\n',
+    )
+    expect(runBazelQuery).toHaveBeenLastCalledWith(
+      '@pypi_requests//:pkg',
+      expect.any(Object),
+    )
   })
 
   it('calls validateOutputBase when bazelOutputBase is set', async () => {

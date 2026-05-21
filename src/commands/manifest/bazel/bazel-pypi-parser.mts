@@ -117,6 +117,12 @@ export function resolveRequirementsLockPath(
 // Group 1 = package name, Group 2 = version string (includes ==).
 const REQUIREMENT_LINE_RE = /^([A-Za-z0-9][A-Za-z0-9._-]*)==([A-Za-z0-9._+!]+)/
 
+const BAZEL_STRING_LABEL_RE = /[A-Za-z0-9_@/.:+-]+/
+
+const ALIAS_ACTUAL_RE = new RegExp(
+  `actual\\s*=\\s*(["'])(${BAZEL_STRING_LABEL_RE.source})\\1`,
+)
+
 // Skippable line prefixes.
 function shouldSkipLine(line: string): boolean {
   const trimmed = line.trim()
@@ -246,6 +252,13 @@ export function parsePypiTagsFromBuildOutput(
     bazelName: rawName.replace(/-/g, '_'),
     source: 'spoke-tag',
   }
+}
+
+export function parseAliasActualFromBuildOutput(
+  text: string,
+): string | undefined {
+  const match = ALIAS_ACTUAL_RE.exec(text)
+  return match?.[2]
 }
 
 // Extract hub package labels from `bazel query` output that match

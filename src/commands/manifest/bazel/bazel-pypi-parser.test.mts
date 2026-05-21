@@ -5,6 +5,7 @@ import {
   collectPypiPackages,
   filterReachedPypiPackages,
   normalizePypiName,
+  parseAliasActualFromBuildOutput,
   parsePypiTagsFromBuildOutput,
   parseRequirementsLock,
   resolveRequirementsLockPath,
@@ -91,6 +92,30 @@ https://example.com/pkg.tar.gz
     const result = parseRequirementsLock('foo-bar==1.0.0\nFoo_Bar==1.0.0\n')
     expect(result.size).toBe(1)
     expect(result.get('foo-bar')?.originalLine).toBe('foo-bar==1.0.0')
+  })
+})
+
+describe('parseAliasActualFromBuildOutput', () => {
+  it('extracts double-quoted alias actual labels', () => {
+    expect(
+      parseAliasActualFromBuildOutput(
+        'alias(name = "pkg", actual = "@pypi_requests//:pkg")',
+      ),
+    ).toBe('@pypi_requests//:pkg')
+  })
+
+  it('extracts single-quoted alias actual labels', () => {
+    expect(
+      parseAliasActualFromBuildOutput(
+        "alias(name = 'pkg', actual = '@pypi_requests//:pkg')",
+      ),
+    ).toBe('@pypi_requests//:pkg')
+  })
+
+  it('returns undefined when no alias actual is present', () => {
+    expect(
+      parseAliasActualFromBuildOutput('py_library(name = "pkg")'),
+    ).toBeUndefined()
   })
 })
 

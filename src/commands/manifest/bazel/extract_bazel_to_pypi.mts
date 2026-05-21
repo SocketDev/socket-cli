@@ -10,6 +10,7 @@ import {
   collectPypiPackages,
   filterReachedPypiPackages,
   normalizePypiName,
+  parseAliasActualFromBuildOutput,
   parsePypiTagsFromBuildOutput,
   readRequirementsLockFile,
   resolveRequirementsLockPath,
@@ -168,9 +169,13 @@ export async function extractBazelToPypi(
       const lockfileMap = await resolveHubLockfile(hubInfo, cwd, verbose)
       // eslint-disable-next-line no-await-in-loop
       const reached = await queryReachedPypiLabels(hubName, queryOpts, verbose)
+      const labelsToQuery = lockfileMap
+        ? reached.filter(label => !lockfileMap.has(label.normalizedName))
+        : reached
+      const divergenceLabels = lockfileMap && verbose ? reached : labelsToQuery
       // eslint-disable-next-line no-await-in-loop
       const spokeTagLookup = await buildSpokeTagLookup(
-        reached,
+        divergenceLabels,
         queryOpts,
         verbose,
       )
@@ -345,7 +350,25 @@ async function buildSpokeTagLookup(
       }
       continue
     }
-    const parsed = parsePypiTagsFromBuildOutput(buildResult.stdout)
+    let parsed = parsePypiTagsFromBuildOutput(buildResult.stdout)
+    if (!parsed) {
+      const actualLabel = parseAliasActualFromBuildOutput(buildResult.stdout)
+      if (actualLabel && actualLabel !== label.apparentLabel) {
+        // eslint-disable-next-line no-await-in-loop
+        const actualResult = await runBazelQuery(actualLabel, {
+          ...queryOpts,
+          verbose: false,
+        })
+        if (actualResult.code === 0) {
+          parsed = parsePypiTagsFromBuildOutput(actualResult.stdout)
+        } else if (verbose) {
+          logger.log(
+            `[VERBOSE] spoke actual query failed for ${actualLabel}:`,
+            actualResult.stderr,
+          )
+        }
+      }
+    }
     if (parsed) {
       lookup.set(normalizePypiName(parsed.name), parsed)
     }
