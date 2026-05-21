@@ -42,7 +42,7 @@ const WASM_ASSET_NAME = 'socket-ai-sync.mjs'
 /**
  * Build WASM bundle from source.
  */
-export async function buildWasm() {
+async function buildWasm() {
   const isDev = process.argv.includes('--dev')
 
   logger.info('╔═══════════════════════════════════════════════════╗')
@@ -109,7 +109,7 @@ export async function buildWasm() {
 /**
  * Check Node.js version requirement.
  */
-export function checkNodeVersion() {
+function checkNodeVersion() {
   const nodeVersion = process.versions.node
   const major = Number.parseInt(nodeVersion.split('.')[0], 10)
 
@@ -164,7 +164,7 @@ export async function downloadFile(url, outputPath, expectedSize) {
 /**
  * Download pre-built WASM bundle from GitHub releases.
  */
-export async function downloadWasm() {
+async function downloadWasm() {
   logger.info('╔═══════════════════════════════════════════════════╗')
   logger.info('║   Downloading Pre-built WASM Bundle               ║')
   logger.info('╚═══════════════════════════════════════════════════╝')
@@ -240,7 +240,7 @@ export async function exec(command, args, options = {}) {
 /**
  * Get latest WASM build release from GitHub.
  */
-export async function getLatestWasmRelease() {
+async function getLatestWasmRelease() {
   logger.info('📡 Fetching latest WASM build from GitHub...')
   logger.error('')
 

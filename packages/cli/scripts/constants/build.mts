@@ -3,11 +3,11 @@
  */
 
 // Build configuration file names.
-export const BIOME_JSON = 'biome.json'
-export const TSCONFIG_JSON = 'tsconfig.json'
+const BIOME_JSON = 'biome.json'
+const TSCONFIG_JSON = 'tsconfig.json'
 
 // Rollup configuration.
-export const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
+const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
 
 // Encoding constants.
 export const UTF8 = 'utf8'

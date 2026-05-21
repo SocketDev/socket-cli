@@ -77,7 +77,7 @@ export async function downloadFile(url, destPath) {
  * Fetch checksums for a GitHub release. First tries checksums.txt, then falls
  * back to downloading assets.
  */
-export async function fetchGitHubReleaseChecksums(
+async function fetchGitHubReleaseChecksums(
   repo,
   releaseTag,
   existingChecksums = {},

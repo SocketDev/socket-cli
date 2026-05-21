@@ -83,7 +83,7 @@ export async function downloadFile(url, destPath) {
 /**
  * Download and extract an external tool.
  */
-export async function downloadTool(toolName, platform) {
+async function downloadTool(toolName, platform) {
   const config = TOOL_REPOS[toolName]
   const assetName = PLATFORM_MAP[platform]?.[toolName]
 
@@ -130,7 +130,7 @@ export async function downloadTool(toolName, platform) {
 /**
  * Extract binary from tar.gz archive using system tar command.
  */
-export async function extractFromTarGz(archivePath, outputPath, binaryName) {
+async function extractFromTarGz(archivePath, outputPath, binaryName) {
   logger.log(`Extracting ${binaryName} from ${path.basename(archivePath)}...`)
 
   // Extract to temp directory.
@@ -183,7 +183,7 @@ export async function extractFromTarGz(archivePath, outputPath, binaryName) {
  * Get current platform identifier (normalized for release naming). Uses 'win'
  * instead of 'win32' for Windows.
  */
-export function getCurrentPlatform() {
+function getCurrentPlatform() {
   const platform = process.platform === 'win32' ? 'win' : process.platform
   const arch = process.arch
   return `${platform}-${arch}`

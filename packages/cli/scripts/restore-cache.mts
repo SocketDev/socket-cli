@@ -35,7 +35,7 @@ const isVerbose = () => process.argv.includes('--verbose')
 /**
  * Check if cache exists in GitHub Actions.
  */
-export async function cacheExists(repo, cacheKey) {
+async function cacheExists(repo, cacheKey) {
   try {
     const result = await spawn(
       'gh',
@@ -73,7 +73,7 @@ export async function cacheExists(repo, cacheKey) {
 /**
  * Generate CLI build cache key (matches CI workflow).
  */
-export async function generateCacheKey() {
+async function generateCacheKey() {
   const pnpmLockHash = await hashFile(path.join(repoRoot, 'pnpm-lock.yaml'))
   const srcHash = await hashFiles('packages/cli/src', repoRoot)
   const configHash = await hashFiles(
@@ -87,7 +87,7 @@ export async function generateCacheKey() {
 /**
  * Get current git commit SHA.
  */
-export async function getCurrentCommit() {
+async function getCurrentCommit() {
   try {
     const result = await spawn('git', ['rev-parse', 'HEAD'], {
       cwd: repoRoot,
@@ -105,7 +105,7 @@ export async function getCurrentCommit() {
 /**
  * Check if gh CLI is available.
  */
-export async function hasGhCli() {
+async function hasGhCli() {
   try {
     const result = await spawn('gh', ['--version'], {
       stdio: 'pipe',
@@ -119,7 +119,7 @@ export async function hasGhCli() {
 /**
  * Compute hash of file.
  */
-export async function hashFile(filePath) {
+async function hashFile(filePath) {
   try {
     const content = await fs.readFile(filePath, 'utf8')
     return createHash('sha256').update(content).digest('hex')
@@ -131,7 +131,7 @@ export async function hashFile(filePath) {
 /**
  * Compute hash of all files matching glob pattern.
  */
-export async function hashFiles(globPattern, cwd) {
+async function hashFiles(globPattern, cwd) {
   try {
     const result = await spawn(
       'find',
@@ -177,7 +177,7 @@ export async function hashFiles(globPattern, cwd) {
 /**
  * Download and extract cache from GitHub Actions.
  */
-export async function restoreCache(repo, cacheKey) {
+async function restoreCache(repo, cacheKey) {
   const tempDir = path.join(packageRoot, 'node_modules', '.cache', 'restore')
   await fs.mkdir(tempDir, { recursive: true })
 

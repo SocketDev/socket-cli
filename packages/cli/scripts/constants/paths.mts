@@ -23,31 +23,31 @@ export const externalPath = path.join(rootPath, 'external')
 export const srcPath = path.join(rootPath, 'src')
 
 // Package and lockfile paths.
-export const rootPackageJsonPath = path.join(rootPath, PACKAGE_JSON)
-export const rootPackageLockPath = path.join(rootPath, PNPM_LOCK_YAML)
+const rootPackageJsonPath = path.join(rootPath, PACKAGE_JSON)
+const rootPackageLockPath = path.join(rootPath, PNPM_LOCK_YAML)
 export const rootNodeModulesBinPath = path.join(rootPath, NODE_MODULES, '.bin')
 
 // Socket registry path (in external, not dist).
-export const socketRegistryPath = path.join(
+const socketRegistryPath = path.join(
   externalPath,
   SOCKET_REGISTRY_PACKAGE_NAME,
 )
 
 // Cache directory paths.
-export const SOCKET_CACHE_DIR = path.join(homedir(), '.socket')
+const SOCKET_CACHE_DIR = path.join(homedir(), '.socket')
 export const SOCKET_CLI_SEA_BUILD_DIR = path.join(
   tmpdir(),
   'socket-cli-sea-build',
 )
-export const SOCKET_CLI_SEA_BUILD_DIR_FALLBACK = '/tmp/socket-cli-sea-build'
+const SOCKET_CLI_SEA_BUILD_DIR_FALLBACK = '/tmp/socket-cli-sea-build'
 
 // Directory name constant.
-export const CONSTANTS = 'constants'
+const CONSTANTS = 'constants'
 
 /**
  * Get all global cache directories.
  */
-export function getGlobalCacheDirs() {
+function getGlobalCacheDirs() {
   return [
     { name: '~/.socket', path: SOCKET_CACHE_DIR },
     { name: '$TMPDIR/socket-cli-sea-build', path: SOCKET_CLI_SEA_BUILD_DIR },

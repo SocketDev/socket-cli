@@ -37,7 +37,7 @@ const rootNodeModulesBinPath = path.join(
 /**
  * Check if required build artifacts exist.
  */
-export function checkBuildArtifacts() {
+function checkBuildArtifacts() {
   const requiredArtifacts = ['build/cli.js', 'dist/index.js']
   for (let i = 0, { length } = requiredArtifacts; i < length; i += 1) {
     const artifact = requiredArtifacts[i]

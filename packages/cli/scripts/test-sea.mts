@@ -20,7 +20,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 /**
  * Build SEA blob.
  */
-export async function buildBlob(configPath) {
+async function buildBlob(configPath) {
   logger.log('Generating SEA blob...')
   const result = await spawn(
     process.execPath,
@@ -38,7 +38,7 @@ export async function buildBlob(configPath) {
 /**
  * Display tool information.
  */
-export async function displayToolInfo(toolPaths) {
+async function displayToolInfo(toolPaths) {
   logger.log('External tools to bundle:')
   let totalToolSize = 0
   // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
@@ -104,7 +104,7 @@ export async function generateSeaConfig(
 /**
  * Load tool paths from previous download.
  */
-export async function loadToolPaths() {
+async function loadToolPaths() {
   const platform = `${process.platform}-${process.arch}`
   const toolPathsFile = path.join(
     __dirname,
@@ -154,7 +154,7 @@ export function parseArgs() {
 /**
  * Mode: standalone - Uses standard Node.js + postject.
  */
-export async function runStandaloneMode(platform, toolPaths) {
+async function runStandaloneMode(platform, toolPaths) {
   logger.log('Mode: standalone (Node.js + postject)')
   logger.log('='.repeat(60))
   logger.log('')
@@ -258,7 +258,7 @@ export async function runStandaloneMode(platform, toolPaths) {
 /**
  * Mode: vfs - Uses binject with --vfs compression.
  */
-export async function runVfsMode(platform) {
+async function runVfsMode(platform) {
   logger.log('Mode: vfs (binject with --vfs compression)')
   logger.log('='.repeat(60))
   logger.log('')
@@ -406,7 +406,7 @@ export async function runVfsMode(platform) {
  * Mode: with-tools - Uses Socket infrastructure (downloadNodeBinary +
  * injectSeaBlob).
  */
-export async function runWithToolsMode(platform, toolPaths) {
+async function runWithToolsMode(platform, toolPaths) {
   logger.log('Mode: with-tools (Socket infrastructure)')
   logger.log('='.repeat(60))
   logger.log('')
@@ -549,7 +549,7 @@ export function spawn(command, args, options = {}) {
 /**
  * Test the generated binary.
  */
-export async function testBinary(outputPath) {
+async function testBinary(outputPath) {
   logger.log('Testing binary...')
   logger.log('-'.repeat(60))
   const testResult = await spawn(outputPath, [], { stdio: 'inherit' })

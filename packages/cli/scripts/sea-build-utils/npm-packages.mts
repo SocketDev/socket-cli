@@ -62,7 +62,7 @@ const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
  *
  * @returns Promise resolving to path of combined tar.gz.
  */
-export async function combineVfsArchives(
+async function combineVfsArchives(
   npmPackagesTarGz,
   externalToolsTarGz,
   platform,
@@ -183,7 +183,7 @@ export async function combineVfsArchives(
  *
  * @returns Promise resolving to the target directory path.
  */
-export async function downloadNpmPackage(
+async function downloadNpmPackage(
   packageSpec,
   targetDir,
   expectedIntegrity,
@@ -277,7 +277,7 @@ export async function downloadNpmPackage(
  * @returns Promise resolving to path of tar.gz archive, or null if no npm
  *   packages defined.
  */
-export async function downloadNpmPackages() {
+async function downloadNpmPackages() {
   const rootPath = getRootPath()
   const npmPackagesDir = normalizePath(
     path.join(rootPath, 'packages/build-infra/build/npm-packages'),

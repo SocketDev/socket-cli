@@ -35,7 +35,7 @@ const logger = getDefaultLogger()
 /**
  * Filter targets based on CLI arguments.
  */
-export function filterTargets(targets, options) {
+function filterTargets(targets, options) {
   if (options.all) {
     return targets
   }

@@ -111,7 +111,7 @@ export async function getDefaultNodeVersion() {
  *
  * @throws {Error} When socket-btm releases cannot be fetched.
  */
-export async function getLatestSocketBtmNodeRelease() {
+async function getLatestSocketBtmNodeRelease() {
   try {
     const response = await httpRequest(
       'https://api.github.com/repos/SocketDev/socket-btm/releases',

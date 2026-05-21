@@ -26,7 +26,7 @@ const VALIDATION_CHECKS = {
 /**
  * Format validation results for display.
  */
-export function formatResults(results) {
+function formatResults(results) {
   const errors = []
   const warnings = []
   const infos = []
@@ -59,7 +59,7 @@ export function formatResults(results) {
 /**
  * Get list of test files to validate.
  */
-export async function getTestFiles() {
+async function getTestFiles() {
   const files = []
 
   /**
@@ -88,7 +88,7 @@ export async function getTestFiles() {
 /**
  * Validate that required build artifacts exist.
  */
-export async function validateBuildArtifacts() {
+async function validateBuildArtifacts() {
   const issues = []
   const distPath = path.join(rootPath, 'dist')
 
@@ -122,7 +122,7 @@ export async function validateBuildArtifacts() {
 /**
  * Validate import statements in test files.
  */
-export async function validateImportSyntax(testFile) {
+async function validateImportSyntax(testFile) {
   const issues = []
   const relativePath = path.relative(rootPath, testFile)
 
@@ -181,7 +181,7 @@ export async function validateImportSyntax(testFile) {
 /**
  * Check for orphaned snapshot files.
  */
-export async function validateSnapshotFiles(testFile) {
+async function validateSnapshotFiles(testFile) {
   const issues = []
   const relativePath = path.relative(rootPath, testFile)
   const snapshotDir = path.join(path.dirname(testFile), '__snapshots__')
@@ -214,7 +214,7 @@ export async function validateSnapshotFiles(testFile) {
 /**
  * Run all validations for a test file.
  */
-export async function validateTestFile(testFile) {
+async function validateTestFile(testFile) {
   const allIssues = []
 
   const validations = [
@@ -242,7 +242,7 @@ export async function validateTestFile(testFile) {
 /**
  * Validate test file structure and naming.
  */
-export async function validateTestStructure(testFile) {
+async function validateTestStructure(testFile) {
   const issues = []
   const relativePath = path.relative(rootPath, testFile)
 

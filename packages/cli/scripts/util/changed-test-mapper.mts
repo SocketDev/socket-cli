@@ -34,7 +34,7 @@ const CORE_FILES = [
  * @returns {{ tests: string[] | 'all' | null; reason?: string; mode?: string }}
  *   Object with test patterns, reason, and mode.
  */
-export function getTestsToRun(options = {}) {
+function getTestsToRun(options = {}) {
   const { all = false, staged = false } = options
 
   // All mode runs all tests
@@ -139,7 +139,7 @@ export function getTestsToRun(options = {}) {
  *
  * @returns {string[]} Array of test file paths
  */
-export function mapSourceToTests(filepath) {
+function mapSourceToTests(filepath) {
   const normalized = normalizePath(filepath)
 
   // Skip non-code files

@@ -30,7 +30,7 @@ export async function computeFileHash(filePath) {
  *
  * @returns {string} - File header comment
  */
-export function generateHeader({ assetName, scriptName, sourceHash, tag }) {
+function generateHeader({ assetName, scriptName, sourceHash, tag }) {
   const hashLine = sourceHash ? `\n * Source hash: ${sourceHash}` : ''
 
   return `/**

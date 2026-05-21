@@ -24,11 +24,11 @@ export const SOCKET_CLI_SENTRY_PNPM_BIN_NAME = 'socket-pnpm-with-sentry'
 export const SOCKET_CLI_SENTRY_YARN_BIN_NAME = 'socket-yarn-with-sentry'
 
 // File and directory names from registry.
-export const GITIGNORE = '.gitignore'
+const GITIGNORE = '.gitignore'
 export const NODE_MODULES = 'node_modules'
 export const PACKAGE_JSON = 'package.json'
 export const PNPM_LOCK_YAML = 'pnpm-lock.yaml'
 export const SOCKET_REGISTRY_PACKAGE_NAME = '@socketsecurity/registry-stable'
 
 // Path separators.
-export const SLASH_NODE_MODULES_SLASH = '/node_modules/'
+const SLASH_NODE_MODULES_SLASH = '/node_modules/'

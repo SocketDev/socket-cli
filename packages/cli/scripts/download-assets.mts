@@ -172,7 +172,7 @@ async function downloadAssets(assetNames, parallel = true) {
 /**
  * Extract tar.gz archive.
  */
-export async function extractArchive(tarGzPath, extractConfig, assetName) {
+async function extractArchive(tarGzPath, extractConfig, assetName) {
   const { outputDir } = extractConfig
 
   await fs.mkdir(outputDir, { recursive: true })

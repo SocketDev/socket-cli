@@ -25,7 +25,7 @@ const logger = getDefaultLogger()
  * @param {string} patchPath - Path to temporary patch directory.
  * @param {string} packageName - Package name for logging.
  */
-export async function commitPatch(patchPath, packageName) {
+async function commitPatch(patchPath, packageName) {
   logger.log(`Committing patch for ${packageName}...`)
   const result = await spawn('pnpm', ['patch-commit', patchPath], {
     shell: WIN32,
@@ -51,7 +51,7 @@ export async function commitPatch(patchPath, packageName) {
  *
  * @returns {Promise<void>}
  */
-export async function createPatch(patchDef) {
+async function createPatch(patchDef) {
   const { description, files, packageName, transform, version } = patchDef
   const packageSpec = `${packageName}@${version}`
 
@@ -115,7 +115,7 @@ export async function createPatch(patchDef) {
  *
  * @returns {object} Babel AST.
  */
-export function parseCode(code, options = {}) {
+function parseCode(code, options = {}) {
   return parse(code, {
     sourceType: 'module',
     plugins: [],
@@ -132,7 +132,7 @@ export function parseCode(code, options = {}) {
  *
  * @returns {Promise<boolean>} True if user answered yes, false otherwise.
  */
-export async function promptYesNo(question, defaultAnswer = false) {
+async function promptYesNo(question, defaultAnswer = false) {
   const readline = await import('node:readline')
   const rl = readline.createInterface({
     input: process.stdin,
@@ -161,7 +161,7 @@ export async function promptYesNo(question, defaultAnswer = false) {
  *
  * @returns {string} File contents.
  */
-export function readPatchFile(packagePath, filePath) {
+function readPatchFile(packagePath, filePath) {
   const fullPath = path.join(packagePath, filePath)
   if (!existsSync(fullPath)) {
     throw new Error(`File not found: ${fullPath}`)
@@ -176,7 +176,7 @@ export function readPatchFile(packagePath, filePath) {
  *
  * @returns {Promise<string>} Path to temporary patch directory.
  */
-export async function startPatch(packageSpec) {
+async function startPatch(packageSpec) {
   logger.log(`Starting patch for ${packageSpec}...`)
 
   // First, try to run pnpm patch to see if directory already exists.
@@ -247,7 +247,7 @@ export async function startPatch(packageSpec) {
  * @param {string} filePath - Relative file path within package.
  * @param {string} content - File contents to write.
  */
-export function writePatchFile(packagePath, filePath, content) {
+function writePatchFile(packagePath, filePath, content) {
   const fullPath = path.join(packagePath, filePath)
   writeFileSync(fullPath, content, 'utf-8')
 }

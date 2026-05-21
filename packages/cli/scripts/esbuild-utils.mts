@@ -48,7 +48,7 @@ export function createBaseConfig(
  * Helper to create both dot and bracket notation define keys. This ensures
  * esbuild can replace both forms of process.env access.
  */
-export function createDefineEntries(envVars: Record<string, string>) {
+function createDefineEntries(envVars: Record<string, string>) {
   const entries: Record<string, string> = {}
   // oxlint-disable-next-line socket/prefer-cached-for-loop -- loop variable is destructured
   for (const [key, value] of Object.entries(envVars)) {

@@ -167,7 +167,7 @@ export const PLATFORM_MAP_TOOLS = {
  *
  * @returns {string} Normalized platform key (e.g., 'win-x64').
  */
-export function getPlatformKey(platform, arch) {
+function getPlatformKey(platform, arch) {
   const releasePlatform = platform === 'win32' ? 'win' : platform
   return `${releasePlatform}-${arch}`
 }
