@@ -17,7 +17,7 @@ import type { CResult } from '../../types.mjs'
 import type { StdioOptions } from 'node:child_process'
 import type { SpawnExtra, SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
 
-export type CoanaSpawnOptions = SpawnOptions & {
+type CoanaSpawnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined
 }
 

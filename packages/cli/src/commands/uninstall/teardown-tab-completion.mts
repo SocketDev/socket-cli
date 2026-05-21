@@ -9,7 +9,7 @@ import {
 
 import type { CResult } from '../../types.mts'
 
-export function findRemainingCompletionSetups(bashrc: string): string[] {
+function findRemainingCompletionSetups(bashrc: string): string[] {
   return bashrc
     .split('\n')
     .map(s => s.trim())

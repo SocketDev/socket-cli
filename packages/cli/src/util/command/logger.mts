@@ -12,7 +12,7 @@ const logger = getDefaultLogger()
 /**
  * Logger with command context.
  */
-export interface CommandLogger {
+interface CommandLogger {
   /**
    * Log an informational message.
    */

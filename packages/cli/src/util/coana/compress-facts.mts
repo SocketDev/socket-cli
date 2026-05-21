@@ -21,7 +21,7 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
 
-export type CompressedScanPaths = {
+type CompressedScanPaths = {
   cleanup: () => Promise<void>
   paths: string[]
 }

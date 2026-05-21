@@ -21,7 +21,7 @@ import { meowWithSubcommands } from './with-subcommands.mts'
 import type { MeowFlags } from '../../flags.mts'
 import type { CliAliases, CliSubcommand } from './with-subcommands-shared.mts'
 
-export interface DefineSubcommandGroupOptions {
+interface DefineSubcommandGroupOptions {
   /**
    * Group name as it appears under `socket`. Used as the second token of the
    * usage string (`socket <name> <subcommand>`).

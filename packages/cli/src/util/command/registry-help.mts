@@ -14,7 +14,7 @@ import type { CommandRegistry } from './registry.mts'
  *
  * @returns Formatted flag line
  */
-export function formatFlag(name: string, def: FlagDefinition): string {
+function formatFlag(name: string, def: FlagDefinition): string {
   const parts: string[] = []
 
   // Flag name with alias

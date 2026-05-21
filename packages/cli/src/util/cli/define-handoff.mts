@@ -34,7 +34,7 @@ import {
 import type { CliCommandContext } from './with-subcommands.mts'
 import type { CliSubcommand } from './with-subcommands-shared.mts'
 
-export interface DefineHandoffCommandOptions {
+interface DefineHandoffCommandOptions {
   /**
    * Command name as it appears under `socket`. Forwarded to sfw as the first
    * arg unless `binaryPicker` overrides it.

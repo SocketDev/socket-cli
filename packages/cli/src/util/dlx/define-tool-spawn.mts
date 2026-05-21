@@ -31,7 +31,7 @@ import type { SpawnExtra } from '@socketsecurity/lib-stable/spawn/types'
 /**
  * Argument shape for every spawn function the factory emits.
  */
-export type ToolSpawnFn = (
+type ToolSpawnFn = (
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,

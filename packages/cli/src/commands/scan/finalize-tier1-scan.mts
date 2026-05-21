@@ -2,11 +2,6 @@ import { sendApiRequest } from '../../util/socket/api.mjs'
 
 import type { CResult } from '../../types.mts'
 
-export type FinalizeTier1ScanOptions = {
-  tier1_reachability_scan_id: string
-  report_run_id: string
-}
-
 /**
  * Finalize a tier1 reachability scan. - Associates the tier1 reachability scan
  * metadata with the full scan. - Sets the tier1 reachability scan to
