@@ -19,6 +19,7 @@
  * - Falls back to configured apiBaseUrl or default API_V0_URL
  */
 
+import { request as httpRequest } from 'node:http'
 import { Agent as HttpsAgent, request as httpsRequest } from 'node:https'
 import { ReadableStream } from 'node:stream/web'
 
@@ -84,25 +85,27 @@ export type ApiFetchInit = {
   method?: string | undefined
 }
 
-// Internal httpsRequest-based fetch with redirect support.
-function _httpsRequestFetch(
+// Internal node request-based fetch with redirect support.
+function _nodeRequestFetch(
   url: string,
   init: ApiFetchInit,
   agent: HttpsAgent | undefined,
   redirectCount: number,
 ): Promise<Response> {
   return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url)
     const headers: Record<string, string> = { ...init.headers }
     // Set Content-Length for request bodies to avoid chunked transfer encoding.
     if (init.body) {
       headers['content-length'] = String(Buffer.byteLength(init.body))
     }
-    const req = httpsRequest(
+    const request = parsedUrl.protocol === 'http:' ? httpRequest : httpsRequest
+    const req = request(
       url,
       {
         method: init.method || 'GET',
         headers,
-        agent,
+        agent: parsedUrl.protocol === 'https:' ? agent : undefined,
       },
       res => {
         const { statusCode } = res
@@ -141,7 +144,7 @@ function _httpsRequestFetch(
           // 307 and 308 preserve the original method and body.
           const preserveMethod = statusCode === 307 || statusCode === 308
           resolve(
-            _httpsRequestFetch(
+            _nodeRequestFetch(
               redirectUrl,
               preserveMethod
                 ? { ...init, headers: redirectHeaders }
@@ -204,7 +207,7 @@ export async function apiFetch(
   url: string,
   init: ApiFetchInit = {},
 ): Promise<Response> {
-  return await _httpsRequestFetch(url, init, getHttpsAgent(), 0)
+  return await _nodeRequestFetch(url, init, getHttpsAgent(), 0)
 }
 
 export type CommandRequirements = {
