@@ -189,6 +189,11 @@
 .claude/hooks/no-blind-keychain-read-guard/package.json linguist-generated=true
 .claude/hooks/no-blind-keychain-read-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/no-blind-keychain-read-guard/tsconfig.json linguist-generated=true
+.claude/hooks/no-empty-commit-guard/README.md linguist-generated=true
+.claude/hooks/no-empty-commit-guard/index.mts linguist-generated=true
+.claude/hooks/no-empty-commit-guard/package.json linguist-generated=true
+.claude/hooks/no-empty-commit-guard/test/index.test.mts linguist-generated=true
+.claude/hooks/no-empty-commit-guard/tsconfig.json linguist-generated=true
 .claude/hooks/no-experimental-strip-types-guard/README.md linguist-generated=true
 .claude/hooks/no-experimental-strip-types-guard/index.mts linguist-generated=true
 .claude/hooks/no-experimental-strip-types-guard/package.json linguist-generated=true
@@ -307,6 +312,11 @@
 .claude/hooks/pull-request-target-guard/package.json linguist-generated=true
 .claude/hooks/pull-request-target-guard/test/index.test.mts linguist-generated=true
 .claude/hooks/pull-request-target-guard/tsconfig.json linguist-generated=true
+.claude/hooks/readme-fleet-shape-guard/README.md linguist-generated=true
+.claude/hooks/readme-fleet-shape-guard/index.mts linguist-generated=true
+.claude/hooks/readme-fleet-shape-guard/package.json linguist-generated=true
+.claude/hooks/readme-fleet-shape-guard/test/index.test.mts linguist-generated=true
+.claude/hooks/readme-fleet-shape-guard/tsconfig.json linguist-generated=true
 .claude/hooks/release-workflow-guard/README.md linguist-generated=true
 .claude/hooks/release-workflow-guard/index.mts linguist-generated=true
 .claude/hooks/release-workflow-guard/package.json linguist-generated=true
@@ -389,7 +399,7 @@
 .claude/skills/auditing-gha-settings/SKILL.md linguist-generated=true
 .claude/skills/auditing-gha-settings/run.mts linguist-generated=true
 .claude/skills/cascading-fleet/SKILL.md linguist-generated=true
-.claude/skills/cascading-fleet/lib/cascade-template.sh linguist-generated=true
+.claude/skills/cascading-fleet/lib/cascade-template.mts linguist-generated=true
 .claude/skills/cascading-fleet/lib/fleet-repos.json linguist-generated=true
 .claude/skills/cascading-fleet/lib/fleet-repos.txt linguist-generated=true
 .claude/skills/driving-cursor-bugbot/SKILL.md linguist-generated=true
