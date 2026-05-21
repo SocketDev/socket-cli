@@ -280,7 +280,7 @@ export function MixedText(props: MixedTextProps): Element {
  *   Text({ children: 'Light', weight: 'light' })
  *   ```
  */
-export type TextWeight = 'normal' | 'bold' | 'light'
+type TextWeight = 'normal' | 'bold' | 'light'
 
 /**
  * Text alignment options for horizontal positioning.
@@ -292,7 +292,7 @@ export type TextWeight = 'normal' | 'bold' | 'light'
  *   Text({ children: 'Right aligned', align: 'right' })
  *   ```
  */
-export type TextAlign = 'left' | 'center' | 'right'
+type TextAlign = 'left' | 'center' | 'right'
 
 /**
  * Text wrapping behavior for long text content.
@@ -303,7 +303,7 @@ export type TextAlign = 'left' | 'center' | 'right'
  *   Text({ children: 'No wrapping', wrap: 'nowrap' })
  *   ```
  */
-export type TextWrap = 'wrap' | 'nowrap'
+type TextWrap = 'wrap' | 'nowrap'
 
 /**
  * Text styling options for visual appearance.
@@ -321,7 +321,7 @@ export type TextWrap = 'wrap' | 'nowrap'
  *   Text({ children: 'Pink', color: '213' }) // Bare number also works
  *   ```
  */
-export interface TextStyle {
+interface TextStyle {
   /**
    * Apply bold styling to text.
    */
@@ -362,7 +362,7 @@ export interface TextStyle {
  *   Box({ display: 'none' }) // Hides the element
  *   ```
  */
-export type DisplayType = 'flex' | 'none'
+type DisplayType = 'flex' | 'none'
 
 /**
  * Position type for element positioning in layout.
@@ -373,7 +373,7 @@ export type DisplayType = 'flex' | 'none'
  *   Box({ position: 'absolute', top: 0, left: 0 }) // Absolute positioning
  *   ```
  */
-export type PositionType = 'relative' | 'absolute'
+type PositionType = 'relative' | 'absolute'
 
 /**
  * Overflow behavior for content that exceeds container bounds.
@@ -385,7 +385,7 @@ export type PositionType = 'relative' | 'absolute'
  *   Box({ overflowX: 'hidden', overflowY: 'visible' }) // Per-axis control
  *   ```
  */
-export type OverflowType = 'visible' | 'hidden'
+type OverflowType = 'visible' | 'hidden'
 
 /**
  * Border edges configuration for selective border rendering.
@@ -396,7 +396,7 @@ export type OverflowType = 'visible' | 'hidden'
  *   Box({ borderEdges: { left: false, right: false } }) // Hide left/right
  *   ```
  */
-export interface BorderEdges {
+interface BorderEdges {
   /**
    * Show border on bottom edge.
    */
@@ -434,7 +434,7 @@ export interface BorderEdges {
  *   })
  *   ```
  */
-export interface CustomBorderChars {
+interface CustomBorderChars {
   /**
    * Bottom border character.
    */
@@ -507,7 +507,7 @@ export type BorderStyle =
  *   })
  *   ```
  */
-export interface MixedTextContentSection {
+interface MixedTextContentSection {
   /**
    * Text color (named colors, hex, or ANSI codes)
    */
@@ -560,7 +560,7 @@ export interface MixedTextContentSection {
  *   })
  *   ```
  */
-export interface BoxProps {
+interface BoxProps {
   /**
    * Align flex lines when there's extra space on the cross axis.
    */
@@ -789,7 +789,7 @@ export interface BoxProps {
  *   })
  *   ```
  */
-export interface TextProps extends TextStyle {
+interface TextProps extends TextStyle {
   /**
    * Horizontal text alignment (left, center, right)
    */
@@ -817,7 +817,7 @@ export interface TextProps extends TextStyle {
  *   })
  *   ```
  */
-export interface MixedTextProps {
+interface MixedTextProps {
   /**
    * Horizontal text alignment.
    */
@@ -842,7 +842,7 @@ export interface MixedTextProps {
  *   })
  *   ```
  */
-export interface FragmentProps {
+interface FragmentProps {
   /**
    * Child elements to group.
    */
@@ -854,7 +854,7 @@ export interface FragmentProps {
  * ComponentNode directly because we need to support all properties when
  * building elements.
  */
-export interface Element {
+interface Element {
   type: 'Text' | 'View' | 'MixedText' | 'Fragment'
   children?: Element[] | undefined
 
