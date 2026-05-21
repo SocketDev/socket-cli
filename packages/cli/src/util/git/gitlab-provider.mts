@@ -262,7 +262,7 @@ export class GitLabProvider implements PrProvider {
  * 2. Git config gitlab.token
  * 3. Error if not found
  */
-export function getGitLabToken(): string {
+function getGitLabToken(): string {
   // Check environment variable.
   const envToken = process.env['GITLAB_TOKEN']
   if (envToken) {
@@ -277,7 +277,7 @@ export function getGitLabToken(): string {
 /**
  * Maps GitLab merge_status to common merge state status.
  */
-export function mapGitLabMergeStatus(status: string): MergeStateStatus {
+function mapGitLabMergeStatus(status: string): MergeStateStatus {
   // GitLab merge_status values:
   // - can_be_merged: clean, no conflicts
   // - cannot_be_merged: has conflicts
@@ -301,7 +301,7 @@ export function mapGitLabMergeStatus(status: string): MergeStateStatus {
 /**
  * Maps GitLab merge request state to common state.
  */
-export function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
+function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
   if (state === 'opened') {
     return 'open'
   }
@@ -314,7 +314,7 @@ export function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
 /**
  * Maps GitLab merge request state to uppercase common state.
  */
-export function mapGitLabStateToUpper(
+function mapGitLabStateToUpper(
   state: string,
 ): 'OPEN' | 'CLOSED' | 'MERGED' {
   if (state === 'opened') {
