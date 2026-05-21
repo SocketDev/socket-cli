@@ -102,7 +102,7 @@ const DEFAULT_TRACK_TELEMETRY = true
 /**
  * Build the help-text generator function used by meow.
  */
-export function buildHelp(
+function buildHelp(
   opts: DefineHandoffCommandOptions,
   parentName: string,
 ): (command: string) => string {
@@ -243,7 +243,7 @@ export function defineHandoffCommand(
  * Wire the child process's exit/signal back to the parent. Optionally flushes
  * telemetry first. Centralized so all wrappers share the same lifecycle.
  */
-export function wireChildExit(
+function wireChildExit(
   childProcess: NodeJS.Process & {
     on: (event: string, listener: (...args: unknown[]) => void) => void
   },
