@@ -46,5 +46,3 @@ function findUpSync(name, options) {
   }
   return undefined
 }
-
-export { findUpSync }

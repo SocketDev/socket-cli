@@ -266,5 +266,3 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     process.exitCode = 1
   })
 }
-
-export { ASSETS, downloadAsset, downloadAssets }
