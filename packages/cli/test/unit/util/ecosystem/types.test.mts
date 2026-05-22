@@ -18,7 +18,6 @@ import {
   ALL_ECOSYSTEMS,
   ALL_SUPPORTED_ECOSYSTEMS,
   getEcosystemChoicesForMeow,
-  isValidEcosystem,
 } from '../../../../src/util/ecosystem/types.mts'
 
 describe('ecosystem utilities', () => {
@@ -66,30 +65,6 @@ describe('ecosystem utilities', () => {
       const choices2 = getEcosystemChoicesForMeow()
       expect(choices1).not.toBe(choices2)
       expect(choices1).toEqual(choices2)
-    })
-  })
-
-  describe('isValidEcosystem', () => {
-    it('validates known ecosystems', () => {
-      expect(isValidEcosystem('npm')).toBe(true)
-      expect(isValidEcosystem('pypi')).toBe(true)
-      expect(isValidEcosystem('cargo')).toBe(true)
-      expect(isValidEcosystem('gem')).toBe(true)
-      expect(isValidEcosystem('maven')).toBe(true)
-    })
-
-    it('rejects unknown ecosystems', () => {
-      expect(isValidEcosystem('invalid')).toBe(false)
-      expect(isValidEcosystem('NPM')).toBe(false) // Case-sensitive.
-      expect(isValidEcosystem('')).toBe(false)
-      expect(isValidEcosystem('node')).toBe(false)
-    })
-
-    it('validates all ecosystems in ALL_ECOSYSTEMS', () => {
-      for (let i = 0, { length } = ALL_ECOSYSTEMS; i < length; i += 1) {
-        const ecosystem = ALL_ECOSYSTEMS[i]
-        expect(isValidEcosystem(ecosystem)).toBe(true)
-      }
     })
   })
 

@@ -97,7 +97,4 @@ export function getEcosystemChoicesForMeow(): string[] {
   return [...ALL_ECOSYSTEMS]
 }
 
-export function isValidEcosystem(value: string): value is PURL_Type {
-  return ALL_SUPPORTED_ECOSYSTEMS.has(value)
-}
 

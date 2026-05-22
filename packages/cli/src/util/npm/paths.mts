@@ -1,14 +1,8 @@
-import path from 'node:path'
-
 import { NPM } from '@socketsecurity/lib-stable/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { SOCKET_CLI_NPM_PATH } from '../../env/socket-cli-npm-path.mts'
 import { SOCKET_CLI_ISSUES_URL } from '../../constants/socket.mts'
-import {
-  findBinPathDetailsSync,
-  findNpmDirPathSync,
-} from '../fs/path-resolve.mts'
+import { findBinPathDetailsSync } from '../fs/path-resolve.mts'
 
 const logger = getDefaultLogger()
 
@@ -44,32 +38,6 @@ export function getNpmBinPathDetails(): ReturnType<
   return npmBinPathDetails
 }
 
-let npmDirPath: string | undefined
-export function getNpmDirPath() {
-  if (npmDirPath === undefined) {
-    const npmBinPath = getNpmBinPath()
-    npmDirPath = npmBinPath ? findNpmDirPathSync(npmBinPath) : undefined
-    if (!npmDirPath) {
-      npmDirPath = SOCKET_CLI_NPM_PATH || undefined
-    }
-    if (!npmDirPath) {
-      let message = 'Unable to find npm CLI install directory.'
-      if (npmBinPath) {
-        message += `\nSearched parent directories of ${path.dirname(npmBinPath)}.`
-      }
-      message +=
-        '\n\nThis is may be a bug with socket-npm related to changes to the npm CLI.'
-      message += `\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
-      logger.fail(message)
-      // The exit code 127 indicates that the command or binary being executed
-      // could not be found.
-      process.exit(127)
-      // This line is never reached in production, but helps tests.
-      throw new Error('process.exit called')
-    }
-  }
-  return npmDirPath
-}
 
 let npxBinPath: string | undefined
 export function getNpxBinPath(): string {
