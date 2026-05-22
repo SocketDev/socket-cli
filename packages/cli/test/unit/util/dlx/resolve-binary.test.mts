@@ -6,8 +6,7 @@
  * cdxgen, sfw, etc.
  *
  * Test Coverage: - resolveCoana function - resolveCdxgen function -
- * resolvePyCli function - resolveSfw function - resolveSocketPatch function -
- * resolveSynp function.
+ * resolvePyCli function - resolveSfw function - resolveSocketPatch function.
  *
  * Related Files: - src/util/dlx/resolve-binary.mts (implementation)
  */
@@ -382,24 +381,6 @@ describe('binary resolution utilities', () => {
       expect(result).toEqual({
         type: 'local',
         path: '/custom/path/socket-patch',
-      })
-    })
-  })
-
-  describe('resolveSynp', () => {
-    it('returns dlx spec', async () => {
-      const { resolveSynp } =
-        await import('../../../../src/util/dlx/resolve-binary.mts')
-
-      const result = resolveSynp()
-
-      expect(result).toEqual({
-        type: 'dlx',
-        details: {
-          name: 'synp',
-          version: '3.0.0',
-          binaryName: 'synp',
-        },
       })
     })
   })

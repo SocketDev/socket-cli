@@ -36,7 +36,6 @@ import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import { debug as debugLib } from '@socketsecurity/lib-stable/debug/output'
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-stable/constants/socket'
 import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
 import {
   getSocketCliApiBaseUrl,
@@ -146,10 +145,6 @@ export function getExtraCaCerts(): string[] | undefined {
     return undefined
   }
   /* c8 ignore stop */
-}
-
-export function getPublicApiToken(): string {
-  return getDefaultApiToken() || getSocketApiToken() || SOCKET_PUBLIC_API_TOKEN
 }
 
 export function getVisibleTokenPrefix(): string {

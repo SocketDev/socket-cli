@@ -6,8 +6,6 @@ import type { GhsaDetails } from '../../util/git/github.mts'
 
 const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
 
-export const genericSocketFixBranchParser = createSocketFixBranchParser()
-
 // GHSA ID pattern: GHSA-xxxx-xxxx-xxxx (4 alphanumeric segments).
 const GHSA_ID_PATTERN = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i
 

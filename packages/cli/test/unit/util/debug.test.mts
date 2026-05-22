@@ -45,7 +45,6 @@ import {
   debugConfig,
   debugFileOp,
   debugGit,
-  debugScan,
 } from '../../../src/util/debug.mts'
 
 describe('debug utilities', () => {
@@ -308,57 +307,6 @@ describe('debug utilities', () => {
         debugFileOp(op, `/path/${op}`)
         // No errors expected.
       }
-    })
-  })
-
-  describe('debugScan', () => {
-    it('logs start phase with package count', () => {
-      debugScan('start', 42)
-
-      expect(debug).toHaveBeenCalledWith('Scanning 42 packages')
-    })
-
-    it('does not log start phase without package count', () => {
-      debugScan('start')
-
-      expect(debug).not.toHaveBeenCalled()
-    })
-
-    it('logs progress when silly debug is enabled', () => {
-      mockIsDebugNs.mockReturnValue(true)
-
-      debugScan('progress', 10)
-
-      expect(debugNs).toHaveBeenCalledWith(
-        'silly',
-        'Scan progress: 10 packages processed',
-      )
-    })
-
-    it('logs complete phase', () => {
-      debugScan('complete', 50)
-
-      expect(debugNs).toHaveBeenCalledWith(
-        'notice',
-        'Scan complete: 50 packages',
-      )
-    })
-
-    it('logs complete phase without package count', () => {
-      debugScan('complete')
-
-      expect(debugNs).toHaveBeenCalledWith('notice', 'Scan complete')
-    })
-
-    it('logs error phase with details', () => {
-      const errorDetails = { message: 'Scan failed' }
-
-      debugScan('error', undefined, errorDetails)
-
-      expect(debugDir).toHaveBeenCalledWith({
-        phase: 'scan_error',
-        details: errorDetails,
-      })
     })
   })
 

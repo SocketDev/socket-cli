@@ -15,7 +15,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   createSocketFixBranchParser,
-  genericSocketFixBranchParser,
   getSocketFixBranchName,
   getSocketFixBranchPattern,
   getSocketFixCommitMessage,
@@ -175,21 +174,6 @@ describe('fix/git utilities', () => {
         ghsaId: 'GHSA-1234-5678-9abc',
       })
       expect(parser('socket/fix/GHSA-other-ghsa-idxx')).toBeUndefined()
-    })
-  })
-
-  describe('genericSocketFixBranchParser', () => {
-    it('parses any socket fix branch', () => {
-      expect(
-        genericSocketFixBranchParser('socket/fix/GHSA-1234-5678-9abc'),
-      ).toEqual({
-        ghsaId: 'GHSA-1234-5678-9abc',
-      })
-      expect(
-        genericSocketFixBranchParser('socket/fix/GHSA-aaaa-bbbb-cccc'),
-      ).toEqual({
-        ghsaId: 'GHSA-aaaa-bbbb-cccc',
-      })
     })
   })
 

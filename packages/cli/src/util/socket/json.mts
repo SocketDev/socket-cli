@@ -14,7 +14,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
@@ -132,67 +132,6 @@ export async function readOrDefaultSocketJsonUp(
     return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson()
   }
   return getDefaultSocketJson()
-}
-
-export async function readSocketJson(
-  cwd: string,
-  defaultOnError = false,
-): Promise<CResult<SocketJson>> {
-  const sockJsonPath = path.join(cwd, SOCKET_JSON)
-  if (!existsSync(sockJsonPath)) {
-    debugNs('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
-    return { ok: true, data: getDefaultSocketJson() }
-  }
-
-  let json = undefined
-  try {
-    json = await readFile(sockJsonPath, 'utf8')
-  } catch (e) {
-    if (defaultOnError) {
-      logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
-      debugNs('warn', `Failed to read ${SOCKET_JSON}`)
-      debugDirNs('warn', e)
-      return { ok: true, data: getDefaultSocketJson() }
-    }
-    const cause = formatErrorWithDetail(
-      `An error occurred while trying to read ${SOCKET_JSON}`,
-      e,
-    )
-    debugNs('error', `Failed to read ${SOCKET_JSON}`)
-    debugDirNs('error', e)
-    return {
-      ok: false,
-      message: `Failed to read ${SOCKET_JSON}`,
-      cause,
-    }
-  }
-
-  let obj: SocketJson | undefined
-  try {
-    obj = JSON.parse(json) as SocketJson | undefined
-  } catch (e) {
-    debugNs('error', `Failed to parse ${SOCKET_JSON} as JSON`)
-    debugDirNs('inspect', { json })
-    debugDirNs('error', e)
-    if (defaultOnError) {
-      logger.warn(`Failed to parse ${SOCKET_JSON}, using default`)
-      return { ok: true, data: getDefaultSocketJson() }
-    }
-    return {
-      ok: false,
-      message: `Failed to parse ${SOCKET_JSON}`,
-      cause: `${SOCKET_JSON} does not contain valid JSON, please verify`,
-    }
-  }
-
-  if (!obj) {
-    logger.warn('Warning: file contents was empty, using default')
-    return { ok: true, data: getDefaultSocketJson() }
-  }
-
-  // Do we really care to validate? All properties are optional so code will have
-  // to check every step of the way regardless. Who cares about validation here...?
-  return { ok: true, data: obj }
 }
 
 export function readSocketJsonSync(

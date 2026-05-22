@@ -92,10 +92,6 @@ export {
   stripAnsi,
 }
 
-// For debugging. Whenever you call meowOrExit it will store the command here
-// This module exports a getter that returns the current value.
-let lastSeenCommand = ''
-
 /**
  * Find the best matching command name for a typo.
  */
@@ -121,13 +117,6 @@ export function findBestCommandMatch(
     }
   }
   return bestMatch
-}
-
-/**
- * Get the last command that was processed by meowOrExit (for debugging).
- */
-export function getLastSeenCommand(): string {
-  return lastSeenCommand
 }
 
 /**
@@ -199,7 +188,6 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     ...options,
   } as MeowOrExitOptions
   const command = `${parentName} ${cliConfig.commandName}`
-  lastSeenCommand = command
 
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({

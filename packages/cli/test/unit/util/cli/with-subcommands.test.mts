@@ -22,7 +22,6 @@ import {
   emitBanner,
   findBestCommandMatch,
   getHeaderTheme,
-  getLastSeenCommand,
   getTokenOrigin,
   levenshteinDistance,
   meowOrExit,
@@ -522,38 +521,6 @@ describe('meow-with-subcommands', () => {
           process.env['SOCKET_CLI_API_TOKEN'] = originalCli
         }
       }
-    })
-  })
-
-  describe('getLastSeenCommand', () => {
-    it('returns empty string initially', () => {
-      // Mock initial state.
-      const command = getLastSeenCommand()
-      expect(typeof command).toBe('string')
-    })
-
-    it('returns last seen command after meowOrExit', () => {
-      const mockConfig = {
-        commandName: 'test',
-        description: 'Test command',
-        flags: {},
-        help: vi.fn(() => 'Test help text'),
-      }
-
-      meowOrExit(
-        {
-          argv: ['test', 'command'],
-          config: mockConfig,
-          importMeta: import.meta,
-          parentName: 'socket',
-        },
-        {},
-      )
-
-      // Note: The actual implementation may not update lastSeenCommand
-      // in this simplified test, but we test the function exists.
-      const command = getLastSeenCommand()
-      expect(typeof command).toBe('string')
     })
   })
 

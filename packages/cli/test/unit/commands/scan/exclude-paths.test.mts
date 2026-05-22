@@ -11,7 +11,6 @@ import {
   applyFullExcludePaths,
   assertNoNegationPatterns,
   excludePathToProjectIgnorePath,
-  normalizeExcludePath,
   pathRelativeToTarget,
   projectIgnorePathsToReachExcludePaths,
 } from '../../../../src/commands/scan/exclude-paths.mts'
@@ -43,17 +42,6 @@ describe('exclude-paths', () => {
       ['tests/**', 'tests/**'],
     ])('converts %s to %s', (input, expected) => {
       expect(excludePathToProjectIgnorePath(input)).toBe(expected)
-    })
-  })
-
-  describe('normalizeExcludePath', () => {
-    it.each([
-      ['tests', 'tests/**'],
-      ['tests/', 'tests/**'],
-      ['tests/*', 'tests/*'],
-      ['tests/**', 'tests/**'],
-    ])('normalizes %s to %s', (input, expected) => {
-      expect(normalizeExcludePath(input)).toBe(expected)
     })
   })
 

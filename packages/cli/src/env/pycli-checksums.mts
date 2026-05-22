@@ -9,7 +9,7 @@ import process from 'node:process'
 
 import type { PyCliChecksums } from '../types.mjs'
 
-import { parseChecksums, requireChecksum } from './checksum-utils.mjs'
+import { parseChecksums } from './checksum-utils.mjs'
 
 const TOOL_NAME = 'PyCLI'
 
@@ -22,10 +22,3 @@ export function getPyCliChecksums(): PyCliChecksums {
   return parseChecksums(process.env['INLINED_PYCLI_CHECKSUMS'], TOOL_NAME)
 }
 
-/**
- * Lookup a PyCLI checksum by asset name. In production builds, throws if asset
- * is missing. In dev mode, returns undefined to allow development.
- */
-export function requirePyCliChecksum(assetName: string): string | undefined {
-  return requireChecksum(getPyCliChecksums(), assetName, TOOL_NAME)
-}

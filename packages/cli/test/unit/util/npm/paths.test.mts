@@ -80,7 +80,6 @@ describe('npm-paths utilities', () => {
   let originalExit: typeof process.exit
   let getNpmBinPath: (typeof PathsModule)['getNpmBinPath']
   let getNpmDirPath: (typeof PathsModule)['getNpmDirPath']
-  let getNpmRequire: (typeof PathsModule)['getNpmRequire']
   let getNpxBinPath: (typeof PathsModule)['getNpxBinPath']
 
   beforeEach(async () => {
@@ -98,7 +97,6 @@ describe('npm-paths utilities', () => {
     const npmPaths = await import('../../../../src/util/npm/paths.mts')
     getNpmBinPath = npmPaths.getNpmBinPath
     getNpmDirPath = npmPaths.getNpmDirPath
-    getNpmRequire = npmPaths.getNpmRequire
     getNpxBinPath = npmPaths.getNpxBinPath
   })
 
@@ -221,58 +219,6 @@ describe('npm-paths utilities', () => {
       expect(() => localGetNpmDirPath()).toThrow('process.exit(127)')
       expect(mockLogger.fail).toHaveBeenCalledWith(
         expect.stringContaining('Unable to find npm CLI install directory'),
-      )
-    })
-  })
-
-  describe('getNpmRequire', () => {
-    it('creates require function for npm directory', async () => {
-      const { findBinPathDetailsSync, findNpmDirPathSync } = vi.mocked(
-        await import('../../../../src/util/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/npm',
-      })
-      findNpmDirPathSync.mockReturnValue('/usr/local/lib/node_modules/npm')
-
-      mockExistsSync.mockReturnValue(true)
-
-      const mockRequire = vi.fn()
-      const Module = vi.mocked(await import('node:module')).default
-      Module.createRequire.mockReturnValue(mockRequire as unknown)
-
-      const result = getNpmRequire()
-
-      expect(result).toBe(mockRequire)
-      expect(Module.createRequire).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /[/\\]node_modules[/\\]npm[/\\]node_modules[/\\]npm[/\\]<placeholder-basename>$/,
-        ),
-      )
-    })
-
-    it('handles missing node_modules/npm subdirectory', async () => {
-      const { findBinPathDetailsSync, findNpmDirPathSync } = vi.mocked(
-        await import('../../../../src/util/fs/path-resolve.mts'),
-      )
-      findBinPathDetailsSync.mockReturnValue({
-        path: '/usr/local/bin/npm',
-      })
-      findNpmDirPathSync.mockReturnValue('/usr/local/lib/node_modules/npm')
-
-      mockExistsSync.mockReturnValue(false)
-
-      const mockRequire = vi.fn()
-      const Module = vi.mocked(await import('node:module')).default
-      Module.createRequire.mockReturnValue(mockRequire as unknown)
-
-      const result = getNpmRequire()
-
-      expect(result).toBe(mockRequire)
-      expect(Module.createRequire).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /[/\\]node_modules[/\\]npm[/\\]<placeholder-basename>$/,
-        ),
       )
     })
   })

@@ -2,14 +2,6 @@
  * @file Socket artifact and alert type definitions.
  */
 
-import {
-  ALERT_TYPE_CRITICAL_CVE,
-  ALERT_TYPE_CVE,
-  ALERT_TYPE_MEDIUM_CVE,
-  ALERT_TYPE_MILD_CVE,
-} from '../../constants/alerts.mts'
-
-import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 import type {
   ALERT_ACTION,
   ALERT_TYPE,
@@ -28,28 +20,9 @@ export type {
   SocketArtifactAlert,
 }
 
-type CVE_ALERT_TYPE = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
-
-type ArtifactAlertCve = Remap<
-  Omit<CompactSocketArtifactAlert, 'type'> & {
-    type: CVE_ALERT_TYPE
-  }
->
-
 export type CveProps = {
   firstPatchedVersionIdentifier?: string | undefined
   vulnerableVersionRange: string
   [key: string]: unknown
 }
 
-export function isArtifactAlertCve(
-  alert: CompactSocketArtifactAlert,
-): alert is ArtifactAlertCve {
-  const { type } = alert
-  return (
-    type === ALERT_TYPE_CVE ||
-    type === ALERT_TYPE_MEDIUM_CVE ||
-    type === ALERT_TYPE_MILD_CVE ||
-    type === ALERT_TYPE_CRITICAL_CVE
-  )
-}

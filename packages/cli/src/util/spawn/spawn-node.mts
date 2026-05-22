@@ -23,7 +23,7 @@
 
 import { whichRealSync } from '@socketsecurity/lib-stable/bin/which'
 import { getExecPath } from '@socketsecurity/lib-stable/constants/node'
-import { spawn, spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { sendBootstrapHandshake } from '../sea/boot.mjs'
 import { isSeaBinary } from '../sea/detect.mjs'
@@ -200,21 +200,3 @@ export function spawnNode(
   return spawnResult
 }
 
-/**
- * Synchronous version of spawnNode using spawnSync.
- *
- * Note: IPC handshake is not supported in synchronous mode, so this should only
- * be used when IPC is not required.
- *
- * @param args - Arguments to pass to Node.js.
- * @param options - Spawn options (ipc field is ignored)
- *
- * @returns Spawn sync result
- */
-export function spawnNodeSync(
-  args: string[] | readonly string[],
-  options?: Omit<SpawnNodeOptions, 'ipc'>,
-): ReturnType<typeof spawnSync> {
-  const nodePath = getNodeExecutablePathSync()
-  return spawnSync(nodePath, args, options)
-}

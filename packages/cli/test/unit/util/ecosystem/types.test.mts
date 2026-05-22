@@ -19,7 +19,6 @@ import {
   ALL_SUPPORTED_ECOSYSTEMS,
   getEcosystemChoicesForMeow,
   isValidEcosystem,
-  parseEcosystems,
 } from '../../../../src/util/ecosystem/types.mts'
 
 describe('ecosystem utilities', () => {
@@ -94,65 +93,4 @@ describe('ecosystem utilities', () => {
     })
   })
 
-  describe('parseEcosystems', () => {
-    it('parses comma-separated string', () => {
-      const result = parseEcosystems('npm,pypi,cargo')
-      expect(result).toEqual(['npm', 'pypi', 'cargo'])
-    })
-
-    it('trims whitespace from values', () => {
-      const result = parseEcosystems('npm , pypi , cargo')
-      expect(result).toEqual(['npm', 'pypi', 'cargo'])
-    })
-
-    it('converts to lowercase', () => {
-      const result = parseEcosystems('NPM,PyPI,Cargo')
-      expect(result).toEqual(['npm', 'pypi', 'cargo'])
-    })
-
-    it('filters out invalid ecosystems', () => {
-      const result = parseEcosystems('npm,invalid,pypi,unknown-eco')
-      expect(result).toEqual(['npm', 'pypi'])
-    })
-
-    it('handles array input', () => {
-      const result = parseEcosystems(['npm', 'pypi', 'cargo'])
-      expect(result).toEqual(['npm', 'pypi', 'cargo'])
-    })
-
-    it('handles array with invalid values', () => {
-      const result = parseEcosystems(['npm', 'INVALID', 'PyPI'])
-      expect(result).toEqual(['npm', 'pypi'])
-    })
-
-    it('returns empty array for undefined', () => {
-      const result = parseEcosystems(undefined)
-      expect(result).toEqual([])
-    })
-
-    it('returns empty array for empty string', () => {
-      const result = parseEcosystems('')
-      expect(result).toEqual([])
-    })
-
-    it('handles single ecosystem', () => {
-      const result = parseEcosystems('npm')
-      expect(result).toEqual(['npm'])
-    })
-
-    it('handles duplicates', () => {
-      const result = parseEcosystems('npm,npm,pypi,pypi')
-      expect(result).toEqual(['npm', 'npm', 'pypi', 'pypi'])
-    })
-
-    it('handles mixed valid and invalid with spaces', () => {
-      const result = parseEcosystems('  npm  ,  invalid  ,  pypi  ')
-      expect(result).toEqual(['npm', 'pypi'])
-    })
-
-    it('coerces non-string array elements', () => {
-      const result = parseEcosystems([123, 'npm', true] as unknown)
-      expect(result).toEqual(['npm'])
-    })
-  })
 })

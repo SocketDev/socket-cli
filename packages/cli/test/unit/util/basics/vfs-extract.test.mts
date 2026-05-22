@@ -45,7 +45,6 @@ import {
   areBasicsToolsAvailable,
   extractBasicsTools,
   getBasicsToolPaths,
-  getPythonSitePackagesPath,
 } from '../../../../src/util/basics/vfs-extract.mts'
 
 const realProcessSmol = (process as unknown).smol
@@ -63,32 +62,6 @@ describe('basics/vfs-extract', () => {
     } else {
       ;(process as unknown).smol = realProcessSmol
     }
-  })
-
-  describe('getPythonSitePackagesPath', () => {
-    it('returns a path under ~/.socket/_dlx with python major.minor', () => {
-      const result = getPythonSitePackagesPath()
-      expect(result).toContain('.socket/_dlx')
-      expect(result).toContain('python3.12')
-      expect(result).toContain('site-packages')
-    })
-
-    it('uses process.smol.getHash() when available', () => {
-      ;(process as unknown).smol = { getHash: () => 'smol-hash-aaaa' }
-      const result = getPythonSitePackagesPath()
-      expect(result).toContain('smol-hash-aaaa')
-    })
-
-    it('falls back to versioned hash when smol.getHash throws', () => {
-      ;(process as unknown).smol = {
-        getHash: () => {
-          throw new Error('boom')
-        },
-      }
-      const result = getPythonSitePackagesPath()
-      // Should still produce a valid path with a hash slice.
-      expect(result).toContain('.socket/_dlx')
-    })
   })
 
   describe('areBasicsToolsAvailable', () => {

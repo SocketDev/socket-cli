@@ -6,10 +6,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import {
-  getPyCliChecksums,
-  requirePyCliChecksum,
-} from '../../../src/env/pycli-checksums.mts'
+import { getPyCliChecksums } from '../../../src/env/pycli-checksums.mts'
 
 describe('env/pycli-checksums', () => {
   let original: string | undefined
@@ -45,26 +42,4 @@ describe('env/pycli-checksums', () => {
     })
   })
 
-  describe('requirePyCliChecksum', () => {
-    it('returns undefined in dev mode', () => {
-      delete process.env['INLINED_PYCLI_CHECKSUMS']
-      expect(requirePyCliChecksum('pycli-1.0')).toBeUndefined()
-    })
-
-    it('returns checksum for a known asset', () => {
-      process.env['INLINED_PYCLI_CHECKSUMS'] = JSON.stringify({
-        'pycli-1.0': 'sha-1',
-      })
-      expect(requirePyCliChecksum('pycli-1.0')).toBe('sha-1')
-    })
-
-    it('throws for unknown asset in production mode', () => {
-      process.env['INLINED_PYCLI_CHECKSUMS'] = JSON.stringify({
-        'pycli-1.0': 'sha-1',
-      })
-      expect(() => requirePyCliChecksum('pycli-9.9')).toThrow(
-        /PyCLI has no SHA-256 checksum/,
-      )
-    })
-  })
 })

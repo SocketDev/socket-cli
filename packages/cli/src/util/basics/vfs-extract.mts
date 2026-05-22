@@ -24,7 +24,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { UPDATE_STORE_DIR } from '../../constants/paths.mts'
-import { getPythonMajorMinor } from '../../env/python-version.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 
 const logger = getDefaultLogger()
@@ -282,22 +281,3 @@ export function getNodeSmolBasePath(): string {
   return normalizePath(path.join(os.homedir(), UPDATE_STORE_DIR, nodeSmolHash))
 }
 
-/**
- * Get the Python site-packages path for extracting Python packages. Path:
- * ~/.socket/_dlx/<hash>/python/lib/python{major.minor}/site-packages/
- *
- * @returns Path to site-packages directory.
- */
-export function getPythonSitePackagesPath(): string {
-  const basePath = getNodeSmolBasePath()
-  const pythonMajorMinor = getPythonMajorMinor()
-  return normalizePath(
-    path.join(
-      basePath,
-      'python',
-      'lib',
-      `python${pythonMajorMinor}`,
-      'site-packages',
-    ),
-  )
-}

@@ -28,7 +28,6 @@ import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  getFixedGhsas,
   isGhsaFixed,
   isPidAlive,
   loadGhsaTracker,
@@ -346,59 +345,6 @@ describe('ghsa-tracker', () => {
       const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
 
       expect(result).toBe(false)
-    })
-  })
-
-  describe('getFixedGhsas', () => {
-    it('returns all fixed GHSA records', async () => {
-      const tracker: GhsaTracker = {
-        version: 1,
-        fixed: [
-          {
-            ghsaId: 'GHSA-1111-1111-1111',
-            fixedAt: '2025-01-01T00:00:00Z',
-            prNumber: 100,
-            branch: 'socket/fix/GHSA-1111-1111-1111',
-          },
-          {
-            ghsaId: 'GHSA-2222-2222-2222',
-            fixedAt: '2025-01-02T00:00:00Z',
-            prNumber: 200,
-            branch: 'socket/fix/GHSA-2222-2222-2222',
-          },
-        ],
-      }
-
-      mockReadJson.mockResolvedValue(tracker)
-
-      const result = await getFixedGhsas(mockCwd)
-
-      expect(result).toEqual(tracker.fixed)
-      expect(result).toHaveLength(2)
-    })
-
-    it('returns empty array on error', async () => {
-      mockReadJson.mockRejectedValue(new Error('Read error'))
-
-      const result = await getFixedGhsas(mockCwd)
-
-      expect(result).toEqual([])
-    })
-
-    it('returns empty array when tracker shape is invalid', async () => {
-      // Resolve to a malformed tracker; loadGhsaTracker yields a tracker
-      // missing .fixed; getFixedGhsas's try block returns undefined and
-      // the catch arm produces the [] fallback (after returning .fixed).
-      // Note: getFixedGhsas just returns tracker.fixed unconditionally, so
-      // when fixed is undefined it returns undefined — covered by the
-      // success path. This test still pins the [] fallback for true throws.
-      mockReadJson.mockImplementation(() => {
-        throw new Error('immediate throw')
-      })
-
-      const result = await getFixedGhsas(mockCwd)
-
-      expect(result).toEqual([])
     })
   })
 

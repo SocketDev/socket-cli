@@ -523,27 +523,6 @@ export function isGraphqlRateLimitError(e: unknown): boolean {
   return false
 }
 
-export async function prExistForBranch(
-  owner: string,
-  repo: string,
-  branch: string,
-): Promise<boolean> {
-  const octokit = getOctokit()
-  try {
-    const { data: prs } = await octokit.pulls.list({
-      owner,
-      repo,
-      /* c8 ignore start - octokit.pulls.list options are evaluated only on cache miss; tests mock the response */
-      head: `${owner}:${branch}`,
-      state: 'all',
-      per_page: 1,
-    })
-    return prs.length > 0
-    /* c8 ignore stop */
-  } catch {}
-  return false
-}
-
 export async function readCache(
   key: string,
   // 5 minute in milliseconds time to live (TTL).

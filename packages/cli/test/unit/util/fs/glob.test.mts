@@ -34,7 +34,6 @@ vi.mock('@socketsecurity/lib-stable/fs/read-file', () => ({
 
 import {
   createSupportedFilesFilter,
-  filterBySupportedScanFiles,
   getSupportedFilePatterns,
   isReportSupportedFile,
   pathsToGlobPatterns,
@@ -87,38 +86,6 @@ describe('util/fs/glob', () => {
 
       expect(patterns).toContain('**/requirements.txt')
       expect(patterns).toHaveLength(1)
-    })
-  })
-
-  describe('filterBySupportedScanFiles', () => {
-    it('filters files to only supported ones', () => {
-      const filepaths = [
-        '/project/package.json',
-        '/project/src/index.js',
-        '/project/requirements.txt',
-        '/project/README.md',
-      ]
-
-      const result = filterBySupportedScanFiles(filepaths, mockSupportedFiles)
-
-      expect(result).toContain('/project/package.json')
-      expect(result).toContain('/project/requirements.txt')
-      expect(result).not.toContain('/project/src/index.js')
-      expect(result).not.toContain('/project/README.md')
-    })
-
-    it('returns empty array when no files match', () => {
-      const filepaths = ['/project/index.js', '/project/style.css']
-
-      const result = filterBySupportedScanFiles(filepaths, mockSupportedFiles)
-
-      expect(result).toEqual([])
-    })
-
-    it('handles empty filepath array', () => {
-      const result = filterBySupportedScanFiles([], mockSupportedFiles)
-
-      expect(result).toEqual([])
     })
   })
 

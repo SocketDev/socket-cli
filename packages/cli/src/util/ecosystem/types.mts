@@ -101,16 +101,3 @@ export function isValidEcosystem(value: string): value is PURL_Type {
   return ALL_SUPPORTED_ECOSYSTEMS.has(value)
 }
 
-export function parseEcosystems(
-  value: string | string[] | undefined,
-): PURL_Type[] {
-  if (!value) {
-    return []
-  }
-  const values =
-    typeof value === 'string'
-      ? value.split(',').map(v => v.trim().toLowerCase())
-      : value.map(v => String(v).toLowerCase())
-
-  return values.filter(isValidEcosystem)
-}

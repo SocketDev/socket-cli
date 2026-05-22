@@ -85,7 +85,6 @@ import {
   getDefaultApiToken,
   getDefaultProxyUrl,
   getExtraCaCerts,
-  getPublicApiToken,
   getVisibleTokenPrefix,
   hasDefaultApiToken,
   invalidateDefaultApiToken,
@@ -164,20 +163,6 @@ describe('SDK Utilities', () => {
       mockGetConfigValueOrUndef.mockReturnValue('mock-config-value-12345')
       const token = getDefaultApiToken()
       expect(token).toBe('mock-config-value-12345')
-    })
-  })
-
-  describe('getPublicApiToken', () => {
-    it('returns a token value', () => {
-      const token = getPublicApiToken()
-      expect(typeof token).toBe('string')
-      expect(token.length).toBeGreaterThan(0)
-    })
-
-    it('returns default token when set', () => {
-      mockGetSocketApiToken.mockReturnValue('mock-custom-value-12345')
-      const token = getPublicApiToken()
-      expect(token).toBe('mock-custom-value-12345')
     })
   })
 

@@ -110,17 +110,6 @@ export function expandReachExcludePath(path: string): string[] {
     : [pattern, `${pattern}/**`]
 }
 
-/**
- * Normalizes a reachability exclude path to a recursive directory glob without
- * changing explicit one-level or recursive glob suffixes.
- */
-export function normalizeExcludePath(path: string): string {
-  const stripped = stripTrailingSlash(path)
-  return stripped.endsWith('/*') || stripped.endsWith('/**')
-    ? stripped
-    : `${stripped}/**`
-}
-
 export function normalizeProjectIgnorePath(path: string): string {
   return stripTrailingSlash(
     toPosixPath(path.startsWith('/') ? path.slice(1) : path),

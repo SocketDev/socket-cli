@@ -75,7 +75,6 @@ import {
   getDefaultSocketJson,
   readOrDefaultSocketJson,
   readOrDefaultSocketJsonUp,
-  readSocketJson,
   readSocketJsonSync,
   writeSocketJson,
 } from '../../../../../src/util/socket/json.mts'
@@ -182,85 +181,6 @@ describe('socket-json utilities', () => {
 
       const result = await readOrDefaultSocketJsonUp('/test/dir')
       expect(result.version).toBe(1)
-    })
-  })
-
-  describe('readSocketJson', () => {
-    it('successfully reads and parses valid JSON file', async () => {
-      const mockJson = { version: 1, custom: 'data' }
-      mockExistsSync.mockReturnValue(true)
-      mockReadFile.mockResolvedValue(JSON.stringify(mockJson))
-
-      const result = await readSocketJson('/test/dir')
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data).toEqual(mockJson)
-      }
-    })
-
-    it('returns default when file does not exist', async () => {
-      mockExistsSync.mockReturnValue(false)
-
-      const result = await readSocketJson('/test/dir')
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data.version).toBe(1)
-      }
-    })
-
-    it('returns error when file read fails and defaultOnError is false', async () => {
-      mockExistsSync.mockReturnValue(true)
-      mockReadFile.mockRejectedValue(new Error('Read error'))
-
-      const result = await readSocketJson('/test/dir', false)
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toContain('Failed to read')
-      }
-    })
-
-    it('returns default when file read fails and defaultOnError is true', async () => {
-      mockExistsSync.mockReturnValue(true)
-      mockReadFile.mockRejectedValue(new Error('Read error'))
-
-      const result = await readSocketJson('/test/dir', true)
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data.version).toBe(1)
-      }
-    })
-
-    it('returns error when JSON parse fails and defaultOnError is false', async () => {
-      mockExistsSync.mockReturnValue(true)
-      mockReadFile.mockResolvedValue('invalid json')
-
-      const result = await readSocketJson('/test/dir', false)
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toContain('Failed to parse')
-      }
-    })
-
-    it('returns default when JSON parse fails and defaultOnError is true', async () => {
-      mockExistsSync.mockReturnValue(true)
-      mockReadFile.mockResolvedValue('invalid json')
-
-      const result = await readSocketJson('/test/dir', true)
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data.version).toBe(1)
-      }
-    })
-
-    it('returns default when file content is empty', async () => {
-      mockExistsSync.mockReturnValue(true)
-      mockReadFile.mockResolvedValue('null')
-
-      const result = await readSocketJson('/test/dir')
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data.version).toBe(1)
-      }
     })
   })
 

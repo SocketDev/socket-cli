@@ -19,7 +19,6 @@ import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../../env/socket-cli-socket-
 import { getSfwNpmVersion } from '../../env/sfw-version.mts'
 import { requireSocketPatchChecksum } from '../../env/socket-patch-checksums.mts'
 import { getSocketPatchVersion } from '../../env/socket-patch-version.mts'
-import { getSynpVersion } from '../../env/synp-version.mts'
 import { requireTrivyChecksum } from '../../env/trivy-checksums.mts'
 import { getTrivyVersion } from '../../env/trivy-version.mts'
 import { requireTrufflehogChecksum } from '../../env/trufflehog-checksums.mts'
@@ -308,19 +307,6 @@ export function resolveSocketPatch(): BinaryResolution {
   }
 }
 
-/**
- * Resolve path for synp binary. No local path override currently supported.
- */
-export function resolveSynp(): BinaryResolution {
-  return {
-    type: 'dlx',
-    details: {
-      name: 'synp',
-      version: getSynpVersion(),
-      binaryName: 'synp',
-    },
-  }
-}
 
 /**
  * Resolve path for Trivy binary. Downloads from GitHub releases

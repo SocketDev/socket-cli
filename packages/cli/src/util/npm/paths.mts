@@ -1,12 +1,9 @@
-import { existsSync } from 'node:fs'
-import Module from 'node:module'
 import path from 'node:path'
 
 import { NPM } from '@socketsecurity/lib-stable/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
 import { SOCKET_CLI_NPM_PATH } from '../../env/socket-cli-npm-path.mts'
-import { NODE_MODULES } from '../../constants/packages.mts'
 import { SOCKET_CLI_ISSUES_URL } from '../../constants/socket.mts'
 import {
   findBinPathDetailsSync,
@@ -72,21 +69,6 @@ export function getNpmDirPath() {
     }
   }
   return npmDirPath
-}
-
-let npmRequire: NodeJS.Require | undefined
-export function getNpmRequire(): NodeJS.Require {
-  if (npmRequire === undefined) {
-    const npmDirPath = getNpmDirPath()
-    const npmNmPath = path.join(npmDirPath, `${NODE_MODULES}/npm`)
-    npmRequire = Module.createRequire(
-      path.join(
-        existsSync(npmNmPath) ? npmNmPath : npmDirPath,
-        '<placeholder-basename>',
-      ),
-    )
-  }
-  return npmRequire
 }
 
 let npxBinPath: string | undefined

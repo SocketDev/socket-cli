@@ -229,40 +229,6 @@ export function debugGit(
 }
 
 /**
- * Debug package scanning. Provides insight into security scanning.
- */
-export function debugScan(
-  phase: 'start' | 'progress' | 'complete' | 'error',
-  packageCount?: number | undefined,
-  details?: unknown | undefined,
-): void {
-  switch (phase) {
-    case 'start':
-      if (packageCount) {
-        debug(`Scanning ${packageCount} packages`)
-      }
-      break
-    case 'progress':
-      if (isDebugNs('silly') && packageCount) {
-        debugNs('silly', `Scan progress: ${packageCount} packages processed`)
-      }
-      break
-    case 'complete':
-      debugNs(
-        'notice',
-        `Scan complete${packageCount ? `: ${packageCount} packages` : ''}`,
-      )
-      break
-    case 'error':
-      debugDir({
-        phase: 'scan_error',
-        details,
-      })
-      break
-  }
-}
-
-/**
  * Sanitize headers to remove sensitive information. Redacts Authorization and
  * API key headers.
  *

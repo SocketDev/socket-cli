@@ -664,23 +664,6 @@ describe('enablePrAutoMerge', () => {
   })
 })
 
-describe('prExistForBranch', () => {
-  it('returns a boolean result', async () => {
-    const { prExistForBranch } =
-      await import('../../../../src/util/git/github.mts')
-
-    // Without proper mocking, this will attempt a real API call.
-    // The function should handle errors gracefully and return false.
-    const result = await prExistForBranch(
-      'test-owner',
-      'test-repo',
-      'test-branch',
-    )
-
-    expect(typeof result).toBe('boolean')
-  })
-})
-
 describe('fetchGhsaDetails', () => {
   it('returns empty map for empty input array', async () => {
     const { fetchGhsaDetails } =

@@ -44,7 +44,6 @@ import {
   findSystemNodejsSync,
   getNodeExecutablePathSync,
   spawnNode,
-  spawnNodeSync,
 } from '../../../../src/util/spawn/spawn-node.mts'
 
 describe('spawn-node', () => {
@@ -228,14 +227,4 @@ describe('spawn-node', () => {
     })
   })
 
-  describe('spawnNodeSync', () => {
-    it('spawns node synchronously', () => {
-      mockSpawnSync.mockReturnValue({ status: 0 })
-
-      const result = spawnNodeSync(['script.js'])
-
-      expect(mockSpawnSync).toHaveBeenCalled()
-      expect(result.status).toBe(0)
-    })
-  })
 })

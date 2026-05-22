@@ -50,14 +50,6 @@ export function createSupportedFilesFilter(
     micromatch.some(filepath, patterns, { dot: true })
 }
 
-export function filterBySupportedScanFiles(
-  filepaths: string[] | readonly string[],
-  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
-): string[] {
-  const patterns = getSupportedFilePatterns(supportedFiles)
-  return filepaths.filter(p => micromatch.some(p, patterns, { dot: true }))
-}
-
 export function getSupportedFilePatterns(
   supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): string[] {
