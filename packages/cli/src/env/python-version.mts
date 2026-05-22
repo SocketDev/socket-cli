@@ -9,20 +9,6 @@
 import process from 'node:process'
 
 /**
- * Get the Python major.minor version for site-packages path (e.g., "3.11").
- * Used to construct: python/lib/python3.11/site-packages/
- */
-export function getPythonMajorMinor(): string {
-  const version = getPythonVersion()
-  const parts = version?.split('.') ?? []
-  if (parts.length < 2 || !parts[0] || !parts[1]) {
-    // Return safe default instead of crashing CLI on startup.
-    return '3.11'
-  }
-  return `${parts[0]}.${parts[1]}`
-}
-
-/**
  * Get the full Python version (e.g., "3.11.14").
  */
 export function getPythonVersion(): string {

@@ -32,11 +32,6 @@ vi.mock('../../../../src/util/sea/detect.mts', () => ({
   isSeaBinary: mockIsSeaBinary,
 }))
 
-const mockGetPythonMajorMinor = vi.hoisted(() => vi.fn(() => '3.12'))
-vi.mock('../../../../src/env/python-version.mts', () => ({
-  getPythonMajorMinor: mockGetPythonMajorMinor,
-}))
-
 vi.mock('../../../../src/constants/paths.mts', () => ({
   UPDATE_STORE_DIR: '.socket/_dlx',
 }))

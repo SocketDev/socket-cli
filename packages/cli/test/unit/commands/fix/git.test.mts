@@ -14,7 +14,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  createSocketFixBranchParser,
   getSocketFixBranchName,
   getSocketFixBranchPattern,
   getSocketFixCommitMessage,
@@ -151,29 +150,6 @@ describe('fix/git utilities', () => {
       expect(pattern.test('socket/fix/GHSA-1234-5678-9abc')).toBe(true)
       expect(pattern.test('other/branch')).toBe(false)
       expect(pattern.test('socket/fix/')).toBe(false)
-    })
-  })
-
-  describe('createSocketFixBranchParser', () => {
-    it('parses socket fix branch names', () => {
-      const parser = createSocketFixBranchParser()
-      const result = parser('socket/fix/GHSA-1234-5678-9abc')
-      expect(result).toEqual({ ghsaId: 'GHSA-1234-5678-9abc' })
-    })
-
-    it('returns undefined for non-matching branches', () => {
-      const parser = createSocketFixBranchParser()
-      expect(parser('main')).toBeUndefined()
-      expect(parser('feature/something')).toBeUndefined()
-      expect(parser('socket/other/GHSA-1234')).toBeUndefined()
-    })
-
-    it('parses with specific GHSA ID filter', () => {
-      const parser = createSocketFixBranchParser('GHSA-1234-5678-9abc')
-      expect(parser('socket/fix/GHSA-1234-5678-9abc')).toEqual({
-        ghsaId: 'GHSA-1234-5678-9abc',
-      })
-      expect(parser('socket/fix/GHSA-other-ghsa-idxx')).toBeUndefined()
     })
   })
 

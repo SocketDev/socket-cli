@@ -16,7 +16,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ALL_ECOSYSTEMS,
-  ALL_SUPPORTED_ECOSYSTEMS,
   getEcosystemChoicesForMeow,
 } from '../../../../src/util/ecosystem/types.mts'
 
@@ -38,18 +37,6 @@ describe('ecosystem utilities', () => {
 
     it('is an array', () => {
       expect(Array.isArray(ALL_ECOSYSTEMS)).toBe(true)
-    })
-  })
-
-  describe('ALL_SUPPORTED_ECOSYSTEMS', () => {
-    it('is a Set containing all ecosystems', () => {
-      expect(ALL_SUPPORTED_ECOSYSTEMS).toBeInstanceOf(Set)
-      expect(ALL_SUPPORTED_ECOSYSTEMS.size).toBe(ALL_ECOSYSTEMS.length)
-
-      for (let i = 0, { length } = ALL_ECOSYSTEMS; i < length; i += 1) {
-        const ecosystem = ALL_ECOSYSTEMS[i]
-        expect(ALL_SUPPORTED_ECOSYSTEMS.has(ecosystem)).toBe(true)
-      }
     })
   })
 

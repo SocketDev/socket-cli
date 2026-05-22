@@ -91,8 +91,6 @@ export const ALL_ECOSYSTEMS = [
 // export type _Check_ALL_ECOSYSTEMS_has_no_extras =
 //   ExpectNever<ExtraInAllEcosystems>
 
-export const ALL_SUPPORTED_ECOSYSTEMS = new Set<string>(ALL_ECOSYSTEMS)
-
 export function getEcosystemChoicesForMeow(): string[] {
   return [...ALL_ECOSYSTEMS]
 }

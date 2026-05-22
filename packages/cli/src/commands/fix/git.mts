@@ -9,30 +9,6 @@ const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
 // GHSA ID pattern: GHSA-xxxx-xxxx-xxxx (4 alphanumeric segments).
 const GHSA_ID_PATTERN = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i
 
-type SocketFixBranchParser = (
-  branch: string,
-) => SocketFixBranchParseResult | undefined
-
-type SocketFixBranchParseResult = {
-  ghsaId: string
-}
-
-export function createSocketFixBranchParser(
-  ghsaId?: string | undefined,
-): SocketFixBranchParser {
-  const pattern = getSocketFixBranchPattern(ghsaId)
-  return function parse(
-    branch: string,
-  ): SocketFixBranchParseResult | undefined {
-    const match = pattern.exec(branch) as [string, string] | null
-    if (!match) {
-      return undefined
-    }
-    const { 1: ghsaId } = match
-    return { ghsaId } as SocketFixBranchParseResult
-  }
-}
-
 export function getSocketFixBranchName(ghsaId: string): string {
   return `socket/fix/${ghsaId}`
 }

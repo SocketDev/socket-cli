@@ -25,7 +25,6 @@ import {
 } from '../../../../src/constants/packages.mts'
 import {
   findBinPathDetailsSync,
-  findNpmDirPathSync,
   getPackageFilesForScan,
 } from '../../../../src/util/fs/path-resolve.mts'
 import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
@@ -439,103 +438,4 @@ describe('Path Resolve', () => {
     })
   })
 
-  describe('findNpmDirPathSync', () => {
-    beforeEach(() => {
-      vi.clearAllMocks()
-    })
-
-    it('finds npm directory in lib/node_modules structure', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
-
-      isDirSync.mockImplementation(p => {
-        const pathStr = normalizePath(String(p))
-        if (pathStr.includes('lib/node_modules/npm')) {
-          return true
-        }
-        if (pathStr.endsWith('/node_modules')) {
-          return true
-        }
-        return false
-      })
-
-      const result = findNpmDirPathSync('/usr/local/bin/npm')
-
-      expect(WIN32 ? result : normalizePath(result)).toBe(
-        WIN32
-          ? undefined
-          : normalizePath('/usr/local/bin/npm/lib/node_modules/npm'),
-      )
-    })
-
-    it('finds npm directory with node_modules in current path', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
-
-      isDirSync.mockImplementation(p => {
-        const pathStr = normalizePath(String(p))
-        if (pathStr === normalizePath('/usr/local/npm/node_modules')) {
-          return true
-        }
-        return false
-      })
-
-      const result = findNpmDirPathSync('/usr/local/npm')
-
-      expect(WIN32 ? result : normalizePath(result)).toBe(
-        WIN32 ? undefined : normalizePath('/usr/local/npm'),
-      )
-    })
-
-    it('finds npm directory with node_modules in parent path', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
-
-      isDirSync.mockImplementation(p => {
-        const pathStr = normalizePath(String(p))
-        if (pathStr === normalizePath('/usr/local/npm/node_modules')) {
-          return false
-        }
-        if (pathStr === normalizePath('/usr/local/node_modules')) {
-          return true
-        }
-        return false
-      })
-
-      const result = findNpmDirPathSync('/usr/local/npm')
-
-      expect(WIN32 ? result : normalizePath(result)).toBe(
-        WIN32 ? undefined : normalizePath('/usr/local'),
-      )
-    })
-
-    it('returns undefined when no npm directory found', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
-
-      isDirSync.mockReturnValue(false)
-
-      const result = findNpmDirPathSync('/random/path')
-
-      expect(result).toBeUndefined()
-    })
-
-    it('handles nvm directory structure', async () => {
-      const { isDirSync } = vi.mocked(await import('@socketsecurity/lib-stable/fs/inspect'))
-
-      isDirSync.mockImplementation(p => {
-        const pathStr = normalizePath(String(p))
-        if (pathStr.includes('.nvm') && pathStr.endsWith('/node_modules')) {
-          return true
-        }
-        return false
-      })
-
-      const result = findNpmDirPathSync(
-        '/Users/user/.nvm/versions/node/v18.0.0/bin/npm',
-      )
-
-      expect(WIN32 ? result : normalizePath(result)).toBe(
-        WIN32
-          ? undefined
-          : normalizePath('/Users/user/.nvm/versions/node/v18.0.0/bin/npm'),
-      )
-    })
-  })
 })

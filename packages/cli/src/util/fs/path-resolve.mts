@@ -1,18 +1,11 @@
-import { existsSync } from 'node:fs'
-import path from 'node:path'
-
 import { resolveRealBinSync } from '@socketsecurity/lib-stable/bin/resolve'
 import { whichRealSync } from '@socketsecurity/lib-stable/bin/which'
-import { NPM } from '@socketsecurity/lib-stable/constants/agents'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
 
 import {
   createSupportedFilesFilter,
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
-import { NODE_MODULES } from '../../constants/packages.mts'
 
 import type { SocketYml } from '../socket-yaml.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
@@ -40,73 +33,6 @@ export function findBinPathDetailsSync(binName: string): {
     break
   }
   return { name: binName, path: theBinPath }
-}
-
-export function findNpmDirPathSync(npmBinPath: string): string | undefined {
-  // On Windows, reject Unix absolute paths (starting with / but not //).
-  // This allows UNC paths: //server/share, \\server\share.
-  // And long paths: \\?\C:\..., //?/C:/...
-  // Backslash paths (\\...) don't match startsWith('/') so they pass through.
-  /* c8 ignore start - WIN32-only branch, tests run on macOS/Linux */
-  if (WIN32 && npmBinPath.startsWith('/') && !npmBinPath.startsWith('//')) {
-    return undefined
-  }
-  /* c8 ignore stop */
-  const MAX_ITERATIONS = 100
-  let thePath = npmBinPath
-  let iterations = 0
-  while (true) {
-    /* c8 ignore start - safety guard against infinite loop on circular symlinks */
-    if (iterations >= MAX_ITERATIONS) {
-      throw new Error(
-        `npm path resolution walked ${MAX_ITERATIONS} directories without finding lib/node_modules/npm starting from "${npmBinPath}" (current: "${thePath}"); check for a circular symlink or corrupt node install`,
-      )
-    }
-    /* c8 ignore stop */
-    iterations += 1
-    const libNmNpmPath = path.join(thePath, `lib/${NODE_MODULES}/${NPM}`)
-    // mise, which uses opaque binaries, puts its npm bin in a path like:
-    //   /Users/<user>/.local/share/mise/installs/node/vX.X.X/bin/npm.
-    // HOWEVER, the location of the npm install is:
-    //   /Users/<user>/.local/share/mise/installs/node/vX.X.X/lib/node_modules/npm.
-    if (
-      // Use existsSync here because statsSync, even with { throwIfNoEntry: false },
-      // will throw an ENOTDIR error for paths like ./a-file-that-exists/a-directory-that-does-not.
-      // See https://github.com/nodejs/node/issues/56993.
-      isDirSync(libNmNpmPath)
-    ) {
-      thePath = libNmNpmPath
-    }
-    const hasNmInCurrPath = isDirSync(path.join(thePath, NODE_MODULES))
-    const hasNmInParentPath =
-      !hasNmInCurrPath && isDirSync(path.join(thePath, `../${NODE_MODULES}`))
-    if (
-      // npm bin paths may look like:
-      //   /usr/local/share/npm/bin/npm
-      //   ~/.nvm/versions/node/vX.X.X/bin/npm
-      //   %USERPROFILE%\AppData\Roaming\npm\bin\npm.cmd
-      // OR
-      //   C:\Program Files\nodejs\npm.cmd
-      //
-      // In practically all cases the npm path contains a node_modules folder:
-      //   /usr/local/share/npm/bin/npm/node_modules
-      //   C:\Program Files\nodejs\node_modules
-      (hasNmInCurrPath ||
-        // In some bespoke cases the node_modules folder is in the parent directory.
-        hasNmInParentPath) &&
-      // Optimistically look for the default location.
-      (path.basename(thePath) === NPM ||
-        // Chocolatey installs npm bins in the same directory as node bins.
-        (!!WIN32 && existsSync(path.join(thePath, `${NPM}.cmd`))))
-    ) {
-      return hasNmInParentPath ? path.dirname(thePath) : thePath
-    }
-    const parent = path.dirname(thePath)
-    if (parent === thePath) {
-      return undefined
-    }
-    thePath = parent
-  }
 }
 
 type PackageFilesForScanOptions = {

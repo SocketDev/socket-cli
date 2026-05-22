@@ -6,10 +6,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import {
-  getPythonMajorMinor,
-  getPythonVersion,
-} from '../../../src/env/python-version.mts'
+import { getPythonVersion } from '../../../src/env/python-version.mts'
 
 describe('env/python-version', () => {
   let original: string | undefined
@@ -33,30 +30,4 @@ describe('env/python-version', () => {
     })
   })
 
-  describe('getPythonMajorMinor', () => {
-    it('returns major.minor from a full semver-style string', () => {
-      process.env['INLINED_PYTHON_VERSION'] = '3.12.5'
-      expect(getPythonMajorMinor()).toBe('3.12')
-    })
-
-    it('returns major.minor when only major.minor is set', () => {
-      process.env['INLINED_PYTHON_VERSION'] = '3.13'
-      expect(getPythonMajorMinor()).toBe('3.13')
-    })
-
-    it('falls back to 3.11 when version is missing', () => {
-      delete process.env['INLINED_PYTHON_VERSION']
-      expect(getPythonMajorMinor()).toBe('3.11')
-    })
-
-    it('falls back to 3.11 when version is malformed (one part)', () => {
-      process.env['INLINED_PYTHON_VERSION'] = '3'
-      expect(getPythonMajorMinor()).toBe('3.11')
-    })
-
-    it('falls back to 3.11 when version is empty', () => {
-      process.env['INLINED_PYTHON_VERSION'] = ''
-      expect(getPythonMajorMinor()).toBe('3.11')
-    })
-  })
 })
