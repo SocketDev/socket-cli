@@ -1,3 +1,4 @@
+import { unlink } from 'node:fs/promises'
 import path from 'node:path'
 
 import micromatch from 'micromatch'
@@ -47,20 +48,14 @@ function getCdxSpdxPatterns(
   return patterns
 }
 
-function filterToCdxSpdxAndFactsFiles(
+function filterToCdxSpdxOnly(
   filepaths: string[],
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
   const patterns = getCdxSpdxPatterns(supportedFiles)
-  return filepaths.filter(filepath => {
-    const basename = path.basename(filepath).toLowerCase()
-    // Include .socket.facts.json files.
-    if (basename === constants.DOT_SOCKET_DOT_FACTS_JSON) {
-      return true
-    }
-    // Include CDX and SPDX files.
-    return micromatch.some(filepath, patterns, { nocase: true })
-  })
+  return filepaths.filter(filepath =>
+    micromatch.some(filepath, patterns, { nocase: true }),
+  )
 }
 
 export type HandleCreateNewScanConfig = {
@@ -228,6 +223,7 @@ export async function handleCreateNewScan({
 
   let scanPaths: string[] = packagePaths
   let tier1ReachabilityScanId: string | undefined
+  let reachabilityReport: string | undefined
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
@@ -258,18 +254,17 @@ export async function handleCreateNewScan({
 
     logger.success('Reachability analysis completed successfully')
 
-    const reachabilityReport = reachResult.data?.reachabilityReport
+    reachabilityReport = reachResult.data?.reachabilityReport
 
     // Ensure the .socket.facts.json isn't duplicated in case it happened
     // to be in the scan folder before the analysis was run.
     const filteredPackagePaths = packagePaths.filter(
-      p =>
-        path.basename(p).toLowerCase() !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+      p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
     )
 
     // When using pregenerated SBOMs only, filter to CDX/SPDX files.
     const pathsForScan = reach.reachUseOnlyPregeneratedSboms
-      ? filterToCdxSpdxAndFactsFiles(filteredPackagePaths, supportedFiles)
+      ? filterToCdxSpdxOnly(filteredPackagePaths, supportedFiles)
       : filteredPackagePaths
 
     scanPaths = [
@@ -319,6 +314,25 @@ export async function handleCreateNewScan({
 
   if (reach && scanId && tier1ReachabilityScanId) {
     await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
+  }
+
+  // On a successful scan, clean up the `.socket.facts.json` coana wrote at
+  // the path we instructed it to write to (via `--socket-mode`). Failed
+  // scans leave the file in place for debugging. Producer-written files
+  // (e.g. from `socket manifest gradle --facts`) are NOT touched here —
+  // those are user-owned input that the user can clean up themselves; in
+  // the --reach path coana overwrites that file with its enriched output
+  // anyway, so it's the same path that gets removed.
+  if (fullScanCResult.ok && scanId && reachabilityReport) {
+    try {
+      await unlink(path.resolve(cwd, reachabilityReport))
+      debugFn(
+        'notice',
+        `[socket-facts] removed coana output after successful scan: ${reachabilityReport}`,
+      )
+    } catch {
+      // Best-effort — file may already be gone or unwritable.
+    }
   }
 
   if (report && fullScanCResult.ok) {

@@ -6,7 +6,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
 
-export async function convertGradleToMaven({
+export async function convertGradleToFacts({
   bin,
   cwd,
   gradleOpts,
@@ -14,18 +14,14 @@ export async function convertGradleToMaven({
 }: {
   bin: string
   cwd: string
-  verbose: boolean
   gradleOpts: string[]
-}) {
-  // TODO: Implement json/md.
-
-  // Note: use resolve because the bin could be an absolute path, away from cwd
-  // TODO: what about $PATH resolved commands? (`gradlew` without dir prefix)
+  verbose: boolean
+}): Promise<void> {
   const rBin = path.resolve(cwd, bin)
   const binExists = fs.existsSync(rBin)
   const cwdExists = fs.existsSync(cwd)
 
-  logger.group('gradle2maven:')
+  logger.group('gradle2facts:')
   logger.info(`- executing: \`${rBin}\``)
   if (!binExists) {
     logger.warn(
@@ -41,18 +37,22 @@ export async function convertGradleToMaven({
   logger.groupEnd()
 
   try {
-    // Run gradlew with the init script we provide which should yield zero or more
-    // pom files. We have to figure out where to store those pom files such that
-    // we can upload them and predict them through the GitHub API. We could do a
-    // .socket folder. We could do a socket.pom.gz with all the poms, although
-    // I'd prefer something plain-text if it is to be committed.
-    // Note: init.gradle will be exported by .config/rollup.dist.config.mjs
-    const initLocation = path.join(constants.distPath, 'init.gradle')
-    const commandArgs = ['--init-script', initLocation, ...gradleOpts, 'pom']
+    // The init script is bundled alongside the existing pom-generating one.
+    // See .config/rollup.dist.config.mjs:copySocketFactsInitGradle.
+    const initLocation = path.join(
+      constants.distPath,
+      'socket-facts.init.gradle',
+    )
+    const commandArgs = [
+      '--init-script',
+      initLocation,
+      ...gradleOpts,
+      'socketFacts',
+    ]
     if (verbose) {
       logger.log('[VERBOSE] Executing:', [bin], ', args:', commandArgs)
     }
-    logger.log(`Converting gradle to maven from \`${bin}\` on \`${cwd}\` ...`)
+    logger.log(`Generating Socket facts from \`${bin}\` on \`${cwd}\` ...`)
     const output = await execGradle(rBin, commandArgs, cwd, verbose)
     if (output.code) {
       process.exitCode = 1
@@ -66,30 +66,43 @@ export async function convertGradleToMaven({
     }
     logger.success('Executed gradle successfully')
     if (verbose) {
-      // Output already streamed; "POM file copied to:" lines were visible
-      // inline. Skip the captured-stdout summary.
+      // Output already streamed; the "Reported exports:" summary lines were
+      // visible inline. No need to repeat them from a captured stdout.
       logger.log('')
       logger.log(
-        'Next step is to generate a Scan by running the `socket scan create` command on the same directory',
+        'Next step is to generate a Scan by running the `socket scan create` command on the same directory.',
       )
       return
     }
-    logger.log('Reported exports:')
-    output.stdout.replace(
-      /^POM file copied to: (.*)/gm,
-      (_all: string, fn: string) => {
-        logger.log('- ', fn)
-        return fn
-      },
+    const exports = Array.from(
+      output.stdout.matchAll(/^Socket facts file written to: (.*)/gm),
+      m => m[1],
     )
+    if (exports.length) {
+      logger.log('Reported exports:')
+      for (const fn of exports) {
+        logger.log('- ', fn)
+      }
+    } else {
+      // Gradle script may have skipped emission when no resolvable
+      // dependencies were found (see the `components.isEmpty()` branch in
+      // socket-facts.init.gradle). Surface the skip reason if present so
+      // the user understands why nothing was written.
+      const skipMatch = output.stdout.match(
+        /^\[socket-facts\] no resolvable dependencies.*/m,
+      )
+      if (skipMatch) {
+        logger.warn(skipMatch[0])
+      }
+    }
     logger.log('')
     logger.log(
-      'Next step is to generate a Scan by running the `socket scan create` command on the same directory',
+      'Next step is to generate a Scan by running the `socket scan create` command on the same directory.',
     )
   } catch (e) {
     process.exitCode = 1
     logger.fail(
-      'There was an unexpected error while generating manifests' +
+      'There was an unexpected error while generating Socket facts' +
         (verbose ? '' : '  (use --verbose for details)'),
     )
     if (verbose) {
@@ -109,7 +122,8 @@ async function execGradle(
   // When verbose, stream gradle stdout/stderr directly to the user's
   // terminal — no spinner, no capture. The trade-off is that the post-run
   // "Reported exports:" summary is skipped (the lines were already visible
-  // inline). Non-verbose runs still get the spinner + summary.
+  // inline). For huge builds where the user wants to see progress, this is
+  // the right default. Non-verbose runs still get the spinner + summary.
   if (verbose) {
     logger.info(
       '(Running gradle with output streaming. This can take a while.)',

@@ -205,19 +205,14 @@ async function spawnCoanaScriptViaNode(
   options: { cwd?: string | URL | undefined },
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
-  const isBinary =
-    !scriptPath.endsWith('.js') && !scriptPath.endsWith('.mjs')
+  const isBinary = !scriptPath.endsWith('.js') && !scriptPath.endsWith('.mjs')
 
   const spawnArgs = isBinary ? args : [scriptPath, ...args]
-  const spawnResult = await spawn(
-    isBinary ? scriptPath : 'node',
-    spawnArgs,
-    {
-      cwd: options.cwd,
-      env: finalEnv,
-      stdio: spawnExtra?.['stdio'] || 'inherit',
-    },
-  )
+  const spawnResult = await spawn(isBinary ? scriptPath : 'node', spawnArgs, {
+    cwd: options.cwd,
+    env: finalEnv,
+    stdio: spawnExtra?.['stdio'] || 'inherit',
+  })
 
   return { ok: true, data: spawnResult.stdout }
 }

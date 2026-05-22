@@ -213,7 +213,9 @@ describe('utils/dlx', () => {
     const setDlxRejection = (err: Record<string, unknown>) => {
       mockDlxBin.mockReset()
       mockDlxBin.mockImplementation(async () => {
-        const rejected = Promise.reject(Object.assign(new Error('dlx exploded'), err))
+        const rejected = Promise.reject(
+          Object.assign(new Error('dlx exploded'), err),
+        )
         rejected.catch(() => {})
         return { spawnPromise: rejected }
       })

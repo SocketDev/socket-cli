@@ -3,6 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
@@ -51,10 +52,7 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {
-    logger.log(
-      'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
-    )
-    await convertGradleToMaven({
+    const gradleArgs = {
       // Note: `gradlew` is more likely to be resolved against cwd.
       // Note: .resolve() won't butcher an absolute path.
       // TODO: `gradlew` (or anything else given) may want to resolve against PATH.
@@ -68,7 +66,18 @@ export async function generateAutoManifest({
           ?.split(' ')
           .map(s => s.trim())
           .filter(Boolean) ?? [],
-    })
+    }
+    if (sockJson.defaults?.manifest?.gradle?.facts) {
+      logger.log(
+        'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts...',
+      )
+      await convertGradleToFacts(gradleArgs)
+    } else {
+      logger.log(
+        'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
+      )
+      await convertGradleToMaven(gradleArgs)
+    }
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {

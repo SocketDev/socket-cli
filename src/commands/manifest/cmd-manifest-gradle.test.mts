@@ -24,6 +24,7 @@ describe('socket manifest gradle', async () => {
 
           Options
             --bin               Location of gradlew binary to use, default: CWD/gradlew
+            --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
             --verbose           Print debug messages
 
@@ -83,6 +84,24 @@ describe('socket manifest gradle', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+    },
+  )
+
+  cmdit(
+    ['manifest', 'gradle', '--facts', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should accept --facts with dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest gradle\`, cwd: <redacted>"
+      `)
+
+      expect(code, '--facts --dry-run should exit with code 0').toBe(0)
     },
   )
 })
