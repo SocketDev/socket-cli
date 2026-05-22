@@ -18,8 +18,12 @@
  * - Configures environment for third-party tools
  */
 
+import { promises as fs } from 'node:fs'
 import { createRequire } from 'node:module'
+import os from 'node:os'
+import path from 'node:path'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -182,12 +186,162 @@ export type CoanaDlxOptions = DlxOptions & {
 }
 
 /**
+ * Cache of resolved Coana CLI script paths from the npm-install fallback,
+ * keyed by version string. Lives for the lifetime of the Socket CLI process so
+ * repeated invocations (e.g. socket fix --pr looping per GHSA) only install
+ * once.
+ */
+const installedCoanaScriptPathsByVersion = new Map<string, string>()
+
+/**
+ * Spawn an installed Coana entry point via `node` (or directly, if it's a
+ * native binary). Shared by the SOCKET_CLI_COANA_LOCAL_PATH branch and the
+ * npm-install fallback.
+ */
+async function spawnCoanaScriptViaNode(
+  scriptPath: string,
+  args: string[] | readonly string[],
+  finalEnv: NodeJS.ProcessEnv,
+  options: { cwd?: string | URL | undefined },
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<CResult<string>> {
+  const isBinary =
+    !scriptPath.endsWith('.js') && !scriptPath.endsWith('.mjs')
+
+  const spawnArgs = isBinary ? args : [scriptPath, ...args]
+  const spawnResult = await spawn(
+    isBinary ? scriptPath : 'node',
+    spawnArgs,
+    {
+      cwd: options.cwd,
+      env: finalEnv,
+      stdio: spawnExtra?.['stdio'] || 'inherit',
+    },
+  )
+
+  return { ok: true, data: spawnResult.stdout }
+}
+
+/**
+ * Resolve the executable JS file inside an installed @coana-tech/cli package
+ * by reading its package.json `bin` field. Returns an absolute path suitable
+ * for passing to `node`.
+ */
+async function resolveCoanaBinFromInstallDir(
+  installDir: string,
+): Promise<string> {
+  const packageJsonPath = path.join(
+    installDir,
+    'node_modules',
+    '@coana-tech',
+    'cli',
+    'package.json',
+  )
+  const pkg = JSON.parse(await fs.readFile(packageJsonPath, 'utf8')) as {
+    bin?: string | Record<string, string> | undefined
+  }
+  const { bin } = pkg
+  let relativeBin: string | undefined
+  if (typeof bin === 'string') {
+    relativeBin = bin
+  } else if (bin && typeof bin === 'object') {
+    // Prefer an entry named "coana" if present; otherwise take the first.
+    relativeBin = bin['coana'] ?? Object.values(bin)[0]
+  }
+  if (!relativeBin) {
+    throw new Error(
+      `@coana-tech/cli package.json at ${packageJsonPath} is missing a usable bin entry`,
+    )
+  }
+  return path.resolve(path.dirname(packageJsonPath), relativeBin)
+}
+
+/**
+ * Install @coana-tech/cli into a fresh temp directory via `npm install` and
+ * return its executable JS path. Caches the result per version for the
+ * lifetime of the process.
+ */
+async function installCoanaToTmpdir(
+  version: string,
+  finalEnv: NodeJS.ProcessEnv,
+): Promise<string> {
+  const cached = installedCoanaScriptPathsByVersion.get(version)
+  if (cached) {
+    return cached
+  }
+  const installDir = await fs.mkdtemp(path.join(os.tmpdir(), 'socket-coana-'))
+  await spawn(
+    'npm',
+    [
+      'install',
+      '--no-save',
+      '--no-package-lock',
+      '--no-audit',
+      '--no-fund',
+      '--prefix',
+      installDir,
+      `@coana-tech/cli@${version}`,
+    ],
+    {
+      env: finalEnv,
+      stdio: 'inherit',
+    },
+  )
+  const scriptPath = await resolveCoanaBinFromInstallDir(installDir)
+  installedCoanaScriptPathsByVersion.set(version, scriptPath)
+  return scriptPath
+}
+
+/**
+ * Fallback path used when the dlx (npx / pnpm dlx / yarn dlx) invocation
+ * fails. Installs @coana-tech/cli into a temp directory via `npm install`
+ * and spawns it directly via `node`.
+ */
+async function spawnCoanaViaNpmInstall(
+  args: string[] | readonly string[],
+  version: string,
+  finalEnv: NodeJS.ProcessEnv,
+  options: { cwd?: string | URL | undefined },
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<CResult<string>> {
+  let scriptPath: string
+  try {
+    scriptPath = await installCoanaToTmpdir(version, finalEnv)
+  } catch (e) {
+    const stderr = (e as any)?.stderr
+    const cause = getErrorCause(e)
+    return {
+      ok: false,
+      data: e,
+      message: `npm install fallback failed: ${stderr || cause}`,
+    }
+  }
+  try {
+    return await spawnCoanaScriptViaNode(
+      scriptPath,
+      args,
+      finalEnv,
+      options,
+      spawnExtra,
+    )
+  } catch (e) {
+    return buildDlxErrorResult(e)
+  }
+}
+
+/**
  * Helper to spawn coana with dlx.
  * Automatically uses force and silent when version is not pinned exactly.
  * Returns a CResult with stdout extraction for backward compatibility.
  *
  * If SOCKET_CLI_COANA_LOCAL_PATH environment variable is set, uses the local
  * Coana CLI at that path instead of downloading from npm.
+ *
+ * If the dlx path fails (e.g. broken `npx` on the host), falls back to
+ * `npm install`-ing @coana-tech/cli into a temp directory and invoking it
+ * directly via `node`. The fallback can be disabled with
+ * SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK or forced as the primary path with
+ * SOCKET_CLI_COANA_FORCE_NPM_INSTALL.
  */
 export async function spawnCoanaDlx(
   args: string[] | readonly string[],
@@ -231,53 +385,57 @@ export async function spawnCoanaDlx(
     mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
   }
 
-  try {
-    const localCoanaPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
-    // Use local Coana CLI if path is provided.
-    if (localCoanaPath) {
-      const isBinary =
-        !localCoanaPath.endsWith('.js') && !localCoanaPath.endsWith('.mjs')
+  const finalEnv = {
+    ...process.env,
+    ...constants.processEnv,
+    ...mixinsEnv,
+    ...spawnEnv,
+  }
 
-      const finalEnv = {
-        ...process.env,
-        ...constants.processEnv,
-        ...mixinsEnv,
-        ...spawnEnv,
-      }
+  const resolvedVersion =
+    coanaVersion || constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION
 
-      const spawnArgs = isBinary ? args : [localCoanaPath, ...args]
-      const spawnResult = await spawn(
-        isBinary ? localCoanaPath : 'node',
-        spawnArgs,
-        {
-          cwd: dlxOptions.cwd,
-          env: finalEnv,
-          stdio: spawnExtra?.['stdio'] || 'inherit',
-        },
+  const localCoanaPath = process.env['SOCKET_CLI_COANA_LOCAL_PATH']
+  // Use local Coana CLI if path is provided.
+  if (localCoanaPath) {
+    try {
+      return await spawnCoanaScriptViaNode(
+        localCoanaPath,
+        args,
+        finalEnv,
+        { cwd: dlxOptions.cwd },
+        spawnExtra,
       )
-
-      return { ok: true, data: spawnResult.stdout }
+    } catch (e) {
+      return buildDlxErrorResult(e)
     }
+  }
 
+  // Allow forcing the npm-install path for debugging or for environments
+  // where dlx is known-broken.
+  if (process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']) {
+    return await spawnCoanaViaNpmInstall(
+      args,
+      resolvedVersion,
+      finalEnv,
+      { cwd: dlxOptions.cwd },
+      spawnExtra,
+    )
+  }
+
+  try {
     // Use npm/dlx version.
     const result = await spawnDlx(
       {
         name: '@coana-tech/cli',
-        version:
-          coanaVersion ||
-          constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
+        version: resolvedVersion,
       },
       args,
       {
         force: true,
         silent: true,
         ...dlxOptions,
-        env: {
-          ...process.env,
-          ...constants.processEnv,
-          ...mixinsEnv,
-          ...spawnEnv,
-        },
+        env: finalEnv,
         ipc: {
           [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
           [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
@@ -291,27 +449,107 @@ export async function spawnCoanaDlx(
     const output = await result.spawnPromise
     return { ok: true, data: output.stdout }
   } catch (e) {
-    const stderr = (e as any)?.stderr
-    const exitCode = (e as any)?.code
-    const signal = (e as any)?.signal
-    const cause = getErrorCause(e)
-    // Build a descriptive error message with exit code and signal details.
-    const details: string[] = []
-    if (typeof exitCode === 'number') {
-      details.push(`exit code ${exitCode}`)
+    const dlxError = buildDlxErrorResult(e)
+
+    if (process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']) {
+      return dlxError
     }
-    if (signal) {
-      details.push(`signal ${signal}`)
+
+    // Only retry via `npm install` when the failure looks like the launcher
+    // never got Coana running. A real Coana process that booted and exited
+    // with an error would just hit the same failure on retry.
+    if (!shouldFallbackOnDlxError(e)) {
+      return dlxError
     }
-    const detailSuffix = details.length ? ` (${details.join(', ')})` : ''
-    const message = stderr
-      ? `Coana command failed${detailSuffix}: ${stderr}`
-      : `Coana command failed${detailSuffix}: ${cause}`
+
+    logger.warn(
+      'Coana dlx invocation failed before Coana started; falling back to `npm install` + `node`.',
+    )
+
+    const fallbackResult = await spawnCoanaViaNpmInstall(
+      args,
+      resolvedVersion,
+      finalEnv,
+      { cwd: dlxOptions.cwd },
+      spawnExtra,
+    )
+    if (fallbackResult.ok) {
+      return fallbackResult
+    }
+    // Surface both errors so support has full context.
     return {
       ok: false,
       data: e,
-      message,
+      message: `${dlxError.message}. npm-install fallback also failed: ${fallbackResult.message}`,
     }
+  }
+}
+
+/**
+ * Decide whether a thrown dlx error should trigger the npm-install fallback.
+ *
+ * The goal is to retry only when the dlx launcher (npx / pnpm dlx / yarn dlx)
+ * failed before Coana itself ran. If Coana actually booted, any subsequent
+ * non-zero exit is a real Coana failure and retrying would hit the same one.
+ *
+ * Signals we use, in priority order:
+ * 1. Captured stderr containing Coana's startup banner — definitive proof
+ *    Coana ran, so do NOT retry. Only available when the caller passed
+ *    `stdio: 'pipe'` (or the spawn defaulted to it).
+ * 2. Spawn-level errors (`e.code` is a string like 'ENOENT'): the binary
+ *    wasn't found / couldn't start — retry.
+ * 3. Signal kills (`e.signal` set, or numeric `e.code >= 128`): conventionally
+ *    not a clean exit; the customer-observed exit code 249 falls here. Retry.
+ * 4. Small integer exit codes with no banner in captured stderr: ambiguous,
+ *    but Coana's own exit codes are small integers, so default to NOT retrying
+ *    rather than blindly re-running Coana.
+ */
+function shouldFallbackOnDlxError(e: unknown): boolean {
+  const capturedStderr = String((e as any)?.stderr ?? '')
+  if (capturedStderr && /Coana CLI version/i.test(capturedStderr)) {
+    return false
+  }
+  const code = (e as any)?.code
+  // Spawn-level failure (e.g. ENOENT when npx is missing from PATH).
+  if (typeof code === 'string') {
+    return true
+  }
+  // Killed by signal — almost never a clean Coana exit.
+  if ((e as any)?.signal) {
+    return true
+  }
+  // Exit codes >= 128 are conventionally signal-derived, and the observed
+  // npx-launcher failures in the wild fall into this range (e.g. 249, 254).
+  if (typeof code === 'number' && code >= 128) {
+    return true
+  }
+  return false
+}
+
+/**
+ * Build a CResult error from a thrown spawn error, preserving exit code,
+ * signal, and stderr context.
+ */
+function buildDlxErrorResult(e: unknown): CResult<string> {
+  const stderr = (e as any)?.stderr
+  const exitCode = (e as any)?.code
+  const signal = (e as any)?.signal
+  const cause = getErrorCause(e)
+  const details: string[] = []
+  if (typeof exitCode === 'number') {
+    details.push(`exit code ${exitCode}`)
+  }
+  if (signal) {
+    details.push(`signal ${signal}`)
+  }
+  const detailSuffix = details.length ? ` (${details.join(', ')})` : ''
+  const message = stderr
+    ? `Coana command failed${detailSuffix}: ${stderr}`
+    : `Coana command failed${detailSuffix}: ${cause}`
+  return {
+    ok: false,
+    data: e,
+    message,
   }
 }
 
