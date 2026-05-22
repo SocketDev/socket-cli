@@ -30,13 +30,7 @@ import {
   cmdFlagsToString,
   cmdPrefixMessage,
   filterFlags,
-  getConfigFlag,
-  isAddCommand,
-  isConfigFlag,
   isHelpFlag,
-  isNpmLockfileScanCommand,
-  isPnpmLockfileScanCommand,
-  isYarnLockfileScanCommand,
 } from '../../../../src/util/process/cmd.mts'
 
 describe('cmd utilities', () => {
@@ -105,25 +99,6 @@ describe('cmd utilities', () => {
     })
   })
 
-  describe('isConfigFlag', () => {
-    it('identifies --config flag', () => {
-      expect(isConfigFlag('--config')).toBe(true)
-    })
-
-    it('does not identify -c as config flag', () => {
-      expect(isConfigFlag('-c')).toBe(false)
-    })
-
-    it('identifies --config=value format', () => {
-      expect(isConfigFlag('--config=value')).toBe(true)
-    })
-
-    it('returns false for non-config flags', () => {
-      expect(isConfigFlag('--help')).toBe(false)
-      expect(isConfigFlag('--other')).toBe(false)
-    })
-  })
-
   describe('isHelpFlag', () => {
     it('identifies --help flag', () => {
       expect(isHelpFlag('--help')).toBe(true)
@@ -136,88 +111,6 @@ describe('cmd utilities', () => {
     it('returns false for non-help flags', () => {
       expect(isHelpFlag('--config')).toBe(false)
       expect(isHelpFlag('--other')).toBe(false)
-    })
-  })
-
-  describe('isAddCommand', () => {
-    it('identifies add command', () => {
-      expect(isAddCommand('add')).toBe(true)
-    })
-
-    it('does not identify install as add command', () => {
-      expect(isAddCommand('install')).toBe(false)
-      expect(isAddCommand('i')).toBe(false)
-    })
-
-    it('returns false for non-add commands', () => {
-      expect(isAddCommand('remove')).toBe(false)
-      expect(isAddCommand('update')).toBe(false)
-    })
-  })
-
-  describe('isNpmLockfileScanCommand', () => {
-    it('identifies npm lockfile scan commands', () => {
-      expect(isNpmLockfileScanCommand('install')).toBe(true)
-      expect(isNpmLockfileScanCommand('i')).toBe(true)
-      expect(isNpmLockfileScanCommand('update')).toBe(true)
-    })
-
-    it('returns false for non-npm scan commands', () => {
-      expect(isNpmLockfileScanCommand('test')).toBe(false)
-      expect(isNpmLockfileScanCommand('run')).toBe(false)
-    })
-  })
-
-  describe('isPnpmLockfileScanCommand', () => {
-    it('identifies pnpm lockfile scan commands', () => {
-      expect(isPnpmLockfileScanCommand('install')).toBe(true)
-      expect(isPnpmLockfileScanCommand('i')).toBe(true)
-      expect(isPnpmLockfileScanCommand('update')).toBe(true)
-      expect(isPnpmLockfileScanCommand('up')).toBe(true)
-    })
-
-    it('returns false for non-pnpm scan commands', () => {
-      expect(isPnpmLockfileScanCommand('test')).toBe(false)
-      expect(isPnpmLockfileScanCommand('run')).toBe(false)
-      expect(isPnpmLockfileScanCommand('add')).toBe(false)
-    })
-  })
-
-  describe('isYarnLockfileScanCommand', () => {
-    it('identifies yarn lockfile scan commands', () => {
-      expect(isYarnLockfileScanCommand('install')).toBe(true)
-      expect(isYarnLockfileScanCommand('up')).toBe(true)
-      expect(isYarnLockfileScanCommand('upgrade')).toBe(true)
-      expect(isYarnLockfileScanCommand('upgrade-interactive')).toBe(true)
-    })
-
-    it('returns false for non-yarn scan commands', () => {
-      expect(isYarnLockfileScanCommand('test')).toBe(false)
-      expect(isYarnLockfileScanCommand('run')).toBe(false)
-      expect(isYarnLockfileScanCommand('add')).toBe(false)
-    })
-  })
-
-  describe('getConfigFlag', () => {
-    it('extracts config value from --config=value', () => {
-      const result = getConfigFlag(['--config={"key":"value"}'])
-      expect(result).toBe('{"key":"value"}')
-    })
-
-    it('extracts config value from separate arguments', () => {
-      const result = getConfigFlag(['--config', '{"key":"value"}'])
-      expect(result).toBe('{"key":"value"}')
-    })
-
-    it('returns undefined when no config flag', () => {
-      const result = getConfigFlag(['--other', 'arg'])
-      expect(result).toBeUndefined()
-    })
-
-    it('skips empty/whitespace-only arguments', () => {
-      // Exercises the `continue` branch for falsy trimmed args.
-      const result = getConfigFlag(['', '   ', '--config', 'value'])
-      expect(result).toBe('value')
     })
   })
 

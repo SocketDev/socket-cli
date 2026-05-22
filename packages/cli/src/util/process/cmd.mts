@@ -15,14 +15,9 @@
  * Remove debug-related flags - stripHelpFlags: Remove help flags (-h, --help)
  */
 
-import { FLAG_CONFIG, FLAG_HELP } from '../../constants/cli.mjs'
+import { FLAG_HELP } from '../../constants/cli.mjs'
 import { camelToKebab } from '../data/strings.mts'
 
-const CONFIG_FLAG_LONG_NAME = FLAG_CONFIG
-const CONFIG_FLAG_ASSIGNMENT = `${CONFIG_FLAG_LONG_NAME}=`
-const CONFIG_FLAG_ASSIGNMENT_LENGTH = CONFIG_FLAG_ASSIGNMENT.length
-
-const configFlags = new Set([FLAG_CONFIG])
 const helpFlags = new Set([FLAG_HELP, '-h'])
 
 /**
@@ -144,79 +139,8 @@ export function filterFlags(
 }
 
 /**
- * Extract config flag value from command arguments.
- */
-export function getConfigFlag(
-  argv: string[] | readonly string[],
-): string | undefined {
-  for (let i = 0, { length } = argv; i < length; i += 1) {
-    const arg = argv[i]?.trim()
-    if (!arg) {
-      continue
-    }
-    // Handle --config=value format.
-    if (arg.startsWith(CONFIG_FLAG_ASSIGNMENT)) {
-      return arg.slice(CONFIG_FLAG_ASSIGNMENT_LENGTH)
-    }
-    // Handle --config value format.
-    if (arg === CONFIG_FLAG_LONG_NAME && i + 1 < length) {
-      return argv[i + 1]
-    }
-  }
-  return undefined
-}
-
-/**
- * Check if command is an add command (adds new dependencies). Supported by:
- * pnpm, yarn. Note: npm uses 'install' with package names instead of 'add'.
- */
-export function isAddCommand(command: string): boolean {
-  return command === 'add'
-}
-
-/**
- * Check if argument is a config flag.
- */
-export function isConfigFlag(cmdArg: string): boolean {
-  return configFlags.has(cmdArg) || cmdArg.startsWith(CONFIG_FLAG_ASSIGNMENT)
-}
-
-/**
  * Check if argument is a help flag.
  */
 export function isHelpFlag(cmdArg: string): boolean {
   return helpFlags.has(cmdArg)
-}
-
-/**
- * Check if npm command requires lockfile scanning. npm uses: install, i, update.
- */
-export function isNpmLockfileScanCommand(command: string): boolean {
-  return command === 'i' || command === 'install' || command === 'update'
-}
-
-/**
- * Check if pnpm command requires lockfile scanning. pnpm uses: install, i,
- * update, up.
- */
-export function isPnpmLockfileScanCommand(command: string): boolean {
-  return (
-    command === 'i' ||
-    command === 'install' ||
-    command === 'up' ||
-    command === 'update'
-  )
-}
-
-/**
- * Check if yarn command requires lockfile scanning. yarn uses: install, up,
- * upgrade, upgrade-interactive.
- */
-export function isYarnLockfileScanCommand(command: string): boolean {
-  return (
-    command === 'install' ||
-    command === 'up' ||
-    command === 'upgrade' ||
-    command === 'upgrade-interactive'
-  )
 }
