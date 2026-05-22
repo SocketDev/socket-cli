@@ -13,14 +13,6 @@ import os from 'node:os'
 import path from 'node:path'
 
 /**
- * Get the bootstrap binary installation directory. This is where SEA/yao-pkg
- * executables are cached.
- */
-export function getBootstrapBinaryDir(): string {
-  return path.join(getSocketHome(), '_cli')
-}
-
-/**
  * Get the CLI entry point path.
  */
 export function getCliEntryPoint(): string {
@@ -48,18 +40,6 @@ export function getCliPackageName(): string {
  */
 export function getDlxDir(): string {
   return path.join(getSocketHome(), '_dlx')
-}
-
-/**
- * Get npm registry URL with environment variable support. Direct process.env
- * access required - bootstrap runs before ENV module loads.
- */
-export function getRegistryUrl(): string {
-  return (
-    process.env['SOCKET_NPM_REGISTRY'] ||
-    process.env['NPM_REGISTRY'] ||
-    'https://registry.npmjs.org'
-  )
 }
 
 /**

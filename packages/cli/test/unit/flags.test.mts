@@ -67,7 +67,6 @@ import {
   getMaxSemiSpaceSizeFlag,
   outputFlags,
   resetFlagCache,
-  validationFlags,
 } from '../../src/flags.mts'
 
 import type * as OsModule from 'node:os'
@@ -302,32 +301,4 @@ describe('flags', () => {
     })
   })
 
-  describe('validationFlags', () => {
-    it('exports validation-related flags', () => {
-      expect(validationFlags).toBeDefined()
-      expect(typeof validationFlags).toBe('object')
-
-      // Check for expected validation flags.
-      expect(validationFlags).toHaveProperty('all')
-      expect(validationFlags).toHaveProperty('strict')
-
-      // Check flag types.
-      expect(validationFlags.all?.type).toBe('boolean')
-      expect(validationFlags.strict?.type).toBe('boolean')
-    })
-
-    it('has descriptions for all flags', () => {
-      for (const [, flag] of Object.entries(validationFlags)) {
-        expect(flag).toHaveProperty('description')
-        expect(typeof flag.description).toBe('string')
-        expect(flag.description.length).toBeGreaterThan(0)
-      }
-    })
-
-    it('validation flags do not have short flags', () => {
-      // Validation flags don't have short flags by design.
-      expect(validationFlags.all?.shortFlag).toBeUndefined()
-      expect(validationFlags.strict?.shortFlag).toBeUndefined()
-    })
-  })
 })

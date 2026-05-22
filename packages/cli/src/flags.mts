@@ -181,7 +181,9 @@ export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
 }
 
 /**
- * Reset cached flag values for testing purposes.
+ * Reset cached flag values. Test-only — the V8 space-size flag getters
+ * memoize their first read of process.execArgv + process.env; tests need
+ * a way to clear the cache between assertions over different env values.
  *
  * @internal
  */
@@ -190,6 +192,7 @@ export function resetFlagCache(): void {
   maxOldSpaceSizeFlag = undefined
   maxSemiSpaceSizeFlag = undefined
 }
+
 // Ensure export because dist/flags.js is required in src/constants.mts.
 if (typeof exports === 'object' && exports !== null) {
   exports.getMaxSemiSpaceSizeFlag = getMaxSemiSpaceSizeFlag
@@ -302,15 +305,3 @@ export const outputFlags = defineFlags({
   },
 })
 
-export const validationFlags = defineFlags({
-  all: {
-    type: 'boolean',
-    default: false,
-    description: 'Include all issues',
-  },
-  strict: {
-    type: 'boolean',
-    default: false,
-    description: 'Exits with an error code if any matching issues are found',
-  },
-})

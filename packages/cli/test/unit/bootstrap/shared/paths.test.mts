@@ -13,12 +13,10 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {
-  getBootstrapBinaryDir,
   getCliEntryPoint,
   getCliPackageDir,
   getCliPackageName,
   getDlxDir,
-  getRegistryUrl,
   getSocketHome,
 } from '../../../../src/bootstrap/shared/paths.mts'
 
@@ -70,13 +68,6 @@ describe('bootstrap/shared/paths', () => {
     })
   })
 
-  describe('getBootstrapBinaryDir', () => {
-    it('appends _cli to the socket home', () => {
-      process.env['SOCKET_HOME'] = '/x'
-      expect(getBootstrapBinaryDir()).toBe(path.join('/x', '_cli'))
-    })
-  })
-
   describe('getDlxDir', () => {
     it('appends _dlx to the socket home', () => {
       process.env['SOCKET_HOME'] = '/x'
@@ -97,28 +88,6 @@ describe('bootstrap/shared/paths', () => {
       expect(getCliEntryPoint()).toBe(
         path.join('/x', '_dlx', 'cli', 'dist', 'cli.js'),
       )
-    })
-  })
-
-  describe('getRegistryUrl', () => {
-    it('uses SOCKET_NPM_REGISTRY when set', () => {
-      process.env['SOCKET_NPM_REGISTRY'] = 'https://socket-registry.example/'
-      expect(getRegistryUrl()).toBe('https://socket-registry.example/')
-    })
-
-    it('uses NPM_REGISTRY when SOCKET_NPM_REGISTRY is missing', () => {
-      process.env['NPM_REGISTRY'] = 'https://npm-registry.example/'
-      expect(getRegistryUrl()).toBe('https://npm-registry.example/')
-    })
-
-    it('falls back to the public npm registry', () => {
-      expect(getRegistryUrl()).toBe('https://registry.npmjs.org')
-    })
-
-    it('prefers SOCKET_NPM_REGISTRY over NPM_REGISTRY', () => {
-      process.env['SOCKET_NPM_REGISTRY'] = 'https://socket-r.example/'
-      process.env['NPM_REGISTRY'] = 'https://npm-r.example/'
-      expect(getRegistryUrl()).toBe('https://socket-r.example/')
     })
   })
 
