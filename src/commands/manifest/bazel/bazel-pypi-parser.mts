@@ -1,7 +1,11 @@
 /**
- * Parse `requirements_lock.txt`, `bazel query` output, and spoke-repo
- * `--output=build` tags into a uniform shape for PyPI requirements.txt
- * generation.
+ * Parse Bazel PyPI extraction inputs into the pinned `name==version` lines
+ * needed for generated `requirements.txt` output.
+ *
+ * This is deliberately not a general-purpose requirements.txt parser. It only
+ * accepts pinned lockfile-style entries needed to map reached Bazel labels to
+ * exact package versions; depscan remains the owner of full PEP 508
+ * requirements ingestion during scan processing.
  *
  * Security gate: every regex uses bounded character classes to prevent
  * catastrophic backtracking on hostile input.
@@ -113,7 +117,7 @@ export function resolveRequirementsLockPath(
   return resolved
 }
 
-// Parses a single `name==version` line.
+// Parses a single pinned `name==version` lockfile line.
 // Group 1 = package name, Group 2 = version string (includes ==).
 const REQUIREMENT_LINE_RE = /^([A-Za-z0-9][A-Za-z0-9._-]*)==([A-Za-z0-9._+!]+)/
 
@@ -149,8 +153,9 @@ function shouldSkipLine(line: string): boolean {
   return false
 }
 
-// Parse a `requirements_lock.txt`-style file into a map keyed by
-// normalized PyPI name.
+// Parse a `requirements_lock.txt`-style file into a map keyed by normalized
+// PyPI name. This intentionally ignores unpinned PEP 508 requirement forms
+// because the Bazel extractor must emit exact package versions.
 export function parseRequirementsLock(
   text: string,
 ): Map<string, ExtractedPypiPackage> {
