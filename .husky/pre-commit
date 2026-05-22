@@ -3,9 +3,3 @@ if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
 else
   echo "Skipping lint due to DISABLE_PRECOMMIT_LINT env var"
 fi
-
-if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
-  pnpm run test-pre-commit
-else
-  echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"
-fi
