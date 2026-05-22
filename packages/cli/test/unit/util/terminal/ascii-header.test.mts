@@ -6,10 +6,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  formatInfoLine,
   renderLogoWithFallback,
   renderShimmerFrame,
-  renderStaticLogo,
   supportsFullColor,
 } from '../../../../src/util/terminal/ascii-header.mts'
 import type { HeaderTheme } from '../../../../src/util/terminal/ascii-header.mts'
@@ -90,50 +88,6 @@ describe('ascii-header', () => {
           process.env['TERM_PROGRAM'] = originalTermProgram
         }
       }
-    })
-  })
-
-  describe('renderStaticLogo', () => {
-    it('should render logo with default theme', () => {
-      const logo = renderStaticLogo()
-      expect(logo).toContain('|   __|___') // ASCII art content
-      expect(logo).toContain('.dev')
-      expect(logo).toContain('\x1b[38;2;') // Contains RGB color codes
-    })
-
-    it('should render logo with cyberpunk theme', () => {
-      const logo = renderStaticLogo('cyberpunk')
-      expect(logo).toContain('|   __|___') // ASCII art content
-      expect(logo).toContain('.dev')
-    })
-
-    it('should render logo with forest theme', () => {
-      const logo = renderStaticLogo('forest')
-      expect(logo).toContain('|   __|___') // ASCII art content
-      expect(logo).toContain('.dev')
-    })
-
-    it('should render logo with ocean theme', () => {
-      const logo = renderStaticLogo('ocean')
-      expect(logo).toContain('|   __|___') // ASCII art content
-      expect(logo).toContain('.dev')
-    })
-
-    it('should render logo with sunset theme', () => {
-      const logo = renderStaticLogo('sunset')
-      expect(logo).toContain('|   __|___') // ASCII art content
-      expect(logo).toContain('.dev')
-    })
-
-    it('should produce 4 lines of output', () => {
-      const logo = renderStaticLogo()
-      const lines = logo.split('\n')
-      expect(lines).toHaveLength(4)
-    })
-
-    it('should not contain ANSI bold codes (bold is for shimmer only)', () => {
-      const logo = renderStaticLogo()
-      expect(logo).not.toContain('\x1b[1m')
     })
   })
 
@@ -259,38 +213,6 @@ describe('ascii-header', () => {
         const logo = renderLogoWithFallback(undefined, theme)
         expect(logo).toContain('|   __|___') // ASCII art content
       }
-    })
-  })
-
-  describe('formatInfoLine', () => {
-    it('should format info line with default theme', () => {
-      const formatted = formatInfoLine('Test info', 'default')
-      expect(formatted).toContain('Test info')
-      expect(formatted).toContain('\x1b[38;2;') // RGB color code
-    })
-
-    it('should format info line with different themes', () => {
-      const themes: HeaderTheme[] = [
-        'default',
-        'cyberpunk',
-        'forest',
-        'ocean',
-        'sunset',
-      ]
-      for (let i = 0, { length } = themes; i < length; i += 1) {
-        const theme = themes[i]
-        const formatted = formatInfoLine('Version 1.0.0', theme)
-        expect(formatted).toContain('Version 1.0.0')
-        expect(formatted).toContain('\x1b[38;2;')
-      }
-    })
-
-    it('should preserve text content', () => {
-      const text = 'CLI v1.2.3 - https://socket.dev'
-      const formatted = formatInfoLine(text, 'ocean')
-      // Strip ANSI codes to verify text preservation
-      const stripped = formatted.replace(/\x1b\[[0-9;]*m/g, '')
-      expect(stripped).toBe(text)
     })
   })
 

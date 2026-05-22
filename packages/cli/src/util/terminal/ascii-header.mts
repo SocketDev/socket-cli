@@ -64,18 +64,6 @@ const THEME_COLORS_RGB = {
 } as const
 
 /**
- * Theme color definitions in hex format (for fallback rendering).
- */
-const THEME_COLORS_HEX = {
-  __proto__: null,
-  default: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE'],
-  cyberpunk: ['#FF00FF', '#00FFFF', '#FF00AA', '#00AAFF'],
-  forest: ['#10B981', '#34D399', '#6EE7B7', '#A7F3D0'],
-  ocean: ['#0EA5E9', '#38BDF8', '#7DD3FC', '#BAE6FD'],
-  sunset: ['#F59E0B', '#FBBF24', '#FCD34D', '#FDE68A'],
-} as const
-
-/**
  * Socket CLI ASCII art template.
  */
 const ASCII_LOGO = [
@@ -104,18 +92,6 @@ export function applyHexColor(text: string, hexColor: string): string {
  */
 export function brighterRgb(a: RGB, b: RGB): RGB {
   return a[0] + a[1] + a[2] >= b[0] + b[1] + b[2] ? a : b
-}
-
-/**
- * Format header info line with theme colors.
- */
-export function formatInfoLine(
-  text: string,
-  theme: HeaderTheme = 'default',
-): string {
-  const themeColors = THEME_COLORS_HEX[theme]
-  const accentColor = themeColors[1]!
-  return applyHexColor(text, accentColor)
 }
 
 /**
@@ -202,15 +178,6 @@ export function renderShimmerFrame(
   }
 
   return lines.join('\n')
-}
-
-/**
- * Render static ASCII logo with single color from theme.
- */
-export function renderStaticLogo(theme: HeaderTheme = 'default'): string {
-  const themeColors = THEME_COLORS_HEX[theme]
-  const primaryColor = themeColors[0]!
-  return ASCII_LOGO.map(line => applyHexColor(line, primaryColor)).join('\n')
 }
 
 /**

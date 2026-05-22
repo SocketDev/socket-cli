@@ -555,16 +555,3 @@ export function hasRecoverySuggestions(
   )
 }
 
-/**
- * Type guard to check if an error is a network error.
- */
-export function isNetworkError(error: unknown): error is NetworkError {
-  return error instanceof NetworkError
-}
-
-/**
- * Type guard to check if an error is a timeout error.
- */
-export function isTimeoutError(error: unknown): error is TimeoutError {
-  return error instanceof TimeoutError
-}

@@ -18,10 +18,6 @@
 
 import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib-stable/constants/socket'
 
-import { isSeaBinary } from './detect.mts'
-
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
-
 /**
  * Find system Node.js binary in PATH (excluding the current SEA binary).
  * Returns undefined if not found or if we are not a SEA binary.
@@ -31,67 +27,11 @@ export function findSystemNodejs(): string | undefined {
 }
 
 /**
- * Get the execution path to use for spawning subprocesses.
- *
- * For SEA binaries: - Returns system Node.js path if available (preferred) -
- * Returns SEA binary path if no system Node.js (will use IPC handshake)
- *
- * For regular Node.js: - Returns process.execPath.
- *
- * @param preferSystemNode - If true, try to find system Node.js first.
- */
-export function getBootstrapExecPath(preferSystemNode = true): string {
-  // If not a SEA binary, just return execPath.
-  if (!isSeaBinary()) {
-    return process.execPath
-  }
-
-  // For SEA binaries, try to use system Node.js if available.
-  /* c8 ignore start - findSystemNodejs path depends on SEA mode + system-node availability */
-  if (preferSystemNode) {
-    const systemNode = findSystemNodejs()
-    if (systemNode) {
-      return systemNode
-    }
-  }
-  /* c8 ignore stop */
-
-  // Fall back to SEA binary itself (will use IPC handshake for subprocesses).
-  return process.execPath
-}
-
-/**
  * Check if the current process is running as a subprocess with IPC. Returns
  * true if we have an IPC channel (process.channel exists).
  */
 export function isSubprocess(): boolean {
   return !!process.channel
-}
-
-/**
- * Prepare spawn options for subprocess execution with IPC handshake.
- *
- * When spawning a SEA binary as a subprocess, we need to:
- *
- * 1. Ensure IPC channel is set up (stdio includes 'ipc')
- * 2. Send SOCKET_IPC_HANDSHAKE message after spawn
- *
- * @param options - Base spawn options.
- * @param ipcData - IPC handshake data to send (if spawning SEA binary)
- */
-export function prepareBootstrapSpawnOptions(
-  options: SpawnOptions | undefined,
-  ipcData?: Record<string, unknown>,
-): SpawnOptions {
-  const opts = { ...options }
-
-  // If we're spawning a SEA binary as a subprocess, ensure IPC channel.
-  if (isSeaBinary() && ipcData) {
-    // Ensure stdio includes 'ipc' for IPC channel.
-    // Callers should configure stdio appropriately for IPC communication.
-  }
-
-  return opts
 }
 
 /**
@@ -110,27 +50,6 @@ export function sendBootstrapHandshake(
   childProcess.send({
     [SOCKET_IPC_HANDSHAKE]: ipcData,
   })
-}
-
-/**
- * Check if we should bypass bootstrap logic. Returns true if: - Not a SEA
- * binary (regular Node.js doesn't need bootstrap) - Running as a subprocess
- * with IPC channel (already bootstrapped)
- */
-export function shouldBypassBootstrap(): boolean {
-  // If not a SEA binary, no bootstrap needed.
-  if (!isSeaBinary()) {
-    return true
-  }
-
-  // If we're a subprocess (have IPC channel), bypass bootstrap.
-  // The parent already handled delegation.
-  if (isSubprocess()) {
-    return true
-  }
-
-  // We're a SEA binary in initial entry mode - need bootstrap.
-  return false
 }
 
 /**

@@ -23,11 +23,8 @@ import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib-stable/constants/socke
 
 import { isSeaBinary } from '../../../../src/util/sea/detect.mts'
 import {
-  getBootstrapExecPath,
   isSubprocess,
-  prepareBootstrapSpawnOptions,
   sendBootstrapHandshake,
-  shouldBypassBootstrap,
 } from '../../../../src/util/sea/boot.mts'
 
 describe('sea/boot', () => {
@@ -47,107 +44,6 @@ describe('sea/boot', () => {
       const { findSystemNodejs } =
         await import('../../../../src/util/sea/boot.mts')
       expect(findSystemNodejs()).toBeUndefined()
-    })
-  })
-
-  describe('shouldBypassBootstrap', () => {
-    it('returns true when not a SEA binary', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(false)
-
-      expect(shouldBypassBootstrap()).toBe(true)
-    })
-
-    it('returns false when SEA binary without IPC channel', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(true)
-
-      // No IPC channel, should not bypass.
-      expect(shouldBypassBootstrap()).toBe(false)
-    })
-
-    it('returns true when SEA binary is also a subprocess (IPC channel set)', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(true)
-      const originalChannel = process.channel
-      Object.defineProperty(process, 'channel', {
-        value: {} as unknown,
-        writable: true,
-        configurable: true,
-      })
-
-      try {
-        expect(shouldBypassBootstrap()).toBe(true)
-      } finally {
-        Object.defineProperty(process, 'channel', {
-          value: originalChannel,
-          writable: true,
-          configurable: true,
-        })
-      }
-    })
-  })
-
-  describe('getBootstrapExecPath', () => {
-    it('returns process.execPath when not a SEA binary', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(false)
-
-      const path = getBootstrapExecPath()
-
-      expect(path).toBe(process.execPath)
-    })
-
-    it('returns process.execPath for SEA binary when system Node not found', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(true)
-
-      // findSystemNodejs returns undefined, so falls back to execPath.
-      const path = getBootstrapExecPath(true)
-
-      expect(path).toBe(process.execPath)
-    })
-
-    it('returns process.execPath for SEA binary when preferSystemNode is false', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(true)
-
-      const path = getBootstrapExecPath(false)
-
-      expect(path).toBe(process.execPath)
-    })
-  })
-
-  describe('prepareBootstrapSpawnOptions', () => {
-    it('returns copy of options when not SEA binary', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(false)
-
-      const inputOptions = { cwd: '/test', shell: false }
-      const result = prepareBootstrapSpawnOptions(inputOptions)
-
-      expect(result).toEqual(inputOptions)
-      expect(result).not.toBe(inputOptions)
-    })
-
-    it('returns copy of options for SEA binary', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(true)
-
-      const inputOptions = { cwd: '/test', shell: false }
-      const result = prepareBootstrapSpawnOptions(inputOptions)
-
-      expect(result).toEqual(inputOptions)
-    })
-
-    it('handles undefined options', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(false)
-
-      const result = prepareBootstrapSpawnOptions(undefined)
-
-      expect(result).toEqual({})
-    })
-
-    it('handles IPC data parameter', () => {
-      vi.mocked(isSeaBinary).mockReturnValue(true)
-
-      const inputOptions = { cwd: '/test' }
-      const ipcData = { subprocess: true, parent_pid: 12345 }
-      const result = prepareBootstrapSpawnOptions(inputOptions, ipcData)
-
-      expect(result.cwd).toBe('/test')
     })
   })
 

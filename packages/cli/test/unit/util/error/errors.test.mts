@@ -39,8 +39,6 @@ import {
   getRecoverySuggestions,
   hasRecoverySuggestions,
   isErrnoException,
-  isNetworkError,
-  isTimeoutError,
 } from '../../../../src/util/error/errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -450,48 +448,6 @@ describe('Recovery Utilities', () => {
       expect(getRecoverySuggestions('string')).toEqual([])
       expect(getRecoverySuggestions(undefined)).toEqual([])
       expect(getRecoverySuggestions(undefined)).toEqual([])
-    })
-  })
-})
-
-describe('Type Guards', () => {
-  describe('isNetworkError', () => {
-    it('should return true for NetworkError instances', () => {
-      const error = new NetworkError('Connection failed')
-      expect(isNetworkError(error)).toBe(true)
-    })
-
-    it('should return false for other error types', () => {
-      expect(isNetworkError(new Error('Generic error'))).toBe(false)
-      expect(isNetworkError(new AuthError('Auth failed'))).toBe(false)
-      expect(isNetworkError(new TimeoutError('Timeout'))).toBe(false)
-    })
-
-    it('should return false for non-errors', () => {
-      expect(isNetworkError('string')).toBe(false)
-      expect(isNetworkError(undefined)).toBe(false)
-      expect(isNetworkError(undefined)).toBe(false)
-      expect(isNetworkError(123)).toBe(false)
-    })
-  })
-
-  describe('isTimeoutError', () => {
-    it('should return true for TimeoutError instances', () => {
-      const error = new TimeoutError('Request timed out')
-      expect(isTimeoutError(error)).toBe(true)
-    })
-
-    it('should return false for other error types', () => {
-      expect(isTimeoutError(new Error('Generic error'))).toBe(false)
-      expect(isTimeoutError(new NetworkError('Network failed'))).toBe(false)
-      expect(isTimeoutError(new AuthError('Auth failed'))).toBe(false)
-    })
-
-    it('should return false for non-errors', () => {
-      expect(isTimeoutError('string')).toBe(false)
-      expect(isTimeoutError(undefined)).toBe(false)
-      expect(isTimeoutError(undefined)).toBe(false)
-      expect(isTimeoutError({})).toBe(false)
     })
   })
 })
