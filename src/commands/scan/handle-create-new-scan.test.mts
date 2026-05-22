@@ -7,6 +7,7 @@ import type { HandleCreateNewScanConfig } from './handle-create-new-scan.mts'
 const {
   mockFetchCreateOrgFullScan,
   mockFetchSupportedScanFileNames,
+  mockFinalizeTier1Scan,
   mockFindSocketYmlSync,
   mockGenerateAutoManifest,
   mockGetPackageFilesForScan,
@@ -15,6 +16,7 @@ const {
 } = vi.hoisted(() => ({
   mockFetchCreateOrgFullScan: vi.fn(),
   mockFetchSupportedScanFileNames: vi.fn(),
+  mockFinalizeTier1Scan: vi.fn(),
   mockFindSocketYmlSync: vi.fn(),
   mockGenerateAutoManifest: vi.fn(),
   mockGetPackageFilesForScan: vi.fn(),
@@ -31,7 +33,7 @@ vi.mock('./fetch-supported-scan-file-names.mts', () => ({
 }))
 
 vi.mock('./finalize-tier1-scan.mts', () => ({
-  finalizeTier1Scan: vi.fn(),
+  finalizeTier1Scan: mockFinalizeTier1Scan,
 }))
 
 vi.mock('./handle-scan-report.mts', () => ({
@@ -126,6 +128,7 @@ describe('handleCreateNewScan excludePaths', () => {
       data: { size: 1 },
       ok: true,
     })
+    mockFinalizeTier1Scan.mockResolvedValue({ data: undefined, ok: true })
     mockFindSocketYmlSync.mockReturnValue({
       data: { parsed: { projectIgnorePaths: ['fixtures/**'] } },
       ok: true,

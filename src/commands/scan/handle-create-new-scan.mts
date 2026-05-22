@@ -318,7 +318,27 @@ export async function handleCreateNewScan({
   const scanId = fullScanCResult.ok ? fullScanCResult.data?.id : undefined
 
   if (reach && scanId && tier1ReachabilityScanId) {
-    await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
+    // The finalize call is what transitions the tier1 reachability scan row
+    // out of INIT on depscan's side. Swallowing the failure here is what
+    // caused REA-454 (tens of thousands of rows stuck in INIT). Capture the
+    // result, retry once on any failure, and log clearly if it still fails.
+    // We deliberately do NOT change the user-facing exit code: the full scan
+    // upload above already succeeded, and finalize is metadata-only.
+    let finalizeResult = await finalizeTier1Scan(
+      tier1ReachabilityScanId,
+      scanId,
+    )
+    if (!finalizeResult.ok) {
+      debugFn('warn', 'tier1 finalize failed, retrying once')
+      debugDir('inspect', { finalizeResult })
+      finalizeResult = await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
+    }
+    if (!finalizeResult.ok) {
+      logger.error(
+        `Failed to finalize tier1 reachability scan (scan_id=${scanId}, tier1_reachability_scan_id=${tier1ReachabilityScanId}): ${finalizeResult.message}${finalizeResult.cause ? ` — ${finalizeResult.cause}` : ''}`,
+      )
+      debugDir('inspect', { finalizeResult })
+    }
   }
 
   if (report && fullScanCResult.ok) {
