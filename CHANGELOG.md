@@ -5,16 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+- **`socket manifest bazel [beta]`** — Generate Bazel JVM SBOM manifests by running `bazel query` against discovered Maven repos in a Bazel workspace. Closes the inline-Maven-declaration gap that lockfile-only parsing misses for repos like envoy, ray, tensorflow, tink-java, and or-tools. Auto-detects Bzlmod and legacy `WORKSPACE`.
+- **`socket scan create --auto-manifest`** now covers Bazel workspaces in addition to Gradle/Scala/Kotlin/Conda. Repos with `MODULE.bazel`, `WORKSPACE`, or `WORKSPACE.bazel` are detected automatically and their Maven dependencies extracted as part of the standard scan-create flow.
 
 ## [1.1.98](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.98) - 2026-05-22
 
 ### Added
-- **`socket manifest bazel [beta]`** — Generate Bazel JVM SBOM manifests by running `bazel query` against discovered Maven repos in a Bazel workspace. Closes the inline-Maven-declaration gap that lockfile-only parsing misses for repos like envoy, ray, tensorflow, tink-java, and or-tools. Auto-detects Bzlmod and legacy `WORKSPACE`.
-- **`socket scan create --auto-manifest`** now covers Bazel workspaces in addition to Gradle/Scala/Kotlin/Conda. Repos with `MODULE.bazel`, `WORKSPACE`, or `WORKSPACE.bazel` are detected automatically and their Maven dependencies extracted as part of the standard scan-create flow.
 - **`socket manifest gradle --facts [beta]`** (and its `socket manifest kotlin --facts` alias) — Emit a `.socket.facts.json` dependency graph from a Gradle build, consumable by `socket scan create --reach` as pregenerated SBOM input for Tier 1 reachability. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
 
 ### Changed
 - Updated the Coana CLI to v `15.3.8`.
+
+## [1.1.101](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.101) - 2026-05-22
+
+### Changed
+- Updated the Coana CLI to v `15.3.6`.
+
+## [1.1.100](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.100) - 2026-05-21
+
+### Changed
+- Updated the Coana CLI to v `15.3.4`.
+
+## [1.1.99](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.99) - 2026-05-20
+
+### Changed
+- Updated the Coana CLI to v `15.3.1`.
+- Forward a `SOCKET_CALLER_USER_AGENT` env var (`socket/<version> node/<nodeVersion> <platform>/<arch>`) to the Coana CLI on spawn. Coana appends this to its outbound axios `User-Agent` so backend traffic identifies the originating Socket CLI alongside the Coana version.
+
+## [1.1.98](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.98) - 2026-05-20
+
+### Changed
+- `socket scan create --reach` now uploads the reachability facts file as brotli on the wire, shrinking mono-repo upload sizes by roughly 85% with no change to the on-disk or stored format. Faster scan submissions on slow connections.
 
 ## [1.1.97](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.97) - 2026-05-18
 
