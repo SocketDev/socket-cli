@@ -273,24 +273,6 @@ describe('ascii-header', () => {
     })
   })
 
-  describe('applyHexColor', () => {
-    it('wraps text with 24-bit ANSI escape codes derived from hex', async () => {
-      const { applyHexColor } =
-        await import('../../../../src/util/terminal/ascii-header.mts')
-      const result = applyHexColor('hello', '#ff8000')
-      expect(result).toBe('\x1b[38;2;255;128;0mhello\x1b[0m')
-    })
-
-    it('handles black + white extremes', async () => {
-      const { applyHexColor } =
-        await import('../../../../src/util/terminal/ascii-header.mts')
-      expect(applyHexColor('x', '#000000')).toBe('\x1b[38;2;0;0;0mx\x1b[0m')
-      expect(applyHexColor('x', '#ffffff')).toBe(
-        '\x1b[38;2;255;255;255mx\x1b[0m',
-      )
-    })
-  })
-
   describe('brighterRgb', () => {
     it('returns the brighter of two RGB tuples by channel sum', async () => {
       const { brighterRgb } =

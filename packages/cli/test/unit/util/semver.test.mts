@@ -16,11 +16,7 @@
 import semver from 'semver'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  RangeStyles,
-  getMajor,
-  getMinVersion,
-} from '../../../src/util/semver.mts'
+import { RangeStyles, getMajor } from '../../../src/util/semver.mts'
 
 // Mock semver.
 vi.mock('semver', () => ({
@@ -79,39 +75,4 @@ describe('semver utilities', () => {
     })
   })
 
-  describe('getMinVersion', () => {
-    it('returns min version for valid range', () => {
-      const mockSemVer = { version: '1.0.0' } as unknown
-      vi.mocked(semver.minVersion).mockReturnValue(mockSemVer)
-
-      const result = getMinVersion('^1.0.0')
-      expect(result).toBe(mockSemVer)
-      expect(semver.minVersion).toHaveBeenCalledWith('^1.0.0')
-    })
-
-    it('returns undefined when minVersion returns null', () => {
-      vi.mocked(semver.minVersion).mockReturnValue(undefined)
-
-      const result = getMinVersion('invalid-range')
-      expect(result).toBeUndefined()
-    })
-
-    it('returns undefined when minVersion throws', () => {
-      vi.mocked(semver.minVersion).mockImplementation(() => {
-        throw new Error('Invalid range')
-      })
-
-      const result = getMinVersion('bad-range')
-      expect(result).toBeUndefined()
-    })
-
-    it('handles non-string input', () => {
-      vi.mocked(semver.minVersion).mockReturnValue(undefined)
-
-      expect(getMinVersion(123)).toBeUndefined()
-      expect(getMinVersion(undefined)).toBeUndefined()
-      expect(getMinVersion(undefined)).toBeUndefined()
-      expect(getMinVersion([])).toBeUndefined()
-    })
-  })
 })

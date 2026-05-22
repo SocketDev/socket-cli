@@ -19,14 +19,6 @@
 import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib-stable/constants/socket'
 
 /**
- * Find system Node.js binary in PATH (excluding the current SEA binary).
- * Returns undefined if not found or if we are not a SEA binary.
- */
-export function findSystemNodejs(): string | undefined {
-  return undefined
-}
-
-/**
  * Check if the current process is running as a subprocess with IPC. Returns
  * true if we have an IPC channel (process.channel exists).
  */

@@ -16,9 +16,3 @@ export function getMajor(version: unknown): number | undefined {
   return undefined
 }
 
-export function getMinVersion(range: unknown): SemVer | undefined {
-  try {
-    return semver.minVersion(range as string) ?? undefined
-  } catch {}
-  return undefined
-}

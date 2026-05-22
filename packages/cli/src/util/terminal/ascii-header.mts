@@ -74,16 +74,6 @@ const ASCII_LOGO = [
 ] as const
 
 /**
- * Apply hex color to text using ANSI 24-bit color codes.
- */
-export function applyHexColor(text: string, hexColor: string): string {
-  const r = Number.parseInt(hexColor.slice(1, 3), 16)
-  const g = Number.parseInt(hexColor.slice(3, 5), 16)
-  const b = Number.parseInt(hexColor.slice(5, 7), 16)
-  return `\x1b[38;2;${r};${g};${b}m${text}\x1b[0m`
-}
-
-/**
  * Pick the brighter of two RGB colors. Used to compose two shimmer waves into
  * one frame: each wave's `frameColors[i]` is computed independently, then
  * merged so the brighter highlight wins per char. Treats luminance as the

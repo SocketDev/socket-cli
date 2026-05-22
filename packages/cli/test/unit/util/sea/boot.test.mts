@@ -39,14 +39,6 @@ describe('sea/boot', () => {
     })
   })
 
-  describe('findSystemNodejs', () => {
-    it('always returns undefined (current stub implementation)', async () => {
-      const { findSystemNodejs } =
-        await import('../../../../src/util/sea/boot.mts')
-      expect(findSystemNodejs()).toBeUndefined()
-    })
-  })
-
   describe('sendBootstrapHandshake', () => {
     it('sends IPC handshake message with correct format', () => {
       const mockSend = vi.fn()
