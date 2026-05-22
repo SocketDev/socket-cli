@@ -9,7 +9,7 @@ import { isError } from '@socketsecurity/lib-stable/errors/predicates'
 import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger/symbols'
 import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 
-import { debugDirNs, debugNs, isDebugNs } from '../debug.mts'
+import { isDebugNs } from '../debug.mts'
 import {
   AuthError,
   ConfigError,
@@ -41,20 +41,6 @@ export function appendCauseChain(baseMessage: string, cause: unknown): string {
   }
   const causeText = isError(cause) ? messageWithCauses(cause) : String(cause)
   return `${baseMessage}: ${causeText}`
-}
-
-/**
- * Format error as compact single-line summary. Perfect for inline error display
- * without overwhelming output.
- */
-export function formatErrorCompact(error: unknown): string {
-  if (isError(error)) {
-    return error.message
-  }
-  if (typeof error === 'string') {
-    return error
-  }
-  return 'An unknown error occurred'
 }
 
 /**
@@ -238,101 +224,3 @@ export function formatErrorForTerminal(
   return lines.filter(Boolean).join('\n')
 }
 
-/**
- * Format external CLI error with normalized output. Handles errors from cdxgen,
- * coana, and other external tools.
- */
-export function formatExternalCliError(
-  command: string,
-  error: unknown,
-  options?: ErrorDisplayOptions | undefined,
-): string {
-  const opts = { __proto__: null, ...options } as ErrorDisplayOptions
-
-  // Extract stderr if available.
-  const stderr =
-    error && typeof error === 'object' && 'stderr' in error
-      ? String((error as { stderr: unknown }).stderr)
-      : undefined
-
-  // Extract exit code if available.
-  const exitCode =
-    error && typeof error === 'object' && 'code' in error
-      ? (error as { code: unknown }).code
-      : undefined
-
-  const lines = [
-    `${LOG_SYMBOLS['error']} ${colors.red(colors.bold(`Command failed: ${command}`))}`,
-  ]
-
-  if (exitCode) {
-    lines.push(
-      `  ${colors.dim('Exit code:')} ${colors.yellow(String(exitCode))}`,
-    )
-  }
-
-  if (stderr) {
-    const stderrLines = stderr
-      .trim()
-      .split('\n')
-      .map(line => `  ${line}`)
-    lines.push('', colors.dim('Error output:'), ...stderrLines)
-  } else if (isError(error)) {
-    lines.push(`  ${error.message}`)
-  }
-
-  if (opts.verbose ?? isDebugNs('error')) {
-    debugNs('error', `External CLI error details: ${command}`)
-    debugDirNs('error', error)
-  }
-
-  return lines.join('\n')
-}
-
-/**
- * Format info message with visual hierarchy.
- */
-export function formatInfo(
-  message: string,
-  details?: string | undefined,
-): string {
-  const lines = [`${LOG_SYMBOLS['info']} ${colors.blue(message)}`]
-
-  if (details) {
-    lines.push(`  ${colors.dim(details)}`)
-  }
-
-  return lines.join('\n')
-}
-
-/**
- * Format success message with visual hierarchy.
- */
-export function formatSuccess(
-  message: string,
-  details?: string | undefined,
-): string {
-  const lines = [`${LOG_SYMBOLS['success']} ${colors.green(message)}`]
-
-  if (details) {
-    lines.push(`  ${colors.dim(details)}`)
-  }
-
-  return lines.join('\n')
-}
-
-/**
- * Format warning message with visual hierarchy.
- */
-export function formatWarning(
-  message: string,
-  details?: string | undefined,
-): string {
-  const lines = [`${LOG_SYMBOLS['warning']} ${colors.yellow(message)}`]
-
-  if (details) {
-    lines.push(`  ${colors.dim(details)}`)
-  }
-
-  return lines.join('\n')
-}

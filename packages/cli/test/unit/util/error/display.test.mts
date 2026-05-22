@@ -29,14 +29,9 @@ import {
   RateLimitError,
 } from '../../../../src/util/error/errors.mts'
 import {
-  formatErrorCompact,
   formatErrorForDisplay,
   formatErrorForJson,
   formatErrorForTerminal,
-  formatExternalCliError,
-  formatInfo,
-  formatSuccess,
-  formatWarning,
 } from '../../../../src/util/error/display.mts'
 
 describe('error/display', () => {
@@ -251,28 +246,6 @@ describe('error/display', () => {
     })
   })
 
-  describe('formatErrorCompact', () => {
-    it('returns error message for Error instances', () => {
-      const error = new Error('Something went wrong')
-
-      const result = formatErrorCompact(error)
-
-      expect(result).toBe('Something went wrong')
-    })
-
-    it('returns string for string errors', () => {
-      const result = formatErrorCompact('Something went wrong')
-
-      expect(result).toBe('Something went wrong')
-    })
-
-    it('returns default message for unknown errors', () => {
-      const result = formatErrorCompact(42)
-
-      expect(result).toBe('An unknown error occurred')
-    })
-  })
-
   describe('formatErrorForTerminal', () => {
     it('includes title and message', () => {
       const error = new Error('Something went wrong')
@@ -345,85 +318,4 @@ describe('error/display', () => {
     })
   })
 
-  describe('formatExternalCliError', () => {
-    it('formats command name in error', () => {
-      const error = new Error('Command failed')
-
-      const result = formatExternalCliError('pnpm exec cdxgen', error)
-
-      expect(result).toContain('pnpm exec cdxgen')
-      expect(result).toContain('Command failed')
-    })
-
-    it('includes exit code when available', () => {
-      const error = { code: 1, message: 'Failed' }
-
-      const result = formatExternalCliError('npm install', error)
-
-      expect(result).toContain('Exit code')
-      expect(result).toContain('1')
-    })
-
-    it('includes stderr when available', () => {
-      const error = { stderr: 'Error: Package not found\n', code: 1 }
-
-      const result = formatExternalCliError('npm install', error)
-
-      expect(result).toContain('Error output')
-      expect(result).toContain('Package not found')
-    })
-
-    it('exercises the verbose debug branch (lines 287-288)', () => {
-      // Pass verbose: true so the debugNs/debugDirNs branch fires.
-      const error = new Error('Verbose error')
-      const result = formatExternalCliError('cmd', error, { verbose: true })
-      expect(result).toContain('cmd')
-      expect(result).toContain('Verbose error')
-    })
-  })
-
-  describe('formatWarning', () => {
-    it('formats warning message', () => {
-      const result = formatWarning('This is a warning')
-
-      expect(result).toContain('This is a warning')
-    })
-
-    it('includes details when provided', () => {
-      const result = formatWarning('Warning', 'Some details here')
-
-      expect(result).toContain('Warning')
-      expect(result).toContain('Some details here')
-    })
-  })
-
-  describe('formatSuccess', () => {
-    it('formats success message', () => {
-      const result = formatSuccess('Operation completed')
-
-      expect(result).toContain('Operation completed')
-    })
-
-    it('includes details when provided', () => {
-      const result = formatSuccess('Success', 'File saved')
-
-      expect(result).toContain('Success')
-      expect(result).toContain('File saved')
-    })
-  })
-
-  describe('formatInfo', () => {
-    it('formats info message', () => {
-      const result = formatInfo('FYI')
-
-      expect(result).toContain('FYI')
-    })
-
-    it('includes details when provided', () => {
-      const result = formatInfo('Info', 'Additional info')
-
-      expect(result).toContain('Info')
-      expect(result).toContain('Additional info')
-    })
-  })
 })
