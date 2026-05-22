@@ -73,9 +73,13 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
-        with:
-          gradle-version: '9.2.1'
+      # TEMPORARY PROBE: gradle/actions/setup-gradle commented out to
+      # isolate whether it's causing the e2e workflow startup_failure.
+      # If e2e starts cleanly with this commented, we know the action is
+      # the trigger (likely repo Actions allowlist policy).
+      # - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+      #   with:
+      #     gradle-version: '9.2.1'
 
       - name: Download sfw-free
         shell: bash
