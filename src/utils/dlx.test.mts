@@ -208,6 +208,17 @@ describe('utils/dlx', () => {
     // install cache.
     const nextVersion = () => `99.0.${testCounter++}`
 
+    // Swap the shadow-bin mock to reject with a specific error shape.
+    // Default beforeEach uses code: 249 / stderr: 'npx aborted'.
+    const setDlxRejection = (err: Record<string, unknown>) => {
+      mockDlxBin.mockReset()
+      mockDlxBin.mockImplementation(async () => {
+        const rejected = Promise.reject(Object.assign(new Error('dlx exploded'), err))
+        rejected.catch(() => {})
+        return { spawnPromise: rejected }
+      })
+    }
+
     beforeEach(async () => {
       delete process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']
       delete process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']
@@ -387,6 +398,73 @@ describe('utils/dlx', () => {
       expect(result.message).toContain('npx aborted')
       expect(result.message).toContain('npm-install fallback also failed')
       expect(result.message).toContain('registry unreachable')
+    })
+
+    it('does NOT fall back on small integer exit codes (likely real Coana failures)', async () => {
+      // Coana ran and exited with code 1 — a real analysis failure. We want
+      // the dlx error to propagate as-is without triggering an install retry.
+      setDlxRejection({ code: 1, stderr: '' })
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toContain('exit code 1')
+      // No npm install was attempted.
+      const npmInstallCalls = mockSpawn.mock.calls.filter(
+        ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
+      )
+      expect(npmInstallCalls).toHaveLength(0)
+    })
+
+    it('does NOT fall back when captured stderr shows Coana booted', async () => {
+      // Coana banner present in stderr → Coana clearly ran, so any subsequent
+      // failure is a real Coana issue, not a launcher problem.
+      setDlxRejection({
+        code: 137,
+        stderr:
+          '2026-05-22 09:31:34.817 - info: Coana CLI version 15.3.4 scan initiated on .\nfatal: out of memory',
+      })
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      expect(result.ok).toBe(false)
+      const npmInstallCalls = mockSpawn.mock.calls.filter(
+        ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
+      )
+      expect(npmInstallCalls).toHaveLength(0)
+    })
+
+    it('falls back on spawn-level errors (ENOENT-style)', async () => {
+      // npx itself missing from PATH — code is a string, not a number.
+      setDlxRejection({ code: 'ENOENT' })
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      expect(result.ok).toBe(true)
+      const npmInstallCalls = mockSpawn.mock.calls.filter(
+        ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
+      )
+      expect(npmInstallCalls).toHaveLength(1)
+    })
+
+    it('falls back when process was killed by signal', async () => {
+      setDlxRejection({ code: null, signal: 'SIGKILL' })
+
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      expect(result.ok).toBe(true)
+      const npmInstallCalls = mockSpawn.mock.calls.filter(
+        ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
+      )
+      expect(npmInstallCalls).toHaveLength(1)
     })
   })
 })

@@ -316,13 +316,17 @@ async function spawnCoanaViaNpmInstall(
       message: `npm install fallback failed: ${stderr || cause}`,
     }
   }
-  return await spawnCoanaScriptViaNode(
-    scriptPath,
-    args,
-    finalEnv,
-    options,
-    spawnExtra,
-  )
+  try {
+    return await spawnCoanaScriptViaNode(
+      scriptPath,
+      args,
+      finalEnv,
+      options,
+      spawnExtra,
+    )
+  } catch (e) {
+    return buildDlxErrorResult(e)
+  }
 }
 
 /**
@@ -451,8 +455,15 @@ export async function spawnCoanaDlx(
       return dlxError
     }
 
+    // Only retry via `npm install` when the failure looks like the launcher
+    // never got Coana running. A real Coana process that booted and exited
+    // with an error would just hit the same failure on retry.
+    if (!shouldFallbackOnDlxError(e)) {
+      return dlxError
+    }
+
     logger.warn(
-      'Coana dlx invocation failed; falling back to `npm install` + `node`.',
+      'Coana dlx invocation failed before Coana started; falling back to `npm install` + `node`.',
     )
 
     const fallbackResult = await spawnCoanaViaNpmInstall(
@@ -472,6 +483,47 @@ export async function spawnCoanaDlx(
       message: `${dlxError.message}. npm-install fallback also failed: ${fallbackResult.message}`,
     }
   }
+}
+
+/**
+ * Decide whether a thrown dlx error should trigger the npm-install fallback.
+ *
+ * The goal is to retry only when the dlx launcher (npx / pnpm dlx / yarn dlx)
+ * failed before Coana itself ran. If Coana actually booted, any subsequent
+ * non-zero exit is a real Coana failure and retrying would hit the same one.
+ *
+ * Signals we use, in priority order:
+ * 1. Captured stderr containing Coana's startup banner — definitive proof
+ *    Coana ran, so do NOT retry. Only available when the caller passed
+ *    `stdio: 'pipe'` (or the spawn defaulted to it).
+ * 2. Spawn-level errors (`e.code` is a string like 'ENOENT'): the binary
+ *    wasn't found / couldn't start — retry.
+ * 3. Signal kills (`e.signal` set, or numeric `e.code >= 128`): conventionally
+ *    not a clean exit; the customer-observed exit code 249 falls here. Retry.
+ * 4. Small integer exit codes with no banner in captured stderr: ambiguous,
+ *    but Coana's own exit codes are small integers, so default to NOT retrying
+ *    rather than blindly re-running Coana.
+ */
+function shouldFallbackOnDlxError(e: unknown): boolean {
+  const capturedStderr = String((e as any)?.stderr ?? '')
+  if (capturedStderr && /Coana CLI version/i.test(capturedStderr)) {
+    return false
+  }
+  const code = (e as any)?.code
+  // Spawn-level failure (e.g. ENOENT when npx is missing from PATH).
+  if (typeof code === 'string') {
+    return true
+  }
+  // Killed by signal — almost never a clean Coana exit.
+  if ((e as any)?.signal) {
+    return true
+  }
+  // Exit codes >= 128 are conventionally signal-derived, and the observed
+  // npx-launcher failures in the wild fall into this range (e.g. 249, 254).
+  if (typeof code === 'number' && code >= 128) {
+    return true
+  }
+  return false
 }
 
 /**
