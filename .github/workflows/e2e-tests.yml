@@ -65,17 +65,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # PROBE 2: also commenting out actions/setup-java. If e2e still fails
-      # at startup, the issue isn't our java/gradle additions — it's
-      # something else on this branch.
-      # - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
-      #   with:
-      #     distribution: temurin
-      #     java-version: '21'
-      # - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
-      #   with:
-      #     gradle-version: '9.2.1'
-
       - name: Download sfw-free
         shell: bash
         env:
