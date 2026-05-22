@@ -147,7 +147,7 @@ function main() {
     return 0
   }
   // Match the first non-empty line so wrapping or stray whitespace does not
-  // hide a BLOCK verdict.
+  // hide a verdict.
   const firstLine = result.output
     .split(/\r?\n/)
     .map(line => line.trim())
@@ -164,6 +164,25 @@ function main() {
     )
     console.error(
       'If this is a false positive, bypass once with: DISABLE_PRECOMMIT_PII_CHECK=1 git commit ...',
+    )
+    console.error('')
+    return 1
+  }
+  // Treat anything that is not an explicit OK as a malformed response and
+  // fail closed. Otherwise a Claude refusal, hallucination, or stray
+  // explanatory text would silently let a problematic commit through.
+  if (!firstLine || !/^OK\b/i.test(firstLine)) {
+    console.error('')
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.error('[pii-check] Commit blocked: unrecognized Claude response.')
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.error(result.output || '(empty response)')
+    console.error('')
+    console.error(
+      'Expected the first non-empty line to start with "OK" or "BLOCK:".',
+    )
+    console.error(
+      'If this is a transient model error, retry; otherwise bypass with: DISABLE_PRECOMMIT_PII_CHECK=1 git commit ...',
     )
     console.error('')
     return 1
