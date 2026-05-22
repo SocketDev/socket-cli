@@ -258,8 +258,7 @@ export async function handleCreateNewScan({
     // Ensure the .socket.facts.json isn't duplicated in case it happened
     // to be in the scan folder before the analysis was run.
     const filteredPackagePaths = packagePaths.filter(
-      p =>
-        path.basename(p).toLowerCase() !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+      p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
     )
 
     // When using pregenerated SBOMs only, filter to CDX/SPDX files.
