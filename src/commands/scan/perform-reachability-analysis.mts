@@ -120,20 +120,19 @@ export async function performReachabilityAnalysis(
 
     const sockSdk = sockSdkCResult.data
 
-    // Exclude any .socket.facts.json files that happen to be in the scan
-    // folder before the analysis was run.
-    const filepathsToUpload = packagePaths.filter(
-      p =>
-        path.basename(p).toLowerCase() !== constants.DOT_SOCKET_DOT_FACTS_JSON,
-    )
-
     spinner?.start('Uploading manifests for reachability analysis...')
 
     // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path
+    // NOTE: previously stripped any `.socket.facts.json` from packagePaths
+    // here to avoid uploading leftover post-reachability output. With the
+    // producer flow (`socket manifest gradle --facts`) those files are
+    // legitimate INPUT to compute-artifacts, so we now upload them. Stale
+    // facts files are cleaned up downstream — see the post-success
+    // deletion in handle-create-new-scan.mts.
     const uploadCResult = await handleApiCall(
       sockSdk.uploadManifestFiles(
         orgSlug,
-        filepathsToUpload,
+        packagePaths,
         path.resolve(cwd, analysisTarget),
       ),
       {
