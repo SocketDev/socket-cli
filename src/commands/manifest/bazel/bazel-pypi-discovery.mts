@@ -403,24 +403,19 @@ export async function discoverPypiHubs(
           : `static parse (${parsed.length})`,
     )
   }
-  // Seed with the default hub name first (so it appears first in output if
-  // validated). Parsed candidates overwrite the seed when they share the same
-  // hub name so metadata (requirements_lock, python_version) is preserved.
-  const seen = new Set<string>()
-  const candidates: PypiHubCandidate[] = []
-  for (const c of parsed) {
-    if (!seen.has(c.hubName)) {
-      seen.add(c.hubName)
-      candidates.push(c)
-    }
-  }
-  if (!seen.has(DEFAULT_PYPI_HUB_SEED)) {
-    candidates.unshift({
-      hubName: DEFAULT_PYPI_HUB_SEED,
-      source: 'default-seed',
-      workspaceMode: 'unknown',
-    })
-  }
+  // Prepend the default hub seed unless parsed metadata already covers it.
+  const candidates: PypiHubCandidate[] = parsed.some(
+    c => c.hubName === DEFAULT_PYPI_HUB_SEED,
+  )
+    ? parsed
+    : [
+        {
+          hubName: DEFAULT_PYPI_HUB_SEED,
+          source: 'default-seed',
+          workspaceMode: 'unknown',
+        },
+        ...parsed,
+      ]
   if (verbose) {
     logger.log(
       '[VERBOSE] discovery: candidate set to probe (seed-first, deduped):',

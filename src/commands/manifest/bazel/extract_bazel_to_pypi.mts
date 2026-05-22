@@ -47,7 +47,7 @@ export type ExtractBazelToPypiOptions = {
   cwd: string
   env?: NodeJS.ProcessEnv
   out: string
-  outLayout?: 'flat'
+  outLayout?: 'flat' | 'standalone'
   verbose: boolean
   explicitEcosystem?: boolean
 }

@@ -118,9 +118,8 @@ function apparentNamesFromRepoMapping(value: unknown): string[] {
     if (name.startsWith('@') || typeof canonicalName !== 'string') {
       continue
     }
-    const repo = normalizeRepoName(name)
-    if (repo) {
-      candidates.push(repo)
+    if (BAZEL_REPO_NAME_RE.test(name)) {
+      candidates.push(name)
     }
   }
   return candidates
