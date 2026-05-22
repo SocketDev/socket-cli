@@ -74,14 +74,27 @@ export async function convertGradleToFacts({
       )
       return
     }
-    logger.log('Reported exports:')
-    output.stdout.replace(
-      /^Socket facts file written to: (.*)/gm,
-      (_all: string, fn: string) => {
-        logger.log('- ', fn)
-        return fn
-      },
+    const exports = Array.from(
+      output.stdout.matchAll(/^Socket facts file written to: (.*)/gm),
+      m => m[1],
     )
+    if (exports.length) {
+      logger.log('Reported exports:')
+      for (const fn of exports) {
+        logger.log('- ', fn)
+      }
+    } else {
+      // Gradle script may have skipped emission when no resolvable
+      // dependencies were found (see the `components.isEmpty()` branch in
+      // socket-facts.init.gradle). Surface the skip reason if present so
+      // the user understands why nothing was written.
+      const skipMatch = output.stdout.match(
+        /^\[socket-facts\] no resolvable dependencies.*/m,
+      )
+      if (skipMatch) {
+        logger.warn(skipMatch[0])
+      }
+    }
     logger.log('')
     logger.log(
       'Next step is to generate a Scan by running the `socket scan create` command on the same directory.',

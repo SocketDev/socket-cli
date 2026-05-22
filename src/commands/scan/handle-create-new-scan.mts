@@ -47,20 +47,14 @@ function getCdxSpdxPatterns(
   return patterns
 }
 
-function filterToCdxSpdxAndFactsFiles(
+function filterToCdxSpdxOnly(
   filepaths: string[],
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
   const patterns = getCdxSpdxPatterns(supportedFiles)
-  return filepaths.filter(filepath => {
-    const basename = path.basename(filepath).toLowerCase()
-    // Include .socket.facts.json files.
-    if (basename === constants.DOT_SOCKET_DOT_FACTS_JSON) {
-      return true
-    }
-    // Include CDX and SPDX files.
-    return micromatch.some(filepath, patterns, { nocase: true })
-  })
+  return filepaths.filter(filepath =>
+    micromatch.some(filepath, patterns, { nocase: true }),
+  )
 }
 
 export type HandleCreateNewScanConfig = {
@@ -270,7 +264,7 @@ export async function handleCreateNewScan({
 
     // When using pregenerated SBOMs only, filter to CDX/SPDX files.
     const pathsForScan = reach.reachUseOnlyPregeneratedSboms
-      ? filterToCdxSpdxAndFactsFiles(filteredPackagePaths, supportedFiles)
+      ? filterToCdxSpdxOnly(filteredPackagePaths, supportedFiles)
       : filteredPackagePaths
 
     scanPaths = [

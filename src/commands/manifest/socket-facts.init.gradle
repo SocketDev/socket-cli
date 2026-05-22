@@ -33,6 +33,10 @@
 import java.util.Collections
 import groovy.json.JsonOutput
 
+// Must stay in sync with `DOT_SOCKET_DOT_FACTS_JSON` in
+// src/constants.mts (TS side). Groovy can't import the TS constant, so
+// the two strings are intentionally duplicated; if you change one,
+// change the other.
 ext.SOCKET_FACTS_FILENAME = '.socket.facts.json'
 
 // Shared accumulators across all subprojects' contributions. Synchronized
@@ -266,8 +270,23 @@ rootProject {
       def nodes = state.nodes
       def directIds = state.directIds
 
-      def components = nodes.collect { id, node ->
-        def coord = node.coord
+      // Snapshot the accumulators under the same monitor used by writers in
+      // each subproject's socketFactsCollect doLast. Task dependencies
+      // (`aggregator.dependsOn(collector)`) already guarantee a
+      // happens-before edge between writes and this read, but we
+      // synchronize on `nodes` here so the read path is symmetric with the
+      // write path — no implicit reliance on Gradle's task-graph ordering
+      // semantics for memory visibility of plain HashMap/HashSet fields.
+      def components
+      synchronized (nodes) {
+        components = nodes.collect { id, node ->
+          [id: id, coord: node.coord, prod: node.prod, nonTooling: node.nonTooling, children: (node.children as List).sort()]
+        }
+      }
+
+      components = components.collect { snapshot ->
+        def id = snapshot.id
+        def coord = snapshot.coord
         def component = [
           type     : 'maven',
           namespace: coord.groupId,
@@ -290,14 +309,14 @@ rootProject {
         if (directIds.contains(id)) {
           component.direct = true
         }
-        if (!node.prod) {
+        if (!snapshot.prod) {
           component.dev = true
         }
-        if (!node.nonTooling) {
+        if (!snapshot.nonTooling) {
           component.tooling = true
         }
-        if (!node.children.isEmpty()) {
-          component.dependencies = (node.children as List).sort()
+        if (!snapshot.children.isEmpty()) {
+          component.dependencies = snapshot.children
         }
         component
       }
