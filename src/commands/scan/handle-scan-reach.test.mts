@@ -5,6 +5,7 @@ import { handleScanReach } from './handle-scan-reach.mts'
 const {
   mockCheckCommandInput,
   mockFetchSupportedScanFileNames,
+  mockFinalizeTier1Scan,
   mockFindSocketYmlSync,
   mockGetPackageFilesForScan,
   mockOutputScanReach,
@@ -13,6 +14,7 @@ const {
 } = vi.hoisted(() => ({
   mockCheckCommandInput: vi.fn(),
   mockFetchSupportedScanFileNames: vi.fn(),
+  mockFinalizeTier1Scan: vi.fn(),
   mockFindSocketYmlSync: vi.fn(),
   mockGetPackageFilesForScan: vi.fn(),
   mockOutputScanReach: vi.fn(),
@@ -22,6 +24,10 @@ const {
 
 vi.mock('./fetch-supported-scan-file-names.mts', () => ({
   fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
+}))
+
+vi.mock('./finalize-tier1-scan.mts', () => ({
+  finalizeTier1Scan: mockFinalizeTier1Scan,
 }))
 
 vi.mock('./output-scan-reach.mts', () => ({
@@ -65,6 +71,7 @@ vi.mock('../../utils/path-resolve.mts', () => ({
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
     success: vi.fn(),
+    warn: vi.fn(),
   },
 }))
 
@@ -76,6 +83,7 @@ describe('handleScanReach', () => {
       ok: true,
       data: { npm: { packageJson: { pattern: 'package.json' } } },
     })
+    mockFinalizeTier1Scan.mockResolvedValue({ data: undefined, ok: true })
     mockFindSocketYmlSync.mockReturnValue({
       ok: true,
       data: { parsed: { projectIgnorePaths: ['vendor/**'] } },
@@ -291,5 +299,84 @@ describe('handleScanReach', () => {
         cwd: '/repo',
       },
     )
+  })
+
+  it('finalizes the tier1 reachability scan with a null report_run_id when Coana returned a scan id', async () => {
+    mockPerformReachabilityAnalysis.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-id',
+      },
+    })
+    const reachabilityOptions = {
+      excludePaths: [],
+      reachAnalysisMemoryLimit: 8192,
+      reachAnalysisTimeout: 0,
+      reachConcurrency: 1,
+      reachContinueOnAnalysisErrors: false,
+      reachContinueOnInstallErrors: false,
+      reachContinueOnMissingLockFiles: false,
+      reachContinueOnNoSourceFiles: false,
+      reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
+      reachDisableAnalytics: false,
+      reachDisableExternalToolChecks: false,
+      reachEcosystems: [],
+      reachEnableAnalysisSplitting: false,
+      reachExcludePaths: [],
+      reachLazyMode: false,
+      reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
+      reachVersion: undefined,
+    }
+
+    await handleScanReach({
+      cwd: '/repo',
+      interactive: false,
+      orgSlug: 'fakeOrg',
+      outputKind: 'text',
+      outputPath: '',
+      reachabilityOptions,
+      targets: ['.'],
+    })
+
+    expect(mockFinalizeTier1Scan).toHaveBeenCalledWith('tier1-id', null)
+  })
+
+  it('does not call finalize when Coana did not return a tier1 reachability scan id', async () => {
+    const reachabilityOptions = {
+      excludePaths: [],
+      reachAnalysisMemoryLimit: 8192,
+      reachAnalysisTimeout: 0,
+      reachConcurrency: 1,
+      reachContinueOnAnalysisErrors: false,
+      reachContinueOnInstallErrors: false,
+      reachContinueOnMissingLockFiles: false,
+      reachContinueOnNoSourceFiles: false,
+      reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
+      reachDisableAnalytics: false,
+      reachDisableExternalToolChecks: false,
+      reachEcosystems: [],
+      reachEnableAnalysisSplitting: false,
+      reachExcludePaths: [],
+      reachLazyMode: false,
+      reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
+      reachVersion: undefined,
+    }
+
+    await handleScanReach({
+      cwd: '/repo',
+      interactive: false,
+      orgSlug: 'fakeOrg',
+      outputKind: 'text',
+      outputPath: '',
+      reachabilityOptions,
+      targets: ['.'],
+    })
+
+    expect(mockFinalizeTier1Scan).not.toHaveBeenCalled()
   })
 })
