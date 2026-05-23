@@ -1054,6 +1054,9 @@ importers:
       '@socketsecurity/lib':
         specifier: 6.0.0
         version: 6.0.0(typescript@5.9.3)
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.0.0
+        version: '@socketsecurity/lib@6.0.0(typescript@5.9.3)'
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19

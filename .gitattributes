@@ -11,6 +11,7 @@
 .claude/commands/security-scan.md linguist-generated=true
 .claude/commands/setup-security-tools.md linguist-generated=true
 .claude/commands/squash-history.md linguist-generated=true
+.claude/commands/update-coverage.md linguist-generated=true
 .claude/commands/update-security.md linguist-generated=true
 .claude/hooks/_shared/README.md linguist-generated=true
 .claude/hooks/_shared/acorn/README.md linguist-generated=true
@@ -343,6 +344,11 @@
 .claude/hooks/socket-token-minifier-start/index.mts linguist-generated=true
 .claude/hooks/socket-token-minifier-start/package.json linguist-generated=true
 .claude/hooks/socket-token-minifier-start/tsconfig.json linguist-generated=true
+.claude/hooks/squash-history-reminder/README.md linguist-generated=true
+.claude/hooks/squash-history-reminder/index.mts linguist-generated=true
+.claude/hooks/squash-history-reminder/package.json linguist-generated=true
+.claude/hooks/squash-history-reminder/test/index.test.mts linguist-generated=true
+.claude/hooks/squash-history-reminder/tsconfig.json linguist-generated=true
 .claude/hooks/stale-process-sweeper/README.md linguist-generated=true
 .claude/hooks/stale-process-sweeper/index.mts linguist-generated=true
 .claude/hooks/stale-process-sweeper/package.json linguist-generated=true
@@ -426,6 +432,7 @@
 .claude/skills/scanning-security/SKILL.md linguist-generated=true
 .claude/skills/squashing-history/SKILL.md linguist-generated=true
 .claude/skills/squashing-history/reference.md linguist-generated=true
+.claude/skills/updating-coverage/SKILL.md linguist-generated=true
 .claude/skills/updating-lockstep/SKILL.md linguist-generated=true
 .claude/skills/updating-lockstep/reference.md linguist-generated=true
 .claude/skills/updating-security/SKILL.md linguist-generated=true
