@@ -1,0 +1,16 @@
+{
+  "name": "hook-setup-misc-tools",
+  "private": true,
+  "type": "module",
+  "main": "./install.mts",
+  "exports": {
+    ".": "./install.mts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  },
+  "devDependencies": {
+    "@socketsecurity/lib-stable": "catalog:",
+    "@types/node": "catalog:"
+  }
+}

@@ -60,18 +60,18 @@ const VAGUE_MESSAGE_PATTERNS: ReadonlyArray<{
   {
     label: 'bare "invalid"',
     regex:
-      /^(invalid|invalid value|invalid input|invalid argument|invalid format)\.?$/i,
+      /^(?:invalid|invalid value|invalid input|invalid argument|invalid format)\.?$/i,
     hint: '"Invalid" describes the fallout, not the rule. Say what shape was expected: "must be lowercase", "must match /^[a-z]+$/", "must be one of X / Y / Z".',
   },
   {
     label: 'bare "failed"',
     regex:
-      /^(failed|failure|operation failed|request failed|action failed)\.?$/i,
+      /^(?:failed|failure|operation failed|request failed|action failed)\.?$/i,
     hint: '"Failed" describes the symptom. Name what was attempted and what blocked it: "could not write <path>: ENOENT", "fetch <url> returned 503".',
   },
   {
     label: 'bare "error occurred"',
-    regex: /^(an? )?error(\s+occurred)?\.?$/i,
+    regex: /^(?:an? )?error(?:\s+occurred)?\.?$/i,
     hint: 'The message says nothing the reader can act on. State the rule, the location, the bad value.',
   },
   {
@@ -81,18 +81,18 @@ const VAGUE_MESSAGE_PATTERNS: ReadonlyArray<{
   },
   {
     label: 'bare "unable to X" / "could not X" (verb-only)',
-    regex: /^(unable to|could not|cannot|can'?t)\s+\w+\.?$/i,
+    regex: /^(?:unable to|could not|cannot|can'?t)\s+\w+\.?$/i,
     hint: 'No object / no reason. "Unable to read" → "could not read <path>: <errno>".',
   },
   {
     label: 'bare "not found"',
-    regex: /^(not found|not\s+exist|does not exist|missing)\.?$/i,
+    regex: /^(?:not found|not\s+exist|does not exist|missing)\.?$/i,
     hint: 'Missing what? Where? Say "config file not found: <path>" with the specific path.',
   },
   {
     label: 'bare "bad" / "wrong" / "incorrect"',
     regex:
-      /^(bad|wrong|incorrect|invalid format)(\s+(argument|data|format|input|value))?\.?$/i,
+      /^(?:bad|wrong|incorrect|invalid format)(?:\s+(?:argument|data|format|input|value))?\.?$/i,
     hint: 'Same as "invalid" — describe the rule the value violated, not how you feel about it.',
   },
 ]

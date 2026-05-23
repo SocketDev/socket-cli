@@ -62,10 +62,10 @@ import {
 } from './segments.mts'
 
 const EXEMPT_FILE_PATTERNS: RegExp[] = [
-  /(^|\/)paths\.(cts|mts)$/,
+  /(?:^|\/)paths\.(?:cts|mts)$/,
   /scripts\/check-paths\.mts$/,
   /scripts\/check-paths\//,
-  /\.claude\/hooks\/path-guard\/index\.(cts|mts)$/,
+  /\.claude\/hooks\/path-guard\/index\.(?:cts|mts)$/,
   /\.claude\/hooks\/path-guard\/test\//,
   /scripts\/check-consistency\.mts$/,
 ]

@@ -60,7 +60,7 @@ interface ToolInput {
 }
 
 // Dotfile shapes that carry env-style KEY=VALUE content.
-const DOTENV_BASENAME_RE = /^\.env(\..+)?$|^\.envrc$/
+const DOTENV_BASENAME_RE = /^\.env(?:\..+)?$|^\.envrc$/
 
 // Token-bearing key names live in `_shared/token-patterns.mts` so
 // every hook that scans for secret leaks (this one + token-guard)

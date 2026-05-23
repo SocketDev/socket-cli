@@ -44,13 +44,16 @@ import { readStdin } from '../_shared/transcript.mts'
 const EXEMPT_PATH_PATTERNS: RegExp[] = [
   /\.claude\/hooks\//,
   /\.git-hooks\//,
-  /(^|\/)scripts\//,
-  /\.(spec|test)\.(m?[jt]s|tsx?|cts|mts)$/,
-  /(^|\/)tests?\//,
-  /(^|\/)fixtures\//,
-  /(^|\/)external\//,
-  /(^|\/)vendor\//,
-  /(^|\/)upstream\//,
+  /(?:^|\/)scripts\//,
+  /\.(?:spec|test)\.(?:m?[jt]s|tsx?|cts|mts)$/,
+  /(?:^|\/)tests?\//,
+  /(?:^|\/)fixtures\//,
+  /(?:^|\/)external\//,
+  /(?:^|\/)vendor\//,
+  /(?:^|\/)upstream\//,
+  // The logger is its own owner — these files implement the Logger
+  // class + its browser shim and must call console.* directly.
+  /(?:^|\/)src\/logger\//,
 ]
 
 // The forbidden calls and the canonical logger replacement for each.
@@ -116,7 +119,7 @@ export function isInScope(filePath: string): boolean {
   if (!filePath) {
     return false
   }
-  if (!/\.(m?ts|tsx|cts)$/.test(filePath)) {
+  if (!/\.(?:m?ts|tsx|cts)$/.test(filePath)) {
     return false
   }
   for (let i = 0, { length } = EXEMPT_PATH_PATTERNS; i < length; i += 1) {

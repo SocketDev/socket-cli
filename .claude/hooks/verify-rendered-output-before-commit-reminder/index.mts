@@ -33,7 +33,7 @@ interface ToolInput {
 
 // Files whose changes likely affect rendered output.
 const UI_FILE_RE =
-  /\.(astro|css|ejs|handlebars|hbs|htm|html|less|njk|sass|scss|svelte|vue)$/i
+  /\.(?:astro|css|ejs|handlebars|hbs|htm|html|less|njk|sass|scss|svelte|vue)$/i
 
 // Build-script patterns. Conservative — match the common fleet shapes:
 // `pnpm run build`, `pnpm build`, `node scripts/<name>.mts`, `pnpm tour`,

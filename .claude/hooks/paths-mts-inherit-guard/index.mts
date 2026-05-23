@@ -74,9 +74,9 @@ type ToolInput = {
 const BYPASS_PHRASE = 'Allow paths-mts-inherit bypass'
 const BYPASS_LOOKBACK_USER_TURNS = 8
 
-const PATHS_MTS_RE = /(^|\/)paths\.(?:cts|mts)$/
+const PATHS_MTS_RE = /(?:^|\/)paths\.(?:cts|mts)$/
 const EXPORT_STAR_RE =
-  /^\s*export\s+\*\s+from\s+['"]([^'"]+\/paths\.m?ts)['"];?\s*$/m
+  /^\s*export\s+\*\s+from\s+['"](?:[^'"]+\/paths\.m?ts)['"];?\s*$/m
 
 /**
  * Walk up from `filePath` looking for an ancestor `scripts/paths.mts` or

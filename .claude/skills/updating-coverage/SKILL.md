@@ -32,13 +32,13 @@ Runs the repo's coverage script and rewrites the README badge so the published n
 
 ## Phases
 
-| #   | Phase              | Outcome                                                                                                |
-| --- | ------------------ | ------------------------------------------------------------------------------------------------------ |
-| 1   | Discovery          | Find the coverage script in `package.json` (`cover` / `coverage` / `test:cover`, in that preference).  |
-| 2   | Run                | `pnpm run <script>`. Capture stdout. Fail loudly if the run errors.                                    |
-| 3   | Parse              | Extract the percentage. Two paths — read `coverage/coverage-summary.json` if present, otherwise scrape `All files \| ...` line.|
-| 4   | Rewrite            | Replace the `<PCT>` in the README badge URL with the parsed value (two decimals).                      |
-| 5   | Commit             | `docs(readme): refresh coverage badge to N.NN%`. Direct-push per fleet norm.                           |
+| #   | Phase     | Outcome                                                                                                                         |
+| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Discovery | Find the coverage script in `package.json` (`cover` / `coverage` / `test:cover`, in that preference).                           |
+| 2   | Run       | `pnpm run <script>`. Capture stdout. Fail loudly if the run errors.                                                             |
+| 3   | Parse     | Extract the percentage. Two paths — read `coverage/coverage-summary.json` if present, otherwise scrape `All files \| ...` line. |
+| 4   | Rewrite   | Replace the `<PCT>` in the README badge URL with the parsed value (two decimals).                                               |
+| 5   | Commit    | `docs(readme): refresh coverage badge to N.NN%`. Direct-push per fleet norm.                                                    |
 
 ## Phase 1 — discovery
 

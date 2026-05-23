@@ -13,6 +13,8 @@
 //    in env / .env / .env.local.
 
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
+
+import { findApiToken as findApiTokenCanonical } from './api-token.mts'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -97,45 +99,20 @@ export async function checkZizmorVersion(binPath: string): Promise<boolean> {
   }
 }
 
+/**
+ * Resolve the Socket API token from env → keychain. Re-exported from
+ * `lib/api-token.mts` so call sites can keep importing `findApiToken` from
+ * `installers.mts` (back-compat) while the canonical resolver stays a single
+ * source of truth.
+ *
+ * The previous in-file implementation read `.env` / `.env.local` which is a
+ * CLAUDE.md token-hygiene violation (dotfiles leak; tokens belong in env or the
+ * OS keychain). It also skipped the keychain entirely, which caused
+ * sfw-enterprise → sfw-free silent downgrades when the token was only in the
+ * macOS Keychain.
+ */
 export function findApiToken(): string | undefined {
-  // SOCKET_API_TOKEN is the canonical fleet name; SOCKET_API_KEY remains
-  // universally supported across Socket tools (CLI, SDK, sfw, fleet scripts)
-  // as the legacy alias.
-  const envToken =
-    process.env['SOCKET_API_TOKEN'] ?? process.env['SOCKET_API_KEY']
-  if (envToken) {
-    return envToken
-  }
-  const projectDir = process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
-  for (const filename of ['.env.local', '.env']) {
-    const filepath = path.join(projectDir, filename)
-    if (existsSync(filepath)) {
-      try {
-        const content = readFileSync(filepath, 'utf8')
-        const match =
-          /^SOCKET_API_KEY\s*=\s*(.+)$/m.exec(content) ??
-          /^SOCKET_API_TOKEN\s*=\s*(.+)$/m.exec(content)
-        if (match) {
-          return match[1]!
-            .replace(/\s*#.*$/, '') // Strip inline comments.
-            .trim() // Strip whitespace before quote removal.
-            .replace(/^["']|["']$/g, '') // Strip surrounding quotes.
-        }
-      } catch (e) {
-        // We already checked existsSync; ENOENT here means a race with
-        // an external delete (rare, ignorable). Anything else (EACCES,
-        // EISDIR, decode failure) is a real signal — log it so the
-        // operator can fix the perms / encoding instead of wondering
-        // why their .env-stored token isn't being picked up.
-        const code = (e as NodeJS.ErrnoException).code
-        if (code !== 'ENOENT') {
-          const msg = e instanceof Error ? e.message : String(e)
-          logger.warn(`could not read ${filepath}: ${msg}`)
-        }
-      }
-    }
-  }
-  return undefined
+  return findApiTokenCanonical().token
 }
 
 type ToolEntry = (typeof config.tools)[string]
@@ -250,7 +227,9 @@ export async function installGitHubReleaseTool(
     return true
   }
 
-  const extractDir = await fs.mkdtemp(path.join(os.tmpdir(), `${name}-extract-`))
+  const extractDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${name}-extract-`),
+  )
   try {
     if (isZip) {
       if (process.platform === 'win32') {
@@ -347,7 +326,9 @@ export async function installGitHubReleaseToolWithTag(
   }
 
   const isZip = asset.endsWith('.zip')
-  const extractDir = await fs.mkdtemp(path.join(os.tmpdir(), `${name}-extract-`))
+  const extractDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), `${name}-extract-`),
+  )
   try {
     if (isZip) {
       if (process.platform === 'win32') {
@@ -633,25 +614,19 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
     ]
     if (isEnterprise) {
       // Read API token from env at runtime — never embed secrets in
-      // scripts. SOCKET_API_KEY is the primary slot (universally
-      // supported); SOCKET_API_TOKEN is the forward-canonical name
-      // accepted as a secondary read. Whichever name is set gets
-      // exported under both so downstream tools see the value
-      // regardless of which name they read.
+      // scripts. Either SOCKET_API_KEY or SOCKET_API_TOKEN is accepted;
+      // whichever is set gets exported under both so downstream tools
+      // see the value regardless of which name they read.
+      //
+      // Dotfile fallback (`.env` / `.env.local`) is intentionally NOT
+      // checked here per CLAUDE.md token-hygiene: tokens belong in env
+      // (CI) or the OS keychain (dev local), never in dotfiles. The
+      // shell-rc bridge installed by setup-security-tools writes the
+      // export line into ~/.zshenv so every new shell already has the
+      // env var set.
       bashLines.push(
         'if [ -z "$SOCKET_API_KEY" ] && [ -n "$SOCKET_API_TOKEN" ]; then',
         '  SOCKET_API_KEY="$SOCKET_API_TOKEN"',
-        'fi',
-        'if [ -z "$SOCKET_API_KEY" ]; then',
-        '  for f in .env.local .env; do',
-        '    if [ -f "$f" ]; then',
-        '      _val="$(grep -m1 "^SOCKET_API_KEY\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^["\\x27]\\(.*\\)["\\x27]$/\\1/")"',
-        '      if [ -z "$_val" ]; then',
-        '        _val="$(grep -m1 "^SOCKET_API_TOKEN\\s*=" "$f" | sed "s/^[^=]*=\\s*//" | sed "s/\\s*#.*//" | sed "s/^["\\x27]\\(.*\\)["\\x27]$/\\1/")"',
-        '      fi',
-        '      if [ -n "$_val" ]; then SOCKET_API_KEY="$_val"; break; fi',
-        '    fi',
-        '  done',
         'fi',
         'if [ -n "$SOCKET_API_KEY" ]; then',
         '  export SOCKET_API_KEY',
@@ -675,25 +650,15 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
     if (isWindows) {
       let cmdApiTokenBlock = ''
       if (isEnterprise) {
-        // Read API token from .env files at runtime — mirrors the bash
-        // shim logic. SOCKET_API_KEY is the primary slot (universally
-        // supported); SOCKET_API_TOKEN is the forward-canonical name
-        // accepted as a secondary read.
+        // Mirror the bash-shim env-only resolution. Dotfile fallback
+        // (`.env` / `.env.local`) is intentionally not read here — see
+        // the bash-shim comment for the token-hygiene rationale. The
+        // Windows CredentialManager shell-rc bridge installed by
+        // setup-security-tools writes the env var for every new
+        // session.
         cmdApiTokenBlock =
           `if not defined SOCKET_API_KEY (\r\n` +
           `  if defined SOCKET_API_TOKEN set "SOCKET_API_KEY=%SOCKET_API_TOKEN%"\r\n` +
-          `)\r\n` +
-          `if not defined SOCKET_API_KEY (\r\n` +
-          `  for %%F in (.env.local .env) do (\r\n` +
-          `    if exist "%%F" (\r\n` +
-          `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_KEY" "%%F"') do (\r\n` +
-          `        set "SOCKET_API_KEY=%%B"\r\n` +
-          `      )\r\n` +
-          `      for /f "tokens=1,* delims==" %%A in ('findstr /b "SOCKET_API_TOKEN" "%%F"') do (\r\n` +
-          `        if not defined SOCKET_API_KEY set "SOCKET_API_KEY=%%B"\r\n` +
-          `      )\r\n` +
-          `    )\r\n` +
-          `  )\r\n` +
           `)\r\n` +
           `if defined SOCKET_API_KEY set "SOCKET_API_TOKEN=%SOCKET_API_KEY%"\r\n`
       }

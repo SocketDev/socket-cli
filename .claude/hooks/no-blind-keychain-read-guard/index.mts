@@ -176,25 +176,15 @@ function handlePayload(payloadRaw: string): number {
     lines.push(`    Saw: ${h.snippet}`)
   }
   lines.push('')
-  lines.push(
-    '  Reading the keychain via the platform CLI surfaces a UI auth',
-  )
-  lines.push(
-    "  prompt on the user's screen — and the prompt fires once per",
-  )
-  lines.push(
-    '  call. A hook chain that reads three times costs three prompts.',
-  )
+  lines.push('  Reading the keychain via the platform CLI surfaces a UI auth')
+  lines.push("  prompt on the user's screen — and the prompt fires once per")
+  lines.push('  call. A hook chain that reads three times costs three prompts.')
   lines.push('')
   lines.push('  The token is almost certainly already available without a')
   lines.push('  keychain read:')
   lines.push('')
-  lines.push(
-    '    - In-process: call findApiToken() from setup-security-tools/',
-  )
-  lines.push(
-    '      lib/api-token.mts. It returns the module-cached value from',
-  )
+  lines.push('    - In-process: call findApiToken() from setup-security-tools/')
+  lines.push('      lib/api-token.mts. It returns the module-cached value from')
   lines.push('      the first call onward, then env, then keychain.')
   lines.push('')
   lines.push('    - From Bash: read process.env.SOCKET_API_KEY or')
@@ -203,12 +193,8 @@ function handlePayload(payloadRaw: string): number {
   )
   lines.push('      exports both for every new shell session.')
   lines.push('')
-  lines.push(
-    '  Writes / deletes (security add-generic-password / secret-tool',
-  )
-  lines.push(
-    '  store / New-StoredCredential / etc.) are allowed — they only',
-  )
+  lines.push('  Writes / deletes (security add-generic-password / secret-tool')
+  lines.push('  store / New-StoredCredential / etc.) are allowed — they only')
   lines.push('  happen during operator-driven setup / rotation.')
   lines.push('')
   lines.push('  Bypass (e.g. operator-invoked diagnostics that need a fresh')

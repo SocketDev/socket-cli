@@ -27,7 +27,7 @@ const SOFT_CAP = 500
 const HARD_CAP = 1000
 
 const BYPASS_RE =
-  /max-file-lines:\s*(legitimate|parser|state[- ]?machine|table)/i
+  /max-file-lines:\s*(?:legitimate|parser|state[- ]?machine|table)/i
 
 /**
  * @type {import('eslint').Rule.RuleModule}

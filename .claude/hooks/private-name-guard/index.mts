@@ -38,10 +38,10 @@ type ToolInput = {
 const PUBLIC_SURFACE_PATTERNS: RegExp[] = [
   /\bgit\s+commit\b/,
   /\bgit\s+push\b/,
-  /\bgh\s+pr\s+(comment|create|edit|review)\b/,
-  /\bgh\s+issue\s+(comment|create|edit)\b/,
-  /\bgh\s+api\b[^|]*-X\s*(PATCH|POST|PUT)\b/i,
-  /\bgh\s+release\s+(create|edit)\b/,
+  /\bgh\s+pr\s+(?:comment|create|edit|review)\b/,
+  /\bgh\s+issue\s+(?:comment|create|edit)\b/,
+  /\bgh\s+api\b[^|]*-X\s*(?:PATCH|POST|PUT)\b/i,
+  /\bgh\s+release\s+(?:create|edit)\b/,
 ]
 
 export function isPublicSurface(command: string): boolean {

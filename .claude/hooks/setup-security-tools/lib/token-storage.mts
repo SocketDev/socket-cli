@@ -175,7 +175,7 @@ export function readLinux(account: string): string | undefined {
   const r = spawnSync(
     'secret-tool',
     ['lookup', 'service', SERVICE, 'user', account],
-    {stdio: ['ignore', 'pipe', 'pipe'] },
+    { stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (r.status !== 0) {
     // secret-tool exits 1 when the entry doesn't exist AND when the
@@ -193,7 +193,7 @@ export function readMacOS(account: string): string | undefined {
   const r = spawnSync(
     'security',
     ['find-generic-password', '-s', SERVICE, '-a', account, '-w'],
-    {stdio: ['ignore', 'pipe', 'pipe'] },
+    { stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (r.status !== 0) {
     return undefined
@@ -247,7 +247,7 @@ export function readWindows(account: string): string | undefined {
       '-Command',
       `try { (Get-StoredCredential -Target '${SERVICE}:${account}').Password | ConvertFrom-SecureString -AsPlainText } catch { exit 1 }`,
     ],
-    {stdio: ['ignore', 'pipe', 'pipe'] },
+    { stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (ps.status === 0) {
     const out = String(ps.stdout).trim()
@@ -326,7 +326,7 @@ export function writeMacOS(token: string, account: string): void {
       '-l',
       'Socket API token',
     ],
-    {stdio: ['ignore', 'pipe', 'pipe'] },
+    { stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (r.status !== 0) {
     throw new Error(

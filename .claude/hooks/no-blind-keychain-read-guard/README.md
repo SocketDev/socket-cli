@@ -9,13 +9,13 @@ should never need to re-read the keychain.
 
 ## Detected reads
 
-| Platform        | Pattern                                     |
-| --------------- | ------------------------------------------- |
-| macOS           | `security find-{generic,internet}-password` |
-| Linux           | `secret-tool lookup` / `secret-tool search` |
-| Windows         | `Get-StoredCredential`                      |
-| Windows         | `Get-Credential … \| ConvertFrom-SecureString` |
-| cross-platform  | `keyring get`                               |
+| Platform       | Pattern                                        |
+| -------------- | ---------------------------------------------- |
+| macOS          | `security find-{generic,internet}-password`    |
+| Linux          | `secret-tool lookup` / `secret-tool search`    |
+| Windows        | `Get-StoredCredential`                         |
+| Windows        | `Get-Credential … \| ConvertFrom-SecureString` |
+| cross-platform | `keyring get`                                  |
 
 ## Allowed (not flagged)
 

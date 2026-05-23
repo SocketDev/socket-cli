@@ -35,20 +35,20 @@ jq '. | length' /tmp/dependabot-alerts.json
   "number": 2,
   "state": "open",
   "dependency": {
-    "package":     { "ecosystem": "npm", "name": "brace-expansion" },
+    "package": { "ecosystem": "npm", "name": "brace-expansion" },
     "manifest_path": "pnpm-lock.yaml",
-    "scope":        "development",
+    "scope": "development",
     "relationship": "transitive"
   },
   "security_advisory": {
-    "ghsa_id":  "GHSA-jxxr-4gwj-5jf2",
+    "ghsa_id": "GHSA-jxxr-4gwj-5jf2",
     "severity": "medium",
-    "summary":  "Large numeric range defeats documented `max` DoS protection"
+    "summary": "Large numeric range defeats documented `max` DoS protection"
   },
   "security_vulnerability": {
-    "package":                  { "name": "brace-expansion" },
+    "package": { "name": "brace-expansion" },
     "vulnerable_version_range": ">= 5.0.0, < 5.0.6",
-    "first_patched_version":    { "identifier": "5.0.6" }
+    "first_patched_version": { "identifier": "5.0.6" }
   },
   "html_url": "https://github.com/SocketDev/<repo>/security/dependabot/2"
 }
@@ -112,9 +112,9 @@ For transitive deps, edit `package.json`:
       // CVE-2026-45149 — DoS via numeric range. Patched 5.0.6.
       "brace-expansion": "^5.0.6",
       // CVE-2026-41305 — XSS via unescaped </style>. Patched 8.5.10.
-      "postcss": "^8.5.10"
-    }
-  }
+      "postcss": "^8.5.10",
+    },
+  },
 }
 ```
 
@@ -221,7 +221,7 @@ should match the AWAITING-SOAK / DISMISS sets we tracked above.
 - Read one: `GET repos/{owner}/{repo}/dependabot/alerts/{number}`
 - Dismiss: `PATCH repos/{owner}/{repo}/dependabot/alerts/{number}`
   with body `{ "state": "dismissed", "dismissed_reason": "...",
-  "dismissed_comment": "..." }`
+"dismissed_comment": "..." }`
 
 Documented at:
 <https://docs.github.com/en/rest/dependabot/alerts>
@@ -230,13 +230,13 @@ Documented at:
 
 GitHub accepts exactly these values for `dismissed_reason`:
 
-| Value             | When to use                                                                |
-| ----------------- | -------------------------------------------------------------------------- |
-| `fix_started`     | A PR resolving the alert is already open in this repo.                     |
-| `inaccurate`      | The advisory mis-classifies our usage (e.g. server-only dep on a CLI repo). |
-| `no_bandwidth`    | Known, accepted, will revisit later — typical for low-severity transitives. |
-| `not_used`        | Dep is in the lockfile but not actually loaded at runtime.                 |
-| `tolerable_risk`  | Risk is understood and accepted; no remediation planned.                   |
+| Value            | When to use                                                                 |
+| ---------------- | --------------------------------------------------------------------------- |
+| `fix_started`    | A PR resolving the alert is already open in this repo.                      |
+| `inaccurate`     | The advisory mis-classifies our usage (e.g. server-only dep on a CLI repo). |
+| `no_bandwidth`   | Known, accepted, will revisit later — typical for low-severity transitives. |
+| `not_used`       | Dep is in the lockfile but not actually loaded at runtime.                  |
+| `tolerable_risk` | Risk is understood and accepted; no remediation planned.                    |
 
 Pick the most precise one; fleet convention prefers `inaccurate` /
 `not_used` (factual) over `tolerable_risk` (judgmental) when both

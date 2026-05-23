@@ -148,7 +148,8 @@ EOF
         'and again spencermountain/compromise#1203"',
     )
     assert.equal(r.code, 2)
-    const matches = String(r.stderr).match(/spencermountain\/compromise#1203/g) || []
+    const matches =
+      String(r.stderr).match(/spencermountain\/compromise#1203/g) || []
     // Ref appears in 'Refs found:' bullet — one bullet, not two.
     // (May also appear in narrative text once.)
     assert.ok(matches.length <= 2, `expected dedup; saw ${matches.length}`)

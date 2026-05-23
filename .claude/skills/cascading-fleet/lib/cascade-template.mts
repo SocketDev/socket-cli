@@ -3,22 +3,28 @@
  * @file Fleet cascade — propagate a socket-wheelhouse/template/ SHA to every
  *   fleet repo. Uses the FLEET_SYNC=1 sentinel to bypass the no-revert-guard /
  *   overeager-staging-guard hooks without per-repo Allow-bypass phrases.
- *
  *   Replaces the original cascade-template.sh; the fleet convention is `.mts`
- *   for all runners.
- *
- * Usage:
- *   node .claude/skills/cascading-fleet/lib/cascade-template.mts <template-sha>
- *
- * Reads the canonical fleet-repo list from `<this-dir>/fleet-repos.txt`. Each
- * repo's worktree is created off `origin/<default-branch>`, the wheelhouse
- * sync-scaffolding CLI runs, the resulting changes are committed, and the
- * script tries a direct push first, falling back to opening a PR on rejection.
+ *   for all runners. Usage: node
+ *   .claude/skills/cascading-fleet/lib/cascade-template.mts <template-sha>
+ *   Reads the canonical fleet-repo list from `<this-dir>/fleet-repos.txt`. Each
+ *   repo's worktree is created off `origin/<default-branch>`, the wheelhouse
+ *   sync-scaffolding CLI runs, the resulting changes are committed, and the
+ *   script tries a direct push first, falling back to opening a PR on
+ *   rejection.
  */
 
-import { execFileSync, spawnSync } from 'node:child_process'
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
+// prefer-async-spawn: sync-required — cascade orchestrator runs
+// sequentially across repos with exit-code gating; async would
+// complicate the linear pipeline for no real concurrency win.
+// prefer-spawn-over-execsync: same — top-level sync CLI flow.
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -42,9 +48,21 @@ const SCRIPT_DIR = import.meta.dirname
 const FLEET_REPOS_FILE = path.join(SCRIPT_DIR, 'fleet-repos.txt')
 const PROJECTS = process.env['PROJECTS'] || path.join(homedir(), 'projects')
 // socket-hook: allow cross-repo
-const WH_SCRIPT = path.join(PROJECTS, 'socket-wheelhouse', 'scripts', 'sync-scaffolding', 'cli.mts')
+const WH_SCRIPT = path.join(
+  PROJECTS,
+  'socket-wheelhouse',
+  'scripts',
+  'sync-scaffolding',
+  'cli.mts',
+)
 // socket-hook: allow cross-repo
-const CLEANUP_SCRIPT = path.join(PROJECTS, 'socket-wheelhouse', 'scripts', 'cascade-tooling', 'cleanup-stranded.mts')
+const CLEANUP_SCRIPT = path.join(
+  PROJECTS,
+  'socket-wheelhouse',
+  'scripts',
+  'cascade-tooling',
+  'cleanup-stranded.mts',
+)
 
 // Prepend the active Node version's bin dir to PATH so the `node` invoked by
 // the wheelhouse CLI matches the operator's expected toolchain (avoids the
@@ -60,7 +78,9 @@ if (!existsSync(FLEET_REPOS_FILE)) {
 }
 if (!existsSync(WH_SCRIPT)) {
   logger.error(`wheelhouse sync-scaffolding CLI not found at ${WH_SCRIPT}`)
-  logger.error('set PROJECTS=<dir containing socket-wheelhouse> before retrying')
+  logger.error(
+    'set PROJECTS=<dir containing socket-wheelhouse> before retrying',
+  )
   process.exit(2)
 }
 // CLEANUP_SCRIPT is optional — older wheelhouse checkouts won't have it.
@@ -106,7 +126,13 @@ type RunResult = {
   stderr: string
 }
 
-function run(cmd: string, args: string[], opts: { cwd: string; env?: NodeJS.ProcessEnv } = { cwd: process.cwd() }): RunResult {
+function run(
+  cmd: string,
+  args: string[],
+  opts: { cwd: string; env?: NodeJS.ProcessEnv | undefined } = {
+    cwd: process.cwd(),
+  },
+): RunResult {
   const r = spawnSync(cmd, args, {
     cwd: opts.cwd,
     env: opts.env ?? process.env,
@@ -133,11 +159,7 @@ function git(cwd: string, args: string[]): RunResult {
 function gitSilent(cwd: string, args: string[]): void {
   // Used for best-effort cleanup that should not pollute output on failure
   // (mirrors `2>/dev/null` in the original bash).
-  try {
-    execFileSync('git', args, { cwd, stdio: 'ignore' })
-  } catch {
-    // Intentional: cleanup failures are non-fatal.
-  }
+  spawnSync('git', args, { cwd, stdio: 'ignore' })
 }
 
 function resolveBase(src: string): string {
@@ -146,7 +168,14 @@ function resolveBase(src: string): string {
     return sym.stdout.trim().replace(/^refs\/remotes\/origin\//, '')
   }
   for (const candidate of ['main', 'master']) {
-    if (git(src, ['show-ref', '--verify', '--quiet', `refs/remotes/origin/${candidate}`]).status === 0) {
+    if (
+      git(src, [
+        'show-ref',
+        '--verify',
+        '--quiet',
+        `refs/remotes/origin/${candidate}`,
+      ]).status === 0
+    ) {
       return candidate
     }
   }
@@ -188,7 +217,14 @@ for (const rawLine of fleetReposRaw) {
   gitSilent(src, ['worktree', 'remove', '--force', wt])
   gitSilent(src, ['branch', '-D', branch])
 
-  const wtAdd = git(src, ['worktree', 'add', '-b', branch, wt, `origin/${base}`])
+  const wtAdd = git(src, [
+    'worktree',
+    'add',
+    '-b',
+    branch,
+    wt,
+    `origin/${base}`,
+  ])
   if (wtAdd.status !== 0) {
     logTail(wtAdd.stdout + wtAdd.stderr, 1)
     RESULTS.push(`${repo}|fail:worktree`)
@@ -200,7 +236,8 @@ for (const rawLine of fleetReposRaw) {
   logTail(sync.stdout + sync.stderr, 3)
 
   const aheadOut = git(wt, ['rev-list', '--count', `origin/${base}..HEAD`])
-  const ahead = aheadOut.status === 0 ? parseInt(aheadOut.stdout.trim(), 10) || 0 : 0
+  const ahead =
+    aheadOut.status === 0 ? parseInt(aheadOut.stdout.trim(), 10) || 0 : 0
   if (ahead === 0) {
     const dirty = git(wt, ['status', '--porcelain']).stdout.trim()
     if (!dirty) {
@@ -214,12 +251,16 @@ for (const rawLine of fleetReposRaw) {
     // hooks. CI=true suppresses interactive pre-commit hook prompts.
     const stageEnv = { ...process.env, FLEET_SYNC: '1', CI: 'true' }
     git(wt, ['add', '--update'])
-    const commit = run('git', [
-      'commit',
-      '--no-verify',
-      '-m',
-      `chore(sync): cascade fleet template@${TEMPLATE_SHA}`,
-    ], { cwd: wt, env: stageEnv })
+    const commit = run(
+      'git',
+      [
+        'commit',
+        '--no-verify',
+        '-m',
+        `chore(sync): cascade fleet template@${TEMPLATE_SHA}`,
+      ],
+      { cwd: wt, env: stageEnv },
+    )
     logTail(commit.stdout + commit.stderr, 2)
     if (commit.status !== 0) {
       RESULTS.push(`${repo}|fail:commit`)
@@ -230,23 +271,45 @@ for (const rawLine of fleetReposRaw) {
   }
 
   const pushEnv = { ...process.env, FLEET_SYNC: '1' }
-  const push = run('git', ['push', '--no-verify', 'origin', `HEAD:${base}`], { cwd: wt, env: pushEnv })
+  const push = run('git', ['push', '--no-verify', 'origin', `HEAD:${base}`], {
+    cwd: wt,
+    env: pushEnv,
+  })
   logTail(push.stdout + push.stderr, 2)
   if (push.status === 0) {
     RESULTS.push(`${repo}|push:${base}`)
   } else {
-    const branchPush = run('git', ['push', '--no-verify', '-u', 'origin', branch], { cwd: wt, env: pushEnv })
+    const branchPush = run(
+      'git',
+      ['push', '--no-verify', '-u', 'origin', branch],
+      { cwd: wt, env: pushEnv },
+    )
     logTail(branchPush.stdout + branchPush.stderr, 2)
     if (branchPush.status === 0) {
-      const prCreate = run('gh', [
-        'pr', 'create',
-        '--repo', `SocketDev/${repo}`,
-        '--base', base,
-        '--head', branch,
-        '--title', `chore(sync): cascade fleet template@${TEMPLATE_SHA}`,
-        '--body', `Auto-cascade of socket-wheelhouse@${TEMPLATE_SHA}.`,
-      ], { cwd: wt })
-      const prUrl = (prCreate.stdout + prCreate.stderr).trim().split('\n').filter(Boolean).slice(-1)[0] ?? ''
+      const prCreate = run(
+        'gh',
+        [
+          'pr',
+          'create',
+          '--repo',
+          `SocketDev/${repo}`,
+          '--base',
+          base,
+          '--head',
+          branch,
+          '--title',
+          `chore(sync): cascade fleet template@${TEMPLATE_SHA}`,
+          '--body',
+          `Auto-cascade of socket-wheelhouse@${TEMPLATE_SHA}.`,
+        ],
+        { cwd: wt },
+      )
+      const prUrl =
+        (prCreate.stdout + prCreate.stderr)
+          .trim()
+          .split('\n')
+          .filter(Boolean)
+          .slice(-1)[0] ?? ''
       RESULTS.push(`${repo}|pr:${prUrl}`)
     } else {
       RESULTS.push(`${repo}|fail:push+pr`)
@@ -259,6 +322,7 @@ for (const rawLine of fleetReposRaw) {
 
 log('')
 log('════ RESULTS ════')
-for (const entry of RESULTS) {
+for (let i = 0, { length } = RESULTS; i < length; i += 1) {
+  const entry = RESULTS[i]!
   log(`  ${entry}`)
 }

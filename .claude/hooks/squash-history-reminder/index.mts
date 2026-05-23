@@ -20,7 +20,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { execSync } from 'node:child_process'
+// prefer-async-spawn: sync-required — hook fires synchronously at
+// turn-end and must finish before stdin/stdout close.
+import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
 
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
@@ -46,21 +48,21 @@ interface FleetRoster {
 }
 
 function gitSafe(cwd: string, args: string[]): string | undefined {
-  try {
-    return execSync(`git ${args.join(' ')}`, {
-      cwd,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim()
-  } catch {
+  const r = spawnSync('git', args, {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  })
+  if (r.status !== 0 || typeof r.stdout !== 'string') {
     return undefined
   }
+  return r.stdout.trim()
 }
 
 /**
- * Identify the canonical repo name. Prefer the GitHub remote (handles
- * checkout dir renames like `socket-cli-fix-foo`); fall back to the
- * working-tree basename.
+ * Identify the canonical repo name. Prefer the GitHub remote (handles checkout
+ * dir renames like `socket-cli-fix-foo`); fall back to the working-tree
+ * basename.
  */
 export function resolveRepoName(cwd: string): string | undefined {
   const remote = gitSafe(cwd, ['config', '--get', 'remote.origin.url'])
@@ -156,10 +158,7 @@ async function main(): Promise<void> {
       repoRoot,
       'template/.claude/skills/cascading-fleet/lib/fleet-repos.json',
     ),
-    path.join(
-      repoRoot,
-      '.claude/skills/cascading-fleet/lib/fleet-repos.json',
-    ),
+    path.join(repoRoot, '.claude/skills/cascading-fleet/lib/fleet-repos.json'),
   ]
   let roster: FleetRoster | undefined
   for (let i = 0, { length } = rosterCandidates; i < length; i += 1) {

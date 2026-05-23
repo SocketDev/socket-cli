@@ -137,7 +137,7 @@ const rule = {
         if (!objName) {
           return
         }
-        if (!/^(childProcess|child_process|cp)$/.test(objName)) {
+        if (!/^(?:childProcess|child_process|cp)$/.test(objName)) {
           return
         }
         if (hasBypassComment(node)) {

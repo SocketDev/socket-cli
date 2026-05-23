@@ -53,15 +53,16 @@ const SCRIPT_CONTEXT_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> =
   [
     {
       label: 'BASE=main / BASE=master literal assignment',
-      regex: /\bBASE\s*=\s*(["']?)(main|master)\1\b/,
+      regex: /\bBASE\s*=\s*(?:["']?)(?:main|master)\1\b/,
     },
     {
       label: '--base main / --base=main literal value',
-      regex: /--base[\s=](["']?)(main|master)\1\b/,
+      regex: /--base[\s=](?:["']?)(?:main|master)\1\b/,
     },
     {
       label: 'DEFAULT_BRANCH=main literal assignment',
-      regex: /\b(DEFAULT_BRANCH|MAIN_BRANCH)\s*=\s*(["']?)(main|master)\2\b/,
+      regex:
+        /\b(?:DEFAULT_BRANCH|MAIN_BRANCH)\s*=\s*(?:["']?)(?:main|master)\2\b/,
     },
   ]
 
@@ -70,9 +71,9 @@ const SCRIPT_CONTEXT_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> =
 // to `main..HEAD` / `main...HEAD` inside the writeable body counts as
 // scripting context.
 const SCRIPT_WRITE_RE =
-  /(cat\s*>\s*|tee\s+|>\s*)\S+\.(bash|fish|js|mjs|mts|sh|ts|zsh)\b/
+  /(?:cat\s*>\s*|tee\s+|>\s*)\S+\.(?:bash|fish|js|mjs|mts|sh|ts|zsh)\b/
 
-const TRIPLE_DOT_BRANCH_RE = /\b(main|master)\.{2,3}HEAD\b/
+const TRIPLE_DOT_BRANCH_RE = /\b(?:main|master)\.{2,3}HEAD\b/
 
 async function main(): Promise<void> {
   if (process.env['SOCKET_DEFAULT_BRANCH_GUARD_DISABLED']) {

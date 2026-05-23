@@ -40,7 +40,7 @@ const PATTERNS: readonly RuleViolation[] = [
     // specific person's intent. The verb-list is intentionally narrow
     // — generic API docs say "the user can call X" which is fine.
     regex:
-      /\b[Tt]he\s+user\s+(asked|chose|decided|likes|needs|picked|prefers|requested|said|wants|wrote)\b/i,
+      /\b[Tt]he\s+user\s+(?:asked|chose|decided|likes|needs|picked|prefers|requested|said|wants|wrote)\b/i,
     why: 'Refers to a specific person\'s intent. Use their name from `git config user.name`, or "you" if speaking directly.',
   },
   {
@@ -50,13 +50,13 @@ const PATTERNS: readonly RuleViolation[] = [
   },
   {
     label: 'someone (singular human reference)',
-    regex: /^Someone\s+(asked|needs|prefers|requested|said|wants|wrote)\b/im,
+    regex: /^Someone\s+(?:asked|needs|prefers|requested|said|wants|wrote)\b/im,
     why: '"Someone" hedges around naming. If you have access to git config, use the name.',
   },
   {
     label: 'the developer / the engineer (third-party framing)',
     regex:
-      /\b[Tt]he\s+(developer|engineer)\s+(asked|needs|prefers|said|wants|wrote)\b/i,
+      /\b[Tt]he\s+(?:developer|engineer)\s+(?:asked|needs|prefers|said|wants|wrote)\b/i,
     why: 'Same — name them if known, "you" if direct.',
   },
 ]

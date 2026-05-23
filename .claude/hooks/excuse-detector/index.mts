@@ -90,14 +90,14 @@ await runStopReminder({
       label: 'leave it for later',
       // Already deferral-shaped by construction ("leave" is the verb);
       // no extra DEFER pairing needed.
-      regex: /\bleave (it|that|this) for later\b/i,
+      regex: /\bleave (?:it|that|this) for later\b/i,
       why: 'CLAUDE.md "Completion": never leave TODO/FIXME/XXX/shims/stubs/placeholders — finish 100%.',
     },
     {
       label: 'not my issue',
       // Already deferral-shaped; "not my X" is the surface form of
       // the deferral itself.
-      regex: /\bnot my (bug|issue|problem)\b/i,
+      regex: /\bnot my (?:bug|issue|problem)\b/i,
       why: 'CLAUDE.md "Unrelated issues are critical": same as "unrelated".',
     },
     {
@@ -108,31 +108,31 @@ await runStopReminder({
     {
       label: 'should I implement … or accept',
       regex:
-        /\bshould (i|we) (build|do|fix|implement) [^.?!\n]+(or|,)\s+(accept|defer|document|leave|skip|treat)\b/i,
+        /\bshould (?:i|we) (?:build|do|fix|implement) [^.?!\n]+(?:or|,)\s+(?:accept|defer|document|leave|skip|treat)\b/i,
       why: 'CLAUDE.md "Fix > defer": this is a choice-architecture masquerading as a question. Fix it.',
     },
     {
       label: 'accept … as (a) (known )?gap',
       regex:
-        /\baccept (this|it|that|[^.?!\n]{1,40}) as (a |an )?(known |documented |expected )?(drift|gap|limitation)\b/i,
+        /\baccept (?:this|it|that|[^.?!\n]{1,40}) as (?:a |an )?(?:known |documented |expected )?(?:drift|gap|limitation)\b/i,
       why: 'CLAUDE.md "Fix > defer": gap-acceptance is the rationalization branch. The fix is the answer unless the user explicitly asked for the trade-off.',
     },
     {
       label: 'two paths/options: fix … or',
       regex:
-        /\b(three|two) (choices|options|paths)[^.?!\n]{0,40}(fix|implement)[^.?!\n]{0,80}(or|,)\s+(accept|defer|document|leave|skip|treat)\b/i,
+        /\b(?:three|two) (?:choices|options|paths)[^.?!\n]{0,40}(?:fix|implement)[^.?!\n]{0,80}(?:or|,)\s+(?:accept|defer|document|leave|skip|treat)\b/i,
       why: 'CLAUDE.md "Fix > defer": collapsing the menu — pick the fix path, start the first sub-step.',
     },
     {
       label: 'document(ed)? (it )?as a known (gap|drift|limitation)',
       regex:
-        /\bdocument(ed)?\b[^.?!\n]{0,40}\bas a known (drift|gap|limitation)\b/i,
+        /\bdocument(?:ed)?\b[^.?!\n]{0,40}\bas a known (?:drift|gap|limitation)\b/i,
       why: 'CLAUDE.md "Fix > defer": "document as known gap" is the deferral euphemism. Fix it instead.',
     },
     {
       label: 'want me to fix … or',
       regex:
-        /\bwant me to (address|build|do|fix|implement) [^.?!\n]+(or|,)\s+(skip|defer|document|treat|accept|leave|move on)\b/i,
+        /\bwant me to (?:address|build|do|fix|implement) [^.?!\n]+(?:or|,)\s+(?:skip|defer|document|treat|accept|leave|move on)\b/i,
       why: 'CLAUDE.md "Fix > defer": same pattern — re-litigating the fix decision. The user already said yes by virtue of asking.',
     },
   ],

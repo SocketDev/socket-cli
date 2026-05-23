@@ -40,6 +40,7 @@ import preferExistsSync from './rules/prefer-exists-sync.mts'
 import preferFunctionDeclaration from './rules/prefer-function-declaration.mts'
 import preferNodeBuiltinImports from './rules/prefer-node-builtin-imports.mts'
 import preferNodeModulesDotCache from './rules/prefer-node-modules-dot-cache.mts'
+import preferNonCapturingGroup from './rules/prefer-non-capturing-group.mts'
 import preferSafeDelete from './rules/prefer-safe-delete.mts'
 import preferSeparateTypeImport from './rules/prefer-separate-type-import.mts'
 import preferSpawnOverExecsync from './rules/prefer-spawn-over-execsync.mts'
@@ -95,6 +96,7 @@ const plugin = {
     'prefer-function-declaration': preferFunctionDeclaration,
     'prefer-node-builtin-imports': preferNodeBuiltinImports,
     'prefer-node-modules-dot-cache': preferNodeModulesDotCache,
+    'prefer-non-capturing-group': preferNonCapturingGroup,
     'prefer-safe-delete': preferSafeDelete,
     'prefer-separate-type-import': preferSeparateTypeImport,
     'prefer-spawn-over-execsync': preferSpawnOverExecsync,

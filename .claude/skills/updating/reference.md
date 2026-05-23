@@ -2,6 +2,13 @@
 
 Long-form details for the `updating` umbrella skill — phase scripts, exit-code semantics, and per-mode contracts. The orchestration story lives in [`SKILL.md`](SKILL.md).
 
+Phase numbers below match SKILL.md's table. Phase 1 (Validate
+environment) is procedural and has no bash — see the SKILL.md
+description directly. Phase 5 (Security advisories) and Phase 7
+(Coverage badge) are documented in their respective sub-skill
+references: [`../updating-security/reference.md`](../updating-security/reference.md)
+and [`../updating-coverage/SKILL.md`](../updating-coverage/SKILL.md).
+
 ## Phase scripts
 
 ### Phase 2 — npm packages
@@ -65,7 +72,7 @@ fi
 
 If no `.gitmodules` exists, skip 4b.
 
-### Phase 5 — Workflow SHA pins
+### Phase 6 — Workflow SHA pins
 
 Resolve the default branch (per CLAUDE.md _Default branch fallback_), then compare:
 
@@ -86,7 +93,34 @@ else
 fi
 ```
 
-### Phase 6 — Final validation (skip in CI)
+### Phase 8 — GitHub settings drift (skip in CI)
+
+`scripts/lint-github-settings.mts` audits repo + Actions settings
+against the fleet baseline. Read-only by default; surfaces findings
+with a fixUrl for each (operator clicks through to apply). The
+underlying script's CI-skip is intentional — it has its own 7-day
+local cache and the umbrella honours that.
+
+```bash
+if [ "$CI" = "true" ] || [ -n "$GITHUB_ACTIONS" ]; then
+  echo "CI mode: skipping GH settings audit"
+elif [ -f scripts/lint-github-settings.mts ]; then
+  node scripts/lint-github-settings.mts --force --json | tee /tmp/gh-settings-audit.json
+  # Findings are not auto-fixed by the umbrella — operator decides
+  # per-finding whether to follow the URL or `pnpm exec node
+  # scripts/lint-github-settings.mts --fix` (needs repo:admin).
+else
+  echo "No scripts/lint-github-settings.mts in this repo; skip"
+fi
+```
+
+Common finding shapes (full taxonomy in `scripts/lint-github-settings.mts`):
+
+- `doesnt-touch-customers must match visibility` — public→`false`, private→`true`. Manual fix at `…/settings/custom-properties`.
+- `GitHub App must be installed: <slug>` — install via `https://github.com/apps/<slug>`. Current required apps: `claude`, `cursor`, `socket-security`, `socket-security-staging`, `socket-trufflehog`.
+- `<repo-setting> must be <value>` — usually fixable via `--fix` (needs `repo:admin`) or the GitHub UI link in the finding.
+
+### Phase 9 — Final validation (skip in CI)
 
 ```bash
 if [ "$CI" = "true" ] || [ -n "$GITHUB_ACTIONS" ]; then
@@ -98,7 +132,7 @@ else
 fi
 ```
 
-### Phase 7 — Report
+### Phase 10 — Report
 
 ```
 ## Update Complete

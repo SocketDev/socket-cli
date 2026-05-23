@@ -225,7 +225,7 @@ async function main(): Promise<void> {
     process.exit(0)
   }
   // Skip tests — they often have illustrative pointer-only comments.
-  if (/(^|\/)test\//.test(filePath) || /\.test\.[jt]sx?$/.test(filePath)) {
+  if (/(?:^|\/)test\//.test(filePath) || /\.test\.[jt]sx?$/.test(filePath)) {
     process.exit(0)
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {

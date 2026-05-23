@@ -75,15 +75,15 @@ export function isForbiddenPath(arg: string): boolean {
   // Any `/node_modules/` segment OR a top-level `node_modules` /
   // `node_modules/...`.
   if (
-    /(^|\/)node_modules(\/|$)/.test(stripped) ||
-    /[\\]node_modules([\\]|$)/.test(stripped)
+    /(?:^|\/)node_modules(?:\/|$)/.test(stripped) ||
+    /[\\]node_modules(?:[\\]|$)/.test(stripped)
   ) {
     return true
   }
   // `package-lock.json` under `.claude/hooks/<name>/` or
   // `.claude/skills/<name>/`.
   if (
-    /(^|\/)\.claude\/(hooks|skills)\/[^/]+\/(package-lock\.json|pnpm-lock\.yaml)$/.test(
+    /(?:^|\/)\.claude\/(?:hooks|skills)\/[^/]+\/(?:package-lock\.json|pnpm-lock\.yaml)$/.test(
       stripped,
     )
   ) {

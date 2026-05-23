@@ -90,9 +90,9 @@ const SIBLING_PATH_RES: readonly RegExp[] = [
 ]
 
 /**
- * Repo-root README detection. The hook only fires on the root README.md,
- * not nested READMEs. The check is path-shape only — basename match +
- * parent directory ≠ another README's parent.
+ * Repo-root README detection. The hook only fires on the root README.md, not
+ * nested READMEs. The check is path-shape only — basename match + parent
+ * directory ≠ another README's parent.
  */
 export function isRootReadme(filePath: string): boolean {
   const normalized = filePath.replace(/\\/g, '/')
@@ -114,7 +114,7 @@ export function isRootReadme(filePath: string): boolean {
     'scripts',
     'template',
     'test',
-    'tests',
+    'tools',
   ])
   for (const seg of segments) {
     if (SCOPED_PARENTS.has(seg)) {
@@ -126,9 +126,9 @@ export function isRootReadme(filePath: string): boolean {
 
 /**
  * Compute the post-edit text for an Edit (splice old_string → new_string
- * against the on-disk file) or a Write (just `content`). Returns
- * undefined when the post-edit text can't be reliably computed (Edit
- * against a file that doesn't exist, or old_string not found).
+ * against the on-disk file) or a Write (just `content`). Returns undefined when
+ * the post-edit text can't be reliably computed (Edit against a file that
+ * doesn't exist, or old_string not found).
  */
 export function computePostEditText(
   toolName: string,

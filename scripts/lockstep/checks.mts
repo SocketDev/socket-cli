@@ -238,8 +238,8 @@ export function checkFeatureParity(
 
   const codePatterns = row.code_patterns ?? []
   const testPatterns = row.test_patterns ?? []
-  const codeFiles = walkDirFiles(localAreaPath, /\.(m?[jt]sx?|json)$/).filter(
-    f => !/[/\\](__tests__|test|tests)[/\\]|\.test\.|\.spec\./.test(f),
+  const codeFiles = walkDirFiles(localAreaPath, /\.(?:m?[jt]sx?|json)$/).filter(
+    f => !/[/\\](?:__tests__|test|tests)[/\\]|\.test\.|\.spec\./.test(f),
   )
 
   const codeScore =
@@ -251,11 +251,11 @@ export function checkFeatureParity(
   // that directory instead (sdxgen-style where tests live outside the
   // parser directory).
   const testAreaPath = path.join(rootDir, row.test_area ?? row.local_area)
-  const testAreaFiles = walkDirFiles(testAreaPath, /\.(m?[jt]sx?|json)$/)
+  const testAreaFiles = walkDirFiles(testAreaPath, /\.(?:m?[jt]sx?|json)$/)
   const testFiles = row.test_area
     ? testAreaFiles
     : testAreaFiles.filter(f =>
-        /[/\\](__tests__|test|tests)[/\\]|\.test\.|\.spec\./.test(f),
+        /[/\\](?:__tests__|test|tests)[/\\]|\.test\.|\.spec\./.test(f),
       )
   const testScore =
     testPatterns.length === 0

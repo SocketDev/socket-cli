@@ -35,18 +35,18 @@ interface StopPayload {
 // Plan-announcement phrases. Each fires only if the announcement is
 // NOT followed (within a window of text) by a numbered list.
 const PLAN_PHRASE_RE =
-  /\b(here'?s the plan|my plan is|i will:|approach:|steps:|step 1)\b/i
+  /\b(?:here'?s the plan|my plan is|i will:|approach:|steps:|step 1)\b/i
 
 // Numbered-list shape: "1." or "1)" at line start.
 const NUMBERED_LIST_RE = /^\s*1\s*[.)]\s+\S/m
 
 // Fleet-shared resources whose edits should invite a second-opinion pass.
 const FLEET_SHARED_RE =
-  /\b(CLAUDE\.md|\.claude\/hooks\/|_shared\/|template\/CLAUDE\.md|sync-scaffolding|cascade-tooling)\b/
+  /\b(?:CLAUDE\.md|\.claude\/hooks\/|_shared\/|template\/CLAUDE\.md|sync-scaffolding|cascade-tooling)\b/
 
 // Second-opinion-invitation phrases.
 const SECOND_OPINION_RE =
-  /\b(second[- ]opinion|review (the|this) plan|sanity[- ]check|pair[- ]review|invite a review)\b/i
+  /\b(?:second[- ]opinion|review (?:the|this) plan|sanity[- ]check|pair[- ]review|invite a review)\b/i
 
 async function main(): Promise<void> {
   const payloadRaw = await readStdin()
@@ -90,7 +90,7 @@ async function main(): Promise<void> {
     // (which keeps the I'll context) and the stripped text.
     if (
       PLAN_PHRASE_RE.test(text) ||
-      /\b(I'?ll|I will|I'm going to)\b/i.test(rawText)
+      /\b(?:I'?ll|I will|I'm going to)\b/i.test(rawText)
     ) {
       hits.push(
         'plan touches fleet-shared resources (CLAUDE.md / .claude/hooks/ / ' +

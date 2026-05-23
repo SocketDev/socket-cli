@@ -330,6 +330,9 @@ const scanFilesInRange = (range: string): number => {
       !file.includes('/external/') &&
       !file.includes('/vendor/') &&
       !file.includes('/upstream/') &&
+      // src/logger/ IS the logger — implementing the surface itself
+      // requires direct console.* calls.
+      !file.startsWith('src/logger/') &&
       /\.(m?ts|tsx|cts)$/.test(file)
     ) {
       const loggerHits = scanLoggerLeaks(text)

@@ -36,16 +36,16 @@ them via the cheapest principled mechanism. Invoked directly via
 
 ## Phases
 
-| #   | Phase                | Outcome                                                                                                                       |
-| --- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Discover             | `gh api repos/{owner}/{repo}/dependabot/alerts?state=open`. Group by package + relationship (direct / transitive).            |
+| #   | Phase                | Outcome                                                                                                                        |
+| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Discover             | `gh api repos/{owner}/{repo}/dependabot/alerts?state=open`. Group by package + relationship (direct / transitive).             |
 | 2   | Classify             | Each alert → one of: `direct-fix` (bump `package.json`), `override-fix` (pnpm override for transitive), `dismiss-with-reason`. |
-| 3   | Apply direct fixes   | For each direct dep: `pnpm update <pkg>@<first-patched-version>` (or higher); commit per alert.                               |
-| 4   | Apply override fixes | For each transitive: add `pnpm.overrides[<pkg>]` to `package.json` pinning the patched range; `pnpm install`; commit per row. |
+| 3   | Apply direct fixes   | For each direct dep: `pnpm update <pkg>@<first-patched-version>` (or higher); commit per alert.                                |
+| 4   | Apply override fixes | For each transitive: add `pnpm.overrides[<pkg>]` to `package.json` pinning the patched range; `pnpm install`; commit per row.  |
 | 5   | Validate             | `pnpm run check --all` (interactive) or `pnpm run check --staged` (CI). Roll back any commit whose check fails.                |
-| 6   | Push                 | Per CLAUDE.md push policy — `git push origin <branch>`, fall back to PR on rejection. NEVER force-push.                       |
+| 6   | Push                 | Per CLAUDE.md push policy — `git push origin <branch>`, fall back to PR on rejection. NEVER force-push.                        |
 | 7   | Verify resolution    | After push lands, `gh api .../dependabot/alerts` should show each fixed alert as `auto_dismissed` or `fixed`. Log remaining.   |
-| 8   | Report               | Per-alert table: alert # / pkg / severity / action taken / state.                                                             |
+| 8   | Report               | Per-alert table: alert # / pkg / severity / action taken / state.                                                              |
 
 ## Hard requirements
 

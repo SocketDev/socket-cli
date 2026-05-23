@@ -705,7 +705,9 @@ describe('release-workflow-guard hook', () => {
       // Create a sibling project named "socket-other" alongside the
       // primary fixture; place a stubs.yml in the sibling. The hook
       // must read the sibling, not the primary.
-      const projectsRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'rwg-roots-'))
+      const projectsRoot = await fs.mkdtemp(
+        path.join(os.tmpdir(), 'rwg-roots-'),
+      )
       const primaryDir = path.join(projectsRoot, 'socket-btm')
       const siblingDir = path.join(projectsRoot, 'socket-other')
       await fs.mkdir(path.join(primaryDir, '.github', 'workflows'), {

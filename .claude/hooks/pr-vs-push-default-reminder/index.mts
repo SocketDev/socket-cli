@@ -58,7 +58,9 @@ export function hasPrDirective(turns: string[]): boolean {
     const text = turns[i]!
     for (let i = 0, { length } = PR_DIRECTIVE_PATTERNS; i < length; i += 1) {
       const re = PR_DIRECTIVE_PATTERNS[i]!
-      if (re.test(text)) {return true}
+      if (re.test(text)) {
+        return true
+      }
     }
   }
   return false

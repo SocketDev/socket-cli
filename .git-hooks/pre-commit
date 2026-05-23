@@ -40,8 +40,34 @@ if ! command -v pnpm >/dev/null 2>&1; then
   exit 1
 fi
 
+# Error-visibility helper. When lint/test fails, harness output often
+# shows only a final "Failed with non-blocking status code" line — the
+# actual error is buried thousands of lines up the log and gets clipped
+# by the agent's stdout limits. Tee each step's output to a tempfile,
+# tail it on failure with a clear marker so the operator (or agent)
+# can see what broke without scrolling.
+run_step() {
+  step_name=$1
+  shift
+  step_log=$(mktemp -t "pre-commit-${step_name}.XXXXXX") || step_log=/tmp/pre-commit-step.log
+  if "$@" 2>&1 | tee "$step_log"; then
+    status=0
+  else
+    status=$?
+  fi
+  if [ "$status" -ne 0 ]; then
+    printf '\n========== pre-commit: %s FAILED (exit %s) ==========\n' "$step_name" "$status"
+    printf 'Last 60 lines of output:\n\n'
+    tail -60 "$step_log"
+    printf '\n========== full log: %s ==========\n' "$step_log"
+  else
+    rm -f "$step_log"
+  fi
+  return "$status"
+}
+
 if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
-  pnpm lint --staged
+  run_step lint pnpm lint --staged || exit $?
 else
   echo "Skipping lint due to DISABLE_PRECOMMIT_LINT env var"
 fi
@@ -58,9 +84,9 @@ if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
   # local override that pre-filters with `git diff --cached --name-only`
   # then runs `pnpm test`.
   if [ -n "${DISABLE_PRECOMMIT_LINT}" ]; then
-    pnpm test --staged --fast
+    run_step test pnpm test --staged --fast || exit $?
   else
-    pnpm test --staged
+    run_step test pnpm test --staged || exit $?
   fi
 else
   echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"

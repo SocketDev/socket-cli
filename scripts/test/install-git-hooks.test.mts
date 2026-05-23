@@ -95,7 +95,7 @@ function runInstaller(
   const r = spawnSync(process.execPath, [installerPath], {
     cwd,
   })
-  return { code: r.status ?? 0, stderr: String(r.stderr) ?? '' }
+  return { code: r.status ?? 0, stderr: r.stderr ? String(r.stderr) : '' }
 }
 
 test('install-git-hooks: sets core.hooksPath when .git + .git-hooks both present', () => {

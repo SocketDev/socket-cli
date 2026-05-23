@@ -229,7 +229,7 @@ const main = (): number => {
     if (shouldSkipFile(file)) {
       continue
     }
-    if (!/\.(md|mdx)$/i.test(file)) {
+    if (!/\.(?:md|mdx)$/i.test(file)) {
       continue
     }
     const text = readFileForScan(file)
@@ -279,7 +279,11 @@ const main = (): number => {
       file.startsWith('template/scripts/') ||
       file.includes('/external/') ||
       file.includes('/vendor/') ||
-      file.includes('/upstream/')
+      file.includes('/upstream/') ||
+      // src/logger/ IS the logger — implementing the surface itself
+      // requires direct console.* calls. Same exemption the
+      // logger-guard PreToolUse hook applies.
+      file.startsWith('src/logger/')
     ) {
       continue
     }

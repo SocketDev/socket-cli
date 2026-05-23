@@ -70,9 +70,9 @@ const rule = {
           }
         }
         if (
+          cursor.type === 'ExportNamedDeclaration' ||
           cursor.type === 'ExpressionStatement' ||
-          cursor.type === 'VariableDeclaration' ||
-          cursor.type === 'ExportNamedDeclaration'
+          cursor.type === 'VariableDeclaration'
         ) {
           break
         }

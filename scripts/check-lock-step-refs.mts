@@ -73,7 +73,7 @@ type Finding = {
 //      matching prose like "Lock-step with Go: JSON parser")
 //   4: optional `:start[-end]` line range (discarded for path resolution)
 const LOCK_STEP_RE =
-  /Lock-step (from|with) ([A-Za-z][A-Za-z0-9+#-]*): ([^\s:,]*[./][^\s:,]*)(?::(\d+(?:-\d+)?))?/g
+  /Lock-step (?:from|with) (?:[A-Za-z][A-Za-z0-9+#-]*): (?:[^\s:,]*[./][^\s:,]*)(?::(?:\d+(?:-\d+)?))?/g
 
 function loadConfig(repoRoot: string): Config | undefined {
   const configFile = path.join(repoRoot, CONFIG_PATH)

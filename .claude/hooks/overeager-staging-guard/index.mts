@@ -118,9 +118,15 @@ export function detectBroadGitAdd(command: string): string | undefined {
     const rest = tokens.slice(j + 2)
     for (let k = 0, { length } = rest; k < length; k += 1) {
       const arg = rest[k]!
-      if (arg === '--all' || arg === '-A') {return `git add ${arg}`}
-      if (arg === '--update' || arg === '-u') {return `git add ${arg}`}
-      if (arg === '.') {return 'git add .'}
+      if (arg === '--all' || arg === '-A') {
+        return `git add ${arg}`
+      }
+      if (arg === '--update' || arg === '-u') {
+        return `git add ${arg}`
+      }
+      if (arg === '.') {
+        return 'git add .'
+      }
     }
   }
   return undefined

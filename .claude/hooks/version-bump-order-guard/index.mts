@@ -46,7 +46,7 @@ const VERSION_TAG_RE = /\bgit\s+tag\b[^|;&\n]*\bv\d+\.\d+\.\d+\b/
 // Subject patterns that count as a "bump commit". Matches Keep-a-
 // Changelog style and Conventional Commits style.
 const BUMP_SUBJECT_RE =
-  /^(chore(?:\([\w-]+\))?:\s+(?:bump version to|release)\s+v?\d+\.\d+\.\d+|chore(?:\([\w-]+\))?:\s+v?\d+\.\d+\.\d+\s+release)/i
+  /^(?:chore(?:\([\w-]+\))?:\s+(?:bump version to|release)\s+v?\d+\.\d+\.\d+|chore(?:\([\w-]+\))?:\s+v?\d+\.\d+\.\d+\s+release)/i
 
 async function main(): Promise<void> {
   if (process.env['SOCKET_VERSION_BUMP_ORDER_GUARD_DISABLED']) {
@@ -75,11 +75,7 @@ async function main(): Promise<void> {
 
   // Read the most-recent commit subject from HEAD.
   const opts = payload.cwd ? { cwd: payload.cwd } : {}
-  const subjectResult = spawnSync(
-    'git',
-    ['log', '-1', '--pretty=%s'],
-    opts,
-  )
+  const subjectResult = spawnSync('git', ['log', '-1', '--pretty=%s'], opts)
   if (subjectResult.status !== 0) {
     // Not a git repo or git unavailable — fail open.
     process.exit(0)

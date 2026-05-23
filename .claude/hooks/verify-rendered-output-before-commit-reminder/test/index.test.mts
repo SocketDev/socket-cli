@@ -106,7 +106,9 @@ test('commit with UI files + recent build + no verify — reminder fires', async
     ]),
   })
   assert.strictEqual(r.code, 0)
-  assert.ok(String(r.stderr).includes('verify-rendered-output-before-commit-reminder'))
+  assert.ok(
+    String(r.stderr).includes('verify-rendered-output-before-commit-reminder'),
+  )
 })
 
 test('commit with UI files + build + later user verify — no reminder', async () => {

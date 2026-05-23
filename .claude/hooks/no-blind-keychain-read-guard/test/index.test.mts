@@ -69,7 +69,7 @@ test('Linux secret-tool clear is NOT flagged (delete)', () => {
 
 test('Windows Get-StoredCredential is flagged', () => {
   const hits = findKeychainReads(
-    "powershell -Command \"(Get-StoredCredential -Target 'socket-cli:SOCKET_API_KEY').Password\"",
+    'powershell -Command "(Get-StoredCredential -Target \'socket-cli:SOCKET_API_KEY\').Password"',
   )
   assert.equal(hits.length, 1)
   assert.equal(hits[0]!.platform, 'windows')
@@ -119,7 +119,7 @@ test('chained reads count separately', () => {
 test('unrelated commands are not flagged', () => {
   for (const cmd of [
     'ls -la',
-    "git log --oneline -5",
+    'git log --oneline -5',
     'echo $SOCKET_API_KEY',
     'pnpm install',
     'grep security file.txt',

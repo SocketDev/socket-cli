@@ -127,7 +127,9 @@ process.stdin.on('end', () => {
     )
     process.exit(2)
   } catch (e) {
-    process.stderr.write(`[no-empty-commit-guard] hook error (allowing): ${e}\n`)
+    process.stderr.write(
+      `[no-empty-commit-guard] hook error (allowing): ${e}\n`,
+    )
     process.exit(0)
   }
 })

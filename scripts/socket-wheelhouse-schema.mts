@@ -343,6 +343,6 @@ export const SocketWheelhouseConfigSchema = Type.Object(
   },
 )
 
-type SocketWheelhouseConfig = Static<typeof SocketWheelhouseConfigSchema>
+export type SocketWheelhouseConfig = Static<typeof SocketWheelhouseConfigSchema>
 export type Layout = Static<typeof LayoutSchema>
 export type Native = Static<typeof NativeSchema>

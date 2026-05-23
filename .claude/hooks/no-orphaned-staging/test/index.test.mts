@@ -32,7 +32,7 @@ function runHook(env: Record<string, string>): RunResult {
 }
 
 function git(repoDir: string, args: string[]): void {
-  const r = spawnSync('git', args, { cwd: repoDir,})
+  const r = spawnSync('git', args, { cwd: repoDir })
   if (r.status !== 0) {
     throw new Error(`git ${args.join(' ')} failed: ${r.stderr}`)
   }
