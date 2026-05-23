@@ -268,7 +268,7 @@ describe('extractBazelToMaven', () => {
     expect(result.ok).toBe(true)
   })
 
-  it('sets process.exitCode = 1 and writes empty maven_install.json when no repos discovered', async () => {
+  it('reports noEcosystemFound without mutating process.exitCode when no repos discovered', async () => {
     vi.mocked(discoverMavenRepos).mockResolvedValue(new Map())
 
     const result = await extractBazelToMaven({
@@ -281,10 +281,11 @@ describe('extractBazelToMaven', () => {
       verbose: false,
     })
 
-    expect(process.exitCode).toBe(1)
+    expect(process.exitCode).toBe(0)
     expect(result).toEqual({
       artifactCount: 0,
       manifestPath: path.join(tmp, 'maven_install.json'),
+      noEcosystemFound: true,
       ok: false,
     })
     // Empty manifest is still written.
@@ -294,6 +295,29 @@ describe('extractBazelToMaven', () => {
     )
     const manifest = JSON.parse(manifestText)
     expect(manifest.artifacts).toEqual({})
+  })
+
+  it('reports hard failure when discovered repos extract zero artifacts', async () => {
+    vi.mocked(discoverMavenRepos).mockResolvedValue(
+      new Map([['maven', '# no parseable rules\n']]),
+    )
+
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      verbose: false,
+    })
+
+    expect(result).toEqual({
+      artifactCount: 0,
+      manifestPath: path.join(tmp, 'maven_install.json'),
+      ok: false,
+    })
+    expect(result.noEcosystemFound).toBeUndefined()
   })
 
   it('iterates each discovered repo independently when one has no parseable rules', async () => {
@@ -334,7 +358,7 @@ describe('extractBazelToMaven', () => {
     })
   })
 
-  it('sets process.exitCode = 1 when one group:artifact has conflicting versions', async () => {
+  it('returns failure without mutating process.exitCode when one group:artifact has conflicting versions', async () => {
     const conflictingStdout = [
       'jvm_import(',
       '  name = "com_example_demo_v1",',
@@ -359,7 +383,7 @@ describe('extractBazelToMaven', () => {
       verbose: false,
     })
 
-    expect(process.exitCode).toBe(1)
+    expect(process.exitCode).toBe(0)
     expect(result).toEqual({
       artifactCount: 0,
       ok: false,

@@ -95,27 +95,30 @@ export async function generateAutoManifest({
 
   if (!sockJson?.defaults?.manifest?.bazel?.disabled && detected.bazel) {
     const bazelConfig = sockJson?.defaults?.manifest?.bazel
+
     logger.log(
       'Detected a Bazel workspace, extracting Maven dependencies via bazel query...',
     )
-    const bazelResult = await extractBazelToMaven({
+    const mavenResult = await extractBazelToMaven({
       bazelFlags: bazelConfig?.bazelFlags,
       bazelOutputBase: bazelConfig?.bazelOutputBase,
       bazelRc: bazelConfig?.bazelRc,
       bin: bazelConfig?.bazel ?? bazelConfig?.bin,
       cwd,
-      // Auto-manifest writes into a sibling directory instead of the repo root
-      // so scan discovery can pick it up without colliding with a checked-in
-      // rules_jvm_external lockfile or repo-root gitignore patterns.
       out: bazelConfig?.out ?? cwd,
       outLayout: 'flat',
       verbose: Boolean(bazelConfig?.verbose) || verbose,
     })
-    if (!bazelResult.ok) {
-      throw new Error('Bazel auto-manifest generation failed')
+
+    if (!mavenResult.ok && !mavenResult.noEcosystemFound) {
+      throw new Error(
+        'Bazel auto-manifest generation failed for ecosystem(s): maven',
+      )
     }
-    if (bazelResult.manifestPath) {
-      generatedFiles.push(bazelResult.manifestPath)
+    if (mavenResult.ok && mavenResult.manifestPath) {
+      generatedFiles.push(mavenResult.manifestPath)
+    } else if (mavenResult.noEcosystemFound) {
+      logger.info('No supported Bazel Maven ecosystem detected.')
     }
   }
 

@@ -1,0 +1,443 @@
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import path from 'node:path'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+
+import { getErrorCause } from '../../../utils/errors.mts'
+
+import type { RepoProbe, ValidationResult } from './bazel-repo-discovery.mts'
+
+// Maximum size (bytes) we will read for any single Bazel workspace file.
+// Prevents DoS via maliciously large MODULE.bazel / WORKSPACE / .bzl files.
+const MAX_WORKSPACE_FILE_BYTES = 5 * 1024 * 1024
+
+// Maximum candidate count we will return (deduped) before failing.
+// Real repos have <20; this is a hard ceiling against pathological inputs.
+const MAX_CANDIDATES = 256
+
+// Regex strategy: anchored, bounded character classes, no nested quantifiers.
+
+// Bzlmod: discover `use_extension(..., "pip")` bindings, then match
+// `${binding}.parse(...)` to find pip hub declarations.
+// Bounded: matches up to ~256 chars of path to avoid catastrophic backtracking.
+const USE_EXTENSION_PIP_RE =
+  /(\w+)\s*=\s*use_extension\s*\(\s*["'][^"']{0,256}pip\.bzl["']\s*,\s*["']pip["']\s*\)/g
+
+// Extract hub_name, requirements_lock, and python_version from a pip.parse
+// argument blob. Bounded character classes and length caps.
+const HUB_NAME_ATTR_RE = /hub_name\s*=\s*(["'])([A-Za-z0-9_]{1,129})\1/
+const REQUIREMENTS_LOCK_ATTR_RE =
+  /requirements_lock\s*=\s*(["'])([^"']{1,512})\1/
+const PYTHON_VERSION_ATTR_RE = /python_version\s*=\s*(["'])([0-9._+!]{1,32})\1/
+
+// Legacy WORKSPACE patterns: pip_parse, pip_install, pip_repository.
+// Bounded: matches up to ~8KB of argument list.
+const PIP_PARSE_NAME_RE = /pip_parse\s*\(\s*([^)]{0,8192})\)/g
+const PIP_INSTALL_NAME_RE = /pip_install\s*\(\s*([^)]{0,8192})\)/g
+const PIP_REPOSITORY_NAME_RE = /pip_repository\s*\(\s*([^)]{0,8192})\)/g
+const NAME_ATTR_RE = /name\s*=\s*(["'])([A-Za-z0-9_]{1,129})\1/
+const LEGACY_REQ_LOCK_RE = /requirements_lock\s*=\s*(["'])([^"']{1,512})\1/
+const MOD_SHOW_PIP_PARSE_RE = /pip\.parse\s*\(\s*([^)]{0,8192})\)/g
+const MOD_SHOW_USE_REPO_RE =
+  /use_repo\s*\(\s*\w+\s*,\s*(["'])([A-Za-z0-9_]{1,129})\1\s*\)/g
+
+// Hub validation: accept alias rules or `:pkg` targets in probe stdout.
+// Does NOT require `pypi_name=` (that marker lives on spoke repos).
+const PYPI_HUB_MARKER_RE = /:pkg\b|alias\s*\(/
+
+export type PypiHubInfo = {
+  hubName: string
+  source:
+    | 'MODULE.bazel'
+    | 'WORKSPACE'
+    | 'WORKSPACE.bazel'
+    | '.bzl'
+    | 'visible-repos'
+    | 'default-seed'
+    | 'bazel-mod-show-extension'
+  workspaceMode: 'bzlmod' | 'legacy' | 'unknown'
+  pythonVersion?: string | undefined
+  requirementsLockLabel?: string | undefined
+  requirementsLockPath?: string | undefined
+  probeStdout: string
+  visibleRepoNames?: string[] | undefined
+}
+
+export type PypiHubCandidate = Omit<
+  PypiHubInfo,
+  'probeStdout' | 'visibleRepoNames'
+>
+
+export function parseBazelModPipExtensionCandidates(
+  stdout: string,
+  verbose?: boolean,
+): PypiHubCandidate[] {
+  const useRepoNames = new Set<string>()
+  for (const m of stdout.matchAll(MOD_SHOW_USE_REPO_RE)) {
+    useRepoNames.add(m[2] as string)
+  }
+
+  const candidates: PypiHubCandidate[] = []
+  for (const m of stdout.matchAll(MOD_SHOW_PIP_PARSE_RE)) {
+    const info = extractHubInfoFromArgBlob(
+      m[1] ?? '',
+      'bazel-mod-show-extension',
+      'bzlmod',
+    )
+    if (!info) {
+      continue
+    }
+    if (useRepoNames.size && !useRepoNames.has(info.hubName)) {
+      if (verbose) {
+        logger.log(
+          `[VERBOSE] discovery: dropping pip.parse hub '${info.hubName}' because show_extension did not report matching use_repo.`,
+        )
+      }
+      continue
+    }
+    candidates.push(info)
+  }
+
+  if (verbose) {
+    logger.log(
+      '[VERBOSE] discovery: bazel mod show_extension pip.parse hits:',
+      candidates.length,
+      'use_repo:',
+      Array.from(useRepoNames),
+    )
+  }
+  return dedupCapped(candidates, verbose)
+}
+
+// Reads file contents, refusing files that exceed MAX_WORKSPACE_FILE_BYTES.
+// Returns null when the file is missing, oversized, or unreadable.
+function safeReadFile(file: string): string | null {
+  if (!existsSync(file)) {
+    return null
+  }
+  try {
+    const stat = statSync(file)
+    if (stat.size > MAX_WORKSPACE_FILE_BYTES) {
+      return null
+    }
+    return readFileSync(file, 'utf8')
+  } catch {
+    return null
+  }
+}
+
+// Walks workspace root for legacy Starlark sources we can scan: WORKSPACE
+// (and WORKSPACE.bazel) plus top-level .bzl files. Non-recursive by design;
+// Phase 1 explicitly avoids static Starlark parsing at depth.
+function listLegacyStarlarkFiles(cwd: string): string[] {
+  const files: string[] = []
+  const candidates = ['WORKSPACE', 'WORKSPACE.bazel']
+  for (const c of candidates) {
+    const p = path.join(cwd, c)
+    if (existsSync(p)) {
+      files.push(p)
+    }
+  }
+  // Top-level .bzl files only.
+  try {
+    for (const entry of readdirSync(cwd)) {
+      if (entry.endsWith('.bzl')) {
+        files.push(path.join(cwd, entry))
+      }
+    }
+  } catch {
+    // Ignore unreadable cwd.
+  }
+  return files
+}
+
+// Returns deduplicated list of items, capped at MAX_CANDIDATES.
+// Precedence: the first occurrence of a given hubName wins. Callers
+// must order inputs so the preferred source comes first (e.g., Bzlmod
+// hits before legacy WORKSPACE hits during migration).
+// Throws a clear error if the cap is exceeded so callers do not silently
+// truncate. Emits a verbose warning when a later entry is dropped due to
+// a name collision so users can see implicit precedence at work.
+function dedupCapped(
+  items: PypiHubCandidate[],
+  verbose?: boolean,
+): PypiHubCandidate[] {
+  const seen = new Map<string, PypiHubCandidate>()
+  const out: PypiHubCandidate[] = []
+  for (const item of items) {
+    const existing = seen.get(item.hubName)
+    if (!existing) {
+      seen.set(item.hubName, item)
+      out.push(item)
+      if (out.length >= MAX_CANDIDATES) {
+        throw new Error(
+          `Discovered more than ${MAX_CANDIDATES} pip hub candidates. ` +
+            'This exceeds the safety ceiling; aborting discovery.',
+        )
+      }
+    } else if (verbose) {
+      logger.log(
+        `[VERBOSE] discovery: dropping duplicate pip hub candidate '${item.hubName}' ` +
+          `(kept first occurrence from ${existing.source}/${existing.workspaceMode}, ` +
+          `dropped ${item.source}/${item.workspaceMode}).`,
+      )
+    }
+  }
+  return out
+}
+
+// Build a dynamic regex for `${binding}.parse(...)` given a validated binding
+// name (word characters only, so safe to embed). Bounded arg list.
+function buildPipParseRe(binding: string): RegExp {
+  return new RegExp(`${binding}\\.parse\\s*\\(\\s*([^)]{0,8192})\\)`, 'g')
+}
+
+// Extract candidate hub fields from a pip.parse / pip_parse / pip_install /
+// pip_repository argument blob (without probeStdout or visibleRepoNames).
+function extractHubInfoFromArgBlob(
+  argBlob: string,
+  source: PypiHubInfo['source'],
+  workspaceMode: PypiHubInfo['workspaceMode'],
+): PypiHubCandidate | undefined {
+  const hubMatch = HUB_NAME_ATTR_RE.exec(argBlob)
+  const nameMatch = NAME_ATTR_RE.exec(argBlob)
+  const hubName = hubMatch?.[2] ?? nameMatch?.[2]
+  if (!hubName) {
+    return undefined
+  }
+  const lockMatch =
+    REQUIREMENTS_LOCK_ATTR_RE.exec(argBlob) ?? LEGACY_REQ_LOCK_RE.exec(argBlob)
+  const pythonVersion = PYTHON_VERSION_ATTR_RE.exec(argBlob)?.[2]
+  return {
+    hubName,
+    source,
+    workspaceMode,
+    pythonVersion,
+    requirementsLockLabel: lockMatch?.[2],
+  }
+}
+
+// Step 1: parse candidate pip hub names from Bzlmod MODULE.bazel and legacy
+// WORKSPACE / .bzl entry points.
+//
+// Precedence: Bzlmod (MODULE.bazel pip.parse) hits are pushed first, then
+// legacy (pip_parse / pip_install / pip_repository) hits. dedupCapped keeps
+// the first occurrence, so during migration scenarios where both
+// MODULE.bazel and WORKSPACE define a hub with the same name, the Bzlmod
+// entry wins implicitly. Pass verbose=true to surface dropped duplicates.
+export function parsePypiHubCandidates(
+  cwd: string,
+  verbose?: boolean,
+): PypiHubCandidate[] {
+  const candidates: PypiHubCandidate[] = []
+
+  // Bzlmod path: parse MODULE.bazel for use_extension bindings to pip,
+  // then match ${binding}.parse(...).
+  const moduleBazel = path.join(cwd, 'MODULE.bazel')
+  const moduleContent = safeReadFile(moduleBazel)
+  if (moduleContent) {
+    const bindings: string[] = []
+    for (const m of moduleContent.matchAll(USE_EXTENSION_PIP_RE)) {
+      bindings.push(m[1] as string)
+    }
+    if (verbose) {
+      logger.log(
+        '[VERBOSE] discovery: scanned',
+        moduleBazel,
+        `(${bindings.length} use_extension pip binding(s))`,
+      )
+    }
+
+    for (const binding of bindings) {
+      const parseRe = buildPipParseRe(binding)
+      for (const m of moduleContent.matchAll(parseRe)) {
+        const argBlob = m[1] ?? ''
+        const info = extractHubInfoFromArgBlob(
+          argBlob,
+          'MODULE.bazel',
+          'bzlmod',
+        )
+        if (info) {
+          candidates.push(info)
+        }
+      }
+    }
+
+    if (verbose) {
+      logger.log(
+        '[VERBOSE] discovery: MODULE.bazel pip.parse hits:',
+        candidates.length,
+      )
+    }
+  } else if (verbose) {
+    logger.log(
+      '[VERBOSE] discovery:',
+      moduleBazel,
+      'not present (skipping bzlmod scan)',
+    )
+  }
+
+  // Legacy path: scan WORKSPACE + top-level .bzl files for pip_parse,
+  // pip_install, and pip_repository.
+  const legacyFiles = listLegacyStarlarkFiles(cwd)
+  if (verbose) {
+    logger.log(
+      '[VERBOSE] discovery: legacy files considered:',
+      legacyFiles.length ? legacyFiles : '(none)',
+    )
+  }
+  for (const file of legacyFiles) {
+    const content = safeReadFile(file)
+    if (!content) {
+      continue
+    }
+    const fileHits: PypiHubCandidate[] = []
+    const source: PypiHubInfo['source'] = file.endsWith('.bzl')
+      ? '.bzl'
+      : path.basename(file) === 'WORKSPACE.bazel'
+        ? 'WORKSPACE.bazel'
+        : 'WORKSPACE'
+
+    for (const m of content.matchAll(PIP_PARSE_NAME_RE)) {
+      const info = extractHubInfoFromArgBlob(m[1] ?? '', source, 'legacy')
+      if (info) {
+        fileHits.push(info)
+      }
+    }
+    for (const m of content.matchAll(PIP_INSTALL_NAME_RE)) {
+      const info = extractHubInfoFromArgBlob(m[1] ?? '', source, 'legacy')
+      if (info) {
+        fileHits.push(info)
+      }
+    }
+    for (const m of content.matchAll(PIP_REPOSITORY_NAME_RE)) {
+      const info = extractHubInfoFromArgBlob(m[1] ?? '', source, 'legacy')
+      if (info) {
+        fileHits.push(info)
+      }
+    }
+
+    candidates.push(...fileHits)
+    if (verbose) {
+      logger.log(
+        '[VERBOSE] discovery: scanned',
+        file,
+        `(${fileHits.length} legacy pip hub match(es))`,
+      )
+    }
+  }
+
+  return dedupCapped(candidates, verbose)
+}
+
+// Step 2: validate a candidate by running the probe and confirming
+// `:pkg` labels or alias rules appear in stdout. Does NOT require
+// `pypi_name=` (that marker lives on spoke repos).
+export async function validatePypiHub(
+  hubName: string,
+  probe: RepoProbe,
+  verbose?: boolean,
+): Promise<ValidationResult> {
+  try {
+    const result = await probe(hubName)
+    if (result.code !== 0) {
+      if (verbose) {
+        logger.log(
+          `[VERBOSE] discovery: probe @${hubName}: REJECT (code=${result.code})`,
+        )
+      }
+      return { valid: false, stdout: result.stdout }
+    }
+    const valid = PYPI_HUB_MARKER_RE.test(result.stdout)
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] discovery: probe @${hubName}:`,
+        valid
+          ? 'ACCEPT (hub alias/pkg marker found)'
+          : 'REJECT (no hub alias/pkg marker in probe stdout)',
+      )
+    }
+    return { valid, stdout: result.stdout }
+  } catch (e) {
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] discovery: probe @${hubName}: REJECT (probe threw):`,
+        getErrorCause(e),
+      )
+    }
+    return { valid: false, stdout: '' }
+  }
+}
+
+// The default pip hub name when no explicit hub_name/name is given.
+// Included as a seed so repos whose pip.parse is in a sub-module (not
+// found by static scanning) can still be discovered via probe validation.
+const DEFAULT_PYPI_HUB_SEED = 'pypi'
+
+// Composition: parse, then validate each candidate; return validated subset
+// as a Map keyed by hub name with the validated PypiHubInfo.
+// Always seeds with the default 'pypi' hub name first.
+export async function discoverPypiHubs(
+  cwd: string,
+  probe: RepoProbe,
+  nativeCandidates?: string[],
+  verbose?: boolean,
+  bazelCommandCandidates?: PypiHubCandidate[],
+): Promise<Map<string, PypiHubInfo>> {
+  // Always run the static parse so MODULE.bazel pip.parse metadata
+  // (requirements_lock, python_version) is available for downstream
+  // lockfile resolution. Native repo-mapping candidates are intentionally
+  // corroborating data only: many non-PyPI repositories expose alias or :pkg
+  // targets, so bare visible repos are too broad to probe as PyPI hubs.
+  const parsedAll = bazelCommandCandidates?.length
+    ? dedupCapped(bazelCommandCandidates, verbose)
+    : parsePypiHubCandidates(cwd, verbose)
+  const parsed: PypiHubCandidate[] = parsedAll
+  if (verbose) {
+    logger.log(
+      '[VERBOSE] discovery: candidate source:',
+      bazelCommandCandidates?.length
+        ? `bazel mod show_extension (${parsed.length})`
+        : nativeCandidates && nativeCandidates.length
+          ? `static parse (${parsed.length}) with bzlmod visible-repos (${nativeCandidates.length}) as corroboration`
+          : `static parse (${parsed.length})`,
+    )
+  }
+  // Prepend the default hub seed unless parsed metadata already covers it.
+  const candidates: PypiHubCandidate[] = parsed.some(
+    c => c.hubName === DEFAULT_PYPI_HUB_SEED,
+  )
+    ? parsed
+    : [
+        {
+          hubName: DEFAULT_PYPI_HUB_SEED,
+          source: 'default-seed',
+          workspaceMode: 'unknown',
+        },
+        ...parsed,
+      ]
+  if (verbose) {
+    logger.log(
+      '[VERBOSE] discovery: candidate set to probe (seed-first, deduped):',
+      candidates.map(c => c.hubName),
+    )
+  }
+  const validated = new Map<string, PypiHubInfo>()
+  for (const c of candidates) {
+    // eslint-disable-next-line no-await-in-loop
+    const result = await validatePypiHub(c.hubName, probe, verbose)
+    if (result.valid) {
+      validated.set(c.hubName, {
+        ...c,
+        probeStdout: result.stdout,
+      })
+    }
+  }
+  if (verbose) {
+    logger.log(
+      '[VERBOSE] discovery: validated pip hubs:',
+      Array.from(validated.keys()),
+    )
+  }
+  return validated
+}
