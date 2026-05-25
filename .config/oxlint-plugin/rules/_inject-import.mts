@@ -79,7 +79,7 @@ export function summarizeImportTarget(
     // whose `.declaration` is the VariableDeclaration. Missing that
     // branch caused the autofix to inject a duplicate
     // `const logger = ...` hoist into files that already exported
-    // their own `logger` (see scripts/cascade-tooling/logger.mts
+    // their own `logger` (see scripts/fleet/logger.mts
     // pre-fix — `export const logger = {...}` got an extra
     // `const logger = getDefaultLogger()` hoisted above it).
     const varDecl =

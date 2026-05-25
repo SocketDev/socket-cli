@@ -10,6 +10,32 @@ Behavior the hook can't catch: redact `token` / `jwt` / `access_token` / `refres
 
 Full hook spec in [`.claude/hooks/token-guard/README.md`](../../.claude/hooks/token-guard/README.md).
 
+## Where tokens live
+
+Tokens belong in env vars (CI) or the OS keychain (dev local) — nowhere else. Never in `.env` / `.env.local` / `.envrc` / `~/.sfw.config` / `~/.config/socket/*` / any dotfile. Dotfiles leak via accidental commits, file-indexers, backup clients, shell-history dumps. Enforced by `.claude/hooks/no-token-in-dotenv-guard/`.
+
+## Initial setup + rotation
+
+- **Initial setup:** `node .claude/hooks/setup-security-tools/install.mts` (prompts + persists via macOS Keychain / Linux libsecret / Windows CredentialManager).
+- **Rotation:** `node .claude/hooks/setup-security-tools/install.mts --rotate` — TTY-muted prompt, overwrites the keychain entry unconditionally, ignores stale dotfile / env-var lookup. This is the ONLY correct rotator. Suggesting any other path (`socket login`, hand-editing `~/.sfw.config`, `export SOCKET_API_TOKEN=…` in a shell rc) is a token-hygiene violation.
+
+The Stop-hook flags broken sfw shims, free-vs-enterprise edition drift, and 401-rejection patterns from the last assistant turn (enforced by `.claude/hooks/setup-security-tools/`).
+
+### Scoped install entrypoints
+
+Four entrypoints share the umbrella installer library for operators who want partial installs:
+
+- `.claude/hooks/setup-firewall/` — sfw only, `--rotate` honored.
+- `.claude/hooks/setup-claude-scanners/` — AgentShield + zizmor.
+- `.claude/hooks/setup-basics-tools/` — TruffleHog + Trivy + OpenGrep + uv.
+- `.claude/hooks/setup-misc-tools/` — cdxgen + synp + janus.
+
+## Never call platform keychain CLIs from Bash
+
+`security find-generic-password` (macOS), `secret-tool lookup` (Linux), `Get-StoredCredential` (Windows PowerShell), `keyring get` (cross-platform) all surface a UI auth prompt on the user's screen — and that prompt fires _per call_, so a hook chain that reads the keychain three times costs three prompts. The token is already cached in process memory after the first resolution (see [`api-token.mts`](../../.claude/hooks/setup-security-tools/lib/api-token.mts) module-scope cache); read it from `findApiToken()` or `process.env.SOCKET_API_KEY` / `SOCKET_API_TOKEN` instead.
+
+Writes (`security add-generic-password`, `secret-tool store`, `New-StoredCredential`) and deletes are allowed — they happen during operator-driven setup / rotation, never on hot paths. Bypass: `Allow blind-keychain-read bypass` (enforced by `.claude/hooks/no-blind-keychain-read-guard/`).
+
 ## Personal-path placeholders
 
 When a doc / test / comment needs to show an example user-home path, use the canonical platform-specific placeholder so the personal-paths scanner recognizes it as documentation: `/Users/<user>/...` (macOS), `/home/<user>/...` (Linux), `C:\Users\<USERNAME>\...` (Windows). Don't drift to `<name>` / `<me>` / `<USER>` / `<u>` etc. — the scanner accepts anything in `<...>` but a fleet-wide audit relies on the canonical strings being grep-able. Env vars (`$HOME`, `${USER}`, `%USERNAME%`) also satisfy the scanner.

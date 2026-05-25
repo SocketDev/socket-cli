@@ -41,18 +41,6 @@ async function runHook(
   })
 }
 
-function fleetBlock(bodyBytes: number): string {
-  // Build a fleet block whose byte size is approximately bodyBytes.
-  // The wrapper markers + minimal text overhead is ~80 bytes; the
-  // body is filler.
-  const filler = 'x'.repeat(Math.max(0, bodyBytes - 80))
-  return [
-    '<!-- BEGIN FLEET-CANONICAL -->',
-    filler,
-    '<!-- END FLEET-CANONICAL -->',
-  ].join('\n')
-}
-
 test('non-CLAUDE.md targets are ignored', async () => {
   const result = await runHook({
     tool_input: { content: 'x'.repeat(100_000), file_path: 'README.md' },
@@ -61,46 +49,48 @@ test('non-CLAUDE.md targets are ignored', async () => {
   assert.strictEqual(result.code, 0)
 })
 
-test('Write of small fleet block is allowed', async () => {
+test('Write of small file is allowed', async () => {
   const result = await runHook({
-    tool_input: { content: fleetBlock(1_000), file_path: 'CLAUDE.md' },
+    tool_input: { content: 'x'.repeat(1_000), file_path: 'CLAUDE.md' },
     tool_name: 'Write',
   })
   assert.strictEqual(result.code, 0)
 })
 
-test('Write of fleet block at exactly 48KB is allowed', async () => {
+test('Write of file at exactly 40KB is allowed', async () => {
   const result = await runHook({
-    tool_input: { content: fleetBlock(48 * 1024), file_path: 'CLAUDE.md' },
+    tool_input: { content: 'x'.repeat(40 * 1024), file_path: 'CLAUDE.md' },
     tool_name: 'Write',
   })
   assert.strictEqual(result.code, 0)
 })
 
-test('Write of fleet block over 48KB is blocked', async () => {
+test('Write of file over 40KB is blocked', async () => {
   const result = await runHook({
-    tool_input: { content: fleetBlock(53 * 1024), file_path: 'CLAUDE.md' },
+    tool_input: { content: 'x'.repeat(45 * 1024), file_path: 'CLAUDE.md' },
     tool_name: 'Write',
   })
   assert.strictEqual(result.code, 2)
   assert.match(result.stderr, /claude-md-size-guard/)
-  assert.match(result.stderr, /fleet block too large/)
-  assert.match(result.stderr, /docs\/references\//)
-})
-
-test('Write of CLAUDE.md without fleet markers is allowed (per-repo only)', async () => {
-  const result = await runHook({
-    tool_input: { content: 'x'.repeat(100_000), file_path: 'CLAUDE.md' },
-    tool_name: 'Write',
-  })
-  assert.strictEqual(result.code, 0)
+  assert.match(result.stderr, /too large/)
+  assert.match(result.stderr, /docs\/claude\.md\/fleet\//)
 })
 
 test('cap override via env var', async () => {
-  // Override to 1KB so even a small block trips the cap.
   const result = await runHook(
     {
-      tool_input: { content: fleetBlock(2_000), file_path: 'CLAUDE.md' },
+      tool_input: { content: 'x'.repeat(2_000), file_path: 'CLAUDE.md' },
+      tool_name: 'Write',
+    },
+    { CLAUDE_MD_BYTES: '1024' },
+  )
+  assert.strictEqual(result.code, 2)
+})
+
+test('legacy CLAUDE_MD_FLEET_BLOCK_BYTES env still works as fallback', async () => {
+  const result = await runHook(
+    {
+      tool_input: { content: 'x'.repeat(2_000), file_path: 'CLAUDE.md' },
       tool_name: 'Write',
     },
     { CLAUDE_MD_FLEET_BLOCK_BYTES: '1024' },
@@ -108,39 +98,31 @@ test('cap override via env var', async () => {
   assert.strictEqual(result.code, 2)
 })
 
-test('Edit splice that grows fleet block over cap is blocked', async () => {
-  // Write a small base file to disk, then propose an Edit that adds
-  // 50KB of body inside the fleet block.
+test('Edit splice that grows file over cap is blocked', async () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'claude-md-size-guard-'))
   const file = path.join(dir, 'CLAUDE.md')
-  const baseBlock = fleetBlock(1_000)
-  writeFileSync(file, baseBlock)
-  // The Edit proposes to add 50KB more body before the END marker.
-  const oldStr = '<!-- END FLEET-CANONICAL -->'
-  const newStr = 'y'.repeat(50 * 1024) + oldStr
+  writeFileSync(file, 'base\n')
   const result = await runHook({
     tool_input: {
       file_path: file,
-      new_string: newStr,
-      old_string: oldStr,
+      new_string: 'y'.repeat(45 * 1024),
+      old_string: 'base\n',
     },
     tool_name: 'Edit',
   })
   assert.strictEqual(result.code, 2)
-  assert.match(result.stderr, /fleet block too large/)
+  assert.match(result.stderr, /too large/)
 })
 
-test('Edit splice that keeps fleet block under cap is allowed', async () => {
+test('Edit splice that keeps file under cap is allowed', async () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'claude-md-size-guard-'))
   const file = path.join(dir, 'CLAUDE.md')
-  writeFileSync(file, fleetBlock(1_000))
-  const oldStr = '<!-- END FLEET-CANONICAL -->'
-  const newStr = 'z'.repeat(2_000) + oldStr
+  writeFileSync(file, 'base\n')
   const result = await runHook({
     tool_input: {
       file_path: file,
-      new_string: newStr,
-      old_string: oldStr,
+      new_string: 'z'.repeat(2_000),
+      old_string: 'base\n',
     },
     tool_name: 'Edit',
   })

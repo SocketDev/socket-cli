@@ -51,20 +51,20 @@ FLEET-CANONICAL` markers) — must be byte-identical across the
 ## Never silently let drift sit
 
 Reconcile in the same PR, or open a follow-up PR titled
-`chore(sync): cascade <thing> from <newer-repo>` and link it.
+`chore(wheelhouse): cascade <thing> from <newer-repo>` and link it.
 The `drift-check-reminder` hook nags after edits to known-drift
 surfaces.
 
 ## Cascade PR convention
 
-`chore(sync): cascade <thing> from <newer-repo>@<sha>`
+`chore(wheelhouse): cascade <thing> from <newer-repo>@<sha>`
 
 Examples:
 
-- `chore(sync): cascade Node 26.1.0 from socket-wheelhouse@87eb704`
-- `chore(sync): cascade plan-location-guard from
+- `chore(wheelhouse): cascade Node 26.1.0 from socket-wheelhouse@87eb704`
+- `chore(wheelhouse): cascade plan-location-guard from
 socket-wheelhouse@d846d1c`
-- `chore(sync): cascade pnpm 11.0.8 + Node 26.1.0 from
+- `chore(wheelhouse): cascade pnpm 11.0.8 + Node 26.1.0 from
 socket-registry@abc1234`
 
 The body should list affected files + the upstream commit. The

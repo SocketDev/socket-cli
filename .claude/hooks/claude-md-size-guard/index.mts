@@ -1,53 +1,42 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — claude-md-size-guard.
 //
-// Blocks Edit/Write tool calls that would push the CLAUDE.md
-// fleet-canonical block above the 48KB size cap. The fleet block lives
-// between `<!-- BEGIN FLEET-CANONICAL -->` and `<!-- END FLEET-CANONICAL -->`
-// markers; everything outside is per-repo content owned by the host
-// repo (different cap, evaluated separately).
+// Blocks Edit/Write tool calls that would push CLAUDE.md above the
+// 40KB whole-file size cap. The cap measures the ENTIRE post-edit
+// file, not just the fleet-canonical block — fleet content + per-repo
+// content both count.
 //
-// Why a fleet-block cap, not a whole-file cap: each fleet rule lands
-// in EVERY socket-* repo as load-bearing in-context bytes. A rule
-// added to the fleet block costs N copies of its size in working-set
-// tokens. Per-repo content only costs once. The cap forces fleet
-// additions to be terse + reference-deferred (defer details to
-// `docs/references/<topic>.md`) so the canonical block stays load-bearing
-// and the per-repo section keeps headroom.
+// Why a whole-file cap: every byte in CLAUDE.md is load-bearing
+// in-context tokens for every Claude session opened in the repo, AND
+// fleet content is duplicated across ~12 socket-* repos. The 40KB
+// ceiling forces ruthless reference-deferral: each rule states the
+// invariant + a one-line "Why" + a link to docs/claude.md/fleet/<topic>.md
+// for the full pattern catalog. Detail goes in the linked doc.
 //
 // What the hook does:
 //   1. Fires only on Edit/Write tool calls targeting a CLAUDE.md.
-//   2. Extracts the post-edit fleet block (between markers) from the
-//      proposed `new_string` / `content`.
-//   3. If the proposed fleet block exceeds the cap, exits 2 with a
-//      stderr message naming the size, the cap, and the canonical
-//      remediation (move detail into `docs/references/<topic>.md`).
+//   2. Computes the post-edit text (Write: content; Edit: splice).
+//   3. If the whole file exceeds the cap, exits 2 with a stderr message
+//      naming the size, the cap, and the canonical remediation.
 //
 // Cap policy:
-//   - Default: 48 KB (49_152 bytes). Sized to leave room for per-repo
-//     CLAUDE.md additions outside the fleet block. Override per-repo by
-//     setting `CLAUDE_MD_FLEET_BLOCK_BYTES` in the env (rarely needed).
-//   - Whole-file cap: NOT enforced here. Per-repo content can grow
-//     freely; this hook only protects the fleet block.
+//   - Default: 40 KB (40_960 bytes). Override per-repo via env
+//     `CLAUDE_MD_BYTES`. Legacy `CLAUDE_MD_FLEET_BLOCK_BYTES` is read
+//     as a fallback so existing per-repo overrides don't break.
 //
 // Hook contract:
 //   - Reads Claude Code's PreToolUse JSON from stdin.
 //   - Operates on `tool_input.new_string` (Edit) or `tool_input.content`
-//     (Write). Edit doesn't always carry the whole file, so when the
-//     edit is a partial replacement we ALSO read the on-disk file and
-//     compute the post-edit size by applying the diff in-memory. If we
-//     can't reliably compute (e.g. ambiguous Edit), we err on the side
-//     of letting it through (fail-open, log a warning).
-//   - Fails open on hook bugs (exit 0 + stderr log).
+//     (Write). When an Edit is a partial replacement we read the on-
+//     disk file and apply the diff in-memory. If we can't reliably
+//     compute (ambiguous Edit), we fail open.
 
 import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
 import { readStdin } from '../_shared/transcript.mts'
 
-const DEFAULT_CAP_BYTES = 48 * 1024
-const FLEET_BEGIN_MARKER = '<!-- BEGIN FLEET-CANONICAL'
-const FLEET_END_MARKER = '<!-- END FLEET-CANONICAL'
+const DEFAULT_CAP_BYTES = 40 * 1024
 
 /**
  * Compute the post-edit text. For Write, that's just `content`. For Edit,
@@ -82,9 +71,6 @@ export function computePostEditText(
   } catch {
     return undefined
   }
-  // Single-replace splice (matches Edit tool semantics with
-  // replace_all=false). If old_string isn't found, the Edit would
-  // have failed before reaching us.
   const idx = raw.indexOf(oldString)
   if (idx === -1) {
     return undefined
@@ -94,63 +80,32 @@ export function computePostEditText(
 
 export function emitBlock(
   filePath: string,
-  blockBytes: number,
+  fileBytes: number,
   capBytes: number,
 ): void {
   const lines: string[] = []
-  lines.push('[claude-md-size-guard] Blocked: CLAUDE.md fleet block too large.')
+  lines.push('[claude-md-size-guard] Blocked: CLAUDE.md too large.')
   lines.push(`  File:        ${filePath}`)
-  lines.push(`  Block size:  ${blockBytes} bytes`)
-  lines.push(`  Cap:         ${capBytes} bytes`)
-  lines.push(`  Over by:     ${blockBytes - capBytes} bytes`)
+  lines.push(`  File size:   ${fileBytes} bytes`)
+  lines.push(`  Cap:         ${capBytes} bytes (whole file)`)
+  lines.push(`  Over by:     ${fileBytes - capBytes} bytes`)
   lines.push('')
-  lines.push(
-    '  The fleet-canonical block (between `<!-- BEGIN FLEET-CANONICAL -->`',
-  )
-  lines.push(
-    '  and `<!-- END FLEET-CANONICAL -->`) is byte-identical across all',
-  )
-  lines.push('  ~12 fleet repos. Every byte added there costs N copies of in-')
-  lines.push('  context tokens. Per-repo content (outside the markers) has')
-  lines.push('  no cap — keep new fleet rules terse and link to a reference')
-  lines.push('  doc for the details:')
+  lines.push('  CLAUDE.md is load-bearing in-context for every session, and')
+  lines.push('  the fleet block is duplicated across ~12 socket-* repos. The')
+  lines.push('  40KB ceiling forces ruthless reference-deferral:')
   lines.push('')
-  lines.push('    1. Add a one-paragraph rule in the fleet block.')
-  lines.push('    2. Move expanded explanation to')
-  lines.push('       `docs/references/<topic>.md` (cascaded fleet-wide).')
-  lines.push(
-    '    3. Link from the rule: `[Full details](docs/references/...)`.',
-  )
+  lines.push('    1. State the invariant + one-line "Why" inline.')
+  lines.push('    2. Move detail to `docs/claude.md/fleet/<topic>.md`.')
+  lines.push('    3. Link from the rule: `[Full details](docs/claude.md/...)`.')
   lines.push('')
-  lines.push('  See `docs/references/bypass-phrases.md` for an example of the')
-  lines.push('  one-paragraph + reference shape.')
+  lines.push('  See `docs/claude.md/fleet/bypass-phrases.md` for an example')
+  lines.push('  of the one-paragraph + reference shape.')
   process.stderr.write(lines.join('\n') + '\n')
 }
 
-/**
- * Extract the fleet-canonical block from a CLAUDE.md text. Returns undefined if
- * the markers aren't present (per-repo CLAUDE.md may not have them, in which
- * case the cap doesn't apply).
- */
-export function extractFleetBlock(text: string): string | undefined {
-  const beginIdx = text.indexOf(FLEET_BEGIN_MARKER)
-  if (beginIdx === -1) {
-    return undefined
-  }
-  const endIdx = text.indexOf(FLEET_END_MARKER, beginIdx)
-  if (endIdx === -1) {
-    return undefined
-  }
-  // Include both markers in the measured block.
-  const blockEnd = text.indexOf('-->', endIdx)
-  if (blockEnd === -1) {
-    return undefined
-  }
-  return text.slice(beginIdx, blockEnd + 3)
-}
-
 export function getCap(): number {
-  const env = process.env['CLAUDE_MD_FLEET_BLOCK_BYTES']
+  const env =
+    process.env['CLAUDE_MD_BYTES'] ?? process.env['CLAUDE_MD_FLEET_BLOCK_BYTES']
   if (!env) {
     return DEFAULT_CAP_BYTES
   }
@@ -210,14 +165,8 @@ async function main(): Promise<void> {
     // Fail open — couldn't compute post-edit text reliably.
     return
   }
-  const fleetBlock = extractFleetBlock(postEdit)
-  if (fleetBlock === undefined) {
-    // No fleet markers in the file (per-repo CLAUDE.md without sync).
-    // Cap doesn't apply.
-    return
-  }
   const cap = getCap()
-  const size = Buffer.byteLength(fleetBlock, 'utf8')
+  const size = Buffer.byteLength(postEdit, 'utf8')
   if (size <= cap) {
     return
   }

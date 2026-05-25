@@ -196,12 +196,16 @@ export function emitBlock(filePath: string, verdict: Verdict): void {
 
 export function isAtAllowedRegularLocation(relPath: string): boolean {
   const dir = path.posix.dirname(relPath)
-  return (
-    dir === 'docs' ||
-    dir.startsWith('docs/') ||
-    dir === '.claude' ||
-    dir.startsWith('.claude/')
-  )
+  if (dir === '.claude' || dir.startsWith('.claude/')) {
+    return true
+  }
+  // Accept any path segment named `docs` so per-package doc trees like
+  // `packages/<pkg>/docs/<name>.md` and
+  // `packages/<pkg>/lang/<lang>/docs/<name>.md` resolve to the same "in
+  // a docs/ directory" rule as repo-root docs/. Segment-equality (not
+  // substring) so `foo-docs/`, `docs-old/`, `.docs/` don't match.
+  const segments = dir.split('/')
+  return segments.includes('docs')
 }
 
 export function isAtAllowedScreamingLocation(relPath: string): boolean {

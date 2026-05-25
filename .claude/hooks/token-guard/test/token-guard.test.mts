@@ -102,6 +102,38 @@ describe('token-guard hook', () => {
       assert.equal(r.code, 2)
       assert.match(r.stderr, /GitHub personal access token/)
     })
+    it('GitHub app server token (ghs_) — classic opaque format', () => {
+      // Classic format: opaque string, no dots, no underscores. Real
+      // `ghs_` server tokens are 36+ chars after the prefix; the
+      // minimum-length floor in the regex matches both classic and
+      // new JWT-format tokens.
+      const r = runHook('echo ghs_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij')
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /GitHub app server token/)
+    })
+    it('GitHub app server token (ghs_) — new JWT format with dots', () => {
+      // New stateless JWT format (2026 rollout): ghs_ prefix + JWT body
+      // with two dots. Recommended detection regex per GitHub docs is
+      // `ghs_[A-Za-z0-9\._]{36,}`. Real JWTs are ~520 chars; this fixture
+      // is a shorter synthetic that still hits both characteristics
+      // (length >= 36, contains dots).
+      const r = runHook(
+        'echo ghs_eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0In0.signature_part_abcdef123456',
+      )
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /GitHub app server token/)
+    })
+    it('GitHub user access token (ghu_) — JWT format prophylactic', () => {
+      // User-to-server tokens are scheduled for the same JWT format
+      // change per the 2026-05-15 changelog (timing TBD). The ghu_
+      // pattern uses the same char class so the future rollout is
+      // covered when it ships.
+      const r = runHook(
+        'echo ghu_eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.signature_part_abcdef123456',
+      )
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /GitHub user access token/)
+    })
     it('AWS access key', () => {
       const r = runHook('echo AKIAIOSFODNN7EXAMPLE')
       assert.equal(r.code, 2)

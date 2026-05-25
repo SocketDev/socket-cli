@@ -210,8 +210,8 @@ async function main(): Promise<void> {
   // global env-var poisoning — and only allows the two operations the
   // cascade actually needs:
   //
-  //   1. `git commit --no-verify -m "chore(sync): cascade fleet template@<sha>"`
-  //      — the commit message MUST start with `chore(sync): cascade fleet template@`.
+  //   1. `git commit --no-verify -m "chore(wheelhouse): cascade template@<sha>"`
+  //      — the commit message MUST start with `chore(wheelhouse): cascade template@`.
   //   2. `git push --no-verify origin <ref>` — any branch / direct push.
   //
   // Anything else with `FLEET_SYNC=1` still falls through to the normal
@@ -220,7 +220,7 @@ async function main(): Promise<void> {
   if (/(?:^|\s)FLEET_SYNC\s*=\s*1\b/.test(command)) {
     const isCascadeCommit =
       /\bgit\s+commit\b/.test(command) &&
-      /chore\(sync\):\s*cascade\s+fleet\s+template@/.test(command)
+      /chore\(wheelhouse\):\s*cascade\s+template@/.test(command)
     const isCascadePush = /\bgit\s+push\b/.test(command)
     if (isCascadeCommit || isCascadePush) {
       return

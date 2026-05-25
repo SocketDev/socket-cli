@@ -79,8 +79,17 @@ const LITERAL_TOKEN_PATTERNS: Array<[RegExp, string]> = [
   [/\brk_live_[A-Za-z0-9_-]{16,}/, 'Stripe live restricted (rk_live_)'],
   [/\bghp_[A-Za-z0-9]{30,}/, 'GitHub personal access token (ghp_)'],
   [/\bgho_[A-Za-z0-9]{30,}/, 'GitHub OAuth token (gho_)'],
-  [/\bghs_[A-Za-z0-9]{30,}/, 'GitHub app server token (ghs_)'],
-  [/\bghu_[A-Za-z0-9]{30,}/, 'GitHub user access token (ghu_)'],
+  // ghs_ and ghu_ char classes include `.` and `_` to match both the
+  // classic opaque format AND the new stateless JWT format GitHub is
+  // rolling out (announced 2026-04, opt-in via X-GitHub-Stateless-S2S-Token
+  // header per 2026-05-15 changelog). JWT-format tokens are ~520 chars
+  // and contain two dots; classic opaque tokens are short and have no
+  // dots. The recommended regex from GitHub's docs is
+  // `ghs_[A-Za-z0-9\._]{36,}` — 36 is the minimum for both formats.
+  // Same applies to ghu_ prophylactically since user-to-server tokens
+  // are scheduled for the same format change (timing TBD per changelog).
+  [/\bghs_[A-Za-z0-9._]{36,}/, 'GitHub app server token (ghs_)'],
+  [/\bghu_[A-Za-z0-9._]{36,}/, 'GitHub user access token (ghu_)'],
   [/\bghr_[A-Za-z0-9]{30,}/, 'GitHub refresh token (ghr_)'],
   [/\bgithub_pat_[A-Za-z0-9_]{20,}/, 'GitHub fine-grained PAT'],
   [/\bglpat-[A-Za-z0-9_-]{16,}/, 'GitLab PAT (glpat-)'],

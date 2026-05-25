@@ -44,7 +44,7 @@ Variants should be batched into the same fix commit when mechanical (one find/re
 ## Don't
 
 - Don't variant-hunt for style nits. Reserve this for correctness / security / fleet-drift findings.
-- Don't expand the search radius past one repo without writing it down — cross-fleet variants get a `chore(sync): cascade <fix>` PR per the _Drift watch_ rule.
+- Don't expand the search radius past one repo without writing it down — cross-fleet variants get a `chore(wheelhouse): cascade <fix>` PR per the _Drift watch_ rule.
 - Don't skip the search because the finding "looks unique." Looking unique is exactly when the search pays off.
 
 ## Trail-of-Bits influence

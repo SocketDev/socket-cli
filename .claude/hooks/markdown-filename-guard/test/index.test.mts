@@ -190,6 +190,43 @@ test('lowercase-with-hyphens in docs/ is allowed', async () => {
   assert.strictEqual(result.code, 0)
 })
 
+test('lowercase-with-hyphens in packages/<pkg>/docs/ is allowed', async () => {
+  for (const p of [
+    '/Users/x/projects/foo/packages/acorn/docs/perf/journey.md',
+    '/Users/x/projects/foo/packages/acorn/docs/architecture.md',
+    '/Users/x/projects/foo/packages/acorn/lang/rust/docs/performance.md',
+    '/Users/x/projects/foo/packages/acorn/lang/typescript/docs/building.md',
+  ]) {
+    const result = await runHook({
+      tool_input: { content: 'doc', file_path: p },
+      tool_name: 'Write',
+    })
+    assert.strictEqual(
+      result.code,
+      0,
+      `${p} should be allowed (got code ${result.code}: ${result.stderr})`,
+    )
+  }
+})
+
+test('docs-lookalike segments (foo-docs, docs-old, .docs) are blocked', async () => {
+  for (const p of [
+    '/Users/x/projects/foo/packages/acorn/foo-docs/notes.md',
+    '/Users/x/projects/foo/docs-old/notes.md',
+    '/Users/x/projects/foo/.docs/notes.md',
+  ]) {
+    const result = await runHook({
+      tool_input: { content: 'doc', file_path: p },
+      tool_name: 'Write',
+    })
+    assert.strictEqual(
+      result.code,
+      2,
+      `${p} should be blocked (got code ${result.code})`,
+    )
+  }
+})
+
 test('lowercase-with-hyphens at root is blocked', async () => {
   const result = await runHook({
     tool_input: {

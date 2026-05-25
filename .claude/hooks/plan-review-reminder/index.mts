@@ -42,7 +42,7 @@ const NUMBERED_LIST_RE = /^\s*1\s*[.)]\s+\S/m
 
 // Fleet-shared resources whose edits should invite a second-opinion pass.
 const FLEET_SHARED_RE =
-  /\b(?:CLAUDE\.md|\.claude\/hooks\/|_shared\/|template\/CLAUDE\.md|sync-scaffolding|cascade-tooling)\b/
+  /\b(?:CLAUDE\.md|\.claude\/hooks\/|_shared\/|template\/CLAUDE\.md|sync-scaffolding|scripts\/fleet)\b/
 
 // Second-opinion-invitation phrases.
 const SECOND_OPINION_RE =

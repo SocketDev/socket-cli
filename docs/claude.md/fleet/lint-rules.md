@@ -14,3 +14,44 @@ Fleet lint rules are guardrails for AI-generated code. Make them strict:
 ## Cascade
 
 When introducing a new rule fleet-wide, expect it to surface dozens of pre-existing violations. That's the rule earning its keep, not noise — surface the cleanup as a separate task rather than auto-fixing in the same PR.
+
+## Disable comments: per-call-site, never identical-stacked
+
+`oxlint-disable-next-line <rule> -- <reason>` is correct when a single call site has a genuine, code-local justification that wouldn't apply to siblings. Stacking the same comment on adjacent lines is the failure mode.
+
+**Wrong** — three byte-identical disables on consecutive lines:
+
+```ts
+// oxlint-disable-next-line socket/prefer-exists-sync -- isDir is the unit under test.
+expect(await isDir(dir)).toBe(true)
+// oxlint-disable-next-line socket/prefer-exists-sync -- isDir is the unit under test.
+expect(await isDir(file)).toBe(false)
+// oxlint-disable-next-line socket/prefer-exists-sync -- isDir is the unit under test.
+expect(await isDir(other)).toBe(false)
+```
+
+**Right (helper pattern)** — lift the rule-violating call behind a one-line helper. The helper's declaration carries the disable once; the test reads clean:
+
+```ts
+it('isDir returns true for directories', async () => {
+  // oxlint-disable-next-line socket/prefer-exists-sync -- isDir is the unit under test.
+  const callIsDir = (p: string) => isDir(p)
+  expect(await callIsDir(dir)).toBe(true)
+  expect(await callIsDir(file)).toBe(false)
+  expect(await callIsDir(other)).toBe(false)
+})
+```
+
+**Right (sentinel-constant pattern)** — when the violation is a literal value rather than a call (e.g., GraphQL spec mandates `null` for unresolved nodes), name the literal at module scope:
+
+```ts
+// oxlint-disable-next-line socket/prefer-undefined-over-null -- GraphQL spec returns null for unresolved nodes.
+const GRAPHQL_NULL = null
+
+// Then in tests:
+JSONStringify({ data: { repository: { tagRef: GRAPHQL_NULL, branchRef: GRAPHQL_NULL } } })
+```
+
+**Why this matters:** stacked identical disables are visual noise that obscures the real signal (per-line disables exist to highlight *exceptional* code). When the disable repeats verbatim, the exception isn't per-line — it's per-pattern, and the pattern deserves its own name.
+
+**When per-call-site IS correct:** the reasons genuinely differ, OR the disables sit on lines that aren't adjacent. Two disables 20 lines apart in the same file with the same rule + same reason is fine; what's banned is the consecutive stack on adjacent lines.

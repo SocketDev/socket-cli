@@ -46,7 +46,7 @@ to know to upgrade.
 - Test reorg
 - Primordials cleanup
 - Lint passes
-- `chore(sync)` cascades
+- `chore(wheelhouse)` cascades
 - Build-script tweaks
 
 Use [Keep-a-Changelog](https://keepachangelog.com/) sections (Added /
@@ -91,7 +91,7 @@ the user runs the publish workflow manually.
   these aren't run before tagging.
 - **The public-facing-only filter is the difference between a
   changelog people read and a changelog people skip.** A 200-line
-  block of `chore(sync)` entries trains downstream consumers to ignore
+  block of `chore(wheelhouse)` entries trains downstream consumers to ignore
   CHANGELOG.md entirely.
 
 ## See also
@@ -100,3 +100,8 @@ the user runs the publish workflow manually.
   bump-at-tip + tag-after-bump ordering.
 - `.claude/hooks/release-workflow-guard/` — blocks `gh workflow run`
   dispatches that aren't dry-run.
+- [`immutable-releases.md`](immutable-releases.md) — every GitHub
+  Release that lands as a result of this sequence ships immutable
+  (Sigstore release attestation, asset lock, tag protection).
+  The release workflow MUST use the 3-step draft → upload → publish
+  pattern; single-call `gh release create <tag> <files>` is forbidden.

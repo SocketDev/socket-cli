@@ -44,18 +44,18 @@ If a literal value matching one of these prefixes appears in a Bash
 command, it gets blocked outright (the assumption being that a value
 this shape is not idle text):
 
-| Provider           | Prefix                                                |
-| ------------------ | ----------------------------------------------------- |
-| Val Town           | `vtwn_`                                               |
-| Linear             | `lin_api_`                                            |
-| OpenAI / Anthropic | `sk-` (20+ chars)                                     |
-| Stripe             | `sk_live_`, `sk_test_`, `pk_live_`, `rk_live_`        |
-| GitHub             | `ghp_`, `gho_`, `ghs_`, `ghu_`, `ghr_`, `github_pat_` |
-| GitLab             | `glpat-`                                              |
-| AWS                | `AKIA…`                                               |
-| Slack              | `xoxb-`, `xoxa-`, `xoxp-`, `xoxr-`, `xoxs-`           |
-| Google             | `AIza…`                                               |
-| JWTs               | three-segment `eyJ…`                                  |
+| Provider           | Prefix                                                                                                                                                   |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Val Town           | `vtwn_`                                                                                                                                                  |
+| Linear             | `lin_api_`                                                                                                                                               |
+| OpenAI / Anthropic | `sk-` (20+ chars)                                                                                                                                        |
+| Stripe             | `sk_live_`, `sk_test_`, `pk_live_`, `rk_live_`                                                                                                           |
+| GitHub             | `ghp_`, `gho_`, `ghs_`, `ghu_`, `ghr_`, `github_pat_` (`ghs_`/`ghu_` match both classic opaque + new JWT format per the 2026-05-15 token-format rollout) |
+| GitLab             | `glpat-`                                                                                                                                                 |
+| AWS                | `AKIA…`                                                                                                                                                  |
+| Slack              | `xoxb-`, `xoxa-`, `xoxp-`, `xoxr-`, `xoxs-`                                                                                                              |
+| Google             | `AIza…`                                                                                                                                                  |
+| JWTs               | three-segment `eyJ…`                                                                                                                                     |
 
 ## Fail-open on hook bugs
 

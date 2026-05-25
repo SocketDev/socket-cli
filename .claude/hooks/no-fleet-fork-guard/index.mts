@@ -73,6 +73,13 @@ const CANONICAL_PREFIXES = [
   'docs/claude.md/',
 ]
 
+// Carve-out: paths under a CANONICAL_PREFIXES dir that are explicitly
+// per-repo (not cascaded). `docs/claude.md/repo/` is the per-repo
+// analog of `docs/claude.md/fleet/` — host repos drop architecture /
+// commands / build-pipeline detail here to keep CLAUDE.md under the
+// whole-file size cap.
+const PER_REPO_PREFIXES = ['docs/claude.md/repo/']
+
 // Fleet-canonical individual files (not under one of the prefix
 // dirs). Matches relative-to-repo-root.
 const CANONICAL_FILES: string[] = [
@@ -132,6 +139,15 @@ export function findFleetRepoRoot(filePath: string): string | undefined {
 
 export function isCanonicalRelativePath(rel: string): boolean {
   const normalized = rel.replace(/\\/g, '/')
+  // Per-repo carve-outs take precedence over the canonical prefixes
+  // (they're more specific). Edits under these paths are intentionally
+  // per-repo and don't go through the fleet cascade.
+  for (let i = 0, { length } = PER_REPO_PREFIXES; i < length; i += 1) {
+    const prefix = PER_REPO_PREFIXES[i]!
+    if (normalized.startsWith(prefix)) {
+      return false
+    }
+  }
   for (let i = 0, { length } = CANONICAL_PREFIXES; i < length; i += 1) {
     const prefix = CANONICAL_PREFIXES[i]!
     if (normalized.startsWith(prefix)) {

@@ -5,7 +5,7 @@
 // repo without mentioning a drift check / cascade to the other fleet
 // repos. The fleet's "Drift watch" rule says: when you bump a shared
 // resource (tool SHA, action SHA, CLAUDE.md fleet block, hook code),
-// either reconcile in the same PR or open a `chore(sync): cascade …`
+// either reconcile in the same PR or open a `chore(wheelhouse): cascade …`
 // follow-up.
 //
 // What this hook catches:
@@ -43,7 +43,7 @@ const DRIFT_SURFACE_RE =
 // Cascade-acknowledgement phrases. Any of these in the same turn
 // satisfies the check.
 const CASCADE_ACK_RE =
-  /\b(cascade|sync(-scaffolding)?|drift|fleet|other repos?|downstream|chore\(sync\)|re-cascade|recascade)\b/i
+  /\b(cascade|sync-scaffolding|drift|fleet|other repos?|downstream|chore\(wheelhouse\)|re-cascade|recascade|wheelhouse)\b/i
 
 // We want this to fire only when an EDIT actually happened, not just
 // a passing mention. The simplest proxy: look for verbs that imply
@@ -92,7 +92,7 @@ async function main(): Promise<void> {
     '',
     '  Per CLAUDE.md "Drift watch": when you edit one of these in repo A,',
     '  either reconcile the other fleet repos in the same PR or open a',
-    '  `chore(sync): cascade <thing> from <repo>` follow-up.',
+    '  `chore(wheelhouse): cascade <thing> from <repo>` follow-up.',
     '',
     '  Drift surfaces include: external-tools.json, template/CLAUDE.md,',
     '  template/.claude/hooks/, .github/actions/, lockstep.json,',

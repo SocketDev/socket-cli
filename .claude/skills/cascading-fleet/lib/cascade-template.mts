@@ -60,7 +60,7 @@ const CLEANUP_SCRIPT = path.join(
   PROJECTS,
   'socket-wheelhouse',
   'scripts',
-  'cascade-tooling',
+  'fleet',
   'cleanup-stranded.mts',
 )
 
@@ -212,7 +212,11 @@ for (const rawLine of fleetReposRaw) {
     logTail(cleanup.stdout + cleanup.stderr, 3)
   }
 
-  const branch = `chore/sync-${TEMPLATE_SHA}`
+  // Branch name reads `chore/wheelhouse-<sha>` — keeps the `chore/`
+  // namespace convention and names the source explicitly. Replaces
+  // the older `chore/sync-<sha>` form (no back-compat retained;
+  // pre-rename stranded branches need a one-time hand cleanup).
+  const branch = `chore/wheelhouse-${TEMPLATE_SHA}`
 
   gitSilent(src, ['worktree', 'remove', '--force', wt])
   gitSilent(src, ['branch', '-D', branch])
@@ -257,7 +261,7 @@ for (const rawLine of fleetReposRaw) {
         'commit',
         '--no-verify',
         '-m',
-        `chore(sync): cascade fleet template@${TEMPLATE_SHA}`,
+        `chore(wheelhouse): cascade template@${TEMPLATE_SHA}`,
       ],
       { cwd: wt, env: stageEnv },
     )
@@ -298,7 +302,7 @@ for (const rawLine of fleetReposRaw) {
           '--head',
           branch,
           '--title',
-          `chore(sync): cascade fleet template@${TEMPLATE_SHA}`,
+          `chore(wheelhouse): cascade template@${TEMPLATE_SHA}`,
           '--body',
           `Auto-cascade of socket-wheelhouse@${TEMPLATE_SHA}.`,
         ],

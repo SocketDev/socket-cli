@@ -7,7 +7,7 @@ allowed-tools: Bash(git fetch:*), Bash(git worktree:*), Bash(git branch:*), Bash
 
 # cascading-fleet
 
-The fleet runs on `chore(sync): cascade fleet template@<sha>` commits — every wheelhouse template change has to land in every fleet repo to take effect. This skill packages the operation so it isn't recreated ad-hoc per session.
+The fleet runs on `chore(wheelhouse): cascade template@<sha>` commits — every wheelhouse template change has to land in every fleet repo to take effect. This skill packages the operation so it isn't recreated ad-hoc per session.
 
 ## When to use
 
@@ -15,7 +15,7 @@ The fleet runs on `chore(sync): cascade fleet template@<sha>` commits — every 
 - A `socket-registry` pin chain (the multi-layer setup-and-install → setup → checkout pin graph) needs propagation.
 - Batching multiple template SHAs into one wave.
 
-Never use this skill while another cascade is in flight (each cascade creates a `chore/sync-<sha>` branch per repo; concurrent runs collide).
+Never use this skill while another cascade is in flight (each cascade creates a `chore/wheelhouse-<sha>` branch per repo; concurrent runs collide).
 
 ## Two modes
 
@@ -24,13 +24,13 @@ Never use this skill while another cascade is in flight (each cascade creates a 
 Propagates a `socket-wheelhouse/template/` SHA to every fleet repo. The flow:
 
 1. For each fleet repo:
-2. Worktree off `origin/<default-branch>` on a fresh `chore/sync-<sha>` branch.
+2. Worktree off `origin/<default-branch>` on a fresh `chore/wheelhouse-<sha>` branch.
 3. Run `socket-wheelhouse/scripts/sync-scaffolding/cli.mts --target <wt> --fix`.
-4. If the cascade modified anything: surgical-stage with `FLEET_SYNC=1 git add --update`, commit `chore(sync): cascade fleet template@<sha>`, push direct to base.
+4. If the cascade modified anything: surgical-stage with `FLEET_SYNC=1 git add --update`, commit `chore(wheelhouse): cascade template@<sha>`, push direct to base.
 5. If direct push is rejected: push the branch, open a PR.
 6. Clean up the worktree + the temp branch.
 
-The `FLEET_SYNC=1` sentinel is recognized by the wheelhouse `no-revert-guard` + `overeager-staging-guard` hooks. It allowlists exactly: `git commit --no-verify` whose message starts with `chore(sync): cascade fleet template@`, `git push --no-verify`, and `git add -A`/`-u`/`.`. Nothing else.
+The `FLEET_SYNC=1` sentinel is recognized by the wheelhouse `no-revert-guard` + `overeager-staging-guard` hooks. It allowlists exactly: `git commit --no-verify` whose message starts with `chore(wheelhouse): cascade template@`, `git push --no-verify`, and `git add -A`/`-u`/`.`. Nothing else.
 
 ### Mode 2 — `registry-pins`
 
@@ -57,7 +57,7 @@ The script reads the fleet-repo list from `lib/fleet-repos.txt` (single source o
 
 ## Worktree cleanup — the branch-cleanup bug
 
-A subtle gotcha: the script's pre-clean step (`git branch -D <branch>`) MUST run from `${src}` (the source repo), not from `/tmp` or the worktree directory. If the loop crashes mid-iteration before `cd`-ing into the worktree, a stale `chore/sync-<sha>` branch can be left behind. The provided script handles this — but if you write a one-off cascade, make sure your cleanup runs from the right cwd.
+A subtle gotcha: the script's pre-clean step (`git branch -D <branch>`) MUST run from `${src}` (the source repo), not from `/tmp` or the worktree directory. If the loop crashes mid-iteration before `cd`-ing into the worktree, a stale `chore/wheelhouse-<sha>` branch can be left behind. The provided script handles this — but if you write a one-off cascade, make sure your cleanup runs from the right cwd.
 
 ## Soak time before catalog cascades
 
@@ -65,7 +65,7 @@ If the wheelhouse template change includes a `@socketsecurity/lib` catalog bump 
 
 ## Stop conditions
 
-- Branch already exists in a fleet repo (`fatal: a branch named 'chore/sync-<sha>' already exists`): pre-clean from `${src}` then retry that repo only.
+- Branch already exists in a fleet repo (`fatal: a branch named 'chore/wheelhouse-<sha>' already exists`): pre-clean from `${src}` then retry that repo only.
 - Worktree-add fails: another worktree at the target path; cleanup with `git worktree remove --force <wt>`.
 - Push rejected on direct base: the script automatically falls back to PR. Confirm via the PR URL printed to stdout.
 

@@ -375,7 +375,7 @@ test('FLEET_SYNC=1 allows the cascade commit without bypass phrase', async () =>
   const result = await runHook({
     tool_input: {
       command:
-        'FLEET_SYNC=1 git commit --no-verify -m "chore(sync): cascade fleet template@abc1234"',
+        'FLEET_SYNC=1 git commit --no-verify -m "chore(wheelhouse): cascade template@abc1234"',
     },
     tool_name: 'Bash',
   })
@@ -427,7 +427,7 @@ test('no FLEET_SYNC sentinel: cascade commit still requires the bypass phrase', 
   const result = await runHook({
     tool_input: {
       command:
-        'git commit --no-verify -m "chore(sync): cascade fleet template@abc1234"',
+        'git commit --no-verify -m "chore(wheelhouse): cascade template@abc1234"',
     },
     tool_name: 'Bash',
   })
@@ -439,7 +439,7 @@ test('FLEET_SYNC=0 (explicit off) does NOT activate the allowlist', async () => 
   const result = await runHook({
     tool_input: {
       command:
-        'FLEET_SYNC=0 git commit --no-verify -m "chore(sync): cascade fleet template@abc1234"',
+        'FLEET_SYNC=0 git commit --no-verify -m "chore(wheelhouse): cascade template@abc1234"',
     },
     tool_name: 'Bash',
   })

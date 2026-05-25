@@ -189,6 +189,23 @@ test('Edit on docs/claude.md/* in a fleet repo is BLOCKED', async () => {
   }
 })
 
+test('Edit on docs/claude.md/repo/* in a fleet repo is ALLOWED (per-repo carve-out)', async () => {
+  // The repo/ subdirectory is the per-repo analog of fleet/. Host repos
+  // drop architecture/commands/build detail here to fit the whole-file
+  // size cap without cascading the content fleet-wide.
+  const repo = makeFakeFleetRepo()
+  try {
+    const file = makeCanonicalFile(repo, 'docs/claude.md/repo/architecture.md')
+    const result = await runHook({
+      tool_input: { file_path: file, new_string: 'x' },
+      tool_name: 'Edit',
+    })
+    assert.strictEqual(result.code, 0)
+  } finally {
+    rmSync(repo, { force: true, recursive: true })
+  }
+})
+
 test('Write tool also blocked, not just Edit', async () => {
   const repo = makeFakeFleetRepo()
   try {

@@ -106,6 +106,10 @@
           },
           {
             "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/immutable-release-pattern-guard/index.mts"
+          },
+          {
+            "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/inline-script-defer-guard/index.mts"
           },
           {
@@ -263,6 +267,15 @@
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/extension-build-current-guard/index.mts"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/enterprise-push-property-reminder/index.mts"
+          }
+        ]
       }
     ],
     "Stop": [
@@ -283,6 +296,10 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/compound-lessons-reminder/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/dirty-worktree-on-stop-reminder/index.mts"
           },
           {
             "type": "command",
