@@ -20,7 +20,7 @@
     "socket-registry — Layer 4 (_local-not-for-reuse-*.yml) SHAs are not valid pins for",
     "external consumers."
   ],
-  "propagationSha": "fe3994c0a4b58d0302ca0039603f4535c13aa942",
-  "propagationShaUpdatedAt": "2026-05-19",
-  "propagationShaCommitSubject": "chore(ci): cascade pins to e9f41a4d (.github/workflows/ci.yml (+2 more))"
+  "propagationSha": "29100ff292fefdae4eba0ab2a40697fea06b1ad2",
+  "propagationShaUpdatedAt": "2026-05-25",
+  "propagationShaCommitSubject": "ci: bump internal action SHA pins to current main"
 }

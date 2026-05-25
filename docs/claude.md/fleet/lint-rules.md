@@ -49,9 +49,11 @@ it('isDir returns true for directories', async () => {
 const GRAPHQL_NULL = null
 
 // Then in tests:
-JSONStringify({ data: { repository: { tagRef: GRAPHQL_NULL, branchRef: GRAPHQL_NULL } } })
+JSONStringify({
+  data: { repository: { tagRef: GRAPHQL_NULL, branchRef: GRAPHQL_NULL } },
+})
 ```
 
-**Why this matters:** stacked identical disables are visual noise that obscures the real signal (per-line disables exist to highlight *exceptional* code). When the disable repeats verbatim, the exception isn't per-line — it's per-pattern, and the pattern deserves its own name.
+**Why this matters:** stacked identical disables are visual noise that obscures the real signal (per-line disables exist to highlight _exceptional_ code). When the disable repeats verbatim, the exception isn't per-line — it's per-pattern, and the pattern deserves its own name.
 
 **When per-call-site IS correct:** the reasons genuinely differ, OR the disables sit on lines that aren't adjacent. Two disables 20 lines apart in the same file with the same rule + same reason is fine; what's banned is the consecutive stack on adjacent lines.

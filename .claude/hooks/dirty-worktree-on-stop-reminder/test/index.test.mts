@@ -3,10 +3,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import {
-  isUntrackedByDefault,
-  parsePorcelain,
-} from '../index.mts'
+import { isUntrackedByDefault, parsePorcelain } from '../index.mts'
 
 test('isUntrackedByDefault: vendor/ prefix', () => {
   assert.strictEqual(isUntrackedByDefault('vendor/foo.cc'), true)
@@ -47,7 +44,10 @@ test('isUntrackedByDefault: *-vendored component', () => {
 test('isUntrackedByDefault: ordinary tracked path', () => {
   assert.strictEqual(isUntrackedByDefault('src/index.ts'), false)
   assert.strictEqual(isUntrackedByDefault('packages/foo/lib/x.ts'), false)
-  assert.strictEqual(isUntrackedByDefault('.github/workflows/release.yml'), false)
+  assert.strictEqual(
+    isUntrackedByDefault('.github/workflows/release.yml'),
+    false,
+  )
 })
 
 test('parsePorcelain: modified + untracked + staged', () => {

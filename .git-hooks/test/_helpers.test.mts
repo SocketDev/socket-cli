@@ -489,6 +489,44 @@ test('scanGitHubTokens: catches ghs_* literal too', () => {
   assert.ok(hits.length >= 1)
 })
 
+test('scanGitHubTokens: catches new JWT-format ghs_* token', () => {
+  // 2026-05-15 GitHub rollout: stateless JWT format. ghs_ prefix +
+  // JWT body with two dots, underscores, ~520 chars in production.
+  // Synthetic fixture is shorter but still hits both characteristics
+  // (length >= 36, contains dots).
+  const hits = scanGitHubTokens(
+    'TOKEN=ghs_eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0In0.signature_part_abcdef123456',
+  )
+  assert.ok(hits.length >= 1)
+})
+
+test('scanGitHubTokens: catches new JWT-format ghu_* token (future)', () => {
+  // User-to-server tokens scheduled for the same JWT format change
+  // per the 2026-05-15 changelog (timing TBD).
+  const hits = scanGitHubTokens(
+    'TOKEN=ghu_eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.signature_part_abcdef123456',
+  )
+  assert.ok(hits.length >= 1)
+})
+
+test('scanGitHubTokens: catches gho_*, ghr_*, github_pat_* literals', () => {
+  // The earlier regex only matched gh[ps]_ — gho/ghr/github_pat got
+  // through. New regex covers the full GitHub-issued set.
+  assert.ok(
+    scanGitHubTokens('TOKEN=gho_abcdefghijklmnopqrstuvwxyzABCDEF1234').length >=
+      1,
+  )
+  assert.ok(
+    scanGitHubTokens('TOKEN=ghr_abcdefghijklmnopqrstuvwxyzABCDEF1234').length >=
+      1,
+  )
+  assert.ok(
+    scanGitHubTokens(
+      'TOKEN=github_pat_11ABCDEFG0aBcDeFgHiJk_lMnOpQrStUvWxYz0123456789AbCdEfGhIjKlMnOp',
+    ).length >= 1,
+  )
+})
+
 test('scanAwsKeys: catches AKIA literal access key', () => {
   const hits = scanAwsKeys('AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE')
   assert.ok(hits.length >= 1)

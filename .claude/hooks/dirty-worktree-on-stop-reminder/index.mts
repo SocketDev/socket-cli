@@ -135,14 +135,14 @@ async function main(): Promise<void> {
     process.stderr.write(`  ... and ${dirty.length - 10} more\n`)
   }
   process.stderr.write(
-    '\nFleet rule: end-of-turn worktree must match the user\'s mental\n' +
+    "\nFleet rule: end-of-turn worktree must match the user's mental\n" +
       "model of where the work is. 'Done' means committed. Options:\n" +
       '  • Commit the dirty paths (surgical: explicit file args).\n' +
       '  • Revert paths you did not author this session.\n' +
       '  • If pause is intentional (mid-refactor, waiting on user),\n' +
       '    announce it explicitly in the turn summary.\n' +
       '\nSilent dirty worktrees break the next session. See:\n' +
-      "  CLAUDE.md → \"Don't leave the worktree dirty\"\n" +
+      '  CLAUDE.md → "Don\'t leave the worktree dirty"\n' +
       '  docs/claude.md/fleet/worktree-hygiene.md\n',
   )
 }

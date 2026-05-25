@@ -25,14 +25,14 @@ step is `gh release edit ... --draft=false` (a different verb).
 
 ## What it blocks
 
-| Pattern                                                       | Block? |
-| ------------------------------------------------------------- | ------ |
-| `gh release create "$TAG" --draft --title ... --notes ...`    | no     |
-| `gh release create "$TAG" --draft=true ...`                   | no     |
+| Pattern                                                        | Block? |
+| -------------------------------------------------------------- | ------ |
+| `gh release create "$TAG" --draft --title ... --notes ...`     | no     |
+| `gh release create "$TAG" --draft=true ...`                    | no     |
 | `gh release create "$TAG" --title ... --notes ... file.tar.gz` | yes    |
-| `gh release create "$TAG" file.tar.gz` (drive-by)             | yes    |
-| `gh release edit "$TAG" --draft=false`                        | no     |
-| Same pattern outside `.github/workflows/*.y*ml`               | no     |
+| `gh release create "$TAG" file.tar.gz` (drive-by)              | yes    |
+| `gh release edit "$TAG" --draft=false`                         | no     |
+| Same pattern outside `.github/workflows/*.y*ml`                | no     |
 
 ## Bypass
 

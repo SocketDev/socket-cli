@@ -24,6 +24,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import {
   gitLines,
   readFileForScan,
+  scanGitHubTokens,
   scanLinearRefs,
   scanSocketApiKeys,
   shouldSkipFile,
@@ -87,6 +88,24 @@ const main = (): number => {
       }
       logger.info(
         'Linear tracking lives in Linear. Remove the reference from the commit message.',
+      )
+      errors++
+    }
+
+    // GitHub tokens in the commit message body. Pasting a `ghs_*` /
+    // `ghp_*` / `ghu_*` token into a commit message is exactly the
+    // leak vector commit-msg should block (the body lands in the
+    // remote repo's commit-log permanently — can't be unpushed). The
+    // scanGitHubTokens regex covers both the classic opaque format
+    // and the new JWT format from the 2026-05-15 GitHub rollout.
+    const ghHits = scanGitHubTokens(original)
+    if (ghHits.length > 0) {
+      logger.fail('Commit message contains a potential GitHub token:')
+      for (const hit of ghHits.slice(0, 3)) {
+        logger.info(`  line ${hit.lineNumber}: ${hit.line.trim()}`)
+      }
+      logger.info(
+        'Remove the token from the commit message. If this is intentional documentation of a token-shape pattern, paste the value into a test fixture instead, not the commit message.',
       )
       errors++
     }

@@ -381,7 +381,24 @@ export const scanPersonalPaths = (text: string): LineHit[] =>
 
 const SOCKET_API_KEY_RE = /sktsec_[a-zA-Z0-9_-]+/
 const AWS_KEY_RE = /(aws_access_key|aws_secret|\bAKIA[0-9A-Z]{16}\b)/i
-const GITHUB_TOKEN_RE = /gh[ps]_[a-zA-Z0-9]{36}/
+// GitHub token formats — accepts both classic opaque and new JWT
+// formats per the 2026-05-15 token-format rollout:
+//
+//   - ghp_ / gho_ / ghr_ / ghu_ / ghs_  : classic opaque 36+ chars
+//   - ghs_ + ghu_ (NEW)                  : JWT format, ~520 chars,
+//                                          contains two dots and
+//                                          underscores. ghu_ scheduled
+//                                          for same rollout per
+//                                          changelog (timing TBD).
+//   - github_pat_                        : fine-grained PAT
+//
+// The `[A-Za-z0-9._]` char class on ghs_/ghu_ covers BOTH formats
+// (classic: alnum only; JWT: alnum + `.` + `_`). Minimum length 36
+// is the floor for both formats — classic tokens are 36+ chars after
+// the prefix, JWTs are ~520. GitHub's recommended regex is
+// `ghs_[A-Za-z0-9\._]{36,}`.
+const GITHUB_TOKEN_RE =
+  /\b(?:ghp_[A-Za-z0-9]{36,}|gho_[A-Za-z0-9]{36,}|ghr_[A-Za-z0-9]{36,}|ghs_[A-Za-z0-9._]{36,}|ghu_[A-Za-z0-9._]{36,}|github_pat_[A-Za-z0-9_]{20,})/
 const PRIVATE_KEY_RE = /-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----/
 
 export const scanSocketApiKeys = (text: string): LineHit[] =>
