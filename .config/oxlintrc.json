@@ -1,13 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "unicorn",
-    "import"
-  ],
-  "jsPlugins": [
-    "./oxlint-plugin/index.mts"
-  ],
+  "plugins": ["typescript", "unicorn", "import"],
+  "jsPlugins": ["./oxlint-plugin/index.mts"],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
@@ -66,6 +60,7 @@
     "socket/prefer-function-declaration": "error",
     "socket/prefer-node-builtin-imports": "error",
     "socket/prefer-node-modules-dot-cache": "error",
+    "socket/prefer-non-capturing-group": "error",
     "socket/prefer-safe-delete": "error",
     "socket/prefer-separate-type-import": "error",
     "socket/prefer-spawn-over-execsync": "error",
@@ -193,8 +188,10 @@
     "**/scripts/check-paths/types.mts",
     "**/scripts/check-paths/walk.mts",
     "**/scripts/check-prompt-less-setup.mts",
+    "**/scripts/check-provenance.mts",
     "**/scripts/check-soak-exclude-dates.mts",
     "**/scripts/fix.mts",
+    "**/scripts/git-partial-submodule.mts",
     "**/scripts/install-claude-plugins.mts",
     "**/scripts/install-git-hooks.mts",
     "**/scripts/install-sfw.mts",
@@ -214,6 +211,9 @@
     "**/scripts/lockstep/schema.mts",
     "**/scripts/lockstep/types.mts",
     "**/scripts/power-state.mts",
+    "**/scripts/publish-release.mts",
+    "**/scripts/publish-shared.mts",
+    "**/scripts/publish.mts",
     "**/scripts/security.mts",
     "**/scripts/socket-wheelhouse-emit-schema.mts",
     "**/scripts/socket-wheelhouse-schema.mts",
