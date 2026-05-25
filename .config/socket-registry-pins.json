@@ -20,7 +20,7 @@
     "socket-registry — Layer 4 (_local-not-for-reuse-*.yml) SHAs are not valid pins for",
     "external consumers."
   ],
-  "propagationSha": "29100ff292fefdae4eba0ab2a40697fea06b1ad2",
+  "propagationSha": "c291a14196d088970c0453e905b40969b11bf193",
   "propagationShaUpdatedAt": "2026-05-25",
-  "propagationShaCommitSubject": "ci: bump internal action SHA pins to current main"
+  "propagationShaCommitSubject": "chore(wheelhouse): cascade hook format drift (oxfmt re-sync)"
 }

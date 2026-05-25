@@ -29,7 +29,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@29100ff292fefdae4eba0ab2a40697fea06b1ad2 # main (2026-05-15)
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@c291a14196d088970c0453e905b40969b11bf193 # main (2026-05-15)
         with:
           checkout: 'false'
 
@@ -62,7 +62,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@29100ff292fefdae4eba0ab2a40697fea06b1ad2 # main (2026-05-15)
+      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@c291a14196d088970c0453e905b40969b11bf193 # main (2026-05-15)
         with:
           checkout: 'false'
 
