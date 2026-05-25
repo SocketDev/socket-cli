@@ -31,7 +31,7 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { getSocketHomePath } from '@socketsecurity/lib-stable/paths/socket'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { parseSchema } from '@socketsecurity/lib-stable/schema/parse'
 
 const logger = getDefaultLogger()

@@ -20,7 +20,7 @@
 // Fires only on cargo / build-prod commands, so a no-op in repos that
 // don't use cargo.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'

@@ -17,11 +17,11 @@ describe('socket/prefer-spawn-over-execsync', () => {
       valid: [
         {
           name: 'lib-stable spawn import',
-          code: "import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'\n",
+          code: "import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'\n",
         },
         {
           name: 'lib-stable spawnSync import',
-          code: "import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'\n",
+          code: "import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'\n",
         },
         {
           name: 'node:child_process spawn (not exec*Sync) is acceptable',

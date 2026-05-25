@@ -20,8 +20,8 @@ import process from 'node:process'
 import { which } from '@socketsecurity/lib/bin/which'
 import { safeDelete } from '@socketsecurity/lib/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { isSpawnError } from '@socketsecurity/lib/spawn/errors'
-import { spawn } from '@socketsecurity/lib/spawn/spawn'
+import { isSpawnError } from '@socketsecurity/lib/process/spawn/errors'
+import { spawn } from '@socketsecurity/lib/process/spawn/child'
 
 const logger = getDefaultLogger()
 

@@ -13,7 +13,7 @@
 // No-op when actionlint isn't on PATH — most fleet machines have it via
 // brew, CI runners have it preinstalled, but downstreams may not.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
 import { readStdin } from '../_shared/transcript.mts'

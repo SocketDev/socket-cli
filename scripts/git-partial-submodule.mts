@@ -20,7 +20,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const logger = getDefaultLogger()
 

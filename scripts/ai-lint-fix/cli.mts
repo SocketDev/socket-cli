@@ -36,8 +36,8 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { isSpawnError } from '@socketsecurity/lib-stable/spawn/errors'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { AI_HANDLED_RULES, RULE_GUIDANCE } from './rule-guidance.mts'
 

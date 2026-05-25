@@ -1,6 +1,6 @@
 // node --test specs for the pr-vs-push-default-reminder hook.
 
-import { spawn, spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn, spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

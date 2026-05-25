@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 // prefer-async-spawn: sync-required — test flow is sync.
 // prefer-spawn-over-execsync: required — uses encoding/input options
 // not exposed on the lib spawnSync wrapper.
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

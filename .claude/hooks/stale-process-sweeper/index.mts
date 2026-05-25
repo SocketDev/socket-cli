@@ -31,7 +31,7 @@
 // Stop hooks receive JSON on stdin (we don't read it; the body
 // shape is irrelevant to our work) and exit code is advisory.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
 // Process-name patterns that indicate a stale test/build worker.

@@ -1,6 +1,6 @@
 /**
  * @file Per CLAUDE.md "Subprocesses" rule: Prefer async `spawn` from
- *   `@socketsecurity/lib-stable/spawn/spawn` over `spawnSync` from
+ *   `@socketsecurity/lib-stable/process/spawn/child` over `spawnSync` from
  *   `node:child_process`. Async unblocks parallel tests / event-loop work; the
  *   sync version freezes the runner for the duration of the child. Use
  *   `spawnSync` only when you genuinely need synchronous semantics. Detects:
@@ -13,19 +13,20 @@
  *     async core spawn lacks the lib's SpawnError shape. Autofix scope
  *     (deterministic; no AI required) — sync-aware: The lib re-exports BOTH
  *     `spawn` and `spawnSync`. The autofix only ever rewrites the import source
- *     (`node:child_process` → `@socketsecurity/lib-stable/spawn/spawn`); it
- *     never changes the imported name, never collapses `spawnSync` into
- *     `spawn`, and never touches call sites. Converting sync → async is a
- *     semantic change (callers must `await`, return types change from objects
- *     to promises) and that's a human-eyes job, not an autofix. Skipped when:
- *     a) any non-spawn named import (e.g. `exec`, `execSync`, `ChildProcess`)
- *     shares the same statement — the lib doesn't re-export those, so we can't
- *     safely rewrite the whole line. Allowed exceptions:
+ *     (`node:child_process` →
+ *     `@socketsecurity/lib-stable/process/spawn/child`); it never changes the
+ *     imported name, never collapses `spawnSync` into `spawn`, and never
+ *     touches call sites. Converting sync → async is a semantic change (callers
+ *     must `await`, return types change from objects to promises) and that's a
+ *     human-eyes job, not an autofix. Skipped when: a) any non-spawn named
+ *     import (e.g. `exec`, `execSync`, `ChildProcess`) shares the same
+ *     statement — the lib doesn't re-export those, so we can't safely rewrite
+ *     the whole line. Allowed exceptions:
  *   - Adjacent comment with `prefer-async-spawn: sync-required` — for top-level
  *     scripts whose entire flow is sync (per CLAUDE.md "Reserve `spawnSync` for
  *     top-level scripts whose entire flow is sync").
- *   - Files inside `@socketsecurity/lib-stable/spawn/spawn` itself — they wrap
- *     the core APIs. Handled at the .config/oxlintrc.json ignorePatterns
+ *   - Files inside `@socketsecurity/lib-stable/process/spawn/child` itself — they
+ *     wrap the core APIs. Handled at the .config/oxlintrc.json ignorePatterns
  *     level.
  */
 
@@ -36,7 +37,7 @@ const CHILD_PROCESS_SPECIFIERS = new Set([
   'node:child_process',
 ])
 
-const LIB_SPECIFIER = '@socketsecurity/lib-stable/spawn/spawn'
+const LIB_SPECIFIER = '@socketsecurity/lib-stable/process/spawn/child'
 
 const BANNED_NAMES = new Set(['spawn', 'spawnSync'])
 
@@ -50,16 +51,16 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Use `spawn` from @socketsecurity/lib-stable/spawn/spawn instead of `spawnSync` / core `spawn` from node:child_process.',
+        'Use `spawn` from @socketsecurity/lib-stable/process/spawn/child instead of `spawnSync` / core `spawn` from node:child_process.',
       category: 'Best Practices',
       recommended: true,
     },
     fixable: 'code',
     messages: {
       importBanned:
-        'Importing `{{name}}` from {{specifier}} — use `spawn` from @socketsecurity/lib-stable/spawn/spawn. Async unblocks parallel work and the lib ships consistent error shapes (SpawnError).',
+        'Importing `{{name}}` from {{specifier}} — use `spawn` from @socketsecurity/lib-stable/process/spawn/child. Async unblocks parallel work and the lib ships consistent error shapes (SpawnError).',
       callBanned:
-        'Calling `child_process.{{name}}(...)` — use `spawn` from @socketsecurity/lib-stable/spawn/spawn instead.',
+        'Calling `child_process.{{name}}(...)` — use `spawn` from @socketsecurity/lib-stable/process/spawn/child instead.',
     },
     schema: [],
   },

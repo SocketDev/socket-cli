@@ -17,7 +17,7 @@
 // Time budget: ~3 seconds total. Anything slower than that holds the
 // SessionStart hook chain and the user feels it.
 
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { appendFileSync, existsSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'

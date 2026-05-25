@@ -37,7 +37,7 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 import { getSocketAppDir } from '@socketsecurity/lib-stable/paths/socket'
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const logger = getDefaultLogger()
 

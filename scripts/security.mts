@@ -23,7 +23,7 @@ import process from 'node:process'
 import { which } from '@socketsecurity/lib-stable/bin/which'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const logger = getDefaultLogger()
 

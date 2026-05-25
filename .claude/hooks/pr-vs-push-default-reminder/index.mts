@@ -15,7 +15,7 @@
 // Skipped when the branch isn't main/master (feature branches always
 // PR via the wheelhouse push-fallback policy).
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
 

@@ -34,7 +34,7 @@
 //
 // Disabled via `SOCKET_NO_ORPHANED_STAGING_DISABLED=1`.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
 export async function drainStdin(): Promise<void> {

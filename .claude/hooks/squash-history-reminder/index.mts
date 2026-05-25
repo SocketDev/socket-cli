@@ -22,7 +22,7 @@ import path from 'node:path'
 import process from 'node:process'
 // prefer-async-spawn: sync-required — hook fires synchronously at
 // turn-end and must finish before stdin/stdout close.
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 

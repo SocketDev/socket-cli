@@ -6,7 +6,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, test } from 'node:test'

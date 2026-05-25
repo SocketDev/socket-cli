@@ -22,7 +22,7 @@
  *   scripts/lint-github-settings.mts --json # machine-readable.
  */
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'

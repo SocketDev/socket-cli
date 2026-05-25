@@ -17,7 +17,7 @@
 // sequentially across repos with exit-code gating; async would
 // complicate the linear pipeline for no real concurrency win.
 // prefer-spawn-over-execsync: same — top-level sync CLI flow.
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import {
   appendFileSync,
   existsSync,

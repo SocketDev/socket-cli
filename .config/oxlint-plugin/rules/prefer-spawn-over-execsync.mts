@@ -1,7 +1,7 @@
 /**
  * @file Per the fleet "Subprocesses" rule: prefer `spawn` from
- *   `@socketsecurity/lib-stable/spawn/spawn` over `execSync` / `execFileSync`
- *   from `node:child_process`. Two reasons:
+ *   `@socketsecurity/lib-stable/process/spawn/child` over `execSync` /
+ *   `execFileSync` from `node:child_process`. Two reasons:
  *
  *   1. Command-injection surface — `execSync(cmd)` runs `cmd` through a shell; any
  *      string concatenation into `cmd` is a potential injection vector.
@@ -24,8 +24,8 @@
  *   - Adjacent comment with `prefer-spawn-over-execsync: required` — for callers
  *     who genuinely need shell expansion (e.g. expanding env vars mid-command).
  *     Rare; document why.
- *   - Files inside `@socketsecurity/lib-stable/spawn/spawn` itself — handled at
- *     the .config/oxlintrc.json ignorePatterns level.
+ *   - Files inside `@socketsecurity/lib-stable/process/spawn/child` itself —
+ *     handled at the .config/oxlintrc.json ignorePatterns level.
  */
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
@@ -47,16 +47,16 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Use `spawn` from @socketsecurity/lib-stable/spawn/spawn instead of `execSync` / `execFileSync` from node:child_process.',
+        'Use `spawn` from @socketsecurity/lib-stable/process/spawn/child instead of `execSync` / `execFileSync` from node:child_process.',
       category: 'Best Practices',
       recommended: true,
     },
     fixable: undefined,
     messages: {
       importBanned:
-        'Importing `{{name}}` from {{specifier}} — use `spawn` (or `spawnSync` for top-level-sync) from @socketsecurity/lib-stable/spawn/spawn. `execSync` runs through a shell (command-injection surface); array-arg `spawn` does not. The lib also ships a typed SpawnError shape — `execSync` errors are plain Errors with no structured fields.',
+        'Importing `{{name}}` from {{specifier}} — use `spawn` (or `spawnSync` for top-level-sync) from @socketsecurity/lib-stable/process/spawn/child. `execSync` runs through a shell (command-injection surface); array-arg `spawn` does not. The lib also ships a typed SpawnError shape — `execSync` errors are plain Errors with no structured fields.',
       callBanned:
-        'Calling `{{obj}}.{{name}}(...)` — use `spawn` from @socketsecurity/lib-stable/spawn/spawn instead. Avoids shell-interpolation injection paths; ships consistent SpawnError shape.',
+        'Calling `{{obj}}.{{name}}(...)` — use `spawn` from @socketsecurity/lib-stable/process/spawn/child instead. Avoids shell-interpolation injection paths; ships consistent SpawnError shape.',
     },
     schema: [],
   },

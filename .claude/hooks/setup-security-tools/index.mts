@@ -38,7 +38,7 @@
 // Fails open on every error (exit 0 + stderr log). The hook must
 // not block the conversation on its own bugs.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'

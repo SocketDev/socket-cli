@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

@@ -30,7 +30,7 @@
 //
 // Fails open on any internal error (exit 0 + stderr log).
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
 import { containsOutsideQuotes } from '../_shared/bash-quote-mask.mts'

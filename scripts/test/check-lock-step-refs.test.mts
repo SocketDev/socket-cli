@@ -11,7 +11,7 @@
 // script from that cwd and inspect exit code + stderr/stdout. Each test
 // owns its own tmpdir to avoid cross-pollution.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'

@@ -18,7 +18,7 @@
 //
 // No-op when the staged set is purely non-UI source.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
 

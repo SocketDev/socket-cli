@@ -40,7 +40,7 @@
 //   SOCKET_AUTH_ROTATION_DISABLED        default: unset
 //     If set to a truthy value, skip the hook entirely.
 
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import {
   existsSync,
   mkdirSync,

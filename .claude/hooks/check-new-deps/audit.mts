@@ -26,8 +26,8 @@ import path from 'node:path'
 
 import { stringify } from '@socketregistry/packageurl-js-stable'
 import type { PackageURL } from '@socketregistry/packageurl-js-stable'
-import { createTtlCache } from '@socketsecurity/lib-stable/ttl-cache/cache'
-import type { TtlCache } from '@socketsecurity/lib-stable/ttl-cache/types'
+import { createTtlCache } from '@socketsecurity/lib-stable/cache/ttl/store'
+import type { TtlCache } from '@socketsecurity/lib-stable/cache/ttl/types'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 
 import type {
