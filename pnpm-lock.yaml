@@ -726,6 +726,12 @@ importers:
         specifier: 'catalog:'
         version: 24.9.2
 
+  .claude/hooks/follow-direct-imperative-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/gitmodules-comment-guard: {}
 
   .claude/hooks/identifying-users-reminder:
