@@ -135,6 +135,11 @@
 .claude/hooks/file-size-reminder/package.json linguist-generated=true
 .claude/hooks/file-size-reminder/test/index.test.mts linguist-generated=true
 .claude/hooks/file-size-reminder/tsconfig.json linguist-generated=true
+.claude/hooks/follow-direct-imperative-reminder/README.md linguist-generated=true
+.claude/hooks/follow-direct-imperative-reminder/index.mts linguist-generated=true
+.claude/hooks/follow-direct-imperative-reminder/package.json linguist-generated=true
+.claude/hooks/follow-direct-imperative-reminder/test/index.test.mts linguist-generated=true
+.claude/hooks/follow-direct-imperative-reminder/tsconfig.json linguist-generated=true
 .claude/hooks/gitmodules-comment-guard/README.md linguist-generated=true
 .claude/hooks/gitmodules-comment-guard/index.mts linguist-generated=true
 .claude/hooks/gitmodules-comment-guard/package.json linguist-generated=true
@@ -461,6 +466,10 @@
 .claude/skills/handing-off/SKILL.md linguist-generated=true
 .claude/skills/locking-down-programmatic-claude/SKILL.md linguist-generated=true
 .claude/skills/plug-leaking-promise-race/SKILL.md linguist-generated=true
+.claude/skills/prose/SKILL.md linguist-generated=true
+.claude/skills/prose/references/examples.md linguist-generated=true
+.claude/skills/prose/references/phrases.md linguist-generated=true
+.claude/skills/prose/references/structures.md linguist-generated=true
 .claude/skills/refreshing-history/SKILL.md linguist-generated=true
 .claude/skills/refreshing-history/run.mts linguist-generated=true
 .claude/skills/reviewing-code/SKILL.md linguist-generated=true
@@ -529,6 +538,7 @@
 .config/oxlint-plugin/rules/prefer-function-declaration.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-node-builtin-imports.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-node-modules-dot-cache.mts linguist-generated=true
+.config/oxlint-plugin/rules/prefer-non-capturing-group.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-safe-delete.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-separate-type-import.mts linguist-generated=true
 .config/oxlint-plugin/rules/prefer-spawn-over-execsync.mts linguist-generated=true
@@ -573,6 +583,7 @@
 .config/oxlint-plugin/test/prefer-function-declaration.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-node-builtin-imports.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-node-modules-dot-cache.test.mts linguist-generated=true
+.config/oxlint-plugin/test/prefer-non-capturing-group.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-safe-delete.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-separate-type-import.test.mts linguist-generated=true
 .config/oxlint-plugin/test/prefer-spawn-over-execsync.test.mts linguist-generated=true

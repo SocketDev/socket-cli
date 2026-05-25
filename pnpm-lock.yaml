@@ -690,6 +690,12 @@ importers:
         specifier: 'catalog:'
         version: 24.9.2
 
+  .claude/hooks/dirty-worktree-on-stop-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/dont-stop-mid-queue-reminder:
     devDependencies:
       '@types/node':
@@ -723,6 +729,12 @@ importers:
   .claude/hooks/gitmodules-comment-guard: {}
 
   .claude/hooks/identifying-users-reminder:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/immutable-release-pattern-guard:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -965,6 +977,48 @@ importers:
         specifier: 'catalog:'
         version: 24.9.2
 
+  .claude/hooks/scan-label-in-commit-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/setup-basics-tools:
+    devDependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.0.0
+        version: '@socketsecurity/lib@6.0.0(typescript@5.9.3)'
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/setup-claude-scanners:
+    devDependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.0.0
+        version: '@socketsecurity/lib@6.0.0(typescript@5.9.3)'
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/setup-firewall:
+    devDependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.0.0
+        version: '@socketsecurity/lib@6.0.0(typescript@5.9.3)'
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
+  .claude/hooks/setup-misc-tools:
+    devDependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.0.0
+        version: '@socketsecurity/lib@6.0.0(typescript@5.9.3)'
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
+
   .claude/hooks/setup-security-tools:
     dependencies:
       '@sinclair/typebox':
@@ -996,6 +1050,12 @@ importers:
         version: 24.9.2
 
   .claude/hooks/stale-process-sweeper: {}
+
+  .claude/hooks/sweep-ds-store:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.9.2
 
   .claude/hooks/token-guard: {}
 

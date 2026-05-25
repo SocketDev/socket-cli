@@ -47,6 +47,10 @@ Full ruleset + threat model + bypass surface in [`docs/claude.md/fleet/public-su
 
 Full ruleset — open-PR edits, Bugbot inline replies, rebase-over-revert for unpushed commits, no-empty-commits, commit-author canonical identity, scan-label scrubbing, enterprise-ruleset bypass — in [`docs/claude.md/fleet/commit-cadence-format.md`](docs/claude.md/fleet/commit-cadence-format.md).
 
+### Prose authoring (commit bodies, PRs, CHANGELOG, docs)
+
+🚨 Run human-facing prose through the `prose` skill before it lands: commit message bodies, PR descriptions, CHANGELOG entries, README sections, `docs/` markdown. The skill catches throat-clearing openers, "not X, it's Y" contrasts, em-dash chains, adverbs doing vague work, metronomic rhythms. Subject lines stay terse and imperative under `commit-message-format-guard`. Cascade commits and bot output are exempt. Full rules: [`.claude/skills/prose/SKILL.md`](.claude/skills/prose/SKILL.md).
+
 ### Squash-history opt-in
 
 Some fleet repos squash the default branch on a cadence — currently socket-addon, socket-bin, socket-btm, sdxgen, stuie (declared via `optIns: ['squash-history']` in `template/.claude/skills/cascading-fleet/lib/fleet-repos.json`). When working in an opted-in repo, prefer one consolidated commit per logical change over a long fan of tiny WIP commits; the `squashing-history` skill is the documented way to collapse history when it grows long. Threshold reminder + bypass `Allow squash-history-reminder bypass` (enforced by `.claude/hooks/squash-history-reminder/`).
@@ -212,6 +216,7 @@ When writing or extending a Bash-allowlist hook, prefer **AST-based parsing** ov
 - Before calling done: perfectionist vs. pragmatist views. Default perfectionist absent a signal.
 - If a fix fails twice: stop, re-read top-down, state where the mental model was wrong, try something fundamentally different.
 - **When the user authorizes a queue** ("complete each one", "hammer it out", "100%", "do them all"): finish every item before stopping. Don't post "what's next?" / "honest stopping point" / "session totals" after one item — that re-litigates intent already given. Continue until the queue is empty or a genuine blocker hits (enforced by `.claude/hooks/dont-stop-mid-queue-reminder/`). Skip AskUserQuestion when recent transcript carries explicit go-ahead directives ("do it" / "yes" / "proceed") — pick the obvious default and execute (enforced by `.claude/hooks/ask-suppression-reminder/`).
+- **Direct imperatives → execute, don't litigate.** When the user issues a bare command ("use nvm 26.2.0", "cancel the build", "do it", "kill it"), the response is the tool call, not a paragraph weighing trade-offs. Hedge openers ("That won't help because…", "Let me explain why…", "Before I do that…") + analysis-before-action when the command was unambiguous are the failure mode. State the intent in one short sentence at most, then run the command (enforced by `.claude/hooks/follow-direct-imperative-reminder/`).
 
 ### Error messages
 
