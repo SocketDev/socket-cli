@@ -20,7 +20,7 @@
     "socket-registry — Layer 4 (_local-not-for-reuse-*.yml) SHAs are not valid pins for",
     "external consumers."
   ],
-  "propagationSha": "c291a14196d088970c0453e905b40969b11bf193",
-  "propagationShaUpdatedAt": "2026-05-25",
-  "propagationShaCommitSubject": "chore(wheelhouse): cascade hook format drift (oxfmt re-sync)"
+  "propagationSha": "0bc65f5b8c962a6419a199a7bd44d8d798acce73",
+  "propagationShaUpdatedAt": "2026-05-26",
+  "propagationShaCommitSubject": "ci(provenance): default fallback path to pnpm stage publish"
 }
