@@ -27,6 +27,7 @@ import {
   scanDocsPnpmFirst,
   scanGitHubTokens,
   scanLinearRefs,
+  scanPackageJsonPnpmOverrides,
   scanPersonalPaths,
   scanPrivateKeys,
   scanSocketApiKeys,
@@ -305,17 +306,31 @@ test('normalizePath: POSIX path passes through', () => {
 
 // ── filterAllowedApiKeys ──────────────────────────────────────────
 
-test('filterAllowedApiKeys: drops fake-token + env-var-name + .example markers', () => {
+test('filterAllowedApiKeys: drops fake-token + env-var-name + .env.example + marker', () => {
   // SOCKET_TOKEN_ENV_NAMES carries the trailing `=` — the filter looks
   // for the assignment shape, not the bare name in prose.
+  // Past variant: bare `.example` substring was overbroad. Tightened
+  // to `.env.example` (canonical fixture filename) + an explicit
+  // per-line `socket-hook: allow socket-api-key` marker.
   const lines = [
     'const real = "abc123secretvalueabcdef"',
     'const fake = "socket-test-fake-token-abc"',
     'export SOCKET_API_TOKEN=somevalue',
-    'const example = "this is .example fixture data"',
+    'see .env.example for the canonical shape',
+    'const marker = "sktsec_fixture" // socket-hook: allow socket-api-key',
   ]
   const filtered = filterAllowedApiKeys(lines)
   assert.deepStrictEqual(filtered, ['const real = "abc123secretvalueabcdef"'])
+})
+
+test('filterAllowedApiKeys: bare .example no longer overbroad', () => {
+  // A real key on a line that happens to mention `.example` (RFC 2606
+  // TLD, prose) MUST be retained, not silently dropped.
+  const lines = [
+    'const tld = "abc123secretvalueabcdef" // .example is an IANA-reserved TLD',
+  ]
+  const filtered = filterAllowedApiKeys(lines)
+  assert.deepStrictEqual(filtered, lines, 'no allowlist hit from bare .example')
 })
 
 test('filterAllowedApiKeys: retains lines without allowlist hits', () => {
@@ -341,12 +356,12 @@ test('socketHookMarkerFor: chooses comment style by file extension', () => {
 
 // ── suggestPlaceholder ────────────────────────────────────────────
 
-test('suggestPlaceholder: rewrites /Users/<name>/ → /Users/<user>/', () => {
+test('suggestPlaceholder: rewrites /Users/<user>/ → /Users/<user>/', () => {
   const out = suggestPlaceholder('const p = "/Users/jdalton/foo.txt"')
   assert.match(out, /\/Users\/<user>\//)
 })
 
-test('suggestPlaceholder: rewrites C:\\Users\\<name>\\ → C:\\Users\\<USERNAME>\\', () => {
+test('suggestPlaceholder: rewrites C:\\Users\\<USERNAME>\\ → C:\\Users\\<USERNAME>\\', () => {
   // String contains 1 literal backslash per separator: C:\Users\jdalton\Documents
   const out = suggestPlaceholder('const p = "C:\\Users\\jdalton\\Documents"')
   assert.match(out, /C:\\Users\\<USERNAME>\\/)
@@ -393,17 +408,17 @@ test('suggestNpxReplacement: leaves non-dlx commands alone', () => {
 
 test('suggestLoggerReplacement: console.log → logger.log', () => {
   const out = suggestLoggerReplacement("console.log('hi')")
-  assert.match(out, /logger\.(log|info)/)
+  assert.match(out, /logger\.(info|log)/)
 })
 
 test('suggestLoggerReplacement: console.error → logger.fail', () => {
   const out = suggestLoggerReplacement("console.error('x')")
-  assert.match(out, /logger\.(fail|error)/)
+  assert.match(out, /logger\.(error|fail)/)
 })
 
 // ── scanPersonalPaths ─────────────────────────────────────────────
 
-test('scanPersonalPaths: flags real /Users/<name>/ paths', () => {
+test('scanPersonalPaths: flags real /Users/<user>/ paths', () => {
   const hits = scanPersonalPaths('const p = "/Users/jdalton/secret.txt"')
   assert.ok(hits.length > 0)
   assert.match(hits[0]!.line, /jdalton/)
@@ -417,6 +432,21 @@ test('scanPersonalPaths: ignores placeholder /Users/<user>/', () => {
 test('scanPersonalPaths: ignores Linux placeholder /home/<user>/', () => {
   const hits = scanPersonalPaths('const p = "/home/<user>/foo"')
   assert.strictEqual(hits.length, 0)
+})
+
+test('scanPersonalPaths: does NOT flag ~/ or $HOME/ (username-free forms)', () => {
+  // ~/ and $HOME/ are the RECOMMENDED replacements for a hardcoded
+  // username — they must never be flagged. Regression: an earlier
+  // revision added them to PERSONAL_PATH_RE and blocked the push on
+  // canonical fixed paths like ~/.config/gh/hosts.yml.
+  for (const p of [
+    'token lives at ~/.config/gh/hosts.yml',
+    'marker file: ~/.claude/gh-workflow-grant',
+    'const dir = "$HOME/.ssh"',
+    'const dir = "${HOME}/.config"',
+  ]) {
+    assert.strictEqual(scanPersonalPaths(p).length, 0, `should not flag: ${p}`)
+  }
 })
 
 test('scanPersonalPaths: respects suppression marker', () => {
@@ -535,6 +565,63 @@ test('scanAwsKeys: catches AKIA literal access key', () => {
 test('scanPrivateKeys: catches PEM header', () => {
   const hits = scanPrivateKeys('-----BEGIN RSA PRIVATE KEY-----')
   assert.ok(hits.length >= 1)
+})
+
+test('scanPrivateKeys: catches every common PEM variant', () => {
+  const variants = [
+    '-----BEGIN PRIVATE KEY-----', // PKCS#8 generic
+    '-----BEGIN RSA PRIVATE KEY-----', // PKCS#1 OpenSSL
+    '-----BEGIN EC PRIVATE KEY-----',
+    '-----BEGIN DSA PRIVATE KEY-----',
+    '-----BEGIN OPENSSH PRIVATE KEY-----', // default ssh-keygen since 2019
+    '-----BEGIN ENCRYPTED PRIVATE KEY-----', // PKCS#8 passphrase
+    '-----BEGIN PGP PRIVATE KEY BLOCK-----',
+  ]
+  for (let i = 0, { length } = variants; i < length; i += 1) {
+    const v = variants[i]!
+    const hits = scanPrivateKeys(v)
+    assert.ok(hits.length >= 1, `must catch: ${v}`)
+  }
+})
+
+test('scanPrivateKeys: does not false-positive on prose', () => {
+  const benign = [
+    'See: BEGIN PRIVATE KEY is the PEM header for PKCS#8 keys.',
+    '// the PRIVATE KEY format starts with -----BEGIN',
+    'PUBLIC KEY (not private):',
+  ]
+  for (let i = 0, { length } = benign; i < length; i += 1) {
+    const b = benign[i]!
+    const hits = scanPrivateKeys(b)
+    assert.strictEqual(hits.length, 0, `must not match prose mention: ${b}`)
+  }
+})
+
+// ── scanPackageJsonPnpmOverrides ──────────────────────────────────
+
+test('scanPackageJsonPnpmOverrides: flags a non-empty pnpm.overrides', () => {
+  const text = JSON.stringify(
+    { name: 'x', pnpm: { overrides: { ajv: '>=6.14.0' } } },
+    undefined,
+    2,
+  )
+  const hits = scanPackageJsonPnpmOverrides(text)
+  assert.strictEqual(hits.length, 1)
+  assert.ok(hits[0]!.line.includes('overrides'))
+})
+
+test('scanPackageJsonPnpmOverrides: ignores empty overrides', () => {
+  const text = JSON.stringify({ name: 'x', pnpm: { overrides: {} } })
+  assert.strictEqual(scanPackageJsonPnpmOverrides(text).length, 0)
+})
+
+test('scanPackageJsonPnpmOverrides: ignores package.json without pnpm', () => {
+  const text = JSON.stringify({ name: 'x', version: '1.0.0' })
+  assert.strictEqual(scanPackageJsonPnpmOverrides(text).length, 0)
+})
+
+test('scanPackageJsonPnpmOverrides: fails open on invalid JSON', () => {
+  assert.strictEqual(scanPackageJsonPnpmOverrides('{ not json').length, 0)
 })
 
 // ── scanSocketApiKeys ─────────────────────────────────────────────

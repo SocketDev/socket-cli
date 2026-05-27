@@ -23,6 +23,7 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
+import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface ToolInput {
@@ -40,7 +41,8 @@ const BYPASS_PHRASE = 'Allow concurrent-cargo-build bypass'
 // the actual long-running cargo / linker process.
 interface BuildPattern {
   readonly label: string
-  readonly cmdRe: RegExp
+  // Parser-based matcher: true when `command` invokes this release build.
+  readonly matches: (command: string) => boolean
   // pgrep -f pattern (string, not RegExp — pgrep uses POSIX ERE).
   readonly pgrepPattern: string
 }
@@ -48,28 +50,42 @@ interface BuildPattern {
 const BUILD_PATTERNS: BuildPattern[] = [
   {
     label: 'cargo build --release',
-    cmdRe: /\bcargo\s+(?:b|build)\b[^&;|]*?(?:--release|\s-r\b)/,
+    // `cargo` (or `cargo b`/`build`) with a release flag, as a real
+    // command — not the words appearing in a quoted string or a sibling.
+    matches: command =>
+      commandsFor(command, 'cargo').some(
+        c =>
+          (c.args.includes('build') || c.args.includes('b')) &&
+          (c.args.includes('--release') || c.args.includes('-r')),
+      ),
     pgrepPattern: 'cargo (build|b).*(--release|-r)',
   },
   {
     label: 'pnpm build:prod',
-    cmdRe: /\bpnpm\s+(?:run\s+)?build:prod\b/,
+    // `pnpm build:prod` or `pnpm run build:prod` — the script token shows
+    // up as an arg either way.
+    matches: command =>
+      commandsFor(command, 'pnpm').some(c => c.args.includes('build:prod')),
     pgrepPattern: 'pnpm.*build:prod',
   },
   {
     label: 'node scripts/build.mts --prod',
-    cmdRe: /\bnode\s+(?:[^&;|]*\/)?scripts\/build\.mts\b[^&;|]*?--prod/,
+    // `node …/scripts/build.mts --prod` — the script path is an arg ending
+    // in scripts/build.mts and --prod is a flag on the same node command.
+    matches: command =>
+      commandsFor(command, 'node').some(
+        c =>
+          c.args.some(a => /(?:^|\/)scripts\/build\.mts$/.test(a)) &&
+          c.args.includes('--prod'),
+      ),
     pgrepPattern: 'node.*scripts/build\\.mts.*--prod',
   },
 ]
 
 export function commandMatchesBuild(command: string): BuildPattern | undefined {
-  // Exempt cargo check + bare cargo build (no --release) explicitly.
-  // The matching regex already requires --release / -r, so this is just
-  // documentation — the false-positive surface is bounded.
   for (let i = 0, { length } = BUILD_PATTERNS; i < length; i += 1) {
     const p = BUILD_PATTERNS[i]!
-    if (p.cmdRe.test(command)) {
+    if (p.matches(command)) {
       return p
     }
   }

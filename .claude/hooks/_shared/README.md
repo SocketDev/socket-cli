@@ -4,7 +4,7 @@ Helper modules shared across multiple hooks under `.claude/hooks/`. **Not a depl
 
 ## What lives here
 
-- **`bash-quote-mask.mts`** — Parses a Bash command string and reports the byte ranges that sit inside single-quoted, double-quoted, or heredoc bodies. Used by `no-experimental-strip-types-guard`, `token-guard`, and similar Bash-scanning hooks to skip false positives in literal strings (e.g. `echo "tip: --experimental-strip-types is..."` should not trigger).
+- **`shell-command.mts`** — Tokenizes a Bash command string with `shell-quote` into discrete `Command`s (`binary`, `args`, leading env `assignments`, plus `viaVariable` / `viaEval` indirection flags). Exposes `parseCommands`, `findInvocation`, `commandsFor`, `invocationHasFlag`, and `hasOpaqueInvocation`. Used by every structure-sensitive Bash guard (`codex-no-write-guard`, `release-workflow-guard`, `no-empty-commit-guard`, the git-detection guards, …) so a forbidden invocation is matched on the actual parsed command — `$(…)` / `$VAR` / `eval` indirection is seen rather than evaded, and a quoted mention inside an `echo` or `-m` body can't false-trigger.
 
 - **`hook-env.mts`** — `isHookDisabled(slug)` and `hookLog(slug, ...lines)`. Standardizes the `SOCKET_<UPPER_SLUG>_DISABLED` env-var convention every hook supports plus the `[<slug>] <line>` stderr prefix shape. Use these in new hooks so every hook gets a uniform kill switch + output format for free.
 
@@ -26,7 +26,7 @@ Helper modules shared across multiple hooks under `.claude/hooks/`. **Not a depl
 
 - Writing a **PreToolUse hook** that inspects a tool call's input? → `import { ToolCallPayload, readCommand, readFilePath } from '../_shared/payload.mts'`. Saves you the `typeof === 'string'` guard.
 
-- Reading the Bash command + want to skip false positives inside quoted strings? → `import { containsOutsideQuotes } from '../_shared/bash-quote-mask.mts'`.
+- Detecting whether a Bash command really invokes some binary/subcommand (and want `$(…)` / `$VAR` / quoted-mention false positives handled)? → `import { commandsFor, findInvocation } from '../_shared/shell-command.mts'`.
 
 - Want a kill switch for your hook? → `import { isHookDisabled, hookLog } from '../_shared/hook-env.mts'`. The hook is enabled by default and `SOCKET_<UPPER_SLUG>_DISABLED=1` opts out — same shape across the fleet.
 

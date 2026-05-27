@@ -1,7 +1,7 @@
 // Shared helpers for git hooks — API-key allowlist + content scanners
 // + tiny string utilities (color wrappers, marker-syntax picker, path
 // normalize). Each hook imports `getDefaultLogger` from
-// `@socketsecurity/lib-stable/logger` directly for output; this module stays
+// `@socketsecurity/lib-stable/logger/default` directly for output; this module stays
 // import-light so the cost of `import './_helpers.mts'` is bounded.
 //
 // Requires Node 25+ for stable .mts type-stripping (no flag needed).
@@ -11,8 +11,9 @@
 // Hooks run *after* `pnpm install`, so `@socketsecurity/lib-stable` is on the
 // resolution path for any caller that imports it.
 
-import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, statSync } from 'node:fs'
+
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 // Hard-fail if Node is below 25. This runs at module load — every
 // hook invocation imports _helpers.mts before doing anything, so the
@@ -75,7 +76,7 @@ export const SOCKET_SECURITY_ENV = SOCKET_TOKEN_ENV_NAMES[0]!
 
 // ── Output ──────────────────────────────────────────────────────────
 //
-// Hooks call `getDefaultLogger()` from `@socketsecurity/lib-stable/logger`
+// Hooks call `getDefaultLogger()` from `@socketsecurity/lib-stable/logger/default`
 // directly. Color comes from the logger's semantic methods —
 // `.fail()` is red ✖, `.success()` is green ✔, `.warn()` is yellow ⚠,
 // `.info()` is blue ℹ, `.error()` is plain. ANSI constants and
@@ -112,12 +113,20 @@ export const splitLines = (text: string): string[] =>
 // Returns true if a line is on the allowlist (a public/example/fake
 // token we deliberately ship). Used by scanners to drop allowlisted
 // hits without losing each hit's original lineNumber.
+//
+// Previous version allowlisted any line containing the bare substring
+// '.example' — too broad. Real keys on lines that mention `.example`
+// anywhere (TLD, paths, prose like "see .example below") were silently
+// allowlisted. Now we require either an explicit per-line marker or
+// the canonical fixture filename pattern `.env.example`.
+const SOCKET_API_KEY_ALLOW_MARKER = 'socket-hook: allow socket-api-key'
 const isAllowedApiKey = (line: string): boolean =>
   line.includes(ALLOWED_PUBLIC_KEY) ||
   line.includes(FAKE_TOKEN_MARKER) ||
   line.includes(FAKE_TOKEN_LEGACY) ||
   SOCKET_TOKEN_ENV_NAMES.some(name => line.includes(name)) ||
-  line.includes('.example')
+  line.includes(SOCKET_API_KEY_ALLOW_MARKER) ||
+  line.includes('.env.example')
 
 // Drops any line that matches an allowlist entry. Kept for callers
 // that work on bare lines; new code should filter LineHit[] directly
@@ -128,6 +137,15 @@ export const filterAllowedApiKeys = (lines: readonly string[]): string[] =>
 // ── Personal-path scanner ──────────────────────────────────────────
 
 // Real personal paths to flag: /Users/foo/, /home/foo/, C:\Users\foo\.
+// The scanner's job is to catch a hardcoded USERNAME leak. `~/...` and
+// `$HOME/...` are the OPPOSITE — they're the recommended username-free
+// forms (and the placeholder-allowlist below explicitly accepts them),
+// so they MUST NOT be flagged. (An earlier revision added `~/` /
+// `$HOME/` here, which wrongly flagged canonical fixed paths like
+// `~/.config/gh/hosts.yml` and `~/.claude/...` and blocked the push.)
+// NFKC normalization is applied at the scanLines layer before this
+// regex runs so full-width / Unicode variants of `/Users` (e.g.
+// `／Users／foo／`) don't slip past.
 const PERSONAL_PATH_RE =
   /(\/Users\/[^/\s]+\/|\/home\/[^/\s]+\/|C:\\Users\\[^\\]+\\)/
 
@@ -296,7 +314,7 @@ export type LineHit = {
   // Suggested rewrite when this flagged line is documentation-style and
   // the scanner can offer a concrete fix. Undefined for runtime-code
   // paths where the right answer depends on the surrounding code.
-  suggested?: string
+  suggested?: string | undefined
 }
 
 // Generic line-walk scanner factory. Splits text into lines once,
@@ -314,24 +332,32 @@ function scanLines(
   text: string,
   pattern: RegExp,
   options: {
-    filter?: (line: string) => boolean
-    skipDocs?: { rule: string }
-    suggest?: (line: string) => string
+    filter?: ((line: string) => boolean) | undefined
+    skipDocs?: { rule: string } | undefined
+    suggest?: ((line: string) => string) | undefined
+    // NFKC-normalize each line before regex match. Catches Unicode
+    // variants of leak markers (full-width slashes, etc.). Off by
+    // default — secret-token regexes match exact ASCII byte
+    // sequences and must NOT be Unicode-normalized.
+    normalizeForMatch?: boolean | undefined
   } = {},
 ): LineHit[] {
   const hits: LineHit[] = []
   const lines = splitLines(text)
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
-    if (!pattern.test(line)) {
+    const lineForMatch = options.normalizeForMatch
+      ? line.normalize('NFKC')
+      : line
+    if (!pattern.test(lineForMatch)) {
       continue
     }
-    if (options.filter && options.filter(line)) {
+    if (options.filter && options.filter(lineForMatch)) {
       continue
     }
     if (
       options.skipDocs &&
-      looksLikeDocumentation(line, pattern, options.skipDocs.rule)
+      looksLikeDocumentation(lineForMatch, pattern, options.skipDocs.rule)
     ) {
       continue
     }
@@ -361,6 +387,9 @@ export function suggestPlaceholder(line: string): string {
 // caller surfaces it to the user as the fix recipe.
 export const scanPersonalPaths = (text: string): LineHit[] =>
   scanLines(text, PERSONAL_PATH_RE, {
+    // NFKC-normalize before match — catches full-width and ligature
+    // variants that would otherwise slip past the ASCII-only regex.
+    normalizeForMatch: true,
     filter: line => {
       // Pure-placeholder lines (no real path remains after stripping
       // every `<...>` placeholder) are documentation, not leaks.
@@ -399,7 +428,18 @@ const AWS_KEY_RE = /(aws_access_key|aws_secret|\bAKIA[0-9A-Z]{16}\b)/i
 // `ghs_[A-Za-z0-9\._]{36,}`.
 const GITHUB_TOKEN_RE =
   /\b(?:ghp_[A-Za-z0-9]{36,}|gho_[A-Za-z0-9]{36,}|ghr_[A-Za-z0-9]{36,}|ghs_[A-Za-z0-9._]{36,}|ghu_[A-Za-z0-9._]{36,}|github_pat_[A-Za-z0-9_]{20,})/
-const PRIVATE_KEY_RE = /-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----/
+// Private-key PEM headers. Covers every type that wraps a private
+// key in PEM armor:
+//   - `BEGIN PRIVATE KEY` (PKCS#8, generic)
+//   - `BEGIN RSA PRIVATE KEY` (PKCS#1, OpenSSL classic)
+//   - `BEGIN EC PRIVATE KEY` / `BEGIN DSA PRIVATE KEY`
+//   - `BEGIN OPENSSH PRIVATE KEY` (default ssh-keygen output since 2019;
+//     the most common case for personal SSH keys)
+//   - `BEGIN ENCRYPTED PRIVATE KEY` (PKCS#8 passphrase-protected)
+//   - `BEGIN PGP PRIVATE KEY BLOCK` (PGP secret keys)
+// The leading `[A-Z ]*` accepts any uppercase-letters+space prefix
+// before "PRIVATE KEY" so future formats are caught automatically.
+const PRIVATE_KEY_RE = /-----BEGIN [A-Z ]*PRIVATE KEY( BLOCK)?-----/
 
 export const scanSocketApiKeys = (text: string): LineHit[] =>
   scanLines(text, SOCKET_API_KEY_RE, { filter: isAllowedApiKey })
@@ -412,6 +452,44 @@ export const scanGitHubTokens = (text: string): LineHit[] =>
 
 export const scanPrivateKeys = (text: string): LineHit[] =>
   scanLines(text, PRIVATE_KEY_RE)
+
+// ── package.json pnpm.overrides scanner ────────────────────────────
+//
+// Dependency overrides belong in pnpm-workspace.yaml `overrides:`, the
+// fleet's single override surface. A non-empty `pnpm.overrides` block in
+// a package.json splits the source of truth and sits outside the
+// workspace file's `trustPolicy: no-downgrade`. Structural, not
+// line-pattern: parse the JSON, flag a non-empty `pnpm.overrides`. Points
+// the hit at the `"overrides"` line so the message is actionable. Returns
+// no hits on parse failure (fail open; oxfmt / other gates catch broken
+// JSON).
+export const scanPackageJsonPnpmOverrides = (text: string): LineHit[] => {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    return []
+  }
+  const pnpm = (parsed as { pnpm?: unknown } | null)?.pnpm
+  const overrides =
+    pnpm && typeof pnpm === 'object'
+      ? (pnpm as { overrides?: unknown }).overrides
+      : undefined
+  if (
+    !overrides ||
+    typeof overrides !== 'object' ||
+    Object.keys(overrides as Record<string, unknown>).length === 0
+  ) {
+    return []
+  }
+  const lines = text.split(/\r?\n/)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    if (/"overrides"\s*:/.test(lines[i]!)) {
+      return [{ lineNumber: i + 1, line: lines[i]!.trim() }]
+    }
+  }
+  return [{ lineNumber: 1, line: '"pnpm": { "overrides": { … } }' }]
+}
 
 // ── npx/dlx scanner ────────────────────────────────────────────────
 //
@@ -480,9 +558,9 @@ export const scanNpxDlx = (text: string): LineHit[] =>
 // Match shell install commands at line start (allowing leading
 // whitespace + `$` prompt). Captures the package manager so the
 // caller can tell which form was seen first.
-const PNPM_INSTALL_LINE_RE = /^\s*\$?\s*pnpm\s+(?:install|add|i)\b/
+const PNPM_INSTALL_LINE_RE = /^\s*\$?\s*pnpm\s+(?:add|i|install)\b/
 const NPM_YARN_INSTALL_LINE_RE =
-  /^\s*\$?\s*(?:(npm)\s+(?:install|add|i)|(?:yarn)\s+(?:install|add)|(?:yarn))\s/
+  /^\s*\$?\s*(?:(npm)\s+(?:add|i|install)|(?:yarn)\s+(?:install|add)|(?:yarn))\s/
 
 // Markdown fence opener: ``` or ~~~ at line start, optionally followed
 // by an info string (language hint). We don't require closing match —
@@ -548,7 +626,7 @@ export const scanDocsPnpmFirst = (text: string): LineHit[] => {
       fenceFirstNpmYarnHit = {
         lineNumber: i + 1,
         line,
-        suggested: line.replace(/\b(npm|yarn)\s+(install|add|i)\b/, 'pnpm $2'),
+        suggested: line.replace(/\b(npm|yarn)\s+(add|i|install)\b/, 'pnpm $2'),
       }
     }
   }
@@ -567,7 +645,7 @@ export const scanDocsPnpmFirst = (text: string): LineHit[] => {
 // ── Logger leak scanner ────────────────────────────────────────────
 //
 // The fleet rule: source code uses `getDefaultLogger()` from
-// `@socketsecurity/lib-stable/logger`. Direct calls to `process.stderr.write`,
+// `@socketsecurity/lib-stable/logger/default`. Direct calls to `process.stderr.write`,
 // `process.stdout.write`, `console.log`, `console.error`, `console.warn`,
 // `console.info`, `console.debug` are blocked. Doc-context lines are
 // exempt; lines carrying `// socket-hook: allow console` (or `#` in
@@ -575,7 +653,7 @@ export const scanDocsPnpmFirst = (text: string): LineHit[] => {
 // an alias for one deprecation cycle.
 
 const LOGGER_LEAK_RE =
-  /\b(process\.std(?:err|out)\.write|console\.(?:log|error|warn|info|debug))\s*\(/
+  /\b(process\.std(?:err|out)\.write|console\.(?:debug|error|info|log|warn))\s*\(/
 
 // Map each direct call to its lib-logger equivalent. process.stdout is
 // closer to logger.info; process.stderr / console.error → logger.error;
@@ -689,7 +767,7 @@ export const scanCrossRepoPaths = (
 // attribution-verb-anchored forms trigger the hook.
 
 const AI_ATTRIBUTION_RE =
-  /(?:(?:Generated|Built|Created|Made|Written|Authored|Powered|Crafted)\s+(?:with|by)\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|Co-Authored-By:\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|🤖\s+Generated|AI[\s-]generated|Machine[\s-]generated|@(?:anthropic|openai)\.com|^Assistant:)/im
+  /(?:(?:Authored|Built|Crafted|Created|Generated|Made|Powered|Written)\s+(?:with|by)\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|Co-Authored-By:\s+(?:Claude|AI|GPT|ChatGPT|Copilot|Cursor|Bard|Gemini)|🤖\s+Generated|AI[\s-]generated|Machine[\s-]generated|@(?:anthropic|openai)\.com|^Assistant:)/im
 
 export const containsAiAttribution = (text: string): boolean =>
   AI_ATTRIBUTION_RE.test(text)
@@ -811,7 +889,7 @@ export const scanLinearRefs = (text: string, limit = 5): string[] => {
 // Files we never scan: hooks themselves (both the .mts files and the
 // shell shims under .git-hooks/), test fixtures, vendored lockfiles.
 const SKIP_FILE_RE =
-  /\.(test|spec)\.(m?[jt]s|tsx?|cts|mts)$|\.example$|\/test\/|\/tests\/|fixtures\/|\.git-hooks\/|node_modules\/|pnpm-lock\.yaml/
+  /\.(spec|test)\.(m?[jt]s|tsx?|cts|mts)$|\.example$|\/test\/|\/tests\/|fixtures\/|\.git-hooks\/|node_modules\/|pnpm-lock\.yaml/
 
 export const shouldSkipFile = (filePath: string): boolean =>
   SKIP_FILE_RE.test(filePath)
@@ -894,4 +972,62 @@ export const gitOrThrow = (...args: string[]): string => {
 export const gitLines = (...args: string[]): string[] => {
   const out = gitOrThrow(...args)
   return out ? splitLines(out) : []
+}
+
+// Staged-path prefixes/suffixes that mean an oxlint-plugin rule's WIRING could
+// have changed: a rule file added/removed, the plugin index, or the oxlintrc
+// activations. Both the dogfood root copies and the `template/` mirrors count.
+const OXLINT_WIRING_PATH_RE =
+  /(?:^|\/)(?:template\/)?\.config\/oxlint-plugin\/rules\/[^/]+\.mts$|(?:^|\/)(?:template\/)?\.config\/oxlint-plugin\/index\.mts$|(?:^|\/)(?:template\/)?\.config\/oxlintrc\.json$|(?:^|\/)(?:template\/)?\.config\/oxlint-plugin\/test\/[^/]+\.test\.mts$/
+
+// Path (relative to repo root) of the rule-wiring generator. Present only in
+// the wheelhouse — downstream fleet repos don't carry it, so the gate no-ops
+// there (they have no plugin rule files to wire).
+const SYNC_OXLINT_RULES_REL = 'scripts/sync-oxlint-rules.mts'
+
+/**
+ * Commit-time gate for oxlint plugin rule WIRING. When a commit stages any file
+ * that can change rule wiring (a `rules/*.mts`, the plugin `index.mts`, the
+ * `oxlintrc.json` activations, or a rule `test`), run the generator in
+ * `--check` mode so a half-wired rule (file present but not imported /
+ * activated / tested) can't land — even on a direct commit with no PR.
+ *
+ * Returns the generator's diagnostic text when wiring is out of sync, or
+ * `undefined` when everything is in sync, no relevant file is staged, or the
+ * generator isn't present (downstream repo). Deliberately fail-closed only on a
+ * real drift signal: a generator that can't run (missing deps pre-install,
+ * spawn error) returns undefined so a fresh checkout isn't blocked.
+ *
+ * @param stagedFiles POSIX-normalized staged paths (from `git diff --cached`).
+ * @param repoRoot Absolute repo toplevel.
+ */
+export const checkOxlintRuleWiringStaged = (
+  stagedFiles: readonly string[],
+  repoRoot: string,
+): string | undefined => {
+  const touchesWiring = stagedFiles.some(f => OXLINT_WIRING_PATH_RE.test(f))
+  if (!touchesWiring) {
+    return undefined
+  }
+  const generatorPath = `${repoRoot}/${SYNC_OXLINT_RULES_REL}`
+  if (!existsSync(generatorPath)) {
+    return undefined
+  }
+  const r = spawnSync(process.execPath, [generatorPath, '--check'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  })
+  // Spawn failure (missing deps, node error) — fail open so a pre-install
+  // checkout isn't blocked. Only a clean non-zero EXIT is a drift signal.
+  if (r.error || typeof r.status !== 'number') {
+    return undefined
+  }
+  if (r.status === 0) {
+    return undefined
+  }
+  return (
+    (r.stderr ?? '').trim() ||
+    (r.stdout ?? '').trim() ||
+    'sync-oxlint-rules --check reported drift.'
+  )
 }

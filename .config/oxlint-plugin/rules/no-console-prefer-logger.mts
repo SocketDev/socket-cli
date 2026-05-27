@@ -1,13 +1,15 @@
 /**
  * @file Ban `console.log` / `console.error` / `console.warn` / `console.info` /
  *   `console.debug` / `console.trace`. The fleet uses `getDefaultLogger()` from
- *   `@socketsecurity/lib-stable/logger` — those methods emit theme-aware
- *   coloring + canonical symbols. Autofix: rewrites `console.<method>(...)` →
- *   `logger.<loggerMethod>(...)` AND inserts the missing pieces in one go:
+ *   `@socketsecurity/lib-stable/logger/default` — those methods emit
+ *   theme-aware coloring + canonical symbols. Autofix: rewrites
+ *   `console.<method>(...)` → `logger.<loggerMethod>(...)` AND inserts the
+ *   missing pieces in one go:
  *
- *   1. `import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'` —
- *      appended after the last existing top-level import (or at the top of the
- *      file if there are none).
+ *   1. `import { getDefaultLogger } from
+ *      '@socketsecurity/lib-stable/logger/default'` — appended after the last
+ *      existing top-level import (or at the top of the file if there are
+ *      none).
  *   2. `const logger = getDefaultLogger()` — appended after the import block (so
  *      `logger` is hoisted at module scope). Each `console.<method>(...)` call
  *      site emits its own fix independently. ESLint's autofixer dedupes
@@ -29,7 +31,7 @@ const CONSOLE_TO_LOGGER = {
 }
 
 const LOGGER_IMPORT_LINE =
-  "import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'"
+  "import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'"
 const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
 
 /**
@@ -40,14 +42,14 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Ban console.* calls; use logger from @socketsecurity/lib-stable/logger.',
+        'Ban console.* calls; use logger from @socketsecurity/lib-stable/logger/default.',
       category: 'Best Practices',
       recommended: true,
     },
     fixable: 'code',
     messages: {
       banned:
-        'console.{{method}}() — use logger.{{loggerMethod}}() from @socketsecurity/lib-stable/logger.',
+        'console.{{method}}() — use logger.{{loggerMethod}}() from @socketsecurity/lib-stable/logger/default.',
     },
     schema: [],
   },
@@ -65,7 +67,7 @@ const rule = {
       }
       summary = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib-stable/logger',
+        '@socketsecurity/lib-stable/logger/default',
         'getDefaultLogger',
         'logger',
       )

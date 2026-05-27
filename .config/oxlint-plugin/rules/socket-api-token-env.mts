@@ -17,9 +17,12 @@
  *     configuration setting, not an API token alias.
  */
 
+import { isPluginSelfFile } from '../lib/fleet-paths.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
-// oxlint-disable-next-line socket/socket-api-token-env -- this rule DEFINES the legacy-alias set; the strings here are rule data, not env-var consumers.
+// This rule DEFINES the legacy-alias set; the strings here are rule data, not
+// env-var consumers. The plugin-self-file guard in `create()` exempts this file
+// (and the test fixtures) so the rule doesn't flag its own lookup table.
 const LEGACY_ALIASES = new Set([
   'SOCKET_API_KEY',
   'SOCKET_SECURITY_API_KEY',
@@ -51,6 +54,12 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    // This rule's own source lists the legacy aliases as lookup-table data and
+    // its test file exercises them as fixtures.
+    if (isPluginSelfFile(context)) {
+      return {}
+    }
+
     const sourceCode = context.getSourceCode
       ? context.getSourceCode()
       : context.sourceCode

@@ -39,6 +39,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 interface ToolInput {
@@ -119,36 +120,59 @@ export function extractCommitMessage(
   command: string,
   cwd: string,
 ): string | undefined {
-  // Skip non-commit commands quickly.
-  if (!/\bgit\s+commit\b/.test(command)) {
-    return undefined
-  }
-  // -m "msg" or --message="msg" / --message=msg
-  const mMatches = [
-    ...command.matchAll(
-      /(?:^|\s)-m\s+(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|(\S+))/g,
-    ),
-    ...command.matchAll(
-      /--message=(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|(\S+))/g,
-    ),
-  ]
-  if (mMatches.length > 0) {
-    return mMatches.map(m => m[1] ?? m[2] ?? m[3] ?? '').join('\n\n')
-  }
-  // -F file / --file=file / --file file
-  const fMatch =
-    /(?:^|\s)-F\s+(\S+)/.exec(command) ??
-    /--file=(\S+)/.exec(command) ??
-    /--file\s+(\S+)/.exec(command)
-  if (fMatch) {
-    const filePath = path.isAbsolute(fMatch[1]!)
-      ? fMatch[1]!
-      : path.join(cwd, fMatch[1]!)
-    if (existsSync(filePath)) {
-      try {
-        return readFileSync(filePath, 'utf8')
-      } catch {
-        return undefined
+  // Inspect each real `git commit` invocation. The parser strips quotes
+  // and scopes args to the command that owns them, so a `-m` inside a
+  // sibling command or a quoted body can't leak in.
+  for (const c of commandsFor(command, 'git')) {
+    if (!c.args.includes('commit')) {
+      continue
+    }
+    const { args } = c
+    // Collect every inline message: `-m <msg>`, `--message <msg>`,
+    // `--message=<msg>` (repeated -m forms join with a blank line, the
+    // same way git concatenates multiple -m paragraphs).
+    const messages: string[] = []
+    let fileArg: string | undefined
+    for (let i = 0, { length } = args; i < length; i += 1) {
+      const arg = args[i]!
+      if (arg === '-m' || arg === '--message') {
+        const next = args[i + 1]
+        if (next !== undefined) {
+          messages.push(next)
+          i += 1
+        }
+        continue
+      }
+      if (arg.startsWith('--message=')) {
+        messages.push(arg.slice('--message='.length))
+        continue
+      }
+      if (arg === '-F' || arg === '--file') {
+        const next = args[i + 1]
+        if (next !== undefined) {
+          fileArg = next
+          i += 1
+        }
+        continue
+      }
+      if (arg.startsWith('--file=')) {
+        fileArg = arg.slice('--file='.length)
+        continue
+      }
+    }
+    if (messages.length > 0) {
+      return messages.join('\n\n')
+    }
+    if (fileArg !== undefined) {
+      const filePath = path.isAbsolute(fileArg)
+        ? fileArg
+        : path.join(cwd, fileArg)
+      if (existsSync(filePath)) {
+        try {
+          return readFileSync(filePath, 'utf8')
+        } catch {
+          return undefined
+        }
       }
     }
   }

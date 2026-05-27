@@ -1,6 +1,6 @@
 ---
 name: prose
-description: Removes AI writing patterns from prose. Use when drafting, editing, or reviewing essays, blog posts, docs, release notes, commit message bodies, PR descriptions, CHANGELOG entries, README content, or any human-facing text that reads AI-generated — hedged, metronomic, padded with throat-clearing, or full of em-dashes, adverbs, and "not X, it's Y" contrasts.
+description: Removes AI writing patterns from prose. Use when drafting, editing, or reviewing essays, blog posts, docs, release notes, commit message bodies, PR descriptions, CHANGELOG entries, README content, or any human-facing text that reads AI-generated: hedged, metronomic, padded with throat-clearing, or full of em-dashes, adverbs, and "not X, it's Y" contrasts.
 user-invocable: true
 allowed-tools: Read, Edit, Write, Grep
 ---
@@ -36,7 +36,7 @@ Apply this skill when you write:
 1. Apply the Core Rules to every paragraph, in order.
 2. Run the Quick Checks on the full draft.
 3. Score with the Scoring table; if it totals below 35/50, revise and re-score.
-4. Stop when the draft reads like a person wrote it — further edits risk over-polishing.
+4. Stop when the draft reads like a person wrote it. Further edits risk over-polishing.
 
 If an edit changes meaning or loses the author's voice, revert it. Never rewrite a direct quote.
 
@@ -110,7 +110,7 @@ See [references/examples.md](references/examples.md) for more.
 
 ## Edge cases
 
-- **Direct quotes** — leave them alone; quoting a hedging speaker verbatim is not slop.
-- **Technical prose where precision > rhythm** — API reference sentences can be metronomic; don't force variation that loses accuracy.
-- **Lists and tables** — structural repetition is the point; don't "vary rhythm" inside a parameter list.
-- **First-person personal voice** — `you`/`I` is fine; don't strip writer presence in the name of directness.
+- **Direct quotes**: leave them alone; quoting a hedging speaker verbatim is not slop.
+- **Technical prose where precision > rhythm**: API reference sentences can be metronomic; don't force variation that loses accuracy.
+- **Lists and tables**: structural repetition is the point; don't "vary rhythm" inside a parameter list.
+- **First-person personal voice**: `you`/`I` is fine; don't strip writer presence in the name of directness.

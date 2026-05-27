@@ -11,7 +11,7 @@
 // Why this rule:
 //
 //   The fleet's source code uses `getDefaultLogger()` from
-//   `@socketsecurity/lib-stable/logger` for every output. Direct stream
+//   `@socketsecurity/lib-stable/logger/default` for every output. Direct stream
 //   writes bypass color/theme handling, indentation tracking, stream
 //   redirection in tests, and spinner-counter increments — producing
 //   inconsistent output that breaks layout-sensitive workflows.
@@ -89,7 +89,7 @@ export function emitBlock(filePath: string, hits: Hit[]): void {
   out.push('')
   out.push('[logger-guard] Blocked: direct stream write found')
   out.push(
-    '  Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger` instead.',
+    '  Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger/default` instead.',
   )
   out.push(`  File:    ${filePath}`)
   for (const h of hits.slice(0, 3)) {

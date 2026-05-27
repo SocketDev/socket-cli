@@ -46,3 +46,18 @@ export function isPluginInternalPath(filename: string): boolean {
 export function isPathsModule(filename: string): boolean {
   return filename.endsWith(PATHS_FILE)
 }
+
+/**
+ * Context-aware wrapper around `isPluginInternalPath`: true when the file
+ * currently being linted is one of the plugin's own rule / test files. Rules
+ * call this to exempt their own rule-data + fixtures (where the patterns they
+ * detect appear as literal strings, not real violations). Takes the rule
+ * `context` so call sites read as `isPluginSelfFile(context)`.
+ */
+export function isPluginSelfFile(context: {
+  filename?: string | undefined
+  getFilename?: (() => string) | undefined
+}): boolean {
+  const filename = context.filename ?? context.getFilename?.() ?? ''
+  return isPluginInternalPath(filename)
+}

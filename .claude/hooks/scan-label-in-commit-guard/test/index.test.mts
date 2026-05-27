@@ -157,3 +157,21 @@ test('multiple -m flags concatenate', () => {
   assert.match(msg!, /B1/)
   assert.match(msg!, /M9/)
 })
+
+test('extracts commit message from a chained command', () => {
+  // Parser sees through `cd … &&` — the commit message is read from the
+  // git invocation, not the chain prefix.
+  const msg = extractCommitMessage('cd /repo && git commit -m "fix B5"', '/tmp')
+  assert.equal(msg, 'fix B5')
+})
+
+test('does not read a -m from a SEPARATE sibling command', () => {
+  // The `-m` belongs to the preceding `mail` command, not `git commit`.
+  // The parser scopes args per-invocation, so the commit message is
+  // empty (editor mode) and nothing leaks across the chain.
+  const msg = extractCommitMessage(
+    'mail -m "B5 in subject" && git commit',
+    '/tmp',
+  )
+  assert.equal(msg, undefined)
+})

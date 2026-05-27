@@ -1,6 +1,6 @@
 ---
 name: scanning-security
-description: Runs a multi-tool security scan — AgentShield for Claude config, zizmor for GitHub Actions, and optionally Socket CLI for dependency scanning. Produces an A-F graded security report. Use after modifying `.claude/` config, hooks, agents, or GitHub Actions workflows, and before releases.
+description: Runs a multi-tool security scan: AgentShield for Claude config, zizmor for GitHub Actions, and optionally Socket CLI for dependency scanning. Produces an A-F graded security report. Use after modifying `.claude/` config, hooks, agents, or GitHub Actions workflows, and before releases.
 user-invocable: true
 allowed-tools: Task, Read, Bash(pnpm exec agentshield:*), Bash(zizmor:*), Bash(command -v:*), Bash(find .cache/external-tools/zizmor:*)
 ---
@@ -81,7 +81,7 @@ The agent:
 2. Calculates an A-F grade per `_shared/report-format.md`
 3. Generates a prioritized report (CRITICAL first)
 4. Suggests fixes for HIGH and CRITICAL findings
-5. For every Critical / High finding, runs variant analysis per [`_shared/variant-analysis.md`](../_shared/variant-analysis.md) — the same misconfiguration likely exists in sibling workflow files, sibling Claude config blocks, or other repos.
+5. For every Critical / High finding, runs variant analysis per [`_shared/variant-analysis.md`](../_shared/variant-analysis.md). The same misconfiguration likely exists in sibling workflow files, sibling Claude config blocks, or other repos.
 
 Output a HANDOFF block per `_shared/report-format.md` for pipeline chaining.
 
@@ -91,15 +91,15 @@ Update queue: `status: done`, write `findings_count` and final grade.
 
 Code-side security (insecure defaults, fail-open patterns, security-regression in a diff) lives in `scanning-quality`'s modular scans:
 
-- [`scanning-quality/scans/insecure-defaults.md`](../scanning-quality/scans/insecure-defaults.md) — code-side fail-open defaults.
-- [`scanning-quality/scans/differential.md`](../scanning-quality/scans/differential.md) — security regressions introduced by the current diff.
+- [`scanning-quality/scans/insecure-defaults.md`](../scanning-quality/scans/insecure-defaults.md): code-side fail-open defaults.
+- [`scanning-quality/scans/differential.md`](../scanning-quality/scans/differential.md): security regressions introduced by the current diff.
 
 This skill stays focused on **config security** (Claude config + GitHub Actions). The split keeps the surface predictable: `scanning-security` = "is the harness safe?", `scanning-quality/scans/` = "is the code safe?".
 
 ## Commit cadence
 
-This skill is read-only — scan + grade + report, no fixes. Cadence rules apply to handing the report off:
+This skill is read-only: scan + grade + report, no fixes. Cadence rules apply to handing the report off:
 
-- **Save the report before acting.** Commit the report file in its own commit (`docs(reports): scanning-security YYYY-MM-DD — grade <A-F>`). The grade in the message makes the trend visible without opening the file.
+- **Save the report before acting.** Commit the report file in its own commit (`docs(reports): scanning-security YYYY-MM-DD: grade <A-F>`). The grade in the message makes the trend visible without opening the file.
 - **Don't fix in-skill.** Security findings need careful per-finding triage; they're not safe to batch-fix mechanically. Open per-finding fixes as separate commits driven by the appropriate skill (or hand-edit when the fix is a one-liner like a workflow SHA bump).
 - **One report per scan run.** Re-running produces a new report; commit each so the security trend line is auditable.

@@ -110,3 +110,25 @@ test('commit message bodies mentioning --allow-empty are skipped (quote-aware)',
   assert.strictEqual(result.code, 0)
   assert.strictEqual(result.stderr, '')
 })
+
+test('--allow-empty in a SEPARATE chained command is not attributed to git commit', async () => {
+  // Parser scopes the flag to the invocation that owns it: here the
+  // commit is plain and `--allow-empty` is just an echo arg. The old
+  // substring approach would have wrongly blocked this.
+  const result = await runHook({
+    tool_input: {
+      command: 'git commit -m "real change" && echo "next: --allow-empty"',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+  assert.strictEqual(result.stderr, '')
+})
+
+test('git commit --allow-empty chained after another command is still blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'cd /x && git commit --allow-empty -m anchor' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})

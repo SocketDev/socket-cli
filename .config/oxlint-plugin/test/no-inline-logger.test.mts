@@ -13,13 +13,13 @@ describe('socket/no-inline-logger', () => {
       valid: [
         {
           name: 'hoisted logger',
-          code: 'import { getDefaultLogger } from "@socketsecurity/lib-stable/logger"\nconst logger = getDefaultLogger()\nlogger.info("ok")\n',
+          code: 'import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default"\nconst logger = getDefaultLogger()\nlogger.info("ok")\n',
         },
       ],
       invalid: [
         {
           name: 'inline getDefaultLogger().info',
-          code: 'import { getDefaultLogger } from "@socketsecurity/lib-stable/logger"\ngetDefaultLogger().info("x")\n',
+          code: 'import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default"\ngetDefaultLogger().info("x")\n',
           errors: [{ messageId: 'inline' }],
         },
       ],

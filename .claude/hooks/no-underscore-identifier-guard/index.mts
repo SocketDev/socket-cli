@@ -45,6 +45,8 @@
 
 import process from 'node:process'
 
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
 interface ToolInput {
   readonly tool_input?:
     | {
@@ -55,6 +57,7 @@ interface ToolInput {
       }
     | undefined
   readonly tool_name?: string | undefined
+  readonly transcript_path?: string | undefined
 }
 
 // Match declarations that introduce a leading-underscore identifier.
@@ -104,16 +107,12 @@ export function findBannedIdentifiers(text: string): Finding[] {
   return findings
 }
 
-export function hasRecentBypass(): boolean {
-  // Bypass detection is delegated to the harness's transcript reader —
-  // we can't see the user turn from here without parsing the env.
-  // The harness sets CLAUDE_RECENT_USER_TURNS when a bypass phrase
-  // hook is registered upstream; absent that, we look for it in env.
-  const turns = process.env['CLAUDE_RECENT_USER_TURNS']
-  if (!turns) {
-    return false
-  }
-  return turns.includes(BYPASS_PHRASE)
+export function hasRecentBypass(transcriptPath: string | undefined): boolean {
+  // Delegates to the shared transcript reader. Reads the JSONL the harness
+  // points at; `normalizeBypassText` handles hyphen/em-dash/whitespace
+  // normalization. Previous version checked process.env['CLAUDE_RECENT_USER_TURNS'],
+  // which no harness sets — bypass channel was effectively dead.
+  return bypassPhrasePresent(transcriptPath, BYPASS_PHRASE)
 }
 
 export function isGeneratedPath(filePath: string): boolean {
@@ -204,7 +203,7 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  if (hasRecentBypass()) {
+  if (hasRecentBypass(payload.transcript_path)) {
     process.stderr.write(
       `no-underscore-identifier-guard: ${findings.length} underscore identifier(s) — bypassed via "${BYPASS_PHRASE}"\n`,
     )

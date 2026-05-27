@@ -53,16 +53,16 @@ const SCRIPT_CONTEXT_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> =
   [
     {
       label: 'BASE=main / BASE=master literal assignment',
-      regex: /\bBASE\s*=\s*(?:["']?)(?:main|master)\1\b/,
+      regex: /\bBASE\s*=\s*(["']?)(?:main|master)\1\b/,
     },
     {
       label: '--base main / --base=main literal value',
-      regex: /--base[\s=](?:["']?)(?:main|master)\1\b/,
+      regex: /--base[\s=](["']?)(?:main|master)\1\b/,
     },
     {
       label: 'DEFAULT_BRANCH=main literal assignment',
       regex:
-        /\b(?:DEFAULT_BRANCH|MAIN_BRANCH)\s*=\s*(?:["']?)(?:main|master)\2\b/,
+        /\b(?:DEFAULT_BRANCH|MAIN_BRANCH)\s*=\s*(["']?)(?:main|master)\1\b/,
     },
   ]
 

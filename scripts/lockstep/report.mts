@@ -10,7 +10,7 @@
  *   ultrathink xlang-harness.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import type { Report } from './types.mts'
 

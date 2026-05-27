@@ -43,6 +43,35 @@ test('non-codex Bash passes', async () => {
   assert.strictEqual(r.code, 0)
 })
 
+test('command mentioning the guard name (codex-no-write-guard) is NOT a codex invocation', async () => {
+  // Regression: the old `codex\b` regex matched `codex-no-write-guard` and
+  // the word "write" in it → false block. The parser sees the binary is
+  // `for`/`ls`/`grep`, not `codex`.
+  const r = await runHook({
+    tool_name: 'Bash',
+    tool_input: {
+      command: 'grep -n "write" template/.claude/hooks/codex-no-write-guard/index.mts',
+    },
+  })
+  assert.strictEqual(r.code, 0)
+})
+
+test('quoted "codex --write" inside an echo is NOT a codex invocation', async () => {
+  const r = await runHook({
+    tool_name: 'Bash',
+    tool_input: { command: 'echo "run codex --write to apply"' },
+  })
+  assert.strictEqual(r.code, 0)
+})
+
+test('real codex --write in a chain is still blocked', async () => {
+  const r = await runHook({
+    tool_name: 'Bash',
+    tool_input: { command: 'cd /x && codex --write "do it"' },
+  })
+  assert.strictEqual(r.code, 2)
+})
+
 test('codex with --write blocked', async () => {
   const r = await runHook({
     tool_name: 'Bash',

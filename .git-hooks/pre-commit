@@ -15,6 +15,12 @@
 # - DISABLE_PRECOMMIT_LINT=1 to skip linting
 # - DISABLE_PRECOMMIT_TEST=1 to skip testing
 
+# Put the repo-pinned Node (.node-version) on PATH — git runs hooks with
+# the login shell's PATH, which may be an older system Node than the
+# hooks' floor (.mts type-stripping needs Node >= 25). See
+# _resolve-node.sh.
+. "$(dirname "$0")/_resolve-node.sh"
+
 # Sanitize placeholder Socket API credentials. Some shell setups
 # export `SOCKET_API_TOKEN=literal-value` (or similar placeholders
 # used in onboarding docs) which causes Socket Firewall's sfw

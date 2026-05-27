@@ -34,7 +34,10 @@
 
 import process from 'node:process'
 
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
 const ALLOW_MARKER = '# socket-hook: allow soak-exclude-no-date-annotation'
+const BYPASS_PHRASE = 'Allow soak-exclude-no-date-annotation bypass'
 
 // Matches the section header for the soak-exclude block.
 const SECTION_HEADER = /^minimumReleaseAgeExclude:\s*$/
@@ -65,6 +68,7 @@ const ANNOTATION_RE =
 
 interface Hook {
   tool_name?: string | undefined
+  transcript_path?: string | undefined
   tool_input?:
     | {
         file_path?: string | undefined
@@ -156,6 +160,9 @@ function main(): void {
         payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
       const orphans = findOrphanEntries(proposed)
       if (orphans.length === 0) {
+        process.exit(0)
+      }
+      if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
         process.exit(0)
       }
       const today = new Date().toISOString().slice(0, 10)

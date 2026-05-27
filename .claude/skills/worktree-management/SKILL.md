@@ -1,13 +1,13 @@
 ---
 name: worktree-management
-description: Manages git worktrees per the fleet's parallel-Claude-sessions rule — creates new task-worktrees, fans out one worktree per open PR for parallel review, and prunes stale worktrees whose branches were deleted upstream. Use when starting a task that needs an isolated working tree, when reviewing every open PR locally without disturbing the primary checkout, or when cleaning up after merges.
+description: Manages git worktrees per the fleet's parallel-Claude-sessions rule. Creates new task-worktrees, fans out one worktree per open PR for parallel review, and prunes stale worktrees whose branches were deleted upstream. Use when starting a task that needs an isolated working tree, when reviewing every open PR locally without disturbing the primary checkout, or when cleaning up after merges.
 user-invocable: true
 allowed-tools: Bash(git worktree:*), Bash(git branch:*), Bash(git fetch:*), Bash(gh pr list:*), Bash(gh auth status), Bash(ls:*), Read
 ---
 
 # worktree-management
 
-The `Parallel Claude sessions` rule in CLAUDE.md mandates worktrees for branch work. This skill is the helper that makes that ergonomic — three modes, surgical, no auto-cleanup of work you didn't make.
+The `Parallel Claude sessions` rule in CLAUDE.md mandates worktrees for branch work. This skill is the helper that makes that ergonomic. Three modes, surgical, no auto-cleanup of work you didn't make.
 
 ## When to use
 
@@ -15,11 +15,11 @@ The `Parallel Claude sessions` rule in CLAUDE.md mandates worktrees for branch w
 - **Reviewing all open PRs locally.** One worktree per PR, lined up under `../<repo>-pr-<num>/` so multiple Claude sessions can each take one.
 - **Cleaning up stale worktrees** after PRs merge or branches get deleted upstream.
 
-Never use this skill to remove a worktree that has uncommitted work — the _Don't leave the worktree dirty_ rule applies; the dirty worktree is held intentionally until its owner commits.
+Never use this skill to remove a worktree that has uncommitted work. The _Don't leave the worktree dirty_ rule applies; the dirty worktree is held until its owner commits.
 
 ## Modes
 
-### Mode 1 — `new <task-name>` (default)
+### Mode 1: `new <task-name>` (default)
 
 Spawn a new worktree at `../<repo>-<task-name>/` based on the remote's default branch.
 
@@ -41,11 +41,11 @@ echo "✓ Worktree ready at $WORKTREE_PATH on branch $BRANCH (base: $BASE)"
 echo "  cd $WORKTREE_PATH"
 ```
 
-If `$TASK_NAME` collides with an existing branch, fail with the conflict — never silently overwrite.
+If `$TASK_NAME` collides with an existing branch, fail with the conflict. Never silently overwrite.
 
-### Mode 2 — `pr-fanout`
+### Mode 2: `pr-fanout`
 
-For each open PR on the current GitHub repo, ensure a worktree exists at `../<repo>-pr-<num>/`. Idempotent — skip PRs whose worktree already exists.
+For each open PR on the current GitHub repo, ensure a worktree exists at `../<repo>-pr-<num>/`. Idempotent: skip PRs whose worktree already exists.
 
 ```bash
 gh auth status >/dev/null  # fail loudly if not authenticated
@@ -69,11 +69,11 @@ done
 git worktree list
 ```
 
-This is the multi-Claude review setup — each open PR gets its own checkout so a parallel session can take one without contention.
+This is the multi-Claude review setup: each open PR gets its own checkout so a parallel session can take one without contention.
 
-### Mode 3 — `prune`
+### Mode 3: `prune`
 
-Remove worktrees whose **branch no longer exists** on the remote AND whose **working tree is clean**. Never auto-remove a dirty tree — that may be active work.
+Remove worktrees whose **branch no longer exists** on the remote AND whose **working tree is clean**. Never auto-remove a dirty tree. That may be active work.
 
 ```bash
 git worktree list --porcelain | awk '/^worktree /{path=$2} /^branch /{branch=$2; print path"\t"branch}' | while IFS=$'\t' read -r path branch; do
@@ -90,7 +90,7 @@ git worktree list --porcelain | awk '/^worktree /{path=$2} /^branch /{branch=$2;
 
   # Skip if working tree is dirty
   if [ -n "$(git -C "$path" status --porcelain 2>/dev/null)" ]; then
-    echo "! skip $path (dirty — has uncommitted changes; commit first per 'Don't leave the worktree dirty' rule)"
+    echo "! skip $path (dirty; has uncommitted changes; commit first per 'Don't leave the worktree dirty' rule)"
     continue
   fi
 
@@ -99,16 +99,16 @@ git worktree list --porcelain | awk '/^worktree /{path=$2} /^branch /{branch=$2;
 done
 ```
 
-The `prune` mode never passes `--force` — if the user wants to discard dirty work, they do it deliberately, outside this skill.
+The `prune` mode never passes `--force`. If the user wants to discard dirty work, they do it deliberately, outside this skill.
 
 ## Safety contract
 
 This skill respects four CLAUDE.md rules:
 
-1. **Parallel Claude sessions** — only ever creates new worktrees; never `checkout`-s an existing one.
-2. **Don't leave the worktree dirty** — refuses to `prune` a dirty tree.
-3. **Public-surface hygiene** — task names must not contain customer / company / internal-tool names. The skill does no redaction; the user picks a clean name.
-4. **Default branch fallback** — every base-branch lookup follows the `main → master → assume main` chain via `git symbolic-ref refs/remotes/origin/HEAD`. Never hard-code one or the other.
+1. **Parallel Claude sessions**: only ever creates new worktrees; never `checkout`-s an existing one.
+2. **Don't leave the worktree dirty**: refuses to `prune` a dirty tree.
+3. **Public-surface hygiene**: task names must not contain customer / company / internal-tool names. The skill does no redaction; the user picks a clean name.
+4. **Default branch fallback**: every base-branch lookup follows the `main → master → assume main` chain via `git symbolic-ref refs/remotes/origin/HEAD`. Never hard-code one or the other.
 
 ## Source
 

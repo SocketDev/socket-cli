@@ -15,11 +15,11 @@ Acts on drift in `lockstep.json`. Auto-applies mechanical `version-pin` bumps; s
 - Standalone: `/updating-lockstep` to sync just the lockstep manifest.
 - After manual submodule bumps, to refresh `lockstep.json` metadata.
 
-Exits cleanly when `lockstep.json` is absent — not every fleet repo has one.
+Exits cleanly when `lockstep.json` is absent. Not every fleet repo has one.
 
 ## Per-kind policy at a glance
 
-`version-pin` is mechanical (auto-bump per `upgrade_policy`). Everything else is advisory — upstream semantics and local deltas need human judgment.
+`version-pin` is mechanical (auto-bump per `upgrade_policy`). Everything else is advisory. Upstream semantics and local deltas need human judgment.
 
 Full policy table, scripts per phase, and advisory format in [`reference.md`](reference.md).
 
@@ -35,12 +35,12 @@ Full policy table, scripts per phase, and advisory format in [`reference.md`](re
 
 ## Hard requirements
 
-- **Bail safely on missing manifest** — exit 0 cleanly if `lockstep.json` is absent.
-- **Atomic commits** — one commit per auto-bumped row. Conventional Commits format.
-- **`.gitmodules` version comments** — keep `# <name>-<version>` annotations synchronized with `pinned_tag`.
-- **Stable releases only** — filter `-rc` / `-alpha` / `-beta` / `-dev` / `-snapshot` / `-nightly` / `-preview` (full pattern in `reference.md`).
-- **No `npx` / `pnpm dlx` / `yarn dlx`** — `pnpm exec` or `pnpm run` per CLAUDE.md _Tooling_.
-- **Edit tool, not `sed`** — for `.gitmodules` annotation updates.
+- **Bail safely on missing manifest**: exit 0 cleanly if `lockstep.json` is absent.
+- **Atomic commits**: one commit per auto-bumped row. Conventional Commits format.
+- **`.gitmodules` version comments**: keep `# <name>-<version>` annotations synchronized with `pinned_tag`.
+- **Stable releases only**: filter `-rc` / `-alpha` / `-beta` / `-dev` / `-snapshot` / `-nightly` / `-preview` (full pattern in `reference.md`).
+- **No `npx` / `pnpm dlx` / `yarn dlx`**: `pnpm exec` or `pnpm run` per CLAUDE.md _Tooling_.
+- **Edit tool, not `sed`**: for `.gitmodules` annotation updates.
 
 ## Forbidden
 
@@ -50,19 +50,19 @@ Full policy table, scripts per phase, and advisory format in [`reference.md`](re
 
 ## CI vs interactive mode
 
-- **CI** (`CI=true` / `GITHUB_ACTIONS`) — skip per-row test validation; emit advisory to `$GITHUB_OUTPUT`.
-- **Interactive** (default) — run `pnpm test` before each auto-bump commit; rollback the row on failure and continue.
+- **CI** (`CI=true` / `GITHUB_ACTIONS`): skip per-row test validation; emit advisory to `$GITHUB_OUTPUT`.
+- **Interactive** (default): run `pnpm test` before each auto-bump commit; rollback the row on failure and continue.
 
 ## Success criteria
 
 - All actionable `version-pin` rows bumped atomically (one commit per row).
 - Advisory rows collected for PR body / workflow output.
 - No edits to non-`version-pin` row tracked state.
-- `pnpm run lockstep` exits 0 or 2 at end (never 1 — no schema errors introduced).
+- `pnpm run lockstep` exits 0 or 2 at end (never 1; no schema errors introduced).
 - `.gitmodules` version comments synchronized with `pinned_tag`.
 
 ## Commands reference
 
-- `pnpm run lockstep --json` — drift report (consumed by this skill).
-- `jq` — parse + edit `lockstep.json` (structured JSON edits).
-- `git submodule status` — verify submodule state after bumps.
+- `pnpm run lockstep --json`: drift report (consumed by this skill).
+- `jq`: parse + edit `lockstep.json` (structured JSON edits).
+- `git submodule status`: verify submodule state after bumps.

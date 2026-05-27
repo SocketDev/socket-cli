@@ -1,9 +1,6 @@
 # Plan storage
 
-Companion to the _Plan storage_ fleet rule in `template/CLAUDE.md`. The
-inline rule is intentionally one sentence; this doc carries the rationale,
-the migration guidance for legacy `docs/plans/` content, and the
-per-repo extension pattern.
+Companion to the _Plan storage_ fleet rule in `template/CLAUDE.md`. The inline rule is one sentence. This doc carries the rationale, the migration guidance for legacy `docs/plans/` content, and the per-repo extension pattern.
 
 ## What counts as a "plan"
 
@@ -18,13 +15,10 @@ work in progress or work about to start**:
 
 What is **not** a plan (and belongs elsewhere):
 
-- Permanent architecture docs → `docs/architecture/` or a top-level
-  `<topic>.md` (tracked).
-- API reference → JSDoc / TSDoc / Rustdoc / README.
-- Onboarding / contributor docs → `CONTRIBUTING.md` (tracked).
-- Incident post-mortems → if the lesson is worth keeping, it goes into
-  CLAUDE.md as a rule with a `**Why:**` line per the _Compound lessons_
-  rule. The post-mortem itself can stay in `.claude/plans/` as scratch.
+- Permanent architecture docs: `docs/architecture/` or a top-level `<topic>.md` (tracked).
+- API reference: JSDoc / TSDoc / Rustdoc / README.
+- Onboarding / contributor docs: `CONTRIBUTING.md` (tracked).
+- Incident post-mortems: if the lesson is worth keeping, it goes into CLAUDE.md as a rule with a `**Why:**` line per the _Compound lessons_ rule. The post-mortem itself can stay in `.claude/plans/` as scratch.
 
 ## The canonical location
 
@@ -32,15 +26,12 @@ What is **not** a plan (and belongs elsewhere):
 
 One location per repo. Never:
 
-- `docs/plans/` — that's tracked, defeats the rule.
-- `<pkg>/docs/plans/` — tracked + duplicates the convention per-package.
-- `<pkg>/.claude/plans/` — sub-package `.claude/` is a fleet-convention
-  smell; CLAUDE itself reads the repo-root `.claude/` for the operator's
-  current session.
+- `docs/plans/`: tracked; defeats the rule.
+- `<pkg>/docs/plans/`: tracked + duplicates the convention per-package.
+- `<pkg>/.claude/plans/`: sub-package `.claude/` is a fleet-convention smell; CLAUDE itself reads the repo-root `.claude/` for the operator's current session.
 
 The path is shared across parallel Claude sessions in the same checkout, so
-multiple plans coexist comfortably. Worktrees get their own `.claude/plans/`
-that disappears when the worktree is removed — that's intentional.
+multiple plans coexist comfortably. Worktrees get their own `.claude/plans/` that disappears when the worktree is removed. That's by design.
 
 ## Untracked-by-default
 
@@ -64,16 +55,11 @@ Do NOT:
 
 - Add `!/.claude/plans/` to the gitignore allowlist.
 - `git add .claude/plans/<file>.md`.
-- Use `git add -A` / `git add .` (which would sweep the plan in — but the
-  fleet rule already forbids those flags for unrelated reasons).
+- Use `git add -A` / `git add .` (which would sweep the plan in; the fleet rule already forbids those flags for unrelated reasons).
 
 ## Why untracked
 
-Plans capture state — what we're about to do, what we've ruled out, what
-the LOC estimates are. State decays the moment a commit lands. A plan
-tracked in git rots into "this file describes what main looked like 4
-months ago" lies that future-you trusts. Keeping plans local-only forces
-the work to live in:
+Plans capture state: what we're about to do, what we've ruled out, what the LOC estimates are. State decays the moment a commit lands. A plan tracked in git rots into "this file describes what main looked like 4 months ago" lies that future-you trusts. Keeping plans local-only forces the work to live in:
 
 - The **code** (the actual implementation is the source of truth).
 - **Commit messages** (capture the why at the moment the change ships).
@@ -82,10 +68,7 @@ the work to live in:
 These are the surfaces that actually stay accurate, because they're
 written at the moment of the change rather than weeks before it.
 
-**Past incident:** socket-btm grew three parallel `plans/` directories
-(`docs/plans/`, `packages/*/docs/plans/`, `.claude/plans/`) — same content
-type, three locations, all tracked, all drifting. The rule is one location,
-untracked.
+**Past incident:** socket-btm grew three parallel `plans/` directories (`docs/plans/`, `packages/*/docs/plans/`, `.claude/plans/`). Same content type, three locations, all tracked, all drifting. The rule is one location, untracked.
 
 ## Migrating legacy `docs/plans/` content
 
@@ -102,10 +85,7 @@ If you find a tracked plan in `docs/plans/` or `<pkg>/docs/plans/`:
      `.claude/plans/<same-name>.md` (the destination is untracked, so the
      move requires `git rm <old>` + `cp <old> .claude/plans/` + plain
      filesystem cp, not `git mv`). Rewrite every reference.
-   - If the plan is **finished** (work shipped): the plan has served its
-     purpose. `git rm` the tracked copy + delete references that say
-     "see plan X." Don't preserve dead plans as documentation — that
-     turns them back into the rot the rule prevents.
+   - If the plan is **finished** (work shipped): the plan has served its purpose. `git rm` the tracked copy + delete references that say "see plan X." Don't preserve dead plans as documentation; that turns them back into the rot the rule prevents.
 3. Either way, the cleanup is its own commit / PR; don't bundle it with
    the work the plan describes.
 
@@ -127,13 +107,7 @@ don't change the fleet rule.
 
 ## How this interacts with other fleet rules
 
-- **`markdown-filename-guard`**: the hook accepts lowercase-hyphenated
-  `.md` files under either `docs/` or `.claude/` (any depth). It will NOT
-  block a `docs/plans/<name>.md` write — the guard is filename-only, not
-  content-aware. The plan-storage convention is enforced by this rule, not
-  by the filename guard.
-- **No fleet fork**: this doc is fleet-canonical (lives under
-  `template/docs/claude.md/fleet/`). Downstream copies are read-only —
-  edit here and cascade.
+- **`markdown-filename-guard`**: the hook accepts lowercase-hyphenated `.md` files under either `docs/` or `.claude/` (any depth). It will NOT block a `docs/plans/<name>.md` write; the guard is filename-only, not content-aware. The plan-storage convention is enforced by this rule, not by the filename guard.
+- **No fleet fork**: this doc is fleet-canonical (lives under `template/docs/claude.md/fleet/`). Downstream copies are read-only. Edit here and cascade.
 - **Drift watch**: if you find a downstream repo carrying its own diverged
   copy of this doc, reconcile back to fleet-canonical.

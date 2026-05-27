@@ -2,13 +2,13 @@
 
 Referenced from CLAUDE.md → _Untracked-by-default for vendored / build-copied trees_.
 
-When an untracked directory appears under a path that looks like vendored upstream source — `additions/source-patched/`, `vendor/`, `third_party/`, `external/`, `upstream/`, `deps/<libname>/`, `pkg-node/`, anything with `-bundled`/`-vendored` in the name — assume **untracked-by-default**.
+When an untracked directory appears under a path that looks like vendored upstream source (`additions/source-patched/`, `vendor/`, `third_party/`, `external/`, `upstream/`, `deps/<libname>/`, `pkg-node/`, anything with `-bundled`/`-vendored` in the name), assume **untracked-by-default**.
 
 ## Three commands before staging
 
-1. **`git status --ignored`** — default `git status` hides ignore matches; only this reveals them. If the path shows under _Ignored files_, stop.
-2. **`cat .gitignore` + the package-local `.gitignore`** — read both. Look for directory excludes (`deps/foo/`) AND `!file.ext` allowlist re-includes inside ignored dirs. The allowlists are the only files in those trees that belong to us.
-3. **`grep -rln "<dirname>" scripts/ packages/*/scripts/`** — find who creates the directory. If a build script copies it in (e.g. `prepare-external-sources.mts`), the contents are build output, not tracked input. The directory name being something like `source-patched` is itself a tell.
+1. **`git status --ignored`**: default `git status` hides ignore matches; only this reveals them. If the path shows under _Ignored files_, stop.
+2. **`cat .gitignore` + the package-local `.gitignore`**: read both. Look for directory excludes (`deps/foo/`) AND `!file.ext` allowlist re-includes inside ignored dirs. The allowlists are the only files in those trees that belong to us.
+3. **`grep -rln "<dirname>" scripts/ packages/*/scripts/`**: find who creates the directory. If a build script copies it in (e.g. `prepare-external-sources.mts`), the contents are build output, not tracked input. The directory name being something like `source-patched` is itself a tell.
 
 ## The `*` + `!file` allowlist pattern
 
@@ -21,7 +21,7 @@ deps/<libname>/*
 
 …the single allowlisted file is **our custom hand-written glue** that the build script must not clobber.
 
-**Worked example** — `packages/node-smol-builder/additions/source-patched/deps/libdeflate/`:
+**Worked example**: `packages/node-smol-builder/additions/source-patched/deps/libdeflate/`:
 
 ```
 packages/node-smol-builder/additions/source-patched/deps/libdeflate/*

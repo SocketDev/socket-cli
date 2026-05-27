@@ -28,7 +28,7 @@ import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
 import { downloadPackage } from '@socketsecurity/lib-stable/dlx/package'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { getSocketHomePath } from '@socketsecurity/lib-stable/paths/socket'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -385,7 +385,7 @@ export async function setupAgentShield(): Promise<boolean> {
   const version = AGENTSHIELD.version ?? purl.version
   const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
 
-  logger.log(`Installing ${packageSpec} via dlx...`)
+  logger.log(`Installing ${packageSpec} via dlx…`)
   const { binaryPath, installed } = await downloadPackage({
     package: packageSpec,
     binaryName: 'agentshield',
@@ -525,7 +525,7 @@ export async function setupNpmTool(
     : purl.name!
   const version = tool.version ?? purl.version
   const packageSpec = version ? `${npmPackage}@${version}` : npmPackage
-  logger.log(`Installing ${packageSpec} via dlx...`)
+  logger.log(`Installing ${packageSpec} via dlx…`)
   const { binaryPath, installed } = await downloadPackage({
     package: packageSpec,
     binaryName: name,
@@ -822,7 +822,7 @@ export async function setupZizmor(): Promise<boolean> {
 }
 
 async function main(): Promise<void> {
-  logger.log('Setting up Socket security tools...')
+  logger.log('Setting up Socket security tools…')
   logger.log('')
 
   const apiToken = findApiToken()

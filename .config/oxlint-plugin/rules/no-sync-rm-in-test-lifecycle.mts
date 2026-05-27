@@ -31,7 +31,7 @@ const SYNC_FS_METHODS = new Set(['rmSync', 'rmdirSync', 'unlinkSync'])
 
 const FS_OBJECT_NAMES = /^(fs|fsPromises|fsp|promises)$/
 
-function calleeKind(
+export function calleeKind(
   callee: AstNode,
 ):
   | { kind: 'fn'; text: string }
@@ -74,6 +74,46 @@ function calleeKind(
   return undefined
 }
 
+/**
+ * Walk up from `node` to the nearest enclosing function. If that function is
+ * the first argument of a `afterEach`/`afterAll`/`beforeEach`/`beforeAll` call
+ * (i.e. the hook's callback), return the hook name; otherwise undefined. Only
+ * the IMMEDIATE enclosing function counts — a sync delete nested inside a
+ * helper that the hook happens to call is out of scope (matches the old
+ * enter/exit-stack behavior, which only pushed the hook's own callback).
+ */
+export function enclosingLifecycleHook(node: AstNode): string | undefined {
+  let current: AstNode = node
+  while (current) {
+    const parent: AstNode = current.parent
+    if (!parent) {
+      return undefined
+    }
+    if (
+      parent.type === 'ArrowFunctionExpression' ||
+      parent.type === 'FunctionDeclaration' ||
+      parent.type === 'FunctionExpression'
+    ) {
+      // Found the nearest enclosing function. Is it a lifecycle-hook callback?
+      const fnParent: AstNode = parent.parent
+      if (
+        fnParent?.type === 'CallExpression' &&
+        fnParent.callee?.type === 'Identifier' &&
+        LIFECYCLE_HOOK_NAMES.has(fnParent.callee.name ?? '') &&
+        Array.isArray(fnParent.arguments) &&
+        fnParent.arguments[0] === parent
+      ) {
+        return fnParent.callee.name
+      }
+      // Enclosed by a non-hook function — the sync delete isn't directly in a
+      // lifecycle slot.
+      return undefined
+    }
+    current = parent
+  }
+  return undefined
+}
+
 const rule = {
   meta: {
     type: 'problem',
@@ -91,78 +131,31 @@ const rule = {
   },
 
   create(context: RuleContext) {
-    const hookStack: string[] = []
-    // Side-channel map keyed by AST node identity — avoids mutating the
-    // node itself (mutation triggers no-underscore-identifier via the
-    // `_lifecycleHookName` field name, and risks colliding with other
-    // rules walking the same tree). WeakMap retains nothing past the
-    // single rule run.
-    const hookNameByCallExpr = new WeakMap<AstNode, string>()
-
     return {
       CallExpression(node: AstNode) {
         const cal = (node as { callee?: AstNode | undefined }).callee
-        if (
-          cal?.type === 'Identifier' &&
-          LIFECYCLE_HOOK_NAMES.has(
-            (cal as { name?: string | undefined }).name ?? '',
-          )
-        ) {
-          const calName = (cal as { name?: string | undefined }).name
-          if (calName) {
-            hookNameByCallExpr.set(node, calName)
-          }
+        if (!cal) {
           return
         }
-
-        if (hookStack.length === 0) {
-          return
-        }
-
-        const kind = calleeKind(cal!)
+        const kind = calleeKind(cal)
         if (!kind) {
+          return
+        }
+        // Walk up to the nearest enclosing function; if it's the first-arg
+        // callback of a lifecycle-hook call (`afterEach(() => { ... })`), this
+        // sync delete is inside a lifecycle slot. Ancestor-walk instead of an
+        // enter/exit hook stack so the rule doesn't depend on the `:exit`
+        // esquery pseudo, which the oxlint JS-plugin engine doesn't support at
+        // the catalog-pinned version.
+        const hook = enclosingLifecycleHook(node)
+        if (!hook) {
           return
         }
         context.report({
           node,
           messageId: 'syncDelete',
-          data: {
-            callee: kind.text,
-            hook: hookStack[hookStack.length - 1] ?? 'lifecycle hook',
-          },
+          data: { callee: kind.text, hook },
         })
-      },
-
-      'FunctionExpression, ArrowFunctionExpression'(node: AstNode) {
-        const parent = (node as unknown as { parent?: AstNode | undefined })
-          .parent
-        if (!parent || parent.type !== 'CallExpression') {
-          return
-        }
-        const hookName = hookNameByCallExpr.get(parent)
-        if (!hookName) {
-          return
-        }
-        const args =
-          (parent as { arguments?: AstNode[] | undefined }).arguments ?? []
-        if (args[0] === node) {
-          hookStack.push(hookName)
-        }
-      },
-      'FunctionExpression:exit, ArrowFunctionExpression:exit'(node: AstNode) {
-        const parent = (node as unknown as { parent?: AstNode | undefined })
-          .parent
-        if (!parent || parent.type !== 'CallExpression') {
-          return
-        }
-        if (!hookNameByCallExpr.has(parent)) {
-          return
-        }
-        const args =
-          (parent as { arguments?: AstNode[] | undefined }).arguments ?? []
-        if (args[0] === node) {
-          hookStack.pop()
-        }
       },
     }
   },

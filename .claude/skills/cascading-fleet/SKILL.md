@@ -7,7 +7,7 @@ allowed-tools: Bash(git fetch:*), Bash(git worktree:*), Bash(git branch:*), Bash
 
 # cascading-fleet
 
-The fleet runs on `chore(wheelhouse): cascade template@<sha>` commits — every wheelhouse template change has to land in every fleet repo to take effect. This skill packages the operation so it isn't recreated ad-hoc per session.
+The fleet runs on `chore(wheelhouse): cascade template@<sha>` commits. Every wheelhouse template change has to land in every fleet repo to take effect. This skill packages the operation so it isn't recreated ad-hoc per session.
 
 ## When to use
 
@@ -19,7 +19,7 @@ Never use this skill while another cascade is in flight (each cascade creates a 
 
 ## Two modes
 
-### Mode 1 — `template` (outer cascade, default)
+### Mode 1: `template` (outer cascade, default)
 
 Propagates a `socket-wheelhouse/template/` SHA to every fleet repo. The flow:
 
@@ -32,9 +32,9 @@ Propagates a `socket-wheelhouse/template/` SHA to every fleet repo. The flow:
 
 The `FLEET_SYNC=1` sentinel is recognized by the wheelhouse `no-revert-guard` + `overeager-staging-guard` hooks. It allowlists exactly: `git commit --no-verify` whose message starts with `chore(wheelhouse): cascade template@`, `git push --no-verify`, and `git add -A`/`-u`/`.`. Nothing else.
 
-### Mode 2 — `registry-pins`
+### Mode 2: `registry-pins`
 
-Propagates a `socket-registry` pin chain through the fleet. Different shape — uses `scripts/cascade-registry-pins.mts --sha <M'>` to walk the per-repo workflow pins. Documented here for completeness; the cascade script in `lib/cascade-template.mts` covers Mode 1, and a future `lib/cascade-registry-pins.mts` will cover Mode 2.
+Propagates a `socket-registry` pin chain through the fleet. Different shape: uses `scripts/cascade-registry-pins.mts --sha <M'>` to walk the per-repo workflow pins. Documented here for completeness; the cascade script in `lib/cascade-template.mts` covers Mode 1, and a future `lib/cascade-registry-pins.mts` will cover Mode 2.
 
 For now, the registry-pin cascade is two steps documented inline:
 
@@ -49,15 +49,15 @@ Skipping Step 1 means Step 3 propagates a SHA whose dependency graph still pins 
 ## How to invoke
 
 ```bash
-# Mode 1 — propagate wheelhouse template SHA
+# Mode 1: propagate wheelhouse template SHA
 node .claude/skills/cascading-fleet/lib/cascade-template.mts <template-sha>
 ```
 
 The script reads the fleet-repo list from `lib/fleet-repos.txt` (single source of truth), iterates, and writes a per-repo result line to stdout. Output also tees to `/tmp/cascade-<sha>.log` for post-hoc inspection.
 
-## Worktree cleanup — the branch-cleanup bug
+## Worktree cleanup: the branch-cleanup bug
 
-A subtle gotcha: the script's pre-clean step (`git branch -D <branch>`) MUST run from `${src}` (the source repo), not from `/tmp` or the worktree directory. If the loop crashes mid-iteration before `cd`-ing into the worktree, a stale `chore/wheelhouse-<sha>` branch can be left behind. The provided script handles this — but if you write a one-off cascade, make sure your cleanup runs from the right cwd.
+A subtle gotcha: the script's pre-clean step (`git branch -D <branch>`) MUST run from `${src}` (the source repo), not from `/tmp` or the worktree directory. If the loop crashes mid-iteration before `cd`-ing into the worktree, a stale `chore/wheelhouse-<sha>` branch can be left behind. The provided script handles this. If you write a one-off cascade, make sure your cleanup runs from the right cwd.
 
 ## Soak time before catalog cascades
 

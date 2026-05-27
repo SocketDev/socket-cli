@@ -37,6 +37,28 @@ import { existsSync, readFileSync } from 'node:fs'
  * so a single phrase doesn't open the door for a follow-up action of the same
  * shape later.
  */
+/**
+ * Normalize a bypass phrase / haystack so hyphens and runs of whitespace
+ * collapse to a single space. `Allow workflow-scope bypass`, `Allow workflow
+ * scope bypass`, and `Allow workflow—scope bypass` all collapse to the same
+ * canonical form for matching. The transcript-reading helpers run user text
+ * through this so minor punctuation variations don't break the bypass match.
+ */
+function normalizeBypassText(text: string): string {
+  // NFKC: canonical-decompose + compose + compatibility-fold so
+  // visually-similar variants collapse — smart quotes, full-width,
+  // ligatures all map to ASCII-canonical.
+  // \p{Cf} strip: format / zero-width / bidi-override chars are removed
+  // so an attacker can't inject a benign-rendering turn that contains
+  // the bypass phrase only after invisible chars are stripped — nor
+  // can a user accidentally type a phrase that fails to match because
+  // an editor inserted a zero-width-space.
+  return text
+    .normalize('NFKC')
+    .replace(/\p{Cf}/gu, '')
+    .replace(/[-—–\s]+/g, ' ')
+}
+
 export function bypassPhrasePresent(
   transcriptPath: string | undefined,
   phrases: string | readonly string[],
@@ -51,8 +73,10 @@ export function bypassPhrasePresent(
   if (!text) {
     return false
   }
+  const haystack = normalizeBypassText(text)
   for (let i = 0; i < length; i += 1) {
-    if (text.includes(list[i]!)) {
+    const needle = normalizeBypassText(list[i]!)
+    if (haystack.includes(needle)) {
       return true
     }
   }
@@ -113,10 +137,15 @@ export function countBypassPhrases(
   if (length === 0) {
     return 0
   }
-  const text = readUserText(transcriptPath, lookbackUserTurns)
-  if (!text) {
+  const rawText = readUserText(transcriptPath, lookbackUserTurns)
+  if (!rawText) {
     return 0
   }
+  // Normalize hyphens / em-dashes / runs of whitespace to single
+  // spaces so `Allow workflow-scope bypass` and `Allow workflow scope
+  // bypass` match the same phrase. Indices below run in the
+  // normalized string's coordinate space.
+  const text = normalizeBypassText(rawText)
   // Track which `[start, end)` spans were already counted by a prior
   // phrase so a shorter phrase that's a substring of a longer one
   // doesn't double-count (e.g. `Allow workflow-dispatch bypass: build`
@@ -125,6 +154,7 @@ export function countBypassPhrases(
   // claims the span first.
   const sorted = [...list]
     .filter(p => p)
+    .map(p => normalizeBypassText(p))
     .toSorted((a, b) => b.length - a.length)
   const claimed: Array<[number, number]> = []
   let total = 0

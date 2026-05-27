@@ -19,7 +19,7 @@ import { existsSync, mkdirSync, promises as fs, readdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const logger = getDefaultLogger()
@@ -46,11 +46,11 @@ type SaveOrRestoreOpts = CommonOpts & {
 }
 
 type Submodule = {
-  branch?: string
+  branch?: string | undefined
   name: string
-  path?: string
-  'sparse-checkout'?: string
-  url?: string
+  path?: string | undefined
+  'sparse-checkout'?: string | undefined
+  url?: string | undefined
 }
 
 type Gitmodules = {
@@ -81,7 +81,7 @@ Commands:
 async function runGit(
   opts: CommonOpts,
   gitArgs: string[],
-  options: { okReturnCodes?: number[] } = {},
+  options: { okReturnCodes?: number[] | undefined } = {},
 ): Promise<{ code: number | null } | undefined> {
   const okReturnCodes = options.okReturnCodes ?? [0]
   if (opts.verbose || opts.dryRun) {
@@ -105,7 +105,7 @@ async function runGit(
  */
 async function readGitOutput(
   gitArgs: string[],
-  options: { okReturnCodes?: number[] } = {},
+  options: { okReturnCodes?: number[] | undefined } = {},
 ): Promise<string> {
   const okReturnCodes = options.okReturnCodes ?? [0]
   const result = await spawn('git', gitArgs, {
@@ -323,7 +323,8 @@ async function cmdClone(opts: CloneOpts): Promise<void> {
     : [...gitmodules.byPath.keys()]
   let skipped = 0
   let processed = 0
-  for (const submoduleRelPath of relPaths) {
+  for (let i = 0, { length } = relPaths; i < length; i += 1) {
+    const submoduleRelPath = relPaths[i]!
     const submodule = gitmodules.byPath.get(submoduleRelPath)
     if (!submodule) {
       logger.error(
@@ -444,7 +445,8 @@ async function cmdSaveSparse(opts: SaveOrRestoreOpts): Promise<void> {
   const relPaths: string[] = opts.paths.length
     ? opts.paths.map(p => toWorktreeRelative(worktreeRoot, p))
     : [...gitmodules.byPath.keys()]
-  for (const submoduleRelPath of relPaths) {
+  for (let i = 0, { length } = relPaths; i < length; i += 1) {
+    const submoduleRelPath = relPaths[i]!
     const submodule = gitmodules.byPath.get(submoduleRelPath)
     if (!submodule) {
       logger.error(
@@ -510,7 +512,8 @@ async function cmdRestoreSparse(opts: SaveOrRestoreOpts): Promise<void> {
   const relPaths: string[] = opts.paths.length
     ? opts.paths.map(p => toWorktreeRelative(worktreeRoot, p))
     : [...gitmodules.byPath.keys()]
-  for (const submoduleRelPath of relPaths) {
+  for (let i = 0, { length } = relPaths; i < length; i += 1) {
+    const submoduleRelPath = relPaths[i]!
     const submodule = gitmodules.byPath.get(submoduleRelPath)
     if (!submodule) {
       logger.error(
@@ -551,11 +554,11 @@ function parseArgs(argv: string[]): {
   const remaining: string[] = []
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]!
-    if (arg === '-n' || arg === '--dry-run') {
+    if (arg === '--dry-run' || arg === '-n') {
       opts.dryRun = true
-    } else if (arg === '-v' || arg === '--verbose') {
+    } else if (arg === '--verbose' || arg === '-v') {
       opts.verbose = true
-    } else if (arg === '-h' || arg === '--help') {
+    } else if (arg === '--help' || arg === '-h') {
       return { command: 'help', opts, rest: [] }
     } else {
       remaining.push(arg)
@@ -568,8 +571,8 @@ function parseArgs(argv: string[]): {
   if (
     command !== 'add' &&
     command !== 'clone' &&
-    command !== 'save-sparse' &&
-    command !== 'restore-sparse'
+    command !== 'restore-sparse' &&
+    command !== 'save-sparse'
   ) {
     logger.error(`Unknown command: ${command}`)
     return { command: 'help', opts, rest: [] }
@@ -584,7 +587,7 @@ function parseAddArgs(common: CommonOpts, rest: string[]): AddOpts {
   const positional: string[] = []
   for (let i = 0; i < rest.length; i += 1) {
     const arg = rest[i]!
-    if (arg === '-b' || arg === '--branch') {
+    if (arg === '--branch' || arg === '-b') {
       branch = rest[++i]
     } else if (arg === '--name') {
       name = rest[++i]

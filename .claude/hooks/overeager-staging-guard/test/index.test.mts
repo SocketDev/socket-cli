@@ -123,6 +123,19 @@ test('blocks broad add when env vars are set on the command', () => {
   assert.equal(r.code, 2)
 })
 
+test('blocks `git -C path add .` (subcommand after a global flag)', () => {
+  const r = runHook(`git -C ${tmpRepo} add .`, { cwd: tmpRepo })
+  assert.equal(r.code, 2)
+  assert.match(r.stderr, /git add \./)
+})
+
+test('quoted "git add ." inside a message is NOT a broad add', () => {
+  // Regression: the parser distinguishes a real invocation from the
+  // same words sitting inside a quoted commit-message argument.
+  const r = runHook('git commit -m "stop using git add ."', { cwd: tmpRepo })
+  assert.equal(r.code, 0)
+})
+
 test('allows `git add path/to/file.ts`', () => {
   const r = runHook('git add src/foo.ts', { cwd: tmpRepo })
   assert.equal(r.code, 0)

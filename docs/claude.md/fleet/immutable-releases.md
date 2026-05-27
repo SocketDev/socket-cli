@@ -1,8 +1,8 @@
 # Immutable releases
 
-The fleet ships **immutable GitHub Releases** — assets locked at publish, tags protected, and a cryptographically verifiable **release attestation** (Sigstore-bundle) produced for every release. GA'd on GitHub 2025-10-28 ([changelog](https://github.blog/changelog/2025-10-28-immutable-releases-are-now-generally-available/), [docs](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)).
+The fleet ships **immutable GitHub Releases**: assets locked at publish, tags protected, and a cryptographically verifiable **release attestation** (Sigstore-bundle) produced for every release. GA'd on GitHub 2025-10-28 ([changelog](https://github.blog/changelog/2025-10-28-immutable-releases-are-now-generally-available/), [docs](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)).
 
-This rule applies to every fleet repo that publishes via `gh release create` — socket-btm + binary releases, every npm publish workflow that also tags a GH release, any `chore(release): vX.Y.Z` workflow.
+This rule applies to every fleet repo that publishes via `gh release create`: socket-btm + binary releases, every npm publish workflow that also tags a GH release, any `chore(release): vX.Y.Z` workflow.
 
 ## Why
 
@@ -61,7 +61,7 @@ These work for anyone outside the org with `gh` installed. The attestation is al
 
 - **Don't** force-push a tag after a release exists. The tag is protected; the push will be rejected at the server.
 - **Don't** delete an asset and re-upload to "fix" it. The release is locked; you'll have to cut a new patch version.
-- **Don't** `gh release create <tag> <files...>` as one atomic call — see the workflow rule above.
+- **Don't** `gh release create <tag> <files...>` as one atomic call. See the workflow rule above.
 - **Don't** dispatch a release workflow that uses the legacy direct-publish pattern. Migrate it first.
 
 ## Post-publish provenance check
@@ -70,12 +70,12 @@ A Stop-hook reminder (`provenance-publish-reminder`) already checks that npm-pub
 
 ## When the repo doesn't qualify
 
-Some fleet repos don't publish releases (private tooling repos, scratch repos). For those, the rule is moot — `gh release create` doesn't appear in their workflows. The hook checks only files matching `.github/workflows/**.yml` that contain a `gh release create` line.
+Some fleet repos don't publish releases (private tooling repos, scratch repos). For those, the rule is moot. `gh release create` doesn't appear in their workflows. The hook checks only files matching `.github/workflows/**.yml` that contain a `gh release create` line.
 
 ## References
 
-- [Immutable releases — changelog (GA 2025-10-28)](https://github.blog/changelog/2025-10-28-immutable-releases-are-now-generally-available/)
-- [Immutable releases — docs](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)
+- [Immutable releases: changelog (GA 2025-10-28)](https://github.blog/changelog/2025-10-28-immutable-releases-are-now-generally-available/)
+- [Immutable releases: docs](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)
 - [gh release verify CLI](https://cli.github.com/manual/gh_release_verify)
 - [gh attestation verify CLI](https://cli.github.com/manual/gh_attestation_verify)
 - Related: [`version-bumps.md`](version-bumps.md) (release sequence), [`public-surface-hygiene.md`](public-surface-hygiene.md) (release workflow restrictions).

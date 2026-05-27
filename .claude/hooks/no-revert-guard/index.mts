@@ -38,6 +38,7 @@
 
 import process from 'node:process'
 
+import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 type ToolInput = {
@@ -51,19 +52,26 @@ type GuardCheck = {
   readonly bypassPhrase: string
   // Human-readable label for the rule (logged on rejection).
   readonly label: string
-  // Pattern that detects the destructive command.
-  readonly pattern: RegExp
+  // Detector. Exactly one of `pattern` / `matches` is set:
+  //   - `pattern`: a regex matched anywhere in the command. Correct for
+  //     flag / env-var rules (`--no-verify`, `DISABLE_PRECOMMIT_LINT=1`)
+  //     that apply regardless of which binary they sit on.
+  //   - `matches`: a parser-based detector for command-STRUCTURE rules
+  //     (which git subcommand runs). Returns the offending substring for
+  //     the log, or undefined when no match. Sees through chains / `$(…)`
+  //     / quotes, where a regex would over- or under-match.
+  readonly pattern?: RegExp
+  readonly matches?: (command: string) => string | undefined
 }
 
 const CHECKS: readonly GuardCheck[] = [
   {
     bypassPhrase: 'Allow revert bypass',
     label: 'git revert (checkout/restore/reset/stash/clean)',
-    // Match destructive git commands. Anchored on `git ` or `git\t`
-    // (with optional leading whitespace) so we don't match inside
-    // arbitrary strings.
-    pattern:
-      /(?:^|[\s;&|(`])git\s+(?:checkout\s+(?:--?[a-z]+\s+)*(?:--\s|\S+\s+--\s)|restore(?!\s+--staged\b)|reset\s+--hard|stash\s+(?:clear|drop|pop)|clean\s+-[a-z]*f|rm\s+-r?f?\s)/,
+    // Parser-based: inspect each real `git` command's args for a
+    // destructive subcommand shape. Sees through chains / quotes so a
+    // quoted "git reset --hard" in a commit message isn't a match.
+    matches: command => matchDestructiveGit(command),
   },
   {
     bypassPhrase: 'Allow no-verify bypass',
@@ -113,8 +121,19 @@ const CHECKS: readonly GuardCheck[] = [
     // user knows no other Claude session is active.
     bypassPhrase: 'Allow stash bypass',
     label: 'git stash (primary-checkout parallel-Claude hazard)',
-    pattern:
-      /(?:^|[\s;&|(`])git\s+stash(?:\s+(?:push|save|--keep-index|--patch|-[a-z]+)|\s*$|\s+[^a-z])/,
+    // Any `git stash` (bare, or push/save/--keep-index/etc.) — but NOT
+    // `git stash pop/drop/clear`, which the destructive-git check above
+    // already owns (it's a different destruction surface).
+    matches: command =>
+      commandsFor(command, 'git').some(c => {
+        if (c.args[0] !== 'stash') {
+          return false
+        }
+        const sub = c.args[1]
+        return sub !== 'pop' && sub !== 'drop' && sub !== 'clear'
+      })
+        ? 'git stash'
+        : undefined,
   },
   {
     // Bash file-write surfaces agents reach for when an Edit/Write
@@ -154,9 +173,58 @@ const CHECKS: readonly GuardCheck[] = [
   {
     bypassPhrase: 'Allow force-push bypass',
     label: 'git push --force / -f',
-    pattern: /(?:^|[\s;&|(`])git\s+push\b[^;&|()`]*\s(?:--force\b|-f\b)/,
+    matches: command =>
+      commandsFor(command, 'git').some(
+        c =>
+          c.args.includes('push') &&
+          (c.args.includes('--force') ||
+            c.args.includes('-f') ||
+            c.args.some(a => a.startsWith('--force-with-lease'))),
+      )
+        ? 'git push --force'
+        : undefined,
   },
 ]
+
+// Destructive `git` subcommands the revert rule blocks. Operates on a
+// parsed git command's args (a1 = first arg = subcommand, rest = flags).
+// Mirrors the old regex's surface:
+//   checkout … -- <path>   (discards working-tree changes)
+//   restore <path>         (but NOT `restore --staged`, which only unstages)
+//   reset --hard
+//   stash clear|drop|pop
+//   clean -f / -xf / -df …
+//   rm -f / -rf
+export function matchDestructiveGit(command: string): string | undefined {
+  for (const c of commandsFor(command, 'git')) {
+    const [sub, ...rest] = c.args
+    if (!sub) {
+      continue
+    }
+    if (sub === 'checkout' && rest.includes('--')) {
+      return 'git checkout -- <path>'
+    }
+    if (sub === 'restore' && !rest.includes('--staged')) {
+      return 'git restore'
+    }
+    if (sub === 'reset' && rest.includes('--hard')) {
+      return 'git reset --hard'
+    }
+    if (
+      sub === 'stash' &&
+      (rest[0] === 'clear' || rest[0] === 'drop' || rest[0] === 'pop')
+    ) {
+      return `git stash ${rest[0]}`
+    }
+    if (sub === 'clean' && rest.some(a => /^-[a-z]*f/.test(a))) {
+      return 'git clean -f'
+    }
+    if (sub === 'rm' && rest.some(a => /^-r?f?$/.test(a) && a.includes('f'))) {
+      return 'git rm -f'
+    }
+  }
+  return undefined
+}
 
 export function emitBlock(
   command: string,
@@ -227,14 +295,24 @@ async function main(): Promise<void> {
     }
   }
 
-  // Find the first matching destructive pattern.
+  // Find the first matching destructive pattern. A check is either a
+  // regex (`pattern`, matched anywhere — flags / env vars) or a parser
+  // detector (`matches`, command-structure — git subcommands).
   let triggered: { check: GuardCheck; matchedSubstring: string } | undefined
   for (let i = 0, { length } = CHECKS; i < length; i += 1) {
     const check = CHECKS[i]!
-    const m = command.match(check.pattern)
-    if (m) {
-      triggered = { check, matchedSubstring: m[0].trim() }
-      break
+    if (check.matches) {
+      const hit = check.matches(command)
+      if (hit) {
+        triggered = { check, matchedSubstring: hit }
+        break
+      }
+    } else if (check.pattern) {
+      const m = command.match(check.pattern)
+      if (m) {
+        triggered = { check, matchedSubstring: m[0].trim() }
+        break
+      }
     }
   }
   if (!triggered) {

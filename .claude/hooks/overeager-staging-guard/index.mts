@@ -41,6 +41,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { commandsFor, findInvocation } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface ToolInput {
@@ -85,39 +86,22 @@ export function addTouchedFromBash(
   }
 }
 
-// Detects `git add` invocations that sweep the working tree. We split
-// the command into tokens and check for the flags rather than regexing
-// the raw string — that way `git add ./path` (a legitimate surgical
-// add of a file that starts with `.`) is not confused with `git add .`
-// (the broad sweep).
+// Detects `git add` invocations that sweep the working tree. Parses
+// the command with the shared shell tokenizer so chains, quoting, and
+// leading env-var assignments (`GIT_AUTHOR_NAME=x git add …`) are all
+// handled — and a quoted "git add ." inside a message can't false-fire.
+// `git add ./path` (a legitimate surgical add of a dotfile) is NOT
+// confused with `git add .` (the broad sweep) because the parser
+// preserves the exact arg.
 export function detectBroadGitAdd(command: string): string | undefined {
-  // Tokenize on whitespace; not bulletproof against quoted arguments
-  // but the broad-add forms never need quoting. Strip trailing
-  // semicolons / && / || segments by splitting on those operators.
-  const segments = command.split(/(?:&&|\|\||;|\n)/)
-  for (let i = 0, { length } = segments; i < length; i += 1) {
-    const segment = segments[i]!
-    const tokens = segment.trim().split(/\s+/)
-    if (tokens.length < 2) {
+  for (const c of commandsFor(command, 'git')) {
+    // The `add` subcommand can sit after global flags (`git -C x add .`),
+    // so scan all args rather than assuming position.
+    if (!c.args.includes('add')) {
       continue
     }
-    // Find "git add" — tolerate leading env-var sets like
-    // `GIT_AUTHOR_NAME=x git add ...`
-    let j = 0
-    while (j < tokens.length && tokens[j]!.includes('=')) {
-      j += 1
-    }
-    if (tokens[j] !== 'git') {
-      continue
-    }
-    if (tokens[j + 1] !== 'add') {
-      continue
-    }
-    // Inspect remaining args; flag if -A / --all / -u / --update / .
-    // appear as a bare positional.
-    const rest = tokens.slice(j + 2)
-    for (let k = 0, { length } = rest; k < length; k += 1) {
-      const arg = rest[k]!
+    for (let k = 0, { length } = c.args; k < length; k += 1) {
+      const arg = c.args[k]!
       if (arg === '--all' || arg === '-A') {
         return `git add ${arg}`
       }
@@ -137,20 +121,7 @@ export function getRepoDir(): string {
 }
 
 export function isGitCommit(command: string): boolean {
-  // Tokenize as above; look for "git commit" anywhere in any segment.
-  const segments = command.split(/(?:&&|\|\||;|\n)/)
-  for (let i = 0, { length } = segments; i < length; i += 1) {
-    const segment = segments[i]!
-    const tokens = segment.trim().split(/\s+/)
-    let j = 0
-    while (j < tokens.length && tokens[j]!.includes('=')) {
-      j += 1
-    }
-    if (tokens[j] === 'git' && tokens[j + 1] === 'commit') {
-      return true
-    }
-  }
-  return false
+  return findInvocation(command, { binary: 'git', subcommand: 'commit' })
 }
 
 export function listStagedFiles(repoDir: string): string[] {

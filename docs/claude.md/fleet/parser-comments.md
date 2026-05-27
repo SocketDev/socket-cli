@@ -12,7 +12,7 @@ Walk the reader through what each block does in terms the upstream reference use
 
 ## 2. Cite the upstream source
 
-When a method, regex, or branch derives from a specific spot in the upstream, link it. Prefer permalinks pinned to a specific tag or commit SHA — `https://github.com/<owner>/<repo>/blob/<tag-or-sha>/<path>#L<line>` — over branch-pointing links that bitrot when upstream moves.
+When a method, regex, or branch derives from a specific spot in the upstream, link it. Prefer permalinks pinned to a specific tag or commit SHA (`https://github.com/<owner>/<repo>/blob/<tag-or-sha>/<path>#L<line>`) over branch-pointing links that bitrot when upstream moves.
 
 ```ts
 // Upstream: acornjs/acorn @ 8.14.0
@@ -33,15 +33,15 @@ When the fleet repo already has an upstream pin (in `xport.json`, `lockstep.json
 
 ## 4. Deviations get a paragraph, not a line
 
-When the local impl diverges from upstream (faster path, different error shape, missing edge case), write a short paragraph explaining _why_ the divergence is intentional. One-line `// differs from upstream` notes get stripped during cleanups; paragraphs survive because they carry the load-bearing _why_.
+When the local impl diverges from upstream (faster path, different error shape, missing edge case), write a short paragraph explaining _why_ the divergence is deliberate. One-line `// differs from upstream` notes get stripped during cleanups; paragraphs survive because they carry the load-bearing _why_.
 
 ## 5. Lock-step references across language ports
 
-When a parser ships in multiple implementations that must agree behaviorally (e.g. ultrathink's acorn ports: Rust / Go / C++ / TypeScript; socket-btm's `packages/temporal-infra/src/socketsecurity/temporal/*.{cc,h}` C++ port of upstream `temporal_rs` Rust crate), every cross-impl reference uses the `Lock-step` prefix. The naming is load-bearing — `grep -r 'Lock-step'` is the audit surface.
+When a parser ships in multiple implementations that must agree behaviorally (e.g. ultrathink's acorn ports: Rust / Go / C++ / TypeScript; socket-btm's `packages/temporal-infra/src/socketsecurity/temporal/*.{cc,h}` C++ port of upstream `temporal_rs` Rust crate), every cross-impl reference uses the `Lock-step` prefix. The naming is load-bearing. `grep -r 'Lock-step'` is the audit surface.
 
 Three forms, three jobs:
 
-**File-level provenance** — top-of-file `//!` doc comment that names where the canonical source lives. Ports state who they follow; canonical files state who follows them:
+**File-level provenance**: top-of-file `//!` doc comment that names where the canonical source lives. Ports state who they follow; canonical files state who follows them:
 
 ```rust
 //! Lock-step with Go: src/parser/class.go
@@ -55,16 +55,16 @@ Three forms, three jobs:
 
 `Lock-step with X` = "X is a peer / downstream port; keep in sync". `Lock-step from X` = "X is the canonical source for this file".
 
-**Inline cross-references** — point at the specific line range in the canonical impl. Include a colon-and-line-range so reviewers can jump:
+**Inline cross-references**: point at the specific line range in the canonical impl. Include a colon-and-line-range so reviewers can jump:
 
 ```rust
 // Lock-step with Go: parser.go:6450-6457
 // Lock-step with Go: parser.go:6672-6682, upstream acorn: statement.js:737-745
 ```
 
-In a port (Go/C++/TS), the reference points up at Rust. In Rust (canonical), the reference may point further upstream at Acorn JS — the rule is comments always point at the source-of-truth, never at a downstream port.
+In a port (Go/C++/TS), the reference points up at Rust. In Rust (canonical), the reference may point further upstream at Acorn JS. The rule is comments always point at the source-of-truth, never at a downstream port.
 
-**Lock-step note** — explains a _deliberate_ divergence from the canonical shape. Reads like a thesis: here's the canonical idiom, here's why this impl can't follow it verbatim, here's the chosen reshape:
+**Lock-step note**: explains a _deliberate_ divergence from the canonical shape. Reads like a thesis: here's the canonical idiom, here's why this impl can't follow it verbatim, here's the chosen reshape:
 
 ```cpp
 // Lock-step note: Rust uses bumpalo-arena ownership for NodeVec;
@@ -74,7 +74,7 @@ In a port (Go/C++/TS), the reference points up at Rust. In Rust (canonical), the
 ```
 
 ```rust
-// Lock-step note: reshaped for borrowck — Go's `defer s.restore()`
+// Lock-step note: reshaped for borrowck. Go's `defer s.restore()`
 // returns a ResetScope holding &mut Path; capture len() and restore
 // via set_length() so the path can be re-borrowed for append()
 // in between.
@@ -84,16 +84,16 @@ The line `Lock-step with X` says "go look here"; the note `Lock-step note:` says
 
 ## 6. Don't let lock-step references rot
 
-Paths in `Lock-step with X: <path>:<lines>` are claims about file layout that decay when ports get reorganized. A stale `Lock-step with Rust: crates/parser-stmt/src/...` reference after `crates/parser-stmt/` is renamed is worse than no reference — it lies to the reader.
+Paths in `Lock-step with X: <path>:<lines>` are claims about file layout that decay when ports get reorganized. A stale `Lock-step with Rust: crates/parser-stmt/src/...` reference after `crates/parser-stmt/` is renamed is worse than no reference. It lies to the reader.
 
 Two cheap defenses:
 
 - Reference paths, not symbols. `parser.go:6450-6457` survives a method rename; `parseClassBody` doesn't.
 - Add a `scripts/check-lock-step-refs.mts` gate that greps every `Lock-step with <Lang>:` comment, resolves the path against the right impl root, and fails CI if the path no longer exists. Line ranges are advisory and can drift; path existence is enforceable.
 
-## 7. Lock-step header — byte-identical intent across the quadruplet
+## 7. Lock-step header: byte-identical intent across the quadruplet
 
-Cross-references catch path rot. They don't catch _semantic_ drift — the case where the four impls quietly start disagreeing about what the file is _for_. The convention for that is a top-of-file **Lock-step header** block, byte-identical across every member of the quadruplet:
+Cross-references catch path rot. They don't catch _semantic_ drift, the case where the four impls quietly start disagreeing about what the file is _for_. The convention for that is a top-of-file **Lock-step header** block, byte-identical across every member of the quadruplet:
 
 ```rust
 // BEGIN LOCK-STEP HEADER
@@ -127,9 +127,9 @@ Cross-references catch path rot. They don't catch _semantic_ drift — the case 
 
 Rules:
 
-- **Single-line `// ` syntax across every language** — no `//!` / `///` / `/** */` mixing. Strip the leading `// `, byte-compare. Languages that need a doc-comment for tooling (Rust's `//!` for `rustdoc`, JSDoc for TypeScript) put that separately — the Lock-step header is its own block and lives alongside.
+- **Single-line `// ` syntax across every language**: no `//!` / `///` / `/** */` mixing. Strip the leading `// `, byte-compare. Languages that need a doc-comment for tooling (Rust's `//!` for `rustdoc`, JSDoc for TypeScript) put that separately. The Lock-step header is its own block and lives alongside.
 - **Mandatory: name + cross-refs.** First line is the file's purpose. Body lists `Lock-step with <Lang>: <path>` for every peer in the quadruplet, and `Lock-step from <Lang>: <path>` if the file is a port. The path forms are the same ones validated in §5.
-- **No timestamps, no authors, no per-impl prose.** Anything that legitimately differs between impls goes _outside_ the header (in language-specific doc comments, `// PORT NOTE:` blocks, etc.). The header is the contract; divergence is contraband.
+- **No timestamps, no authors, no per-impl prose.** Anything that differs between impls goes _outside_ the header (in language-specific doc comments, `// PORT NOTE:` blocks, etc.). The header is the contract; divergence is contraband.
 
 The gate (`scripts/check-lock-step-header.mts`, registered in the same opt-in `.config/lock-step-refs.json` as §5–6) walks the quadruplets named by each canonical-side header, extracts the `BEGIN LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block from each peer, and fails CI on any byte-diff. When the canonical impl needs to revise the contract, every peer must update in the same commit.
 

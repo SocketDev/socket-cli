@@ -3,6 +3,12 @@
 # points at this directory (set by `node scripts/install-git-hooks.mts`
 # at `pnpm install` time). Defers to the .mts implementation.
 
+# Put the repo-pinned Node (.node-version) on PATH — git runs hooks with
+# the login shell's PATH, which may be an older system Node than the
+# hooks' floor (.mts type-stripping needs Node >= 25). See
+# _resolve-node.sh.
+. "$(dirname "$0")/_resolve-node.sh"
+
 # Same placeholder-Socket-token sanitization as pre-commit. A
 # `SOCKET_API_TOKEN=literal-value` placeholder in the user's
 # environment causes sfw to 401 on the pnpm shim before this hook

@@ -7,7 +7,7 @@ allowed-tools: Task, Skill, Read, Edit, Grep, Glob, Bash(pnpm run:*), Bash(pnpm 
 
 # updating
 
-Umbrella update skill. Runs `pnpm run update` for npm deps, then adapts to whatever the repo has — lockstep manifest, submodules, workflow SHA pins. Validates with check/test before reporting done.
+Umbrella update skill. Runs `pnpm run update` for npm deps, then adapts to whatever the repo has: lockstep manifest, submodules, workflow SHA pins. Validates with check/test before reporting done.
 
 ## When to use
 
@@ -17,15 +17,15 @@ Umbrella update skill. Runs `pnpm run update` for npm deps, then adapts to whate
 
 ## Update targets
 
-- **npm packages** — `pnpm run update` (every fleet repo has this script).
-- **lockstep-managed upstreams** — `pnpm run lockstep` when `lockstep.json` exists. Mechanical `version-pin` bumps auto-apply; `file-fork` / `feature-parity` / `spec-conformance` / `lang-parity` rows surface as advisory.
-- **Other submodules** — repo-specific `updating-*` sub-skills handle `.gitmodules` entries not claimed by a lockstep `version-pin` row.
-- **Workflow SHA pins** — `_local-not-for-reuse-*.yml` SHAs against the remote's default branch (per CLAUDE.md _Default branch fallback_); run `/updating-workflows` when stale.
-- **Security advisories** — open GitHub Dependabot alerts via `/update-security`. Direct deps bumped via `pnpm update`; transitives pinned via `pnpm.overrides`; unfixable advisories dismissed with documented reasons. Honors the 7-day soak gate.
-- **Coverage badge** — when a coverage script exists (`cover` / `coverage` / `test:cover`), `/update-coverage` runs the script and rewrites the README badge to match. Repos without a coverage script skip silently.
-- **GitHub settings drift** — `scripts/lint-github-settings.mts --force --json` audits repo + Actions settings against the fleet baseline (custom properties, feature flags, merge policy, branch protection, required apps like `cursor` / `claude` / `socket-security`). Read-only by default; fixes are surfaced as URLs the operator clicks through (`--fix` is gated on `repo:admin`, not auto-applied in the umbrella). Skipped under `CI=true` — the underlying script's local-only design.
+- **npm packages**: `pnpm run update` (every fleet repo has this script).
+- **lockstep-managed upstreams**: `pnpm run lockstep` when `lockstep.json` exists. Mechanical `version-pin` bumps auto-apply; `file-fork` / `feature-parity` / `spec-conformance` / `lang-parity` rows surface as advisory.
+- **Other submodules**: repo-specific `updating-*` sub-skills handle `.gitmodules` entries not claimed by a lockstep `version-pin` row.
+- **Workflow SHA pins**: `_local-not-for-reuse-*.yml` SHAs against the remote's default branch (per CLAUDE.md _Default branch fallback_); run `/updating-workflows` when stale.
+- **Security advisories**: open GitHub Dependabot alerts via `/update-security`. Direct deps bumped via `pnpm update`; transitives pinned via `pnpm.overrides`; unfixable advisories dismissed with documented reasons. Honors the 7-day soak gate.
+- **Coverage badge**: when a coverage script exists (`cover` / `coverage` / `test:cover`), `/update-coverage` runs the script and rewrites the README badge to match. Repos without a coverage script skip silently.
+- **GitHub settings drift**: `scripts/lint-github-settings.mts --force --json` audits repo + Actions settings against the fleet baseline (custom properties, feature flags, merge policy, branch protection, required apps like `cursor` / `claude` / `socket-security`). Read-only by default; fixes are surfaced as URLs the operator clicks through (`--fix` is gated on `repo:admin`, not auto-applied in the umbrella). Skipped under `CI=true` (the underlying script's local-only design).
 
-This umbrella reads repo state first to discover what applies — sub-skills are only invoked when relevant.
+This umbrella reads repo state first to discover what applies. Sub-skills are only invoked when relevant.
 
 ## Phases
 
@@ -38,7 +38,7 @@ This umbrella reads repo state first to discover what applies — sub-skills are
 | 5   | Security advisories  | If `gh api .../dependabot/alerts?state=open` returns any rows, invoke `/update-security` (the `updating-security` sub-skill). Atomic commit per alert.                                                                                                                                  |
 | 6   | Workflow SHA pins    | Compare pinned SHAs against `origin/$BASE`; report stale → `/updating-workflows`.                                                                                                                                                                                                       |
 | 7   | Coverage badge       | If the repo declares a coverage script (`cover` / `coverage` / `test:cover`), invoke `/update-coverage` to refresh the README badge. Atomic commit if the percentage moved.                                                                                                             |
-| 8   | GH settings drift    | Skipped under `CI=true`. Otherwise: `node scripts/lint-github-settings.mts --force --json` and surface findings — repo-settings drift, missing apps (cursor/claude/socket-security/etc), custom-property/visibility mismatches. Read-only; operator follows the fixUrl in each finding. |
+| 8   | GH settings drift    | Skipped under `CI=true`. Otherwise: `node scripts/lint-github-settings.mts --force --json` and surface findings (repo-settings drift, missing apps (cursor/claude/socket-security/etc), custom-property/visibility mismatches). Read-only; operator follows the fixUrl in each finding. |
 | 9   | Final validation     | Interactive only: `pnpm run check --all && pnpm test && pnpm run build`. CI skips (validated separately).                                                                                                                                                                               |
 | 10  | Report               | Per-category summary: npm / lockstep / submodules / security / SHA pins / coverage / settings drift / validation / next steps.                                                                                                                                                          |
 
@@ -46,10 +46,10 @@ Full bash, exit-code tables, mode contracts, and failure recovery in [`reference
 
 ## Hard requirements
 
-- **Clean tree on entry** — no uncommitted changes.
-- **Atomic commits per category** — npm in one commit, each lockstep auto-bump in its own commit, each submodule bump in its own commit.
+- **Clean tree on entry**: no uncommitted changes.
+- **Atomic commits per category**: npm in one commit, each lockstep auto-bump in its own commit, each submodule bump in its own commit.
 - **Conventional Commits** per CLAUDE.md.
-- **Default-branch fallback** — never hard-code `main` or `master` in scripts.
+- **Default-branch fallback**: never hard-code `main` or `master` in scripts.
 
 ## Success criteria
 
@@ -59,4 +59,4 @@ Full bash, exit-code tables, mode contracts, and failure recovery in [`reference
 - Full check + tests pass (interactive mode).
 - Summary report printed.
 
-**Safety:** updates are validated before committing. Schema errors (lockstep exit 1) stop the process; drift (exit 2) is advisory and does not block. Security-advisory fixes never `--force` push — per-alert commits go through the normal push-or-PR flow.
+**Safety:** updates are validated before committing. Schema errors (lockstep exit 1) stop the process; drift (exit 2) is advisory and does not block. Security-advisory fixes never `--force` push. Per-alert commits go through the normal push-or-PR flow.

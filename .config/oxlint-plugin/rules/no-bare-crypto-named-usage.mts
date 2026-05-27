@@ -60,6 +60,120 @@ const CRYPTO_NAMED_EXPORTS = new Set([
   'webcrypto',
 ])
 
+/**
+ * Collect the names bound by a single statement-list element (a declaration).
+ * Covers the forms that can shadow a crypto export name in practice: `const` /
+ * `let` / `var` declarators (incl. simple destructuring), function + class
+ * declarations. Not exhaustive ESTree binding analysis — just enough to tell a
+ * local variable named `hash` apart from a bare `node:crypto` export
+ * reference.
+ */
+export function collectDeclaredNames(stmt: AstNode, out: Set<string>): void {
+  if (!stmt || typeof stmt.type !== 'string') {
+    return
+  }
+  if (stmt.type === 'VariableDeclaration') {
+    const decls = Array.isArray(stmt.declarations) ? stmt.declarations : []
+    for (let i = 0, { length } = decls; i < length; i += 1) {
+      const id = decls[i]?.id
+      if (id?.type === 'Identifier' && typeof id.name === 'string') {
+        out.add(id.name)
+      } else if (id?.type === 'ObjectPattern') {
+        const props = Array.isArray(id.properties) ? id.properties : []
+        for (let j = 0, plen = props.length; j < plen; j += 1) {
+          const val = props[j]?.value
+          if (val?.type === 'Identifier' && typeof val.name === 'string') {
+            out.add(val.name)
+          }
+        }
+      } else if (id?.type === 'ArrayPattern') {
+        const els = Array.isArray(id.elements) ? id.elements : []
+        for (let j = 0, elen = els.length; j < elen; j += 1) {
+          const el = els[j]
+          if (el?.type === 'Identifier' && typeof el.name === 'string') {
+            out.add(el.name)
+          }
+        }
+      }
+    }
+    return
+  }
+  if (
+    (stmt.type === 'ClassDeclaration' || stmt.type === 'FunctionDeclaration') &&
+    stmt.id?.type === 'Identifier' &&
+    typeof stmt.id.name === 'string'
+  ) {
+    out.add(stmt.id.name)
+  }
+}
+
+/**
+ * Add the parameter names of a function-like node to `out`. Handles plain
+ * identifier params and the common `{ a }` / `[a]` / `a = default` / `...rest`
+ * wrappers — enough to recognize a param shadowing a crypto export name.
+ */
+export function collectParamNames(fn: AstNode, out: Set<string>): void {
+  const params = Array.isArray(fn?.params) ? fn.params : []
+  for (let i = 0, { length } = params; i < length; i += 1) {
+    let p = params[i]
+    if (p?.type === 'AssignmentPattern') {
+      p = p.left
+    }
+    if (p?.type === 'RestElement') {
+      p = p.argument
+    }
+    if (p?.type === 'Identifier' && typeof p.name === 'string') {
+      out.add(p.name)
+    }
+  }
+}
+
+/**
+ * Walk the ancestor chain from `node` and return true if `name` resolves to a
+ * binding declared in an enclosing scope (a local variable, function/class
+ * name, or function parameter) rather than to the bare `node:crypto` export.
+ * This is what stops the rule flagging a `const hash = ...; hash.update()`
+ * local as if `hash` were the crypto `hash` export.
+ */
+export function resolvesToLocalBinding(node: AstNode, name: string): boolean {
+  let current: AstNode = node
+  while (current) {
+    const parent: AstNode = current.parent
+    if (!parent) {
+      break
+    }
+    // Block / program / module scope: scan sibling statements for a binding.
+    if (
+      parent.type === 'BlockStatement' ||
+      parent.type === 'Program' ||
+      parent.type === 'StaticBlock'
+    ) {
+      const body = Array.isArray(parent.body) ? parent.body : []
+      const declared = new Set<string>()
+      for (let i = 0, { length } = body; i < length; i += 1) {
+        collectDeclaredNames(body[i], declared)
+      }
+      if (declared.has(name)) {
+        return true
+      }
+    }
+    // Function scope: its params bind names for the whole body.
+    if (
+      parent.type === 'ArrowFunctionExpression' ||
+      parent.type === 'FunctionDeclaration' ||
+      parent.type === 'FunctionExpression'
+    ) {
+      const declared = new Set<string>()
+      collectParamNames(parent, declared)
+      if (declared.has(name)) {
+        return true
+      }
+    }
+    current = parent
+  }
+  return false
+}
+
 const rule = {
   meta: {
     type: 'problem',
@@ -147,6 +261,12 @@ const rule = {
           ) &&
           (parent as { params: AstNode[] }).params.includes(node)
         ) {
+          return
+        }
+        // A local variable / param / function named like a crypto export (e.g.
+        // `const hash = crypto.createHash(...); hash.update(...)`) is a
+        // reference to that binding, not a bare export — don't flag or rewrite.
+        if (resolvesToLocalBinding(node, name)) {
           return
         }
         context.report({

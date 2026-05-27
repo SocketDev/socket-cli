@@ -60,13 +60,13 @@ To check `already-fixed`: read `git log` on the PR branch since the comment's `c
 - **Reply first, resolve second.** Resolving without a written reply leaves future readers blind.
 - **One commit per `real` finding.** Don't bundle. Conventional Commits: `fix(<scope>): address Bugbot finding on <file>:<line>`.
 - **Push after each fix; reply with the new commit SHA.** The reply cites the SHA, so the SHA must already be pushed.
-- **Propagate canonical fixes.** When the file lives under `.claude/hooks/`, `.claude/skills/`, or `.git-hooks/`, fix at `socket-wheelhouse/template/` first, then sync to consumers — drifting fleet copies is the larger bug.
+- **Propagate canonical fixes.** When the file lives under `.claude/hooks/`, `.claude/skills/`, or `.git-hooks/`, fix at `socket-wheelhouse/template/` first, then sync to consumers. Drifting fleet copies is the larger bug.
 
 ## When to use
 
-- **After `gh pr create`** — Bugbot reviews most PRs within ~1 minute.
-- **After pushing a Bugbot-related fix** — confirms the new HEAD didn't introduce new findings.
-- **Before merging** — sweep open Bugbot threads. CLAUDE.md merge protocol depends on threads being resolved (replied to, not necessarily approved).
+- **After `gh pr create`**: Bugbot reviews most PRs within ~1 minute.
+- **After pushing a Bugbot-related fix**: confirms the new HEAD didn't introduce new findings.
+- **Before merging**: sweep open Bugbot threads. CLAUDE.md merge protocol depends on threads being resolved (replied to, not necessarily approved).
 
 ## Success criteria
 

@@ -1,19 +1,19 @@
 ---
 name: auditing-gha-settings
-description: Audits a repo's GitHub Actions permissions + allowlist against the fleet baseline. Reports drift only — fixes are manual in Settings → Actions because flipping these silently is unsafe. Use when a CI failure looks like "action X is not allowed to be used", when onboarding a new fleet repo, or as a periodic fleet-wide health check.
+description: Audits a repo's GitHub Actions permissions + allowlist against the fleet baseline. Reports drift only. Fixes are manual in Settings → Actions because flipping these silently is unsafe. Use when a CI failure looks like "action X is not allowed to be used", when onboarding a new fleet repo, or as a periodic fleet-wide health check.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(gh:*), Bash(node:*), Bash(jq:*)
 ---
 
 # auditing-gha-settings
 
-Diff a fleet repo's GitHub Actions repository-level settings against the canonical baseline. Read-only — surfaces what to change, doesn't change it.
+Diff a fleet repo's GitHub Actions repository-level settings against the canonical baseline. Read-only: surfaces what to change, doesn't change it.
 
 ## When to use
 
-- **"action X is not allowed to be used" CI failure** — the allowlist is missing an entry, or the policy got flipped from `selected` to `local_only`.
-- **Onboarding a new fleet repo** — before the first CI run, confirm the new repo matches the baseline so the first push doesn't hit policy errors.
-- **Periodic fleet health check** — drift accumulates; somebody adds a workflow that needs a new action and silently flips `verified_allowed: true` to make it work instead of adding the explicit pattern.
+- **"action X is not allowed to be used" CI failure**: the allowlist is missing an entry, or the policy got flipped from `selected` to `local_only`.
+- **Onboarding a new fleet repo**: before the first CI run, confirm the new repo matches the baseline so the first push doesn't hit policy errors.
+- **Periodic fleet health check**: drift accumulates. Somebody adds a workflow that needs a new action and silently flips `verified_allowed: true` to make it work instead of adding the explicit pattern.
 
 ## What the baseline checks
 
@@ -43,7 +43,7 @@ The **canonical patterns** (every fleet repo must have all of these):
 - `depot/setup-action@*`
 - `github/codeql-action/upload-sarif@*`
 
-Extras beyond the canonical set are tolerated (reported as info, not failure). A repo may legitimately pin a one-off action — but each extra should map to a real consumer; orphans should be pruned.
+Extras beyond the canonical set are tolerated (reported as info, not failure). A repo may pin a one-off action, but each extra should map to a real consumer; orphans should be pruned.
 
 **Third-party actions are NOT on the allowlist.** Anything outside `actions/`, `github/`, and `depot/` should be ported to a hand-rolled composite under `SocketDev/socket-registry/.github/actions/` rather than added here. The current set of socket-registry composite replacements:
 
@@ -57,7 +57,7 @@ Extras beyond the canonical set are tolerated (reported as info, not failure). A
 | `softprops/action-gh-release`     | `create-gh-release`        |
 | `Swatinem/rust-cache`             | `setup-rust-cache`         |
 
-Note: `enabled: false` from the per-repo API does NOT mean Actions are disabled — it means the per-repo override is unset and org-level policy is in effect. The skill explains this in its output.
+Note: `enabled: false` from the per-repo API does NOT mean Actions are disabled. It means the per-repo override is unset and org-level policy is in effect. The skill explains this in its output.
 
 ## How to invoke
 
@@ -86,17 +86,17 @@ For machine-readable output (one finding per repo):
 
 ## How to fix the findings
 
-Each finding line names the exact toggle to flip. The fix is **manual**: the runner does not write — flipping these silently is a credible attack vector and should always be a human action.
+Each finding line names the exact toggle to flip. The fix is **manual**: the runner does not write. Flipping these silently is a credible attack vector and should always be a human action.
 
 Two paths:
 
-1.  **Web UI (preferred)** — Repo → Settings → Actions → General. The settings map 1:1 with the audit findings:
+1.  **Web UI (preferred)**: Repo → Settings → Actions → General. The settings map 1:1 with the audit findings:
     - "Allow enterprise, and select non-enterprise, actions and reusable workflows" → flips `allowed_actions` to `selected`.
     - Uncheck "Allow actions created by GitHub" → `github_owned_allowed: false`.
     - Uncheck "Allow Marketplace actions by verified creators" → `verified_allowed: false`.
-    - "Allow specified actions and reusable workflows" textarea — paste the canonical patterns list (one per line). Existing extras can stay; remove only ones with no consumer.
+    - "Allow specified actions and reusable workflows" textarea: paste the canonical patterns list (one per line). Existing extras can stay; remove only ones with no consumer.
 
-2.  **`gh api` PUT (admin-scoped tokens only)** — surfaced for completeness; prefer the UI:
+2.  **`gh api` PUT (admin-scoped tokens only)**: surfaced for completeness; prefer the UI:
 
         gh api -X PUT repos/<owner>/<repo>/actions/permissions \
           -F enabled=true -F allowed_actions=selected
@@ -106,14 +106,14 @@ Two paths:
           -f patterns_allowed[]='actions/cache/save@*' \
           # ...one -f per canonical pattern...
 
-    The whole-list replace semantics on the selected-actions endpoint mean **omitting a repo's existing extras drops them** — preserve them when relevant.
+    The whole-list replace semantics on the selected-actions endpoint mean **omitting a repo's existing extras drops them**. Preserve them when relevant.
 
 ## Anti-patterns
 
 - **Auto-PUT-ing the baseline from a script.** Don't. The settings affect every workflow on the repo and a wrong setting silently weakens supply-chain posture. The user runs the audit, the user fixes.
-- **Adding an action to the allowlist to make a one-off workflow happy.** First ask: should the workflow use a shared socket-registry workflow that already references an approved action? Adding entries to the canonical set means cascading them to every consumer org — a real commitment.
+- **Adding an action to the allowlist to make a one-off workflow happy.** First ask: should the workflow use a shared socket-registry workflow that already references an approved action? Adding entries to the canonical set means cascading them to every consumer org. A real commitment.
 - **Treating the audit as a security review.** It checks policy state, not workflow content. A workflow that uses an allowed action insecurely (e.g. `pull_request_target` + `actions/checkout` of untrusted ref) is invisible to this audit; that's `pull-request-target-guard`'s job.
 
 ## Companion: `greening-ci`
 
-If a CI failure shows `action <X> is not allowed by enterprise admin` or `not allowed to be used in this repository`, that's an allowlist gap — run this audit, fix the gap manually, then re-run `/green-ci` to confirm the build goes green.
+If a CI failure shows `action <X> is not allowed by enterprise admin` or `not allowed to be used in this repository`, that's an allowlist gap. Run this audit, fix the gap manually, then re-run `/green-ci` to confirm the build goes green.

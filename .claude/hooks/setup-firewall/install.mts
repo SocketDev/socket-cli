@@ -15,7 +15,7 @@
 
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { findApiToken } from '../setup-security-tools/lib/api-token.mts'
 import {

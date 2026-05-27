@@ -28,13 +28,17 @@ import noPlaceholders from './rules/no-placeholders.mts'
 import noProcessCwdInScriptsHooks from './rules/no-process-cwd-in-scripts-hooks.mts'
 import noPromiseRace from './rules/no-promise-race.mts'
 import noPromiseRaceInLoop from './rules/no-promise-race-in-loop.mts'
+import noSrcImportInTestExpect from './rules/no-src-import-in-test-expect.mts'
 import noStatusEmoji from './rules/no-status-emoji.mts'
+import noStructuredClonePreferJson from './rules/no-structured-clone-prefer-json.mts'
 import noSyncRmInTestLifecycle from './rules/no-sync-rm-in-test-lifecycle.mts'
 import noUnderscoreIdentifier from './rules/no-underscore-identifier.mts'
+import noWhichForLocalBin from './rules/no-which-for-local-bin.mts'
 import optionalExplicitUndefined from './rules/optional-explicit-undefined.mts'
 import personalPathPlaceholders from './rules/personal-path-placeholders.mts'
 import preferAsyncSpawn from './rules/prefer-async-spawn.mts'
 import preferCachedForLoop from './rules/prefer-cached-for-loop.mts'
+import preferEllipsisChar from './rules/prefer-ellipsis-char.mts'
 import preferEnvAsBoolean from './rules/prefer-env-as-boolean.mts'
 import preferExistsSync from './rules/prefer-exists-sync.mts'
 import preferFunctionDeclaration from './rules/prefer-function-declaration.mts'
@@ -44,10 +48,10 @@ import preferNonCapturingGroup from './rules/prefer-non-capturing-group.mts'
 import preferSafeDelete from './rules/prefer-safe-delete.mts'
 import preferSeparateTypeImport from './rules/prefer-separate-type-import.mts'
 import preferSpawnOverExecsync from './rules/prefer-spawn-over-execsync.mts'
+import preferStableSelfImport from './rules/prefer-stable-self-import.mts'
 import preferStaticTypeImport from './rules/prefer-static-type-import.mts'
 import preferUndefinedOverNull from './rules/prefer-undefined-over-null.mts'
 import socketApiTokenEnv from './rules/socket-api-token-env.mts'
-import noStructuredClonePreferJson from './rules/no-structured-clone-prefer-json.mts'
 import sortBooleanChains from './rules/sort-boolean-chains.mts'
 import sortEqualityDisjunctions from './rules/sort-equality-disjunctions.mts'
 import sortNamedImports from './rules/sort-named-imports.mts'
@@ -84,13 +88,17 @@ const plugin = {
     'no-process-cwd-in-scripts-hooks': noProcessCwdInScriptsHooks,
     'no-promise-race': noPromiseRace,
     'no-promise-race-in-loop': noPromiseRaceInLoop,
+    'no-src-import-in-test-expect': noSrcImportInTestExpect,
     'no-status-emoji': noStatusEmoji,
+    'no-structured-clone-prefer-json': noStructuredClonePreferJson,
     'no-sync-rm-in-test-lifecycle': noSyncRmInTestLifecycle,
     'no-underscore-identifier': noUnderscoreIdentifier,
+    'no-which-for-local-bin': noWhichForLocalBin,
     'optional-explicit-undefined': optionalExplicitUndefined,
     'personal-path-placeholders': personalPathPlaceholders,
     'prefer-async-spawn': preferAsyncSpawn,
     'prefer-cached-for-loop': preferCachedForLoop,
+    'prefer-ellipsis-char': preferEllipsisChar,
     'prefer-env-as-boolean': preferEnvAsBoolean,
     'prefer-exists-sync': preferExistsSync,
     'prefer-function-declaration': preferFunctionDeclaration,
@@ -100,10 +108,10 @@ const plugin = {
     'prefer-safe-delete': preferSafeDelete,
     'prefer-separate-type-import': preferSeparateTypeImport,
     'prefer-spawn-over-execsync': preferSpawnOverExecsync,
+    'prefer-stable-self-import': preferStableSelfImport,
     'prefer-static-type-import': preferStaticTypeImport,
     'prefer-undefined-over-null': preferUndefinedOverNull,
     'socket-api-token-env': socketApiTokenEnv,
-    'no-structured-clone-prefer-json': noStructuredClonePreferJson,
     'sort-boolean-chains': sortBooleanChains,
     'sort-equality-disjunctions': sortEqualityDisjunctions,
     'sort-named-imports': sortNamedImports,

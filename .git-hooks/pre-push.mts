@@ -16,21 +16,22 @@
 // Stdin format (provided by git): one push line per ref, each line:
 //   <local_ref> <local_sha> <remote_ref> <remote_sha>
 
-import { spawnSync } from 'node:child_process'
-import { existsSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 
-import { basename } from 'node:path'
+import path from 'node:path'
 import process from 'node:process'
 
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
   containsAiAttribution,
   git,
   gitLines,
-  readFileForScan,
   normalizePath,
+  readFileForScan,
   scanAwsKeys,
   scanCrossRepoPaths,
   scanGitHubTokens,
@@ -63,7 +64,7 @@ const checkSubmodules = (): number => {
   if (!existsSync('.gitmodules')) {
     return 0
   }
-  logger.info('Checking submodules are pristine...')
+  logger.info('Checking submodules are pristine…')
   let errors = 0
   const status = gitLines('submodule', 'status')
   for (const line of status) {
@@ -103,16 +104,31 @@ const computeRange = (
 ): string | null => {
   if (localRef.startsWith('refs/tags/')) {
     logger.info(`Skipping tag push: ${localRef}`)
-    return null
+    return undefined
   }
   if (localSha === ZERO_SHA) {
-    return null
+    return undefined
+  }
+
+  const refExists = (ref: string): boolean => {
+    const r = spawnSync('git', ['rev-parse', ref])
+    return r.status === 0
   }
 
   const defaultBranchOf = (remoteName: string): string => {
     const sym = git('symbolic-ref', `refs/remotes/${remoteName}/HEAD`).trim()
     if (sym) {
       return sym.replace(`refs/remotes/${remoteName}/`, '')
+    }
+    // symbolic-ref unset (rare — happens with shallow clones, partial
+    // fetches, freshly-init'd remotes). Try main → master → 'main'
+    // per CLAUDE.md default-branch resolution. Reversing the order
+    // would mispick during rename migrations.
+    if (refExists(`${remoteName}/main`)) {
+      return 'main'
+    }
+    if (refExists(`${remoteName}/master`)) {
+      return 'master'
     }
     return 'main'
   }
@@ -124,18 +140,13 @@ const computeRange = (
     return result.status === 0
   }
 
-  const refExists = (ref: string): boolean => {
-    const r = spawnSync('git', ['rev-parse', ref])
-    return r.status === 0
-  }
-
   if (remoteSha === ZERO_SHA) {
     // New branch — compare against remote default branch.
     const def = defaultBranchOf(remote)
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
       logger.success('Skipping validation (no baseline to compare against)')
-      return null
+      return undefined
     }
     return `${baseRef}..${localSha}`
   }
@@ -147,17 +158,188 @@ const computeRange = (
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
       logger.success('Skipping validation (no baseline for force-push)')
-      return null
+      return undefined
     }
     return `${baseRef}..${localSha}`
   }
   return `${remoteSha}..${localSha}`
 }
 
+// Scans every commit in the range to require a verified signature
+// when pushing to a protected ref (default branch). Block on `N`
+// (no signature) and `B` (bad/unverifiable) — but allow other
+// markers like `G` (good GPG sig), `U` (good GPG sig, unknown trust),
+// `E` (missing-key but otherwise valid), `X` (good signature on
+// expired key), `Y`/`R` (revoked/expired key with good signature).
+//
+// Bypass (exceptional only): prefix the push command with the
+// SOCKET_PRE_PUSH_ALLOW_UNSIGNED env var:
+//   SOCKET_PRE_PUSH_ALLOW_UNSIGNED=1 git push origin main
+// One-shot — do not persist in shell rc.
+//
+// Why pre-push and not just rely on GitHub branch protection? The
+// fleet enforces branch protection too (lint-github-settings.mts
+// audits `required_signatures: true`), but a local pre-push fail
+// gives faster feedback (no round-trip to GitHub) and catches the
+// case where branch protection is being set up but not yet active
+// on a freshly-created fleet repo.
+const SIGNED_PUSH_BYPASS_ENV = 'SOCKET_PRE_PUSH_ALLOW_UNSIGNED'
+
+const readSignedPushBypassActive = (): boolean => {
+  // Pre-push runs in git's own context — no Claude Code transcript
+  // path is available. The bypass is an explicit env var the user
+  // sets on the failing push: `SOCKET_PRE_PUSH_ALLOW_UNSIGNED=1 git
+  // push origin main`. One-shot semantics: env var is not persisted.
+  return Boolean(process.env[SIGNED_PUSH_BYPASS_ENV])
+}
+
+// Parse the SSH allowed_signers file referenced by
+// `git config --get gpg.ssh.allowedSignersFile`. Returns the set of
+// public-key BLOBS (the same format `git log --format=%GK` emits for
+// SSH-signed commits — `<key-type> <base64-key>`).
+//
+// Returns an empty set if:
+//   - gpg.format isn't 'ssh' (allowed-signers only applies to SSH-format)
+//   - gpg.ssh.allowedSignersFile is unset
+//   - the file doesn't exist or can't be read
+// An empty set means "don't enforce" — the %G? marker check alone
+// remains active. This degrades gracefully on first install before
+// the user has set up allowed_signers.
+const readAllowedSignerKeys = (): Set<string> => {
+  const out = new Set<string>()
+  try {
+    const fmt = git('config', '--get', 'gpg.format').trim()
+    if (fmt !== 'ssh') {
+      return out
+    }
+    const file = git('config', '--get', 'gpg.ssh.allowedSignersFile').trim()
+    if (!file) {
+      return out
+    }
+    const expanded = file.startsWith('~')
+      ? file.replace(/^~/, process.env['HOME'] ?? '')
+      : file
+    if (!existsSync(expanded)) {
+      return out
+    }
+    // allowed_signers file format: `<principal> [<options>] <key-type> <base64-key>`
+    // %GK emits `<key-type> <base64-key>` (no principal). We extract
+    // the last two whitespace-separated tokens of each line.
+    const text = readFileSync(expanded, 'utf8')
+    for (const rawLine of text.split('\n')) {
+      const line = rawLine.trim()
+      if (!line || line.startsWith('#')) {
+        continue
+      }
+      const tokens = line.split(/\s+/)
+      if (tokens.length < 3) {
+        continue
+      }
+      const keyType = tokens[tokens.length - 2]!
+      const keyBlob = tokens[tokens.length - 1]!
+      out.add(`${keyType} ${keyBlob}`)
+    }
+  } catch {
+    // best-effort; absence of allowed-signers shouldn't crash the hook
+  }
+  return out
+}
+
+const scanSignedCommits = (
+  range: string,
+  remoteRef: string,
+  bypassActive: boolean,
+): number => {
+  // Only enforce on default-branch refs (main / master). Feature
+  // branches and topic branches can stay unsigned during development;
+  // signing is required at the point of landing on the protected ref.
+  const refBase = remoteRef.replace(/^refs\/heads\//, '')
+  if (refBase !== 'main' && refBase !== 'master') {
+    return 0
+  }
+  logger.info('Checking commit signatures…')
+  // %G? — signature verification marker (G/U/E/X/Y/R/N/B).
+  // %GK — signing key fingerprint (empty if unsigned).
+  // %GS — signer name (from key user-id).
+  // Cross-check %GK against gpg.ssh.allowedSignersFile when configured
+  // and `gpg.format = ssh`. For gpg-format signatures, %G? alone
+  // reflects the local keyring's trust, which is sufficient for our
+  // threat model (the attacker would need to control the dev's
+  // ~/.gnupg, at which point the local box is fully owned).
+  const lines = gitLines('log', '--format=%H %G? %GK', range)
+  const allowedSigners = readAllowedSignerKeys()
+  let errors = 0
+  const unsigned: string[] = []
+  const unauthorized: string[] = []
+  for (const line of lines) {
+    const parts = line.split(' ')
+    const sha = parts[0]
+    const marker = parts[1]
+    const signerKey = parts.slice(2).join(' ').trim()
+    if (!sha || !marker) {
+      continue
+    }
+    // `N` = no signature. `B` = bad signature. Both block.
+    if (marker === 'B' || marker === 'N') {
+      unsigned.push(sha)
+      errors++
+      continue
+    }
+    // Allowed-signers cross-check (SSH-signed commits only). `G`
+    // means git verified the signature against SOME key it trusts —
+    // but "any trusted key" includes attacker-controlled keys on a
+    // compromised dev machine. The authorized-signer file pins down
+    // which keys we accept for the protected branch.
+    if (
+      allowedSigners.size > 0 &&
+      signerKey &&
+      !allowedSigners.has(signerKey)
+    ) {
+      unauthorized.push(`${sha} (signed by ${signerKey.slice(0, 16)}…)`)
+      errors++
+    }
+  }
+  if (unauthorized.length > 0) {
+    logger.error(
+      `${unauthorized.length} commit(s) signed by a key NOT in gpg.ssh.allowedSignersFile:`,
+    )
+    for (let i = 0, { length } = unauthorized; i < length; i += 1) {
+      const u = unauthorized[i]!
+      logger.error(`  ${u}`)
+    }
+  }
+  if (errors === 0) {
+    return 0
+  }
+  if (bypassActive) {
+    logger.warn(
+      `${errors} unsigned commit(s) being pushed to ${refBase} — allowed by bypass phrase.`,
+    )
+    return 0
+  }
+  logger.fail(`${errors} unsigned commit(s) being pushed to ${refBase}.`)
+  for (const sha of unsigned.slice(0, 5)) {
+    const oneline = git('log', '-1', '--oneline', sha)
+    logger.info(`  - ${oneline}`)
+  }
+  if (unsigned.length > 5) {
+    logger.info(`  ... and ${unsigned.length - 5} more`)
+  }
+  logger.info('')
+  logger.info('Fix: rebase + re-sign the commits.')
+  logger.info(`  git rebase --exec 'git commit --amend --no-edit -S' <base>`)
+  logger.info('')
+  logger.info(
+    'Bypass (exceptional only): prefix the push with ' +
+      `\`${SIGNED_PUSH_BYPASS_ENV}=1\`. One-shot; do not persist in shell rc.`,
+  )
+  return errors
+}
+
 // Scans every commit in the range for AI attribution in commit
 // messages.
 const scanCommitMessages = (range: string): number => {
-  logger.info('Checking commit messages for AI attribution...')
+  logger.info('Checking commit messages for AI attribution…')
   const shas = gitLines('rev-list', range)
   let errors = 0
   for (const sha of shas) {
@@ -193,7 +375,7 @@ const scanCommitMessages = (range: string): number => {
 
 // Scans changed files in the range for secrets, keys, and leaks.
 const scanFilesInRange = (range: string): number => {
-  logger.info('Checking files for security issues...')
+  logger.info('Checking files for security issues…')
   // Normalize to POSIX forward slashes — same reason as pre-commit.mts.
   const changed = gitLines('diff', '--name-only', range).map(normalizePath)
   let errors = 0
@@ -203,17 +385,17 @@ const scanFilesInRange = (range: string): number => {
   // Best-effort current repo name — used by cross-repo scanner to
   // avoid flagging a repo's own paths.
   const repoTopline = gitLines('rev-parse', '--show-toplevel')[0] ?? ''
-  const currentRepoName = repoTopline ? basename(repoTopline) : undefined
+  const currentRepoName = repoTopline ? path.basename(repoTopline) : undefined
 
   // .env files at any depth — match commit-msg.mts and pre-commit.mts.
   // Allow .env.example, .env.test, .env.precommit (templates / tracked
   // placeholders); block bare .env / .env.local / .env.production /
   // anything else regardless of directory depth.
   const envHits = changed.filter(f => {
-    const base = basename(f)
+    const base = path.basename(f)
     return (
       /^\.env(\.[^/]+)?$/.test(base) &&
-      !/^\.env\.(example|test|precommit)$/.test(base)
+      !/^\.env\.(example|precommit|test)$/.test(base)
     )
   })
   if (envHits.length > 0) {
@@ -345,7 +527,7 @@ const scanFilesInRange = (range: string): number => {
           }
         }
         logger.info(
-          'Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger`. ' +
+          'Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger/default`. ' +
             'For documentation lines that need the literal call, append ' +
             `the marker \`${socketHookMarkerFor(file, 'logger')}\`.`,
         )
@@ -390,7 +572,7 @@ const scanFilesInRange = (range: string): number => {
 }
 
 const main = async (): Promise<number> => {
-  logger.info('Running mandatory pre-push validation...')
+  logger.info('Running mandatory pre-push validation…')
 
   const submoduleErrors = checkSubmodules()
   if (submoduleErrors > 0) {
@@ -404,9 +586,13 @@ const main = async (): Promise<number> => {
   let totalErrors = 0
   const refLines = splitLines(stdin.trim()).filter(Boolean)
 
+  // Bypass for the signed-commits scan is evaluated once per push:
+  // a single phrase authorizes one push regardless of ref count.
+  const signedBypassActive = readSignedPushBypassActive()
+
   for (const refLine of refLines) {
-    const [localRef, localSha, , remoteSha] = refLine.split(/\s+/)
-    if (!localRef || !localSha || !remoteSha) {
+    const [localRef, localSha, remoteRef, remoteSha] = refLine.split(/\s+/)
+    if (!localRef || !localSha || !remoteRef || !remoteSha) {
       continue
     }
     const range = computeRange(remote, localRef, localSha, remoteSha)
@@ -421,6 +607,7 @@ const main = async (): Promise<number> => {
     }
 
     totalErrors += scanCommitMessages(range)
+    totalErrors += scanSignedCommits(range, remoteRef, signedBypassActive)
     totalErrors += scanFilesInRange(range)
   }
 

@@ -40,29 +40,12 @@
 
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { FLEET_REPO_NAMES } from '../_shared/fleet-repos.mts'
 import { readStdin } from '../_shared/transcript.mts'
 
 const logger = getDefaultLogger()
-
-const FLEET_REPO_NAMES = [
-  'claude-code',
-  'skills',
-  'socket-addon',
-  'socket-btm',
-  'socket-cli',
-  'socket-lib',
-  'socket-packageurl-js',
-  'socket-registry',
-  'socket-wheelhouse',
-  'socket-sdk-js',
-  'socket-sdxgen',
-  'socket-stuie',
-  'socket-vscode',
-  'socket-webext',
-  'ultrathink',
-] as const
 
 const FLEET_RE_FRAGMENT = FLEET_REPO_NAMES.join('|')
 

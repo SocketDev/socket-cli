@@ -22,13 +22,14 @@
  *     caller is async-capable. Reporting only.
  */
 
+import { makeBypassChecker } from '../lib/comment-markers.mts'
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 const FLAGGED_PROPERTIES = new Set(['SOCKET_API_KEY', 'SOCKET_API_TOKEN'])
 
 const BYPASS_RE = /socket-api-token-getter:\s*allow direct-env/
 
-function isProcessEnv(node: AstNode): boolean {
+export function isProcessEnv(node: AstNode): boolean {
   if (node.type !== 'MemberExpression') {
     return false
   }
@@ -69,10 +70,6 @@ const rule = {
   },
 
   create(context: RuleContext) {
-    const sourceCode = context.getSourceCode
-      ? context.getSourceCode()
-      : context.sourceCode
-
     const filename =
       (context as { filename?: string | undefined }).filename ??
       (
@@ -84,23 +81,7 @@ const rule = {
       return {}
     }
 
-    function hasBypassComment(node: AstNode): boolean {
-      const comments = sourceCode.getCommentsBefore?.(node) ?? []
-      for (let i = 0, { length } = comments; i < length; i += 1) {
-        const c = comments[i]!
-        if (BYPASS_RE.test((c as { value?: string | undefined }).value ?? '')) {
-          return true
-        }
-      }
-      const trailing = sourceCode.getCommentsAfter?.(node) ?? []
-      for (let i = 0, { length } = trailing; i < length; i += 1) {
-        const c = trailing[i]!
-        if (BYPASS_RE.test((c as { value?: string | undefined }).value ?? '')) {
-          return true
-        }
-      }
-      return false
-    }
+    const hasBypassComment = makeBypassChecker(context, BYPASS_RE)
 
     function reportName(node: AstNode, name: string) {
       if (hasBypassComment(node)) {

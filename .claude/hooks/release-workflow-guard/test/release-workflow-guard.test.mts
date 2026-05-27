@@ -177,6 +177,26 @@ describe('release-workflow-guard hook', () => {
       const r = await runHook('git fetch && gh workflow run release.yml')
       assert.equal(r.code, 2)
     })
+
+    it('gh workflow run with value flags BEFORE the target', async () => {
+      // Parser skips each value-taking flag + its value, so the target
+      // is found wherever it sits in the arg list.
+      const r = await runHook(
+        'gh workflow run --ref main -f mode=prod release.yml',
+      )
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /release\.yml/)
+    })
+
+    it('blocks an obfuscated `$(echo gh) workflow run` dispatch', async () => {
+      // shell-quote strands `workflow` as the binary when `gh` is
+      // produced by a substitution. The guard treats that shape as a
+      // dispatch too — a security guard must block-the-default on an
+      // obfuscated `gh`, not wave it through.
+      const r = await runHook('$(echo gh) workflow run release.yml')
+      assert.equal(r.code, 2)
+      assert.match(r.stderr, /release\.yml/)
+    })
   })
 
   describe('allows benign commands', () => {

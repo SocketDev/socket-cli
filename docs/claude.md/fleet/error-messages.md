@@ -39,10 +39,10 @@ re-running the tool. Give each ingredient its own words.
 
 Breakdown:
 
-- **What**: `is missing "filename"` — the rule is "each part has a filename".
-- **Where**: `tour.json: part 3 ("Parsing & Normalization")` — file + record + human label.
+- **What**: `is missing "filename"`. The rule is "each part has a filename".
+- **Where**: `tour.json: part 3 ("Parsing & Normalization")`. File + record + human label.
 - **Saw vs. wanted**: saw = missing; wanted = a single-word lowercase filename, with `"parsing"` as a concrete model.
-- **Fix**: `Add … to this part` — imperative, specific.
+- **Fix**: `Add … to this part`. Imperative, specific.
 
 The trailing `to route /<slug>/part/3 at publish time` is optional. Include a _why_ clause only when the rule is non-obvious. Skip it for rules the reader already knows (e.g. "names can't start with an underscore").
 

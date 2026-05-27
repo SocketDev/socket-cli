@@ -96,6 +96,16 @@ interface RepoApiPayload {
 
 interface BranchProtectionPayload {
   required_signatures?: { enabled?: boolean | undefined } | undefined
+  required_pull_request_reviews?:
+    | {
+        required_approving_review_count?: number | undefined
+        require_code_owner_reviews?: boolean | undefined
+        dismiss_stale_reviews?: boolean | undefined
+      }
+    | undefined
+  allow_force_pushes?: { enabled?: boolean | undefined } | undefined
+  allow_deletions?: { enabled?: boolean | undefined } | undefined
+  enforce_admins?: { enabled?: boolean | undefined } | undefined
 }
 
 /**
@@ -542,7 +552,12 @@ function severityOverride(
   // security, downgrade branch-protection findings to warn.
   if (
     disableGhAS &&
-    (ruleKey === 'branch-protection-exists' ||
+    (ruleKey === 'branch-protection-allow-deletions' ||
+      ruleKey === 'branch-protection-allow-force-pushes' ||
+      ruleKey === 'branch-protection-dismiss-stale-reviews' ||
+      ruleKey === 'branch-protection-enforce-admins' ||
+      ruleKey === 'branch-protection-exists' ||
+      ruleKey === 'branch-protection-required-pr-reviews' ||
       ruleKey === 'branch-protection-required-signatures')
   ) {
     return 'warn'
@@ -699,22 +714,120 @@ function evaluate(
       fixUrl: branchesUrl,
       fixable: false,
     })
-  } else if (apiProtection.required_signatures?.enabled !== true) {
-    findings.push({
-      rule: 'main branch protection: required_signatures must be enabled',
-      severity: severityOverride(
-        'branch-protection-required-signatures',
-        customProps,
-      ),
-      current: apiProtection.required_signatures?.enabled ?? false,
-      expected: true,
-      fixUrl: branchesUrl,
-      // PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures
-      // is the endpoint; this script's --fix doesn't auto-apply it
-      // because rewriting branch protection rules can clobber custom
-      // status-check requirements set by the maintainer. Manual.
-      fixable: false,
-    })
+  } else {
+    // Required signatures.
+    if (apiProtection.required_signatures?.enabled !== true) {
+      findings.push({
+        rule: 'main branch protection: required_signatures must be enabled',
+        severity: severityOverride(
+          'branch-protection-required-signatures',
+          customProps,
+        ),
+        current: apiProtection.required_signatures?.enabled ?? false,
+        expected: true,
+        fixUrl: branchesUrl,
+        // PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures
+        // is the endpoint; this script's --fix doesn't auto-apply it
+        // because rewriting branch protection rules can clobber custom
+        // status-check requirements set by the maintainer. Manual.
+        fixable: false,
+      })
+    }
+    // Required PR reviews. Direct pushes to main are forbidden under
+    // the fleet's standard policy. At least 1 approving review,
+    // dismiss stale reviews on new pushes. Code-owner enforcement
+    // is opt-in per repo (some repos don't have a CODEOWNERS file).
+    const prReviews = apiProtection.required_pull_request_reviews
+    if (!prReviews) {
+      findings.push({
+        rule: 'main branch protection: required_pull_request_reviews must be enabled',
+        severity: severityOverride(
+          'branch-protection-required-pr-reviews',
+          customProps,
+        ),
+        current: undefined,
+        expected:
+          '{ required_approving_review_count: 1, dismiss_stale_reviews: true }',
+        fixUrl: branchesUrl,
+        fixable: false,
+      })
+    } else {
+      if ((prReviews.required_approving_review_count ?? 0) < 1) {
+        findings.push({
+          rule: 'main branch protection: required_approving_review_count must be ≥ 1',
+          severity: severityOverride(
+            'branch-protection-required-pr-reviews',
+            customProps,
+          ),
+          current: prReviews.required_approving_review_count ?? 0,
+          expected: '≥ 1',
+          fixUrl: branchesUrl,
+          fixable: false,
+        })
+      }
+      if (prReviews.dismiss_stale_reviews !== true) {
+        findings.push({
+          rule: 'main branch protection: dismiss_stale_reviews must be enabled',
+          severity: severityOverride(
+            'branch-protection-dismiss-stale-reviews',
+            customProps,
+          ),
+          current: prReviews.dismiss_stale_reviews ?? false,
+          expected: true,
+          fixUrl: branchesUrl,
+          fixable: false,
+        })
+      }
+    }
+    // Force pushes — must be disabled. A force push to main is the
+    // recovery-from-bad-state pattern that also enables stolen-token
+    // attacks (rewrite history, push back).
+    if (apiProtection.allow_force_pushes?.enabled === true) {
+      findings.push({
+        rule: 'main branch protection: allow_force_pushes must be disabled',
+        severity: severityOverride(
+          'branch-protection-allow-force-pushes',
+          customProps,
+        ),
+        current: true,
+        expected: false,
+        fixUrl: branchesUrl,
+        fixable: false,
+      })
+    }
+    // Branch deletion — must be disabled. The default branch shouldn't
+    // be deletable via the API (separate concern from regular
+    // branch cleanup).
+    if (apiProtection.allow_deletions?.enabled === true) {
+      findings.push({
+        rule: 'main branch protection: allow_deletions must be disabled',
+        severity: severityOverride(
+          'branch-protection-allow-deletions',
+          customProps,
+        ),
+        current: true,
+        expected: false,
+        fixUrl: branchesUrl,
+        fixable: false,
+      })
+    }
+    // Enforce admins — must be enabled. Without this, repo admins
+    // can bypass every other branch-protection rule. The whole
+    // point of branch protection is to apply uniformly; admin
+    // bypass undermines it.
+    if (apiProtection.enforce_admins?.enabled !== true) {
+      findings.push({
+        rule: 'main branch protection: enforce_admins must be enabled',
+        severity: severityOverride(
+          'branch-protection-enforce-admins',
+          customProps,
+        ),
+        current: apiProtection.enforce_admins?.enabled ?? false,
+        expected: true,
+        fixUrl: branchesUrl,
+        fixable: false,
+      })
+    }
   }
 
   // Required apps. Each missing app gets one finding with the install URL.

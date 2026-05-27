@@ -36,25 +36,26 @@ them via the cheapest principled mechanism. Invoked directly via
 
 ## Phases
 
-| #   | Phase                | Outcome                                                                                                                        |
-| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Discover             | `gh api repos/{owner}/{repo}/dependabot/alerts?state=open`. Group by package + relationship (direct / transitive).             |
-| 2   | Classify             | Each alert → one of: `direct-fix` (bump `package.json`), `override-fix` (pnpm override for transitive), `dismiss-with-reason`. |
-| 3   | Apply direct fixes   | For each direct dep: `pnpm update <pkg>@<first-patched-version>` (or higher); commit per alert.                                |
-| 4   | Apply override fixes | For each transitive: add `pnpm.overrides[<pkg>]` to `package.json` pinning the patched range; `pnpm install`; commit per row.  |
-| 5   | Validate             | `pnpm run check --all` (interactive) or `pnpm run check --staged` (CI). Roll back any commit whose check fails.                |
-| 6   | Push                 | Per CLAUDE.md push policy — `git push origin <branch>`, fall back to PR on rejection. NEVER force-push.                        |
-| 7   | Verify resolution    | After push lands, `gh api .../dependabot/alerts` should show each fixed alert as `auto_dismissed` or `fixed`. Log remaining.   |
-| 8   | Report               | Per-alert table: alert # / pkg / severity / action taken / state.                                                              |
+| #   | Phase                | Outcome                                                                                                                                                                                                                                                           |
+| --- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Discover             | `gh api repos/{owner}/{repo}/dependabot/alerts?state=open`. Group by package + relationship (direct / transitive).                                                                                                                                                |
+| 2   | Classify             | Each alert → one of: `direct-fix` (bump the catalog / `package.json` pin), `override-fix` (pnpm override for transitive), `dismiss-with-reason`. Resolve the PIN TARGET = highest soaked release sharing `first_patched`'s major (see reference.md "Pin target"). |
+| 3   | Apply direct fixes   | For each direct dep: bump to the resolved exact pin version; commit per alert.                                                                                                                                                                                    |
+| 4   | Apply override fixes | For each transitive: add an EXACT pin to `overrides:` in **pnpm-workspace.yaml** (not `package.json`); `pnpm install`; commit per row.                                                                                                                            |
+| 5   | Validate             | `pnpm run check --all` (interactive) or `pnpm run check --staged` (CI). Roll back any commit whose check fails.                                                                                                                                                   |
+| 6   | Push                 | Per CLAUDE.md push policy: `git push origin <branch>`, fall back to PR on rejection. NEVER force-push.                                                                                                                                                            |
+| 7   | Verify resolution    | After push lands, `gh api .../dependabot/alerts` should show each fixed alert as `auto_dismissed` or `fixed`. Log remaining.                                                                                                                                      |
+| 8   | Report               | Per-alert table: alert # / pkg / severity / action taken / state.                                                                                                                                                                                                 |
 
 ## Hard requirements
 
-- **Clean tree on entry** — same rule as `updating` umbrella.
-- **One commit per alert** — `chore(security): bump <pkg> to <ver> (GHSA-XXXX)` or `chore(security): override <pkg> ~> <ver> (GHSA-XXXX)`.
-- **No `--no-verify`** — the soak / cooldown guard (`minimum-release-age-guard`) MUST be honored. If a patched version is inside the 7-day soak, the skill notes the alert as `awaiting-soak` and returns without modification.
-- **Conventional Commits** — `chore(security): <action>` (per CLAUDE.md _Commits & PRs_).
-- **Default-branch fallback** — never hard-code `main` (per CLAUDE.md _Default branch fallback_).
-- **GitHub auth** — assumes `gh auth status` returns OK. Token must have `security_events:read` + `repo` scopes. Personal `gh` login satisfies both.
+- **Clean tree on entry**: same rule as `updating` umbrella.
+- **One commit per alert**: `chore(security): bump <pkg> to <ver> (GHSA-XXXX)` or `chore(security): override <pkg> to <ver> (GHSA-XXXX)`. `<ver>` is an exact version, never a `^`/`>=`/`~` range.
+- **Exact pins, highest-soaked-in-major**: pin to the highest release sharing `first_patched_version`'s major that's past the 7-day soak — never a range, never an auto major-cross. Crossing a major requires an AI benignity check (socket-lib `spawnAiAgent`) that returns BENIGN (ESM-only / Node-floor / dropped deep-imports), and is then auto-applied **with a notice in the Phase-8 report**; a BREAKING or unavailable verdict requires `AskUserQuestion` signoff. See reference.md "Pin target".
+- **No `--no-verify`**: the soak / cooldown guard (`minimum-release-age-guard`) MUST be honored. If a patched version is inside the 7-day soak, the skill notes the alert as `awaiting-soak` and returns without modification.
+- **Conventional Commits**: `chore(security): <action>` (per CLAUDE.md _Commits & PRs_).
+- **Default-branch fallback**: never hard-code `main` (per CLAUDE.md _Default branch fallback_).
+- **GitHub auth**: assumes `gh auth status` returns OK. Token must have `security_events:read` + `repo` scopes. Personal `gh` login satisfies both.
 
 ## Success criteria
 
@@ -63,9 +64,7 @@ them via the cheapest principled mechanism. Invoked directly via
 - Working tree clean after the commit chain.
 - `pnpm run check` passes against the fix set.
 
-**Safety:** every commit is atomic and the skill can be interrupted at
-any phase. Resume by re-running — already-applied fixes show up as
-`auto_dismissed` and are skipped.
+**Safety:** every commit is atomic and the skill can be interrupted at any phase. Resume by re-running. Already-applied fixes show up as `auto_dismissed` and are skipped.
 
 Full bash, alert-shape reference, dismissal-reason taxonomy, and
 recovery procedures in [`reference.md`](reference.md).

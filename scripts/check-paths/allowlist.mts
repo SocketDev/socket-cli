@@ -11,7 +11,7 @@
  *   is OR'd so reformatting that shifts the line still matches via the hash.
  */
 
-import crypto from 'node:crypto'
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 

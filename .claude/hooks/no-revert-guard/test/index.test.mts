@@ -446,3 +446,128 @@ test('FLEET_SYNC=0 (explicit off) does NOT activate the allowlist', async () => 
   assert.strictEqual(result.code, 2)
   assert.ok(String(result.stderr).includes('Allow no-verify bypass'))
 })
+
+// ── Parser-enabled coverage (added with the shell-quote migration) ──
+
+test('destructive git in an && chain is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'echo backup && git reset --hard origin/main' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('destructive git after a cd is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'cd /repo; git clean -fdx' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('quoted "git reset --hard" in a commit message is NOT a revert', async () => {
+  const result = await runHook({
+    tool_input: {
+      command: 'git commit -m "document why git reset --hard is dangerous"',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('quoted "git push --force" in an echo is NOT a force-push', async () => {
+  const result = await runHook({
+    tool_input: { command: 'echo "never git push --force to main"' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('git clean -f is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git clean -f' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('git clean -xdf (bundled flags) is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git clean -xdf' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('git rm -rf is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git rm -rf old-dir' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('git checkout <ref> -- <path> is blocked (ref form)', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git checkout HEAD~1 -- src/foo.ts' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('git push --force-with-lease is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git push --force-with-lease origin main' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('git push -f is blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git push -f origin main' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+})
+
+test('plain git push (no force) is NOT blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git push origin main' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('git checkout <branch> (switch, no --) is NOT a revert', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git checkout main' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('git reset (soft, default) is NOT blocked', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git reset HEAD~1' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('git stash pop attributed to the revert rule (not stash rule)', async () => {
+  const result = await runHook({
+    tool_input: { command: 'git stash pop' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow revert bypass/)
+})
+
+test('a word ending in "git" is not a git command (e.g. legit)', async () => {
+  const result = await runHook({
+    tool_input: { command: 'echo legit && ls' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})

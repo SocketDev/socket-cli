@@ -23,6 +23,7 @@
 
 import process from 'node:process'
 
+import { commandsFor, invocationHasFlag } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface ToolInput {
@@ -70,7 +71,11 @@ export function hasWriteIntent(text: string): string | undefined {
 }
 
 export function isCodexBashCommand(command: string): boolean {
-  return /(?:^|[\s;&|(`])codex\b/.test(command)
+  // Parser-based: the binary at a command position is exactly `codex`.
+  // Rejects `codex-no-write-guard` (a path/identifier, not the binary) and
+  // a quoted "codex …" inside an arg to another command — both of which
+  // the old `codex\b` regex wrongly matched.
+  return commandsFor(command, 'codex').length > 0
 }
 
 async function main(): Promise<void> {
@@ -99,11 +104,18 @@ async function main(): Promise<void> {
 
   if (payload.tool_name === 'Bash') {
     const command = input.command ?? ''
-    if (isCodexBashCommand(command)) {
-      if (/(?:^|\s)(?:--write|-w)\b/.test(command)) {
+    const codexCommands = commandsFor(command, 'codex')
+    if (codexCommands.length > 0) {
+      if (invocationHasFlag(command, 'codex', ['--write', '-w'])) {
         blocked = { kind: 'bash', reason: '--write / -w flag' }
       } else {
-        const verb = hasWriteIntent(command)
+        // Check write-intent verbs only in the codex command's OWN args
+        // (the prompt), not the whole shell line — so a sibling command
+        // or a path containing a verb word doesn't trip the guard.
+        const codexArgText = codexCommands
+          .flatMap(c => c.args)
+          .join(' ')
+        const verb = hasWriteIntent(codexArgText)
         if (verb) {
           blocked = { kind: 'bash', reason: `write-intent verb "${verb}"` }
         }

@@ -6,9 +6,10 @@
  *   fleet-canonical pattern. Autofix: rewrites `getDefaultLogger().<method>` →
  *   `logger.<method>` AND inserts the missing pieces in one go:
  *
- *   1. `import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'` —
- *      appended after the last existing top-level import (or at the top of the
- *      file if there are none).
+ *   1. `import { getDefaultLogger } from
+ *      '@socketsecurity/lib-stable/logger/default'` — appended after the last
+ *      existing top-level import (or at the top of the file if there are
+ *      none).
  *   2. `const logger = getDefaultLogger()` — appended after the import block (so
  *      `logger` is hoisted at module scope). Each inline call site emits its
  *      own fix independently. ESLint's autofixer dedupes overlapping inserts,
@@ -21,7 +22,7 @@ import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const LOGGER_IMPORT_LINE =
-  "import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'"
+  "import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'"
 const LOGGER_HOIST_LINE = 'const logger = getDefaultLogger()'
 
 /**
@@ -57,7 +58,7 @@ const rule = {
       }
       summary = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib-stable/logger',
+        '@socketsecurity/lib-stable/logger/default',
         'getDefaultLogger',
         'logger',
       )

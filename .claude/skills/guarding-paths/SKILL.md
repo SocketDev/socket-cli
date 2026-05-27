@@ -1,13 +1,13 @@
 ---
 name: guarding-paths
-description: Audits and fixes path duplication in a Socket repo. Applies the strict "1 path, 1 reference" rule — every build/test/runtime/config path is constructed exactly once; everywhere else references the constructed value. Default mode finds and fixes; `check` mode reports only; `install` mode drops the gate + hook + rule into a fresh repo. Use when path drift surfaces from `pnpm check`, when a new sibling package needs path conventions, or when bootstrapping a fresh Socket repo.
+description: Audits and fixes path duplication in a Socket repo. Applies the strict "1 path, 1 reference" rule: every build/test/runtime/config path is constructed exactly once; everywhere else references the constructed value. Default mode finds and fixes; `check` mode reports only; `install` mode drops the gate + hook + rule into a fresh repo. Use when path drift surfaces from `pnpm check`, when a new sibling package needs path conventions, or when bootstrapping a fresh Socket repo.
 user-invocable: true
 allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(node scripts/check-paths:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(git:*)
 ---
 
 # guarding-paths
 
-**Mantra: 1 path, 1 reference.** A path is constructed exactly once; everywhere else references the constructed value. Re-constructing the same path twice is the violation; referencing the constructed value many times is fine.
+**Mantra: 1 path, 1 reference.** A path is constructed exactly once; everywhere else references the constructed value. Re-constructing the same path twice is the violation. Referencing the constructed value many times is fine.
 
 ## Modes
 
@@ -22,11 +22,11 @@ allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm r
 
 The strategy lives in three artifacts that ship together:
 
-1. **CLAUDE.md rule** — the mantra and detection rules in plain language. Every fleet repo's CLAUDE.md carries `## 1 path, 1 reference`. Synced from [`_shared/path-guard-rule.md`](../_shared/path-guard-rule.md).
-2. **Hook** — `.claude/hooks/path-guard/index.mts` runs `PreToolUse` on `Edit` / `Write` of `.mts` / `.cts` files. Blocks new violations at edit time.
-3. **Gate** — `scripts/check-paths.mts` runs in `pnpm check` (and CI). Whole-repo scan. Fails the build on any unsanctioned violation.
+1. **CLAUDE.md rule**: the mantra and detection rules in plain language. Every fleet repo's CLAUDE.md carries `## 1 path, 1 reference`. Synced from [`_shared/path-guard-rule.md`](../_shared/path-guard-rule.md).
+2. **Hook**: `.claude/hooks/path-guard/index.mts` runs `PreToolUse` on `Edit` / `Write` of `.mts` / `.cts` files. Blocks new violations at edit time.
+3. **Gate**: `scripts/check-paths.mts` runs in `pnpm check` (and CI). Whole-repo scan. Fails the build on any unsanctioned violation.
 
-The hook and gate share their stage / build-root / mode / sibling-package vocabulary via `.claude/hooks/path-guard/segments.mts` — a single canonical source. Adding a new stage segment or fleet package means editing one file; the two consumers can never drift on what counts as a build-output path.
+The hook and gate share their stage / build-root / mode / sibling-package vocabulary via `.claude/hooks/path-guard/segments.mts`: a single canonical source. Adding a new stage segment or fleet package means editing one file; the two consumers can never drift on what counts as a build-output path.
 
 This skill is the **audit-and-fix workflow** that makes a repo conform initially and validates conformance over time.
 
@@ -97,10 +97,10 @@ For Socket repos that don't yet have the gate:
 
 ## Allowlisting a finding
 
-Genuine exemptions are rare — most "false positives" should be reported as gate bugs. When needed, add an entry to `.github/paths-allowlist.yml`. Two ways to pin:
+Genuine exemptions are rare; most "false positives" should be reported as gate bugs. When needed, add an entry to `.github/paths-allowlist.yml`. Two ways to pin:
 
-- **`line:`** — exact line number. Strict; a single-line edit above shifts the entry off-target and the finding re-surfaces.
-- **`snippet_hash:`** — 12-char SHA-256 prefix of the offending snippet (whitespace-normalized). Drift-resistant — survives reformatting, but any content-changing edit invalidates it. Get the hash via `pnpm run check:paths --show-hashes`.
+- **`line:`**: exact line number. Strict; a single-line edit above shifts the entry off-target and the finding re-surfaces.
+- **`snippet_hash:`**: 12-char SHA-256 prefix of the offending snippet (whitespace-normalized). Drift-resistant: survives reformatting, but any content-changing edit invalidates it. Get the hash via `pnpm run check:paths --show-hashes`.
 
 Both may be set — either matching is sufficient. Prefer `snippet_hash` over raw `line:` when the exemption is expected to outlive routine reformatting; prefer `line:` when you specifically _want_ the entry to fall off after any nearby edit.
 
@@ -110,11 +110,11 @@ Both may be set — either matching is sufficient. Prefer `snippet_hash` over ra
 - **Re-run the gate before each commit.** A green `pnpm run check:paths` is the entry criterion.
 - **Don't leave a partial fix uncommitted across phases.** Commit what's done on `chore/paths-audit-wip` if the audit gets interrupted.
 
-Conventional commit shape: `fix(paths): rule A — extract foo build paths into scripts/paths.mts`.
+Conventional commit shape: `fix(paths): rule A: extract foo build paths into scripts/paths.mts`.
 
 ## Tie-in with `scanning-quality`
 
-`/scanning-quality` calls `pnpm run check:paths --json` as one of its sub-scans and surfaces findings in its A-F report. The full audit-and-fix workflow lives here; `scanning-quality` only _detects_ during periodic scans.
+`/scanning-quality` calls `pnpm run check:paths --json` as one of its sub-scans and surfaces findings in its A-F report. The full audit-and-fix workflow lives here. `scanning-quality` only _detects_ during periodic scans.
 
 ## Fix patterns
 

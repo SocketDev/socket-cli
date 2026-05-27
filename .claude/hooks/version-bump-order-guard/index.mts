@@ -24,6 +24,7 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
+import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface PreToolUsePayload {
@@ -39,9 +40,16 @@ const BYPASS_PHRASES = [
   'Allow versionbumporder bypass',
 ] as const
 
-// `git tag <name>` (also `git tag -a`, `git tag -s`, etc.). We want
-// version tags specifically (`vX.Y.Z`).
-const VERSION_TAG_RE = /\bgit\s+tag\b[^|;&\n]*\bv\d+\.\d+\.\d+\b/
+// `git tag <name>` (also `git tag -a`, `git tag -s`, etc.) creating a
+// version tag (`vX.Y.Z`). Parser-based: a real `git` command with a
+// `tag` arg and a version-shaped arg — so a quoted "git tag v1.2.3" in
+// a message or a sibling command's string isn't a false trigger.
+const VERSION_ARG_RE = /^v\d+\.\d+\.\d+$/
+function isVersionTagCommand(command: string): boolean {
+  return commandsFor(command, 'git').some(
+    c => c.args.includes('tag') && c.args.some(a => VERSION_ARG_RE.test(a)),
+  )
+}
 
 // Subject patterns that count as a "bump commit". Matches Keep-a-
 // Changelog style and Conventional Commits style.
@@ -66,7 +74,7 @@ async function main(): Promise<void> {
   if (typeof command !== 'string') {
     process.exit(0)
   }
-  if (!VERSION_TAG_RE.test(command)) {
+  if (!isVersionTagCommand(command)) {
     process.exit(0)
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {

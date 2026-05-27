@@ -1,8 +1,6 @@
 # Version bumps
 
-Companion to the `### Version bumps` rule in `template/CLAUDE.md`.
-The inline section gives the headline; this file is the ordered sequence,
-the CHANGELOG filter, and the rationale.
+Companion to the `### Version bumps` rule in `template/CLAUDE.md`. The inline section gives the headline. This file is the ordered sequence, the CHANGELOG filter, and the rationale.
 
 ## The sequence (order matters)
 
@@ -24,7 +22,7 @@ pnpm run check --all # type + lint + path gates
 If any step surfaces failures, fix them before continuing. Don't bump
 a broken tree.
 
-### 2. CHANGELOG entry — public-facing only
+### 2. CHANGELOG entry: public-facing only
 
 The new `## [X.Y.Z]` block describes what a downstream consumer needs
 to know to upgrade.
@@ -85,10 +83,7 @@ the user runs the publish workflow manually.
   matches `git describe --tags --exact-match HEAD` exactly at release
   time; downstream tooling that uses `git describe` for version
   detection sees clean output.
-- **The pre-bump prep wave catches drift consumers would hit on first
-  install.** Dependency drift, formatting drift, type drift — the
-  fleet check passes on your branch but breaks on a clean clone if
-  these aren't run before tagging.
+- **The pre-bump prep wave catches drift consumers would hit on first install.** Dependency drift, formatting drift, type drift; the fleet check passes on your branch but breaks on a clean clone if these aren't run before tagging.
 - **The public-facing-only filter is the difference between a
   changelog people read and a changelog people skip.** A 200-line
   block of `chore(wheelhouse)` entries trains downstream consumers to ignore
@@ -96,12 +91,6 @@ the user runs the publish workflow manually.
 
 ## See also
 
-- `.claude/hooks/version-bump-order-guard/` — enforces the
-  bump-at-tip + tag-after-bump ordering.
-- `.claude/hooks/release-workflow-guard/` — blocks `gh workflow run`
-  dispatches that aren't dry-run.
-- [`immutable-releases.md`](immutable-releases.md) — every GitHub
-  Release that lands as a result of this sequence ships immutable
-  (Sigstore release attestation, asset lock, tag protection).
-  The release workflow MUST use the 3-step draft → upload → publish
-  pattern; single-call `gh release create <tag> <files>` is forbidden.
+- `.claude/hooks/version-bump-order-guard/`: enforces the bump-at-tip + tag-after-bump ordering.
+- `.claude/hooks/release-workflow-guard/`: blocks `gh workflow run` dispatches that aren't dry-run.
+- [`immutable-releases.md`](immutable-releases.md): every GitHub Release that lands as a result of this sequence ships immutable (Sigstore release attestation, asset lock, tag protection). The release workflow MUST use the 3-step draft → upload → publish pattern; single-call `gh release create <tag> <files>` is forbidden.

@@ -61,12 +61,7 @@ Requires git ≥ 2.27 (for `--filter` + `--sparse` on `git clone`).
 
 ### 2. Runner: thin entry + modular guts
 
-The CLI entry (`<corpus>-<scope>-runner.mts`) stays under ~60 lines
-— it parses argv, resolves the binary, calls the harness/executor
-modules. Everything else lives in the sibling `<corpus>/` directory
-broken into ~6 modules. The split lets each piece have a single
-reason to change AND lets the pure modules be unit-tested in
-isolation.
+The CLI entry (`<corpus>-<scope>-runner.mts`) stays under ~60 lines. It parses argv, resolves the binary, calls the harness/executor modules. Everything else lives in the sibling `<corpus>/` directory broken into ~6 modules. The split lets each piece have a single reason to change AND lets the pure modules be unit-tested in isolation.
 
 Canonical module set:
 
@@ -79,9 +74,7 @@ Canonical module set:
 | `executor.mts`   | Spawn subprocesses, collect output, retry                               |
 | `report.mts`     | Format human-readable summary, exit-code policy                         |
 
-**The classifier is the highest-value module to extract** — get the
-result-bucketing logic wrong and the runner silently masks
-regressions. Keep it pure (no I/O, no globals).
+**The classifier is the highest-value module to extract.** Get the result-bucketing logic wrong and the runner silently masks regressions. Keep it pure (no I/O, no globals).
 
 ### 3. Integration vitest wrapper (auto-gate)
 
@@ -96,7 +89,7 @@ A ~20-line `.test.mts` under `test/integration/` that:
 // test/integration/<corpus>-<scope>.test.mts
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { resolveFinalBinary } from '../helpers/binary.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -170,19 +163,14 @@ harness,executor,report}.mts`.
    covering at minimum the classifier.
 6. `package.json` script: `"<corpus>:<scope>": "node test/scripts/<corpus>-<scope>-runner.mts"`.
 
-The runner should always exit non-zero on (a) unexpected failure
-(test not in allowlist that failed), or (b) stale allowlist (test in
-allowlist that now passes — a drift signal that needs cleanup, not
-silent acceptance).
+The runner should always exit non-zero on (a) unexpected failure (test not in allowlist that failed), or (b) stale allowlist (test in allowlist that now passes; a drift signal that needs cleanup, not silent acceptance).
 
 ## Reference implementations
 
 As of 2026-05, the closest-to-canonical implementations in the fleet:
 
-- `socket-btm/packages/temporal-infra/test/scripts/test262-temporal-runner.mts`
-  — best module split + unit-tested classifier.
-- `socket-btm/packages/node-smol-builder/test/scripts/wpt-streams-runner.mts`
-  — best integration wrapper shape.
+- `socket-btm/packages/temporal-infra/test/scripts/test262-temporal-runner.mts`: best module split + unit-tested classifier.
+- `socket-btm/packages/node-smol-builder/test/scripts/wpt-streams-runner.mts`: best integration wrapper shape.
 
 When in doubt, mirror temporal-infra's `test262/` subdirectory split.
 
@@ -205,10 +193,6 @@ When in doubt, mirror temporal-infra's `test262/` subdirectory split.
 
 ## Related skills + docs
 
-- `.claude/skills/running-test262/SKILL.md` — how to invoke runners
-  per repo.
-- [`untracked-by-default.md`](untracked-by-default.md) — adjacent
-  rules for vendored / build-copied trees.
-- [`parser-comments.md`](parser-comments.md) — lock-step comment
-  conventions for cross-language parser ports (relevant when a single
-  package has multiple language lanes, each with its own runner).
+- `.claude/skills/running-test262/SKILL.md`: how to invoke runners per repo.
+- [`untracked-by-default.md`](untracked-by-default.md): adjacent rules for vendored / build-copied trees.
+- [`parser-comments.md`](parser-comments.md): lock-step comment conventions for cross-language parser ports (relevant when a single package has multiple language lanes, each with its own runner).

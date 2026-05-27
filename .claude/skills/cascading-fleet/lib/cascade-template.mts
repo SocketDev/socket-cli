@@ -28,7 +28,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
 
@@ -46,7 +46,7 @@ if (!TEMPLATE_SHA) {
 
 const SCRIPT_DIR = import.meta.dirname
 const FLEET_REPOS_FILE = path.join(SCRIPT_DIR, 'fleet-repos.txt')
-const PROJECTS = process.env['PROJECTS'] || path.join(homedir(), 'projects')
+const PROJECTS = process.env['PROJECTS'] || path.join(os.homedir(), 'projects')
 // socket-hook: allow cross-repo
 const WH_SCRIPT = path.join(
   PROJECTS,

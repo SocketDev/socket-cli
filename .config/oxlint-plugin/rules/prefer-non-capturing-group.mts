@@ -60,7 +60,7 @@ const CAPTURE_USAGE_RES: readonly RegExp[] = [
   /\bRegExp\.\$\d\b/,
   // `match.groups.name` / `m.groups.name` — named-capture usage means
   // the author knows their captures matter; stay out.
-  /\b(?:match|result|m|res)\.groups\b/,
+  /\b(?:m|match|res|result)\.groups\b/,
   // `.replace(re, '...$1...')` — even if the replacement isn't a
   // string literal we matched above, the call signature suggests
   // capture-aware usage.

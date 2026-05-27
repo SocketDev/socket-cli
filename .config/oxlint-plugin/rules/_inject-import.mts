@@ -27,9 +27,10 @@ export type FixerOp = unknown
  *
  * Import detection ignores the specifier path: a file inside the lib package
  * itself imports `getDefaultLogger` from `'../logger'`, while a downstream repo
- * imports the same name from `'@socketsecurity/lib-stable/logger'`. Both
- * resolve to the same identifier; either should count as "already imported" so
- * the autofix doesn't inject a duplicate (and broken — see issue #64).
+ * imports the same name from `'@socketsecurity/lib-stable/logger/default'`.
+ * Both resolve to the same identifier; either should count as "already
+ * imported" so the autofix doesn't inject a duplicate (and broken — see issue
+ * #64).
  *
  * `specifier` is retained in the signature for backward compatibility but is no
  * longer used for the match decision. Callers may pass any truthy value

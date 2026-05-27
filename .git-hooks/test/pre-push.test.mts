@@ -6,10 +6,13 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { spawn, spawnSync } from 'node:child_process'
+import {
+  spawn,
+  spawnSync,
+} from '@socketsecurity/lib-stable/process/spawn/child'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { tmpdir } from 'node:os'
+import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -99,7 +102,9 @@ test('pre-push: clean commit + clean message passes', async () => {
       'export const X = 1\n',
       'feat: initial commit',
     )
-    const pushLine = `refs/heads/main ${sha} refs/heads/main ${ZERO_SHA}\n`
+    // Push to a topic branch — the signed-commit check exempts non-main
+    // refs since these test cases aren't about signing.
+    const pushLine = `refs/heads/topic ${sha} refs/heads/topic ${ZERO_SHA}\n`
     const { code } = await runHook(dir, pushLine)
     assert.strictEqual(code, 0)
   } finally {
@@ -136,7 +141,8 @@ test('pre-push: keeps prose mentioning Claude in context', async () => {
       'export const X = 1\n',
       'docs(claude): point at Claude Code best practices\n\nLinks the upstream guide that informs the .claude/ layout.',
     )
-    const pushLine = `refs/heads/main ${sha} refs/heads/main ${ZERO_SHA}\n`
+    // Topic branch — the signed-commit check exempts non-main refs.
+    const pushLine = `refs/heads/topic ${sha} refs/heads/topic ${ZERO_SHA}\n`
     const { code } = await runHook(dir, pushLine)
     assert.strictEqual(code, 0, 'legitimate Claude Code prose must pass')
   } finally {
@@ -156,6 +162,94 @@ test('pre-push: blocks commit introducing a personal-path leak', async () => {
     const pushLine = `refs/heads/main ${sha} refs/heads/main ${ZERO_SHA}\n`
     const { code } = await runHook(dir, pushLine)
     assert.notStrictEqual(code, 0)
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
+test('pre-push: unsigned commit pushed to main is blocked', async () => {
+  const dir = setupRepo()
+  try {
+    const sha = commit(
+      dir,
+      'foo.ts',
+      'export const X = 1\n',
+      'feat: clean commit',
+    )
+    // Pushing to refs/heads/main with unsigned commits → block.
+    const pushLine = `refs/heads/main ${sha} refs/heads/main ${ZERO_SHA}\n`
+    const { code, stderr } = await runHook(dir, pushLine)
+    assert.notStrictEqual(code, 0, 'unsigned push to main must block')
+    assert.match(stderr, /unsigned commit/i)
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
+test('pre-push: unsigned commit pushed to master is blocked', async () => {
+  const dir = setupRepo()
+  try {
+    const sha = commit(
+      dir,
+      'foo.ts',
+      'export const X = 1\n',
+      'feat: clean commit',
+    )
+    const pushLine = `refs/heads/master ${sha} refs/heads/master ${ZERO_SHA}\n`
+    const { code } = await runHook(dir, pushLine)
+    assert.notStrictEqual(code, 0, 'unsigned push to master must block')
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
+test('pre-push: unsigned commit pushed to topic branch is allowed', async () => {
+  const dir = setupRepo()
+  try {
+    const sha = commit(
+      dir,
+      'foo.ts',
+      'export const X = 1\n',
+      'feat: clean commit',
+    )
+    const pushLine = `refs/heads/feature ${sha} refs/heads/feature ${ZERO_SHA}\n`
+    const { code } = await runHook(dir, pushLine)
+    assert.strictEqual(
+      code,
+      0,
+      'topic branch push exempt from signed-commit gate',
+    )
+  } finally {
+    rmSync(dir, { force: true, recursive: true })
+  }
+})
+
+test('pre-push: SOCKET_PRE_PUSH_ALLOW_UNSIGNED=1 bypasses the check', async () => {
+  const dir = setupRepo()
+  try {
+    const sha = commit(
+      dir,
+      'foo.ts',
+      'export const X = 1\n',
+      'feat: emergency push',
+    )
+    const pushLine = `refs/heads/main ${sha} refs/heads/main ${ZERO_SHA}\n`
+    const child = spawn(process.execPath, [HOOK, 'origin', dir], {
+      cwd: dir,
+      stdio: 'pipe',
+      env: { ...process.env, SOCKET_PRE_PUSH_ALLOW_UNSIGNED: '1' },
+    })
+    let stderr = ''
+    child.stderr.on('data', chunk => {
+      stderr += chunk.toString('utf8')
+    })
+    child.stdin.end(pushLine)
+    const code = await new Promise<number>(resolve => {
+      child.on('exit', c => resolve(c ?? 0))
+    })
+    assert.strictEqual(code, 0, 'bypass env should allow the unsigned push')
+    // The hook prints a warning even when bypassing — confirm it.
+    assert.match(stderr, /allowed by bypass/i)
   } finally {
     rmSync(dir, { force: true, recursive: true })
   }

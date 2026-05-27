@@ -13,11 +13,11 @@ describe('socket/prefer-async-spawn', () => {
       valid: [
         {
           name: 'async spawn import from lib',
-          code: 'import { spawn } from "@socketsecurity/lib-stable/spawn"\nawait spawn("ls")\n',
+          code: 'import { spawn } from "@socketsecurity/lib-stable/process/spawn/child"\nawait spawn("ls")\n',
         },
         {
           name: 'spawnSync import from lib (sync-aware)',
-          code: 'import { spawnSync } from "@socketsecurity/lib-stable/spawn"\nspawnSync("ls")\n',
+          code: 'import { spawnSync } from "@socketsecurity/lib-stable/process/spawn/child"\nspawnSync("ls")\n',
         },
         {
           name: 'bypass comment on import',
@@ -40,7 +40,7 @@ describe('socket/prefer-async-spawn', () => {
           // The rule's autofix emits single quotes for the rewritten
           // import source; the call site retains its original quoting.
           output:
-            'import { spawnSync } from \'@socketsecurity/lib-stable/spawn\'\nspawnSync("ls")\n',
+            'import { spawnSync } from \'@socketsecurity/lib-stable/process/spawn/child\'\nspawnSync("ls")\n',
           errors: [{ messageId: 'importBanned' }],
         },
         {

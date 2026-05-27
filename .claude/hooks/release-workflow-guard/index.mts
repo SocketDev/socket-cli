@@ -75,7 +75,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { buildQuoteMask } from '../_shared/bash-quote-mask.mts'
+import { commandsFor, parseCommands } from '../_shared/shell-command.mts'
 import { bypassPhraseRemaining } from '../_shared/transcript.mts'
 
 type ToolInput = {
@@ -216,16 +216,26 @@ export function countPriorDispatches(
   return count
 }
 
-// `gh workflow run <id-or-file>` / `gh workflow dispatch <id-or-file>`.
-// The captured workflow argument is reported back so the user can
-// see what was blocked.
-const GH_WORKFLOW_DISPATCH_RE =
-  /\bgh\s+workflow\s+(?:dispatch|run)\b(?:\s+(?:--field|--ref|--repo|-f)\s+\S+)*\s+(['"]?)([^\s'"]+)\1/g
+// Flags on `gh workflow run/dispatch` that take a value argument — so
+// the value isn't mistaken for the workflow target. `gh workflow run
+// publish.yml -f dry-run=true --ref main` → target is `publish.yml`.
+const GH_WORKFLOW_VALUE_FLAGS = new Set([
+  '--field',
+  '-f',
+  '-F',
+  '--raw-field',
+  '--ref',
+  '-r',
+  '--repo',
+  '-R',
+  '--json',
+])
 
-// `gh api .../actions/workflows/<id>/dispatches` (POST/PUT).
-// The path component implies dispatch — no need to also match -X.
-const GH_API_WORKFLOW_DISPATCH_RE =
-  /\bgh\s+api\b[^|]*?\/actions\/workflows\/([^/\s]+)\/dispatches\b/g
+// `gh api` path that names a workflow dispatch endpoint:
+// `.../actions/workflows/<id>/dispatches`. The path component implies
+// dispatch — no need to also inspect -X.
+const GH_API_DISPATCH_PATH_RE =
+  /\/actions\/workflows\/([^/\s]+)\/dispatches\b/
 
 // Dry-run input detection. The fleet standardized on `dry-run`
 // (kebab-case) — see socket-registry's shared actions and every
@@ -531,62 +541,108 @@ export function isGhReleaseOnly(
   return classifyWorkflow(workflow, resolveSearchRoots(command)) === 'gh'
 }
 
-export function detectDispatch(command: string): DispatchResult {
-  // We can't `replace(/\s+/g, ' ')` first because that would offset
-  // the quote mask from the original string. Match against the raw
-  // command and use the mask to filter false-positives.
-  const mask = buildQuoteMask(command)
+// Pull the workflow target token out of a parsed `gh workflow
+// run/dispatch` arg list. Skips the `workflow` + `run`/`dispatch`
+// subcommand words and any value-taking flag + its value; the first
+// remaining bare positional is the target (`publish.yml`, `publish`,
+// or a numeric id).
+function extractWorkflowTarget(args: readonly string[]): string | undefined {
+  // Locate the run/dispatch subcommand index after the `workflow` word.
+  const wfIdx = args.indexOf('workflow')
+  if (wfIdx === -1) {
+    return undefined
+  }
+  let i = wfIdx + 1
+  // The subcommand may be `run` or `dispatch`; skip exactly one.
+  if (args[i] === 'run' || args[i] === 'dispatch') {
+    i += 1
+  } else {
+    return undefined
+  }
+  for (let { length } = args; i < length; i += 1) {
+    const arg = args[i]!
+    // `--flag=value` form consumes its own value.
+    if (arg.startsWith('--') && arg.includes('=')) {
+      continue
+    }
+    if (GH_WORKFLOW_VALUE_FLAGS.has(arg)) {
+      // Skip the flag's value token too.
+      i += 1
+      continue
+    }
+    if (arg.startsWith('-')) {
+      // A bare flag with no value (rare here) — skip just the flag.
+      continue
+    }
+    return arg
+  }
+  return undefined
+}
 
-  // The /g-flag regex is a module-scoped singleton; `.exec()` advances
-  // `lastIndex` and only resets when it returns null at end-of-input.
-  // If our previous call broke out of the loop early (because we found
-  // a quote-masked match), `lastIndex` is left mid-string and the next
-  // `detectDispatch` call would resume from there instead of scanning
-  // the whole command. Reset before each scan to make the regex
-  // stateless from the caller's perspective.
-  GH_WORKFLOW_DISPATCH_RE.lastIndex = 0
-  let cliMatch: RegExpExecArray | null
-  while ((cliMatch = GH_WORKFLOW_DISPATCH_RE.exec(command))) {
-    if (!mask[cliMatch.index]) {
-      const workflow = cliMatch[2]
-      if (isVerifiableDryRun(command, workflow)) {
+export function detectDispatch(command: string): DispatchResult {
+  // Parser-based: each real `gh` invocation is inspected on its own
+  // args, so a quoted "gh workflow run" in a message body or a sibling
+  // command's string can't false-trigger, and `$(…)` / chains are seen
+  // through. No module-scoped /g-regex `lastIndex` state to manage.
+  //
+  // Obfuscation guard: when `gh` is produced by a command substitution
+  // (`$(echo gh) workflow run …`), shell-quote strands `workflow` as
+  // the command's binary. Treat that shape as a dispatch too — a
+  // security guard should block-the-default on an obfuscated `gh`
+  // rather than wave it through.
+  const ghCommands = commandsFor(command, 'gh')
+  const obfuscatedWorkflowCommands = parseCommands(command).filter(
+    c =>
+      c.binary === 'workflow' &&
+      (c.args[0] === 'run' || c.args[0] === 'dispatch'),
+  )
+  for (const c of [...ghCommands, ...obfuscatedWorkflowCommands]) {
+    // Normalize: gh commands carry `workflow` in args; the obfuscated
+    // shape carries it as the binary with run/dispatch in args[0]. Build
+    // a uniform arg list that always starts at `workflow`.
+    const wfArgs =
+      c.binary === 'workflow' ? ['workflow', ...c.args] : c.args
+    if (wfArgs.includes('workflow')) {
+      const workflow = extractWorkflowTarget(wfArgs)
+      if (workflow) {
+        if (isVerifiableDryRun(command, workflow)) {
+          return {
+            allowedReason:
+              'verifiable dry-run (-f dry-run=true + workflow declares dry-run input)',
+            blocked: false,
+            shape: 'gh workflow run/dispatch',
+            workflow,
+          }
+        }
+        if (isGhReleaseOnly(command, workflow)) {
+          return {
+            allowedReason:
+              'GitHub-release-only workflow (no npm publish; reversible via `gh release delete --cleanup-tag`)',
+            blocked: false,
+            shape: 'gh workflow run/dispatch',
+            workflow,
+          }
+        }
         return {
-          allowedReason:
-            'verifiable dry-run (-f dry-run=true + workflow declares dry-run input)',
-          blocked: false,
+          blocked: true,
           shape: 'gh workflow run/dispatch',
           workflow,
         }
-      }
-      if (isGhReleaseOnly(command, workflow)) {
-        return {
-          allowedReason:
-            'GitHub-release-only workflow (no npm publish; reversible via `gh release delete --cleanup-tag`)',
-          blocked: false,
-          shape: 'gh workflow run/dispatch',
-          workflow,
-        }
-      }
-      return {
-        blocked: true,
-        shape: 'gh workflow run/dispatch',
-        workflow,
       }
     }
-  }
-
-  // Same /g-flag reset rationale as above — keep the regex stateless
-  // across calls. The dry-run bypass intentionally doesn't apply to
-  // `gh api .../dispatches` — that path takes inputs as a JSON body,
-  // which is harder to verify safely; route those through the user.
-  GH_API_WORKFLOW_DISPATCH_RE.lastIndex = 0
-  let apiMatch: RegExpExecArray | null
-  while ((apiMatch = GH_API_WORKFLOW_DISPATCH_RE.exec(command))) {
-    if (!mask[apiMatch.index]) {
-      return {
-        blocked: true,
-        shape: 'gh api .../dispatches',
-        workflow: apiMatch[1],
+    // `gh api .../actions/workflows/<id>/dispatches`. The dry-run
+    // bypass intentionally doesn't apply — that path takes inputs as a
+    // JSON body, harder to verify; route those through the user.
+    if (c.args.includes('api')) {
+      for (let i = 0, { length } = c.args; i < length; i += 1) {
+        const m = GH_API_DISPATCH_PATH_RE.exec(c.args[i]!)
+        if (m) {
+          return {
+            blocked: true,
+            shape: 'gh api .../dispatches',
+            workflow: m[1],
+          }
+        }
       }
     }
   }

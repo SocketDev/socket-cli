@@ -15,7 +15,7 @@ import process from 'node:process'
 import readline from 'node:readline'
 
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
-import type { Logger } from '@socketsecurity/lib-stable/logger'
+import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
 
 import { installShellRcBridge } from './shell-rc-bridge.mts'
 import type { BridgeWriteResult } from './shell-rc-bridge.mts'

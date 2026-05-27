@@ -1,6 +1,6 @@
 ---
 name: running-test262
-description: Run the test262 conformance suite against fleet parsers / runtimes (ultrathink acorn variants, socket-btm temporal-infra, future ports) using each repo's canonical runner. Never write homebrew test262 runners — every parser/runtime in the fleet ships a runner under `test/scripts/test262-*.mts` and an unsupported-features config. Use this skill when asked to run spec tests, check conformance, debug a failing test262 case, or compare a parser against a reference implementation.
+description: Run the test262 conformance suite against fleet parsers / runtimes (ultrathink acorn variants, socket-btm temporal-infra, future ports) using each repo's canonical runner. Never write homebrew test262 runners. Every parser/runtime in the fleet ships a runner under `test/scripts/test262-*.mts` and an unsupported-features config. Use this skill when asked to run spec tests, check conformance, debug a failing test262 case, or compare a parser against a reference implementation.
 user-invocable: true
 allowed-tools: Bash(node:*), Bash(pnpm:*), Bash(ls:*), Bash(cat:*), Bash(grep:*), Bash(find:*), Read
 ---
@@ -9,11 +9,11 @@ allowed-tools: Bash(node:*), Bash(pnpm:*), Bash(ls:*), Bash(cat:*), Bash(grep:*)
 
 The fleet has multiple parsers + runtimes that conform to ECMA262 or to a TC39 proposal:
 
-- `ultrathink/packages/acorn/` — the JS parser, multiple lang ports (cpp/go/rust/typescript).
-- `ultrathink/packages/test262-parser-runner/` — the canonical shared runner package.
-- `socket-btm/packages/temporal-infra/` — Temporal-proposal C++ port.
+- `ultrathink/packages/acorn/`: the JS parser, multiple lang ports (cpp/go/rust/typescript).
+- `ultrathink/packages/test262-parser-runner/`: the canonical shared runner package.
+- `socket-btm/packages/temporal-infra/`: Temporal-proposal C++ port.
 
-Every one of them ships its own `scripts/test262-*.mts` runner + an `unsupported-features` config. Running test262 by hand (downloading the suite, scanning the metadata blocks, running each test) is the wrong shape — the runners already encode the suite-traversal, the per-feature skip logic, the harness setup, and the result-aggregation. Always reach for the existing runner.
+Every one of them ships its own `scripts/test262-*.mts` runner + an `unsupported-features` config. Running test262 by hand (downloading the suite, scanning the metadata blocks, running each test) is the wrong shape. The runners already encode the suite-traversal, the per-feature skip logic, the harness setup, and the result-aggregation. Always reach for the existing runner.
 
 ## Test262 submodule pin
 
@@ -23,22 +23,22 @@ Annotation lives in each repo's `.gitmodules` with the pattern `# test262-YYYY.M
 
 ## 🚨 Strict allowlist policy
 
-**An allowlist entry is ONLY for non-parser test fails.** Anything a parser should handle MUST NOT be allowlisted — it must be fixed in the parser. This is strict; the runners enforce it via design choices below.
+**An allowlist entry is ONLY for non-parser test fails.** Anything a parser should handle MUST NOT be allowlisted; it must be fixed in the parser. This is strict; the runners enforce it via design choices below.
 
 What counts as "non-parser":
 
-- **Unimplemented TC39 feature** — the proposal is at Stage 3+ but we haven't ported the grammar yet (decorators, source-phase imports). Goes in `test262-config/test262.unsupported-features` keyed on the TC39 feature name (NOT a test path).
-- **Runner / harness bug** — the test runner itself produces a false signal (e.g. async-throws semantics, error-name matching). Fix the runner, don't allow-list the symptom.
-- **Runtime-only test** — the test exercises a runtime API (`Reflect.*`, `Temporal.*`) that the parser-conformance run can't evaluate. The runners skip these by classification, not per-path allowlist.
+- **Unimplemented TC39 feature**: the proposal is at Stage 3+ but we haven't ported the grammar yet (decorators, source-phase imports). Goes in `test262-config/test262.unsupported-features` keyed on the TC39 feature name (NOT a test path).
+- **Runner / harness bug**: the test runner itself produces a false signal (e.g. async-throws semantics, error-name matching). Fix the runner, don't allow-list the symptom.
+- **Runtime-only test**: the test exercises a runtime API (`Reflect.*`, `Temporal.*`) that the parser-conformance run can't evaluate. The runners skip these by classification, not per-path allowlist.
 
 What does NOT count and must be fixed in the parser:
 
 - "Parser rejects valid input." Fix the parser.
 - "Parser accepts invalid input." Fix the parser.
 - "Parser produces wrong AST shape." Fix the parser.
-- "Cross-impl divergence — Rust + TS pass, Go fails." Fix Go.
+- "Cross-impl divergence: Rust + TS pass, Go fails." Fix Go.
 
-If you feel tempted to add a per-test-path allowlist entry, the answer is almost always "the parser needs fixing." The `unsupported-features` file is the only escape valve and it's feature-name-keyed by design — you can't sneak a parser bug past it.
+If you feel tempted to add a per-test-path allowlist entry, the answer is almost always "the parser needs fixing." The `unsupported-features` file is the only escape valve and it's feature-name-keyed by design. You can't sneak a parser bug past it.
 
 ## Canonical runners per repo
 
@@ -107,7 +107,7 @@ node scripts/test262.mts --include 'class' --exclude 'async'
 
 ### Vitest-integrated mode
 
-Each repo also wires a vitest test that wraps the runner — useful for CI integration and selective re-runs:
+Each repo also wires a vitest test that wraps the runner. Useful for CI integration and selective re-runs:
 
 ```bash
 pnpm exec vitest run test/unit/test262.test.mts             # ultrathink acorn
@@ -118,7 +118,7 @@ pnpm exec vitest run test/unit/test262-temporal.test.mts    # socket-btm tempora
 
 - **Submodule missing.** The test262 suite is a git submodule. If the runner errors with "test262 suite not found", run `git submodule update --init --recursive`.
 - **Feature classification drift.** The runner uses each test's metadata block (`/*--- features: [...] ---*/`) to decide whether to run or skip. If a new TC39 feature is added upstream, classify it in the `unsupported-features` config first; do not let the runner silently pass tests for features the parser doesn't implement.
-- **"Allowlist drift" — does NOT apply here.** The acorn lanes don't carry a per-test-path allowlist. If a test starts passing or failing, that's the parser's behavior; either the parser is correct and the test is correct (good), or one of them is wrong and that's a bug.
+- **"Allowlist drift": does NOT apply here.** The acorn lanes don't carry a per-test-path allowlist. If a test starts passing or failing, that's the parser's behavior; either the parser is correct and the test is correct (good), or one of them is wrong and that's a bug.
 - **Cross-fleet drift.** ultrathink and socket-btm should pin the same `tc39/test262` SHA. If you're investigating a flaky test, double-check both `.gitmodules` files first.
 
 ## Never write a homebrew runner
@@ -129,4 +129,4 @@ The existing runners encode dozens of edge cases (strict-mode harness wrapping, 
 
 - TC39 test262 spec: https://github.com/tc39/test262
 - Each runner's source is the source of truth for invocation flags and exit-code conventions; cat the runner first if the invocation is unclear.
-- Strict allowlist policy + multi-lane behavior + `tc39/test262` pin date all encoded in this skill — read this skill before touching either system.
+- Strict allowlist policy + multi-lane behavior + `tc39/test262` pin date all encoded in this skill. Read this skill before touching either system.

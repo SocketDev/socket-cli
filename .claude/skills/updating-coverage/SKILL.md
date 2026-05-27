@@ -19,10 +19,7 @@ Runs the repo's coverage script and rewrites the README badge so the published n
 
 ## What it does NOT do
 
-- **Generate coverage from scratch.** This skill consumes the
-  output of the repo's existing coverage tooling — vitest /
-  c8 / istanbul / node-test coverage. If no coverage script is
-  declared in `package.json`, the skill reports that and exits.
+- **Generate coverage from scratch.** This skill consumes the output of the repo's existing coverage tooling (vitest / c8 / istanbul / node-test coverage). If no coverage script is declared in `package.json`, the skill reports that and exits.
 - **Compute coverage thresholds.** The badge reflects what the
   tooling reports; tightening the threshold is a separate decision
   in the repo's vitest/c8 config.
@@ -32,15 +29,15 @@ Runs the repo's coverage script and rewrites the README badge so the published n
 
 ## Phases
 
-| #   | Phase     | Outcome                                                                                                                         |
-| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Discovery | Find the coverage script in `package.json` (`cover` / `coverage` / `test:cover`, in that preference).                           |
-| 2   | Run       | `pnpm run <script>`. Capture stdout. Fail loudly if the run errors.                                                             |
-| 3   | Parse     | Extract the percentage. Two paths — read `coverage/coverage-summary.json` if present, otherwise scrape `All files \| ...` line. |
-| 4   | Rewrite   | Replace the `<PCT>` in the README badge URL with the parsed value (two decimals).                                               |
-| 5   | Commit    | `docs(readme): refresh coverage badge to N.NN%`. Direct-push per fleet norm.                                                    |
+| #   | Phase     | Outcome                                                                                                                        |
+| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Discovery | Find the coverage script in `package.json` (`cover` / `coverage` / `test:cover`, in that preference).                          |
+| 2   | Run       | `pnpm run <script>`. Capture stdout. Fail loudly if the run errors.                                                            |
+| 3   | Parse     | Extract the percentage. Two paths: read `coverage/coverage-summary.json` if present, otherwise scrape `All files \| ...` line. |
+| 4   | Rewrite   | Replace the `<PCT>` in the README badge URL with the parsed value (two decimals).                                              |
+| 5   | Commit    | `docs(readme): refresh coverage badge to N.NN%`. Direct-push per fleet norm.                                                   |
 
-## Phase 1 — discovery
+## Phase 1: discovery
 
 ```sh
 node -e '
@@ -51,9 +48,9 @@ for (const name of ["cover", "coverage", "test:cover"]) {
 process.exit(1);'
 ```
 
-If no matching script exists, the skill emits `no coverage script found` and exits cleanly (this is not a failure mode — many fleet repos don't track coverage).
+If no matching script exists, the skill emits `no coverage script found` and exits cleanly (this is not a failure mode; many fleet repos don't track coverage).
 
-## Phase 2 — run
+## Phase 2: run
 
 ```sh
 pnpm run <SCRIPT>
@@ -61,26 +58,26 @@ pnpm run <SCRIPT>
 
 Use the standard pnpm runner so we pick up the repo's own env config (catalog versions, etc.).
 
-## Phase 3 — parse
+## Phase 3: parse
 
-**Preferred path** — read `coverage/coverage-summary.json` (vitest / istanbul format):
+**Preferred path**: read `coverage/coverage-summary.json` (vitest / istanbul format):
 
 ```sh
 jq -r '.total.lines.pct' coverage/coverage-summary.json
 ```
 
-The number is a float with one decimal place. Two decimals is the canonical badge format — pad with `.00` when needed.
+The number is a float with one decimal place. Two decimals is the canonical badge format; pad with `.00` when needed.
 
-**Fallback path** — scrape the `All files | ...` line from coverage stdout:
+**Fallback path**: scrape the `All files | ...` line from coverage stdout:
 
 ```sh
 pnpm run cover | tee /tmp/cover-output.txt
 awk -F '|' '/^All files/ { gsub(/ /, "", $2); print $2 }' /tmp/cover-output.txt
 ```
 
-Whichever column the tool prints first (statements vs lines) is acceptable — the badge is approximate by design. Document the column choice in the commit message.
+Whichever column the tool prints first (statements vs lines) is acceptable; the badge is approximate by design. Document the column choice in the commit message.
 
-## Phase 4 — rewrite
+## Phase 4: rewrite
 
 The canonical badge line in `README.md` is:
 
@@ -92,7 +89,7 @@ Use the Edit tool to replace the `<PCT>` placeholder with the actual percentage.
 
 If the README has been canonicalized but the badge still reads `<PCT>` (e.g. just-canonicalized by the readme-skeleton work), Phase 4 substitutes; otherwise the existing number is replaced.
 
-## Phase 5 — commit
+## Phase 5: commit
 
 ```sh
 git add README.md
@@ -114,6 +111,6 @@ When no coverage script exists or the percentage is unchanged, exit silently.
 
 ## Related
 
-- `.claude/skills/updating/SKILL.md` — umbrella that calls this skill when applicable.
-- `.claude/skills/updating-security/SKILL.md` — sibling under `updating`.
-- `template/README.md` — canonical README skeleton ships the placeholder badge.
+- `.claude/skills/updating/SKILL.md`: umbrella that calls this skill when applicable.
+- `.claude/skills/updating-security/SKILL.md`: sibling under `updating`.
+- `template/README.md`: canonical README skeleton ships the placeholder badge.

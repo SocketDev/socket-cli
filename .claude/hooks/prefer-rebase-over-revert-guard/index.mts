@@ -33,7 +33,7 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
-import { containsOutsideQuotes } from '../_shared/bash-quote-mask.mts'
+import { commandsFor } from '../_shared/shell-command.mts'
 
 interface ToolInput {
   readonly tool_input?: { readonly command?: string | undefined } | undefined
@@ -49,21 +49,24 @@ interface ToolInput {
  * git revert <sha>..<sha> git revert --no-commit HEAD.
  */
 export function extractRef(command: string): string | undefined {
-  const m = command.match(
-    /\bgit\s+revert\s+([^\s;&|`]+(?:\s+[^\s;&|`-][^\s;&|`]*)?)/,
-  )
-  if (!m) {
-    return undefined
-  }
-  // The capture may include subsequent non-flag tokens for ranges
-  // like `<sha>..<sha>`. Take the first whitespace-delimited token
-  // that isn't a flag.
-  for (const tok of m[1]!.split(/\s+/)) {
-    if (!tok.startsWith('-') && tok.length > 0) {
-      return tok
+  for (const c of commandsFor(command, 'git')) {
+    const revertIdx = c.args.indexOf('revert')
+    if (revertIdx === -1) {
+      continue
+    }
+    // First non-flag token after `revert` is the target ref.
+    for (let i = revertIdx + 1, { length } = c.args; i < length; i += 1) {
+      const tok = c.args[i]!
+      if (!tok.startsWith('-') && tok.length > 0) {
+        return tok
+      }
     }
   }
   return undefined
+}
+
+function isGitRevert(command: string): boolean {
+  return commandsFor(command, 'git').some(c => c.args.includes('revert'))
 }
 
 /**
@@ -142,8 +145,9 @@ process.stdin.on('end', () => {
       process.exit(0)
     }
 
-    // Only fire on real `git revert` invocations (outside quotes).
-    if (!containsOutsideQuotes(command, /\bgit\s+revert\b/)) {
+    // Only fire on real `git revert` invocations (parser sees through
+    // chains / `$(…)`; a quoted "git revert" in a message is ignored).
+    if (!isGitRevert(command)) {
       process.exit(0)
     }
 

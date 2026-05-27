@@ -2,7 +2,7 @@
 
 Reverting tracked changes or bypassing the fleet's hook chain requires the user to type the canonical phrase verbatim in a recent user turn. Inferring intent from "go ahead", "skip the hook", "fix it", etc. does NOT count.
 
-The phrase format is `Allow <X> bypass` — case-sensitive, exact match.
+The phrase format is `Allow <X> bypass`. Case-sensitive, exact match.
 
 | Operation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Phrase                            |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
@@ -22,11 +22,11 @@ The phrase format is `Allow <X> bypass` — case-sensitive, exact match.
 
 ## Scope
 
-A phrase from a previous session does not carry over — only the current conversation's user turns count. The hook reads the active session's transcript (passed by Claude Code as `transcript_path` in the PreToolUse payload) and searches the concatenated user-turn text for the exact phrase.
+A phrase from a previous session does not carry over. Only the current conversation's user turns count. The hook reads the active session's transcript (passed by Claude Code as `transcript_path` in the PreToolUse payload) and searches the concatenated user-turn text for the exact phrase.
 
 The match is **case-sensitive** and **substring-based**:
 
-- ✓ `Allow revert bypass — please drop my last edit`
+- ✓ `Allow revert bypass; please drop my last edit`
 - ✓ a multi-line user message with `Allow revert bypass` on its own line
 - ✗ `allow revert bypass` (lowercase)
 - ✗ `please revert that file` (paraphrase)
@@ -42,7 +42,7 @@ The bypass policy is enforced at three layers:
 
 - **CLAUDE.md** documents the rule (`### Hook bypasses require the canonical phrase`).
 - **Memory** keeps the assistant honest across sessions even before the hook fires.
-- **`.claude/hooks/no-revert-guard/`** is the actual enforcement: a `PreToolUse(Bash)` hook that scans the proposed command, parses the transcript, and exits 2 with a clear stderr message naming the phrase the user must type.
+- **`.claude/hooks/no-revert-guard/`** is the enforcement: a `PreToolUse(Bash)` hook that scans the proposed command, parses the transcript, and exits 2 with a stderr message naming the phrase the user must type.
 
 The hook fails open on its own bugs (exit 0 + stderr log) so a bad deploy can't brick the session. Trade-off: a buggy hook silently allows the destructive command. Acceptable because the alternative (hook crash wedges the session) is worse for development velocity.
 

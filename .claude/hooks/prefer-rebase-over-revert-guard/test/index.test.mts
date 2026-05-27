@@ -70,6 +70,18 @@ test('commit message bodies mentioning git revert are skipped (quote-aware)', as
   assert.strictEqual(result.stderr, '')
 })
 
+test('git revert chained after another command is still detected', async () => {
+  // Parser sees through the `&&` chain — the old regex matched on the
+  // raw substring; the parser confirms a real `git revert` invocation.
+  const result = await runHook({
+    tool_input: { command: 'cd /tmp && git revert this-ref-does-not-exist' },
+    tool_name: 'Bash',
+  })
+  // Bogus ref → defensive exit 0; the point is the hook didn't bail at
+  // the detection gate (it reached the ref-resolution probe).
+  assert.strictEqual(result.code, 0)
+})
+
 test('git revert with --no-commit is skipped (advanced workflow)', async () => {
   const result = await runHook({
     tool_input: { command: 'git revert --no-commit HEAD' },

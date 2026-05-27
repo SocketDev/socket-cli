@@ -35,7 +35,7 @@
 
 import process from 'node:process'
 
-import { containsOutsideQuotes } from '../_shared/bash-quote-mask.mts'
+import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 interface ToolInput {
@@ -48,15 +48,16 @@ const BYPASS_PHRASE = 'Allow empty-commit bypass'
 
 /**
  * Detect `git commit --allow-empty` (and `--allow-empty-message`, which is the
- * same antipattern — both produce a no-op commit). Matches outside quoted
- * strings so a literal `--allow-empty` in a commit-message body doesn't
- * false-positive.
+ * same antipattern — both produce a no-op commit). Parser-based: the flag must
+ * belong to a real `git commit` invocation, so a literal `--allow-empty` in a
+ * commit-message body or a sibling command doesn't false-positive.
  */
 export function isAllowEmptyCommit(command: string): boolean {
-  if (!containsOutsideQuotes(command, /\bgit\s+commit\b/)) {
-    return false
-  }
-  return containsOutsideQuotes(command, /--allow-empty(?:-message)?\b/)
+  return commandsFor(command, 'git').some(
+    c =>
+      c.args.includes('commit') &&
+      c.args.some(a => a === '--allow-empty' || a === '--allow-empty-message'),
+  )
 }
 
 /**
@@ -65,12 +66,12 @@ export function isAllowEmptyCommit(command: string): boolean {
  * the empty-commit pattern the rule bans.
  */
 export function isCherryPickAllowEmpty(command: string): boolean {
-  if (!containsOutsideQuotes(command, /\bgit\s+cherry-pick\b/)) {
-    return false
-  }
-  return containsOutsideQuotes(
-    command,
-    /--(?:allow-empty|keep-redundant-commits)\b/,
+  return commandsFor(command, 'git').some(
+    c =>
+      c.args.includes('cherry-pick') &&
+      c.args.some(
+        a => a === '--allow-empty' || a === '--keep-redundant-commits',
+      ),
   )
 }
 

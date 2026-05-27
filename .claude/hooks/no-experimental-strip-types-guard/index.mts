@@ -23,11 +23,32 @@
 
 import process from 'node:process'
 
-import { containsOutsideQuotes } from '../_shared/bash-quote-mask.mts'
+import { parseCommands } from '../_shared/shell-command.mts'
 
 interface ToolInput {
   readonly tool_input?: { readonly command?: string | undefined } | undefined
   readonly tool_name?: string | undefined
+}
+
+const FLAG = '--experimental-strip-types'
+
+// True when any parsed command passes `--experimental-strip-types` as a
+// real argument, or carries it inside a `NODE_OPTIONS=…` env assignment
+// (Node parses that value as args at startup, so it's live even when the
+// assignment value is quoted). The parser scopes the flag to an actual
+// invocation, so a quoted mention inside an `echo`/`-m` body is ignored.
+function passesStripTypesFlag(command: string): boolean {
+  for (const c of parseCommands(command)) {
+    if (c.args.some(a => a === FLAG || a.startsWith(`${FLAG}=`))) {
+      return true
+    }
+    for (const a of c.assignments) {
+      if (a.startsWith('NODE_OPTIONS=') && a.includes(FLAG)) {
+        return true
+      }
+    }
+  }
+  return false
 }
 
 let payloadRaw = ''
@@ -55,21 +76,10 @@ process.stdin.on('end', () => {
     }
     const command = payload.tool_input?.command ?? ''
 
-    // Check for the flag at a position the shell would actually execute
-    // (outside quoted strings and outside heredoc bodies). This skips
-    // false positives from `echo "tip: ..."` reminders and
-    // `git commit -m "$(cat <<EOF ... EOF)"` message bodies.
-    //
-    // NODE_OPTIONS is a special case: even when the flag sits inside
-    // quotes after `NODE_OPTIONS=`, Node parses the value as args at
-    // startup, so it's a real invocation. Match it separately.
-    const flagPattern = /--experimental-strip-types\b/
-    const nodeOptionsPattern =
-      /NODE_OPTIONS\s*=\s*['"]?[^'"]*--experimental-strip-types\b/
-    if (
-      !containsOutsideQuotes(command, flagPattern) &&
-      !nodeOptionsPattern.test(command)
-    ) {
+    // Fire only when the flag is a real argument to a parsed command, or
+    // lives in a NODE_OPTIONS env assignment — never on a quoted mention
+    // inside an `echo`/`-m` message body.
+    if (!passesStripTypesFlag(command)) {
       process.exit(0)
     }
 
