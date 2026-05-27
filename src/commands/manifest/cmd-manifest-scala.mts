@@ -223,6 +223,20 @@ async function run(
     verbose = false
   }
 
+  // `--configs` and `--ignore-unresolved` only affect --facts; the pom path
+  // (`sbt makePom`) has no equivalent knobs. Warn rather than silently ignore
+  // an explicitly-passed flag. (socket.json defaults don't trip this — only a
+  // flag actually present on the command line does.)
+  if (
+    !facts &&
+    (cli.flags['configs'] !== undefined ||
+      cli.flags['ignoreUnresolved'] !== undefined)
+  ) {
+    logger.warn(
+      'The `--configs` and `--ignore-unresolved` options only apply with `--facts`; ignoring them.',
+    )
+  }
+
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
     logger.group('- flags:', cli.flags)
