@@ -8,10 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`socket manifest bazel [beta]`** — Generate Bazel JVM SBOM manifests by running `bazel query` against discovered Maven repos in a Bazel workspace. Closes the inline-Maven-declaration gap that lockfile-only parsing misses for repos like envoy, ray, tensorflow, tink-java, and or-tools. Auto-detects Bzlmod and legacy `WORKSPACE`.
 - **`socket scan create --auto-manifest`** now covers Bazel workspaces in addition to Gradle/Scala/Kotlin/Conda. Repos with `MODULE.bazel`, `WORKSPACE`, or `WORKSPACE.bazel` are detected automatically and their Maven dependencies extracted as part of the standard scan-create flow.
 - **Bazel PyPI extraction** — `socket manifest bazel --ecosystem pypi` now generates `requirements.txt` for Python Bazel workspaces. Discovers custom `rules_python` pip hub names with Bazel command output first, queries `py_library` / `py_binary` / `py_test` dependencies, resolves canonical pinned versions from `requirements_lock.txt`, and emits PEP 503-normalized `name==version` lines. Supports both Bzlmod (`pip.parse`) and legacy `WORKSPACE` (`pip_parse` / `pip_install`) configurations. PyPI remains explicit opt-in for `socket scan create --auto-manifest` until real-world no-lockfile recovery is validated.
-- **`socket manifest scala --facts [beta]`** — Emit a `.socket.facts.json` dependency graph straight from an sbt build (no `pom.xml` round-trip), consumable by `socket scan create --reach` as pregenerated SBOM input for Tier 1 reachability. Reads dependency metadata only (no artifact downloads) and works across a wide range of sbt versions (0.13 through 1.x) with no plugin install or project changes. Toggle also exposed via the `socket manifest setup` wizard and honored by `socket scan create --auto-manifest`.
 
 ### Changed
 - **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
+
+## [1.1.105](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.105) - 2026-05-27
+
+### Added
+- **`socket manifest scala --facts [beta]`** — Emit a `.socket.facts.json` dependency graph straight from an sbt build (no `pom.xml` round-trip), consumable by `socket scan create --reach` as pregenerated SBOM input for Tier 1 reachability. Reads dependency metadata only (no artifact downloads) and works across a wide range of sbt versions (0.13 through 1.x) with no plugin install or project changes. Toggle also exposed via the `socket manifest setup` wizard and honored by `socket scan create --auto-manifest`.
 
 ## [1.1.104](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.104) - 2026-05-26
 
