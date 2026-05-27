@@ -22,7 +22,7 @@ async function runHook(commitMsg: string): Promise<{
   result: Result
   rewrittenMessage: string
 }> {
-  const dir = mkdtempSync(path.join(tmpdir(), 'commit-msg-test-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'commit-msg-test-'))
   const msgFile = path.join(dir, 'COMMIT_EDITMSG')
   writeFileSync(msgFile, commitMsg)
   try {

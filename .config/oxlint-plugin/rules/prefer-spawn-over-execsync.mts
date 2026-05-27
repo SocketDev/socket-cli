@@ -28,6 +28,7 @@
  *     handled at the .config/oxlintrc.json ignorePatterns level.
  */
 
+import { makeBypassChecker } from '../lib/comment-markers.mts'
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 const CHILD_PROCESS_SPECIFIERS = new Set([
@@ -62,25 +63,7 @@ const rule = {
   },
 
   create(context: RuleContext) {
-    const sourceCode = context.getSourceCode
-      ? context.getSourceCode()
-      : context.sourceCode
-
-    function hasBypassComment(node: AstNode): boolean {
-      const before = sourceCode.getCommentsBefore(node)
-      const after = sourceCode.getCommentsAfter(node)
-      for (let i = 0, { length } = before; i < length; i += 1) {
-        if (BYPASS_RE.test(before[i]!.value)) {
-          return true
-        }
-      }
-      for (let i = 0, { length } = after; i < length; i += 1) {
-        if (BYPASS_RE.test(after[i]!.value)) {
-          return true
-        }
-      }
-      return false
-    }
+    const hasBypassComment = makeBypassChecker(context, BYPASS_RE)
 
     return {
       ImportDeclaration(node: AstNode) {

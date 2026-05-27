@@ -47,6 +47,14 @@ describe('socket/prefer-non-capturing-group', () => {
           code: 'export const r = /(?<ext>md|mdx)/\n',
         },
         {
+          name: 'group referenced by a later \\1 backreference → stay silent',
+          code: 'export const r = /([\'"]?)(?:main|master)\\1/\n',
+        },
+        {
+          name: 'inner backreference anywhere in pattern → stay silent',
+          code: 'export const r = /(foo|bar\\1)/\n',
+        },
+        {
           name: 'usage markers anywhere in file → stay silent',
           code: [
             'export function f(s: string) {',
@@ -70,11 +78,6 @@ describe('socket/prefer-non-capturing-group', () => {
           code: 'export const r = /^(foo|bar)\\.(md|mdx)$/.test("x")\n',
           errors: [{ messageId: 'unused' }, { messageId: 'unused' }],
           output: 'export const r = /^(?:foo|bar)\\.(?:md|mdx)$/.test("x")\n',
-        },
-        {
-          name: 'inner contains backreference → report only',
-          code: 'export const r = /(foo|bar\\1)/\n',
-          errors: [{ messageId: 'unusedNoFix' }],
         },
       ],
     })

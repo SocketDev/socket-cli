@@ -60,7 +60,7 @@ test('parsePorcelain: modified + untracked + staged', () => {
   ].join('\n')
   const entries = parsePorcelain(out)
   assert.strictEqual(entries.length, 4)
-  assert.deepStrictEqual(entries.map(e => e.path).sort(), [
+  assert.deepStrictEqual(entries.map(e => e.path).toSorted(), [
     'added.ts',
     'new-file.md',
     'src/index.ts',

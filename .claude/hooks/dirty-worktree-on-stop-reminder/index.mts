@@ -69,12 +69,17 @@ const UNTRACKED_BY_DEFAULT_PREFIXES = [
 ]
 
 export function isUntrackedByDefault(p: string): boolean {
-  for (const prefix of UNTRACKED_BY_DEFAULT_PREFIXES) {
+  for (
+    let i = 0, { length } = UNTRACKED_BY_DEFAULT_PREFIXES;
+    i < length;
+    i += 1
+  ) {
+    const prefix = UNTRACKED_BY_DEFAULT_PREFIXES[i]!
     if (p.startsWith(prefix)) {
       return true
     }
   }
-  if (/(^|\/)[^/]+-(?:bundled|vendored)(\/|$)/.test(p)) {
+  if (/(?:^|\/)[^/]+-(?:bundled|vendored)(?:\/|$)/.test(p)) {
     return true
   }
   return false

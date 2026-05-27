@@ -75,7 +75,7 @@ export function findReleaseCreateCalls(text: string): string[] {
 export function callIsDraft(call: string): boolean {
   // Match `--draft` as a standalone flag (not e.g. `--draft=false`, which
   // is the publish step using `gh release edit`, not `create`).
-  return /(^|\s)--draft(\s|$|=true)/.test(call)
+  return /(?:^|\s)--draft(?:\s|$|=true)/.test(call)
 }
 
 export function isWorkflowYaml(filePath: string): boolean {

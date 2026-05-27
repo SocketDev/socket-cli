@@ -60,7 +60,7 @@ type GuardCheck = {
   //     (which git subcommand runs). Returns the offending substring for
   //     the log, or undefined when no match. Sees through chains / `$(…)`
   //     / quotes, where a regex would over- or under-match.
-  readonly pattern?: RegExp
+  readonly pattern?: RegExp | undefined
   readonly matches?: (command: string) => string | undefined
 }
 
@@ -130,7 +130,7 @@ const CHECKS: readonly GuardCheck[] = [
           return false
         }
         const sub = c.args[1]
-        return sub !== 'pop' && sub !== 'drop' && sub !== 'clear'
+        return sub !== 'clear' && sub !== 'drop' && sub !== 'pop'
       })
         ? 'git stash'
         : undefined,

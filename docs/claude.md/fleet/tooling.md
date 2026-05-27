@@ -26,6 +26,16 @@ Vitest `include` globs must not match `node:test` files. Mismatched runners prod
 
 `rolldown`, NOT `esbuild`. The fleet standardizes on rolldown for direct bundling (see `template/.config/rolldown/`). Transitive esbuild deps (e.g. via vitest) are unavoidable today. The rule is no _new direct_ esbuild use anywhere in the fleet.
 
+## Compile-time defines (`INLINED_*`)
+
+Build-inlined constants use the `process.env.INLINED_*` naming convention (mirrors socket-cli: `INLINED_VERSION`, `INLINED_NAME`, …). The `INLINED_` prefix flags at a glance that a value is substituted at build time, not read from the real environment at runtime.
+
+Substitution is done by `template/.config/rolldown/define-guarded.mts` (`defineGuardedPlugin`), an esbuild-`define`-equivalent that only rewrites _read_ positions — it never touches assignment targets, `delete` / `++` / `--` operands, or dynamic `process.env[expr]` access (so `delete process.env.DEBUG` stays valid, unlike oxc's built-in `define`).
+
+- **Source must use quoted bracket access**: `process.env['INLINED_EXTENSION_VERSION']`. `process.env` is an index-signature type, so TypeScript (TS4111) forbids dot access. The plugin normalizes dot and quoted-bracket access to the same dotted define key, so one `'process.env.INLINED_X'` key matches `process.env.INLINED_X`, `process.env['INLINED_X']`, and `process.env["INLINED_X"]`.
+- **Define key is the dotted form**: `defineGuardedPlugin({ 'process.env.INLINED_X': JSON.stringify(value) })`. Values are already-quoted source text (same contract as esbuild / oxc `define`).
+- **`magic-string` is the fallback**: `defineGuarded` does its surgical rewrites with MagicString. When the build opts into rolldown's `experimental.nativeMagicString` (set `experimental: { nativeMagicString: true }` + `output.sourcemap: true` in the rolldown config), the `transform` hook receives a Rust-backed native MagicString on `meta.magicString` — same API, no JS `toString()`/`generateMap()` round-trip — and the plugin uses it. Without the flag, `meta.magicString` is absent and it constructs a JS `magic-string` instance. So `magic-string` stays catalog-pinned (`pnpm-workspace.yaml`) and a member adopting the plugin keeps `"magic-string": "catalog:"` in devDependencies as the fallback path.
+
 ## Backward compatibility
 
 FORBIDDEN to maintain. Remove when encountered.

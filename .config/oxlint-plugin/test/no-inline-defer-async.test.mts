@@ -27,6 +27,10 @@ describe('socket/no-inline-defer-async', () => {
           name: 'inline script without defer/async — fine',
           code: 'const html = "<script>doThing()</script>"\n',
         },
+        {
+          name: 'bypass marker on the line above → allowed',
+          code: '// socket-hook: allow inline-defer\nconst msg = "<script async>x</script>"\n',
+        },
       ],
       invalid: [
         {

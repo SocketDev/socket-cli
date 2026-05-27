@@ -3,6 +3,7 @@
 // prefer-async-spawn: streaming-stdio-required — test spawns the hook
 // subprocess and pipes stdin/stdout/stderr.
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+// prefer-spawn-over-execsync: required -- test asserts the hook's behavior under a synchronous execFileSync call path.
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
@@ -49,7 +50,10 @@ async function runHook(
   })
 }
 
-const bash = (command: string) => ({ tool_name: 'Bash', tool_input: { command } })
+const bash = (command: string) => ({
+  tool_name: 'Bash',
+  tool_input: { command },
+})
 
 test('non-Bash tool passes', async () => {
   const r = await runHook({ tool_name: 'Edit', tool_input: { command: 'x' } })

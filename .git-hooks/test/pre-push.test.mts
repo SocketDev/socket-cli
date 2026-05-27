@@ -21,7 +21,7 @@ const HOOK = path.join(here, '..', 'pre-push.mts')
 const ZERO_SHA = '0000000000000000000000000000000000000000'
 
 function setupRepo(): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'pre-push-test-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'pre-push-test-'))
   spawnSync('git', ['init', '-q', '-b', 'main'], { cwd: dir })
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir })
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir })

@@ -15,7 +15,13 @@
  * @type {import('eslint').Rule.RuleModule}
  */
 
+import { makeBypassChecker } from '../lib/comment-markers.mts'
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+
+// socket-hook: allow global-fetch -- opt-out for a `fetch()` that genuinely
+// must use the platform global (e.g. publish / provenance tooling probing a
+// registry before the lib http-request helper is available).
+const BYPASS_RE = /socket-hook:\s*allow\s+global-fetch/
 
 const rule = {
   meta: {
@@ -34,11 +40,15 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    const hasBypassComment = makeBypassChecker(context, BYPASS_RE)
     return {
       CallExpression(node: AstNode) {
         const callee = node.callee
         // Only flag direct `fetch(...)` calls (Identifier callee).
         if (callee.type !== 'Identifier' || callee.name !== 'fetch') {
+          return
+        }
+        if (hasBypassComment(node)) {
           return
         }
 

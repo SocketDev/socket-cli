@@ -41,7 +41,7 @@ async function main(): Promise<void> {
   logger.log(`TruffleHog:  ${trufflehogOk ? 'ready' : 'FAILED'}`)
   logger.log(`uv:          ${uvOk ? 'ready' : 'FAILED'}`)
 
-  if (!(trufflehogOk && trivyOk && opengrepOk && uvOk)) {
+  if (!(opengrepOk && trivyOk && trufflehogOk && uvOk)) {
     process.exitCode = 1
   }
 }

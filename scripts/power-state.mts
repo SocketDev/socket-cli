@@ -38,22 +38,22 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 interface SmolPower {
   isOnAcPower: () => boolean
 }
-let _smolPower: SmolPower | undefined
-let _smolPowerProbed = false
+let cachedSmolPower: SmolPower | undefined
+let smolPowerProbed = false
 async function getSmolPower(): Promise<SmolPower | undefined> {
-  if (_smolPowerProbed) {
-    return _smolPower
+  if (smolPowerProbed) {
+    return cachedSmolPower
   }
-  _smolPowerProbed = true
+  smolPowerProbed = true
   if (!isBuiltin('node:smol-power')) {
     return undefined
   }
   // Cast through `unknown` because system Node's typings don't
   // declare the module — only node-smol's lib.d.ts does.
-  _smolPower = (await import(
+  cachedSmolPower = (await import(
     'node:smol-power' as string
   )) as unknown as SmolPower
-  return _smolPower
+  return cachedSmolPower
 }
 
 // Coerce spawn's stdout (string | Buffer | undefined) to a string.

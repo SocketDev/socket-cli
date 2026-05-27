@@ -16,7 +16,7 @@
  */
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
-import { homedir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -200,8 +200,12 @@ function scanToolUse(evt: ToolUseEvent): Finding[] {
   }
   for (let i = 0, { length } = PATTERNS; i < length; i += 1) {
     const p = PATTERNS[i]!
-    if (p.tool && p.tool !== evt.name) continue
-    if (!p.matches(haystack)) continue
+    if (p.tool && p.tool !== evt.name) {
+      continue
+    }
+    if (!p.matches(haystack)) {
+      continue
+    }
     findings.push({
       severity: p.severity,
       category: p.category,
@@ -220,7 +224,7 @@ function findRecentTranscript(): string | undefined {
   // operates on the whole path. (So `/Users/foo` → `-Users-foo`, not
   // `--Users-foo`.)
   const encoded = process.cwd().replace(/\//g, '-')
-  const dir = path.join(homedir(), '.claude', 'projects', encoded)
+  const dir = path.join(os.homedir(), '.claude', 'projects', encoded)
   if (!existsSync(dir)) {
     return undefined
   }

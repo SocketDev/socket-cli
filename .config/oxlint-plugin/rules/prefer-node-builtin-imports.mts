@@ -313,6 +313,28 @@ const rule = {
           return
         }
 
+        // Reference rewriting needs scope analysis to find every `homedir()` /
+        // `platform()` call site and prefix it with `<local>.`. When the oxlint
+        // engine doesn't expose `getScope` (older versions return nothing), we
+        // can only safely rewrite the import line — which would leave the bare
+        // call sites undefined (`ReferenceError`). So in that case report WITHOUT
+        // a fix: the author rewrites by hand. Better a manual fix than a
+        // half-conversion that breaks the module.
+        const scopeForFix = context.getScope ? context.getScope() : undefined
+        if (!scopeForFix) {
+          context.report({
+            node,
+            messageId: 'preferDefault',
+            data: {
+              names: `{ ${violatingNameList} }`,
+              specifier,
+              local,
+              first: violatingNames[0]!.imported.name,
+            },
+          })
+          return
+        }
+
         context.report({
           node,
           messageId: 'preferDefault',
@@ -353,8 +375,9 @@ const rule = {
             // of each violating name. Skip occurrences inside
             // strings/comments to avoid breaking unrelated text.
             //
-            // Cheap heuristic: use scope analysis if available.
-            const scope = context.getScope ? context.getScope() : undefined
+            // Scope analysis is guaranteed available here — the report above
+            // returns early (report-only, no fix) when getScope is absent.
+            const scope = scopeForFix
             const targetNames = new Set(
               violatingNames.map((s: AstNode) => s.local.name),
             )

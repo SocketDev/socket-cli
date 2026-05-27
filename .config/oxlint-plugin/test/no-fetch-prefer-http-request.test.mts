@@ -16,6 +16,10 @@ describe('socket/no-fetch-prefer-http-request', () => {
           code: 'import { httpJson } from "@socketsecurity/lib-stable/http-request"\nawait httpJson("https://x")\n',
         },
         { name: 'no fetch call', code: 'const x = 1\n' },
+        {
+          name: 'bypass marker on the line above → allowed',
+          code: '// socket-hook: allow global-fetch\nconst r = await fetch("https://x")\n',
+        },
       ],
       invalid: [
         {

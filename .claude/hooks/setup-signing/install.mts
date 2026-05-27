@@ -27,7 +27,7 @@
  */
 
 import { existsSync } from 'node:fs'
-import { homedir, platform } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -84,13 +84,13 @@ function detect1PasswordSshAgent(): DetectedSigner | undefined {
   // Linux: ~/.1password/agent.sock
   // Windows: \\\\.\\pipe\\openssh-ssh-agent (different mechanism, skip detection)
   let sock: string | undefined
-  if (platform() === 'darwin') {
+  if (os.platform() === 'darwin') {
     sock = path.join(
-      homedir(),
+      os.homedir(),
       'Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock',
     )
-  } else if (platform() === 'linux') {
-    sock = path.join(homedir(), '.1password/agent.sock')
+  } else if (os.platform() === 'linux') {
+    sock = path.join(os.homedir(), '.1password/agent.sock')
   }
   if (!sock || !existsSync(sock)) {
     return undefined
@@ -124,8 +124,9 @@ function detect1PasswordSshAgent(): DetectedSigner | undefined {
 function detectSshKeyOnDisk(): DetectedSigner | undefined {
   // Prefer ed25519 over rsa.
   const candidates = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_rsa.pub']
-  for (const name of candidates) {
-    const p = path.join(homedir(), '.ssh', name)
+  for (let i = 0, { length } = candidates; i < length; i += 1) {
+    const name = candidates[i]!
+    const p = path.join(os.homedir(), '.ssh', name)
     if (existsSync(p)) {
       return {
         format: 'ssh',
@@ -183,7 +184,7 @@ function configure(signer: DetectedSigner): void {
     // SSH signing additionally needs a program that can verify signatures
     // (op-ssh-sign for 1Password). git uses gpg.ssh.program for signing
     // operations.
-    if (platform() === 'darwin') {
+    if (os.platform() === 'darwin') {
       const opSign = '/Applications/1Password.app/Contents/MacOS/op-ssh-sign'
       if (existsSync(opSign)) {
         set('gpg.ssh.program', opSign)

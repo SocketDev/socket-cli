@@ -1,6 +1,6 @@
 // node --test specs for the enterprise-push-property-reminder hook.
 
-import { spawn } from 'node:child_process'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'

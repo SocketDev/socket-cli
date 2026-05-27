@@ -221,21 +221,20 @@ export function countPriorDispatches(
 // publish.yml -f dry-run=true --ref main` → target is `publish.yml`.
 const GH_WORKFLOW_VALUE_FLAGS = new Set([
   '--field',
-  '-f',
-  '-F',
+  '--json',
   '--raw-field',
   '--ref',
-  '-r',
   '--repo',
+  '-F',
   '-R',
-  '--json',
+  '-f',
+  '-r',
 ])
 
 // `gh api` path that names a workflow dispatch endpoint:
 // `.../actions/workflows/<id>/dispatches`. The path component implies
 // dispatch — no need to also inspect -X.
-const GH_API_DISPATCH_PATH_RE =
-  /\/actions\/workflows\/([^/\s]+)\/dispatches\b/
+const GH_API_DISPATCH_PATH_RE = /\/actions\/workflows\/([^/\s]+)\/dispatches\b/
 
 // Dry-run input detection. The fleet standardized on `dry-run`
 // (kebab-case) — see socket-registry's shared actions and every
@@ -554,12 +553,12 @@ function extractWorkflowTarget(args: readonly string[]): string | undefined {
   }
   let i = wfIdx + 1
   // The subcommand may be `run` or `dispatch`; skip exactly one.
-  if (args[i] === 'run' || args[i] === 'dispatch') {
+  if (args[i] === 'dispatch' || args[i] === 'run') {
     i += 1
   } else {
     return undefined
   }
-  for (let { length } = args; i < length; i += 1) {
+  for (const { length } = args; i < length; i += 1) {
     const arg = args[i]!
     // `--flag=value` form consumes its own value.
     if (arg.startsWith('--') && arg.includes('=')) {
@@ -594,14 +593,13 @@ export function detectDispatch(command: string): DispatchResult {
   const obfuscatedWorkflowCommands = parseCommands(command).filter(
     c =>
       c.binary === 'workflow' &&
-      (c.args[0] === 'run' || c.args[0] === 'dispatch'),
+      (c.args[0] === 'dispatch' || c.args[0] === 'run'),
   )
   for (const c of [...ghCommands, ...obfuscatedWorkflowCommands]) {
     // Normalize: gh commands carry `workflow` in args; the obfuscated
     // shape carries it as the binary with run/dispatch in args[0]. Build
     // a uniform arg list that always starts at `workflow`.
-    const wfArgs =
-      c.binary === 'workflow' ? ['workflow', ...c.args] : c.args
+    const wfArgs = c.binary === 'workflow' ? ['workflow', ...c.args] : c.args
     if (wfArgs.includes('workflow')) {
       const workflow = extractWorkflowTarget(wfArgs)
       if (workflow) {

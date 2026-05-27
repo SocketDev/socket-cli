@@ -272,6 +272,7 @@ const KNOWN_GOOD_NAMES: Record<string, string[]> = {
     'fastify',
     'koa',
     'axios',
+    // socket-hook: allow eslint-biome-ref -- popular-package allowlist entry, not a config ref.
     'eslint',
     'prettier',
     'vitest',

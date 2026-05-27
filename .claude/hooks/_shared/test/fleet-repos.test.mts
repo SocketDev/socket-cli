@@ -18,7 +18,7 @@ test('FLEET_REPO_NAMES includes the broad membership set', () => {
 })
 
 test('FLEET_REPO_NAMES is sorted + has no duplicates', () => {
-  const sorted = [...FLEET_REPO_NAMES].sort()
+  const sorted = [...FLEET_REPO_NAMES].toSorted()
   assert.deepStrictEqual([...FLEET_REPO_NAMES], sorted)
   assert.strictEqual(new Set(FLEET_REPO_NAMES).size, FLEET_REPO_NAMES.length)
 })

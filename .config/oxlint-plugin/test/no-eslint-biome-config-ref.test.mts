@@ -19,6 +19,10 @@ describe('socket/no-eslint-biome-config-ref', () => {
           name: 'unrelated string',
           code: 'const greeting = "hello"\n',
         },
+        {
+          name: 'bypass marker — package-name-as-data, not a config ref',
+          code: '// socket-hook: allow eslint-biome-ref\nconst pkg = "eslint"\n',
+        },
       ],
       invalid: [
         {

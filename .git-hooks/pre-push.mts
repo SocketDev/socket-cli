@@ -101,7 +101,7 @@ const computeRange = (
   localRef: string,
   localSha: string,
   remoteSha: string,
-): string | null => {
+): string | undefined => {
   if (localRef.startsWith('refs/tags/')) {
     logger.info(`Skipping tag push: ${localRef}`)
     return undefined
@@ -596,7 +596,11 @@ const main = async (): Promise<number> => {
       continue
     }
     const range = computeRange(remote, localRef, localSha, remoteSha)
-    if (range === null) {
+    // `computeRange` returns `undefined` for skip cases (tags, deletions, new
+    // branches); use loose equality so both `null` and `undefined` skip. A
+    // strict `=== null` check let `undefined` fall through and failed every
+    // tag push with "Invalid commit range: undefined".
+    if (range == null) {
       continue
     }
     // Validate range.

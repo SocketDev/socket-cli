@@ -27,14 +27,47 @@
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, readFileSync } from 'node:fs'
+import { cpSync, existsSync, readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
+
+// Wheelhouse-owned patches reapplied to plugin caches after (re)install.
+// Some upstream plugins ship bugs we've fixed but can't land upstream yet;
+// the cache is overwritten on every install, so the fix has to be reapplied
+// from a checked-in diff. Lives in scripts/plugin-patches/ (a plainly-ours
+// dir, not Claude Code's `.claude-plugin/` convention dir). File naming:
+// <plugin>-<version>-<slug>.patch — the `<plugin>` + `<version>` prefix maps
+// to the cache dir ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/.
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
+const PLUGIN_PATCHES_DIR = path.join(SCRIPT_DIR, 'plugin-patches')
+// <plugin>-<version>-<slug>.patch — version is dotted (e.g. 1.0.1); slug is
+// freeform after it. Capture plugin + version to locate the cache dir.
+const PATCH_FILE_NAME = /^([a-z0-9-]+)-(\d+\.\d+\.\d+)-[a-z0-9-]+\.patch$/
+
+/**
+ * Parse a plugin-patch filename of the form `<plugin>-<version>-<slug>.patch`
+ * into its `{ plugin, version }`. The plugin + version map to the cache dir
+ * `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`. Returns
+ * `undefined` for any name that doesn't match the shape (dotted semver version
+ * sandwiched between a plugin name and a freeform slug). Greedy `<plugin>` is
+ * disambiguated by the `\d+\.\d+\.\d+` version anchor, so a hyphenated plugin
+ * name (`socket-foo`) still parses.
+ */
+export function parsePatchFileName(
+  fileName: string,
+): { plugin: string; version: string } | undefined {
+  const m = PATCH_FILE_NAME.exec(fileName)
+  if (!m) {
+    return undefined
+  }
+  return { plugin: m[1]!, version: m[2]! }
+}
 
 // Canonical marketplace identity. The repo URL is what `claude plugin
 // marketplace add` resolves; the name is what Claude Code records in
@@ -46,6 +79,21 @@ const MARKETPLACE_URL = 'https://github.com/SocketDev/socket-wheelhouse'
 // whose name is `<sha-12-chars>-<content-hash-8-chars>`. We parse the
 // first segment to extract the pinned SHA for drift comparison.
 const SHA_PINNED_DIR_NAME = /^([0-9a-f]{12})-[0-9a-f]{8,}$/
+
+/**
+ * The single owner of the `~/.claude/plugins/` base path — Claude Code's
+ * plugin home, which holds both `installed_plugins.json` (the state file) and
+ * `cache/<marketplace>/<plugin>/<version>/` (the per-plugin caches). Every
+ * other reference derives from this one construction (1 path, 1 reference).
+ * Returns `undefined` if HOME / USERPROFILE is unresolvable.
+ */
+function getPluginsDir(): string | undefined {
+  const home = process.env['HOME'] ?? process.env['USERPROFILE']
+  if (!home || !path.isAbsolute(home)) {
+    return undefined
+  }
+  return path.join(home, '.claude', 'plugins')
+}
 
 export interface MarketplaceListEntry {
   name: string
@@ -280,16 +328,11 @@ function ensureMarketplace(): MarketplaceListEntry {
  * path-prefix parsing in that case.
  */
 function loadInstalledPluginsState(): unknown {
-  const home = process.env['HOME'] ?? process.env['USERPROFILE']
-  if (!home || !path.isAbsolute(home)) {
+  const pluginsDir = getPluginsDir()
+  if (!pluginsDir) {
     return undefined
   }
-  const stateFile = path.join(
-    home,
-    '.claude',
-    'plugins',
-    'installed_plugins.json',
-  )
+  const stateFile = path.join(pluginsDir, 'installed_plugins.json')
   if (!existsSync(stateFile)) {
     return undefined
   }
@@ -445,6 +488,151 @@ function warnOrphanMarketplaces(
   }
 }
 
+/**
+ * Resolve the on-disk cache dir for a plugin pinned in our marketplace. Claude
+ * Code lays caches out at
+ * `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`. Returns the
+ * absolute path, or `undefined` if HOME is unresolvable or the dir is absent.
+ */
+function resolvePluginCacheDir(
+  pluginName: string,
+  version: string,
+): string | undefined {
+  const pluginsDir = getPluginsDir()
+  if (!pluginsDir) {
+    return undefined
+  }
+  const dir = path.join(
+    pluginsDir,
+    'cache',
+    MARKETPLACE_NAME,
+    pluginName,
+    version,
+  )
+  return existsSync(dir) ? dir : undefined
+}
+
+/**
+ * Strip the leading `# @key: value` / `#` comment header from a fleet-style
+ * patch, returning just the unified-diff body (everything from the first
+ * `--- ` line onward). Mirrors socket-btm's node-smol patch convention, where
+ * the header carries provenance metadata and the apply step feeds only the
+ * diff to `patch`. Returns an empty string if the file has no `--- ` line.
+ */
+export function stripPatchHeader(patchText: string): string {
+  const idx = patchText.search(/^--- /m)
+  return idx === -1 ? '' : patchText.slice(idx)
+}
+
+/**
+ * Derive the sidecar dir for a patch file. A patch named `<x>.patch` may ship a
+ * companion `<x>.files/` directory whose tree mirrors the plugin cache root
+ * (e.g. `<x>.files/scripts/lib/read-stdin-sync.mjs` → `<cache>/scripts/lib/…`).
+ * The fleet "smallest patch footprint" rule prefers moving substantial logic
+ * into such a sidecar module so the diff itself stays an import + call-site
+ * swap, rather than inlining a 30-line function body. Returns the dir path
+ * (whether or not it exists — caller checks).
+ */
+export function patchSidecarDir(patchPath: string): string {
+  return patchPath.replace(/\.patch$/, '.files')
+}
+
+/**
+ * Copy a patch's sidecar `.files/` tree into the plugin cache, overwriting.
+ * No-op when the patch ships no sidecar. Runs before the diff is applied so the
+ * thin diff's `import` of a sidecar module resolves. Idempotent (plain
+ * overwrite copy).
+ */
+function copyPatchSidecar(patchPath: string, cacheDir: string): void {
+  const sidecar = patchSidecarDir(patchPath)
+  if (!existsSync(sidecar)) {
+    return
+  }
+  cpSync(sidecar, cacheDir, { recursive: true })
+}
+
+/**
+ * Reapply wheelhouse-owned patches to plugin caches. The cache is regenerated
+ * on every (re)install, so an upstream-bug fix we can't land upstream yet has
+ * to be replayed from a checked-in diff.
+ *
+ * Patches use the fleet (socket-btm) convention: a `# @key: value` provenance
+ * header above a plain `diff -u` body (NOT a `git diff` — no `index`/`mode`
+ * markers), applied with `patch -p1`, the same tool the node-smol build chain
+ * uses. The header is stripped before feeding the diff to `patch`.
+ *
+ * Idempotent: a forward `--dry-run` that fails while a reverse `--dry-run`
+ * succeeds means the fix is already present, so it's skipped. A patch that
+ * applies neither way (e.g. the plugin bumped and the patch went stale) is
+ * reported, not fatal — a stale patch shouldn't wedge the whole reconcile.
+ */
+function reapplyPluginPatches(): void {
+  if (!existsSync(PLUGIN_PATCHES_DIR)) {
+    return
+  }
+  const patchFiles = readdirSync(PLUGIN_PATCHES_DIR)
+    .filter(f => f.endsWith('.patch'))
+    .toSorted()
+  for (let i = 0, { length } = patchFiles; i < length; i += 1) {
+    const file = patchFiles[i]!
+    const parsed = parsePatchFileName(file)
+    if (!parsed) {
+      logger.warn(
+        `Skipping patch "${file}": name must match <plugin>-<version>-<slug>.patch.`,
+      )
+      continue
+    }
+    const { plugin: pluginName, version } = parsed
+    const patchPath = path.join(PLUGIN_PATCHES_DIR, file)
+    const diff = stripPatchHeader(readFileSync(patchPath, 'utf8'))
+    if (!diff) {
+      logger.warn(`Skipping patch "${file}": no \`--- \` diff body found.`)
+      continue
+    }
+    const cacheDir = resolvePluginCacheDir(pluginName, version)
+    if (!cacheDir) {
+      logger.log(
+        `Patch "${file}": no cache for ${pluginName}@${version}; skipping (plugin not installed).`,
+      )
+      continue
+    }
+    // Copy any sidecar modules into the cache first, so the thin diff's
+    // import of them resolves (and so the already-applied reverse-check sees
+    // the same tree the forward apply produced).
+    copyPatchSidecar(patchPath, cacheDir)
+    // patch reads the diff from stdin. -p1 strips the leading a/ b/ segment;
+    // --forward refuses to re-apply an already-applied hunk (so the forward
+    // dry-run cleanly fails when the fix is present).
+    const runPatch = (extraArgs: readonly string[]) =>
+      spawnSync('patch', ['-p1', '--forward', '--silent', ...extraArgs], {
+        cwd: cacheDir,
+        input: diff,
+        stdio: ['pipe', 'ignore', 'ignore'],
+      })
+    if (runPatch(['--dry-run']).status !== 0) {
+      // Forward dry-run failed. Either already applied or genuinely stale —
+      // a reverse dry-run that succeeds means the fix is already present.
+      if (runPatch(['--reverse', '--dry-run']).status === 0) {
+        logger.log(
+          `Patch "${file}" already applied to ${pluginName}@${version}.`,
+        )
+      } else {
+        logger.warn(
+          `Patch "${file}" did not apply to ${pluginName}@${version} ` +
+            '(neither forward nor already-applied). The plugin may have ' +
+            'changed upstream — regenerate via the regenerating-plugin-patches skill.',
+        )
+      }
+      continue
+    }
+    if (runPatch([]).status === 0) {
+      logger.success(`Applied patch "${file}" to ${pluginName}@${version}.`)
+    } else {
+      logger.warn(`Patch "${file}" dry-run passed but apply failed; skipped.`)
+    }
+  }
+}
+
 function main(): void {
   logger.log(`Reconciling Claude Code plugins to ${MARKETPLACE_NAME}…`)
   const marketplace = ensureMarketplace()
@@ -463,6 +651,9 @@ function main(): void {
   // Post-pass: warn about marketplaces that now look redundant.
   const ourPluginNames = new Set(plugins.map(p => p.name))
   warnOrphanMarketplaces(listMarketplaces(), ourPluginNames, listPlugins())
+
+  // Post-pass: reapply wheelhouse-owned patches over the (re)installed caches.
+  reapplyPluginPatches()
 
   logger.log('Done.')
 }

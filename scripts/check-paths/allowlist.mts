@@ -11,7 +11,7 @@
  *   is OR'd so reformatting that shifts the line still matches via the hash.
  */
 
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
@@ -244,7 +244,11 @@ export const loadAllowlist = (repoRoot: string): AllowlistEntry[] => {
  */
 export const snippetHash = (snippet: string): string => {
   const normalized = snippet.replace(/\s+/g, ' ').trim()
-  return createHash('sha256').update(normalized).digest('hex').slice(0, 12)
+  return crypto
+    .createHash('sha256')
+    .update(normalized)
+    .digest('hex')
+    .slice(0, 12)
 }
 
 /**

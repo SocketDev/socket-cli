@@ -419,7 +419,7 @@ export function normalizeMarkdown(text: string): string {
     lastNonEmpty--
   }
   const lastIsClosingFence = lines[lastNonEmpty] === '```'
-  if (firstStartsWithUpdated && thirdIsCodeFence && lastIsClosingFence) {
+  if (firstStartsWithUpdated && lastIsClosingFence && thirdIsCodeFence) {
     return lines.slice(3, lastNonEmpty).join('\n').trimEnd() + '\n'
   }
   return text

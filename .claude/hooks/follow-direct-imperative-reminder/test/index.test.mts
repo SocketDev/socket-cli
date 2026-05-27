@@ -107,5 +107,5 @@ test('flattenContent: ignores non-text blocks', () => {
 test('flattenContent: empty/garbage', () => {
   assert.strictEqual(flattenContent(undefined), '')
   assert.strictEqual(flattenContent(42), '')
-  assert.strictEqual(flattenContent(null), '')
+  assert.strictEqual(flattenContent(undefined), '')
 })

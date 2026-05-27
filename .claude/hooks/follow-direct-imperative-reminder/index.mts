@@ -106,7 +106,10 @@ export function flattenContent(content: unknown): string {
     const parts: string[] = []
     for (const block of content) {
       if (block && typeof block === 'object') {
-        const b = block as { type?: string; text?: string }
+        const b = block as {
+          type?: string | undefined
+          text?: string | undefined
+        }
         if (b.type === 'text' && typeof b.text === 'string') {
           parts.push(b.text)
         }
@@ -220,7 +223,8 @@ const HEDGE_MARKERS = [
 ]
 
 export function hasHedge(text: string): boolean {
-  for (const re of HEDGE_MARKERS) {
+  for (let i = 0, { length } = HEDGE_MARKERS; i < length; i += 1) {
+    const re = HEDGE_MARKERS[i]!
     if (re.test(text)) {
       return true
     }

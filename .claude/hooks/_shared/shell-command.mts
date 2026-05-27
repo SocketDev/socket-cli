@@ -1,33 +1,30 @@
 /**
- * @file Shell-command parsing for Bash-allowlist hooks. Wraps `shell-quote`
- *   (a maintained, zero-dep JS tokenizer) so structure-sensitive guards can
- *   reason about "what binary actually runs, at each command position"
- *   instead of regex-matching the raw string.
- *
- *   Why this exists: regex command detection is evaded by ordinary shell
- *   indirection — `g=git; $g push`, `eval "git push"`, `git $(printf push)`,
- *   `\git push`. CLAUDE.md ("Background Bash") mandates AST-based parsing for
- *   structure-sensitive Bash rules; this is the fleet's JS parser layer,
- *   built on `shell-quote` (the fleet-canonical shell parser).
- *
+ * @file Shell-command parsing for Bash-allowlist hooks. Wraps `shell-quote` (a
+ *   maintained, zero-dep JS tokenizer) so structure-sensitive guards can reason
+ *   about "what binary actually runs, at each command position" instead of
+ *   regex-matching the raw string. Why this exists: regex command detection is
+ *   evaded by ordinary shell indirection — `g=git; $g push`, `eval "git push"`,
+ *   `git $(printf push)`, `\git push`. CLAUDE.md ("Background Bash") mandates
+ *   AST-based parsing for structure-sensitive Bash rules; this is the fleet's
+ *   JS parser layer, built on `shell-quote` (the fleet-canonical shell parser).
  *   What it gives you:
- *   - `parseCommands(command)` — split a command line into Command segments,
- *     one per shell command (separated by `;`, `&&`, `||`, `|`, `&`, and the
+ *
+ *   - `parseCommands(command)` — split a command line into Command segments, one
+ *     per shell command (separated by `;`, `&&`, `||`, `|`, `&`, and the
  *     boundaries of `$(…)` substitutions). Each segment carries its binary,
  *     args, leading `VAR=val` assignments, and indirection flags.
- *   - `findInvocation(command, { binary, subcommand })` — true when any
- *     segment invokes `binary` (optionally with `subcommand` as its first
- *     non-flag argument). Sees through chains, substitution, and quoting.
+ *   - `findInvocation(command, { binary, subcommand })` — true when any segment
+ *     invokes `binary` (optionally with `subcommand` as its first non-flag
+ *     argument). Sees through chains, substitution, and quoting.
  *   - Each Command exposes `viaVariable` (binary resolved from `$VAR` →
  *     shell-quote yields an empty binary token) and `viaEval` (the binary is
  *     `eval`), so a guard can choose to BLOCK or fail-loud on indirection it
- *     can't statically resolve rather than silently allow it.
- *
- *   Limitation: shell-quote tokenizes, it doesn't fully evaluate. It cannot
- *   expand a variable's value (`g=git; $g push` yields an empty binary, not
- *   `git`) — but it FLAGS that the binary was variable-sourced, which is the
- *   actionable signal. Aliases defined elsewhere and wrapper scripts remain
- *   out of scope for any static parser.
+ *     can't statically resolve rather than silently allow it. Limitation:
+ *     shell-quote tokenizes, it doesn't fully evaluate. It cannot expand a
+ *     variable's value (`g=git; $g push` yields an empty binary, not `git`) —
+ *     but it FLAGS that the binary was variable-sourced, which is the
+ *     actionable signal. Aliases defined elsewhere and wrapper scripts remain
+ *     out of scope for any static parser.
  */
 
 // shell-quote ships no types and we don't want a second dep (@types/
@@ -44,19 +41,29 @@ const parse = shellQuoteParse as unknown as (cmd: string) => ParseEntry[]
 
 // shell-quote emits operator objects ({ op }), comment objects ({ comment }),
 // and bare strings. These ops separate one command from the next.
-const COMMAND_SEPARATORS = new Set(['&&', '||', ';', '|', '&', '\n'])
+const COMMAND_SEPARATORS = new Set(['\n', '&', '&&', ';', '|', '||'])
 
 export interface Command {
-  /** The resolved binary (first non-assignment token), or '' when it could
-   *  not be statically resolved (e.g. `$VAR` indirection). */
+  /**
+   * The resolved binary (first non-assignment token), or '' when it could not
+   * be statically resolved (e.g. `$VAR` indirection).
+   */
   readonly binary: string
-  /** Arguments after the binary, bare strings only (ops/comments dropped). */
+  /**
+   * Arguments after the binary, bare strings only (ops/comments dropped).
+   */
   readonly args: readonly string[]
-  /** Leading `NAME=value` assignments that prefixed the command. */
+  /**
+   * Leading `NAME=value` assignments that prefixed the command.
+   */
   readonly assignments: readonly string[]
-  /** True when the binary token came from a variable (`$g push` → ''). */
+  /**
+   * True when the binary token came from a variable (`$g push` → '').
+   */
   readonly viaVariable: boolean
-  /** True when the binary is `eval` (the command it runs is opaque). */
+  /**
+   * True when the binary is `eval` (the command it runs is opaque).
+   */
   readonly viaEval: boolean
 }
 
@@ -74,10 +81,11 @@ const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/
  * Parse a shell command line into its constituent Command segments.
  *
  * Token handling:
+ *
  * - Operators in COMMAND_SEPARATORS start a new segment.
- * - `$(…)` substitution shows up as `"$" ( … )`; the `(`/`)` ops bound an
- *   inner command, which becomes its own segment (so a substituted binary
- *   like `git $(printf push)` surfaces `printf` as a command too).
+ * - `$(…)` substitution shows up as `"$" ( … )`; the `(`/`)` ops bound an inner
+ *   command, which becomes its own segment (so a substituted binary like `git
+ *   $(printf push)` surfaces `printf` as a command too).
  * - Comments are dropped.
  * - A leading run of `NAME=value` tokens are assignments; the first
  *   non-assignment token is the binary.
@@ -132,7 +140,8 @@ export function parseCommands(command: string): Command[] {
     sawVarPlaceholder = false
   }
 
-  for (const e of entries) {
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const e = entries[i]!
     if (isComment(e)) {
       continue
     }
@@ -163,22 +172,26 @@ export function parseCommands(command: string): Command[] {
 }
 
 export interface InvocationQuery {
-  /** Binary name to match, e.g. 'git' or 'gh'. Case-sensitive. */
+  /**
+   * Binary name to match, e.g. 'git' or 'gh'. Case-sensitive.
+   */
   readonly binary: string
-  /** Optional first non-flag argument, e.g. 'push' or 'workflow'. */
+  /**
+   * Optional first non-flag argument, e.g. 'push' or 'workflow'.
+   */
   readonly subcommand?: string | undefined
 }
 
 /**
- * True when `command` invokes `query.binary` (optionally with `subcommand`
- * as its first non-flag argument) in any of its command segments.
+ * True when `command` invokes `query.binary` (optionally with `subcommand` as
+ * its first non-flag argument) in any of its command segments.
  *
- * "First non-flag argument" skips leading `-x` / `--long` / `-x value`
- * option tokens so `git -C /x push` matches `{ binary: 'git', subcommand:
- * 'push' }`. Flags that take a separate-word value (`-C <dir>`) are handled
- * by skipping a non-flag token that immediately follows a known value-taking
- * flag is NOT attempted — instead we scan for `subcommand` among the
- * non-flag args, which is robust for the subcommand-detection use case.
+ * "First non-flag argument" skips leading `-x` / `--long` / `-x value` option
+ * tokens so `git -C /x push` matches `{ binary: 'git', subcommand: 'push' }`.
+ * Flags that take a separate-word value (`-C <dir>`) are handled by skipping a
+ * non-flag token that immediately follows a known value-taking flag is NOT
+ * attempted — instead we scan for `subcommand` among the non-flag args, which
+ * is robust for the subcommand-detection use case.
  */
 export function findInvocation(
   command: string,
@@ -207,24 +220,23 @@ export function findInvocation(
 
 /**
  * Every command segment that invokes `binary`. Use when a guard needs the
- * matched command's args (to check for a flag like `--write` or a
- * subcommand) rather than a yes/no. Returns [] when `binary` isn't invoked.
+ * matched command's args (to check for a flag like `--write` or a subcommand)
+ * rather than a yes/no. Returns [] when `binary` isn't invoked.
  *
- * This is the right entry point for "binary X with flag/arg Y" rules: a
- * guard reads `binary === 'codex'` segments and inspects their `args`,
- * instead of regex-matching `--write` anywhere in the raw command (which
- * trips on the flag appearing in a path, a sibling command, or a quoted
- * string).
+ * This is the right entry point for "binary X with flag/arg Y" rules: a guard
+ * reads `binary === 'codex'` segments and inspects their `args`, instead of
+ * regex-matching `--write` anywhere in the raw command (which trips on the flag
+ * appearing in a path, a sibling command, or a quoted string).
  */
 export function commandsFor(command: string, binary: string): Command[] {
   return parseCommands(command).filter(c => c.binary === binary)
 }
 
 /**
- * True when any `binary` segment carries one of `flags` as an argument.
- * Matches both the exact flag token (`--write`, `-w`) and the `--flag=value`
- * form (so `--write=true` counts for `--write`). Bundled short flags
- * (`-wf`) are NOT decomposed — list each short flag you care about.
+ * True when any `binary` segment carries one of `flags` as an argument. Matches
+ * both the exact flag token (`--write`, `-w`) and the `--flag=value` form (so
+ * `--write=true` counts for `--write`). Bundled short flags (`-wf`) are NOT
+ * decomposed — list each short flag you care about.
  */
 export function invocationHasFlag(
   command: string,
@@ -245,9 +257,9 @@ export function invocationHasFlag(
 
 /**
  * True when the command uses indirection a static parser can't resolve to a
- * concrete binary: a `$VAR`-sourced binary or an `eval`. A guard that wants
- * to be strict (fail-closed on evasion attempts) can treat this as
- * suspicious; a guard that wants to stay permissive can ignore it.
+ * concrete binary: a `$VAR`-sourced binary or an `eval`. A guard that wants to
+ * be strict (fail-closed on evasion attempts) can treat this as suspicious; a
+ * guard that wants to stay permissive can ignore it.
  */
 export function hasOpaqueInvocation(command: string): boolean {
   return parseCommands(command).some(c => c.viaVariable || c.viaEval)

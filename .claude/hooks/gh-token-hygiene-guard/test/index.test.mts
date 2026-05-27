@@ -27,19 +27,19 @@ type Result = { code: number; stderr: string }
 
 interface RunOptions {
   // What the fake `gh auth status` should print.
-  ghStatusOutput?: string
+  ghStatusOutput?: string | undefined
   // Pretend a transcript with this body exists. Path passed as
   // transcript_path to the hook.
-  transcriptText?: string
+  transcriptText?: string | undefined
   // The Bash command to feed via tool_input.command.
   command: string
   // Pre-create the workflow-grant file body. Use a string to set the
   // body content (e.g. a session_id for a valid grant, or 'wrong-session'
   // for a mismatch test). Set to `true` to record with the same
   // session_id the hook sees ('test-session-id'). Omit for no grant.
-  hasGrant?: boolean | string
+  hasGrant?: boolean | string | undefined
   // session_id passed to the hook (defaults to 'test-session-id').
-  sessionId?: string
+  sessionId?: string | undefined
 }
 
 const TEST_SESSION_ID = 'test-session-id'

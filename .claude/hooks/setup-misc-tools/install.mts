@@ -36,7 +36,7 @@ async function main(): Promise<void> {
   logger.log(`janus:  ${janusOk ? 'ready' : 'FAILED'}`)
   logger.log(`synp:   ${synpOk ? 'ready' : 'FAILED'}`)
 
-  if (!(cdxgenOk && synpOk && janusOk)) {
+  if (!(cdxgenOk && janusOk && synpOk)) {
     process.exitCode = 1
   }
 }

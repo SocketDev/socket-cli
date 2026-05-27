@@ -238,7 +238,8 @@ async function applySparsePatterns(
 async function cmdAdd(opts: AddOpts): Promise<void> {
   const { repoRoot, worktreeRoot } = await getRoots()
   if (opts.verbose) {
-    logger.log(`worktree root: ${worktreeRoot}\nrepo root: ${repoRoot}`)
+    logger.log(`worktree root: ${worktreeRoot}`)
+    logger.log(`repo root: ${repoRoot}`)
   }
   const submoduleRelPath = toWorktreeRelative(worktreeRoot, opts.path)
   const submoduleName = opts.name ?? submoduleRelPath
@@ -314,7 +315,8 @@ async function cmdAdd(opts: AddOpts): Promise<void> {
 async function cmdClone(opts: CloneOpts): Promise<void> {
   const { repoRoot, worktreeRoot } = await getRoots()
   if (opts.verbose) {
-    logger.log(`worktree root: ${worktreeRoot}\nrepo root: ${repoRoot}`)
+    logger.log(`worktree root: ${worktreeRoot}`)
+    logger.log(`repo root: ${repoRoot}`)
   }
   const gitmodules = await readGitmodules(opts, worktreeRoot)
   await runGit(opts, ['submodule', 'init', ...opts.paths])
@@ -393,9 +395,8 @@ async function cmdClone(opts: CloneOpts): Promise<void> {
       .trim()
       .split(/\s+/)
     if (treeInfo.length !== 4) {
-      logger.error(
-        `git ls-tree produced unexpected output:\n${treeInfo.join(' ')}`,
-      )
+      logger.error('git ls-tree produced unexpected output:')
+      logger.error(treeInfo.join(' '))
       process.exit(1)
     }
     const submoduleCommit = treeInfo[2]!

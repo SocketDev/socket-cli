@@ -19,7 +19,7 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const HOOK = path.join(here, '..', 'pre-commit.mts')
 
 function setupRepo(): string {
-  const dir = mkdtempSync(path.join(tmpdir(), 'pre-commit-test-'))
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'pre-commit-test-'))
   spawnSync('git', ['init', '-q'], { cwd: dir })
   spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: dir })
   spawnSync('git', ['config', 'user.name', 'Test'], { cwd: dir })

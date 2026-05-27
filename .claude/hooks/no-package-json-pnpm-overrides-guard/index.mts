@@ -56,11 +56,11 @@ export function extractOverrideKeys(jsonText: string): Set<string> {
   if (!parsed || typeof parsed !== 'object') {
     return out
   }
-  const pnpm = (parsed as { pnpm?: unknown }).pnpm
+  const pnpm = (parsed as { pnpm?: unknown | undefined }).pnpm
   if (!pnpm || typeof pnpm !== 'object') {
     return out
   }
-  const overrides = (pnpm as { overrides?: unknown }).overrides
+  const overrides = (pnpm as { overrides?: unknown | undefined }).overrides
   if (!overrides || typeof overrides !== 'object') {
     return out
   }

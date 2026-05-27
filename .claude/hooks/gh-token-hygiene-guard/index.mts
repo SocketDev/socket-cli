@@ -79,7 +79,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { homedir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -126,9 +126,13 @@ const BYPASS_PHRASE = 'Allow workflow-scope bypass'
 // letting the dispatch through, so a second dispatch (chain attack or
 // genuine re-use) requires a fresh phrase. Token-age (8h) is the
 // time-based check; the dispatch gate is single-use.
-const WORKFLOW_GRANT_FILE = path.join(homedir(), '.claude', 'gh-workflow-grant')
+const WORKFLOW_GRANT_FILE = path.join(
+  os.homedir(),
+  '.claude',
+  'gh-workflow-grant',
+)
 const TOKEN_ISSUED_AT_FILE = path.join(
-  homedir(),
+  os.homedir(),
   '.claude',
   'gh-token-issued-at',
 )
@@ -471,7 +475,9 @@ function extractHostBlock(text: string, host: string): string | undefined {
   let end = lines.length
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i]!
-    if (!headerRe.test(line)) continue
+    if (!headerRe.test(line)) {
+      continue
+    }
     const trimmed = line.trim().replace(/:$/, '')
     if (start === -1) {
       if (trimmed === host) {
@@ -483,7 +489,9 @@ function extractHostBlock(text: string, host: string): string | undefined {
       break
     }
   }
-  if (start === -1) return undefined
+  if (start === -1) {
+    return undefined
+  }
   return lines.slice(start, end).join('\n')
 }
 
@@ -512,8 +520,12 @@ function recordWorkflowGrant(sessionId: string | undefined): void {
 // the current session. An attacker-planted grant from a different
 // (or no) session is rejected.
 function verifyWorkflowGrant(sessionId: string | undefined): boolean {
-  if (!sessionId) return false
-  if (!existsSync(WORKFLOW_GRANT_FILE)) return false
+  if (!sessionId) {
+    return false
+  }
+  if (!existsSync(WORKFLOW_GRANT_FILE)) {
+    return false
+  }
   try {
     const body = readFileSync(WORKFLOW_GRANT_FILE, 'utf8')
     const recordedSessionId = body.split('\n')[0]?.trim() ?? ''
@@ -747,7 +759,7 @@ function requireUserAuthentication(): AuthResult {
 }
 
 const TOUCH_ID_NUDGED_FILE = path.join(
-  homedir(),
+  os.homedir(),
   '.claude',
   'gh-touch-id-setup-nudged',
 )

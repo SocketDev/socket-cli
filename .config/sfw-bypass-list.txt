@@ -26,11 +26,19 @@
 # diffs.
 
 # GitHub release-asset CDNs (targets of github.com/*/releases/download/*
-# and github.com/*/archive/* redirects).
+# redirects).
 bypass:objects.githubusercontent.com
 bypass:release-assets.githubusercontent.com
 bypass:raw.githubusercontent.com
 bypass:gist.githubusercontent.com
+# Source-archive CDN: github.com/<owner>/<repo>/archive/<ref>.zip|.tar.gz
+# 302-redirects to codeload.github.com, NOT *.githubusercontent.com.
+# CMake FetchContent / go modules / build systems pulling SHA-pinned
+# source archives hit this host — sfw was truncating the stream
+# mid-transfer (curl status 18 "Transferred a partial file"), e.g.
+# onnxruntime's eigen3 dep. Integrity stays enforced by the build's
+# own SHA checks (deps.txt SHA1 / FetchContent URL_HASH).
+bypass:codeload.github.com
 
 # VCS fallbacks (Go modules, npm git-deps, Ruby git sources).
 bypass:gitlab.com

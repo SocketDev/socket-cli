@@ -43,7 +43,7 @@ await runStopReminder({
       // by the assistant's own scripts (sync-cascade, pre-commit
       // autofix, oxlint --fix, oxfmt).
       regex:
-        /\b(?:the\s+)?(?:user|linter|formatter)\s+(?:reverted|stripped|removed|undid|reformatted|rewrote|preserves?|prefers?|keeps?)\b|\buser['']s\s+(?:preferred|intentional|preserved)\s+state\b|\b(?:reverted|stripped|removed)\s+by\s+(?:the\s+)?(?:user|linter|formatter)\b|\b(?:the\s+)?(?:user|linter)\s+(?:wants|chose|picked)\s+(?:to\s+keep|to\s+strip|to\s+remove)\b/i,
+        /\b(?:the\s+)?(?:formatter|linter|user)\s+(?:reverted|stripped|removed|undid|reformatted|rewrote|preserves?|prefers?|keeps?)\b|\buser['']s\s+(?:intentional|preferred|preserved)\s+state\b|\b(?:removed|reverted|stripped)\s+by\s+(?:the\s+)?(?:formatter|linter|user)\b|\b(?:the\s+)?(?:user|linter)\s+(?:wants|chose|picked)\s+(?:to\s+keep|to\s+strip|to\s+remove)\b/i,
       why: 'Don\'t blame the user or "the linter" for state that may have been produced by your own scripts (sync-cascade, pre-commit autofix, oxlint --fix, oxfmt, template canonical sources). Investigate WHICH script produced the state — `git log -S` the change, run pre-commit phases in isolation, check `template/` canonical sources. Only attribute the change to the user with direct evidence (a quoted user message, a `git reflog` entry).',
     },
   ],

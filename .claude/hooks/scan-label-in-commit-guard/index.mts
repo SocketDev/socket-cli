@@ -135,7 +135,7 @@ export function extractCommitMessage(
     let fileArg: string | undefined
     for (let i = 0, { length } = args; i < length; i += 1) {
       const arg = args[i]!
-      if (arg === '-m' || arg === '--message') {
+      if (arg === '--message' || arg === '-m') {
         const next = args[i + 1]
         if (next !== undefined) {
           messages.push(next)
@@ -147,7 +147,7 @@ export function extractCommitMessage(
         messages.push(arg.slice('--message='.length))
         continue
       }
-      if (arg === '-F' || arg === '--file') {
+      if (arg === '--file' || arg === '-F') {
         const next = args[i + 1]
         if (next !== undefined) {
           fileArg = next

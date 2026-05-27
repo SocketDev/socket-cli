@@ -10,7 +10,14 @@
  *   `oxlint`/`oxfmt`, or rewrite a script invocation). Reporting only.
  */
 
+import { makeBypassChecker } from '../lib/comment-markers.mts'
+import { isPluginSelfFile } from '../lib/fleet-paths.mts'
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'
+
+// socket-hook: allow eslint-biome-ref -- opt-out for a string that names a
+// legacy tool as DATA (e.g. an allowlist of popular package names), not as a
+// stale config reference.
+const BYPASS_RE = /socket-hook:\s*allow\s+eslint-biome-ref/
 
 const FORBIDDEN_REFS = [
   '.eslintrc',
@@ -64,6 +71,12 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    // This rule's own source lists the banned config names as lookup-table
+    // data and its test file exercises them as fixtures.
+    if (isPluginSelfFile(context)) {
+      return {}
+    }
+    const hasBypassComment = makeBypassChecker(context, BYPASS_RE)
     return {
       Literal(node: AstNode) {
         const v = (node as { value?: unknown | undefined }).value
@@ -71,7 +84,7 @@ const rule = {
           return
         }
         const hit = isForbiddenString(v)
-        if (!hit) {
+        if (!hit || hasBypassComment(node)) {
           return
         }
         context.report({
@@ -89,7 +102,7 @@ const rule = {
           return
         }
         const hit = isForbiddenString(cooked)
-        if (!hit) {
+        if (!hit || hasBypassComment(node)) {
           return
         }
         context.report({

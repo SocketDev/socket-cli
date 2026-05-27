@@ -153,6 +153,7 @@ async function main(): Promise<void> {
 
   process.stderr.write(
     [
+      // socket-hook: allow inline-defer -- the hook's own diagnostic text names the banned shape; it isn't real inline-script markup.
       '[inline-script-defer-guard] Blocked: <script defer/async> without src=',
       '',
       `  File: ${filePath}`,
