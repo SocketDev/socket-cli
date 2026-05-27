@@ -27,86 +27,61 @@ import scala.collection.mutable
  *
  * The graph is read from Ivy resolution metadata only: `setDownload(false)`
  * means no artifact jars are fetched, just the POM/ivy.xml needed to compute
- * the transitive closure. Resolution failures are fatal: any unresolved
- * dependency aborts with a non-zero exit rather than being silently dropped
- * (the env is the user's own, set up to resolve their deps).
+ * the transitive closure — we never consume bandwidth pulling jars.
  *
- * The project's dependency configurations are resolved into one component per
- * module (org:name:version); a module's alternate artifacts (sources/javadoc
- * classifier jars) are the same package, so they collapse into that single
- * component rather than adding duplicates. The Scala compiler/scaladoc
- * toolchain and sbt plugins are skipped by default: they're inherent to the
- * chosen sbt/Scala version (absent from the pom-path manifest too) and
- * dominate resolution cost for little actionable alert signal. Pass
- * `-Dsocket.includeToolchain=true` to resolve them as well, tagged `tooling`
- * so reachability skips them. (Any dependency reached only via a non-classpath
- * config is likewise tagged `tooling`.)
+ * By default only the project's real dependency configurations are resolved
+ * (`compile`, `runtime`, `test`, `provided`, `optional`); the Scala
+ * compiler/scaladoc toolchain, sbt-native-packager configs (debian, docker,
+ * universal, ...), `-internal` duplicates and the sources/docs/pom artifact
+ * configs are skipped. They aren't the project's declared dependencies (the
+ * pom-path manifest omits them too) and resolving them dominates cost on large
+ * builds. Override the set with `-Dsocket.configs=comma,separated` (e.g.
+ * `compile,test`, or add a custom config). One component is emitted per
+ * resolved module (org:name:version); a module's alternate artifacts
+ * (sources/javadoc classifier jars) are the same package, so they collapse
+ * into that single component rather than adding duplicates. `test`-scoped
+ * configs are tagged `dev`.
+ *
+ * Unresolved dependencies are fatal by default (non-zero exit) rather than
+ * silently dropped — the env is the user's own, set up to resolve their deps.
+ * `-Dsocket.ignoreUnresolved=true` downgrades that to a warning and emits the
+ * resolvable deps anyway.
  *
  * Intra-build project dependencies are omitted: sbt's `dependsOn` is a
- * classpath dependency, not an Ivy one, so siblings never appear in a
+ * classpath dependency, not an Ivy one, so siblings rarely appear in a
  * project's resolve, and a sibling referenced as an explicit library
  * dependency is filtered out by coordinate. Each project's own external deps
- * are aggregated, so a subproject's transitives still land in the output via
- * that subproject's own resolve.
+ * are aggregated, and resolution is per-project, so divergent per-module
+ * versions are all reported.
  *
  * Delivery: shipped as source and dropped into an isolated `-Dsbt.global.base`
  * plugins dir, so it activates on any project without installation. It is
  * compiled by the sbt meta-build, whose Scala is 2.10 for sbt 0.13 and 2.12
  * for sbt 1.x — so this file must compile on both. Reaching into Ivy (stable
  * across those sbt versions) keeps the code free of the version-specific sbt
- * APIs that would otherwise need reflection.
+ * APIs that would otherwise need reflection, and lets us scope resolution to
+ * the configs we want (which sbt's own `update`/`updateFull` can't).
  */
 object SocketFactsPlugin extends AutoPlugin {
   override def trigger = allRequirements
+
+  // The configurations resolved by default: the project's real dependency
+  // scopes. Override via `-Dsocket.configs`. Everything else (toolchain,
+  // packager, `-internal`, sources/docs/pom) is skipped — not declared deps,
+  // and costly to resolve.
+  private val DefaultConfs =
+    Set("compile", "optional", "provided", "runtime", "test")
+
+  // Must stay in sync with `DOT_SOCKET_DOT_FACTS_JSON` in src/constants.mts
+  // (TS side). Scala can't import the TS constant, so the two strings are
+  // intentionally duplicated; change them together.
+  private val SocketFactsFilename = ".socket.facts.json"
 
   object autoImport {
     val socketFacts =
       taskKey[Unit]("Emit a Socket facts JSON for the whole build")
   }
   import autoImport._
-
-  // Configurations that put a dependency on the application's own classpath —
-  // what reachability analysis consumes. A dependency reached by any of these
-  // (or by a test config; see isTestConf) is a real dependency. EVERYTHING
-  // else — the Scala compiler/scaladoc toolchain, sbt plugins, and any other
-  // non-classpath config — is tagged `tooling`: still emitted (so artifact and
-  // vulnerability alerts see every package), but skipped by reachability.
-  //
-  // The point of `tooling` is operational: reachability needn't, and often
-  // can't, resolve internal build tools, and would error trying. Defining
-  // tooling as "not a known app classpath" (rather than allowlisting known
-  // tool configs) means even an unanticipated build-tool config is skipped
-  // rather than blowing up reachability. The cost is that a non-standard
-  // classpath config (e.g. sbt's IntegrationTest `it`) is also treated as
-  // tooling — acceptable, since it's still emitted for alerts and such deps
-  // are reasonable to leave out of production reachability. `scala-library` is
-  // on `compile`, so it stays non-tooling.
-  private val ClasspathConfs = Set(
-    "compile",
-    "compile-internal",
-    "default",
-    "optional",
-    "provided",
-    "runtime",
-    "runtime-internal",
-    "test",
-    "test-internal"
-  )
-
-  // Configs skipped by default. The Scala toolchain (scala-tool/scala-doc-tool)
-  // and sbt plugins are inherent to the chosen sbt/Scala version, not the
-  // project's declared deps (the pom-path manifest omits them too), and their
-  // metadata — chiefly the scaladoc tree — is most of the resolution cost for
-  // little actionable alert signal. docs/pom/sources only re-request alternate
-  // artifacts of modules already resolved. `-Dsocket.includeToolchain=true`
-  // resolves everything instead (kept so the perf impact can be A/B'd).
-  private val SkippedConfs =
-    Set("docs", "plugin", "pom", "scala-doc-tool", "scala-tool", "sources")
-
-  // Must stay in sync with `DOT_SOCKET_DOT_FACTS_JSON` in src/constants.mts
-  // (TS side). Scala can't import the TS constant, so the two strings are
-  // intentionally duplicated; change them together.
-  private val SocketFactsFilename = ".socket.facts.json"
 
   override def projectSettings: Seq[Setting[_]] = Seq(
     // Run once for the whole build; the task itself gathers every project via
@@ -142,13 +117,23 @@ object SocketFactsPlugin extends AutoPlugin {
       }
 
       if (unresolved.nonEmpty) {
-        log.error("Socket facts: could not resolve these dependencies:")
-        unresolved.toList.sorted.foreach(u => log.error("  - " + u))
-        sys.error(
-          "Socket facts aborted: " + unresolved.size +
-            " unresolved dependency(ies). Fix resolution (repositories, " +
-            "credentials, offline cache) and retry."
-        )
+        val ignore = boolProp("socket.ignoreUnresolved")
+        if (ignore) {
+          log.warn(
+            "Socket facts: skipping " + unresolved.size +
+              " unresolved dependency(ies) (ignore-unresolved):"
+          )
+          unresolved.toList.sorted.foreach(u => log.warn("  - " + u))
+        } else {
+          log.error("Socket facts: could not resolve these dependencies:")
+          unresolved.toList.sorted.foreach(u => log.error("  - " + u))
+          sys.error(
+            "Socket facts aborted: " + unresolved.size +
+              " unresolved dependency(ies). Pass --ignore-unresolved to skip " +
+              "them, or fix resolution (repositories, credentials, offline " +
+              "cache) and retry."
+          )
+        }
       }
 
       if (nodes.isEmpty) {
@@ -174,6 +159,18 @@ object SocketFactsPlugin extends AutoPlugin {
     }
   )
 
+  // The configurations to resolve: `-Dsocket.configs=a,b,c` if set, else the
+  // real dependency scopes.
+  private def requestedConfs: Set[String] =
+    sys.props.get("socket.configs") match {
+      case Some(s) if s.trim.nonEmpty =>
+        s.split(",").map(_.trim).filter(_.nonEmpty).toSet
+      case _ => DefaultConfs
+    }
+
+  private def boolProp(name: String): Boolean =
+    java.lang.Boolean.parseBoolean(sys.props.getOrElse(name, "false"))
+
   // Resolve one project's module metadata-only and fold its graph into the
   // shared, build-wide node map. Takes the stable Ivy types (not sbt's
   // IvySbt#Module, which moved packages between 0.13 and 1.x).
@@ -185,17 +182,8 @@ object SocketFactsPlugin extends AutoPlugin {
       unresolved: mutable.LinkedHashSet[String]
   ): Unit = {
     val rootMrid = md.getModuleRevisionId
-    // Resolve the project's dependency configs; skip the toolchain/no-op
-    // configs (SkippedConfs) by default so we don't pay for the scaladoc tree
-    // etc. Custom dependency configs (e.g. IntegrationTest `it`) are still
-    // resolved. `-Dsocket.includeToolchain=true` resolves everything.
-    val includeToolchain = java.lang.Boolean.parseBoolean(
-      sys.props.getOrElse("socket.includeToolchain", "false")
-    )
-    val allConfs = md.getConfigurationsNames
-    val confs =
-      if (includeToolchain) allConfs
-      else allConfs.filterNot(SkippedConfs.contains)
+    val wanted = requestedConfs
+    val confs = md.getConfigurationsNames.filter(wanted.contains)
     if (confs.nonEmpty) {
       // Don't revalidate cached metadata over the network: with release
       // coordinates the cached POM/ivy.xml never changes, so HEAD/GET-ing each
@@ -229,20 +217,14 @@ object SocketFactsPlugin extends AutoPlugin {
         val ivyNode = pass1.next().asInstanceOf[IvyNode]
         if (isEmittable(ivyNode, projectCoords)) {
           val mrid = ivyNode.getResolvedId
-          val rootConfs = ivyNode.getRootModuleConfigurations
-          // prod = reached by any non-test config. nonTooling = reached by a
-          // real app-classpath config (test configs count as classpath too);
-          // anything reachable only via non-classpath configs is build tooling.
-          val prod = rootConfs.exists(c => !isTestConf(c))
-          val nonTooling =
-            rootConfs.exists(c => ClasspathConfs.contains(c) || isTestConf(c))
+          // prod = reached by any non-test config; a dep reached only via test
+          // configs is dev.
+          val prod =
+            ivyNode.getRootModuleConfigurations.exists(c => !isTestConf(c))
           val coord = coordFor(ivyNode, mrid)
           val node = nodes.getOrElseUpdate(coord.id, new Node(coord))
           if (prod) {
             node.prod = true
-          }
-          if (nonTooling) {
-            node.nonTooling = true
           }
           mridToId(mrid.toString) = coord.id
         }
@@ -280,8 +262,7 @@ object SocketFactsPlugin extends AutoPlugin {
   // A dependency node is emittable when it actually resolved to a real module
   // that isn't a project in this build and isn't a conflict loser. Failed or
   // unloaded nodes are skipped here (reading their metadata throws); they're
-  // reported separately via the resolve report's unresolved list, which aborts
-  // the run.
+  // reported separately via the resolve report's unresolved list.
   private def isEmittable(
       node: IvyNode,
       projectCoords: scala.collection.Set[String]
@@ -357,9 +338,6 @@ object SocketFactsPlugin extends AutoPlugin {
     if (!node.prod) {
       fields += "\"dev\": true"
     }
-    if (!node.nonTooling) {
-      fields += "\"tooling\": true"
-    }
     if (node.children.nonEmpty) {
       val depLines = node.children.toList.map(d => "        " + jsonString(d))
       fields += "\"dependencies\": [\n" + depLines.mkString(",\n") + "\n      ]"
@@ -397,7 +375,6 @@ object SocketFactsPlugin extends AutoPlugin {
   private final class Node(val coord: Coord) {
     val children = mutable.TreeSet.empty[String]
     var prod = false
-    var nonTooling = false
     var direct = false
   }
 }

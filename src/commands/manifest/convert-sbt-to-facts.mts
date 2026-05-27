@@ -47,12 +47,16 @@ async function ensurePluginSource(
 
 export async function convertSbtToFacts({
   bin,
+  configs,
   cwd,
+  ignoreUnresolved,
   sbtOpts,
   verbose,
 }: {
   bin: string
+  configs: string
   cwd: string
+  ignoreUnresolved: boolean
   sbtOpts: string[]
   verbose: boolean
 }): Promise<void> {
@@ -75,9 +79,18 @@ export async function convertSbtToFacts({
     await ensurePluginSource(pluginSrcPath, path.join(globalBase, 'plugins'))
 
     // `-Dsbt.global.base` points sbt at our isolated plugins dir, so the
-    // source-only plugin activates without touching the user's `~/.sbt`.
+    // source-only plugin activates without touching the user's `~/.sbt`. The
+    // resolution options are passed as JVM system properties the plugin reads.
+    const socketProps: string[] = []
+    if (ignoreUnresolved) {
+      socketProps.push('-Dsocket.ignoreUnresolved=true')
+    }
+    if (configs) {
+      socketProps.push(`-Dsocket.configs=${configs}`)
+    }
     const commandArgs = [
       `-Dsbt.global.base=${globalBase}`,
+      ...socketProps,
       ...sbtOpts,
       '--batch',
       'socketFacts',

@@ -40,7 +40,11 @@ export async function generateAutoManifest({
     const sbtArgs = {
       // Note: `sbt` is more likely to be resolved against PATH env.
       bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
+      configs: sockJson.defaults?.manifest?.sbt?.configs ?? '',
       cwd,
+      ignoreUnresolved: Boolean(
+        sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
+      ),
       sbtOpts:
         sockJson.defaults?.manifest?.sbt?.sbtOpts
           ?.split(' ')

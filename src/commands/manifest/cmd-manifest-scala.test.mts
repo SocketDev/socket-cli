@@ -24,7 +24,9 @@ describe('socket manifest scala', async () => {
 
           Options
             --bin               Location of sbt binary to use
+            --configs           With --facts: comma-separated sbt configurations to resolve (default: compile,runtime,test,provided,optional)
             --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
+            --ignore-unresolved  With --facts: skip dependencies that fail to resolve instead of failing the run
             --out               Path of output file; where to store the resulting manifest, see also --stdout
             --sbt-opts          Additional options to pass on to sbt, as per \`sbt --help\`
             --stdout            Print resulting pom.xml to stdout (supersedes --out)
@@ -55,7 +57,9 @@ describe('socket manifest scala', async () => {
           Pass --facts to instead emit a single \`.socket.facts.json\` describing the
           resolved dependency graph of the whole build (no \`pom.xml\` files). It reads
           dependency metadata only and never downloads artifacts; an unresolved
-          dependency is a fatal error.
+          dependency is a fatal error. With --facts you can pass
+          --configs=compile,test to choose which sbt configurations to resolve, and
+          --ignore-unresolved to skip dependencies that fail to resolve.
 
           Support is beta. Please report issues or give us feedback on what's missing.
 

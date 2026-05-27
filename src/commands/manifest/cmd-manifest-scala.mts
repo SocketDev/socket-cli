@@ -34,6 +34,16 @@ const config: CliCommandConfig = {
       description:
         'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph instead of generating `pom.xml` files',
     },
+    configs: {
+      type: 'string',
+      description:
+        'With --facts: comma-separated sbt configurations to resolve (default: compile,runtime,test,provided,optional)',
+    },
+    ignoreUnresolved: {
+      type: 'boolean',
+      description:
+        'With --facts: skip dependencies that fail to resolve instead of failing the run',
+    },
     out: {
       type: 'string',
       description:
@@ -84,7 +94,9 @@ const config: CliCommandConfig = {
     Pass --facts to instead emit a single \`.socket.facts.json\` describing the
     resolved dependency graph of the whole build (no \`pom.xml\` files). It reads
     dependency metadata only and never downloads artifacts; an unresolved
-    dependency is a fatal error.
+    dependency is a fatal error. With --facts you can pass
+    --configs=compile,test to choose which sbt configurations to resolve, and
+    --ignore-unresolved to skip dependencies that fail to resolve.
 
     Support is beta. Please report issues or give us feedback on what's missing.
 
@@ -137,7 +149,8 @@ async function run(
     sockJson?.defaults?.manifest?.sbt,
   )
 
-  let { bin, facts, out, sbtOpts, stdout, verbose } = cli.flags
+  let { bin, configs, facts, ignoreUnresolved, out, sbtOpts, stdout, verbose } =
+    cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -154,6 +167,25 @@ async function run(
       logger.info(`Using default --facts from ${SOCKET_JSON}:`, facts)
     } else {
       facts = false
+    }
+  }
+  if (configs === undefined) {
+    if (sockJson.defaults?.manifest?.sbt?.configs !== undefined) {
+      configs = sockJson.defaults?.manifest?.sbt?.configs
+      logger.info(`Using default --configs from ${SOCKET_JSON}:`, configs)
+    } else {
+      configs = ''
+    }
+  }
+  if (ignoreUnresolved === undefined) {
+    if (sockJson.defaults?.manifest?.sbt?.ignoreUnresolved !== undefined) {
+      ignoreUnresolved = sockJson.defaults?.manifest?.sbt?.ignoreUnresolved
+      logger.info(
+        `Using default --ignore-unresolved from ${SOCKET_JSON}:`,
+        ignoreUnresolved,
+      )
+    } else {
+      ignoreUnresolved = false
     }
   }
   if (
@@ -234,7 +266,9 @@ async function run(
   if (facts) {
     await convertSbtToFacts({
       bin: String(bin),
+      configs: String(configs || ''),
       cwd,
+      ignoreUnresolved: Boolean(ignoreUnresolved),
       sbtOpts: parsedSbtOpts,
       verbose: Boolean(verbose),
     })
