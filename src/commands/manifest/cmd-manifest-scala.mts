@@ -37,7 +37,7 @@ const config: CliCommandConfig = {
     configs: {
       type: 'string',
       description:
-        'With --facts: comma-separated sbt configurations to resolve (default: compile,runtime,test,provided,optional)',
+        'With --facts: comma-separated sbt configurations to resolve (default: compile,optional,provided,runtime,test)',
     },
     ignoreUnresolved: {
       type: 'boolean',
@@ -234,6 +234,20 @@ async function run(
   ) {
     logger.warn(
       'The `--configs` and `--ignore-unresolved` options only apply with `--facts`; ignoring them.',
+    )
+  }
+
+  // Conversely, --out / --stdout only affect the pom path; with --facts the
+  // plugin always writes `.socket.facts.json` to the build root (its
+  // socket.outputDirectory/outputFile JVM props aren't exposed by the CLI), so
+  // warn rather than let `--facts --out custom.json` silently write nothing
+  // there.
+  if (
+    facts &&
+    (cli.flags['out'] !== undefined || cli.flags['stdout'] !== undefined)
+  ) {
+    logger.warn(
+      'The `--out` and `--stdout` options do not apply with `--facts`; the facts file is always written to the build root.',
     )
   }
 

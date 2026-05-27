@@ -96,13 +96,14 @@ object SocketFactsPlugin extends AutoPlugin {
       val modules = ivyModule.all(ScopeFilter(inAnyProject)).value
       val buildRoot = (baseDirectory in ThisBuild).value
 
-      // First pass: every project's own coordinate (org:name), so intra-build
-      // deps are omitted even when referenced as explicit library deps.
+      // First pass: every project's own coordinate (org:name:version), so
+      // intra-build deps are omitted even when referenced as explicit library
+      // deps. Keying on the full GAV (not just org:name) means an external dep
+      // that merely shares an org:name with a build project is still emitted.
       val projectCoords = mutable.HashSet.empty[String]
       modules.foreach { module =>
         module.withModule(log) { (_, md, _) =>
-          val mrid = md.getModuleRevisionId
-          projectCoords += mrid.getOrganisation + ":" + mrid.getName
+          projectCoords += gavKey(md.getModuleRevisionId)
         }
       }
 
@@ -271,9 +272,16 @@ object SocketFactsPlugin extends AutoPlugin {
     mrid != null &&
     node.getModuleRevision != null &&
     !node.hasProblem &&
-    !projectCoords.contains(mrid.getOrganisation + ":" + mrid.getName) &&
+    !projectCoords.contains(gavKey(mrid)) &&
     !node.isCompletelyEvicted
   }
+
+  // Build-wide coordinate key (org:name:version) identifying a project in this
+  // build, so its own modules are omitted when they surface in another
+  // project's resolve. Full GAV (not just org:name) so a same-named external
+  // dependency at a different version is still emitted.
+  private def gavKey(mrid: ModuleRevisionId): String =
+    mrid.getOrganisation + ":" + mrid.getName + ":" + mrid.getRevision
 
   private def coordFor(node: IvyNode, mrid: ModuleRevisionId): Coord =
     Coord(mrid.getOrganisation, mrid.getName, mrid.getRevision, primaryExt(node))

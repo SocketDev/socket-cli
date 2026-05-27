@@ -24,7 +24,7 @@ describe('socket manifest scala', async () => {
 
           Options
             --bin               Location of sbt binary to use
-            --configs           With --facts: comma-separated sbt configurations to resolve (default: compile,runtime,test,provided,optional)
+            --configs           With --facts: comma-separated sbt configurations to resolve (default: compile,optional,provided,runtime,test)
             --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
             --ignore-unresolved  With --facts: skip dependencies that fail to resolve instead of failing the run
             --out               Path of output file; where to store the resulting manifest, see also --stdout
