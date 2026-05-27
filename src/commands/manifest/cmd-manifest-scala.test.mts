@@ -24,6 +24,7 @@ describe('socket manifest scala', async () => {
 
           Options
             --bin               Location of sbt binary to use
+            --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
             --out               Path of output file; where to store the resulting manifest, see also --stdout
             --sbt-opts          Additional options to pass on to sbt, as per \`sbt --help\`
             --stdout            Print resulting pom.xml to stdout (supersedes --out)
@@ -51,6 +52,11 @@ describe('socket manifest scala', async () => {
 
           You can specify --bin to override the path to the \`sbt\` binary to invoke.
 
+          Pass --facts to instead emit a single \`.socket.facts.json\` describing the
+          resolved dependency graph of the whole build (no \`pom.xml\` files). It reads
+          dependency metadata only and never downloads artifacts; an unresolved
+          dependency is a fatal error.
+
           Support is beta. Please report issues or give us feedback on what's missing.
 
           This is only for SBT. If your Scala setup uses gradle, please see the help
@@ -59,6 +65,7 @@ describe('socket manifest scala', async () => {
           Examples
 
             $ socket manifest scala
+            $ socket manifest scala --facts .
             $ socket manifest scala ./proj --bin=/usr/bin/sbt --file=boot.sbt"
       `,
       )
@@ -92,6 +99,24 @@ describe('socket manifest scala', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+    },
+  )
+
+  cmdit(
+    ['manifest', 'scala', '--facts', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should accept --facts with dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest scala\`, cwd: <redacted>"
+      `)
+
+      expect(code, '--facts --dry-run should exit with code 0').toBe(0)
     },
   )
 })

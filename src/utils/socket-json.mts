@@ -70,6 +70,7 @@ export interface SocketJson {
         infile?: string | undefined
         stdin?: boolean | undefined
         bin?: string | undefined
+        facts?: boolean | undefined
         outfile?: string | undefined
         sbtOpts?: string | undefined
         stdout?: boolean | undefined

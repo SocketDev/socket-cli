@@ -332,29 +332,42 @@ async function setupSbt(
     delete config.sbtOpts
   }
 
-  const stdout = await askForStdout(config.stdout)
-  if (stdout === undefined) {
+  const facts = await askForFactsFlag(config.facts)
+  if (facts === undefined) {
     return canceledByUser()
-  } else if (stdout === 'yes') {
-    config.stdout = true
-  } else if (stdout === 'no') {
-    config.stdout = false
+  } else if (facts === 'yes' || facts === 'no') {
+    config.facts = facts === 'yes'
   } else {
-    delete config.stdout
+    delete config.facts
   }
 
-  if (config.stdout !== true) {
-    const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
-    if (out === undefined) {
+  // --facts emits a .socket.facts.json instead of pom.xml files, so the pom
+  // output questions (stdout/outfile) don't apply when it is enabled.
+  if (config.facts !== true) {
+    const stdout = await askForStdout(config.stdout)
+    if (stdout === undefined) {
       return canceledByUser()
-    } else if (out === '-') {
+    } else if (stdout === 'yes') {
       config.stdout = true
+    } else if (stdout === 'no') {
+      config.stdout = false
     } else {
       delete config.stdout
-      if (out) {
-        config.outfile = out
+    }
+
+    if (config.stdout !== true) {
+      const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
+      if (out === undefined) {
+        return canceledByUser()
+      } else if (out === '-') {
+        config.stdout = true
       } else {
-        delete config.outfile
+        delete config.stdout
+        if (out) {
+          config.outfile = out
+        } else {
+          delete config.outfile
+        }
       }
     }
   }

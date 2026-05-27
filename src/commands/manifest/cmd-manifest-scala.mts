@@ -3,6 +3,7 @@ import path from 'node:path'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
@@ -27,6 +28,11 @@ const config: CliCommandConfig = {
     bin: {
       type: 'string',
       description: 'Location of sbt binary to use',
+    },
+    facts: {
+      type: 'boolean',
+      description:
+        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph instead of generating `pom.xml` files',
     },
     out: {
       type: 'string',
@@ -75,6 +81,11 @@ const config: CliCommandConfig = {
 
     You can specify --bin to override the path to the \`sbt\` binary to invoke.
 
+    Pass --facts to instead emit a single \`.socket.facts.json\` describing the
+    resolved dependency graph of the whole build (no \`pom.xml\` files). It reads
+    dependency metadata only and never downloads artifacts; an unresolved
+    dependency is a fatal error.
+
     Support is beta. Please report issues or give us feedback on what's missing.
 
     This is only for SBT. If your Scala setup uses gradle, please see the help
@@ -83,6 +94,7 @@ const config: CliCommandConfig = {
     Examples
 
       $ ${command}
+      $ ${command} --facts .
       $ ${command} ./proj --bin=/usr/bin/sbt --file=boot.sbt
   `,
 }
@@ -125,7 +137,7 @@ async function run(
     sockJson?.defaults?.manifest?.sbt,
   )
 
-  let { bin, out, sbtOpts, stdout, verbose } = cli.flags
+  let { bin, facts, out, sbtOpts, stdout, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -134,6 +146,14 @@ async function run(
       logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
       bin = 'sbt'
+    }
+  }
+  if (facts === undefined) {
+    if (sockJson.defaults?.manifest?.sbt?.facts !== undefined) {
+      facts = sockJson.defaults?.manifest?.sbt?.facts
+      logger.info(`Using default --facts from ${SOCKET_JSON}:`, facts)
+    } else {
+      facts = false
     }
   }
   if (
@@ -206,14 +226,26 @@ async function run(
     return
   }
 
+  const parsedSbtOpts = String(sbtOpts || '')
+    .split(' ')
+    .map(s => s.trim())
+    .filter(Boolean)
+
+  if (facts) {
+    await convertSbtToFacts({
+      bin: String(bin),
+      cwd,
+      sbtOpts: parsedSbtOpts,
+      verbose: Boolean(verbose),
+    })
+    return
+  }
+
   await convertSbtToMaven({
     bin: String(bin),
-    cwd: cwd,
+    cwd,
     out: String(out),
-    sbtOpts: String(sbtOpts)
-      .split(' ')
-      .map(s => s.trim())
-      .filter(Boolean),
+    sbtOpts: parsedSbtOpts,
     verbose: Boolean(verbose),
   })
 }
