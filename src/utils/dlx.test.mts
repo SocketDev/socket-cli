@@ -468,5 +468,54 @@ describe('utils/dlx', () => {
       )
       expect(npmInstallCalls).toHaveLength(1)
     })
+
+    it('strips npm_package_* env vars in the fallback to avoid E2BIG in big monorepos', async () => {
+      // Simulate a parent env polluted with npm_package_* (as set by npm/pnpm
+      // when running inside a project with a populated package.json). The
+      // fallback must not pass these through to its npm install or node
+      // spawns, or the same ARG_MAX overflow that broke the dlx path would
+      // recur.
+      process.env['npm_package_name'] = 'forge'
+      process.env['npm_package_dependencies_react'] = '^18.2.0'
+      process.env['npm_package_devDependencies_typescript'] = '^5.0.0'
+      // npm_config_* must be preserved — these carry registry/proxy settings
+      // sourced from .npmrc and are needed for the nested npm install.
+      process.env['npm_config_registry'] = 'https://artifactory.example/npm/'
+
+      try {
+        const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+          coanaVersion: nextVersion(),
+        })
+        expect(result.ok).toBe(true)
+
+        const npmInstallCall = mockSpawn.mock.calls.find(
+          ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
+        )!
+        const nodeCall = mockSpawn.mock.calls.find(([cmd]) => cmd === 'node')!
+
+        const npmEnv = (npmInstallCall[2] as { env: NodeJS.ProcessEnv }).env
+        const nodeEnv = (nodeCall[2] as { env: NodeJS.ProcessEnv }).env
+
+        // npm_package_* are stripped from both spawns.
+        expect(npmEnv['npm_package_name']).toBeUndefined()
+        expect(npmEnv['npm_package_dependencies_react']).toBeUndefined()
+        expect(npmEnv['npm_package_devDependencies_typescript']).toBeUndefined()
+        expect(nodeEnv['npm_package_name']).toBeUndefined()
+        expect(nodeEnv['npm_package_dependencies_react']).toBeUndefined()
+
+        // npm_config_* is preserved (registry override survives).
+        expect(npmEnv['npm_config_registry']).toBe(
+          'https://artifactory.example/npm/',
+        )
+        expect(nodeEnv['npm_config_registry']).toBe(
+          'https://artifactory.example/npm/',
+        )
+      } finally {
+        delete process.env['npm_package_name']
+        delete process.env['npm_package_dependencies_react']
+        delete process.env['npm_package_devDependencies_typescript']
+        delete process.env['npm_config_registry']
+      }
+    })
   })
 })

@@ -194,6 +194,32 @@ export type CoanaDlxOptions = DlxOptions & {
 const installedCoanaScriptPathsByVersion = new Map<string, string>()
 
 /**
+ * Strip npm-injected `npm_package_*` env vars before spawning a Coana
+ * subprocess. npm (and pnpm/yarn classic) populate one env var per leaf in
+ * the cwd's package.json — `npm_package_dependencies_*`, `npm_package_scripts_*`,
+ * etc. In big monorepos with hundreds of deps this can easily account for
+ * 50KB+ of environment, pushing combined argv + env past Linux ARG_MAX
+ * (~128KB) and causing `spawn` to fail with E2BIG before Coana even starts.
+ *
+ * Coana does not read `npm_package_*` itself, so dropping them is safe. We
+ * intentionally keep `npm_config_*` (registry, cache, proxy settings sourced
+ * from .npmrc), `npm_lifecycle_*`, and everything else untouched — those can
+ * matter for outbound network behavior of nested `npm install` calls.
+ */
+function sanitizeEnvForCoanaSubprocess(
+  env: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  const out: NodeJS.ProcessEnv = {}
+  for (const key of Object.keys(env)) {
+    if (key.startsWith('npm_package_')) {
+      continue
+    }
+    out[key] = env[key]
+  }
+  return out
+}
+
+/**
  * Spawn an installed Coana entry point via `node` (or directly, if it's a
  * native binary). Shared by the SOCKET_CLI_COANA_LOCAL_PATH branch and the
  * npm-install fallback.
@@ -210,7 +236,7 @@ async function spawnCoanaScriptViaNode(
   const spawnArgs = isBinary ? args : [scriptPath, ...args]
   const spawnResult = await spawn(isBinary ? scriptPath : 'node', spawnArgs, {
     cwd: options.cwd,
-    env: finalEnv,
+    env: sanitizeEnvForCoanaSubprocess(finalEnv),
     stdio: spawnExtra?.['stdio'] || 'inherit',
   })
 
@@ -278,7 +304,7 @@ async function installCoanaToTmpdir(
       `@coana-tech/cli@${version}`,
     ],
     {
-      env: finalEnv,
+      env: sanitizeEnvForCoanaSubprocess(finalEnv),
       stdio: 'inherit',
     },
   )

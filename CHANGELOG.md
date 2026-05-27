@@ -13,6 +13,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
 
+## [1.1.104](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.104) - 2026-05-26
+
+### Fixed
+- Coana CLI invocation: strip `npm_package_*` env vars before spawning the npm-install fallback. Prevents `spawn E2BIG` failures in large monorepos where the parent process has hundreds of `npm_package_*` env vars populated from the root `package.json`. Preserves `npm_config_*` (registry / proxy / cache from `.npmrc`).
+
 ## [1.1.103](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.103) - 2026-05-26
 
 ### Changed
