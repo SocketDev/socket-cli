@@ -20,18 +20,18 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../test/helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
 import { fetchDeleteOrgFullScan } from '../../../../src/commands/scan/fetch-delete-org-full-scan.mts'
 
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/util/socket/api.mts', () => ({
+vi.mock('../../../../src/util/socket/api.mts', () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../../src/util/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 

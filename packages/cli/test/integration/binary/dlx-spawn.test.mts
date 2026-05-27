@@ -150,7 +150,7 @@ describe('dlx e2e tests', () => {
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
       'executes @coana-tech/cli via dlx with correct binary name',
       async () => {
-        const { spawnCoanaDlx } = await import('../../src/util/dlx/spawn.mts')
+        const { spawnCoanaDlx } = await import('../../../src/util/dlx/spawn.mts')
         const result = await spawnCoanaDlx(['--help'])
 
         // Coana should succeed - if it fails, it indicates a real issue.
@@ -171,9 +171,9 @@ describe('dlx e2e tests', () => {
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
       'verifies coana binary is correctly resolved from package name',
       async () => {
-        const { spawnCoanaDlx } = await import('../../src/util/dlx/spawn.mts')
+        const { spawnCoanaDlx } = await import('../../../src/util/dlx/spawn.mts')
         const { resolveCoana } =
-          await import('../../src/util/dlx/resolve-binary.mts')
+          await import('../../../src/util/dlx/resolve-binary.mts')
 
         // Verify the resolution includes correct binary name.
         const resolution = resolveCoana()

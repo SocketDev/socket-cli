@@ -468,59 +468,53 @@ describe('meow-with-subcommands', () => {
       }
     })
 
-    it('returns "(--config flag)" when token from config-from-flag (line 56)', () => {
-      const originalNo = process.env['SOCKET_CLI_NO_API_TOKEN']
-      const original = process.env['SOCKET_API_TOKEN']
-      const originalCli = process.env['SOCKET_CLI_API_TOKEN']
-      delete process.env['SOCKET_CLI_NO_API_TOKEN']
-      delete process.env['SOCKET_API_TOKEN']
-      delete process.env['SOCKET_CLI_API_TOKEN']
+    // getTokenOrigin() resolves through getSocketApiToken(), which reads
+    // every token env source — including the legacy SOCKET_API_KEY alias
+    // and SOCKET_CLI_API_TOKEN. To exercise the config branches we must
+    // clear ALL of them so the ambient dev-shell key doesn't win the
+    // earlier (env) branch. Save/clear/restore via a helper so the env
+    // names (and the one legacy-alias exemption) live in a single place.
+    // socket-api-token-env: bootstrap -- this list intentionally names the
+    // legacy SOCKET_API_KEY alias so the test can neutralize it.
+    const TOKEN_ENV_KEYS = [
+      'SOCKET_CLI_NO_API_TOKEN',
+      'SOCKET_API_TOKEN',
+      'SOCKET_CLI_API_TOKEN',
+      'SOCKET_API_KEY',
+    ]
+    function withTokenEnvCleared(fn: () => void): void {
+      const saved = new Map(TOKEN_ENV_KEYS.map(k => [k, process.env[k]]))
+      for (let i = 0, { length } = TOKEN_ENV_KEYS; i < length; i += 1) {
+        delete process.env[TOKEN_ENV_KEYS[i]!]
+      }
       try {
-        // Mock config returns a token AND isConfigFromFlag returns true.
-        mockGetConfigValueOrUndef.mockReturnValueOnce(
-          'sktsec_flag_xxxxxxxxxxxx',
-        )
-        mockIsConfigFromFlag.mockReturnValueOnce(true)
-        const result = getTokenOrigin()
-        expect(result).toBe('(--config flag)')
+        fn()
       } finally {
-        if (originalNo !== undefined) {
-          process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNo
-        }
-        if (original !== undefined) {
-          process.env['SOCKET_API_TOKEN'] = original
-        }
-        if (originalCli !== undefined) {
-          process.env['SOCKET_CLI_API_TOKEN'] = originalCli
+        for (const [k, v] of saved) {
+          if (v !== undefined) {
+            process.env[k] = v
+          }
         }
       }
+    }
+
+    it('returns "(--config flag)" when token from config-from-flag (line 56)', () => {
+      withTokenEnvCleared(() => {
+        // Mock config returns a token AND isConfigFromFlag returns true.
+        mockGetConfigValueOrUndef.mockReturnValueOnce('sktsec_flag_xxxxxxxxxxxx')
+        mockIsConfigFromFlag.mockReturnValueOnce(true)
+        expect(getTokenOrigin()).toBe('(--config flag)')
+      })
     })
 
     it('returns "(config)" when token from persisted config (line 56)', () => {
-      const originalNo = process.env['SOCKET_CLI_NO_API_TOKEN']
-      const original = process.env['SOCKET_API_TOKEN']
-      const originalCli = process.env['SOCKET_CLI_API_TOKEN']
-      delete process.env['SOCKET_CLI_NO_API_TOKEN']
-      delete process.env['SOCKET_API_TOKEN']
-      delete process.env['SOCKET_CLI_API_TOKEN']
-      try {
+      withTokenEnvCleared(() => {
         mockGetConfigValueOrUndef.mockReturnValueOnce(
           'sktsec_persisted_xxxxxxxxxxxx',
         )
         mockIsConfigFromFlag.mockReturnValueOnce(false)
-        const result = getTokenOrigin()
-        expect(result).toBe('(config)')
-      } finally {
-        if (originalNo !== undefined) {
-          process.env['SOCKET_CLI_NO_API_TOKEN'] = originalNo
-        }
-        if (original !== undefined) {
-          process.env['SOCKET_API_TOKEN'] = original
-        }
-        if (originalCli !== undefined) {
-          process.env['SOCKET_CLI_API_TOKEN'] = originalCli
-        }
-      }
+        expect(getTokenOrigin()).toBe('(config)')
+      })
     })
   })
 

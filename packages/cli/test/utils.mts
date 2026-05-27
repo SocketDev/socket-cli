@@ -101,7 +101,7 @@ function sanitizeTokens(str: string): string {
   // Sanitize token prefixes that might be displayed (e.g., "zP416" -> "REDAC")
   // Match 5-character alphanumeric strings that appear after "token:" labels
   result = result.replace(
-    /token:\s*\[?\d+m\]?([A-Za-z0-9]{5})\*{3}/gi,
+    /token:\s*\[?\d+m\]?(?:[A-Za-z0-9]{5})\*{3}/gi,
     'token: REDAC***',
   )
 

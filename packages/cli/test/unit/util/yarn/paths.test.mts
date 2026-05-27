@@ -14,7 +14,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PathsModule from '../../../../../src/util/yarn/paths.mts'
+import type * as PathsModule from '../../../../src/util/yarn/paths.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -54,7 +54,7 @@ describe('yarn-paths utilities', () => {
     }) as unknown
 
     // Re-import functions after module reset to clear caches.
-    const yarnPaths = await import('../../../../../src/util/yarn/paths.mts')
+    const yarnPaths = await import('../../../../src/util/yarn/paths.mts')
     getYarnBinPath = yarnPaths.getYarnBinPath
     getYarnBinPathDetails = yarnPaths.getYarnBinPathDetails
   })

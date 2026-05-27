@@ -352,7 +352,7 @@ export function validatePackageName(name: string): void {
   // Basic validation: no shell metacharacters, must be valid npm package name.
   // npm package names can contain: lowercase letters, numbers, hyphens, underscores, dots, and @ for scopes.
   const validNamePattern =
-    /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
+    /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/
 
   if (!validNamePattern.test(name)) {
     throw new InputError(

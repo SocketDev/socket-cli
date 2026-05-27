@@ -29,15 +29,15 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchRepoAnalyticsData } from '../../../../src/src/commands/../../../../src/commands/analytics/fetch-repo-analytics.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchRepoAnalyticsData } from '../../../../src/commands/analytics/fetch-repo-analytics.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../util/socket/api.mts', () => ({
+vi.mock('../../../../src/util/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../util/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 

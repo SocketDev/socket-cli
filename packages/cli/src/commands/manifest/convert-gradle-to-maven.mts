@@ -100,6 +100,7 @@ export async function convertGradleToMaven({
     // Extract file paths from output.
     const files: string[] = []
     output.stdout.replace(
+      // oxlint-disable-next-line socket/prefer-non-capturing-group -- the capture is consumed as `fn` in the replace callback below.
       /^POM file copied to: (.*)/gm,
       (_all: string, fn: string) => {
         files.push(fn)

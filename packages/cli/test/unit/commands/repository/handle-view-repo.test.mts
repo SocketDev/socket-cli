@@ -17,7 +17,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { createSuccessResult } from '../../../../../src/commands/../../../test/helpers/index.mts'
+import { createSuccessResult } from '../../../helpers/index.mts'
 import { handleViewRepo } from '../../../../src/commands/repository/handle-view-repo.mts'
 
 // Setup mocks at module level

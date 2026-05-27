@@ -1,7 +1,6 @@
 import { NPM } from '@socketsecurity/lib-stable/constants/agents'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
 
-import { SOCKET_CLI_ISSUES_URL } from '../../constants/socket.mts'
 import { findBinPathDetailsSync } from '../fs/path-resolve.mts'
 
 const logger = getDefaultLogger()

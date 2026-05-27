@@ -19,7 +19,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../test/helpers/mocks.mts'
+} from '../../../helpers/mocks.mts'
 import { handleListScans } from '../../../../src/commands/scan/handle-list-scans.mts'
 
 // Mock the dependencies.

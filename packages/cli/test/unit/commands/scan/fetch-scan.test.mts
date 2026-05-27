@@ -16,7 +16,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchScan } from '../../../../../src/commands/scan/fetch-scan.mts'
+import { fetchScan } from '../../../../src/commands/scan/fetch-scan.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({

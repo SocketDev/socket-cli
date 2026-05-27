@@ -19,10 +19,10 @@ import {
   getSocketDevAlertUrl,
   getSocketDevPackageOverviewUrl,
   getSocketDevPackageOverviewUrlFromPurl,
-} from '../../../../../src/util/socket/url.mts'
+} from '../../../../src/util/socket/url.mts'
 
 // Mock constants.
-vi.mock('../../../../../src/constants.mts', () => ({
+vi.mock('../../../../src/constants.mts', () => ({
   constants: {
     SOCKET_WEBSITE_URL: 'https://socket.dev',
   },
@@ -31,7 +31,7 @@ vi.mock('../../../../../src/constants.mts', () => ({
 // Mock purl.
 const mockGetPurlObject = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/util/purl/parse.mts', () => ({
+vi.mock('../../../../src/util/purl/parse.mts', () => ({
   getPurlObject: mockGetPurlObject,
 }))
 

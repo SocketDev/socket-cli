@@ -23,7 +23,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { runAgentInstall } from '../../../../../src/commands/optimize/agent-installer.mts'
+import { runAgentInstall } from '../../../../src/commands/optimize/agent-installer.mts'
 
 // Mock dependencies.
 vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
@@ -37,7 +37,7 @@ vi.mock('@socketsecurity/lib-stable/spinner/spinner', () => ({
   })),
 }))
 
-vi.mock('../../../../../src/util/process/cmd.mts', () => ({
+vi.mock('../../../../src/util/process/cmd.mts', () => ({
   cmdFlagsToString: vi.fn(flags =>
     Object.entries(flags || {})
       .map(([k, v]) => `--${k}=${v}`)

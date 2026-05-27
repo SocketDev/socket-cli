@@ -11,24 +11,24 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../test/helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/util/socket/api.mts', () => ({
+vi.mock('../../../../src/util/socket/api.mts', () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../../src/util/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: mockSetupSdk,
 }))
 
 describe('fetchSupportedScanFileNames', () => {
   it('fetches supported scan file names successfully', async () => {
     const { fetchSupportedScanFileNames } =
-      await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
+      await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     const mockData = {
       supportedFiles: ['package.json', 'yarn.lock', 'composer.json'],
@@ -51,7 +51,7 @@ describe('fetchSupportedScanFileNames', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchSupportedScanFileNames } =
-      await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
+      await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     await setupSdkSetupFailure('Failed to setup SDK', {
       code: 1,
@@ -67,7 +67,7 @@ describe('fetchSupportedScanFileNames', () => {
 
   it('handles API call failure', async () => {
     const { fetchSupportedScanFileNames } =
-      await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
+      await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     await setupSdkMockError('getSupportedFiles', 'API error', 500)
 
@@ -79,7 +79,7 @@ describe('fetchSupportedScanFileNames', () => {
 
   it('passes custom SDK options', async () => {
     const { fetchSupportedScanFileNames } =
-      await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
+      await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
       'getSupportedFiles',
@@ -103,7 +103,7 @@ describe('fetchSupportedScanFileNames', () => {
 
   it('passes custom spinner', async () => {
     const { fetchSupportedScanFileNames } =
-      await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
+      await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     const { mockHandleApi } = await setupSdkMockSuccess('getSupportedFiles', {})
 
@@ -127,7 +127,7 @@ describe('fetchSupportedScanFileNames', () => {
 
   it('handles empty supported files response', async () => {
     const { fetchSupportedScanFileNames } =
-      await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
+      await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     await setupSdkMockSuccess('getSupportedFiles', {
       supportedFiles: [],
@@ -143,7 +143,7 @@ describe('fetchSupportedScanFileNames', () => {
 
   it('works with orgSlug provided', async () => {
     const { fetchSupportedScanFileNames } =
-      await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
+      await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     const { mockHandleApi, mockSetupSdk } = await setupSdkMockSuccess(
       'getSupportedFiles',
@@ -162,7 +162,7 @@ describe('fetchSupportedScanFileNames', () => {
 
   it('uses null prototype for options', async () => {
     const { fetchSupportedScanFileNames } =
-      await import('../../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
+      await import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('getSupportedFiles', {})
 

@@ -15,8 +15,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { overrideCachedConfig } from '../../../../../src/util/config.mts'
-import { determineOrgSlug } from '../../../../../src/util/socket/org-slug.mts'
+import { overrideCachedConfig } from '../../../../src/util/config.mts'
+import { determineOrgSlug } from '../../../../src/util/socket/org-slug.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({

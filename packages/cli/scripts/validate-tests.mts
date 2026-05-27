@@ -73,7 +73,7 @@ async function getTestFiles() {
         await collectFiles(fullPath)
       } else if (
         entry.isFile() &&
-        /\.test\.(js|mjs|mts|ts)$/.test(entry.name)
+        /\.test\.(?:js|mjs|mts|ts)$/.test(entry.name)
       ) {
         files.push(fullPath)
       }

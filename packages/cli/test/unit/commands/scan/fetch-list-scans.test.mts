@@ -16,21 +16,21 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { setupSdkMockSuccess } from '../../../../../test/helpers/sdk-test-helpers.mts'
+import { setupSdkMockSuccess } from '../../../helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/util/socket/api.mts', () => ({
+vi.mock('../../../../src/util/socket/api.mts', () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/util/socket/sdk.mts', () => ({
+vi.mock('../../../../src/util/socket/sdk.mts', () => ({
   setupSdk: vi.fn(),
 }))
 
 describe('fetchOrgFullScanList', () => {
   it('fetches scan list successfully', async () => {
     const { fetchOrgFullScanList } =
-      await import('../../../../../src/commands/scan/fetch-list-scans.mts')
+      await import('../../../../src/commands/scan/fetch-list-scans.mts')
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
       'listFullScans',
@@ -72,9 +72,9 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles SDK setup failure', async () => {
     const { fetchOrgFullScanList } =
-      await import('../../../../../src/commands/scan/fetch-list-scans.mts')
+      await import('../../../../src/commands/scan/fetch-list-scans.mts')
     const { setupSdkSetupFailure } =
-      await import('../../../../../test/helpers/sdk-test-helpers.mts')
+      await import('../../../helpers/sdk-test-helpers.mts')
 
     await setupSdkSetupFailure('Failed to setup SDK', {
       cause: 'Invalid configuration',
@@ -100,9 +100,9 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles API call failure', async () => {
     const { fetchOrgFullScanList } =
-      await import('../../../../../src/commands/scan/fetch-list-scans.mts')
+      await import('../../../../src/commands/scan/fetch-list-scans.mts')
     const { setupSdkMockError } =
-      await import('../../../../../test/helpers/sdk-test-helpers.mts')
+      await import('../../../helpers/sdk-test-helpers.mts')
 
     await setupSdkMockError('listFullScans', 'API error', 500)
 
@@ -125,7 +125,7 @@ describe('fetchOrgFullScanList', () => {
 
   it('passes custom SDK options', async () => {
     const { fetchOrgFullScanList } =
-      await import('../../../../../src/commands/scan/fetch-list-scans.mts')
+      await import('../../../../src/commands/scan/fetch-list-scans.mts')
 
     const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
       'listFullScans',
@@ -166,7 +166,7 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles empty optional config values', async () => {
     const { fetchOrgFullScanList } =
-      await import('../../../../../src/commands/scan/fetch-list-scans.mts')
+      await import('../../../../src/commands/scan/fetch-list-scans.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('listFullScans', {})
 
@@ -194,7 +194,7 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles different pagination parameters', async () => {
     const { fetchOrgFullScanList } =
-      await import('../../../../../src/commands/scan/fetch-list-scans.mts')
+      await import('../../../../src/commands/scan/fetch-list-scans.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('listFullScans', {})
 
@@ -233,7 +233,7 @@ describe('fetchOrgFullScanList', () => {
 
   it('handles different sort and direction combinations', async () => {
     const { fetchOrgFullScanList } =
-      await import('../../../../../src/commands/scan/fetch-list-scans.mts')
+      await import('../../../../src/commands/scan/fetch-list-scans.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('listFullScans', {})
 
@@ -272,7 +272,7 @@ describe('fetchOrgFullScanList', () => {
 
   it('uses null prototype for config and options', async () => {
     const { fetchOrgFullScanList } =
-      await import('../../../../../src/commands/scan/fetch-list-scans.mts')
+      await import('../../../../src/commands/scan/fetch-list-scans.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('listFullScans', {})
 

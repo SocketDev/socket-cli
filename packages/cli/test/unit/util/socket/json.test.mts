@@ -69,7 +69,7 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
 import {
   SOCKET_JSON,
   SOCKET_WEBSITE_URL,
-} from '../../../../../src/constants/socket.mts'
+} from '../../../../src/constants/socket.mts'
 import {
   findSocketJsonUp,
   getDefaultSocketJson,
@@ -77,7 +77,7 @@ import {
   readOrDefaultSocketJsonUp,
   readSocketJsonSync,
   writeSocketJson,
-} from '../../../../../src/util/socket/json.mts'
+} from '../../../../src/util/socket/json.mts'
 
 describe('socket-json utilities', () => {
   beforeEach(() => {

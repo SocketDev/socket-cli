@@ -69,14 +69,14 @@ export function scrubSnapshotData(
   if (timestamps) {
     // ISO timestamps: 2025-04-02T01:47:26.914Z.
     scrubbed = scrubbed.replace(
-      /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z/g,
+      /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z/g,
       '[TIMESTAMP]',
     )
     // Date-only: 2025-04-02.
     scrubbed = scrubbed.replace(/\d{4}-\d{2}-\d{2}/g, '[DATE]')
     // Relative time: "2 days ago", "5 minutes ago".
     scrubbed = scrubbed.replace(
-      /\d+\s+(days?|hours?|minutes?|seconds?)\s+ago/g,
+      /\d+\s+(?:days?|hours?|minutes?|seconds?)\s+ago/g,
       '[RELATIVE_TIME]',
     )
   }
@@ -109,7 +109,7 @@ export function scrubSnapshotData(
     // Scan IDs: scan-123, scan-ai-dee.
     scrubbed = scrubbed.replace(/scan-[a-zA-Z0-9-]+/g, 'scan-[ID]')
     // Event IDs in JSON: "event_id": "123112".
-    scrubbed = scrubbed.replace(/"event_id":\s*"(\d+)"/g, '"event_id":"[ID]"')
+    scrubbed = scrubbed.replace(/"event_id":\s*"(?:\d+)"/g, '"event_id":"[ID]"')
   }
 
   // Phase 4: Version numbers.
@@ -125,7 +125,7 @@ export function scrubSnapshotData(
     // IPv4.
     scrubbed = scrubbed.replace(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g, '[IP]')
     // IPv6.
-    scrubbed = scrubbed.replace(/([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}/gi, '[IP]')
+    scrubbed = scrubbed.replace(/(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}/gi, '[IP]')
   }
 
   // Phase 6: Email addresses.
