@@ -88,6 +88,15 @@ async function copySocketFactsInitGradle() {
   await fs.copyFile(filepath, destPath)
 }
 
+async function copySocketFactsSbtPlugin() {
+  const filepath = path.join(
+    constants.srcPath,
+    'commands/manifest/socket-facts.plugin.scala',
+  )
+  const destPath = path.join(constants.distPath, 'socket-facts.plugin.scala')
+  await fs.copyFile(filepath, destPath)
+}
+
 async function copyBashCompletion() {
   const filepath = path.join(
     constants.srcPath,
@@ -468,6 +477,7 @@ export default async () => {
             await Promise.all([
               copyInitGradle(),
               copySocketFactsInitGradle(),
+              copySocketFactsSbtPlugin(),
               copyBashCompletion(),
               updatePackageJson(),
               // Remove dist/vendor.js.map file.

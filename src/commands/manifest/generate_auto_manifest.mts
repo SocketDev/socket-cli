@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
+import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
@@ -36,19 +37,36 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
-    logger.log('Detected a Scala sbt build, generating pom files with sbt...')
-    await convertSbtToMaven({
-      // Note: `sbt` is more likely to be resolved against PATH env
+    // Args shared by both paths. The facts-only knobs (`configs`,
+    // `ignoreUnresolved`) and the pom-only `out` are added per branch so
+    // neither handler is spread properties it doesn't accept.
+    const sbtArgs = {
+      // Note: `sbt` is more likely to be resolved against PATH env.
       bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
       cwd,
-      out: sockJson.defaults?.manifest?.sbt?.outfile ?? './pom.xml',
       sbtOpts:
         sockJson.defaults?.manifest?.sbt?.sbtOpts
           ?.split(' ')
           .map(s => s.trim())
           .filter(Boolean) ?? [],
       verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
-    })
+    }
+    if (sockJson.defaults?.manifest?.sbt?.facts) {
+      logger.log('Detected a Scala sbt build, generating Socket facts...')
+      await convertSbtToFacts({
+        ...sbtArgs,
+        configs: sockJson.defaults?.manifest?.sbt?.configs ?? '',
+        ignoreUnresolved: Boolean(
+          sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
+        ),
+      })
+    } else {
+      logger.log('Detected a Scala sbt build, generating pom files with sbt...')
+      await convertSbtToMaven({
+        ...sbtArgs,
+        out: sockJson.defaults?.manifest?.sbt?.outfile ?? './pom.xml',
+      })
+    }
   }
 
   if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {

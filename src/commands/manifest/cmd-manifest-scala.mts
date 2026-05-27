@@ -3,6 +3,7 @@ import path from 'node:path'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
@@ -27,6 +28,21 @@ const config: CliCommandConfig = {
     bin: {
       type: 'string',
       description: 'Location of sbt binary to use',
+    },
+    facts: {
+      type: 'boolean',
+      description:
+        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph instead of generating `pom.xml` files',
+    },
+    configs: {
+      type: 'string',
+      description:
+        'With --facts: comma-separated sbt configurations to resolve (default: compile,optional,provided,runtime,test)',
+    },
+    ignoreUnresolved: {
+      type: 'boolean',
+      description:
+        'With --facts: skip dependencies that fail to resolve instead of failing the run',
     },
     out: {
       type: 'string',
@@ -75,6 +91,13 @@ const config: CliCommandConfig = {
 
     You can specify --bin to override the path to the \`sbt\` binary to invoke.
 
+    Pass --facts to instead emit a single \`.socket.facts.json\` describing the
+    resolved dependency graph of the whole build (no \`pom.xml\` files). It reads
+    dependency metadata only and never downloads artifacts; an unresolved
+    dependency is a fatal error. With --facts you can pass
+    --configs=compile,test to choose which sbt configurations to resolve, and
+    --ignore-unresolved to skip dependencies that fail to resolve.
+
     Support is beta. Please report issues or give us feedback on what's missing.
 
     This is only for SBT. If your Scala setup uses gradle, please see the help
@@ -83,6 +106,7 @@ const config: CliCommandConfig = {
     Examples
 
       $ ${command}
+      $ ${command} --facts .
       $ ${command} ./proj --bin=/usr/bin/sbt --file=boot.sbt
   `,
 }
@@ -125,7 +149,8 @@ async function run(
     sockJson?.defaults?.manifest?.sbt,
   )
 
-  let { bin, out, sbtOpts, stdout, verbose } = cli.flags
+  let { bin, configs, facts, ignoreUnresolved, out, sbtOpts, stdout, verbose } =
+    cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -134,6 +159,33 @@ async function run(
       logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
       bin = 'sbt'
+    }
+  }
+  if (facts === undefined) {
+    if (sockJson.defaults?.manifest?.sbt?.facts !== undefined) {
+      facts = sockJson.defaults?.manifest?.sbt?.facts
+      logger.info(`Using default --facts from ${SOCKET_JSON}:`, facts)
+    } else {
+      facts = false
+    }
+  }
+  if (configs === undefined) {
+    if (sockJson.defaults?.manifest?.sbt?.configs !== undefined) {
+      configs = sockJson.defaults?.manifest?.sbt?.configs
+      logger.info(`Using default --configs from ${SOCKET_JSON}:`, configs)
+    } else {
+      configs = ''
+    }
+  }
+  if (ignoreUnresolved === undefined) {
+    if (sockJson.defaults?.manifest?.sbt?.ignoreUnresolved !== undefined) {
+      ignoreUnresolved = sockJson.defaults?.manifest?.sbt?.ignoreUnresolved
+      logger.info(
+        `Using default --ignore-unresolved from ${SOCKET_JSON}:`,
+        ignoreUnresolved,
+      )
+    } else {
+      ignoreUnresolved = false
     }
   }
   if (
@@ -171,6 +223,34 @@ async function run(
     verbose = false
   }
 
+  // `--configs` and `--ignore-unresolved` only affect --facts; the pom path
+  // (`sbt makePom`) has no equivalent knobs. Warn rather than silently ignore
+  // an explicitly-passed flag. (socket.json defaults don't trip this — only a
+  // flag actually present on the command line does.)
+  if (
+    !facts &&
+    (cli.flags['configs'] !== undefined ||
+      cli.flags['ignoreUnresolved'] !== undefined)
+  ) {
+    logger.warn(
+      'The `--configs` and `--ignore-unresolved` options only apply with `--facts`; ignoring them.',
+    )
+  }
+
+  // Conversely, --out / --stdout only affect the pom path; with --facts the
+  // plugin always writes `.socket.facts.json` to the build root (its
+  // socket.outputDirectory/outputFile JVM props aren't exposed by the CLI), so
+  // warn rather than let `--facts --out custom.json` silently write nothing
+  // there.
+  if (
+    facts &&
+    (cli.flags['out'] !== undefined || cli.flags['stdout'] !== undefined)
+  ) {
+    logger.warn(
+      'The `--out` and `--stdout` options do not apply with `--facts`; the facts file is always written to the build root.',
+    )
+  }
+
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
     logger.group('- flags:', cli.flags)
@@ -206,14 +286,28 @@ async function run(
     return
   }
 
+  const parsedSbtOpts = String(sbtOpts || '')
+    .split(' ')
+    .map(s => s.trim())
+    .filter(Boolean)
+
+  if (facts) {
+    await convertSbtToFacts({
+      bin: String(bin),
+      configs: String(configs || ''),
+      cwd,
+      ignoreUnresolved: Boolean(ignoreUnresolved),
+      sbtOpts: parsedSbtOpts,
+      verbose: Boolean(verbose),
+    })
+    return
+  }
+
   await convertSbtToMaven({
     bin: String(bin),
-    cwd: cwd,
+    cwd,
     out: String(out),
-    sbtOpts: String(sbtOpts)
-      .split(' ')
-      .map(s => s.trim())
-      .filter(Boolean),
+    sbtOpts: parsedSbtOpts,
     verbose: Boolean(verbose),
   })
 }
