@@ -12,11 +12,10 @@ const logger = getDefaultLogger()
 
 async function main() {
   try {
-    // Step 1: Build with esbuild.
     logger.step('Building CLI bundle')
     const buildResult = await spawn(
       'node',
-      ['--max-old-space-size=8192', '.config/esbuild.build.mts', 'cli'],
+      ['--max-old-space-size=8192', '.config/rolldown.build.mts', 'cli'],
       { stdio: 'inherit' },
     )
     if (!buildResult) {

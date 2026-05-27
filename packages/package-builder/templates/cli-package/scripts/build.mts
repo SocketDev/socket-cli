@@ -1,5 +1,5 @@
 /**
- * @file Build script for Socket CLI. Delegates to esbuild config for actual
+ * @file Build script for Socket CLI. Delegates to rolldown config for actual
  *   build. Copies data/ and images from packages/cli.
  */
 
@@ -23,7 +23,7 @@ async function main() {
 
     // Build CLI bundle.
     logger.info('Building CLI bundle...')
-    let result = await spawn('node', ['.config/esbuild.cli.mts'], {
+    let result = await spawn('node', ['.config/rolldown.cli.mts'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,
@@ -40,7 +40,7 @@ async function main() {
 
     // Build index loader.
     logger.info('Building index loader...')
-    result = await spawn('node', ['.config/esbuild.index.mts'], {
+    result = await spawn('node', ['.config/rolldown.index.mts'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,

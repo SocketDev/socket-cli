@@ -104,10 +104,9 @@ async function main() {
       logger.info('Starting watch mode...')
     }
 
-    // Start esbuild in watch mode.
     const watchResult = await spawn(
       'node',
-      [...NODE_MEMORY_FLAGS, '.config/esbuild.cli.mts', '--watch'],
+      [...NODE_MEMORY_FLAGS, '.config/rolldown.cli.mts', '--watch'],
       {
         shell: WIN32,
         stdio: 'inherit',
@@ -216,7 +215,7 @@ async function main() {
 
     const buildResult = await spawn(
       'node',
-      [...NODE_MEMORY_FLAGS, '.config/esbuild.build.mts', 'all'],
+      [...NODE_MEMORY_FLAGS, '.config/rolldown.build.mts', 'all'],
       {
         shell: WIN32,
         stdio: 'inherit',

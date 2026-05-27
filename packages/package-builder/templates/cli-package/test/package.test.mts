@@ -67,7 +67,7 @@ describe('@socketsecurity/cli-with-sentry package', () => {
 
       expect(pkgJson.devDependencies).toBeDefined()
       expect(pkgJson.devDependencies['@sentry/node']).toBeDefined()
-      expect(pkgJson.devDependencies.esbuild).toBeDefined()
+      expect(pkgJson.devDependencies.rolldown).toBeDefined()
     })
   })
 
@@ -115,38 +115,38 @@ describe('@socketsecurity/cli-with-sentry package', () => {
       expect(existsSync(configDir)).toBe(true)
     })
 
-    it('should have esbuild config', () => {
-      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mts')
-      expect(existsSync(esbuildPath)).toBe(true)
+    it('should have rolldown config', () => {
+      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
+      expect(existsSync(rolldownPath)).toBe(true)
     })
 
-    it('esbuild config should import base config', async () => {
-      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mts')
-      const content = await fs.readFile(esbuildPath, 'utf-8')
+    it('rolldown config should import base config', async () => {
+      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
+      const content = await fs.readFile(rolldownPath, 'utf-8')
 
       expect(content).toContain(
-        "import baseConfig from '../../cli/.config/esbuild.cli.mts'",
+        "import baseConfig from '../../cli/.config/rolldown.cli.mts'",
       )
     })
 
-    it('esbuild config should enable Sentry build flag', async () => {
-      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mts')
-      const content = await fs.readFile(esbuildPath, 'utf-8')
+    it('rolldown config should enable Sentry build flag', async () => {
+      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
+      const content = await fs.readFile(rolldownPath, 'utf-8')
 
       expect(content).toContain('INLINED_SENTRY_BUILD')
       expect(content).toContain("JSON.stringify('1')")
     })
 
-    it('esbuild config should use CLI dispatch with Sentry entry point', async () => {
-      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mts')
-      const content = await fs.readFile(esbuildPath, 'utf-8')
+    it('rolldown config should use CLI dispatch with Sentry entry point', async () => {
+      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
+      const content = await fs.readFile(rolldownPath, 'utf-8')
 
       expect(content).toContain('cli-dispatch-with-sentry.mts')
     })
 
-    it('esbuild config should call build() when run', async () => {
-      const esbuildPath = path.join(configDir, 'esbuild.cli-sentry.build.mts')
-      const content = await fs.readFile(esbuildPath, 'utf-8')
+    it('rolldown config should call build() when run', async () => {
+      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
+      const content = await fs.readFile(rolldownPath, 'utf-8')
 
       expect(content).toContain('build(config)')
       expect(content).toContain('import.meta.url')
@@ -169,7 +169,7 @@ describe('@socketsecurity/cli-with-sentry package', () => {
 
       expect(content).toBeTruthy()
       expect(content).toContain('import')
-      expect(content).toContain('esbuild.cli-sentry.build.mts')
+      expect(content).toContain('rolldown.cli-sentry.build.mts')
     })
   })
 

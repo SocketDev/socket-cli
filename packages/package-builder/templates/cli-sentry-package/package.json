@@ -55,7 +55,7 @@
   "devDependencies": {
     "@socketsecurity/cli": "workspace:*",
     "build-infra": "workspace:*",
-    "esbuild": "catalog:"
+    "rolldown": "catalog:"
   },
   "engines": {
     "node": ">=18"
