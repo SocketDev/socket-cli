@@ -18,7 +18,7 @@ import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'

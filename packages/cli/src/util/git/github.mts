@@ -47,7 +47,7 @@ import { isError } from '@socketsecurity/lib-stable/errors/predicates'
 import { readJson } from '@socketsecurity/lib-stable/fs/read-json'
 import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { writeJson } from '@socketsecurity/lib-stable/fs/write-json'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { parseUrl } from '@socketsecurity/lib-stable/url/parse'
 
 import { DISABLE_GITHUB_CACHE } from '../../env/disable-github-cache.mts'
@@ -60,7 +60,7 @@ import { formatErrorWithDetail } from '../error/errors.mts'
 import type { CResult } from '../../types.mts'
 import type { components } from '@octokit/openapi-types'
 import type { JsonContent } from '@socketsecurity/lib-stable/fs/types'
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 export type Pr = components['schemas']['pull-request']
 

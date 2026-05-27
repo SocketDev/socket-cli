@@ -7,7 +7,7 @@ import {
   getSocketCliConfig,
   getSocketCliNoApiToken,
 } from '@socketsecurity/lib-stable/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
 import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
 import { indentString } from '@socketsecurity/lib-stable/strings/format'

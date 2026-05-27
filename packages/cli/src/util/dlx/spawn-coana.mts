@@ -9,7 +9,7 @@
  */
 
 import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { spawnDlx, spawnToolVfs } from './spawn.mts'
 import { resolveCoana } from './resolve-binary.mjs'
@@ -23,7 +23,7 @@ import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
 import type { CoanaDlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { CResult } from '../../types.mjs'
 import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/spawn/types'
+import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
 
 /**
  * Spawn Coana CLI. Auto-detects SEA mode and uses appropriate spawn method.

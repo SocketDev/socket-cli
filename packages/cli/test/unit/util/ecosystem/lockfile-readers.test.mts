@@ -19,7 +19,7 @@ vi.mock('@socketsecurity/lib-stable/fs/read-file', () => ({
   readFileUtf8: mockReadFileUtf8,
 }))
 
-vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: mockSpawn,
 }))
 

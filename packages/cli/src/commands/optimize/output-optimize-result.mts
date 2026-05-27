@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'

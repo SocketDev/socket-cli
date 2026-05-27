@@ -42,8 +42,8 @@ import {
   getSocketCliBootstrapCacheDir,
   getSocketCliBootstrapSpec,
 } from '@socketsecurity/lib-stable/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
 import { rootAliases, rootCommandBuckets, rootCommands } from './commands.mts'
 import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'

@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { mdHeader, mdTableOfPairs } from '../../util/output/markdown.mts'

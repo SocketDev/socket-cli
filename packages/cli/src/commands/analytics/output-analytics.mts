@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { debugFileOp } from '../../util/debug.mts'
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'

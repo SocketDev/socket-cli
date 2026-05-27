@@ -13,7 +13,7 @@ import colors from 'yoctocolors-cjs'
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
 import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
 import { getSocketCliNoApiToken } from '@socketsecurity/lib-stable/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { FLAG_ORG, REDACTED } from '../../constants/cli.mts'

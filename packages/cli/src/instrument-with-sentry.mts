@@ -4,7 +4,7 @@
 import { createRequire } from 'node:module'
 
 import { kInternalsSymbol } from '@socketsecurity/lib-stable/constants/sentinels'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getCliVersionHash } from './env/cli-version-hash.mts'
 import { isPublishedBuild } from './env/is-published-build.mts'

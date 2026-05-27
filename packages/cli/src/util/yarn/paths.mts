@@ -1,5 +1,5 @@
 import { YARN_CLASSIC } from '@socketsecurity/lib-stable/constants/agents'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const YARN = YARN_CLASSIC
 

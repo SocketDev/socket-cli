@@ -40,7 +40,7 @@ import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { readPackageJson } from '@socketsecurity/lib-stable/packages/operations'
 import { toEditablePackageJson } from '@socketsecurity/lib-stable/packages/edit'
 import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import {
@@ -59,7 +59,7 @@ import { findUp } from '../fs/find-up.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
 
 import type { CResult } from '../../types.mjs'
-import type { Logger } from '@socketsecurity/lib-stable/logger'
+import type { Logger } from '@socketsecurity/lib-stable/logger/types'
 import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
 import type { SemVer } from 'semver'

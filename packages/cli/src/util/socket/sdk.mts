@@ -43,7 +43,7 @@ import {
   getSocketCliApiTimeout,
   getSocketCliNoApiToken,
 } from '@socketsecurity/lib-stable/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { password } from '@socketsecurity/lib-stable/stdio/prompts'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 import { isUrl } from '@socketsecurity/lib-stable/url/predicates'

@@ -10,8 +10,8 @@ import process from 'node:process'
 
 import { existsSync } from 'node:fs'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { ALPINE_RELEASE_FILE } from './constants.mts'
 

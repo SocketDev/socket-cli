@@ -15,7 +15,7 @@ import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/lib-stable/fs/read-file'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import {
   BUN,

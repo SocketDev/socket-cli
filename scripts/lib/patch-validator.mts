@@ -4,7 +4,7 @@
  */
 import { promises as fs } from 'node:fs'
 
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 interface PatchMetadata {
   description: string | null

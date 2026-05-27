@@ -1,5 +1,5 @@
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLAG_VERSION } from '../../constants/cli.mts'
 import { getYarnBinPath } from '../yarn/paths.mts'

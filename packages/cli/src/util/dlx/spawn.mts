@@ -28,7 +28,7 @@ import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib-stable/dlx/binary'
 import { dlxPackage } from '@socketsecurity/lib-stable/dlx/package'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 
 import type { GitHubReleaseSpec } from './resolve-binary.mjs'
@@ -45,7 +45,7 @@ import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/lib-stable/spawn/types'
+} from '@socketsecurity/lib-stable/process/spawn/types'
 
 type DlxSpawnOptions = SpawnOptions & {
   ipc?: IpcObject | undefined

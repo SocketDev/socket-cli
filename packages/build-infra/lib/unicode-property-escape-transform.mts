@@ -9,7 +9,7 @@ import { parse } from '@babel/parser'
 import { default as traverseImport } from '@babel/traverse'
 import MagicString from 'magic-string'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
 const traverse =

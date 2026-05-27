@@ -14,7 +14,7 @@ import path from 'node:path'
 
 import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import {
   detectMusl,

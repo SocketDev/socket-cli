@@ -17,9 +17,9 @@ import { fileURLToPath } from 'node:url'
 
 import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib-stable/releases/socket-btm'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')

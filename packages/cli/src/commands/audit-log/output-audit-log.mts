@@ -1,5 +1,5 @@
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { FLAG_JSON, OUTPUT_JSON, REDACTED } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'

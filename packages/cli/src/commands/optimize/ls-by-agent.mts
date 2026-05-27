@@ -7,7 +7,7 @@ import {
   YARN_CLASSIC,
 } from '@socketsecurity/lib-stable/constants/agents'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLAG_PROD } from '../../constants/cli.mts'
 

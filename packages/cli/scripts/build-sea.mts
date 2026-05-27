@@ -17,7 +17,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { parsePlatformArgs } from 'build-infra/lib/platform-targets'
 import { getSocketbinBinaryPath } from 'package-builder/scripts/paths.mts'

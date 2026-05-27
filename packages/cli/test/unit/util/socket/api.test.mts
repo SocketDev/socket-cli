@@ -60,7 +60,7 @@ const mockGetDefaultSpinner = vi.hoisted(() =>
 vi.mock('@socketsecurity/lib-stable/spinner/spinner', () => ({
   Spinner: mockSpinner,
 }))
-vi.mock('@socketsecurity/lib-stable/spinner/registry', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner/default', () => ({
   getDefaultSpinner: mockGetDefaultSpinner,
 }))
 

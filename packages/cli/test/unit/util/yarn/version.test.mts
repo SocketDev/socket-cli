@@ -16,7 +16,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies before importing the module under test.
-vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawnSync: vi.fn(),
 }))
 
@@ -30,7 +30,7 @@ describe('yarn version utilities', () => {
 
   beforeEach(async () => {
     vi.resetModules()
-    const spawnModule = await import('@socketsecurity/lib-stable/spawn/spawn')
+    const spawnModule = await import('@socketsecurity/lib-stable/process/spawn/child')
     const pathsModule = await import('../../../../src/util/yarn/paths.mts')
     spawnSyncMock = spawnModule.spawnSync as ReturnType<typeof vi.fn>
     getYarnBinPathMock = pathsModule.getYarnBinPath as ReturnType<typeof vi.fn>

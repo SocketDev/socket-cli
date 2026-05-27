@@ -15,7 +15,7 @@
 
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { waitForBootstrapHandshake } from './util/sea/boot.mjs'
 

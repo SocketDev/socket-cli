@@ -54,7 +54,7 @@ vi.mock('../../../../src/env/socket-cli-python-path.mts', () => ({
   },
 }))
 
-vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: mockSpawn,
 }))
 

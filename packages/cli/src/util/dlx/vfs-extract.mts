@@ -65,7 +65,7 @@ import path from 'node:path'
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { UPDATE_STORE_DIR } from '../../constants/paths.mts'

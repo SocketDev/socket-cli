@@ -1,4 +1,4 @@
-import { spawnSync } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { GitHubProvider } from './github-provider.mts'
 import { GitLabProvider } from './gitlab-provider.mts'

@@ -6,7 +6,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const packageBuilderScripts = path.resolve(

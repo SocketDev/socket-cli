@@ -22,7 +22,7 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
 }))
 
 // Mock spawn to prevent actual command execution.
-vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: vi.fn().mockResolvedValue({ code: 0 }),
 }))
 

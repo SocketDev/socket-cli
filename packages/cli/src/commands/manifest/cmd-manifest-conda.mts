@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'

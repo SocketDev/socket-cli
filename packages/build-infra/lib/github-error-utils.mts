@@ -6,7 +6,7 @@
  */
 
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
 

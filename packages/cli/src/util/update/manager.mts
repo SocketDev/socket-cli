@@ -24,7 +24,7 @@
 
 import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import { checkForUpdates as performUpdateCheck } from './checker.mts'

@@ -11,7 +11,7 @@ import path from 'node:path'
 import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 

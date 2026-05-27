@@ -23,7 +23,7 @@ vi.mock('node:https', () => ({
 }))
 
 // Mock signal-exit.
-vi.mock('@socketsecurity/lib-stable/signal-exit/register', () => ({
+vi.mock('@socketsecurity/lib-stable/events/exit/handler', () => ({
   onExit: vi.fn(() => () => {}),
 }))
 

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { existsSync } from 'node:fs'
 
 const __filename = fileURLToPath(import.meta.url)

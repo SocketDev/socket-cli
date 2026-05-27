@@ -82,7 +82,7 @@ vi.mock(
     performReachabilityAnalysis: mockPerformReachabilityAnalysis,
   }),
 )
-vi.mock('@socketsecurity/lib-stable/spinner/registry', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner/default', () => ({
   getDefaultSpinner: () => ({
     start: mockStart,
     stop: mockStop,

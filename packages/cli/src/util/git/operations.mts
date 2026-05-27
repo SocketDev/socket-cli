@@ -31,8 +31,8 @@ import {
   getGithubRefType,
 } from '@socketsecurity/lib-stable/env/github'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { isSpawnError } from '@socketsecurity/lib-stable/spawn/errors'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLAG_QUIET } from '../../constants/cli.mts'
 import { SOCKET_CLI_GIT_USER_EMAIL } from '../../env/socket-cli-git-user-email.mts'
@@ -45,7 +45,7 @@ import { debugGit } from '../debug.mts'
 import { extractName, extractOwner } from '../sanitize-names.mts'
 
 import type { CResult } from '../../types.mjs'
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 // Cache git executable path
 let gitPath: string | undefined = undefined

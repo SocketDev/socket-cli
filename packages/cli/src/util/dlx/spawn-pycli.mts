@@ -16,7 +16,7 @@ import path from 'node:path'
 
 import { downloadBinary, getDlxCachePath } from '@socketsecurity/lib-stable/dlx/binary'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 

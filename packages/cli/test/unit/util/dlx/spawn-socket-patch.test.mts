@@ -14,7 +14,7 @@ const mockDownloadGitHubReleaseBinary = vi.hoisted(() => vi.fn())
 const mockResolveSocketPatch = vi.hoisted(() => vi.fn())
 const mockDetectExecutableType = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: mockSpawn,
 }))
 

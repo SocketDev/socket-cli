@@ -2,9 +2,9 @@
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
 import type { ManifestResult } from './output-manifest.mts'
 import type { CResult, OutputKind } from '../../types.mts'

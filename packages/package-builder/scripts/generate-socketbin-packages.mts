@@ -10,7 +10,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { PLATFORM_CONFIGS } from 'build-infra/lib/platform-targets'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { SOCKETBIN_TEMPLATE_DIR, getSocketbinPackageDir } from './paths.mts'
 import { processTemplate } from './utils.mts'

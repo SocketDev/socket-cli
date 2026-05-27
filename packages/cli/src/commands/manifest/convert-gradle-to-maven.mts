@@ -2,9 +2,9 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/registry'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
 import { distPath } from '../../constants/paths.mjs'
 

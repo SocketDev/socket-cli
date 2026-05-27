@@ -8,7 +8,7 @@
  */
 
 import { debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getOctokit, withGitHubRetry } from '../../util/git/github.mts'
 

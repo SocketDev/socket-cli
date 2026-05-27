@@ -62,7 +62,7 @@ vi.mock('node:fs', () => ({
   promises: { readFile: mockReadFile },
 }))
 
-vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: mockSpawn,
 }))
 

@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { HTTP_STATUS_UNAUTHORIZED } from '../../constants/http.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'

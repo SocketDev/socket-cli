@@ -59,7 +59,7 @@ describe('fetchScanData', () => {
       logger: mockLogger,
     }))
 
-    vi.doMock('@socketsecurity/lib-stable/spinner/registry', () => ({
+    vi.doMock('@socketsecurity/lib-stable/spinner/default', () => ({
       getDefaultSpinner: () => mockSpinner,
     }))
 

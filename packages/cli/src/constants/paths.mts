@@ -14,7 +14,7 @@ import {
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
 } from '@socketsecurity/lib-stable/constants/node'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib-stable/paths/dirnames'
 
 import { ENV } from './env.mts'

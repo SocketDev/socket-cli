@@ -7,7 +7,7 @@
  */
 
 import { debug } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
   gitDeleteBranch,

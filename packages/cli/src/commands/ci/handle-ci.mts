@@ -1,5 +1,5 @@
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mts'

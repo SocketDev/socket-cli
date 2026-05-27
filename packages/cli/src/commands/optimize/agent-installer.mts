@@ -20,7 +20,7 @@ import {
 } from '@socketsecurity/lib-stable/constants/node'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { cmdFlagsToString } from '../../util/process/cmd.mts'
 

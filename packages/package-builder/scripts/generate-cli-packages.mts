@@ -5,7 +5,7 @@
  * Usage: node scripts/generate-cli-packages.mts.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
   CLI_SENTRY_TEMPLATE_DIR,

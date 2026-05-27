@@ -1,5 +1,5 @@
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
 import { defineFlags } from '../../meow.mts'

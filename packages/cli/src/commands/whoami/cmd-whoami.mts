@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mjs'
 import { SOCKET_CLI_API_TOKEN } from '../../env/socket-cli-api-token.mts'

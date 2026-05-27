@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import { safeStatSync } from '@socketsecurity/lib-stable/fs/inspect'
 import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REDACTED } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'

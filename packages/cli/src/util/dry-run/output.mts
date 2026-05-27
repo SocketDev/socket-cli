@@ -8,7 +8,7 @@
  * running `command > file` (where stderr still goes to the terminal).
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 

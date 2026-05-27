@@ -6,7 +6,7 @@ import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isPath } from '@socketsecurity/lib-stable/paths/normalize'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 

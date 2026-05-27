@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url'
 import fastGlob from 'fast-glob'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { EnvironmentVariables } from './environment-variables.mts'
 import { loadEnvFile } from './util/load-env.mts'

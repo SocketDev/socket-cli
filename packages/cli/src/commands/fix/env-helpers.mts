@@ -3,7 +3,7 @@ import { isDebug } from '@socketsecurity/lib-stable/debug/namespace'
 import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
 import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getSocketFixPrs } from './pull-request.mts'
 import { GITHUB_REPOSITORY } from '../../env/github-repository.mts'

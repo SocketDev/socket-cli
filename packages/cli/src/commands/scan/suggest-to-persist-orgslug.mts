@@ -1,4 +1,4 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { select } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { getConfigValue, updateConfigValue } from '../../util/config.mts'

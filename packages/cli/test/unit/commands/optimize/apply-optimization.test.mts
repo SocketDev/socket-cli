@@ -35,7 +35,7 @@ vi.mock('@socketsecurity/lib-stable/logger', () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib-stable/spinner/registry', () => ({
+vi.mock('@socketsecurity/lib-stable/spinner/default', () => ({
   getDefaultSpinner: () => mockSpinner,
 }))
 

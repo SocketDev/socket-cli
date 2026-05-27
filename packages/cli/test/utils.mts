@@ -5,10 +5,10 @@ import { fileURLToPath } from 'node:url'
 import { it } from 'vitest'
 
 import { createEnvProxy } from '@socketsecurity/lib-stable/env/proxy'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 import { scrubSnapshotData } from './util/scrub-snapshot-data.mts'
 import { execPath } from '../src/constants/paths.mts'

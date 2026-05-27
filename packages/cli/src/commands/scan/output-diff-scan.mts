@@ -3,7 +3,7 @@ import util from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'

@@ -14,7 +14,7 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { constants } from '../../src/constants.mts'
 import { spawnSocketCli } from '../utils.mts'
 
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 /**
  * Result from CLI execution with enhanced utilities.

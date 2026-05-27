@@ -11,7 +11,7 @@
  */
 
 import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
 import { spawnDlx } from './spawn.mts'
@@ -19,7 +19,7 @@ import { resolveCdxgen } from './resolve-binary.mjs'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/spawn/types'
+import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
 
 /**
  * Helper to spawn cdxgen with dlx. If SOCKET_CLI_CDXGEN_LOCAL_PATH environment

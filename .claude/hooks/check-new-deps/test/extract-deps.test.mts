@@ -6,12 +6,12 @@ import assert from 'node:assert/strict'
 // The wrapper isn't adding any security here: nodeBin comes from
 // whichSync (validated path) and the only arg is hookScript (a
 // path we control). Same shape Node's native API has.
-import { spawnSync } from 'node:child_process'
-import { promises as fsp, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { existsSync, mkdtempSync, promises as fsp, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { whichSync } from '@socketsecurity/lib-stable/bin'
+import { whichSync } from '@socketsecurity/lib-stable/bin/which'
 
 import {
   buildAuditRecords,
@@ -25,12 +25,12 @@ import {
   cache,
   cacheGet,
   cacheSet,
+  diffDeps,
   extractBrewfile,
   extractNewDeps,
   extractNixFlake,
   extractNpmLockfile,
   extractTerraform,
-  diffDeps,
 } from '../index.mts'
 
 const hookScript = new URL('../index.mts', import.meta.url).pathname
@@ -44,9 +44,9 @@ const nodeBin: string = Array.isArray(nodeBinRaw) ? nodeBinRaw[0]! : nodeBinRaw
 interface RunHookOptions {
   // Override HOME/USERPROFILE so the audit log + 404 cache don't
   // leak into the developer's real ~/.claude.
-  home?: string
-  transcript_path?: string
-  session_id?: string
+  home?: string | undefined
+  transcript_path?: string | undefined
+  session_id?: string | undefined
 }
 
 // Helper: run the full hook as a subprocess.
@@ -60,9 +60,12 @@ function runHook(
     tool_name: toolName,
     tool_input: toolInput,
   }
-  if (options.transcript_path)
+  if (options.transcript_path) {
     payload['transcript_path'] = options.transcript_path
-  if (options.session_id) payload['session_id'] = options.session_id
+  }
+  if (options.session_id) {
+    payload['session_id'] = options.session_id
+  }
   const input = JSON.stringify(payload)
   // Inherit the parent env (so PATH / NODE / etc. work) and only
   // override HOME/USERPROFILE when the test wants an isolated $HOME.
@@ -897,9 +900,13 @@ describe('buildAuditRecords', () => {
     assert.equal(byName.get('ghost-pkg')?.verdict, 'notfound')
     assert.equal(byName.get('mystery-pkg')?.verdict, 'unknown')
     // Session id flows through.
-    for (const r of records) assert.equal(r.session, 'sess-1')
+    for (let i = 0, { length } = records; i < length; i += 1) {
+      const r = records[i]!
+      assert.equal(r.session, 'sess-1')
+    }
     // Repo basename is the cwd basename (which varies by where tests run).
-    for (const r of records) {
+    for (let i = 0, { length } = records; i < length; i += 1) {
+      const r = records[i]!
       assert.ok(typeof r.repo === 'string' && r.repo.length > 0)
     }
   })
@@ -963,7 +970,7 @@ describe('audit log integration', () => {
       const lines = body.trim().split('\n').filter(Boolean)
       assert.equal(lines.length, 2)
       const records = lines.map(l => JSON.parse(l) as Record<string, unknown>)
-      const names = records.map(r => r['name']).sort()
+      const names = records.map(r => r['name']).toSorted()
       assert.deepEqual(names, ['express', 'lodash'])
     } finally {
       removeTempHome(home)
@@ -1035,7 +1042,9 @@ describe('audit log integration', () => {
       )
       assert.equal(r.code, 0, 'unwritable audit must not fail the hook')
     } finally {
-      if (existsSync(home)) rmSync(home, { force: true })
+      if (existsSync(home)) {
+        rmSync(home, { force: true })
+      }
     }
   })
 })

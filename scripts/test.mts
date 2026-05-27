@@ -1,310 +1,204 @@
-
+/* eslint-disable no-shadow -- nested cached-length for-loops intentionally reuse `i`/`length` names for the fleet-wide cached-loop idiom; renaming would diverge from the codebase pattern. */
 /**
- * @file Monorepo-aware test runner with smart file detection. Runs tests across
- *   affected packages based on changed files.
+ * @file Canonical minimal test runner for socket-* repos. Scope modes:
+ *   (default) Run tests covering files modified in the working tree vs HEAD.
+ *   --staged Run tests covering files in the git index (pre-commit hook). --all
+ *   Run the full test suite. Flags: --quiet Suppress progress output.
+ *   Scope-to-tests mapping (adapt per repo layout):
+ *
+ *   - Changed test files run themselves.
+ *   - Changed source files under `packages/<pkg>/src/` run the sibling
+ *     `packages/<pkg>/test/` folder. Non-workspace repos can adapt the
+ *     resolveTestPatterns() function to their layout (e.g. single src/ + test/
+ *     at root, or tests colocated with source).
+ *   - Config / infrastructure changes escalate to the full suite. This is the
+ *     minimal zero-dependency reference implementation. Larger repos
+ *     (socket-registry, socket-sdk-js, socket-packageurl-js, etc.) use a richer
+ *     version; this one keeps the same CLI contract so pre-commit hooks and CI
+ *     work identically across repos.
  */
 
-import type { PackageInfo } from './util/monorepo-helper.mts'
-
-import colors from 'yoctocolors-cjs'
-
-import { isQuiet } from '@socketsecurity/lib-stable/argv/flag-predicates'
-import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getChangedFiles } from '@socketsecurity/lib-stable/git/changed'
-import { getStagedFiles } from '@socketsecurity/lib-stable/git/staged'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { onExit } from '@socketsecurity/lib-stable/signal-exit/register'
-import { isSpawnError } from '@socketsecurity/lib-stable/spawn/errors'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
-import { printHeader } from '@socketsecurity/lib-stable/stdio/header'
-import { ProgressBar } from '@socketsecurity/lib-stable/stdio/progress'
-
-import {
-  getAffectedPackages,
-  getPackagesWithScript,
-} from './util/monorepo-helper.mts'
+// prefer-async-spawn: sync-required — top-level CLI runner; entire
+// flow is sync (test runner invocation + exit-code aggregation).
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import type { SpawnSyncOptions } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import process from 'node:process'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
 
-interface TestOptions {
-  all?: boolean | undefined
-  changed?: boolean | undefined
-  staged?: boolean | undefined
+const args = process.argv.slice(2)
+const mode: 'staged' | 'all' | 'modified' = args.includes('--all')
+  ? 'all'
+  : args.includes('--staged')
+    ? 'staged'
+    : 'modified'
+const quiet = args.includes('--quiet') || args.includes('--silent')
+const stdio: SpawnSyncOptions['stdio'] = quiet ? 'pipe' : 'inherit'
+// On Windows, `pnpm` is a .cmd shim that Node refuses to exec directly via
+// spawnSync (CVE-2024-27980 hardening). Wrap through the shell on Windows
+// only; POSIX keeps direct invocation.
+const useShell = process.platform === 'win32'
+
+// Paths that, when changed, force the full suite to run.
+const ESCALATION_PATTERNS = [
+  /^\.config\//,
+  /^scripts\//,
+  /^pnpm-lock\.yaml$/,
+  /^tsconfig.*\.json$/,
+  /^\.oxlintrc\.json$/,
+  /^\.oxfmtrc\.json$/,
+  /^vitest\.config\.(js|mjs|mts|ts)$/,
+  /^package\.json$/,
+  /^lockstep\.schema\.json$/,
+]
+
+function log(msg: string): void {
+  if (!quiet) {
+    logger.log(msg)
+  }
 }
 
-interface PackagesToTestResult {
-  mode: string
-  packages: PackageInfo[]
-  reason: string | null
+function gitFiles(args: string[]): string[] {
+  // spawnSync with array args — no shell interpolation. Matches the
+  // socket/prefer-spawn-over-execsync rule contract.
+  const r = spawnSync('git', args, {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    stdioString: true,
+  })
+  if (r.status !== 0 || typeof r.stdout !== 'string') {
+    return []
+  }
+  return r.stdout
+    .split('\n')
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+}
+
+function getStagedFiles(): string[] {
+  return gitFiles(['diff', '--cached', '--name-only', '--diff-filter=ACMR'])
+}
+
+function getModifiedFiles(): string[] {
+  return gitFiles(['diff', '--name-only', '--diff-filter=ACMR', 'HEAD'])
+}
+
+function shouldEscalate(files: string[]): boolean {
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const f = files[i]!
+    for (let i = 0, { length } = ESCALATION_PATTERNS; i < length; i += 1) {
+      const pattern = ESCALATION_PATTERNS[i]!
+      if (pattern.test(f)) {
+        return true
+      }
+    }
+  }
+  return false
 }
 
 /**
- * Get packages to test and determine affected packages.
+ * Map changed files to vitest test patterns.
+ *
+ * Default implementation handles two common layouts:
+ *
+ * - Pnpm workspace: packages/<pkg>/src/... → packages/<pkg>/test
+ * - Single repo: src/... → test Adapt to your repo's layout if different.
  */
-async function getPackagesToTest(
-  options: TestOptions,
-): Promise<PackagesToTestResult> {
-  const { all, changed, staged } = options
-
-  // If --all, return all packages.
-  if (all) {
-    return {
-      mode: 'all',
-      packages: getPackagesWithScript('test'),
-      reason: 'all flag specified',
+function resolveTestPatterns(files: string[]): string[] {
+  const patterns = new Set<string>()
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const f = files[i]!
+    // Test file itself.
+    if (/\.test\.(m?[jt]s)$/.test(f)) {
+      patterns.add(f)
+      continue
+    }
+    // Workspace source file. Only emit the pattern if the test dir exists;
+    // packages without a test/ directory are skipped rather than making
+    // vitest error on an unknown pattern.
+    const wsMatch = f.match(/^(packages\/[^/]+)\/src\//)
+    if (wsMatch && existsSync(`${wsMatch[1]}/test`)) {
+      patterns.add(`${wsMatch[1]}/test`)
+      continue
+    }
+    // Single-repo source file.
+    if (f.startsWith('src/') && existsSync('test')) {
+      patterns.add('test')
     }
   }
-
-  // Get changed files.
-  let changedFiles: string[] = []
-  let mode = 'changed'
-
-  if (staged) {
-    mode = 'staged'
-    changedFiles = await getStagedFiles({ absolute: false })
-    if (!changedFiles.length) {
-      return { mode, packages: [], reason: 'no staged files' }
-    }
-  } else if (changed) {
-    mode = 'changed'
-    changedFiles = await getChangedFiles({ absolute: false })
-    if (!changedFiles.length) {
-      return { mode, packages: [], reason: 'no changed files' }
-    }
-  } else {
-    // Default to changed files if no specific flag.
-    mode = 'changed'
-    changedFiles = await getChangedFiles({ absolute: false })
-    if (!changedFiles.length) {
-      return { mode, packages: [], reason: 'no changed files' }
-    }
-  }
-
-  // Determine affected packages.
-  const affectedPackages = getAffectedPackages(changedFiles)
-
-  if (!affectedPackages.length) {
-    return { mode, packages: [], reason: 'no testable packages affected' }
-  }
-
-  return { mode, packages: affectedPackages, reason: undefined }
+  return [...patterns]
 }
 
-/**
- * Run tests on a specific package with pretty output.
- */
-async function runPackageTest(
-  pkg: PackageInfo,
-  testArgs: string[] = [],
-  quiet: boolean = false,
-  showProgress: boolean = true,
-): Promise<number> {
-  const displayName = pkg.displayName || pkg.name
-
-  if (!quiet && showProgress) {
-    logger.progress(`${displayName}: running tests`)
-  }
-
-  let result: Awaited<ReturnType<typeof spawn>>
-  try {
-    result = await spawn(
-      'pnpm',
-      ['--filter', pkg.name, 'run', 'test', ...testArgs],
-      {
-        // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- script runs under pnpm workspace; pnpm sets cwd to the package root so process.cwd() resolves correctly.
-        cwd: process.cwd(),
-        encoding: 'utf8',
-        shell: WIN32,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      },
-    )
-  } catch (e) {
-    if (!quiet && showProgress) {
-      logger.clearLine()
-      logger.log(`${colors.red('✗')} ${displayName}`)
-    }
-    if (isSpawnError(e)) {
-      if (e.stdout) {
-        logger.log(e.stdout)
-      }
-      if (e.stderr) {
-        logger.error(e.stderr)
-      }
-      return e.code
-    }
-    const message = e instanceof Error ? e.message : String(e)
-    logger.error(`Failed to spawn test command: ${message}`)
+function runAll(): number {
+  log('Test scope: all')
+  const r = spawnSync(
+    'pnpm',
+    ['exec', 'vitest', 'run', '--config', '.config/vitest.config.mts'],
+    { shell: useShell, stdio },
+  )
+  if (r.status !== 0) {
+    log('Tests failed')
     return 1
   }
-
-  if (result.code !== 0) {
-    if (!quiet && showProgress) {
-      logger.clearLine()
-      logger.log(`${colors.red('✗')} ${displayName}`)
-    }
-    if (result.stdout) {
-      logger.log(result.stdout)
-    }
-    if (result.stderr) {
-      logger.error(result.stderr)
-    }
-    return result.code
-  }
-
-  if (!quiet && showProgress) {
-    logger.clearLine()
-    logger.log(`${colors.green('✓')} ${displayName}`)
-  }
-
+  log('All tests passed')
   return 0
 }
 
-async function main(): Promise<void> {
-  try {
-    // Parse arguments.
-    const { positionals, values } = parseArgs({
-      options: {
-        all: { type: 'boolean', default: false },
-        changed: { type: 'boolean', default: false },
-        help: { type: 'boolean', default: false },
-        quiet: { type: 'boolean', default: false },
-        silent: { type: 'boolean', default: false },
-        staged: { type: 'boolean', default: false },
-      },
-      allowPositionals: true,
-      strict: false,
-    })
-
-    // Show help if requested.
-    if (values.help) {
-      logger.log('Monorepo Test Runner')
-      logger.log('')
-      logger.log('Usage: pnpm test [options] [test-args...]')
-      logger.log('')
-      logger.log('Options:')
-      logger.log('  --help         Show this help message')
-      logger.log('  --all          Test all packages')
-      logger.log('  --changed      Test packages with changed files (default)')
-      logger.log('  --staged       Test packages with staged files')
-      logger.log('  --quiet, --silent  Suppress progress messages')
-      logger.log('')
-      logger.log('Examples:')
-      logger.log('  pnpm test                # Test changed packages (default)')
-      logger.log('  pnpm test --all          # Test all packages')
-      logger.log('  pnpm test --staged       # Test staged packages')
-      logger.log('  pnpm test -- --coverage  # Pass args to test runner')
-      process.exitCode = 0
-      return
-    }
-
-    const quiet = isQuiet(values)
-
-    if (!quiet) {
-      printHeader('Monorepo Test Runner')
-      logger.log('')
-    }
-
-    // Get packages to test.
-    const { mode, packages, reason } = await getPackagesToTest(values)
-
-    if (!packages.length) {
-      if (!quiet) {
-        logger.step('Skipping tests')
-        logger.substep(reason)
-      }
-      process.exitCode = 0
-      return
-    }
-
-    // Display what we're testing.
-    if (!quiet) {
-      const modeText = mode === 'all' ? 'all packages' : `${mode} packages`
-      logger.step(
-        `Testing ${modeText} (${packages.length} package${packages.length > 1 ? 's' : ''})`,
-      )
-      // Blank line.
-      logger.log('')
-    }
-
-    // Setup progress bar.
-    let progressBar
-    if (!quiet && packages.length > 1) {
-      progressBar = new ProgressBar(packages.length, {
-        format: ':bar :percent :current/:total :pkg',
-        width: 30,
-        color: 'cyan',
-      })
-
-      // Setup signal exit handler for cleanup.
-      onExit(() => {
-        if (progressBar) {
-          progressBar.terminate()
-        }
-      })
-
-      // Initialize progress bar with first package.
-      const firstPkg = packages[0]?.displayName || packages[0]?.name || ''
-      progressBar.update(0, { pkg: colors.cyan(firstPkg) })
-    }
-
-    // Run tests across affected packages.
-    let exitCode = 0
-    let completedCount = 0
-    const useProgressBar = !!progressBar
-    for (let i = 0, { length } = packages; i < length; i += 1) {
-      const pkg = packages[i]
-      const displayName = pkg.displayName || pkg.name
-
-      // Show what we're testing.
-      if (progressBar) {
-        progressBar.update(completedCount, { pkg: colors.cyan(displayName) })
-      }
-
-      const result = await runPackageTest(
-        pkg,
-        positionals,
-        quiet,
-        !useProgressBar,
-      )
-
-      if (progressBar) {
-        completedCount++
-        const status = result === 0 ? colors.green('✓') : colors.red('✗')
-        progressBar.update(completedCount, { pkg: `${status} ${displayName}` })
-      }
-
-      if (result !== 0) {
-        exitCode = result
-        break
-      }
-    }
-
-    // Ensure progress bar is terminated.
-    if (progressBar) {
-      progressBar.terminate()
-    }
-
-    if (exitCode !== 0) {
-      if (!quiet) {
-        logger.error('')
-        logger.log('Tests failed')
-      }
-      process.exitCode = exitCode
-    } else {
-      if (!quiet) {
-        logger.error('')
-        logger.success('All tests passed!')
-      }
-    }
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    logger.error(`Test runner failed: ${message}`)
-    process.exitCode = 1
+function runPatterns(patterns: string[]): number {
+  if (patterns.length === 0) {
+    log('No tests to run; skipping.')
+    return 0
   }
+  log(`Test scope: ${mode} (${patterns.length} pattern(s))`)
+  // --passWithNoTests: if a pattern produces zero matches (e.g. a freshly
+  // added package with an empty test dir, or a source change that doesn't
+  // touch any testable code), vitest treats it as success rather than a
+  // "no test files found" error. Scoped-by-default runs shouldn't fail
+  // just because the change didn't happen to touch a testable file.
+  const r = spawnSync(
+    'pnpm',
+    [
+      'exec',
+      'vitest',
+      'run',
+      '--config',
+      '.config/vitest.config.mts',
+      '--passWithNoTests',
+      ...patterns,
+    ],
+    // Continuing the same Windows shell-shim rationale (see useShell at file top).
+    { shell: useShell, stdio },
+  )
+  if (r.status !== 0) {
+    log('Tests failed')
+    return 1
+  }
+  log('All tests passed')
+  return 0
 }
 
-main().catch((e: unknown) => {
-  logger.error(e)
-  process.exitCode = 1
-})
+function main(): void {
+  if (mode === 'all') {
+    process.exitCode = runAll()
+    return
+  }
+
+  const files = mode === 'staged' ? getStagedFiles() : getModifiedFiles()
+
+  if (files.length === 0) {
+    log(`No ${mode} files; skipping tests.`)
+    return
+  }
+
+  if (shouldEscalate(files)) {
+    log('Config files changed; escalating to full test suite.')
+    process.exitCode = runAll()
+    return
+  }
+
+  const patterns = resolveTestPatterns(files)
+  process.exitCode = runPatterns(patterns)
+}
+
+main()

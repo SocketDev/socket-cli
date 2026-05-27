@@ -3,7 +3,7 @@
 import { existsSync } from 'node:fs'
 
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'

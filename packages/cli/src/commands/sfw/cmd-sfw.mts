@@ -12,7 +12,7 @@
  * allows direct access to sfw for advanced use cases and troubleshooting.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'

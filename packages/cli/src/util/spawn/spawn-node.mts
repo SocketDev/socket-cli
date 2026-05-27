@@ -23,7 +23,7 @@
 
 import { whichRealSync } from '@socketsecurity/lib-stable/bin/which'
 import { getExecPath } from '@socketsecurity/lib-stable/constants/node'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { sendBootstrapHandshake } from '../sea/boot.mjs'
 import { isSeaBinary } from '../sea/detect.mjs'
@@ -33,7 +33,7 @@ import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/lib-stable/spawn/types'
+} from '@socketsecurity/lib-stable/process/spawn/types'
 
 /**
  * Narrows a spawned process to the shape required by `sendBootstrapHandshake`

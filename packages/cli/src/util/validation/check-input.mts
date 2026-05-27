@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger/symbols'
 import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 

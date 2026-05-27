@@ -26,7 +26,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { PNPM } from '@socketsecurity/lib-stable/constants/agents'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import {
   FLAG_CONFIG,
@@ -41,7 +41,7 @@ import { cmdit, spawnSocketCli } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
 
-import type { SpawnOptions } from '@socketsecurity/lib-stable/spawn/types'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 // Known issue: Several exec/install tests currently fail due to config flag handling.
 // Needs investigation and fix for proper config isolation in pnpm wrapper tests.

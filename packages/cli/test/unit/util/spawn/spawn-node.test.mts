@@ -27,7 +27,7 @@ vi.mock('@socketsecurity/lib-stable/constants/node', () => ({
   getExecPath: mockGetExecPath,
 }))
 
-vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: mockSpawn,
   spawnSync: mockSpawnSync,
 }))

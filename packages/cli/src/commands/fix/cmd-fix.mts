@@ -8,7 +8,7 @@ import terminalLink from 'terminal-link'
 
 import { joinAnd, joinOr } from '@socketsecurity/lib-stable/arrays/join'
 import { arrayUnique } from '@socketsecurity/lib-stable/arrays/unique'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 import { handleFix } from './handle-fix.mts'

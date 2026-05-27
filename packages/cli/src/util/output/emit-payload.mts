@@ -14,7 +14,7 @@
  * instead of calling logger.log(JSON.stringify(...)) directly.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { SENTINEL_BEGIN, SENTINEL_END, isMachineOutputMode } from './mode.mts'
 

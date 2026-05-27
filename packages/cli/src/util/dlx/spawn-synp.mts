@@ -15,7 +15,7 @@ import { spawnDlx } from './spawn.mts'
 import { getSynpVersion } from '../../env/synp-version.mts'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/spawn/types'
+import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
 
 /**
  * Helper to spawn synp with dlx.

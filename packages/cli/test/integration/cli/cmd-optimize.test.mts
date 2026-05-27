@@ -36,7 +36,7 @@ import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
 import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { readPackageJson } from '@socketsecurity/lib-stable/packages/operations'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import {
   FLAG_CONFIG,

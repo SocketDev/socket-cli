@@ -8,7 +8,7 @@ import path from 'node:path'
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 import {

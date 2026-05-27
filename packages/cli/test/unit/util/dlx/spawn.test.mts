@@ -47,7 +47,7 @@ vi.mock('adm-zip', () => ({
   default: mockAdmZipCtor,
 }))
 
-vi.mock('@socketsecurity/lib-stable/spawn/spawn', () => ({
+vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
   spawn: mockSpawn,
 }))
 

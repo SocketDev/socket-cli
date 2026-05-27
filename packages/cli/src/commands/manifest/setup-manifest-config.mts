@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { debugDirNs } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { input, select } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'

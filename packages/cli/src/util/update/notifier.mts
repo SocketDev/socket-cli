@@ -20,8 +20,8 @@ import process from 'node:process'
 import colors from 'yoctocolors-cjs'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { onExit } from '@socketsecurity/lib-stable/signal-exit/register'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { onExit } from '@socketsecurity/lib-stable/events/exit/handler'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import { SEA_UPDATE_COMMAND } from '../../constants/cli.mts'

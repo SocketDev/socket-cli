@@ -1,6 +1,6 @@
 import { Type } from '@sinclair/typebox'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { setupSdk } from '../../util/socket/sdk.mts'
 import { deduplicateArtifacts } from './lib/artifacts.mts'

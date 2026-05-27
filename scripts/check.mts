@@ -1,445 +1,62 @@
 /**
- * @file Monorepo-aware check runner with flag-based configuration. Runs code
- *   quality checks: Oxlint and TypeScript type checking across packages.
+ * @file Unified check runner — delegates to lint + type + path-hygiene.
+ *   Forwards CLI scope flags to the lint script so `pnpm run check --all`
+ *   actually runs a full-scope lint (not the default modified-only scope).
+ *   `pnpm type` doesn't accept our scope flags, so it's always a full check.
+ *   Usage: pnpm run check # lint in modified scope + full type check +
+ *   path-hygiene pnpm run check --staged # lint staged + full type + paths pnpm
+ *   run check --all # full lint + full type + paths (CI) Byte-identical across
+ *   every fleet repo. Sync-scaffolding flags drift.
  */
 
-import path from 'node:path'
+// prefer-async-spawn: sync-required — top-level CLI runner; entire
+// flow is sequential gate-running with exit-code aggregation.
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
-import { fileURLToPath } from 'node:url'
+const args = process.argv.slice(2)
+const forwardedArgs = args.filter(
+  a => a === '--all' || a === '--fix' || a === '--quiet' || a === '--staged',
+)
 
-import { isQuiet } from '@socketsecurity/lib-stable/argv/flag-predicates'
-import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getChangedFiles } from '@socketsecurity/lib-stable/git/changed'
-import { getStagedFiles } from '@socketsecurity/lib-stable/git/staged'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger'
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
-import { printFooter } from '@socketsecurity/lib-stable/stdio/footer'
-import { printHeader } from '@socketsecurity/lib-stable/stdio/header'
-
-import {
-  getAffectedPackages,
-  getPackagesWithScript,
-  runAcrossPackages,
-} from './util/monorepo-helper.mts'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const scriptsDir = __dirname
-
-const logger = getDefaultLogger()
-
-import type { PackageInfo } from './util/monorepo-helper.mts'
-
-interface CheckOptions {
-  all?: boolean | undefined
-  changed?: boolean | undefined
-  staged?: boolean | undefined
-  quiet?: boolean | undefined
+// spawnSync with array args — no shell interpolation, matches the
+// socket/prefer-spawn-over-execsync rule.
+function run(cmd: string, cmdArgs: string[]): boolean {
+  const r = spawnSync(cmd, cmdArgs, { stdio: 'inherit' })
+  return r.status === 0
 }
 
-interface FilesToCheckResult {
-  mode: string
-  packages: PackageInfo[]
-  reason: string | null
-}
+const steps: Array<() => boolean> = [
+  // Lint scope is forwarded; everything else is full-scope.
+  () => run('node', ['scripts/lint.mts', ...forwardedArgs]),
+  () => run('pnpm', ['exec', 'tsgo', '--noEmit', '-p', 'tsconfig.check.json']),
+  // Path-hygiene check (1 path, 1 reference). Mantra-driven gate;
+  // see .claude/skills/path-guard/ + .claude/hooks/path-guard/.
+  () => run('node', ['scripts/check-paths.mts', '--quiet']),
+  // Lock-step reference hygiene. Opt-in gate that exits clean when
+  // .config/lock-step-refs.json is absent; for repos that ship
+  // cross-language ports (acorn quadruplet, socket-btm mcp/*.cpp),
+  // it validates every `Lock-step with <Lang>: <path>` comment resolves
+  // to an existing file. Forms documented in
+  // docs/claude.md/fleet/parser-comments.md §5–6.
+  () => run('node', ['scripts/check-lock-step-refs.mts', '--quiet']),
+  // Lock-step header byte-equality. Same opt-in. Where the path-refs
+  // gate above catches stale REFERENCES, this one catches drift in the
+  // top-of-file `BEGIN LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block
+  // — the intent tripwire across the quadruplet. Spec:
+  // docs/claude.md/fleet/parser-comments.md §7.
+  () => run('node', ['scripts/check-lock-step-header.mts', '--quiet']),
+  // Soak-exclude date-annotation gate — pairs with
+  // .claude/hooks/soak-exclude-date-annotation-guard/. Catches
+  // pnpm-workspace.yaml `minimumReleaseAgeExclude` entries that landed
+  // via non-Claude paths without the canonical
+  // `# published: YYYY-MM-DD | removable: YYYY-MM-DD` annotation.
+  () => run('node', ['scripts/check-soak-exclude-dates.mts']),
+]
 
-/**
- * Get files to check and determine affected packages.
- */
-export async function getFilesToCheck(
-  options: CheckOptions,
-): Promise<FilesToCheckResult> {
-  const { all, changed, staged } = options
-
-  // If --all, return all packages.
-  if (all) {
-    return {
-      mode: 'all',
-      packages: getPackagesWithScript('lint'),
-      reason: 'all flag specified',
-    }
-  }
-
-  // Get changed files.
-  let changedFiles: string[] = []
-  let mode = 'changed'
-
-  if (staged) {
-    mode = 'staged'
-    changedFiles = await getStagedFiles({ absolute: false })
-    if (!changedFiles.length) {
-      return { mode, packages: [], reason: 'no staged files' }
-    }
-  } else if (changed) {
-    mode = 'changed'
-    changedFiles = await getChangedFiles({ absolute: false })
-    if (!changedFiles.length) {
-      return { mode, packages: [], reason: 'no changed files' }
-    }
-  } else {
-    // Default to changed files if no specific flag.
-    mode = 'changed'
-    changedFiles = await getChangedFiles({ absolute: false })
-    if (!changedFiles.length) {
-      return { mode, packages: [], reason: 'no changed files' }
-    }
-  }
-
-  // Determine affected packages.
-  const affectedPackages = getAffectedPackages(changedFiles)
-
-  if (!affectedPackages.length) {
-    return { mode, packages: [], reason: 'no lintable packages affected' }
-  }
-
-  return { mode, packages: affectedPackages, reason: undefined }
-}
-
-/**
- * Run Oxlint check via lint script on affected packages.
- */
-export async function runOxlintCheck(
-  options: CheckOptions = {},
-): Promise<number> {
-  const { quiet = false } = options
-
-  // Get files to check and affected packages.
-  const { packages } = await getFilesToCheck(options)
-
-  if (!packages.length) {
-    if (!quiet) {
-      logger.step('Running Oxlint checks')
-      logger.substep('No packages to check, skipping Oxlint')
-    }
-    return 0
-  }
-
-  // Run lint across affected packages.
-  return await runAcrossPackages(
-    packages,
-    'lint',
-    [],
-    quiet,
-    'Running Oxlint checks',
-  )
-}
-
-/**
- * Run TypeScript type check across all packages with type script.
- */
-export async function runTypeCheck(
-  options: { quiet?: boolean | undefined } = {},
-): Promise<number> {
-  const { quiet = false } = options
-
-  const packages = getPackagesWithScript('type')
-
-  if (!packages.length) {
-    if (!quiet) {
-      logger.step('Running TypeScript checks')
-      logger.substep('No packages with type checking')
-    }
-    return 0
-  }
-
-  // Run type check across packages.
-  return await runAcrossPackages(
-    packages,
-    'type',
-    [],
-    quiet,
-    'Running TypeScript checks',
-  )
-}
-
-async function main(): Promise<void> {
-  try {
-    // Parse arguments.
-    const { values } = parseArgs({
-      options: {
-        help: { type: 'boolean', default: false },
-        lint: { type: 'boolean', default: false },
-        types: { type: 'boolean', default: false },
-        all: { type: 'boolean', default: false },
-        staged: { type: 'boolean', default: false },
-        changed: { type: 'boolean', default: false },
-        quiet: { type: 'boolean', default: false },
-        silent: { type: 'boolean', default: false },
-      },
-      allowPositionals: false,
-      strict: false,
-    })
-
-    // Show help if requested.
-    if (values.help) {
-      logger.log('Monorepo Check Runner')
-      logger.log('')
-      logger.log('Usage: pnpm check [options]')
-      logger.log('')
-      logger.log('Options:')
-      logger.log('  --help         Show this help message')
-      logger.log('  --lint         Run Oxlint check only')
-      logger.log('  --types        Run TypeScript check only')
-      logger.log('  --all          Check all packages')
-      logger.log('  --staged       Check packages with staged files')
-      logger.log('  --changed      Check packages with changed files')
-      logger.log('  --quiet, --silent  Suppress progress messages')
-      logger.log('')
-      logger.log('Examples:')
-      logger.log(
-        '  pnpm check             # Run all checks on changed packages',
-      )
-      logger.log('  pnpm check --all       # Run all checks on all packages')
-      logger.log('  pnpm check --lint      # Run Oxlint only')
-      logger.log('  pnpm check --types     # Run TypeScript only')
-      logger.log(
-        '  pnpm check --lint --staged  # Run Oxlint on staged packages',
-      )
-      process.exitCode = 0
-      return
-    }
-
-    const quiet = isQuiet(values)
-    const runAll = !values.lint && !values.types
-
-    if (!quiet) {
-      printHeader('Monorepo Check Runner')
-    }
-
-    let exitCode = 0
-
-    // Run Oxlint check if requested or running all.
-    if (runAll || values.lint) {
-      if (!quiet) {
-        logger.log('')
-      }
-      exitCode = await runOxlintCheck({
-        all: values.all,
-        changed: values.changed,
-        quiet,
-        staged: values.staged,
-      })
-      if (exitCode !== 0) {
-        if (!quiet) {
-          logger.error('Checks failed')
-        }
-        process.exitCode = exitCode
-        return
-      }
-    }
-
-    // Run TypeScript check if requested or running all.
-    if (runAll || values.types) {
-      if (!quiet) {
-        logger.log('')
-      }
-      exitCode = await runTypeCheck({ quiet })
-      if (exitCode !== 0) {
-        if (!quiet) {
-          logger.error('Checks failed')
-        }
-        process.exitCode = exitCode
-        return
-      }
-    }
-
-    // Run link: validation check.
-    if (runAll) {
-      if (!quiet) {
-        logger.log('')
-        logger.progress('Validating no link: dependencies')
-      }
-      const validateResult = await spawn(
-        'node',
-        [path.join(scriptsDir, 'validate-no-link-deps.mts')],
-        {
-          shell: WIN32,
-          stdio: 'pipe',
-          stdioString: true,
-        },
-      )
-      if (validateResult.code !== 0) {
-        if (!quiet) {
-          logger.clearLine()
-          logger.error('Validation failed')
-        }
-        // Show the actual error output.
-        if (validateResult.stdout) {
-          logger.log(validateResult.stdout)
-        }
-        if (validateResult.stderr) {
-          logger.error(validateResult.stderr)
-        }
-        process.exitCode = validateResult.code
-        return
-      }
-      if (!quiet) {
-        logger.clearLine()
-        logger.success('No link: dependencies found')
-      }
-    }
-
-    // Run bundle dependencies validation check.
-    if (runAll) {
-      if (!quiet) {
-        logger.log('')
-        logger.progress('Validating bundle dependencies')
-      }
-      const bundleResult = await spawn(
-        'node',
-        [path.join(scriptsDir, 'validate-bundle-deps.mts')],
-        {
-          shell: WIN32,
-          stdio: 'pipe',
-          stdioString: true,
-        },
-      )
-      if (bundleResult.code !== 0) {
-        if (!quiet) {
-          logger.clearLine()
-          logger.error('Bundle validation failed')
-        }
-        // Show the actual error output.
-        if (bundleResult.stdout) {
-          logger.log(bundleResult.stdout)
-        }
-        if (bundleResult.stderr) {
-          logger.error(bundleResult.stderr)
-        }
-        process.exitCode = bundleResult.code
-        return
-      }
-      if (!quiet) {
-        logger.clearLine()
-        logger.success('Bundle dependencies validation passed')
-      }
-    }
-
-    // Run CDN references validation check.
-    if (runAll) {
-      if (!quiet) {
-        logger.log('')
-        logger.progress('Validating no CDN references')
-      }
-      const cdnResult = await spawn(
-        'node',
-        [path.join(scriptsDir, 'validate-no-cdn-refs.mts')],
-        {
-          shell: WIN32,
-          stdio: 'pipe',
-          stdioString: true,
-        },
-      )
-      if (cdnResult.code !== 0) {
-        if (!quiet) {
-          logger.clearLine()
-          logger.error('CDN references validation failed')
-        }
-        // Show the actual error output.
-        if (cdnResult.stdout) {
-          logger.log(cdnResult.stdout)
-        }
-        if (cdnResult.stderr) {
-          logger.error(cdnResult.stderr)
-        }
-        process.exitCode = cdnResult.code
-        return
-      }
-      if (!quiet) {
-        logger.clearLine()
-        logger.success('No CDN references found')
-      }
-    }
-
-    // Run file size validation check.
-    if (runAll) {
-      if (!quiet) {
-        logger.log('')
-        logger.progress('Validating file sizes')
-      }
-      const sizeResult = await spawn(
-        'node',
-        [path.join(scriptsDir, 'validate-file-size.mts')],
-        {
-          shell: WIN32,
-          stdio: 'pipe',
-          stdioString: true,
-        },
-      )
-      if (sizeResult.code !== 0) {
-        if (!quiet) {
-          logger.clearLine()
-          logger.error('File size validation failed')
-        }
-        // Show the actual error output.
-        if (sizeResult.stdout) {
-          logger.log(sizeResult.stdout)
-        }
-        if (sizeResult.stderr) {
-          logger.error(sizeResult.stderr)
-        }
-        process.exitCode = sizeResult.code
-        return
-      }
-      if (!quiet) {
-        logger.clearLine()
-        logger.success('All files are within size limits')
-      }
-    }
-
-    // Run path-hygiene check (1 path, 1 reference). See
-    // .claude/skills/path-guard/ + .claude/hooks/path-guard/.
-    if (runAll) {
-      if (!quiet) {
-        logger.log('')
-        logger.progress('Running path-hygiene check (1 path, 1 reference)')
-      }
-      // Resolve the gate path against scripts/ so this runner works
-      // when invoked from any cwd (root or a workspace package dir).
-      const gatePath = path.join(scriptsDir, 'check-paths.mts')
-      const repoRoot = path.dirname(scriptsDir)
-      const pathHygieneResult = await spawn('node', [gatePath, '--quiet'], {
-        cwd: repoRoot,
-        shell: WIN32,
-        stdio: 'pipe',
-        stdioString: true,
-      })
-      if (pathHygieneResult.code !== 0) {
-        if (!quiet) {
-          logger.clearLine()
-          logger.error(
-            'Path-hygiene check failed — rerun with --explain for details',
-          )
-        }
-        if (pathHygieneResult.stdout) {
-          logger.log(pathHygieneResult.stdout)
-        }
-        if (pathHygieneResult.stderr) {
-          logger.error(pathHygieneResult.stderr)
-        }
-        process.exitCode = pathHygieneResult.code
-        return
-      }
-      if (!quiet) {
-        logger.clearLine()
-        logger.success('Path-hygiene check passed')
-      }
-    }
-
-    if (!quiet) {
-      logger.log('')
-      logger.success('All checks passed')
-      printFooter()
-    }
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    logger.error(`Check runner failed: ${message}`)
+for (let i = 0, { length } = steps; i < length; i += 1) {
+  if (!steps[i]!()) {
     process.exitCode = 1
+    break
   }
 }
-
-main().catch((e: unknown) => {
-  logger.error(e)
-  process.exitCode = 1
-})

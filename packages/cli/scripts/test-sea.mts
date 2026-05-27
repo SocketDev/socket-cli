@@ -10,7 +10,7 @@
 // oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: fs.stat() reads .size, not existence; per-call would produce many redundant disables.
 // oxlint-disable socket/prefer-exists-sync -- all fs.stat() calls here read .size for size reporting; not existence checks.
 
-import { spawn } from '@socketsecurity/lib-stable/spawn/spawn'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
