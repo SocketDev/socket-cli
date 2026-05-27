@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.105](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.105) - 2026-05-27
 
 ### Added
-- **`socket manifest scala --facts [beta]`** — Emit a `.socket.facts.json` dependency graph straight from an sbt build (no `pom.xml` round-trip), consumable by `socket scan create --reach` as pregenerated SBOM input for Tier 1 reachability. Reads dependency metadata only (no artifact downloads) and works across a wide range of sbt versions (0.13 through 1.x) with no plugin install or project changes. Toggle also exposed via the `socket manifest setup` wizard and honored by `socket scan create --auto-manifest`.
+- **`socket manifest scala --facts [beta]`** — Emit a `.socket.facts.json` dependency graph from an sbt build, consumable by `socket scan create --reach` as pregenerated SBOM input for Tier 1 reachability. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
 
 ## [1.1.104](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.104) - 2026-05-26
 
