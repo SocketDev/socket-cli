@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.105](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.105) - 2026-05-27
 
 ### Added
-- **`socket manifest scala --facts [beta]`** — Emit a `.socket.facts.json` dependency graph from an sbt build, consumable by `socket scan create --reach` as pregenerated SBOM input for Tier 1 reachability. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
+- **`socket manifest scala --facts [beta]`** — Emit a `.socket.facts.json` dependency graph from an sbt build for `socket scan create` to consume as a pregenerated SBOM. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
 
 ## [1.1.104](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.104) - 2026-05-26
 
@@ -30,7 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.98](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.98) - 2026-05-22
 
 ### Added
-- **`socket manifest gradle --facts [beta]`** (and its `socket manifest kotlin --facts` alias) — Emit a `.socket.facts.json` dependency graph from a Gradle build, consumable by `socket scan create --reach` as pregenerated SBOM input for Tier 1 reachability. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
+- **`socket manifest gradle --facts [beta]`** (and its `socket manifest kotlin --facts` alias) — Emit a `.socket.facts.json` dependency graph from a Gradle build for `socket scan create` to consume as a pregenerated SBOM. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
 
 ### Changed
 - Updated the Coana CLI to v `15.3.8`.
