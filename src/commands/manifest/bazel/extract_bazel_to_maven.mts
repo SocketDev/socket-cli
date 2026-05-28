@@ -2,37 +2,42 @@ import {
   existsSync,
   promises as fs,
   mkdirSync,
-  readFileSync,
-  realpathSync,
+  mkdtempSync,
 } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { resolveBazelBinary } from './bazel-bin-detect.mts'
-import {
-  parseBazelBuildOutput,
-  parseUnsortedDepsJson,
-} from './bazel-build-parser.mts'
+import { runMetadataCqueryForRepo } from './bazel-cquery.mts'
 import { ensureJavaOnPath } from './bazel-java-shim.mts'
 import { validateOutputBase } from './bazel-output-base-check.mts'
 import { provisionPythonShim } from './bazel-python-shim.mts'
 import {
-  buildProbeFor,
-  runBazelModShowVisibleRepos,
+  buildMavenProbeFor,
+  runBazelModShowMavenExtension,
 } from './bazel-query-runner.mts'
 import {
-  discoverMavenRepos,
-  parseVisibleRepoCandidates,
+  CONVENTIONAL_MAVEN_REPO_NAMES,
+  parseShowExtensionOutput,
+  probeCandidate,
 } from './bazel-repo-discovery.mts'
 import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
 } from './bazel-workspace-detect.mts'
+import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
 
+import type {
+  CqueryRepoResult,
+  CqueryStatus,
+} from './bazel-cquery.mts'
 import type { ExtractedArtifact } from './bazel-build-parser.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
+import type { WorkspaceMode } from './bazel-workspace-detect.mts'
 
 export type ExtractBazelOptions = {
   bazelFlags: string | undefined
@@ -42,9 +47,18 @@ export type ExtractBazelOptions = {
   cwd: string
   // Optional env override used for python-shim PATH augmentation.
   env?: NodeJS.ProcessEnv
+  // Customer-supplied Maven hub names augmenting the auto-discovery
+  // candidate set. Wired in by the `--bazel-maven-repo=<name>` flag for
+  // legacy WORKSPACE workspaces whose hubs use non-conventional names
+  // (or custom Bzlmod extensions `mod show_extension` doesn't enumerate).
+  extraMavenRepoNames?: string[] | undefined
   out: string
   // Use the auto-manifest sibling directory instead of writing directly to `out`.
   outLayout?: 'flat'
+  // Per-repo cquery timeout in milliseconds. Auto-manifest default is 60s
+  // (the orchestrator's job is to not stall the wider scan); explicit
+  // invocations may bump it.
+  perRepoTimeoutMs?: number | undefined
   verbose: boolean
 }
 
@@ -53,7 +67,32 @@ export type ExtractBazelResult = {
   manifestPath?: string | undefined
   noEcosystemFound?: boolean | undefined
   ok: boolean
+  // Path to the per-invocation status sidecar describing which repos
+  // produced artefacts and which timed out / were empty. Useful for the
+  // server-side to surface partial results to the customer.
+  statusPath?: string | undefined
 }
+
+type SidecarRepoEntry = {
+  name: string
+  status: CqueryStatus
+  artifactCount: number
+  durationMs: number
+}
+
+type SidecarWorkspaceEntry = {
+  relPath: string
+  mode: { bzlmod: boolean; workspace: boolean }
+  repos: SidecarRepoEntry[]
+}
+
+type Sidecar = {
+  complete: boolean
+  workspaces: SidecarWorkspaceEntry[]
+}
+
+const DEFAULT_PER_REPO_TIMEOUT_MS = 60_000
+const REAP_TIMEOUT_MS = 10_000
 
 type CoordPair = { groupArtifact: string; version: string }
 
@@ -171,15 +210,11 @@ export function normalizeToMavenInstallJson(
     }
     // Dependency keys in maven_install.json use "g:a" (no version),
     // matching the canonical rules_jvm_external lockfile shape.
-    // Only emit an entry when there are actual dependencies (lockfile omits
-    // artifacts with an empty dep list).
     const depKey = split.groupArtifact
     const depCoords = dependencySets.get(depKey) ?? new Set<string>()
     for (const depLabel of a.deps) {
-      // First try our rule-label lookup (the common case for --output=build text).
       const c = depLabelToCoord(depLabel, labelToCoord)
       if (c) {
-        // c is "g:a:v"; strip the version to produce "g:a" per lockfile shape.
         const cs = splitCoord(c)
         depCoords.add(cs ? cs.groupArtifact : c)
       } else if (
@@ -187,9 +222,6 @@ export function normalizeToMavenInstallJson(
         !depLabel.startsWith('@') &&
         !depLabel.startsWith(':')
       ) {
-        // unsorted_deps.json deps may be "g:a:v" in older files or
-        // "g:a" in v2 lock-file-shaped maps. Strip only when a version is
-        // present.
         const parts = depLabel.split(':')
         depCoords.add(
           parts.length >= 3 ? parts.slice(0, -1).join(':') : depLabel,
@@ -206,127 +238,103 @@ export function normalizeToMavenInstallJson(
   return out
 }
 
-// Resolves the bazel `external/` dir for the given workspace.
-//
-// Bazel's `bazel-out/` convenience symlink points at
-// `<output_base>/execroot/<workspace>/bazel-out/`; the `external/` dir we
-// want is at `<output_base>/external/`. `path.join` is purely lexical and
-// would collapse `bazel-out/..` to the cwd itself, which is the wrong place
-// Resolve the symlink at the filesystem level and walk up to
-// `<output_base>` instead.
-function bazelExternalDir(
-  cwd: string,
-  outputBase: string | undefined,
-): string | null {
-  if (outputBase) {
-    return path.join(outputBase, 'external')
+// Cross-workspace dedup keyed on the full Maven coordinate string
+// (`g:a:v[:classifier]`). The metadata cquery emits one entry per rule,
+// so the same `androidx.annotation:annotation:1.8.2` can show up in
+// `examples/dagger/@maven` and `examples/ksp/@maven` in rules_kotlin —
+// downstream only needs it once.
+function dedupArtifactsByCoord(
+  artifacts: ExtractedArtifact[],
+): ExtractedArtifact[] {
+  const seen = new Set<string>()
+  const out: ExtractedArtifact[] = []
+  for (const a of artifacts) {
+    if (seen.has(a.mavenCoordinates)) {
+      continue
+    }
+    seen.add(a.mavenCoordinates)
+    out.push(a)
   }
-  const bazelOutLink = path.join(cwd, 'bazel-out')
-  if (!existsSync(bazelOutLink)) {
-    return null
-  }
-  try {
-    // realpath follows symlinks: .../<output_base>/execroot/<workspace>/bazel-out
-    const real = realpathSync(bazelOutLink)
-    // Walk up bazel-out -> <workspace> -> execroot -> <output_base>, then into external/.
-    return path.join(real, '..', '..', '..', 'external')
-  } catch {
-    return null
-  }
+  return out
 }
 
-// Internal diagnostic: when truthy, skip the unsorted_deps.json fast path
-// and force the bazel-query regex fallback. Used by bazel-bench to
-// deterministically exercise parseBazelBuildOutput on every CI run. Truthy
-// values are '1', 'true', 'yes' (case-insensitive); anything else (unset,
-// '', '0', 'false') is treated as off. Not exposed as a user-facing CLI
-// flag, so it is read here rather than added to constants.mts.
-function isForceQueryFallbackEnabled(): boolean {
-  const raw = process.env['SOCKET_BAZEL_FORCE_QUERY_FALLBACK']
-  if (!raw) {
-    return false
-  }
-  const normalized = raw.toLowerCase()
-  return normalized === '1' || normalized === 'true' || normalized === 'yes'
-}
-
-// Tries `external/<repo>/unsorted_deps.json` first; falls back to parsing the
-// probe stdout the caller already captured during discovery. Discovery runs
-// the same `kind("jvm_import rule|aar_import rule", @<repo>//:*)` query that
-// extraction needs, so reusing its stdout skips one bazel-query invocation
-// per repo on the unpinned path (where unsorted_deps.json isn't on disk).
-async function extractFromOneRepo(
-  repoName: string,
+// Build the per-workspace candidate Maven hub list. Bzlmod mode prefers
+// `bazel mod show_extension`; WORKSPACE mode (and Bzlmod fallback when
+// show_extension yields nothing) probes the conventional names plus any
+// customer-supplied extras. Returns the list in discovery order.
+async function discoverCandidatesForWorkspace(
+  workspaceRoot: string,
+  mode: WorkspaceMode,
   queryOpts: BazelQueryOptions,
-  cachedProbeStdout: string,
-): Promise<ExtractedArtifact[]> {
-  const verbose = queryOpts.verbose
-  // unsorted_deps.json lives under the bazel external dir.
-  // When --output_base is set, it's under that; otherwise under the workspace's
-  // bazel-out symlink (resolved via realpath, NOT lexical path.join — the
-  // lexical form would collapse `bazel-out/..` to cwd and miss the file).
-  const externalDir = bazelExternalDir(queryOpts.cwd, queryOpts.bazelOutputBase)
-  if (verbose) {
-    logger.log(
-      `[VERBOSE] @${repoName}: external dir:`,
-      externalDir ?? '(unresolved — bazel-out symlink absent)',
-    )
-  }
-  const forceFallback = isForceQueryFallbackEnabled()
-  if (forceFallback && verbose) {
-    logger.log(
-      `[VERBOSE] @${repoName}: SOCKET_BAZEL_FORCE_QUERY_FALLBACK set; skipping unsorted_deps.json fast path.`,
-    )
-  }
-  const candidates = forceFallback
-    ? []
-    : externalDir
-      ? [path.join(externalDir, repoName, 'unsorted_deps.json')]
-      : []
-  for (const c of candidates) {
-    if (existsSync(c)) {
-      // Bound the read to 1GB to prevent OOM on hostile content while allowing large real-world lockfiles.
-      // eslint-disable-next-line no-await-in-loop
-      const stat = await fs.stat(c)
-      if (stat.size > 1024 * 1024 * 1024) {
-        logger.warn(
-          `Skipping oversized ${c} (${stat.size} bytes); falling back to cached probe stdout.`,
+  extras: readonly string[],
+  verbose: boolean,
+): Promise<string[]> {
+  const candidates: string[] = []
+  if (mode.bzlmod) {
+    const extResult = await runBazelModShowMavenExtension(queryOpts)
+    if (extResult.code === 0) {
+      candidates.push(...parseShowExtensionOutput(extResult.stdout))
+      if (verbose) {
+        logger.log(
+          `[VERBOSE] workspace ${workspaceRoot}: show_extension yielded`,
+          candidates,
         )
-        break
-      }
-      const json = readFileSync(c, 'utf8')
-      const parsed = parseUnsortedDepsJson(json)
-      if (parsed.length) {
-        if (verbose) {
-          logger.log(
-            `[VERBOSE] @${repoName}: source=unsorted_deps.json (${c}, ${parsed.length} artifact(s))`,
-          )
-        }
-        return parsed.map(a => ({ ...a, sourceRepo: repoName }))
       }
     } else if (verbose) {
-      logger.log(`[VERBOSE] @${repoName}: unsorted_deps.json miss at`, c)
+      logger.log(
+        `[VERBOSE] workspace ${workspaceRoot}: show_extension failed (code=${extResult.code}); falling back to conventional probe`,
+      )
     }
   }
-  // Reuse the probe stdout that discovery already captured for this repo.
-  // The probe ran exactly this query during validation and only validated
-  // repos with code === 0 make it into the cache, so retry is unnecessary
-  // — if the probe was flaky, the repo wouldn't be in the map.
-  if (!cachedProbeStdout) {
-    logger.warn(
-      `No cached probe stdout for @${repoName}; skipping. (This shouldn't happen — discovery should have populated it.)`,
-    )
-    return []
+  // Probe conventional names + extras for any candidate not already
+  // discovered. WORKSPACE mode relies entirely on the probe; Bzlmod
+  // mode uses it as a defensive fallback (e.g. custom Maven extensions
+  // mod show_extension doesn't enumerate).
+  const seen = new Set(candidates)
+  const probe = buildMavenProbeFor(queryOpts)
+  const toProbe = [...CONVENTIONAL_MAVEN_REPO_NAMES, ...extras].filter(
+    name => !seen.has(name),
+  )
+  for (const name of toProbe) {
+    // eslint-disable-next-line no-await-in-loop
+    const status = await probeCandidate(name, probe, verbose)
+    if (status === 'populated') {
+      candidates.push(name)
+      seen.add(name)
+    }
   }
-  if (verbose) {
-    logger.log(
-      `[VERBOSE] @${repoName}: source=cached probe stdout (${cachedProbeStdout.length} bytes)`,
+  return candidates
+}
+
+// Best-effort reap of a Bazel server. Spawned with a short timeout so
+// a wedged server can't itself hang the cleanup; failures are swallowed
+// because the caller will `rm -rf` the output_user_root regardless.
+async function reapBazelServer(
+  bin: string,
+  outputUserRoot: string,
+): Promise<void> {
+  try {
+    await spawn(
+      bin,
+      [`--output_user_root=${outputUserRoot}`, 'shutdown'],
+      { timeout: REAP_TIMEOUT_MS },
     )
+  } catch {
+    // Server may already be dead, or shutdown itself timed out — the
+    // tempdir removal below is sufficient cleanup.
   }
-  return parseBazelBuildOutput(cachedProbeStdout).map(a => ({
-    ...a,
-    sourceRepo: repoName,
-  }))
+}
+
+async function removeTempdir(dir: string): Promise<void> {
+  try {
+    await fs.rm(dir, { recursive: true, force: true })
+  } catch {
+    // Best effort. The next CLI invocation lands a fresh tempdir.
+  }
+}
+
+function makeOutputUserRoot(): string {
+  return mkdtempSync(path.join(os.tmpdir(), 'socket-bazel-'))
 }
 
 export async function extractBazelToMaven(
@@ -341,102 +349,160 @@ export async function extractBazelToMaven(
   }
   logger.groupEnd()
 
+  const perRepoTimeoutMs =
+    opts.perRepoTimeoutMs ?? DEFAULT_PER_REPO_TIMEOUT_MS
+  const extras = opts.extraMavenRepoNames ?? []
+
+  // Validate config + ensure toolchains BEFORE we mint a tempdir.
+  let bin: string
+  let baseEnv: NodeJS.ProcessEnv | undefined
   try {
-    // Validate caller-provided Bazel filesystem settings before invoking Bazel.
     if (opts.bazelOutputBase) {
       validateOutputBase(opts.bazelOutputBase, opts.cwd)
     }
-    // Java must be available before rules_jvm_external/Coursier runs;
-    // python shim follows so its augmented PATH inherits the JDK prefix.
     ensureJavaOnPath()
     const shim = await provisionPythonShim()
-    const baseEnv = shim.augmentedEnv ?? opts.env
-
-    // Step 1: workspace detection.
-    const mode = detectWorkspaceMode(cwd)
-    logger.info(
-      `Workspace mode: bzlmod=${mode.bzlmod} workspace=${mode.workspace}`,
-    )
-    const invocationFlags = getBazelInvocationFlags(mode)
-
-    // Step 2: bazel binary resolution.
-    const bin = await resolveBazelBinary(opts.bin)
-    logger.info(`Using bazel: ${bin}`)
+    baseEnv = shim.augmentedEnv ?? opts.env
+    bin = await resolveBazelBinary(opts.bin)
+  } catch (e) {
+    logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)
     if (verbose) {
-      logger.log('[VERBOSE] resolved options:', {
-        bin,
-        bazelRc: opts.bazelRc ?? '(unset)',
-        bazelOutputBase: opts.bazelOutputBase ?? '(unset)',
-        bazelFlags: opts.bazelFlags ?? '(unset)',
-        invocationFlags,
-      })
+      logger.group('[VERBOSE] error:')
+      logger.log(e)
+      logger.groupEnd()
+    }
+    return { artifactCount: 0, ok: false }
+  }
+  logger.info(`Using bazel: ${bin}`)
+
+  // Track every output_user_root we mint so we can reap them all in
+  // the cleanup pass, even if a per-repo timeout forced a re-mint.
+  let outputUserRoot = makeOutputUserRoot()
+  const mintedRoots: string[] = [outputUserRoot]
+  if (verbose) {
+    logger.log(
+      `[VERBOSE] initial --output_user_root=${outputUserRoot} (will be reaped on completion)`,
+    )
+  }
+
+  const sidecar: Sidecar = { complete: true, workspaces: [] }
+  const allArtifacts: ExtractedArtifact[] = []
+
+  try {
+    const workspaceRoots = findWorkspaceRoots(cwd, verbose)
+    if (!workspaceRoots.length) {
+      logger.warn(
+        `No Bazel workspace found at ${cwd} or beneath (looked for MODULE.bazel / WORKSPACE / WORKSPACE.bazel).`,
+      )
+      return { artifactCount: 0, noEcosystemFound: true, ok: false }
+    }
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] discovered ${workspaceRoots.length} workspace root(s):`,
+        workspaceRoots,
+      )
     }
 
-    // Step 3: build the shared query options object.
-    const queryOpts: BazelQueryOptions = {
-      bin,
-      cwd,
-      invocationFlags,
-      ...(opts.bazelRc ? { bazelRc: opts.bazelRc } : {}),
-      ...(opts.bazelFlags ? { bazelFlags: opts.bazelFlags } : {}),
-      ...(opts.bazelOutputBase
-        ? { bazelOutputBase: opts.bazelOutputBase }
-        : {}),
-      ...(baseEnv ? { env: baseEnv } : {}),
-      verbose,
-    }
-
-    // Step 4: discover validated Maven repos via the two-step recipe.
-    // Bzlmod has a native visible-repository surface; prefer that over static
-    // MODULE.bazel parsing and keep bounded parsing as the legacy/fallback path.
-    let nativeCandidates: string[] | undefined
-    if (mode.bzlmod) {
-      const visibleRepos = await runBazelModShowVisibleRepos(queryOpts)
-      if (visibleRepos.code === 0) {
-        nativeCandidates = parseVisibleRepoCandidates(visibleRepos.stdout)
+    for (const workspaceRoot of workspaceRoots) {
+      const relPath = path.relative(cwd, workspaceRoot)
+      let mode: WorkspaceMode
+      try {
+        mode = detectWorkspaceMode(workspaceRoot)
+      } catch (e) {
         if (verbose) {
           logger.log(
-            '[VERBOSE] Bzlmod visible repo candidates:',
-            nativeCandidates,
+            `[VERBOSE] workspace ${workspaceRoot}: detect failed (${getErrorCause(e)}); skipping`,
           )
         }
-      } else if (verbose) {
-        logger.log(
-          '[VERBOSE] bazel mod show_repo failed; falling back to static candidate parsing:',
-          visibleRepos.stderr,
-        )
+        continue
       }
-    }
-    // Returns Map<repoName, probeStdout> so extraction can reuse the probe
-    // output and skip running an identical bazel-query a second time.
-    const probe = buildProbeFor(queryOpts)
-    const repos = await discoverMavenRepos(
-      cwd,
-      probe,
-      nativeCandidates,
-      verbose,
-    )
-    const repoNames = Array.from(repos.keys())
-    logger.info(
-      `Discovered ${repos.size} Maven repo(s): ${repoNames.join(', ') || '(none)'}`,
-    )
+      logger.info(
+        `Workspace ${relPath || '.'}: bzlmod=${mode.bzlmod} workspace=${mode.workspace}`,
+      )
+      const invocationFlags = getBazelInvocationFlags(mode)
+      const buildQueryOpts = (
+        userRoot: string,
+        spawnCwd: string,
+      ): BazelQueryOptions => ({
+        bin,
+        cwd: spawnCwd,
+        invocationFlags,
+        outputUserRoot: userRoot,
+        ...(opts.bazelRc ? { bazelRc: opts.bazelRc } : {}),
+        ...(opts.bazelFlags ? { bazelFlags: opts.bazelFlags } : {}),
+        ...(opts.bazelOutputBase
+          ? { bazelOutputBase: opts.bazelOutputBase }
+          : {}),
+        ...(baseEnv ? { env: baseEnv } : {}),
+        verbose,
+      })
 
-    // Step 5: extract artifacts from each repo (preferring unsorted_deps.json).
-    const allArtifacts: ExtractedArtifact[] = []
-    for (const [repo, probeStdout] of repos) {
       // eslint-disable-next-line no-await-in-loop
-      const artifacts = await extractFromOneRepo(repo, queryOpts, probeStdout)
-      allArtifacts.push(...artifacts)
-      logger.info(`@${repo}: ${artifacts.length} artifact(s)`)
+      const candidates = await discoverCandidatesForWorkspace(
+        workspaceRoot,
+        mode,
+        buildQueryOpts(outputUserRoot, workspaceRoot),
+        extras,
+        verbose,
+      )
+      logger.info(
+        `Workspace ${relPath || '.'}: discovered ${candidates.length} Maven repo(s): ${
+          candidates.join(', ') || '(none)'
+        }`,
+      )
+      const wsEntry: SidecarWorkspaceEntry = {
+        mode: { bzlmod: mode.bzlmod, workspace: mode.workspace },
+        relPath,
+        repos: [],
+      }
+
+      for (const repoName of candidates) {
+        // eslint-disable-next-line no-await-in-loop
+        const result: CqueryRepoResult = await runMetadataCqueryForRepo({
+          opts: buildQueryOpts(outputUserRoot, workspaceRoot),
+          repoName,
+          timeoutMs: perRepoTimeoutMs,
+          workspaceRelPath: relPath,
+          workspaceRoot,
+        })
+        wsEntry.repos.push({
+          artifactCount: result.artifacts.length,
+          durationMs: result.durationMs,
+          name: repoName,
+          status: result.status,
+        })
+        allArtifacts.push(...result.artifacts)
+        if (result.status === 'ok' || result.status === 'partial') {
+          logger.info(
+            `@${repoName}: ${result.artifacts.length} artifact(s) (status=${result.status})`,
+          )
+        } else if (result.status === 'timeout') {
+          logger.warn(
+            `@${repoName}: cquery timed out after ${perRepoTimeoutMs}ms; reaping server`,
+          )
+          sidecar.complete = false
+          // eslint-disable-next-line no-await-in-loop
+          await reapBazelServer(bin, outputUserRoot)
+          // eslint-disable-next-line no-await-in-loop
+          await removeTempdir(outputUserRoot)
+          outputUserRoot = makeOutputUserRoot()
+          mintedRoots.push(outputUserRoot)
+          if (verbose) {
+            logger.log(
+              `[VERBOSE] minted fresh --output_user_root=${outputUserRoot} after timeout`,
+            )
+          }
+        } else if (verbose) {
+          logger.log(
+            `[VERBOSE] @${repoName}: status=${result.status} (no artifacts)`,
+          )
+        }
+      }
+      sidecar.workspaces.push(wsEntry)
     }
 
-    // Step 6: normalize to maven_install.json shape.
-    const normalized = normalizeToMavenInstallJson(allArtifacts)
-
-    // Step 7: write outputs.
-    // Standalone output writes directly to `out`; auto-manifest uses a sibling directory
-    // to avoid colliding with a repo's checked-in rules_jvm_external lockfile and
-    // to avoid repo-root gitignore patterns such as `/maven_install.json`.
+    const deduped = dedupArtifactsByCoord(allArtifacts)
+    const normalized = normalizeToMavenInstallJson(deduped)
     const layout = opts.outLayout ?? 'standalone'
     const manifestDir =
       layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
@@ -447,21 +513,23 @@ export async function extractBazelToMaven(
       JSON.stringify(normalized, null, 2),
       'utf8',
     )
+    const statusPath = path.join(manifestDir, 'manifest-status.json')
+    await fs.writeFile(statusPath, JSON.stringify(sidecar, null, 2), 'utf8')
 
     if (verbose) {
       logger.log('[VERBOSE] outputs:', {
-        artifactCount: allArtifacts.length,
-        generatedManifest: path.relative(out, manifestPath),
+        artifactCount: deduped.length,
+        complete: sidecar.complete,
         layout,
-        manifest: manifestPath,
-        mavenRepos: repoNames,
-        tool: 'socket manifest bazel',
-        workspace: { bzlmod: mode.bzlmod, legacyWorkspace: mode.workspace },
+        manifestPath,
+        statusPath,
+        workspaceCount: sidecar.workspaces.length,
       })
     }
 
-    if (!allArtifacts.length) {
-      if (!repos.size) {
+    const anyRepos = sidecar.workspaces.some(w => w.repos.length > 0)
+    if (!deduped.length) {
+      if (!anyRepos) {
         if (verbose) {
           logger.info(
             'No Maven artifacts extracted. failureCategory=no-supported-ecosystem',
@@ -472,29 +540,24 @@ export async function extractBazelToMaven(
           manifestPath,
           noEcosystemFound: true,
           ok: false,
+          statusPath,
         }
       }
       logger.fail(
-        `Discovered Maven repo(s) ${repoNames.join(', ')} but extracted zero artifacts. failureCategory=ecosystem-detected-but-empty`,
+        'Discovered Maven repo(s) but extracted zero artifacts. failureCategory=ecosystem-detected-but-empty',
       )
-      return {
-        artifactCount: 0,
-        manifestPath,
-        ok: false,
-      }
+      return { artifactCount: 0, manifestPath, ok: false, statusPath }
     }
     logger.success(
-      `Wrote ${allArtifacts.length} artifact(s) to ${path.relative(cwd, manifestPath)}.`,
+      `Wrote ${deduped.length} artifact(s) to ${path.relative(cwd, manifestPath)}.`,
     )
     return {
-      artifactCount: allArtifacts.length,
+      artifactCount: deduped.length,
       manifestPath,
-      ok: true,
+      ok: sidecar.complete,
+      statusPath,
     }
   } catch (e) {
-    // Always surface the error message; users should not have to
-    // re-run a multi-minute bazel build with --verbose just to see whether
-    // the failure was a missing dependency, permission error, or network blip.
     logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)
     if (verbose) {
       logger.group('[VERBOSE] error:')
@@ -504,5 +567,12 @@ export async function extractBazelToMaven(
       logger.info('Re-run with --verbose for the full stack.')
     }
     return { artifactCount: 0, ok: false }
+  } finally {
+    for (const dir of mintedRoots) {
+      // eslint-disable-next-line no-await-in-loop
+      await reapBazelServer(bin, dir)
+      // eslint-disable-next-line no-await-in-loop
+      await removeTempdir(dir)
+    }
   }
 }
