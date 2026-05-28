@@ -8,13 +8,17 @@ import constants from '../../constants.mts'
 
 export async function convertGradleToFacts({
   bin,
+  configs,
   cwd,
   gradleOpts,
+  ignoreUnresolved,
   verbose,
 }: {
   bin: string
+  configs: string
   cwd: string
   gradleOpts: string[]
+  ignoreUnresolved: boolean
   verbose: boolean
 }): Promise<void> {
   const rBin = path.resolve(cwd, bin)
@@ -43,7 +47,34 @@ export async function convertGradleToFacts({
       constants.distPath,
       'socket-facts.init.gradle',
     )
+    // Disable Gradle's configuration cache for the facts run. The init
+    // script resolves dependencies via the legacy
+    // `Configuration.resolvedConfiguration` API (the only public API that
+    // surfaces classifier + extension metadata) and registers per-
+    // subproject tasks that share a `gradle.ext` accumulator — neither
+    // pattern is compatible with the configuration cache, which would
+    // otherwise be on by default for projects with
+    // `org.gradle.configuration-cache=true` in `gradle.properties`. The
+    // Provider-based CC-safe alternatives (`ResolutionResult` /
+    // `ArtifactView.resolvedArtifacts`) only exist in Gradle 7.4+ and
+    // they don't expose classifier/extension, so they aren't a usable
+    // replacement here. Using `-D` rather than `--no-configuration-cache`
+    // keeps us compatible with older Gradle versions that don't recognize
+    // the flag — the system property is silently ignored when the
+    // feature doesn't exist.
+    // Both knobs are passed as Gradle project properties so the init script
+    // can read them via `rp.findProperty(...)`, matching how
+    // `socket.outputDirectory` / `socket.outputFile` are already wired.
+    const socketProps: string[] = []
+    if (ignoreUnresolved) {
+      socketProps.push('-Psocket.ignoreUnresolved=true')
+    }
+    if (configs) {
+      socketProps.push(`-Psocket.configs=${configs}`)
+    }
     const commandArgs = [
+      '-Dorg.gradle.configuration-cache=false',
+      ...socketProps,
       '--init-script',
       initLocation,
       ...gradleOpts,

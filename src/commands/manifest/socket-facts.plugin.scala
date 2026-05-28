@@ -35,8 +35,10 @@ import scala.collection.mutable
  * universal, ...), `-internal` duplicates and the sources/docs/pom artifact
  * configs are skipped. They aren't the project's declared dependencies (the
  * pom-path manifest omits them too) and resolving them dominates cost on large
- * builds. Override the set with `-Dsocket.configs=comma,separated` (e.g.
- * `compile,test`, or add a custom config). One component is emitted per
+ * builds. Override the set with `-Dsocket.configs=comma,separated` glob
+ * patterns (case-sensitive; `*` = any sequence, `?` = single char). e.g.
+ * `compile,test` to keep only those scopes, `*Test*` to add custom test-
+ * like configs. One component is emitted per
  * resolved module (org:name:version); a module's alternate artifacts
  * (sources/javadoc classifier jars) are the same package, so they collapse
  * into that single component rather than adding duplicates. `test`-scoped
@@ -160,14 +162,40 @@ object SocketFactsPlugin extends AutoPlugin {
     }
   )
 
-  // The configurations to resolve: `-Dsocket.configs=a,b,c` if set, else the
-  // real dependency scopes.
-  private def requestedConfs: Set[String] =
+  // Build a name-matcher closed over `-Dsocket.configs`. When set, patterns
+  // are matched as case-sensitive globs (`*` = any sequence, `?` = single
+  // char) so the same flag shape works as on `socket manifest gradle
+  // --facts`. With no wildcards a pattern is just an exact-name match,
+  // which preserves the prior comma-separated-names semantics. When unset
+  // we fall back to exact membership in DefaultConfs.
+  private def buildConfigMatcher(): String => Boolean =
     sys.props.get("socket.configs") match {
       case Some(s) if s.trim.nonEmpty =>
-        s.split(",").map(_.trim).filter(_.nonEmpty).toSet
-      case _ => DefaultConfs
+        val patterns = s
+          .split(",")
+          .map(_.trim)
+          .filter(_.nonEmpty)
+          .map(globToRegex)
+          .toList
+        if (patterns.isEmpty) { (name: String) =>
+          DefaultConfs.contains(name)
+        } else { (name: String) =>
+          patterns.exists(_.matcher(name).matches())
+        }
+      case _ => (name: String) => DefaultConfs.contains(name)
     }
+
+  private def globToRegex(glob: String): java.util.regex.Pattern = {
+    val sb = new StringBuilder
+    glob.foreach {
+      case '*' => sb.append(".*")
+      case '?' => sb.append('.')
+      case c if "\\.^$|+()[]{}".indexOf(c.toInt) >= 0 =>
+        sb.append('\\').append(c)
+      case c => sb.append(c)
+    }
+    java.util.regex.Pattern.compile(sb.toString)
+  }
 
   private def boolProp(name: String): Boolean =
     java.lang.Boolean.parseBoolean(sys.props.getOrElse(name, "false"))
@@ -183,8 +211,8 @@ object SocketFactsPlugin extends AutoPlugin {
       unresolved: mutable.LinkedHashSet[String]
   ): Unit = {
     val rootMrid = md.getModuleRevisionId
-    val wanted = requestedConfs
-    val confs = md.getConfigurationsNames.filter(wanted.contains)
+    val matcher = buildConfigMatcher()
+    val confs = md.getConfigurationsNames.filter(matcher)
     if (confs.nonEmpty) {
       // Don't revalidate cached metadata over the network: with release
       // coordinates the cached POM/ivy.xml never changes, so HEAD/GET-ing each
