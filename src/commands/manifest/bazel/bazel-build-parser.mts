@@ -9,8 +9,13 @@
  * the input string.
  */
 
+// `ruleKind` is the rule class the artifact came from. Legacy text-format
+// parsers only emit 'jvm_import' / 'aar_import' (the kinds rules_jvm_external
+// historically generated); the metadata cquery in bazel-cquery.mts emits
+// whatever `ruleClass` jsonproto reports — `java_library`, `kt_jvm_import`,
+// any future rules_jvm_external rule — so the type is open.
 export type ExtractedArtifact = {
-  ruleKind: 'jvm_import' | 'aar_import'
+  ruleKind: string
   ruleName: string
   mavenCoordinates: string
   sourceRepo?: string | undefined
