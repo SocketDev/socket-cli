@@ -5,13 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
-- **`socket fix --exclude-paths`** — Skip matching paths from the scan entirely: manifests under these paths are not uploaded, and fixes are not applied to workspaces under them. Use this to skip directories the current user cannot read (e.g. a postgres `pgdata` directory inside the repo) so they do not abort manifest collection. The pre-existing `--exclude` flag keeps its previous fix-application-only semantic but is now hidden in `--help` in favor of `--exclude-paths`.
 - **`socket manifest bazel [beta]`** — Generate Bazel JVM SBOM manifests by running `bazel query` against discovered Maven repos in a Bazel workspace. Closes the inline-Maven-declaration gap that lockfile-only parsing misses for repos like envoy, ray, tensorflow, tink-java, and or-tools. Auto-detects Bzlmod and legacy `WORKSPACE`.
 - **`socket scan create --auto-manifest`** now covers Bazel workspaces in addition to Gradle/Scala/Kotlin/Conda. Repos with `MODULE.bazel`, `WORKSPACE`, or `WORKSPACE.bazel` are detected automatically and their Maven dependencies extracted as part of the standard scan-create flow.
 - **Bazel PyPI extraction** — `socket manifest bazel --ecosystem pypi` now generates `requirements.txt` for Python Bazel workspaces. Discovers custom `rules_python` pip hub names with Bazel command output first, queries `py_library` / `py_binary` / `py_test` dependencies, resolves canonical pinned versions from `requirements_lock.txt`, and emits PEP 503-normalized `name==version` lines. Supports both Bzlmod (`pip.parse`) and legacy `WORKSPACE` (`pip_parse` / `pip_install`) configurations. PyPI remains explicit opt-in for `socket scan create --auto-manifest` until real-world no-lockfile recovery is validated.
 
 ### Changed
 - **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
+
+## [1.1.109](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.109) - 2026-05-28
+
+### Added
+- **`socket fix --exclude-paths`** — Skip matching paths from the scan entirely: manifests under these paths are not uploaded, and fixes are not applied to workspaces under them. Use this to skip directories the current user cannot read (e.g. a postgres `pgdata` directory inside the repo) so they do not abort manifest collection. The pre-existing `--exclude` flag keeps its previous fix-application-only semantic but is now hidden in `--help` in favor of `--exclude-paths`.
 
 ## [1.1.108](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.108) - 2026-05-28
 
