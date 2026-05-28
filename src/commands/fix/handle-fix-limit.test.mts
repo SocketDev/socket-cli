@@ -485,5 +485,27 @@ describe('socket fix --pr-limit behavior verification', () => {
       const [, , opts] = mockGetPackageFilesForScan.mock.calls[0] ?? []
       expect(opts.additionalIgnores).toBeUndefined()
     })
+
+    it('forwards excludePaths to coana --exclude alongside --exclude values', async () => {
+      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+
+      await coanaFix({
+        ...baseConfig,
+        exclude: ['legacy-workspace'],
+        excludePaths: ['data/postgres/pgdata'],
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      const excludeIndex = callArgs.indexOf('--exclude')
+      expect(excludeIndex).toBeGreaterThan(-1)
+      // --exclude is followed by every pattern from both sources, in order:
+      // legacy --exclude entries first, then --exclude-paths entries.
+      expect(callArgs.slice(excludeIndex + 1, excludeIndex + 3)).toEqual([
+        'legacy-workspace',
+        'data/postgres/pgdata',
+      ])
+    })
   })
 })

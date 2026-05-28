@@ -180,6 +180,12 @@ export async function coanaFix(
   const additionalIgnores = excludePaths.length
     ? excludePaths.flatMap(excludePathToScanIgnores)
     : undefined
+  // Forward --exclude-paths to coana's workspace filter too, so a workspace
+  // matching the pattern is also skipped during fix application even when
+  // its manifest somehow made it into the upload (e.g. picked up via a
+  // sibling manifest's references). --exclude stays separate as a hidden
+  // legacy escape hatch for the narrower "fix-application only" semantic.
+  const coanaExcludePatterns = [...exclude, ...excludePaths]
   const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
     additionalIgnores,
     config: socketConfig,
@@ -299,7 +305,9 @@ export async function coanaFix(
             ? ['--minimum-release-age', minimumReleaseAge]
             : []),
           ...(include.length ? ['--include', ...include] : []),
-          ...(exclude.length ? ['--exclude', ...exclude] : []),
+          ...(coanaExcludePatterns.length
+            ? ['--exclude', ...coanaExcludePatterns]
+            : []),
           ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
           ...(packageManagers.length
             ? ['--package-managers', ...packageManagers]
@@ -461,7 +469,9 @@ export async function coanaFix(
           ? ['--minimum-release-age', minimumReleaseAge]
           : []),
         ...(include.length ? ['--include', ...include] : []),
-        ...(exclude.length ? ['--exclude', ...exclude] : []),
+        ...(coanaExcludePatterns.length
+          ? ['--exclude', ...coanaExcludePatterns]
+          : []),
         ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
         ...(packageManagers.length
           ? ['--package-managers', ...packageManagers]

@@ -83,13 +83,17 @@ const generalFlags: MeowFlags = {
     description:
       'Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
     isMultiple: true,
-    hidden: false,
+    // Hidden in favor of --exclude-paths, which covers both manifest
+    // discovery and workspace filtering. --exclude is preserved for
+    // backwards compatibility with the narrower (fix-application only)
+    // semantic.
+    hidden: true,
   },
   excludePaths: {
     type: 'string',
     default: [],
     description:
-      'List of glob patterns to exclude from manifest discovery. Patterns are anchored micromatch globs matched relative to the target directory (CWD); `data/postgres/pgdata` matches only at that exact path, `**/pgdata` matches at any depth. Use this to skip directories the current user cannot read (e.g. a postgres data dir owned by another user) so they do not abort manifest collection. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
+      'Skip matching paths from the scan entirely: manifests under these paths are not uploaded, and fixes are not applied to workspaces under them. Patterns are anchored micromatch globs matched relative to the target directory (CWD); `data/postgres/pgdata` matches that exact path, `**/pgdata` matches at any depth. Use this to skip directories the current user cannot read so they do not abort manifest collection. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
     isMultiple: true,
     hidden: false,
   },
