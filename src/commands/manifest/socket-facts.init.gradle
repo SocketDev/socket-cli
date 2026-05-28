@@ -216,7 +216,9 @@ allprojects { project ->
       def isTestConfig = { String name -> name.toLowerCase().contains('test') }
 
       // Optional user-supplied filter: comma-separated glob patterns matched
-      // against full configuration names (case-insensitive). `*` matches any
+      // against full configuration names (case-sensitive — Gradle config
+      // names are canonical camelCase, and matching the user's literal input
+      // is more predictable than silently lower-casing). `*` matches any
       // sequence of characters, `?` matches a single character. When set,
       // only configurations whose name matches at least one pattern are
       // walked. e.g. `--configs=*CompileClasspath,*RuntimeClasspath` keeps
@@ -236,7 +238,7 @@ allprojects { project ->
             default: sb << ch
           }
         }
-        java.util.regex.Pattern.compile(sb.toString(), java.util.regex.Pattern.CASE_INSENSITIVE)
+        java.util.regex.Pattern.compile(sb.toString())
       }
       def configsProp = project.findProperty('socket.configs')?.toString()
       def requestedPatterns = null
