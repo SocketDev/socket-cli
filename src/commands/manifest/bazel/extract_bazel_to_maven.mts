@@ -15,7 +15,6 @@ import {
   parseUnsortedDepsJson,
 } from './bazel-build-parser.mts'
 import { ensureJavaOnPath } from './bazel-java-shim.mts'
-import { discoverAllCheckedInMavenArtifacts } from './bazel-lockfile-discovery.mts'
 import { validateOutputBase } from './bazel-output-base-check.mts'
 import { provisionPythonShim } from './bazel-python-shim.mts'
 import {
@@ -429,38 +428,6 @@ export async function extractBazelToMaven(
       const artifacts = await extractFromOneRepo(repo, queryOpts, probeStdout)
       allArtifacts.push(...artifacts)
       logger.info(`@${repo}: ${artifacts.length} artifact(s)`)
-    }
-
-    // Step 5b: merge checked-in `maven_install.json` files found anywhere
-    // under cwd. The root-only bazel-query path above never sees per-example
-    // sub-workspace lockfiles (rules_kotlin, rules_js, rules_rust, etc. all
-    // declare additional Maven artifacts in `examples/*/MODULE.bazel`
-    // projects with their own lockfiles), so without this merge the CLI
-    // emits a strict subset of what depscan's server-side parser already
-    // returns. Dedup by `mavenCoordinates` so the root workspace's lockfile
-    // — which bazel-query already extracted — does not double-count.
-    const seenCoords = new Set<string>(
-      allArtifacts.map(a => a.mavenCoordinates),
-    )
-    const { artifacts: lockfileArtifacts, lockfilePaths } =
-      discoverAllCheckedInMavenArtifacts(cwd, verbose)
-    let mergedFromLockfiles = 0
-    for (const a of lockfileArtifacts) {
-      if (seenCoords.has(a.mavenCoordinates)) {
-        continue
-      }
-      seenCoords.add(a.mavenCoordinates)
-      allArtifacts.push(a)
-      mergedFromLockfiles += 1
-    }
-    if (mergedFromLockfiles > 0) {
-      logger.info(
-        `Sub-workspace discovery: merged ${mergedFromLockfiles} additional artifact(s) from ${lockfilePaths.length} checked-in maven_install.json file(s).`,
-      )
-    } else if (verbose) {
-      logger.log(
-        `[VERBOSE] subworkspace: no additional artifacts beyond bazel-query (${lockfilePaths.length} lockfile(s) examined)`,
-      )
     }
 
     // Step 6: normalize to maven_install.json shape.
