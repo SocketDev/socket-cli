@@ -25,7 +25,7 @@ import {
   runBazelModShowVisibleRepos,
   runBazelQuery,
 } from './bazel-query-runner.mts'
-import { parseVisibleRepoCandidates } from './bazel-repo-discovery.mts'
+import { parseVisibleRepoCandidates } from './bazel-pypi-discovery.mts'
 import {
   detectWorkspaceMode,
   getBazelInvocationFlags,
