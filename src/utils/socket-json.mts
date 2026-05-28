@@ -61,8 +61,10 @@ export interface SocketJson {
       gradle?: {
         disabled?: boolean | undefined
         bin?: string | undefined
+        configs?: string | undefined
         facts?: boolean | undefined
         gradleOpts?: string | undefined
+        ignoreUnresolved?: boolean | undefined
         verbose?: boolean | undefined
       }
       sbt?: {
@@ -70,6 +72,9 @@ export interface SocketJson {
         infile?: string | undefined
         stdin?: boolean | undefined
         bin?: string | undefined
+        configs?: string | undefined
+        facts?: boolean | undefined
+        ignoreUnresolved?: boolean | undefined
         outfile?: string | undefined
         sbtOpts?: string | undefined
         stdout?: boolean | undefined

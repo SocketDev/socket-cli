@@ -215,8 +215,50 @@ allprojects { project ->
       }
       def isTestConfig = { String name -> name.toLowerCase().contains('test') }
 
+      // Optional user-supplied filter: comma-separated glob patterns matched
+      // against full configuration names (case-sensitive — Gradle config
+      // names are canonical camelCase, and matching the user's literal input
+      // is more predictable than silently lower-casing). `*` matches any
+      // sequence of characters, `?` matches a single character. When set,
+      // only configurations whose name matches at least one pattern are
+      // walked. e.g. `--configs=*CompileClasspath,*RuntimeClasspath` keeps
+      // every variant of the standard classpath configs while filtering out
+      // tooling configs like `annotationProcessor` and
+      // `kotlinCompilerClasspath`.
+      def globToRegex = { String glob ->
+        def sb = new StringBuilder()
+        glob.each { String ch ->
+          switch (ch) {
+            case '*': sb << '.*'; break
+            case '?': sb << '.'; break
+            case '.': case '\\': case '^': case '$': case '|':
+            case '+': case '(': case ')':
+            case '[': case ']': case '{': case '}':
+              sb << '\\' << ch; break
+            default: sb << ch
+          }
+        }
+        java.util.regex.Pattern.compile(sb.toString())
+      }
+      def configsProp = project.findProperty('socket.configs')?.toString()
+      def requestedPatterns = null
+      if (configsProp != null && !configsProp.trim().isEmpty()) {
+        requestedPatterns = configsProp.split(',')
+          .collect { it.trim() }
+          .findAll { !it.isEmpty() }
+          .collect { globToRegex(it) }
+        if (requestedPatterns.isEmpty()) {
+          requestedPatterns = null
+        }
+      }
+
       def targetConfigs = project.configurations.findAll {
-        it.canBeResolved && !isAndroidInstrumentedTest(it.name)
+        if (!it.canBeResolved) return false
+        if (isAndroidInstrumentedTest(it.name)) return false
+        if (requestedPatterns != null) {
+          return requestedPatterns.any { p -> p.matcher(it.name).matches() }
+        }
+        return true
       }
 
       targetConfigs.each { cfg ->
@@ -233,6 +275,13 @@ allprojects { project ->
           lenient.firstLevelModuleDependencies.each { dep ->
             directIds.addAll(visit(dep, isProd, isNonTooling, cache))
           }
+          // Unresolved deps drive the abort/warn decision in the root
+          // aggregator but are deliberately NOT emitted as nodes — the
+          // selector-only coordinates (no classifier, no ext, possibly
+          // empty version) would surface as half-formed entries downstream
+          // and a consumer like coana's `mvn dependency:get` would try to
+          // fetch a phantom artifact. Matches the sbt plugin, whose
+          // `isEmittable` filter drops these the same way.
           lenient.unresolvedModuleDependencies.each { dep ->
             if (isIntraProject(dep.selector.group, dep.selector.name)) {
               return
@@ -242,14 +291,6 @@ allprojects { project ->
               def reason = dep.problem?.message?.readLines()?.first() ?: 'unknown reason'
               println "[socket-facts] unresolved: ${selectorKey} in ${project.path}: ${reason}"
             }
-            def coord = [
-              groupId   : dep.selector.group ?: '',
-              artifactId: dep.selector.name,
-              version   : dep.selector.version ?: '',
-              classifier: '',
-              ext       : '',
-            ]
-            directIds.add(upsertNode(coord, isProd, isNonTooling))
           }
         } catch (Exception e) {
           println "[socket-facts] skipping ${project.path}:${cfg.name}: ${e.message?.readLines()?.first()}"
@@ -259,8 +300,25 @@ allprojects { project ->
   }
 }
 
-rootProject {
-  tasks.create('socketFacts') {
+rootProject { rp ->
+  // Capture project-derived values at configuration time so the task action
+  // doesn't reach back into `project` at execution time. Gradle's
+  // configuration cache forbids `Task.project` invocations from task
+  // actions; the Socket CLI disables the cache for the facts run via the
+  // `-Dorg.gradle.configuration-cache=false` flag, but hoisting these
+  // reads is cheap defensive code that keeps the script working even if
+  // a caller re-enables the cache by other means.
+  def outDirOverride = rp.findProperty('socket.outputDirectory')?.toString()
+  def outFileOverride = rp.findProperty('socket.outputFile')?.toString()
+  def defaultOutDir = rp.projectDir
+  def factsFileName = SOCKET_FACTS_FILENAME
+  // Unresolved dependencies are fatal by default — the user's environment is
+  // expected to resolve their declared deps. `-Psocket.ignoreUnresolved=true`
+  // (set by the CLI's `--ignore-unresolved`) downgrades that to a warning so
+  // the facts file still emits with whatever did resolve.
+  def ignoreUnresolved = rp.findProperty('socket.ignoreUnresolved')?.toString()?.toLowerCase() == 'true'
+
+  rp.tasks.create('socketFacts') {
     group = 'socket'
     description = 'Aggregates a single Socket facts JSON for the entire build'
     outputs.upToDateWhen { false }
@@ -269,6 +327,26 @@ rootProject {
       def state = gradle.socketFactsState
       def nodes = state.nodes
       def directIds = state.directIds
+      def reportedUnresolved = state.reportedUnresolved
+
+      // Fail the build (or warn) once we've seen every collector's
+      // contributions. Subproject collectors already log each unresolved dep
+      // inline; this is the summary + decision point.
+      if (!reportedUnresolved.isEmpty()) {
+        def sorted = (reportedUnresolved as List).sort()
+        if (ignoreUnresolved) {
+          println "[socket-facts] ignoring ${sorted.size()} unresolved dependency(ies):"
+          sorted.each { println "  - ${it}" }
+        } else {
+          println "[socket-facts] could not resolve ${sorted.size()} dependency(ies):"
+          sorted.each { println "  - ${it}" }
+          throw new GradleException(
+            "Socket facts aborted: ${sorted.size()} unresolved dependency(ies). " +
+            "Pass --ignore-unresolved to skip them, or fix resolution (repositories, " +
+            "credentials, offline cache) and retry."
+          )
+        }
+      }
 
       // Snapshot the accumulators under the same monitor used by writers in
       // each subproject's socketFactsCollect doLast. Task dependencies
@@ -326,12 +404,10 @@ rootProject {
         return
       }
 
-      def outputDir = project.findProperty('socket.outputDirectory')
-        ? new File(project.findProperty('socket.outputDirectory').toString())
-        : project.projectDir
+      def outputDir = outDirOverride ? new File(outDirOverride) : defaultOutDir
       outputDir.mkdirs()
-      def fileName = project.findProperty('socket.outputFile') ?: SOCKET_FACTS_FILENAME
-      def outFile = new File(outputDir, fileName.toString())
+      def fileName = outFileOverride ?: factsFileName
+      def outFile = new File(outputDir, fileName)
       outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson([components: components]))
       println "Socket facts file written to: ${outFile.absolutePath}"
     }

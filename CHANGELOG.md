@@ -12,10 +12,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
 
+## [1.1.108](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.108) - 2026-05-28
+
+### Changed
+- Updated the Coana CLI to v `15.3.12`.
+
+## [1.1.107](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.107) - 2026-05-28
+
+### Changed
+- **`socket manifest gradle --facts [beta]`** (and its `kotlin` alias) gained `--configs` and `--ignore-unresolved`, matching `socket manifest scala --facts`. `--configs` takes comma-separated glob patterns (e.g. `*CompileClasspath,*RuntimeClasspath`) to restrict resolution to matching Gradle configurations; unresolved dependencies are now a fatal error by default — pass `--ignore-unresolved` for the previous lenient behavior.
+- **`socket manifest scala --facts --configs`** now accepts glob patterns too (e.g. `*Test*`) for consistency with the gradle command. Bare names (no `*`/`?`) keep working as exact-name filters, so existing usages are unchanged.
+
+### Fixed
+- **`socket manifest gradle --facts`** now works on Gradle builds with the configuration cache enabled (default on Gradle 9), which previously failed with `Task.project at execution time` errors.
+
+## [1.1.106](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.106) - 2026-05-27
+
+### Added
+- **`socket manifest scala --facts [beta]`** — Emit a `.socket.facts.json` dependency graph from an sbt build for `socket scan create` to consume as a pregenerated SBOM. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
+
+## [1.1.105](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.105) - 2026-05-27
+
+### Changed
+- Updated the Coana CLI to v `15.3.11`.
+
+## [1.1.104](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.104) - 2026-05-26
+
+### Fixed
+- Coana CLI invocation: strip `npm_package_*` env vars before spawning the npm-install fallback. Prevents `spawn E2BIG` failures in large monorepos where the parent process has hundreds of `npm_package_*` env vars populated from the root `package.json`. Preserves `npm_config_*` (registry / proxy / cache from `.npmrc`).
+
+## [1.1.103](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.103) - 2026-05-26
+
+### Changed
+- Updated the Coana CLI to v `15.3.9`.
+
 ## [1.1.98](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.98) - 2026-05-22
 
 ### Added
-- **`socket manifest gradle --facts [beta]`** (and its `socket manifest kotlin --facts` alias) — Emit a `.socket.facts.json` dependency graph from a Gradle build, consumable by `socket scan create --reach` as pregenerated SBOM input for Tier 1 reachability. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
+- **`socket manifest gradle --facts [beta]`** (and its `socket manifest kotlin --facts` alias) — Emit a `.socket.facts.json` dependency graph from a Gradle build for `socket scan create` to consume as a pregenerated SBOM. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
 
 ### Changed
 - Updated the Coana CLI to v `15.3.8`.

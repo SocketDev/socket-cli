@@ -34,6 +34,16 @@ const config: CliCommandConfig = {
       description:
         'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph instead of generating `pom.xml` files',
     },
+    configs: {
+      type: 'string',
+      description:
+        'With --facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive, `*` and `?` wildcards). e.g. `*CompileClasspath,*RuntimeClasspath` to skip tooling configs. Default: every resolvable configuration except AGP instrumented-test classpaths',
+    },
+    ignoreUnresolved: {
+      type: 'boolean',
+      description:
+        'With --facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)',
+    },
     gradleOpts: {
       type: 'string',
       description:
@@ -69,11 +79,20 @@ const config: CliCommandConfig = {
 
     - it works with your \`gradlew\` from your repo and local settings and config
 
+    Pass --facts to instead emit a single \`.socket.facts.json\` describing the
+    resolved dependency graph of the whole build (no \`pom.xml\` files). An
+    unresolved dependency is a fatal error. With --facts you can pass
+    --configs=<comma-separated glob patterns> to restrict resolution to
+    matching configurations (e.g. \`*CompileClasspath,*RuntimeClasspath\`),
+    and --ignore-unresolved to warn on unresolved dependencies instead of
+    failing the run.
+
     Support is beta. Please report issues or give us feedback on what's missing.
 
     Examples
 
       $ ${command} .
+      $ ${command} --facts .
       $ ${command} --bin=../gradlew .
   `,
 }
@@ -116,7 +135,7 @@ async function run(
     sockJson?.defaults?.manifest?.gradle,
   )
 
-  let { bin, facts, gradleOpts, verbose } = cli.flags
+  let { bin, configs, facts, gradleOpts, ignoreUnresolved, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -153,6 +172,40 @@ async function run(
     } else {
       facts = false
     }
+  }
+  if (configs === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.configs !== undefined) {
+      configs = sockJson.defaults?.manifest?.gradle?.configs
+      logger.info(`Using default --configs from ${SOCKET_JSON}:`, configs)
+    } else {
+      configs = ''
+    }
+  }
+  if (ignoreUnresolved === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.ignoreUnresolved !== undefined) {
+      ignoreUnresolved = sockJson.defaults?.manifest?.gradle?.ignoreUnresolved
+      logger.info(
+        `Using default --ignore-unresolved from ${SOCKET_JSON}:`,
+        ignoreUnresolved,
+      )
+    } else {
+      ignoreUnresolved = false
+    }
+  }
+
+  // `--configs` and `--ignore-unresolved` only affect --facts; the pom path
+  // (the legacy `socketGenerateMaven` task) has no equivalent knobs. Warn
+  // rather than silently ignore an explicitly-passed flag. (socket.json
+  // defaults don't trip this — only a flag actually present on the command
+  // line does.)
+  if (
+    !facts &&
+    (cli.flags['configs'] !== undefined ||
+      cli.flags['ignoreUnresolved'] !== undefined)
+  ) {
+    logger.warn(
+      'The `--configs` and `--ignore-unresolved` options only apply with `--facts`; ignoring them.',
+    )
   }
 
   if (verbose) {
@@ -197,8 +250,10 @@ async function run(
   if (facts) {
     await convertGradleToFacts({
       bin: String(bin),
+      configs: String(configs || ''),
       cwd,
       gradleOpts: parsedGradleOpts,
+      ignoreUnresolved: Boolean(ignoreUnresolved),
       verbose: Boolean(verbose),
     })
     return
