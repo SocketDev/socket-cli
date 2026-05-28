@@ -32,10 +32,7 @@ import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
 import { IGNORED_DIRS } from '../../../utils/glob.mts'
 
-import type {
-  CqueryRepoResult,
-  CqueryStatus,
-} from './bazel-cquery.mts'
+import type { CqueryRepoResult } from './bazel-cquery.mts'
 import type { ExtractedArtifact } from './bazel-build-parser.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
 import type { WorkspaceMode } from './bazel-workspace-detect.mts'
@@ -68,28 +65,6 @@ export type ExtractBazelResult = {
   manifestPath?: string | undefined
   noEcosystemFound?: boolean | undefined
   ok: boolean
-  // Path to the per-invocation status sidecar describing which repos
-  // produced artefacts and which timed out / were empty. Useful for the
-  // server-side to surface partial results to the customer.
-  statusPath?: string | undefined
-}
-
-type SidecarRepoEntry = {
-  name: string
-  status: CqueryStatus
-  artifactCount: number
-  durationMs: number
-}
-
-type SidecarWorkspaceEntry = {
-  relPath: string
-  mode: { bzlmod: boolean; workspace: boolean }
-  repos: SidecarRepoEntry[]
-}
-
-type Sidecar = {
-  complete: boolean
-  workspaces: SidecarWorkspaceEntry[]
 }
 
 const DEFAULT_PER_REPO_TIMEOUT_MS = 60_000
@@ -402,7 +377,8 @@ export async function extractBazelToMaven(
     )
   }
 
-  const sidecar: Sidecar = { complete: true, workspaces: [] }
+  let anyTimeout = false
+  let anyRepos = false
   const allArtifacts: ExtractedArtifact[] = []
 
   try {
@@ -472,13 +448,8 @@ export async function extractBazelToMaven(
           candidates.join(', ') || '(none)'
         }`,
       )
-      const wsEntry: SidecarWorkspaceEntry = {
-        mode: { bzlmod: mode.bzlmod, workspace: mode.workspace },
-        relPath,
-        repos: [],
-      }
-
       for (const repoName of candidates) {
+        anyRepos = true
         // eslint-disable-next-line no-await-in-loop
         const result: CqueryRepoResult = await runMetadataCqueryForRepo({
           opts: buildQueryOpts(outputUserRoot, workspaceRoot),
@@ -486,12 +457,6 @@ export async function extractBazelToMaven(
           timeoutMs: perRepoTimeoutMs,
           workspaceRelPath: relPath,
           workspaceRoot,
-        })
-        wsEntry.repos.push({
-          artifactCount: result.artifacts.length,
-          durationMs: result.durationMs,
-          name: repoName,
-          status: result.status,
         })
         allArtifacts.push(...result.artifacts)
         if (result.status === 'ok' || result.status === 'partial') {
@@ -502,7 +467,7 @@ export async function extractBazelToMaven(
           logger.warn(
             `@${repoName}: cquery timed out after ${perRepoTimeoutMs}ms; reaping server`,
           )
-          sidecar.complete = false
+          anyTimeout = true
           // eslint-disable-next-line no-await-in-loop
           await reapBazelServer(bin, outputUserRoot)
           // eslint-disable-next-line no-await-in-loop
@@ -520,7 +485,6 @@ export async function extractBazelToMaven(
           )
         }
       }
-      sidecar.workspaces.push(wsEntry)
     }
 
     const deduped = dedupArtifactsByCoord(allArtifacts)
@@ -535,21 +499,16 @@ export async function extractBazelToMaven(
       JSON.stringify(normalized, null, 2),
       'utf8',
     )
-    const statusPath = path.join(manifestDir, 'manifest-status.json')
-    await fs.writeFile(statusPath, JSON.stringify(sidecar, null, 2), 'utf8')
 
     if (verbose) {
       logger.log('[VERBOSE] outputs:', {
         artifactCount: deduped.length,
-        complete: sidecar.complete,
+        complete: !anyTimeout,
         layout,
         manifestPath,
-        statusPath,
-        workspaceCount: sidecar.workspaces.length,
       })
     }
 
-    const anyRepos = sidecar.workspaces.some(w => w.repos.length > 0)
     if (!deduped.length) {
       if (!anyRepos) {
         if (verbose) {
@@ -562,13 +521,12 @@ export async function extractBazelToMaven(
           manifestPath,
           noEcosystemFound: true,
           ok: false,
-          statusPath,
         }
       }
       logger.fail(
         'Discovered Maven repo(s) but extracted zero artifacts. failureCategory=ecosystem-detected-but-empty',
       )
-      return { artifactCount: 0, manifestPath, ok: false, statusPath }
+      return { artifactCount: 0, manifestPath, ok: false }
     }
     logger.success(
       `Wrote ${deduped.length} artifact(s) to ${path.relative(cwd, manifestPath)}.`,
@@ -576,8 +534,7 @@ export async function extractBazelToMaven(
     return {
       artifactCount: deduped.length,
       manifestPath,
-      ok: sidecar.complete,
-      statusPath,
+      ok: !anyTimeout,
     }
   } catch (e) {
     logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)

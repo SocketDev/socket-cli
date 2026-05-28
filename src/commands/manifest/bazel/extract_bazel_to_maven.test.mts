@@ -148,27 +148,6 @@ describe('extractBazelToMaven', () => {
     )
   }
 
-  function readSidecar(out: string): {
-    complete: boolean
-    workspaces: Array<{
-      relPath: string
-      mode: { bzlmod: boolean; workspace: boolean }
-      repos: Array<{
-        name: string
-        status: string
-        artifactCount: number
-        durationMs: number
-      }>
-    }>
-  } {
-    return JSON.parse(
-      readFileSync(
-        path.join(out, '.socket-auto-manifest', 'manifest-status.json'),
-        'utf8',
-      ),
-    )
-  }
-
   it('extracts a single Bzlmod workspace end-to-end', async () => {
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({
@@ -198,14 +177,6 @@ describe('extractBazelToMaven', () => {
       'androidx.annotation:annotation',
       'com.google.guava:guava',
     ])
-    const sidecar = readSidecar(tmp)
-    expect(sidecar.complete).toBe(true)
-    expect(sidecar.workspaces).toHaveLength(1)
-    expect(sidecar.workspaces[0]!.repos[0]).toMatchObject({
-      artifactCount: 2,
-      name: 'maven',
-      status: 'ok',
-    })
   })
 
   it('returns noEcosystemFound when no workspace roots are discovered', async () => {
@@ -288,14 +259,9 @@ describe('extractBazelToMaven', () => {
       'com.google.dagger:dagger',
       'com.google.guava:guava',
     ])
-    const sidecar = readSidecar(tmp)
-    expect(sidecar.workspaces.map(w => w.relPath)).toEqual([
-      '',
-      'examples/dagger',
-    ])
   })
 
-  it('marks the sidecar complete:false on per-repo timeout and keeps going', async () => {
+  it('reports ok:false on per-repo timeout but keeps going', async () => {
     // Two candidates: first times out, second succeeds. The orchestrator
     // re-mints --output_user_root after the timeout.
     vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
@@ -330,12 +296,6 @@ Fetched repositories:
     })
     expect(result.ok).toBe(false)
     expect(result.artifactCount).toBe(1)
-    const sidecar = readSidecar(tmp)
-    expect(sidecar.complete).toBe(false)
-    expect(sidecar.workspaces[0]!.repos.map(r => r.status)).toEqual([
-      'timeout',
-      'ok',
-    ])
   })
 
   it('threads extraMavenRepoNames into the candidate list (WORKSPACE mode)', async () => {
@@ -381,7 +341,7 @@ Fetched repositories:
     expect(runBazelModShowMavenExtension).not.toHaveBeenCalled()
   })
 
-  it('writes manifest-status.json beside maven_install.json in flat layout', async () => {
+  it('writes maven_install.json into .socket-auto-manifest in flat layout', async () => {
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({
         artifacts: [mkArt('com.example:a:1.0', 'a')],
@@ -400,11 +360,6 @@ Fetched repositories:
     })
     expect(
       existsSync(path.join(tmp, '.socket-auto-manifest', 'maven_install.json')),
-    ).toBe(true)
-    expect(
-      existsSync(
-        path.join(tmp, '.socket-auto-manifest', 'manifest-status.json'),
-      ),
     ).toBe(true)
   })
 })

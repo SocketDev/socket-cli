@@ -49,7 +49,7 @@ const NO_SUCH_PACKAGE_STDERR_RE = /no such package ['"`]?@/
 // Pattern emitted when a repo IS visible / defined but yields no targets.
 // `--keep_going` plus `'no targets found beneath'` is the empty-but-defined
 // signature. The orchestrator treats `empty` and `not-defined` uniformly
-// as skips, but the distinction is preserved in the sidecar status report.
+// as skips.
 const NO_TARGETS_STDERR_RE = /no targets found beneath/i
 // Anchor for the maven extension's section header in
 // `bazel mod show_extension` output. Tolerant of the canonical-name form
@@ -103,11 +103,10 @@ export function parseShowExtensionOutput(stdout: string): string[] {
 }
 
 // Classify a raw probe result into one of three states. The probe contract
-// is whatever the runner (layer 4) emits — typically a lightweight
-// `cquery '@<name>//...' --keep_going --output=label`. Distinguishing
-// `empty` from `not-defined` lets the sidecar status report explain to the
-// customer why a particular candidate was skipped; the orchestrator itself
-// treats both as no-ops.
+// is whatever the runner emits — typically a lightweight
+// `cquery '@<name>//...' --keep_going --output=label`. The orchestrator
+// treats `empty` and `not-defined` uniformly as no-ops; the distinction
+// is preserved for verbose-mode diagnostics.
 export function classifyProbeResult(result: ProbeResult): ProbeStatus {
   // A successful probe with any stdout means the repo exists AND has at
   // least one target — populated.
