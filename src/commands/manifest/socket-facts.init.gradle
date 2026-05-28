@@ -275,6 +275,13 @@ allprojects { project ->
           lenient.firstLevelModuleDependencies.each { dep ->
             directIds.addAll(visit(dep, isProd, isNonTooling, cache))
           }
+          // Unresolved deps drive the abort/warn decision in the root
+          // aggregator but are deliberately NOT emitted as nodes — the
+          // selector-only coordinates (no classifier, no ext, possibly
+          // empty version) would surface as half-formed entries downstream
+          // and a consumer like coana's `mvn dependency:get` would try to
+          // fetch a phantom artifact. Matches the sbt plugin, whose
+          // `isEmittable` filter drops these the same way.
           lenient.unresolvedModuleDependencies.each { dep ->
             if (isIntraProject(dep.selector.group, dep.selector.name)) {
               return
@@ -284,14 +291,6 @@ allprojects { project ->
               def reason = dep.problem?.message?.readLines()?.first() ?: 'unknown reason'
               println "[socket-facts] unresolved: ${selectorKey} in ${project.path}: ${reason}"
             }
-            def coord = [
-              groupId   : dep.selector.group ?: '',
-              artifactId: dep.selector.name,
-              version   : dep.selector.version ?: '',
-              classifier: '',
-              ext       : '',
-            ]
-            directIds.add(upsertNode(coord, isProd, isNonTooling))
           }
         } catch (Exception e) {
           println "[socket-facts] skipping ${project.path}:${cfg.name}: ${e.message?.readLines()?.first()}"

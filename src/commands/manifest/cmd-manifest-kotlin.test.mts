@@ -27,7 +27,7 @@ describe('socket manifest kotlin', async () => {
             --configs           With --facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive, \`*\` and \`?\` wildcards). e.g. \`*CompileClasspath,*RuntimeClasspath\` to skip tooling configs. Default: every resolvable configuration except AGP instrumented-test classpaths
             --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
-            --ignore-unresolved  With --facts: warn on unresolved dependencies instead of failing the run (they're still emitted as direct entries with their declared coordinates)
+            --ignore-unresolved  With --facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)
             --verbose           Print debug messages
 
           Uses gradle, preferably through your local project \`gradlew\`, to generate a

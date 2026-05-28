@@ -47,7 +47,7 @@ const config: CliCommandConfig = {
     ignoreUnresolved: {
       type: 'boolean',
       description:
-        "With --facts: warn on unresolved dependencies instead of failing the run (they're still emitted as direct entries with their declared coordinates)",
+        'With --facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)',
     },
     gradleOpts: {
       type: 'string',
