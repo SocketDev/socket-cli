@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
@@ -443,7 +444,15 @@ async function run(
   }
 
   const detected = await detectManifestActions(sockJson, cwd)
-  if (detected.count > 0 && !autoManifest) {
+  // Suppress the --auto-manifest suggestion when a `.socket.facts.json` is
+  // already present at cwd. That file is the output of `socket manifest auto`
+  // (and `--facts` mode of the per-ecosystem manifest commands), so suggesting
+  // to regenerate it would be misleading — the manifest data is already there
+  // and will be picked up by the scan.
+  const hasFactsFile = existsSync(
+    path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON),
+  )
+  if (detected.count > 0 && !autoManifest && !hasFactsFile) {
     logger.info(
       `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
     )
