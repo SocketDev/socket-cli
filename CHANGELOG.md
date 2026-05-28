@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - **`socket manifest gradle --facts [beta]`** (and its `kotlin` alias) gained `--configs` and `--ignore-unresolved`, matching `socket manifest scala --facts`. `--configs` takes comma-separated glob patterns (e.g. `*CompileClasspath,*RuntimeClasspath`) to restrict resolution to matching Gradle configurations; unresolved dependencies are now a fatal error by default — pass `--ignore-unresolved` for the previous lenient behavior.
+- **`socket manifest scala --facts --configs`** now accepts glob patterns too (e.g. `*Test*`) for consistency with the gradle command. Bare names (no `*`/`?`) keep working as exact-name filters, so existing usages are unchanged.
 
 ### Fixed
 - **`socket manifest gradle --facts`** now works on Gradle builds with the configuration cache enabled (default on Gradle 9), which previously failed with `Task.project at execution time` errors.
