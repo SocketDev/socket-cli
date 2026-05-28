@@ -46,10 +46,25 @@ const config: CliCommandConfig = {
       description:
         'Path to bazel/bazelisk binary; default: $(which bazelisk) || $(which bazel)',
     },
+    bazelFlag: {
+      type: 'string',
+      isMultiple: true,
+      description:
+        'Bazel flag forwarded to every subcommand (repeatable). E.g. ' +
+        '`--bazel-flag=--config=ci-scala-2-13` to scan a matrix cell.',
+    },
     bazelFlags: {
       type: 'string',
       description:
         'Flags forwarded to every bazel invocation (single quoted string)',
+    },
+    bazelMavenRepo: {
+      type: 'string',
+      isMultiple: true,
+      description:
+        'Maven hub repo name to extract in addition to the auto-discovered ' +
+        'set (repeatable). For legacy WORKSPACE workspaces with hubs that ' +
+        'use non-conventional names. E.g. `--bazel-maven-repo=my_jars`.',
     },
     bazelOutputBase: {
       type: 'string',
@@ -58,6 +73,13 @@ const config: CliCommandConfig = {
     bazelRc: {
       type: 'string',
       description: 'Path to additional .bazelrc fragments forwarded to bazel',
+    },
+    bazelStartupFlag: {
+      type: 'string',
+      isMultiple: true,
+      description:
+        'Bazel startup flag inserted before the subcommand (repeatable). ' +
+        'E.g. `--bazel-startup-flag=--host_jvm_args=-Xmx2g`.',
     },
     ecosystem: {
       type: 'string',
@@ -203,6 +225,11 @@ async function run(
   )
 
   const { ecosystem } = cli.flags
+  const bazelFlag = (cli.flags['bazelFlag'] as string[] | undefined) ?? []
+  const bazelStartupFlag =
+    (cli.flags['bazelStartupFlag'] as string[] | undefined) ?? []
+  const bazelMavenRepo =
+    (cli.flags['bazelMavenRepo'] as string[] | undefined) ?? []
   let { bazel, bazelFlags, bazelOutputBase, bazelRc, out, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
@@ -318,6 +345,13 @@ async function run(
         bazelRc: bazelRc as string | undefined,
         bin: bazel as string | undefined,
         cwd,
+        ...(bazelFlag.length ? { extraBazelFlags: bazelFlag } : {}),
+        ...(bazelStartupFlag.length
+          ? { extraBazelStartupFlags: bazelStartupFlag }
+          : {}),
+        ...(bazelMavenRepo.length
+          ? { extraMavenRepoNames: bazelMavenRepo }
+          : {}),
         ignoreDirNames: BAZEL_WALKER_IGNORE_DIR_NAMES,
         ignoreDirPrefixes: BAZEL_WALKER_IGNORE_DIR_PREFIXES,
         out: out as string,

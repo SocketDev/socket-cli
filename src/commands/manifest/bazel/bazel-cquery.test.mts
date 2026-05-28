@@ -114,6 +114,21 @@ describe('buildMetadataCqueryArgv', () => {
     expect(argv).toContain('--repo_env=SCALA_VERSION=2.13.18')
   })
 
+  it('threads extraBazelStartupFlags ahead of cquery and extraBazelFlags after the standard flags', () => {
+    const argv = buildMetadataCqueryArgv('maven', {
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+      extraBazelStartupFlags: ['--host_jvm_args=-Xmx2g'],
+      extraBazelFlags: ['--config=ci'],
+    })
+    const cqueryIdx = argv.indexOf('cquery')
+    const jvmIdx = argv.indexOf('--host_jvm_args=-Xmx2g')
+    const configIdx = argv.indexOf('--config=ci')
+    expect(jvmIdx).toBeLessThan(cqueryIdx)
+    expect(configIdx).toBeGreaterThan(cqueryIdx)
+  })
+
   it('includes invocationFlags between subcommand and target expression', () => {
     const argv = buildMetadataCqueryArgv('maven', {
       bin: 'bazel',

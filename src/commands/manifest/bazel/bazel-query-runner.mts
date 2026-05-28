@@ -19,6 +19,17 @@ export type BazelQueryOptions = {
   // orchestrator mkdtemp's a fresh path per invocation; the legacy PyPI
   // path may leave it unset for now.
   outputUserRoot?: string
+  // Customer-supplied `--bazel-flag=<arg>` values (repeatable on the CLI).
+  // Each entry is appended verbatim to every subcommand invocation, after
+  // the orchestrator's own flags and after `bazelFlags`. Used to thread
+  // matrix-cell selectors like `--config=ci-scala-2-13` or
+  // `--repo_env=SCALA_VERSION=2.13.18` per CI shard.
+  extraBazelFlags?: string[]
+  // Customer-supplied `--bazel-startup-flag=<arg>` values (repeatable).
+  // Each entry is appended to the startup-flag prefix, after the
+  // orchestrator's own startup flags (--bazelrc, --output_user_root,
+  // --output_base) and before the subcommand.
+  extraBazelStartupFlags?: string[]
   env?: NodeJS.ProcessEnv
   verbose?: boolean
 }
@@ -49,7 +60,8 @@ export function splitBazelFlags(flags: string | undefined): string[] {
 // Build the shared startup-flag prefix for any bazel invocation. Centralised
 // so `--output_user_root` propagates to every spawn — principle 7 of the
 // Maven design requires per-invocation server isolation across query,
-// cquery, and `bazel mod` commands alike.
+// cquery, and `bazel mod` commands alike. Customer `--bazel-startup-flag`
+// values are appended last so they appear before the subcommand.
 function buildStartupFlags(opts: BazelQueryOptions): string[] {
   const startup: string[] = []
   if (opts.bazelRc) {
@@ -61,11 +73,23 @@ function buildStartupFlags(opts: BazelQueryOptions): string[] {
   if (opts.bazelOutputBase) {
     startup.push(`--output_base=${opts.bazelOutputBase}`)
   }
+  if (opts.extraBazelStartupFlags?.length) {
+    startup.push(...opts.extraBazelStartupFlags)
+  }
   return startup
 }
 
+// Compose the user-flag suffix appended after every subcommand's standard
+// flags. The legacy whitespace-split `bazelFlags` string and the new
+// repeatable `extraBazelFlags` array are concatenated in that order so a
+// socket.json default plus a CLI override applies both. No deduplication
+// — Bazel's last-wins semantics handle conflicts.
+function userBazelFlags(opts: BazelQueryOptions): string[] {
+  return [...splitBazelFlags(opts.bazelFlags), ...(opts.extraBazelFlags ?? [])]
+}
+
 function buildBazelModShowVisibleReposArgv(opts: BazelQueryOptions): string[] {
-  const userFlags = splitBazelFlags(opts.bazelFlags)
+  const userFlags = userBazelFlags(opts)
   return [
     ...buildStartupFlags(opts),
     'mod',
@@ -79,7 +103,7 @@ function buildBazelModShowVisibleReposArgv(opts: BazelQueryOptions): string[] {
 function buildBazelModShowMavenExtensionArgv(
   opts: BazelQueryOptions,
 ): string[] {
-  const userFlags = splitBazelFlags(opts.bazelFlags)
+  const userFlags = userBazelFlags(opts)
   return [
     ...buildStartupFlags(opts),
     'mod',
@@ -90,7 +114,7 @@ function buildBazelModShowMavenExtensionArgv(
 }
 
 function buildBazelModShowPipExtensionArgv(opts: BazelQueryOptions): string[] {
-  const userFlags = splitBazelFlags(opts.bazelFlags)
+  const userFlags = userBazelFlags(opts)
   return [
     ...buildStartupFlags(opts),
     'mod',
@@ -110,7 +134,7 @@ function buildBazelArgv(
   // Bazel argv shape: <startup> query <queryFlags> <invocationFlags> <queryStr> --output=<output> <userFlags>
   // Keep query output stable and avoid updating Bazel lockfiles while extracting.
   const queryFlags = ['--lockfile_mode=off', '--noshow_progress']
-  const userFlags = splitBazelFlags(opts.bazelFlags)
+  const userFlags = userBazelFlags(opts)
   return [
     ...buildStartupFlags(opts),
     'query',
@@ -131,7 +155,7 @@ function buildBazelProbeCqueryArgv(
   repoName: string,
   opts: BazelQueryOptions,
 ): string[] {
-  const userFlags = splitBazelFlags(opts.bazelFlags)
+  const userFlags = userBazelFlags(opts)
   return [
     ...buildStartupFlags(opts),
     'cquery',
