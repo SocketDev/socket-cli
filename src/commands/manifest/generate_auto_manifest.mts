@@ -89,7 +89,13 @@ export async function generateAutoManifest({
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts...',
       )
-      await convertGradleToFacts(gradleArgs)
+      await convertGradleToFacts({
+        ...gradleArgs,
+        configs: sockJson.defaults?.manifest?.gradle?.configs ?? '',
+        ignoreUnresolved: Boolean(
+          sockJson.defaults?.manifest?.gradle?.ignoreUnresolved,
+        ),
+      })
     } else {
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',

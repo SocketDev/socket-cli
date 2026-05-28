@@ -12,6 +12,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
 
+## [1.1.107](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.107) - 2026-05-28
+
+### Changed
+- **`socket manifest gradle --facts [beta]`** (and its `kotlin` alias) gained `--configs` and `--ignore-unresolved`, matching `socket manifest scala --facts`. `--configs=compileClasspath,runtimeClasspath` restricts resolution to matching Gradle configurations; unresolved dependencies are now a fatal error by default — pass `--ignore-unresolved` for the previous lenient behavior.
+
+### Fixed
+- **`socket manifest gradle --facts`** now works on Gradle builds with the configuration cache enabled (default on Gradle 9), which previously failed with `Task.project at execution time` errors.
+
 ## [1.1.106](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.106) - 2026-05-27
 
 ### Added

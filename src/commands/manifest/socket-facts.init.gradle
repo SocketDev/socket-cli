@@ -215,8 +215,33 @@ allprojects { project ->
       }
       def isTestConfig = { String name -> name.toLowerCase().contains('test') }
 
+      // Optional user-supplied filter: comma-separated configuration name
+      // suffixes (case-insensitive). When set, only configurations whose
+      // lowercased name ends with one of the listed suffixes are walked. The
+      // suffix model matches Gradle's own conventions (compileClasspath,
+      // runtimeClasspath, testCompileClasspath, jvmMainCompileClasspath,
+      // debugRuntimeClasspath, ...) so `--configs=compileClasspath,
+      // runtimeClasspath` filters out tooling configs (annotationProcessor,
+      // kotlinCompilerClasspath, etc.) without having to list every variant.
+      def configsProp = project.findProperty('socket.configs')?.toString()
+      def requestedSuffixes = null
+      if (configsProp != null && !configsProp.trim().isEmpty()) {
+        requestedSuffixes = configsProp.split(',')
+          .collect { it.trim().toLowerCase() }
+          .findAll { !it.isEmpty() }
+        if (requestedSuffixes.isEmpty()) {
+          requestedSuffixes = null
+        }
+      }
+
       def targetConfigs = project.configurations.findAll {
-        it.canBeResolved && !isAndroidInstrumentedTest(it.name)
+        if (!it.canBeResolved) return false
+        if (isAndroidInstrumentedTest(it.name)) return false
+        if (requestedSuffixes != null) {
+          def lower = it.name.toLowerCase()
+          return requestedSuffixes.any { suffix -> lower.endsWith(suffix) }
+        }
+        return true
       }
 
       targetConfigs.each { cfg ->
@@ -259,8 +284,25 @@ allprojects { project ->
   }
 }
 
-rootProject {
-  tasks.create('socketFacts') {
+rootProject { rp ->
+  // Capture project-derived values at configuration time so the task action
+  // doesn't reach back into `project` at execution time. Gradle's
+  // configuration cache forbids `Task.project` invocations from task
+  // actions; the Socket CLI disables the cache for the facts run via the
+  // `-Dorg.gradle.configuration-cache=false` flag, but hoisting these
+  // reads is cheap defensive code that keeps the script working even if
+  // a caller re-enables the cache by other means.
+  def outDirOverride = rp.findProperty('socket.outputDirectory')?.toString()
+  def outFileOverride = rp.findProperty('socket.outputFile')?.toString()
+  def defaultOutDir = rp.projectDir
+  def factsFileName = SOCKET_FACTS_FILENAME
+  // Unresolved dependencies are fatal by default — the user's environment is
+  // expected to resolve their declared deps. `-Psocket.ignoreUnresolved=true`
+  // (set by the CLI's `--ignore-unresolved`) downgrades that to a warning so
+  // the facts file still emits with whatever did resolve.
+  def ignoreUnresolved = rp.findProperty('socket.ignoreUnresolved')?.toString()?.toLowerCase() == 'true'
+
+  rp.tasks.create('socketFacts') {
     group = 'socket'
     description = 'Aggregates a single Socket facts JSON for the entire build'
     outputs.upToDateWhen { false }
@@ -269,6 +311,26 @@ rootProject {
       def state = gradle.socketFactsState
       def nodes = state.nodes
       def directIds = state.directIds
+      def reportedUnresolved = state.reportedUnresolved
+
+      // Fail the build (or warn) once we've seen every collector's
+      // contributions. Subproject collectors already log each unresolved dep
+      // inline; this is the summary + decision point.
+      if (!reportedUnresolved.isEmpty()) {
+        def sorted = (reportedUnresolved as List).sort()
+        if (ignoreUnresolved) {
+          println "[socket-facts] ignoring ${sorted.size()} unresolved dependency(ies):"
+          sorted.each { println "  - ${it}" }
+        } else {
+          println "[socket-facts] could not resolve ${sorted.size()} dependency(ies):"
+          sorted.each { println "  - ${it}" }
+          throw new GradleException(
+            "Socket facts aborted: ${sorted.size()} unresolved dependency(ies). " +
+            "Pass --ignore-unresolved to skip them, or fix resolution (repositories, " +
+            "credentials, offline cache) and retry."
+          )
+        }
+      }
 
       // Snapshot the accumulators under the same monitor used by writers in
       // each subproject's socketFactsCollect doLast. Task dependencies
@@ -326,12 +388,10 @@ rootProject {
         return
       }
 
-      def outputDir = project.findProperty('socket.outputDirectory')
-        ? new File(project.findProperty('socket.outputDirectory').toString())
-        : project.projectDir
+      def outputDir = outDirOverride ? new File(outDirOverride) : defaultOutDir
       outputDir.mkdirs()
-      def fileName = project.findProperty('socket.outputFile') ?: SOCKET_FACTS_FILENAME
-      def outFile = new File(outputDir, fileName.toString())
+      def fileName = outFileOverride ?: factsFileName
+      def outFile = new File(outputDir, fileName)
       outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson([components: components]))
       println "Socket facts file written to: ${outFile.absolutePath}"
     }

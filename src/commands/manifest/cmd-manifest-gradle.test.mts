@@ -24,8 +24,10 @@ describe('socket manifest gradle', async () => {
 
           Options
             --bin               Location of gradlew binary to use, default: CWD/gradlew
+            --configs           With --facts: comma-separated Gradle configuration name suffixes to resolve (case-insensitive, e.g. \`compileClasspath,runtimeClasspath\`). Default: every resolvable configuration except AGP instrumented-test classpaths
             --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
+            --ignore-unresolved  With --facts: skip dependencies that fail to resolve instead of failing the run
             --verbose           Print debug messages
 
           Uses gradle, preferably through your local project \`gradlew\`, to generate a
@@ -46,11 +48,19 @@ describe('socket manifest gradle', async () => {
 
           - it works with your \`gradlew\` from your repo and local settings and config
 
+          Pass --facts to instead emit a single \`.socket.facts.json\` describing the
+          resolved dependency graph of the whole build (no \`pom.xml\` files). An
+          unresolved dependency is a fatal error. With --facts you can pass
+          --configs=compileClasspath,runtimeClasspath to restrict resolution to
+          matching configurations (case-insensitive suffix match), and
+          --ignore-unresolved to skip dependencies that fail to resolve.
+
           Support is beta. Please report issues or give us feedback on what's missing.
 
           Examples
 
             $ socket manifest gradle .
+            $ socket manifest gradle --facts .
             $ socket manifest gradle --bin=../gradlew ."
       `,
       )

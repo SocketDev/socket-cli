@@ -39,6 +39,16 @@ const config: CliCommandConfig = {
       description:
         'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph instead of generating `pom.xml` files',
     },
+    configs: {
+      type: 'string',
+      description:
+        'With --facts: comma-separated Gradle configuration name suffixes to resolve (case-insensitive, e.g. `compileClasspath,runtimeClasspath`). Default: every resolvable configuration except AGP instrumented-test classpaths',
+    },
+    ignoreUnresolved: {
+      type: 'boolean',
+      description:
+        'With --facts: skip dependencies that fail to resolve instead of failing the run',
+    },
     gradleOpts: {
       type: 'string',
       description:
@@ -121,7 +131,7 @@ async function run(
     sockJson?.defaults?.manifest?.gradle,
   )
 
-  let { bin, facts, gradleOpts, verbose } = cli.flags
+  let { bin, configs, facts, gradleOpts, ignoreUnresolved, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -158,6 +168,35 @@ async function run(
     } else {
       facts = false
     }
+  }
+  if (configs === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.configs !== undefined) {
+      configs = sockJson.defaults?.manifest?.gradle?.configs
+      logger.info(`Using default --configs from ${SOCKET_JSON}:`, configs)
+    } else {
+      configs = ''
+    }
+  }
+  if (ignoreUnresolved === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.ignoreUnresolved !== undefined) {
+      ignoreUnresolved = sockJson.defaults?.manifest?.gradle?.ignoreUnresolved
+      logger.info(
+        `Using default --ignore-unresolved from ${SOCKET_JSON}:`,
+        ignoreUnresolved,
+      )
+    } else {
+      ignoreUnresolved = false
+    }
+  }
+
+  if (
+    !facts &&
+    (cli.flags['configs'] !== undefined ||
+      cli.flags['ignoreUnresolved'] !== undefined)
+  ) {
+    logger.warn(
+      'The `--configs` and `--ignore-unresolved` options only apply with `--facts`; ignoring them.',
+    )
   }
 
   if (verbose) {
@@ -202,8 +241,10 @@ async function run(
   if (facts) {
     await convertGradleToFacts({
       bin: String(bin),
+      configs: String(configs || ''),
       cwd,
       gradleOpts: parsedGradleOpts,
+      ignoreUnresolved: Boolean(ignoreUnresolved),
       verbose: Boolean(verbose),
     })
     return
