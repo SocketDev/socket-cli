@@ -1,247 +1,188 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {
-  discoverMavenRepos,
-  parseMavenRepoCandidates,
-  parseVisibleRepoCandidates,
-  validateMavenRepo,
+  CONVENTIONAL_MAVEN_REPO_NAMES,
+  classifyProbeResult,
+  parseShowExtensionOutput,
+  probeCandidate,
 } from './bazel-repo-discovery.mts'
 
-import type { RepoProbe } from './bazel-repo-discovery.mts'
+import type {
+  ProbeResult,
+  ProbeStatus,
+  RepoProbe,
+} from './bazel-repo-discovery.mts'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+// Truncated text-format report Bazel 8.4.2 emits on tink-java for
+// `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`.
+// The headline shape: a `## @@<canonical>//:extensions.bzl%maven:` header,
+// blank line, then `Fetched repositories:` and a bullet list. Hub repos
+// carry `(imported by ...)`; generated artifact repos don't.
+const TINK_SHOW_EXTENSION_FIXTURE = `DEBUG: irrelevant noise
+WARNING: also irrelevant
 
-// from src/commands/manifest/bazel/ to repo root is four levels up, then into
-// test/fixtures/manifest-bazel.
-const FIXTURES = path.join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  '..',
-  'test',
-  'fixtures',
-  'manifest-bazel',
-)
+## @@rules_jvm_external+//:extensions.bzl%maven:
 
-const acceptingProbe: RepoProbe = async () => ({
-  stdout:
-    'jvm_import(\n  name = "guava",\n  maven_coordinates = "com.google.guava:guava:33.0.0-jre",\n)',
+Fetched repositories:
+  - android_ide_common_30_1_3 (imported by rules_android@0.6.6)
+  - maven (imported by <root>, bazel_worker_java@0.0.4, protobuf@32.1)
+  - rules_android_maven (imported by rules_android@0.6.6)
+  - rules_jvm_external_deps (imported by rules_jvm_external@6.7)
+  - stardoc_maven (imported by stardoc@0.7.2)
+  - unpinned_rules_jvm_external_deps (imported by rules_jvm_external@6.7)
+  - aopalliance_aopalliance_1_0
+  - aopalliance_aopalliance_jar_sources_1_0
+  - androidx_annotation_annotation
+`
+
+const probeResult = (over: Partial<ProbeResult> = {}): ProbeResult => ({
   code: 0,
+  stdout: '',
+  stderr: '',
+  ...over,
 })
-
-const compactAcceptingProbe: RepoProbe = async () => ({
-  stdout:
-    'jvm_import(\n  name = "guava",\n  maven_coordinates="com.google.guava:guava:33.0.0-jre",\n)',
-  code: 0,
-})
-
-const rejectingProbe: RepoProbe = async () => ({ stdout: '', code: 0 })
-
-const failingProbe: RepoProbe = async () => ({ stdout: '', code: 1 })
-
-const throwingProbe: RepoProbe = async () => {
-  throw new Error('bazel exploded')
-}
-
-const selectiveProbe: RepoProbe = async name =>
-  name === 'maven'
-    ? { stdout: 'maven_coordinates=foo', code: 0 }
-    : { stdout: '', code: 0 }
 
 describe('bazel-repo-discovery', () => {
-  describe('parseMavenRepoCandidates', () => {
-    it('parses single use_repo from bzlmod-only', () => {
-      expect(
-        parseMavenRepoCandidates(path.join(FIXTURES, 'bzlmod-only')),
-      ).toEqual(['maven'])
+  describe('parseShowExtensionOutput', () => {
+    it('extracts hub repos with (imported by ...) annotations only', () => {
+      // The 6 hub repos in the fixture are the ones with annotations;
+      // generated per-artifact repos (no annotation) are skipped.
+      expect(parseShowExtensionOutput(TINK_SHOW_EXTENSION_FIXTURE)).toEqual([
+        'android_ide_common_30_1_3',
+        'maven',
+        'rules_android_maven',
+        'rules_jvm_external_deps',
+        'stardoc_maven',
+        'unpinned_rules_jvm_external_deps',
+      ])
     })
 
-    it('parses multiple names from multi-repo-bzlmod', () => {
+    it('returns [] when the maven section is missing', () => {
       expect(
-        parseMavenRepoCandidates(
-          path.join(FIXTURES, 'multi-repo-bzlmod'),
-        ).sort(),
-      ).toEqual(['maven', 'maven_test'].sort())
+        parseShowExtensionOutput(
+          'DEBUG: noise\n\n## @@other//:extensions.bzl%other:\n\nFetched repositories:\n  - foo (imported by <root>)\n',
+        ),
+      ).toEqual([])
     })
 
-    it('recovers custom name from custom-name-bzlmod', () => {
+    it('returns [] when Fetched repositories: is absent', () => {
       expect(
-        parseMavenRepoCandidates(path.join(FIXTURES, 'custom-name-bzlmod')),
-      ).toEqual(['maven_rules_kotlin_example'])
+        parseShowExtensionOutput(
+          '## @@rules_jvm_external+//:extensions.bzl%maven:\n\nOther stuff\n',
+        ),
+      ).toEqual([])
     })
 
-    it('parses maven_install name from legacy WORKSPACE', () => {
-      expect(
-        parseMavenRepoCandidates(path.join(FIXTURES, 'legacy-only')),
-      ).toEqual(['maven'])
+    it('stops at the next section header (multiple extensions in one report)', () => {
+      const input =
+        '## @@rules_jvm_external+//:extensions.bzl%maven:\n\nFetched repositories:\n  - maven (imported by <root>)\n  - other (imported by foo)\n\n## @@rules_python+//:extensions.bzl%pip:\n\nFetched repositories:\n  - pypi (imported by <root>)\n'
+      expect(parseShowExtensionOutput(input)).toEqual(['maven', 'other'])
     })
 
-    it('parses maven_install name from sibling .bzl file (legacy-with-load)', () => {
-      expect(
-        parseMavenRepoCandidates(path.join(FIXTURES, 'legacy-with-load')),
-      ).toEqual(['maven_legacy_app'])
-    })
-
-    it('parses repo names containing hyphens and dots from static sources', () => {
-      const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-repos-'))
-      try {
-        writeFileSync(
-          path.join(dir, 'MODULE.bazel'),
-          'use_repo(maven, "maven-prod", "third.party.maven")\n',
-        )
-        writeFileSync(
-          path.join(dir, 'WORKSPACE'),
-          'maven_install(name = "legacy-maven.prod", artifacts = [])\n',
-        )
-
-        expect(parseMavenRepoCandidates(dir)).toEqual([
-          'legacy-maven.prod',
-          'maven-prod',
-          'third.party.maven',
-        ])
-      } finally {
-        rmSync(dir, { recursive: true, force: true })
+    it('tolerates canonical-name separator variants (~ and +)', () => {
+      for (const sep of ['+', '~']) {
+        const input = `## @@rules_jvm_external${sep}//:extensions.bzl%maven:\n\nFetched repositories:\n  - maven (imported by <root>)\n`
+        expect(parseShowExtensionOutput(input)).toEqual(['maven'])
       }
     })
 
-    it('returns empty array on a directory without bazel markers', () => {
-      // Use the fixtures root itself: no MODULE.bazel/WORKSPACE there.
-      expect(parseMavenRepoCandidates(FIXTURES)).toEqual([])
+    it('deduplicates if the same hub appears twice (defensive)', () => {
+      const input =
+        '## @@rules_jvm_external+//:extensions.bzl%maven:\n\nFetched repositories:\n  - maven (imported by <root>)\n  - maven (imported by foo)\n'
+      expect(parseShowExtensionOutput(input)).toEqual(['maven'])
     })
   })
 
-  describe('parseVisibleRepoCandidates', () => {
-    it('parses apparent repo names from dump_repo_mapping JSON output', () => {
-      const output = JSON.stringify({
-        '': '',
-        '@invalid': 'canonical-invalid',
-        bazel_tools: 'bazel_tools',
-        maven: 'rules_jvm_external~~maven~maven',
-        'maven-prod': 'rules_jvm_external~~maven~prod',
-        pypi: 'rules_python~~pip~pypi',
-        'third.party.maven': 'rules_jvm_external~~maven~third_party',
+  describe('classifyProbeResult', () => {
+    it('classifies code=0 + non-empty stdout as populated', () => {
+      expect(
+        classifyProbeResult(
+          probeResult({ code: 0, stdout: '@maven//:guava\n' }),
+        ),
+      ).toBe<ProbeStatus>('populated')
+    })
+
+    it('classifies code=1 + "No repository visible" stderr as not-defined', () => {
+      expect(
+        classifyProbeResult(
+          probeResult({
+            code: 1,
+            stderr:
+              "ERROR: No repository visible as '@nonexistent_repo_xyz' from main repository\n",
+          }),
+        ),
+      ).toBe<ProbeStatus>('not-defined')
+    })
+
+    it('classifies code=1 + "no targets found beneath" stderr as empty', () => {
+      expect(
+        classifyProbeResult(
+          probeResult({
+            code: 1,
+            stderr:
+              "WARNING: Evaluation of query \"@maven_install//...\" failed: no targets found beneath ''\n",
+          }),
+        ),
+      ).toBe<ProbeStatus>('empty')
+    })
+
+    it('classifies code=0 + empty stdout (WORKSPACE-mode silent miss) as not-defined', () => {
+      expect(
+        classifyProbeResult(probeResult({ code: 0, stdout: '' })),
+      ).toBe<ProbeStatus>('not-defined')
+    })
+
+    it('classifies code=1 + unrecognized stderr conservatively as not-defined', () => {
+      expect(
+        classifyProbeResult(
+          probeResult({ code: 1, stderr: 'some other failure\n' }),
+        ),
+      ).toBe<ProbeStatus>('not-defined')
+    })
+
+    it('classifies code=1 + "no such package" stderr as not-defined', () => {
+      expect(
+        classifyProbeResult(
+          probeResult({
+            code: 1,
+            stderr: "ERROR: no such package '@unknown_repo//'\n",
+          }),
+        ),
+      ).toBe<ProbeStatus>('not-defined')
+    })
+  })
+
+  describe('probeCandidate', () => {
+    it('returns the classified status from a probe', async () => {
+      const probe: RepoProbe = async () => ({
+        code: 0,
+        stdout: '@maven//:guava\n',
+        stderr: '',
       })
-
-      expect(parseVisibleRepoCandidates(output)).toEqual([
-        'bazel_tools',
-        'maven',
-        'maven-prod',
-        'pypi',
-        'third.party.maven',
-      ])
+      expect(await probeCandidate('maven', probe)).toBe<ProbeStatus>('populated')
     })
 
-    it('parses apparent repo names from streamed jsonproto output', () => {
-      const output = [
-        JSON.stringify({
-          repository: {
-            apparentName: '@maven',
-            canonicalName: 'rules_jvm_external~maven~maven',
-          },
-        }),
-        JSON.stringify({
-          repository: {
-            apparent_name: 'maven_rules_kotlin_example',
-            canonical_name: 'rules_jvm_external~maven~custom',
-          },
-        }),
-        JSON.stringify({
-          repository: {
-            apparentName: '@maven-prod',
-            canonicalName: 'rules_jvm_external~maven~prod',
-          },
-        }),
-        JSON.stringify({
-          repository: {
-            apparentName: 'third.party.maven',
-            canonicalName: 'rules_jvm_external~maven~third_party',
-          },
-        }),
-        'not json',
-      ].join('\n')
-
-      expect(parseVisibleRepoCandidates(output)).toEqual([
-        'maven',
-        'maven-prod',
-        'maven_rules_kotlin_example',
-        'third.party.maven',
-      ])
-    })
-  })
-
-  describe('validateMavenRepo', () => {
-    it('accepts when probe stdout contains spaced maven_coordinates output', async () => {
-      const r = await validateMavenRepo('maven', acceptingProbe)
-      expect(r.valid).toBe(true)
-      expect(r.stdout).toContain('maven_coordinates')
-    })
-
-    it('accepts when probe stdout contains compact maven_coordinates output', async () => {
-      const r = await validateMavenRepo('maven', compactAcceptingProbe)
-      expect(r.valid).toBe(true)
-      expect(r.stdout).toContain('maven_coordinates')
-    })
-
-    it('rejects when probe stdout lacks maven_coordinates=', async () => {
-      expect((await validateMavenRepo('not_maven', rejectingProbe)).valid).toBe(
-        false,
-      )
-    })
-
-    it('rejects on non-zero exit code', async () => {
-      expect(
-        (await validateMavenRepo('also_not_maven', failingProbe)).valid,
-      ).toBe(false)
-    })
-
-    it('rejects when probe throws', async () => {
-      expect((await validateMavenRepo('crash', throwingProbe)).valid).toBe(
-        false,
-      )
-    })
-  })
-
-  describe('discoverMavenRepos', () => {
-    it('returns parsed candidates that the probe validates, with cached probe stdout', async () => {
-      // multi-repo-bzlmod parses to ['maven', 'maven_test']; the accepting probe
-      // validates both. The returned Map carries the probe stdout for each.
-      const result = await discoverMavenRepos(
-        path.join(FIXTURES, 'multi-repo-bzlmod'),
-        acceptingProbe,
-      )
-      expect(Array.from(result.keys()).sort()).toEqual(
-        ['maven', 'maven_test'].sort(),
-      )
-      for (const stdout of result.values()) {
-        expect(stdout).toContain('maven_coordinates')
+    it('returns not-defined when the probe throws', async () => {
+      const probe: RepoProbe = async () => {
+        throw new Error('bazel exploded')
       }
-    })
-
-    it('uses native visible repo candidates instead of static parsing when provided', async () => {
-      const result = await discoverMavenRepos(
-        path.join(FIXTURES, 'multi-repo-bzlmod'),
-        acceptingProbe,
-        ['native_maven'],
+      expect(await probeCandidate('crash', probe)).toBe<ProbeStatus>(
+        'not-defined',
       )
-      expect(Array.from(result.keys())).toEqual(['maven', 'native_maven'])
     })
+  })
 
-    it('filters out candidates the probe rejects', async () => {
-      // Probe accepts only when repo name === 'maven'; rejects 'maven_test'.
-      const result = await discoverMavenRepos(
-        path.join(FIXTURES, 'multi-repo-bzlmod'),
-        selectiveProbe,
-      )
-      expect(Array.from(result.keys())).toEqual(['maven'])
+  describe('CONVENTIONAL_MAVEN_REPO_NAMES', () => {
+    it('includes the documented set', () => {
+      expect(CONVENTIONAL_MAVEN_REPO_NAMES).toEqual([
+        'maven',
+        'maven_install',
+        'maven_dev',
+        'unpinned_maven',
+        'maven_unpinned',
+      ])
     })
   })
 
@@ -262,83 +203,34 @@ describe('bazel-repo-discovery', () => {
         .join('\n')
     }
 
-    it('parseMavenRepoCandidates stays silent when verbose is unset', () => {
-      parseMavenRepoCandidates(path.join(FIXTURES, 'multi-repo-bzlmod'))
+    it('probeCandidate stays silent without verbose', async () => {
+      const probe: RepoProbe = async () => ({
+        code: 0,
+        stdout: '@maven//:x\n',
+        stderr: '',
+      })
+      await probeCandidate('maven', probe)
       expect(logSpy).not.toHaveBeenCalled()
     })
 
-    it('parseMavenRepoCandidates emits scanned-files + candidate set when verbose=true', () => {
-      parseMavenRepoCandidates(path.join(FIXTURES, 'multi-repo-bzlmod'), true)
-      const text = loggedLines()
-      expect(text).toContain('discovery: scanned')
-      expect(text).toContain('MODULE.bazel')
-      expect(text).toContain('use_repo match')
-      expect(text).toContain('candidate set (pre-seed)')
+    it('probeCandidate logs the status under verbose', async () => {
+      const probe: RepoProbe = async () => ({
+        code: 0,
+        stdout: '@maven//:x\n',
+        stderr: '',
+      })
+      await probeCandidate('maven', probe, true)
+      expect(loggedLines()).toMatch(/probe @maven:\s*populated/)
     })
 
-    it('validateMavenRepo logs ACCEPT under verbose', async () => {
-      await validateMavenRepo('maven', acceptingProbe, true)
-      expect(loggedLines()).toMatch(
-        /probe @maven:\s*ACCEPT \(maven_coordinates marker found\)/,
-      )
-    })
-
-    it('validateMavenRepo logs REJECT (no marker) under verbose', async () => {
-      await validateMavenRepo('not_maven', rejectingProbe, true)
-      expect(loggedLines()).toMatch(/probe @not_maven:\s*REJECT/)
-    })
-
-    it('validateMavenRepo logs REJECT (probe threw) under verbose', async () => {
-      await validateMavenRepo('crash', throwingProbe, true)
-      expect(loggedLines()).toMatch(/probe @crash:\s*REJECT \(probe threw\)/)
-    })
-
-    it('discoverMavenRepos propagates verbose into the full pipeline', async () => {
-      await discoverMavenRepos(
-        path.join(FIXTURES, 'multi-repo-bzlmod'),
-        selectiveProbe,
-        undefined,
-        true,
-      )
-      const text = loggedLines()
-      // Candidate-source label.
-      expect(text).toContain('candidate source: static parse')
-      // Seeded-and-deduped candidate set log.
-      expect(text).toContain('candidate set to probe')
-      // Per-candidate probe verdicts.
-      expect(text).toMatch(/probe @maven:\s*ACCEPT/)
-      expect(text).toMatch(/probe @maven_test:\s*REJECT/)
-      // Final validated set.
-      expect(text).toContain('validated repos')
-    })
-  })
-
-  describe('DoS guard', () => {
-    it('completes parse on 1MB pathological input within 1s', () => {
-      // Synthesize a 1MB Bzlmod-shaped file in a tmp dir and feed it through
-      // parseMavenRepoCandidates. Exercises the bounded USE_REPO_RE +
-      // QUOTED_NAME_RE windows.
-      const dir = mkdtempSync(path.join(os.tmpdir(), 'bazel-discover-'))
-      try {
-        // Build the fixture content in a single pass (avoid O(n^2) join-in-loop).
-        const lines: string[] = []
-        let totalLen = 0
-        while (totalLen < 1_000_000) {
-          const line = 'use_repo(maven, "x_' + lines.length + '")'
-          lines.push(line)
-          // Plus 1 for the eventual newline separator.
-          totalLen += line.length + 1
-        }
-        writeFileSync(path.join(dir, 'MODULE.bazel'), lines.join('\n'))
-        const start = process.hrtime.bigint()
-        const result = parseMavenRepoCandidates(dir)
-        const elapsed = process.hrtime.bigint() - start
-        expect(elapsed).toBeLessThan(1_000_000_000n)
-        // Verify the cap kicks in (length is bounded by MAX_CANDIDATES).
-        expect(result.length).toBeLessThanOrEqual(256)
-      } finally {
-        rmSync(dir, { recursive: true, force: true })
+    it('probeCandidate logs the throw reason under verbose', async () => {
+      const probe: RepoProbe = async () => {
+        throw new Error('bazel exploded')
       }
+      await probeCandidate('crash', probe, true)
+      expect(loggedLines()).toMatch(
+        /probe @crash:\s*not-defined \(probe threw: bazel exploded\)/,
+      )
     })
   })
 })
