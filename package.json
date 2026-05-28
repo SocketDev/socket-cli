@@ -163,5 +163,9 @@
   "packageManager": "pnpm@11.3.0",
   "npm-run-all2": {
     "nodeRun": true
+  },
+  "allowScripts": {
+    "rolldown": true,
+    "postject": false
   }
 }
