@@ -447,7 +447,7 @@ async function run(
   // Suppress the --auto-manifest suggestion when a `.socket.facts.json` is
   // already present at cwd. That file is the output of `socket manifest auto`
   // (and `--facts` mode of the per-ecosystem manifest commands), so suggesting
-  // to regenerate it would be misleading — the manifest data is already there
+  // to regenerate it would be misleading; the manifest data is already there
   // and will be picked up by the scan.
   const hasFactsFile = existsSync(
     path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON),
