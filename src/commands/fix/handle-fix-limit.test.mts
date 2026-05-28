@@ -80,6 +80,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     disableMajorUpdates: false,
     ecosystems: [],
     exclude: [],
+    excludePaths: [],
     ghsas: [],
     include: [],
     minSatisfying: false,
@@ -446,6 +447,43 @@ describe('socket fix --pr-limit behavior verification', () => {
         .filter(arg => arg.startsWith('GHSA-'))
 
       expect(ghsaArgs).toEqual(['GHSA-1111-1111-1111'])
+    })
+  })
+
+  describe('--exclude-paths flag', () => {
+    it('passes excludePaths to getPackageFilesForScan as anchored ignore patterns', async () => {
+      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+
+      await coanaFix({
+        ...baseConfig,
+        excludePaths: ['data/postgres/pgdata', '**/.cache'],
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(mockGetPackageFilesForScan).toHaveBeenCalledTimes(1)
+      const [, , opts] = mockGetPackageFilesForScan.mock.calls[0] ?? []
+      // excludePathToScanIgnores emits both the entry itself and a /** sibling
+      // unless the user already passed a /** suffix.
+      expect(opts.additionalIgnores).toEqual([
+        'data/postgres/pgdata',
+        'data/postgres/pgdata/**',
+        '**/.cache',
+        '**/.cache/**',
+      ])
+    })
+
+    it('omits additionalIgnores when excludePaths is empty', async () => {
+      mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'fix applied' })
+
+      await coanaFix({
+        ...baseConfig,
+        excludePaths: [],
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(mockGetPackageFilesForScan).toHaveBeenCalledTimes(1)
+      const [, , opts] = mockGetPackageFilesForScan.mock.calls[0] ?? []
+      expect(opts.additionalIgnores).toBeUndefined()
     })
   })
 })

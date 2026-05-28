@@ -47,6 +47,7 @@ import {
 } from '../../utils/github.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
+import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { FixConfig } from './types.mts'
@@ -129,6 +130,7 @@ export async function coanaFix(
     disableMajorUpdates,
     ecosystems,
     exclude,
+    excludePaths,
     ghsas,
     include,
     minimumReleaseAge,
@@ -171,7 +173,15 @@ export async function coanaFix(
     ? socketYmlResult.data?.parsed
     : undefined
 
+  // Expand user-supplied `--exclude-paths` patterns into the fast-glob ignore
+  // form so manifest discovery skips them. Without this an unreadable
+  // subdirectory (e.g. a postgres `pgdata` owned by another uid) would crash
+  // `socket fix` before coana is even invoked.
+  const additionalIgnores = excludePaths.length
+    ? excludePaths.flatMap(excludePathToScanIgnores)
+    : undefined
   const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
+    additionalIgnores,
     config: socketConfig,
     cwd,
   })
