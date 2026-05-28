@@ -215,31 +215,46 @@ allprojects { project ->
       }
       def isTestConfig = { String name -> name.toLowerCase().contains('test') }
 
-      // Optional user-supplied filter: comma-separated configuration name
-      // suffixes (case-insensitive). When set, only configurations whose
-      // lowercased name ends with one of the listed suffixes are walked. The
-      // suffix model matches Gradle's own conventions (compileClasspath,
-      // runtimeClasspath, testCompileClasspath, jvmMainCompileClasspath,
-      // debugRuntimeClasspath, ...) so `--configs=compileClasspath,
-      // runtimeClasspath` filters out tooling configs (annotationProcessor,
-      // kotlinCompilerClasspath, etc.) without having to list every variant.
+      // Optional user-supplied filter: comma-separated glob patterns matched
+      // against full configuration names (case-insensitive). `*` matches any
+      // sequence of characters, `?` matches a single character. When set,
+      // only configurations whose name matches at least one pattern are
+      // walked. e.g. `--configs=*CompileClasspath,*RuntimeClasspath` keeps
+      // every variant of the standard classpath configs while filtering out
+      // tooling configs like `annotationProcessor` and
+      // `kotlinCompilerClasspath`.
+      def globToRegex = { String glob ->
+        def sb = new StringBuilder()
+        glob.each { String ch ->
+          switch (ch) {
+            case '*': sb << '.*'; break
+            case '?': sb << '.'; break
+            case '.': case '\\': case '^': case '$': case '|':
+            case '+': case '(': case ')':
+            case '[': case ']': case '{': case '}':
+              sb << '\\' << ch; break
+            default: sb << ch
+          }
+        }
+        java.util.regex.Pattern.compile(sb.toString(), java.util.regex.Pattern.CASE_INSENSITIVE)
+      }
       def configsProp = project.findProperty('socket.configs')?.toString()
-      def requestedSuffixes = null
+      def requestedPatterns = null
       if (configsProp != null && !configsProp.trim().isEmpty()) {
-        requestedSuffixes = configsProp.split(',')
-          .collect { it.trim().toLowerCase() }
+        requestedPatterns = configsProp.split(',')
+          .collect { it.trim() }
           .findAll { !it.isEmpty() }
-        if (requestedSuffixes.isEmpty()) {
-          requestedSuffixes = null
+          .collect { globToRegex(it) }
+        if (requestedPatterns.isEmpty()) {
+          requestedPatterns = null
         }
       }
 
       def targetConfigs = project.configurations.findAll {
         if (!it.canBeResolved) return false
         if (isAndroidInstrumentedTest(it.name)) return false
-        if (requestedSuffixes != null) {
-          def lower = it.name.toLowerCase()
-          return requestedSuffixes.any { suffix -> lower.endsWith(suffix) }
+        if (requestedPatterns != null) {
+          return requestedPatterns.any { p -> p.matcher(it.name).matches() }
         }
         return true
       }

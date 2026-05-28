@@ -42,7 +42,7 @@ const config: CliCommandConfig = {
     configs: {
       type: 'string',
       description:
-        'With --facts: comma-separated Gradle configuration name suffixes to resolve (case-insensitive, e.g. `compileClasspath,runtimeClasspath`). Default: every resolvable configuration except AGP instrumented-test classpaths',
+        'With --facts: comma-separated glob patterns matched against Gradle configuration names (case-insensitive, `*` and `?` wildcards). e.g. `*CompileClasspath,*RuntimeClasspath` to skip tooling configs. Default: every resolvable configuration except AGP instrumented-test classpaths',
     },
     ignoreUnresolved: {
       type: 'boolean',

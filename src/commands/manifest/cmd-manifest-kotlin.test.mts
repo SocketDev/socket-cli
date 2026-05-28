@@ -24,7 +24,7 @@ describe('socket manifest kotlin', async () => {
 
           Options
             --bin               Location of gradlew binary to use, default: CWD/gradlew
-            --configs           With --facts: comma-separated Gradle configuration name suffixes to resolve (case-insensitive, e.g. \`compileClasspath,runtimeClasspath\`). Default: every resolvable configuration except AGP instrumented-test classpaths
+            --configs           With --facts: comma-separated glob patterns matched against Gradle configuration names (case-insensitive, \`*\` and \`?\` wildcards). e.g. \`*CompileClasspath,*RuntimeClasspath\` to skip tooling configs. Default: every resolvable configuration except AGP instrumented-test classpaths
             --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
             --ignore-unresolved  With --facts: skip dependencies that fail to resolve instead of failing the run

@@ -37,7 +37,7 @@ const config: CliCommandConfig = {
     configs: {
       type: 'string',
       description:
-        'With --facts: comma-separated Gradle configuration name suffixes to resolve (case-insensitive, e.g. `compileClasspath,runtimeClasspath`). Default: every resolvable configuration except AGP instrumented-test classpaths',
+        'With --facts: comma-separated glob patterns matched against Gradle configuration names (case-insensitive, `*` and `?` wildcards). e.g. `*CompileClasspath,*RuntimeClasspath` to skip tooling configs. Default: every resolvable configuration except AGP instrumented-test classpaths',
     },
     ignoreUnresolved: {
       type: 'boolean',
@@ -82,9 +82,9 @@ const config: CliCommandConfig = {
     Pass --facts to instead emit a single \`.socket.facts.json\` describing the
     resolved dependency graph of the whole build (no \`pom.xml\` files). An
     unresolved dependency is a fatal error. With --facts you can pass
-    --configs=compileClasspath,runtimeClasspath to restrict resolution to
-    matching configurations (case-insensitive suffix match), and
-    --ignore-unresolved to skip dependencies that fail to resolve.
+    --configs=<comma-separated glob patterns> to restrict resolution to
+    matching configurations (e.g. \`*CompileClasspath,*RuntimeClasspath\`),
+    and --ignore-unresolved to skip dependencies that fail to resolve.
 
     Support is beta. Please report issues or give us feedback on what's missing.
 
