@@ -42,7 +42,7 @@ const config: CliCommandConfig = {
     ignoreUnresolved: {
       type: 'boolean',
       description:
-        'With --facts: skip dependencies that fail to resolve instead of failing the run',
+        "With --facts: warn on unresolved dependencies instead of failing the run (they're still emitted as direct entries with their declared coordinates)",
     },
     gradleOpts: {
       type: 'string',
@@ -84,7 +84,9 @@ const config: CliCommandConfig = {
     unresolved dependency is a fatal error. With --facts you can pass
     --configs=<comma-separated glob patterns> to restrict resolution to
     matching configurations (e.g. \`*CompileClasspath,*RuntimeClasspath\`),
-    and --ignore-unresolved to skip dependencies that fail to resolve.
+    and --ignore-unresolved to warn on unresolved dependencies instead of
+    failing the run (they're still emitted as direct entries with their
+    declared coordinates).
 
     Support is beta. Please report issues or give us feedback on what's missing.
 

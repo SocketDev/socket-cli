@@ -42,7 +42,7 @@ const config: CliCommandConfig = {
     ignoreUnresolved: {
       type: 'boolean',
       description:
-        'With --facts: skip dependencies that fail to resolve instead of failing the run',
+        'With --facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)',
     },
     out: {
       type: 'string',
@@ -97,7 +97,8 @@ const config: CliCommandConfig = {
     dependency is a fatal error. With --facts you can pass
     --configs=<comma-separated glob patterns> to choose which sbt configurations
     to resolve (e.g. \`compile,test\` for exact names or \`*Test*\` for variants),
-    and --ignore-unresolved to skip dependencies that fail to resolve.
+    and --ignore-unresolved to warn on unresolved dependencies instead of
+    failing the run.
 
     Support is beta. Please report issues or give us feedback on what's missing.
 

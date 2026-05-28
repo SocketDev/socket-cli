@@ -27,7 +27,7 @@ describe('socket manifest gradle', async () => {
             --configs           With --facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive, \`*\` and \`?\` wildcards). e.g. \`*CompileClasspath,*RuntimeClasspath\` to skip tooling configs. Default: every resolvable configuration except AGP instrumented-test classpaths
             --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
             --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
-            --ignore-unresolved  With --facts: skip dependencies that fail to resolve instead of failing the run
+            --ignore-unresolved  With --facts: warn on unresolved dependencies instead of failing the run (they're still emitted as direct entries with their declared coordinates)
             --verbose           Print debug messages
 
           Uses gradle, preferably through your local project \`gradlew\`, to generate a
@@ -53,7 +53,9 @@ describe('socket manifest gradle', async () => {
           unresolved dependency is a fatal error. With --facts you can pass
           --configs=<comma-separated glob patterns> to restrict resolution to
           matching configurations (e.g. \`*CompileClasspath,*RuntimeClasspath\`),
-          and --ignore-unresolved to skip dependencies that fail to resolve.
+          and --ignore-unresolved to warn on unresolved dependencies instead of
+          failing the run (they're still emitted as direct entries with their
+          declared coordinates).
 
           Support is beta. Please report issues or give us feedback on what's missing.
 
