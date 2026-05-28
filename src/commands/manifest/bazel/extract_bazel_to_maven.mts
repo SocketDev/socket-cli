@@ -30,6 +30,7 @@ import {
 } from './bazel-workspace-detect.mts'
 import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
+import { IGNORED_DIRS } from '../../../utils/glob.mts'
 
 import type {
   CqueryRepoResult,
@@ -93,6 +94,22 @@ type Sidecar = {
 
 const DEFAULT_PER_REPO_TIMEOUT_MS = 60_000
 const REAP_TIMEOUT_MS = 10_000
+
+// Composed prune policy passed to the workspace walker. Reuses the
+// codebase-wide `IGNORED_DIRS` and augments it with: the walker's own
+// output dir (`.socket-auto-manifest`), VCS/IDE dirs not in the shared
+// list (`.hg`, `.svn`, `.idea`, `.vscode`, `.pnpm-store`), Bazel's
+// `bazel-*` output_base symlinks, and `dist*` build-output dirs.
+const WORKSPACE_WALK_IGNORE_NAMES: ReadonlySet<string> = new Set([
+  ...IGNORED_DIRS,
+  '.hg',
+  '.idea',
+  '.pnpm-store',
+  '.socket-auto-manifest',
+  '.svn',
+  '.vscode',
+])
+const WORKSPACE_WALK_IGNORE_PREFIXES: readonly string[] = ['bazel-', 'dist']
 
 type CoordPair = { groupArtifact: string; version: string }
 
@@ -389,7 +406,12 @@ export async function extractBazelToMaven(
   const allArtifacts: ExtractedArtifact[] = []
 
   try {
-    const workspaceRoots = findWorkspaceRoots(cwd, verbose)
+    const workspaceRoots = findWorkspaceRoots({
+      cwd,
+      ignoreDirNames: WORKSPACE_WALK_IGNORE_NAMES,
+      ignoreDirPrefixes: WORKSPACE_WALK_IGNORE_PREFIXES,
+      verbose,
+    })
     if (!workspaceRoots.length) {
       logger.warn(
         `No Bazel workspace found at ${cwd} or beneath (looked for MODULE.bazel / WORKSPACE / WORKSPACE.bazel).`,

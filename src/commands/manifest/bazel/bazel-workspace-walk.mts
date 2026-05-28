@@ -6,11 +6,13 @@
  * `examples/<name>/MODULE.bazel`); the per-workspace algorithm in the
  * orchestrator runs once per discovered root.
  *
- * Pruning matches the now-deleted `bazel-lockfile-discovery.mts`: skip
- * directories that obviously aren't Bazel workspaces (`.git`, `node_modules`,
- * `.socket-auto-manifest`, etc.) and Bazel's `bazel-*` convenience symlinks
- * that point into <output_base> (tens of GiB of generated state). Also
- * prunes `dist*` build-output directories.
+ * The walker is dependency-injected with the directory-prune policy:
+ * callers pass the set of basenames and basename prefixes the walk must
+ * refuse to descend into. This module intentionally hardcodes none of
+ * the "common" prunes (`.git`, `node_modules`, …) — Bazel callers compose
+ * the codebase-wide `IGNORED_DIRS` list (`src/utils/glob.mts`) with the
+ * Bazel-specific bits (`bazel-*` output_base symlinks,
+ * `.socket-auto-manifest`, build-output `dist*`).
  */
 
 import { readdirSync } from 'node:fs'
@@ -21,27 +23,13 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 // Hard ceiling on number of workspace roots we will surface. Real monorepos
 // have well under 50; this cap is a guard against pathological inputs.
 const MAX_WORKSPACE_ROOTS = 256
-// Hard ceiling on directory walk depth. Real workspaces nest <8 deep; the
-// cap protects against pathological symlink loops that slipped past the
-// `bazel-*` prefix prune.
-const MAX_WALK_DEPTH = 16
-// Directory basenames the walk refuses to descend into. None of these
-// contain Bazel workspaces, and node_modules / .git can be enormous.
-const PRUNE_DIR_NAMES = new Set([
-  '.git',
-  '.hg',
-  '.idea',
-  '.pnpm-store',
-  '.socket-auto-manifest',
-  '.svn',
-  '.vscode',
-  'node_modules',
-])
-// Directory basename prefixes the walk refuses to descend into. Bazel's
-// `bazel-out`, `bazel-bin`, `bazel-testlogs`, and `bazel-<workspace>`
-// convenience symlinks all point into the output_base. `dist`-prefixed
-// directories are build artefacts, not workspaces.
-const PRUNE_DIR_PREFIXES = ['bazel-', 'dist']
+// Hard ceiling on directory walk depth. Deepest workspace marker observed
+// across the OSS corpus surveyed is 9 (bazel-self test fixtures); deepest
+// in realistic application code is 7 (checkmk's thirdparty layout). Cap
+// is set to 8 — one level of headroom over the realistic max, while still
+// guarding against pathological symlink loops that slipped past any
+// prefix prune.
+const MAX_WALK_DEPTH = 8
 // Files whose presence promotes a directory to a workspace root.
 const WORKSPACE_MARKER_FILES = new Set([
   'MODULE.bazel',
@@ -49,10 +37,29 @@ const WORKSPACE_MARKER_FILES = new Set([
   'WORKSPACE.bazel',
 ])
 
-// Walks the tree rooted at `cwd` and returns absolute paths to every
+export type FindWorkspaceRootsOptions = {
+  cwd: string
+  // Directory basenames to skip outright (exact match). Pass the union of
+  // the codebase-wide ignore set (`IGNORED_DIRS` in `src/utils/glob.mts`)
+  // and any caller-specific additions (e.g. `.socket-auto-manifest`).
+  ignoreDirNames?: ReadonlySet<string>
+  // Directory basename prefixes to skip. Bazel callers pass `['bazel-',
+  // 'dist']` so the walk never descends into Bazel's output_base symlinks
+  // or build-output directories.
+  ignoreDirPrefixes?: readonly string[]
+  verbose?: boolean
+}
+
+const EMPTY_SET: ReadonlySet<string> = new Set()
+const EMPTY_ARRAY: readonly string[] = []
+
+// Walks the tree rooted at `opts.cwd` and returns absolute paths to every
 // directory that contains at least one workspace marker file. Output is
 // sorted for determinism.
-export function findWorkspaceRoots(cwd: string, verbose?: boolean): string[] {
+export function findWorkspaceRoots(opts: FindWorkspaceRootsOptions): string[] {
+  const { cwd, verbose } = opts
+  const ignoreDirNames = opts.ignoreDirNames ?? EMPTY_SET
+  const ignoreDirPrefixes = opts.ignoreDirPrefixes ?? EMPTY_ARRAY
   const out: string[] = []
   // Tuple stack: [absolute dir, depth from cwd].
   const stack: Array<[string, number]> = [[cwd, 0]]
@@ -98,11 +105,11 @@ export function findWorkspaceRoots(cwd: string, verbose?: boolean): string[] {
         continue
       }
       const name = entry.name
-      if (PRUNE_DIR_NAMES.has(name)) {
+      if (ignoreDirNames.has(name)) {
         continue
       }
       let pruned = false
-      for (const prefix of PRUNE_DIR_PREFIXES) {
+      for (const prefix of ignoreDirPrefixes) {
         if (name.startsWith(prefix)) {
           pruned = true
           break
