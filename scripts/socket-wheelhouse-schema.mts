@@ -171,13 +171,13 @@ const ClaudeSchema = Type.Object(
   {
     includeSecurityScanSkill: Type.Optional(
       Type.Boolean({
-        description: 'Ship `.claude/skills/scanning-security/SKILL.md`.',
+        description: 'Ship `.claude/skills/fleet/scanning-security/SKILL.md`.',
       }),
     ),
     includeSharedSkills: Type.Optional(
       Type.Boolean({
         description:
-          'Ship `.claude/skills/_shared/*` — env-check, path-guard-rule, report-format, security-tools, verify-build.',
+          'Ship `.claude/skills/fleet/_shared/*` — env-check, path-guard-rule, report-format, security-tools, verify-build.',
       }),
     ),
     includeUpdatingSkill: Type.Optional(

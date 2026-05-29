@@ -9,7 +9,7 @@ These directories and files cascade fleet-wide. They are **not** repo-local:
 - `.config/oxlint-plugin/`: plugin index + rules
 - `.git-hooks/`: commit-msg / pre-commit / pre-push entry shims + .mts helpers (git invokes the shims when `core.hooksPath` is set to this directory; wired by `scripts/install-git-hooks.mts` at `pnpm install` time)
 - `.claude/hooks/`: PreToolUse / PostToolUse hooks
-- `.claude/skills/_shared/`: shared skill helpers
+- `.claude/skills/fleet/_shared/`: shared skill helpers
 - `CLAUDE.md` fleet block (between `BEGIN/END FLEET-CANONICAL` markers)
 - `docs/claude.md/fleet/`: fleet-canonical CLAUDE.md offshoot references (applies to every socket-\* repo)
 - `docs/claude.md/wheelhouse/`: docs about the wheelhouse cascade mechanism itself (this file lives here)
