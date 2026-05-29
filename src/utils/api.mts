@@ -54,9 +54,9 @@ import type {
 const MAX_REDIRECTS = 20
 const NO_ERROR_MESSAGE = 'No error message returned'
 
-// Cached HTTPS agent for direct API calls.
+// Cached HTTPS agent for direct API calls. Undefined only until the first
+// getHttpsAgent() call lazily creates it.
 let _httpsAgent: HttpsAgent | undefined
-let _httpsAgentResolved = false
 
 // Returns an explicit HTTPS agent for direct API calls, carrying extra CA
 // certificates when SSL_CERT_FILE is set but NODE_EXTRA_CA_CERTS is not. An
@@ -66,14 +66,14 @@ let _httpsAgentResolved = false
 // down after 5s of socket inactivity, prematurely dropping slow or idle-gapped
 // requests (e.g. streaming full-scan responses, large downloads) even when no
 // timeout was requested. A fresh Agent carries no timeout.
-function getHttpsAgent(): HttpsAgent | undefined {
-  if (_httpsAgentResolved) {
+function getHttpsAgent(): HttpsAgent {
+  if (_httpsAgent) {
     return _httpsAgent
   }
-  _httpsAgentResolved = true
   const ca = getExtraCaCerts()
-  _httpsAgent = ca ? new HttpsAgent({ ca }) : new HttpsAgent()
-  return _httpsAgent
+  const agent = ca ? new HttpsAgent({ ca }) : new HttpsAgent()
+  _httpsAgent = agent
+  return agent
 }
 
 // All outbound API requests use node:https.request rather than global fetch.
@@ -92,7 +92,7 @@ export type ApiFetchInit = {
 function _httpsRequestFetch(
   url: string,
   init: ApiFetchInit,
-  agent: HttpsAgent | undefined,
+  agent: HttpsAgent,
   redirectCount: number,
 ): Promise<Response> {
   return new Promise((resolve, reject) => {
