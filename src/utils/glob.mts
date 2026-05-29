@@ -306,11 +306,14 @@ export async function globWithGitIgnore(
     ignore: hasNegatedPattern
       ? [...defaultIgnore, ...cliMinimatchIgnores]
       : [...ignores, ...cliMinimatchIgnores].map(stripTrailingSlash),
+    ...additionalOptions,
     // Skip directories the running user cannot read rather than aborting the
     // whole walk on the first `EACCES` (see the .gitignore discovery walk
-    // above for the full rationale).
+    // above for the full rationale). Pinned after `...additionalOptions` so a
+    // caller's options bag cannot accidentally flip it back to `false` and
+    // re-introduce the crash — `suppressErrors` is a safety invariant here, not
+    // a tunable.
     suppressErrors: true,
-    ...additionalOptions,
   } as GlobOptions
 
   // When no filter is provided and no negated patterns exist, use the fast path.
