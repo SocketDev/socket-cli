@@ -8,7 +8,7 @@
  * Test Coverage:
  * - apiFetch always uses node:https.request (no undici body timeout).
  * - apiFetch passes a custom HttpsAgent when CA certs are set via SSL_CERT_FILE.
- * - apiFetch passes no agent (undefined) when no CA certs are configured.
+ * - apiFetch passes an explicit HttpsAgent (no timeout) when no CA certs are configured.
  * - Response object construction from https.request output.
  * - POST requests with JSON body through https.request path.
  * - Error propagation from https.request failures.
@@ -114,7 +114,7 @@ describe('apiFetch with extra CA certificates', () => {
     globalThis.fetch = originalFetch
   })
 
-  it('should use https.request with no agent when no extra CA certs are needed', async () => {
+  it('should use https.request with an explicit no-timeout agent when no extra CA certs are needed', async () => {
     const mockReq = {
       end: vi.fn(),
       on: vi.fn(),
@@ -148,11 +148,15 @@ describe('apiFetch with extra CA certificates', () => {
 
     // Always uses https.request — no undici body timeout.
     expect(mockHttpsRequest).toHaveBeenCalled()
-    // No custom HttpsAgent created when CA certs are not configured.
-    expect(MockHttpsAgent).not.toHaveBeenCalled()
-    // agent is undefined when no CA certs are configured.
+    // An explicit HttpsAgent is created so the request does not inherit Node's
+    // global agent (keepAlive plus a 5s socket timeout).
+    expect(MockHttpsAgent).toHaveBeenCalledTimes(1)
+    // A fresh agent carries no timeout, so no per-socket inactivity timeout.
+    const agentOpts = MockHttpsAgent.mock.calls[0]?.[0]
+    expect(agentOpts?.timeout).toBeUndefined()
+    // The request is made with that explicit agent.
     const callArgs = mockHttpsRequest.mock.calls[0]
-    expect(callArgs[1]).toEqual(expect.objectContaining({ agent: undefined }))
+    expect(callArgs[1].agent).toMatchObject({ _isHttpsAgent: true })
     expect(result.ok).toBe(true)
   })
 
