@@ -5,8 +5,11 @@ packages:
 
 # Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
 allowBuilds:
+  cpu-features: false
+  protobufjs: false
   rolldown: true
   postject: false
+  ssh2: false
 
 # Refuse to run if the pnpm version on PATH differs from the packageManager
 # field in package.json. Our setup action pins pnpm via external-tools.json;
@@ -41,6 +44,7 @@ catalog:
   '@pnpm/lockfile.detect-dep-types': 1001.0.13
   '@pnpm/lockfile.fs': 1001.1.17
   '@pnpm/logger': 1001.0.0
+  '@redwoodjs/agent-ci': 0.16.2
   '@sentry/node': 8.0.0
   '@sinclair/typebox': 0.34.49
   '@socketregistry/hyrious__bun.lockb': 1.0.19
@@ -48,6 +52,7 @@ catalog:
   '@socketregistry/is-interactive': 1.0.6
   '@socketregistry/packageurl-js': 'npm:@socketregistry/packageurl-js@1.4.2'
   '@socketsecurity/lib': 6.0.5
+  '@types/shell-quote': 1.7.5
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
   # name from inside the same package — Node ESM resolves it as a
   # self-reference. The 4 Socket-published packages each need a
@@ -244,6 +249,37 @@ minimumReleaseAgeExclude:
   # lockfile resolves cleanly today rather than waiting 4 days for the
   # natural soak clearance on 2026-05-22.
   - 'read-package-json-fast@6.0.0'
+  - '@redwoodjs/agent-ci'
+  - 'dtu-github-actions'
+  - 'shell-quote'
+  - 'vite'
+  - 'vitest'
+  - '@vitest/coverage-v8'
+  - '@vitest/expect'
+  - '@vitest/mocker'
+  - '@vitest/pretty-format'
+  - '@vitest/runner'
+  - '@vitest/snapshot'
+  - '@vitest/spy'
+  - '@vitest/ui'
+  - '@vitest/utils'
+  - 'rolldown'
+  - '@rolldown/pluginutils'
+  - '@rolldown/binding-android-arm64'
+  - '@rolldown/binding-darwin-arm64'
+  - '@rolldown/binding-darwin-x64'
+  - '@rolldown/binding-freebsd-x64'
+  - '@rolldown/binding-linux-arm-gnueabihf'
+  - '@rolldown/binding-linux-arm64-gnu'
+  - '@rolldown/binding-linux-arm64-musl'
+  - '@rolldown/binding-linux-ppc64-gnu'
+  - '@rolldown/binding-linux-s390x-gnu'
+  - '@rolldown/binding-linux-x64-gnu'
+  - '@rolldown/binding-linux-x64-musl'
+  - '@rolldown/binding-openharmony-arm64'
+  - '@rolldown/binding-wasm32-wasi'
+  - '@rolldown/binding-win32-arm64-msvc'
+  - '@rolldown/binding-win32-x64-msvc'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we
