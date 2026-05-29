@@ -169,7 +169,7 @@ describe('socket fix', async () => {
             --debug             Enable debug logging in the Coana-based Socket Fix CLI invocation.
             --disable-external-tool-checks  Disable external tool checks during fix analysis.
             --ecosystems        Limit fix analysis to specific ecosystems. Accepts space- or comma-separated values and is case-insensitive. Defaults to all ecosystems.
-            --exclude           Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
+            --exclude-paths     Skip matching paths from the scan entirely: manifests under these paths are not uploaded, and fixes are not applied to workspaces under them. Patterns are anchored micromatch globs matched relative to the target directory (CWD); \`data/postgres/pgdata\` matches that exact path, \`**/pgdata\` matches at any depth. Use this to skip directories the current user cannot read so they do not abort manifest collection. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: <coana-version>.
             --id                Provide a list of vulnerability identifiers to compute fixes for:
                                     - GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) (e.g., GHSA-xxxx-xxxx-xxxx)

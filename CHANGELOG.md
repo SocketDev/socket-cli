@@ -12,6 +12,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
 
+## [1.1.109](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.109) - 2026-05-28
+
+### Added
+- **`socket fix --exclude-paths`** — Skip matching paths from the scan entirely: manifests under these paths are not uploaded, and fixes are not applied to workspaces under them. Use this to skip directories the current user cannot read (e.g. a postgres `pgdata` directory inside the repo) so they do not abort manifest collection. The pre-existing `--exclude` flag keeps its previous fix-application-only semantic but is now hidden in `--help` in favor of `--exclude-paths`.
+
 ## [1.1.108](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.108) - 2026-05-28
 
 ### Changed
