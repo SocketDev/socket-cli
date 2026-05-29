@@ -54,9 +54,9 @@ GitHub-side enforcement is the failsafe: it catches pushes that somehow bypassed
 The setup helper detects available signing methods and configures git in one shot:
 
 ```sh
-node .claude/hooks/setup-signing/install.mts            # detect + configure
-node .claude/hooks/setup-signing/install.mts --check    # report status (exit 0 if configured, 1 if not)
-node .claude/hooks/setup-signing/install.mts --force    # overwrite existing config
+node .claude/hooks/fleet/setup-signing/install.mts            # detect + configure
+node .claude/hooks/fleet/setup-signing/install.mts --check    # report status (exit 0 if configured, 1 if not)
+node .claude/hooks/fleet/setup-signing/install.mts --force    # overwrite existing config
 ```
 
 Detection order (first hit wins):

@@ -3,6 +3,8 @@ name: worktree-management
 description: Manages git worktrees per the fleet's parallel-Claude-sessions rule. Creates new task-worktrees, fans out one worktree per open PR for parallel review, and prunes stale worktrees whose branches were deleted upstream. Use when starting a task that needs an isolated working tree, when reviewing every open PR locally without disturbing the primary checkout, or when cleaning up after merges.
 user-invocable: true
 allowed-tools: Bash(git worktree:*), Bash(git branch:*), Bash(git fetch:*), Bash(gh pr list:*), Bash(gh auth status), Bash(ls:*), Read
+model: claude-haiku-4-5
+context: fork
 ---
 
 # worktree-management

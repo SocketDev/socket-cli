@@ -60,11 +60,20 @@ test('extractInstalledSha returns undefined for empty string', () => {
 
 test('extractInstalledSha rejects shapes that almost-match but are not 12 + 8+', () => {
   // 11 chars instead of 12.
-  assert.strictEqual(extractInstalledSha('/x/cache/m/p/9cb4fe40991-deadbeef'), undefined)
+  assert.strictEqual(
+    extractInstalledSha('/x/cache/m/p/9cb4fe40991-deadbeef'),
+    undefined,
+  )
   // No content-hash suffix.
-  assert.strictEqual(extractInstalledSha('/x/cache/m/p/9cb4fe409919'), undefined)
+  assert.strictEqual(
+    extractInstalledSha('/x/cache/m/p/9cb4fe409919'),
+    undefined,
+  )
   // Non-hex chars.
-  assert.strictEqual(extractInstalledSha('/x/cache/m/p/zzzzzzzzzzzz-deadbeef'), undefined)
+  assert.strictEqual(
+    extractInstalledSha('/x/cache/m/p/zzzzzzzzzzzz-deadbeef'),
+    undefined,
+  )
 })
 
 const fakePlugin = (id: string, installPath?: string): PluginListEntry => ({
@@ -191,12 +200,18 @@ test('lookupInstalledSha extracts gitCommitSha from installed_plugins.json shape
       ],
     },
   }
-  assert.strictEqual(lookupInstalledSha(state, 'codex@socket-wheelhouse'), FULL_SHA)
+  assert.strictEqual(
+    lookupInstalledSha(state, 'codex@socket-wheelhouse'),
+    FULL_SHA,
+  )
 })
 
 test('lookupInstalledSha returns undefined when plugin id is absent', () => {
   const state = { version: 2, plugins: {} }
-  assert.strictEqual(lookupInstalledSha(state, 'codex@socket-wheelhouse'), undefined)
+  assert.strictEqual(
+    lookupInstalledSha(state, 'codex@socket-wheelhouse'),
+    undefined,
+  )
 })
 
 test('lookupInstalledSha returns undefined when entry has no gitCommitSha', () => {
@@ -208,7 +223,10 @@ test('lookupInstalledSha returns undefined when entry has no gitCommitSha', () =
       ],
     },
   }
-  assert.strictEqual(lookupInstalledSha(state, 'codex@socket-wheelhouse'), undefined)
+  assert.strictEqual(
+    lookupInstalledSha(state, 'codex@socket-wheelhouse'),
+    undefined,
+  )
 })
 
 test('lookupInstalledSha rejects malformed gitCommitSha values', () => {
@@ -218,16 +236,25 @@ test('lookupInstalledSha rejects malformed gitCommitSha values', () => {
       'codex@socket-wheelhouse': [{ gitCommitSha: 'not-a-sha' }],
     },
   }
-  assert.strictEqual(lookupInstalledSha(state, 'codex@socket-wheelhouse'), undefined)
+  assert.strictEqual(
+    lookupInstalledSha(state, 'codex@socket-wheelhouse'),
+    undefined,
+  )
 })
 
 test('lookupInstalledSha handles null / non-object input', () => {
-  assert.strictEqual(lookupInstalledSha(undefined, 'codex@socket-wheelhouse'), undefined)
+  assert.strictEqual(
+    lookupInstalledSha(undefined, 'codex@socket-wheelhouse'),
+    undefined,
+  )
   assert.strictEqual(
     lookupInstalledSha('not-an-object', 'codex@socket-wheelhouse'),
     undefined,
   )
-  assert.strictEqual(lookupInstalledSha({}, 'codex@socket-wheelhouse'), undefined)
+  assert.strictEqual(
+    lookupInstalledSha({}, 'codex@socket-wheelhouse'),
+    undefined,
+  )
   assert.strictEqual(
     lookupInstalledSha({ plugins: undefined }, 'codex@socket-wheelhouse'),
     undefined,
@@ -245,7 +272,10 @@ test('lookupInstalledSha walks multiple scope entries to find a valid SHA', () =
       ],
     },
   }
-  assert.strictEqual(lookupInstalledSha(state, 'codex@socket-wheelhouse'), FULL_SHA)
+  assert.strictEqual(
+    lookupInstalledSha(state, 'codex@socket-wheelhouse'),
+    FULL_SHA,
+  )
 })
 
 test('parsePatchFileName parses <plugin>-<version>-<slug>.patch', () => {
@@ -258,10 +288,13 @@ test('parsePatchFileName parses <plugin>-<version>-<slug>.patch', () => {
 test('parsePatchFileName keeps a hyphenated plugin name (version anchor disambiguates)', () => {
   // The greedy plugin capture stops at the dotted-semver anchor, so a
   // hyphenated plugin name survives.
-  assert.deepStrictEqual(parsePatchFileName('socket-foo-2.3.4-fix-crash.patch'), {
-    plugin: 'socket-foo',
-    version: '2.3.4',
-  })
+  assert.deepStrictEqual(
+    parsePatchFileName('socket-foo-2.3.4-fix-crash.patch'),
+    {
+      plugin: 'socket-foo',
+      version: '2.3.4',
+    },
+  )
 })
 
 test('parsePatchFileName returns undefined without a dotted-semver version', () => {
@@ -305,12 +338,16 @@ test('stripPatchHeader returns the whole body when there is no header', () => {
 })
 
 test('stripPatchHeader returns empty string when no diff body is present', () => {
-  assert.strictEqual(stripPatchHeader('# @plugin: codex\n# just a comment\n'), '')
+  assert.strictEqual(
+    stripPatchHeader('# @plugin: codex\n# just a comment\n'),
+    '',
+  )
 })
 
 test('stripPatchHeader only matches --- at line start (not mid-line)', () => {
   // A `---` inside a comment line must not be mistaken for the diff start.
-  const patch = '# note: see --- somewhere\n--- a/real\n+++ b/real\n@@ -1 +1 @@\n-x\n+y\n'
+  const patch =
+    '# note: see --- somewhere\n--- a/real\n+++ b/real\n@@ -1 +1 @@\n-x\n+y\n'
   const body = stripPatchHeader(patch)
   assert.ok(body.startsWith('--- a/real'))
 })

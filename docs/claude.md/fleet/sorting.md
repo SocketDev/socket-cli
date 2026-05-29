@@ -1,20 +1,135 @@
 # Sorting reference
 
-Sort lists alphanumerically (literal byte order, ASCII before letters).
+Sort lists alphanumerically (literal byte order, ASCII before letters). This is a
+**universal** rule: any block of sibling items, in any file type, gets sorted
+unless there's a documented ordering reason. When you touch an unsorted block,
+**fully re-sort it**. Don't append the new entry and leave the rest unsorted.
 
-## Where to sort
+## What "alphanumeric" means here
 
-- **Config lists**: `permissions.allow` / `permissions.deny` in `.claude/settings.json`, `external-tools.json` checksum keys, allowlists in workflow YAML.
-- **Object key entries**: keys in plain JSON config + return-shape literals + internal-state objects. (Exception: `__proto__: null` always comes first, ahead of any data keys.)
-- **Import specifiers**: sort named imports inside a single statement: `import { encrypt, randomDataKey, wrapKey } from './crypto.mts'`. `import type` follows the same rule. Statement _order_ (`node:` → external → local → types) is separate from specifier order _within_ a statement.
-- **Method / function placement**: within a module, sort top-level functions alphabetically. Convention: private functions (lowercase / un-exported) sort first, exported functions second. The `export` keyword is the divider.
-- **Array literals**: when the array is a config list, allowlist, or set-like collection. Position-bearing arrays (e.g. `argv`, anything where index matters semantically) keep their meaningful order.
-- **`Set` constructor arguments**: `new Set([...])` and `new SafeSet([...])` literals. The runtime is order-insensitive, so source order is alphanumeric. Same rationale as Array literals: predictable diffs, no merge conflicts on insertions.
-- **Regex alternation groups**: `(foo|bar|baz)` reads as `(bar|baz|foo)`. Capturing, non-capturing, and named-capture groups all follow the rule. Auto-fixable when every alternative is a simple literal. The exception is order-bearing alternations where the regex engine MUST try one alternative before another (rare; the canonical example is markup parsers where `<!--|-->` would silently mismatch if reordered). Append `// socket-hook: allow regex-alternation-order` on those lines.
-- **String-equality disjunctions**: `x === 'a' || x === 'b' || x === 'c'` reads with the comparand strings in alpha order. The De Morgan dual `x !== 'a' && x !== 'b'` (negative-membership check) follows the same rule. The `||` chain short-circuits regardless of operand order; sorting reduces diff churn when adding new comparands and makes "is X in this set?" checks visually consistent. Auto-fixable when every clause has the same left operand and uses string-literal comparands. Mixed shape (different left, different operator, non-string right) is skipped. Those are usually ordering-sensitive predicates and the autofix would change semantics.
-- **Boolean identifier chains**: `agentshieldOk && zizmorOk && sfwOk` reads with the names in alpha order: `agentshieldOk && sfwOk && zizmorOk`. Same rule for `||` chains. The lint rule fires only when (1) every leaf is a bare `Identifier` (no calls, no member access, no literals, no negations; those have side-effect or short-circuit semantics where order can be observable) AND (2) the chain has **3 or more operands**. Two-operand chains like `useHttp && oauthEnabled` are guard patterns where order carries narrative ("in HTTP mode, did OAuth get enabled?") that alpha-sort would destroy; only length-3+ chains are unambiguously flag lists. Duplicate identifiers and chains with interior comments are skipped (the autofix would lose information). Enforced by `socket/sort-boolean-chains`.
-- **TypeScript union of string literals**: `type Source = 'download' | 'path' | 'vfs'` (not `'vfs' | 'path' | 'download'`). Members are interchangeable at the type level; alpha order makes "which values can this take?" answerable without scanning. Applies to type aliases, inline parameter unions, and template-literal type alternatives. Position-bearing unions (rare; e.g. a discriminator where order encodes priority) keep their meaningful order; append `// socket-hook: allow union-order` on those lines.
+1. **ASCII byte order**, not natural/numeric order. `'name-10'` sorts **before**
+   `'name-2'`. Stable across Node versions and machines.
+2. **Case-sensitive.** `'Z' < 'a'` (uppercase first). Raw `<` comparison, not
+   `localeCompare`.
+3. **No locale-aware collation.** No `Intl.Collator`, no `numeric: true`.
+4. **Whole-token comparison**, not character-class buckets.
+
+These are the exact semantics every `socket/sort-*` lint rule uses.
+
+## Where to sort: code surfaces (lint-enforced)
+
+- **Import specifiers**: named imports inside a single statement, e.g.
+  `import { encrypt, randomDataKey, wrapKey } from './crypto.mts'`. `import type`
+  follows the same rule. Statement _order_ (`node:` → external → local → types)
+  is separate from specifier order _within_ a statement. Enforced by
+  `socket/sort-named-imports`.
+- **Object literal properties**: sibling properties of an object literal at
+  module scope (and inside `export const` / `export default`) sort
+  alphanumerically. Exception: `__proto__: null` always comes first, ahead of
+  any data key. Object literals that are position-bearing (HTTP header order,
+  protocol field order) opt out with `// socket-hook: allow object-property-order`.
+  Enforced by `socket/sort-object-literal-properties`.
+- **Method / function placement**: within a module, sort top-level functions
+  alphabetically. Private functions (lowercase / un-exported) sort first,
+  exported functions second; the `export` keyword is the divider. `main`, if
+  present, stays last. Enforced by `socket/sort-source-methods`.
+- **Array literals**: when the array is a config list, allowlist, or set-like
+  collection. Position-bearing arrays (`argv`, anything where index matters
+  semantically) keep their meaningful order.
+- **`Set` constructor arguments**: `new Set([...])` and `new SafeSet([...])`
+  literals. The runtime is order-insensitive, so source order is alphanumeric.
+  Enforced by `socket/sort-set-args`.
+- **Regex alternation groups**: `(foo|bar|baz)` reads as `(bar|baz|foo)`.
+  Capturing, non-capturing, and named-capture groups all follow the rule.
+  Auto-fixable when every alternative is a simple literal. Order-bearing
+  alternations (rare; markup parsers where `<!--|-->` would silently mismatch if
+  reordered) append `// socket-hook: allow regex-alternation-order`. Enforced by
+  `socket/sort-regex-alternations`.
+- **String-equality disjunctions**: `x === 'a' || x === 'b' || x === 'c'` reads
+  with the comparand strings in alpha order. The De Morgan dual
+  `x !== 'a' && x !== 'b'` follows the same rule. Auto-fixable when every clause
+  has the same left operand and uses string-literal comparands; mixed shapes are
+  skipped. Enforced by `socket/sort-equality-disjunctions`.
+- **Boolean identifier chains**: `agentshieldOk && zizmorOk && sfwOk` reads in
+  alpha order. Fires only when every leaf is a bare `Identifier` AND the chain
+  has **3+ operands** (two-operand chains are guard patterns whose order carries
+  narrative). Duplicate identifiers and interior comments are skipped. Enforced
+  by `socket/sort-boolean-chains`.
+- **TypeScript union of string literals**: `type Source = 'download' | 'path' | 'vfs'`.
+  Members are interchangeable at the type level; alpha order makes "which values
+  can this take?" answerable without scanning. Position-bearing unions (a
+  discriminator where order encodes priority) append
+  `// socket-hook: allow union-order`. _(Rule planned; see Roadmap.)_
+
+## Where to sort: non-code surfaces (hook-reminded, manual)
+
+oxlint only sees JS/TS, so these are caught by the `alpha-sort-reminder` hook on
+edit and by review, not by a lint rule.
+
+- **JSON / JSONC** (`tsconfig.json`, `package.json`, `.oxlintrc.json`,
+  `.config/*.json`): sort every object's keys alphanumerically.
+  - Exception: `tsconfig.json` top-level has a canonical order
+    (`extends` → `compilerOptions` → `include` → `exclude` → `files`); keys
+    _inside_ `compilerOptions` alphabetize.
+  - Exception: `package.json` top-level keeps npm convention
+    (`name` → `version` → `description` → … → `scripts` → `dependencies`); keys
+    inside `scripts` / `dependencies` / `devDependencies` alphabetize.
+- **YAML** (`.github/workflows/*.yml`, `pnpm-workspace.yaml`): `env:` blocks,
+  `with:` blocks, `catalog:` entries, `minimumReleaseAgeExclude` arrays, and
+  allowlist arrays alphabetize. `matrix.include[]` entries alphabetize by a
+  compound `platform → arch` key. **Even commented-out matrix entries** sort into
+  position; don't drop them at the bottom.
+  - Exception: step lists are ordered by pipeline phase, not alpha.
+  - Exception: active matrix entries today are `x64`-before-`arm64` fleet-wide
+    for historical reasons; **new** entries follow alpha (`arm64` < `x64`), and a
+    fleet-wide cascade re-sort of the active entries is a future PR. (Origin:
+    socket-btm `boringssl.yml`, commit c8dd1f1b.)
+- **Bash / shell variables in workflow scripts**: cache-key hash assignments
+  (`BIN_INFRA_LIB=$(...)`, `BORINGSSL_PACKAGE_JSON=$(...)`) alphabetize. Hash
+  order doesn't affect correctness, but stable diffs do.
+- **Markdown lists** (README consumer lists, doc bullet lists, fleet-canonical
+  tables): alphabetize sibling bullets.
+  - Exception: narrative ordering (numbered setup steps, "first X then Y").
+    State the reason in surrounding prose.
+  - **NO ELLIPSIS.** Drop `"..."` / `"…"` from list endings. List every item
+    alphabetically, or write "N items, see `<source>`". Never trail off.
+
+## Behavior rules
+
+- **Fully re-sort, don't append.** Editing an already-sorted block → insert in
+  sorted position. Editing an unsorted block → fully re-sort it in the same
+  commit.
+- **Cascade-scoped re-sorts** (e.g. all 8 builder workflows' matrix entries) get
+  a dedicated `chore(wheelhouse): cascade alpha-sort <pattern>` PR. Don't slip
+  the re-sort into unrelated work.
+- **State the reason for any non-alpha order inline.** Boot/init sequences,
+  dependency chains, parser tokens in lex order, and discriminator priority all
+  qualify.
 
 ## Default
 
-When in doubt, sort. The cost of a sorted list that didn't need to be is approximately zero; the cost of an unsorted list that did need to be is a merge conflict.
+When in doubt, sort. Sorting a list that didn't need it costs nothing. Leaving
+one unsorted that did costs a merge conflict later.
+
+## Roadmap (not yet enforced)
+
+| Surface                                                              | Plan                                                                           |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `export { … }` lists                                                 | `socket/sort-named-exports` — mirror `sort-named-imports`.                     |
+| TS string-literal unions                                             | `socket/sort-union-members` — with `// socket-hook: allow union-order` escape. |
+| Module-scope const arrays                                            | `socket/sort-array-literals` — skip position-bearing arrays.                   |
+| Independent switch-case branches                                     | future rule; skip fall-through / early-return chains.                          |
+| `.claude/settings.json` permission lists, `external-tools.json` keys | sync-scaffolding sort check.                                                   |
+
+## Provenance
+
+User-confirmed across 2026-04-17 → 2026-05-29 in socket-lib, socket-cli,
+socket-btm, ultrathink, socket-sdk-js, socket-wheelhouse. Representative asks:
+"properties and configs should be sorted alphanumerically" (JSON keys,
+2026-04-17); "lets alphanumeric sort" (object-literal props); repeated
+`sort-source-methods` reorders; "make `sort-source-methods` autofixable"; "add a
+`sort-boolean-chains` rule"; "alphanumeric, no ellipsis" (README lists,
+2026-05-29); "alphanumeric sort" on commented matrix entries
+(`boringssl.yml`, 2026-05-29); "how can we do more alphanumeric sorting"
+(2026-05-29, the meta-ask that produced this consolidation). John-David treats
+an unsorted list as a defect: "when in doubt, sort."

@@ -1,6 +1,7 @@
 ---
 name: security-reviewer
 description: Reviews findings from AgentShield + zizmor against the project's CLAUDE.md security rules and grades the result A-F. Spawned by the scanning-security skill after the static scans run.
+model: claude-opus-4-8
 tools: Read, Grep, Glob, Bash(git:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(pnpm exec agentshield:*), Bash(zizmor:*), Bash(command -v:*), Bash(cat:*), Bash(head:*), Bash(tail:*)
 ---
 

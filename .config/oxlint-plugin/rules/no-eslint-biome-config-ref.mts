@@ -7,7 +7,15 @@
  *   TS/JS source — package.json + workflow YAML are caught by other tooling
  *   (the SBOM / dep scanners flag the package refs at install time). No
  *   autofix: the right replacement varies (drop the line, swap to
- *   `oxlint`/`oxfmt`, or rewrite a script invocation). Reporting only.
+ *   `oxlint`/`oxfmt`, or rewrite a script invocation). Reporting only. **Test
+ *   fixtures:** if a pattern-matching test reaches for a real package name that
+ *   happens to start with `eslint-` / `biome` / `@biomejs/`, the rule fires on
+ *   the test fixture even though it isn't a config ref. Use the documented
+ *   neutral placeholder family `acme-*` (`acme-plugin-react`, `acme-foo`,
+ *   `@acme/widget`) — same convention as `Acme Inc` for customer-name
+ *   placeholders in [`fleet/public-surface-hygiene`]. They keep wildcard
+ *   semantics intact without tripping the rule. Reserve the bypass comment for
+ *   genuinely irreplaceable cases (e.g. testing the rule itself).
  */
 
 import { makeBypassChecker } from '../lib/comment-markers.mts'
@@ -65,7 +73,7 @@ const rule = {
     },
     messages: {
       staleConfig:
-        '`{{ref}}` is a stale ESLint/Biome reference — the fleet runs oxlint + oxfmt. Drop the line or swap to the oxlint/oxfmt equivalent. (See `template/.config/oxlintrc.json` / `oxfmtrc.json` for the canonical configs.)',
+        '`{{ref}}` is a stale ESLint/Biome reference — the fleet runs oxlint + oxfmt. Drop the line or swap to the oxlint/oxfmt equivalent. (See `template/.config/oxlintrc.json` / `oxfmtrc.json` for the canonical configs.) If this is a test fixture, rename to the neutral placeholder family `acme-*` (mirrors the `Acme Inc` convention from `fleet/public-surface-hygiene`).',
     },
     schema: [],
   },

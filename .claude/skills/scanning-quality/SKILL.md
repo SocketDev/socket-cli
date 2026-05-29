@@ -3,6 +3,8 @@ name: scanning-quality
 description: Scans the codebase for bugs, logic errors, cache races, workflow problems, insecure defaults, security regressions in the diff, and variant analysis on prior findings. Spawns specialized Task agents per scan type, deduplicates findings, and produces an A-F prioritized report. Use when preparing a release, investigating quality issues, running pre-merge checks, or whenever a recent diff touches security-sensitive code.
 user-invocable: true
 allowed-tools: Task, Read, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(pnpm run test:*), Bash(pnpm test:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*)
+model: claude-opus-4-8
+context: fork
 ---
 
 # scanning-quality

@@ -22,7 +22,7 @@ edit and is painful to review.
 
 Mechanism: a patch named `<x>.patch` may ship a companion **`<x>.files/`**
 directory whose tree mirrors the plugin cache root. `reapplyPluginPatches()`
-copies it into the cache (overwrite) *before* applying the diff, so the thin
+copies it into the cache (overwrite) _before_ applying the diff, so the thin
 diff's `import` of a sidecar module resolves. Example — the codex stdin fix
 ships `codex-1.0.1-stdin-eagain.files/scripts/lib/read-stdin-sync.mjs` (the
 30-line `readStdinSync` body) and the `.patch` is a 6-line diff that imports it

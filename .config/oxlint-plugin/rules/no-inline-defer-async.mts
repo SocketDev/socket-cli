@@ -4,14 +4,15 @@
  *   immediately. The author intent (wait for DOMContentLoaded) is silently
  *   ignored. Past incident: same shape bit a fleet project twice; rendered
  *   pages went silently broken when the script tried to operate on DOM nodes
- *   that didn't exist yet. Sibling: `.claude/hooks/inline-script-defer-guard/`
- *   catches this at edit time. This lint rule catches it at commit time when
- *   edits happened outside Claude. Detects: string literals (single-quoted,
- *   double-quoted, or template) containing `<script ...defer...>` or `<script
- *   ...async...>` lacking `src=`. The rule applies to TS/JS source — HTML /
- *   template files aren't lint-target by oxlint. Autofix: remove the `defer` /
- *   `async` attribute. The DOMContentLoaded wrap is a manual fix surfaced in
- *   the error message.
+ *   that didn't exist yet. Sibling:
+ *   `.claude/hooks/fleet/inline-script-defer-guard/` catches this at edit time.
+ *   This lint rule catches it at commit time when edits happened outside
+ *   Claude. Detects: string literals (single-quoted, double-quoted, or
+ *   template) containing `<script ...defer...>` or `<script ...async...>`
+ *   lacking `src=`. The rule applies to TS/JS source — HTML / template files
+ *   aren't lint-target by oxlint. Autofix: remove the `defer` / `async`
+ *   attribute. The DOMContentLoaded wrap is a manual fix surfaced in the error
+ *   message.
  */
 
 import { makeBypassChecker } from '../lib/comment-markers.mts'

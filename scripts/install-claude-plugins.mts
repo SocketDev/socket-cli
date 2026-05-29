@@ -21,9 +21,9 @@
  *      keep a dev-source override; let them remove it explicitly. Idempotent —
  *      running twice in a row is a no-op. Designed for `pnpm setup` wiring in
  *      every fleet repo. Pin discipline is enforced by
- *      `.claude/hooks/marketplace-comment-guard/`: every `plugins[].source.sha`
- *      in `marketplace.json` must have a row in `.claude-plugin/README.md` with
- *      matching version + sha + ISO date.
+ *      `.claude/hooks/fleet/marketplace-comment-guard/`: every
+ *      `plugins[].source.sha` in `marketplace.json` must have a row in
+ *      `.claude-plugin/README.md` with matching version + sha + ISO date.
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -81,8 +81,8 @@ const MARKETPLACE_URL = 'https://github.com/SocketDev/socket-wheelhouse'
 const SHA_PINNED_DIR_NAME = /^([0-9a-f]{12})-[0-9a-f]{8,}$/
 
 /**
- * The single owner of the `~/.claude/plugins/` base path — Claude Code's
- * plugin home, which holds both `installed_plugins.json` (the state file) and
+ * The single owner of the `~/.claude/plugins/` base path — Claude Code's plugin
+ * home, which holds both `installed_plugins.json` (the state file) and
  * `cache/<marketplace>/<plugin>/<version>/` (the per-plugin caches). Every
  * other reference derives from this one construction (1 path, 1 reference).
  * Returns `undefined` if HOME / USERPROFILE is unresolvable.
@@ -514,10 +514,10 @@ function resolvePluginCacheDir(
 
 /**
  * Strip the leading `# @key: value` / `#` comment header from a fleet-style
- * patch, returning just the unified-diff body (everything from the first
- * `--- ` line onward). Mirrors socket-btm's node-smol patch convention, where
- * the header carries provenance metadata and the apply step feeds only the
- * diff to `patch`. Returns an empty string if the file has no `--- ` line.
+ * patch, returning just the unified-diff body (everything from the first `--- `
+ * line onward). Mirrors socket-btm's node-smol patch convention, where the
+ * header carries provenance metadata and the apply step feeds only the diff to
+ * `patch`. Returns an empty string if the file has no `--- ` line.
  */
 export function stripPatchHeader(patchText: string): string {
   const idx = patchText.search(/^--- /m)

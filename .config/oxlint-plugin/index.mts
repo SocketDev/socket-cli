@@ -40,11 +40,13 @@ import preferAsyncSpawn from './rules/prefer-async-spawn.mts'
 import preferCachedForLoop from './rules/prefer-cached-for-loop.mts'
 import preferEllipsisChar from './rules/prefer-ellipsis-char.mts'
 import preferEnvAsBoolean from './rules/prefer-env-as-boolean.mts'
+import preferErrorMessage from './rules/prefer-error-message.mts'
 import preferExistsSync from './rules/prefer-exists-sync.mts'
 import preferFunctionDeclaration from './rules/prefer-function-declaration.mts'
 import preferNodeBuiltinImports from './rules/prefer-node-builtin-imports.mts'
 import preferNodeModulesDotCache from './rules/prefer-node-modules-dot-cache.mts'
 import preferNonCapturingGroup from './rules/prefer-non-capturing-group.mts'
+import preferPureCallForm from './rules/prefer-pure-call-form.mts'
 import preferSafeDelete from './rules/prefer-safe-delete.mts'
 import preferSeparateTypeImport from './rules/prefer-separate-type-import.mts'
 import preferSpawnOverExecsync from './rules/prefer-spawn-over-execsync.mts'
@@ -55,6 +57,7 @@ import socketApiTokenEnv from './rules/socket-api-token-env.mts'
 import sortBooleanChains from './rules/sort-boolean-chains.mts'
 import sortEqualityDisjunctions from './rules/sort-equality-disjunctions.mts'
 import sortNamedImports from './rules/sort-named-imports.mts'
+import sortObjectLiteralProperties from './rules/sort-object-literal-properties.mts'
 import sortRegexAlternations from './rules/sort-regex-alternations.mts'
 import sortSetArgs from './rules/sort-set-args.mts'
 import sortSourceMethods from './rules/sort-source-methods.mts'
@@ -100,11 +103,13 @@ const plugin = {
     'prefer-cached-for-loop': preferCachedForLoop,
     'prefer-ellipsis-char': preferEllipsisChar,
     'prefer-env-as-boolean': preferEnvAsBoolean,
+    'prefer-error-message': preferErrorMessage,
     'prefer-exists-sync': preferExistsSync,
     'prefer-function-declaration': preferFunctionDeclaration,
     'prefer-node-builtin-imports': preferNodeBuiltinImports,
     'prefer-node-modules-dot-cache': preferNodeModulesDotCache,
     'prefer-non-capturing-group': preferNonCapturingGroup,
+    'prefer-pure-call-form': preferPureCallForm,
     'prefer-safe-delete': preferSafeDelete,
     'prefer-separate-type-import': preferSeparateTypeImport,
     'prefer-spawn-over-execsync': preferSpawnOverExecsync,
@@ -115,6 +120,7 @@ const plugin = {
     'sort-boolean-chains': sortBooleanChains,
     'sort-equality-disjunctions': sortEqualityDisjunctions,
     'sort-named-imports': sortNamedImports,
+    'sort-object-literal-properties': sortObjectLiteralProperties,
     'sort-regex-alternations': sortRegexAlternations,
     'sort-set-args': sortSetArgs,
     'sort-source-methods': sortSourceMethods,

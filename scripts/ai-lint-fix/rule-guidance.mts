@@ -34,6 +34,93 @@ export const AI_HANDLED_RULES: ReadonlySet<string> = new Set([
 ])
 
 /**
+ * Capability tier per rule. The orchestrator picks the highest-tier model among
+ * a per-file batch's rules so a single Haiku-only file goes cheap, a mixed
+ * batch gets Sonnet, and any `max-file-lines` finding triggers Opus (module
+ * splits are real refactoring).
+ *
+ * Why per-rule rather than per-file or per-finding:
+ *
+ * - Per-finding would spawn N AI calls per file. Wasteful.
+ * - Per-file flat would route everything to Sonnet defensively. Wasteful too.
+ * - Per-rule + escalation matches the actual cost surface: simple regex-shaped
+ *   rewrites (identifier rename, null→undefined, fs.X → X) work fine on Haiku;
+ *   control-flow + caller-chain rewrites (fetch→httpJson, sync→async, fs.access
+ *   → existsSync) need Sonnet; module decomposition needs Opus.
+ *
+ * Tier order: `claude-haiku-4-5` < `claude-sonnet-4-6` < `claude-opus-4-8`. Add
+ * new rules to the right bucket when adding to AI_HANDLED_RULES.
+ */
+export const RULE_MODEL_TIER: Readonly<
+  Record<string, 'haiku' | 'opus' | 'sonnet'>
+> = {
+  __proto__: null,
+  // Identifier renames, single-token substitutions, namespace rewrites.
+  // The right rewrite is fully determined by the pattern that fired.
+  'socket/inclusive-language': 'haiku',
+  'socket/no-placeholders': 'haiku',
+  'socket/personal-path-placeholders': 'haiku',
+  'socket/prefer-node-builtin-imports': 'haiku',
+  'socket/prefer-undefined-over-null': 'haiku',
+  // Control-flow / caller-chain rewrites. Need to read surrounding code +
+  // reason about side effects (the `fs.access` Promise<boolean> collapse,
+  // the sync→async caller chain, the fetch → httpJson error-handling
+  // shape). Sonnet's reasoning is the right depth.
+  'socket/no-fetch-prefer-http-request': 'sonnet',
+  'socket/prefer-async-spawn': 'sonnet',
+  'socket/prefer-exists-sync': 'sonnet',
+  // Module decomposition. The model has to read the whole file, partition
+  // by domain, decide what each new module exports, and rewrite imports
+  // in every consumer. Real refactoring; Opus's depth pays back.
+  'socket/max-file-lines': 'opus',
+} as unknown as Readonly<Record<string, 'haiku' | 'opus' | 'sonnet'>>
+
+/**
+ * Map a tier label to the canonical Claude Code model ID. Centralized here so a
+ * global tier bump (Haiku 4.5 → 4.6, Sonnet 4.6 → 5.0, etc.) is a single-file
+ * edit and won't drift across the orchestrator + the docs.
+ */
+export const TIER_MODEL: Readonly<Record<'haiku' | 'opus' | 'sonnet', string>> =
+  {
+    __proto__: null,
+    haiku: 'claude-haiku-4-5',
+    sonnet: 'claude-sonnet-4-6',
+    opus: 'claude-opus-4-8',
+  } as Readonly<Record<'haiku' | 'opus' | 'sonnet', string>>
+
+/**
+ * Pick the highest tier present in a per-file batch's rule set. Returns a tier
+ * label; the caller resolves it to a model via `TIER_MODEL`. Default (no
+ * recognized rules in batch) is `sonnet` — the historical baseline.
+ *
+ * `ruleIds` is a concrete array (not `Iterable<string>`) so the loop can use
+ * the cached-length for-loop idiom the fleet's `prefer-cached-for-loop` lint
+ * rule enforces. Callers in cli.mts already build a string[] via
+ * `findings.map(f => f.ruleId).filter(...)`.
+ */
+export function escalateTier(
+  ruleIds: readonly string[],
+): 'haiku' | 'opus' | 'sonnet' {
+  let highest: 'haiku' | 'opus' | 'sonnet' = 'haiku'
+  let sawAny = false
+  for (let i = 0, { length } = ruleIds; i < length; i += 1) {
+    const tier = RULE_MODEL_TIER[ruleIds[i]!]
+    if (!tier) {
+      continue
+    }
+    sawAny = true
+    if (tier === 'opus') {
+      return 'opus'
+    }
+    if (tier === 'sonnet') {
+      highest = 'sonnet'
+    }
+  }
+  // No recognized rules → fall back to sonnet (historical default).
+  return sawAny ? highest : 'sonnet'
+}
+
+/**
  * Per-rule guidance — concise, low-freedom (one canonical rewrite per rule).
  * Built per Anthropic's prompt-engineering best practices: direct instructions,
  * XML structure, examples per rule.

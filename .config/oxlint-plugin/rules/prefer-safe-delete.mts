@@ -21,7 +21,8 @@
  *   - Calls whose result is checked/assigned in a way that depends on fs.rm's
  *     specific throw-on-missing or callback contract. Spawn-based bans (`rm
  *     -rf`, `Remove-Item`) live in a separate hook
- *     (`.claude/hooks/path-guard/`) — this rule covers the JavaScript side.
+ *     (`.claude/hooks/fleet/path-guard/`) — this rule covers the JavaScript
+ *     side.
  */
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'

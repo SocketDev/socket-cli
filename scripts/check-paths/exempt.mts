@@ -3,10 +3,15 @@
  *   legitimately enumerate path segments — the canonical constructors
  *   (`paths.mts`), build-infra helpers, and the scanners / hooks that READ the
  *   segment vocabulary in order to flag everyone else. Pure data + predicate;
- *   no I/O.
+ *   no I/O. Paths are normalized to forward-slash form before matching so the
+ *   regexes work on Windows too — see [`docs/claude.md/fleet/code-style.md`]
+ *   (cross-platform path matching).
  */
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 // File-path patterns that legitimately enumerate path segments.
+// Match against `normalizePath(filePath)` only — never raw paths.
 export const EXEMPT_FILE_PATTERNS: RegExp[] = [
   // Any paths.mts is the canonical constructor.
   /(?:^|\/)paths\.(?:cts|js|mts)$/,
@@ -17,10 +22,12 @@ export const EXEMPT_FILE_PATTERNS: RegExp[] = [
   /scripts\/check-paths\.mts$/,
   /scripts\/check-paths\//,
   /scripts\/check-consistency\.mts$/,
-  /\.claude\/hooks\/path-guard\//,
+  /\.claude\/hooks\/fleet\/path-guard\//,
   // Allowlist + config files.
   /\.github\/paths-allowlist\.yml$/,
 ]
 
-export const isExempt = (filePath: string): boolean =>
-  EXEMPT_FILE_PATTERNS.some(re => re.test(filePath))
+export function isExempt(filePath: string): boolean {
+  const normalized = normalizePath(filePath)
+  return EXEMPT_FILE_PATTERNS.some(re => re.test(normalized))
+}

@@ -25,7 +25,7 @@ If they don't, proceed with SFW free mode.
 Then run:
 
 ```bash
-node .claude/hooks/setup-security-tools/index.mts
+node .claude/hooks/fleet/setup-security-tools/index.mts
 ```
 
 After the script completes, add the SFW shim directory to PATH:
@@ -42,4 +42,4 @@ export PATH="$HOME/.socket/_wheelhouse/shims:$PATH"
 - SFW binary is cached via dlx at `~/.socket/_dlx/`
 - SFW shims are shared across repos at `~/.socket/_wheelhouse/shims/`
 - `.env.local` must NEVER be committed
-- `/update` will check for new versions of these tools via `node .claude/hooks/setup-security-tools/update.mts`
+- `/update` will check for new versions of these tools via `node .claude/hooks/fleet/setup-security-tools/update.mts`

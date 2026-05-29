@@ -91,6 +91,6 @@ the user runs the publish workflow manually.
 
 ## See also
 
-- `.claude/hooks/version-bump-order-guard/`: enforces the bump-at-tip + tag-after-bump ordering.
-- `.claude/hooks/release-workflow-guard/`: blocks `gh workflow run` dispatches that aren't dry-run.
+- `.claude/hooks/fleet/version-bump-order-guard/`: enforces the bump-at-tip + tag-after-bump ordering.
+- `.claude/hooks/fleet/release-workflow-guard/`: blocks `gh workflow run` dispatches that aren't dry-run.
 - [`immutable-releases.md`](immutable-releases.md): every GitHub Release that lands as a result of this sequence ships immutable (Sigstore release attestation, asset lock, tag protection). The release workflow MUST use the 3-step draft → upload → publish pattern; single-call `gh release create <tag> <files>` is forbidden.

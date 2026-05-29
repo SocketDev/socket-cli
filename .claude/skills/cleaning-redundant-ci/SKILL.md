@@ -3,6 +3,8 @@ name: cleaning-redundant-ci
 description: Sweeps a fleet repo (or every fleet repo) for redundant CI surface. Three classes: orphan workflow YAML files (lint.yml / check.yml / type.yml / test.yml that the unified ci.yml replaced), GitHub-Dependabot auto-fix PRs that the fleet handles via /updating-security, and stale workflow run history in the Actions sidebar. Deletes the YAML files, disables Dependabot automated-security-fixes via gh api, and reports anything that needs a manual UI toggle. Once-and-never-again sweep meant to leave a repo clean.
 user-invocable: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash(gh:*), Bash(git:*), Bash(ls:*), Bash(rm:*), Bash(find:*), Bash(jq:*)
+model: claude-haiku-4-5
+context: fork
 ---
 
 # cleaning-redundant-ci

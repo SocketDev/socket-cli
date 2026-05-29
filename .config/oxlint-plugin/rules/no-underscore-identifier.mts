@@ -7,8 +7,8 @@
  *   languages where it has runtime meaning (Python name mangling, Ruby
  *   visibility); in TS the underscore is decorative and adds noise to `git
  *   blame` and IDE autocomplete. Commit-time partner of the edit-time
- *   `.claude/hooks/no-underscore-identifier-guard/`. Allowed (skipped by this
- *   rule):
+ *   `.claude/hooks/fleet/no-underscore-identifier-guard/`. Allowed (skipped by
+ *   this rule):
  *
  *   - Bare `_` as a throwaway (`for (const _ of arr)`, destructuring rest).
  *   - Files under any `_internal/` directory — the canonical structural pattern
@@ -25,6 +25,14 @@ import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 const UNDERSCORE_NAME_RE = /^_[A-Za-z]/
 
+// Node CJS exposes `__dirname` and `__filename` as module-scoped free
+// variables. ESM modules conventionally re-create them with
+// `path.dirname(fileURLToPath(import.meta.url))` etc., which means the
+// identifiers appear in a `const ... = ...` declaration. Treat those
+// declarations as allowed — they're not a `_internal` marker, they're
+// matching Node's published names.
+const ALLOWED_FREE_VARS = new Set(['__dirname', '__filename'])
+
 function isInInternalDir(filename: string): boolean {
   return filename.includes('/_internal/')
 }
@@ -35,6 +43,9 @@ function checkIdentifier(
   name: string | undefined,
 ): void {
   if (!name || !UNDERSCORE_NAME_RE.test(name)) {
+    return
+  }
+  if (ALLOWED_FREE_VARS.has(name)) {
     return
   }
   context.report({

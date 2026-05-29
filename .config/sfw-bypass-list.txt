@@ -50,6 +50,12 @@ bypass:cmake.org
 bypass:sh.rustup.rs
 bypass:nodejs.org
 bypass:bootstrap.pypa.io
+# OrbStack — recommended macOS Docker runtime for Dockerfile-based builds
+# (socket-btm glibc/musl node-smol images). The /download endpoint on
+# orbstack.dev 307-redirects to the cdn-updates.orbstack.dev .dmg; a
+# `brew install --cask orbstack` onboarding step hits both.
+bypass:orbstack.dev
+bypass:cdn-updates.orbstack.dev
 
 # Go module proxy + toolchain auto-download. proxy.golang.org serves
 # modules and 302s to storage.googleapis.com for the

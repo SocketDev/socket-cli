@@ -3,6 +3,8 @@ name: scanning-security
 description: Runs a multi-tool security scan: AgentShield for Claude config, zizmor for GitHub Actions, and optionally Socket CLI for dependency scanning. Produces an A-F graded security report. Use after modifying `.claude/` config, hooks, agents, or GitHub Actions workflows, and before releases.
 user-invocable: true
 allowed-tools: Task, Read, Bash(pnpm exec agentshield:*), Bash(zizmor:*), Bash(command -v:*), Bash(find .cache/external-tools/zizmor:*)
+model: claude-opus-4-8
+context: fork
 ---
 
 # scanning-security

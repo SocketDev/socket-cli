@@ -1,26 +1,24 @@
 /**
- * @file Per CLAUDE.md "Imports" rule: `node:fs` cherry-picks (`existsSync`,
- *   `promises as fs`); `path` / `os` / `url` / `crypto` use default imports.
- *   Exception: `fileURLToPath` from `node:url`. The fleet's Node-builtin import
+ * @file Per CLAUDE.md "Imports" rule: `node:fs` and `node:url` cherry-pick
+ *   (`existsSync`, `promises as fs`; `fileURLToPath`, `pathToFileURL`); `path`
+ *   / `os` / `crypto` use default imports. The fleet's Node-builtin import
  *   shape is asymmetric on purpose:
  *
  *   - `node:fs` is large; cherry-picking is the canonical idiom and keeps the
  *     import line meaningful (you can read off which fs APIs the module
  *     actually uses).
- *   - `node:path`, `node:os`, `node:url`, `node:crypto` are small; a default
- *     import (`import path from 'node:path'`) reads cleaner than four named
- *     imports and matches the way most fleet code references `path.join` /
- *     `path.resolve` / `path.dirname`.
- *   - `fileURLToPath` is the documented exception — named import from `node:url`
- *     is allowed because every caller uses just that one symbol and
- *     `url.fileURLToPath(import.meta.url)` reads worse than
- *     `fileURLToPath(import.meta.url)`. Detects:
+ *   - `node:url` is also cherry-picked: callers use just `fileURLToPath` /
+ *     `pathToFileURL`, and `url.fileURLToPath(import.meta.url)` reads worse
+ *     than the named form. So `node:url` is not default-import-required.
+ *   - `node:path`, `node:os`, `node:crypto` are small; a default import (`import
+ *     path from 'node:path'`) reads cleaner than four named imports and matches
+ *     the way most fleet code references `path.join` / `path.resolve` /
+ *     `path.dirname`. Detects:
  *   - `import fs from 'node:fs'` / `import * as fs from 'node:fs'` — recommends
  *     named imports.
  *   - `import { join, resolve } from 'node:path'` — recommends default import +
  *     dotted access (`path.join`, `path.resolve`).
- *   - Same for `node:os`, `node:url` (with `fileURLToPath` exception),
- *     `node:crypto`. Autofix:
+ *   - Same for `node:os`, `node:crypto`. Autofix:
  *   - `import { join } from 'node:path'` → `import path from 'node:path'` AND
  *     every `join(...)` reference in the file is rewritten to `path.join(...)`.
  *     Same shape for os/url/crypto. Skipped when the file already has a default
@@ -33,22 +31,23 @@
  *     (computed access `fs[expr]`, spread `...fs`, passed as a value `fn(fs)`,
  *     reassignment). Those need human eyes — the rewrite would lose semantics.
  *     b) collected names collide with existing top-level bindings in the file.
+ *     (os/crypto follow the path autofix shape; url and fs are cherry-picked.)
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
-const PREFER_DEFAULT = ['node:path', 'node:os', 'node:url', 'node:crypto']
+const PREFER_DEFAULT = ['node:path', 'node:os', 'node:crypto']
 const DEFAULT_LOCAL = {
   'node:path': 'path',
   'node:os': 'os',
-  'node:url': 'url',
   'node:crypto': 'crypto',
 }
 
-// `fileURLToPath` is the documented exception per CLAUDE.md.
-const NAMED_EXCEPTIONS = {
-  'node:url': new Set(['fileURLToPath']),
-}
+// `node:url` is fully cherry-pickable (like `node:fs`): callers typically use
+// just `fileURLToPath` / `pathToFileURL`, and `url.fileURLToPath(...)` reads
+// worse than the named form. So `node:url` is not in PREFER_DEFAULT at all —
+// no per-name exception list is needed.
+const NAMED_EXCEPTIONS: Record<string, Set<string>> = {}
 
 /**
  * @type {import('eslint').Rule.RuleModule}
@@ -58,7 +57,7 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Use cherry-pick named imports for node:fs and default imports for node:path / os / url / crypto. Per CLAUDE.md "Imports" rule.',
+        'Use cherry-pick named imports for node:fs / node:url and default imports for node:path / os / crypto. Per CLAUDE.md "Imports" rule.',
       category: 'Best Practices',
       recommended: true,
     },

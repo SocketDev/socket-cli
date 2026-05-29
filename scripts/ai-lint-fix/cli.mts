@@ -42,7 +42,12 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { AI_HANDLED_RULES, RULE_GUIDANCE } from './rule-guidance.mts'
+import {
+  AI_HANDLED_RULES,
+  RULE_GUIDANCE,
+  TIER_MODEL,
+  escalateTier,
+} from './rule-guidance.mts'
 
 const logger = getDefaultLogger()
 
@@ -207,7 +212,7 @@ function bucketFindings(files: OxlintFile[]): Map<string, OxlintMessage[]> {
   for (let i = 0, { length } = files; i < length; i += 1) {
     const f = files[i]!
     const handled = f.messages.filter(
-      m => m.ruleId && AI_HANDLED_RULES.has(m.ruleId),
+      m => m.ruleId !== undefined && AI_HANDLED_RULES.has(m.ruleId),
     )
     if (handled.length === 0) {
       continue
@@ -329,15 +334,20 @@ async function runClaudeFix(
   _filePath: string,
   prompt: string,
   cwd: string,
+  model: string,
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   // AI_PROFILE.edit = in-place edits only (Edit on existing files, no
   // Write/MultiEdit) — exactly the lint-fix contract: the prompt forbids
   // creating files. spawnAiAgent owns the --no-session-persistence /
   // --add-dir / 529-retry the hand-rolled version used to duplicate.
+  // The model is picked per-file by the caller via escalateTier() — see
+  // RULE_MODEL_TIER in rule-guidance.mts. Simple regex-shaped rewrites
+  // run on Haiku; control-flow + caller-chain rewrites run on Sonnet;
+  // module-split refactors (`socket/max-file-lines`) run on Opus.
   const { exitCode, stderr, stdout } = await spawnAiAgent({
     ...AI_PROFILE.edit,
     cwd,
-    model: 'claude-sonnet-4-6',
+    model,
     prompt,
     timeoutMs: 5 * 60 * 1000,
   })
@@ -385,9 +395,23 @@ async function main(): Promise<void> {
 
   for (const [filePath, findings] of byFile) {
     const rel = path.relative(cwd, filePath)
-    logger.log(`AI-fix ${rel} (${findings.length} findings)…`)
+    // Pick the model from the highest-tier rule in this file's batch.
+    // Pure-Haiku files (identifier renames, null→undefined, etc.) run
+    // cheap; any caller-chain rewrite escalates to Sonnet; a
+    // `socket/max-file-lines` finding escalates to Opus.
+    const ruleIds = findings
+      .map(f => f.ruleId)
+      .filter((r): r is string => typeof r === 'string')
+    const tier = escalateTier(ruleIds)
+    const model = TIER_MODEL[tier]
+    logger.log(`AI-fix ${rel} (${findings.length} findings, ${tier})…`)
     const prompt = buildPrompt(filePath, findings)
-    const { exitCode, stderr } = await runClaudeFix(filePath, prompt, cwd)
+    const { exitCode, stderr } = await runClaudeFix(
+      filePath,
+      prompt,
+      cwd,
+      model,
+    )
     if (exitCode === 0) {
       totalEdits += findings.length
       continue

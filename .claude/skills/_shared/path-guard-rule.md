@@ -7,7 +7,7 @@ This file is the source of truth for the rule's wording. Three artifacts
 embed (or paraphrase) it:
 
   1. CLAUDE.md — every Socket repo's instructions to Claude.
-  2. .claude/hooks/path-guard/README.md — what the hook blocks.
+  2. .claude/hooks/fleet/path-guard/README.md — what the hook blocks.
   3. .claude/skills/guarding-paths/SKILL.md — what the skill enforces.
 
 If the wording changes here, re-run `node scripts/sync-scaffolding.mts
@@ -32,7 +32,7 @@ Code execution takes priority over docs: violations in `.mts`/`.cts`, Makefiles,
 
 ### Three-level enforcement
 
-- **Hook** — `.claude/hooks/path-guard/` blocks `Edit`/`Write` calls that would introduce a violation in a `.mts`/`.cts` file. Refusal at edit time stops new duplication from landing.
+- **Hook** — `.claude/hooks/fleet/path-guard/` blocks `Edit`/`Write` calls that would introduce a violation in a `.mts`/`.cts` file. Refusal at edit time stops new duplication from landing.
 - **Gate** — `scripts/check-paths.mts` runs in `pnpm check`. Fails the build on any violation that isn't allowlisted.
 - **Skill** — `/guarding-paths` audits the repo and fixes findings; `/guarding-paths check` reports only; `/guarding-paths install` drops the gate + hook + rule into a fresh repo.
 

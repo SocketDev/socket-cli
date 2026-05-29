@@ -1,6 +1,6 @@
 /**
  * @file Canonical fleet janus launcher. Forwards argv to the janus binary
- *   installed by `.claude/hooks/setup-security-tools/` under the shared
+ *   installed by `.claude/hooks/fleet/setup-security-tools/` under the shared
  *   wheelhouse dir
  *   (`~/.socket/_wheelhouse/janus/<version>/<platform-arch>/janus`) so every
  *   fleet member's `pnpm run janus -- <args>` resolves to the same SHA-verified

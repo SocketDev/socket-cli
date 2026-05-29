@@ -50,6 +50,41 @@ function calleeRootsAtExpect(callee: AstNode | undefined): boolean {
   return false
 }
 
+// Is this CallExpression the inner `expect(<actual>)` call itself (callee is the
+// bare `expect` identifier)? Its argument is the system-under-test / actual
+// value, which legitimately comes from `src/` — never flag it.
+function isExpectActualCall(node: AstNode): boolean {
+  return (
+    node.type === 'CallExpression' &&
+    node.callee?.type === 'Identifier' &&
+    node.callee.name === 'expect'
+  )
+}
+
+// Matchers whose argument is a class/constructor reference for an identity
+// check, not a built expected value. The src class MUST be used here so
+// `instanceof` holds (the -stable alias is a different module instance).
+const CLASS_IDENTITY_MATCHERS = new Set([
+  'toThrow',
+  'toThrowError',
+  'toBeInstanceOf',
+  'rejects',
+])
+
+// Given an `expect(...).<matcher>(...)` chain node, return the matcher name
+// (`toBe`, `toThrow`, …) if the call is the matcher invocation, else undefined.
+function matcherName(node: AstNode): string | undefined {
+  if (
+    node.type === 'CallExpression' &&
+    node.callee?.type === 'MemberExpression' &&
+    !node.callee.computed &&
+    node.callee.property?.type === 'Identifier'
+  ) {
+    return node.callee.property.name
+  }
+  return undefined
+}
+
 // Collect every Identifier name used in a value position within `node`'s
 // subtree. Skips non-computed member property names (`.foo`) and object
 // literal keys, which aren't real references to a binding.
@@ -64,6 +99,17 @@ function collectValueIdentifiers(node: AstNode, out: Set<string>): void {
     return
   }
   if (typeof node.type !== 'string') {
+    return
+  }
+  // `X.prototype` is a class-identity reference, not a built expected value —
+  // `expect(Object.getPrototypeOf(x)).toBe(X.prototype)` must use the src class
+  // (the -stable alias is a different object). Treat it like a class matcher.
+  if (
+    node.type === 'MemberExpression' &&
+    !node.computed &&
+    node.property?.type === 'Identifier' &&
+    node.property.name === 'prototype'
+  ) {
     return
   }
   if (node.type === 'Identifier') {
@@ -159,9 +205,17 @@ const rule = {
           if (typeof node.type !== 'string') {
             return
           }
+          // Only matcher invocations build the EXPECTED value:
+          // `expect(actual).toBe(<expected>)`. Skip the inner `expect(actual)`
+          // call (its argument is the system-under-test), and skip
+          // class-identity matchers (`.toThrow(PurlError)` /
+          // `.toBeInstanceOf(X)`) whose argument must be the src class so
+          // `instanceof` holds.
           if (
             node.type === 'CallExpression' &&
             calleeRootsAtExpect(node.callee) &&
+            !isExpectActualCall(node) &&
+            !CLASS_IDENTITY_MATCHERS.has(matcherName(node) ?? '') &&
             Array.isArray(node.arguments)
           ) {
             const used = new Set<string>()

@@ -3,6 +3,8 @@ name: auditing-gha-settings
 description: Audits a repo's GitHub Actions permissions + allowlist against the fleet baseline. Reports drift only. Fixes are manual in Settings → Actions because flipping these silently is unsafe. Use when a CI failure looks like "action X is not allowed to be used", when onboarding a new fleet repo, or as a periodic fleet-wide health check.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(gh:*), Bash(node:*), Bash(jq:*)
+model: claude-haiku-4-5
+context: fork
 ---
 
 # auditing-gha-settings

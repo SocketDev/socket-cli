@@ -21,6 +21,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
 
 const logger = getDefaultLogger()
 
@@ -87,6 +88,69 @@ function readToolUses(transcriptPath: string): ToolUseEvent[] {
   return out
 }
 
+/**
+ * Walk a shell command's parsed tokens and return the args of each invocation
+ * whose leading tokens match `cmdLine` (e.g. `['sudo']`, `['gh', 'auth',
+ * 'refresh']`). Returns an empty array when no invocation matches.
+ *
+ * Will be lifted to `@socketsecurity/lib-stable/shell/parse` in the next lib
+ * bump (the exports are already on socket-lib's `src/` but haven't shipped
+ * yet). Keep this inline copy until the cascade can pin the new lib version;
+ * remove it then.
+ *
+ * Uses the AST-based `parseShell` (wraps `shell-quote`) so the matcher sees
+ * actual invocations only, not embedded args (`echo "sudo foo"`), variable
+ * substitutions (`$gh`), or command substitution (`$(...)`). Treats `&&`, `;`,
+ * `||`, `|` as segment terminators so chained commands each get their own
+ * scan.
+ */
+function findInvocations(
+  command: string,
+  cmdLine: readonly string[],
+): readonly string[][] {
+  // shell-quote is permissive — partial parses don't throw; the walk
+  // below tolerates any shape it returns.
+  const entries = parseShell(command)
+  const segments: string[][] = [[]]
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]
+    if (entry && typeof entry === 'object' && 'op' in entry) {
+      segments.push([])
+      continue
+    }
+    if (typeof entry === 'string') {
+      segments[segments.length - 1]!.push(entry)
+    }
+  }
+  const matches: string[][] = []
+  for (let i = 0, { length } = segments; i < length; i += 1) {
+    const seg = segments[i]!
+    if (seg.length < cmdLine.length) {
+      continue
+    }
+    let ok = true
+    for (let j = 0, { length: cl } = cmdLine; j < cl; j += 1) {
+      if (seg[j] !== cmdLine[j]) {
+        ok = false
+        break
+      }
+    }
+    if (ok) {
+      matches.push(seg.slice(cmdLine.length))
+    }
+  }
+  return matches
+}
+
+/**
+ * Convenience: does `command` contain at least one invocation of `cmdLine`?
+ * Equivalent to `findInvocations(command, cmdLine).length > 0`. The most common
+ * audit-pattern shape.
+ */
+function commandInvokes(command: string, cmdLine: readonly string[]): boolean {
+  return findInvocations(command, cmdLine).length > 0
+}
+
 const PATTERNS: ReadonlyArray<{
   severity: Finding['severity']
   category: string
@@ -106,9 +170,27 @@ const PATTERNS: ReadonlyArray<{
     severity: 'critical',
     category: 'gh auth refresh -s workflow (workflow scope grant)',
     tool: 'Bash',
-    matches: c =>
-      /\bgh\s+auth\s+refresh\b/.test(c) &&
-      /(?:^|\s)(?:--scopes|-s)\b[^|;&]*\bworkflow\b/.test(c),
+    matches: c => {
+      // For each `gh auth refresh ...` invocation, check whether its
+      // args carry a `-s|--scopes ...workflow...` pair. The AST walk
+      // ensures we only inspect args of the actual gh invocation —
+      // `echo "gh auth refresh -s workflow"` doesn't trip the matcher.
+      const invocations = findInvocations(c, ['gh', 'auth', 'refresh'])
+      for (let i = 0, { length } = invocations; i < length; i += 1) {
+        const args = invocations[i]!
+        for (let j = 0, { length: al } = args; j < al; j += 1) {
+          const a = args[j]
+          if (a !== '-s' && a !== '--scopes') {
+            continue
+          }
+          const value = args[j + 1] ?? ''
+          if (value.includes('workflow')) {
+            return true
+          }
+        }
+      }
+      return false
+    },
   },
   {
     severity: 'critical',
@@ -140,7 +222,7 @@ const PATTERNS: ReadonlyArray<{
     category: 'sudo invocation (non-cached)',
     tool: 'Bash',
     matches: c =>
-      /(?:^|\s|;|&&|\|\|)sudo\s+/.test(c) && !/\bsudo\s+-k\b/.test(c),
+      commandInvokes(c, ['sudo']) && !commandInvokes(c, ['sudo', '-k']),
   },
   // WARN — unusual surfaces that should be checked.
   {
@@ -223,6 +305,7 @@ function findRecentTranscript(): string | undefined {
   // `/` becomes the leading `-` automatically since the replace
   // operates on the whole path. (So `/Users/foo` → `-Users-foo`, not
   // `--Users-foo`.)
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- audit-transcript intentionally reads the user-invoked cwd to look up the matching Claude Code transcript dir; anchoring on the script's own location would always return the wheelhouse transcripts.
   const encoded = process.cwd().replace(/\//g, '-')
   const dir = path.join(os.homedir(), '.claude', 'projects', encoded)
   if (!existsSync(dir)) {

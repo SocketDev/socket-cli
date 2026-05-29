@@ -4,7 +4,7 @@
 // the scan dirs declared in .config/lock-step-refs.json, greps every
 // canonical `Lock-step (with|from) <Lang>: <path>` comment, and fails
 // when the path doesn't resolve. Companion edit-time hook is
-// .claude/hooks/lock-step-ref-guard/.
+// .claude/hooks/fleet/lock-step-ref-guard/.
 //
 // Test strategy: build a tmpdir repo with a known set of source files +
 // a config + (optionally) the target files the refs claim. Spawn the

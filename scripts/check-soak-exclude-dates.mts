@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * @file Whole-file commit-time gate that mirrors the edit-time
- *   `.claude/hooks/soak-exclude-date-annotation-guard/`. Scans the repo's
+ *   `.claude/hooks/fleet/soak-exclude-date-annotation-guard/`. Scans the repo's
  *   `pnpm-workspace.yaml` `minimumReleaseAgeExclude:` block and reports any
  *   per-package exact-pin entry missing the canonical `# published: YYYY-MM-DD
  *   | removable: YYYY-MM-DD` annotation. Why the second surface (hook +

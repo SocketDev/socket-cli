@@ -3,6 +3,8 @@ name: updating-coverage
 description: Refresh the coverage badge in the root README by running the repo's coverage script and rewriting the `![Coverage](https://img.shields.io/badge/coverage-<PCT>%25-brightgreen)` line. Sibling of `updating-security` / `updating-lockstep` under the `updating` umbrella.
 user-invocable: true
 allowed-tools: Read, Edit, Bash(pnpm run cover:*), Bash(pnpm run coverage:*), Bash(pnpm run test:cover:*), Bash(node:*), Bash(git:*), Bash(jq:*), Bash(cat:*)
+model: claude-haiku-4-5
+context: fork
 ---
 
 # updating-coverage

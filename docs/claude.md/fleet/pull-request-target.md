@@ -21,4 +21,4 @@ If you genuinely need `pull_request_target` semantics (e.g. to access a secret-d
 
 ## Enforcement
 
-The `.claude/hooks/pull-request-target-guard/` hook scans workflow YAML for the combo and blocks edits that introduce it. The hook is byte-identical across fleet repos; the rule is the contract, the hook is the enforcer.
+The `.claude/hooks/fleet/pull-request-target-guard/` hook scans workflow YAML for the combo and blocks edits that introduce it. The hook is byte-identical across fleet repos; the rule is the contract, the hook is the enforcer.

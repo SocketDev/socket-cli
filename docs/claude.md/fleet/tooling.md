@@ -16,11 +16,11 @@ User-facing install commands in fenced code blocks must show the pnpm form first
 
 ## New dependencies + soak
 
-Every new dep added to `package.json` runs a Socket-score check at edit time. Low-scoring deps block (enforced by `.claude/hooks/check-new-deps/`). The 7-day `minimumReleaseAge` soak is malware protection. Never add to `pnpm-workspace.yaml` `minimumReleaseAge.exclude[]` (bypass `Allow minimumReleaseAge bypass` for emergency CVE patches; enforced by `.claude/hooks/minimum-release-age-guard/`).
+Every new dep added to `package.json` runs a Socket-score check at edit time. Low-scoring deps block (enforced by `.claude/hooks/fleet/check-new-deps/`). The 7-day `minimumReleaseAge` soak is malware protection. Never add to `pnpm-workspace.yaml` `minimumReleaseAge.exclude[]` (bypass `Allow minimumReleaseAge bypass` for emergency CVE patches; enforced by `.claude/hooks/fleet/minimum-release-age-guard/`).
 
-Every per-package soak-bypass entry (the `'pkg@1.2.3'` exact-pin form) MUST carry a `# published: YYYY-MM-DD | removable: YYYY-MM-DD` annotation as the LAST comment line above the bullet. `published` is the version's npm publish date; `removable` is `published + 7d` so a periodic cleanup can drop entries that no longer need the bypass (enforced by `.claude/hooks/soak-exclude-date-annotation-guard/` at edit time + `scripts/check-soak-exclude-dates.mts` at commit time).
+Every per-package soak-bypass entry (the `'pkg@1.2.3'` exact-pin form) MUST carry a `# published: YYYY-MM-DD | removable: YYYY-MM-DD` annotation as the LAST comment line above the bullet. `published` is the version's npm publish date; `removable` is `published + 7d` so a periodic cleanup can drop entries that no longer need the bypass (enforced by `.claude/hooks/fleet/soak-exclude-date-annotation-guard/` at edit time + `scripts/check-soak-exclude-dates.mts` at commit time).
 
-Vitest `include` globs must not match `node:test` files. Mismatched runners produce confusing "no test suite found" errors (enforced by `.claude/hooks/vitest-include-vs-node-test-guard/`).
+Vitest `include` globs must not match `node:test` files. Mismatched runners produce confusing "no test suite found" errors (enforced by `.claude/hooks/fleet/vitest-include-vs-node-test-guard/`).
 
 ## Bundler
 
@@ -118,3 +118,40 @@ Bump the `-stable` alias in lockstep with the plain catalog pin on every release
 **Why:** Past incident — socket-lib's git-hooks imported `@socketsecurity/lib/logger/default` (bare). In socket-lib that resolves to local `src/`; during a version straddle the `logger/default` subpath didn't exist in the working tree yet, so every commit threw `ERR_PACKAGE_PATH_NOT_EXPORTED`. The `-stable` alias would have resolved to the published package that already had the subpath.
 
 Enforced by the fixable `socket/prefer-stable-self-import` oxlint rule (rewrites the package segment, preserving the subpath). The deterministic published-dependency surface for scripted/AI-driven tooling follows [Claude prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices) — generated edits build against a stable contract, not a moving local-src target.
+
+## Docker runtime (macOS)
+
+Repos with Dockerfile-based cross-builds (socket-btm's `glibc`/`musl`
+node-smol images) need a local Docker engine. On macOS the recommended
+runtime is **[OrbStack](https://docs.orbstack.dev/)** ([download](https://orbstack.dev/download)) —
+a faster, lighter drop-in for Docker Desktop (lower memory, near-instant
+start, native `docker` CLI compatibility). macOS-only; Linux dev hosts use
+the distro's native Docker/Podman and don't need it. It's a recommended
+dev convenience, not a build requirement — CI builds run on Linux runners
+with native Docker, so OrbStack only affects local Mac iteration. Repos
+that consume it pin it in their own `external-tools.json` (per-repo, not
+template) and may wire a `brew install --cask orbstack` onboarding step.
+
+## Local CI runs (`agent-ci`)
+
+[`@redwoodjs/agent-ci`](https://agent-ci.dev/#quick-start) runs a repo's
+GitHub Actions workflows locally in a Linux container (official runner
+binary, bind-mounted deps for near-instant startup, pauses-on-failure for
+debugging). Optional, local-dev only; needs a Docker runtime (see above).
+
+**Run it through the fleet dlx, never raw `npx`** (the `NEVER npx` rule
+applies — `@socketsecurity/lib/dlx/package`'s `dlxPackage` + `executePackage`
+download + integrity-verify the pinned package through Socket Firewall):
+
+```mts
+import { dlxPackage, executePackage } from '@socketsecurity/lib/dlx/package'
+// version resolves from the repo's external-tools.json `agent-ci` pin
+```
+
+**Limitations** ([compatibility](https://agent-ci.dev/compatibility)) — it
+**skips reusable workflows** (so the fleet `ci.yml`'s
+`SocketDev/socket-registry/.github/workflows/*` uses are skipped with a
+warning), has no GH-secret access, no concurrency groups, and a simplified
+job-`if` evaluator. Useful for the self-contained `ci.yml` jobs (lint /
+type / test matrix), not the provenance/release reusable workflows. Repos
+that adopt it pin the version in their own `external-tools.json`.

@@ -4,37 +4,37 @@ The CLAUDE.md `### Token hygiene` section is the headline rule plus the canonica
 
 ## Headline
 
-Never emit the raw value of any secret to tool output, commits, comments, or replies. The `.claude/hooks/token-guard/` `PreToolUse` hook blocks the deterministic patterns (literal token shapes, env dumps, `.env*` reads, unfiltered `curl -H "Authorization:"`, sensitive-name commands without redaction). When the hook blocks a command, rewrite. Don't bypass.
+Never emit the raw value of any secret to tool output, commits, comments, or replies. The `.claude/hooks/fleet/token-guard/` `PreToolUse` hook blocks the deterministic patterns (literal token shapes, env dumps, `.env*` reads, unfiltered `curl -H "Authorization:"`, sensitive-name commands without redaction). When the hook blocks a command, rewrite. Don't bypass.
 
 Behavior the hook can't catch: redact `token` / `jwt` / `access_token` / `refresh_token` / `api_key` / `secret` / `password` / `authorization` fields when citing API responses. Show key _names_ only when displaying `.env.local`. If a user pastes a secret, treat it as compromised and ask them to rotate.
 
-Full hook spec in [`.claude/hooks/token-guard/README.md`](../../.claude/hooks/token-guard/README.md).
+Full hook spec in [`.claude/hooks/fleet/token-guard/README.md`](../../.claude/hooks/fleet/token-guard/README.md).
 
 ## Where tokens live
 
-Tokens belong in env vars (CI) or the OS keychain (dev local). Nowhere else. Never in `.env` / `.env.local` / `.envrc` / `~/.sfw.config` / `~/.config/socket/*` / any dotfile. Dotfiles leak via accidental commits, file-indexers, backup clients, shell-history dumps. Enforced by `.claude/hooks/no-token-in-dotenv-guard/`.
+Tokens belong in env vars (CI) or the OS keychain (dev local). Nowhere else. Never in `.env` / `.env.local` / `.envrc` / `~/.sfw.config` / `~/.config/socket/*` / any dotfile. Dotfiles leak via accidental commits, file-indexers, backup clients, shell-history dumps. Enforced by `.claude/hooks/fleet/no-token-in-dotenv-guard/`.
 
 ## Initial setup + rotation
 
-- **Initial setup:** `node .claude/hooks/setup-security-tools/install.mts` (prompts + persists via macOS Keychain / Linux libsecret / Windows CredentialManager).
-- **Rotation:** `node .claude/hooks/setup-security-tools/install.mts --rotate`. TTY-muted prompt, overwrites the keychain entry unconditionally, ignores stale dotfile / env-var lookup. This is the ONLY correct rotator. Suggesting any other path (`socket login`, hand-editing `~/.sfw.config`, `export SOCKET_API_TOKEN=…` in a shell rc) is a token-hygiene violation.
+- **Initial setup:** `node .claude/hooks/fleet/setup-security-tools/install.mts` (prompts + persists via macOS Keychain / Linux libsecret / Windows CredentialManager).
+- **Rotation:** `node .claude/hooks/fleet/setup-security-tools/install.mts --rotate`. TTY-muted prompt, overwrites the keychain entry unconditionally, ignores stale dotfile / env-var lookup. This is the ONLY correct rotator. Suggesting any other path (`socket login`, hand-editing `~/.sfw.config`, `export SOCKET_API_TOKEN=…` in a shell rc) is a token-hygiene violation.
 
-The Stop-hook flags broken sfw shims, free-vs-enterprise edition drift, and 401-rejection patterns from the last assistant turn (enforced by `.claude/hooks/setup-security-tools/`).
+The Stop-hook flags broken sfw shims, free-vs-enterprise edition drift, and 401-rejection patterns from the last assistant turn (enforced by `.claude/hooks/fleet/setup-security-tools/`).
 
 ### Scoped install entrypoints
 
 Four entrypoints share the umbrella installer library for operators who want partial installs:
 
-- `.claude/hooks/setup-firewall/`: sfw only, `--rotate` honored.
-- `.claude/hooks/setup-claude-scanners/`: AgentShield + zizmor.
-- `.claude/hooks/setup-basics-tools/`: TruffleHog + Trivy + OpenGrep + uv.
-- `.claude/hooks/setup-misc-tools/`: cdxgen + synp + janus.
+- `.claude/hooks/fleet/setup-firewall/`: sfw only, `--rotate` honored.
+- `.claude/hooks/fleet/setup-claude-scanners/`: AgentShield + zizmor.
+- `.claude/hooks/fleet/setup-basics-tools/`: TruffleHog + Trivy + OpenGrep + uv.
+- `.claude/hooks/fleet/setup-misc-tools/`: cdxgen + synp + janus.
 
 ## Never call platform keychain CLIs from Bash
 
-`security find-generic-password` (macOS), `secret-tool lookup` (Linux), `Get-StoredCredential` (Windows PowerShell), `keyring get` (cross-platform) all surface a UI auth prompt on the user's screen. That prompt fires _per call_, so a hook chain that reads the keychain three times costs three prompts. The token is already cached in process memory after the first resolution (see [`api-token.mts`](../../.claude/hooks/setup-security-tools/lib/api-token.mts) module-scope cache). Read it from `findApiToken()` or `process.env.SOCKET_API_KEY` / `SOCKET_API_TOKEN` instead.
+`security find-generic-password` (macOS), `secret-tool lookup` (Linux), `Get-StoredCredential` (Windows PowerShell), `keyring get` (cross-platform) all surface a UI auth prompt on the user's screen. That prompt fires _per call_, so a hook chain that reads the keychain three times costs three prompts. The token is already cached in process memory after the first resolution (see [`api-token.mts`](../../.claude/hooks/fleet/setup-security-tools/lib/api-token.mts) module-scope cache). Read it from `findApiToken()` or `process.env.SOCKET_API_KEY` / `SOCKET_API_TOKEN` instead.
 
-Writes (`security add-generic-password`, `secret-tool store`, `New-StoredCredential`) and deletes are allowed. They happen during operator-driven setup / rotation, never on hot paths. Bypass: `Allow blind-keychain-read bypass` (enforced by `.claude/hooks/no-blind-keychain-read-guard/`).
+Writes (`security add-generic-password`, `secret-tool store`, `New-StoredCredential`) and deletes are allowed. They happen during operator-driven setup / rotation, never on hot paths. Bypass: `Allow blind-keychain-read bypass` (enforced by `.claude/hooks/fleet/no-blind-keychain-read-guard/`).
 
 ## Personal-path placeholders
 

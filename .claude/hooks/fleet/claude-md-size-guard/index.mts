@@ -1,0 +1,181 @@
+#!/usr/bin/env node
+// Claude Code PreToolUse hook — claude-md-size-guard.
+//
+// Blocks Edit/Write tool calls that would push CLAUDE.md above the
+// 40KB whole-file size cap. The cap measures the ENTIRE post-edit
+// file, not just the fleet-canonical block — fleet content + per-repo
+// content both count.
+//
+// Why a whole-file cap: every byte in CLAUDE.md is load-bearing
+// in-context tokens for every Claude session opened in the repo, AND
+// fleet content is duplicated across ~12 socket-* repos. The 40KB
+// ceiling forces ruthless reference-deferral: each rule states the
+// invariant + a one-line "Why" + a link to docs/claude.md/fleet/<topic>.md
+// for the full pattern catalog. Detail goes in the linked doc.
+//
+// What the hook does:
+//   1. Fires only on Edit/Write tool calls targeting a CLAUDE.md.
+//   2. Computes the post-edit text (Write: content; Edit: splice).
+//   3. If the whole file exceeds the cap, exits 2 with a stderr message
+//      naming the size, the cap, and the canonical remediation.
+//
+// Cap policy:
+//   - Default: 40 KB (40_960 bytes). Override per-repo via env
+//     `CLAUDE_MD_BYTES`. Legacy `CLAUDE_MD_FLEET_BLOCK_BYTES` is read
+//     as a fallback so existing per-repo overrides don't break.
+//
+// Hook contract:
+//   - Reads Claude Code's PreToolUse JSON from stdin.
+//   - Operates on `tool_input.new_string` (Edit) or `tool_input.content`
+//     (Write). When an Edit is a partial replacement we read the on-
+//     disk file and apply the diff in-memory. If we can't reliably
+//     compute (ambiguous Edit), we fail open.
+
+import { existsSync, readFileSync } from 'node:fs'
+import process from 'node:process'
+
+import { readStdin } from '../_shared/transcript.mts'
+
+const DEFAULT_CAP_BYTES = 40 * 1024
+
+/**
+ * Compute the post-edit text. For Write, that's just `content`. For Edit,
+ * splice the on-disk file: replace `old_string` with `new_string` once. If the
+ * on-disk file isn't readable or `old_string` doesn't match exactly, return
+ * undefined (caller fails open).
+ */
+export function computePostEditText(
+  toolName: string,
+  filePath: string,
+  newString: string | undefined,
+  oldString: string | undefined,
+  content: string | undefined,
+): string | undefined {
+  if (toolName === 'Write') {
+    return content
+  }
+  if (toolName !== 'Edit') {
+    return undefined
+  }
+  if (!existsSync(filePath)) {
+    // First Edit on a new file is essentially a Write; treat
+    // new_string as the full content.
+    return newString
+  }
+  if (oldString === undefined || newString === undefined) {
+    return undefined
+  }
+  let raw: string
+  try {
+    raw = readFileSync(filePath, 'utf8')
+  } catch {
+    return undefined
+  }
+  const idx = raw.indexOf(oldString)
+  if (idx === -1) {
+    return undefined
+  }
+  return raw.slice(0, idx) + newString + raw.slice(idx + oldString.length)
+}
+
+export function emitBlock(
+  filePath: string,
+  fileBytes: number,
+  capBytes: number,
+): void {
+  const lines: string[] = []
+  lines.push('[claude-md-size-guard] Blocked: CLAUDE.md too large.')
+  lines.push(`  File:        ${filePath}`)
+  lines.push(`  File size:   ${fileBytes} bytes`)
+  lines.push(`  Cap:         ${capBytes} bytes (whole file)`)
+  lines.push(`  Over by:     ${fileBytes - capBytes} bytes`)
+  lines.push('')
+  lines.push('  CLAUDE.md is load-bearing in-context for every session, and')
+  lines.push('  the fleet block is duplicated across ~12 socket-* repos. The')
+  lines.push('  40KB ceiling forces ruthless reference-deferral:')
+  lines.push('')
+  lines.push('    1. State the invariant + one-line "Why" inline.')
+  lines.push('    2. Move detail to `docs/claude.md/fleet/<topic>.md`.')
+  lines.push('    3. Link from the rule: `[Full details](docs/claude.md/...)`.')
+  lines.push('')
+  lines.push('  See `docs/claude.md/fleet/bypass-phrases.md` for an example')
+  lines.push('  of the one-paragraph + reference shape.')
+  process.stderr.write(lines.join('\n') + '\n')
+}
+
+export function getCap(): number {
+  const env =
+    process.env['CLAUDE_MD_BYTES'] ?? process.env['CLAUDE_MD_FLEET_BLOCK_BYTES']
+  if (!env) {
+    return DEFAULT_CAP_BYTES
+  }
+  const n = Number.parseInt(env, 10)
+  if (!Number.isFinite(n) || n <= 0) {
+    return DEFAULT_CAP_BYTES
+  }
+  return n
+}
+
+type ToolInput = {
+  tool_input?:
+    | {
+        content?: string | undefined
+        file_path?: string | undefined
+        new_string?: string | undefined
+        old_string?: string | undefined
+      }
+    | undefined
+  tool_name?: string | undefined
+}
+
+export function isClaudeMd(filePath: string | undefined): boolean {
+  if (!filePath) {
+    return false
+  }
+  const base = filePath.split('/').pop() ?? ''
+  return base === 'CLAUDE.md'
+}
+
+async function main(): Promise<void> {
+  const raw = await readStdin()
+  if (!raw) {
+    return
+  }
+  let payload: ToolInput
+  try {
+    payload = JSON.parse(raw) as ToolInput
+  } catch {
+    return
+  }
+  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
+    return
+  }
+  const filePath = payload.tool_input?.file_path ?? ''
+  if (!isClaudeMd(filePath)) {
+    return
+  }
+  const postEdit = computePostEditText(
+    payload.tool_name,
+    filePath,
+    payload.tool_input?.new_string,
+    payload.tool_input?.old_string,
+    payload.tool_input?.content,
+  )
+  if (postEdit === undefined) {
+    // Fail open — couldn't compute post-edit text reliably.
+    return
+  }
+  const cap = getCap()
+  const size = Buffer.byteLength(postEdit, 'utf8')
+  if (size <= cap) {
+    return
+  }
+  emitBlock(filePath, size, cap)
+  process.exitCode = 2
+}
+
+main().catch(e => {
+  process.stderr.write(
+    `[claude-md-size-guard] hook error (continuing): ${(e as Error).message}\n`,
+  )
+})

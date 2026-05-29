@@ -326,7 +326,7 @@ function checkSocketTokenInEnv(): CheckResult {
     detail:
       'SOCKET_API_KEY is not in the current env AND no shell-rc-bridge block is wired up. Hooks fall through to the keychain, which prompts on first access.',
     fix:
-      'node .claude/hooks/setup-security-tools/install.mts\n' +
+      'node .claude/hooks/fleet/setup-security-tools/install.mts\n' +
       '  # installs the shell-rc-bridge block; exports the token in every fresh shell',
   }
 }
@@ -355,7 +355,7 @@ function checkKeychainTokenAcl(): CheckResult {
       detail:
         'No socket-cli/SOCKET_API_KEY entry in the Keychain. Tools that fall back to keychain (when env is empty) will prompt for input on first use.',
       fix:
-        'node .claude/hooks/setup-security-tools/install.mts\n' +
+        'node .claude/hooks/fleet/setup-security-tools/install.mts\n' +
         '  # prompts for the token interactively and persists it to the Keychain with -T "" (any app can read).',
     }
   }

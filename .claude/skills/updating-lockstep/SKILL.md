@@ -3,6 +3,8 @@ name: updating-lockstep
 description: Acts on `lockstep.json` drift for repos that carry the lockstep manifest. Reads `pnpm run lockstep --json`, auto-bumps mechanical `version-pin` rows, surfaces `file-fork` / `feature-parity` / `spec-conformance` / `lang-parity` rows as advisory. Invoked by the `updating` umbrella skill; can also run standalone.
 user-invocable: true
 allowed-tools: Read, Edit, Grep, Glob, Bash(pnpm:*), Bash(npm:*), Bash(git:*), Bash(node:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(head:*), Bash(tail:*), Bash(wc:*), Bash(diff:*)
+model: claude-haiku-4-5
+context: fork
 ---
 
 # updating-lockstep

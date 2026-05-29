@@ -21,7 +21,7 @@ Node release, a pnpm pin).
 - **`template/CLAUDE.md` fleet block** (between `BEGIN/END FLEET-CANONICAL` markers): must be byte-identical across the fleet.
 - **`template/.claude/hooks/*`**: same hook code in every repo; diverged hook code is drift.
 - **`lockstep.json` `pinned_sha` rows**: upstream submodules tracked by socket-btm (lsquic, yoga, etc.).
-- **`.gitmodules` `# name-version` annotations** (enforced by `.claude/hooks/gitmodules-comment-guard/`).
+- **`.gitmodules` `# name-version` annotations** (enforced by `.claude/hooks/fleet/gitmodules-comment-guard/`).
 - **pnpm / Node `packageManager` / `engines` fields**: fleet-wide pin; any divergence is drift.
 
 ## How to check
@@ -62,6 +62,6 @@ sync-scaffolding tool produces this body automatically when run with
 
 ## See also
 
-- `.claude/hooks/drift-check-reminder/`
-- `.claude/hooks/gitmodules-comment-guard/`
+- `.claude/hooks/fleet/drift-check-reminder/`
+- `.claude/hooks/fleet/gitmodules-comment-guard/`
 - `scripts/sync-scaffolding/`: drift detection + auto-fix tooling (canonical in socket-wheelhouse).

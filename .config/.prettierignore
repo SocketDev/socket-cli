@@ -21,16 +21,16 @@
 # `SyntaxError: Unexpected token 'export'`. Past incident: cascaded
 # to two fleet repos before the break surfaced.
 #
-# The generators we DO own (`acorn-wasm-sync.{mts,cts}`,
-# `acorn-wasm-embed.{mts,cts}`) are not listed here on purpose —
+# The generators we DO own (`acorn-sync.{mts,cts}`,
+# `acorn-embed.{mts,cts}`) are not listed here on purpose —
 # the ultrathink build emits them already formatted+linted per fleet
 # rules so they participate in the regular lint pass like any other
 # JS source. Only the raw wasm blob + the bindgen glue skip the
 # formatter. Marked `binary` in .gitattributes for the wasm blob too
 # so PR diffs collapse.
-template/.claude/hooks/_shared/acorn/acorn.wasm
-template/.claude/hooks/_shared/acorn/acorn-bindgen.cjs
-.claude/hooks/_shared/acorn/acorn-bindgen.cjs
+template/.claude/hooks/fleet/_shared/acorn/acorn.wasm
+template/.claude/hooks/fleet/_shared/acorn/acorn-bindgen.cjs
+.claude/hooks/fleet/_shared/acorn/acorn-bindgen.cjs
 
 # Vendored / upstream trees — kept byte-identical with their source
 # of truth. Per CLAUDE.md "Untracked-by-default for vendored / build-

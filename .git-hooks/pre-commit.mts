@@ -76,7 +76,7 @@ const main = (): number => {
       logger.info('  git config --global commit.gpgsign true')
       logger.info('')
       logger.info('If you have not set up commit signing yet, run:')
-      logger.info('  node .claude/hooks/setup-security-tools/install.mts')
+      logger.info('  node .claude/hooks/fleet/setup-security-tools/install.mts')
       logger.info(
         'which detects available signing methods (GPG, SSH, 1Password)',
       )
@@ -89,7 +89,7 @@ const main = (): number => {
       logger.info('  git config --global user.signingkey <YOUR_KEY_ID>')
       logger.info('')
       logger.info('Or run the setup helper for guided configuration:')
-      logger.info('  node .claude/hooks/setup-security-tools/install.mts')
+      logger.info('  node .claude/hooks/fleet/setup-security-tools/install.mts')
       errors++
     }
     if (errors > 0) {

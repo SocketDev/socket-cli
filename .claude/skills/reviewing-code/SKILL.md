@@ -3,6 +3,8 @@ name: reviewing-code
 description: Reviews the current branch against a base ref using multiple AI backends. Routes discovery, discovery-secondary, remediation, and verify passes through the available agents (codex, claude, opencode, kimi, …), gracefully skipping any backend that isn't installed. Writes a markdown findings report under docs/. Use when preparing or updating a PR, before merging a feature branch, or when wanting an independent second opinion from a different agent.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(node:*), Bash(git:*), Bash(command -v:*)
+model: claude-opus-4-8
+context: fork
 ---
 
 # reviewing-code

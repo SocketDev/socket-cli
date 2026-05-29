@@ -50,6 +50,10 @@ After `git worktree remove`, the branch lives in the primary repo's `.git/refs/h
 
 Cross-repo imports go through `@socketsecurity/lib/...` and `@socketregistry/...` (workspace exports). Path-based imports (`../<sibling-repo>/...`) break in CI, in fresh clones, and on CI agents without the sibling checked out. The `cross-repo-guard` hook blocks these at edit time.
 
+## Never overwrite a file another session is editing
+
+A plain `Edit` / `Write` to a file another session has dirty silently clobbers their uncommitted work — and they may clobber yours right back, edit-for-edit, until one of you stops. (Incident 2026-05-27: two Claude sessions plus a Codex companion shared one checkout; one kept re-cascading `shell-command.mts` + test files, reverting the other's type-error fixes four times.) The `parallel-agent-edit-guard` hook blocks an Edit/Write/NotebookEdit whose target is **foreign** — dirty, not authored by this session, changed within 30 min — so the clobber is refused before it lands. Companion to `parallel-agent-staging-guard` (git-op version) + `parallel-agent-on-stop-reminder` (turn-end signal); all share `_shared/foreign-paths.mts`. When it fires: let the other session commit first, work on a different file, or use a `git worktree` for an isolated edit. Bypass (only if the other edit is abandoned): `Allow parallel-agent-edit bypass`.
+
 ## The umbrella rule
 
 > Never run a git command that mutates state belonging to a path other than the file you just edited.

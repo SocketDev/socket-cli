@@ -1,6 +1,6 @@
 # gh token hygiene
 
-GitHub CLI auth tokens are the highest-blast-radius credential most developers carry. The Nx Console supply-chain compromise (May 2026) exfiltrated `~/.config/gh/hosts.yml` and used the token against the GitHub API within 74 seconds of malware execution. Three layered defenses, all enforced by `.claude/hooks/gh-token-hygiene-guard/` (the 8h age cap, keychain check, and workflow-scope gate all live in this hook — `auth-rotation-reminder` handles non-gh CLIs like npm/pnpm/gcloud/docker/vault).
+GitHub CLI auth tokens are the highest-blast-radius credential most developers carry. The Nx Console supply-chain compromise (May 2026) exfiltrated `~/.config/gh/hosts.yml` and used the token against the GitHub API within 74 seconds of malware execution. Three layered defenses, all enforced by `.claude/hooks/fleet/gh-token-hygiene-guard/` (the 8h age cap, keychain check, and workflow-scope gate all live in this hook — `auth-rotation-reminder` handles non-gh CLIs like npm/pnpm/gcloud/docker/vault).
 
 ## 1. Keychain storage only
 
@@ -134,5 +134,21 @@ Local timestamp tracking is advisory. A malicious process can backdate the file.
 
 - `~/.claude/gh-token-issued-at`: local timestamp stamped by the hook when the user runs `gh auth login` or `gh auth refresh`. The 8h age check reads this.
 - `~/.claude/gh-workflow-grant`: presence marker for an unconsumed workflow-dispatch authorization. Created when a bypass-authorized + auth-passed `gh auth refresh -s workflow` runs; deleted as soon as the first dispatch is let through.
+
+## Refresh recovery — when the hook didn't see your refresh
+
+The hook stamps `~/.claude/gh-token-issued-at` from a `PreToolUse` event — meaning it only sees `gh auth refresh` invocations that pass through Claude's tool layer. If you ran `gh auth refresh` in a side terminal (e.g. via the `<bash-input>` pasteback flow), the hook didn't see it and the stamp file stays at its prior age, so the next gh tool call gets the >8h block.
+
+Three recovery paths, ordered from cleanest to most surgical:
+
+1. **Run the refresh through Claude.** Ask Claude to run `gh auth refresh -h github.com` in a Bash tool call. The hook sees it, pre-stamps, and the next gh call goes through.
+2. **Use the hook's `--stamp` CLI mode.** From any shell:
+   ```sh
+   node ~/.claude/hooks/fleet/gh-token-hygiene-guard/index.mts --stamp
+   ```
+   Writes a fresh `Date.now()` to the stamp file. Use this when you've already done `gh auth refresh` externally and don't want to re-run it.
+3. **Auto-correction of malformed values.** If the stamp file contains a value less than `1577836800000` (2020-01-01 in ms) — e.g. you accidentally wrote POSIX seconds via `date "+%s" > ~/.claude/gh-token-issued-at` — the hook treats it as malformed on the next read, re-stamps, and proceeds. No manual intervention required; the malformed-value branch is there as a safety net for cases like the seconds-vs-ms confusion (2026-05-28 incident).
+
+The stamp file is purely an in-process record of "when did the hook last see a refresh"; the actual token security lives in the OS keychain. A wrong stamp value can't escalate access — at worst it temporarily locks the user out of gh tool calls until they reauth or re-stamp.
 
 No escape hatches. The hook is failsafe-deny on all invariants. The OS-auth path (Touch ID + osascript + dscl, called via absolute `/usr/bin/` paths to defeat PATH-hijack) is intentionally unreachable in unit tests; the auth path is exercised by manual smoke-testing when the hook ships.
