@@ -1,4 +1,13 @@
-import { existsSync, readdirSync, rmSync } from 'node:fs'
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -269,6 +278,49 @@ describe('glob utilities', () => {
         `${mockFixturePath}/package.json`,
       ])
     })
+
+    // Reproduces the reported `socket fix` crash: a project containing a
+    // directory the running user cannot enter (e.g. a postgres `pgdata` dir
+    // owned by another uid, mode drwx------) made fast-glob throw
+    // `EACCES: permission denied, scandir` during manifest discovery. Uses the
+    // real filesystem because mock-fs only enforces permissions for non-root
+    // uids; skipped under root (perm checks bypassed) and on Windows (no POSIX
+    // directory perms).
+    const skipUnreadableDirTest =
+      process.platform === 'win32' ||
+      (typeof process.getuid === 'function' && process.getuid() === 0)
+    it.skipIf(skipUnreadableDirTest)(
+      'skips an unreadable directory instead of throwing EACCES',
+      async () => {
+        const realTmp = mkdtempSync(path.join(tmpdir(), 'socket-glob-perm-'))
+        const unreadable = path.join(realTmp, 'data/postgres/pgdata')
+        try {
+          mkdirSync(unreadable, { recursive: true })
+          writeFileSync(path.join(realTmp, 'package.json'), '{}')
+          // Files inside the directory must never surface — the user cannot
+          // read them, so they cannot be scanned.
+          writeFileSync(path.join(unreadable, 'PG_VERSION'), '17')
+          // drwx------ : owner-only, and the running test user is not the owner
+          // in the field report; locally dropping all bits has the same effect
+          // of making scandir fail for the current user.
+          chmodSync(unreadable, 0o000)
+
+          const results = await globWithGitIgnore(['**/*'], {
+            cwd: realTmp,
+          })
+
+          expect(results.map(normalizePath)).toEqual([
+            normalizePath(path.join(realTmp, 'package.json')),
+          ])
+        } finally {
+          // Restore perms so recursive cleanup can descend into the locked dir.
+          try {
+            chmodSync(unreadable, 0o755)
+          } catch {}
+          rmSync(realTmp, { force: true, recursive: true })
+        }
+      },
+    )
   })
 
   describe('createSupportedFilesFilter()', () => {
