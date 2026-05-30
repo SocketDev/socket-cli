@@ -98,6 +98,7 @@ catalog:
   compromise: 14.14.4
   del-cli: 6.0.0
   dev-null-cli: 2.0.0
+  'dtu-github-actions': 0.16.2
   ecc-agentshield: 1.4.0
   emoji-regex: 10.6.0
   es-define-property: npm:@socketregistry/es-define-property@^1.0.7
@@ -280,6 +281,12 @@ minimumReleaseAgeExclude:
   - '@rolldown/binding-wasm32-wasi'
   - '@rolldown/binding-win32-arm64-msvc'
   - '@rolldown/binding-win32-x64-msvc'
+  - '@socketdev/*'
+  - 'ecc-agentshield'
+  - 'sfw'
+  - 'socket-*'
+  - '@redwoodjs/agent-ci@0.16.2'
+  - 'dtu-github-actions@0.16.2'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we

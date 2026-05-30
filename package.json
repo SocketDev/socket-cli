@@ -74,6 +74,7 @@
     "@pnpm/lockfile.detect-dep-types": "catalog:",
     "@pnpm/lockfile.fs": "catalog:",
     "@pnpm/logger": "catalog:",
+    "@redwoodjs/agent-ci": "catalog:",
     "@sinclair/typebox": "catalog:",
     "@socketregistry/hyrious__bun.lockb": "catalog:",
     "@socketregistry/indent-string": "catalog:",
@@ -166,7 +167,10 @@
     "nodeRun": true
   },
   "allowScripts": {
+    "cpu-features": false,
+    "protobufjs": false,
     "rolldown": true,
-    "postject": false
+    "postject": false,
+    "ssh2": false
   }
 }

@@ -34,7 +34,6 @@
     "**/vendor/**",
     "**/upstream/**",
     "**/third_party/**",
-    "**/CHANGELOG.md",
     // .claude/ markdown is internal scaffolding (hook READMEs, agent
     // role files, skill SKILL.mds, command reminders) — scoped docs
     // with their own shape conventions. Excluded from the public-
@@ -43,9 +42,17 @@
   ],
   // Custom rule plugins live under markdownlint-rules/, byte-identical
   // across the fleet via sync-scaffolding manifest registration.
+  //
+  // NOTE: CHANGELOG.md is now lint-scoped (removed from `ignores`) so
+  // socket-no-empty-changelog-sections can autofix empty Keep-a-Changelog
+  // section headings. If oxfmt ever grows a markdown semantic-rule API
+  // we can migrate the autofix to a formatter pass, but as of oxfmt 0.48
+  // (https://oxc.rs/docs/guide/usage/formatter.html) only structural
+  // formatting is supported.
   "customRules": [
-    "./markdownlint-rules/socket-no-private-wheelhouse-leak.mjs",
-    "./markdownlint-rules/socket-no-relative-sibling-script.mjs",
-    "./markdownlint-rules/socket-readme-required-sections.mjs",
+    "./markdownlint-rules/socket-no-empty-changelog-sections.mts",
+    "./markdownlint-rules/socket-no-private-wheelhouse-leak.mts",
+    "./markdownlint-rules/socket-no-relative-sibling-script.mts",
+    "./markdownlint-rules/socket-readme-required-sections.mts",
   ],
 }

@@ -77,10 +77,11 @@
 .config/.markdownlint-cli2.jsonc linguist-generated=true
 .config/.prettierignore linguist-generated=true
 .config/lockstep.schema.json linguist-generated=true
-.config/markdownlint-rules/_shared/wheelhouse-self-skip.mjs linguist-generated=true
-.config/markdownlint-rules/socket-no-private-wheelhouse-leak.mjs linguist-generated=true
-.config/markdownlint-rules/socket-no-relative-sibling-script.mjs linguist-generated=true
-.config/markdownlint-rules/socket-readme-required-sections.mjs linguist-generated=true
+.config/markdownlint-rules/_shared/wheelhouse-self-skip.mts linguist-generated=true
+.config/markdownlint-rules/socket-no-empty-changelog-sections.mts linguist-generated=true
+.config/markdownlint-rules/socket-no-private-wheelhouse-leak.mts linguist-generated=true
+.config/markdownlint-rules/socket-no-relative-sibling-script.mts linguist-generated=true
+.config/markdownlint-rules/socket-readme-required-sections.mts linguist-generated=true
 .config/oxlint-plugin/index.mts linguist-generated=true
 .config/oxlint-plugin/lib/comment-markers.mts linguist-generated=true
 .config/oxlint-plugin/lib/detect-source-type.mts linguist-generated=true

@@ -50,6 +50,14 @@ to know to upgrade.
 Use [Keep-a-Changelog](https://keepachangelog.com/) sections (Added /
 Changed / Removed / Renamed / Fixed / Performance / Migration).
 
+**No empty sections.** If the public-facing-only filter leaves a section
+with zero bullets, delete the heading too — don't leave `### Changed`
+followed by a blank line and the next heading. A reader scanning the
+release for "what changed" should not have to disambiguate "section
+intentionally empty" from "section forgot its content." Enforced
+pre-commit by `.claude/hooks/fleet/changelog-no-empty-sections-guard/`;
+bypass `Allow changelog-empty-section bypass`.
+
 Source the raw list with `git log <prev-tag>..HEAD --pretty="%s"` and
 filter to consumer-visible commits only.
 

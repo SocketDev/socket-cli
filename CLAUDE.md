@@ -57,7 +57,7 @@ Some fleet repos squash the default branch on a cadence — currently socket-add
 
 ### Version bumps & immutable releases
 
-🚨 Bump: (1) `pnpm run update` → `pnpm i` → `pnpm run fix --all` → `pnpm run check --all`; (2) CHANGELOG public-facing only; (3) `chore: bump version to X.Y.Z` LAST; (4) `git tag vX.Y.Z` (`version-bump-order-guard`); (5) user dispatches publish. GH Releases ship **immutable** via 3-step `gh release create --draft` → `gh release upload` → `gh release edit --draft=false`; single-call form forbidden (enforced by `.claude/hooks/fleet/immutable-release-pattern-guard/`; bypass `Allow immutable-release-pattern bypass`). Detail: [`docs/claude.md/fleet/version-bumps.md`](docs/claude.md/fleet/version-bumps.md), [`docs/claude.md/fleet/immutable-releases.md`](docs/claude.md/fleet/immutable-releases.md).
+🚨 Bump: (1) pre-bump wave; (2) CHANGELOG public-facing only, no empty sections (enforced by `.claude/hooks/fleet/changelog-no-empty-sections-guard/`; bypass `Allow changelog-empty-section bypass`); (3) `chore: bump version to X.Y.Z` LAST; (4) `git tag vX.Y.Z` (`version-bump-order-guard`); (5) user dispatches publish. GH Releases ship **immutable** via 3-step `gh release create --draft` → `gh release upload` → `gh release edit --draft=false`; single-call form forbidden (enforced by `.claude/hooks/fleet/immutable-release-pattern-guard/`; bypass `Allow immutable-release-pattern bypass`). Detail: [`docs/claude.md/fleet/version-bumps.md`](docs/claude.md/fleet/version-bumps.md).
 
 ### Programmatic Claude calls
 
