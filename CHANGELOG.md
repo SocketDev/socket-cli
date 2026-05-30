@@ -12,6 +12,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
 
+## [1.1.112](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.112) - 2026-05-29
+
+### Fixed
+- `socket fix` and `socket scan create` no longer abort with `EACCES: permission denied, scandir` when the project contains a directory the running user cannot read (for example a postgres `pgdata` data directory owned by another uid, or a Docker volume mount). Manifest discovery walks a project for `.gitignore` files before applying any path exclusions; that walk now honors `--exclude-paths` and `socket.yml` `projectIgnorePaths`, and skips unreadable directories rather than crashing. This makes `--exclude-paths` effective for unreadable directories — previously the crash happened before the exclusion was ever applied.
+
 ## [1.1.111](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.111) - 2026-05-29
 
 ### Changed
