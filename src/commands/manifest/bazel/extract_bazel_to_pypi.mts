@@ -8,6 +8,7 @@ import { validateOutputBase } from './bazel-output-base-check.mts'
 import {
   discoverPypiHubs,
   parseBazelModPipExtensionCandidates,
+  parseVisibleRepoCandidates,
 } from './bazel-pypi-discovery.mts'
 import {
   collectPypiPackages,
@@ -25,7 +26,6 @@ import {
   runBazelModShowVisibleRepos,
   runBazelQuery,
 } from './bazel-query-runner.mts'
-import { parseVisibleRepoCandidates } from './bazel-pypi-discovery.mts'
 import {
   detectWorkspaceMode,
   getBazelInvocationFlags,

@@ -1,9 +1,4 @@
-import {
-  existsSync,
-  promises as fs,
-  mkdirSync,
-  mkdtempSync,
-} from 'node:fs'
+import { existsSync, promises as fs, mkdirSync, mkdtempSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -30,10 +25,9 @@ import {
 } from './bazel-workspace-detect.mts'
 import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
-import { IGNORED_DIRS } from '../../../utils/glob.mts'
 
-import type { CqueryRepoResult } from './bazel-cquery.mts'
 import type { ExtractedArtifact } from './bazel-build-parser.mts'
+import type { CqueryRepoResult } from './bazel-cquery.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
 import type { WorkspaceMode } from './bazel-workspace-detect.mts'
 
@@ -50,6 +44,15 @@ export type ExtractBazelOptions = {
   // legacy WORKSPACE workspaces whose hubs use non-conventional names
   // (or custom Bzlmod extensions `mod show_extension` doesn't enumerate).
   extraMavenRepoNames?: string[] | undefined
+  // Directory basenames the workspace walker must not descend into.
+  // Caller-supplied so the orchestrator stays generic; the CLI command
+  // composes the codebase-wide `IGNORED_DIRS` with Bazel-specific dirs
+  // like `.socket-auto-manifest`.
+  ignoreDirNames?: ReadonlySet<string> | undefined
+  // Directory basename prefixes the workspace walker must not descend
+  // into. Caller-supplied so the orchestrator stays generic; the CLI
+  // command supplies `bazel-` for Bazel's output_base symlinks.
+  ignoreDirPrefixes?: readonly string[] | undefined
   out: string
   // Use the auto-manifest sibling directory instead of writing directly to `out`.
   outLayout?: 'flat'
@@ -69,22 +72,6 @@ export type ExtractBazelResult = {
 
 const DEFAULT_PER_REPO_TIMEOUT_MS = 60_000
 const REAP_TIMEOUT_MS = 10_000
-
-// Composed prune policy passed to the workspace walker. Reuses the
-// codebase-wide `IGNORED_DIRS` and augments it with: the walker's own
-// output dir (`.socket-auto-manifest`), VCS/IDE dirs not in the shared
-// list (`.hg`, `.svn`, `.idea`, `.vscode`, `.pnpm-store`), Bazel's
-// `bazel-*` output_base symlinks, and `dist*` build-output dirs.
-const WORKSPACE_WALK_IGNORE_NAMES: ReadonlySet<string> = new Set([
-  ...IGNORED_DIRS,
-  '.hg',
-  '.idea',
-  '.pnpm-store',
-  '.socket-auto-manifest',
-  '.svn',
-  '.vscode',
-])
-const WORKSPACE_WALK_IGNORE_PREFIXES: readonly string[] = ['bazel-', 'dist']
 
 type CoordPair = { groupArtifact: string; version: string }
 
@@ -250,10 +237,17 @@ function dedupArtifactsByCoord(
   return out
 }
 
-// Build the per-workspace candidate Maven hub list. Bzlmod mode prefers
-// `bazel mod show_extension`; WORKSPACE mode (and Bzlmod fallback when
-// show_extension yields nothing) probes the conventional names plus any
-// customer-supplied extras. Returns the list in discovery order.
+// Build the per-workspace candidate Maven hub list.
+//
+// Bzlmod mode: trust `bazel mod show_extension` as the authoritative hub
+// list. Customer-supplied extras (via `--bazel-maven-repo=`) are still
+// probed in case `show_extension` doesn't enumerate a custom extension.
+//
+// WORKSPACE mode: no equivalent of `show_extension`, so probe the
+// conventional names plus customer extras.
+//
+// On `show_extension` failure under Bzlmod, fall through to the probe
+// path so partial discovery is still possible.
 async function discoverCandidatesForWorkspace(
   workspaceRoot: string,
   mode: WorkspaceMode,
@@ -262,10 +256,12 @@ async function discoverCandidatesForWorkspace(
   verbose: boolean,
 ): Promise<string[]> {
   const candidates: string[] = []
+  let showExtensionSucceeded = false
   if (mode.bzlmod) {
     const extResult = await runBazelModShowMavenExtension(queryOpts)
     if (extResult.code === 0) {
       candidates.push(...parseShowExtensionOutput(extResult.stdout))
+      showExtensionSucceeded = true
       if (verbose) {
         logger.log(
           `[VERBOSE] workspace ${workspaceRoot}: show_extension yielded`,
@@ -278,15 +274,20 @@ async function discoverCandidatesForWorkspace(
       )
     }
   }
-  // Probe conventional names + extras for any candidate not already
-  // discovered. WORKSPACE mode relies entirely on the probe; Bzlmod
-  // mode uses it as a defensive fallback (e.g. custom Maven extensions
-  // mod show_extension doesn't enumerate).
+  // Probe candidates the show_extension path could not authoritatively
+  // enumerate: under WORKSPACE mode that's the conventional names; under
+  // a failed Bzlmod show_extension it's the same; under a successful
+  // Bzlmod show_extension only the customer-supplied extras need probing.
   const seen = new Set(candidates)
+  const toProbe = (
+    showExtensionSucceeded
+      ? extras
+      : [...CONVENTIONAL_MAVEN_REPO_NAMES, ...extras]
+  ).filter(name => !seen.has(name))
+  if (!toProbe.length) {
+    return candidates
+  }
   const probe = buildMavenProbeFor(queryOpts)
-  const toProbe = [...CONVENTIONAL_MAVEN_REPO_NAMES, ...extras].filter(
-    name => !seen.has(name),
-  )
   for (const name of toProbe) {
     // eslint-disable-next-line no-await-in-loop
     const status = await probeCandidate(name, probe, verbose)
@@ -304,29 +305,73 @@ async function discoverCandidatesForWorkspace(
 async function reapBazelServer(
   bin: string,
   outputUserRoot: string,
+  verbose: boolean,
 ): Promise<void> {
   try {
-    await spawn(
-      bin,
-      [`--output_user_root=${outputUserRoot}`, 'shutdown'],
-      { timeout: REAP_TIMEOUT_MS },
-    )
-  } catch {
+    await spawn(bin, [`--output_user_root=${outputUserRoot}`, 'shutdown'], {
+      timeout: REAP_TIMEOUT_MS,
+    })
+  } catch (e) {
     // Server may already be dead, or shutdown itself timed out — the
     // tempdir removal below is sufficient cleanup.
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] reapBazelServer: shutdown failed for ${outputUserRoot} (${getErrorCause(e)}); tempdir removal will still run`,
+      )
+    }
   }
 }
 
-async function removeTempdir(dir: string): Promise<void> {
+async function removeTempdir(dir: string, verbose: boolean): Promise<void> {
   try {
     await fs.rm(dir, { recursive: true, force: true })
-  } catch {
+  } catch (e) {
     // Best effort. The next CLI invocation lands a fresh tempdir.
+    if (verbose) {
+      logger.log(
+        `[VERBOSE] removeTempdir: ${dir} not fully removed (${getErrorCause(e)}); a stale dir may linger until the next OS tempdir sweep`,
+      )
+    }
   }
 }
 
 function makeOutputUserRoot(): string {
   return mkdtempSync(path.join(os.tmpdir(), 'socket-bazel-'))
+}
+
+// Construct the BazelQueryOptions shape used for a single workspace's
+// queries. Lifted to module scope (out of the per-workspace loop) so
+// ESLint's consistent-function-scoping is happy; takes everything it
+// previously closed over as explicit params.
+function buildQueryOpts(args: {
+  baseEnv: NodeJS.ProcessEnv | undefined
+  bin: string
+  invocationFlags: string[]
+  opts: ExtractBazelOptions
+  outputUserRoot: string
+  spawnCwd: string
+  verbose: boolean
+}): BazelQueryOptions {
+  const {
+    baseEnv,
+    bin,
+    invocationFlags,
+    opts,
+    outputUserRoot,
+    spawnCwd,
+    verbose,
+  } = args
+  return {
+    bin,
+    cwd: spawnCwd,
+    invocationFlags,
+    outputUserRoot,
+    ...(opts.bazelRc ? { bazelRc: opts.bazelRc } : {}),
+    ...(opts.bazelFlags ? { bazelFlags: opts.bazelFlags } : {}),
+    ...(opts.bazelOutputBase ? { bazelOutputBase: opts.bazelOutputBase } : {}),
+    ...(baseEnv ? { env: baseEnv } : {}),
+    verbose,
+  }
 }
 
 export async function extractBazelToMaven(
@@ -341,8 +386,7 @@ export async function extractBazelToMaven(
   }
   logger.groupEnd()
 
-  const perRepoTimeoutMs =
-    opts.perRepoTimeoutMs ?? DEFAULT_PER_REPO_TIMEOUT_MS
+  const perRepoTimeoutMs = opts.perRepoTimeoutMs ?? DEFAULT_PER_REPO_TIMEOUT_MS
   const extras = opts.extraMavenRepoNames ?? []
 
   // Validate config + ensure toolchains BEFORE we mint a tempdir.
@@ -384,8 +428,10 @@ export async function extractBazelToMaven(
   try {
     const workspaceRoots = findWorkspaceRoots({
       cwd,
-      ignoreDirNames: WORKSPACE_WALK_IGNORE_NAMES,
-      ignoreDirPrefixes: WORKSPACE_WALK_IGNORE_PREFIXES,
+      ...(opts.ignoreDirNames ? { ignoreDirNames: opts.ignoreDirNames } : {}),
+      ...(opts.ignoreDirPrefixes
+        ? { ignoreDirPrefixes: opts.ignoreDirPrefixes }
+        : {}),
       verbose,
     })
     if (!workspaceRoots.length) {
@@ -418,28 +464,22 @@ export async function extractBazelToMaven(
         `Workspace ${relPath || '.'}: bzlmod=${mode.bzlmod} workspace=${mode.workspace}`,
       )
       const invocationFlags = getBazelInvocationFlags(mode)
-      const buildQueryOpts = (
-        userRoot: string,
-        spawnCwd: string,
-      ): BazelQueryOptions => ({
-        bin,
-        cwd: spawnCwd,
-        invocationFlags,
-        outputUserRoot: userRoot,
-        ...(opts.bazelRc ? { bazelRc: opts.bazelRc } : {}),
-        ...(opts.bazelFlags ? { bazelFlags: opts.bazelFlags } : {}),
-        ...(opts.bazelOutputBase
-          ? { bazelOutputBase: opts.bazelOutputBase }
-          : {}),
-        ...(baseEnv ? { env: baseEnv } : {}),
-        verbose,
-      })
+      const queryOptsFor = (userRoot: string): BazelQueryOptions =>
+        buildQueryOpts({
+          baseEnv,
+          bin,
+          invocationFlags,
+          opts,
+          outputUserRoot: userRoot,
+          spawnCwd: workspaceRoot,
+          verbose,
+        })
 
       // eslint-disable-next-line no-await-in-loop
       const candidates = await discoverCandidatesForWorkspace(
         workspaceRoot,
         mode,
-        buildQueryOpts(outputUserRoot, workspaceRoot),
+        queryOptsFor(outputUserRoot),
         extras,
         verbose,
       )
@@ -452,7 +492,7 @@ export async function extractBazelToMaven(
         anyRepos = true
         // eslint-disable-next-line no-await-in-loop
         const result: CqueryRepoResult = await runMetadataCqueryForRepo({
-          opts: buildQueryOpts(outputUserRoot, workspaceRoot),
+          opts: queryOptsFor(outputUserRoot),
           repoName,
           timeoutMs: perRepoTimeoutMs,
           workspaceRelPath: relPath,
@@ -469,9 +509,9 @@ export async function extractBazelToMaven(
           )
           anyTimeout = true
           // eslint-disable-next-line no-await-in-loop
-          await reapBazelServer(bin, outputUserRoot)
+          await reapBazelServer(bin, outputUserRoot, verbose)
           // eslint-disable-next-line no-await-in-loop
-          await removeTempdir(outputUserRoot)
+          await removeTempdir(outputUserRoot, verbose)
           outputUserRoot = makeOutputUserRoot()
           mintedRoots.push(outputUserRoot)
           if (verbose) {
@@ -549,9 +589,9 @@ export async function extractBazelToMaven(
   } finally {
     for (const dir of mintedRoots) {
       // eslint-disable-next-line no-await-in-loop
-      await reapBazelServer(bin, dir)
+      await reapBazelServer(bin, dir, verbose)
       // eslint-disable-next-line no-await-in-loop
-      await removeTempdir(dir)
+      await removeTempdir(dir, verbose)
     }
   }
 }

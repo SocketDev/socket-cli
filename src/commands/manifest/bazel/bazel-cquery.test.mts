@@ -75,7 +75,9 @@ describe('buildMetadataCqueryArgv', () => {
     })
     expect(argv).toContain('cquery')
     expect(argv).toContain('--output=jsonproto')
-    expect(argv).toContain('--proto:output_rule_attrs=tags,maven_coordinates,maven_url')
+    expect(argv).toContain(
+      '--proto:output_rule_attrs=tags,maven_coordinates,maven_url',
+    )
     expect(argv).toContain('--keep_going')
     expect(argv).toContain('--lockfile_mode=off')
     const expr = argv.find(a => a.includes('attr("tags"'))
@@ -164,7 +166,9 @@ describe('parseCqueryJsonproto', () => {
                 {
                   name: 'tags',
                   type: 'STRING_LIST',
-                  string_list_value: ['maven_coordinates=com.example:snake:2.0'],
+                  string_list_value: [
+                    'maven_coordinates=com.example:snake:2.0',
+                  ],
                 },
               ],
             },

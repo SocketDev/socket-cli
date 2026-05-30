@@ -44,6 +44,22 @@ const probeResult = (over: Partial<ProbeResult> = {}): ProbeResult => ({
   ...over,
 })
 
+const probePopulatedGuava: RepoProbe = async () => ({
+  code: 0,
+  stdout: '@maven//:guava\n',
+  stderr: '',
+})
+
+const probePopulatedX: RepoProbe = async () => ({
+  code: 0,
+  stdout: '@maven//:x\n',
+  stderr: '',
+})
+
+const probeThrows: RepoProbe = async () => {
+  throw new Error('bazel exploded')
+}
+
 describe('bazel-repo-discovery', () => {
   describe('parseShowExtensionOutput', () => {
     it('extracts hub repos with (imported by ...) annotations only', () => {
@@ -122,7 +138,7 @@ describe('bazel-repo-discovery', () => {
           probeResult({
             code: 1,
             stderr:
-              "WARNING: Evaluation of query \"@maven_install//...\" failed: no targets found beneath ''\n",
+              'WARNING: Evaluation of query "@maven_install//..." failed: no targets found beneath \'\'\n',
           }),
         ),
       ).toBe<ProbeStatus>('empty')
@@ -156,19 +172,13 @@ describe('bazel-repo-discovery', () => {
 
   describe('probeCandidate', () => {
     it('returns the classified status from a probe', async () => {
-      const probe: RepoProbe = async () => ({
-        code: 0,
-        stdout: '@maven//:guava\n',
-        stderr: '',
-      })
-      expect(await probeCandidate('maven', probe)).toBe<ProbeStatus>('populated')
+      expect(
+        await probeCandidate('maven', probePopulatedGuava),
+      ).toBe<ProbeStatus>('populated')
     })
 
     it('returns not-defined when the probe throws', async () => {
-      const probe: RepoProbe = async () => {
-        throw new Error('bazel exploded')
-      }
-      expect(await probeCandidate('crash', probe)).toBe<ProbeStatus>(
+      expect(await probeCandidate('crash', probeThrows)).toBe<ProbeStatus>(
         'not-defined',
       )
     })
@@ -204,30 +214,17 @@ describe('bazel-repo-discovery', () => {
     }
 
     it('probeCandidate stays silent without verbose', async () => {
-      const probe: RepoProbe = async () => ({
-        code: 0,
-        stdout: '@maven//:x\n',
-        stderr: '',
-      })
-      await probeCandidate('maven', probe)
+      await probeCandidate('maven', probePopulatedX)
       expect(logSpy).not.toHaveBeenCalled()
     })
 
     it('probeCandidate logs the status under verbose', async () => {
-      const probe: RepoProbe = async () => ({
-        code: 0,
-        stdout: '@maven//:x\n',
-        stderr: '',
-      })
-      await probeCandidate('maven', probe, true)
+      await probeCandidate('maven', probePopulatedX, true)
       expect(loggedLines()).toMatch(/probe @maven:\s*populated/)
     })
 
     it('probeCandidate logs the throw reason under verbose', async () => {
-      const probe: RepoProbe = async () => {
-        throw new Error('bazel exploded')
-      }
-      await probeCandidate('crash', probe, true)
+      await probeCandidate('crash', probeThrows, true)
       expect(loggedLines()).toMatch(
         /probe @crash:\s*not-defined \(probe threw: bazel exploded\)/,
       )

@@ -20,9 +20,8 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-// Hard ceiling on number of workspace roots we will surface. Real monorepos
-// have well under 50; this cap is a guard against pathological inputs.
-const MAX_WORKSPACE_ROOTS = 256
+// Hard ceiling on workspace roots; 16 sits well above realistic monorepo counts while tightening the guard against pathological inputs.
+const MAX_WORKSPACE_ROOTS = 16
 // Hard ceiling on directory walk depth. Deepest workspace marker observed
 // across the OSS corpus surveyed is 9 (bazel-self test fixtures); deepest
 // in realistic application code is 7 (checkmk's thirdparty layout). Cap

@@ -373,8 +373,7 @@ describe('buildMavenProbeFor', () => {
     mocked.mockResolvedValueOnce({
       code: 1,
       stdout: '',
-      stderr:
-        "ERROR: No repository visible as '@nope' from main repository\n",
+      stderr: "ERROR: No repository visible as '@nope' from main repository\n",
     })
     const probe = buildMavenProbeFor({
       bin: 'bazel',
@@ -385,8 +384,7 @@ describe('buildMavenProbeFor', () => {
     expect(result).toEqual({
       code: 1,
       stdout: '',
-      stderr:
-        "ERROR: No repository visible as '@nope' from main repository\n",
+      stderr: "ERROR: No repository visible as '@nope' from main repository\n",
     })
   })
 })

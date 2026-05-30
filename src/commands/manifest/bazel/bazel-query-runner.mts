@@ -309,7 +309,7 @@ async function runBazelOneShot(
 export async function runBazelModShowVisibleRepos(
   opts: BazelQueryOptions,
 ): Promise<BazelQueryResult> {
-  return runBazelOneShot(
+  return await runBazelOneShot(
     buildBazelModShowVisibleReposArgv(opts),
     opts,
     'bazel mod dump_repo_mapping',
@@ -325,7 +325,7 @@ export async function runBazelModShowVisibleRepos(
 export async function runBazelModShowMavenExtension(
   opts: BazelQueryOptions,
 ): Promise<BazelQueryResult> {
-  return runBazelOneShot(
+  return await runBazelOneShot(
     buildBazelModShowMavenExtensionArgv(opts),
     opts,
     'bazel mod show_extension rules_jvm_external maven',
@@ -340,7 +340,7 @@ export async function runBazelModShowMavenExtension(
 export async function runBazelModShowPipExtension(
   opts: BazelQueryOptions,
 ): Promise<BazelQueryResult> {
-  return runBazelOneShot(
+  return await runBazelOneShot(
     buildBazelModShowPipExtensionArgv(opts),
     opts,
     'bazel mod show_extension rules_python pip',

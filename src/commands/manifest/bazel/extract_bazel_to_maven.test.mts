@@ -11,9 +11,6 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CqueryRepoResult } from './bazel-cquery.mts'
-import type { ExtractedArtifact } from './bazel-build-parser.mts'
-
 // Mock collaborators BEFORE importing the orchestrator. The orchestrator
 // composes pure-function discovery + the metadata cquery + a workspace
 // walker; mocking these lets us drive end-to-end behaviour without a
@@ -41,11 +38,7 @@ vi.mock('./bazel-workspace-walk.mts', () => ({
   findWorkspaceRoots: vi.fn(),
 }))
 vi.mock('./bazel-query-runner.mts', () => ({
-  buildMavenProbeFor: vi.fn(() => async (_: string) => ({
-    code: 1,
-    stdout: '',
-    stderr: "ERROR: No repository visible as '@x' from main repository\n",
-  })),
+  buildMavenProbeFor: vi.fn(() => defaultMavenProbe),
   runBazelModShowMavenExtension: vi.fn(),
 }))
 vi.mock('./bazel-repo-discovery.mts', async () => {
@@ -79,6 +72,30 @@ import {
   extractBazelToMaven,
   normalizeToMavenInstallJson,
 } from './extract_bazel_to_maven.mts'
+
+import type { ExtractedArtifact } from './bazel-build-parser.mts'
+import type { CqueryRepoResult } from './bazel-cquery.mts'
+
+async function defaultMavenProbe(_: string): Promise<{
+  code: number
+  stdout: string
+  stderr: string
+}> {
+  return {
+    code: 1,
+    stdout: '',
+    stderr: "ERROR: No repository visible as '@x' from main repository\n",
+  }
+}
+
+function readManifest(out: string): unknown {
+  return JSON.parse(
+    readFileSync(
+      path.join(out, '.socket-auto-manifest', 'maven_install.json'),
+      'utf8',
+    ),
+  )
+}
 
 const mkResult = (over: Partial<CqueryRepoResult>): CqueryRepoResult => ({
   artifacts: [],
@@ -138,15 +155,6 @@ describe('extractBazelToMaven', () => {
   afterEach(() => {
     rmSync(tmp, { recursive: true, force: true })
   })
-
-  function readManifest(out: string): unknown {
-    return JSON.parse(
-      readFileSync(
-        path.join(out, '.socket-auto-manifest', 'maven_install.json'),
-        'utf8',
-      ),
-    )
-  }
 
   it('extracts a single Bzlmod workspace end-to-end', async () => {
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
@@ -418,7 +426,9 @@ describe('normalizeToMavenInstallJson', () => {
         ruleName: 'a',
       },
     ])
-    expect(result.artifacts['com.example:lib']?.shasums.jar).toBe('a'.repeat(64))
+    expect(result.artifacts['com.example:lib']?.shasums.jar).toBe(
+      'a'.repeat(64),
+    )
   })
 })
 
@@ -466,10 +476,14 @@ describe('fixture-driven write-output', () => {
       verbose: false,
     })
     expect(
-      existsSync(path.join(outDir, '.socket-auto-manifest', '.socket.facts.json')),
+      existsSync(
+        path.join(outDir, '.socket-auto-manifest', '.socket.facts.json'),
+      ),
     ).toBe(false)
     expect(
-      existsSync(path.join(outDir, '.socket-auto-manifest', 'maven_install.json')),
+      existsSync(
+        path.join(outDir, '.socket-auto-manifest', 'maven_install.json'),
+      ),
     ).toBe(true)
   })
 })
