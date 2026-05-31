@@ -314,6 +314,19 @@ export async function handleCreateNewScan({
 
   if (reach && scanId && tier1ReachabilityScanId) {
     await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
+  } else if (
+    reach.runReachabilityAnalysis &&
+    scanId &&
+    !tier1ReachabilityScanId
+  ) {
+    // Reachability analysis ran and a scan was created, but no tier 1
+    // reachability scan id was extracted from the facts file. Surface this
+    // instead of silently skipping finalize — otherwise the tier 1 row stays
+    // stuck (e.g. at COANA_DONE) and the full scan is never linked to its
+    // reachability report.
+    logger.warn(
+      'Reachability analysis ran but no tier 1 reachability scan ID was found; skipping tier 1 finalize. The scan was created but its reachability report was not linked.',
+    )
   }
 
   // On a successful scan, clean up the `.socket.facts.json` coana wrote at

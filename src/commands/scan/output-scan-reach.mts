@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -11,7 +13,11 @@ import type { CResult, OutputKind } from '../../types.mts'
 
 export async function outputScanReach(
   result: CResult<ReachabilityAnalysisResult>,
-  { outputKind, outputPath }: { outputKind: OutputKind; outputPath: string },
+  {
+    cwd,
+    outputKind,
+    outputPath,
+  }: { cwd: string; outputKind: OutputKind; outputPath: string },
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -33,7 +39,13 @@ export async function outputScanReach(
   logger.info(`Reachability report has been written to: ${actualOutputPath}`)
 
   // Warn about individual vulnerabilities where reachability analysis errored.
-  const errors = extractReachabilityErrors(result.data.reachabilityReport)
+  // Resolve the report path against the scan `cwd` (not `process.cwd()`):
+  // Coana writes the facts file relative to `cwd` and `reachabilityReport`
+  // is a `cwd`-relative path, so reading the bare relative path would miss
+  // the file whenever `cwd !== process.cwd()` (e.g. `--cwd <dir>`).
+  const errors = extractReachabilityErrors(
+    path.resolve(cwd, result.data.reachabilityReport),
+  )
   if (errors.length) {
     logger.log('')
     logger.warn(
