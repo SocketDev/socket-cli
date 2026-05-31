@@ -39,6 +39,13 @@ export type ExtractBazelOptions = {
   cwd: string
   // Optional env override used for python-shim PATH augmentation.
   env?: NodeJS.ProcessEnv
+  // Customer-supplied `--bazel-flag=<arg>` values; threaded into every
+  // bazel subcommand after the orchestrator's own flags. Repeatable on
+  // the CLI; entries are forwarded verbatim.
+  extraBazelFlags?: string[] | undefined
+  // Customer-supplied `--bazel-startup-flag=<arg>` values; injected into
+  // the startup-flag prefix before the subcommand.
+  extraBazelStartupFlags?: string[] | undefined
   // Customer-supplied Maven hub names augmenting the auto-discovery
   // candidate set. Wired in by the `--bazel-maven-repo=<name>` flag for
   // legacy WORKSPACE workspaces whose hubs use non-conventional names
@@ -369,6 +376,12 @@ function buildQueryOpts(args: {
     ...(opts.bazelRc ? { bazelRc: opts.bazelRc } : {}),
     ...(opts.bazelFlags ? { bazelFlags: opts.bazelFlags } : {}),
     ...(opts.bazelOutputBase ? { bazelOutputBase: opts.bazelOutputBase } : {}),
+    ...(opts.extraBazelFlags?.length
+      ? { extraBazelFlags: opts.extraBazelFlags }
+      : {}),
+    ...(opts.extraBazelStartupFlags?.length
+      ? { extraBazelStartupFlags: opts.extraBazelStartupFlags }
+      : {}),
     ...(baseEnv ? { env: baseEnv } : {}),
     verbose,
   }

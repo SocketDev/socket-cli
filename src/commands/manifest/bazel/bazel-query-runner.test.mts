@@ -121,6 +121,39 @@ describe('runBazelQuery', () => {
     expect(argv).toContain('--keep_going')
   })
 
+  it('appends extraBazelFlags after bazelFlags (CLI overrides socket.json default)', async () => {
+    await runBazelQuery('q', {
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+      bazelFlags: '--config=default',
+      extraBazelFlags: ['--config=override', '--repo_env=K=V'],
+    })
+    const argv = mocked.mock.calls[0]![1] as string[]
+    const def = argv.indexOf('--config=default')
+    const override = argv.indexOf('--config=override')
+    const envFlag = argv.indexOf('--repo_env=K=V')
+    expect(def).toBeGreaterThanOrEqual(0)
+    expect(override).toBeGreaterThan(def)
+    expect(envFlag).toBeGreaterThan(override)
+  })
+
+  it('threads extraBazelStartupFlags ahead of the subcommand but after the orchestrator startup flags', async () => {
+    await runBazelQuery('q', {
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+      outputUserRoot: '/tmp/x',
+      extraBazelStartupFlags: ['--host_jvm_args=-Xmx2g'],
+    })
+    const argv = mocked.mock.calls[0]![1] as string[]
+    const root = argv.indexOf('--output_user_root=/tmp/x')
+    const jvm = argv.indexOf('--host_jvm_args=-Xmx2g')
+    const subcmd = argv.indexOf('query')
+    expect(root).toBeLessThan(jvm)
+    expect(jvm).toBeLessThan(subcmd)
+  })
+
   it('forwards env to spawn when provided', async () => {
     const env = { ...process.env, BAZEL_BENCH: 'yes' }
     await runBazelQuery('q', {
@@ -416,6 +449,19 @@ describe('buildPypiProbeFor', () => {
       stdout: expect.stringContaining('@pypi//requests:pkg'),
       stderr: '',
     })
+  })
+
+  it('does nothing when extra flags are absent', async () => {
+    // Sanity-check the new flag arrays don't pollute argv when empty.
+    const probe = buildPypiProbeFor({
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+    })
+    await probe('pypi')
+    const argv = mocked.mock.calls[0]![1] as string[]
+    // No --bazel-startup-flag / --bazel-flag entries should have appeared.
+    expect(argv.some(a => a.startsWith('--config='))).toBe(false)
   })
 
   it('returns the full triple when the hub has no :pkg targets', async () => {

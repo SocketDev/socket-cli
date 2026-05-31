@@ -75,7 +75,10 @@ function buildMetadataCqueryExpr(repoName: string): string {
 }
 
 // Build the full cquery argv for a per-repo metadata cquery. Exposed for
-// argv-shape unit tests without touching `spawn`.
+// argv-shape unit tests without touching `spawn`. The startup-flag
+// composition mirrors `bazel-query-runner`'s `buildStartupFlags` so
+// customer `--bazel-startup-flag` values land before the subcommand and
+// `--bazel-flag` values land after the standard cquery flags.
 export function buildMetadataCqueryArgv(
   repoName: string,
   opts: BazelQueryOptions,
@@ -90,7 +93,13 @@ export function buildMetadataCqueryArgv(
   if (opts.bazelOutputBase) {
     startup.push(`--output_base=${opts.bazelOutputBase}`)
   }
-  const userFlags = splitBazelFlags(opts.bazelFlags)
+  if (opts.extraBazelStartupFlags?.length) {
+    startup.push(...opts.extraBazelStartupFlags)
+  }
+  const userFlags = [
+    ...splitBazelFlags(opts.bazelFlags),
+    ...(opts.extraBazelFlags ?? []),
+  ]
   return [
     ...startup,
     'cquery',
