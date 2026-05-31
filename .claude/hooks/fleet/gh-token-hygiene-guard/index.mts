@@ -212,15 +212,20 @@ async function main(): Promise<void> {
   }
   // Invariant 4 (checked early so the user can self-recover by
   // running `gh auth refresh -h github.com` even when expired).
+  // isTokenFresh() self-heals stale stamps via a `gh api user` probe,
+  // so reaching here means the token genuinely failed the live probe
+  // (or hit the network timeout).
   if (!isAuthMaintenanceCommand(command) && !isTokenFresh()) {
     fail(
-      'gh-token-hygiene-guard: gh token is >8h old',
+      'gh-token-hygiene-guard: gh token is >8h old (and live probe failed)',
       [
-        'The fleet enforces an 8-hour cap on gh token age. Refresh:',
-        '  gh auth refresh -h github.com',
+        'The fleet enforces an 8-hour cap on gh token age. The hook',
+        'probed `gh api user` to self-heal a stale stamp; the probe',
+        "didn't return 200, so the token is genuinely expired or",
+        'unreachable.',
         '',
-        '(Once refreshed, the hook stamps a local timestamp and',
-        'gh commands flow normally again.)',
+        'Refresh:',
+        '  gh auth refresh -h github.com',
       ].join('\n'),
     )
   }
@@ -440,10 +445,35 @@ function isTokenFresh(): boolean {
       recordTokenIssuedAt()
       return true
     }
-    return Date.now() - recorded < TOKEN_TTL_MS
+    if (Date.now() - recorded < TOKEN_TTL_MS) {
+      return true
+    }
+    // Stamp says expired. Self-heal: the user may have refreshed in a
+    // side shell (without the hook's --stamp follow-up). Probe the
+    // token directly via a cheap unauthenticated-rate-limit API call.
+    // If gh accepts it (exit 0), the token IS fresh; re-stamp and
+    // proceed. If gh rejects it (exit non-zero / 401), the stamp was
+    // right and the token really is dead.
+    if (probeTokenValid()) {
+      recordTokenIssuedAt()
+      return true
+    }
+    return false
   } catch {
     return false
   }
+}
+
+// Lightweight liveness check. `gh api user` is the standard "am I
+// authenticated" probe — 1 request, returns the user object on 200,
+// fails non-zero on 401/network issues. Timeout-bounded so a network
+// blackout doesn't hang the hook.
+function probeTokenValid(): boolean {
+  const result = spawnSync('gh', ['api', 'user', '--jq', '.login'], {
+    stdio: 'pipe',
+    timeout: 5000,
+  })
+  return result.status === 0
 }
 
 function recordTokenIssuedAt(): void {

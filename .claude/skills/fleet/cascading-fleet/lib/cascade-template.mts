@@ -239,6 +239,18 @@ for (const rawLine of fleetReposRaw) {
   const sync = run('node', [WH_SCRIPT, '--target', wt, '--fix'], { cwd: wt })
   logTail(sync.stdout + sync.stderr, 3)
 
+  // Exit code 3 means sync-scaffolding refused the cascade commit because
+  // lockfile drift would have left the repo's pnpm-lock.yaml out of sync
+  // with its package.json (downstream CI's --frozen-lockfile would then
+  // reject the cascade commit). Bail the repo rather than push a known-
+  // broken state — operator gets a clear `fail:lockfile-stale` row.
+  if (sync.status === 3) {
+    RESULTS.push(`${repo}|fail:lockfile-stale`)
+    gitSilent(src, ['worktree', 'remove', '--force', wt])
+    gitSilent(src, ['branch', '-D', branch])
+    continue
+  }
+
   const aheadOut = git(wt, ['rev-list', '--count', `origin/${base}..HEAD`])
   const ahead =
     aheadOut.status === 0 ? parseInt(aheadOut.stdout.trim(), 10) || 0 : 0

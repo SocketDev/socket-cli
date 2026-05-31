@@ -360,6 +360,7 @@ overrides:
   'tiny-colors': 'catalog:'
   'typedarray': 'catalog:'
   'undici': 'catalog:'
+  'uuid': '11.1.1'
   'vite': 'catalog:'
   'wrap-ansi': 'catalog:'
   'xml2js': 'catalog:'
