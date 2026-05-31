@@ -53,10 +53,17 @@ function normalizeBypassText(text: string): string {
   // the bypass phrase only after invisible chars are stripped — nor
   // can a user accidentally type a phrase that fails to match because
   // an editor inserted a zero-width-space.
+  // toLowerCase: matching is case-INsensitive — `allow fleet-fork bypass`
+  // and `ALLOW FLEET-FORK BYPASS` count the same as the canonical mixed
+  // case. Typing the phrase is already a deliberate act; casing carries no
+  // extra signal, and requiring exact case just trips up a hurried user.
+  // Combined with the dash/whitespace fold below, only the words + their
+  // order are load-bearing.
   return text
     .normalize('NFKC')
     .replace(/\p{Cf}/gu, '')
     .replace(/[-—–\s]+/g, ' ')
+    .toLowerCase()
 }
 
 export function bypassPhrasePresent(

@@ -205,7 +205,12 @@ async function main(): Promise<void> {
       '    - Emergency CVE patch published < 7 days ago.',
       '    - First-party package you control.',
       '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
+      "  Don't hand-edit the exclude list — run the canonical helper, which",
+      '  looks up the npm publish date and writes the dated annotation for you:',
+      '    node scripts/soak-bypass.mts <pkg>@<version>',
+      '  (the daily updating-daily job removes the entry once its soak clears).',
+      '',
+      `  Bypass (to hand-edit anyway): type "${BYPASS_PHRASE}" in a new message, then retry.`,
       '',
     ].join('\n'),
   )

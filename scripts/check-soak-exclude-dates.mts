@@ -9,14 +9,19 @@
  *   script catches anything that lands via a non-Claude path (manual `git
  *   checkout`, external editor, etc.). Reports stale entries too — any line
  *   whose `removable:` date is in the past is a cleanup candidate. Reporting is
- *   informational only (exit 0 on stale entries; exit 1 only on missing
- *   annotation). Exit codes:
+ *   informational by default (exit 0 on stale entries; exit 1 only on missing
+ *   annotation). `--fix` flips stale-reporting into PROMOTE mode: it removes
+ *   each soaked entry (the bullet + its annotation line) from
+ *   `pnpm-workspace.yaml` and writes the file. The caller runs `pnpm install`
+ *   after to reconcile the lockfile. This is what the daily `updating-daily`
+ *   job runs. Exit codes:
  *
- *   - 0 — clean (no missing annotations; stale entries logged as warnings)
+ *   - 0 — clean (no missing annotations; stale entries logged or, with --fix,
+ *     promoted)
  *   - 1 — at least one missing annotation
  */
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -31,7 +36,7 @@ const ANNOTATION_RE =
   /^\s*#\s+published:\s+(\d{4}-\d{2}-\d{2})\s+\|\s+removable:\s+(\d{4}-\d{2}-\d{2})\s*$/
 const ALLOW_MARKER = '# socket-hook: allow soak-exclude-no-date-annotation'
 
-interface Finding {
+export interface Finding {
   kind: 'missing' | 'stale'
   line: number
   name: string
@@ -39,7 +44,7 @@ interface Finding {
   removable?: string | undefined
 }
 
-function scan(text: string, todayISO: string): Finding[] {
+export function scan(text: string, todayISO: string): Finding[] {
   const lines = text.split('\n')
   const findings: Finding[] = []
   let inBlock = false
@@ -88,6 +93,35 @@ function scan(text: string, todayISO: string): Finding[] {
   return findings
 }
 
+/**
+ * Promote (remove) stale soak-exclude entries: for each stale finding, drop the
+ * `- 'pkg@ver'` bullet and, when present directly above it, its `# published: …
+ * | removable: …` annotation line. Everything else (other entries, their
+ * comments, the rest of the file) is preserved verbatim. Processes findings
+ * bottom-up so earlier line numbers stay valid as later lines are spliced out.
+ *
+ * @param content - The pnpm-workspace.yaml text.
+ * @param stale - Stale findings from `scan()` (each carries a 1-based `line`).
+ *
+ * @returns The updated content (unchanged when `stale` is empty).
+ */
+export function removeStaleEntries(content: string, stale: Finding[]): string {
+  if (stale.length === 0) {
+    return content
+  }
+  const lines = content.split('\n')
+  // 1-based line numbers, descending, so splices don't shift pending indices.
+  const byLineDesc = [...stale].sort((a, b) => b.line - a.line)
+  for (let i = 0, { length } = byLineDesc; i < length; i += 1) {
+    const idx = byLineDesc[i]!.line - 1
+    // Remove a preceding annotation line if it's the canonical comment.
+    const hasAnnotation = idx > 0 && ANNOTATION_RE.test(lines[idx - 1] ?? '')
+    const start = hasAnnotation ? idx - 1 : idx
+    lines.splice(start, idx - start + 1)
+  }
+  return lines.join('\n')
+}
+
 function main(): void {
   // Anchor on this script's location and walk up to the repo root
   // (the dir containing pnpm-workspace.yaml). process.cwd() is unstable
@@ -102,16 +136,33 @@ function main(): void {
     // No pnpm-workspace.yaml — not a workspace repo, nothing to check.
     process.exit(0)
   }
+  const fix = process.argv.includes('--fix')
   const todayISO = new Date().toISOString().slice(0, 10)
   const findings = scan(content, todayISO)
   const missing = findings.filter(f => f.kind === 'missing')
   const stale = findings.filter(f => f.kind === 'stale')
 
-  if (stale.length > 0) {
+  if (stale.length > 0 && fix) {
+    // Promote: the soak cleared, so the bypass is no longer needed.
+    const promoted = removeStaleEntries(content, stale)
+    writeFileSync(yamlPath, promoted)
+    process.stdout.write(
+      `[check-soak-exclude-dates] promoted ${stale.length} soaked ` +
+        `entr${stale.length === 1 ? 'y' : 'ies'} out of minimumReleaseAgeExclude:\n`,
+    )
+    for (let i = 0, { length } = stale; i < length; i += 1) {
+      const f = stale[i]!
+      process.stdout.write(`  - ${f.name}@${f.version}\n`)
+    }
+    process.stdout.write(`\nRun \`pnpm install\` to reconcile the lockfile.\n`)
+    // Promoting is the whole job in --fix mode; missing-annotation reporting
+    // still runs below so a fix run also surfaces malformed entries.
+  } else if (stale.length > 0) {
     process.stderr.write(
       `[check-soak-exclude-dates] ${stale.length} stale soak-bypass ` +
         `entr${stale.length === 1 ? 'y' : 'ies'} ` +
-        `(removable: date in the past) — candidates for cleanup:\n`,
+        `(removable: date in the past) — candidates for cleanup ` +
+        `(run with --fix to promote):\n`,
     )
     for (let i = 0, { length } = stale; i < length; i += 1) {
       const f = stale[i]!
@@ -145,4 +196,9 @@ function main(): void {
   process.exit(0)
 }
 
-main()
+// Run only when invoked directly (CLI / CI), not when imported by the unit
+// tests for `scan` / `removeStaleEntries` — `main()` calls `process.exit`,
+// which would tear down the test runner mid-suite.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main()
+}

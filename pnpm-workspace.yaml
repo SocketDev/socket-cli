@@ -304,16 +304,20 @@ blockExoticSubdeps: true
 # in the default `catalog:` block above. This defeats accidental
 # local-checkout resolution when a sibling repo is on disk.
 overrides:
+  # Fleet-canonical overrides (managed by socket-wheelhouse sync; do not edit).
+  '@socketregistry/packageurl-js': 'catalog:'
+  '@socketsecurity/lib': 'catalog:'
+  '@socketsecurity/registry': 'catalog:'
+  '@socketsecurity/sdk': 'catalog:'
+  'uuid': '11.1.1'
+
+  # Repo-specific overrides below.
   '@octokit/graphql': 'catalog:'
   '@octokit/request-error': 'catalog:'
   '@sigstore/sign': '4.1.0'
-  '@socketregistry/packageurl-js': 'catalog:'
   '@socketregistry/packageurl-js-stable': 'catalog:'
-  '@socketsecurity/lib': 'catalog:'
   '@socketsecurity/lib-stable': 'catalog:'
-  '@socketsecurity/registry': 'catalog:'
   '@socketsecurity/registry-stable': 'catalog:'
-  '@socketsecurity/sdk': 'catalog:'
   '@socketsecurity/sdk-stable': 'catalog:'
   'aggregate-error': 'catalog:'
   'ansi-regex': 'catalog:'
@@ -360,7 +364,6 @@ overrides:
   'tiny-colors': 'catalog:'
   'typedarray': 'catalog:'
   'undici': 'catalog:'
-  'uuid': '11.1.1'
   'vite': 'catalog:'
   'wrap-ansi': 'catalog:'
   'xml2js': 'catalog:'

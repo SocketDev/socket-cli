@@ -148,7 +148,10 @@ export function findFleetRepoRoot(filePath: string): string | undefined {
   return undefined
 }
 
-export function isCanonicalRelativePath(rel: string): boolean {
+export function isCanonicalRelativePath(
+  rel: string,
+  repoRoot?: string | undefined,
+): boolean {
   const normalized = rel.replace(/\\/g, '/')
   // Per-repo carve-outs take precedence over the canonical prefixes
   // (they're more specific). Edits under these paths are intentionally
@@ -164,6 +167,19 @@ export function isCanonicalRelativePath(rel: string): boolean {
     if (normalized.startsWith(prefix)) {
       return true
     }
+  }
+  // `scripts/<x>` is fleet-canonical when it has a cascaded twin under
+  // `template/scripts/<x>` (the wheelhouse mirrors root scripts/ from the
+  // template; sync-scaffolding/ + validate-template.mts etc. are
+  // wheelhouse-only tooling with no template twin and are NOT canonical).
+  // A bare `scripts/` prefix would wrongly guard that wheelhouse-only set,
+  // so probe for the twin instead. `scripts/repo/` is already excluded above.
+  if (
+    repoRoot &&
+    normalized.startsWith('scripts/') &&
+    existsSync(path.join(repoRoot, 'template', normalized))
+  ) {
+    return true
   }
   return CANONICAL_FILES.includes(normalized)
 }
@@ -215,7 +231,7 @@ async function main(): Promise<number> {
 
   const relToRepo = path.relative(repoRoot, absPath)
 
-  if (!isCanonicalRelativePath(relToRepo)) {
+  if (!isCanonicalRelativePath(relToRepo, repoRoot)) {
     return 0
   }
 

@@ -2,7 +2,7 @@
 
 Reverting tracked changes or bypassing the fleet's hook chain requires the user to type the canonical phrase verbatim in a recent user turn. Inferring intent from "go ahead", "skip the hook", "fix it", etc. does NOT count.
 
-The phrase format is `Allow <X> bypass`. Case-sensitive, exact match.
+The phrase format is `Allow <X> bypass`. Case-insensitive; hyphens, spaces, and dashes in `<X>` are interchangeable (`Allow fleet-fork bypass` ≡ `allow fleet fork bypass`). Every word must still be present, in order.
 
 | Operation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Phrase                            |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
@@ -26,12 +26,13 @@ The phrase format is `Allow <X> bypass`. Case-sensitive, exact match.
 
 A phrase from a previous session does not carry over. Only the current conversation's user turns count. The hook reads the active session's transcript (passed by Claude Code as `transcript_path` in the PreToolUse payload) and searches the concatenated user-turn text for the exact phrase.
 
-The match is **case-sensitive** and **substring-based**:
+The match is **case-insensitive** and **substring-based**. Hyphens, spaces, and dashes inside `<X>` are folded together, but every word of the phrase must appear in order:
 
 - ✓ `Allow revert bypass; please drop my last edit`
 - ✓ a multi-line user message with `Allow revert bypass` on its own line
-- ✗ `allow revert bypass` (lowercase)
+- ✓ `allow revert bypass` (lowercase)
 - ✗ `please revert that file` (paraphrase)
+- ✗ `Allow revert` (missing `bypass`)
 - ✗ `--no-verify is fine` (no `Allow ... bypass` shape)
 
 ## Why a phrase

@@ -155,12 +155,23 @@ test('bypassPhrasePresent: finds the phrase', () => {
   }
 })
 
-test('bypassPhrasePresent: case-sensitive (lowercase does not count)', () => {
+test('bypassPhrasePresent: case-insensitive (lowercase counts)', () => {
   const f = writeTranscript(
     JSON.stringify({ role: 'user', content: 'allow revert bypass please' }),
   )
   try {
-    assert.equal(bypassPhrasePresent(f, 'Allow revert bypass'), false)
+    assert.equal(bypassPhrasePresent(f, 'Allow revert bypass'), true)
+  } finally {
+    cleanup(f)
+  }
+})
+
+test('bypassPhrasePresent: uppercase counts', () => {
+  const f = writeTranscript(
+    JSON.stringify({ role: 'user', content: 'ALLOW REVERT BYPASS please' }),
+  )
+  try {
+    assert.equal(bypassPhrasePresent(f, 'Allow revert bypass'), true)
   } finally {
     cleanup(f)
   }
