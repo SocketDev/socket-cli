@@ -47,7 +47,19 @@ import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const logger = getDefaultLogger()
 
+// Bare, session-wide form (kept as a fallback). The scoped form is
+// preferred — it names the exact repo so authorization can't leak to an
+// unrelated non-fleet publish later in the session.
 const BYPASS_PHRASE = 'Allow non-fleet-publish bypass'
+const BYPASS_PHRASE_PREFIX = 'Allow non-fleet-publish bypass:'
+
+// Phrases that authorize a publish to `slug`: the bare fallback plus the
+// scoped form against the full `owner/repo` slug and its bare basename.
+export function acceptedBypassPhrases(slug: string): string[] {
+  const basename = slug.includes('/') ? slug.slice(slug.indexOf('/') + 1) : slug
+  const targets = basename === slug ? [slug] : [slug, basename]
+  return [BYPASS_PHRASE, ...targets.map(t => `${BYPASS_PHRASE_PREFIX} ${t}`)]
+}
 
 const GH_DASH_REPO_RE = /--repo[\s=]+("([^"]+)"|'([^']+)'|(\S+))/
 
@@ -142,7 +154,7 @@ await withBashGuard((command, payload) => {
   // Non-fleet target. Check bypass phrase.
   if (
     payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
+    bypassPhrasePresent(payload.transcript_path, acceptedBypassPhrases(slug))
   ) {
     return
   }
@@ -159,9 +171,13 @@ await withBashGuard((command, payload) => {
       `  submit without explicit per-action user confirmation —`,
       `  captured plans + "do all N tasks" directives do NOT count.`,
       '',
-      `  If you really want to submit: type the canonical phrase`,
-      `  in your next message, then re-run:`,
-      `    ${BYPASS_PHRASE}`,
+      `  If you really want to submit: type the scoped phrase for THIS`,
+      `  repo in your next message, then re-run:`,
+      `    ${BYPASS_PHRASE_PREFIX} ${slug}`,
+      '',
+      `  The scoped form authorizes ${slug} only — it can’t leak to an`,
+      `  unrelated non-fleet publish later. (The bare, session-wide`,
+      `  "${BYPASS_PHRASE}" is still accepted as a fallback.)`,
       '',
       '  Otherwise: draft locally, share for review, get explicit',
       '  yes/no before re-attempting.',

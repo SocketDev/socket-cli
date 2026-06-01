@@ -8,7 +8,7 @@
  *   re-audited. Per-package, like package.json: every package that has its own
  *   `scripts/` directory has its own `paths.mts`. A sub-package can inherit
  *   from a parent's paths.mts by re-exporting: // packages/foo/bar/paths.mts
- *   export * from '../../../scripts/paths.mts' // Add sub-package-specific
+ *   export * from '../../../scripts/fleet/paths.mts' // Add sub-package-specific
  *   overrides below the export line. export const FOO_BAR_DIST =
  *   path.join(REPO_ROOT, 'packages', 'foo', 'bar', 'dist') Consumers resolve
  *   `paths.mts` the same way Node resolves `package.json` — relative to the

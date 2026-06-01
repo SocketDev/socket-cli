@@ -20,17 +20,19 @@ The fleet rule from CLAUDE.md (1 path, 1 reference):
 
 ## Allowed shapes
 
-Repo-root `scripts/paths.mts` — no ancestor exists; nothing to
-inherit from. Skipped.
+Repo-root paths module — no ancestor exists; nothing to inherit from.
+Skipped. The canonical location is `scripts/fleet/paths.mts` after the
+`scripts/{fleet,repo}` segmentation; the pre-segmentation `scripts/paths.mts`
+is also recognized for repos that haven't moved yet.
 
 Sub-package `packages/foo/scripts/paths.mts`:
 
 ```ts
-export * from '../../../scripts/paths.mts'
+export * from '../../../scripts/fleet/paths.mts'
 
 // Local overrides below — package-specific paths.
 import path from 'node:path'
-import { REPO_ROOT } from '../../../scripts/paths.mts'
+import { REPO_ROOT } from '../../../scripts/fleet/paths.mts'
 export const FOO_DIST = path.join(REPO_ROOT, 'packages', 'foo', 'dist')
 ```
 

@@ -34,10 +34,13 @@ let tmpRoot: string
 
 beforeEach(() => {
   tmpRoot = mkdtempSync(path.join(os.tmpdir(), 'paths-mts-inherit-guard-'))
-  // Repo-root scripts/fleet/paths.mts — ancestor exists for sub-packages.
-  mkdirSync(path.join(tmpRoot, 'scripts'), { recursive: true })
+  // Repo-root scripts/fleet/paths.mts — the canonical ancestor after the
+  // scripts/{fleet,repo} segmentation. findAncestorPathsMts must discover this
+  // (not just the pre-segmentation scripts/paths.mts) so sub-packages stay
+  // enforced.
+  mkdirSync(path.join(tmpRoot, 'scripts', 'fleet'), { recursive: true })
   writeFileSync(
-    path.join(tmpRoot, 'scripts', 'paths.mts'),
+    path.join(tmpRoot, 'scripts', 'fleet', 'paths.mts'),
     "export const REPO_ROOT = '/tmp/fake'\n",
   )
 })
@@ -70,7 +73,7 @@ describe('paths-mts-inherit-guard', () => {
     const r = runHook({
       tool_name: 'Write',
       tool_input: {
-        file_path: path.join(tmpRoot, 'scripts', 'paths.mts'),
+        file_path: path.join(tmpRoot, 'scripts', 'fleet', 'paths.mts'),
         content: "export const X = 'no inheritance needed at root'\n",
       },
     })
@@ -99,6 +102,32 @@ describe('paths-mts-inherit-guard', () => {
     assert.match(r.stderr, /export \* from/)
   })
 
+  test('discovers the ancestor at scripts/fleet/paths.mts (post-segmentation)', () => {
+    // Regression: before findAncestorPathsMts learned the scripts/fleet/
+    // location, a sub-package whose only ancestor lives at
+    // scripts/fleet/paths.mts (the segmented repo-root module) was wrongly
+    // treated as having NO ancestor → silently exempt. The block must fire,
+    // and the suggested re-export must point at the fleet location.
+    mkdirSync(path.join(tmpRoot, 'packages', 'seg', 'scripts'), {
+      recursive: true,
+    })
+    const r = runHook({
+      tool_name: 'Write',
+      tool_input: {
+        file_path: path.join(
+          tmpRoot,
+          'packages',
+          'seg',
+          'scripts',
+          'paths.mts',
+        ),
+        content: "export const REDERIVED = 'wrong'\n",
+      },
+    })
+    assert.equal(r.code, 2)
+    assert.match(r.stderr, /scripts\/fleet\/paths\.mts/)
+  })
+
   test('allows sub-package paths.mts WITH export *', () => {
     mkdirSync(path.join(tmpRoot, 'packages', 'foo', 'scripts'), {
       recursive: true,
@@ -114,7 +143,7 @@ describe('paths-mts-inherit-guard', () => {
           'paths.mts',
         ),
         content:
-          "export * from '../../../scripts/paths.mts'\nexport const FOO_DIST = '/x'\n",
+          "export * from '../../../scripts/fleet/paths.mts'\nexport const FOO_DIST = '/x'\n",
       },
     })
     assert.equal(r.code, 0)
@@ -133,7 +162,7 @@ describe('paths-mts-inherit-guard', () => {
     )
     writeFileSync(
       subPath,
-      "export * from '../../../scripts/paths.mts'\nexport const OLD = '/x'\n",
+      "export * from '../../../scripts/fleet/paths.mts'\nexport const OLD = '/x'\n",
     )
     const r = runHook({
       tool_name: 'Edit',
@@ -147,7 +176,11 @@ describe('paths-mts-inherit-guard', () => {
     assert.equal(r.code, 0)
   })
 
-  test('allows paths.cts variant', () => {
+  test('allows paths.cts variant (and the pre-segmentation export * target)', () => {
+    // The guard checks the textual export * line; it does NOT resolve the
+    // target to disk. So a sub-package re-exporting the OLD pre-segmentation
+    // path string still satisfies inheritance — un-migrated repos aren't
+    // suddenly blocked. (The on-disk ancestor here is scripts/fleet/paths.mts.)
     mkdirSync(path.join(tmpRoot, 'packages', 'cjs', 'scripts'), {
       recursive: true,
     })

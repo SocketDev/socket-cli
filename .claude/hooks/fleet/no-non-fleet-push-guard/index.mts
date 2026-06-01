@@ -42,7 +42,21 @@ import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const logger = getDefaultLogger()
 
+// Bare, session-wide form (kept as a fallback). The scoped form below
+// is preferred — it names the exact repo so the authorization can't
+// leak to an unrelated non-fleet push later in the session.
 const BYPASS_PHRASE = 'Allow non-fleet-push bypass'
+const BYPASS_PHRASE_PREFIX = 'Allow non-fleet-push bypass:'
+
+// Build the phrases that authorize a push to `slug`. Accept the full
+// `owner/repo` slug and its bare repo basename, so the user can write
+// whichever feels natural (e.g. `SocketDev/socket-bin` or `socket-bin`).
+// The bare session-wide phrase stays accepted for back-compat.
+export function acceptedBypassPhrases(slug: string): string[] {
+  const basename = slug.includes('/') ? slug.slice(slug.indexOf('/') + 1) : slug
+  const targets = basename === slug ? [slug] : [slug, basename]
+  return [BYPASS_PHRASE, ...targets.map(t => `${BYPASS_PHRASE_PREFIX} ${t}`)]
+}
 
 export function originSlug(dir: string): string | undefined {
   let out: string
@@ -85,7 +99,7 @@ await withBashGuard((command, payload) => {
 
   if (
     payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
+    bypassPhrasePresent(payload.transcript_path, acceptedBypassPhrases(slug))
   ) {
     return
   }
@@ -107,7 +121,13 @@ await withBashGuard((command, payload) => {
       `    git -C ${dir} remote get-url origin`,
       '',
       `  If the push is genuinely intended (a personal / non-fleet repo`,
-      `  you own), type "${BYPASS_PHRASE}" in a new message, then retry.`,
+      `  you own), type the scoped phrase for THIS repo in a new message,`,
+      '  then retry:',
+      `    ${BYPASS_PHRASE_PREFIX} ${slug}`,
+      '',
+      `  The scoped form authorizes ${slug} only — it can’t leak to an`,
+      '  unrelated non-fleet push later. (The bare, session-wide',
+      `  "${BYPASS_PHRASE}" is still accepted as a fallback.)`,
       '',
     ].join('\n'),
   )

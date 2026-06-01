@@ -69,22 +69,37 @@ const PATHS_MTS_RE = /(?:^|\/)paths\.(?:cts|mts)$/
 const EXPORT_STAR_RE =
   /^\s*export\s+\*\s+from\s+['"](?:[^'"]+\/paths\.m?ts)['"];?\s*$/m
 
+// Ancestor paths.mts can live at `scripts/paths.{mts,cts}` (per-package
+// convention) OR `scripts/fleet/paths.{mts,cts}` (the repo-root canonical
+// module after the scripts/{fleet,repo} segmentation moved it under fleet/).
+// Probe both, in directory-depth order, so the walk finds the nearest ancestor
+// whether or not a given repo has been segmented yet.
+const ANCESTOR_REL_CANDIDATES: readonly string[] = [
+  'scripts/paths.mts',
+  'scripts/paths.cts',
+  'scripts/fleet/paths.mts',
+  'scripts/fleet/paths.cts',
+]
+
 /**
- * Walk up from `filePath` looking for an ancestor `scripts/paths.mts` or
- * `scripts/paths.cts`. Returns the absolute path of the nearest one, or
- * `undefined` if there's no ancestor (i.e. this IS the repo- root paths.mts).
+ * Walk up from `filePath` looking for an ancestor paths module —
+ * `scripts/paths.{mts,cts}` or `scripts/fleet/paths.{mts,cts}` (the post-
+ * segmentation repo-root location). Returns the absolute path of the nearest
+ * one, or `undefined` if there's no ancestor (i.e. this IS the repo-root
+ * paths.mts).
  *
  * Stops at the first ancestor found OR at the filesystem root.
  */
 export function findAncestorPathsMts(filePath: string): string | undefined {
-  const fileDir = path.dirname(path.resolve(filePath))
+  const resolvedSelf = path.resolve(filePath)
+  const fileDir = path.dirname(resolvedSelf)
   // Skip the current file's own dir — we want a STRICT ancestor.
   let cur = path.dirname(fileDir)
   const root = path.parse(cur).root
   while (cur && cur !== root) {
-    for (const ext of ['mts', 'cts']) {
-      const candidate = path.join(cur, 'scripts', `paths.${ext}`)
-      if (existsSync(candidate) && candidate !== path.resolve(filePath)) {
+    for (let i = 0, { length } = ANCESTOR_REL_CANDIDATES; i < length; i += 1) {
+      const candidate = path.join(cur, ANCESTOR_REL_CANDIDATES[i]!)
+      if (existsSync(candidate) && candidate !== resolvedSelf) {
         return candidate
       }
     }

@@ -301,6 +301,9 @@ minimumReleaseAgeExclude:
   # published: 2026-05-11 | removable: 2026-05-18
   - '@vitest/utils@4.1.6'
   - 'shell-quote'
+  - '@stuie/*'
+  - '@ultrathink/*'
+  - '@yuku-parser/*'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we

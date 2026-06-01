@@ -154,6 +154,6 @@ scripts/fleet/util/source-allowlist.mts linguist-generated=true
 scripts/fleet/validate-bundle-deps.mts linguist-generated=true
 
 # Vendored binary blobs (no diff, no merge, no text-mode).
-.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
-template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
+.claude/hooks/_shared/acorn/acorn.wasm binary
+template/.claude/hooks/_shared/acorn/acorn.wasm binary
 # ─── END fleet-canonical ────────────────────────────────────────
