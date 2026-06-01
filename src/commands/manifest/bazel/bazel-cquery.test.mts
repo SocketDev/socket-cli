@@ -398,7 +398,7 @@ describe('parseCqueryJsonproto', () => {
         {
           name: '@maven//:a',
           coord: 'g:a:1',
-          deps: ['@platforms//os:linux', ':src'],
+          deps: ['@platforms//os:linux', ':src', '//pkg:thing'],
         },
       ])
       const { artifacts, unresolvedLabels } = parseCqueryJsonproto(
@@ -406,6 +406,7 @@ describe('parseCqueryJsonproto', () => {
         'maven',
         '',
       )
+      // `//pkg:thing` is a Bazel package-relative target, not a coordinate.
       expect(artifacts[0]!.deps).toEqual([])
       expect(unresolvedLabels).toEqual([])
     })

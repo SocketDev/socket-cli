@@ -229,7 +229,9 @@ describe('extractBazelToMaven', () => {
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({
         artifacts: [
-          mkArt('com.google.guava:guava:33.0.0-jre', 'com_google_guava_guava'),
+          mkArt('com.google.guava:guava:33.0.0-jre', 'com_google_guava_guava', {
+            deps: ['com.x:x'],
+          }),
         ],
         repoName: 'maven',
         workspaceRelPath: '',
@@ -238,8 +240,10 @@ describe('extractBazelToMaven', () => {
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({
         artifacts: [
-          // Same coord as the root workspace — must be deduped.
+          // Same coord as the root workspace — must be deduped, but its edges
+          // (resolved against its own repo) must be unioned, not dropped.
           mkArt('com.google.guava:guava:33.0.0-jre', 'com_google_guava_guava', {
+            deps: ['com.y:y'],
             sourceRepo: 'examples/dagger:maven',
           }),
           mkArt('com.google.dagger:dagger:2.50', 'com_google_dagger_dagger', {
@@ -263,10 +267,16 @@ describe('extractBazelToMaven', () => {
     expect(result.artifactCount).toBe(2)
     const manifest = readManifest(tmp) as {
       artifacts: Record<string, { version: string }>
+      dependencies: Record<string, string[]>
     }
     expect(Object.keys(manifest.artifacts).sort()).toEqual([
       'com.google.dagger:dagger',
       'com.google.guava:guava',
+    ])
+    // Edges from both occurrences of the deduped coordinate are unioned.
+    expect(manifest.dependencies['com.google.guava:guava']?.sort()).toEqual([
+      'com.x:x',
+      'com.y:y',
     ])
   })
 

@@ -365,8 +365,14 @@ function resolveDepLabel(label: string, index: LabelCoordIndex): DepResolution {
     return { kind: 'unresolved' }
   }
   // Already-a-coordinate fallback: a bare `g:a:v` string label (not a Bazel
-  // label). Versionless-normalize it.
-  if (label.includes(':') && !label.startsWith('@') && !label.startsWith(':')) {
+  // label). Versionless-normalize it. Exclude `//`-prefixed package-relative
+  // labels (`//pkg:thing`) — those are Bazel targets, not coordinates.
+  if (
+    label.includes(':') &&
+    !label.startsWith('@') &&
+    !label.startsWith(':') &&
+    !label.startsWith('//')
+  ) {
     return { coord: versionlessCoordinate(label), kind: 'coord' }
   }
   // Non-maven target — intentional drop, not counted.

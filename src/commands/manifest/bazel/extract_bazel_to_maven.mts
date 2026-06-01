@@ -156,20 +156,27 @@ export function normalizeToMavenInstallJson(
 // (`g:a:v[:classifier]`). The metadata cquery emits one entry per rule,
 // so the same `androidx.annotation:annotation:1.8.2` can show up in
 // `examples/dagger/@maven` and `examples/ksp/@maven` in rules_kotlin —
-// downstream only needs it once.
+// downstream only needs it once. Each occurrence resolves its edges against
+// its own repo's targets, so the resolved `deps` can legitimately differ
+// between occurrences; union them rather than keeping only the first, or
+// real graph edges would be silently dropped.
 function dedupArtifactsByCoord(
   artifacts: ExtractedArtifact[],
 ): ExtractedArtifact[] {
-  const seen = new Set<string>()
-  const out: ExtractedArtifact[] = []
+  const byCoord = new Map<string, ExtractedArtifact>()
   for (const a of artifacts) {
-    if (seen.has(a.mavenCoordinates)) {
+    const existing = byCoord.get(a.mavenCoordinates)
+    if (!existing) {
+      byCoord.set(a.mavenCoordinates, { ...a, deps: [...a.deps] })
       continue
     }
-    seen.add(a.mavenCoordinates)
-    out.push(a)
+    const merged = new Set(existing.deps)
+    for (const dep of a.deps) {
+      merged.add(dep)
+    }
+    existing.deps = [...merged]
   }
-  return out
+  return [...byCoord.values()]
 }
 
 // Build the per-workspace candidate Maven hub list.
