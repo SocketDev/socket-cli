@@ -102,7 +102,7 @@ const EDGE_ATTR_NAMES: ReadonlySet<string> = new Set([
 //    (Bazel-native java_library / kt_jvm_import shape).
 // Note: a `maven_url`-only predicate was intentionally dropped — those rules
 // carry no coordinate, so selecting them only to discard them downstream is
-// wasted analysis (finding G). If POM-only artifacts ever matter, synthesize
+// wasted analysis. If POM-only artifacts ever matter, synthesize
 // a coordinate from `maven_url` instead of re-adding the selector.
 function buildMetadataCqueryExpr(repoName: string): string {
   const r = `@${repoName}//...`

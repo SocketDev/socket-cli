@@ -90,7 +90,7 @@ const REAP_TIMEOUT_MS = 10_000
 // Default directory-prune policy for the Bazel workspace walk. The
 // orchestrator applies this unconditionally so neither caller (the explicit
 // `socket manifest bazel` command nor `--auto-manifest`) can omit it and let
-// the walk descend `node_modules`/VCS/vendored trees (finding A). Callers may
+// the walk descend `node_modules`/VCS/vendored trees. Callers may
 // pass extra names/prefixes to EXTEND, not replace, this set.
 export const DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES: ReadonlySet<string> =
   new Set([
@@ -519,8 +519,8 @@ export async function extractBazelToMaven(
   let hubsFailed = 0
 
   try {
-    // Always apply the default prune policy so no caller can forget it
-    // (finding A); callers EXTEND it via ignoreDirNames/ignoreDirPrefixes.
+    // Always apply the default prune policy so no caller can forget it;
+    // callers EXTEND it via ignoreDirNames/ignoreDirPrefixes.
     const ignoreDirNames = new Set([
       ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
       ...(opts.ignoreDirNames ?? []),

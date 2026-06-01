@@ -146,7 +146,7 @@ describe('buildMetadataCqueryArgv', () => {
     const expr = argv.find(a => a.includes('attr("tags"'))
     expect(expr).toContain('attr("tags", "\\bmaven_coordinates=", @maven//...)')
     expect(expr).toContain('attr("maven_coordinates", ".+", @maven//...)')
-    // maven_url selector dropped (finding G).
+    // maven_url selector dropped: those rules carry no coordinate.
     expect(expr).not.toContain('maven_url')
   })
 
