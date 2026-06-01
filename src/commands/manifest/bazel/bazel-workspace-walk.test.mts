@@ -19,10 +19,12 @@ function touch(file: string): void {
   writeFileSync(file, '')
 }
 
-// Standard prune set Bazel callers pass: the codebase-wide IGNORED_DIRS
-// (.git, node_modules, etc.) plus the walker's own output dir, plus
-// `bazel-*` output_base symlinks and `dist*` build outputs. Replicated
-// inline here so the test stays decoupled from `src/utils/glob.mts`.
+// A representative injected prune set for exercising the walker's generic
+// name/prefix pruning. The walker hardcodes none of these; the production
+// default (DEFAULT_BAZEL_WALKER_IGNORE_DIR_* in extract_bazel_to_maven.mts)
+// is IGNORED_DIRS + VCS/IDE dirs for names and just `['bazel-']` for
+// prefixes. `dist` is included here only as an extra arbitrary prefix to
+// prove multi-prefix pruning works, not because callers pass it.
 const BAZEL_IGNORE_NAMES: ReadonlySet<string> = new Set([
   '.git',
   '.hg',
