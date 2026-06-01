@@ -78,7 +78,26 @@ interface ToolEntry {
   version: string
   repository?: string | undefined
   release?: string | undefined
-  checksums?: Record<string, { asset: string; sha256: string }> | undefined
+  platforms?:
+    | Record<string, { asset: string; integrity: string }>
+    | undefined
+}
+
+/**
+ * Decode the Subresource Integrity form (`sha256-<base64>`) the canonical
+ * fleet external-tools.json uses into the bare hex digest the
+ * downloadBinary helper expects. Single-source-of-truth schema:
+ * socket-btm/packages/build-infra/lib/external-tools-schema.json.
+ */
+function sriToHex(integrity: string): string {
+  if (!integrity.startsWith('sha256-')) {
+    throw new Error(
+      `Unsupported integrity prefix in external-tools.json (expected 'sha256-'): ${integrity}`,
+    )
+  }
+  return Buffer.from(integrity.slice('sha256-'.length), 'base64').toString(
+    'hex',
+  )
 }
 
 interface ExternalToolsFile {
@@ -163,12 +182,16 @@ async function main(): Promise<void> {
     return
   }
 
+  // The canonical version field can carry a leading `v` (template ships
+  // `v1.12.0`). Strip it for the URL; the wheelhouse-root mirror stores
+  // it bare. downloadBinary expects the hex form so decode the SRI.
+  const ver = entry.version.replace(/^v/, '')
   const platform = detectPlatform()
-  const platformMeta = entry.checksums?.[platform]
+  const platformMeta = entry.platforms?.[platform]
   if (!platformMeta) {
-    const supported = Object.keys(entry.checksums ?? {}).join(', ')
+    const supported = Object.keys(entry.platforms ?? {}).join(', ')
     logger.fail(
-      `${toolKey} v${entry.version} is not published for ${platform}.\n` +
+      `${toolKey} v${ver} is not published for ${platform}.\n` +
         `  Supported: ${supported || '(none)'}`,
     )
     process.exit(1)
@@ -176,12 +199,12 @@ async function main(): Promise<void> {
   }
 
   const repoSlug = entry.repository.replace(/^github:/, '')
-  const url = `https://github.com/${repoSlug}/releases/download/v${entry.version}/${platformMeta.asset}`
+  const url = `https://github.com/${repoSlug}/releases/download/v${ver}/${platformMeta.asset}`
   const binaryName = WIN32 ? 'sfw.exe' : 'sfw'
-  const sha256 = platformMeta.sha256
+  const sha256 = sriToHex(platformMeta.integrity)
 
   if (!values['quiet']) {
-    logger.info(`Installing ${toolKey} v${entry.version} (${platform})`)
+    logger.info(`Installing ${toolKey} v${ver} (${platform})`)
     logger.log(`  from: ${url}`)
   }
 
@@ -213,7 +236,7 @@ async function main(): Promise<void> {
   await fsPromises.symlink(binaryPath, linkPath)
 
   if (!values['quiet']) {
-    logger.success(`sfw v${entry.version} ready at ${linkPath}`)
+    logger.success(`sfw v${ver} ready at ${linkPath}`)
     logger.log(`  → ${binaryPath}`)
   }
 }

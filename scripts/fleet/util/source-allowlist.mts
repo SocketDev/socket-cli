@@ -30,6 +30,15 @@ import type { PackAppTriplet } from './pack-app-triplets.mts'
 export type SourceAllowlistTargetScope = '@socketaddon' | '@socketbin'
 
 /**
+ * Kind of binary the family ships. `napi` = Node.js native addon (a `.node`
+ * file loaded via `require()` / dlopen); `cli` = standalone executable invoked
+ * by name. The kind selects where the binary lands in the tail (a `.node` next
+ * to package.json for napi; under `bin/` for cli) and which test harness
+ * verifies the staged artifact.
+ */
+export type SourceAllowlistBinaryKind = 'cli' | 'napi'
+
+/**
  * Workflow path under a source repo's `.github/workflows/` directory. Encoded
  * as a template literal so a typo at compile time hurts.
  */
@@ -105,6 +114,23 @@ export interface SourceAllowlistEntry {
    * shipping a Windows tail).
    */
   readonly triplets: readonly PackAppTriplet[]
+
+  /**
+   * Whether the family ships a NAPI `.node` addon or a standalone CLI binary.
+   * Used by the consumer's `binaryPathInTail()` helper to compute the right
+   * in-tail path: `napi` → `<binaryName>.node` next to package.json; `cli` →
+   * `bin/<binaryName>` (or `bin/<binaryName>.exe` for `win32-*` triplets).
+   */
+  readonly kind: SourceAllowlistBinaryKind
+
+  /**
+   * Base file name of the binary (no extension, no platform suffix). Combined
+   * with `kind` + the triplet to derive the in-tail path. Example:
+   * `binaryName: 'acorn'` + `kind: 'cli'` + triplet `win32-x64` →
+   * `bin/acorn.exe`; `binaryName: 'iocraft'` + `kind: 'napi'` + triplet
+   * `darwin-arm64` → `iocraft.node`.
+   */
+  readonly binaryName: string
 
   /**
    * Sigstore signer-subject expected on artifact attestations. Passed verbatim
@@ -189,6 +215,30 @@ export function buildTailPackageName(
   triplet: PackAppTriplet,
 ): string {
   return `${entry.targetScope}/${entry.namePrefix}${triplet}`
+}
+
+/**
+ * Compute the in-tail path for the staged binary. Centralized so every
+ * consumer derives the same shape:
+ *
+ *   - `napi` → `<binaryName>.node` (next to package.json).
+ *   - `cli` + win32-* triplet → `bin/<binaryName>.exe`.
+ *   - `cli` + non-win32 triplet → `bin/<binaryName>`.
+ *
+ * Consumers pass this as the `binaryPathInTail` callback to
+ * `stageMultiPackagePublish()`. Centralizing prevents per-consumer ternary drift
+ * (today's NAPI consumers all do the same thing; tomorrow they'd all need to
+ * remember the win32 suffix when they grow to CLI families too).
+ */
+export function buildBinaryPathInTail(
+  entry: SourceAllowlistEntry,
+  triplet: PackAppTriplet,
+): string {
+  if (entry.kind === 'napi') {
+    return `${entry.binaryName}.node`
+  }
+  const exe = triplet.startsWith('win32-') ? '.exe' : ''
+  return `bin/${entry.binaryName}${exe}`
 }
 
 /**

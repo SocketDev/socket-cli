@@ -79,6 +79,7 @@
 .config/fleet/sfw-bypass-list.txt linguist-generated=true
 .config/fleet/taze.config.mts linguist-generated=true
 .config/fleet/tsconfig.base.json linguist-generated=true
+.config/fleet/tsconfig.check.base.json linguist-generated=true
 .config/fleet/vitest.coverage.fleet.config.mts linguist-generated=true
 .config/lockstep.schema.json linguist-generated=true
 .config/repo/rolldown/define-guarded.mts linguist-generated=true
@@ -88,6 +89,7 @@
 .config/socket-wheelhouse-schema.json linguist-generated=true
 .git-hooks linguist-generated=true
 .github/dependabot.yml linguist-generated=true
+.npmrc linguist-generated=true
 assets/README.md linguist-generated=true
 assets/socket-icon-brand-128.png linguist-generated=true
 assets/socket-icon-brand-16.png linguist-generated=true
@@ -145,7 +147,6 @@ packages/build-infra/lib/release-checksums/producer.mts linguist-generated=true
 packages/build-infra/release-assets.schema.json linguist-generated=true
 scripts/fleet linguist-generated=true
 scripts/fleet/check-provenance.mts linguist-generated=true
-scripts/fleet/publish-release.mts linguist-generated=true
 scripts/fleet/publish-shared.mts linguist-generated=true
 scripts/fleet/publish.mts linguist-generated=true
 scripts/fleet/util/multi-package-publish.mts linguist-generated=true

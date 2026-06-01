@@ -38,12 +38,15 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-const REPO_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-const PLUGIN_DIR = path.join(REPO_ROOT, '.config', 'oxlint-plugin')
+// scripts/fleet/sync-oxlint-rules.mts → walk up 3 levels (file → fleet → scripts → repo root).
+const REPO_ROOT = path.dirname(
+  path.dirname(path.dirname(fileURLToPath(import.meta.url))),
+)
+const PLUGIN_DIR = path.join(REPO_ROOT, '.config', 'fleet', 'oxlint-plugin')
 const RULES_DIR = path.join(PLUGIN_DIR, 'rules')
 const TEST_DIR = path.join(PLUGIN_DIR, 'test')
 const INDEX_PATH = path.join(PLUGIN_DIR, 'index.mts')
-const OXLINTRC_PATH = path.join(REPO_ROOT, '.config', 'oxlintrc.json')
+const OXLINTRC_PATH = path.join(REPO_ROOT, '.config', 'fleet', 'oxlintrc.json')
 
 const SOCKET_PREFIX = 'socket/'
 

@@ -32,6 +32,7 @@ import noSrcImportInTestExpect from './rules/no-src-import-in-test-expect.mts'
 import noStatusEmoji from './rules/no-status-emoji.mts'
 import noStructuredClonePreferJson from './rules/no-structured-clone-prefer-json.mts'
 import noSyncRmInTestLifecycle from './rules/no-sync-rm-in-test-lifecycle.mts'
+import noTopLevelAwait from './rules/no-top-level-await.mts'
 import noUnderscoreIdentifier from './rules/no-underscore-identifier.mts'
 import noWhichForLocalBin from './rules/no-which-for-local-bin.mts'
 import optionalExplicitUndefined from './rules/optional-explicit-undefined.mts'
@@ -51,6 +52,7 @@ import preferPureCallForm from './rules/prefer-pure-call-form.mts'
 import preferSafeDelete from './rules/prefer-safe-delete.mts'
 import preferSeparateTypeImport from './rules/prefer-separate-type-import.mts'
 import preferSpawnOverExecsync from './rules/prefer-spawn-over-execsync.mts'
+import preferStableExternalSemver from './rules/prefer-stable-external-semver.mts'
 import preferStableSelfImport from './rules/prefer-stable-self-import.mts'
 import preferStaticTypeImport from './rules/prefer-static-type-import.mts'
 import preferUndefinedOverNull from './rules/prefer-undefined-over-null.mts'
@@ -96,6 +98,7 @@ const plugin = {
     'no-status-emoji': noStatusEmoji,
     'no-structured-clone-prefer-json': noStructuredClonePreferJson,
     'no-sync-rm-in-test-lifecycle': noSyncRmInTestLifecycle,
+    'no-top-level-await': noTopLevelAwait,
     'no-underscore-identifier': noUnderscoreIdentifier,
     'no-which-for-local-bin': noWhichForLocalBin,
     'optional-explicit-undefined': optionalExplicitUndefined,
@@ -115,6 +118,7 @@ const plugin = {
     'prefer-safe-delete': preferSafeDelete,
     'prefer-separate-type-import': preferSeparateTypeImport,
     'prefer-spawn-over-execsync': preferSpawnOverExecsync,
+    'prefer-stable-external-semver': preferStableExternalSemver,
     'prefer-stable-self-import': preferStableSelfImport,
     'prefer-static-type-import': preferStaticTypeImport,
     'prefer-undefined-over-null': preferUndefinedOverNull,

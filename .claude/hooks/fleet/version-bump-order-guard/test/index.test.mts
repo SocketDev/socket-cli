@@ -29,6 +29,42 @@ function makeRepoWithHeadSubject(subject: string): FakeRepo {
   }
 }
 
+// A bump-commit repo that ALSO declares a `lint` script — so the gate
+// half runs. `lintExit` controls whether `pnpm run lint --all` passes
+// (0) or fails (1): the lint script is a tiny node one-liner exiting that
+// code, so the test doesn't depend on oxlint or a real toolchain.
+function makeRepoWithLintScript(lintExit: number): FakeRepo {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'bumporder-lint-'))
+  spawnSync('git', ['init', '-q'], { cwd: root })
+  spawnSync('git', ['config', 'user.email', 'test@example.com'], { cwd: root })
+  spawnSync('git', ['config', 'user.name', 'tester'], { cwd: root })
+  spawnSync('git', ['config', 'commit.gpgsign', 'false'], { cwd: root })
+  // `pnpm run lint --all` forwards `--all` to the script. A bare
+  // `node -e "…"` rejects `--all` as a node option, so the fixture lint
+  // command points at a real script file: node treats the trailing
+  // `--all` as a script argument (ignored), not a node flag.
+  writeFileSync(
+    path.join(root, 'lint-fixture.mjs'),
+    `process.exit(${lintExit})\n`,
+  )
+  writeFileSync(
+    path.join(root, 'package.json'),
+    JSON.stringify({
+      name: 'gate-fixture',
+      version: '1.2.3',
+      scripts: { lint: 'node lint-fixture.mjs' },
+    }),
+  )
+  spawnSync('git', ['add', '-A'], { cwd: root })
+  spawnSync('git', ['commit', '-q', '-m', 'chore: bump version to 1.2.3'], {
+    cwd: root,
+  })
+  return {
+    root,
+    cleanup: () => rmSync(root, { recursive: true, force: true }),
+  }
+}
+
 function makeTranscript(userText?: string): string {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'bumporder-tx-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
@@ -149,5 +185,39 @@ test('fails open when not in a git repo', () => {
     assert.equal(exitCode, 0)
   } finally {
     rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('GATE BLOCKS a bump-commit tag when lint --all fails', () => {
+  const repo = makeRepoWithLintScript(1)
+  try {
+    const { stderr, exitCode } = runHook('git tag v1.2.3', repo.root)
+    assert.equal(exitCode, 2)
+    assert.match(stderr, /Pre-release gate failed/)
+    assert.match(stderr, /lint --all/)
+  } finally {
+    repo.cleanup()
+  }
+})
+
+test('GATE ALLOWS a bump-commit tag when lint --all passes', () => {
+  const repo = makeRepoWithLintScript(0)
+  try {
+    const { exitCode } = runHook('git tag v1.2.3', repo.root)
+    assert.equal(exitCode, 0)
+  } finally {
+    repo.cleanup()
+  }
+})
+
+test('SOCKET_VERSION_BUMP_SKIP_GATE=1 skips the gate (ordering still checked)', () => {
+  const repo = makeRepoWithLintScript(1)
+  try {
+    const { exitCode } = runHook('git tag v1.2.3', repo.root, undefined, {
+      SOCKET_VERSION_BUMP_SKIP_GATE: '1',
+    })
+    assert.equal(exitCode, 0)
+  } finally {
+    repo.cleanup()
   }
 })

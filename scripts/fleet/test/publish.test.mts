@@ -112,3 +112,41 @@ describe('publish / isStagingExpected', () => {
     assert.equal(result, false)
   })
 })
+
+describe('publish / main-guard', () => {
+  test('importing the module does not run main()', async () => {
+    // The main-guard is `if (process.argv[1] === fileURLToPath(import.meta.url))`.
+    // When this test file imports `../publish.mts`, process.argv[1] points at
+    // the node:test runner — not at publish.mts — so main() must not run.
+    // If the guard regressed (e.g. someone deleted the `if` branch), the
+    // import would trigger a real publish-prep run: read package.json,
+    // probe npm registry, spawn child processes. That's catastrophic in a
+    // test context.
+    //
+    // We assert two things: (1) the import resolves without throwing,
+    // (2) the resolved module exports the public API. If main() ran
+    // synchronously at import time, throws inside it would either reject
+    // the import promise OR `process.exitCode = 1` would set, both of
+    // which would fail this test.
+    const mod = await import('../publish.mts')
+    assert.equal(typeof mod.isStagingExpected, 'function')
+    // exitCode is 0 (or undefined) when nothing has set it; a regressed
+    // main-guard would have run main() which sets exitCode on error.
+    assert.ok(
+      process.exitCode === 0 || process.exitCode === undefined,
+      `process.exitCode is ${process.exitCode}; main() likely ran during import`,
+    )
+  })
+
+  test('process.argv[1] doesn\'t match import.meta.url under test runner', () => {
+    // Sanity check the test environment: the runner's argv[1] is the
+    // test entry, not publish.mts itself. If this assumption changes
+    // (e.g. a different test runner), the main-guard test above could
+    // give a false-positive pass.
+    const fileURLToPath = (
+      url: string,
+    ): string => new URL(url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+    const publishUrl = new URL('../publish.mts', import.meta.url).href
+    assert.notEqual(process.argv[1], fileURLToPath(publishUrl))
+  })
+})
