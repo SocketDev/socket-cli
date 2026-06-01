@@ -172,20 +172,23 @@ export function evaluateEcosystemOutcomes(
 
 // Map the legacy PyPI result shape (single manifestPath + ok/noEcosystem
 // booleans) into the shared status vocabulary so both ecosystems flow through
-// one success gate. PyPI has no partial state.
+// one success gate. PyPI has no partial state. Only a `complete` outcome
+// carries a manifest path; `noEcosystem`/`hardFailure` carry none, preserving
+// the invariant that a non-success outcome produced no usable output (a
+// detected-but-empty PyPI run writes a stub file but is still a hard failure,
+// and that stub must not be surfaced as produced output).
 function pypiOutcome(result: {
   manifestPath?: string | undefined
   noEcosystemFound?: boolean | undefined
   ok: boolean
 }): { manifestPaths: string[]; status: ExtractBazelStatus } {
-  const manifestPaths = result.manifestPath ? [result.manifestPath] : []
   if (result.noEcosystemFound) {
-    return { manifestPaths, status: 'noEcosystem' }
+    return { manifestPaths: [], status: 'noEcosystem' }
   }
-  if (result.ok && manifestPaths.length) {
-    return { manifestPaths, status: 'complete' }
+  if (result.ok && result.manifestPath) {
+    return { manifestPaths: [result.manifestPath], status: 'complete' }
   }
-  return { manifestPaths, status: 'hardFailure' }
+  return { manifestPaths: [], status: 'hardFailure' }
 }
 
 async function run(
