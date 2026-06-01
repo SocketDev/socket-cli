@@ -8,7 +8,9 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 
@@ -144,6 +146,77 @@ describe('bazel-workspace-walk', () => {
     it('handles an unreadable directory by skipping it (no throw)', () => {
       touch(path.join(tmp, 'MODULE.bazel'))
       expect(findWorkspaceRoots({ cwd: path.join(tmp, 'nope') })).toEqual([])
+    })
+
+    it('finds a workspace marker deeper than the old depth-8 cap (depth 9)', () => {
+      const deep = path.join(
+        tmp,
+        'l1',
+        'l2',
+        'l3',
+        'l4',
+        'l5',
+        'l6',
+        'l7',
+        'l8',
+        'l9',
+      )
+      touch(path.join(deep, 'MODULE.bazel'))
+      const found = findWorkspaceRoots({ cwd: tmp })
+      expect(found).toEqual([deep])
+    })
+  })
+
+  describe('findWorkspaceRoots truncation', () => {
+    let warnSpy: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+    })
+
+    afterEach(() => {
+      warnSpy.mockRestore()
+    })
+
+    it('caps at 16 roots, warns unconditionally, and keeps the sorted survivors', () => {
+      // 18 sibling roots; only the 16 lexicographically smallest survive.
+      const names = Array.from(
+        { length: 18 },
+        (_, i) => `r${String(i).padStart(2, '0')}`,
+      )
+      for (const name of names) {
+        touch(path.join(tmp, name, 'MODULE.bazel'))
+      }
+      const found = findWorkspaceRoots({ cwd: tmp }).map(p =>
+        path.relative(tmp, p),
+      )
+      expect(found).toHaveLength(16)
+      expect(found).toEqual(names.slice(0, 16))
+      expect(warnSpy).toHaveBeenCalled()
+      expect(warnSpy.mock.calls.map(c => String(c[0])).join('\n')).toMatch(
+        /capping at 16 and dropping 2/,
+      )
+    })
+
+    it('warns unconditionally when the visited-directory budget is exhausted', () => {
+      for (const name of ['a', 'b', 'c']) {
+        touch(path.join(tmp, name, 'MODULE.bazel'))
+      }
+      // Budget of 3 visits tmp + a + b, then stops before c.
+      const found = findWorkspaceRoots({ cwd: tmp, maxWalkDirs: 3 }).map(p =>
+        path.relative(tmp, p),
+      )
+      expect(found).toEqual(['a', 'b'])
+      expect(warnSpy.mock.calls.map(c => String(c[0])).join('\n')).toMatch(
+        /directory budget/,
+      )
+    })
+
+    it('does not warn on a normal small tree', () => {
+      touch(path.join(tmp, 'MODULE.bazel'))
+      touch(path.join(tmp, 'examples', 'dagger', 'MODULE.bazel'))
+      findWorkspaceRoots({ cwd: tmp })
+      expect(warnSpy).not.toHaveBeenCalled()
     })
   })
 })
