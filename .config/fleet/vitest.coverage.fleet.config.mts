@@ -14,8 +14,8 @@ import type { CoverageOptions } from 'vitest'
  * appended in the repo's own coverage config.
  */
 export const baseFleetCoverageConfig: CoverageOptions = {
-  provider: 'v8',
-  reporter: ['text', 'json', 'json-summary', 'html', 'lcov', 'clover'],
+  all: true,
+  clean: true,
   exclude: [
     '**/*.config.*',
     '**/node_modules/**',
@@ -35,12 +35,12 @@ export const baseFleetCoverageConfig: CoverageOptions = {
     'src/types.ts',
     'scripts/**',
   ],
-  include: ['src/**/*.{ts,mts,cts}', '!src/external/**'],
   excludeAfterRemap: true,
-  all: true,
-  clean: true,
-  skipFull: false,
   ignoreClassMethods: ['constructor'],
+  include: ['src/**/*.{ts,mts,cts}', '!src/external/**'],
+  provider: 'v8',
+  reporter: ['text', 'json', 'json-summary', 'html', 'lcov', 'clover'],
+  skipFull: false,
 }
 
 /**

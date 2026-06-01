@@ -4,7 +4,7 @@
     "Wheelhouse-tracked SocketDev/socket-registry SHAs that fleet consumers pin against.",
     "",
     "Why: socket-registry ships shared GitHub Actions + reusable workflows + a fleet-canonical",
-    ".config/sfw-bypass-list.txt that ALL fleet repos consume. Per the cascade discipline in",
+    ".config/fleet/sfw-bypass-list.txt that ALL fleet repos consume. Per the cascade discipline in",
     "socket-registry/.claude/skills/fleet/updating-workflows/reference.md, every consumer pins to the",
     "Layer 3 'propagation SHA' — the merge SHA of the most recent ci.yml / provenance.yml /",
     "weekly-update.yml update. Tracking that SHA here means each fleet repo's own pin docs +",

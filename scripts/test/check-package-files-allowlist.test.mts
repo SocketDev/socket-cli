@@ -145,7 +145,7 @@ describe('FORBIDDEN_PUBLISHED_PATTERNS', () => {
       'src/foo.test.mts',
       'lib/bar.spec.ts',
       'scripts/build.mts',
-      '.config/oxlintrc.json',
+      '.config/fleet/oxlintrc.json',
       '.github/workflows/ci.yml',
       '.claude/settings.json',
       'pnpm-lock.yaml',

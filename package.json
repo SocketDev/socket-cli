@@ -20,8 +20,8 @@
     "fix:all": "node scripts/fix.mts --all",
     "lint": "node scripts/lint.mts",
     "lint:all": "node scripts/lint.mts --all",
-    "format": "oxfmt -c .config/oxfmtrc.json --write .",
-    "format:check": "oxfmt -c .config/oxfmtrc.json --check .",
+    "format": "oxfmt -c .config/fleet/oxfmtrc.json --write .",
+    "format:check": "oxfmt -c .config/fleet/oxfmtrc.json --check .",
     "// Claude": "",
     "claude": "pnpm --filter @socketsecurity/cli run claude --",
     "// Type Checking": "",
@@ -160,9 +160,9 @@
   },
   "engines": {
     "node": ">=26.0.0",
-    "pnpm": ">=11.4.0"
+    "pnpm": ">=11.5.0"
   },
-  "packageManager": "pnpm@11.4.0",
+  "packageManager": "pnpm@11.5.0",
   "allowScripts": {
     "cpu-features": false,
     "protobufjs": false,

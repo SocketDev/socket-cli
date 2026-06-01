@@ -13,7 +13,7 @@
  *      of repo-root-relative config paths. Repos whose configs are nested
  *      (monorepo packages) or non-standard-named list them here. Each listed
  *      path is validated.
- *   2. `.config/rolldown.config.mts`, then root `rolldown.config.mts` — the
+ *   2. `.config/repo/rolldown.config.mts`, then root `rolldown.config.mts` — the
  *      single-config fallback for simple single-package repos. If neither
  *      resolves the repo has no rolldown build and the check is a no-op pass.
  *      Export shapes tolerated per config: a `default` export (single options

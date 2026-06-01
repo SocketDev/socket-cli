@@ -10,7 +10,7 @@ Lint rules catch real classes of bug or style drift. Disabling a rule globally w
 
 Block examples:
 
-- Adding `"socket/foo": "off"` to `.config/oxlintrc.json`
+- Adding `"socket/foo": "off"` to `.config/fleet/oxlintrc.json`
 - Adding `"no-console": "warn"` to `.eslintrc.json`
 - Writing a new lint config file that already contains rule disables
 

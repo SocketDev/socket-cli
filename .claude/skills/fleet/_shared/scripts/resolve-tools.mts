@@ -81,7 +81,7 @@ export type ResolveTestRunnerOptions = {
    */
   readonly mode?: 'run' | 'watch' | undefined
   /**
-   * Path to vitest config; defaults to `.config/vitest.config.mts`.
+   * Path to vitest config; defaults to `.config/repo/vitest.config.mts`.
    */
   readonly config?: string | undefined
   /**
@@ -115,7 +115,7 @@ export type RunResolvedOptions = {
 
 const FLEET_LINTER_CONFIG = '.oxlintrc.json'
 const FLEET_FORMATTER_CONFIG = '.oxfmtrc.json'
-const FLEET_TEST_CONFIG = '.config/vitest.config.mts'
+const FLEET_TEST_CONFIG = '.config/repo/vitest.config.mts'
 
 /**
  * Resolve the fleet's linter (currently Oxlint).

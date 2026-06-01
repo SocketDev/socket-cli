@@ -1,8 +1,8 @@
 /**
  * Update: two-pass taze to apply the fleet's maturity policy correctly.
  *
- * Pass 1: default config (.config/taze.config.mts) — non-Socket deps respect
- * maturityPeriod: 7.
+ * Pass 1: default config (.config/fleet/taze.config.mts) — non-Socket deps
+ * respect maturityPeriod: 7.
  *
  * Pass 2: CLI-flag override — Socket-owned scopes only, maturityPeriod: 0.
  * taze's config auto-discovery is path-based and doesn't support a --config
@@ -12,8 +12,8 @@
  * Pass 3: pnpm install to refresh the lockfile against the updated
  * package.json.
  *
- * SOCKET_SCOPES below MUST match the `exclude` list in .config/taze.config.mts
- * — drift causes double-bumps or misses.
+ * SOCKET_SCOPES below MUST match the `exclude` list in
+ * .config/fleet/taze.config.mts — drift causes double-bumps or misses.
  *
  * This is a reference script. Consuming repos can drop it into their own
  * scripts/ dir and wire it in via a `"update": "node scripts/update.mts"`
@@ -32,7 +32,7 @@ async function run(cmd: string, args: string[]): Promise<boolean> {
 }
 
 /* Socket-owned scopes — keep in lockstep with the exclude list
- * in .config/taze.config.mts. */
+ * in .config/fleet/taze.config.mts. */
 const SOCKET_SCOPES = [
   '@socketregistry/*',
   '@socketsecurity/*',
@@ -46,7 +46,7 @@ const steps: Array<[string, string[]]> = [
   /* Pass 1 — third-party deps, respects the 7-day cooldown.
    *
    * `--maturity-period 7` MUST be passed on the CLI even though
-   * the config file (.config/taze.config.mts) sets the same
+   * the config file (.config/fleet/taze.config.mts) sets the same
    * value. Taze's CLI default for this flag is 0, and CLI
    * defaults override config — without this flag, the cooldown
    * is silently disabled. */

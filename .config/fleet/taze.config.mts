@@ -23,6 +23,7 @@ const SOCKET_SCOPES = [
   'sfw',
 ]
 
+// oxlint-disable-next-line socket/no-default-export -- taze loads its config via default export per the documented API.
 export default defineConfig({
   // Interactive mode disabled for automation.
   interactive: false,

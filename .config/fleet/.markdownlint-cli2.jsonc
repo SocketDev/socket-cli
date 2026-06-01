@@ -1,7 +1,7 @@
 // markdownlint-cli2 configuration for fleet repos.
 //
 // Loaded by `pnpm run lint` (template/scripts/lint.mts invokes
-// markdownlint-cli2 with `-c .config/.markdownlint-cli2.jsonc`).
+// markdownlint-cli2 with `-c .config/fleet/.markdownlint-cli2.jsonc`).
 //
 // Two concerns:
 //   1. Stock markdownlint rules — disable a handful that bite real prose

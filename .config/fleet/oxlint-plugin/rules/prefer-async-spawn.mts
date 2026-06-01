@@ -26,8 +26,8 @@
  *     scripts whose entire flow is sync (per CLAUDE.md "Reserve `spawnSync` for
  *     top-level scripts whose entire flow is sync").
  *   - Files inside `@socketsecurity/lib-stable/process/spawn/child` itself — they
- *     wrap the core APIs. Handled at the .config/oxlintrc.json ignorePatterns
- *     level.
+ *     wrap the core APIs. Handled at the .config/fleet/oxlintrc.json
+ *     ignorePatterns level.
  */
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'

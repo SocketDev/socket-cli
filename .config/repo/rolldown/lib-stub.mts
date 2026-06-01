@@ -10,8 +10,8 @@
  *   files for THEIR import surface. Verify reachability before adding a pattern
  *   — stubbing a file that IS reached at runtime gives runtime crashes, not
  *   bundle-time errors. Source: lifted from socket-packageurl-js's inline
- *   plugin (.config/rolldown.config.mts), generalized so the stub-pattern is
- *   caller-provided. Fleet-canonical via socket-wheelhouse.
+ *   plugin (.config/repo/rolldown.config.mts), generalized so the stub-pattern
+ *   is caller-provided. Fleet-canonical via socket-wheelhouse.
  */
 
 import type { Plugin } from 'rolldown'

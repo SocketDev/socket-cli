@@ -14,7 +14,7 @@ Surface four shapes of dead code:
 ## Inputs
 
 - `git ls-files` — to enumerate tracked source + test files.
-- `pnpm exec oxlint --config .config/oxlintrc.json --report-unused-disable-directives .` — canonical detector for shape (3). Treat oxlint's emit as authoritative.
+- `pnpm exec oxlint --config .config/fleet/oxlintrc.json --report-unused-disable-directives .` — canonical detector for shape (3). Treat oxlint's emit as authoritative.
 - `tsc --noEmit` with `noUnusedLocals` — surfaces shape (4) (constants/types with no readers including self).
 
 ## Skip when
@@ -59,7 +59,7 @@ For each exported name in `src/<file>.mts`:
 ### Shape 3: stale lint-disable directives
 
 ```bash
-pnpm exec oxlint --config .config/oxlintrc.json --report-unused-disable-directives . > /tmp/oxlint-disable.out 2>&1
+pnpm exec oxlint --config .config/fleet/oxlintrc.json --report-unused-disable-directives . > /tmp/oxlint-disable.out 2>&1
 grep -c "Unused (oxlint|eslint)-disable" /tmp/oxlint-disable.out
 ```
 
@@ -108,7 +108,7 @@ Total: shape-1 LOC × N + shape-2 LOC × N + N stale directives + N dead constan
 Before deleting ANY candidate, run both checks:
 
 1. `tsc --noEmit -p packages/<pkg>/tsconfig.json` — must pass after the proposed delete.
-2. `pnpm exec oxlint --config .config/oxlintrc.json .` — must report zero violations after the proposed delete.
+2. `pnpm exec oxlint --config .config/fleet/oxlintrc.json .` — must report zero violations after the proposed delete.
 
 If lint surfaces new `socket/export-top-level-functions` violations after a colocate-style change, **revert the change immediately**. Don't try to "fix" the lint by changing function order or adding disable comments — the rule wants the `export` keyword.
 

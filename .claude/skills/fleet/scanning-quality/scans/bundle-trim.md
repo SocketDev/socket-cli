@@ -9,14 +9,14 @@ For each repo that ships a rolldown bundle, look at `dist/index.js` (or the prim
 ## Inputs
 
 - `dist/` — the most recent build output. If missing or stale, the scan flags "build first" and skips.
-- `.config/rolldown.config.mts` — required (signal that this repo uses rolldown).
-- `.config/rolldown/lib-stub.mts` — required (the canonical plugin the trim skill uses). If missing, the scan flags "cascade missing canonical plugin" and skips.
+- `.config/repo/rolldown.config.mts` — required (signal that this repo uses rolldown).
+- `.config/repo/rolldown/lib-stub.mts` — required (the canonical plugin the trim skill uses). If missing, the scan flags "cascade missing canonical plugin" and skips.
 - `src/index.ts` (or the entry declared in `package.json` `exports`) — the published API surface.
 
 ## Skip when
 
-- `.config/rolldown.config.mts` doesn't exist (repo doesn't use rolldown).
-- `.config/rolldown/lib-stub.mts` doesn't exist (cascade gap; surface as a separate finding).
+- `.config/repo/rolldown.config.mts` doesn't exist (repo doesn't use rolldown).
+- `.config/repo/rolldown/lib-stub.mts` doesn't exist (cascade gap; surface as a separate finding).
 - `dist/` doesn't exist (run `pnpm build` first; surface as a separate finding).
 
 ## Method
@@ -59,5 +59,5 @@ If candidates total >50KB and the repo is npm-published (consumers bear the bund
 ## Cross-references
 
 - `trimming-bundle` skill — the active trim loop. This scan reports; that skill mutates.
-- `.config/rolldown/lib-stub.mts` — the canonical plugin. Both scan and skill require it to exist.
+- `.config/repo/rolldown/lib-stub.mts` — the canonical plugin. Both scan and skill require it to exist.
 - `socket-packageurl-js/docs/rolldown-migration.md` — worked example of bundle-size baseline tracking.

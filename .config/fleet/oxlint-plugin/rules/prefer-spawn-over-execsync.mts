@@ -25,7 +25,7 @@
  *     who genuinely need shell expansion (e.g. expanding env vars mid-command).
  *     Rare; document why.
  *   - Files inside `@socketsecurity/lib-stable/process/spawn/child` itself —
- *     handled at the .config/oxlintrc.json ignorePatterns level.
+ *     handled at the .config/fleet/oxlintrc.json ignorePatterns level.
  */
 
 import { makeBypassChecker } from '../lib/comment-markers.mts'

@@ -7,7 +7,7 @@ allowed-tools: Read, Edit, Grep, Glob, AskUserQuestion, Bash(pnpm:*), Bash(node:
 
 # trimming-bundle
 
-Iteratively stub heavyweight modules that the bundler statically pulls in but the runtime never reaches. Apply on repos that ship a built bundle. Today: rolldown only (socket-packageurl-js, socket-sdk-js; any repo with `.config/rolldown.config.mts`). The skill is named generically because the dead-path-stubbing pattern applies to any bundler; today the only fleet bundler is rolldown.
+Iteratively stub heavyweight modules that the bundler statically pulls in but the runtime never reaches. Apply on repos that ship a built bundle. Today: rolldown only (socket-packageurl-js, socket-sdk-js; any repo with `.config/repo/rolldown.config.mts`). The skill is named generically because the dead-path-stubbing pattern applies to any bundler; today the only fleet bundler is rolldown.
 
 ## When to invoke
 
@@ -18,19 +18,19 @@ Iteratively stub heavyweight modules that the bundler statically pulls in but th
 
 ## Skip when
 
-- The repo doesn't build a rolldown bundle (no `.config/rolldown.config.mts`).
+- The repo doesn't build a rolldown bundle (no `.config/repo/rolldown.config.mts`).
 - The bundle is consumed by code that uses dynamic feature detection (rare; flagged by the rolldown plugin's `moduleSideEffects: false` annotation).
 - Tests aren't running (`pnpm test` fails before any trim). Fix tests first; trim depends on the test signal.
 
 ## Required: rolldown/lib-stub.mts
 
-🚨 This skill **REQUIRES** `.config/rolldown/lib-stub.mts` to be present and to export `createLibStubPlugin`. The file is fleet-canonical (cascades from `socket-wheelhouse/template/.config/rolldown/lib-stub.mts` via sync-scaffolding) and must NOT be edited locally per the no-fleet-fork rule.
+🚨 This skill **REQUIRES** `.config/repo/rolldown/lib-stub.mts` to be present and to export `createLibStubPlugin`. The file is fleet-canonical (cascades from `socket-wheelhouse/template/.config/rolldown/lib-stub.mts` via sync-scaffolding) and must NOT be edited locally per the no-fleet-fork rule.
 
 Before doing anything else:
 
 ```bash
-[ -f .config/rolldown/lib-stub.mts ] || {
-  echo "ERROR: .config/rolldown/lib-stub.mts is missing."
+[ -f .config/repo/rolldown/lib-stub.mts ] || {
+  echo "ERROR: .config/repo/rolldown/lib-stub.mts is missing."
   echo "Cascade it from socket-wheelhouse:"
   echo "  cd /Users/<user>/projects/socket-wheelhouse &&" # socket-hook: allow cross-repo
   echo "  node scripts/sync-scaffolding/cli.mts --target <this-repo> --fix"
@@ -43,8 +43,8 @@ If the file is missing, STOP and run the cascade. Do NOT inline a copy of the pl
 Verify the rolldown config imports it:
 
 ```bash
-grep -q "createLibStubPlugin" .config/rolldown.config.mts || {
-  echo "ERROR: .config/rolldown.config.mts doesn't import createLibStubPlugin."
+grep -q "createLibStubPlugin" .config/repo/rolldown.config.mts || {
+  echo "ERROR: .config/repo/rolldown.config.mts doesn't import createLibStubPlugin."
   echo "Add: import { createLibStubPlugin } from './rolldown/lib-stub.mts'"
   echo "And: plugins: [createLibStubPlugin({ stubPattern: /...regex.../ })]"
   exit 1
@@ -54,7 +54,7 @@ grep -q "createLibStubPlugin" .config/rolldown.config.mts || {
 ## Inputs
 
 - `dist/`: the most recent build output (run `pnpm build` first if missing or stale).
-- `.config/rolldown.config.mts`: already imports `createLibStubPlugin` from `.config/rolldown/lib-stub.mts` (fleet-canonical; cascaded via sync-scaffolding).
+- `.config/repo/rolldown.config.mts`: already imports `createLibStubPlugin` from `.config/repo/rolldown/lib-stub.mts` (fleet-canonical; cascaded via sync-scaffolding).
 - `pnpm test`: must pass at start; the trim loop's signal is "tests still pass after stub."
 
 ## Process
@@ -112,7 +112,7 @@ If any of these find a hit, the candidate is reachable; skip it. Only candidates
 
 ### Phase 4: Stub one candidate
 
-Edit `.config/rolldown.config.mts` to extend the `stubPattern` regex:
+Edit `.config/repo/rolldown.config.mts` to extend the `stubPattern` regex:
 
 ```ts
 const stubPattern = /(?:globs|sorts|<new-candidate>)\.js$/
@@ -153,7 +153,7 @@ All four must pass before committing.
 ### Phase 7: Commit
 
 ```bash
-git add .config/rolldown.config.mts
+git add .config/repo/rolldown.config.mts
 git commit -m "perf(bundle): stub <N> unused lib internals (<size> saved)"
 ```
 
@@ -161,7 +161,7 @@ The commit message states the count + size delta. If the trim is significant (sa
 
 ## Reference
 
-- `.config/rolldown/lib-stub.mts`: fleet-canonical plugin (cascade via sync-scaffolding; never edit locally per the no-fleet-fork rule).
+- `.config/repo/rolldown/lib-stub.mts`: fleet-canonical plugin (cascade via sync-scaffolding; never edit locally per the no-fleet-fork rule).
 - `docs/rolldown-migration.md`: repo-specific (in repos that ran the migration). Records baseline numbers from before/after the esbuild → rolldown switch.
 - `socket-packageurl-js/.config/rolldown.config.mts`: the worked example of `createLibStubPlugin` use, with a populated `stubPattern`.
 

@@ -11,7 +11,7 @@
  *     (.oxlintrc.json, .oxfmtrc.json, .npmrc, .gitignore, .gitattributes,
  *     .node-version)
  *   - tsconfig.json (TypeScript's project root anchor — extends from
- *     .config/tsconfig.base.json) Everything else (taze.config.mts,
+ *     .config/fleet/tsconfig.base.json) Everything else (taze.config.mts,
  *     vitest.config_.mts, tsconfig.base.json, esbuild.config.mts,
  *     lockstep.json, socket-wheelhouse.json, etc.) lives in `.config/`. A copy
  *     at root is drift — usually a half-finished move that left a stale file

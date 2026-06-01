@@ -4,8 +4,8 @@
  *   Why a plugin instead of a separate scanner: oxlint's native plugin surface
  *   integrates with the existing `pnpm run lint` pipeline, inherits oxlint's
  *   AST + sourcemap + fix-application machinery, and keeps the rule set
- *   discoverable via `oxlint --rules`. Wiring: `.config/oxlintrc.json` adds
- *   this plugin via `jsPlugins: ["./oxlint-plugin/index.mts"]` and enables
+ *   discoverable via `oxlint --rules`. Wiring: `.config/fleet/oxlintrc.json`
+ *   adds this plugin via `jsPlugins: ["./oxlint-plugin/index.mts"]` and enables
  *   rules under the `socket/` namespace.
  */
 

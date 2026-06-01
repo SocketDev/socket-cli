@@ -39,7 +39,7 @@ the vitest config.
 
 ## Detection
 
-Reads `.config/vitest.config.mts` (or the standard fleet alternatives),
+Reads `.config/repo/vitest.config.mts` (or the standard fleet alternatives),
 parses the `include: [...]` literal array, converts each glob to a regex,
 and tests the target file's repo-relative path. Fails open if the config
 isn't found or the include globs aren't string literals (dynamic includes

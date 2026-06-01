@@ -11,7 +11,7 @@
 //   - Fires on Write/Edit operations whose target file path imports
 //     `node:test`.
 //   - Reads the repo's `vitest.config.*` from the standard fleet locations
-//     (`.config/vitest.config.mts`, `vitest.config.mts/mjs/ts/js`, or the
+//     (`.config/repo/vitest.config.mts`, `vitest.config.mts/mjs/ts/js`, or the
 //     `template/.config/` mirror for wheelhouse).
 //   - Parses the config's `include` globs (string-literal extraction; if
 //     the config uses dynamic globs, we fail open).
@@ -40,7 +40,7 @@ const BYPASS_PHRASE = 'Allow node-test-in-vitest-include bypass'
 
 // Standard fleet vitest config locations, checked in order.
 const VITEST_CONFIG_CANDIDATES = [
-  '.config/vitest.config.mts',
+  '.config/repo/vitest.config.mts',
   '.config/vitest.config.mjs',
   '.config/vitest.config.ts',
   '.config/vitest.config.js',
