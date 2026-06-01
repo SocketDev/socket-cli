@@ -20,7 +20,7 @@
     "socket-registry — Layer 4 (_local-not-for-reuse-*.yml) SHAs are not valid pins for",
     "external consumers."
   ],
-  "propagationSha": "5e830399ab9d24bcff7ab5940eb30623e173c39b",
-  "propagationShaUpdatedAt": "2026-05-26",
-  "propagationShaCommitSubject": "ci(provenance): default fallback to scripts/publish.mts with --staged"
+  "propagationSha": "bb4bb872b58d7c97f828caea595ff534b78c507b",
+  "propagationShaUpdatedAt": "2026-06-01",
+  "propagationShaCommitSubject": "fix(ci): set allowBuilds esbuild placeholder to true"
 }
