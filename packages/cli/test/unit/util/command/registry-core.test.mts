@@ -3,634 +3,623 @@
  * @file Tests for command registry system.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { CommandRegistry } from '../../../../src/util/command/registry.mts'
+import { CommandRegistry } from "../../../../src/util/command/registry.mts";
 
-import type { CommandDefinition } from '../../../../src/util/command/types.mts'
+import type { CommandDefinition } from "../../../../src/util/command/types.mts";
 
-describe('CommandRegistry', () => {
-  let registry: CommandRegistry
+describe("CommandRegistry", () => {
+  let registry: CommandRegistry;
 
   beforeEach(() => {
-    registry = new CommandRegistry()
-  })
+    registry = new CommandRegistry();
+  });
 
-  describe('register()', () => {
-    it('should register a command', () => {
+  describe("register()", () => {
+    it("should register a command", () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      expect(registry.has('test')).toBe(true)
-      expect(registry.get('test')).toBe(command)
-    })
+      expect(registry.has("test")).toBe(true);
+      expect(registry.get("test")).toBe(command);
+    });
 
-    it('should register command aliases', () => {
+    it("should register command aliases", () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
-        aliases: ['t', 'tst'],
+        name: "test",
+        description: "Test command",
+        aliases: ["t", "tst"],
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      expect(registry.has('test')).toBe(true)
-      expect(registry.has('t')).toBe(true)
-      expect(registry.has('tst')).toBe(true)
-      expect(registry.get('t')).toBe(command)
-      expect(registry.get('tst')).toBe(command)
-    })
+      expect(registry.has("test")).toBe(true);
+      expect(registry.has("t")).toBe(true);
+      expect(registry.has("tst")).toBe(true);
+      expect(registry.get("t")).toBe(command);
+      expect(registry.get("tst")).toBe(command);
+    });
 
-    it('should throw error when registering duplicate command', () => {
+    it("should throw error when registering duplicate command", () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
       expect(() => registry.register(command)).toThrow(
         /cannot register command "test": already registered/,
-      )
-    })
+      );
+    });
 
-    it('should throw error when alias conflicts with existing command', () => {
+    it("should throw error when alias conflicts with existing command", () => {
       const cmd1: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
       const cmd2: CommandDefinition = {
-        name: 'other',
-        description: 'Other command',
-        aliases: ['test'],
+        name: "other",
+        description: "Other command",
+        aliases: ["test"],
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(cmd1)
+      registry.register(cmd1);
 
       expect(() => registry.register(cmd2)).toThrow(
         /cannot register command "other" alias "test": conflicts with command "test"/,
-      )
-    })
-  })
+      );
+    });
+  });
 
-  describe('unregister()', () => {
-    it('should unregister a command', () => {
+  describe("unregister()", () => {
+    it("should unregister a command", () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
-      expect(registry.has('test')).toBe(true)
+      registry.register(command);
+      expect(registry.has("test")).toBe(true);
 
-      const result = registry.unregister('test')
+      const result = registry.unregister("test");
 
-      expect(result).toBe(true)
-      expect(registry.has('test')).toBe(false)
-    })
+      expect(result).toBe(true);
+      expect(registry.has("test")).toBe(false);
+    });
 
-    it('should unregister command aliases', () => {
+    it("should unregister command aliases", () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
-        aliases: ['t', 'tst'],
+        name: "test",
+        description: "Test command",
+        aliases: ["t", "tst"],
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
-      expect(registry.has('t')).toBe(true)
-      expect(registry.has('tst')).toBe(true)
+      registry.register(command);
+      expect(registry.has("t")).toBe(true);
+      expect(registry.has("tst")).toBe(true);
 
-      registry.unregister('test')
+      registry.unregister("test");
 
-      expect(registry.has('test')).toBe(false)
-      expect(registry.has('t')).toBe(false)
-      expect(registry.has('tst')).toBe(false)
-    })
+      expect(registry.has("test")).toBe(false);
+      expect(registry.has("t")).toBe(false);
+      expect(registry.has("tst")).toBe(false);
+    });
 
-    it('should return false when unregistering unknown command', () => {
-      const result = registry.unregister('nonexistent')
-      expect(result).toBe(false)
-    })
-  })
+    it("should return false when unregistering unknown command", () => {
+      const result = registry.unregister("nonexistent");
+      expect(result).toBe(false);
+    });
+  });
 
-  describe('list()', () => {
-    it('should list all commands', () => {
+  describe("list()", () => {
+    it("should list all commands", () => {
       const cmd1: CommandDefinition = {
-        name: 'test1',
-        description: 'Test 1',
+        name: "test1",
+        description: "Test 1",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
       const cmd2: CommandDefinition = {
-        name: 'test2',
-        description: 'Test 2',
+        name: "test2",
+        description: "Test 2",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(cmd1)
-      registry.register(cmd2)
+      registry.register(cmd1);
+      registry.register(cmd2);
 
-      const commands = registry.list()
-      expect(commands).toHaveLength(2)
-      expect(commands).toContainEqual(cmd1)
-      expect(commands).toContainEqual(cmd2)
-    })
+      const commands = registry.list();
+      expect(commands).toHaveLength(2);
+      expect(commands).toContainEqual(cmd1);
+      expect(commands).toContainEqual(cmd2);
+    });
 
-    it('should filter commands by parent', () => {
+    it("should filter commands by parent", () => {
       const parent: CommandDefinition = {
-        name: 'org',
-        description: 'Organization commands',
+        name: "org",
+        description: "Organization commands",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
       const child: CommandDefinition = {
-        name: 'org:list',
-        description: 'List organizations',
-        parent: 'org',
+        name: "org:list",
+        description: "List organizations",
+        parent: "org",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
       const other: CommandDefinition = {
-        name: 'scan',
-        description: 'Scan command',
+        name: "scan",
+        description: "Scan command",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(parent)
-      registry.register(child)
-      registry.register(other)
+      registry.register(parent);
+      registry.register(child);
+      registry.register(other);
 
-      const orgCommands = registry.list('org')
-      expect(orgCommands).toHaveLength(1)
-      expect(orgCommands[0]).toBe(child)
-    })
+      const orgCommands = registry.list("org");
+      expect(orgCommands).toHaveLength(1);
+      expect(orgCommands[0]).toBe(child);
+    });
 
-    it('should deduplicate aliases in list', () => {
+    it("should deduplicate aliases in list", () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
-        aliases: ['t'],
+        name: "test",
+        description: "Test command",
+        aliases: ["t"],
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      const commands = registry.list()
-      expect(commands).toHaveLength(1)
-      expect(commands[0]).toBe(command)
-    })
-  })
+      const commands = registry.list();
+      expect(commands).toHaveLength(1);
+      expect(commands[0]).toBe(command);
+    });
+  });
 
-  describe('execute()', () => {
-    it('should execute a command successfully', async () => {
-      let executed = false
+  describe("execute()", () => {
+    it("should execute a command successfully", async () => {
+      let executed = false;
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         async handler() {
-          executed = true
-          return { ok: true, data: 'success' }
+          executed = true;
+          return { ok: true, data: "success" };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      const result = await registry.execute('test', [])
+      const result = await registry.execute("test", []);
 
-      expect(result.ok).toBe(true)
-      expect(executed).toBe(true)
-    })
+      expect(result.ok).toBe(true);
+      expect(executed).toBe(true);
+    });
 
-    it('should return error for unknown command', async () => {
-      const result = await registry.execute('nonexistent', [])
+    it("should return error for unknown command", async () => {
+      const result = await registry.execute("nonexistent", []);
 
-      expect(result.ok).toBe(false)
-      expect(result.message).toContain('Unknown command: nonexistent')
-    })
+      expect(result.ok).toBe(false);
+      expect(result.message).toContain("Unknown command: nonexistent");
+    });
 
-    it('should parse boolean flags', async () => {
+    it("should parse boolean flags", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           verbose: {
-            type: 'boolean',
-            description: 'Verbose output',
+            type: "boolean",
+            description: "Verbose output",
           },
         },
         async handler({ flags }) {
-          expect(flags.verbose).toBe(true)
-          return { ok: true, data: undefined }
+          expect(flags.verbose).toBe(true);
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      await registry.execute('test', ['--verbose'])
-    })
+      await registry.execute("test", ["--verbose"]);
+    });
 
-    it('should parse string flags', async () => {
+    it("should parse string flags", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           name: {
-            type: 'string',
-            description: 'Name',
+            type: "string",
+            description: "Name",
           },
         },
         async handler({ flags }) {
-          expect(flags.name).toBe('foo')
-          return { ok: true, data: undefined }
+          expect(flags.name).toBe("foo");
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      await registry.execute('test', ['--name', 'foo'])
-    })
+      await registry.execute("test", ["--name", "foo"]);
+    });
 
-    it('should parse flags with = syntax', async () => {
+    it("should parse flags with = syntax", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           name: {
-            type: 'string',
-            description: 'Name',
+            type: "string",
+            description: "Name",
           },
         },
         async handler({ flags }) {
-          expect(flags.name).toBe('foo')
-          return { ok: true, data: undefined }
+          expect(flags.name).toBe("foo");
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      await registry.execute('test', ['--name=foo'])
-    })
+      await registry.execute("test", ["--name=foo"]);
+    });
 
-    it('should use flag defaults', async () => {
+    it("should use flag defaults", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           verbose: {
-            type: 'boolean',
-            description: 'Verbose',
+            type: "boolean",
+            description: "Verbose",
             default: true,
           },
         },
         async handler({ flags }) {
-          expect(flags.verbose).toBe(true)
-          return { ok: true, data: undefined }
+          expect(flags.verbose).toBe(true);
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      await registry.execute('test', [])
-    })
+      await registry.execute("test", []);
+    });
 
-    it('should validate required flags', async () => {
+    it("should validate required flags", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           name: {
-            type: 'string',
-            description: 'Name',
+            type: "string",
+            description: "Name",
             isRequired: true,
           },
         },
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      const result = await registry.execute('test', [])
+      const result = await registry.execute("test", []);
 
-      expect(result.ok).toBe(false)
-      expect(result.message).toContain(
-        'command "test" requires --name but it was not provided',
-      )
-    })
+      expect(result.ok).toBe(false);
+      expect(result.message).toContain('command "test" requires --name but it was not provided');
+    });
 
-    it('should run validation function', async () => {
+    it("should run validation function", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           count: {
-            type: 'number',
-            description: 'Count',
+            type: "number",
+            description: "Count",
           },
         },
         validate(flags) {
-          if (typeof flags.count === 'number' && flags.count < 0) {
+          if (typeof flags.count === "number" && flags.count < 0) {
             return {
               ok: false,
-              errors: ['Count must be non-negative'],
-            }
+              errors: ["Count must be non-negative"],
+            };
           }
-          return { ok: true }
+          return { ok: true };
         },
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      const result = await registry.execute('test', ['--count', '-5'])
+      const result = await registry.execute("test", ["--count", "-5"]);
 
-      expect(result.ok).toBe(false)
-      expect(result.cause).toContain('Count must be non-negative')
-    })
+      expect(result.ok).toBe(false);
+      expect(result.cause).toContain("Count must be non-negative");
+    });
 
-    it('should error when string flag is missing value', async () => {
+    it("should error when string flag is missing value", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           name: {
-            type: 'string',
-            description: 'Name',
+            type: "string",
+            description: "Name",
           },
         },
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      const result = await registry.execute('test', ['--name'])
+      const result = await registry.execute("test", ["--name"]);
 
-      expect(result.ok).toBe(false)
-      expect(result.message).toContain(
-        'flag --name requires a string value but none was provided',
-      )
-    })
+      expect(result.ok).toBe(false);
+      expect(result.message).toContain("flag --name requires a string value but none was provided");
+    });
 
-    it('should error when number flag has invalid value', async () => {
+    it("should error when number flag has invalid value", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           count: {
-            type: 'number',
-            description: 'Count',
+            type: "number",
+            description: "Count",
           },
         },
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      const result = await registry.execute('test', ['--count', 'notanumber'])
+      const result = await registry.execute("test", ["--count", "notanumber"]);
 
-      expect(result.ok).toBe(false)
-      expect(result.message).toContain('flag --count requires a numeric value')
-    })
+      expect(result.ok).toBe(false);
+      expect(result.message).toContain("flag --count requires a numeric value");
+    });
 
-    it('should parse array flags', async () => {
+    it("should parse array flags", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           tags: {
-            type: 'array',
-            description: 'Tags',
+            type: "array",
+            description: "Tags",
           },
         },
         async handler({ flags }) {
-          expect(flags.tags).toEqual(['tag1', 'tag2', 'tag3'])
-          return { ok: true, data: undefined }
+          expect(flags.tags).toEqual(["tag1", "tag2", "tag3"]);
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      const result = await registry.execute('test', [
-        '--tags',
-        'tag1',
-        '--tags',
-        'tag2',
-        '--tags',
-        'tag3',
-      ])
+      const result = await registry.execute("test", [
+        "--tags",
+        "tag1",
+        "--tags",
+        "tag2",
+        "--tags",
+        "tag3",
+      ]);
 
-      expect(result.ok).toBe(true)
-    })
+      expect(result.ok).toBe(true);
+    });
 
-    it('should parse array flags with = syntax', async () => {
+    it("should parse array flags with = syntax", async () => {
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
           tags: {
-            type: 'array',
-            description: 'Tags',
+            type: "array",
+            description: "Tags",
           },
         },
         async handler({ flags }) {
-          expect(flags.tags).toEqual(['tag1', 'tag2'])
-          return { ok: true, data: undefined }
+          expect(flags.tags).toEqual(["tag1", "tag2"]);
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      const result = await registry.execute('test', [
-        '--tags=tag1',
-        '--tags=tag2',
-      ])
+      const result = await registry.execute("test", ["--tags=tag1", "--tags=tag2"]);
 
-      expect(result.ok).toBe(true)
-    })
-  })
+      expect(result.ok).toBe(true);
+    });
+  });
 
-  describe('plugins', () => {
-    it('should install plugin and call its install method', () => {
-      let installed = false
+  describe("plugins", () => {
+    it("should install plugin and call its install method", () => {
+      let installed = false;
       const plugin = {
-        name: 'test-plugin',
+        name: "test-plugin",
         install(reg: CommandRegistry) {
-          installed = true
+          installed = true;
           // Plugin can register commands.
           reg.register({
-            name: 'plugin-cmd',
-            description: 'Plugin command',
+            name: "plugin-cmd",
+            description: "Plugin command",
             async handler() {
-              return { ok: true, data: undefined }
+              return { ok: true, data: undefined };
             },
-          })
+          });
         },
-      }
+      };
 
-      registry.use(plugin)
+      registry.use(plugin);
 
-      expect(installed).toBe(true)
-      expect(registry.has('plugin-cmd')).toBe(true)
-    })
-  })
+      expect(installed).toBe(true);
+      expect(registry.has("plugin-cmd")).toBe(true);
+    });
+  });
 
-  describe('middleware', () => {
-    it('should execute middleware in order', async () => {
-      const order: string[] = []
-
-      registry.use(async (_ctx, next) => {
-        order.push('middleware1-before')
-        await next()
-        order.push('middleware1-after')
-      })
+  describe("middleware", () => {
+    it("should execute middleware in order", async () => {
+      const order: string[] = [];
 
       registry.use(async (_ctx, next) => {
-        order.push('middleware2-before')
-        await next()
-        order.push('middleware2-after')
-      })
+        order.push("middleware1-before");
+        await next();
+        order.push("middleware1-after");
+      });
+
+      registry.use(async (_ctx, next) => {
+        order.push("middleware2-before");
+        await next();
+        order.push("middleware2-after");
+      });
 
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         async handler() {
-          order.push('handler')
-          return { ok: true, data: undefined }
+          order.push("handler");
+          return { ok: true, data: undefined };
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      await registry.execute('test', [])
+      await registry.execute("test", []);
 
       expect(order).toEqual([
-        'middleware1-before',
-        'middleware2-before',
-        'handler',
-        'middleware2-after',
-        'middleware1-after',
-      ])
-    })
+        "middleware1-before",
+        "middleware2-before",
+        "handler",
+        "middleware2-after",
+        "middleware1-after",
+      ]);
+    });
 
-    it('should execute before and after hooks', async () => {
-      const order: string[] = []
+    it("should execute before and after hooks", async () => {
+      const order: string[] = [];
 
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         async before() {
-          order.push('before')
+          order.push("before");
         },
         async handler() {
-          order.push('handler')
-          return { ok: true, data: undefined }
+          order.push("handler");
+          return { ok: true, data: undefined };
         },
         async after() {
-          order.push('after')
+          order.push("after");
         },
-      }
+      };
 
-      registry.register(command)
+      registry.register(command);
 
-      await registry.execute('test', [])
+      await registry.execute("test", []);
 
-      expect(order).toEqual(['before', 'handler', 'after'])
-    })
+      expect(order).toEqual(["before", "handler", "after"]);
+    });
 
-    it('throws when middleware calls next() more than once', async () => {
+    it("throws when middleware calls next() more than once", async () => {
       // Middleware function form: (ctx, next) => Promise<void>.
       registry.use(async (_ctx, next) => {
-        await next()
+        await next();
         // Calling next() again — should trigger the dispatch detection.
-        await next()
-      })
+        await next();
+      });
 
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         async handler() {
-          return { ok: true, data: undefined }
+          return { ok: true, data: undefined };
         },
-      }
-      registry.register(command)
+      };
+      registry.register(command);
 
       // execute() doesn't reject — it catches and returns CResult.
-      const result = await registry.execute('test', [])
-      expect(result.ok).toBe(false)
+      const result = await registry.execute("test", []);
+      expect(result.ok).toBe(false);
       if (!result.ok) {
-        expect(result.message).toMatch(/next\(\) more than once/)
+        expect(result.message).toMatch(/next\(\) more than once/);
       }
-    })
+    });
 
-    it('skips non-flag arguments and unknown flags during parseFlags', async () => {
-      let observedFlags: unknown
+    it("skips non-flag arguments and unknown flags during parseFlags", async () => {
+      let observedFlags: unknown;
       const command: CommandDefinition = {
-        name: 'test',
-        description: 'Test command',
+        name: "test",
+        description: "Test command",
         flags: {
-          known: { type: 'string', default: 'd' },
+          known: { type: "string", default: "d" },
         },
         async handler(ctx) {
-          observedFlags = ctx.flags
-          return { ok: true, data: undefined }
+          observedFlags = ctx.flags;
+          return { ok: true, data: undefined };
         },
-      }
-      registry.register(command)
+      };
+      registry.register(command);
 
       // Mix of: positional, known flag, unknown flag.
-      await registry.execute('test', [
-        'positional-arg',
-        '--known=v',
-        '--unknown=ignored',
-      ])
+      await registry.execute("test", ["positional-arg", "--known=v", "--unknown=ignored"]);
 
-      expect(observedFlags.known).toBe('v')
-      expect(observedFlags.unknown).toBeUndefined()
-    })
-  })
-})
+      expect(observedFlags.known).toBe("v");
+      expect(observedFlags.unknown).toBeUndefined();
+    });
+  });
+});

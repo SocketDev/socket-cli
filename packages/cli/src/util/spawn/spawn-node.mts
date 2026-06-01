@@ -21,19 +21,19 @@
  * ```
  */
 
-import { whichRealSync } from '@socketsecurity/lib-stable/bin/which'
-import { getExecPath } from '@socketsecurity/lib-stable/constants/node'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { whichRealSync } from "@socketsecurity/lib-stable/bin/which";
+import { getExecPath } from "@socketsecurity/lib-stable/constants/node";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { sendBootstrapHandshake } from '../sea/boot.mjs'
-import { isSeaBinary } from '../sea/detect.mjs'
+import { sendBootstrapHandshake } from "../sea/boot.mjs";
+import { isSeaBinary } from "../sea/detect.mjs";
 
-import type { StdioOptions } from 'node:child_process'
+import type { StdioOptions } from "node:child_process";
 import type {
   SpawnExtra,
   SpawnOptions,
   SpawnResult,
-} from '@socketsecurity/lib-stable/process/spawn/types'
+} from "@socketsecurity/lib-stable/process/spawn/types";
 
 /**
  * Narrows a spawned process to the shape required by `sendBootstrapHandshake`
@@ -43,10 +43,8 @@ import type {
 export function assertHasSend<T extends { send?: unknown | undefined }>(
   proc: T,
 ): asserts proc is T & { send: (message: unknown) => void } {
-  if (typeof proc.send !== 'function') {
-    throw new TypeError(
-      'spawn-node: expected IPC channel on child process (send is undefined)',
-    )
+  if (typeof proc.send !== "function") {
+    throw new TypeError("spawn-node: expected IPC channel on child process (send is undefined)");
   }
 }
 
@@ -54,19 +52,17 @@ export function assertHasSend<T extends { send?: unknown | undefined }>(
  * Ensures stdio configuration includes IPC channel for process communication.
  * Converts various stdio formats to include 'ipc' as the fourth element.
  */
-export function ensureIpcInStdio(
-  stdio: StdioOptions | undefined,
-): StdioOptions {
-  if (typeof stdio === 'string') {
-    return [stdio, stdio, stdio, 'ipc']
+export function ensureIpcInStdio(stdio: StdioOptions | undefined): StdioOptions {
+  if (typeof stdio === "string") {
+    return [stdio, stdio, stdio, "ipc"];
   }
   if (Array.isArray(stdio)) {
-    if (!stdio.includes('ipc')) {
-      return stdio.concat('ipc')
+    if (!stdio.includes("ipc")) {
+      return stdio.concat("ipc");
     }
-    return stdio.slice()
+    return stdio.slice();
   }
-  return ['pipe', 'pipe', 'pipe', 'ipc']
+  return ["pipe", "pipe", "pipe", "ipc"];
 }
 
 /**
@@ -78,20 +74,20 @@ export function ensureIpcInStdio(
  */
 export function findSystemNodejsSync(): string | undefined {
   // Use which to find 'node' in PATH (returns all matches).
-  const nodePath = whichRealSync('node', { all: true, nothrow: true })
+  const nodePath = whichRealSync("node", { all: true, nothrow: true });
 
   if (!nodePath) {
-    return undefined
+    return undefined;
   }
 
   // which with all:true returns string[] if multiple matches, string if single match.
-  const nodePaths = Array.isArray(nodePath) ? nodePath : [nodePath]
+  const nodePaths = Array.isArray(nodePath) ? nodePath : [nodePath];
 
   // Find first Node.js that isn't our SEA binary.
-  const currentExecPath = process.execPath
-  const systemNode = nodePaths.find(p => p !== currentExecPath)
+  const currentExecPath = process.execPath;
+  const systemNode = nodePaths.find((p) => p !== currentExecPath);
 
-  return systemNode
+  return systemNode;
 }
 
 /**
@@ -105,17 +101,17 @@ export function findSystemNodejsSync(): string | undefined {
 export function getNodeExecutablePathSync(): string {
   // If not a SEA, use standard getExecPath().
   if (!isSeaBinary()) {
-    return getExecPath()
+    return getExecPath();
   }
 
   // For SEA binaries, try to find system Node.js.
-  const systemNode = findSystemNodejsSync()
+  const systemNode = findSystemNodejsSync();
   if (systemNode) {
-    return systemNode
+    return systemNode;
   }
 
   // Fall back to SEA binary itself (will use IPC handshake).
-  return process.execPath
+  return process.execPath;
 }
 
 /**
@@ -139,7 +135,7 @@ export interface SpawnNodeOptions extends SpawnOptions {
    * System Node.js will ignore the handshake message. SEA subprocess will use
    * it to skip bootstrap.
    */
-  ipc?: Record<string, unknown> | undefined
+  ipc?: Record<string, unknown> | undefined;
 }
 
 /**
@@ -163,10 +159,10 @@ export function spawnNode(
   const { ipc, ...spawnOpts } = {
     __proto__: null,
     ...options,
-  } as SpawnNodeOptions
+  } as SpawnNodeOptions;
 
   // Get the Node.js executable path to use.
-  const nodePath = getNodeExecutablePathSync()
+  const nodePath = getNodeExecutablePathSync();
 
   // Spawn the Node.js process.
   const spawnResult = spawn(
@@ -180,12 +176,12 @@ export function spawnNode(
       stdio: ensureIpcInStdio((spawnOpts as SpawnOptions).stdio),
     },
     extra,
-  )
+  );
 
   // `ensureIpcInStdio` above guarantees an IPC channel in stdio, so
   // `.send` should always be a function here. Narrow explicitly via an
   // assertion function so the call site doesn't need a structural cast.
-  assertHasSend(spawnResult.process)
+  assertHasSend(spawnResult.process);
   sendBootstrapHandshake(
     spawnResult.process,
     // Always send IPC handshake with bootstrap indicators + custom data.
@@ -195,8 +191,7 @@ export function spawnNode(
       // Custom IPC data in extra field to avoid collision with standard fields.
       ...(ipc ? { extra: { ...ipc } } : {}),
     },
-  )
+  );
 
-  return spawnResult
+  return spawnResult;
 }
-

@@ -9,156 +9,153 @@
  * Related Files: - util/spawn/spawn-node.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies.
-const mockWhichRealSync = vi.hoisted(() => vi.fn())
-const mockGetExecPath = vi.hoisted(() => vi.fn())
-const mockSpawn = vi.hoisted(() => vi.fn())
-const mockSpawnSync = vi.hoisted(() => vi.fn())
-const mockIsSeaBinary = vi.hoisted(() => vi.fn())
-const mockSendBootstrapHandshake = vi.hoisted(() => vi.fn())
+const mockWhichRealSync = vi.hoisted(() => vi.fn());
+const mockGetExecPath = vi.hoisted(() => vi.fn());
+const mockSpawn = vi.hoisted(() => vi.fn());
+const mockSpawnSync = vi.hoisted(() => vi.fn());
+const mockIsSeaBinary = vi.hoisted(() => vi.fn());
+const mockSendBootstrapHandshake = vi.hoisted(() => vi.fn());
 
-vi.mock('@socketsecurity/lib-stable/bin/which', () => ({
+vi.mock(import("@socketsecurity/lib-stable/bin/which"), () => ({
   whichRealSync: mockWhichRealSync,
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/constants/node', () => ({
+vi.mock(import("@socketsecurity/lib-stable/constants/node"), () => ({
   getExecPath: mockGetExecPath,
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
+vi.mock(import("@socketsecurity/lib-stable/process/spawn/child"), () => ({
   spawn: mockSpawn,
   spawnSync: mockSpawnSync,
-}))
+}));
 
-vi.mock('../../../../src/util/sea/detect.mjs', () => ({
+vi.mock(import("../../../../src/util/sea/detect.mjs"), () => ({
   isSeaBinary: mockIsSeaBinary,
-}))
+}));
 
-vi.mock('../../../../src/util/sea/boot.mjs', () => ({
+vi.mock(import("../../../../src/util/sea/boot.mjs"), () => ({
   sendBootstrapHandshake: mockSendBootstrapHandshake,
-}))
+}));
 
 import {
   findSystemNodejsSync,
   getNodeExecutablePathSync,
   spawnNode,
-} from '../../../../src/util/spawn/spawn-node.mts'
+} from "../../../../src/util/spawn/spawn-node.mts";
 
-describe('spawn-node', () => {
+describe("spawn-node", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockGetExecPath.mockReturnValue('/usr/local/bin/node')
-    mockIsSeaBinary.mockReturnValue(false)
-    mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
-  })
+    vi.clearAllMocks();
+    mockGetExecPath.mockReturnValue("/usr/local/bin/node");
+    mockIsSeaBinary.mockReturnValue(false);
+    mockSpawn.mockReturnValue({ process: { send: vi.fn() } });
+  });
 
-  describe('findSystemNodejsSync', () => {
-    it('returns undefined when no node found', () => {
-      mockWhichRealSync.mockReturnValue(undefined)
+  describe("findSystemNodejsSync", () => {
+    it("returns undefined when no node found", () => {
+      mockWhichRealSync.mockReturnValue(undefined);
 
-      const result = findSystemNodejsSync()
+      const result = findSystemNodejsSync();
 
-      expect(result).toBeUndefined()
-    })
+      expect(result).toBeUndefined();
+    });
 
-    it('returns single node path when found', () => {
-      mockWhichRealSync.mockReturnValue('/usr/bin/node')
+    it("returns single node path when found", () => {
+      mockWhichRealSync.mockReturnValue("/usr/bin/node");
 
-      const result = findSystemNodejsSync()
+      const result = findSystemNodejsSync();
 
-      expect(result).toBe('/usr/bin/node')
-    })
+      expect(result).toBe("/usr/bin/node");
+    });
 
-    it('returns first non-current-exec path when multiple found', () => {
-      mockWhichRealSync.mockReturnValue([
-        '/usr/bin/node',
-        '/usr/local/bin/node',
-      ])
+    it("returns first non-current-exec path when multiple found", () => {
+      mockWhichRealSync.mockReturnValue(["/usr/bin/node", "/usr/local/bin/node"]);
       // Mock process.execPath.
-      const originalExecPath = process.execPath
-      Object.defineProperty(process, 'execPath', {
-        value: '/usr/bin/node',
+      const originalExecPath = process.execPath;
+      Object.defineProperty(process, "execPath", {
+        value: "/usr/bin/node",
         writable: true,
-      })
+      });
 
-      const result = findSystemNodejsSync()
+      const result = findSystemNodejsSync();
 
-      Object.defineProperty(process, 'execPath', {
+      Object.defineProperty(process, "execPath", {
         value: originalExecPath,
         writable: true,
-      })
+      });
 
-      expect(result).toBe('/usr/local/bin/node')
-    })
+      expect(result).toBe("/usr/local/bin/node");
+    });
 
-    it('filters out current execPath from results', () => {
-      const originalExecPath = process.execPath
-      Object.defineProperty(process, 'execPath', {
-        value: '/my/sea/binary',
+    it("filters out current execPath from results", () => {
+      const originalExecPath = process.execPath;
+      Object.defineProperty(process, "execPath", {
+        value: "/my/sea/binary",
         writable: true,
-      })
+      });
 
-      mockWhichRealSync.mockReturnValue(['/my/sea/binary', '/usr/bin/node'])
+      mockWhichRealSync.mockReturnValue(["/my/sea/binary", "/usr/bin/node"]);
 
-      const result = findSystemNodejsSync()
+      const result = findSystemNodejsSync();
 
-      Object.defineProperty(process, 'execPath', {
+      Object.defineProperty(process, "execPath", {
         value: originalExecPath,
         writable: true,
-      })
+      });
 
-      expect(result).toBe('/usr/bin/node')
-    })
-  })
+      expect(result).toBe("/usr/bin/node");
+    });
+  });
 
-  describe('getNodeExecutablePathSync', () => {
-    it('returns getExecPath when not a SEA binary', () => {
-      mockIsSeaBinary.mockReturnValue(false)
-      mockGetExecPath.mockReturnValue('/usr/local/bin/node')
+  describe("getNodeExecutablePathSync", () => {
+    it("returns getExecPath when not a SEA binary", () => {
+      mockIsSeaBinary.mockReturnValue(false);
+      mockGetExecPath.mockReturnValue("/usr/local/bin/node");
 
-      const result = getNodeExecutablePathSync()
+      const result = getNodeExecutablePathSync();
 
-      expect(result).toBe('/usr/local/bin/node')
-      expect(mockGetExecPath).toHaveBeenCalled()
-    })
+      expect(result).toBe("/usr/local/bin/node");
+      expect(mockGetExecPath).toHaveBeenCalled();
+    });
 
-    it('returns system node when SEA and system node available', () => {
-      mockIsSeaBinary.mockReturnValue(true)
-      mockWhichRealSync.mockReturnValue('/usr/bin/node')
+    it("returns system node when SEA and system node available", () => {
+      mockIsSeaBinary.mockReturnValue(true);
+      mockWhichRealSync.mockReturnValue("/usr/bin/node");
 
-      const result = getNodeExecutablePathSync()
+      const result = getNodeExecutablePathSync();
 
-      expect(result).toBe('/usr/bin/node')
-    })
+      expect(result).toBe("/usr/bin/node");
+    });
 
-    it('returns process.execPath when SEA and no system node', () => {
-      mockIsSeaBinary.mockReturnValue(true)
-      mockWhichRealSync.mockReturnValue(undefined)
+    it("returns process.execPath when SEA and no system node", () => {
+      mockIsSeaBinary.mockReturnValue(true);
+      mockWhichRealSync.mockReturnValue(undefined);
 
-      const result = getNodeExecutablePathSync()
+      const result = getNodeExecutablePathSync();
 
-      expect(result).toBe(process.execPath)
-    })
-  })
+      expect(result).toBe(process.execPath);
+    });
+  });
 
-  describe('spawnNode', () => {
-    it('spawns node with IPC stdio', () => {
-      mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
+  describe("spawnNode", () => {
+    it("spawns node with IPC stdio", () => {
+      mockSpawn.mockReturnValue({ process: { send: vi.fn() } });
 
-      spawnNode(['script.js'])
+      spawnNode(["script.js"]);
 
-      expect(mockSpawn).toHaveBeenCalled()
-      const spawnCall = mockSpawn.mock.calls[0]
-      expect(spawnCall[2].stdio).toContain('ipc')
-    })
+      expect(mockSpawn).toHaveBeenCalled();
+      const spawnCall = mockSpawn.mock.calls[0];
+      expect(spawnCall[2].stdio).toContain("ipc");
+    });
 
-    it('sends bootstrap handshake after spawn', () => {
-      const mockProcess = { send: vi.fn() }
-      mockSpawn.mockReturnValue({ process: mockProcess })
+    it("sends bootstrap handshake after spawn", () => {
+      const mockProcess = { send: vi.fn() };
+      mockSpawn.mockReturnValue({ process: mockProcess });
 
-      spawnNode(['script.js'])
+      spawnNode(["script.js"]);
 
       expect(mockSendBootstrapHandshake).toHaveBeenCalledWith(
         mockProcess,
@@ -166,65 +163,57 @@ describe('spawn-node', () => {
           subprocess: true,
           parent_pid: process.pid,
         }),
-      )
-    })
+      );
+    });
 
-    it('includes custom IPC data in handshake extra field', () => {
-      const mockProcess = { send: vi.fn() }
-      mockSpawn.mockReturnValue({ process: mockProcess })
+    it("includes custom IPC data in handshake extra field", () => {
+      const mockProcess = { send: vi.fn() };
+      mockSpawn.mockReturnValue({ process: mockProcess });
 
-      spawnNode(['script.js'], { ipc: { custom: 'data' } })
+      spawnNode(["script.js"], { ipc: { custom: "data" } });
 
       expect(mockSendBootstrapHandshake).toHaveBeenCalledWith(
         mockProcess,
         expect.objectContaining({
-          extra: { custom: 'data' },
+          extra: { custom: "data" },
         }),
-      )
-    })
+      );
+    });
 
-    it('preserves existing stdio array', () => {
-      mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
+    it("preserves existing stdio array", () => {
+      mockSpawn.mockReturnValue({ process: { send: vi.fn() } });
 
-      spawnNode(['script.js'], { stdio: ['pipe', 'pipe', 'pipe'] })
+      spawnNode(["script.js"], { stdio: ["pipe", "pipe", "pipe"] });
 
-      const spawnCall = mockSpawn.mock.calls[0]
-      expect(spawnCall[2].stdio).toEqual(['pipe', 'pipe', 'pipe', 'ipc'])
-    })
+      const spawnCall = mockSpawn.mock.calls[0];
+      expect(spawnCall[2].stdio).toEqual(["pipe", "pipe", "pipe", "ipc"]);
+    });
 
-    it('converts string stdio to array with ipc', () => {
-      mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
+    it("converts string stdio to array with ipc", () => {
+      mockSpawn.mockReturnValue({ process: { send: vi.fn() } });
 
-      spawnNode(['script.js'], { stdio: 'inherit' })
+      spawnNode(["script.js"], { stdio: "inherit" });
 
-      const spawnCall = mockSpawn.mock.calls[0]
-      expect(spawnCall[2].stdio).toEqual([
-        'inherit',
-        'inherit',
-        'inherit',
-        'ipc',
-      ])
-    })
+      const spawnCall = mockSpawn.mock.calls[0];
+      expect(spawnCall[2].stdio).toEqual(["inherit", "inherit", "inherit", "ipc"]);
+    });
 
-    it('keeps stdio array unchanged when ipc is already present', () => {
-      mockSpawn.mockReturnValue({ process: { send: vi.fn() } })
+    it("keeps stdio array unchanged when ipc is already present", () => {
+      mockSpawn.mockReturnValue({ process: { send: vi.fn() } });
 
-      spawnNode(['script.js'], {
-        stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-      })
+      spawnNode(["script.js"], {
+        stdio: ["pipe", "pipe", "pipe", "ipc"],
+      });
 
-      const spawnCall = mockSpawn.mock.calls[0]
-      expect(spawnCall[2].stdio).toEqual(['pipe', 'pipe', 'pipe', 'ipc'])
-    })
+      const spawnCall = mockSpawn.mock.calls[0];
+      expect(spawnCall[2].stdio).toEqual(["pipe", "pipe", "pipe", "ipc"]);
+    });
 
-    it('throws when spawned child process is missing the IPC send method', () => {
+    it("throws when spawned child process is missing the IPC send method", () => {
       // Simulate a process without a send fn so assertHasSend throws.
-      mockSpawn.mockReturnValue({ process: {} })
+      mockSpawn.mockReturnValue({ process: {} });
 
-      expect(() => spawnNode(['script.js'])).toThrow(
-        /expected IPC channel on child process/,
-      )
-    })
-  })
-
-})
+      expect(() => spawnNode(["script.js"])).toThrow(/expected IPC channel on child process/);
+    });
+  });
+});

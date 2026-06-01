@@ -1,5 +1,5 @@
 interface NestedRecord<T> {
-  [key: string]: T | NestedRecord<T>
+  [key: string]: T | NestedRecord<T>;
 }
 
 /**
@@ -10,9 +10,6 @@ export function mapToObject<T>(
   map: Map<string, T | Map<string, T | Map<string, T>>>,
 ): NestedRecord<T> {
   return Object.fromEntries(
-    Array.from(map.entries()).map(([k, v]) => [
-      k,
-      v instanceof Map ? mapToObject(v) : v,
-    ]),
-  )
+    Array.from(map.entries()).map(([k, v]) => [k, v instanceof Map ? mapToObject(v) : v]),
+  );
 }

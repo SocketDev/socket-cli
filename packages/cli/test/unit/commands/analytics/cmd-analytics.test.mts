@@ -17,10 +17,10 @@
  * src/commands/analytics/handle-analytics.mts - Handler.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
+import type * as SdkModule from "../../../../src/util/socket/sdk.mjs";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -30,424 +30,387 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 // Mock dependencies.
-const mockHandleAnalytics = vi.hoisted(() => vi.fn())
-const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true))
+const mockHandleAnalytics = vi.hoisted(() => vi.fn());
+const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true));
 
-vi.mock('../../../../src/commands/analytics/handle-analytics.mts', () => ({
+vi.mock(import("../../../../src/commands/analytics/handle-analytics.mts"), () => ({
   handleAnalytics: mockHandleAnalytics,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof SdkModule>()
+vi.mock(import("../../../../src/util/socket/sdk.mjs"), async (importOriginal) => {
+  const actual = await importOriginal<typeof SdkModule>();
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
-  }
-})
+  };
+});
 
 // Import after mocks.
-const { cmdAnalytics } =
-  await import('../../../../src/commands/analytics/cmd-analytics.mts')
+const { cmdAnalytics } = await import("../../../../src/commands/analytics/cmd-analytics.mts");
 
-describe('cmd-analytics', () => {
+describe("cmd-analytics", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdAnalytics.description).toBe('Look up analytics data')
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdAnalytics.description).toBe("Look up analytics data");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdAnalytics.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdAnalytics.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-analytics.mts' }
-    const context = { parentName: 'socket' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-analytics.mts" };
+    const context = { parentName: "socket" };
 
-    it('should support --dry-run flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --dry-run flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['--dry-run'], importMeta, context)
+      await cmdAnalytics.run(["--dry-run"], importMeta, context);
 
-      expect(mockHandleAnalytics).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('DryRun'),
-      )
-    })
+      expect(mockHandleAnalytics).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("DryRun"));
+    });
 
-    it('should fail without Socket API token', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(false)
+    it("should fail without Socket API token", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(false);
 
-      await cmdAnalytics.run([], importMeta, context)
+      await cmdAnalytics.run([], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAnalytics).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAnalytics).not.toHaveBeenCalled();
+    });
 
-    it('should call handleAnalytics with default values', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should call handleAnalytics with default values", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run([], importMeta, context)
+      await cmdAnalytics.run([], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith({
-        filepath: '',
-        outputKind: 'text',
-        repo: '',
-        scope: 'org',
+        filepath: "",
+        outputKind: "text",
+        repo: "",
+        scope: "org",
         time: 30,
-      })
-    })
+      });
+    });
 
     it('should parse "org" scope argument', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['org'], importMeta, context)
+      await cmdAnalytics.run(["org"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          scope: 'org',
+          scope: "org",
         }),
-      )
-    })
+      );
+    });
 
     it('should parse "repo" scope argument', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['repo', 'test-repo'], importMeta, context)
+      await cmdAnalytics.run(["repo", "test-repo"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          scope: 'repo',
-          repo: 'test-repo',
+          scope: "repo",
+          repo: "test-repo",
         }),
-      )
-    })
+      );
+    });
 
-    it('should parse time argument with org scope', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should parse time argument with org scope", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['org', '7'], importMeta, context)
+      await cmdAnalytics.run(["org", "7"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          scope: 'org',
+          scope: "org",
           time: 7,
         }),
-      )
-    })
+      );
+    });
 
-    it('should parse time argument with repo scope', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should parse time argument with repo scope", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['repo', 'test-repo', '90'], importMeta, context)
+      await cmdAnalytics.run(["repo", "test-repo", "90"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          scope: 'repo',
-          repo: 'test-repo',
+          scope: "repo",
+          repo: "test-repo",
           time: 90,
         }),
-      )
-    })
+      );
+    });
 
-    it('should parse standalone time argument', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should parse standalone time argument", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['7'], importMeta, context)
+      await cmdAnalytics.run(["7"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          scope: 'org',
+          scope: "org",
           time: 7,
         }),
-      )
-    })
+      );
+    });
 
-    it('should validate time is 7, 30, or 90', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate time is 7, 30, or 90", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['org', '15'], importMeta, context)
-
-      // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAnalytics).not.toHaveBeenCalled()
-    })
-
-    it('should fail when repo scope missing repo name', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdAnalytics.run(['repo'], importMeta, context)
+      await cmdAnalytics.run(["org", "15"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAnalytics).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAnalytics).not.toHaveBeenCalled();
+    });
 
-    it('should detect time as second arg when repo scope', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should fail when repo scope missing repo name", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['repo', '7'], importMeta, context)
+      await cmdAnalytics.run(["repo"], importMeta, context);
+
+      // Exit code 2 = invalid usage/validation failure.
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAnalytics).not.toHaveBeenCalled();
+    });
+
+    it("should detect time as second arg when repo scope", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdAnalytics.run(["repo", "7"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure (7 is a time, not a repo name).
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAnalytics).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAnalytics).not.toHaveBeenCalled();
+    });
 
-    it('should detect time as second arg with 30', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should detect time as second arg with 30", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['repo', '30'], importMeta, context)
+      await cmdAnalytics.run(["repo", "30"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure (30 is a time, not a repo name).
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAnalytics).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAnalytics).not.toHaveBeenCalled();
+    });
 
-    it('should detect time as second arg with 90', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should detect time as second arg with 90", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['repo', '90'], importMeta, context)
+      await cmdAnalytics.run(["repo", "90"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure (90 is a time, not a repo name).
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAnalytics).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAnalytics).not.toHaveBeenCalled();
+    });
 
-    it('should support --json output mode', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --json output mode", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['--json'], importMeta, context)
-
-      expect(mockHandleAnalytics).toHaveBeenCalledWith(
-        expect.objectContaining({
-          outputKind: 'json',
-        }),
-      )
-    })
-
-    it('should support --markdown output mode', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdAnalytics.run(['--markdown'], importMeta, context)
+      await cmdAnalytics.run(["--json"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          outputKind: 'markdown',
+          outputKind: "json",
         }),
-      )
-    })
+      );
+    });
 
-    it('should fail if both --json and --markdown are set', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --markdown output mode", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['--json', '--markdown'], importMeta, context)
+      await cmdAnalytics.run(["--markdown"], importMeta, context);
+
+      expect(mockHandleAnalytics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          outputKind: "markdown",
+        }),
+      );
+    });
+
+    it("should fail if both --json and --markdown are set", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdAnalytics.run(["--json", "--markdown"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAnalytics).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAnalytics).not.toHaveBeenCalled();
+    });
 
-    it('should pass --file flag to handleAnalytics', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --file flag to handleAnalytics", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(
-        ['--json', '--file', '/tmp/analytics.json'],
-        importMeta,
-        context,
-      )
+      await cmdAnalytics.run(["--json", "--file", "/tmp/analytics.json"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          filepath: '/tmp/analytics.json',
-          outputKind: 'json',
+          filepath: "/tmp/analytics.json",
+          outputKind: "json",
         }),
-      )
-    })
+      );
+    });
 
-    it('should fail if --file used without --json or --markdown', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should fail if --file used without --json or --markdown", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(
-        ['--file', '/tmp/analytics.json'],
-        importMeta,
-        context,
-      )
+      await cmdAnalytics.run(["--file", "/tmp/analytics.json"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAnalytics).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAnalytics).not.toHaveBeenCalled();
+    });
 
-    it('should allow --file with --markdown', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should allow --file with --markdown", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(
-        ['--markdown', '--file', '/tmp/analytics.md'],
-        importMeta,
-        context,
-      )
+      await cmdAnalytics.run(["--markdown", "--file", "/tmp/analytics.md"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          filepath: '/tmp/analytics.md',
-          outputKind: 'markdown',
+          filepath: "/tmp/analytics.md",
+          outputKind: "markdown",
         }),
-      )
-    })
+      );
+    });
 
-    it('should show dry-run output with org scope', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should show dry-run output with org scope", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['--dry-run', 'org', '7'], importMeta, context)
+      await cmdAnalytics.run(["--dry-run", "org", "7"], importMeta, context);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('analytics data'),
-      )
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('org'),
-      )
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('7 days'),
-      )
-    })
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("analytics data"));
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("org"));
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("7 days"));
+    });
 
-    it('should show dry-run output with repo scope', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should show dry-run output with repo scope", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(
-        ['--dry-run', 'repo', 'test-repo', '90'],
-        importMeta,
-        context,
-      )
+      await cmdAnalytics.run(["--dry-run", "repo", "test-repo", "90"], importMeta, context);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('repo'),
-      )
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('test-repo'),
-      )
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('90 days'),
-      )
-    })
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("repo"));
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("test-repo"));
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("90 days"));
+    });
 
-    it('should handle all time values correctly', async () => {
-      mockHasDefaultApiToken.mockReturnValue(true)
+    it("should handle all time values correctly", async () => {
+      mockHasDefaultApiToken.mockReturnValue(true);
 
-      await cmdAnalytics.run(['7'], importMeta, context)
-      expect(mockHandleAnalytics).toHaveBeenCalledWith(
-        expect.objectContaining({ time: 7 }),
-      )
+      await cmdAnalytics.run(["7"], importMeta, context);
+      expect(mockHandleAnalytics).toHaveBeenCalledWith(expect.objectContaining({ time: 7 }));
 
-      vi.clearAllMocks()
+      vi.clearAllMocks();
 
-      await cmdAnalytics.run(['30'], importMeta, context)
-      expect(mockHandleAnalytics).toHaveBeenCalledWith(
-        expect.objectContaining({ time: 30 }),
-      )
+      await cmdAnalytics.run(["30"], importMeta, context);
+      expect(mockHandleAnalytics).toHaveBeenCalledWith(expect.objectContaining({ time: 30 }));
 
-      vi.clearAllMocks()
+      vi.clearAllMocks();
 
-      await cmdAnalytics.run(['90'], importMeta, context)
-      expect(mockHandleAnalytics).toHaveBeenCalledWith(
-        expect.objectContaining({ time: 90 }),
-      )
-    })
+      await cmdAnalytics.run(["90"], importMeta, context);
+      expect(mockHandleAnalytics).toHaveBeenCalledWith(expect.objectContaining({ time: 90 }));
+    });
 
-    it('should handle repo name with dashes', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should handle repo name with dashes", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['repo', 'my-test-repo'], importMeta, context)
+      await cmdAnalytics.run(["repo", "my-test-repo"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          repo: 'my-test-repo',
+          repo: "my-test-repo",
         }),
-      )
-    })
+      );
+    });
 
-    it('should handle repo name with underscores', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should handle repo name with underscores", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['repo', 'my_test_repo'], importMeta, context)
+      await cmdAnalytics.run(["repo", "my_test_repo"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          repo: 'my_test_repo',
+          repo: "my_test_repo",
         }),
-      )
-    })
+      );
+    });
 
-    it('should default to 30 days when no time specified', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should default to 30 days when no time specified", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['org'], importMeta, context)
+      await cmdAnalytics.run(["org"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
           time: 30,
         }),
-      )
-    })
+      );
+    });
 
-    it('should default to empty repo name when scope is org', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should default to empty repo name when scope is org", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['org', '7'], importMeta, context)
+      await cmdAnalytics.run(["org", "7"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          scope: 'org',
-          repo: '',
+          scope: "org",
+          repo: "",
         }),
-      )
-    })
+      );
+    });
 
-    it('should combine all arguments correctly', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should combine all arguments correctly", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdAnalytics.run(
-        ['repo', 'test-repo', '90', '--json', '--file', '/tmp/out.json'],
+        ["repo", "test-repo", "90", "--json", "--file", "/tmp/out.json"],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith({
-        filepath: '/tmp/out.json',
-        outputKind: 'json',
-        repo: 'test-repo',
-        scope: 'repo',
+        filepath: "/tmp/out.json",
+        outputKind: "json",
+        repo: "test-repo",
+        scope: "repo",
         time: 90,
-      })
-    })
+      });
+    });
 
-    it('should handle empty filepath', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should handle empty filepath", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAnalytics.run(['--json'], importMeta, context)
+      await cmdAnalytics.run(["--json"], importMeta, context);
 
       expect(mockHandleAnalytics).toHaveBeenCalledWith(
         expect.objectContaining({
-          filepath: '',
+          filepath: "",
         }),
-      )
-    })
-  })
-})
+      );
+    });
+  });
+});

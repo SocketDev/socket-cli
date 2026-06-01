@@ -11,18 +11,18 @@
  *     backward compatibility.
  */
 
-import { existsSync, promises as fs } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync, promises as fs } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
-import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
+import { logTransientErrorHelp } from "build-infra/lib/github-error-utils";
+import { downloadReleaseAsset } from "build-infra/lib/github-releases";
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { safeDelete, safeMkdir } from "@socketsecurity/lib-stable/fs/safe";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { normalizePath } from "@socketsecurity/lib-stable/paths/normalize";
 
-import { ARCH_MAP, PLATFORM_MAP } from '../constants/platform-mappings.mts'
+import { ARCH_MAP, PLATFORM_MAP } from "../constants/platform-mappings.mts";
 
 // =============================================================================
 // Constants and Utilities.
@@ -34,8 +34,8 @@ import { ARCH_MAP, PLATFORM_MAP } from '../constants/platform-mappings.mts'
  * @returns Absolute path to monorepo root.
  */
 export function getRootPath() {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url))
-  return path.join(__dirname, '../../../..')
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  return path.join(__dirname, "../../../..");
 }
 
 // =============================================================================
@@ -73,19 +73,16 @@ export class AssetManager {
     } = {
       __proto__: null,
       ...options,
-    }
+    };
 
-    this.cacheEnabled = cacheEnabled
-    this.logger = getDefaultLogger()
-    this.quiet = quiet
+    this.cacheEnabled = cacheEnabled;
+    this.logger = getDefaultLogger();
+    this.quiet = quiet;
 
     // Default download directory: socket-cli/packages/build-infra/build/downloaded/
-    const rootPath = getRootPath()
+    const rootPath = getRootPath();
     this.downloadDir =
-      downloadDir ||
-      normalizePath(
-        path.join(rootPath, 'packages/build-infra/build/downloaded'),
-      )
+      downloadDir || normalizePath(path.join(rootPath, "packages/build-infra/build/downloaded"));
   }
 
   /**
@@ -95,12 +92,12 @@ export class AssetManager {
    * @returns {Object} Headers object for GitHub API requests.
    */
   getAuthHeaders() {
-    const token = process.env['GH_TOKEN'] || process.env['GITHUB_TOKEN']
+    const token = process.env["GH_TOKEN"] || process.env["GITHUB_TOKEN"];
     return {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
       ...(token && { Authorization: `Bearer ${token}` }),
-    }
+    };
   }
 
   /**
@@ -114,8 +111,8 @@ export class AssetManager {
    *   'linux-x64-musl').
    */
   getPlatformArch(platform, arch, libc) {
-    const muslSuffix = libc === 'musl' ? '-musl' : ''
-    return `${platform}-${arch}${muslSuffix}`
+    const muslSuffix = libc === "musl" ? "-musl" : "";
+    return `${platform}-${arch}${muslSuffix}`;
   }
 
   /**
@@ -127,7 +124,7 @@ export class AssetManager {
    * @returns {string} Absolute path to download directory.
    */
   getDownloadDir(tool, platformArch) {
-    return normalizePath(path.join(this.downloadDir, tool, platformArch))
+    return normalizePath(path.join(this.downloadDir, tool, platformArch));
   }
 
   /**
@@ -143,24 +140,24 @@ export class AssetManager {
    */
   async validateCache(versionPath, expectedTag, tagPrefix) {
     if (!existsSync(versionPath)) {
-      return false
+      return false;
     }
 
-    const content = (await fs.readFile(versionPath, 'utf8')).trim()
+    const content = (await fs.readFile(versionPath, "utf8")).trim();
 
     // Validate version format to prevent empty/corrupted version files.
     if (!content || content.length === 0) {
-      this.logger.warn(`Invalid version file at ${versionPath}, clearing cache`)
-      return false
+      this.logger.warn(`Invalid version file at ${versionPath}, clearing cache`);
+      return false;
     }
 
     // Validate tag prefix if provided.
     if (tagPrefix && !content.startsWith(tagPrefix)) {
-      this.logger.warn(`Invalid version file at ${versionPath}, clearing cache`)
-      return false
+      this.logger.warn(`Invalid version file at ${versionPath}, clearing cache`);
+      return false;
     }
 
-    return content === expectedTag
+    return content === expectedTag;
   }
 
   /**
@@ -172,24 +169,24 @@ export class AssetManager {
    */
   async clearStaleCache(cacheDir) {
     if (!existsSync(cacheDir)) {
-      return
+      return;
     }
 
-    this.logger.log('Clearing stale cache...')
+    this.logger.log("Clearing stale cache…");
 
     try {
-      await safeDelete(cacheDir)
+      await safeDelete(cacheDir);
 
       // Verify deletion succeeded.
       if (existsSync(cacheDir)) {
-        throw new Error(`Failed to clear cache directory: ${cacheDir}`)
+        throw new Error(`Failed to clear cache directory: ${cacheDir}`);
       }
     } catch (e) {
-      this.logger.error(`Cache clear failed: ${e.message}`)
+      this.logger.error(`Cache clear failed: ${e.message}`);
       throw new Error(
         `Cannot clear stale cache at ${cacheDir}. ` +
-          'Please delete manually or use local override environment variables.',
-      )
+          "Please delete manually or use local override environment variables.",
+      );
     }
   }
 
@@ -213,137 +210,121 @@ export class AssetManager {
     const { arch, libc, localOverride, platform, tool, version } = {
       __proto__: null,
       ...config,
-    }
+    };
 
     // Check for local override environment variable.
     if (localOverride) {
-      const localPath = process.env[localOverride]
+      const localPath = process.env[localOverride];
       if (localPath && existsSync(localPath)) {
-        this.logger.log(`Using local ${tool} from: ${localPath}`)
-        return localPath
+        this.logger.log(`Using local ${tool} from: ${localPath}`);
+        return localPath;
       }
 
       if (localPath && !existsSync(localPath)) {
-        this.logger.warn(
-          `${localOverride} is set but file not found: ${localPath}`,
-        )
-        this.logger.warn(
-          `Falling back to downloaded ${tool} from GitHub releases`,
-        )
+        this.logger.warn(`${localOverride} is set but file not found: ${localPath}`);
+        this.logger.warn(`Falling back to downloaded ${tool} from GitHub releases`);
       }
     }
 
-    const isPlatWin = platform === 'win32'
-    const platformArch = this.getPlatformArch(platform, arch, libc)
-    const toolDir = this.getDownloadDir(tool, platformArch)
+    const isPlatWin = platform === "win32";
+    const platformArch = this.getPlatformArch(platform, arch, libc);
+    const toolDir = this.getDownloadDir(tool, platformArch);
 
     // Determine binary filename based on platform.
-    const isNodeSmol = tool === 'node-smol'
-    const binaryName = isNodeSmol ? 'node' : tool
-    const binaryFilename = isPlatWin ? `${binaryName}.exe` : binaryName
-    const binaryPath = normalizePath(path.join(toolDir, binaryFilename))
-    const versionPath = normalizePath(path.join(toolDir, '.version'))
+    const isNodeSmol = tool === "node-smol";
+    const binaryName = isNodeSmol ? "node" : tool;
+    const binaryFilename = isPlatWin ? `${binaryName}.exe` : binaryName;
+    const binaryPath = normalizePath(path.join(toolDir, binaryFilename));
+    const versionPath = normalizePath(path.join(toolDir, ".version"));
 
     // Build full tag (e.g., 'node-smol-20251213-7cf90d2').
-    const tag = `${tool}-${version}`
+    const tag = `${tool}-${version}`;
 
     // Create lock file to prevent concurrent downloads (TOCTOU mitigation).
-    const lockFile = normalizePath(path.join(toolDir, '.downloading'))
+    const lockFile = normalizePath(path.join(toolDir, ".downloading"));
 
-    await safeMkdir(toolDir)
+    await safeMkdir(toolDir);
 
     try {
       // Try to create lock file atomically (wx = write + exclusive).
-      await fs.writeFile(lockFile, process.pid.toString(), { flag: 'wx' })
+      await fs.writeFile(lockFile, process.pid.toString(), { flag: "wx" });
     } catch (e) {
-      if (e.code === 'EEXIST') {
+      if (e.code === "EEXIST") {
         // Another process is downloading, wait and check for completion.
-        this.logger.log(`Another process is downloading ${tool}, waiting...`)
+        this.logger.log(`Another process is downloading ${tool}, waiting…`);
         for (let i = 0; i < 60; i++) {
-          await new Promise(resolve => {
-            setTimeout(resolve, 1_000)
-          })
+          await new Promise((resolve) => {
+            setTimeout(resolve, 1000);
+          });
           // Check if cached version matches requested version.
-          const tagPrefix = `${tool}-`
-          const cacheValid = await this.validateCache(
-            versionPath,
-            tag,
-            tagPrefix,
-          )
+          const tagPrefix = `${tool}-`;
+          const cacheValid = await this.validateCache(versionPath, tag, tagPrefix);
           if (cacheValid && existsSync(binaryPath)) {
-            return binaryPath
+            return binaryPath;
           }
         }
-        throw new Error(
-          `Timeout waiting for another process to download ${tool}`,
-        )
+        throw new Error(`Timeout waiting for another process to download ${tool}`);
       }
-      throw e
+      throw e;
     }
 
     try {
       // Check if cached version matches requested version.
-      const tagPrefix = `${tool}-`
-      const cacheValid = await this.validateCache(versionPath, tag, tagPrefix)
+      const tagPrefix = `${tool}-`;
+      const cacheValid = await this.validateCache(versionPath, tag, tagPrefix);
 
       if (cacheValid && existsSync(binaryPath)) {
-        return binaryPath
+        return binaryPath;
       }
 
       // Clear stale cache if it exists.
       if (existsSync(toolDir)) {
         // Remove version file and binary, but keep lock file.
         if (existsSync(versionPath)) {
-          await safeDelete(versionPath)
+          await safeDelete(versionPath);
         }
         if (existsSync(binaryPath)) {
-          await safeDelete(binaryPath)
+          await safeDelete(binaryPath);
         }
       }
 
       // Map platform/arch to socket-btm release asset names.
-      const mappedPlatform = PLATFORM_MAP[platform]
-      const mappedArch = ARCH_MAP[arch]
+      const mappedPlatform = PLATFORM_MAP[platform];
+      const mappedArch = ARCH_MAP[arch];
 
       if (!mappedPlatform || !mappedArch) {
-        throw new Error(`Unsupported platform/arch: ${platform}/${arch}`)
+        throw new Error(`Unsupported platform/arch: ${platform}/${arch}`);
       }
 
       // Build asset filename.
       // Format: {tool}-{platform}-{arch}[-musl][.exe]
-      const muslSuffix = libc === 'musl' ? '-musl' : ''
-      const assetFilename = `${binaryName}-${mappedPlatform}-${mappedArch}${muslSuffix}${isPlatWin ? '.exe' : ''}`
+      const muslSuffix = libc === "musl" ? "-musl" : "";
+      const assetFilename = `${binaryName}-${mappedPlatform}-${mappedArch}${muslSuffix}${isPlatWin ? ".exe" : ""}`;
 
-      this.logger.log(`Downloading ${tool} from socket-btm ${tag}...`)
+      this.logger.log(`Downloading ${tool} from socket-btm ${tag}...`);
 
       // Download using github-releases helper (handles HTTP 302 redirects automatically).
       try {
-        await downloadReleaseAsset(
-          'SocketDev',
-          'socket-btm',
-          tag,
-          assetFilename,
-          binaryPath,
-        )
+        await downloadReleaseAsset("SocketDev", "socket-btm", tag, assetFilename, binaryPath);
       } catch (e) {
-        await logTransientErrorHelp(e)
-        throw e
+        await logTransientErrorHelp(e);
+        throw e;
       }
 
       // Write version file (store full tag for consistency).
-      await fs.writeFile(versionPath, tag, 'utf8')
+      await fs.writeFile(versionPath, tag, "utf8");
 
       // Make executable on Unix.
       if (!isPlatWin) {
-        await fs.chmod(binaryPath, 0o755)
+        await fs.chmod(binaryPath, 0o755);
       }
 
-      return binaryPath
+      return binaryPath;
     } finally {
       // Clean up lock file.
       try {
         if (existsSync(lockFile)) {
-          await safeDelete(lockFile)
+          await safeDelete(lockFile);
         }
       } catch {
         // Ignore cleanup errors.

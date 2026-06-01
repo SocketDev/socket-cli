@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { handleOptimize } from '../../../../src/commands/optimize/handle-optimize.mts'
+import { handleOptimize } from "../../../../src/commands/optimize/handle-optimize.mts";
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -10,372 +10,367 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
+vi.mock(import("@socketsecurity/lib-stable/debug/output"), () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/constants/agents', async importOriginal => {
-  const actual = await importOriginal()
+vi.mock(import("@socketsecurity/lib-stable/constants/agents"), async (importOriginal) => {
+  const actual = await importOriginal();
   return {
     ...actual,
-    VLT: 'vlt',
-  }
-})
+    VLT: "vlt",
+  };
+});
 
-vi.mock('../../../../src/commands/optimize/apply-optimization.mts', () => ({
+vi.mock(import("../../../../src/commands/optimize/apply-optimization.mts"), () => ({
   applyOptimization: vi.fn(),
-}))
-vi.mock('../../../../src/commands/optimize/output-optimize-result.mts', () => ({
+}));
+vi.mock(import("../../../../src/commands/optimize/output-optimize-result.mts"), () => ({
   outputOptimizeResult: vi.fn(),
-}))
-vi.mock('../../../../src/commands/optimize/shared.mts', () => ({
-  CMD_NAME: 'optimize',
-}))
-vi.mock('../../../../src/util/process/cmd.mts', () => ({
+}));
+vi.mock(import("../../../../src/commands/optimize/shared.mts"), () => ({
+  CMD_NAME: "optimize",
+}));
+vi.mock(import("../../../../src/util/process/cmd.mts"), () => ({
   cmdPrefixMessage: vi.fn((cmd, msg) => `${cmd}: ${msg}`),
-}))
-vi.mock('../../../../src/util/ecosystem/environment.mts', () => ({
+}));
+vi.mock(import("../../../../src/util/ecosystem/environment.mts"), () => ({
   detectAndValidatePackageEnvironment: vi.fn(),
-}))
+}));
 
-describe('handleOptimize', () => {
-  const originalExitCode = process.exitCode
+describe("handleOptimize", () => {
+  const originalExitCode = process.exitCode;
 
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
   afterEach(() => {
-    process.exitCode = originalExitCode
-  })
+    process.exitCode = originalExitCode;
+  });
 
-  it('optimizes packages successfully', async () => {
+  it("optimizes packages successfully", async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/util/ecosystem/environment.mts')
+      await import("../../../../src/util/ecosystem/environment.mts");
     const { applyOptimization } =
-      await import('../../../../src/commands/optimize/apply-optimization.mts')
+      await import("../../../../src/commands/optimize/apply-optimization.mts");
     const { outputOptimizeResult } =
-      await import('../../../../src/commands/optimize/output-optimize-result.mts')
+      await import("../../../../src/commands/optimize/output-optimize-result.mts");
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
       data: {
-        agent: 'npm',
-        agentVersion: '10.0.0',
-        manifestPath: '/test/project/package.json',
-        lockfilePath: '/test/project/package-lock.json',
+        agent: "npm",
+        agentVersion: "10.0.0",
+        manifestPath: "/test/project/package.json",
+        lockfilePath: "/test/project/package-lock.json",
       },
-    })
+    });
     vi.mocked(applyOptimization).mockResolvedValue({
       ok: true,
       data: {
         optimizedCount: 5,
-        packages: ['pkg1', 'pkg2', 'pkg3', 'pkg4', 'pkg5'],
+        packages: ["pkg1", "pkg2", "pkg3", "pkg4", "pkg5"],
       },
-    })
+    });
 
     await handleOptimize({
-      cwd: '/test/project',
-      outputKind: 'json',
+      cwd: "/test/project",
+      outputKind: "json",
       pin: false,
       prod: false,
-    })
+    });
 
     expect(detectAndValidatePackageEnvironment).toHaveBeenCalledWith(
-      '/test/project',
+      "/test/project",
       expect.objectContaining({
-        cmdName: 'optimize',
+        cmdName: "optimize",
         prod: false,
       }),
-    )
+    );
     expect(applyOptimization).toHaveBeenCalledWith(
       expect.objectContaining({
-        agent: 'npm',
-        agentVersion: '10.0.0',
+        agent: "npm",
+        agentVersion: "10.0.0",
       }),
       { pin: false, prod: false },
-    )
+    );
     expect(outputOptimizeResult).toHaveBeenCalledWith(
       expect.objectContaining({ ok: true }),
-      'json',
-    )
-    expect(process.exitCode).toBeUndefined()
-  })
+      "json",
+    );
+    expect(process.exitCode).toBeUndefined();
+  });
 
-  it('handles package environment validation failure', async () => {
+  it("handles package environment validation failure", async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/util/ecosystem/environment.mts')
+      await import("../../../../src/util/ecosystem/environment.mts");
     const { outputOptimizeResult } =
-      await import('../../../../src/commands/optimize/output-optimize-result.mts')
+      await import("../../../../src/commands/optimize/output-optimize-result.mts");
     const { applyOptimization } =
-      await import('../../../../src/commands/optimize/apply-optimization.mts')
+      await import("../../../../src/commands/optimize/apply-optimization.mts");
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: false,
       code: 2,
-      error: new Error('Invalid package environment'),
-    })
+      error: new Error("Invalid package environment"),
+    });
 
     await handleOptimize({
-      cwd: '/test/project',
-      outputKind: 'text',
+      cwd: "/test/project",
+      outputKind: "text",
       pin: true,
       prod: false,
-    })
+    });
 
     expect(outputOptimizeResult).toHaveBeenCalledWith(
       expect.objectContaining({ ok: false }),
-      'text',
-    )
-    expect(applyOptimization).not.toHaveBeenCalled()
-    expect(process.exitCode).toBe(2)
-  })
+      "text",
+    );
+    expect(applyOptimization).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(2);
+  });
 
-  it('handles missing package environment details', async () => {
+  it("handles missing package environment details", async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/util/ecosystem/environment.mts')
+      await import("../../../../src/util/ecosystem/environment.mts");
     const { outputOptimizeResult } =
-      await import('../../../../src/commands/optimize/output-optimize-result.mts')
+      await import("../../../../src/commands/optimize/output-optimize-result.mts");
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
       data: undefined,
-    })
+    });
 
     await handleOptimize({
-      cwd: '/test/project',
-      outputKind: 'json',
+      cwd: "/test/project",
+      outputKind: "json",
       pin: false,
       prod: true,
-    })
+    });
 
     expect(outputOptimizeResult).toHaveBeenCalledWith(
       {
         ok: false,
-        message: 'No package found.',
-        cause:
-          'No valid package environment found for project path: /test/project',
+        message: "No package found.",
+        cause: "No valid package environment found for project path: /test/project",
       },
-      'json',
-    )
-    expect(process.exitCode).toBe(1)
-  })
+      "json",
+    );
+    expect(process.exitCode).toBe(1);
+  });
 
-  it('handles unsupported vlt package manager', async () => {
+  it("handles unsupported vlt package manager", async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/util/ecosystem/environment.mts')
+      await import("../../../../src/util/ecosystem/environment.mts");
     const { outputOptimizeResult } =
-      await import('../../../../src/commands/optimize/output-optimize-result.mts')
+      await import("../../../../src/commands/optimize/output-optimize-result.mts");
     const { applyOptimization } =
-      await import('../../../../src/commands/optimize/apply-optimization.mts')
+      await import("../../../../src/commands/optimize/apply-optimization.mts");
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
       data: {
-        agent: 'vlt',
-        agentVersion: '1.0.0',
-        manifestPath: '/test/project/package.json',
-        lockfilePath: '/test/project/vlt.lock',
+        agent: "vlt",
+        agentVersion: "1.0.0",
+        manifestPath: "/test/project/package.json",
+        lockfilePath: "/test/project/vlt.lock",
       },
-    })
+    });
 
     await handleOptimize({
-      cwd: '/test/project',
-      outputKind: 'markdown',
+      cwd: "/test/project",
+      outputKind: "markdown",
       pin: false,
       prod: false,
-    })
+    });
 
     expect(outputOptimizeResult).toHaveBeenCalledWith(
       {
         ok: false,
-        message: 'Unsupported',
-        cause: 'optimize: vlt v1.0.0 does not support overrides.',
+        message: "Unsupported",
+        cause: "optimize: vlt v1.0.0 does not support overrides.",
       },
-      'markdown',
-    )
-    expect(applyOptimization).not.toHaveBeenCalled()
-    expect(process.exitCode).toBe(1)
-  })
+      "markdown",
+    );
+    expect(applyOptimization).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+  });
 
-  it('handles optimization failure', async () => {
+  it("handles optimization failure", async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/util/ecosystem/environment.mts')
+      await import("../../../../src/util/ecosystem/environment.mts");
     const { applyOptimization } =
-      await import('../../../../src/commands/optimize/apply-optimization.mts')
+      await import("../../../../src/commands/optimize/apply-optimization.mts");
     const { outputOptimizeResult } =
-      await import('../../../../src/commands/optimize/output-optimize-result.mts')
+      await import("../../../../src/commands/optimize/output-optimize-result.mts");
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
       data: {
-        agent: 'yarn',
-        agentVersion: '3.0.0',
-        manifestPath: '/test/project/package.json',
-        lockfilePath: '/test/project/yarn.lock',
+        agent: "yarn",
+        agentVersion: "3.0.0",
+        manifestPath: "/test/project/package.json",
+        lockfilePath: "/test/project/yarn.lock",
       },
-    })
+    });
     vi.mocked(applyOptimization).mockResolvedValue({
       ok: false,
       code: 3,
-      error: new Error('Failed to apply optimization'),
-    })
+      error: new Error("Failed to apply optimization"),
+    });
 
     await handleOptimize({
-      cwd: '/test/project',
-      outputKind: 'json',
+      cwd: "/test/project",
+      outputKind: "json",
       pin: true,
       prod: true,
-    })
+    });
 
-    expect(applyOptimization).toHaveBeenCalledWith(
-      expect.objectContaining({ agent: 'yarn' }),
-      { pin: true, prod: true },
-    )
+    expect(applyOptimization).toHaveBeenCalledWith(expect.objectContaining({ agent: "yarn" }), {
+      pin: true,
+      prod: true,
+    });
     expect(outputOptimizeResult).toHaveBeenCalledWith(
       expect.objectContaining({ ok: false }),
-      'json',
-    )
-    expect(process.exitCode).toBe(3)
-  })
+      "json",
+    );
+    expect(process.exitCode).toBe(3);
+  });
 
-  it('handles pnpm package manager', async () => {
+  it("handles pnpm package manager", async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/util/ecosystem/environment.mts')
+      await import("../../../../src/util/ecosystem/environment.mts");
     const { applyOptimization } =
-      await import('../../../../src/commands/optimize/apply-optimization.mts')
+      await import("../../../../src/commands/optimize/apply-optimization.mts");
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
       data: {
-        agent: 'pnpm',
-        agentVersion: '8.0.0',
-        manifestPath: '/test/project/package.json',
-        lockfilePath: '/test/project/pnpm-lock.yaml',
+        agent: "pnpm",
+        agentVersion: "8.0.0",
+        manifestPath: "/test/project/package.json",
+        lockfilePath: "/test/project/pnpm-lock.yaml",
       },
-    })
+    });
     vi.mocked(applyOptimization).mockResolvedValue({
       ok: true,
       data: { optimizedCount: 3 },
-    })
+    });
 
     await handleOptimize({
-      cwd: '/test/project',
-      outputKind: 'text',
+      cwd: "/test/project",
+      outputKind: "text",
       pin: false,
       prod: false,
-    })
+    });
 
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      'Optimizing packages for pnpm v8.0.0.',
-    )
-    expect(applyOptimization).toHaveBeenCalledWith(
-      expect.objectContaining({ agent: 'pnpm' }),
-      { pin: false, prod: false },
-    )
-  })
+    expect(mockLogger.info).toHaveBeenCalledWith("Optimizing packages for pnpm v8.0.0.");
+    expect(applyOptimization).toHaveBeenCalledWith(expect.objectContaining({ agent: "pnpm" }), {
+      pin: false,
+      prod: false,
+    });
+  });
 
-  it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib-stable/debug/output')
+  it("logs debug information", async () => {
+    const { debug, debugDir } = await import("@socketsecurity/lib-stable/debug/output");
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/util/ecosystem/environment.mts')
+      await import("../../../../src/util/ecosystem/environment.mts");
     const { applyOptimization } =
-      await import('../../../../src/commands/optimize/apply-optimization.mts')
+      await import("../../../../src/commands/optimize/apply-optimization.mts");
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
       data: {
-        agent: 'npm',
-        agentVersion: '10.0.0',
-        manifestPath: '/test/project/package.json',
-        lockfilePath: '/test/project/package-lock.json',
+        agent: "npm",
+        agentVersion: "10.0.0",
+        manifestPath: "/test/project/package.json",
+        lockfilePath: "/test/project/package-lock.json",
       },
-    })
+    });
     vi.mocked(applyOptimization).mockResolvedValue({
       ok: true,
       data: { optimizedCount: 2 },
-    })
+    });
 
     await handleOptimize({
-      cwd: '/debug/project',
-      outputKind: 'json',
+      cwd: "/debug/project",
+      outputKind: "json",
       pin: true,
       prod: false,
-    })
+    });
 
-    expect(debug).toHaveBeenCalledWith(
-      'Starting optimization for /debug/project',
-    )
+    expect(debug).toHaveBeenCalledWith("Starting optimization for /debug/project");
     expect(debugDir).toHaveBeenCalledWith({
-      cwd: '/debug/project',
-      outputKind: 'json',
+      cwd: "/debug/project",
+      outputKind: "json",
       pin: true,
       prod: false,
-    })
-    expect(debug).toHaveBeenCalledWith('Detected package manager: npm v10.0.0')
-    expect(debug).toHaveBeenCalledWith('Applying optimization')
-    expect(debug).toHaveBeenCalledWith('Optimization succeeded')
-  })
+    });
+    expect(debug).toHaveBeenCalledWith("Detected package manager: npm v10.0.0");
+    expect(debug).toHaveBeenCalledWith("Applying optimization");
+    expect(debug).toHaveBeenCalledWith("Optimization succeeded");
+  });
 
-  it('falls back to exitCode 1 when pkgEnv result has no code', async () => {
+  it("falls back to exitCode 1 when pkgEnv result has no code", async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/util/ecosystem/environment.mts')
+      await import("../../../../src/util/ecosystem/environment.mts");
     const { applyOptimization } =
-      await import('../../../../src/commands/optimize/apply-optimization.mts')
+      await import("../../../../src/commands/optimize/apply-optimization.mts");
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: false,
       // No code field
-      message: 'fail',
-    } as unknown)
+      message: "fail",
+    } as unknown);
 
     await handleOptimize({
-      cwd: '/test',
-      outputKind: 'text',
+      cwd: "/test",
+      outputKind: "text",
       pin: false,
       prod: false,
-    })
+    });
 
-    expect(process.exitCode).toBe(1)
-    expect(applyOptimization).not.toHaveBeenCalled()
-  })
+    expect(process.exitCode).toBe(1);
+    expect(applyOptimization).not.toHaveBeenCalled();
+  });
 
-  it('falls back to exitCode 1 when applyOptimization result has no code', async () => {
+  it("falls back to exitCode 1 when applyOptimization result has no code", async () => {
     const { detectAndValidatePackageEnvironment } =
-      await import('../../../../src/util/ecosystem/environment.mts')
+      await import("../../../../src/util/ecosystem/environment.mts");
     const { applyOptimization } =
-      await import('../../../../src/commands/optimize/apply-optimization.mts')
+      await import("../../../../src/commands/optimize/apply-optimization.mts");
 
     vi.mocked(detectAndValidatePackageEnvironment).mockResolvedValue({
       ok: true,
       data: {
-        agent: 'npm',
-        agentVersion: '10.0.0',
-        manifestPath: '/p/package.json',
-        lockfilePath: '/p/package-lock.json',
+        agent: "npm",
+        agentVersion: "10.0.0",
+        manifestPath: "/p/package.json",
+        lockfilePath: "/p/package-lock.json",
       },
-    } as unknown)
+    } as unknown);
     vi.mocked(applyOptimization).mockResolvedValue({
       ok: false,
-      message: 'failed',
-    } as unknown)
+      message: "failed",
+    } as unknown);
 
     await handleOptimize({
-      cwd: '/test',
-      outputKind: 'text',
+      cwd: "/test",
+      outputKind: "text",
       pin: false,
       prod: false,
-    })
+    });
 
-    expect(process.exitCode).toBe(1)
-  })
-})
+    expect(process.exitCode).toBe(1);
+  });
+});

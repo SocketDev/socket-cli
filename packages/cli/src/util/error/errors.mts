@@ -22,51 +22,46 @@
  * - Log errors to Sentry in production for monitoring
  */
 
-import { setTimeout as sleep } from 'node:timers/promises'
+import { setTimeout as sleep } from "node:timers/promises";
 
-import {
-  UNKNOWN_ERROR,
-  kInternalsSymbol,
-} from '@socketsecurity/lib-stable/constants/sentinels'
-import { debugNs } from '@socketsecurity/lib-stable/debug/output'
+import { UNKNOWN_ERROR, kInternalsSymbol } from "@socketsecurity/lib-stable/constants/sentinels";
+import { debugNs } from "@socketsecurity/lib-stable/debug/output";
 
-import { isErrnoException, isError } from '@socketsecurity/lib-stable/errors/predicates'
-export { isErrnoException } from '@socketsecurity/lib-stable/errors/predicates'
+import { isErrnoException, isError } from "@socketsecurity/lib-stable/errors/predicates";
+export { isErrnoException } from "@socketsecurity/lib-stable/errors/predicates";
 import {
   SOCKET_DASHBOARD_URL,
   SOCKET_PRICING_URL,
   SOCKET_STATUS_URL,
-} from '../../constants/socket.mts'
+} from "../../constants/socket.mts";
 
 // Access internals via kInternalsSymbol.
 type SentryClient = {
-  captureException(exception: unknown, hint?: unknown): string
-}
+  captureException(exception: unknown, hint?: unknown): string;
+};
 const constants = {
   [kInternalsSymbol]: {} as { getSentry?: () => SentryClient | undefined },
-}
-const internals = constants[kInternalsSymbol]
-const getSentry = internals?.getSentry
+};
+const internals = constants[kInternalsSymbol];
+const getSentry = internals?.getSentry;
 
-type EventHintOrCaptureContext =
-  | { [key: string]: unknown }
-  | Function
+type EventHintOrCaptureContext = { [key: string]: unknown } | Function;
 
 /**
  * Authentication error with recovery suggestions. Thrown when API
  * authentication fails (401/403).
  */
 export class AuthError extends Error {
-  public readonly recovery: string[]
+  public readonly recovery: string[];
 
   constructor(message: string, recovery?: string[]) {
-    super(message)
-    this.name = 'AuthError'
+    super(message);
+    this.name = "AuthError";
     this.recovery = recovery || [
-      'Run `socket login` to authenticate',
-      'Set SOCKET_SECURITY_API_KEY environment variable',
-      'Add apiToken to ~/.config/socket/config.toml',
-    ]
+      "Run `socket login` to authenticate",
+      "Set SOCKET_SECURITY_API_KEY environment variable",
+      "Add apiToken to ~/.config/socket/config.toml",
+    ];
   }
 }
 
@@ -75,14 +70,14 @@ export class AuthError extends Error {
  * input or arguments.
  */
 export class InputError extends Error {
-  public readonly body: string | undefined
-  public readonly recovery: string[]
+  public readonly body: string | undefined;
+  public readonly recovery: string[];
 
   constructor(message: string, body?: string | undefined, recovery?: string[]) {
-    super(message)
-    this.name = 'InputError'
-    this.body = body
-    this.recovery = recovery || ['Check command syntax with --help']
+    super(message);
+    this.name = "InputError";
+    this.body = body;
+    this.recovery = recovery || ["Check command syntax with --help"];
   }
 }
 
@@ -91,22 +86,18 @@ export class InputError extends Error {
  * to connectivity issues.
  */
 export class NetworkError extends Error {
-  public readonly statusCode?: number | undefined
-  public readonly recovery: string[]
+  public readonly statusCode?: number | undefined;
+  public readonly recovery: string[];
 
-  constructor(
-    message: string,
-    statusCode?: number | undefined,
-    recovery?: string[] | undefined,
-  ) {
-    super(message)
-    this.name = 'NetworkError'
-    this.statusCode = statusCode
+  constructor(message: string, statusCode?: number | undefined, recovery?: string[] | undefined) {
+    super(message);
+    this.name = "NetworkError";
+    this.statusCode = statusCode;
     this.recovery = recovery || [
-      'Check your internet connection',
-      'Verify proxy settings if using a proxy',
-      'Try again in a few moments',
-    ]
+      "Check your internet connection",
+      "Verify proxy settings if using a proxy",
+      "Try again in a few moments",
+    ];
   }
 }
 
@@ -115,20 +106,20 @@ export class NetworkError extends Error {
  * exceeded (429).
  */
 export class RateLimitError extends Error {
-  public readonly retryAfter?: number | undefined
-  public readonly recovery: string[]
+  public readonly retryAfter?: number | undefined;
+  public readonly recovery: string[];
 
   constructor(message: string, retryAfter?: number | undefined) {
-    super(message)
-    this.name = 'RateLimitError'
-    this.retryAfter = retryAfter
+    super(message);
+    this.name = "RateLimitError";
+    this.retryAfter = retryAfter;
     this.recovery = [
       retryAfter
         ? `Wait ${retryAfter} seconds before retrying`
-        : 'Wait a few minutes before retrying',
+        : "Wait a few minutes before retrying",
       `Check your API quota at ${SOCKET_DASHBOARD_URL}`,
       `Consider upgrading your plan for higher limits at ${SOCKET_PRICING_URL}`,
-    ]
+    ];
   }
 }
 
@@ -136,9 +127,9 @@ export class RateLimitError extends Error {
  * File system error with path context. Thrown when file operations fail.
  */
 export class FileSystemError extends Error {
-  public readonly path?: string | undefined
-  public readonly code?: string | undefined
-  public readonly recovery: string[]
+  public readonly path?: string | undefined;
+  public readonly code?: string | undefined;
+  public readonly recovery: string[];
 
   constructor(
     message: string,
@@ -146,36 +137,36 @@ export class FileSystemError extends Error {
     code?: string | undefined,
     recovery?: string[] | undefined,
   ) {
-    super(message)
-    this.name = 'FileSystemError'
-    this.path = path
-    this.code = code
-    this.recovery = recovery || this.getDefaultRecovery(code)
+    super(message);
+    this.name = "FileSystemError";
+    this.path = path;
+    this.code = code;
+    this.recovery = recovery || this.getDefaultRecovery(code);
   }
 
   private getDefaultRecovery(code?: string): string[] {
     switch (code) {
-      case 'ENOENT':
+      case "ENOENT":
         return [
-          'Verify the file or directory exists',
-          'Check the path spelling',
-          'Ensure you have permission to access the location',
-        ]
-      case 'EACCES':
-      case 'EPERM':
+          "Verify the file or directory exists",
+          "Check the path spelling",
+          "Ensure you have permission to access the location",
+        ];
+      case "EACCES":
+      case "EPERM":
         return [
-          'Check file permissions',
-          'Run with appropriate user privileges',
-          'Verify directory ownership',
-        ]
-      case 'ENOSPC':
+          "Check file permissions",
+          "Run with appropriate user privileges",
+          "Verify directory ownership",
+        ];
+      case "ENOSPC":
         return [
-          'Free up disk space',
-          'Check available disk space with `df -h`',
-          'Delete unnecessary files',
-        ]
+          "Free up disk space",
+          "Check available disk space with `df -h`",
+          "Delete unnecessary files",
+        ];
       default:
-        return ['Check file system permissions and availability']
+        return ["Check file system permissions and availability"];
     }
   }
 }
@@ -185,22 +176,18 @@ export class FileSystemError extends Error {
  * invalid or missing.
  */
 export class ConfigError extends Error {
-  public readonly configKey?: string | undefined
-  public readonly recovery: string[]
+  public readonly configKey?: string | undefined;
+  public readonly recovery: string[];
 
-  constructor(
-    message: string,
-    configKey?: string | undefined,
-    recovery?: string[] | undefined,
-  ) {
-    super(message)
-    this.name = 'ConfigError'
-    this.configKey = configKey
+  constructor(message: string, configKey?: string | undefined, recovery?: string[] | undefined) {
+    super(message);
+    this.name = "ConfigError";
+    this.configKey = configKey;
     this.recovery = recovery || [
-      'Run `socket config list` to view current configuration',
-      'Use `socket config set <key> <value>` to update settings',
-      'Check ~/.config/socket/config.toml for syntax errors',
-    ]
+      "Run `socket config list` to view current configuration",
+      "Use `socket config set <key> <value>` to update settings",
+      "Check ~/.config/socket/config.toml for syntax errors",
+    ];
   }
 }
 
@@ -208,9 +195,9 @@ export class ConfigError extends Error {
  * Timeout error with retry guidance. Thrown when operations exceed time limits.
  */
 export class TimeoutError extends Error {
-  public readonly timeoutMs?: number | undefined
-  public readonly elapsedMs?: number | undefined
-  public readonly recovery: string[]
+  public readonly timeoutMs?: number | undefined;
+  public readonly elapsedMs?: number | undefined;
+  public readonly recovery: string[];
 
   constructor(
     message: string,
@@ -218,15 +205,15 @@ export class TimeoutError extends Error {
     elapsedMs?: number | undefined,
     recovery?: string[] | undefined,
   ) {
-    super(message)
-    this.name = 'TimeoutError'
-    this.timeoutMs = timeoutMs
-    this.elapsedMs = elapsedMs
+    super(message);
+    this.name = "TimeoutError";
+    this.timeoutMs = timeoutMs;
+    this.elapsedMs = elapsedMs;
     this.recovery = recovery || [
-      'Check your internet connection speed',
-      'Try again when network conditions improve',
-      'Contact support if timeouts persist',
-    ]
+      "Check your internet connection speed",
+      "Try again when network conditions improve",
+      "Contact support if timeouts persist",
+    ];
   }
 }
 
@@ -235,32 +222,31 @@ export async function buildErrorCause(
   message: string,
   reason: string,
 ): Promise<string> {
-  const NO_ERROR_MESSAGE = 'No error message returned'
+  const NO_ERROR_MESSAGE = "No error message returned";
 
   // For 429 errors, preserve the detailed quota information.
   if (status === 429) {
-    const { getErrorMessageForHttpStatusCode } =
-      await import('../socket/api.mjs')
-    const quotaMessage = await getErrorMessageForHttpStatusCode(429)
+    const { getErrorMessageForHttpStatusCode } = await import("../socket/api.mjs");
+    const quotaMessage = await getErrorMessageForHttpStatusCode(429);
     if (reason && reason !== NO_ERROR_MESSAGE) {
-      return `${reason}. ${quotaMessage}`
+      return `${reason}. ${quotaMessage}`;
     }
     if (message && message !== NO_ERROR_MESSAGE) {
-      return `${message}. ${quotaMessage}`
+      return `${message}. ${quotaMessage}`;
     }
-    return quotaMessage
+    return quotaMessage;
   }
 
   // Skip adding reason if it's too similar to message (avoid redundancy).
   // Threshold of 0.7 means >70% word overlap indicates redundancy.
   if (reason && message !== reason) {
-    const similarity = calculateStringSimilarity(message, reason)
+    const similarity = calculateStringSimilarity(message, reason);
     if (similarity < 0.7) {
-      return `${message} (reason: ${reason})`
+      return `${message} (reason: ${reason})`;
     }
   }
 
-  return message
+  return message;
 }
 
 /**
@@ -287,57 +273,57 @@ export async function buildErrorCause(
  */
 export function calculateStringSimilarity(str1: string, str2: string): number {
   if (str1 === str2) {
-    return 1
+    return 1;
   }
 
   const words1 = new Set(
     str1
       .toLowerCase()
       .split(/\W+/)
-      .filter(w => w.length > 2),
-  )
+      .filter((w) => w.length > 2),
+  );
   const words2 = new Set(
     str2
       .toLowerCase()
       .split(/\W+/)
-      .filter(w => w.length > 2),
-  )
+      .filter((w) => w.length > 2),
+  );
 
   if (words1.size === 0 || words2.size === 0) {
-    return 0
+    return 0;
   }
 
-  let overlap = 0
+  let overlap = 0;
   for (const word of words1) {
     if (words2.has(word)) {
-      overlap += 1
+      overlap += 1;
     }
   }
 
-  return (2 * overlap) / (words1.size + words2.size)
+  return (2 * overlap) / (words1.size + words2.size);
 }
 
 export async function captureException(
   exception: unknown,
   hint?: EventHintOrCaptureContext | undefined,
 ): Promise<string> {
-  const result = captureExceptionSync(exception, hint)
+  const result = captureExceptionSync(exception, hint);
   // "Sleep" for a second, just in case, hopefully enough time to initiate fetch.
-  await sleep(1000)
-  return result
+  await sleep(1000);
+  return result;
 }
 
 export function captureExceptionSync(
   exception: unknown,
   hint?: EventHintOrCaptureContext | undefined,
 ): string {
-  const Sentry = getSentry?.()
+  const Sentry = getSentry?.();
   if (!Sentry) {
-    return ''
+    return "";
   }
   /* c8 ignore start - Sentry is undefined in tests (Sentry build mode is opt-in only) */
-  debugNs('notice', 'send: exception to Sentry')
-  return Sentry.captureException(exception, hint) as string
+  debugNs("notice", "send: exception to Sentry");
+  return Sentry.captureException(exception, hint) as string;
   /* c8 ignore stop */
 }
 
@@ -356,12 +342,9 @@ export function captureExceptionSync(
  *
  * @returns Formatted message with error detail if available
  */
-export function formatErrorWithDetail(
-  baseMessage: string,
-  error: unknown,
-): string {
-  const errorMessage = getErrorMessage(error)
-  return `${baseMessage}${errorMessage ? `: ${errorMessage}` : ''}`
+export function formatErrorWithDetail(baseMessage: string, error: unknown): string {
+  const errorMessage = getErrorMessage(error);
+  return `${baseMessage}${errorMessage ? `: ${errorMessage}` : ""}`;
 }
 
 /**
@@ -377,7 +360,7 @@ export function formatErrorWithDetail(
  * @returns The error message or UNKNOWN_ERROR constant
  */
 export function getErrorCause(error: unknown): string {
-  return getErrorMessageOr(error, UNKNOWN_ERROR)
+  return getErrorMessageOr(error, UNKNOWN_ERROR);
 }
 
 /**
@@ -389,7 +372,7 @@ export function getErrorCause(error: unknown): string {
  * @returns The error message or undefined
  */
 export function getErrorMessage(error: unknown): string | undefined {
-  return (error as Error)?.message
+  return (error as Error)?.message;
 }
 
 /**
@@ -406,7 +389,7 @@ export function getErrorMessage(error: unknown): string | undefined {
  * @returns The error message or fallback
  */
 export function getErrorMessageOr(error: unknown, fallback: string): string {
-  return getErrorMessage(error) || fallback
+  return getErrorMessage(error) || fallback;
 }
 
 /**
@@ -414,9 +397,9 @@ export function getErrorMessageOr(error: unknown, fallback: string): string {
  */
 export function getNetworkErrorCode(error: unknown): string | undefined {
   if (!isErrnoException(error)) {
-    return undefined
+    return undefined;
   }
-  return error.code
+  return error.code;
 }
 
 /**
@@ -436,96 +419,94 @@ export function getNetworkErrorDiagnostics(
   error: unknown,
   durationMs?: number | undefined,
 ): string {
-  const errorCode = getNetworkErrorCode(error)
-  const errorMessage = getErrorMessage(error) || String(error)
+  const errorCode = getNetworkErrorCode(error);
+  const errorMessage = getErrorMessage(error) || String(error);
 
   // Timeout errors.
   if (
-    errorCode === 'ETIMEDOUT' ||
-    errorCode === 'ESOCKETTIMEDOUT' ||
-    errorCode === 'ECONNRESET' ||
+    errorCode === "ETIMEDOUT" ||
+    errorCode === "ESOCKETTIMEDOUT" ||
+    errorCode === "ECONNRESET" ||
     (durationMs && durationMs > 30_000)
   ) {
-    const timeInfo = durationMs
-      ? ` after ${Math.round(durationMs / 1000)}s`
-      : ''
+    const timeInfo = durationMs ? ` after ${Math.round(durationMs / 1000)}s` : "";
     return (
       `Request timeout${timeInfo}. The server took too long to respond.\n` +
-      '💡 Try:\n' +
-      '  • Check your internet connection speed\n' +
-      '  • Retry the request - the server may be temporarily slow\n' +
+      "💡 Try:\n" +
+      "  • Check your internet connection speed\n" +
+      "  • Retry the request - the server may be temporarily slow\n" +
       `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
-      '  • Contact support if timeouts persist'
-    )
+      "  • Contact support if timeouts persist"
+    );
   }
 
   // Connection refused.
-  if (errorCode === 'ECONNREFUSED') {
+  if (errorCode === "ECONNREFUSED") {
     return (
-      'Connection refused. The server actively rejected the connection.\n' +
-      '💡 Try:\n' +
-      '  • Check if you are using a proxy or VPN that may be blocking the connection\n' +
-      '  • Verify your firewall settings\n' +
+      "Connection refused. The server actively rejected the connection.\n" +
+      "💡 Try:\n" +
+      "  • Check if you are using a proxy or VPN that may be blocking the connection\n" +
+      "  • Verify your firewall settings\n" +
       `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
-      '  • Ensure SOCKET_CLI_API_BASE_URL is set correctly (if configured)'
-    )
+      "  • Ensure SOCKET_CLI_API_BASE_URL is set correctly (if configured)"
+    );
   }
 
   // DNS resolution failures.
   if (
-    errorCode === 'ENOTFOUND' ||
-    errorCode === 'EAI_AGAIN' ||
-    errorMessage.includes('getaddrinfo')
+    errorCode === "ENOTFOUND" ||
+    errorCode === "EAI_AGAIN" ||
+    errorMessage.includes("getaddrinfo")
   ) {
     return (
-      'DNS resolution failed. Unable to resolve the server hostname.\n' +
-      '💡 Try:\n' +
-      '  • Check your internet connection\n' +
-      '  • Verify DNS settings (try 8.8.8.8 or 1.1.1.1)\n' +
-      '  • Check if a VPN or proxy is interfering\n' +
-      '  • Ensure SOCKET_CLI_API_BASE_URL is correct (if configured)\n' +
-      '  • Try again in a few moments'
-    )
+      "DNS resolution failed. Unable to resolve the server hostname.\n" +
+      "💡 Try:\n" +
+      "  • Check your internet connection\n" +
+      "  • Verify DNS settings (try 8.8.8.8 or 1.1.1.1)\n" +
+      "  • Check if a VPN or proxy is interfering\n" +
+      "  • Ensure SOCKET_CLI_API_BASE_URL is correct (if configured)\n" +
+      "  • Try again in a few moments"
+    );
   }
 
   // Certificate/SSL errors.
   if (
-    errorCode === 'CERT_HAS_EXPIRED' ||
-    errorCode === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
-    errorCode === 'SELF_SIGNED_CERT_IN_CHAIN' ||
-    errorMessage.includes('certificate')
+    errorCode === "CERT_HAS_EXPIRED" ||
+    errorCode === "UNABLE_TO_VERIFY_LEAF_SIGNATURE" ||
+    errorCode === "SELF_SIGNED_CERT_IN_CHAIN" ||
+    errorMessage.includes("certificate")
   ) {
     return (
-      'SSL/TLS certificate error. Unable to verify server identity.\n' +
-      '💡 Try:\n' +
-      '  • Check your system date and time are correct\n' +
-      '  • Update your system certificates\n' +
-      '  • Check if a proxy is intercepting HTTPS traffic\n' +
-      '  • Contact your IT department if behind corporate firewall'
-    )
+      "SSL/TLS certificate error. Unable to verify server identity.\n" +
+      "💡 Try:\n" +
+      "  • Check your system date and time are correct\n" +
+      "  • Update your system certificates\n" +
+      "  • Check if a proxy is intercepting HTTPS traffic\n" +
+      "  • Contact your IT department if behind corporate firewall"
+    );
   }
 
   // Network unreachable.
-  if (errorCode === 'EHOSTUNREACH' || errorCode === 'ENETUNREACH') {
+  if (errorCode === "EHOSTUNREACH" || errorCode === "ENETUNREACH") {
     return (
-      'Network unreachable. Cannot reach the destination network.\n' +
-      '💡 Try:\n' +
-      '  • Check your internet connection\n' +
-      '  • Verify network/WiFi is connected\n' +
-      '  • Check if VPN or firewall is blocking access\n' +
-      '  • Try a different network'
-    )
+      "Network unreachable. Cannot reach the destination network.\n" +
+      "💡 Try:\n" +
+      "  • Check your internet connection\n" +
+      "  • Verify network/WiFi is connected\n" +
+      "  • Check if VPN or firewall is blocking access\n" +
+      "  • Try a different network"
+    );
   }
 
   // Generic network error with basic guidance.
   return (
     `Network error: ${errorMessage}\n` +
-    '💡 Try:\n' +
-    '  • Check your internet connection\n' +
-    '  • Verify proxy settings if using a proxy\n' +
+    "💡 Try:\n" +
+    "  • Check your internet connection\n" +
+    "  • Verify proxy settings if using a proxy\n" +
     `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
-    '  • Try again in a few moments'
-  )
+    "  • Try again in a few moments"
+  );
 }
 
 /**
@@ -537,21 +518,18 @@ export function getNetworkErrorDiagnostics(
  */
 export function getRecoverySuggestions(error: unknown): string[] {
   if (hasRecoverySuggestions(error)) {
-    return error.recovery
+    return error.recovery;
   }
-  return []
+  return [];
 }
 
 /**
  * Type guard to check if an error has recovery suggestions.
  */
-export function hasRecoverySuggestions(
-  error: unknown,
-): error is Error & { recovery: string[] } {
+export function hasRecoverySuggestions(error: unknown): error is Error & { recovery: string[] } {
   return (
     isError(error) &&
-    'recovery' in error &&
+    "recovery" in error &&
     Array.isArray((error as { recovery?: unknown | undefined }).recovery)
-  )
+  );
 }
-

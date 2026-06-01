@@ -5,10 +5,10 @@
  * Tests the command that computes tier 1 reachability analysis.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as SdkModule from '../../../../src/util/socket/sdk.mts'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
+import type * as SdkModule from "../../../../src/util/socket/sdk.mts";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -18,19 +18,19 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 // Mock dependencies.
-const mockHandleScanReach = vi.hoisted(() => vi.fn())
-const mockSuggestTarget = vi.hoisted(() => vi.fn().mockResolvedValue(['.']))
+const mockHandleScanReach = vi.hoisted(() => vi.fn());
+const mockSuggestTarget = vi.hoisted(() => vi.fn().mockResolvedValue(["."]));
 const mockValidateReachabilityTarget = vi.hoisted(() =>
   vi.fn().mockResolvedValue({
     isDirectory: true,
@@ -38,313 +38,271 @@ const mockValidateReachabilityTarget = vi.hoisted(() =>
     isValid: true,
     targetExists: true,
   }),
-)
-const mockDetermineOrgSlug = vi.hoisted(() =>
-  vi.fn().mockResolvedValue(['test-org', 'test-org']),
-)
-const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
+);
+const mockDetermineOrgSlug = vi.hoisted(() => vi.fn().mockResolvedValue(["test-org", "test-org"]));
+const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false));
 
-vi.mock('../../../../src/commands/scan/handle-scan-reach.mts', () => ({
+vi.mock(import("../../../../src/commands/scan/handle-scan-reach.mts"), () => ({
   handleScanReach: mockHandleScanReach,
-}))
+}));
 
-vi.mock('../../../../src/commands/scan/suggest_target.mts', () => ({
+vi.mock(import("../../../../src/commands/scan/suggest_target.mts"), () => ({
   suggestTarget: mockSuggestTarget,
-}))
+}));
 
-vi.mock(
-  '../../../../src/commands/scan/validate-reachability-target.mts',
-  () => ({
-    validateReachabilityTarget: mockValidateReachabilityTarget,
-  }),
-)
+vi.mock(import("../../../../src/commands/scan/validate-reachability-target.mts"), () => ({
+  validateReachabilityTarget: mockValidateReachabilityTarget,
+}));
 
-vi.mock('../../../../src/util/socket/org-slug.mts', () => ({
+vi.mock(import("../../../../src/util/socket/org-slug.mts"), () => ({
   determineOrgSlug: mockDetermineOrgSlug,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mts', async importOriginal => {
-  const actual = await importOriginal<typeof SdkModule>()
+vi.mock(import("../../../../src/util/socket/sdk.mts"), async (importOriginal) => {
+  const actual = await importOriginal<typeof SdkModule>();
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
-  }
-})
+  };
+});
 
 // Import after mocks.
-const { cmdScanReach } =
-  await import('../../../../src/commands/scan/cmd-scan-reach.mts')
+const { cmdScanReach } = await import("../../../../src/commands/scan/cmd-scan-reach.mts");
 
-describe('cmd-scan-reach', () => {
+describe("cmd-scan-reach", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdScanReach.description).toBe('Compute tier 1 reachability')
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdScanReach.description).toBe("Compute tier 1 reachability");
+    });
 
-    it('should be hidden', () => {
-      expect(cmdScanReach.hidden).toBe(true)
-    })
-  })
+    it("should be hidden", () => {
+      expect(cmdScanReach.hidden).toBe(true);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-scan-reach.mts' }
-    const context = { parentName: 'socket scan' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-scan-reach.mts" };
+    const context = { parentName: "socket scan" };
 
-    it('should support --dry-run flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --dry-run flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanReach.run(
-        ['--dry-run', '--org', 'test-org', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--dry-run", "--org", "test-org", "."], importMeta, context);
 
-      expect(mockHandleScanReach).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('DryRun'),
-      )
-    })
+      expect(mockHandleScanReach).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("DryRun"));
+    });
 
-    it('should show command and args in --dry-run mode', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should show command and args in --dry-run mode", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        ['--dry-run', '--org', 'test-org', './my-project'],
+        ["--dry-run", "--org", "test-org", "./my-project"],
         importMeta,
         context,
-      )
+      );
 
-      expect(mockHandleScanReach).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Command: coana'),
-      )
-    })
+      expect(mockHandleScanReach).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("Command: coana"));
+    });
 
-    it('should fail without Socket API token', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(false)
+    it("should fail without Socket API token", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(false);
 
-      await cmdScanReach.run(['--org', 'test-org', '.'], importMeta, context)
+      await cmdScanReach.run(["--org", "test-org", "."], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleScanReach).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleScanReach).not.toHaveBeenCalled();
+    });
 
-    it('should call handleScanReach with valid inputs', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should call handleScanReach with valid inputs", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanReach.run(['--org', 'test-org', '.'], importMeta, context)
+      await cmdScanReach.run(["--org", "test-org", "."], importMeta, context);
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
           cwd: expect.any(String),
           interactive: true,
-          orgSlug: 'test-org',
-          outputKind: 'text',
-          targets: ['.'],
+          orgSlug: "test-org",
+          outputKind: "text",
+          targets: ["."],
           reachabilityOptions: expect.any(Object),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --org flag to handleScanReach', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['custom-org', 'custom-org'])
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --org flag to handleScanReach", async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(["custom-org", "custom-org"]);
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanReach.run(['--org', 'custom-org', '.'], importMeta, context)
+      await cmdScanReach.run(["--org", "custom-org", "."], importMeta, context);
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
-        'custom-org',
-        true,
-        false,
-      )
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("custom-org", true, false);
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
-          orgSlug: 'custom-org',
+          orgSlug: "custom-org",
         }),
-      )
-    })
+      );
+    });
 
-    it('should validate target must be exactly one directory', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate target must be exactly one directory", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
       mockValidateReachabilityTarget.mockResolvedValueOnce({
         isDirectory: true,
         isInsideCwd: true,
         isValid: false,
         targetExists: true,
-      })
+      });
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', './dir1', './dir2'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--org", "test-org", "./dir1", "./dir2"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleScanReach).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleScanReach).not.toHaveBeenCalled();
+    });
 
-    it('should validate target must be a directory', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate target must be a directory", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
       mockValidateReachabilityTarget.mockResolvedValueOnce({
         isDirectory: false,
         isInsideCwd: true,
         isValid: true,
         targetExists: true,
-      })
+      });
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', './package.json'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--org", "test-org", "./package.json"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleScanReach).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleScanReach).not.toHaveBeenCalled();
+    });
 
-    it('should validate target must exist', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate target must exist", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
       mockValidateReachabilityTarget.mockResolvedValueOnce({
         isDirectory: true,
         isInsideCwd: true,
         isValid: true,
         targetExists: false,
-      })
+      });
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', './nonexistent'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--org", "test-org", "./nonexistent"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleScanReach).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleScanReach).not.toHaveBeenCalled();
+    });
 
-    it('should validate target must be inside cwd', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate target must be inside cwd", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
       mockValidateReachabilityTarget.mockResolvedValueOnce({
         isDirectory: true,
         isInsideCwd: false,
         isValid: true,
         targetExists: true,
-      })
+      });
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', '../outside'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--org", "test-org", "../outside"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleScanReach).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleScanReach).not.toHaveBeenCalled();
+    });
 
-    it('should pass reachability options to handleScanReach', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass reachability options to handleScanReach", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
         [
-          '--org',
-          'test-org',
-          '--reach-ecosystems',
-          'npm,pypi',
-          '--reach-concurrency',
-          '4',
-          '--reach-debug',
-          '.',
+          "--org",
+          "test-org",
+          "--reach-ecosystems",
+          "npm,pypi",
+          "--reach-concurrency",
+          "4",
+          "--reach-debug",
+          ".",
         ],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
           reachabilityOptions: expect.objectContaining({
             reachConcurrency: 4,
             reachDebug: true,
-            reachEcosystems: ['npm', 'pypi'],
+            reachEcosystems: ["npm", "pypi"],
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should validate invalid ecosystem value', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate invalid ecosystem value", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await expect(
         cmdScanReach.run(
-          ['--org', 'test-org', '--reach-ecosystems', 'invalid-ecosystem', '.'],
+          ["--org", "test-org", "--reach-ecosystems", "invalid-ecosystem", "."],
           importMeta,
           context,
         ),
-      ).rejects.toThrow(/--reach-ecosystems must be one of/)
-    })
+      ).rejects.toThrow(/--reach-ecosystems must be one of/);
+    });
 
-    it('should support --json output mode', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --json output mode", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', '--json', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--org", "test-org", "--json", "."], importMeta, context);
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
-          outputKind: 'json',
+          outputKind: "json",
         }),
-      )
-    })
+      );
+    });
 
-    it('should support --markdown output mode', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --markdown output mode", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', '--markdown', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--org", "test-org", "--markdown", "."], importMeta, context);
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
-          outputKind: 'markdown',
+          outputKind: "markdown",
         }),
-      )
-    })
+      );
+    });
 
-    it('should fail when both --json and --markdown are set', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should fail when both --json and --markdown are set", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--json', '--markdown', '.'],
+        ["--org", "test-org", "--json", "--markdown", "."],
         importMeta,
         context,
-      )
+      );
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleScanReach).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleScanReach).not.toHaveBeenCalled();
+    });
 
-    it('should pass --reach-analysis-memory-limit flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-analysis-memory-limit flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-analysis-memory-limit', '4096', '.'],
+        ["--org", "test-org", "--reach-analysis-memory-limit", "4096", "."],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -352,17 +310,17 @@ describe('cmd-scan-reach', () => {
             reachAnalysisMemoryLimit: 4096,
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --reach-analysis-timeout flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-analysis-timeout flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-analysis-timeout', '300', '.'],
+        ["--org", "test-org", "--reach-analysis-timeout", "300", "."],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -370,17 +328,13 @@ describe('cmd-scan-reach', () => {
             reachAnalysisTimeout: 300,
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --reach-lazy-mode flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-lazy-mode flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-lazy-mode', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--org", "test-org", "--reach-lazy-mode", "."], importMeta, context);
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -388,17 +342,13 @@ describe('cmd-scan-reach', () => {
             reachLazyMode: true,
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --reach-skip-cache flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-skip-cache flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-skip-cache', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--org", "test-org", "--reach-skip-cache", "."], importMeta, context);
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -406,17 +356,17 @@ describe('cmd-scan-reach', () => {
             reachSkipCache: true,
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --reach-disable-analytics flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-disable-analytics flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-disable-analytics', '.'],
+        ["--org", "test-org", "--reach-disable-analytics", "."],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -424,17 +374,17 @@ describe('cmd-scan-reach', () => {
             reachDisableAnalytics: true,
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --reach-enable-analysis-splitting flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-enable-analysis-splitting flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-enable-analysis-splitting', '.'],
+        ["--org", "test-org", "--reach-enable-analysis-splitting", "."],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -442,59 +392,53 @@ describe('cmd-scan-reach', () => {
             reachEnableAnalysisSplitting: true,
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --reach-min-severity flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-min-severity flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-min-severity', 'high', '.'],
+        ["--org", "test-org", "--reach-min-severity", "high", "."],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
           reachabilityOptions: expect.objectContaining({
-            reachMinSeverity: 'high',
+            reachMinSeverity: "high",
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --reach-exclude-paths flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-exclude-paths flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        [
-          '--org',
-          'test-org',
-          '--reach-exclude-paths',
-          'node_modules,dist',
-          '.',
-        ],
+        ["--org", "test-org", "--reach-exclude-paths", "node_modules,dist", "."],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
           reachabilityOptions: expect.objectContaining({
-            reachExcludePaths: expect.arrayContaining(['node_modules', 'dist']),
+            reachExcludePaths: expect.arrayContaining(["node_modules", "dist"]),
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --reach-use-only-pregenerated-sboms flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-use-only-pregenerated-sboms flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--reach-use-only-pregenerated-sboms', '.'],
+        ["--org", "test-org", "--reach-use-only-pregenerated-sboms", "."],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -502,22 +446,17 @@ describe('cmd-scan-reach', () => {
             reachUseOnlyPregeneratedSboms: true,
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --reach-use-unreachable-from-precomputation flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --reach-use-unreachable-from-precomputation flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        [
-          '--org',
-          'test-org',
-          '--reach-use-unreachable-from-precomputation',
-          '.',
-        ],
+        ["--org", "test-org", "--reach-use-unreachable-from-precomputation", "."],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -525,158 +464,133 @@ describe('cmd-scan-reach', () => {
             reachUseUnreachableFromPrecomputation: true,
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('should validate invalid numeric values for memory limit', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await expect(
-        cmdScanReach.run(
-          [
-            '--org',
-            'test-org',
-            '--reach-analysis-memory-limit',
-            'invalid',
-            '.',
-          ],
-          importMeta,
-          context,
-        ),
-      ).rejects.toThrow(
-        /--reach-analysis-memory-limit must be a number of megabytes/,
-      )
-    })
-
-    it('should validate invalid numeric values for timeout', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate invalid numeric values for memory limit", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await expect(
         cmdScanReach.run(
-          ['--org', 'test-org', '--reach-analysis-timeout', 'invalid', '.'],
+          ["--org", "test-org", "--reach-analysis-memory-limit", "invalid", "."],
           importMeta,
           context,
         ),
-      ).rejects.toThrow(/--reach-analysis-timeout must be a number of seconds/)
-    })
+      ).rejects.toThrow(/--reach-analysis-memory-limit must be a number of megabytes/);
+    });
 
-    it('should validate invalid numeric values for concurrency', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate invalid numeric values for timeout", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await expect(
         cmdScanReach.run(
-          ['--org', 'test-org', '--reach-concurrency', 'invalid', '.'],
+          ["--org", "test-org", "--reach-analysis-timeout", "invalid", "."],
           importMeta,
           context,
         ),
-      ).rejects.toThrow(/--reach-concurrency must be a positive integer/)
-    })
+      ).rejects.toThrow(/--reach-analysis-timeout must be a number of seconds/);
+    });
 
-    it('should default to current directory if no target specified', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate invalid numeric values for concurrency", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanReach.run(['--org', 'test-org'], importMeta, context)
+      await expect(
+        cmdScanReach.run(
+          ["--org", "test-org", "--reach-concurrency", "invalid", "."],
+          importMeta,
+          context,
+        ),
+      ).rejects.toThrow(/--reach-concurrency must be a positive integer/);
+    });
+
+    it("should default to current directory if no target specified", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdScanReach.run(["--org", "test-org"], importMeta, context);
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
           targets: [expect.any(String)],
         }),
-      )
-    })
+      );
+    });
 
-    it('should support --no-interactive flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --no-interactive flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanReach.run(
-        ['--org', 'test-org', '--no-interactive', '.'],
-        importMeta,
-        context,
-      )
+      await cmdScanReach.run(["--org", "test-org", "--no-interactive", "."], importMeta, context);
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
-        'test-org',
-        false,
-        false,
-      )
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("test-org", false, false);
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
           interactive: false,
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --cwd flag to change working directory', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --cwd flag to change working directory", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        ['--org', 'test-org', '--cwd', './my-project', '.'],
+        ["--org", "test-org", "--cwd", "./my-project", "."],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
-          cwd: expect.stringContaining('my-project'),
+          cwd: expect.stringContaining("my-project"),
         }),
-      )
-    })
+      );
+    });
 
-    it('should combine multiple reachability flags', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should combine multiple reachability flags", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
         [
-          '--org',
-          'test-org',
-          '--reach-ecosystems',
-          'npm',
-          '--reach-concurrency',
-          '2',
-          '--reach-debug',
-          '--reach-lazy-mode',
-          '--reach-skip-cache',
-          '--reach-min-severity',
-          'medium',
-          '.',
+          "--org",
+          "test-org",
+          "--reach-ecosystems",
+          "npm",
+          "--reach-concurrency",
+          "2",
+          "--reach-debug",
+          "--reach-lazy-mode",
+          "--reach-skip-cache",
+          "--reach-min-severity",
+          "medium",
+          ".",
         ],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleScanReach).toHaveBeenCalledWith(
         expect.objectContaining({
           reachabilityOptions: expect.objectContaining({
-            reachEcosystems: ['npm'],
+            reachEcosystems: ["npm"],
             reachConcurrency: 2,
             reachDebug: true,
             reachLazyMode: true,
             reachSkipCache: true,
-            reachMinSeverity: 'medium',
+            reachMinSeverity: "medium",
           }),
         }),
-      )
-    })
+      );
+    });
 
-    it('emits --ecosystems in dry-run args when reachEcosystems set', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("emits --ecosystems in dry-run args when reachEcosystems set", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdScanReach.run(
-        [
-          '--org',
-          'test-org',
-          '--reach-ecosystems',
-          'npm,pypi',
-          '--dry-run',
-          '.',
-        ],
+        ["--org", "test-org", "--reach-ecosystems", "npm,pypi", "--dry-run", "."],
         importMeta,
         context,
-      )
+      );
 
-      expect(mockHandleScanReach).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('--ecosystems'),
-      )
-    })
-  })
-})
+      expect(mockHandleScanReach).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("--ecosystems"));
+    });
+  });
+});

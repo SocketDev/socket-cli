@@ -4,20 +4,18 @@
  * Defined via `defineHandoffCommand`. See util/cli/define-handoff.mts.
  */
 
-import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
+import { defineHandoffCommand } from "../../util/cli/define-handoff.mts";
 
 export const cmdGo = defineHandoffCommand({
-  name: 'go',
-  description: 'Run go with Socket Firewall security',
-  spawnMode: 'dlx',
+  name: "go",
+  description: "Run go with Socket Firewall security",
+  spawnMode: "dlx",
   examples: [
-    'get github.com/gin-gonic/gin',
-    'install golang.org/x/tools/cmd/goimports',
-    'mod download',
+    "get github.com/gin-gonic/gin",
+    "install golang.org/x/tools/cmd/goimports",
+    "mod download",
   ],
-  helpNotes: [
-    'Wrapper mode works best on Linux (macOS may have keychain issues).',
-  ],
+  helpNotes: ["Wrapper mode works best on Linux (macOS may have keychain issues)."],
   trackTelemetry: false,
   supportDryRun: false,
-})
+});

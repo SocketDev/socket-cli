@@ -6,14 +6,14 @@
  * embedding version info into the binary.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
 export function getOpengrepVersion(): string {
-  const version = process.env['INLINED_OPENGREP_VERSION']
+  const version = process.env["INLINED_OPENGREP_VERSION"];
   if (!version) {
     throw new Error(
       `process.env.INLINED_OPENGREP_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools.opengrep.version — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
-    )
+    );
   }
-  return version
+  return version;
 }

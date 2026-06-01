@@ -41,10 +41,10 @@ Property access without optional chaining crashes when intermediate values are n
 
 ```typescript
 // Crashes if user or profile is undefined
-const name = user.profile.name
+const name = user.profile.name;
 
 // Safe - returns undefined instead of crashing
-const name = user?.profile?.name
+const name = user?.profile?.name;
 ```
 ````
 
@@ -59,12 +59,12 @@ Unhandled promise rejections crash Node.js processes by default. Async calls wit
 ```typescript
 // Rejection crashes process
 async function run() {
-  apiCall() // Floating promise
+  apiCall(); // Floating promise
 }
 
 // Rejection handled
 async function run() {
-  await apiCall().catch(handleError)
+  await apiCall().catch(handleError);
 }
 ```
 
@@ -78,13 +78,13 @@ Concurrent modifications to shared state cause data corruption. `forEach` with a
 
 ```typescript
 // Results array races - pushes can interleave
-const results = []
+const results = [];
 for (const item of items) {
-  processItem(item).then(r => results.push(r))
+  processItem(item).then((r) => results.push(r));
 }
 
 // Coordinated - Promise.all ensures proper collection
-const results = await Promise.all(items.map(processItem))
+const results = await Promise.all(items.map(processItem));
 ```
 
 **Severity**: Critical (data corruption)
@@ -97,10 +97,10 @@ Logged tokens leak into CI logs, error tracking systems, and terminal histories.
 
 ```typescript
 // Logs full token to console/Sentry
-logger.debug({ apiToken: token })
+logger.debug({ apiToken: token });
 
 // Safe - logs only presence
-logger.debug({ hasToken: !!token })
+logger.debug({ hasToken: !!token });
 ```
 
 **Severity**: Critical (credential theft)
@@ -129,11 +129,11 @@ Hardcoded `/` separators fail on Windows (uses `\`). String concatenation breaks
 
 ```typescript
 // Fails on Windows, breaks with spaces
-const configPath = dir + '/config.json'
+const configPath = dir + "/config.json";
 
 // Works cross-platform, handles spaces
-import { join } from 'node:path'
-const configPath = join(dir, 'config.json')
+import { join } from "node:path";
+const configPath = join(dir, "config.json");
 ```
 
 **Severity**: High (Windows incompatibility)
@@ -146,10 +146,10 @@ Direct `process.exit()` bypasses CLI error handling framework, preventing proper
 
 ```typescript
 // Bypasses framework, no error shown
-if (!token) process.exit(1)
+if (!token) process.exit(1);
 
 // Framework handles exit code, shows error
-if (!token) throw new InputError('API token required')
+if (!token) throw new InputError("API token required");
 ```
 
 **Severity**: High (poor UX, skips cleanup)
@@ -162,12 +162,12 @@ if (!token) throw new InputError('API token required')
 
 ```typescript
 // Deletes without safety checks
-import { rmSync } from 'node:fs'
-rmSync(dir, { recursive: true })
+import { rmSync } from "node:fs";
+rmSync(dir, { recursive: true });
 
 // Validates against dangerous deletions
-import { safeDelete } from '@socketsecurity/lib-stable/fs'
-await safeDelete(dir)
+import { safeDelete } from "@socketsecurity/lib-stable/fs";
+await safeDelete(dir);
 ```
 
 **Severity**: Critical (data loss + security)
@@ -251,13 +251,13 @@ Package names come in multiple formats: `package`, `@scope/package`, `@scope/pac
 ```typescript
 // Crashes on non-scoped packages like "lodash"
 function getPackageName(fullName: string) {
-  return fullName.split('/')[1]
+  return fullName.split("/")[1];
 }
 
 // Handles both scoped and non-scoped
 function getPackageName(fullName: string) {
-  const parts = fullName.split('/')
-  return parts.length > 1 ? parts[1] : parts[0]
+  const parts = fullName.split("/");
+  return parts.length > 1 ? parts[1] : parts[0];
 }
 ```
 
@@ -271,13 +271,13 @@ function getPackageName(fullName: string) {
 
 ```typescript
 // Matches null, arrays, objects - too broad
-if (typeof value === 'object') {
-  value.foo // Crashes if null
+if (typeof value === "object") {
+  value.foo; // Crashes if null
 }
 
 // Correctly excludes null
-if (typeof value === 'object' && value !== null) {
-  value.foo // Safe
+if (typeof value === "object" && value !== null) {
+  value.foo; // Safe
 }
 ```
 
@@ -291,10 +291,10 @@ Regex without anchors (`^`, `$`) matches substrings, bypassing validation. Missi
 
 ```typescript
 // Matches inside malicious strings: "evil@scope/packageMALICIOUS"
-const isValid = /@[a-z]+\/[a-z]+/.test(name)
+const isValid = /@[a-z]+\/[a-z]+/.test(name);
 
 // Only matches exact format
-const isValid = /^@[a-z0-9-]+\/[a-z0-9-]+$/.test(name)
+const isValid = /^@[a-z0-9-]+\/[a-z0-9-]+$/.test(name);
 ```
 
 **Severity**: High (security impact)
@@ -307,10 +307,10 @@ Comparison functions must return negative, zero, or positive values. Returning `
 
 ```typescript
 // Unstable - never returns 0 for equal values
-array.sort((a, b) => (a > b ? 1 : -1))
+array.sort((a, b) => (a > b ? 1 : -1));
 
 // Stable numeric sort
-array.sort((a, b) => a - b)
+array.sort((a, b) => a - b);
 ```
 
 **Severity**: Medium
@@ -324,12 +324,10 @@ De Morgan's laws: `!(A && B)` ≠ `!A && !B`. Filter conditions often invert inc
 ```typescript
 // Wrong - keeps only items that are NEITHER low NOR medium
 // (keeps high, critical, undefined, "")
-const issues = all.filter(i => i.severity !== 'low' && i.severity !== 'medium')
+const issues = all.filter((i) => i.severity !== "low" && i.severity !== "medium");
 
 // Correct - keeps high and critical only
-const issues = all.filter(
-  i => i.severity === 'high' || i.severity === 'critical',
-)
+const issues = all.filter((i) => i.severity === "high" || i.severity === "critical");
 ```
 
 **Severity**: High
@@ -423,10 +421,10 @@ Cache keys must include all parameters affecting cached values. Missing package 
 
 ```typescript
 // Collides: scan-lodash for v1.0.0 and v2.0.0
-const key = `scan-${packageName}`
+const key = `scan-${packageName}`;
 
 // Unique per version
-const key = `scan-${packageName}-${version}-${platform}`
+const key = `scan-${packageName}-${version}-${platform}`;
 ```
 
 **Severity**: Medium
@@ -440,13 +438,13 @@ Read-modify-write sequences race when concurrent CLI invocations run. Atomic fil
 ```typescript
 // Races - concurrent calls lose updates
 async function updateCache(key: string, value: string) {
-  const cache = await readCache()
-  cache[key] = value
-  await writeCache(cache)
+  const cache = await readCache();
+  cache[key] = value;
+  await writeCache(cache);
 }
 
 // Atomic write (OS-level locking)
-await writeFile(cacheFile, JSON.stringify({ [key]: value }), { flag: 'w' })
+await writeFile(cacheFile, JSON.stringify({ [key]: value }), { flag: "w" });
 ```
 
 **Severity**: Medium
@@ -459,11 +457,11 @@ Cached auth tokens expire but cache persists indefinitely. Using expired tokens 
 
 ```typescript
 // Returns expired tokens - causes 401 errors
-if (cachedToken) return cachedToken
+if (cachedToken) return cachedToken;
 
 // Validates expiration
 if (cached && cached.expiresAt > Date.now()) {
-  return cached.token
+  return cached.token;
 }
 ```
 
@@ -564,10 +562,10 @@ CLAUDE.md mandates `@socketsecurity/lib/*` imports for spawn, fs operations. Soc
 
 ```typescript
 // Missing Socket security enhancements
-import { spawn } from 'node:child_process'
+import { spawn } from "node:child_process";
 
 // Includes Socket security patterns
-import { spawn } from '@socketsecurity/registry-stable/lib/spawn'
+import { spawn } from "@socketsecurity/registry-stable/lib/spawn";
 ```
 
 **Severity**: Medium
@@ -710,10 +708,10 @@ Logged tokens appear in GitHub Actions logs, Sentry traces, local terminal histo
 
 ```typescript
 // Leaks full token to logs
-console.log('Token:', apiToken)
+console.log("Token:", apiToken);
 
 // Safe - logs only presence
-console.log('Token:', apiToken ? '***' : 'none')
+console.log("Token:", apiToken ? "***" : "none");
 ```
 
 **Severity**: Critical
@@ -842,16 +840,16 @@ Users discover flags through `--help` output. Undocumented flags remain hidden; 
 ```typescript
 // Users never discover --verbose flag
 const flags = {
-  verbose: { type: 'boolean' },
-}
+  verbose: { type: "boolean" },
+};
 
 // Discoverable via --help
 const flags = {
   verbose: {
-    type: 'boolean',
-    description: 'Enable verbose logging',
+    type: "boolean",
+    description: "Enable verbose logging",
   },
-}
+};
 ```
 
 **Severity**: Medium
@@ -865,7 +863,7 @@ VSCode/IDE autocomplete shows JSDoc on hover. Exported utility functions without
 ```typescript
 // IDE shows: validatePackageName(name: string): boolean
 export function validatePackageName(name: string): boolean {
-  return /^(@[a-z0-9-]+\/)?[a-z0-9-]+$/.test(name)
+  return /^(@[a-z0-9-]+\/)?[a-z0-9-]+$/.test(name);
 }
 
 // IDE shows full documentation on hover
@@ -874,7 +872,7 @@ export function validatePackageName(name: string): boolean {
  * Supports scoped (@org/pkg) and unscoped (pkg) packages.
  */
 export function validatePackageName(name: string): boolean {
-  return /^(@[a-z0-9-]+\/)?[a-z0-9-]+$/.test(name)
+  return /^(@[a-z0-9-]+\/)?[a-z0-9-]+$/.test(name);
 }
 ```
 
@@ -923,17 +921,17 @@ Required flags without descriptions cause confusion. Users don't know format exp
 ```typescript
 // Confusing - no guidance on what apiKey should be
 const flags = {
-  apiKey: { type: 'string', isRequired: true },
-}
+  apiKey: { type: "string", isRequired: true },
+};
 
 // Clear - explains format and env var alternative
 const flags = {
   apiKey: {
-    type: 'string',
+    type: "string",
     isRequired: true,
-    description: 'Socket API key (or set SOCKET_API_KEY env var)',
+    description: "Socket API key (or set SOCKET_API_KEY env var)",
   },
-}
+};
 ```
 
 **Severity**: Medium

@@ -3,17 +3,17 @@
  *   a single platform target.
  */
 
-import { promises as fs } from 'node:fs'
-import path from 'node:path'
+import { promises as fs } from "node:fs";
+import path from "node:path";
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { safeDelete, safeMkdir } from "@socketsecurity/lib-stable/fs/safe";
+import { normalizePath } from "@socketsecurity/lib-stable/paths/normalize";
 
-import { PACKAGE_ROOT } from '../paths.mts'
+import { PACKAGE_ROOT } from "../paths.mts";
 
-import { generateSeaConfig, injectSeaBlob } from './builder.mts'
-import { downloadNodeBinary } from '../util/asset-manager-compat.mts'
-import { downloadExternalTools, logger } from './downloads.mts'
+import { generateSeaConfig, injectSeaBlob } from "./builder.mts";
+import { downloadNodeBinary } from "../util/asset-manager-compat.mts";
+import { downloadExternalTools, logger } from "./downloads.mts";
 
 /**
  * Build a single SEA target for a specific platform. Orchestrates the complete
@@ -52,20 +52,20 @@ export async function buildTarget(target, entryPoint, options) {
   const { outputDir, outputPath: providedOutputPath } = {
     __proto__: null,
     ...options,
-  }
+  };
 
   // Determine output path.
-  let outputPath
+  let outputPath;
   if (providedOutputPath) {
-    outputPath = normalizePath(providedOutputPath)
+    outputPath = normalizePath(providedOutputPath);
   } else {
-    const dir = outputDir || normalizePath(path.join(PACKAGE_ROOT, 'dist/sea'))
-    outputPath = normalizePath(path.join(dir, target.outputName))
+    const dir = outputDir || normalizePath(path.join(PACKAGE_ROOT, "dist/sea"));
+    outputPath = normalizePath(path.join(dir, target.outputName));
   }
 
   // Ensure output directory exists.
-  const outputDirPath = path.dirname(outputPath)
-  await safeMkdir(outputDirPath)
+  const outputDirPath = path.dirname(outputPath);
+  await safeMkdir(outputDirPath);
 
   // Download Node.js binary for target platform.
   const nodeBinary = await downloadNodeBinary(
@@ -73,51 +73,45 @@ export async function buildTarget(target, entryPoint, options) {
     target.platform,
     target.arch,
     target.libc,
-  )
+  );
 
   // Create unique cache ID for parallel builds to prevent extraction cache conflicts.
-  const cacheId = `${target.platform}-${target.arch}${target.libc ? `-${target.libc}` : ''}`
+  const cacheId = `${target.platform}-${target.arch}${target.libc ? `-${target.libc}` : ""}`;
 
   // Download and package external security tools for VFS bundling.
-  let vfsTarGz
+  let vfsTarGz;
   try {
-    vfsTarGz = await downloadExternalTools(
-      target.platform,
-      target.arch,
-      target.libc === 'musl',
-    )
+    vfsTarGz = await downloadExternalTools(target.platform, target.arch, target.libc === "musl");
   } catch (e) {
-    logger.warn(
-      `Failed to download security tools for ${cacheId}: ${e.message}`,
-    )
-    logger.warn('Building without security tools VFS')
+    logger.warn(`Failed to download security tools for ${cacheId}: ${e.message}`);
+    logger.warn("Building without security tools VFS");
   }
 
   // Generate SEA configuration.
-  const configPath = await generateSeaConfig(entryPoint, outputPath)
+  const configPath = await generateSeaConfig(entryPoint, outputPath);
 
   try {
     // Inject SEA using config-based blob generation.
     // binject reads the config, generates the blob, and injects VFS in one operation.
-    await injectSeaBlob(nodeBinary, configPath, outputPath, cacheId, vfsTarGz)
+    await injectSeaBlob(nodeBinary, configPath, outputPath, cacheId, vfsTarGz);
 
     // Make executable on Unix.
-    if (target.platform !== 'win32') {
-      await fs.chmod(outputPath, 0o755)
+    if (target.platform !== "win32") {
+      await fs.chmod(outputPath, 0o755);
     }
 
     // Clean up generated blob file.
     // Blob path in config is relative to config directory.
-    const config = JSON.parse(await fs.readFile(configPath, 'utf8'))
+    const config = JSON.parse(await fs.readFile(configPath, "utf8"));
     if (config.output) {
-      const blobPath = path.join(path.dirname(configPath), config.output)
-      await safeDelete(blobPath).catch(() => {})
+      const blobPath = path.join(path.dirname(configPath), config.output);
+      await safeDelete(blobPath).catch(() => {});
     }
   } finally {
     // Clean up config.
-    await safeDelete(configPath).catch(() => {})
+    await safeDelete(configPath).catch(() => {});
   }
 
-  return outputPath
+  return outputPath;
 }
 // c8 ignore stop

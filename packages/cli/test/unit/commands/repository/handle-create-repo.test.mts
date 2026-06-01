@@ -16,253 +16,239 @@
  * fetcher) - src/commands/repository/output-create-repo.mts (formatter)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { handleCreateRepo } from '../../../../src/commands/repository/handle-create-repo.mts'
+import { handleCreateRepo } from "../../../../src/commands/repository/handle-create-repo.mts";
 
 // Mock the dependencies.
-const mockFetchCreateRepo = vi.hoisted(() => vi.fn())
-const mockOutputCreateRepo = vi.hoisted(() => vi.fn())
-const mockDebug = vi.hoisted(() => vi.fn())
-const mockDebugDir = vi.hoisted(() => vi.fn())
-const mockIsDebug = vi.hoisted(() => false)
+const mockFetchCreateRepo = vi.hoisted(() => vi.fn());
+const mockOutputCreateRepo = vi.hoisted(() => vi.fn());
+const mockDebug = vi.hoisted(() => vi.fn());
+const mockDebugDir = vi.hoisted(() => vi.fn());
+const mockIsDebug = vi.hoisted(() => false);
 
-vi.mock('../../../../src/commands/repository/fetch-create-repo.mts', () => ({
+vi.mock(import("../../../../src/commands/repository/fetch-create-repo.mts"), () => ({
   fetchCreateRepo: mockFetchCreateRepo,
-}))
-vi.mock('../../../../src/commands/repository/output-create-repo.mts', () => ({
+}));
+vi.mock(import("../../../../src/commands/repository/output-create-repo.mts"), () => ({
   outputCreateRepo: mockOutputCreateRepo,
-}))
-vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
+}));
+vi.mock(import("@socketsecurity/lib-stable/debug/output"), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
-}))
-vi.mock('@socketsecurity/lib-stable/debug/namespace', () => ({
+}));
+vi.mock(import("@socketsecurity/lib-stable/debug/namespace"), () => ({
   isDebug: mockIsDebug,
-}))
+}));
 
-describe('handleCreateRepo', () => {
+describe("handleCreateRepo", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('creates repository successfully', async () => {
+  it("creates repository successfully", async () => {
     const mockData = {
       ok: true,
       data: {
-        id: '123',
-        name: 'my-repo',
-        fullName: 'test-org/my-repo',
-        visibility: 'private',
+        id: "123",
+        name: "my-repo",
+        fullName: "test-org/my-repo",
+        visibility: "private",
       },
-    }
-    mockFetchCreateRepo.mockResolvedValue(mockData)
+    };
+    mockFetchCreateRepo.mockResolvedValue(mockData);
 
     await handleCreateRepo(
       {
-        orgSlug: 'test-org',
-        repoName: 'my-repo',
-        description: 'Test repository',
-        homepage: 'https://example.com',
-        defaultBranch: 'main',
-        visibility: 'private',
+        orgSlug: "test-org",
+        repoName: "my-repo",
+        description: "Test repository",
+        homepage: "https://example.com",
+        defaultBranch: "main",
+        visibility: "private",
       },
-      'json',
-    )
+      "json",
+    );
 
     expect(mockFetchCreateRepo).toHaveBeenCalledWith(
       {
-        orgSlug: 'test-org',
-        repoName: 'my-repo',
-        description: 'Test repository',
-        homepage: 'https://example.com',
-        defaultBranch: 'main',
-        visibility: 'private',
+        orgSlug: "test-org",
+        repoName: "my-repo",
+        description: "Test repository",
+        homepage: "https://example.com",
+        defaultBranch: "main",
+        visibility: "private",
       },
       {
-        commandPath: 'socket repository create',
+        commandPath: "socket repository create",
       },
-    )
-    expect(mockOutputCreateRepo).toHaveBeenCalledWith(
-      mockData,
-      'my-repo',
-      'json',
-    )
-  })
+    );
+    expect(mockOutputCreateRepo).toHaveBeenCalledWith(mockData, "my-repo", "json");
+  });
 
-  it('handles creation failure', async () => {
+  it("handles creation failure", async () => {
     const mockError = {
       ok: false,
-      error: new Error('Repository already exists'),
-    }
-    mockFetchCreateRepo.mockResolvedValue(mockError)
+      error: new Error("Repository already exists"),
+    };
+    mockFetchCreateRepo.mockResolvedValue(mockError);
 
     await handleCreateRepo(
       {
-        orgSlug: 'test-org',
-        repoName: 'existing-repo',
-        description: 'Test repository',
-        homepage: '',
-        defaultBranch: 'main',
-        visibility: 'public',
+        orgSlug: "test-org",
+        repoName: "existing-repo",
+        description: "Test repository",
+        homepage: "",
+        defaultBranch: "main",
+        visibility: "public",
       },
-      'text',
-    )
+      "text",
+    );
 
     expect(mockFetchCreateRepo).toHaveBeenCalledWith(
       expect.objectContaining({
-        repoName: 'existing-repo',
+        repoName: "existing-repo",
       }),
       expect.objectContaining({
-        commandPath: 'socket repository create',
+        commandPath: "socket repository create",
       }),
-    )
-    expect(mockOutputCreateRepo).toHaveBeenCalledWith(
-      mockError,
-      'existing-repo',
-      'text',
-    )
-  })
+    );
+    expect(mockOutputCreateRepo).toHaveBeenCalledWith(mockError, "existing-repo", "text");
+  });
 
-  it('handles markdown output', async () => {
+  it("handles markdown output", async () => {
     const mockData = {
       ok: true,
-      data: { id: '456', name: 'test-repo' },
-    }
-    mockFetchCreateRepo.mockResolvedValue(mockData)
+      data: { id: "456", name: "test-repo" },
+    };
+    mockFetchCreateRepo.mockResolvedValue(mockData);
 
     await handleCreateRepo(
       {
-        orgSlug: 'org',
-        repoName: 'test-repo',
-        description: 'Description',
-        homepage: 'https://test.com',
-        defaultBranch: 'develop',
-        visibility: 'internal',
+        orgSlug: "org",
+        repoName: "test-repo",
+        description: "Description",
+        homepage: "https://test.com",
+        defaultBranch: "develop",
+        visibility: "internal",
       },
-      'markdown',
-    )
+      "markdown",
+    );
 
-    expect(mockOutputCreateRepo).toHaveBeenCalledWith(
-      mockData,
-      'test-repo',
-      'markdown',
-    )
-  })
+    expect(mockOutputCreateRepo).toHaveBeenCalledWith(mockData, "test-repo", "markdown");
+  });
 
-  it('logs debug information', async () => {
+  it("logs debug information", async () => {
     const mockData = {
       ok: true,
-      data: { id: '789', name: 'debug-repo' },
-    }
-    mockFetchCreateRepo.mockResolvedValue(mockData)
+      data: { id: "789", name: "debug-repo" },
+    };
+    mockFetchCreateRepo.mockResolvedValue(mockData);
 
     await handleCreateRepo(
       {
-        orgSlug: 'debug-org',
-        repoName: 'debug-repo',
-        description: 'Debug test',
-        homepage: 'https://debug.com',
-        defaultBranch: 'main',
-        visibility: 'private',
+        orgSlug: "debug-org",
+        repoName: "debug-repo",
+        description: "Debug test",
+        homepage: "https://debug.com",
+        defaultBranch: "main",
+        visibility: "private",
       },
-      'json',
-    )
+      "json",
+    );
 
-    expect(mockDebug).toHaveBeenCalledWith(
-      'Creating repository debug-org/debug-repo',
-    )
+    expect(mockDebug).toHaveBeenCalledWith("Creating repository debug-org/debug-repo");
     expect(mockDebugDir).toHaveBeenCalledWith(
       expect.objectContaining({
-        orgSlug: 'debug-org',
-        repoName: 'debug-repo',
+        orgSlug: "debug-org",
+        repoName: "debug-repo",
       }),
-    )
-    expect(mockDebug).toHaveBeenCalledWith('Repository creation succeeded')
-  })
+    );
+    expect(mockDebug).toHaveBeenCalledWith("Repository creation succeeded");
+  });
 
-  it('logs debug information on failure', async () => {
+  it("logs debug information on failure", async () => {
     mockFetchCreateRepo.mockResolvedValue({
       ok: false,
-      error: new Error('Failed'),
-    })
+      error: new Error("Failed"),
+    });
 
     await handleCreateRepo(
       {
-        orgSlug: 'org',
-        repoName: 'repo',
-        description: '',
-        homepage: '',
-        defaultBranch: 'main',
-        visibility: 'public',
+        orgSlug: "org",
+        repoName: "repo",
+        description: "",
+        homepage: "",
+        defaultBranch: "main",
+        visibility: "public",
       },
-      'json',
-    )
+      "json",
+    );
 
-    expect(mockDebug).toHaveBeenCalledWith('Repository creation failed')
-  })
+    expect(mockDebug).toHaveBeenCalledWith("Repository creation failed");
+  });
 
-  it('handles different visibility types', async () => {
-    const visibilities = ['public', 'private', 'internal']
+  it("handles different visibility types", async () => {
+    const visibilities = ["public", "private", "internal"];
 
     for (let i = 0, { length } = visibilities; i < length; i += 1) {
-      const visibility = visibilities[i]
+      const visibility = visibilities[i];
       mockFetchCreateRepo.mockResolvedValue({
         ok: true,
-        data: { id: '1', name: 'repo', visibility },
-      })
+        data: { id: "1", name: "repo", visibility },
+      });
 
       await handleCreateRepo(
         {
-          orgSlug: 'org',
-          repoName: 'repo',
-          description: 'Test',
-          homepage: '',
-          defaultBranch: 'main',
+          orgSlug: "org",
+          repoName: "repo",
+          description: "Test",
+          homepage: "",
+          defaultBranch: "main",
           visibility,
         },
-        'json',
-      )
+        "json",
+      );
 
       expect(mockFetchCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({ visibility }),
         expect.objectContaining({
-          commandPath: 'socket repository create',
+          commandPath: "socket repository create",
         }),
-      )
+      );
     }
-  })
+  });
 
-  it('handles empty optional fields', async () => {
+  it("handles empty optional fields", async () => {
     mockFetchCreateRepo.mockResolvedValue({
       ok: true,
-      data: { id: '1', name: 'minimal-repo' },
-    })
+      data: { id: "1", name: "minimal-repo" },
+    });
 
     await handleCreateRepo(
       {
-        orgSlug: 'org',
-        repoName: 'minimal-repo',
-        description: '',
-        homepage: '',
-        defaultBranch: 'main',
-        visibility: 'public',
+        orgSlug: "org",
+        repoName: "minimal-repo",
+        description: "",
+        homepage: "",
+        defaultBranch: "main",
+        visibility: "public",
       },
-      'json',
-    )
+      "json",
+    );
 
     expect(mockFetchCreateRepo).toHaveBeenCalledWith(
       {
-        orgSlug: 'org',
-        repoName: 'minimal-repo',
-        description: '',
-        homepage: '',
-        defaultBranch: 'main',
-        visibility: 'public',
+        orgSlug: "org",
+        repoName: "minimal-repo",
+        description: "",
+        homepage: "",
+        defaultBranch: "main",
+        visibility: "public",
       },
       {
-        commandPath: 'socket repository create',
+        commandPath: "socket repository create",
       },
-    )
-  })
-})
+    );
+  });
+});

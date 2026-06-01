@@ -18,16 +18,16 @@
  * functionality - Update notification customization.
  */
 
-import { createRequire } from 'node:module'
+import { createRequire } from "node:module";
 
-import { isInSocketDlx } from '@socketsecurity/lib-stable/dlx/paths'
+import { isInSocketDlx } from "@socketsecurity/lib-stable/dlx/paths";
 
-const require = createRequire(import.meta.url)
+const require = createRequire(import.meta.url);
 
 /**
  * Cached SEA detection result.
  */
-let isSea: boolean | undefined
+let isSea: boolean | undefined;
 
 /**
  * Detect if self-update is allowed for the current binary. Self-update is ONLY
@@ -42,15 +42,15 @@ let isSea: boolean | undefined
  * - Bootstrap wrappers (not SEA binaries)
  */
 export function canSelfUpdate(): boolean {
-  const binaryPath = process.argv[0]
-  return isSeaBinary() && !!binaryPath && isInSocketDlx(binaryPath)
+  const binaryPath = process.argv[0];
+  return isSeaBinary() && !!binaryPath && isInSocketDlx(binaryPath);
 }
 
 /**
  * Get the current SEA binary path. Only valid when running as a SEA binary.
  */
 export function getSeaBinaryPath(): string | undefined {
-  return isSeaBinary() ? process.argv[0] : undefined
+  return isSeaBinary() ? process.argv[0] : undefined;
 }
 
 /**
@@ -61,11 +61,11 @@ export function isSeaBinary(): boolean {
   if (isSea === undefined) {
     try {
       // Use Node.js 24+ native SEA detection API.
-      const seaModule = require('node:sea')
-      isSea = seaModule.isSea()
+      const seaModule = require("node:sea");
+      isSea = seaModule.isSea();
     } catch {
-      isSea = false
+      isSea = false;
     }
   }
-  return isSea ?? false
+  return isSea ?? false;
 }

@@ -362,8 +362,8 @@ jobs:
       - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v4
         with:
-          node-version: '25'
-          cache: 'pnpm'
+          node-version: "25"
+          cache: "pnpm"
 
       - run: pnpm install
       - run: pnpm build
@@ -390,8 +390,8 @@ jobs:
       - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v4
         with:
-          node-version: '25'
-          cache: 'pnpm'
+          node-version: "25"
+          cache: "pnpm"
 
       - run: pnpm install
       - run: pnpm build:cli

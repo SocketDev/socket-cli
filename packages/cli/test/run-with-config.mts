@@ -19,8 +19,8 @@
  *   const json = JSON.parse(result.stdout)
  */
 
-import { spawnSocketCli } from './utils.mts'
-import { constants } from '../src/constants.mts'
+import { spawnSocketCli } from "./utils.mts";
+import { constants } from "../src/constants.mts";
 
 /**
  * Run Socket CLI command with isolated configuration.
@@ -30,15 +30,15 @@ import { constants } from '../src/constants.mts'
  * @returns Object containing exitCode, stdout, and stderr.
  */
 export async function runWithConfig(...args: string[]) {
-  const binCliPath = constants.getBinCliPath()
+  const binCliPath = constants.getBinCliPath();
   // Add --config {} if not present.
-  if (!args.includes('--config')) {
-    args.push('--config', '{}')
+  if (!args.includes("--config")) {
+    args.push("--config", "{}");
   }
-  const result = await spawnSocketCli(binCliPath, args)
+  const result = await spawnSocketCli(binCliPath, args);
   return {
     exitCode: result.code,
     stdout: result.stdout,
     stderr: result.stderr,
-  }
+  };
 }

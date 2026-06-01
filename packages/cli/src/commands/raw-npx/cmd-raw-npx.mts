@@ -1,23 +1,23 @@
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { outputDryRunExecute } from '../../util/dry-run/output.mts'
-import { getNpxBinPath } from '../../util/npm/paths.mts'
+import { FLAG_DRY_RUN, FLAG_HELP } from "../../constants/cli.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { outputDryRunExecute } from "../../util/dry-run/output.mts";
+import { getNpxBinPath } from "../../util/npm/paths.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
 
-export const CMD_NAME = 'raw-npx'
+export const CMD_NAME = "raw-npx";
 
-const description = 'Run pnpm exec without the Socket wrapper'
+const description = "Run pnpm exec without the Socket wrapper";
 
-const hidden = false
+const hidden = false;
 
 // Helper functions.
 
@@ -47,55 +47,46 @@ export async function run(
     Examples
       $ ${command} cowsay
   `,
-  }
+  };
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
   if (dryRun) {
-    outputDryRunExecute(
-      getNpxBinPath(),
-      argv as string[],
-      'raw pnpm exec command',
-    )
-    return
+    outputDryRunExecute(getNpxBinPath(), argv as string[], "raw pnpm exec command");
+    return;
   }
 
-  await runRawNpx(argv)
+  await runRawNpx(argv);
 }
 
-export async function runRawNpx(
-  argv: string[] | readonly string[],
-): Promise<void> {
-  process.exitCode = 1
+export async function runRawNpx(argv: string[] | readonly string[]): Promise<void> {
+  process.exitCode = 1;
 
   const spawnPromise = spawn(getNpxBinPath(), argv as string[], {
     // On Windows, npx is often a .cmd file that requires shell execution.
     // The spawn function from @socketsecurity/registry will handle this properly
     // when shell is true.
     shell: WIN32,
-    stdio: 'inherit',
-  })
+    stdio: "inherit",
+  });
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on(
-    'exit',
-    (code: number | null, signalName: string | null) => {
-      if (signalName) {
-        process.kill(process.pid, signalName)
-      } else if (typeof code === 'number') {
-        process.exit(code)
-      }
-    },
-  )
+  spawnPromise.process.on("exit", (code: number | null, signalName: string | null) => {
+    if (signalName) {
+      process.kill(process.pid, signalName);
+    } else if (typeof code === "number") {
+      process.exit(code);
+    }
+  });
 
-  await spawnPromise
+  await spawnPromise;
 }
 
 // Exported command.
@@ -104,4 +95,4 @@ export const cmdRawNpx = {
   description,
   hidden,
   run,
-}
+};

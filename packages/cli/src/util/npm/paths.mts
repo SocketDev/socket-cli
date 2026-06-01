@@ -1,60 +1,55 @@
-import { NPM } from '@socketsecurity/lib-stable/constants/agents'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { NPM } from "@socketsecurity/lib-stable/constants/agents";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { findBinPathDetailsSync } from '../fs/path-resolve.mts'
+import { findBinPathDetailsSync } from "../fs/path-resolve.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 export function exitWithBinPathError(binName: string): never {
   logger.fail(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,
-  )
+  );
   // The exit code 127 indicates that the command or binary being executed
   // could not be found.
-  process.exit(127)
+  process.exit(127);
   // This line is never reached in production, but helps tests.
-  throw new Error('process.exit called')
+  throw new Error("process.exit called");
 }
 
-let npmBinPath: string | undefined
+let npmBinPath: string | undefined;
 export function getNpmBinPath(): string {
   if (npmBinPath === undefined) {
-    npmBinPath = getNpmBinPathDetails().path
+    npmBinPath = getNpmBinPathDetails().path;
     if (!npmBinPath) {
-      exitWithBinPathError(NPM)
+      exitWithBinPathError(NPM);
     }
   }
-  return npmBinPath
+  return npmBinPath;
 }
 
-let npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-export function getNpmBinPathDetails(): ReturnType<
-  typeof findBinPathDetailsSync
-> {
+let npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined;
+export function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   if (npmBinPathDetails === undefined) {
-    npmBinPathDetails = findBinPathDetailsSync(NPM)
+    npmBinPathDetails = findBinPathDetailsSync(NPM);
   }
-  return npmBinPathDetails
+  return npmBinPathDetails;
 }
 
-
-let npxBinPath: string | undefined
+let npxBinPath: string | undefined;
 export function getNpxBinPath(): string {
   if (npxBinPath === undefined) {
-    npxBinPath = getNpxBinPathDetails().path
+    npxBinPath = getNpxBinPathDetails().path;
     if (!npxBinPath) {
-      exitWithBinPathError('npx')
+      exitWithBinPathError("npx");
     }
   }
-  return npxBinPath
+  return npxBinPath;
 }
 
-let npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-export function getNpxBinPathDetails(): ReturnType<
-  typeof findBinPathDetailsSync
-> {
+let npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined;
+export function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   if (npxBinPathDetails === undefined) {
-    npxBinPathDetails = findBinPathDetailsSync('npx')
+    npxBinPathDetails = findBinPathDetailsSync("npx");
   }
-  return npxBinPathDetails
+  return npxBinPathDetails;
 }

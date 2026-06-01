@@ -29,11 +29,16 @@ const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow soak-exclude-third-party bypass'
 
+// Fleet-internal first-party scopes published by trusted Socket pipelines —
+// soak-exempt by design. The danger the guard targets is a third-party
+// scope-glob (the 2026-04-06 `@anthropic-ai/*` incident), not a fleet repo's
+// own scope. `@stuie` is the first-party scope of the stuie fleet repo.
 const ALLOWED_SCOPES = new Set([
-  '@socketsecurity',
-  '@socketregistry',
-  '@socketbin',
   '@socketaddon',
+  '@socketbin',
+  '@socketregistry',
+  '@socketsecurity',
+  '@stuie',
 ])
 
 const SECTION_HEADER = /^minimumReleaseAgeExclude:\s*$/
@@ -179,7 +184,7 @@ await withEditGuard((filePath, content, payload) => {
     '  `minimumReleaseAgeExclude:` is a security-policy bypass for Socket',
     '  first-party scopes only:',
     '',
-    '    @socketsecurity/* @socketregistry/* @socketbin/* @socketaddon/*',
+    '    @socketaddon/* @socketbin/* @socketregistry/* @socketsecurity/* @stuie/*',
     '',
     '  Adding a third-party package weakens the malware-protection soak gate.',
     '',

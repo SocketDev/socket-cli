@@ -9,8 +9,8 @@
  * value.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
 export function getTrustProxy(): boolean {
-  return process.env['TRUST_PROXY'] === 'true'
+  return process.env["TRUST_PROXY"] === "true";
 }

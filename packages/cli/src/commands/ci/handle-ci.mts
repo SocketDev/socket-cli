@@ -1,52 +1,48 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { debug, debugDir } from "@socketsecurity/lib-stable/debug/output";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
-import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mts'
-import {
-  detectDefaultBranch,
-  getRepoName,
-  gitBranch,
-} from '../../util/git/operations.mjs'
-import { serializeResultJson } from '../../util/output/result-json.mjs'
-import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
+import { getDefaultOrgSlug } from "./fetch-default-org-slug.mts";
+import { REPORT_LEVEL_ERROR } from "../../constants/reporting.mts";
+import { detectDefaultBranch, getRepoName, gitBranch } from "../../util/git/operations.mjs";
+import { serializeResultJson } from "../../util/output/result-json.mjs";
+import { handleCreateNewScan } from "../scan/handle-create-new-scan.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 export async function handleCi(autoManifest: boolean): Promise<void> {
-  debug('Starting CI scan')
-  debugDir({ autoManifest })
+  debug("Starting CI scan");
+  debugDir({ autoManifest });
 
-  const orgSlugCResult = await getDefaultOrgSlug()
+  const orgSlugCResult = await getDefaultOrgSlug();
   if (!orgSlugCResult.ok) {
-    debug('Failed to get default org slug')
-    debugDir({ orgSlugCResult })
-    process.exitCode = orgSlugCResult.code ?? 1
+    debug("Failed to get default org slug");
+    debugDir({ orgSlugCResult });
+    process.exitCode = orgSlugCResult.code ?? 1;
     // Always assume json mode.
-    logger.log(serializeResultJson(orgSlugCResult))
-    return
+    logger.log(serializeResultJson(orgSlugCResult));
+    return;
   }
 
-  const orgSlug = orgSlugCResult.data
-  const cwd = process.cwd()
-  const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
-  const repoName = await getRepoName(cwd)
+  const orgSlug = orgSlugCResult.data;
+  const cwd = process.cwd();
+  const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd));
+  const repoName = await getRepoName(cwd);
 
-  debug(`CI scan for ${orgSlug}/${repoName} on branch ${branchName}`)
-  debugDir({ orgSlug, cwd, branchName, repoName })
+  debug(`CI scan for ${orgSlug}/${repoName} on branch ${branchName}`);
+  debugDir({ orgSlug, cwd, branchName, repoName });
 
   await handleCreateNewScan({
     autoManifest,
     basics: false,
     branchName,
-    commitMessage: '',
-    commitHash: '',
-    committers: '',
+    commitMessage: "",
+    commitHash: "",
+    committers: "",
     cwd,
     defaultBranch: false,
     interactive: false,
     orgSlug,
-    outputKind: 'json',
+    outputKind: "json",
     // When 'pendingHead' is true, it requires 'branchName' set and 'tmp' false.
     pendingHead: true,
     pullRequest: 0,
@@ -63,7 +59,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
       reachEcosystems: [],
       reachExcludePaths: [],
       reachLazyMode: false,
-      reachMinSeverity: '',
+      reachMinSeverity: "",
       reachSkipCache: false,
       reachUseOnlyPregeneratedSboms: false,
       reachUseUnreachableFromPrecomputation: false,
@@ -74,8 +70,8 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     readOnly: false,
     report: true,
     reportLevel: REPORT_LEVEL_ERROR,
-    targets: ['.'],
+    targets: ["."],
     // Don't set 'tmp' when 'pendingHead' is true.
     tmp: false,
-  })
+  });
 }

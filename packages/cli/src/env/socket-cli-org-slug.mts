@@ -3,6 +3,6 @@
  * Socket CLI operations.
  */
 
-import { getSocketCliOrgSlug } from '@socketsecurity/lib-stable/env/socket-cli'
+import { getSocketCliOrgSlug } from "@socketsecurity/lib-stable/env/socket-cli";
 
-export const SOCKET_CLI_ORG_SLUG = getSocketCliOrgSlug()
+export const SOCKET_CLI_ORG_SLUG = getSocketCliOrgSlug();

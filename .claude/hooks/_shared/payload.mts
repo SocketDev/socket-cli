@@ -31,8 +31,8 @@
  * this and narrows the `tool_input` fields it reads.
  */
 export interface ToolCallPayload {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: ToolInput | undefined
+  readonly tool_name?: string | undefined;
+  readonly tool_input?: ToolInput | undefined;
 }
 
 /**
@@ -43,12 +43,12 @@ export interface ToolCallPayload {
  */
 export interface ToolInput {
   // Edit/Write
-  readonly file_path?: unknown | undefined
-  readonly content?: unknown | undefined
-  readonly new_string?: unknown | undefined
-  readonly old_string?: unknown | undefined
+  readonly file_path?: unknown | undefined;
+  readonly content?: unknown | undefined;
+  readonly new_string?: unknown | undefined;
+  readonly old_string?: unknown | undefined;
   // Bash
-  readonly command?: unknown | undefined
+  readonly command?: unknown | undefined;
 }
 
 /**
@@ -59,8 +59,8 @@ export interface ToolInput {
  * Const cmd = readCommand(payload) if (!cmd) return.
  */
 export function readCommand(payload: ToolCallPayload): string | undefined {
-  const cmd = payload?.tool_input?.command
-  return typeof cmd === 'string' ? cmd : undefined
+  const cmd = payload?.tool_input?.command;
+  return typeof cmd === "string" ? cmd : undefined;
 }
 
 /**
@@ -68,8 +68,8 @@ export function readCommand(payload: ToolCallPayload): string | undefined {
  * single entry point so callers don't repeat the `typeof === 'string'` guard.
  */
 export function readFilePath(payload: ToolCallPayload): string | undefined {
-  const fp = payload?.tool_input?.file_path
-  return typeof fp === 'string' ? fp : undefined
+  const fp = payload?.tool_input?.file_path;
+  return typeof fp === "string" ? fp : undefined;
 }
 
 /**
@@ -79,13 +79,13 @@ export function readFilePath(payload: ToolCallPayload): string | undefined {
  * disk" without caring whether it's a Write or an Edit.
  */
 export function readWriteContent(payload: ToolCallPayload): string | undefined {
-  const content = payload?.tool_input?.content
-  if (typeof content === 'string') {
-    return content
+  const content = payload?.tool_input?.content;
+  if (typeof content === "string") {
+    return content;
   }
-  const newStr = payload?.tool_input?.new_string
-  if (typeof newStr === 'string') {
-    return newStr
+  const newStr = payload?.tool_input?.new_string;
+  if (typeof newStr === "string") {
+    return newStr;
   }
-  return undefined
+  return undefined;
 }

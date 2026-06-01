@@ -1,20 +1,20 @@
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { outputDryRunExecute } from '../../util/dry-run/output.mts'
-import { getNpmBinPath } from '../../util/npm/paths.mts'
+import { FLAG_DRY_RUN, FLAG_HELP } from "../../constants/cli.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { outputDryRunExecute } from "../../util/dry-run/output.mts";
+import { getNpmBinPath } from "../../util/npm/paths.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
 
-export const CMD_NAME = 'raw-npm'
+export const CMD_NAME = "raw-npm";
 
-const description = 'Run npm without the Socket wrapper'
+const description = "Run npm without the Socket wrapper";
 
-const hidden = false
+const hidden = false;
 
 // Helper functions.
 
@@ -44,51 +44,46 @@ export async function run(
     Examples
       $ ${command} install -g cowsay
   `,
-  }
+  };
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
   if (dryRun) {
-    outputDryRunExecute(getNpmBinPath(), argv as string[], 'raw npm command')
-    return
+    outputDryRunExecute(getNpmBinPath(), argv as string[], "raw npm command");
+    return;
   }
 
-  await runRawNpm(argv)
+  await runRawNpm(argv);
 }
 
-export async function runRawNpm(
-  argv: string[] | readonly string[],
-): Promise<void> {
-  process.exitCode = 1
+export async function runRawNpm(argv: string[] | readonly string[]): Promise<void> {
+  process.exitCode = 1;
 
   const spawnPromise = spawn(getNpmBinPath(), argv as string[], {
     // On Windows, npm is often a .cmd file that requires shell execution.
     // The spawn function from @socketsecurity/registry will handle this properly
     // when shell is true.
     shell: WIN32,
-    stdio: 'inherit',
-  })
+    stdio: "inherit",
+  });
 
   // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on(
-    'exit',
-    (code: number | null, signalName: string | null) => {
-      if (signalName) {
-        process.kill(process.pid, signalName)
-      } else if (typeof code === 'number') {
-        process.exit(code)
-      }
-    },
-  )
+  spawnPromise.process.on("exit", (code: number | null, signalName: string | null) => {
+    if (signalName) {
+      process.kill(process.pid, signalName);
+    } else if (typeof code === "number") {
+      process.exit(code);
+    }
+  });
 
-  await spawnPromise
+  await spawnPromise;
 }
 
 // Exported command.
@@ -97,4 +92,4 @@ export const cmdRawNpm = {
   description,
   hidden,
   run,
-}
+};

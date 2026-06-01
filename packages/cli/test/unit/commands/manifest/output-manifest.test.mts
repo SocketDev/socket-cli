@@ -9,16 +9,16 @@
  * Related Files: - src/commands/manifest/output-manifest.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fs.
-const mockWriteFileSync = vi.hoisted(() => vi.fn())
-vi.mock('node:fs', () => ({
+const mockWriteFileSync = vi.hoisted(() => vi.fn());
+vi.mock(import("node:fs"), () => ({
   writeFileSync: mockWriteFileSync,
   default: {
     writeFileSync: mockWriteFileSync,
   },
-}))
+}));
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -28,184 +28,177 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
-}))
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+}));
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
-}))
+}));
 
 // Mock utilities.
-vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: (msg: string, cause?: string) =>
-    cause ? `${msg}: ${cause}` : msg,
-}))
+vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
+  failMsgWithBadge: (msg: string, cause?: string) => (cause ? `${msg}: ${cause}` : msg),
+}));
 
-vi.mock('../../../../src/util/output/markdown.mts', () => ({
-  mdHeader: (text: string, level = 1) => `${'#'.repeat(level)} ${text}`,
-}))
+vi.mock(import("../../../../src/util/output/markdown.mts"), () => ({
+  mdHeader: (text: string, level = 1) => `${"#".repeat(level)} ${text}`,
+}));
 
-vi.mock('../../../../src/util/output/result-json.mjs', () => ({
+vi.mock(import("../../../../src/util/output/result-json.mjs"), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
-}))
+}));
 
-import { outputManifest } from '../../../../src/commands/manifest/output-manifest.mts'
+import { outputManifest } from "../../../../src/commands/manifest/output-manifest.mts";
 
-import type { ManifestResult } from '../../../../src/commands/manifest/output-manifest.mts'
-import type { CResult } from '../../../../src/types.mts'
+import type { ManifestResult } from "../../../../src/commands/manifest/output-manifest.mts";
+import type { CResult } from "../../../../src/types.mts";
 
-describe('output-manifest', () => {
+describe("output-manifest", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
-  describe('outputManifest', () => {
+  describe("outputManifest", () => {
     const mockGradleResult: ManifestResult = {
-      files: ['pom.xml', 'subproject/pom.xml'],
-      type: 'gradle',
+      files: ["pom.xml", "subproject/pom.xml"],
+      type: "gradle",
       success: true,
-    }
+    };
 
     const mockSbtResult: ManifestResult = {
-      files: ['pom.xml'],
-      type: 'sbt',
+      files: ["pom.xml"],
+      type: "sbt",
       success: true,
-    }
+    };
 
-    describe('JSON output', () => {
-      it('outputs success result as JSON to stdout', async () => {
+    describe("JSON output", () => {
+      it("outputs success result as JSON to stdout", async () => {
         const result: CResult<ManifestResult> = {
           ok: true,
           data: mockGradleResult,
-        }
+        };
 
-        await outputManifest(result, 'json', '-')
+        await outputManifest(result, "json", "-");
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          expect.stringContaining('"ok": true'),
-        )
-        expect(mockWriteFileSync).not.toHaveBeenCalled()
-      })
+        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok": true'));
+        expect(mockWriteFileSync).not.toHaveBeenCalled();
+      });
 
-      it('writes JSON to file when path provided', async () => {
+      it("writes JSON to file when path provided", async () => {
         const result: CResult<ManifestResult> = {
           ok: true,
           data: mockGradleResult,
-        }
+        };
 
-        await outputManifest(result, 'json', '/output/result.json')
+        await outputManifest(result, "json", "/output/result.json");
 
         expect(mockWriteFileSync).toHaveBeenCalledWith(
-          '/output/result.json',
+          "/output/result.json",
           expect.stringContaining('"ok": true'),
-          'utf8',
-        )
-        expect(mockLogger.log).not.toHaveBeenCalled()
-      })
+          "utf8",
+        );
+        expect(mockLogger.log).not.toHaveBeenCalled();
+      });
 
-      it('outputs error result as JSON', async () => {
+      it("outputs error result as JSON", async () => {
         const result: CResult<ManifestResult> = {
           ok: false,
-          message: 'Manifest generation failed',
-        }
+          message: "Manifest generation failed",
+        };
 
-        await outputManifest(result, 'json', '-')
+        await outputManifest(result, "json", "-");
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          expect.stringContaining('"ok": false'),
-        )
-        expect(process.exitCode).toBe(1)
-      })
-    })
+        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok": false'));
+        expect(process.exitCode).toBe(1);
+      });
+    });
 
-    describe('Markdown output', () => {
-      it('outputs Gradle manifest to stdout', async () => {
+    describe("Markdown output", () => {
+      it("outputs Gradle manifest to stdout", async () => {
         const result: CResult<ManifestResult> = {
           ok: true,
           data: mockGradleResult,
-        }
+        };
 
-        await outputManifest(result, 'markdown', '-')
+        await outputManifest(result, "markdown", "-");
 
-        const loggedMd = mockLogger.log.mock.calls[0]![0]
-        expect(loggedMd).toContain('# Gradle Manifest Generation')
-        expect(loggedMd).toContain('pom.xml')
-        expect(loggedMd).toContain('subproject/pom.xml')
-        expect(loggedMd).toContain('2 POM files')
-        expect(loggedMd).toContain('## Next Steps')
-        expect(loggedMd).toContain('socket scan create')
-      })
+        const loggedMd = mockLogger.log.mock.calls[0]![0];
+        expect(loggedMd).toContain("# Gradle Manifest Generation");
+        expect(loggedMd).toContain("pom.xml");
+        expect(loggedMd).toContain("subproject/pom.xml");
+        expect(loggedMd).toContain("2 POM files");
+        expect(loggedMd).toContain("## Next Steps");
+        expect(loggedMd).toContain("socket scan create");
+      });
 
-      it('outputs SBT manifest to stdout', async () => {
+      it("outputs SBT manifest to stdout", async () => {
         const result: CResult<ManifestResult> = {
           ok: true,
           data: mockSbtResult,
-        }
+        };
 
-        await outputManifest(result, 'markdown', '-')
+        await outputManifest(result, "markdown", "-");
 
-        const loggedMd = mockLogger.log.mock.calls[0]![0]
-        expect(loggedMd).toContain('# SBT Manifest Generation')
-        expect(loggedMd).toContain('1 POM file')
-      })
+        const loggedMd = mockLogger.log.mock.calls[0]![0];
+        expect(loggedMd).toContain("# SBT Manifest Generation");
+        expect(loggedMd).toContain("1 POM file");
+      });
 
-      it('writes markdown to file when path provided', async () => {
+      it("writes markdown to file when path provided", async () => {
         const result: CResult<ManifestResult> = {
           ok: true,
           data: mockGradleResult,
-        }
+        };
 
-        await outputManifest(result, 'markdown', '/output/result.md')
+        await outputManifest(result, "markdown", "/output/result.md");
 
         expect(mockWriteFileSync).toHaveBeenCalledWith(
-          '/output/result.md',
-          expect.stringContaining('Gradle Manifest Generation'),
-          'utf8',
-        )
-      })
-    })
+          "/output/result.md",
+          expect.stringContaining("Gradle Manifest Generation"),
+          "utf8",
+        );
+      });
+    });
 
-    describe('Text output', () => {
-      it('handles text output mode', async () => {
+    describe("Text output", () => {
+      it("handles text output mode", async () => {
         const result: CResult<ManifestResult> = {
           ok: true,
           data: mockGradleResult,
-        }
+        };
 
         // Text output is handled by converter functions directly.
-        await outputManifest(result, 'text', '-')
+        await outputManifest(result, "text", "-");
 
         // Function should complete without error.
-        expect(process.exitCode).toBeUndefined()
-      })
-    })
+        expect(process.exitCode).toBeUndefined();
+      });
+    });
 
-    describe('Error handling', () => {
-      it('outputs error with fail message for non-JSON', async () => {
+    describe("Error handling", () => {
+      it("outputs error with fail message for non-JSON", async () => {
         const result: CResult<ManifestResult> = {
           ok: false,
-          message: 'Build failed',
-          cause: 'Gradle not found',
-        }
+          message: "Build failed",
+          cause: "Gradle not found",
+        };
 
-        await outputManifest(result, 'text', '-')
+        await outputManifest(result, "text", "-");
 
-        expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining('Build failed'),
-        )
-        expect(process.exitCode).toBe(1)
-      })
+        expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("Build failed"));
+        expect(process.exitCode).toBe(1);
+      });
 
-      it('uses custom exit code when provided', async () => {
+      it("uses custom exit code when provided", async () => {
         const result: CResult<ManifestResult> = {
           ok: false,
-          message: 'Failed',
+          message: "Failed",
           code: 127,
-        }
+        };
 
-        await outputManifest(result, 'text', '-')
+        await outputManifest(result, "text", "-");
 
-        expect(process.exitCode).toBe(127)
-      })
-    })
-  })
-})
+        expect(process.exitCode).toBe(127);
+      });
+    });
+  });
+});

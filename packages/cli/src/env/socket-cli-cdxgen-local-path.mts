@@ -3,6 +3,6 @@
  * testing with custom cdxgen builds.
  */
 
-import { env } from 'node:process'
+import { env } from "node:process";
 
-export const SOCKET_CLI_CDXGEN_LOCAL_PATH = env['SOCKET_CLI_CDXGEN_LOCAL_PATH']
+export const SOCKET_CLI_CDXGEN_LOCAL_PATH = env["SOCKET_CLI_CDXGEN_LOCAL_PATH"];

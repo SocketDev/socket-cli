@@ -1,6 +1,6 @@
-import { sendApiRequest } from '../../util/socket/api.mjs'
+import { sendApiRequest } from "../../util/socket/api.mjs";
 
-import type { CResult } from '../../types.mts'
+import type { CResult } from "../../types.mts";
 
 /**
  * Finalize a tier1 reachability scan. - Associates the tier1 reachability scan
@@ -13,11 +13,11 @@ export async function finalizeTier1Scan(
 ): Promise<CResult<unknown>> {
   // we do not use the SDK here because the tier1-reachability-scan/finalize is a hidden
   // endpoint that is not part of the OpenAPI specification.
-  return await sendApiRequest('tier1-reachability-scan/finalize', {
-    method: 'POST',
+  return await sendApiRequest("tier1-reachability-scan/finalize", {
+    method: "POST",
     body: {
       tier1_reachability_scan_id: tier1ReachabilityScanId,
       report_run_id: scanId,
     },
-  })
+  });
 }

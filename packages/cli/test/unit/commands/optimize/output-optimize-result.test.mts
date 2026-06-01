@@ -11,50 +11,49 @@
  * (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   log: vi.fn(),
   success: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/words/pluralize', () => ({
+vi.mock(import("@socketsecurity/lib-stable/words/pluralize"), () => ({
   pluralize: (word: string, options: { count: number }) =>
     options.count === 1 ? word : `${word}s`,
-}))
+}));
 
-vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: (message: string, cause?: string) =>
-    cause ? `${message}: ${cause}` : message,
-}))
+vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
+  failMsgWithBadge: (message: string, cause?: string) => (cause ? `${message}: ${cause}` : message),
+}));
 
-vi.mock('../../../../src/util/output/markdown.mts', () => ({
+vi.mock(import("../../../../src/util/output/markdown.mts"), () => ({
   mdError: (message: string, cause?: string) =>
     cause ? `## Error\n${message}: ${cause}` : `## Error\n${message}`,
   mdHeader: (title: string) => `# ${title}`,
-  mdList: (items: string[]) => items.map(i => `- ${i}`).join('\n'),
-}))
+  mdList: (items: string[]) => items.map((i) => `- ${i}`).join("\n"),
+}));
 
-vi.mock('../../../../src/util/output/result-json.mjs', () => ({
+vi.mock(import("../../../../src/util/output/result-json.mjs"), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result),
-}))
+}));
 
-import { outputOptimizeResult } from '../../../../src/commands/optimize/output-optimize-result.mts'
+import { outputOptimizeResult } from "../../../../src/commands/optimize/output-optimize-result.mts";
 
-describe('output-optimize-result', () => {
+describe("output-optimize-result", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = 0
-  })
+    vi.clearAllMocks();
+    process.exitCode = 0;
+  });
 
-  describe('outputOptimizeResult', () => {
-    it('outputs JSON for successful result', async () => {
+  describe("outputOptimizeResult", () => {
+    it("outputs JSON for successful result", async () => {
       const result = {
         ok: true as const,
         data: {
@@ -64,31 +63,27 @@ describe('output-optimize-result', () => {
           updatedInWorkspaces: 0,
           addedInWorkspaces: 0,
         },
-      }
+      };
 
-      await outputOptimizeResult(result, 'json')
+      await outputOptimizeResult(result, "json");
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('"ok":true'),
-      )
-    })
+      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok":true'));
+    });
 
-    it('outputs JSON for error result', async () => {
+    it("outputs JSON for error result", async () => {
       const result = {
         ok: false as const,
-        message: 'Something went wrong',
+        message: "Something went wrong",
         code: 1,
-      }
+      };
 
-      await outputOptimizeResult(result, 'json')
+      await outputOptimizeResult(result, "json");
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('"ok":false'),
-      )
-      expect(process.exitCode).toBe(1)
-    })
+      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok":false'));
+      expect(process.exitCode).toBe(1);
+    });
 
-    it('outputs markdown for successful result with changes', async () => {
+    it("outputs markdown for successful result with changes", async () => {
       const result = {
         ok: true as const,
         data: {
@@ -98,14 +93,14 @@ describe('output-optimize-result', () => {
           updatedInWorkspaces: 1,
           addedInWorkspaces: 2,
         },
-      }
+      };
 
-      await outputOptimizeResult(result, 'markdown')
+      await outputOptimizeResult(result, "markdown");
 
-      expect(mockLogger.log).toHaveBeenCalledWith('# Optimize Complete')
-    })
+      expect(mockLogger.log).toHaveBeenCalledWith("# Optimize Complete");
+    });
 
-    it('outputs markdown for successful result without changes', async () => {
+    it("outputs markdown for successful result without changes", async () => {
       const result = {
         ok: true as const,
         data: {
@@ -115,31 +110,27 @@ describe('output-optimize-result', () => {
           updatedInWorkspaces: 0,
           addedInWorkspaces: 0,
         },
-      }
+      };
 
-      await outputOptimizeResult(result, 'markdown')
+      await outputOptimizeResult(result, "markdown");
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        'No Socket.dev optimized overrides applied.',
-      )
-    })
+      expect(mockLogger.log).toHaveBeenCalledWith("No Socket.dev optimized overrides applied.");
+    });
 
-    it('outputs markdown error for failed result', async () => {
+    it("outputs markdown error for failed result", async () => {
       const result = {
         ok: false as const,
-        message: 'Failed to optimize',
-        cause: 'Network error',
+        message: "Failed to optimize",
+        cause: "Network error",
         code: 1,
-      }
+      };
 
-      await outputOptimizeResult(result, 'markdown')
+      await outputOptimizeResult(result, "markdown");
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('Error'),
-      )
-    })
+      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining("Error"));
+    });
 
-    it('outputs text for successful result with updates', async () => {
+    it("outputs text for successful result with updates", async () => {
       const result = {
         ok: true as const,
         data: {
@@ -149,17 +140,15 @@ describe('output-optimize-result', () => {
           updatedInWorkspaces: 2,
           addedInWorkspaces: 0,
         },
-      }
+      };
 
-      await outputOptimizeResult(result, 'text')
+      await outputOptimizeResult(result, "text");
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('Updated'),
-      )
-      expect(mockLogger.success).toHaveBeenCalledWith('Finished!')
-    })
+      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining("Updated"));
+      expect(mockLogger.success).toHaveBeenCalledWith("Finished!");
+    });
 
-    it('outputs text for successful result with additions', async () => {
+    it("outputs text for successful result with additions", async () => {
       const result = {
         ok: true as const,
         data: {
@@ -169,16 +158,14 @@ describe('output-optimize-result', () => {
           updatedInWorkspaces: 0,
           addedInWorkspaces: 3,
         },
-      }
+      };
 
-      await outputOptimizeResult(result, 'text')
+      await outputOptimizeResult(result, "text");
 
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('Added'),
-      )
-    })
+      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining("Added"));
+    });
 
-    it('outputs text for no changes', async () => {
+    it("outputs text for no changes", async () => {
       const result = {
         ok: true as const,
         data: {
@@ -188,40 +175,40 @@ describe('output-optimize-result', () => {
           updatedInWorkspaces: 0,
           addedInWorkspaces: 0,
         },
-      }
+      };
 
-      await outputOptimizeResult(result, 'text')
+      await outputOptimizeResult(result, "text");
 
       expect(mockLogger.log).toHaveBeenCalledWith(
-        'Scan complete. No Socket.dev optimized overrides applied.',
-      )
-    })
+        "Scan complete. No Socket.dev optimized overrides applied.",
+      );
+    });
 
-    it('outputs text error for failed result', async () => {
+    it("outputs text error for failed result", async () => {
       const result = {
         ok: false as const,
-        message: 'Optimization failed',
+        message: "Optimization failed",
         code: 1,
-      }
+      };
 
-      await outputOptimizeResult(result, 'text')
+      await outputOptimizeResult(result, "text");
 
-      expect(mockLogger.fail).toHaveBeenCalled()
-      expect(process.exitCode).toBe(1)
-    })
+      expect(mockLogger.fail).toHaveBeenCalled();
+      expect(process.exitCode).toBe(1);
+    });
 
-    it('falls back to exitCode 1 when result.code is undefined', async () => {
+    it("falls back to exitCode 1 when result.code is undefined", async () => {
       const result = {
         ok: false as const,
-        message: 'No code given',
-      }
+        message: "No code given",
+      };
 
-      await outputOptimizeResult(result, 'text')
+      await outputOptimizeResult(result, "text");
 
-      expect(process.exitCode).toBe(1)
-    })
+      expect(process.exitCode).toBe(1);
+    });
 
-    it('emits both Updated and Added markdown changes when both counts > 0', async () => {
+    it("emits both Updated and Added markdown changes when both counts > 0", async () => {
       const result = {
         ok: true as const,
         data: {
@@ -231,14 +218,14 @@ describe('output-optimize-result', () => {
           updatedInWorkspaces: 0,
           addedInWorkspaces: 0,
         },
-      }
+      };
 
-      await outputOptimizeResult(result, 'markdown')
+      await outputOptimizeResult(result, "markdown");
 
-      const logs = mockLogger.log.mock.calls.flat().join('\n')
-      expect(logs).toContain('Updated')
-      expect(logs).toContain('Added')
-    })
+      const logs = mockLogger.log.mock.calls.flat().join("\n");
+      expect(logs).toContain("Updated");
+      expect(logs).toContain("Added");
+    });
 
     it('text mode appends "." when both updated and added counts > 0', async () => {
       const result = {
@@ -250,15 +237,15 @@ describe('output-optimize-result', () => {
           updatedInWorkspaces: 0,
           addedInWorkspaces: 0,
         },
-      }
+      };
 
-      await outputOptimizeResult(result, 'text')
+      await outputOptimizeResult(result, "text");
 
       // When addedCount > 0, the Updated line ends in "." (not 🚀).
-      const logs = mockLogger.log.mock.calls.flat().join('\n')
-      expect(logs).toContain('Updated')
+      const logs = mockLogger.log.mock.calls.flat().join("\n");
+      expect(logs).toContain("Updated");
       // Updated has "." separator before Added when both fire.
-      expect(logs).toMatch(/Updated.*\.\s*$/m)
-    })
-  })
-})
+      expect(logs).toMatch(/Updated.*\.\s*$/m);
+    });
+  });
+});

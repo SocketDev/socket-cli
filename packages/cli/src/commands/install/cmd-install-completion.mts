@@ -1,17 +1,16 @@
-import { handleInstallCompletion } from './handle-install-completion.mts'
-import { outputDryRunWrite } from '../../util/dry-run/output.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { handleInstallCompletion } from "./handle-install-completion.mts";
+import { outputDryRunWrite } from "../../util/dry-run/output.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagListOutput } from "../../util/output/formatting.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
 const config = {
-  commandName: 'completion',
-  description: 'Install bash completion for Socket CLI',
-  hidden: false,
+  commandName: "completion",
+  description: "Install bash completion for Socket CLI",
   flags: defineFlags({
     ...commonFlags,
   }),
@@ -43,13 +42,14 @@ const config = {
       $ ${command} sd
       $ ${command} ./sd
   `,
-}
+  hidden: false,
+};
 
 export const cmdInstallCompletion = {
   description: config.description,
   hidden: config.hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -61,24 +61,20 @@ export async function run(
     config,
     parentName,
     importMeta,
-  })
+  });
 
-  const dryRun = !!cli.flags['dryRun']
-  const targetName = cli.input[0] || 'socket'
+  const dryRun = !!cli.flags["dryRun"];
+  const targetName = cli.input[0] || "socket";
 
   if (dryRun) {
     // Runtime read so tests that mutate process.env['HOME'] pick up changes.
-    const bashRcPath = `${process.env['HOME']}/.bashrc`
-    outputDryRunWrite(
-      bashRcPath,
-      `install bash completion for "${targetName}"`,
-      [
-        'Add completion script source command to ~/.bashrc',
-        'Enable tab completion in current shell',
-      ],
-    )
-    return
+    const bashRcPath = `${process.env["HOME"]}/.bashrc`;
+    outputDryRunWrite(bashRcPath, `install bash completion for "${targetName}"`, [
+      "Add completion script source command to ~/.bashrc",
+      "Enable tab completion in current shell",
+    ]);
+    return;
   }
 
-  await handleInstallCompletion(String(targetName))
+  await handleInstallCompletion(String(targetName));
 }

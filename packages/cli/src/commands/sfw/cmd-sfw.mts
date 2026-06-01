@@ -12,29 +12,28 @@
  * allows direct access to sfw for advanced use cases and troubleshooting.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mts'
-import { spawnSfw } from '../../util/dlx/spawn.mts'
-import { outputDryRunExecute } from '../../util/dry-run/output.mts'
-import { getFlagListOutput } from '../../util/output/formatting.mts'
-import { filterFlags, isHelpFlag } from '../../util/process/cmd.mts'
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mts";
+import { spawnSfw } from "../../util/dlx/spawn.mts";
+import { outputDryRunExecute } from "../../util/dry-run/output.mts";
+import { getFlagListOutput } from "../../util/output/formatting.mts";
+import { filterFlags, isHelpFlag } from "../../util/process/cmd.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 // Flags interface for type safety.
 interface SfwFlags {
-  dryRun: boolean
+  dryRun: boolean;
 }
 
 const config = {
-  commandName: 'sfw',
-  description: 'Run Socket Firewall directly (alias: firewall)',
-  hidden: false,
+  commandName: "sfw",
+  description: "Run Socket Firewall directly (alias: firewall)",
   flags: defineFlags({
     ...commonFlags,
   }),
@@ -63,13 +62,14 @@ const config = {
       $ ${command} pip install requests
       $ ${command} --help
   `,
-}
+  hidden: false,
+};
 
 export const cmdSfw = {
   description: config.description,
   hidden: config.hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -79,60 +79,60 @@ export async function run(
   const { parentName } = {
     __proto__: null,
     ...context,
-  } as CliCommandContext
+  } as CliCommandContext;
 
   // Check for help flag.
-  const hasHelpFlag = argv.some(a => isHelpFlag(a))
+  const hasHelpFlag = argv.some((a) => isHelpFlag(a));
 
   if (hasHelpFlag) {
     // Show Socket CLI wrapper help.
     meowOrExit({
-      argv: ['--help'],
+      argv: ["--help"],
       config,
       importMeta,
       parentName,
-    })
+    });
     // meowOrExit will exit here.
-    return
+    return;
   }
 
   const cli = meowOrExit({
-    argv: argv.filter(a => !isHelpFlag(a)),
+    argv: argv.filter((a) => !isHelpFlag(a)),
     config,
     importMeta,
     parentName,
-  })
+  });
 
   // Extract typed flags (commonFlags defines dryRun as boolean).
-  const { dryRun } = cli.flags as unknown as SfwFlags
+  const { dryRun } = cli.flags as unknown as SfwFlags;
 
   // Filter Socket-specific flags from argv, pass rest to sfw.
-  const sfwArgs = filterFlags(argv, commonFlags, [])
+  const sfwArgs = filterFlags(argv, commonFlags, []);
 
   if (!sfwArgs.length) {
-    logger.fail('No package manager command specified.')
-    logger.info('Usage: socket sfw <package-manager> [args...]')
-    logger.info('Example: socket sfw npm install lodash')
-    process.exitCode = 2
-    return
+    logger.fail("No package manager command specified.");
+    logger.info("Usage: socket sfw <package-manager> [args...]");
+    logger.info("Example: socket sfw npm install lodash");
+    process.exitCode = 2;
+    return;
   }
 
   if (dryRun) {
-    outputDryRunExecute('sfw', sfwArgs, 'Socket Firewall (sfw)')
-    return
+    outputDryRunExecute("sfw", sfwArgs, "Socket Firewall (sfw)");
+    return;
   }
 
-  logger.info(`Invoking Socket Firewall: sfw ${sfwArgs.join(' ')}`)
+  logger.info(`Invoking Socket Firewall: sfw ${sfwArgs.join(" ")}`);
 
   const { spawnPromise } = await spawnSfw(sfwArgs, {
-    stdio: 'inherit',
-  })
+    stdio: "inherit",
+  });
 
-  const result = await spawnPromise
+  const result = await spawnPromise;
 
   if (result.signal) {
-    process.kill(process.pid, result.signal)
-  } else if (typeof result.code === 'number') {
-    process.exitCode = result.code
+    process.kill(process.pid, result.signal);
+  } else if (typeof result.code === "number") {
+    process.exitCode = result.code;
   }
 }

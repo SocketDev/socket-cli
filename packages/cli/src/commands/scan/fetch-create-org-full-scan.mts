@@ -1,38 +1,38 @@
-import { handleApiCall } from '../../util/socket/api.mjs'
-import { setupSdk } from '../../util/socket/sdk.mjs'
+import { handleApiCall } from "../../util/socket/api.mjs";
+import { setupSdk } from "../../util/socket/sdk.mjs";
 
-import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
-import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { CResult } from "../../types.mts";
+import type { SetupSdkOptions } from "../../util/socket/sdk.mjs";
+import type { SpinnerInstance } from "@socketsecurity/lib-stable/spinner/types";
+import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
 
 type FetchCreateOrgFullScanConfigs = {
-  branchName: string
-  commitHash: string
-  commitMessage: string
-  committers: string
-  pullRequest: number
-  repoName: string
-  scanType: string | undefined
-  workspace?: string | undefined
-}
+  branchName: string;
+  commitHash: string;
+  commitMessage: string;
+  committers: string;
+  pullRequest: number;
+  repoName: string;
+  scanType: string | undefined;
+  workspace?: string | undefined;
+};
 
 type FetchCreateOrgFullScanOptions = {
-  commandPath?: string | undefined
-  cwd?: string | undefined
-  defaultBranch?: boolean | undefined
-  pendingHead?: boolean | undefined
-  sdkOpts?: SetupSdkOptions | undefined
-  spinner?: SpinnerInstance | undefined
-  tmp?: boolean | undefined
-}
+  commandPath?: string | undefined;
+  cwd?: string | undefined;
+  defaultBranch?: boolean | undefined;
+  pendingHead?: boolean | undefined;
+  sdkOpts?: SetupSdkOptions | undefined;
+  spinner?: SpinnerInstance | undefined;
+  tmp?: boolean | undefined;
+};
 
 export async function fetchCreateOrgFullScan(
   packagePaths: string[],
   orgSlug: string,
   config: FetchCreateOrgFullScanConfigs,
   options?: FetchCreateOrgFullScanOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]>> {
   const {
     branchName,
     commitHash,
@@ -42,7 +42,7 @@ export async function fetchCreateOrgFullScan(
     repoName,
     scanType,
     workspace,
-  } = { __proto__: null, ...config } as FetchCreateOrgFullScanConfigs
+  } = { __proto__: null, ...config } as FetchCreateOrgFullScanConfigs;
 
   const {
     commandPath,
@@ -52,38 +52,34 @@ export async function fetchCreateOrgFullScan(
     sdkOpts,
     spinner,
     tmp,
-  } = { __proto__: null, ...options } as FetchCreateOrgFullScanOptions
+  } = { __proto__: null, ...options } as FetchCreateOrgFullScanOptions;
 
-  const sockSdkCResult = await setupSdk(sdkOpts)
+  const sockSdkCResult = await setupSdk(sdkOpts);
   if (!sockSdkCResult.ok) {
-    return sockSdkCResult
+    return sockSdkCResult;
   }
-  const sockSdk = sockSdkCResult.data
+  const sockSdk = sockSdkCResult.data;
 
-  return await handleApiCall<'createFullScan'>(
+  return await handleApiCall<"createFullScan">(
     sockSdk.createFullScan(orgSlug, packagePaths, {
       pathsRelativeTo: cwd,
       ...(branchName ? { branch: branchName } : {}),
       ...(commitHash ? { commit_hash: commitHash } : {}),
       ...(commitMessage ? { commit_message: commitMessage } : {}),
       ...(committers ? { committers } : {}),
-      ...(defaultBranch !== undefined
-        ? { make_default_branch: Boolean(defaultBranch) }
-        : {}),
+      ...(defaultBranch !== undefined ? { make_default_branch: Boolean(defaultBranch) } : {}),
       ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
       ...(repoName ? { repo: repoName } : {}),
       ...(scanType ? { scan_type: scanType } : {}),
       ...(workspace ? { workspace } : {}),
-      ...(pendingHead !== undefined
-        ? { set_as_pending_head: Boolean(pendingHead) }
-        : {}),
+      ...(pendingHead !== undefined ? { set_as_pending_head: Boolean(pendingHead) } : {}),
       ...(tmp !== undefined ? { tmp: Boolean(tmp) } : {}),
       // eslint-disable-next-line typescript-eslint/no-explicit-any -- SDK option shape varies by spread; downstream validates against canonical API contract.
     } as any),
     {
       commandPath,
-      description: 'to create a scan',
+      description: "to create a scan",
       spinner,
     },
-  )
+  );
 }

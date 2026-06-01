@@ -1,32 +1,31 @@
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
 
-import { existsSync } from 'node:fs'
+import { existsSync } from "node:fs";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { addSocketWrapper } from './add-socket-wrapper.mts'
-import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
-import { postinstallWrapper } from './postinstall-wrapper.mts'
-import { removeSocketWrapper } from './remove-socket-wrapper.mts'
-import { outputDryRunWrite } from '../../util/dry-run/output.mts'
-import { getBashRcPath, getZshRcPath } from '../../constants/paths.mjs'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { addSocketWrapper } from "./add-socket-wrapper.mts";
+import { checkSocketWrapperSetup } from "./check-socket-wrapper-setup.mts";
+import { postinstallWrapper } from "./postinstall-wrapper.mts";
+import { removeSocketWrapper } from "./remove-socket-wrapper.mts";
+import { outputDryRunWrite } from "../../util/dry-run/output.mts";
+import { getBashRcPath, getZshRcPath } from "../../constants/paths.mjs";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mjs";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 const config = {
-  commandName: 'wrapper',
-  description: 'Enable or disable the Socket npm/pnpm exec wrapper',
-  hidden: false,
+  commandName: "wrapper",
+  description: "Enable or disable the Socket npm/pnpm exec wrapper",
   flags: defineFlags({
     ...commonFlags,
   }),
@@ -45,13 +44,14 @@ const config = {
       $ ${command} on
       $ ${command} off
   `,
-}
+  hidden: false,
+};
 
 export const cmdWrapper = {
   description: config.description,
   hidden: config.hidden,
   run,
-}
+};
 
 export async function run(
   argv: readonly string[],
@@ -59,9 +59,9 @@ export async function run(
   { parentName }: CliCommandContext,
 ): Promise<void> {
   // I don't think meow would mess with this but ...
-  if (argv[0] === '--postinstall') {
-    await postinstallWrapper()
-    return
+  if (argv[0] === "--postinstall") {
+    await postinstallWrapper();
+    return;
   }
 
   const cli = meowOrExit({
@@ -69,151 +69,147 @@ export async function run(
     config,
     importMeta,
     parentName,
-  })
+  });
 
   // Feature request: Implement json/markdown output for wrapper command status.
-  const { json, markdown } = cli.flags
+  const { json, markdown } = cli.flags;
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
-  let enable = false
-  let disable = false
-  const [arg] = cli.input
-  if (arg === 'enable' || arg === 'enabled' || arg === 'on') {
-    enable = true
-    disable = false
-  } else if (arg === 'disable' || arg === 'disabled' || arg === 'off') {
-    enable = false
-    disable = true
+  let enable = false;
+  let disable = false;
+  const [arg] = cli.input;
+  if (arg === "enable" || arg === "enabled" || arg === "on") {
+    enable = true;
+    disable = false;
+  } else if (arg === "disable" || arg === "disabled" || arg === "off") {
+    enable = false;
+    disable = true;
   }
 
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       test: enable || disable,
       message: 'Must specify "on" or "off" argument',
-      fail: 'missing',
+      fail: "missing",
     },
     {
       nook: true,
       test: cli.input.length <= 1,
-      message: 'expecting exactly one argument',
-      fail: 'got multiple',
+      message: "expecting exactly one argument",
+      fail: "got multiple",
     },
-  )
+  );
   if (!wasValidInput) {
-    return
+    return;
   }
 
-  const bashRcPath = getBashRcPath()
-  const zshRcPath = getZshRcPath()
+  const bashRcPath = getBashRcPath();
+  const zshRcPath = getZshRcPath();
 
   if (dryRun) {
-    const files = []
+    const files = [];
     if (existsSync(bashRcPath)) {
-      files.push(bashRcPath)
+      files.push(bashRcPath);
     }
     if (existsSync(zshRcPath)) {
-      files.push(zshRcPath)
+      files.push(zshRcPath);
     }
     const changes = enable
       ? [
-          'Add shell aliases/functions to wrap npm/pnpm exec commands',
-          'Redirect npm/pnpm exec calls to socket npm/socket npx',
+          "Add shell aliases/functions to wrap npm/pnpm exec commands",
+          "Redirect npm/pnpm exec calls to socket npm/socket npx",
         ]
       : [
-          'Remove Socket wrapper aliases/functions from shell config',
-          'Restore original npm/pnpm exec behavior',
-        ]
+          "Remove Socket wrapper aliases/functions from shell config",
+          "Restore original npm/pnpm exec behavior",
+        ];
     outputDryRunWrite(
-      files.join(', '),
-      enable
-        ? 'enable Socket npm/pnpm exec wrapper'
-        : 'disable Socket npm/pnpm exec wrapper',
+      files.join(", "),
+      enable ? "enable Socket npm/pnpm exec wrapper" : "disable Socket npm/pnpm exec wrapper",
       changes,
-    )
-    return
+    );
+    return;
   }
-  const modifiedFiles: string[] = []
-  const skippedFiles: string[] = []
+  const modifiedFiles: string[] = [];
+  const skippedFiles: string[] = [];
 
   if (enable) {
     if (existsSync(bashRcPath)) {
       if (!checkSocketWrapperSetup(bashRcPath)) {
-        await addSocketWrapper(bashRcPath)
-        modifiedFiles.push(bashRcPath)
+        await addSocketWrapper(bashRcPath);
+        modifiedFiles.push(bashRcPath);
       } else {
-        skippedFiles.push(bashRcPath)
+        skippedFiles.push(bashRcPath);
       }
     }
     if (existsSync(zshRcPath)) {
       if (!checkSocketWrapperSetup(zshRcPath)) {
-        await addSocketWrapper(zshRcPath)
-        modifiedFiles.push(zshRcPath)
+        await addSocketWrapper(zshRcPath);
+        modifiedFiles.push(zshRcPath);
       } else {
-        skippedFiles.push(zshRcPath)
+        skippedFiles.push(zshRcPath);
       }
     }
   } else {
     if (existsSync(bashRcPath)) {
-      removeSocketWrapper(bashRcPath)
-      modifiedFiles.push(bashRcPath)
+      removeSocketWrapper(bashRcPath);
+      modifiedFiles.push(bashRcPath);
     }
     if (existsSync(zshRcPath)) {
-      removeSocketWrapper(zshRcPath)
-      modifiedFiles.push(zshRcPath)
+      removeSocketWrapper(zshRcPath);
+      modifiedFiles.push(zshRcPath);
     }
   }
 
   if (!existsSync(bashRcPath) && !existsSync(zshRcPath)) {
-    logger.fail('There was an issue setting up the alias in your bash profile')
-    return
+    logger.fail("There was an issue setting up the alias in your bash profile");
+    return;
   }
 
   // Output results in requested format.
-  if (outputKind === 'json') {
+  if (outputKind === "json") {
     const result = {
-      action: enable ? 'enabled' : 'disabled',
+      action: enable ? "enabled" : "disabled",
       modifiedFiles,
       skippedFiles,
       success: modifiedFiles.length > 0 || skippedFiles.length > 0,
-    }
-    logger.log(JSON.stringify(result, null, 2))
-  } else if (outputKind === 'markdown') {
-    const arr = []
-    arr.push(`# Socket Wrapper ${enable ? 'Enabled' : 'Disabled'}`)
-    arr.push('')
+    };
+    logger.log(JSON.stringify(result, null, 2));
+  } else if (outputKind === "markdown") {
+    const arr = [];
+    arr.push(`# Socket Wrapper ${enable ? "Enabled" : "Disabled"}`);
+    arr.push("");
 
     if (modifiedFiles.length > 0) {
-      arr.push('## Modified Files')
-      arr.push('')
+      arr.push("## Modified Files");
+      arr.push("");
       for (let i = 0, { length } = modifiedFiles; i < length; i += 1) {
-        const file = modifiedFiles[i]
-        arr.push(`- \`${file}\``)
+        const file = modifiedFiles[i];
+        arr.push(`- \`${file}\``);
       }
-      arr.push('')
+      arr.push("");
     }
 
     if (skippedFiles.length > 0) {
-      arr.push('## Skipped Files (already configured)')
-      arr.push('')
+      arr.push("## Skipped Files (already configured)");
+      arr.push("");
       for (let i = 0, { length } = skippedFiles; i < length; i += 1) {
-        const file = skippedFiles[i]
-        arr.push(`- \`${file}\``)
+        const file = skippedFiles[i];
+        arr.push(`- \`${file}\``);
       }
-      arr.push('')
+      arr.push("");
     }
 
-    arr.push('## Status')
-    arr.push('')
-    arr.push(
-      `Socket npm/npx wrapper has been **${enable ? 'enabled' : 'disabled'}**.`,
-    )
-    arr.push('')
+    arr.push("## Status");
+    arr.push("");
+    arr.push(`Socket npm/npx wrapper has been **${enable ? "enabled" : "disabled"}**.`);
+    arr.push("");
 
-    logger.log(arr.join('\n'))
+    logger.log(arr.join("\n"));
   }
   // Text mode output is already handled by add/remove functions.
 }

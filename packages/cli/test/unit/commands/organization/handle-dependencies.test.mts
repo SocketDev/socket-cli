@@ -20,134 +20,128 @@
  * formatter.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { fetchDependencies } from '../../../../src/commands/organization/fetch-dependencies.mts'
-import { handleDependencies } from '../../../../src/commands/organization/handle-dependencies.mts'
-import { outputDependencies } from '../../../../src/commands/organization/output-dependencies.mts'
-import {
-  createSuccessResult,
-  setupTestEnvironment,
-} from '../../../helpers/index.mts'
+import { fetchDependencies } from "../../../../src/commands/organization/fetch-dependencies.mts";
+import { handleDependencies } from "../../../../src/commands/organization/handle-dependencies.mts";
+import { outputDependencies } from "../../../../src/commands/organization/output-dependencies.mts";
+import { createSuccessResult, setupTestEnvironment } from "../../../helpers/index.mts";
 
 // Mock the dependencies.
-const mockFetchDependencies = vi.hoisted(() => vi.fn())
-const mockOutputDependencies = vi.hoisted(() => vi.fn())
-const mockDebug = vi.hoisted(() => vi.fn())
-const mockDebugDir = vi.hoisted(() => vi.fn())
+const mockFetchDependencies = vi.hoisted(() => vi.fn());
+const mockOutputDependencies = vi.hoisted(() => vi.fn());
+const mockDebug = vi.hoisted(() => vi.fn());
+const mockDebugDir = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/commands/organization/fetch-dependencies.mts', () => ({
+vi.mock(import("../../../../src/commands/organization/fetch-dependencies.mts"), () => ({
   fetchDependencies: mockFetchDependencies,
-}))
+}));
 
-vi.mock(
-  '../../../../src/commands/organization/output-dependencies.mts',
-  () => ({
-    outputDependencies: mockOutputDependencies,
-  }),
-)
+vi.mock(import("../../../../src/commands/organization/output-dependencies.mts"), () => ({
+  outputDependencies: mockOutputDependencies,
+}));
 
-vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
+vi.mock(import("@socketsecurity/lib-stable/debug/output"), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
-}))
+}));
 
-describe('handleDependencies', () => {
-  setupTestEnvironment()
+describe("handleDependencies", () => {
+  setupTestEnvironment();
 
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('should fetch and output dependencies successfully', async () => {
+  it("should fetch and output dependencies successfully", async () => {
     const mockResult = createSuccessResult([
       {
-        name: 'test-package',
-        version: '1.0.0',
-        description: 'Test package',
+        name: "test-package",
+        version: "1.0.0",
+        description: "Test package",
       },
-    ])
+    ]);
 
-    mockFetchDependencies.mockResolvedValue(mockResult)
-    mockOutputDependencies.mockResolvedValue()
+    mockFetchDependencies.mockResolvedValue(mockResult);
+    mockOutputDependencies.mockResolvedValue();
 
     await handleDependencies({
       limit: 10,
       offset: 0,
-      outputKind: 'json',
-    })
+      outputKind: "json",
+    });
 
     expect(fetchDependencies).toHaveBeenCalledWith(
       { limit: 10, offset: 0 },
       {
-        commandPath: 'socket organization dependencies',
+        commandPath: "socket organization dependencies",
       },
-    )
+    );
     expect(outputDependencies).toHaveBeenCalledWith(mockResult, {
       limit: 10,
       offset: 0,
-      outputKind: 'json',
-    })
-  })
+      outputKind: "json",
+    });
+  });
 
-  it('should handle fetch failure', async () => {
+  it("should handle fetch failure", async () => {
     const mockResult = {
       ok: false,
-      error: new Error('Fetch failed'),
-    }
+      error: new Error("Fetch failed"),
+    };
 
-    mockFetchDependencies.mockResolvedValue(mockResult)
-    mockOutputDependencies.mockResolvedValue()
+    mockFetchDependencies.mockResolvedValue(mockResult);
+    mockOutputDependencies.mockResolvedValue();
 
     await handleDependencies({
       limit: 20,
       offset: 10,
-      outputKind: 'table',
-    })
+      outputKind: "table",
+    });
 
     expect(fetchDependencies).toHaveBeenCalledWith(
       { limit: 20, offset: 10 },
       {
-        commandPath: 'socket organization dependencies',
+        commandPath: "socket organization dependencies",
       },
-    )
+    );
     expect(outputDependencies).toHaveBeenCalledWith(mockResult, {
       limit: 20,
       offset: 10,
-      outputKind: 'table',
-    })
-  })
+      outputKind: "table",
+    });
+  });
 
-  it('should handle different output kinds', async () => {
-    const mockResult = createSuccessResult([])
+  it("should handle different output kinds", async () => {
+    const mockResult = createSuccessResult([]);
 
-    mockFetchDependencies.mockResolvedValue(mockResult)
-    mockOutputDependencies.mockResolvedValue()
+    mockFetchDependencies.mockResolvedValue(mockResult);
+    mockOutputDependencies.mockResolvedValue();
 
     await handleDependencies({
       limit: 5,
       offset: 0,
-      outputKind: 'markdown',
-    })
+      outputKind: "markdown",
+    });
 
     expect(outputDependencies).toHaveBeenCalledWith(mockResult, {
       limit: 5,
       offset: 0,
-      outputKind: 'markdown',
-    })
-  })
+      outputKind: "markdown",
+    });
+  });
 
-  it('should handle large offsets and limits', async () => {
-    const mockResult = createSuccessResult([])
+  it("should handle large offsets and limits", async () => {
+    const mockResult = createSuccessResult([]);
 
-    mockFetchDependencies.mockResolvedValue(mockResult)
-    mockOutputDependencies.mockResolvedValue()
+    mockFetchDependencies.mockResolvedValue(mockResult);
+    mockOutputDependencies.mockResolvedValue();
 
     await handleDependencies({
       limit: 100,
       offset: 500,
-      outputKind: 'json',
-    })
+      outputKind: "json",
+    });
 
     expect(fetchDependencies).toHaveBeenCalledWith(
       {
@@ -155,13 +149,13 @@ describe('handleDependencies', () => {
         offset: 500,
       },
       {
-        commandPath: 'socket organization dependencies',
+        commandPath: "socket organization dependencies",
       },
-    )
+    );
     expect(outputDependencies).toHaveBeenCalledWith(mockResult, {
       limit: 100,
       offset: 500,
-      outputKind: 'json',
-    })
-  })
-})
+      outputKind: "json",
+    });
+  });
+});

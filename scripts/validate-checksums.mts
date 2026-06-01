@@ -11,138 +11,133 @@
  *   - 1: One or more checksums are missing.
  */
 
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { PLATFORM_MAP_TOOLS } from '../packages/cli/scripts/constants/external-tools-platforms.mts'
+import { PLATFORM_MAP_TOOLS } from "../packages/cli/scripts/constants/external-tools-platforms.mts";
 
-const logger = getDefaultLogger()
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
+const logger = getDefaultLogger();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootPath = path.join(__dirname, "..");
 
 // Load external tools configuration.
-const externalToolsPath = path.join(rootPath, 'packages/cli/bundle-tools.json')
-const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
+const externalToolsPath = path.join(rootPath, "packages/cli/bundle-tools.json");
+const externalTools = JSON.parse(readFileSync(externalToolsPath, "utf8"));
 
 /**
  * Validate that all required checksums exist for external tools.
  */
 export function validateChecksums(): boolean {
-  const errors: string[] = []
-  const warnings: string[] = []
+  const errors: string[] = [];
+  const warnings: string[] = [];
 
-  logger.info('Validating SHA-256 checksums for external tools...')
-  logger.error('')
+  logger.info("Validating SHA-256 checksums for external tools…");
+  logger.error("");
 
   // Track all unique assets that need checksums.
-  const requiredAssets = new Map<string, Set<string>>()
+  const requiredAssets = new Map<string, Set<string>>();
 
   // Collect all assets needed across all platforms.
   for (const [platform, tools] of Object.entries(PLATFORM_MAP_TOOLS)) {
     if (!tools) {
-      continue
+      continue;
     }
 
     for (const [toolName, assetName] of Object.entries(tools)) {
       if (!assetName) {
-        continue
+        continue;
       }
 
       if (!requiredAssets.has(toolName)) {
-        requiredAssets.set(toolName, new Set())
+        requiredAssets.set(toolName, new Set());
       }
-      requiredAssets.get(toolName).add(assetName)
+      requiredAssets.get(toolName).add(assetName);
     }
   }
 
   // Validate each tool's checksums.
   for (const [toolName, assets] of requiredAssets) {
-    const toolConfig = externalTools[toolName]
+    const toolConfig = externalTools[toolName];
 
     if (!toolConfig) {
-      errors.push(`Tool "${toolName}" not found in bundle-tools.json`)
-      continue
+      errors.push(`Tool "${toolName}" not found in bundle-tools.json`);
+      continue;
     }
 
     // Only GitHub release tools need checksums.
-    if (toolConfig.type !== 'github-release') {
-      continue
+    if (toolConfig.type !== "github-release") {
+      continue;
     }
 
-    const checksums = toolConfig.checksums || {}
-    const missingAssets: string[] = []
+    const checksums = toolConfig.checksums || {};
+    const missingAssets: string[] = [];
 
     for (let i = 0, { length } = assets; i < length; i += 1) {
-      const assetName = assets[i]
+      const assetName = assets[i];
       if (!checksums[assetName]) {
-        missingAssets.push(assetName)
+        missingAssets.push(assetName);
       }
     }
 
     if (missingAssets.length > 0) {
       errors.push(
-        `Missing checksums for ${toolName}:\n` +
-          missingAssets.map(a => `    - ${a}`).join('\n'),
-      )
+        `Missing checksums for ${toolName}:\n` + missingAssets.map((a) => `    - ${a}`).join("\n"),
+      );
     } else {
-      logger.success(`${toolName}: ${assets.size} asset checksum(s) verified`)
+      logger.success(`${toolName}: ${assets.size} asset checksum(s) verified`);
     }
   }
 
   // Check for extra checksums that aren't used (informational).
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.type !== 'github-release' || !toolConfig.checksums) {
-      continue
+    if (toolConfig.type !== "github-release" || !toolConfig.checksums) {
+      continue;
     }
 
-    const usedAssets = requiredAssets.get(toolName) || new Set()
-    const extraAssets = Object.keys(toolConfig.checksums).filter(
-      asset => !usedAssets.has(asset),
-    )
+    const usedAssets = requiredAssets.get(toolName) || new Set();
+    const extraAssets = Object.keys(toolConfig.checksums).filter((asset) => !usedAssets.has(asset));
 
     if (extraAssets.length > 0) {
       warnings.push(
         `${toolName} has ${extraAssets.length} unused checksum(s) (may be for unsupported platforms)`,
-      )
+      );
     }
   }
 
   // Print summary.
-  logger.log('')
+  logger.log("");
   if (warnings.length > 0) {
-    logger.warn('Warnings:')
+    logger.warn("Warnings:");
     for (let i = 0, { length } = warnings; i < length; i += 1) {
-      const warning = warnings[i]
-      logger.warn(`  ${warning}`)
+      const warning = warnings[i];
+      logger.warn(`  ${warning}`);
     }
-    logger.log('')
+    logger.log("");
   }
 
   if (errors.length > 0) {
-    logger.error('CHECKSUM VALIDATION FAILED')
-    logger.log('')
+    logger.error("CHECKSUM VALIDATION FAILED");
+    logger.log("");
     for (let i = 0, { length } = errors; i < length; i += 1) {
-      const error = errors[i]
-      logger.error(error)
+      const error = errors[i];
+      logger.error(error);
     }
-    logger.log('')
+    logger.log("");
     logger.error(
-      'All external tool assets MUST have SHA-256 checksums defined in bundle-tools.json.',
-    )
-    logger.error(
-      'This is a security requirement to prevent supply chain attacks.',
-    )
-    return false
+      "All external tool assets MUST have SHA-256 checksums defined in bundle-tools.json.",
+    );
+    logger.error("This is a security requirement to prevent supply chain attacks.");
+    return false;
   }
 
-  logger.error('')
-  logger.success('All required checksums are present.')
-  return true
+  logger.error("");
+  logger.success("All required checksums are present.");
+  return true;
 }
 
 // Run validation.
-const valid = validateChecksums()
-process.exit(valid ? 0 : 1)
+const valid = validateChecksums();
+process.exit(valid ? 0 : 1);

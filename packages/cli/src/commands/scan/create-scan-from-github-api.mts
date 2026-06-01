@@ -7,14 +7,14 @@
  * messages for empty repos / missing default branch.
  */
 
-import { debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { debugDir } from "@socketsecurity/lib-stable/debug/output";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { getOctokit, withGitHubRetry } from '../../util/git/github.mts'
+import { getOctokit, withGitHubRetry } from "../../util/git/github.mts";
 
-import type { CResult } from '../../types.mts'
+import type { CResult } from "../../types.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 /**
  * Fetch the latest commit on the given branch (SHA, message, committer).
@@ -24,21 +24,21 @@ export async function getLastCommitDetails({
   orgGithub,
   repoSlug,
 }: {
-  defaultBranch: string
-  orgGithub: string
-  repoSlug: string
+  defaultBranch: string;
+  orgGithub: string;
+  repoSlug: string;
 }): Promise<
   CResult<{
-    lastCommitMessage: string
-    lastCommitSha: string
-    lastCommitter: string | undefined
+    lastCommitMessage: string;
+    lastCommitSha: string;
+    lastCommitter: string | undefined;
   }>
 > {
   logger.info(
     `Requesting last commit for default branch ${defaultBranch} for ${orgGithub}/${repoSlug}...`,
-  )
+  );
 
-  const octokit = getOctokit()
+  const octokit = getOctokit();
 
   const result = await withGitHubRetry(
     /* c8 ignore start - withGitHubRetry mock returns cached value; the inner factory only runs on cache miss */
@@ -48,50 +48,50 @@ export async function getLastCommitDetails({
         repo: repoSlug,
         sha: defaultBranch,
         per_page: 1,
-      })
-      return data
+      });
+      return data;
     },
     /* c8 ignore stop */
     `fetching latest commit SHA for ${orgGithub}/${repoSlug}`,
-  )
+  );
 
   if (!result.ok) {
-    return result
+    return result;
   }
 
-  const commits = result.data
-  debugDir({ commits })
+  const commits = result.data;
+  debugDir({ commits });
 
   if (!commits.length) {
     return {
       ok: false,
-      message: 'No commits found',
+      message: "No commits found",
       cause:
         `No commits found on branch ${defaultBranch} for ${orgGithub}/${repoSlug}. ` +
-        'The repository may be empty.',
-    }
+        "The repository may be empty.",
+    };
   }
 
-  const [lastCommit] = commits
-  const lastCommitSha = lastCommit?.sha
+  const [lastCommit] = commits;
+  const lastCommitSha = lastCommit?.sha;
 
   if (!lastCommitSha) {
     return {
       ok: false,
-      message: 'Missing commit SHA',
+      message: "Missing commit SHA",
       cause:
         `Unable to get last commit SHA for ${orgGithub}/${repoSlug}. ` +
-        'The GitHub API response was missing the SHA field.',
-    }
+        "The GitHub API response was missing the SHA field.",
+    };
   }
 
   // Extract committer information.
-  const authorName = lastCommit?.commit?.author?.name
-  const committerName = lastCommit?.commit?.committer?.name
-  const lastCommitter = authorName || committerName
-  const lastCommitMessage = lastCommit?.commit?.message || ''
+  const authorName = lastCommit?.commit?.author?.name;
+  const committerName = lastCommit?.commit?.committer?.name;
+  const lastCommitter = authorName || committerName;
+  const lastCommitMessage = lastCommit?.commit?.message || "";
 
-  return { ok: true, data: { lastCommitMessage, lastCommitSha, lastCommitter } }
+  return { ok: true, data: { lastCommitMessage, lastCommitSha, lastCommitter } };
 }
 
 /**
@@ -106,15 +106,15 @@ export async function getRepoBranchTree({
   orgGithub,
   repoSlug,
 }: {
-  defaultBranch: string
-  orgGithub: string
-  repoSlug: string
+  defaultBranch: string;
+  orgGithub: string;
+  repoSlug: string;
 }): Promise<CResult<string[]>> {
   logger.info(
     `Requesting default branch file tree; branch \`${defaultBranch}\`, repo \`${orgGithub}/${repoSlug}\`...`,
-  )
+  );
 
-  const octokit = getOctokit()
+  const octokit = getOctokit();
 
   const result = await withGitHubRetry(
     /* c8 ignore start - withGitHubRetry mock returns cached value; the inner factory only runs on cache miss */
@@ -123,46 +123,46 @@ export async function getRepoBranchTree({
         owner: orgGithub,
         repo: repoSlug,
         tree_sha: defaultBranch,
-        recursive: 'true',
-      })
-      return data
+        recursive: "true",
+      });
+      return data;
     },
     /* c8 ignore stop */
     `fetching file tree for branch ${defaultBranch} in ${orgGithub}/${repoSlug}`,
-  )
+  );
 
   if (!result.ok) {
     // Check if it's an empty repo error (404 with specific message).
-    if (result.message === 'GitHub resource not found') {
+    if (result.message === "GitHub resource not found") {
       logger.warn(
         `GitHub reports the default branch of repo ${repoSlug} may be empty or not found. Moving on to next repo.`,
-      )
-      return { ok: true, data: [] }
+      );
+      return { ok: true, data: [] };
     }
-    return result
+    return result;
   }
 
-  const treeDetails = result.data
-  debugDir({ treeDetails })
+  const treeDetails = result.data;
+  debugDir({ treeDetails });
 
   if (!treeDetails.tree || !Array.isArray(treeDetails.tree)) {
-    debugDir({ treeDetails: { tree: treeDetails.tree } })
+    debugDir({ treeDetails: { tree: treeDetails.tree } });
 
     return {
       ok: false,
-      message: 'Invalid tree response',
+      message: "Invalid tree response",
       cause:
         `Tree response for default branch ${defaultBranch} for ${orgGithub}/${repoSlug} was not a list. ` +
-        'The repository may be empty or in an unexpected state.',
-    }
+        "The repository may be empty or in an unexpected state.",
+    };
   }
 
   const files = treeDetails.tree
-    .filter(obj => obj.type === 'blob')
-    .map(obj => obj.path)
-    .filter((p): p is string => typeof p === 'string' && p.length > 0)
+    .filter((obj) => obj.type === "blob")
+    .map((obj) => obj.path)
+    .filter((p): p is string => typeof p === "string" && p.length > 0);
 
-  return { ok: true, data: files }
+  return { ok: true, data: files };
 }
 
 /**
@@ -172,12 +172,12 @@ export async function getRepoDetails({
   orgGithub,
   repoSlug,
 }: {
-  orgGithub: string
-  repoSlug: string
-  githubApiUrl: string
-  githubToken: string
+  orgGithub: string;
+  repoSlug: string;
+  githubApiUrl: string;
+  githubToken: string;
 }): Promise<CResult<{ defaultBranch: string; repoDetails: unknown }>> {
-  const octokit = getOctokit()
+  const octokit = getOctokit();
 
   const result = await withGitHubRetry(
     /* c8 ignore start - withGitHubRetry mock returns cached value; the inner factory only runs on cache miss */
@@ -185,31 +185,31 @@ export async function getRepoDetails({
       const { data } = await octokit.repos.get({
         owner: orgGithub,
         repo: repoSlug,
-      })
-      return data
+      });
+      return data;
     },
     /* c8 ignore stop */
     `fetching repository details for ${orgGithub}/${repoSlug}`,
-  )
+  );
 
   if (!result.ok) {
-    return result
+    return result;
   }
 
-  const repoDetails = result.data
-  logger.success('Request completed.')
-  debugDir({ repoDetails })
+  const repoDetails = result.data;
+  logger.success("Request completed.");
+  debugDir({ repoDetails });
 
-  const defaultBranch = repoDetails.default_branch
+  const defaultBranch = repoDetails.default_branch;
   if (!defaultBranch) {
     return {
       ok: false,
-      message: 'Default branch not found',
+      message: "Default branch not found",
       cause:
         `Repository ${orgGithub}/${repoSlug} does not have a default branch set. ` +
-        'This can happen with empty repositories or misconfigured repo settings.',
-    }
+        "This can happen with empty repositories or misconfigured repo settings.",
+    };
   }
 
-  return { ok: true, data: { defaultBranch, repoDetails } }
+  return { ok: true, data: { defaultBranch, repoDetails } };
 }

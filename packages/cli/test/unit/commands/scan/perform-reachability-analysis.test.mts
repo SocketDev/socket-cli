@@ -35,9 +35,9 @@
  * - Src/commands/scan/perform-reachability-analysis.mts - Implementation
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
 
 const {
   mockExtractTier1ReachabilityScanId,
@@ -59,71 +59,66 @@ const {
   mockSocketDevLink: vi.fn((label: string, _path: string) => `[link:${label}]`),
   mockSpawnCoanaDlx: vi.fn(),
   mockUploadManifestFiles: vi.fn(),
-}))
+}));
 
-vi.mock('../../../../src/constants/paths.mts', () => ({
-  DOT_SOCKET_DOT_FACTS_JSON: '.socket.facts.json',
-}))
+vi.mock(import("../../../../src/constants/paths.mts"), () => ({
+  DOT_SOCKET_DOT_FACTS_JSON: ".socket.facts.json",
+}));
 
-vi.mock(
-  '../../../../src/commands/organization/fetch-organization-list.mts',
-  () => ({
-    fetchOrganization: mockFetchOrganization,
-  }),
-)
+vi.mock(import("../../../../src/commands/organization/fetch-organization-list.mts"), () => ({
+  fetchOrganization: mockFetchOrganization,
+}));
 
-vi.mock('../../../../src/util/coana/extract-scan-id.mjs', () => ({
+vi.mock(import("../../../../src/util/coana/extract-scan-id.mjs"), () => ({
   extractTier1ReachabilityScanId: mockExtractTier1ReachabilityScanId,
-}))
+}));
 
-vi.mock('../../../../src/util/dlx/spawn.mjs', () => ({
+vi.mock(import("../../../../src/util/dlx/spawn.mjs"), () => ({
   spawnCoanaDlx: mockSpawnCoanaDlx,
-}))
+}));
 
-vi.mock('../../../../src/util/output/ambient-mode.mts', () => ({
+vi.mock(import("../../../../src/util/output/ambient-mode.mts"), () => ({
   getMachineOutputMode: mockGetMachineOutputMode,
-}))
+}));
 
-vi.mock('../../../../src/util/organization.mts', () => ({
+vi.mock(import("../../../../src/util/organization.mts"), () => ({
   hasEnterpriseOrgPlan: mockHasEnterpriseOrgPlan,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/api.mjs', () => ({
+vi.mock(import("../../../../src/util/socket/api.mjs"), () => ({
   handleApiCall: mockHandleApiCall,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mjs', () => ({
+vi.mock(import("../../../../src/util/socket/sdk.mjs"), () => ({
   setupSdk: mockSetupSdk,
-}))
+}));
 
-vi.mock('../../../../src/util/terminal/link.mts', () => ({
+vi.mock(import("../../../../src/util/terminal/link.mts"), () => ({
   socketDevLink: mockSocketDevLink,
-}))
+}));
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   info: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 const { performReachabilityAnalysis } =
-  await import('../../../../src/commands/scan/perform-reachability-analysis.mts')
+  await import("../../../../src/commands/scan/perform-reachability-analysis.mts");
 
 const enterpriseOrgs = {
-  ok: true as const,
   data: {
-    organizations: [
-      { id: 'a', slug: 'ent', name: 'Ent', image: '', plan: 'enterprise' },
-    ],
+    organizations: [{ id: "a", slug: "ent", name: "Ent", image: "", plan: "enterprise" }],
   },
-}
+  ok: true as const,
+};
 
 const baseReachOpts = {
   excludePaths: [],
@@ -134,308 +129,304 @@ const baseReachOpts = {
   reachDetailedAnalysisLogFile: false,
   reachDisableAnalytics: false,
   reachDisableExternalToolChecks: false,
-  reachEnableAnalysisSplitting: false,
   reachEcosystems: [],
+  reachEnableAnalysisSplitting: false,
   reachExcludePaths: [],
   reachLazyMode: false,
-  reachMinSeverity: '',
+  reachMinSeverity: "",
   reachSkipCache: false,
   reachUseOnlyPregeneratedSboms: false,
   reachUseUnreachableFromPrecomputation: false,
   reachVersion: undefined,
-}
+};
 
 beforeEach(() => {
-  vi.clearAllMocks()
-  mockFetchOrganization.mockResolvedValue(enterpriseOrgs)
-  mockHasEnterpriseOrgPlan.mockReturnValue(true)
-  mockGetMachineOutputMode.mockReturnValue(false)
-  mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: undefined })
-  mockExtractTier1ReachabilityScanId.mockReturnValue('scan-abc')
-})
+  vi.clearAllMocks();
+  mockFetchOrganization.mockResolvedValue(enterpriseOrgs);
+  mockHasEnterpriseOrgPlan.mockReturnValue(true);
+  mockGetMachineOutputMode.mockReturnValue(false);
+  mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: undefined });
+  mockExtractTier1ReachabilityScanId.mockReturnValue("scan-abc");
+});
 
-describe('performReachabilityAnalysis — plan checks', () => {
+describe("performReachabilityAnalysis — plan checks", () => {
   it('returns "Authentication failed" on a 401 from fetchOrganization', async () => {
     mockFetchOrganization.mockResolvedValueOnce({
       ok: false,
-      message: 'Unauthorized',
+      message: "Unauthorized",
       data: { code: 401 },
-    })
+    });
     const result = await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(result.ok).toBe(false)
+      target: ".",
+    });
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toBe('Authentication failed')
+      expect(result.message).toBe("Authentication failed");
     }
-  })
+  });
 
-  it('returns generic plan error on other fetch failures', async () => {
+  it("returns generic plan error on other fetch failures", async () => {
     mockFetchOrganization.mockResolvedValueOnce({
       ok: false,
-      message: 'API down',
-    })
+      message: "API down",
+    });
     const result = await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(result.ok).toBe(false)
+      target: ".",
+    });
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toBe('Unable to verify plan permissions')
+      expect(result.message).toBe("Unable to verify plan permissions");
     }
-  })
+  });
 
-  it('rejects non-enterprise plans with an upgrade link', async () => {
-    mockHasEnterpriseOrgPlan.mockReturnValue(false)
+  it("rejects non-enterprise plans with an upgrade link", async () => {
+    mockHasEnterpriseOrgPlan.mockReturnValue(false);
     const result = await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(result.ok).toBe(false)
+      target: ".",
+    });
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toContain('enterprise plan')
+      expect(result.message).toContain("enterprise plan");
     }
-    expect(mockSocketDevLink).toHaveBeenCalled()
-  })
-})
+    expect(mockSocketDevLink).toHaveBeenCalled();
+  });
+});
 
-describe('performReachabilityAnalysis — target normalization', () => {
-  it('relativizes an absolute target to the cwd', async () => {
+describe("performReachabilityAnalysis — target normalization", () => {
+  it("relativizes an absolute target to the cwd", async () => {
     await performReachabilityAnalysis({
-      cwd: '/work',
+      cwd: "/work",
       reachabilityOptions: baseReachOpts,
-      target: '/work/sub',
-    })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+      target: "/work/sub",
+    });
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
     // Coana args includes 'run' followed by the relativized target.
-    const idx = args.indexOf('run')
-    expect(args[idx + 1]).toBe('sub')
-  })
+    const idx = args.indexOf("run");
+    expect(args[idx + 1]).toBe("sub");
+  });
 
   it('uses "." when relative resolution would produce empty string', async () => {
     await performReachabilityAnalysis({
-      cwd: '/work',
+      cwd: "/work",
       reachabilityOptions: baseReachOpts,
-      target: '/work',
-    })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    const idx = args.indexOf('run')
-    expect(args[idx + 1]).toBe('.')
-  })
+      target: "/work",
+    });
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
+    const idx = args.indexOf("run");
+    expect(args[idx + 1]).toBe(".");
+  });
 
-  it('keeps a relative target unchanged', async () => {
+  it("keeps a relative target unchanged", async () => {
     await performReachabilityAnalysis({
-      cwd: '/work',
+      cwd: "/work",
       reachabilityOptions: baseReachOpts,
-      target: 'sub/dir',
-    })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    const idx = args.indexOf('run')
-    expect(args[idx + 1]).toBe('sub/dir')
-  })
-})
+      target: "sub/dir",
+    });
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
+    const idx = args.indexOf("run");
+    expect(args[idx + 1]).toBe("sub/dir");
+  });
+});
 
-describe('performReachabilityAnalysis — manifest upload', () => {
-  it('skips upload when uploadManifests is false', async () => {
+describe("performReachabilityAnalysis — manifest upload", () => {
+  it("skips upload when uploadManifests is false", async () => {
     await performReachabilityAnalysis({
-      orgSlug: 'ent',
-      packagePaths: ['pkg/package.json'],
+      orgSlug: "ent",
+      packagePaths: ["pkg/package.json"],
       reachabilityOptions: baseReachOpts,
-      target: '.',
+      target: ".",
       uploadManifests: false,
-    })
-    expect(mockSetupSdk).not.toHaveBeenCalled()
-    expect(mockHandleApiCall).not.toHaveBeenCalled()
-  })
+    });
+    expect(mockSetupSdk).not.toHaveBeenCalled();
+    expect(mockHandleApiCall).not.toHaveBeenCalled();
+  });
 
-  it('skips upload when orgSlug is missing', async () => {
+  it("skips upload when orgSlug is missing", async () => {
     await performReachabilityAnalysis({
-      packagePaths: ['pkg/package.json'],
+      packagePaths: ["pkg/package.json"],
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(mockSetupSdk).not.toHaveBeenCalled()
-  })
+      target: ".",
+    });
+    expect(mockSetupSdk).not.toHaveBeenCalled();
+  });
 
-  it('skips upload when packagePaths is missing', async () => {
+  it("skips upload when packagePaths is missing", async () => {
     await performReachabilityAnalysis({
-      orgSlug: 'ent',
+      orgSlug: "ent",
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(mockSetupSdk).not.toHaveBeenCalled()
-  })
+      target: ".",
+    });
+    expect(mockSetupSdk).not.toHaveBeenCalled();
+  });
 
-  it('runs upload when orgSlug + packagePaths + uploadManifests', async () => {
+  it("runs upload when orgSlug + packagePaths + uploadManifests", async () => {
     mockSetupSdk.mockResolvedValueOnce({
       ok: true,
       data: { uploadManifestFiles: mockUploadManifestFiles },
-    })
+    });
     mockHandleApiCall.mockResolvedValueOnce({
       ok: true,
-      data: { tarHash: 'abc123' },
-    })
+      data: { tarHash: "abc123" },
+    });
     const result = await performReachabilityAnalysis({
-      orgSlug: 'ent',
-      packagePaths: ['pkg/package.json'],
+      orgSlug: "ent",
+      packagePaths: ["pkg/package.json"],
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(mockSetupSdk).toHaveBeenCalled()
-    expect(mockHandleApiCall).toHaveBeenCalled()
+      target: ".",
+    });
+    expect(mockSetupSdk).toHaveBeenCalled();
+    expect(mockHandleApiCall).toHaveBeenCalled();
     // Coana args include the tar hash flags.
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    expect(args).toContain('--manifests-tar-hash')
-    expect(args).toContain('abc123')
-    expect(result.ok).toBe(true)
-  })
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
+    expect(args).toContain("--manifests-tar-hash");
+    expect(args).toContain("abc123");
+    expect(result.ok).toBe(true);
+  });
 
-  it('filters out .socket.facts.json paths from upload list', async () => {
+  it("filters out .socket.facts.json paths from upload list", async () => {
     mockSetupSdk.mockResolvedValueOnce({
       ok: true,
       data: { uploadManifestFiles: mockUploadManifestFiles },
-    })
+    });
     mockHandleApiCall.mockResolvedValueOnce({
       ok: true,
-      data: { tarHash: 'abc123' },
-    })
+      data: { tarHash: "abc123" },
+    });
     await performReachabilityAnalysis({
-      orgSlug: 'ent',
-      packagePaths: [
-        'pkg/package.json',
-        'sub/.socket.facts.json',
-        'pkg/.socket.facts.json',
-      ],
+      orgSlug: "ent",
+      packagePaths: ["pkg/package.json", "sub/.socket.facts.json", "pkg/.socket.facts.json"],
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    const apiCallSpec = mockHandleApiCall.mock.calls[0]![0]
+      target: ".",
+    });
+    const apiCallSpec = mockHandleApiCall.mock.calls[0]![0];
     // The first arg to handleApiCall is the SDK promise; we just want
     // to confirm uploadManifestFiles was given the filtered list.
-    expect(mockUploadManifestFiles).toHaveBeenCalledTimes(1)
-    const [, filepaths] = mockUploadManifestFiles.mock.calls[0]!
-    expect(filepaths).toEqual(['pkg/package.json'])
-  })
+    expect(mockUploadManifestFiles).toHaveBeenCalledTimes(1);
+    const [, filepaths] = mockUploadManifestFiles.mock.calls[0]!;
+    expect(filepaths).toEqual(["pkg/package.json"]);
+  });
 
-  it('returns the SDK setup error when setupSdk fails', async () => {
+  it("returns the SDK setup error when setupSdk fails", async () => {
     mockSetupSdk.mockResolvedValueOnce({
       ok: false,
-      message: 'Auth Error',
-      cause: 'no token',
-    })
+      message: "Auth Error",
+      cause: "no token",
+    });
     const result = await performReachabilityAnalysis({
-      orgSlug: 'ent',
-      packagePaths: ['pkg/package.json'],
+      orgSlug: "ent",
+      packagePaths: ["pkg/package.json"],
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(result.ok).toBe(false)
+      target: ".",
+    });
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toBe('Auth Error')
+      expect(result.message).toBe("Auth Error");
     }
-    expect(mockHandleApiCall).not.toHaveBeenCalled()
-  })
+    expect(mockHandleApiCall).not.toHaveBeenCalled();
+  });
 
-  it('returns the upload error when uploadManifestFiles fails', async () => {
+  it("returns the upload error when uploadManifestFiles fails", async () => {
     mockSetupSdk.mockResolvedValueOnce({
       ok: true,
       data: { uploadManifestFiles: mockUploadManifestFiles },
-    })
+    });
     mockHandleApiCall.mockResolvedValueOnce({
       ok: false,
-      message: 'Upload failed',
-    })
+      message: "Upload failed",
+    });
     const result = await performReachabilityAnalysis({
-      orgSlug: 'ent',
-      packagePaths: ['pkg/package.json'],
+      orgSlug: "ent",
+      packagePaths: ["pkg/package.json"],
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(result.ok).toBe(false)
+      target: ".",
+    });
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toBe('Upload failed')
+      expect(result.message).toBe("Upload failed");
     }
-    expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
-  })
+    expect(mockSpawnCoanaDlx).not.toHaveBeenCalled();
+  });
 
-  it('errors when the upload response is missing tarHash', async () => {
+  it("errors when the upload response is missing tarHash", async () => {
     mockSetupSdk.mockResolvedValueOnce({
       ok: true,
       data: { uploadManifestFiles: mockUploadManifestFiles },
-    })
+    });
     mockHandleApiCall.mockResolvedValueOnce({
       ok: true,
       data: {},
-    })
+    });
     const result = await performReachabilityAnalysis({
-      orgSlug: 'ent',
-      packagePaths: ['pkg/package.json'],
+      orgSlug: "ent",
+      packagePaths: ["pkg/package.json"],
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(result.ok).toBe(false)
+      target: ".",
+    });
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toContain('tar hash')
+      expect(result.message).toContain("tar hash");
     }
-  })
-})
+  });
+});
 
-describe('performReachabilityAnalysis — repo and branch env', () => {
-  it('omits SOCKET_REPO_NAME when repo is the default', async () => {
+describe("performReachabilityAnalysis — repo and branch env", () => {
+  it("omits SOCKET_REPO_NAME when repo is the default", async () => {
     await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      repoName: 'socket-default-repository',
-      target: '.',
-    })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2]
-    expect(callOpts.env['SOCKET_REPO_NAME']).toBeUndefined()
-  })
+      repoName: "socket-default-repository",
+      target: ".",
+    });
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2];
+    expect(callOpts.env["SOCKET_REPO_NAME"]).toBeUndefined();
+  });
 
-  it('exports SOCKET_REPO_NAME for non-default repo names', async () => {
+  it("exports SOCKET_REPO_NAME for non-default repo names", async () => {
     await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      repoName: 'my-repo',
-      target: '.',
-    })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2]
-    expect(callOpts.env['SOCKET_REPO_NAME']).toBe('my-repo')
-  })
+      repoName: "my-repo",
+      target: ".",
+    });
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2];
+    expect(callOpts.env["SOCKET_REPO_NAME"]).toBe("my-repo");
+  });
 
-  it('omits SOCKET_BRANCH_NAME when branch is the default', async () => {
+  it("omits SOCKET_BRANCH_NAME when branch is the default", async () => {
     await performReachabilityAnalysis({
-      branchName: 'socket-default-branch',
+      branchName: "socket-default-branch",
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2]
-    expect(callOpts.env['SOCKET_BRANCH_NAME']).toBeUndefined()
-  })
+      target: ".",
+    });
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2];
+    expect(callOpts.env["SOCKET_BRANCH_NAME"]).toBeUndefined();
+  });
 
-  it('exports SOCKET_BRANCH_NAME for non-default branch names', async () => {
+  it("exports SOCKET_BRANCH_NAME for non-default branch names", async () => {
     await performReachabilityAnalysis({
-      branchName: 'feat/x',
+      branchName: "feat/x",
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2]
-    expect(callOpts.env['SOCKET_BRANCH_NAME']).toBe('feat/x')
-  })
-})
+      target: ".",
+    });
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0]![2];
+    expect(callOpts.env["SOCKET_BRANCH_NAME"]).toBe("feat/x");
+  });
+});
 
-describe('performReachabilityAnalysis — coana flag forwarding', () => {
-  it('builds the base flag set (--disable-report-submission, --disable-analysis-splitting)', async () => {
+describe("performReachabilityAnalysis — coana flag forwarding", () => {
+  it("builds the base flag set (--disable-report-submission, --disable-analysis-splitting)", async () => {
     await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    expect(args).toContain('--disable-report-submission')
-    expect(args).toContain('--disable-analysis-splitting')
-    expect(args).toContain('--socket-mode')
-  })
+      target: ".",
+    });
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
+    expect(args).toContain("--disable-report-submission");
+    expect(args).toContain("--disable-analysis-splitting");
+    expect(args).toContain("--socket-mode");
+  });
 
-  it('forwards every reachability flag when set', async () => {
+  it("forwards every reachability flag when set", async () => {
     await performReachabilityAnalysis({
       reachabilityOptions: {
         ...baseReachOpts,
@@ -446,137 +437,137 @@ describe('performReachabilityAnalysis — coana flag forwarding', () => {
         reachDetailedAnalysisLogFile: true,
         reachDisableAnalytics: true,
         reachDisableExternalToolChecks: true,
-        reachEcosystems: ['npm', 'pypi'],
+        reachEcosystems: ["npm", "pypi"],
         reachEnableAnalysisSplitting: true,
-        reachExcludePaths: ['vendor/', 'node_modules/'],
+        reachExcludePaths: ["vendor/", "node_modules/"],
         reachLazyMode: true,
-        reachMinSeverity: 'high',
+        reachMinSeverity: "high",
         reachSkipCache: true,
         reachUseOnlyPregeneratedSboms: true,
         reachUseUnreachableFromPrecomputation: true,
       },
-      target: '.',
-    })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    expect(args).toContain('--analysis-timeout')
-    expect(args).toContain('600')
-    expect(args).toContain('--memory-limit')
-    expect(args).toContain('4096')
-    expect(args).toContain('--concurrency')
-    expect(args).toContain('4')
-    expect(args).toContain('--debug')
-    expect(args).toContain('--detailed-analysis-log-file')
-    expect(args).toContain('--disable-analytics-sharing')
-    expect(args).toContain('--disable-external-tool-checks')
+      target: ".",
+    });
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
+    expect(args).toContain("--analysis-timeout");
+    expect(args).toContain("600");
+    expect(args).toContain("--memory-limit");
+    expect(args).toContain("4096");
+    expect(args).toContain("--concurrency");
+    expect(args).toContain("4");
+    expect(args).toContain("--debug");
+    expect(args).toContain("--detailed-analysis-log-file");
+    expect(args).toContain("--disable-analytics-sharing");
+    expect(args).toContain("--disable-external-tool-checks");
     // analysis-splitting is INVERTED: enabled flag means we omit
     // --disable-analysis-splitting.
-    expect(args).not.toContain('--disable-analysis-splitting')
-    expect(args).toContain('--purl-types')
-    expect(args).toContain('npm')
-    expect(args).toContain('pypi')
-    expect(args).toContain('--exclude-dirs')
-    expect(args).toContain('vendor/')
-    expect(args).toContain('--lazy-mode')
-    expect(args).toContain('--min-severity')
-    expect(args).toContain('high')
-    expect(args).toContain('--skip-cache-usage')
-    expect(args).toContain('--use-only-pregenerated-sboms')
-    expect(args).toContain('--use-unreachable-from-precomputation')
-  })
+    expect(args).not.toContain("--disable-analysis-splitting");
+    expect(args).toContain("--purl-types");
+    expect(args).toContain("npm");
+    expect(args).toContain("pypi");
+    expect(args).toContain("--exclude-dirs");
+    expect(args).toContain("vendor/");
+    expect(args).toContain("--lazy-mode");
+    expect(args).toContain("--min-severity");
+    expect(args).toContain("high");
+    expect(args).toContain("--skip-cache-usage");
+    expect(args).toContain("--use-only-pregenerated-sboms");
+    expect(args).toContain("--use-unreachable-from-precomputation");
+  });
 
-  it('omits --purl-types when reachEcosystems is empty', async () => {
+  it("omits --purl-types when reachEcosystems is empty", async () => {
     await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    expect(args).not.toContain('--purl-types')
-  })
+      target: ".",
+    });
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
+    expect(args).not.toContain("--purl-types");
+  });
 
-  it('omits --exclude-dirs when reachExcludePaths is empty', async () => {
+  it("omits --exclude-dirs when reachExcludePaths is empty", async () => {
     await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    expect(args).not.toContain('--exclude-dirs')
-  })
-})
+      target: ".",
+    });
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
+    expect(args).not.toContain("--exclude-dirs");
+  });
+});
 
-describe('performReachabilityAnalysis — machine-output mode', () => {
-  it('adds --silent and uses stdio: ignore in machine mode', async () => {
-    mockGetMachineOutputMode.mockReturnValue(true)
+describe("performReachabilityAnalysis — machine-output mode", () => {
+  it("adds --silent and uses stdio: ignore in machine mode", async () => {
+    mockGetMachineOutputMode.mockReturnValue(true);
     await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    const opts = mockSpawnCoanaDlx.mock.calls[0]![2]
-    expect(args[0]).toBe('--silent')
-    expect(opts.stdio).toBe('ignore')
-  })
+      target: ".",
+    });
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
+    const opts = mockSpawnCoanaDlx.mock.calls[0]![2];
+    expect(args[0]).toBe("--silent");
+    expect(opts.stdio).toBe("ignore");
+  });
 
-  it('keeps stdio: inherit in interactive mode', async () => {
-    mockGetMachineOutputMode.mockReturnValue(false)
+  it("keeps stdio: inherit in interactive mode", async () => {
+    mockGetMachineOutputMode.mockReturnValue(false);
     await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    const opts = mockSpawnCoanaDlx.mock.calls[0]![2]
-    expect(opts.stdio).toBe('inherit')
-  })
-})
+      target: ".",
+    });
+    const opts = mockSpawnCoanaDlx.mock.calls[0]![2];
+    expect(opts.stdio).toBe("inherit");
+  });
+});
 
-describe('performReachabilityAnalysis — coana result handling', () => {
-  it('logs error and returns failure when coana fails', async () => {
+describe("performReachabilityAnalysis — coana result handling", () => {
+  it("logs error and returns failure when coana fails", async () => {
     mockSpawnCoanaDlx.mockResolvedValueOnce({
       ok: false,
-      message: 'coana crashed',
-    })
+      message: "coana crashed",
+    });
     const result = await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(result.ok).toBe(false)
+      target: ".",
+    });
+    expect(result.ok).toBe(false);
     expect(mockLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Reachability analysis failed'),
-    )
-  })
+      expect.stringContaining("Reachability analysis failed"),
+    );
+  });
 
-  it('returns the report path + scan ID on success', async () => {
-    mockExtractTier1ReachabilityScanId.mockReturnValue('scan-xyz')
+  it("returns the report path + scan ID on success", async () => {
+    mockExtractTier1ReachabilityScanId.mockReturnValue("scan-xyz");
     const result = await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
-    expect(result.ok).toBe(true)
+      target: ".",
+    });
+    expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.reachabilityReport).toBe('.socket.facts.json')
-      expect(result.data.tier1ReachabilityScanId).toBe('scan-xyz')
+      expect(result.data.reachabilityReport).toBe(".socket.facts.json");
+      expect(result.data.tier1ReachabilityScanId).toBe("scan-xyz");
     }
-  })
+  });
 
-  it('uses outputPath when provided', async () => {
+  it("uses outputPath when provided", async () => {
     const result = await performReachabilityAnalysis({
-      outputPath: '/custom/out.json',
+      outputPath: "/custom/out.json",
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+      target: ".",
+    });
     if (result.ok) {
-      expect(result.data.reachabilityReport).toBe('/custom/out.json')
+      expect(result.data.reachabilityReport).toBe("/custom/out.json");
     }
-    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    expect(args).toContain('/custom/out.json')
-  })
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[];
+    expect(args).toContain("/custom/out.json");
+  });
 
-  it('falls back to default outputPath when value is whitespace', async () => {
+  it("falls back to default outputPath when value is whitespace", async () => {
     const result = await performReachabilityAnalysis({
-      outputPath: '   ',
+      outputPath: "   ",
       reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+      target: ".",
+    });
     if (result.ok) {
-      expect(result.data.reachabilityReport).toBe('.socket.facts.json')
+      expect(result.data.reachabilityReport).toBe(".socket.facts.json");
     }
-  })
-})
+  });
+});

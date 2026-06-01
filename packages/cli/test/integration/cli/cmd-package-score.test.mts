@@ -13,24 +13,20 @@
  * logic - src/commands/package/output-package-score.mts - Formatting.
  */
 
-import { describe, expect } from 'vitest'
+import { describe, expect } from "vitest";
 
-import {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-} from '../../../src/constants/cli.mts'
-import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { cmdit, spawnSocketCli } from '../../utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from "../../../src/constants/cli.mts";
+import { getBinCliPath } from "../../../src/constants/paths.mts";
+import { cmdit, spawnSocketCli } from "../../utils.mts";
 
-const binCliPath = getBinCliPath()
+const binCliPath = getBinCliPath();
 
-describe('socket package score', async () => {
+describe("socket package score", async () => {
   cmdit(
-    ['package', 'score', FLAG_HELP, FLAG_CONFIG, '{}'],
+    ["package", "score", FLAG_HELP, FLAG_CONFIG, "{}"],
     `should support ${FLAG_HELP}`,
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
       expect(stdout).toMatchInlineSnapshot(`
         "Look up score for one package which reflects all of its transitive dependencies as well
 
@@ -69,35 +65,28 @@ describe('socket package score', async () => {
                 $ socket package score npm eslint@1.0.0 --json
                 $ socket package score pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60
                 $ socket package score nuget/needpluscommonlibrary@1.0.0 --markdown"
-      `)
+      `);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket package score\`, cwd: <redacted>"
-      `)
+      `);
 
-      expect(code, 'explicit help should exit with code 0').toBe(0)
-      expect(
-        stderr,
-        'header should include command (without params)',
-      ).toContain('`socket package score`')
+      expect(code, "explicit help should exit with code 0").toBe(0);
+      expect(stderr, "header should include command (without params)").toContain(
+        "`socket package score`",
+      );
     },
-  )
+  );
 
   cmdit(
-    [
-      'package',
-      'score',
-      FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
-    ],
-    'should require args with just dry-run',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+    ["package", "score", FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    "should require args with just dry-run",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`""`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -109,35 +98,27 @@ describe('socket package score', async () => {
 
           \\xd7 First parameter must be an ecosystem or the whole purl (bad)
           \\xd7 Expecting at least one package (missing)"
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+      expect(code, "dry-run should exit with code 2 if missing input").toBe(2);
     },
-  )
+  );
 
   cmdit(
-    [
-      'package',
-      'score',
-      'npm',
-      'babel',
-      FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should require args with just dry-run',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    ["package", "score", "npm", "babel", FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    "should require args with just dry-run",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket package score\`, cwd: <redacted>"
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
     },
-  )
-})
+  );
+});

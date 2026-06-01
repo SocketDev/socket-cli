@@ -1,5 +1,5 @@
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
-import process from 'node:process'
+import process from "node:process";
 
 /**
  * @file Developer setup script - checks prerequisites and prepares environment.
@@ -15,75 +15,71 @@ import process from 'node:process'
  *   - Verifies installed tools are actually available in PATH before proceeding
  *   - Attempts to restore build cache from CI (only if gh CLI available)
  *   - Reports missing tools with installation instructions Usage: pnpm run setup
- *     # Check prerequisites and restore GitHub cache pnpm run setup --install #
- *     Check and auto-install optional tools, then restore cache pnpm run setup
- *     --skip-prereqs # Only restore GitHub cache (skip prerequisite checks)
- *     pnpm run setup --skip-gh-cache # Check prerequisites but skip GitHub
- *     cache restoration pnpm run setup --quiet # Minimal output (for
- *     postinstall) Flags: --install Auto-install missing optional tools (gh
- *     CLI) --skip-prereqs Skip prerequisite checks (for CI use; still attempts
- *     cache restoration) --skip-gh-cache Skip GitHub cache restoration (useful
- *     when cache is corrupt) --quiet Minimal output Note: Setup helpers are
- *     also exported in build-infra/lib/setup-helpers for reuse in other build
- *     scripts.
+ *
+ *   # Check prerequisites and restore GitHub cache pnpm run setup --install
+ *
+ *   Check and auto-install optional tools, then restore cache pnpm run setup
+ *   --skip-prereqs # Only restore GitHub cache (skip prerequisite checks) pnpm
+ *   run setup --skip-gh-cache # Check prerequisites but skip GitHub cache
+ *   restoration pnpm run setup --quiet # Minimal output (for postinstall)
+ *   Flags: --install Auto-install missing optional tools (gh CLI)
+ *   --skip-prereqs Skip prerequisite checks (for CI use; still attempts cache
+ *   restoration) --skip-gh-cache Skip GitHub cache restoration (useful when
+ *   cache is corrupt) --quiet Minimal output Note: Setup helpers are also
+ *   exported in build-infra/lib/setup-helpers for reuse in other build
+ *   scripts.
  */
 
-import { existsSync } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { existsSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
-const autoInstall = process.argv.includes('--install')
-const quiet = process.argv.includes('--quiet')
-const skipPrereqs = process.argv.includes('--skip-prereqs')
-const skipGhCache = process.argv.includes('--skip-gh-cache')
+const autoInstall = process.argv.includes("--install");
+const quiet = process.argv.includes("--quiet");
+const skipPrereqs = process.argv.includes("--skip-prereqs");
+const skipGhCache = process.argv.includes("--skip-gh-cache");
 
 // Handle --help flag.
-const showHelp = process.argv.includes('--help') || process.argv.includes('-h')
+const showHelp = process.argv.includes("--help") || process.argv.includes("-h");
 if (showHelp) {
-  logger.log('')
-  logger.log('Socket CLI Developer Setup')
-  logger.log('')
-  logger.log('Usage:')
-  logger.log('  pnpm run setup [options]')
-  logger.log('')
-  logger.log('Options:')
-  logger.log('  --install          Auto-install missing optional tools (gh CLI)')
-  logger.log('  --skip-prereqs     Skip prerequisite checks (for CI use)')
-  logger.log(
-    '  --skip-gh-cache    Skip GitHub cache restoration (useful when cache is corrupt)',
-  )
-  logger.log('  --quiet            Minimal output')
-  logger.log('  --help, -h         Show this help message')
-  logger.log('')
-  logger.log('Examples:')
-  logger.log(
-    '  pnpm run setup                      # Check prerequisites and restore cache',
-  )
-  logger.log('  pnpm run setup --install            # Auto-install optional tools')
-  logger.log(
-    '  pnpm run setup --skip-gh-cache      # Skip cache (useful if cache is corrupt)',
-  )
-  logger.log('  pnpm run setup --skip-prereqs       # Skip checks, only restore cache')
-  logger.log('')
-  process.exitCode = 0
+  logger.log("");
+  logger.log("Socket CLI Developer Setup");
+  logger.log("");
+  logger.log("Usage:");
+  logger.log("  pnpm run setup [options]");
+  logger.log("");
+  logger.log("Options:");
+  logger.log("  --install          Auto-install missing optional tools (gh CLI)");
+  logger.log("  --skip-prereqs     Skip prerequisite checks (for CI use)");
+  logger.log("  --skip-gh-cache    Skip GitHub cache restoration (useful when cache is corrupt)");
+  logger.log("  --quiet            Minimal output");
+  logger.log("  --help, -h         Show this help message");
+  logger.log("");
+  logger.log("Examples:");
+  logger.log("  pnpm run setup                      # Check prerequisites and restore cache");
+  logger.log("  pnpm run setup --install            # Auto-install optional tools");
+  logger.log("  pnpm run setup --skip-gh-cache      # Skip cache (useful if cache is corrupt)");
+  logger.log("  pnpm run setup --skip-prereqs       # Skip checks, only restore cache");
+  logger.log("");
+  process.exitCode = 0;
 }
 
 interface VersionInfo {
-  major: number
-  minor: number
-  patch: number
+  major: number;
+  minor: number;
+  patch: number;
 }
 
 interface PrerequisiteOptions {
-  command: string
-  minVersion?: VersionInfo | undefined
-  name: string
-  required?: boolean | undefined
+  command: string;
+  minVersion?: VersionInfo | undefined;
+  name: string;
+  required?: boolean | undefined;
 }
 
 /**
@@ -95,29 +91,29 @@ async function checkPrerequisite({
   name,
   required = true,
 }: PrerequisiteOptions): Promise<boolean> {
-  const version = await getVersion(command)
+  const version = await getVersion(command);
 
   if (!version) {
-    logger.error(`${name} not found`)
-    return false
+    logger.error(`${name} not found`);
+    return false;
   }
 
   if (minVersion) {
-    const current = parseVersion(version)
+    const current = parseVersion(version);
     if (!current) {
-      logger.warn(`Could not parse ${name} version: ${version}`)
-      return !required
+      logger.warn(`Could not parse ${name} version: ${version}`);
+      return !required;
     }
 
     if (compareVersions(current, minVersion) < 0) {
-      const minVersionStr = `${minVersion.major}.${minVersion.minor}.${minVersion.patch}`
-      logger.error(`${name} ${version} found, but >=${minVersionStr} required`)
-      return false
+      const minVersionStr = `${minVersion.major}.${minVersion.minor}.${minVersion.patch}`;
+      logger.error(`${name} ${version} found, but >=${minVersionStr} required`);
+      return false;
     }
   }
 
-  logger.log(`${name} ${version}`)
-  return true
+  logger.log(`${name} ${version}`);
+  return true;
 }
 
 /**
@@ -125,101 +121,99 @@ async function checkPrerequisite({
  */
 export function compareVersions(a: VersionInfo, b: VersionInfo): number {
   if (a.major !== b.major) {
-    return a.major < b.major ? -1 : 1
+    return a.major < b.major ? -1 : 1;
   }
   if (a.minor !== b.minor) {
-    return a.minor < b.minor ? -1 : 1
+    return a.minor < b.minor ? -1 : 1;
   }
   if (a.patch !== b.patch) {
-    return a.patch < b.patch ? -1 : 1
+    return a.patch < b.patch ? -1 : 1;
   }
-  return 0
+  return 0;
 }
 
 /**
  * Check and optionally install gh CLI.
  */
 async function ensureGhCli(): Promise<boolean> {
-  if (await hasCommand('gh')) {
-    const version = await getVersion('gh')
-    logger.log(`gh CLI ${version} (optional)`)
-    return true
+  if (await hasCommand("gh")) {
+    const version = await getVersion("gh");
+    logger.log(`gh CLI ${version} (optional)`);
+    return true;
   }
 
   if (!autoInstall) {
-    logger.info('gh CLI not found (optional - enables cache restoration)')
-    logger.info('Install from: https://cli.github.com/')
-    logger.info('Or run: pnpm run setup --install')
-    return false
+    logger.info("gh CLI not found (optional - enables cache restoration)");
+    logger.info("Install from: https://cli.github.com/");
+    logger.info("Or run: pnpm run setup --install");
+    return false;
   }
 
   // Auto-install mode.
   if (WIN32) {
     // Windows: Try Chocolatey.
-    if (!(await hasCommand('choco'))) {
-      logger.info('Chocolatey not found (needed for auto-install on Windows)')
-      logger.log('Attempting to install Chocolatey...')
-      const installed = await installChocolatey()
+    if (!(await hasCommand("choco"))) {
+      logger.info("Chocolatey not found (needed for auto-install on Windows)");
+      logger.log("Attempting to install Chocolatey…");
+      const installed = await installChocolatey();
       if (!installed) {
-        logger.warn('Could not install Chocolatey')
-        logger.info('Install gh CLI manually from: https://cli.github.com/')
-        logger.info(
-          'Or install Chocolatey from: https://chocolatey.org/install',
-        )
-        return false
+        logger.warn("Could not install Chocolatey");
+        logger.info("Install gh CLI manually from: https://cli.github.com/");
+        logger.info("Or install Chocolatey from: https://chocolatey.org/install");
+        return false;
       }
     }
 
     // Install gh CLI with Chocolatey.
-    logger.log('Installing gh CLI with Chocolatey...')
-    const installed = await installWithChocolatey('gh')
+    logger.log("Installing gh CLI with Chocolatey…");
+    const installed = await installWithChocolatey("gh");
     if (installed) {
       // Verify gh is actually available after installation.
-      if (await hasCommand('gh')) {
-        const version = await getVersion('gh')
-        logger.log(`gh CLI ${version} installed!`)
-        return true
+      if (await hasCommand("gh")) {
+        const version = await getVersion("gh");
+        logger.log(`gh CLI ${version} installed!`);
+        return true;
       }
-      logger.warn('gh CLI installed but not available in PATH')
-      logger.info('You may need to restart your shell or run: pnpm run setup')
-      return false
+      logger.warn("gh CLI installed but not available in PATH");
+      logger.info("You may need to restart your shell or run: pnpm run setup");
+      return false;
     }
 
-    logger.warn('Could not install gh CLI')
-    logger.info('Install manually from: https://cli.github.com/')
-    return false
+    logger.warn("Could not install gh CLI");
+    logger.info("Install manually from: https://cli.github.com/");
+    return false;
   }
 
   // macOS/Linux: Try Homebrew.
-  if (!(await hasCommand('brew'))) {
-    logger.info('Homebrew not found (needed for auto-install)')
-    logger.log('Attempting to install Homebrew...')
-    const installed = await installHomebrew()
+  if (!(await hasCommand("brew"))) {
+    logger.info("Homebrew not found (needed for auto-install)");
+    logger.log("Attempting to install Homebrew…");
+    const installed = await installHomebrew();
     if (!installed) {
-      logger.warn('Could not install Homebrew')
-      logger.info('Install gh CLI manually from: https://cli.github.com/')
-      return false
+      logger.warn("Could not install Homebrew");
+      logger.info("Install gh CLI manually from: https://cli.github.com/");
+      return false;
     }
   }
 
   // Install gh CLI with Homebrew.
-  logger.log('Installing gh CLI with Homebrew...')
-  const installed = await installWithHomebrew('gh')
+  logger.log("Installing gh CLI with Homebrew…");
+  const installed = await installWithHomebrew("gh");
   if (installed) {
     // Verify gh is actually available after installation.
-    if (await hasCommand('gh')) {
-      const version = await getVersion('gh')
-      logger.log(`gh CLI ${version} installed!`)
-      return true
+    if (await hasCommand("gh")) {
+      const version = await getVersion("gh");
+      logger.log(`gh CLI ${version} installed!`);
+      return true;
     }
-    logger.warn('gh CLI installed but not available in PATH')
-    logger.info('You may need to restart your shell or run: pnpm run setup')
-    return false
+    logger.warn("gh CLI installed but not available in PATH");
+    logger.info("You may need to restart your shell or run: pnpm run setup");
+    return false;
   }
 
-  logger.warn('Could not install gh CLI')
-  logger.info('Install manually from: https://cli.github.com/')
-  return false
+  logger.warn("Could not install gh CLI");
+  logger.info("Install manually from: https://cli.github.com/");
+  return false;
 }
 
 /**
@@ -227,26 +221,26 @@ async function ensureGhCli(): Promise<boolean> {
  */
 async function generateCliSentryPackage(): Promise<boolean> {
   if (!quiet) {
-    logger.log('Generating cli-with-sentry package from template...')
+    logger.log("Generating cli-with-sentry package from template…");
   }
 
   const scriptPath = new URL(
-    '../packages/package-builder/scripts/generate-cli-sentry-package.mts',
+    "../packages/package-builder/scripts/generate-cli-sentry-package.mts",
     import.meta.url,
-  )
-  const result = await spawn('node', [scriptPath.pathname], {
-    stdio: quiet ? 'pipe' : 'inherit',
-  })
+  );
+  const result = await spawn("node", [scriptPath.pathname], {
+    stdio: quiet ? "pipe" : "inherit",
+  });
 
   if (result.code === 0) {
     if (!quiet) {
-      logger.log('cli-with-sentry package generated!')
+      logger.log("cli-with-sentry package generated!");
     }
-    return true
+    return true;
   }
 
-  logger.warn('Failed to generate cli-with-sentry package')
-  return false
+  logger.warn("Failed to generate cli-with-sentry package");
+  return false;
 }
 
 /**
@@ -254,26 +248,26 @@ async function generateCliSentryPackage(): Promise<boolean> {
  */
 async function generateSocketbinPackages(): Promise<boolean> {
   if (!quiet) {
-    logger.log('Generating socketbin packages from template...')
+    logger.log("Generating socketbin packages from template…");
   }
 
   const scriptPath = new URL(
-    '../packages/package-builder/scripts/generate-socketbin-packages.mts',
+    "../packages/package-builder/scripts/generate-socketbin-packages.mts",
     import.meta.url,
-  )
-  const result = await spawn('node', [scriptPath.pathname], {
-    stdio: quiet ? 'pipe' : 'inherit',
-  })
+  );
+  const result = await spawn("node", [scriptPath.pathname], {
+    stdio: quiet ? "pipe" : "inherit",
+  });
 
   if (result.code === 0) {
     if (!quiet) {
-      logger.log('Socketbin packages generated!')
+      logger.log("Socketbin packages generated!");
     }
-    return true
+    return true;
   }
 
-  logger.warn('Failed to generate socketbin packages')
-  return false
+  logger.warn("Failed to generate socketbin packages");
+  return false;
 }
 
 /**
@@ -281,19 +275,19 @@ async function generateSocketbinPackages(): Promise<boolean> {
  */
 async function getVersion(
   command: string,
-  args: string[] = ['--version'],
+  args: string[] = ["--version"],
 ): Promise<string | undefined> {
   try {
     const result = await spawn(command, args, {
-      stdio: 'pipe',
-    })
+      stdio: "pipe",
+    });
     if (result.code === 0) {
-      return String(result.stdout).trim()
+      return String(result.stdout).trim();
     }
   } catch {
     // Ignore.
   }
-  return undefined
+  return undefined;
 }
 
 /**
@@ -301,12 +295,12 @@ async function getVersion(
  */
 async function hasCommand(command: string): Promise<boolean> {
   try {
-    const result = await spawn(command, ['--version'], {
-      stdio: 'pipe',
-    })
-    return result.code === 0
+    const result = await spawn(command, ["--version"], {
+      stdio: "pipe",
+    });
+    return result.code === 0;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -315,28 +309,28 @@ async function hasCommand(command: string): Promise<boolean> {
  */
 async function installChocolatey(): Promise<boolean> {
   if (!WIN32) {
-    logger.warn('Chocolatey is only available on Windows')
-    return false
+    logger.warn("Chocolatey is only available on Windows");
+    return false;
   }
 
-  logger.step('Installing Chocolatey...')
-  logger.info('This requires admin access and may take a few minutes')
+  logger.step("Installing Chocolatey…");
+  logger.info("This requires admin access and may take a few minutes");
 
   const installScript =
-    "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+    "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))";
 
-  const result = await spawn('powershell', ['-Command', installScript], {
-    stdio: 'inherit',
-  })
+  const result = await spawn("powershell", ["-Command", installScript], {
+    stdio: "inherit",
+  });
 
   if (result.code === 0) {
-    logger.success('Chocolatey installed successfully!')
-    return true
+    logger.success("Chocolatey installed successfully!");
+    return true;
   }
 
-  logger.error('Failed to install Chocolatey')
-  logger.info('You may need to run as Administrator')
-  return false
+  logger.error("Failed to install Chocolatey");
+  logger.info("You may need to run as Administrator");
+  return false;
 }
 
 /**
@@ -344,95 +338,91 @@ async function installChocolatey(): Promise<boolean> {
  */
 async function installHomebrew(): Promise<boolean> {
   if (WIN32) {
-    logger.warn('Homebrew is not available on Windows')
-    return false
+    logger.warn("Homebrew is not available on Windows");
+    return false;
   }
 
-  logger.step('Installing Homebrew...')
-  logger.info('This requires sudo access and may take a few minutes')
+  logger.step("Installing Homebrew…");
+  logger.info("This requires sudo access and may take a few minutes");
 
   const installScript =
-    '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"';
 
-  const result = await spawn('bash', ['-c', installScript], {
-    stdio: 'inherit',
-  })
+  const result = await spawn("bash", ["-c", installScript], {
+    stdio: "inherit",
+  });
 
   if (result.code === 0) {
-    logger.success('Homebrew installed successfully!')
-    return true
+    logger.success("Homebrew installed successfully!");
+    return true;
   }
 
-  logger.error('Failed to install Homebrew')
-  return false
+  logger.error("Failed to install Homebrew");
+  return false;
 }
 
 /**
  * Install a package using Chocolatey (Windows).
  */
-async function installWithChocolatey(
-  packageName: string,
-): Promise<boolean> {
-  if (!(await hasCommand('choco'))) {
-    logger.error('Chocolatey not available')
-    return false
+async function installWithChocolatey(packageName: string): Promise<boolean> {
+  if (!(await hasCommand("choco"))) {
+    logger.error("Chocolatey not available");
+    return false;
   }
 
-  logger.step(`Installing ${packageName} with Chocolatey...`)
+  logger.step(`Installing ${packageName} with Chocolatey…`);
 
-  const result = await spawn('choco', ['install', packageName, '-y'], {
-    stdio: 'inherit',
-  })
+  const result = await spawn("choco", ["install", packageName, "-y"], {
+    stdio: "inherit",
+  });
 
   if (result.code === 0) {
-    logger.success(`${packageName} installed successfully!`)
-    return true
+    logger.success(`${packageName} installed successfully!`);
+    return true;
   }
 
-  logger.error(`Failed to install ${packageName}`)
-  logger.info('You may need to run as Administrator')
-  return false
+  logger.error(`Failed to install ${packageName}`);
+  logger.info("You may need to run as Administrator");
+  return false;
 }
 
 /**
  * Install a package using Homebrew (macOS/Linux).
  */
-async function installWithHomebrew(
-  packageName: string,
-): Promise<boolean> {
-  if (!(await hasCommand('brew'))) {
-    logger.error('Homebrew not available')
-    return false
+async function installWithHomebrew(packageName: string): Promise<boolean> {
+  if (!(await hasCommand("brew"))) {
+    logger.error("Homebrew not available");
+    return false;
   }
 
-  logger.step(`Installing ${packageName} with Homebrew...`)
+  logger.step(`Installing ${packageName} with Homebrew…`);
 
-  const result = await spawn('brew', ['install', packageName], {
-    stdio: 'inherit',
-  })
+  const result = await spawn("brew", ["install", packageName], {
+    stdio: "inherit",
+  });
 
   if (result.code === 0) {
-    logger.success(`${packageName} installed successfully!`)
-    return true
+    logger.success(`${packageName} installed successfully!`);
+    return true;
   }
 
-  logger.error(`Failed to install ${packageName}`)
-  return false
+  logger.error(`Failed to install ${packageName}`);
+  return false;
 }
 
 /**
  * Parse version string to compare.
  */
 function parseVersion(versionString: string): VersionInfo | undefined {
-  const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/)
+  const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/);
   if (!match) {
-    return undefined
+    return undefined;
   }
   return {
     major: Number.parseInt(match[1], 10),
     minor: Number.parseInt(match[2], 10),
     patch: Number.parseInt(match[3], 10),
-  }
+  };
 }
 
 /**
@@ -441,38 +431,38 @@ function parseVersion(versionString: string): VersionInfo | undefined {
 export async function restoreCache(hasGh: boolean): Promise<boolean> {
   // Skip entirely if gh CLI not available.
   if (!hasGh) {
-    logger.info('Skipping cache restoration (gh CLI not available)')
-    return false
+    logger.info("Skipping cache restoration (gh CLI not available)");
+    return false;
   }
 
   // Check if already built.
-  if (existsSync('packages/cli/build') && existsSync('packages/cli/dist')) {
-    logger.info('Build artifacts already exist, skipping cache restoration')
-    return true
+  if (existsSync("packages/cli/build") && existsSync("packages/cli/dist")) {
+    logger.info("Build artifacts already exist, skipping cache restoration");
+    return true;
   }
 
   // Ensure directories exist.
-  logger.log('Ensuring build directories exist...')
-  await mkdir('packages/cli/build', { recursive: true })
-  await mkdir('packages/cli/dist', { recursive: true })
+  logger.log("Ensuring build directories exist…");
+  await mkdir("packages/cli/build", { recursive: true });
+  await mkdir("packages/cli/dist", { recursive: true });
 
-  logger.log('Attempting to restore build cache from CI...')
+  logger.log("Attempting to restore build cache from CI…");
 
   const result = await spawn(
-    'pnpm',
-    ['--filter', '@socketsecurity/cli', 'run', 'restore-cache', '--quiet'],
+    "pnpm",
+    ["--filter", "@socketsecurity/cli", "run", "restore-cache", "--quiet"],
     {
-      stdio: 'inherit',
+      stdio: "inherit",
     },
-  )
+  );
 
   if (result.code === 0) {
-    logger.log('Build cache restored!')
-    return true
+    logger.log("Build cache restored!");
+    return true;
   }
 
-  logger.info('Cache not available for this commit (will build from scratch)')
-  return false
+  logger.info("Cache not available for this commit (will build from scratch)");
+  return false;
 }
 
 /**
@@ -482,138 +472,136 @@ async function main(): Promise<number> {
   // Handle --skip-prereqs: skip prerequisite checks, proceed to cache restoration.
   if (skipPrereqs) {
     if (!quiet) {
-      logger.log('')
-      logger.log('Socket CLI Cache Restoration')
-      logger.log('============================')
-      logger.log('')
-      logger.info('Skipping prerequisite checks (--skip-prereqs)')
-      logger.log('')
+      logger.log("");
+      logger.log("Socket CLI Cache Restoration");
+      logger.log("============================");
+      logger.log("");
+      logger.info("Skipping prerequisite checks (--skip-prereqs)");
+      logger.log("");
     }
 
     // Cache restoration respects --skip-gh-cache flag.
     if (!skipGhCache) {
-      const hasGh = await hasCommand('gh')
+      const hasGh = await hasCommand("gh");
       if (!hasGh) {
-        logger.error('gh CLI not found (required for cache restoration)')
-        logger.info('Install from: https://cli.github.com/')
-        return 1
+        logger.error("gh CLI not found (required for cache restoration)");
+        logger.info("Install from: https://cli.github.com/");
+        return 1;
       }
-      await restoreCache(hasGh)
+      await restoreCache(hasGh);
     } else if (!quiet) {
-      logger.info('Skipping GitHub cache restoration (--skip-gh-cache)')
+      logger.info("Skipping GitHub cache restoration (--skip-gh-cache)");
     }
 
     if (!quiet) {
-      logger.log('')
-      logger.log('Setup complete!')
-      logger.log('')
+      logger.log("");
+      logger.log("Setup complete!");
+      logger.log("");
     }
-    return 0
+    return 0;
   }
 
   // Normal setup flow: check prerequisites and restore cache.
   if (!quiet) {
-    logger.log('')
-    logger.log('Socket CLI Developer Setup')
-    logger.log('==========================')
-    logger.log('')
+    logger.log("");
+    logger.log("Socket CLI Developer Setup");
+    logger.log("==========================");
+    logger.log("");
 
     if (autoInstall) {
-      logger.info('Auto-install mode enabled (--install)')
-      logger.log('')
+      logger.info("Auto-install mode enabled (--install)");
+      logger.log("");
     }
   }
 
-  logger.log('Checking prerequisites...')
+  logger.log("Checking prerequisites…");
   if (!quiet) {
-    logger.log('')
+    logger.log("");
   }
 
   // Check Node.js.
   const nodeOk = await checkPrerequisite({
-    command: 'node',
+    command: "node",
     minVersion: { major: 18, minor: 0, patch: 0 },
-    name: 'Node.js',
+    name: "Node.js",
     required: true,
-  })
+  });
 
   // Check pnpm.
   const pnpmOk = await checkPrerequisite({
-    command: 'pnpm',
+    command: "pnpm",
     minVersion: { major: 10, minor: 21, patch: 0 },
-    name: 'pnpm',
+    name: "pnpm",
     required: true,
-  })
+  });
 
   // Check gh CLI (optional, with auto-install).
-  const ghOk = await ensureGhCli()
+  const ghOk = await ensureGhCli();
 
   if (!quiet) {
-    logger.log('')
+    logger.log("");
   }
 
   if (!nodeOk || !pnpmOk) {
-    logger.error(
-      'Required prerequisites missing. Please install and try again.',
-    )
+    logger.error("Required prerequisites missing. Please install and try again.");
     if (!quiet) {
-      logger.log('')
+      logger.log("");
     }
     if (!nodeOk) {
-      logger.info('Node.js: https://nodejs.org/')
+      logger.info("Node.js: https://nodejs.org/");
     }
     if (!pnpmOk) {
-      logger.info('pnpm: npm install -g pnpm')
+      logger.info("pnpm: npm install -g pnpm");
     }
-    return 1
+    return 1;
   }
 
-  logger.log('All required prerequisites met!')
+  logger.log("All required prerequisites met!");
   if (!quiet) {
-    logger.log('')
+    logger.log("");
   }
 
   // Generate packages from templates.
-  await generateCliSentryPackage()
+  await generateCliSentryPackage();
   if (!quiet) {
-    logger.log('')
+    logger.log("");
   }
 
-  await generateSocketbinPackages()
+  await generateSocketbinPackages();
 
   if (!quiet) {
-    logger.log('')
+    logger.log("");
   }
 
   // Always restore cache after prerequisite checks (unless --skip-gh-cache).
   if (!skipGhCache) {
-    await restoreCache(ghOk)
+    await restoreCache(ghOk);
   } else if (!quiet) {
-    logger.info('Skipping GitHub cache restoration (--skip-gh-cache)')
+    logger.info("Skipping GitHub cache restoration (--skip-gh-cache)");
   }
 
   if (!quiet) {
-    logger.log('')
-    logger.log('Setup complete!')
-    logger.log('')
-    logger.log('Next steps:')
-    logger.log('  pnpm run build    # Build the CLI')
-    logger.log('  pnpm test         # Run tests')
-    logger.log('  pnpm exec socket  # Run the CLI')
-    logger.log('')
+    logger.log("");
+    logger.log("Setup complete!");
+    logger.log("");
+    logger.log("Next steps:");
+    logger.log("  pnpm run build    # Build the CLI");
+    logger.log("  pnpm test         # Run tests");
+    logger.log("  pnpm exec socket  # Run the CLI");
+    logger.log("");
   }
 
-  return 0
+  return 0;
 }
 
 if (!showHelp) {
   main()
     .then((code: number) => {
-      process.exitCode = code
+      process.exitCode = code;
     })
     .catch((e: unknown) => {
-      const message = e instanceof Error ? e.message : String(e)
-      logger.error(message)
-      process.exitCode = 1
-    })
+      const message = e instanceof Error ? e.message : String(e);
+      logger.error(message);
+      process.exitCode = 1;
+    });
 }

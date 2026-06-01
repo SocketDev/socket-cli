@@ -3,11 +3,11 @@ name: 🔄 Weekly Dependency Update
 on:
   schedule:
     # Run weekly on Monday at 9 AM UTC
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
   workflow_dispatch:
     inputs:
       dry-run:
-        description: 'Check for updates without creating PR'
+        description: "Check for updates without creating PR"
         required: false
         type: boolean
         default: false
@@ -31,7 +31,7 @@ jobs:
 
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@bb4bb872b58d7c97f828caea595ff534b78c507b # main (2026-05-15)
         with:
-          checkout: 'false'
+          checkout: "false"
 
       - name: Check for npm updates
         id: check
@@ -64,7 +64,7 @@ jobs:
 
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@bb4bb872b58d7c97f828caea595ff534b78c507b # main (2026-05-15)
         with:
-          checkout: 'false'
+          checkout: "false"
 
       - name: Create update branch
         id: branch
@@ -88,7 +88,7 @@ jobs:
         timeout-minutes: 10
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_ACTIONS: 'true'
+          GITHUB_ACTIONS: "true"
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
             echo "ANTHROPIC_API_KEY not set - skipping automated update"
@@ -157,7 +157,7 @@ jobs:
         timeout-minutes: 15
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_ACTIONS: 'true'
+          GITHUB_ACTIONS: "true"
         run: |
           FAILURE_LOG="$(cat build.log test.log 2>/dev/null)"
 

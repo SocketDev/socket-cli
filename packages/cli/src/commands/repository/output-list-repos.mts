@@ -1,18 +1,18 @@
-import chalkTable from 'chalk-table'
-import colors from 'yoctocolors-cjs'
+import chalkTable from "chalk-table";
+import colors from "yoctocolors-cjs";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../util/output/result-json.mts'
+import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
+import { serializeResultJson } from "../../util/output/result-json.mts";
 
-import type { Direction } from './types.mts'
-import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
-const logger = getDefaultLogger()
+import type { Direction } from "./types.mts";
+import type { CResult, OutputKind } from "../../types.mts";
+import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+const logger = getDefaultLogger();
 
 export async function outputListRepos(
-  result: CResult<SocketSdkSuccessResult<'listRepositories'>['data']>,
+  result: CResult<SocketSdkSuccessResult<"listRepositories">["data"]>,
   outputKind: OutputKind,
   page: number,
   nextPage: number | null,
@@ -21,10 +21,10 @@ export async function outputListRepos(
   direction: Direction,
 ): Promise<void> {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1
+    process.exitCode = result.code ?? 1;
   }
 
-  if (outputKind === 'json') {
+  if (outputKind === "json") {
     if (result.ok) {
       logger.log(
         serializeResultJson({
@@ -38,44 +38,40 @@ export async function outputListRepos(
             sort,
           },
         }),
-      )
+      );
     } else {
-      logger.log(serializeResultJson(result))
+      logger.log(serializeResultJson(result));
     }
-    return
+    return;
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
+    logger.fail(failMsgWithBadge(result.message, result.cause));
+    return;
   }
 
   logger.log(
-    `Result page: ${page}, results per page: ${perPage === Number.POSITIVE_INFINITY ? 'all' : perPage}, sorted by: ${sort}, direction: ${direction}`,
-  )
+    `Result page: ${page}, results per page: ${perPage === Number.POSITIVE_INFINITY ? "all" : perPage}, sorted by: ${sort}, direction: ${direction}`,
+  );
 
   const options = {
     columns: [
-      { field: 'id', name: colors.magenta('ID') },
-      { field: 'name', name: colors.magenta('Name') },
-      { field: 'visibility', name: colors.magenta('Visibility') },
-      { field: 'default_branch', name: colors.magenta('Default branch') },
-      { field: 'archived', name: colors.magenta('Archived') },
+      { field: "id", name: colors.magenta("ID") },
+      { field: "name", name: colors.magenta("Name") },
+      { field: "visibility", name: colors.magenta("Visibility") },
+      { field: "default_branch", name: colors.magenta("Default branch") },
+      { field: "archived", name: colors.magenta("Archived") },
     ],
-  }
+  };
 
-  logger.log(chalkTable(options, result.data.results))
+  logger.log(chalkTable(options, result.data.results));
   if (nextPage) {
     logger.info(
       `This is page ${page}. Server indicated there are more results available on page ${nextPage}...`,
-    )
-    logger.info(
-      `(Hint: you can use \`socket repository list --page ${nextPage}\`)`,
-    )
+    );
+    logger.info(`(Hint: you can use \`socket repository list --page ${nextPage}\`)`);
   } else if (perPage === Number.POSITIVE_INFINITY) {
-    logger.info('This should be the entire list available on the server.')
+    logger.info("This should be the entire list available on the server.");
   } else {
-    logger.info(
-      `This is page ${page}. Server indicated this is the last page with results.`,
-    )
+    logger.info(`This is page ${page}. Server indicated this is the last page with results.`);
   }
 }

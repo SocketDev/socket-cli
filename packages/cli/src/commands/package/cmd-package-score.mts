@@ -1,32 +1,29 @@
-import { handlePurlDeepScore } from './handle-purl-deep-score.mts'
-import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
-import { outputDryRunFetch } from '../../util/dry-run/output.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import {
-  getFlagApiRequirementsOutput,
-  getFlagListOutput,
-} from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mjs'
-import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { handlePurlDeepScore } from "./handle-purl-deep-score.mts";
+import { parsePackageSpecifiers } from "./parse-package-specifiers.mts";
+import { outputDryRunFetch } from "../../util/dry-run/output.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags, outputFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mjs";
+import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
-export const CMD_NAME = 'score'
+export const CMD_NAME = "score";
 
 const description =
-  'Look up score for one package which reflects all of its transitive dependencies as well'
+  "Look up score for one package which reflects all of its transitive dependencies as well";
 
-const hidden = false
+const hidden = false;
 
 export const cmdPackageScore = {
   description,
   hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -76,62 +73,62 @@ export async function run(
       $ ${command} pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60
       $ ${command} nuget/needpluscommonlibrary@1.0.0 --markdown
   `,
-  }
+  };
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const { json, markdown } = cli.flags
+  const { json, markdown } = cli.flags;
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
-  const [ecosystem = '', purl] = cli.input
+  const [ecosystem = "", purl] = cli.input;
 
-  const hasApiToken = hasDefaultApiToken()
+  const hasApiToken = hasDefaultApiToken();
 
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
-  const { purls, valid } = parsePackageSpecifiers(ecosystem, purl ? [purl] : [])
+  const { purls, valid } = parsePackageSpecifiers(ecosystem, purl ? [purl] : []);
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       test: valid,
-      message: 'First parameter must be an ecosystem or the whole purl',
-      fail: 'bad',
+      message: "First parameter must be an ecosystem or the whole purl",
+      fail: "bad",
     },
     {
       test: purls.length === 1,
-      message: 'Expecting at least one package',
-      fail: !purls.length ? 'missing' : 'too many',
+      message: "Expecting at least one package",
+      fail: !purls.length ? "missing" : "too many",
     },
     {
       nook: true,
       test: !json || !markdown,
-      message: 'The json and markdown flags cannot be both set, pick one',
-      fail: 'omit one',
+      message: "The json and markdown flags cannot be both set, pick one",
+      fail: "omit one",
     },
     {
       nook: true,
       test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
+      message: "This command requires a Socket API token for access",
+      fail: "try `socket login`",
     },
-  )
+  );
   if (!wasValidInput) {
-    return
+    return;
   }
 
   if (dryRun) {
-    outputDryRunFetch('package score', {
-      package: purls[0] || '(invalid)',
-    })
-    return
+    outputDryRunFetch("package score", {
+      package: purls[0] || "(invalid)",
+    });
+    return;
   }
 
-  await handlePurlDeepScore(purls[0] || '', outputKind)
+  await handlePurlDeepScore(purls[0] || "", outputKind);
 }

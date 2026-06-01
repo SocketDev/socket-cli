@@ -4,13 +4,13 @@
  *   management.
  */
 
-import { beforeEach, vi } from 'vitest'
+import { beforeEach, vi } from "vitest";
 
 /**
  * Clear all mocks manually.
  */
 export function clearAllMocks(): void {
-  vi.clearAllMocks()
+  vi.clearAllMocks();
 }
 
 /**
@@ -19,7 +19,7 @@ export function clearAllMocks(): void {
  */
 export function setupTestEnvironment(): void {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 }

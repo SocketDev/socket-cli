@@ -2,18 +2,18 @@
  * @file Type declarations for @babel/traverse module.
  */
 
-declare module '@babel/traverse' {
-  import type { File } from '@babel/types'
+declare module "@babel/traverse" {
+  import type { File } from "@babel/types";
 
   interface NodePath<T = any> {
-    node: T
+    node: T;
   }
 
   interface TraverseOptions {
-    [key: string]: ((path: NodePath) => void) | undefined
+    [key: string]: ((path: NodePath) => void) | undefined;
   }
 
-  function traverse(ast: File, opts: TraverseOptions): void
+  function traverse(ast: File, opts: TraverseOptions): void;
 
-  export default traverse
+  export default traverse;
 }

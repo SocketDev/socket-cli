@@ -1,26 +1,23 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
+import { debug, debugDir } from "@socketsecurity/lib-stable/debug/output";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultSpinner } from "@socketsecurity/lib-stable/spinner/default";
 
-import { formatErrorWithDetail } from '../../util/error/errors.mjs'
-import {
-  handleApiCallNoSpinner,
-  queryApiSafeText,
-} from '../../util/socket/api.mjs'
-import { setupSdk } from '../../util/socket/sdk.mjs'
+import { formatErrorWithDetail } from "../../util/error/errors.mjs";
+import { handleApiCallNoSpinner, queryApiSafeText } from "../../util/socket/api.mjs";
+import { setupSdk } from "../../util/socket/sdk.mjs";
 
-import type { CResult } from '../../types.mts'
-import type { SocketArtifact } from '../../util/alert/artifact.mts'
-import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { CResult } from "../../types.mts";
+import type { SocketArtifact } from "../../util/alert/artifact.mts";
+import type { SetupSdkOptions } from "../../util/socket/sdk.mjs";
+import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
 
-const logger = getDefaultLogger()
-const spinner = getDefaultSpinner()
+const logger = getDefaultLogger();
+const spinner = getDefaultSpinner();
 
 type FetchScanData = {
-  includeLicensePolicy?: boolean | undefined
-  sdkOpts?: SetupSdkOptions | undefined
-}
+  includeLicensePolicy?: boolean | undefined;
+  sdkOpts?: SetupSdkOptions | undefined;
+};
 
 /**
  * This fetches all the relevant pieces of data to generate a report, given a
@@ -32,159 +29,153 @@ export async function fetchScanData(
   options?: FetchScanData | undefined,
 ): Promise<
   CResult<{
-    scan: SocketArtifact[]
-    securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
+    scan: SocketArtifact[];
+    securityPolicy: SocketSdkSuccessResult<"getOrgSecurityPolicy">["data"];
   }>
 > {
   const { includeLicensePolicy, sdkOpts } = {
     __proto__: null,
     ...options,
-  } as FetchScanData
-  const sockSdkCResult = await setupSdk(sdkOpts)
+  } as FetchScanData;
+  const sockSdkCResult = await setupSdk(sdkOpts);
   if (!sockSdkCResult.ok) {
-    return sockSdkCResult
+    return sockSdkCResult;
   }
-  const sockSdk = sockSdkCResult.data
+  const sockSdk = sockSdkCResult.data;
 
-  let policyStatus = 'requested...'
-  let scanStatus = 'requested...'
-  let finishedFetching = false
+  let policyStatus = "requested…";
+  let scanStatus = "requested…";
+  let finishedFetching = false;
 
   function updateScan(status: string) {
-    scanStatus = status
-    updateProgress()
+    scanStatus = status;
+    updateProgress();
   }
 
   function updatePolicy(status: string) {
-    policyStatus = status
-    updateProgress()
+    policyStatus = status;
+    updateProgress();
   }
 
   function updateProgress() {
     if (finishedFetching) {
-      spinner.stop()
-      logger.info(
-        `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`,
-      )
+      spinner.stop();
+      logger.info(`Scan result: ${scanStatus}. Security policy: ${policyStatus}.`);
     } else {
-      spinner.start(
-        `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`,
-      )
+      spinner.start(`Scan result: ${scanStatus}. Security policy: ${policyStatus}.`);
     }
   }
 
   async function fetchScanResult(): Promise<CResult<SocketArtifact[]>> {
     const result = await queryApiSafeText(
-      `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
-    )
+      `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? "?include_license_details=true" : ""}`,
+    );
 
-    updateScan('response received')
+    updateScan("response received");
 
     if (!result.ok) {
-      return result
+      return result;
     }
 
-    const ndJsonString = result.data
+    const ndJsonString = result.data;
 
     // This is nd-json; each line is a json object.
-    const lines = ndJsonString.split('\n').filter(Boolean)
-    const data: SocketArtifact[] = []
+    const lines = ndJsonString.split("\n").filter(Boolean);
+    const data: SocketArtifact[] = [];
     for (let i = 0, { length } = lines; i < length; i += 1) {
-      const line = lines[i]!
+      const line = lines[i]!;
       try {
-        data.push(JSON.parse(line))
+        data.push(JSON.parse(line));
       } catch (e) {
-        debug('Failed to parse report data line as JSON')
-        debugDir({ error: e, line })
-        updateScan('received invalid JSON response')
+        debug("Failed to parse report data line as JSON");
+        debugDir({ error: e, line });
+        updateScan("received invalid JSON response");
         return {
           ok: false,
-          message: 'Invalid Socket API response',
+          message: "Invalid Socket API response",
           cause:
-            'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
-        }
+            "The Socket API responded with at least one line that was not valid JSON. Please report if this persists.",
+        };
       }
     }
 
-    updateScan('success')
-    return { ok: true, data }
+    updateScan("success");
+    return { ok: true, data };
   }
 
   async function fetchSecurityPolicy(): Promise<
-    CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>
+    CResult<SocketSdkSuccessResult<"getOrgSecurityPolicy">["data"]>
   > {
     const result = (await handleApiCallNoSpinner(
       sockSdk.getOrgSecurityPolicy(orgSlug),
-      'GetOrgSecurityPolicy',
-    )) as CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>
+      "GetOrgSecurityPolicy",
+    )) as CResult<SocketSdkSuccessResult<"getOrgSecurityPolicy">["data"]>;
 
-    updatePolicy('received policy')
+    updatePolicy("received policy");
 
-    return result
+    return result;
   }
 
-  updateProgress()
+  updateProgress();
 
   const results = await Promise.allSettled([
-    fetchScanResult().catch(e => {
-      updateScan('failure; unknown blocking error occurred')
+    fetchScanResult().catch((e) => {
+      updateScan("failure; unknown blocking error occurred");
       return {
         ok: false as const,
-        message: 'Socket API error',
+        message: "Socket API error",
         cause:
-          formatErrorWithDetail('Error requesting scan', e) ||
-          'Error requesting scan: (no error message found)',
-      }
+          formatErrorWithDetail("Error requesting scan", e) ||
+          "Error requesting scan: (no error message found)",
+      };
     }),
-    fetchSecurityPolicy().catch(e => {
-      updatePolicy('failure; unknown blocking error occurred')
+    fetchSecurityPolicy().catch((e) => {
+      updatePolicy("failure; unknown blocking error occurred");
       return {
         ok: false as const,
-        message: 'Socket API error',
+        message: "Socket API error",
         cause:
-          formatErrorWithDetail('Error requesting policy', e) ||
-          'Error requesting policy: (no error message found)',
-      }
+          formatErrorWithDetail("Error requesting policy", e) ||
+          "Error requesting policy: (no error message found)",
+      };
     }),
   ]).finally(() => {
-    finishedFetching = true
-    updateProgress()
-  })
+    finishedFetching = true;
+    updateProgress();
+  });
 
   const scan: CResult<SocketArtifact[]> =
-    results[0].status === 'fulfilled'
+    results[0].status === "fulfilled"
       ? results[0].value
       : {
           ok: false as const,
-          message: 'Unexpected error',
-          cause: 'Promise rejected unexpectedly',
-        }
+          message: "Unexpected error",
+          cause: "Promise rejected unexpectedly",
+        };
 
-  const securityPolicy: CResult<
-    SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
-  > =
-    results[1].status === 'fulfilled'
+  const securityPolicy: CResult<SocketSdkSuccessResult<"getOrgSecurityPolicy">["data"]> =
+    results[1].status === "fulfilled"
       ? results[1].value
       : {
           ok: false as const,
-          message: 'Unexpected error',
-          cause: 'Promise rejected unexpectedly',
-        }
+          message: "Unexpected error",
+          cause: "Promise rejected unexpectedly",
+        };
 
   if (!scan.ok) {
-    return scan
+    return scan;
   }
   if (!securityPolicy.ok) {
-    return securityPolicy
+    return securityPolicy;
   }
 
   /* c8 ignore start - defensive: scan.data is always SocketArtifact[] from the loop above */
   if (!Array.isArray(scan.data)) {
     return {
       ok: false,
-      message: 'Failed to fetch',
-      cause: 'Was unable to fetch scan result, bailing',
-    }
+      message: "Failed to fetch",
+      cause: "Was unable to fetch scan result, bailing",
+    };
   }
   /* c8 ignore stop */
 
@@ -194,5 +185,5 @@ export async function fetchScanData(
       scan: scan.data satisfies SocketArtifact[],
       securityPolicy: securityPolicy.data,
     },
-  }
+  };
 }

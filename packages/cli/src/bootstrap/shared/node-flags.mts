@@ -8,21 +8,21 @@
  * --disable-sigusr1 for newer Node, --no-inspect for older versions.
  */
 export function getNodeDisableSigusr1Flags(): string[] {
-  return supportsDisableSigusr1() ? ['--disable-sigusr1'] : ['--no-inspect']
+  return supportsDisableSigusr1() ? ["--disable-sigusr1"] : ["--no-inspect"];
 }
 
 /**
  * Get Node major version number.
  */
 export function getNodeMajorVersion(): number {
-  return Number.parseInt(process.version.slice(1).split('.')[0] || '0', 10)
+  return Number.parseInt(process.version.slice(1).split(".")[0] || "0", 10);
 }
 
 /**
  * Get Node minor version number.
  */
 export function getNodeMinorVersion(): number {
-  return Number.parseInt(process.version.slice(1).split('.')[1] || '0', 10)
+  return Number.parseInt(process.version.slice(1).split(".")[1] || "0", 10);
 }
 
 /**
@@ -30,17 +30,17 @@ export function getNodeMinorVersion(): number {
  * v23.7.0+, v24.8.0+ (stable in v22.20.0+, v24.8.0+).
  */
 export function supportsDisableSigusr1(): boolean {
-  const major = getNodeMajorVersion()
-  const minor = getNodeMinorVersion()
+  const major = getNodeMajorVersion();
+  const minor = getNodeMinorVersion();
 
   if (major >= 24) {
-    return minor >= 8
+    return minor >= 8;
   }
   if (major === 23) {
-    return minor >= 7
+    return minor >= 7;
   }
   if (major === 22) {
-    return minor >= 14
+    return minor >= 14;
   }
-  return false
+  return false;
 }

@@ -9,14 +9,14 @@
  *   survives merges. The `overrides:` block is created when missing.
  */
 
-import { existsSync, writeFileSync } from 'node:fs'
-import path from 'node:path'
+import { existsSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
-import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
-import { isMap, parseDocument } from 'yaml'
-import type { Document, YAMLMap } from 'yaml'
+import { safeReadFile } from "@socketsecurity/lib-stable/fs/read-file";
+import { isMap, parseDocument } from "yaml";
+import type { Document, YAMLMap } from "yaml";
 
-import type { Overrides } from './types.mts'
+import type { Overrides } from "./types.mts";
 
 /**
  * Merge `overrides` into `pnpm-workspace.yaml` at
@@ -33,29 +33,29 @@ export async function updatePnpmWorkspaceYamlOverrides(
   repoRoot: string,
   overrides: Overrides,
 ): Promise<void> {
-  const yamlPath = path.join(repoRoot, 'pnpm-workspace.yaml')
+  const yamlPath = path.join(repoRoot, "pnpm-workspace.yaml");
   const existing = existsSync(yamlPath)
-    ? await safeReadFile(yamlPath, { encoding: 'utf8' })
-    : undefined
+    ? await safeReadFile(yamlPath, { encoding: "utf8" })
+    : undefined;
 
-  let doc: Document
+  let doc: Document;
   if (existing) {
-    doc = parseDocument(existing, { keepSourceTokens: true })
+    doc = parseDocument(existing, { keepSourceTokens: true });
   } else {
     // Minimal new file. The Document is empty until we add `overrides:`.
-    doc = parseDocument('', { keepSourceTokens: true })
-    doc.contents = doc.createNode({}) as ReturnType<Document['createNode']>
+    doc = parseDocument("", { keepSourceTokens: true });
+    doc.contents = doc.createNode({}) as ReturnType<Document["createNode"]>;
   }
 
   // Locate or create the `overrides:` map.
-  let overridesNode = doc.get('overrides', true) as unknown
+  let overridesNode = doc.get("overrides", true) as unknown;
   if (!isMap(overridesNode)) {
-    doc.set('overrides', overrides)
-    overridesNode = doc.get('overrides', true)
+    doc.set("overrides", overrides);
+    overridesNode = doc.get("overrides", true);
   } else {
-    const map = overridesNode as YAMLMap<unknown, unknown>
+    const map = overridesNode as YAMLMap<unknown, unknown>;
     for (const [key, value] of Object.entries(overrides)) {
-      map.set(key, value)
+      map.set(key, value);
     }
   }
 
@@ -65,7 +65,7 @@ export async function updatePnpmWorkspaceYamlOverrides(
     indent: 2,
     lineWidth: 0,
     minContentWidth: 0,
-  })
+  });
 
-  writeFileSync(yamlPath, output, 'utf8')
+  writeFileSync(yamlPath, output, "utf8");
 }

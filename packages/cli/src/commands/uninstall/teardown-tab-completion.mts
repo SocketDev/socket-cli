@@ -1,70 +1,67 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import path from 'node:path'
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
-import { homePath } from '../../constants/paths.mts'
-import {
-  COMPLETION_CMD_PREFIX,
-  getBashrcDetails,
-} from '../../util/cli/completion.mts'
+import { homePath } from "../../constants/paths.mts";
+import { COMPLETION_CMD_PREFIX, getBashrcDetails } from "../../util/cli/completion.mts";
 
-import type { CResult } from '../../types.mts'
+import type { CResult } from "../../types.mts";
 
 export function findRemainingCompletionSetups(bashrc: string): string[] {
   return bashrc
-    .split('\n')
-    .map(s => s.trim())
-    .filter(s => s.startsWith(COMPLETION_CMD_PREFIX))
-    .map(s => s.slice(COMPLETION_CMD_PREFIX.length).trim())
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((s) => s.startsWith(COMPLETION_CMD_PREFIX))
+    .map((s) => s.slice(COMPLETION_CMD_PREFIX.length).trim());
 }
 
 export async function teardownTabCompletion(
   targetName: string,
 ): Promise<CResult<{ action: string; left: string[] }>> {
-  const result = getBashrcDetails(targetName)
+  const result = getBashrcDetails(targetName);
   if (!result.ok) {
-    return result
+    return result;
   }
 
-  const { completionCommand, sourcingCommand, toAddToBashrc } = result.data
+  const { completionCommand, sourcingCommand, toAddToBashrc } = result.data;
 
   // Remove from ~/.bashrc if found
-  const bashrc = homePath ? path.join(homePath, '.bashrc') : ''
+  const bashrc = homePath ? path.join(homePath, ".bashrc") : "";
 
   if (bashrc && existsSync(bashrc)) {
-    const content = readFileSync(bashrc, 'utf8')
+    const content = readFileSync(bashrc, "utf8");
 
     if (content.includes(toAddToBashrc)) {
       const newContent = content
         // Try to remove the whole thing with comment first
-        .replaceAll(toAddToBashrc, '')
+        .replaceAll(toAddToBashrc, "")
         // Comment may have been edited away, try to remove the command at least
-        .replaceAll(sourcingCommand, '')
-        .replaceAll(completionCommand, '')
+        .replaceAll(sourcingCommand, "")
+        .replaceAll(completionCommand, "");
 
-      writeFileSync(bashrc, newContent, 'utf8')
+      writeFileSync(bashrc, newContent, "utf8");
 
       return {
         ok: true,
         data: {
-          action: 'removed',
+          action: "removed",
           left: findRemainingCompletionSetups(newContent),
         },
-        message: 'Removed completion from ~/.bashrc',
-      }
+        message: "Removed completion from ~/.bashrc",
+      };
     }
-    const left = findRemainingCompletionSetups(content)
+    const left = findRemainingCompletionSetups(content);
     return {
       ok: true,
       data: {
-        action: 'missing',
+        action: "missing",
         left,
       },
-      message: `Completion was not found in ~/.bashrc${left.length ? ' (you may need to manually edit your .bashrc to clean this up...)' : ''}`,
-    }
+      message: `Completion was not found in ~/.bashrc${left.length ? " (you may need to manually edit your .bashrc to clean this up...)" : ""}`,
+    };
   }
   return {
     ok: true, // Eh. I think this makes most sense.
-    data: { action: 'not found', left: [] },
-    message: '~/.bashrc not found, skipping',
-  }
+    data: { action: "not found", left: [] },
+    message: "~/.bashrc not found, skipping",
+  };
 }

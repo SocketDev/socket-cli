@@ -1,182 +1,174 @@
-
 /**
  * E2E test runner. Options: --js, --sea, --all.
  */
 
-import { existsSync } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import colors from 'yoctocolors-cjs'
+import colors from "yoctocolors-cjs";
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { EnvironmentVariables } from './environment-variables.mts'
-import { loadEnvFile } from './util/load-env.mts'
+import { EnvironmentVariables } from "./environment-variables.mts";
+import { loadEnvFile } from "./util/load-env.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const ROOT_DIR = path.resolve(__dirname, '..')
-const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
-const NODE_MODULES_BIN_PATH = path.join(MONOREPO_ROOT, 'node_modules/.bin')
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(__dirname, "..");
+const MONOREPO_ROOT = path.resolve(ROOT_DIR, "../..");
+const NODE_MODULES_BIN_PATH = path.join(MONOREPO_ROOT, "node_modules/.bin");
 
 const BINARY_PATHS = {
   __proto__: null,
-  js: path.join(ROOT_DIR, 'dist/cli.js'),
-  sea: path.join(ROOT_DIR, 'dist/sea/socket-sea'),
-}
+  js: path.join(ROOT_DIR, "dist/cli.js"),
+  sea: path.join(ROOT_DIR, "dist/sea/socket-sea"),
+};
 
 const BINARY_BUILD_COMMANDS = {
   __proto__: null,
-  js: ['pnpm', '--filter', '@socketsecurity/cli', 'run', 'build:js'],
-  sea: ['pnpm', '--filter', '@socketsecurity/cli', 'run', 'build:sea'],
-}
+  js: ["pnpm", "--filter", "@socketsecurity/cli", "run", "build:js"],
+  sea: ["pnpm", "--filter", "@socketsecurity/cli", "run", "build:sea"],
+};
 
 const BINARY_FLAGS = {
   __proto__: null,
   all: {
-    TEST_SEA_BINARY: '1',
+    TEST_SEA_BINARY: "1",
   },
   js: {},
   sea: {
-    TEST_SEA_BINARY: '1',
+    TEST_SEA_BINARY: "1",
   },
-}
+};
 
 export async function buildBinary(binaryType) {
-  const buildCommand = BINARY_BUILD_COMMANDS[binaryType]
+  const buildCommand = BINARY_BUILD_COMMANDS[binaryType];
   if (!buildCommand) {
-    logger.error('No build command defined for binary type:', binaryType)
-    return false
+    logger.error("No build command defined for binary type:", binaryType);
+    return false;
   }
 
-  logger.log(`${colors.blue('⚙')} Building ${binaryType} binary...`)
-  logger.log(`${colors.dim(`  ${buildCommand.join(' ')}`)}`)
-  logger.log('')
+  logger.log(`${colors.blue("⚙")} Building ${binaryType} binary…`);
+  logger.log(`${colors.dim(`  ${buildCommand.join(" ")}`)}`);
+  logger.log("");
 
   try {
     const result = await spawn(buildCommand[0], buildCommand.slice(1), {
       cwd: MONOREPO_ROOT,
-      stdio: 'inherit',
-    })
+      stdio: "inherit",
+    });
 
     if (result.code !== 0) {
-      logger.error(`${colors.red('✗')} Failed to build ${binaryType} binary`)
-      return false
+      logger.error(`${colors.red("✗")} Failed to build ${binaryType} binary`);
+      return false;
     }
 
-    logger.log(`${colors.green('✓')} Successfully built ${binaryType} binary`)
-    logger.log('')
-    return true
+    logger.log(`${colors.green("✓")} Successfully built ${binaryType} binary`);
+    logger.log("");
+    return true;
   } catch (e) {
-    logger.error(`${colors.red('✗')} Error building ${binaryType} binary:`, e)
-    return false
+    logger.error(`${colors.red("✗")} Error building ${binaryType} binary:`, e);
+    return false;
   }
 }
 
 export async function checkBinaryExists(binaryType) {
   // For explicit binary requests (js, sea), check and auto-build if needed.
-  if (binaryType === 'js' || binaryType === 'sea') {
-    const binaryPath = BINARY_PATHS[binaryType]
+  if (binaryType === "js" || binaryType === "sea") {
+    const binaryPath = BINARY_PATHS[binaryType];
     if (!existsSync(binaryPath)) {
-      logger.log('')
-      logger.warn(`${colors.yellow('⚠')} Binary not found: ${binaryPath}`)
-      logger.log('')
+      logger.log("");
+      logger.warn(`${colors.yellow("⚠")} Binary not found: ${binaryPath}`);
+      logger.log("");
 
       // Auto-build (builds are fast using prebuilt binaries + binject).
-      logger.log('Auto-building missing binary...')
-      const buildSuccess = await buildBinary(binaryType)
+      logger.log("Auto-building missing binary…");
+      const buildSuccess = await buildBinary(binaryType);
 
       if (!buildSuccess || !existsSync(binaryPath)) {
-        logger.error(`${colors.red('✗')} Failed to build ${binaryType} binary`)
-        logger.log('To build manually, run:')
-        logger.log(`  ${BINARY_BUILD_COMMANDS[binaryType].join(' ')}`)
-        logger.log('')
-        return false
+        logger.error(`${colors.red("✗")} Failed to build ${binaryType} binary`);
+        logger.log("To build manually, run:");
+        logger.log(`  ${BINARY_BUILD_COMMANDS[binaryType].join(" ")}`);
+        logger.log("");
+        return false;
       }
     }
-    logger.log(`${colors.green('✓')} Binary found: ${binaryPath}`)
-    logger.log('')
+    logger.log(`${colors.green("✓")} Binary found: ${binaryPath}`);
+    logger.log("");
   }
 
   // For 'all', we'll skip missing binaries (handled by test suite).
-  return true
+  return true;
 }
 
 export async function runVitest(binaryType) {
-  const envVars = BINARY_FLAGS[binaryType]
-  logger.log(
-    `${colors.blue('ℹ')} Running e2e tests for ${binaryType} binary...`,
-  )
-  logger.log('')
+  const envVars = BINARY_FLAGS[binaryType];
+  logger.log(`${colors.blue("ℹ")} Running e2e tests for ${binaryType} binary…`);
+  logger.log("");
 
   // Check if binary exists when explicitly requested.
-  const binaryExists = await checkBinaryExists(binaryType)
+  const binaryExists = await checkBinaryExists(binaryType);
   if (!binaryExists) {
-    throw new Error('Binary not found')
+    throw new Error("Binary not found");
   }
 
   // Load external tool versions for INLINED_* env vars.
   // This is required for tests to load external tool versions (coana, cdxgen, synp, etc).
-  const externalToolVersions = EnvironmentVariables.getTestVariables()
+  const externalToolVersions = EnvironmentVariables.getTestVariables();
 
   // Load .env.e2e configuration (falls back gracefully if missing).
-  const e2eEnv = loadEnvFile(path.join(ROOT_DIR, '.env.e2e'))
+  const e2eEnv = loadEnvFile(path.join(ROOT_DIR, ".env.e2e"));
 
   // Resolve vitest path.
-  const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
-  const vitestPath = path.join(NODE_MODULES_BIN_PATH, vitestCmd)
+  const vitestCmd = WIN32 ? "vitest.cmd" : "vitest";
+  const vitestPath = path.join(NODE_MODULES_BIN_PATH, vitestCmd);
 
   const result = await spawn(
     vitestPath,
-    [
-      'run',
-      'test/e2e/binary-test-suite.e2e.test.mts',
-      '--config',
-      'vitest.e2e.config.mts',
-    ],
+    ["run", "test/e2e/binary-test-suite.e2e.test.mts", "--config", "vitest.e2e.config.mts"],
     {
       cwd: ROOT_DIR,
       env: {
         ...e2eEnv,
         ...process.env,
         // Automatically enable tests when explicitly running e2e.mts.
-        RUN_E2E_TESTS: '1',
+        RUN_E2E_TESTS: "1",
         // Load external tool versions (INLINED_* env vars).
         ...externalToolVersions,
         // Binary-specific test flags.
         ...envVars,
       },
-      stdio: 'inherit',
+      stdio: "inherit",
     },
-  )
+  );
 
   // Pass through vitest's exit code to signal test success/failure to CI.
-  process.exitCode = result.code ?? 0
+  process.exitCode = result.code ?? 0;
 }
 
 async function main() {
-  const args = process.argv.slice(2)
-  const flag = args.find(arg => arg.startsWith('--'))?.slice(2)
+  const args = process.argv.slice(2);
+  const flag = args.find((arg) => arg.startsWith("--"))?.slice(2);
 
   if (!flag || !BINARY_FLAGS[flag]) {
-    logger.error('Invalid or missing flag')
-    logger.log('')
-    logger.log('Usage:')
-    logger.log('  node scripts/e2e.mts --js     # Test JS binary')
-    logger.log('  node scripts/e2e.mts --sea    # Test SEA binary')
-    logger.log('  node scripts/e2e.mts --all    # Test all binaries')
-    logger.log('')
-    throw new Error('Invalid or missing flag')
+    logger.error("Invalid or missing flag");
+    logger.log("");
+    logger.log("Usage:");
+    logger.log("  node scripts/e2e.mts --js     # Test JS binary");
+    logger.log("  node scripts/e2e.mts --sea    # Test SEA binary");
+    logger.log("  node scripts/e2e.mts --all    # Test all binaries");
+    logger.log("");
+    throw new Error("Invalid or missing flag");
   }
 
-  await runVitest(flag)
+  await runVitest(flag);
 }
 
-main().catch(e => {
-  logger.error('E2E test runner failed:', e)
-  process.exitCode = 1
-})
+main().catch((e) => {
+  logger.error("E2E test runner failed:", e);
+  process.exitCode = 1;
+});

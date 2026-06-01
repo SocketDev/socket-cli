@@ -7,72 +7,72 @@
 
 export interface PrProvider {
   // Core operations.
-  createPr(options: CreatePrOptions): Promise<PrResponse>
-  updatePr(options: UpdatePrOptions): Promise<void>
-  listPrs(options: ListPrsOptions): Promise<PrMatch[]>
-  deleteBranch(branch: string): Promise<boolean>
-  addComment(options: AddCommentOptions): Promise<void>
+  createPr(options: CreatePrOptions): Promise<PrResponse>;
+  updatePr(options: UpdatePrOptions): Promise<void>;
+  listPrs(options: ListPrsOptions): Promise<PrMatch[]>;
+  deleteBranch(branch: string): Promise<boolean>;
+  addComment(options: AddCommentOptions): Promise<void>;
 
   // Metadata.
-  getProviderName(): 'github' | 'gitlab'
-  supportsGraphQL(): boolean
+  getProviderName(): "github" | "gitlab";
+  supportsGraphQL(): boolean;
 }
 
 export interface CreatePrOptions {
-  owner: string
-  repo: string
-  title: string
-  head: string
-  base: string
-  body: string
-  retries?: number | undefined
+  owner: string;
+  repo: string;
+  title: string;
+  head: string;
+  base: string;
+  body: string;
+  retries?: number | undefined;
 }
 
 export interface UpdatePrOptions {
-  owner: string
-  repo: string
-  prNumber: number
-  head: string
-  base: string
+  owner: string;
+  repo: string;
+  prNumber: number;
+  head: string;
+  base: string;
 }
 
 export interface AddCommentOptions {
-  owner: string
-  repo: string
-  prNumber: number
-  body: string
+  owner: string;
+  repo: string;
+  prNumber: number;
+  body: string;
 }
 
 export interface ListPrsOptions {
-  owner: string
-  repo: string
-  author?: string | undefined
-  states?: 'all' | 'open' | 'closed' | undefined
-  ghsaId?: string | undefined
+  owner: string;
+  repo: string;
+  author?: string | undefined;
+  states?: "all" | "open" | "closed" | undefined;
+  ghsaId?: string | undefined;
 }
 
 export interface PrResponse {
-  number: number
-  url: string
-  state: 'open' | 'closed' | 'merged'
+  number: number;
+  url: string;
+  state: "open" | "closed" | "merged";
 }
 
 export interface PrMatch {
-  number: number
-  title: string
-  author: string
-  headRefName: string
-  baseRefName: string
-  state: 'OPEN' | 'CLOSED' | 'MERGED'
-  mergeStateStatus: MergeStateStatus
+  number: number;
+  title: string;
+  author: string;
+  headRefName: string;
+  baseRefName: string;
+  state: "OPEN" | "CLOSED" | "MERGED";
+  mergeStateStatus: MergeStateStatus;
 }
 
 export type MergeStateStatus =
-  | 'BEHIND'
-  | 'BLOCKED'
-  | 'CLEAN'
-  | 'DIRTY'
-  | 'DRAFT'
-  | 'HAS_HOOKS'
-  | 'UNKNOWN'
-  | 'UNSTABLE'
+  | "BEHIND"
+  | "BLOCKED"
+  | "CLEAN"
+  | "DIRTY"
+  | "DRAFT"
+  | "HAS_HOOKS"
+  | "UNKNOWN"
+  | "UNSTABLE";

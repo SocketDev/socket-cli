@@ -9,20 +9,20 @@
  *      binject.
  */
 
-import { existsSync, promises as fs } from 'node:fs'
-import path from 'node:path'
+import { existsSync, promises as fs } from "node:fs";
+import path from "node:path";
 
-import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { safeMkdir } from "@socketsecurity/lib-stable/fs/safe";
+import { normalizePath } from "@socketsecurity/lib-stable/paths/normalize";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
 import {
   detectMusl,
   downloadBinject,
   getLatestBinjectVersion,
-} from '../util/asset-manager-compat.mts'
-import { getRootPath, logger } from './downloads.mts'
-import { SOCKET_CLI_SEA_BUILD_DIR } from '../constants/paths.mts'
+} from "../util/asset-manager-compat.mts";
+import { getRootPath, logger } from "./downloads.mts";
+import { SOCKET_CLI_SEA_BUILD_DIR } from "../constants/paths.mts";
 
 // =============================================================================
 // Section 1: SEA Configuration Generation.
@@ -50,14 +50,12 @@ import { SOCKET_CLI_SEA_BUILD_DIR } from '../constants/paths.mts'
  * @returns Promise resolving to absolute path of generated config file.
  */
 export async function generateSeaConfig(entryPoint, outputPath) {
-  const outputName = path.basename(outputPath, path.extname(outputPath))
-  const configDir = path.dirname(outputPath)
-  const configPath = normalizePath(
-    path.join(configDir, `sea-config-${outputName}.json`),
-  )
+  const outputName = path.basename(outputPath, path.extname(outputPath));
+  const configDir = path.dirname(outputPath);
+  const configPath = normalizePath(path.join(configDir, `sea-config-${outputName}.json`));
   // Use relative paths in sea-config.json (binject requires relative paths).
-  const blobPathRelative = `sea-blob-${outputName}.blob`
-  const mainPathRelative = path.relative(configDir, entryPoint)
+  const blobPathRelative = `sea-blob-${outputName}.blob`;
+  const mainPathRelative = path.relative(configDir, entryPoint);
 
   const config = {
     // No assets to minimize size.
@@ -77,14 +75,14 @@ export async function generateSeaConfig(entryPoint, outputPath) {
     // The node-smol C stub will check for updates on exit and display notifications.
     updateConfig: {
       // Check GitHub releases API for socket-cli releases.
-      checkIntervalSeconds: 86400,
-      tagPrefix: 'socket-cli-',
-      url: 'https://api.github.com/repos/SocketDev/socket-cli/releases',
+      checkIntervalSeconds: 86_400,
+      tagPrefix: "socket-cli-",
+      url: "https://api.github.com/repos/SocketDev/socket-cli/releases",
     },
-  }
+  };
 
-  await fs.writeFile(configPath, JSON.stringify(config, null, 2))
-  return configPath
+  await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+  return configPath;
 }
 // c8 ignore stop
 
@@ -157,92 +155,68 @@ export async function generateSeaConfig(entryPoint, outputPath) {
  *
  * @returns Promise that resolves when injection completes.
  */
-export async function injectSeaBlob(
-  nodeBinary,
-  configPath,
-  outputPath,
-  cacheId,
-  vfsTarGz,
-) {
+export async function injectSeaBlob(nodeBinary, configPath, outputPath, cacheId, vfsTarGz) {
   // Get or download binject binary.
-  let binjectVersion
+  let binjectVersion;
   try {
-    binjectVersion = await getLatestBinjectVersion()
+    binjectVersion = await getLatestBinjectVersion();
   } catch (e) {
     // If we can't fetch the latest version, check if we have a cached version.
-    const platform = process.platform
-    const arch = process.arch
+    const platform = process.platform;
+    const arch = process.arch;
     // Detect actual libc on Linux (musl for Alpine, glibc for standard distros).
-    const muslSuffix = detectMusl() ? '-musl' : ''
-    const platformArch = `${platform}-${arch}${muslSuffix}`
-    const rootPath = getRootPath()
+    const muslSuffix = detectMusl() ? "-musl" : "";
+    const platformArch = `${platform}-${arch}${muslSuffix}`;
+    const rootPath = getRootPath();
     const binjectDir = normalizePath(
-      path.join(
-        rootPath,
-        `packages/build-infra/build/downloaded/binject/${platformArch}`,
-      ),
-    )
-    const versionPath = normalizePath(path.join(binjectDir, '.version'))
+      path.join(rootPath, `packages/build-infra/build/downloaded/binject/${platformArch}`),
+    );
+    const versionPath = normalizePath(path.join(binjectDir, ".version"));
 
     if (existsSync(versionPath)) {
-      const versionContent = (await fs.readFile(versionPath, 'utf8')).trim()
+      const versionContent = (await fs.readFile(versionPath, "utf8")).trim();
       if (!versionContent) {
         throw new Error(
           `Cached binject version file is empty at ${versionPath}. ` +
-            'Please delete the cache directory and try again.',
+            "Please delete the cache directory and try again.",
           { cause: e },
-        )
+        );
       }
-      binjectVersion = versionContent
-      logger.warn('Failed to fetch latest binject version from GitHub')
-      logger.warn(`Using cached binject version ${binjectVersion}`)
+      binjectVersion = versionContent;
+      logger.warn("Failed to fetch latest binject version from GitHub");
+      logger.warn(`Using cached binject version ${binjectVersion}`);
     } else {
       throw new Error(
         `Failed to fetch binject version from GitHub and no cached version found: ${e.message}`,
         { cause: e },
-      )
+      );
     }
   }
 
-  const binjectPath = await downloadBinject(binjectVersion)
+  const binjectPath = await downloadBinject(binjectVersion);
 
   // Create unique temp directory for this build's extraction cache.
   // This prevents parallel builds from interfering with each other.
-  const env = { ...process.env }
+  const env = { ...process.env };
   if (cacheId) {
-    const uniqueCacheDir = normalizePath(
-      path.join(SOCKET_CLI_SEA_BUILD_DIR, cacheId),
-    )
-    await safeMkdir(uniqueCacheDir)
-    env['SOCKET_DLX_DIR'] = uniqueCacheDir
+    const uniqueCacheDir = normalizePath(path.join(SOCKET_CLI_SEA_BUILD_DIR, cacheId));
+    await safeMkdir(uniqueCacheDir);
+    env["SOCKET_DLX_DIR"] = uniqueCacheDir;
   }
 
   // Inject SEA blob into Node binary using binject.
-  const args = [
-    'inject',
-    '--executable',
-    nodeBinary,
-    '--output',
-    outputPath,
-    '--sea',
-    configPath,
-  ]
+  const args = ["inject", "--executable", nodeBinary, "--output", outputPath, "--sea", configPath];
 
   // Add VFS if provided (compressed tar.gz), otherwise use vfs-compat mode.
   if (vfsTarGz && existsSync(vfsTarGz)) {
-    args.push('--vfs', vfsTarGz)
+    args.push("--vfs", vfsTarGz);
   } else {
-    args.push('--vfs-compat')
+    args.push("--vfs-compat");
   }
 
-  const result = await spawn(binjectPath, args, { env, stdio: 'inherit' })
+  const result = await spawn(binjectPath, args, { env, stdio: "inherit" });
 
-  if (
-    result &&
-    typeof result === 'object' &&
-    'code' in result &&
-    result.code !== 0
-  ) {
-    throw new Error(`binject failed with exit code ${result.code}`)
+  if (result && typeof result === "object" && "code" in result && result.code !== 0) {
+    throw new Error(`binject failed with exit code ${result.code}`);
   }
 }

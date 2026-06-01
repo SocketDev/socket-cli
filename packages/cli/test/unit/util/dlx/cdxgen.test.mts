@@ -12,156 +12,152 @@
  * Related Files: - util/dlx/cdxgen.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { spawnCdxgenDlx } from '../../../../src/util/dlx/spawn.mts'
+import { spawnCdxgenDlx } from "../../../../src/util/dlx/spawn.mts";
 
 // Mock spawnDlx function.
-vi.mock('../../../../src/util/dlx/spawn.mts', () => {
-  const mockSpawnDlx = vi.fn()
+vi.mock(import("../../../../src/util/dlx/spawn.mts"), () => {
+  const mockSpawnDlx = vi.fn();
   // Return the actual implementation for spawnCdxgenDlx.
   return {
     spawnDlx: mockSpawnDlx,
-    spawnCdxgenDlx: async (
-      args: unknown,
-      options: unknown,
-      spawnExtra: unknown,
-    ) => {
+    spawnCdxgenDlx: async (args: unknown, options: unknown, spawnExtra: unknown) => {
       // Replicate the actual implementation.
       return mockSpawnDlx(
-        { name: '@cyclonedx/cdxgen', version: 'undefined' },
+        { name: "@cyclonedx/cdxgen", version: "undefined" },
         args,
         { force: false, silent: true, ...options },
         spawnExtra,
-      )
+      );
     },
-  }
-})
+  };
+});
 
-describe('spawnCdxgenDlx', () => {
-  let mockSpawnDlx: ReturnType<typeof vi.fn>
+describe("spawnCdxgenDlx", () => {
+  let mockSpawnDlx: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
-    vi.clearAllMocks()
-    const { spawnDlx } = await import('../../../../src/util/dlx/spawn.mts')
-    mockSpawnDlx = vi.mocked(spawnDlx)
+    vi.clearAllMocks();
+    const { spawnDlx } = await import("../../../../src/util/dlx/spawn.mts");
+    mockSpawnDlx = vi.mocked(spawnDlx);
     // Setup default resolved value for the mock.
     mockSpawnDlx.mockResolvedValue({
       spawnPromise: Promise.resolve({
-        stdout: 'cdxgen output',
-        stderr: '',
+        stdout: "cdxgen output",
+        stderr: "",
       }),
-    })
-  })
+    });
+  });
 
-  it('calls spawnDlx with cdxgen package', async () => {
+  it("calls spawnDlx with cdxgen package", async () => {
     mockSpawnDlx.mockResolvedValueOnce({
       spawnPromise: Promise.resolve({
-        stdout: 'cdxgen output',
-        stderr: '',
+        stdout: "cdxgen output",
+        stderr: "",
       }),
-    } as unknown)
+    } as unknown);
 
-    await spawnCdxgenDlx(['--help'])
+    await spawnCdxgenDlx(["--help"]);
 
     expect(mockSpawnDlx).toHaveBeenCalledWith(
-      { name: '@cyclonedx/cdxgen', version: 'undefined' },
-      ['--help'],
+      { name: "@cyclonedx/cdxgen", version: "undefined" },
+      ["--help"],
       { force: false, silent: true },
       undefined,
-    )
-  })
+    );
+  });
 
-  it('passes options through to spawnDlx', async () => {
+  it("passes options through to spawnDlx", async () => {
     mockSpawnDlx.mockResolvedValueOnce({
       spawnPromise: Promise.resolve({
-        stdout: 'cdxgen output',
-        stderr: '',
+        stdout: "cdxgen output",
+        stderr: "",
       }),
-    } as unknown)
+    } as unknown);
 
     const options = {
-      env: { CDXGEN_OUTPUT: 'sbom.json' },
-      timeout: 30000,
+      env: { CDXGEN_OUTPUT: "sbom.json" },
+      timeout: 30_000,
       force: true,
-    }
+    };
 
-    await spawnCdxgenDlx(['--output', 'sbom.json'], options)
+    await spawnCdxgenDlx(["--output", "sbom.json"], options);
 
     expect(mockSpawnDlx).toHaveBeenCalledWith(
-      { name: '@cyclonedx/cdxgen', version: 'undefined' },
-      ['--output', 'sbom.json'],
+      { name: "@cyclonedx/cdxgen", version: "undefined" },
+      ["--output", "sbom.json"],
       {
         force: true,
         silent: true,
-        env: { CDXGEN_OUTPUT: 'sbom.json' },
-        timeout: 30000,
+        env: { CDXGEN_OUTPUT: "sbom.json" },
+        timeout: 30_000,
       },
       undefined,
-    )
-  })
+    );
+  });
 
-  it('returns spawnDlx result', async () => {
-    const { spawnDlx } = await import('../../../../src/util/dlx/spawn.mts')
-    const mockFn = vi.mocked(spawnDlx)
+  it("returns spawnDlx result", async () => {
+    const { spawnDlx } = await import("../../../../src/util/dlx/spawn.mts");
+    const mockFn = vi.mocked(spawnDlx);
 
     const expectedResult = {
       spawnPromise: Promise.resolve({
         stdout: '{"bomFormat": "CycloneDX"}',
-        stderr: '',
+        stderr: "",
       }),
-    }
-    mockFn.mockResolvedValueOnce(expectedResult as unknown)
+    };
+    mockFn.mockResolvedValueOnce(expectedResult as unknown);
 
-    const result = await spawnCdxgenDlx(['--type', 'npm'])
+    const result = await spawnCdxgenDlx(["--type", "npm"]);
 
-    expect(result).toEqual(expectedResult)
-  })
+    expect(result).toEqual(expectedResult);
+  });
 
-  it('handles SBOM generation arguments', async () => {
+  it("handles SBOM generation arguments", async () => {
     mockSpawnDlx.mockResolvedValueOnce({
       spawnPromise: Promise.resolve({
-        stdout: 'cdxgen output',
-        stderr: '',
+        stdout: "cdxgen output",
+        stderr: "",
       }),
-    } as unknown)
+    } as unknown);
 
     const sbomArgs = [
-      '--type',
-      'npm',
-      '--output',
-      '/tmp/sbom.json',
-      '--spec-version',
-      '1.4',
-      '--project-name',
-      'test-project',
-    ]
+      "--type",
+      "npm",
+      "--output",
+      "/tmp/sbom.json",
+      "--spec-version",
+      "1.4",
+      "--project-name",
+      "test-project",
+    ];
 
-    await spawnCdxgenDlx(sbomArgs)
+    await spawnCdxgenDlx(sbomArgs);
 
     expect(mockSpawnDlx).toHaveBeenCalledWith(
-      { name: '@cyclonedx/cdxgen', version: 'undefined' },
+      { name: "@cyclonedx/cdxgen", version: "undefined" },
       sbomArgs,
       { force: false, silent: true },
       undefined,
-    )
-  })
+    );
+  });
 
-  it('handles recursive scanning arguments', async () => {
+  it("handles recursive scanning arguments", async () => {
     mockSpawnDlx.mockResolvedValueOnce({
       spawnPromise: Promise.resolve({
-        stdout: 'cdxgen output',
-        stderr: '',
+        stdout: "cdxgen output",
+        stderr: "",
       }),
-    } as unknown)
+    } as unknown);
 
-    await spawnCdxgenDlx(['-r', '/path/to/scan'])
+    await spawnCdxgenDlx(["-r", "/path/to/scan"]);
 
     expect(mockSpawnDlx).toHaveBeenCalledWith(
-      { name: '@cyclonedx/cdxgen', version: 'undefined' },
-      ['-r', '/path/to/scan'],
+      { name: "@cyclonedx/cdxgen", version: "undefined" },
+      ["-r", "/path/to/scan"],
       { force: false, silent: true },
       undefined,
-    )
-  })
-})
+    );
+  });
+});

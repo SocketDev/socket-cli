@@ -15,116 +15,109 @@
  * - src/commands/repository/output-view-repo.mts (formatter)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from "vitest";
 
-import { createSuccessResult } from '../../../helpers/index.mts'
-import { handleViewRepo } from '../../../../src/commands/repository/handle-view-repo.mts'
+import { createSuccessResult } from "../../../helpers/index.mts";
+import { handleViewRepo } from "../../../../src/commands/repository/handle-view-repo.mts";
 
 // Setup mocks at module level
-const mockFetchViewRepo = vi.hoisted(() => vi.fn())
-const mockOutputViewRepo = vi.hoisted(() => vi.fn())
+const mockFetchViewRepo = vi.hoisted(() => vi.fn());
+const mockOutputViewRepo = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/commands/repository/fetch-view-repo.mts', () => ({
+vi.mock(import("../../../../src/commands/repository/fetch-view-repo.mts"), () => ({
   fetchViewRepo: mockFetchViewRepo,
-}))
+}));
 
-vi.mock('../../../../src/commands/repository/output-view-repo.mts', () => ({
+vi.mock(import("../../../../src/commands/repository/output-view-repo.mts"), () => ({
   outputViewRepo: mockOutputViewRepo,
-}))
+}));
 
-describe('handleViewRepo', () => {
-  it('fetches and outputs repository details successfully', async () => {
+describe("handleViewRepo", () => {
+  it("fetches and outputs repository details successfully", async () => {
     const mockRepoData = createSuccessResult({
-      id: 'repo-123',
-      name: 'test-repo',
-      org: 'test-org',
-      url: 'https://github.com/test-org/test-repo',
-      lastUpdated: '2025-01-01T00:00:00Z',
-    })
+      id: "repo-123",
+      name: "test-repo",
+      org: "test-org",
+      url: "https://github.com/test-org/test-repo",
+      lastUpdated: "2025-01-01T00:00:00Z",
+    });
 
-    mockFetchViewRepo.mockResolvedValue(mockRepoData)
+    mockFetchViewRepo.mockResolvedValue(mockRepoData);
 
-    await handleViewRepo('test-org', 'test-repo', 'json')
+    await handleViewRepo("test-org", "test-repo", "json");
 
-    expect(mockFetchViewRepo).toHaveBeenCalledWith('test-org', 'test-repo', {
-      commandPath: 'socket repository view',
-    })
-    expect(mockOutputViewRepo).toHaveBeenCalledWith(mockRepoData, 'json')
-  })
+    expect(mockFetchViewRepo).toHaveBeenCalledWith("test-org", "test-repo", {
+      commandPath: "socket repository view",
+    });
+    expect(mockOutputViewRepo).toHaveBeenCalledWith(mockRepoData, "json");
+  });
 
-  it('handles fetch failure', async () => {
+  it("handles fetch failure", async () => {
     const mockError = {
       ok: false as const,
-      message: 'Repository not found',
+      message: "Repository not found",
       code: 404,
-    }
+    };
 
-    mockFetchViewRepo.mockResolvedValue(mockError)
+    mockFetchViewRepo.mockResolvedValue(mockError);
 
-    await handleViewRepo('test-org', 'nonexistent-repo', 'text')
+    await handleViewRepo("test-org", "nonexistent-repo", "text");
 
-    expect(mockFetchViewRepo).toHaveBeenCalledWith(
-      'test-org',
-      'nonexistent-repo',
-      {
-        commandPath: 'socket repository view',
-      },
-    )
-    expect(mockOutputViewRepo).toHaveBeenCalledWith(mockError, 'text')
-  })
+    expect(mockFetchViewRepo).toHaveBeenCalledWith("test-org", "nonexistent-repo", {
+      commandPath: "socket repository view",
+    });
+    expect(mockOutputViewRepo).toHaveBeenCalledWith(mockError, "text");
+  });
 
-  it('handles markdown output format', async () => {
+  it("handles markdown output format", async () => {
     mockFetchViewRepo.mockResolvedValue(
       createSuccessResult({
-        name: 'my-repo',
-        org: 'my-org',
+        name: "my-repo",
+        org: "my-org",
       }),
-    )
+    );
 
-    await handleViewRepo('my-org', 'my-repo', 'markdown')
+    await handleViewRepo("my-org", "my-repo", "markdown");
 
-    expect(mockOutputViewRepo).toHaveBeenCalledWith(
-      expect.any(Object),
-      'markdown',
-    )
-  })
+    expect(mockOutputViewRepo).toHaveBeenCalledWith(expect.any(Object), "markdown");
+  });
 
-  it('handles text output format', async () => {
+  it("handles text output format", async () => {
     mockFetchViewRepo.mockResolvedValue(
       createSuccessResult({
-        name: 'production-repo',
-        org: 'production-org',
-        branches: ['main', 'develop', 'staging'],
-        defaultBranch: 'main',
+        name: "production-repo",
+        org: "production-org",
+        branches: ["main", "develop", "staging"],
+        defaultBranch: "main",
       }),
-    )
+    );
 
-    await handleViewRepo('production-org', 'production-repo', 'text')
+    await handleViewRepo("production-org", "production-repo", "text");
 
     expect(mockOutputViewRepo).toHaveBeenCalledWith(
       expect.objectContaining({
         ok: true,
         data: expect.objectContaining({
-          name: 'production-repo',
+          name: "production-repo",
         }),
       }),
-      'text',
-    )
-  })
+      "text",
+    );
+  });
 
-  it('handles different repository names', async () => {
+  it("handles different repository names", async () => {
     const testCases = [
-      ['org-1', 'repo-1'],
-      ['my-org', 'my-awesome-project'],
-      ['company', 'internal-tool'],
-    ]
+      ["org-1", "repo-1"],
+      ["my-org", "my-awesome-project"],
+      ["company", "internal-tool"],
+    ];
 
     for (const [org, repo] of testCases) {
-      mockFetchViewRepo.mockResolvedValue(createSuccessResult({}))
-      await handleViewRepo(org, repo, 'json')
+      mockFetchViewRepo.mockResolvedValue(createSuccessResult({}));
+      await handleViewRepo(org, repo, "json");
       expect(mockFetchViewRepo).toHaveBeenCalledWith(org, repo, {
-        commandPath: 'socket repository view',
-      })
+        commandPath: "socket repository view",
+      });
     }
-  })
-})
+  });
+});

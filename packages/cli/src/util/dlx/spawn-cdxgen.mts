@@ -10,16 +10,16 @@
  * define-tool-spawn.
  */
 
-import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { detectExecutableType } from "@socketsecurity/lib-stable/dlx/detect";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
-import { spawnDlx } from './spawn.mts'
-import { resolveCdxgen } from './resolve-binary.mjs'
+import { defineAutoDispatch, defineVfsSpawn } from "./define-tool-spawn.mts";
+import { spawnDlx } from "./spawn.mts";
+import { resolveCdxgen } from "./resolve-binary.mjs";
 
-import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
-import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
+import type { DlxOptions, DlxSpawnResult } from "./spawn.mts";
+import type { StdioOptions } from "node:child_process";
+import type { SpawnExtra } from "@socketsecurity/lib-stable/process/spawn/types";
 
 /**
  * Helper to spawn cdxgen with dlx. If SOCKET_CLI_CDXGEN_LOCAL_PATH environment
@@ -31,19 +31,18 @@ export async function spawnCdxgenDlx(
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<DlxSpawnResult> {
-  const resolution = resolveCdxgen()
+  const resolution = resolveCdxgen();
 
   // Use local cdxgen if available.
-  if (resolution.type === 'local') {
-    const detection = detectExecutableType(resolution.path)
+  if (resolution.type === "local") {
+    const detection = detectExecutableType(resolution.path);
     const { env: spawnEnv, ...dlxOptions } = {
       __proto__: null,
       ...options,
-    } as DlxOptions
+    } as DlxOptions;
 
-    const spawnArgs =
-      detection.type === 'binary' ? args : [resolution.path, ...args]
-    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
+    const spawnArgs = detection.type === "binary" ? args : [resolution.path, ...args];
+    const spawnCommand = detection.type === "binary" ? resolution.path : "node";
 
     const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
@@ -51,31 +50,26 @@ export async function spawnCdxgenDlx(
         ...process.env,
         ...spawnEnv,
       },
-      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-    })
+      stdio: (spawnExtra?.["stdio"] as StdioOptions | undefined) ?? "inherit",
+    });
 
     return {
       spawnPromise,
-    }
+    };
   }
 
   // Use dlx version (resolveCdxgen only returns 'local' or 'dlx' types).
-  if (resolution.type !== 'dlx') {
+  if (resolution.type !== "dlx") {
     throw new Error(
       `internal: resolveCdxgen returned resolution.type="${resolution.type}" (expected "dlx"); this is a resolver contract bug — re-run with --debug and report the output`,
-    )
+    );
   }
-  return await spawnDlx(
-    resolution.details,
-    args,
-    { force: false, ...options },
-    spawnExtra,
-  )
+  return await spawnDlx(resolution.details, args, { force: false, ...options }, spawnExtra);
 }
 
-export const spawnCdxgenVfs = defineVfsSpawn('cdxgen')
+export const spawnCdxgenVfs = defineVfsSpawn("cdxgen");
 
 export const spawnCdxgen = defineAutoDispatch({
   vfs: spawnCdxgenVfs,
   dlx: spawnCdxgenDlx,
-})
+});

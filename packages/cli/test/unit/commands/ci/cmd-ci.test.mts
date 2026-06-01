@@ -18,10 +18,10 @@
  * src/commands/ci/handle-ci.mts - Handler.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
+import type * as WithSubcommandsModule from "../../../../src/util/cli/with-subcommands.mjs";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -31,53 +31,49 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 // Mock handler.
-const mockHandleCi = vi.hoisted(() => vi.fn())
+const mockHandleCi = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/commands/ci/handle-ci.mts', () => ({
+vi.mock(import("../../../../src/commands/ci/handle-ci.mts"), () => ({
   handleCi: mockHandleCi,
-}))
+}));
 
 // Mock git operations.
-const mockGitBranch = vi.hoisted(() => vi.fn(() => Promise.resolve('main')))
-const mockDetectDefaultBranch = vi.hoisted(() =>
-  vi.fn(() => Promise.resolve('main')),
-)
-const mockGetRepoName = vi.hoisted(() =>
-  vi.fn(() => Promise.resolve('my-repo')),
-)
+const mockGitBranch = vi.hoisted(() => vi.fn(() => Promise.resolve("main")));
+const mockDetectDefaultBranch = vi.hoisted(() => vi.fn(() => Promise.resolve("main")));
+const mockGetRepoName = vi.hoisted(() => vi.fn(() => Promise.resolve("my-repo")));
 
-vi.mock('../../../../src/util/git/operations.mjs', () => ({
+vi.mock(import("../../../../src/util/git/operations.mjs"), () => ({
   detectDefaultBranch: mockDetectDefaultBranch,
   getRepoName: mockGetRepoName,
   gitBranch: mockGitBranch,
-}))
+}));
 
 // Mock organization slug fetching.
 const mockGetDefaultOrgSlug = vi.hoisted(() =>
-  vi.fn(() => Promise.resolve({ ok: true, data: 'my-org' })),
-)
+  vi.fn(() => Promise.resolve({ ok: true, data: "my-org" })),
+);
 
-vi.mock('../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
+vi.mock(import("../../../../src/commands/ci/fetch-default-org-slug.mts"), () => ({
   getDefaultOrgSlug: mockGetDefaultOrgSlug,
-}))
+}));
 
 // Mock dry-run output.
-const mockOutputDryRunUpload = vi.hoisted(() => vi.fn())
+const mockOutputDryRunUpload = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/util/dry-run/output.mts', () => ({
+vi.mock(import("../../../../src/util/dry-run/output.mts"), () => ({
   outputDryRunUpload: mockOutputDryRunUpload,
-}))
+}));
 
 // Mock meowOrExit to prevent actual CLI parsing. Also invoke the
 // help() callback so its template-string body is recorded as covered;
@@ -85,366 +81,363 @@ vi.mock('../../../../src/util/dry-run/output.mts', () => ({
 // suite never exercises.
 const mockMeowOrExit = vi.hoisted(() =>
   vi.fn((options: unknown) => {
-    const argv = options.argv as string[] | readonly string[]
-    const flags: Record<string, unknown> = {}
+    const argv = options.argv as string[] | readonly string[];
+    const flags: Record<string, unknown> = {};
 
     // Parse flags from argv.
-    if (argv.includes('--dry-run')) {
-      flags['dryRun'] = true
+    if (argv.includes("--dry-run")) {
+      flags["dryRun"] = true;
     }
-    if (argv.includes('--auto-manifest')) {
-      flags['autoManifest'] = true
+    if (argv.includes("--auto-manifest")) {
+      flags["autoManifest"] = true;
     }
 
-    const help = options.config?.help ? options.config.help('socket ci') : ''
+    const help = options.config?.help ? options.config.help("socket ci") : "";
 
     return {
       flags,
       help,
       input: [],
       pkg: {},
-    }
+    };
   }),
-)
+);
 
-vi.mock(
-  '../../../../src/util/cli/with-subcommands.mjs',
-  async importOriginal => {
-    const actual = await importOriginal<typeof WithSubcommandsModule>()
-    return {
-      ...actual,
-      meowOrExit: mockMeowOrExit,
-    }
-  },
-)
+vi.mock(import("../../../../src/util/cli/with-subcommands.mjs"), async (importOriginal) => {
+  const actual = await importOriginal<typeof WithSubcommandsModule>();
+  return {
+    ...actual,
+    meowOrExit: mockMeowOrExit,
+  };
+});
 
 // Import after mocks.
-const { cmdCI } = await import('../../../../src/commands/ci/cmd-ci.mts')
+const { cmdCI } = await import("../../../../src/commands/ci/cmd-ci.mts");
 
-describe('cmd-ci', () => {
+describe("cmd-ci", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-    mockGetDefaultOrgSlug.mockResolvedValue({ ok: true, data: 'my-org' })
-    mockGitBranch.mockResolvedValue('main')
-    mockDetectDefaultBranch.mockResolvedValue('main')
-    mockGetRepoName.mockResolvedValue('my-repo')
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+    mockGetDefaultOrgSlug.mockResolvedValue({ ok: true, data: "my-org" });
+    mockGitBranch.mockResolvedValue("main");
+    mockDetectDefaultBranch.mockResolvedValue("main");
+    mockGetRepoName.mockResolvedValue("my-repo");
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
+  describe("command metadata", () => {
+    it("should have correct description", () => {
       expect(cmdCI.description).toBe(
-        'Alias for `socket scan create --report` (creates report and exits with error if unhealthy)',
-      )
-    })
+        "Alias for `socket scan create --report` (creates report and exits with error if unhealthy)",
+      );
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdCI.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdCI.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-ci.mts' }
-    const context = { parentName: 'socket' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-ci.mts" };
+    const context = { parentName: "socket" };
 
-    describe('handler invocation', () => {
-      it('should call handler with autoManifest false by default', async () => {
-        await cmdCI.run([], importMeta, context)
+    describe("handler invocation", () => {
+      it("should call handler with autoManifest false by default", async () => {
+        await cmdCI.run([], importMeta, context);
 
-        expect(mockHandleCi).toHaveBeenCalledWith(false)
-      })
+        expect(mockHandleCi).toHaveBeenCalledWith(false);
+      });
 
-      it('should call handler with autoManifest true when flag provided', async () => {
-        await cmdCI.run(['--auto-manifest'], importMeta, context)
+      it("should call handler with autoManifest true when flag provided", async () => {
+        await cmdCI.run(["--auto-manifest"], importMeta, context);
 
-        expect(mockHandleCi).toHaveBeenCalledWith(true)
-      })
+        expect(mockHandleCi).toHaveBeenCalledWith(true);
+      });
 
-      it('should call handler exactly once', async () => {
-        await cmdCI.run([], importMeta, context)
+      it("should call handler exactly once", async () => {
+        await cmdCI.run([], importMeta, context);
 
-        expect(mockHandleCi).toHaveBeenCalledTimes(1)
-      })
-    })
+        expect(mockHandleCi).toHaveBeenCalledTimes(1);
+      });
+    });
 
-    describe('--dry-run flag', () => {
-      it('should show preview without calling handler', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
+    describe("--dry-run flag", () => {
+      it("should show preview without calling handler", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
-        expect(mockOutputDryRunUpload).toHaveBeenCalledWith('CI scan', {
+        expect(mockOutputDryRunUpload).toHaveBeenCalledWith("CI scan", {
           autoManifest: false,
-          branchName: 'main',
+          branchName: "main",
           cwd: process.cwd(),
-          organizationSlug: 'my-org',
-          repoName: 'my-repo',
+          organizationSlug: "my-org",
+          repoName: "my-repo",
           report: true,
-          targets: ['.'],
-        })
-        expect(mockHandleCi).not.toHaveBeenCalled()
-      })
+          targets: ["."],
+        });
+        expect(mockHandleCi).not.toHaveBeenCalled();
+      });
 
-      it('should fetch org slug in dry-run', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
+      it("should fetch org slug in dry-run", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
-        expect(mockGetDefaultOrgSlug).toHaveBeenCalled()
-      })
+        expect(mockGetDefaultOrgSlug).toHaveBeenCalled();
+      });
 
-      it('should fetch git branch in dry-run', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
+      it("should fetch git branch in dry-run", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
-        expect(mockGitBranch).toHaveBeenCalledWith(process.cwd())
-      })
+        expect(mockGitBranch).toHaveBeenCalledWith(process.cwd());
+      });
 
-      it('should fetch repo name in dry-run', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
+      it("should fetch repo name in dry-run", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
-        expect(mockGetRepoName).toHaveBeenCalledWith(process.cwd())
-      })
+        expect(mockGetRepoName).toHaveBeenCalledWith(process.cwd());
+      });
 
-      it('should include autoManifest true in dry-run when flag provided', async () => {
-        await cmdCI.run(['--dry-run', '--auto-manifest'], importMeta, context)
+      it("should include autoManifest true in dry-run when flag provided", async () => {
+        await cmdCI.run(["--dry-run", "--auto-manifest"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
             autoManifest: true,
           }),
-        )
-      })
+        );
+      });
 
-      it('should use default branch when git branch fails', async () => {
-        mockGitBranch.mockResolvedValue(undefined)
-        mockDetectDefaultBranch.mockResolvedValue('develop')
+      it("should use default branch when git branch fails", async () => {
+        mockGitBranch.mockResolvedValue(undefined);
+        mockDetectDefaultBranch.mockResolvedValue("develop");
 
-        await cmdCI.run(['--dry-run'], importMeta, context)
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
-            branchName: 'develop',
+            branchName: "develop",
           }),
-        )
-      })
+        );
+      });
 
-      it('should show placeholder when org slug fetch fails', async () => {
+      it("should show placeholder when org slug fetch fails", async () => {
         mockGetDefaultOrgSlug.mockResolvedValue({
           ok: false,
           code: 1,
-          message: 'Failed',
-        })
+          message: "Failed",
+        });
 
-        await cmdCI.run(['--dry-run'], importMeta, context)
-
-        expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
-          expect.objectContaining({
-            organizationSlug: '(from API token)',
-          }),
-        )
-      })
-
-      it('should show placeholder when repo name is null', async () => {
-        mockGetRepoName.mockResolvedValue(undefined)
-
-        await cmdCI.run(['--dry-run'], importMeta, context)
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
-            repoName: '(auto-detected)',
+            organizationSlug: "(from API token)",
           }),
-        )
-      })
+        );
+      });
 
-      it('should show placeholder when branch name is null', async () => {
-        mockGitBranch.mockResolvedValue(undefined)
-        mockDetectDefaultBranch.mockResolvedValue(undefined)
+      it("should show placeholder when repo name is null", async () => {
+        mockGetRepoName.mockResolvedValue(undefined);
 
-        await cmdCI.run(['--dry-run'], importMeta, context)
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
-            branchName: '(default)',
+            repoName: "(auto-detected)",
           }),
-        )
-      })
-    })
+        );
+      });
 
-    describe('--auto-manifest flag', () => {
-      it('should default to false', async () => {
-        await cmdCI.run([], importMeta, context)
+      it("should show placeholder when branch name is null", async () => {
+        mockGitBranch.mockResolvedValue(undefined);
+        mockDetectDefaultBranch.mockResolvedValue(undefined);
 
-        expect(mockHandleCi).toHaveBeenCalledWith(false)
-      })
-
-      it('should pass true when flag provided', async () => {
-        await cmdCI.run(['--auto-manifest'], importMeta, context)
-
-        expect(mockHandleCi).toHaveBeenCalledWith(true)
-      })
-
-      it('should handle boolean conversion correctly', async () => {
-        await cmdCI.run(['--auto-manifest'], importMeta, context)
-
-        const [autoManifest] = mockHandleCi.mock.calls[0]
-        expect(typeof autoManifest).toBe('boolean')
-        expect(autoManifest).toBe(true)
-      })
-    })
-
-    describe('git operations', () => {
-      it('should call gitBranch with current directory', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
-
-        expect(mockGitBranch).toHaveBeenCalledWith(process.cwd())
-      })
-
-      it('should fall back to detectDefaultBranch when gitBranch returns null', async () => {
-        mockGitBranch.mockResolvedValue(undefined)
-
-        await cmdCI.run(['--dry-run'], importMeta, context)
-
-        expect(mockDetectDefaultBranch).toHaveBeenCalledWith(process.cwd())
-      })
-
-      it('should call getRepoName with current directory', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
-
-        expect(mockGetRepoName).toHaveBeenCalledWith(process.cwd())
-      })
-
-      it('should use gitBranch result over detectDefaultBranch', async () => {
-        mockGitBranch.mockResolvedValue('feature-branch')
-        mockDetectDefaultBranch.mockResolvedValue('main')
-
-        await cmdCI.run(['--dry-run'], importMeta, context)
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
-            branchName: 'feature-branch',
+            branchName: "(default)",
           }),
-        )
-      })
-    })
+        );
+      });
+    });
 
-    describe('organization slug', () => {
-      it('should fetch default org slug', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
+    describe("--auto-manifest flag", () => {
+      it("should default to false", async () => {
+        await cmdCI.run([], importMeta, context);
 
-        expect(mockGetDefaultOrgSlug).toHaveBeenCalled()
-      })
+        expect(mockHandleCi).toHaveBeenCalledWith(false);
+      });
 
-      it('should use org slug from successful fetch', async () => {
+      it("should pass true when flag provided", async () => {
+        await cmdCI.run(["--auto-manifest"], importMeta, context);
+
+        expect(mockHandleCi).toHaveBeenCalledWith(true);
+      });
+
+      it("should handle boolean conversion correctly", async () => {
+        await cmdCI.run(["--auto-manifest"], importMeta, context);
+
+        const [autoManifest] = mockHandleCi.mock.calls[0];
+        expect(typeof autoManifest).toBe("boolean");
+        expect(autoManifest).toBe(true);
+      });
+    });
+
+    describe("git operations", () => {
+      it("should call gitBranch with current directory", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
+
+        expect(mockGitBranch).toHaveBeenCalledWith(process.cwd());
+      });
+
+      it("should fall back to detectDefaultBranch when gitBranch returns null", async () => {
+        mockGitBranch.mockResolvedValue(undefined);
+
+        await cmdCI.run(["--dry-run"], importMeta, context);
+
+        expect(mockDetectDefaultBranch).toHaveBeenCalledWith(process.cwd());
+      });
+
+      it("should call getRepoName with current directory", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
+
+        expect(mockGetRepoName).toHaveBeenCalledWith(process.cwd());
+      });
+
+      it("should use gitBranch result over detectDefaultBranch", async () => {
+        mockGitBranch.mockResolvedValue("feature-branch");
+        mockDetectDefaultBranch.mockResolvedValue("main");
+
+        await cmdCI.run(["--dry-run"], importMeta, context);
+
+        expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
+          "CI scan",
+          expect.objectContaining({
+            branchName: "feature-branch",
+          }),
+        );
+      });
+    });
+
+    describe("organization slug", () => {
+      it("should fetch default org slug", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
+
+        expect(mockGetDefaultOrgSlug).toHaveBeenCalled();
+      });
+
+      it("should use org slug from successful fetch", async () => {
         mockGetDefaultOrgSlug.mockResolvedValue({
           ok: true,
-          data: 'test-org',
-        })
+          data: "test-org",
+        });
 
-        await cmdCI.run(['--dry-run'], importMeta, context)
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
-            organizationSlug: 'test-org',
+            organizationSlug: "test-org",
           }),
-        )
-      })
+        );
+      });
 
-      it('should handle org slug fetch error', async () => {
+      it("should handle org slug fetch error", async () => {
         mockGetDefaultOrgSlug.mockResolvedValue({
           ok: false,
           code: 1,
-          message: 'Auth failed',
-        })
+          message: "Auth failed",
+        });
 
-        await cmdCI.run(['--dry-run'], importMeta, context)
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
-            organizationSlug: '(from API token)',
+            organizationSlug: "(from API token)",
           }),
-        )
-      })
-    })
+        );
+      });
+    });
 
-    describe('edge cases', () => {
-      it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze([]) as readonly string[]
+    describe("edge cases", () => {
+      it("should handle readonly argv array", async () => {
+        const readonlyArgv = Object.freeze([]) as readonly string[];
 
-        await cmdCI.run(readonlyArgv, importMeta, context)
+        await cmdCI.run(readonlyArgv, importMeta, context);
 
-        expect(mockHandleCi).toHaveBeenCalledWith(false)
-      })
+        expect(mockHandleCi).toHaveBeenCalledWith(false);
+      });
 
-      it('should handle all git operations returning null', async () => {
-        mockGitBranch.mockResolvedValue(undefined)
-        mockDetectDefaultBranch.mockResolvedValue(undefined)
-        mockGetRepoName.mockResolvedValue(undefined)
+      it("should handle all git operations returning null", async () => {
+        mockGitBranch.mockResolvedValue(undefined);
+        mockDetectDefaultBranch.mockResolvedValue(undefined);
+        mockGetRepoName.mockResolvedValue(undefined);
 
-        await cmdCI.run(['--dry-run'], importMeta, context)
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
-            branchName: '(default)',
-            repoName: '(auto-detected)',
+            branchName: "(default)",
+            repoName: "(auto-detected)",
           }),
-        )
-      })
+        );
+      });
 
-      it('should handle git operations throwing errors gracefully', async () => {
-        mockGitBranch.mockRejectedValue(new Error('Git not found'))
+      it("should handle git operations throwing errors gracefully", async () => {
+        mockGitBranch.mockRejectedValue(new Error("Git not found"));
 
-        await expect(
-          cmdCI.run(['--dry-run'], importMeta, context),
-        ).rejects.toThrow('Git not found')
-      })
+        await expect(cmdCI.run(["--dry-run"], importMeta, context)).rejects.toThrow(
+          "Git not found",
+        );
+      });
 
-      it('should handle org slug fetch throwing errors', async () => {
-        mockGetDefaultOrgSlug.mockRejectedValue(new Error('Network error'))
+      it("should handle org slug fetch throwing errors", async () => {
+        mockGetDefaultOrgSlug.mockRejectedValue(new Error("Network error"));
 
-        await expect(
-          cmdCI.run(['--dry-run'], importMeta, context),
-        ).rejects.toThrow('Network error')
-      })
-    })
+        await expect(cmdCI.run(["--dry-run"], importMeta, context)).rejects.toThrow(
+          "Network error",
+        );
+      });
+    });
 
-    describe('dry-run output structure', () => {
-      it('should include report true in dry-run', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
+    describe("dry-run output structure", () => {
+      it("should include report true in dry-run", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
             report: true,
           }),
-        )
-      })
+        );
+      });
 
-      it('should include targets array in dry-run', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
+      it("should include targets array in dry-run", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
-            targets: ['.'],
+            targets: ["."],
           }),
-        )
-      })
+        );
+      });
 
-      it('should include cwd in dry-run', async () => {
-        await cmdCI.run(['--dry-run'], importMeta, context)
+      it("should include cwd in dry-run", async () => {
+        await cmdCI.run(["--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
-          'CI scan',
+          "CI scan",
           expect.objectContaining({
             cwd: process.cwd(),
           }),
-        )
-      })
-    })
-  })
-})
+        );
+      });
+    });
+  });
+});

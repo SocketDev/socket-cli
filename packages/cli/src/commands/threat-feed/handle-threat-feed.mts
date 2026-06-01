@@ -1,7 +1,7 @@
-import { fetchThreatFeed } from './fetch-threat-feed.mts'
-import { outputThreatFeed } from './output-threat-feed.mts'
+import { fetchThreatFeed } from "./fetch-threat-feed.mts";
+import { outputThreatFeed } from "./output-threat-feed.mts";
 
-import type { OutputKind } from '../../types.mts'
+import type { OutputKind } from "../../types.mts";
 
 export async function handleThreatFeed({
   direction,
@@ -14,15 +14,15 @@ export async function handleThreatFeed({
   pkg,
   version,
 }: {
-  direction: string
-  ecosystem: string
-  filter: string
-  outputKind: OutputKind
-  orgSlug: string
-  page: string
-  perPage: number
-  pkg: string
-  version: string
+  direction: string;
+  ecosystem: string;
+  filter: string;
+  outputKind: OutputKind;
+  orgSlug: string;
+  page: string;
+  perPage: number;
+  pkg: string;
+  version: string;
 }): Promise<void> {
   const data = await fetchThreatFeed({
     direction,
@@ -33,7 +33,7 @@ export async function handleThreatFeed({
     perPage,
     pkg,
     version,
-  })
+  });
 
-  await outputThreatFeed(data, outputKind)
+  await outputThreatFeed(data, outputKind);
 }

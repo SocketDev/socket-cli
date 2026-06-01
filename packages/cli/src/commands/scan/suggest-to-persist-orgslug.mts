@@ -1,55 +1,51 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { select } from '@socketsecurity/lib-stable/stdio/prompts'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { select } from "@socketsecurity/lib-stable/stdio/prompts";
 
-import { getConfigValue, updateConfigValue } from '../../util/config.mts'
-const logger = getDefaultLogger()
+import { getConfigValue, updateConfigValue } from "../../util/config.mts";
+const logger = getDefaultLogger();
 
 export async function suggestToPersistOrgSlug(orgSlug: string): Promise<void> {
-  const skipAsk = getConfigValue('skipAskToPersistDefaultOrg')
+  const skipAsk = getConfigValue("skipAskToPersistDefaultOrg");
   if (!skipAsk.ok || skipAsk.data) {
     // Don't ask to store it when disabled before, or when reading config fails.
-    return
+    return;
   }
 
   const result = await select({
     message: `Would you like to use this org (${orgSlug}) as the default org for future calls?`,
     choices: [
       {
-        name: 'Yes',
-        value: 'yes',
-        description: 'Stores it in your config',
+        name: "Yes",
+        value: "yes",
+        description: "Stores it in your config",
       },
       {
-        name: 'No',
-        value: 'no',
-        description: 'Do not persist this org as default org',
+        name: "No",
+        value: "no",
+        description: "Do not persist this org as default org",
       },
       {
         name: "No and don't ask again",
-        value: 'sush',
-        description:
-          'Do not store as default org and do not ask again to persist it',
+        value: "sush",
+        description: "Do not store as default org and do not ask again to persist it",
       },
     ],
-  })
-  if (result === 'yes') {
-    const updateResult = updateConfigValue('defaultOrg', orgSlug)
+  });
+  if (result === "yes") {
+    const updateResult = updateConfigValue("defaultOrg", orgSlug);
     if (updateResult.ok) {
-      logger.success('Updated default org config to:', orgSlug)
+      logger.success("Updated default org config to:", orgSlug);
     } else {
-      logger.fail(
-        '(Non blocking) Failed to update default org in config:',
-        updateResult.cause,
-      )
+      logger.fail("(Non blocking) Failed to update default org in config:", updateResult.cause);
     }
-  } else if (result === 'sush') {
-    const updateResult = updateConfigValue('skipAskToPersistDefaultOrg', true)
+  } else if (result === "sush") {
+    const updateResult = updateConfigValue("skipAskToPersistDefaultOrg", true);
     if (updateResult.ok) {
-      logger.info('Default org not changed. Will not ask to persist again.')
+      logger.info("Default org not changed. Will not ask to persist again.");
     } else {
       logger.fail(
         `(Non blocking) Failed to store preference; will ask to persist again next time. Reason: ${updateResult.cause}`,
-      )
+      );
     }
   }
 }

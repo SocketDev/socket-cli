@@ -133,15 +133,11 @@ We don't adopt Vite+ as a runtime dependency, but its **resolver pattern** is wo
 ```ts
 // vite-plus/packages/cli/src/resolve-test.ts
 export async function test(): Promise<{
-  binPath: string
-  envs: Record<string, string>
+  binPath: string;
+  envs: Record<string, string>;
 }> {
-  const binPath = join(
-    dirname(resolve('@voidzero-dev/vite-plus-test')),
-    'dist',
-    'cli.js',
-  )
-  return { binPath, envs: { ...DEFAULT_ENVS } }
+  const binPath = join(dirname(resolve("@voidzero-dev/vite-plus-test")), "dist", "cli.js");
+  return { binPath, envs: { ...DEFAULT_ENVS } };
 }
 ```
 
@@ -153,11 +149,8 @@ The Rust dispatcher then execs `binPath` with the user's args. Swapping the tool
 
 ```ts
 // Caller (per-repo scripts/check.mts):
-import {
-  resolveLinter,
-  runResolved,
-} from '../.claude/skills/_shared/scripts/resolve-tools.mts'
-const result = await runResolved(resolveLinter({ mode: 'check' }), { cwd })
+import { resolveLinter, runResolved } from "../.claude/skills/_shared/scripts/resolve-tools.mts";
+const result = await runResolved(resolveLinter({ mode: "check" }), { cwd });
 ```
 
 The resolver gives us a clean migration path: when rolldown goes fleet-wide, we change `resolveBundler()` to return `['rolldown']` instead of `['esbuild']` — every per-repo `scripts/build.mts` that consults the resolver picks up the swap. Per-repo migration to consume the resolver lands repo-by-repo so we don't bundle bundler-swap risk into a 12-repo cascade.

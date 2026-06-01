@@ -11,21 +11,21 @@
  * pattern matching or the ONNX fallback.
  */
 
-import { promises as fs } from 'node:fs'
-import path from 'node:path'
+import { promises as fs } from "node:fs";
+import path from "node:path";
 
-import nlp from 'compromise'
+import nlp from "compromise";
 
-import { getHome } from '@socketsecurity/lib-stable/env/home'
+import { getHome } from "@socketsecurity/lib-stable/env/home";
 
 // Minimum Jaccard similarity for word-overlap matching to win.
-const WORD_OVERLAP_THRESHOLD = 0.3
+const WORD_OVERLAP_THRESHOLD = 0.3;
 
 // Lazy-loaded ~3KB semantic index. `null` until loadSemanticIndex resolves.
 type SemanticIndex = {
-  commands?: Record<string, unknown> | undefined
-}
-let semanticIndex: SemanticIndex | undefined = undefined
+  commands?: Record<string, unknown> | undefined;
+};
+let semanticIndex: SemanticIndex | undefined = undefined;
 
 /**
  * Extract meaningful words from text: lowercase, stripped of punctuation,
@@ -35,9 +35,9 @@ let semanticIndex: SemanticIndex | undefined = undefined
 export function extractWords(text: string): string[] {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
+    .replace(/[^\w\s-]/g, "")
     .split(/\s+/)
-    .filter(w => w.length > 2)
+    .filter((w) => w.length > 2);
 }
 
 /**
@@ -47,25 +47,22 @@ export function extractWords(text: string): string[] {
  */
 export async function loadSemanticIndex() {
   if (semanticIndex) {
-    return semanticIndex
+    return semanticIndex;
   }
 
   try {
-    const homeDir = getHome()
+    const homeDir = getHome();
     if (!homeDir) {
-      return undefined
+      return undefined;
     }
-    const indexPath = path.join(
-      homeDir,
-      '.claude/skills/socket-cli/semantic-index.json',
-    )
+    const indexPath = path.join(homeDir, ".claude/skills/socket-cli/semantic-index.json");
 
-    const content = await fs.readFile(indexPath, 'utf-8')
-    semanticIndex = JSON.parse(content)
-    return semanticIndex
+    const content = await fs.readFile(indexPath, "utf-8");
+    semanticIndex = JSON.parse(content);
+    return semanticIndex;
   } catch (_e) {
     // Semantic index not available — not a critical error.
-    return undefined
+    return undefined;
   }
 }
 
@@ -76,13 +73,13 @@ export async function loadSemanticIndex() {
  */
 export function normalizeQuery(query: string): string {
   try {
-    const doc = nlp(query)
-    doc.verbs().toInfinitive()
-    doc.nouns().toSingular()
-    return doc.out('text').toLowerCase()
+    const doc = nlp(query);
+    doc.verbs().toInfinitive();
+    doc.nouns().toSingular();
+    return doc.out("text").toLowerCase();
     /* c8 ignore start - defensive fallback when compromise NLP library throws unexpectedly */
   } catch (_e) {
-    return query.toLowerCase()
+    return query.toLowerCase();
   }
   /* c8 ignore stop */
 }
@@ -91,14 +88,11 @@ export function normalizeQuery(query: string): string {
  * Compute word overlap score between query and command using Jaccard
  * similarity: |intersection| / |union|. Returns 0 when both sides are empty.
  */
-export function wordOverlap(
-  queryWords: Set<string>,
-  commandWords: string[],
-): number {
-  const commandSet = new Set(commandWords)
-  const intersection = new Set([...queryWords].filter(w => commandSet.has(w)))
-  const union = new Set([...queryWords, ...commandWords])
-  return union.size === 0 ? 0 : intersection.size / union.size
+export function wordOverlap(queryWords: Set<string>, commandWords: string[]): number {
+  const commandSet = new Set(commandWords);
+  const intersection = new Set([...queryWords].filter((w) => commandSet.has(w)));
+  const union = new Set([...queryWords, ...commandWords]);
+  return union.size === 0 ? 0 : intersection.size / union.size;
 }
 
 /**
@@ -109,43 +103,43 @@ export function wordOverlap(
  */
 export async function wordOverlapMatch(query: string): Promise<
   | {
-      action: string
-      confidence: number
+      action: string;
+      confidence: number;
     }
   | undefined
 > {
-  const index = await loadSemanticIndex()
+  const index = await loadSemanticIndex();
   if (!index || !index.commands) {
-    return undefined
+    return undefined;
   }
 
-  const queryWords = new Set(extractWords(query))
+  const queryWords = new Set(extractWords(query));
   if (queryWords.size === 0) {
-    return undefined
+    return undefined;
   }
 
-  let bestAction = ''
-  let bestScore = 0
+  let bestAction = "";
+  let bestScore = 0;
 
   for (const [commandName, commandData] of Object.entries(index.commands)) {
     if (
       !commandData ||
-      typeof commandData !== 'object' ||
-      !('words' in commandData) ||
+      typeof commandData !== "object" ||
+      !("words" in commandData) ||
       !Array.isArray(commandData.words)
     ) {
-      continue
+      continue;
     }
-    const score = wordOverlap(queryWords, commandData.words)
+    const score = wordOverlap(queryWords, commandData.words);
     if (score > bestScore) {
-      bestScore = score
-      bestAction = commandName
+      bestScore = score;
+      bestAction = commandName;
     }
   }
 
   if (bestScore < WORD_OVERLAP_THRESHOLD) {
-    return undefined
+    return undefined;
   }
 
-  return { action: bestAction, confidence: bestScore }
+  return { action: bestAction, confidence: bestScore };
 }

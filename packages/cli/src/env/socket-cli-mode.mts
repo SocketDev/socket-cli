@@ -3,6 +3,6 @@
  * operational mode.
  */
 
-import { env } from 'node:process'
+import { env } from "node:process";
 
-export const SOCKET_CLI_MODE = env['SOCKET_CLI_MODE']
+export const SOCKET_CLI_MODE = env["SOCKET_CLI_MODE"];

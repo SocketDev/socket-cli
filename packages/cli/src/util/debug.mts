@@ -24,27 +24,27 @@ import {
   debugDir,
   debugDirNs,
   debugNs,
-} from '@socketsecurity/lib-stable/debug/output'
-import { isDebug, isDebugNs } from '@socketsecurity/lib-stable/debug/namespace'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+} from "@socketsecurity/lib-stable/debug/output";
+import { isDebug, isDebugNs } from "@socketsecurity/lib-stable/debug/namespace";
+import { errorMessage } from "@socketsecurity/lib-stable/errors";
 type ApiRequestDebugInfo = {
-  durationMs?: number | undefined
-  headers?: Record<string, string> | undefined
-  method?: string | undefined
+  durationMs?: number | undefined;
+  headers?: Record<string, string> | undefined;
+  method?: string | undefined;
   // ISO-8601 timestamp of when the request was initiated. Useful when
   // correlating failures with server-side logs.
-  requestedAt?: string | undefined
+  requestedAt?: string | undefined;
   // Response body string; truncated by the helper to a safe length so
   // logs don't balloon on megabyte payloads.
-  responseBody?: string | undefined
+  responseBody?: string | undefined;
   // Response headers from the failed request. The helper extracts the
   // cf-ray trace id as a first-class field so support can look it up in
   // the Cloudflare dashboard without eyeballing the whole header dump.
-  responseHeaders?: Record<string, string> | undefined
-  url?: string | undefined
-}
+  responseHeaders?: Record<string, string> | undefined;
+  url?: string | undefined;
+};
 
-const RESPONSE_BODY_TRUNCATE_LENGTH = 2_000
+const RESPONSE_BODY_TRUNCATE_LENGTH = 2000;
 
 /**
  * Build the structured debug payload shared by the error + failure-status
@@ -59,47 +59,45 @@ export function buildApiDebugDetails(
   const details: Record<string, unknown> = {
     __proto__: null,
     ...base,
-  } as Record<string, unknown>
+  } as Record<string, unknown>;
   if (!requestInfo) {
-    return details
+    return details;
   }
   if (requestInfo.requestedAt) {
-    details['requestedAt'] = requestInfo.requestedAt
+    details["requestedAt"] = requestInfo.requestedAt;
   }
   if (requestInfo.method) {
-    details['method'] = requestInfo.method
+    details["method"] = requestInfo.method;
   }
   if (requestInfo.url) {
-    details['url'] = requestInfo.url
+    details["url"] = requestInfo.url;
   }
   if (requestInfo.durationMs !== undefined) {
-    details['durationMs'] = requestInfo.durationMs
+    details["durationMs"] = requestInfo.durationMs;
   }
   if (requestInfo.headers) {
-    details['headers'] = sanitizeHeaders(requestInfo.headers)
+    details["headers"] = sanitizeHeaders(requestInfo.headers);
   }
   if (requestInfo.responseHeaders) {
-    const cfRay =
-      requestInfo.responseHeaders['cf-ray'] ??
-      requestInfo.responseHeaders['CF-Ray']
+    const cfRay = requestInfo.responseHeaders["cf-ray"] ?? requestInfo.responseHeaders["CF-Ray"];
     if (cfRay) {
       // First-class field so it's obvious when filing a support ticket
       // that points at a Cloudflare trace.
-      details['cfRay'] = cfRay
+      details["cfRay"] = cfRay;
     }
-    details['responseHeaders'] = sanitizeHeaders(requestInfo.responseHeaders)
+    details["responseHeaders"] = sanitizeHeaders(requestInfo.responseHeaders);
   }
   if (requestInfo.responseBody !== undefined) {
-    const body = requestInfo.responseBody
+    const body = requestInfo.responseBody;
     // `.length` / `.slice` operate on UTF-16 code units, not bytes, so
     // the counter and truncation are both reported in "chars" to stay
     // consistent with what we actually measured.
-    details['responseBody'] =
+    details["responseBody"] =
       body.length > RESPONSE_BODY_TRUNCATE_LENGTH
         ? `${body.slice(0, RESPONSE_BODY_TRUNCATE_LENGTH)}… (truncated, ${body.length} chars)`
-        : body
+        : body;
   }
-  return details
+  return details;
 }
 
 /**
@@ -111,12 +109,12 @@ export function debugApiRequest(
   endpoint: string,
   timeout?: number | undefined,
 ): void {
-  if (isDebugNs('silly')) {
-    const timeoutStr = timeout !== undefined ? ` (timeout: ${timeout}ms)` : ''
+  if (isDebugNs("silly")) {
+    const timeoutStr = timeout !== undefined ? ` (timeout: ${timeout}ms)` : "";
     debugNs(
-      'silly',
+      "silly",
       `[${new Date().toISOString()}] request started: ${method} ${endpoint}${timeoutStr}`,
-    )
+    );
   }
 }
 
@@ -136,7 +134,7 @@ export function debugApiResponse(
 ): void {
   if (error) {
     debugDirNs(
-      'error',
+      "error",
       buildApiDebugDetails(
         {
           endpoint,
@@ -144,19 +142,16 @@ export function debugApiResponse(
         },
         requestInfo,
       ),
-    )
+    );
   } else if (status && status >= 400) {
     if (requestInfo) {
-      debugDirNs(
-        'error',
-        buildApiDebugDetails({ endpoint, status }, requestInfo),
-      )
+      debugDirNs("error", buildApiDebugDetails({ endpoint, status }, requestInfo));
     } else {
-      debugNs('error', `API ${endpoint}: HTTP ${status}`)
+      debugNs("error", `API ${endpoint}: HTTP ${status}`);
     }
     /* c8 ignore start - notice-level debug ns rarely enabled in tests */
-  } else if (isDebugNs('notice')) {
-    debugNs('notice', `API ${endpoint}: ${status || 'pending'}`)
+  } else if (isDebugNs("notice")) {
+    debugNs("notice", `API ${endpoint}: ${status || "pending"}`);
   }
   /* c8 ignore stop */
 }
@@ -164,21 +159,17 @@ export function debugApiResponse(
 /**
  * Debug configuration loading.
  */
-export function debugConfig(
-  source: string,
-  found: boolean,
-  error?: unknown | undefined,
-): void {
+export function debugConfig(source: string, found: boolean, error?: unknown | undefined): void {
   if (error) {
     debugDir({
       source,
       error: errorMessage(error),
-    })
+    });
   } else if (found) {
-    debug(`Config loaded: ${source}`)
+    debug(`Config loaded: ${source}`);
     /* c8 ignore start - silly-level debug ns rarely enabled in tests */
-  } else if (isDebugNs('silly')) {
-    debugNs('silly', `Config not found: ${source}`)
+  } else if (isDebugNs("silly")) {
+    debugNs("silly", `Config not found: ${source}`);
   }
   /* c8 ignore stop */
 }
@@ -187,7 +178,7 @@ export function debugConfig(
  * Debug file operation. Logs file operations with appropriate level.
  */
 export function debugFileOp(
-  operation: 'read' | 'write' | 'delete' | 'create',
+  operation: "read" | "write" | "delete" | "create",
   filepath: string,
   error?: unknown | undefined,
 ): void {
@@ -196,10 +187,10 @@ export function debugFileOp(
       operation,
       filepath,
       error: errorMessage(error),
-    })
+    });
     /* c8 ignore start - silly-level debug ns rarely enabled in tests */
-  } else if (isDebugNs('silly')) {
-    debugNs('silly', `File ${operation}: ${filepath}`)
+  } else if (isDebugNs("silly")) {
+    debugNs("silly", `File ${operation}: ${filepath}`);
   }
   /* c8 ignore stop */
 }
@@ -216,15 +207,12 @@ export function debugGit(
     debugDir({
       git_op: operation,
       ...details,
-    })
-  } else if (
-    (isDebugNs('notice') && operation.includes('push')) ||
-    operation.includes('commit')
-  ) {
+    });
+  } else if ((isDebugNs("notice") && operation.includes("push")) || operation.includes("commit")) {
     // Only log important operations like push and commit.
-    debugNs('notice', `Git ${operation} succeeded`)
-  } else if (isDebugNs('silly')) {
-    debugNs('silly', `Git ${operation}`)
+    debugNs("notice", `Git ${operation} succeeded`);
+  } else if (isDebugNs("silly")) {
+    debugNs("silly", `Git ${operation}`);
   }
 }
 
@@ -234,19 +222,17 @@ export function debugGit(
  *
  * Callers must gate truthy — passing an empty/undefined map skips the loop.
  */
-export function sanitizeHeaders(
-  headers: Record<string, string>,
-): Record<string, string> {
-  const sanitized: Record<string, string> = Object.create(null)
+export function sanitizeHeaders(headers: Record<string, string>): Record<string, string> {
+  const sanitized: Record<string, string> = Object.create(null);
   for (const [key, value] of Object.entries(headers)) {
-    const lowerKey = key.toLowerCase()
-    if (lowerKey === 'authorization' || lowerKey.includes('api-key')) {
-      sanitized[key] = '[REDACTED]'
+    const lowerKey = key.toLowerCase();
+    if (lowerKey === "authorization" || lowerKey.includes("api-key")) {
+      sanitized[key] = "[REDACTED]";
     } else {
-      sanitized[key] = value
+      sanitized[key] = value;
     }
   }
-  return sanitized
+  return sanitized;
 }
 
-export { debug, debugCache, debugDir, debugDirNs, debugNs, isDebug, isDebugNs }
+export { debug, debugCache, debugDir, debugDirNs, debugNs, isDebug, isDebugNs };

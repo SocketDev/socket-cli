@@ -43,27 +43,27 @@
  * finalizeTelemetrySync() // Sync version (best-effort).
  * ```
  */
-import os from 'node:os'
-import process from 'node:process'
+import os from "node:os";
+import process from "node:process";
 
-import { debugNs } from '@socketsecurity/lib-stable/debug/output'
-import { isError } from '@socketsecurity/lib-stable/errors/predicates'
-import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
+import { debugNs } from "@socketsecurity/lib-stable/debug/output";
+import { isError } from "@socketsecurity/lib-stable/errors/predicates";
+import { escapeRegExp } from "@socketsecurity/lib-stable/regexps/escape";
 
-import { TelemetryService } from './service.mts'
-import { CONFIG_KEY_DEFAULT_ORG, constants } from '../../constants.mts'
-import { getConfigValueOrUndef } from '../config.mts'
+import { TelemetryService } from "./service.mts";
+import { CONFIG_KEY_DEFAULT_ORG, constants } from "../../constants.mts";
+import { getConfigValueOrUndef } from "../config.mts";
 
-import type { TelemetryContext } from './types.mts'
+import type { TelemetryContext } from "./types.mts";
 
 // Track whether exit handlers have been set up to prevent duplicate registration.
-let exitHandlersRegistered = false
+let exitHandlersRegistered = false;
 
 // Add other subcommands
-const WRAPPER_CLI = new Set(['bun', 'npm', 'npx', 'pip', 'pnpm', 'vlt', 'yarn'])
+const WRAPPER_CLI = new Set(["bun", "npm", "npx", "pip", "pnpm", "vlt", "yarn"]);
 
 // Add other sensitive flags
-const API_TOKEN_FLAGS = new Set(['--api-token', '--token', '-t'])
+const API_TOKEN_FLAGS = new Set(["--api-token", "--token", "-t"]);
 
 /**
  * Build context for the current telemetry entry.
@@ -82,7 +82,7 @@ export function buildContext(argv: string[]): TelemetryContext {
     node_version: process.version,
     platform: process.platform,
     version: constants.ENV.INLINED_VERSION,
-  }
+  };
 }
 
 /**
@@ -93,14 +93,14 @@ export function buildContext(argv: string[]): TelemetryContext {
  * @returns Duration in milliseconds.
  */
 export function calculateDuration(startTime: number): number {
-  return Date.now() - startTime
+  return Date.now() - startTime;
 }
 
 /**
  * Debug wrapper for telemetry integration.
  */
 export function debug(message: string): void {
-  debugNs('socket:telemetry:integration', message)
+  debugNs("socket:telemetry:integration", message);
 }
 
 /**
@@ -111,10 +111,10 @@ export function debug(message: string): void {
  * @returns Promise that resolves when finalization completes.
  */
 export async function finalizeTelemetry(): Promise<void> {
-  const instance = TelemetryService.getCurrentInstance()
+  const instance = TelemetryService.getCurrentInstance();
   if (instance) {
-    debug('Flushing telemetry')
-    await instance.flush()
+    debug("Flushing telemetry");
+    await instance.flush();
   }
 }
 
@@ -128,10 +128,10 @@ export async function finalizeTelemetry(): Promise<void> {
  * possible.
  */
 export function finalizeTelemetrySync(): void {
-  const instance = TelemetryService.getCurrentInstance()
+  const instance = TelemetryService.getCurrentInstance();
   if (instance) {
-    debug('Triggering sync flush (best-effort)')
-    void instance.flush()
+    debug("Triggering sync flush (best-effort)");
+    void instance.flush();
   }
 }
 
@@ -143,7 +143,7 @@ export function finalizeTelemetrySync(): void {
  * @returns Error object.
  */
 export function normalizeError(error: unknown): Error {
-  return isError(error) ? error : new Error(String(error))
+  return isError(error) ? error : new Error(String(error));
 }
 
 /**
@@ -158,7 +158,7 @@ export function normalizeExitCode(
   exitCode: string | number | null | undefined,
   defaultValue: number,
 ): number {
-  return typeof exitCode === 'number' ? exitCode : defaultValue
+  return typeof exitCode === "number" ? exitCode : defaultValue;
 }
 
 /**
@@ -177,43 +177,41 @@ export function normalizeExitCode(
  */
 export function sanitizeArgv(argv: string[]): string[] {
   // Strip the first two values to drop the execPath and script.
-  const withoutPathAndScript = argv.slice(2)
+  const withoutPathAndScript = argv.slice(2);
 
   // Then strip arguments after wrapper CLIs to avoid leaking package names.
-  const wrapperIndex = withoutPathAndScript.findIndex(arg =>
-    WRAPPER_CLI.has(arg),
-  )
-  let strippedArgv = withoutPathAndScript
+  const wrapperIndex = withoutPathAndScript.findIndex((arg) => WRAPPER_CLI.has(arg));
+  let strippedArgv = withoutPathAndScript;
 
   if (wrapperIndex !== -1) {
     // Keep only wrapper + first command (e.g., ['npm']).
-    const endIndex = wrapperIndex + 1
-    strippedArgv = withoutPathAndScript.slice(0, endIndex)
+    const endIndex = wrapperIndex + 1;
+    strippedArgv = withoutPathAndScript.slice(0, endIndex);
   }
 
   // Then sanitize remaining arguments.
   return strippedArgv.map((arg, index) => {
     // Check if previous arg was an API token flag.
     if (index > 0) {
-      const prevArg = strippedArgv[index - 1]
+      const prevArg = strippedArgv[index - 1];
       if (prevArg && API_TOKEN_FLAGS.has(prevArg)) {
-        return '[REDACTED]'
+        return "[REDACTED]";
       }
     }
 
     // Redact anything that looks like a socket API token.
-    if (arg.startsWith('sktsec_') || arg.match(/^[a-f0-9]{32,}$/i)) {
-      return '[REDACTED]'
+    if (arg.startsWith("sktsec_") || arg.match(/^[a-f0-9]{32,}$/i)) {
+      return "[REDACTED]";
     }
 
     // Remove user home directory from file paths.
-    const homeDir = os.homedir()
+    const homeDir = os.homedir();
     if (homeDir) {
-      return arg.replace(new RegExp(escapeRegExp(homeDir), 'g'), '~')
+      return arg.replace(new RegExp(escapeRegExp(homeDir), "g"), "~");
     }
 
-    return arg
-  })
+    return arg;
+  });
 }
 
 /**
@@ -224,20 +222,18 @@ export function sanitizeArgv(argv: string[]): string[] {
  *
  * @returns Sanitized input.
  */
-export function sanitizeErrorAttribute(
-  input: string | undefined,
-): string | undefined {
+export function sanitizeErrorAttribute(input: string | undefined): string | undefined {
   if (!input) {
-    return undefined
+    return undefined;
   }
 
   // Remove user home directory.
-  const homeDir = os.homedir()
+  const homeDir = os.homedir();
   if (homeDir) {
-    return input.replace(new RegExp(escapeRegExp(homeDir), 'g'), '~')
+    return input.replace(new RegExp(escapeRegExp(homeDir), "g"), "~");
   }
 
-  return input
+  return input;
 }
 
 /**
@@ -253,7 +249,7 @@ export function sanitizeErrorAttribute(
  * exit. Safe to call multiple times - only registers handlers once.
  *
  * @example
- *   ```typescript
+ *   ;```typescript
  *   // In src/cli.mts
  *   setupTelemetryExitHandlers()
  *   ```
@@ -261,43 +257,43 @@ export function sanitizeErrorAttribute(
 export function setupTelemetryExitHandlers(): void {
   // Prevent duplicate handler registration.
   if (exitHandlersRegistered) {
-    debug('Telemetry exit handlers already registered, skipping')
-    return
+    debug("Telemetry exit handlers already registered, skipping");
+    return;
   }
 
-  exitHandlersRegistered = true
+  exitHandlersRegistered = true;
 
   // Use beforeExit for async finalization during clean shutdowns.
   // This fires when the event loop empties but before process actually exits.
-  process.on('beforeExit', () => {
+  process.on("beforeExit", () => {
     /* c8 ignore start - beforeExit handler body fires only on real process exit; vitest workers don't trigger it */
-    debug('beforeExit handler triggered')
-    void finalizeTelemetry()
+    debug("beforeExit handler triggered");
+    void finalizeTelemetry();
     /* c8 ignore stop */
-  })
+  });
 
   // Register handlers for common fatal signals as best-effort fallback.
   // These are synchronous contexts, so we can only trigger flush without awaiting.
-  const fatalSignals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP']
+  const fatalSignals: NodeJS.Signals[] = ["SIGINT", "SIGTERM", "SIGHUP"];
 
   for (let i = 0, { length } = fatalSignals; i < length; i += 1) {
-    const signal = fatalSignals[i]!
+    const signal = fatalSignals[i]!;
     try {
       process.on(signal, () => {
         /* c8 ignore start - signal handler body fires only on real signal delivery; tests don't dispatch signals */
-        debug(`Signal ${signal} received, attempting sync flush`)
-        finalizeTelemetrySync()
+        debug(`Signal ${signal} received, attempting sync flush`);
+        finalizeTelemetrySync();
         /* c8 ignore stop */
-      })
+      });
       /* c8 ignore start - process.on rarely throws for SIGINT/SIGTERM/SIGHUP; cross-platform defensive */
     } catch (e) {
       // Some signals may not be available on all platforms.
-      debug(`Failed to register handler for signal ${signal}: ${e}`)
+      debug(`Failed to register handler for signal ${signal}: ${e}`);
     }
     /* c8 ignore stop */
   }
 
-  debug('Telemetry exit handlers registered (beforeExit + common signals)')
+  debug("Telemetry exit handlers registered (beforeExit + common signals)");
 }
 
 /**
@@ -313,10 +309,10 @@ export async function trackCliComplete(
   startTime: number,
   exitCode?: string | number | undefined | null,
 ): Promise<void> {
-  debug('Capture end of command')
+  debug("Capture end of command");
 
   await trackEvent(
-    'cli_complete',
+    "cli_complete",
     buildContext(argv),
     {
       duration: calculateDuration(startTime),
@@ -325,7 +321,7 @@ export async function trackCliComplete(
     {
       flush: true,
     },
-  )
+  );
 }
 
 /**
@@ -343,10 +339,10 @@ export async function trackCliError(
   error: unknown,
   exitCode?: number | string | undefined | null,
 ): Promise<void> {
-  debug('Capture error and stack trace of command')
+  debug("Capture error and stack trace of command");
 
   await trackEvent(
-    'cli_error',
+    "cli_error",
     buildContext(argv),
     {
       duration: calculateDuration(startTime),
@@ -356,7 +352,7 @@ export async function trackCliError(
       error: normalizeError(error),
       flush: true,
     },
-  )
+  );
 }
 
 /**
@@ -372,9 +368,9 @@ export async function trackCliEvent(
   argv: string[],
   metadata?: Record<string, unknown> | undefined,
 ): Promise<void> {
-  debug(`Tracking CLI event: ${eventType}`)
+  debug(`Tracking CLI event: ${eventType}`);
 
-  await trackEvent(eventType, buildContext(argv), metadata)
+  await trackEvent(eventType, buildContext(argv), metadata);
 }
 
 /**
@@ -386,13 +382,13 @@ export async function trackCliEvent(
  * @returns Start timestamp for duration calculation.
  */
 export async function trackCliStart(argv: string[]): Promise<number> {
-  debug('Capture start of command')
+  debug("Capture start of command");
 
-  const startTime = Date.now()
+  const startTime = Date.now();
 
-  await trackEvent('cli_start', buildContext(argv))
+  await trackEvent("cli_start", buildContext(argv));
 
-  return startTime
+  return startTime;
 }
 
 /**
@@ -414,21 +410,21 @@ export async function trackEvent(
   context: TelemetryContext,
   metadata: Record<string, unknown> = {},
   options: {
-    error?: Error | undefined
-    flush?: boolean | undefined
+    error?: Error | undefined;
+    flush?: boolean | undefined;
   } = {},
 ): Promise<void> {
   // Skip telemetry in test environments.
   if (constants.ENV.VITEST) {
-    return
+    return;
   }
 
   try {
-    const orgSlug = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
+    const orgSlug = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG);
 
     if (orgSlug) {
-      const telemetry = await TelemetryService.getTelemetryClient(orgSlug)
-      debug(`Got telemetry service for org: ${orgSlug}`)
+      const telemetry = await TelemetryService.getTelemetryClient(orgSlug);
+      debug(`Got telemetry service for org: ${orgSlug}`);
 
       const event = {
         context,
@@ -442,18 +438,18 @@ export async function trackEvent(
             type: options.error.constructor.name,
           },
         }),
-      }
+      };
 
-      telemetry.track(event)
+      telemetry.track(event);
 
       // Flush events if requested.
       if (options.flush) {
-        await telemetry.flush()
+        await telemetry.flush();
       }
     }
   } catch (e) {
     // Telemetry errors should never block CLI execution.
-    debug(`Failed to track event ${eventType}: ${e}`)
+    debug(`Failed to track event ${eventType}: ${e}`);
   }
 }
 
@@ -474,14 +470,14 @@ export async function trackSubprocessComplete(
   exitCode: number | null,
   metadata?: Record<string, unknown> | undefined,
 ): Promise<void> {
-  debug(`Tracking subprocess complete: ${command}`)
+  debug(`Tracking subprocess complete: ${command}`);
 
-  await trackEvent('subprocess_complete', buildContext(process.argv), {
+  await trackEvent("subprocess_complete", buildContext(process.argv), {
     command,
     duration: calculateDuration(startTime),
     exit_code: normalizeExitCode(exitCode, 0),
     ...metadata,
-  })
+  });
 }
 
 /**
@@ -502,10 +498,10 @@ export async function trackSubprocessError(
   exitCode?: number | null | undefined,
   metadata?: Record<string, unknown> | undefined,
 ): Promise<void> {
-  debug(`Tracking subprocess error: ${command}`)
+  debug(`Tracking subprocess error: ${command}`);
 
   await trackEvent(
-    'subprocess_error',
+    "subprocess_error",
     buildContext(process.argv),
     {
       command,
@@ -516,7 +512,7 @@ export async function trackSubprocessError(
     {
       error: normalizeError(error),
     },
-  )
+  );
 }
 
 /**
@@ -528,7 +524,7 @@ export async function trackSubprocessError(
  * cli_error) are tracked by the main CLI entry point in src/cli.mts.
  *
  * @example
- *   ```typescript
+ *   ;```typescript
  *   await trackSubprocessExit(NPM, subprocessStartTime, code)
  *   ```
  *
@@ -545,14 +541,14 @@ export async function trackSubprocessExit(
 ): Promise<void> {
   // Track subprocess completion or error based on exit code.
   if (exitCode !== null && exitCode !== 0) {
-    const error = new Error(`${command} exited with code ${exitCode}`)
-    await trackSubprocessError(command, startTime, error, exitCode)
+    const error = new Error(`${command} exited with code ${exitCode}`);
+    await trackSubprocessError(command, startTime, error, exitCode);
   } else if (exitCode === 0) {
-    await trackSubprocessComplete(command, startTime, exitCode)
+    await trackSubprocessComplete(command, startTime, exitCode);
   }
 
   // Flush telemetry to ensure events are sent before exit.
-  await finalizeTelemetry()
+  await finalizeTelemetry();
 }
 
 /**
@@ -569,14 +565,14 @@ export async function trackSubprocessStart(
   command: string,
   metadata?: Record<string, unknown> | undefined,
 ): Promise<number> {
-  debug(`Tracking subprocess start: ${command}`)
+  debug(`Tracking subprocess start: ${command}`);
 
-  const startTime = Date.now()
+  const startTime = Date.now();
 
-  await trackEvent('subprocess_start', buildContext(process.argv), {
+  await trackEvent("subprocess_start", buildContext(process.argv), {
     command,
     ...metadata,
-  })
+  });
 
-  return startTime
+  return startTime;
 }

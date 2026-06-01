@@ -2,6 +2,6 @@
  * HOME environment variable. User home directory (Unix systems).
  */
 
-import { getHome } from '@socketsecurity/lib-stable/env/home'
+import { getHome } from "@socketsecurity/lib-stable/env/home";
 
-export const HOME = getHome()
+export const HOME = getHome();

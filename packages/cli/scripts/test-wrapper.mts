@@ -10,46 +10,40 @@
  *   - Inlined variable injection from bundle-tools.json
  */
 
-import { existsSync } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import fastGlob from 'fast-glob'
+import fastGlob from "fast-glob";
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { EnvironmentVariables } from './environment-variables.mts'
-import { loadEnvFile } from './util/load-env.mts'
+import { EnvironmentVariables } from "./environment-variables.mts";
+import { loadEnvFile } from "./util/load-env.mts";
 
-const logger = getDefaultLogger()
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
-const rootNodeModulesBinPath = path.join(
-  rootPath,
-  '..',
-  '..',
-  'node_modules',
-  '.bin',
-)
+const logger = getDefaultLogger();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootPath = path.join(__dirname, "..");
+const rootNodeModulesBinPath = path.join(rootPath, "..", "..", "node_modules", ".bin");
 
 /**
  * Check if required build artifacts exist.
  */
 function checkBuildArtifacts() {
-  const requiredArtifacts = ['build/cli.js', 'dist/index.js']
+  const requiredArtifacts = ["build/cli.js", "dist/index.js"];
   for (let i = 0, { length } = requiredArtifacts; i < length; i += 1) {
-    const artifact = requiredArtifacts[i]
-    const fullPath = path.join(rootPath, artifact)
+    const artifact = requiredArtifacts[i];
+    const fullPath = path.join(rootPath, artifact);
     if (!existsSync(fullPath)) {
-      logger.error(`Required build artifact missing: ${artifact}`)
-      logger.error('Run `pnpm build` before running tests')
-      return false
+      logger.error(`Required build artifact missing: ${artifact}`);
+      logger.error("Run `pnpm build` before running tests");
+      return false;
     }
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -59,42 +53,38 @@ async function main() {
   try {
     // Validate build artifacts exist.
     if (!checkBuildArtifacts()) {
-      process.exitCode = 1
-      return
+      process.exitCode = 1;
+      return;
     }
 
     // Parse command line arguments.
-    let args = process.argv.slice(2)
+    let args = process.argv.slice(2);
 
     // Remove the -- separator if it's the first argument.
-    if (args[0] === '--') {
-      args = args.slice(1)
+    if (args[0] === "--") {
+      args = args.slice(1);
     }
 
     // Check for and warn about environment variables that can cause snapshot mismatches.
     // These are all aliases for the Socket API token that should not be set during tests.
     const problematicEnvVars = [
-      'SOCKET_CLI_API_KEY',
-      'SOCKET_CLI_API_TOKEN',
-      'SOCKET_API_TOKEN',
-      'SOCKET_API_TOKEN',
-    ]
-    const foundEnvVars = problematicEnvVars.filter(v => process.env[v])
+      "SOCKET_CLI_API_KEY",
+      "SOCKET_CLI_API_TOKEN",
+      "SOCKET_API_TOKEN",
+      "SOCKET_API_TOKEN",
+    ];
+    const foundEnvVars = problematicEnvVars.filter((v) => process.env[v]);
     if (foundEnvVars.length > 0) {
       logger.warn(
-        `Detected environment variable(s) that may cause snapshot test failures: ${foundEnvVars.join(', ')}`,
-      )
-      logger.warn(
-        'These will be cleared for the test run to ensure consistent snapshots.',
-      )
-      logger.warn(
-        'Tests use .env.test configuration which should not include real API tokens.',
-      )
+        `Detected environment variable(s) that may cause snapshot test failures: ${foundEnvVars.join(", ")}`,
+      );
+      logger.warn("These will be cleared for the test run to ensure consistent snapshots.");
+      logger.warn("Tests use .env.test configuration which should not include real API tokens.");
     }
 
     // Load external tool versions for INLINED_* env vars.
     // Delegate to unified EnvironmentVariables module.
-    const externalToolVersions = EnvironmentVariables.getTestVariables()
+    const externalToolVersions = EnvironmentVariables.getTestVariables();
 
     const spawnEnv = {
       ...process.env,
@@ -102,7 +92,7 @@ async function main() {
       // Use 8GB in CI, 4GB locally.
       // Add --max-semi-space-size for better GC with RegExp-heavy tests.
       NODE_OPTIONS:
-        `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${process.env.CI ? 8192 : 4096} --max-semi-space-size=512`.trim(),
+        `${process.env.NODE_OPTIONS || ""} --max-old-space-size=${process.env.CI ? 8192 : 4096} --max-semi-space-size=512`.trim(),
       // Clear problematic environment variables that cause snapshot mismatches.
       // Tests should use .env.test configuration instead.
       SOCKET_CLI_API_KEY: undefined,
@@ -116,31 +106,31 @@ async function main() {
       // shell's TZ would otherwise override anything from the env
       // file. V8 caches TZ after the first Date op per-worker, so
       // it must enter the worker via spawn env, not setupFiles.
-      TZ: 'UTC',
+      TZ: "UTC",
       // Inject external tool versions (normally inlined at build time).
       ...externalToolVersions,
-    }
+    };
 
     // Load .env.test configuration.
-    const testEnv = loadEnvFile(path.join(rootPath, '.env.test'))
+    const testEnv = loadEnvFile(path.join(rootPath, ".env.test"));
 
     // Handle Windows vs Unix for vitest executable.
-    const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
-    const vitestPath = path.join(rootNodeModulesBinPath, vitestCmd)
+    const vitestCmd = WIN32 ? "vitest.cmd" : "vitest";
+    const vitestPath = path.join(rootNodeModulesBinPath, vitestCmd);
 
     // Expand glob patterns in arguments.
-    const expandedArgs = []
+    const expandedArgs = [];
     for (let i = 0, { length } = args; i < length; i += 1) {
-      const arg = args[i]
+      const arg = args[i];
       // Check if argument looks like a glob pattern.
-      if (arg.includes('*') && !arg.startsWith('-')) {
-        const files = fastGlob.sync(arg, { cwd: rootPath })
+      if (arg.includes("*") && !arg.startsWith("-")) {
+        const files = fastGlob.sync(arg, { cwd: rootPath });
         if (files.length === 0) {
-          logger.warn(`No files matched pattern: ${arg}`)
+          logger.warn(`No files matched pattern: ${arg}`);
         }
-        expandedArgs.push(...files)
+        expandedArgs.push(...files);
       } else {
-        expandedArgs.push(arg)
+        expandedArgs.push(arg);
       }
     }
 
@@ -151,9 +141,9 @@ async function main() {
         ...testEnv,
         ...spawnEnv,
       },
-      stdio: 'inherit',
+      stdio: "inherit",
       ...(WIN32 ? { shell: true } : {}),
-    }
+    };
 
     // --passWithNoTests: a scoped run where the expanded args don't
     // resolve to any test file should succeed rather than error with
@@ -161,19 +151,19 @@ async function main() {
     // touches only non-testable code.
     const result = await spawn(
       vitestPath,
-      ['run', '--passWithNoTests', ...expandedArgs],
+      ["run", "--passWithNoTests", ...expandedArgs],
       spawnOptions,
-    )
+    );
     // `code === null` means the process was killed by a signal — treat
     // as a failure so SIGKILL / SIGABRT aren't silently reported as 0.
-    process.exitCode = typeof result?.code === 'number' ? result.code : 1
+    process.exitCode = typeof result?.code === "number" ? result.code : 1;
   } catch (e) {
-    logger.error('Failed to spawn test process:', e)
-    process.exitCode = 1
+    logger.error("Failed to spawn test process:", e);
+    process.exitCode = 1;
   }
 }
 
-main().catch(e => {
-  logger.error('Unexpected error:', e)
-  process.exitCode = 1
-})
+main().catch((e) => {
+  logger.error("Unexpected error:", e);
+  process.exitCode = 1;
+});

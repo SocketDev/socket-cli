@@ -14,23 +14,23 @@
  *   - Extracts cache to packages/cli/build/ and packages/cli/dist/.
  */
 
-import crypto from 'node:crypto'
-import { existsSync, promises as fs } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import crypto from "node:crypto";
+import { existsSync, promises as fs } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { safeDelete } from "@socketsecurity/lib-stable/fs/safe";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const packageRoot = path.resolve(__dirname, '..')
-const repoRoot = path.resolve(__dirname, '../../..')
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const packageRoot = path.resolve(__dirname, "..");
+const repoRoot = path.resolve(__dirname, "../../..");
 
-const isQuiet = () => process.argv.includes('--quiet')
-const isVerbose = () => process.argv.includes('--verbose')
+const isQuiet = () => process.argv.includes("--quiet");
+const isVerbose = () => process.argv.includes("--verbose");
 
 /**
  * Check if cache exists in GitHub Actions.
@@ -38,35 +38,26 @@ const isVerbose = () => process.argv.includes('--verbose')
 async function cacheExists(repo, cacheKey) {
   try {
     const result = await spawn(
-      'gh',
-      [
-        'cache',
-        'list',
-        '--repo',
-        repo,
-        '--key',
-        `cli-build-Linux-${cacheKey}`,
-        '--json',
-        'key',
-      ],
+      "gh",
+      ["cache", "list", "--repo", repo, "--key", `cli-build-Linux-${cacheKey}`, "--json", "key"],
       {
         cwd: repoRoot,
-        stdio: 'pipe',
+        stdio: "pipe",
       },
-    )
+    );
     if (result.code !== 0) {
-      return false
+      return false;
     }
 
     // Validate stdout before parsing.
     if (!result.stdout || result.stdout.trim().length === 0) {
-      return false
+      return false;
     }
 
-    const caches = JSON.parse(result.stdout)
-    return Array.isArray(caches) && caches.length > 0
+    const caches = JSON.parse(result.stdout);
+    return Array.isArray(caches) && caches.length > 0;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -74,14 +65,11 @@ async function cacheExists(repo, cacheKey) {
  * Generate CLI build cache key (matches CI workflow).
  */
 async function generateCacheKey() {
-  const pnpmLockHash = await hashFile(path.join(repoRoot, 'pnpm-lock.yaml'))
-  const srcHash = await hashFiles('packages/cli/src', repoRoot)
-  const configHash = await hashFiles(
-    'packages/cli/.config packages/cli/scripts',
-    repoRoot,
-  )
-  const combined = `${pnpmLockHash}-${srcHash}-${configHash}`
-  return createHash('sha256').update(combined).digest('hex')
+  const pnpmLockHash = await hashFile(path.join(repoRoot, "pnpm-lock.yaml"));
+  const srcHash = await hashFiles("packages/cli/src", repoRoot);
+  const configHash = await hashFiles("packages/cli/.config packages/cli/scripts", repoRoot);
+  const combined = `${pnpmLockHash}-${srcHash}-${configHash}`;
+  return crypto.createHash("sha256").update(combined).digest("hex");
 }
 
 /**
@@ -89,16 +77,16 @@ async function generateCacheKey() {
  */
 async function getCurrentCommit() {
   try {
-    const result = await spawn('git', ['rev-parse', 'HEAD'], {
+    const result = await spawn("git", ["rev-parse", "HEAD"], {
       cwd: repoRoot,
-      stdio: 'pipe',
-    })
+      stdio: "pipe",
+    });
     if (!result || result.code !== 0) {
-      return undefined
+      return undefined;
     }
-    return result.stdout.trim()
+    return result.stdout.trim();
   } catch {
-    return undefined
+    return undefined;
   }
 }
 
@@ -107,12 +95,12 @@ async function getCurrentCommit() {
  */
 async function hasGhCli() {
   try {
-    const result = await spawn('gh', ['--version'], {
-      stdio: 'pipe',
-    })
-    return result !== null && result.code === 0
+    const result = await spawn("gh", ["--version"], {
+      stdio: "pipe",
+    });
+    return result !== null && result.code === 0;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -121,10 +109,10 @@ async function hasGhCli() {
  */
 async function hashFile(filePath) {
   try {
-    const content = await fs.readFile(filePath, 'utf8')
-    return createHash('sha256').update(content).digest('hex')
+    const content = await fs.readFile(filePath, "utf8");
+    return crypto.createHash("sha256").update(content).digest("hex");
   } catch {
-    return 'none'
+    return "none";
   }
 }
 
@@ -134,43 +122,43 @@ async function hashFile(filePath) {
 async function hashFiles(globPattern, cwd) {
   try {
     const result = await spawn(
-      'find',
+      "find",
       globPattern
-        .split(' ')
+        .split(" ")
         .concat([
-          '-type',
-          'f',
-          '!',
-          '-path',
-          '*/node_modules/*',
-          '!',
-          '-path',
-          '*/dist/*',
-          '!',
-          '-path',
-          '*/build/*',
+          "-type",
+          "f",
+          "!",
+          "-path",
+          "*/node_modules/*",
+          "!",
+          "-path",
+          "*/dist/*",
+          "!",
+          "-path",
+          "*/build/*",
         ]),
       {
         cwd,
-        stdio: 'pipe',
+        stdio: "pipe",
       },
-    )
+    );
     if (result.code !== 0) {
-      return 'none'
+      return "none";
     }
-    const files = result.stdout.split('\n').filter(Boolean).sort()
+    const files = result.stdout.split("\n").filter(Boolean).toSorted();
     if (!files.length) {
-      return 'none'
+      return "none";
     }
-    const hash = createHash('sha256')
+    const hash = crypto.createHash("sha256");
     for (let i = 0, { length } = files; i < length; i += 1) {
-      const file = files[i]
-      const content = await fs.readFile(path.join(cwd, file), 'utf8')
-      hash.update(content)
+      const file = files[i];
+      const content = await fs.readFile(path.join(cwd, file), "utf8");
+      hash.update(content);
     }
-    return hash.digest('hex')
+    return hash.digest("hex");
   } catch {
-    return 'none'
+    return "none";
   }
 }
 
@@ -178,90 +166,83 @@ async function hashFiles(globPattern, cwd) {
  * Download and extract cache from GitHub Actions.
  */
 async function restoreCache(repo, cacheKey) {
-  const tempDir = path.join(packageRoot, 'node_modules', '.cache', 'restore')
-  await fs.mkdir(tempDir, { recursive: true })
+  const tempDir = path.join(packageRoot, "node_modules", ".cache", "restore");
+  await fs.mkdir(tempDir, { recursive: true });
 
   try {
     // Note: gh cache download is not yet available.
     // We'll use the gh actions cache download API instead.
-    logger.info('Downloading cache from GitHub Actions...')
+    logger.info("Downloading cache from GitHub Actions…");
 
     // For now, we use gh api to download the cache.
     const result = await spawn(
-      'gh',
+      "gh",
       [
-        'api',
+        "api",
         `/repos/${repo}/actions/cache`,
-        '-H',
-        'Accept: application/vnd.github+json',
-        '--jq',
+        "-H",
+        "Accept: application/vnd.github+json",
+        "--jq",
         `.actions_caches[] | select(.key == "cli-build-Linux-${cacheKey}") | .id`,
       ],
       {
         cwd: repoRoot,
-        stdio: 'pipe',
+        stdio: "pipe",
       },
-    )
+    );
 
     if (result.code !== 0 || !result.stdout.trim()) {
-      logger.warn('Cache ID not found.')
-      return false
+      logger.warn("Cache ID not found.");
+      return false;
     }
 
-    const cacheId = result.stdout.trim()
+    const cacheId = result.stdout.trim();
 
     // Download cache archive.
     const downloadResult = await spawn(
-      'gh',
+      "gh",
       [
-        'api',
+        "api",
         `/repos/${repo}/actions/caches/${cacheId}/download`,
-        '-H',
-        'Accept: application/octet-stream',
+        "-H",
+        "Accept: application/octet-stream",
       ],
       {
         cwd: repoRoot,
-        stdio: 'pipe',
+        stdio: "pipe",
       },
-    )
+    );
 
     if (downloadResult.code !== 0) {
-      logger.warn('Failed to download cache archive.')
-      return false
+      logger.warn("Failed to download cache archive.");
+      return false;
     }
 
     // Extract cache (GitHub Actions uses tar + zstd).
-    const cacheArchive = path.join(tempDir, 'cache.tar.zst')
-    await fs.writeFile(
-      cacheArchive,
-      Buffer.from(downloadResult.stdout, 'binary'),
-    )
+    const cacheArchive = path.join(tempDir, "cache.tar.zst");
+    await fs.writeFile(cacheArchive, Buffer.from(downloadResult.stdout, "binary"));
 
     // Extract with tar.
-    const extractResult = await spawn(
-      'tar',
-      ['-xf', cacheArchive, '-C', packageRoot],
-      {
-        cwd: tempDir,
-        stdio: 'pipe',
-      },
-    )
+    const extractResult = await spawn("tar", ["-xf", cacheArchive, "-C", packageRoot], {
+      cwd: tempDir,
+      stdio: "pipe",
+    });
 
     if (extractResult.code !== 0) {
-      logger.warn('Failed to extract cache archive.')
-      return false
+      logger.warn("Failed to extract cache archive.");
+      return false;
     }
 
-    logger.success('Cache restored successfully!')
-    return true
+    logger.success("Cache restored successfully!");
+    return true;
   } catch (e) {
     if (isVerbose()) {
-      logger.error(`Cache restoration failed: ${e.message}`)
+      logger.error(`Cache restoration failed: ${e.message}`);
     }
-    return false
+    return false;
   } finally {
     // Clean up temp directory.
-    await safeDelete(tempDir)
+    await safeDelete(tempDir);
   }
 }
 
@@ -270,124 +251,120 @@ async function restoreCache(repo, cacheKey) {
  */
 async function main() {
   if (!isQuiet()) {
-    logger.log('')
-    logger.log('CLI Build Cache Restoration')
-    logger.log('===========================')
-    logger.log('')
+    logger.log("");
+    logger.log("CLI Build Cache Restoration");
+    logger.log("===========================");
+    logger.log("");
   }
 
   // Check if build artifacts already exist.
-  const buildDir = path.join(packageRoot, 'build')
-  const distDir = path.join(packageRoot, 'dist')
+  const buildDir = path.join(packageRoot, "build");
+  const distDir = path.join(packageRoot, "dist");
 
   if (existsSync(buildDir) && existsSync(distDir)) {
     if (!isQuiet()) {
-      logger.info('Build artifacts already exist, skipping cache restoration.')
+      logger.info("Build artifacts already exist, skipping cache restoration.");
     }
-    return 0
+    return 0;
   }
 
   // Check if gh CLI is available.
   if (!(await hasGhCli())) {
     if (!isQuiet()) {
-      logger.info('gh CLI not found (optional dependency).')
-      logger.info('Install from: https://cli.github.com/')
+      logger.info("gh CLI not found (optional dependency).");
+      logger.info("Install from: https://cli.github.com/");
     }
-    return 0
+    return 0;
   }
 
   // Get current commit.
-  const commit = await getCurrentCommit()
+  const commit = await getCurrentCommit();
   if (!commit) {
     if (!isQuiet()) {
-      logger.info('Not in a git repository, skipping cache restoration.')
+      logger.info("Not in a git repository, skipping cache restoration.");
     }
-    return 0
+    return 0;
   }
 
   if (!isQuiet()) {
-    logger.step(`Current commit: ${commit.slice(0, 8)}`)
+    logger.step(`Current commit: ${commit.slice(0, 8)}`);
   }
 
   // Generate cache key.
-  const cacheKey = await generateCacheKey()
+  const cacheKey = await generateCacheKey();
   if (!isQuiet()) {
-    logger.step(`Cache key: cli-build-Linux-${cacheKey.slice(0, 16)}...`)
+    logger.step(`Cache key: cli-build-Linux-${cacheKey.slice(0, 16)}...`);
   }
 
   // Get repository name.
-  const repoResult = await spawn(
-    'git',
-    ['config', '--get', 'remote.origin.url'],
-    {
-      cwd: repoRoot,
-      stdio: 'pipe',
-    },
-  )
+  const repoResult = await spawn("git", ["config", "--get", "remote.origin.url"], {
+    cwd: repoRoot,
+    stdio: "pipe",
+  });
   if (repoResult.code !== 0) {
     if (!isQuiet()) {
-      logger.info('Could not determine repository, skipping cache restoration.')
+      logger.info("Could not determine repository, skipping cache restoration.");
     }
-    return 0
+    return 0;
   }
 
-  const repoUrl = repoResult.stdout.trim()
-  const repoMatch = repoUrl.match(/github\.com[/:](.+?)(?:\.git)?$/)
+  const repoUrl = repoResult.stdout.trim();
+  const repoMatch = repoUrl.match(/github\.com[/:](.+?)(?:\.git)?$/);
   if (!repoMatch) {
     if (!isQuiet()) {
-      logger.info('Not a GitHub repository, skipping cache restoration.')
+      logger.info("Not a GitHub repository, skipping cache restoration.");
     }
-    return 0
+    return 0;
   }
 
-  const repo = repoMatch[1]
+  const repo = repoMatch[1];
   if (!isQuiet()) {
-    logger.step(`Repository: ${repo}`)
+    logger.step(`Repository: ${repo}`);
   }
 
   // Check if cache exists.
   if (!isQuiet()) {
-    logger.step('Checking if cache exists...')
+    logger.step("Checking if cache exists…");
   }
 
   if (!(await cacheExists(repo, cacheKey))) {
     if (!isQuiet()) {
-      logger.info('Cache not found for this commit.')
-      logger.info('This is normal for first-time builds or new commits.')
+      logger.info("Cache not found for this commit.");
+      logger.info("This is normal for first-time builds or new commits.");
     }
-    return 0
+    return 0;
   }
 
   // Restore cache.
   if (!isQuiet()) {
-    logger.step('Restoring cache...')
+    logger.step("Restoring cache…");
   }
 
-  const success = await restoreCache(repo, cacheKey)
+  const success = await restoreCache(repo, cacheKey);
   if (!success) {
     if (!isQuiet()) {
-      logger.warn('Cache restoration failed, will build from scratch.')
+      logger.warn("Cache restoration failed, will build from scratch.");
     }
-    return 0
+    return 0;
   }
 
   if (!isQuiet()) {
-    logger.log('')
-    logger.success('Build cache restored! Builds will be much faster.')
-    logger.log('')
+    logger.log("");
+    logger.success("Build cache restored! Builds will be much faster.");
+    logger.log("");
   }
 
-  return 0
+  return 0;
 }
 
 main()
-  .then(code => {
-    process.exitCode = code
+  .then((code) => {
+    process.exitCode = code;
   })
-  .catch(error => {
-    logger.error(error.message)
+  .catch((error) => {
+    logger.error(error.message);
     if (isVerbose()) {
-      logger.error(error.stack)
+      logger.error(error.stack);
     }
-    process.exitCode = 1
-  })
+    process.exitCode = 1;
+  });

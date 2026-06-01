@@ -52,11 +52,11 @@ This package centralizes build-time utilities that are shared across multiple So
 Transforms Unicode property escapes (`\p{Property}`) into basic character classes for `--with-intl=none` compatibility. Required because node-smol binaries lack ICU support.
 
 ```javascript
-import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
+import { unicodeTransformPlugin } from "build-infra/lib/esbuild-plugin-unicode-transform";
 
 export default {
   plugins: [unicodeTransformPlugin()],
-}
+};
 ```
 
 **Transformations:**
@@ -79,20 +79,20 @@ export default {
 Banner injection for `import.meta.url` polyfill in CommonJS bundles. Converts `__filename` to proper `file://` URL using Node.js `pathToFileURL()`.
 
 ```javascript
-import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
+import { IMPORT_META_URL_BANNER } from "build-infra/lib/esbuild-helpers";
 
 export default {
   banner: IMPORT_META_URL_BANNER,
   define: {
-    'import.meta.url': '__importMetaUrl',
+    "import.meta.url": "__importMetaUrl",
   },
-}
+};
 ```
 
 **Generated code:**
 
 ```javascript
-const __importMetaUrl = require('node:url').pathToFileURL(__filename).href
+const __importMetaUrl = require("node:url").pathToFileURL(__filename).href;
 ```
 
 ### GitHub Releases
@@ -104,9 +104,9 @@ Downloads assets from SocketDev/socket-btm releases with retry logic and caching
 Fetches the latest release tag for a tool from socket-btm.
 
 ```javascript
-import { getLatestRelease } from 'build-infra/lib/github-releases'
+import { getLatestRelease } from "build-infra/lib/github-releases";
 
-const tag = await getLatestRelease('node-smol')
+const tag = await getLatestRelease("node-smol");
 // Returns: 'node-smol-20250115-abc1234'
 ```
 
@@ -129,12 +129,9 @@ const tag = await getLatestRelease('node-smol')
 Gets the browser download URL for a specific release asset.
 
 ```javascript
-import { getReleaseAssetUrl } from 'build-infra/lib/github-releases'
+import { getReleaseAssetUrl } from "build-infra/lib/github-releases";
 
-const url = await getReleaseAssetUrl(
-  'node-smol-20250115-abc1234',
-  'node-linux-x64',
-)
+const url = await getReleaseAssetUrl("node-smol-20250115-abc1234", "node-linux-x64");
 // Returns: 'https://github.com/SocketDev/socket-btm/releases/download/...'
 ```
 
@@ -151,13 +148,9 @@ const url = await getReleaseAssetUrl(
 Downloads a release asset with automatic redirect following.
 
 ```javascript
-import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
+import { downloadReleaseAsset } from "build-infra/lib/github-releases";
 
-await downloadReleaseAsset(
-  'node-smol-20250120-abc1234',
-  'node-smol-linux-x64',
-  '/path/to/output',
-)
+await downloadReleaseAsset("node-smol-20250120-abc1234", "node-smol-linux-x64", "/path/to/output");
 ```
 
 **Parameters:**
@@ -180,47 +173,40 @@ await downloadReleaseAsset(
 
 ```javascript
 // .config/esbuild.cli.mjs
-import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
-import { unicodeTransformPlugin } from 'build-infra/lib/esbuild-plugin-unicode-transform'
+import { IMPORT_META_URL_BANNER } from "build-infra/lib/esbuild-helpers";
+import { unicodeTransformPlugin } from "build-infra/lib/esbuild-plugin-unicode-transform";
 
 export default {
-  entryPoints: ['src/cli.mts'],
+  entryPoints: ["src/cli.mts"],
   bundle: true,
-  outfile: 'build/cli.js',
-  platform: 'node',
-  target: 'node18',
-  format: 'cjs',
+  outfile: "build/cli.js",
+  platform: "node",
+  target: "node18",
+  format: "cjs",
 
   banner: {
     js: `#!/usr/bin/env node\n${IMPORT_META_URL_BANNER.js}`,
   },
 
   define: {
-    'import.meta.url': '__importMetaUrl',
+    "import.meta.url": "__importMetaUrl",
   },
 
   plugins: [unicodeTransformPlugin()],
-}
+};
 ```
 
 ### Asset Download Script
 
 ```javascript
 // scripts/download-node-smol.mjs
-import {
-  getLatestRelease,
-  downloadReleaseAsset,
-} from 'build-infra/lib/github-releases'
+import { getLatestRelease, downloadReleaseAsset } from "build-infra/lib/github-releases";
 
-const tag = await getLatestRelease('node-smol')
-const platform = process.platform
-const arch = process.arch
+const tag = await getLatestRelease("node-smol");
+const platform = process.platform;
+const arch = process.arch;
 
-await downloadReleaseAsset(
-  tag,
-  `node-${platform}-${arch}`,
-  `build/node-smol-${platform}-${arch}`,
-)
+await downloadReleaseAsset(tag, `node-${platform}-${arch}`, `build/node-smol-${platform}-${arch}`);
 ```
 
 ## Code Quality

@@ -15,107 +15,98 @@
  * dist/bootstrap/node.js (copied to Node.js source)
  */
 
-import { existsSync } from 'node:fs'
-import path from 'node:path'
+import { existsSync } from "node:fs";
+import path from "node:path";
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { safeDelete, safeMkdir } from "@socketsecurity/lib-stable/fs/safe";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { getNodeDisableSigusr1Flags } from './shared/node-flags.mjs'
+import { getNodeDisableSigusr1Flags } from "./shared/node-flags.mjs";
 import {
   getCliEntryPoint,
   getCliPackageDir,
   getCliPackageName,
   getDlxDir,
-} from './shared/paths.mjs'
+} from "./shared/paths.mjs";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 /**
  * Download CLI using npm pack command. This delegates to npm which handles
  * downloading and extracting the latest version.
  */
 export async function downloadCli(): Promise<void> {
-  const packageName = getCliPackageName()
-  const dlxDir = getDlxDir()
-  const cliDir = getCliPackageDir()
+  const packageName = getCliPackageName();
+  const dlxDir = getDlxDir();
+  const cliDir = getCliPackageDir();
 
-  await safeMkdir(dlxDir, { recursive: true })
+  await safeMkdir(dlxDir, { recursive: true });
 
-  logger.error(`Downloading ${packageName}...`)
+  logger.error(`Downloading ${packageName}...`);
 
   return new Promise((resolve, reject) => {
-    const npmPackProcess = spawn(
-      'npm',
-      ['pack', packageName, '--pack-destination', dlxDir],
-      {
-        stdio: ['ignore', 'pipe', 'inherit'],
-      },
-    )
+    const npmPackProcess = spawn("npm", ["pack", packageName, "--pack-destination", dlxDir], {
+      stdio: ["ignore", "pipe", "inherit"],
+    });
 
-    let tarballName = ''
-    npmPackProcess.process.stdout?.on('data', (data: Buffer) => {
-      tarballName += data.toString()
-    })
+    let tarballName = "";
+    npmPackProcess.process.stdout?.on("data", (data: Buffer) => {
+      tarballName += data.toString();
+    });
 
-    npmPackProcess.process.on('error', (e: Error) => {
-      reject(new Error(`Failed to run npm pack: ${e}`))
-    })
+    npmPackProcess.process.on("error", (e: Error) => {
+      reject(new Error(`Failed to run npm pack: ${e}`));
+    });
 
-    npmPackProcess.process.on('exit', async (code: number | null) => {
+    npmPackProcess.process.on("exit", async (code: number | null) => {
       if (code !== 0) {
-        reject(new Error(`npm pack exited with code ${code}`))
-        return
+        reject(new Error(`npm pack exited with code ${code}`));
+        return;
       }
 
       try {
-        const tarballPath = path.join(dlxDir, tarballName.trim())
+        const tarballPath = path.join(dlxDir, tarballName.trim());
 
-        await safeMkdir(cliDir, { recursive: true })
+        await safeMkdir(cliDir, { recursive: true });
 
         const tarExtractProcess = spawn(
-          'tar',
-          ['-xzf', tarballPath, '-C', cliDir, '--strip-components=1'],
+          "tar",
+          ["-xzf", tarballPath, "-C", cliDir, "--strip-components=1"],
           {
-            stdio: 'inherit',
+            stdio: "inherit",
           },
-        )
+        );
 
-        tarExtractProcess.process.on('error', (e: Error) => {
-          reject(new Error(`Failed to extract tarball: ${e}`))
-        })
+        tarExtractProcess.process.on("error", (e: Error) => {
+          reject(new Error(`Failed to extract tarball: ${e}`));
+        });
 
-        tarExtractProcess.process.on(
-          'exit',
-          async (extractCode: number | null) => {
-            if (extractCode !== 0) {
-              reject(
-                new Error(`tar extraction exited with code ${extractCode}`),
-              )
-              return
-            }
+        tarExtractProcess.process.on("exit", async (extractCode: number | null) => {
+          if (extractCode !== 0) {
+            reject(new Error(`tar extraction exited with code ${extractCode}`));
+            return;
+          }
 
-            await safeDelete(tarballPath, { force: true })
+          await safeDelete(tarballPath, { force: true });
 
-            logger.error('Socket CLI installed successfully')
-            resolve()
-          },
-        )
+          logger.error("Socket CLI installed successfully");
+          resolve();
+        });
       } catch (e) {
-        reject(e)
+        reject(e);
       }
-    })
-  })
+    });
+  });
 }
 
 /**
  * Check if CLI is installed.
  */
 export function isCliInstalled(): boolean {
-  const entryPoint = getCliEntryPoint()
-  const packageJson = `${getCliPackageDir()}/package.json`
-  return existsSync(entryPoint) && existsSync(packageJson)
+  const entryPoint = getCliEntryPoint();
+  const packageJson = `${getCliPackageDir()}/package.json`;
+  return existsSync(entryPoint) && existsSync(packageJson);
 }
 
 /**
@@ -124,45 +115,38 @@ export function isCliInstalled(): boolean {
 async function main(): Promise<void> {
   // Check if CLI is already installed.
   if (!isCliInstalled()) {
-    logger.error('Socket CLI not installed yet.')
+    logger.error("Socket CLI not installed yet.");
     try {
-      await downloadCli()
+      await downloadCli();
     } catch (e) {
-      logger.error('Failed to download Socket CLI:', e)
-      process.exit(1)
+      logger.error("Failed to download Socket CLI:", e);
+      process.exit(1);
     }
   }
 
   // CLI is installed, delegate to it.
-  const cliPath = getCliEntryPoint()
-  const args = process.argv.slice(2)
+  const cliPath = getCliEntryPoint();
+  const args = process.argv.slice(2);
 
-  const child = spawn(
-    process.execPath,
-    [...getNodeDisableSigusr1Flags(), cliPath, ...args],
-    {
-      stdio: 'inherit',
-      env: process.env,
-    },
-  )
+  const child = spawn(process.execPath, [...getNodeDisableSigusr1Flags(), cliPath, ...args], {
+    stdio: "inherit",
+    env: process.env,
+  });
 
-  child.process.on('error', (error: Error) => {
-    logger.error('Failed to spawn CLI:', error)
-    process.exit(1)
-  })
+  child.process.on("error", (error: Error) => {
+    logger.error("Failed to spawn CLI:", error);
+    process.exit(1);
+  });
 
-  child.process.on(
-    'exit',
-    (code: number | null, signal: NodeJS.Signals | null) => {
-      process.exit(code ?? (signal ? 1 : 0))
-    },
-  )
+  child.process.on("exit", (code: number | null, signal: NodeJS.Signals | null) => {
+    process.exit(code ?? (signal ? 1 : 0));
+  });
 }
 
 // Only run if executed directly (not when loaded as module).
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => {
-    logger.error('Bootstrap error:', error)
-    process.exit(1)
-  })
+  main().catch((error) => {
+    logger.error("Bootstrap error:", error);
+    process.exit(1);
+  });
 }

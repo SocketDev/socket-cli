@@ -1,19 +1,19 @@
-import { writeFileSync } from 'node:fs'
+import { writeFileSync } from "node:fs";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
-import { mdHeader } from '../../util/output/markdown.mts'
-import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
+import { mdHeader } from "../../util/output/markdown.mts";
+import { serializeResultJson } from "../../util/output/result-json.mjs";
 
-import type { CResult, OutputKind } from '../../types.mts'
-const logger = getDefaultLogger()
+import type { CResult, OutputKind } from "../../types.mts";
+const logger = getDefaultLogger();
 
 export type ManifestResult = {
-  files: string[]
-  type: 'gradle' | 'sbt'
-  success: boolean
-}
+  files: string[];
+  type: "gradle" | "sbt";
+  success: boolean;
+};
 
 export async function outputManifest(
   result: CResult<ManifestResult>,
@@ -21,65 +21,65 @@ export async function outputManifest(
   out: string,
 ) {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1
+    process.exitCode = result.code ?? 1;
   }
 
   if (!result.ok) {
-    if (outputKind === 'json') {
-      logger.log(serializeResultJson(result))
-      return
+    if (outputKind === "json") {
+      logger.log(serializeResultJson(result));
+      return;
     }
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
+    logger.fail(failMsgWithBadge(result.message, result.cause));
+    return;
   }
 
-  if (outputKind === 'json') {
-    const json = serializeResultJson(result)
+  if (outputKind === "json") {
+    const json = serializeResultJson(result);
 
-    if (out === '-') {
-      logger.log(json)
+    if (out === "-") {
+      logger.log(json);
     } else {
-      writeFileSync(out, json, 'utf8')
+      writeFileSync(out, json, "utf8");
     }
 
-    return
+    return;
   }
 
-  if (outputKind === 'markdown') {
-    const arr = []
-    const { files, type } = result.data
-    const typeName = type === 'gradle' ? 'Gradle' : 'SBT'
+  if (outputKind === "markdown") {
+    const arr = [];
+    const { files, type } = result.data;
+    const typeName = type === "gradle" ? "Gradle" : "SBT";
 
-    arr.push(mdHeader(`${typeName} Manifest Generation`))
-    arr.push('')
+    arr.push(mdHeader(`${typeName} Manifest Generation`));
+    arr.push("");
     arr.push(
-      `Successfully generated ${files.length} POM file${files.length === 1 ? '' : 's'} from ${typeName} project:`,
-    )
-    arr.push('')
+      `Successfully generated ${files.length} POM file${files.length === 1 ? "" : "s"} from ${typeName} project:`,
+    );
+    arr.push("");
 
     for (let i = 0, { length } = files; i < length; i += 1) {
-      const file = files[i]
-      arr.push(`- \`${file}\``)
+      const file = files[i];
+      arr.push(`- \`${file}\``);
     }
 
-    arr.push('')
-    arr.push(mdHeader('Next Steps', 2))
-    arr.push('')
-    arr.push('Generate a security scan by running:')
-    arr.push('')
-    arr.push('```bash')
-    arr.push('socket scan create')
-    arr.push('```')
-    arr.push('')
+    arr.push("");
+    arr.push(mdHeader("Next Steps", 2));
+    arr.push("");
+    arr.push("Generate a security scan by running:");
+    arr.push("");
+    arr.push("```bash");
+    arr.push("socket scan create");
+    arr.push("```");
+    arr.push("");
 
-    const md = arr.join('\n')
+    const md = arr.join("\n");
 
-    if (out === '-') {
-      logger.log(md)
+    if (out === "-") {
+      logger.log(md);
     } else {
-      writeFileSync(out, md, 'utf8')
+      writeFileSync(out, md, "utf8");
     }
-    return
+    return;
   }
 
   // Text mode output - this is handled by the converter functions themselves.

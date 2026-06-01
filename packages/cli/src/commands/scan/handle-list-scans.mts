@@ -1,7 +1,7 @@
-import { fetchOrgFullScanList } from './fetch-list-scans.mts'
-import { outputListScans } from './output-list-scans.mts'
+import { fetchOrgFullScanList } from "./fetch-list-scans.mts";
+import { outputListScans } from "./output-list-scans.mts";
 
-import type { OutputKind } from '../../types.mts'
+import type { OutputKind } from "../../types.mts";
 
 export async function handleListScans({
   branch,
@@ -14,15 +14,15 @@ export async function handleListScans({
   repo,
   sort,
 }: {
-  branch: string
-  direction: string
-  from_time: string
-  orgSlug: string
-  outputKind: OutputKind
-  page: number
-  perPage: number
-  repo: string
-  sort: string
+  branch: string;
+  direction: string;
+  from_time: string;
+  orgSlug: string;
+  outputKind: OutputKind;
+  page: number;
+  perPage: number;
+  repo: string;
+  sort: string;
 }): Promise<void> {
   const data = await fetchOrgFullScanList(
     {
@@ -36,9 +36,9 @@ export async function handleListScans({
       sort,
     },
     {
-      commandPath: 'socket scan list',
+      commandPath: "socket scan list",
     },
-  )
+  );
 
-  await outputListScans(data, outputKind)
+  await outputListScans(data, outputKind);
 }

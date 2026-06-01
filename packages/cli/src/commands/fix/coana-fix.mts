@@ -1,48 +1,40 @@
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
-import { promises as fs } from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
+import { joinAnd } from "@socketsecurity/lib-stable/arrays/join";
+import { debug, debugDir } from "@socketsecurity/lib-stable/debug/output";
+import { safeDelete } from "@socketsecurity/lib-stable/fs/safe";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { pluralize } from "@socketsecurity/lib-stable/words/pluralize";
 
 import {
   cleanupErrorBranches,
   cleanupFailedPrBranches,
   cleanupStaleBranch,
   cleanupSuccessfulPrLocalBranch,
-} from './branch-cleanup.mts'
-import {
-  checkCiEnvVars,
-  getCiEnvInstructions,
-  getFixEnv,
-} from './env-helpers.mts'
-import { isGhsaFixed, markGhsaFixed } from './ghsa-tracker.mts'
-import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
-import { logPrEvent } from './pr-lifecycle-logger.mts'
-import {
-  cleanupSocketFixPrs,
-  getSocketFixPrs,
-  openSocketFixPr,
-} from './pull-request.mts'
-import { FLAG_DRY_RUN } from '../../constants/cli.mts'
-import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
-import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
-import { findSocketYmlSync } from '../../util/config.mts'
-import { spawnCoanaDlx } from '../../util/dlx/spawn.mjs'
-import { getErrorCause } from '../../util/error/errors.mjs'
-import { getPackageFilesForScan } from '../../util/fs/path-resolve.mjs'
+} from "./branch-cleanup.mts";
+import { checkCiEnvVars, getCiEnvInstructions, getFixEnv } from "./env-helpers.mts";
+import { isGhsaFixed, markGhsaFixed } from "./ghsa-tracker.mts";
+import { getSocketFixBranchName, getSocketFixCommitMessage } from "./git.mts";
+import { logPrEvent } from "./pr-lifecycle-logger.mts";
+import { cleanupSocketFixPrs, getSocketFixPrs, openSocketFixPr } from "./pull-request.mts";
+import { FLAG_DRY_RUN } from "../../constants/cli.mts";
+import { GQL_PR_STATE_OPEN } from "../../constants/github.mts";
+import { DOT_SOCKET_DOT_FACTS_JSON } from "../../constants/paths.mts";
+import { findSocketYmlSync } from "../../util/config.mts";
+import { spawnCoanaDlx } from "../../util/dlx/spawn.mjs";
+import { getErrorCause } from "../../util/error/errors.mjs";
+import { getPackageFilesForScan } from "../../util/fs/path-resolve.mjs";
 import {
   enablePrAutoMerge,
   fetchGhsaDetails,
   getOctokit,
   setGitRemoteGithubRepoUrl,
-} from '../../util/git/github.mts'
+} from "../../util/git/github.mts";
 import {
   gitCheckoutBranch,
   gitCommit,
@@ -51,21 +43,21 @@ import {
   gitRemoteBranchExists,
   gitResetAndClean,
   gitUnstagedModifiedFiles,
-} from '../../util/git/operations.mjs'
-import { handleApiCall } from '../../util/socket/api.mjs'
-import { setupSdk } from '../../util/socket/sdk.mjs'
-import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
+} from "../../util/git/operations.mjs";
+import { handleApiCall } from "../../util/socket/api.mjs";
+import { setupSdk } from "../../util/socket/sdk.mjs";
+import { fetchSupportedScanFileNames } from "../scan/fetch-supported-scan-file-names.mts";
 
-import type { FixConfig } from './types.mts'
-import type { CResult } from '../../types.mts'
-const logger = getDefaultLogger()
+import type { FixConfig } from "./types.mts";
+import type { CResult } from "../../types.mts";
+const logger = getDefaultLogger();
 
 type GhsaFixResult = {
-  ghsaId: string
-  fixed: boolean
-  pullRequestLink?: string | undefined
-  pullRequestNumber?: number | undefined
-}
+  ghsaId: string;
+  fixed: boolean;
+  pullRequestLink?: string | undefined;
+  pullRequestNumber?: number | undefined;
+};
 
 export async function coanaFix(
   fixConfig: FixConfig,
@@ -90,219 +82,203 @@ export async function coanaFix(
     prLimit,
     showAffectedDirectDependencies,
     spinner,
-  } = fixConfig
+  } = fixConfig;
 
   // Under json/markdown mode we route coana's chatter away from our
   // stdout (its JSON report comes from --output-file, not stdout, so
   // coana stdout is entirely informational). 'ignore' drops it; that
   // was the previous behavior and it remains safe. When interactive we
   // inherit so the user sees coana progress in real-time.
-  const coanaStdio = outputKind === 'json' ? 'ignore' : 'inherit'
+  const coanaStdio = outputKind === "json" ? "ignore" : "inherit";
   // Ask coana to silence its own Winston logger under json mode. Belt
   // and braces with stdio:'ignore' and harmless if coana ignores the
   // flag.
-  const coanaSilenceArgs = outputKind === 'json' ? ['--silent'] : []
+  const coanaSilenceArgs = outputKind === "json" ? ["--silent"] : [];
 
-  const fixEnv = await getFixEnv()
-  debugDir({ fixEnv })
+  const fixEnv = await getFixEnv();
+  debugDir({ fixEnv });
 
-  spinner?.start()
+  spinner?.start();
 
-  const sockSdkCResult = await setupSdk()
+  const sockSdkCResult = await setupSdk();
   if (!sockSdkCResult.ok) {
-    return sockSdkCResult
+    return sockSdkCResult;
   }
 
-  const sockSdk = sockSdkCResult.data
+  const sockSdk = sockSdkCResult.data;
 
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner });
   if (!supportedFilesCResult.ok) {
-    return supportedFilesCResult
+    return supportedFilesCResult;
   }
 
-  const supportedFiles = supportedFilesCResult.data
+  const supportedFiles = supportedFilesCResult.data;
 
   // Load socket.yml so projectIgnorePaths is respected when collecting files.
-  const socketYmlResult = findSocketYmlSync(cwd)
-  const socketConfig = socketYmlResult.ok
-    ? socketYmlResult.data?.parsed
-    : undefined
+  const socketYmlResult = findSocketYmlSync(cwd);
+  const socketConfig = socketYmlResult.ok ? socketYmlResult.data?.parsed : undefined;
 
-  const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
+  const scanFilepaths = await getPackageFilesForScan(["."], supportedFiles, {
     config: socketConfig,
     cwd,
-  })
+  });
 
   // Exclude any .socket.facts.json files that happen to be in the scan
   // folder before the analysis was run.
   const filepathsToUpload = scanFilepaths.filter(
-    p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
-  )
+    (p) => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
+  );
   const uploadCResult = (await handleApiCall(
     sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload, {
       pathsRelativeTo: cwd,
     }),
     {
-      commandPath: 'socket fix',
-      description: 'upload manifests',
+      commandPath: "socket fix",
+      description: "upload manifests",
       spinner,
     },
-  )) as CResult<{ tarHash?: string | undefined }>
+  )) as CResult<{ tarHash?: string | undefined }>;
 
   if (!uploadCResult.ok) {
-    return uploadCResult
+    return uploadCResult;
   }
 
-  const tarHash: string | undefined = uploadCResult.data.tarHash
+  const tarHash: string | undefined = uploadCResult.data.tarHash;
   if (!tarHash) {
-    spinner?.stop()
+    spinner?.stop();
     return {
       ok: false,
-      message:
-        'No tar hash returned from Socket API upload-manifest-files endpoint',
+      message: "No tar hash returned from Socket API upload-manifest-files endpoint",
       data: uploadCResult.data,
-    }
+    };
   }
 
-  const shouldDiscoverGhsaIds =
-    all || !ghsas.length || (ghsas.length === 1 && ghsas[0] === 'all')
+  const shouldDiscoverGhsaIds = all || !ghsas.length || (ghsas.length === 1 && ghsas[0] === "all");
 
-  const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
+  const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo;
 
   if (!shouldOpenPrs) {
     // In local mode, if neither --all nor --id is provided, show deprecation warning.
     if (shouldDiscoverGhsaIds && !all) {
       logger.warn(
-        'Implicit --all is deprecated in local mode and will be removed in a future release. Please use --all explicitly.',
-      )
+        "Implicit --all is deprecated in local mode and will be removed in a future release. Please use --all explicitly.",
+      );
     }
 
     // Inform user about local mode when fixes will be applied.
     if (applyFixes && ghsas.length) {
-      const envCheck = checkCiEnvVars()
+      const envCheck = checkCiEnvVars();
       if (envCheck.present.length) {
         // Some CI vars are set but not all - show what's missing.
         if (envCheck.missing.length) {
           logger.info(
-            'Running in local mode - fixes will be applied directly to your working directory.\n' +
+            "Running in local mode - fixes will be applied directly to your working directory.\n" +
               `Missing environment variables for PR creation: ${joinAnd(envCheck.missing)}`,
-          )
+          );
         }
       } else {
         // No CI vars are present - show general local mode message.
         logger.info(
-          'Running in local mode - fixes will be applied directly to your working directory.\n' +
+          "Running in local mode - fixes will be applied directly to your working directory.\n" +
             getCiEnvInstructions(),
-        )
+        );
       }
     }
 
     // In local mode, apply limit to provided IDs.
-    const idsToProcess = shouldDiscoverGhsaIds
-      ? ['all']
-      : ghsas.slice(0, prLimit)
+    const idsToProcess = shouldDiscoverGhsaIds ? ["all"] : ghsas.slice(0, prLimit);
     if (!idsToProcess.length) {
-      spinner?.stop()
-      return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
+      spinner?.stop();
+      return { ok: true, data: { fixedAll: false, ghsaDetails: [] } };
     }
 
     // Create a temporary file for the output.
-    const tmpDir = os.tmpdir()
-    const tmpFile = path.join(tmpDir, `socket-fix-${Date.now()}.json`)
+    const tmpDir = os.tmpdir();
+    const tmpFile = path.join(tmpDir, `socket-fix-${Date.now()}.json`);
 
     try {
       const fixCResult = await spawnCoanaDlx(
         [
           ...coanaSilenceArgs,
-          'compute-fixes-and-upgrade-purls',
+          "compute-fixes-and-upgrade-purls",
           cwd,
-          '--manifests-tar-hash',
+          "--manifests-tar-hash",
           tarHash,
-          '--apply-fixes-to',
+          "--apply-fixes-to",
           ...idsToProcess,
-          ...(fixConfig.rangeStyle
-            ? ['--range-style', fixConfig.rangeStyle]
-            : []),
-          ...(minimumReleaseAge
-            ? ['--minimum-release-age', minimumReleaseAge]
-            : []),
-          ...(include.length ? ['--include', ...include] : []),
-          ...(exclude.length ? ['--exclude', ...exclude] : []),
-          ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
+          ...(fixConfig.rangeStyle ? ["--range-style", fixConfig.rangeStyle] : []),
+          ...(minimumReleaseAge ? ["--minimum-release-age", minimumReleaseAge] : []),
+          ...(include.length ? ["--include", ...include] : []),
+          ...(exclude.length ? ["--exclude", ...exclude] : []),
+          ...(ecosystems.length ? ["--purl-types", ...ecosystems] : []),
           ...(!applyFixes ? [FLAG_DRY_RUN] : []),
-          '--output-file',
+          "--output-file",
           tmpFile,
-          ...(debugFlag ? ['--debug'] : []),
-          ...(disableExternalToolChecks
-            ? ['--disable-external-tool-checks']
-            : []),
-          ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-          ...(showAffectedDirectDependencies
-            ? ['--show-affected-direct-dependencies']
-            : []),
+          ...(debugFlag ? ["--debug"] : []),
+          ...(disableExternalToolChecks ? ["--disable-external-tool-checks"] : []),
+          ...(disableMajorUpdates ? ["--disable-major-updates"] : []),
+          ...(showAffectedDirectDependencies ? ["--show-affected-direct-dependencies"] : []),
           ...fixConfig.unknownFlags,
         ],
         fixConfig.orgSlug,
         { coanaVersion, cwd, spinner, stdio: coanaStdio },
-      )
+      );
 
-      spinner?.stop()
+      spinner?.stop();
 
       if (!fixCResult.ok) {
-        return fixCResult
+        return fixCResult;
       }
 
       // Copy to outputFile if provided.
       if (outputFile) {
         // Status message — belongs on stderr so stdout stays payload-only
         // when a consumer is piping `socket fix --json`.
-        logger.error(`Copying fixes result to ${outputFile}`)
-        const tmpContent = await fs.readFile(tmpFile, 'utf8')
-        await fs.writeFile(outputFile, tmpContent, 'utf8')
+        logger.error(`Copying fixes result to ${outputFile}`);
+        const tmpContent = await fs.readFile(tmpFile, "utf8");
+        await fs.writeFile(outputFile, tmpContent, "utf8");
       }
 
       return {
         ok: true,
         data: {
           fixedAll: true,
-          ghsaDetails: idsToProcess.map(id => ({
+          ghsaDetails: idsToProcess.map((id) => ({
             ghsaId: id,
             fixed: true,
           })),
         },
-      }
+      };
     } finally {
       // Clean up the temporary file.
-      await safeDelete(tmpFile, { force: true })
+      await safeDelete(tmpFile, { force: true });
     }
   }
 
   // Adjust PR limit based on open Socket Fix PRs.
-  let adjustedLimit = prLimit
+  let adjustedLimit = prLimit;
   if (shouldOpenPrs && fixEnv.repoInfo) {
     try {
-      const openPrs = await getSocketFixPrs(
-        fixEnv.repoInfo.owner,
-        fixEnv.repoInfo.repo,
-        { states: GQL_PR_STATE_OPEN },
-      )
-      const openPrCount = openPrs.length
+      const openPrs = await getSocketFixPrs(fixEnv.repoInfo.owner, fixEnv.repoInfo.repo, {
+        states: GQL_PR_STATE_OPEN,
+      });
+      const openPrCount = openPrs.length;
       // Reduce limit by number of open PRs to avoid creating too many.
-      adjustedLimit = Math.max(0, prLimit - openPrCount)
+      adjustedLimit = Math.max(0, prLimit - openPrCount);
       if (openPrCount > 0) {
         debug(
-          `prLimit: adjusted from ${prLimit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', { count: openPrCount })}`,
-        )
+          `prLimit: adjusted from ${prLimit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize("PR", { count: openPrCount })}`,
+        );
       }
     } catch (e) {
-      debug('Failed to count open PRs, using original limit')
-      debugDir(e)
+      debug("Failed to count open PRs, using original limit");
+      debugDir(e);
     }
   }
 
-  const shouldSpawnCoana = adjustedLimit > 0
+  const shouldSpawnCoana = adjustedLimit > 0;
 
-  let ids: string[] | undefined
+  let ids: string[] | undefined;
 
   // When shouldDiscoverGhsaIds is true, discover vulnerabilities using find-vulnerabilities command.
   // This gives us the GHSA IDs needed to create individual PRs in CI mode.
@@ -310,291 +286,269 @@ export async function coanaFix(
     try {
       const discoverCResult = await spawnCoanaDlx(
         [
-          'find-vulnerabilities',
+          "find-vulnerabilities",
           cwd,
-          '--manifests-tar-hash',
+          "--manifests-tar-hash",
           tarHash,
-          ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
+          ...(ecosystems.length ? ["--purl-types", ...ecosystems] : []),
         ],
         fixConfig.orgSlug,
         { coanaVersion, cwd, spinner },
-        { stdio: 'pipe' },
-      )
+        { stdio: "pipe" },
+      );
 
       if (discoverCResult.ok) {
         // Coana prints ghsaIds as json-formatted string on the final line of the output.
-        const discoveredIds: string[] = []
+        const discoveredIds: string[] = [];
         try {
           const lines = discoverCResult.data
             .trim()
-            .split('\n')
-            .filter(line => line.trim())
-          const ghsaIdsRaw = lines.length > 0 ? lines[lines.length - 1] : ''
+            .split("\n")
+            .filter((line) => line.trim());
+          const ghsaIdsRaw = lines.length > 0 ? lines[lines.length - 1] : "";
           if (ghsaIdsRaw && ghsaIdsRaw.trim()) {
-            const parsed = JSON.parse(ghsaIdsRaw)
+            const parsed = JSON.parse(ghsaIdsRaw);
             if (!Array.isArray(parsed)) {
               throw new Error(
                 `coana find-vulnerabilities returned non-array JSON on last line (got: ${typeof parsed}); expected an array of GHSA ID strings`,
-              )
+              );
             }
-            discoveredIds.push(...parsed)
+            discoveredIds.push(...parsed);
           }
         } catch (e) {
-          debug('Failed to parse GHSA IDs from find-vulnerabilities output')
-          debugDir(e)
+          debug("Failed to parse GHSA IDs from find-vulnerabilities output");
+          debugDir(e);
         }
-        ids = discoveredIds.slice(0, adjustedLimit)
+        ids = discoveredIds.slice(0, adjustedLimit);
       }
     } catch (e) {
-      debug('Failed to discover vulnerabilities')
-      debugDir(e)
+      debug("Failed to discover vulnerabilities");
+      debugDir(e);
     }
   } else if (shouldSpawnCoana) {
-    ids = ghsas.slice(0, adjustedLimit)
+    ids = ghsas.slice(0, adjustedLimit);
   }
 
   if (!ids?.length) {
-    debug('miss: no GHSA IDs to process')
+    debug("miss: no GHSA IDs to process");
   }
 
   /* c8 ignore start -- defensive: shouldOpenPrs requires repoInfo truthy at line 168, so reaching this branch with repoInfo undefined is unreachable. */
   if (!fixEnv.repoInfo) {
-    debug('miss: no repo info detected')
+    debug("miss: no repo info detected");
   }
   /* c8 ignore stop */
 
   if (!ids?.length || !fixEnv.repoInfo) {
-    spinner?.stop()
-    return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
+    spinner?.stop();
+    return { ok: true, data: { fixedAll: false, ghsaDetails: [] } };
   }
 
   const displayIds =
-    ids.length > 3
-      ? `${ids.slice(0, 3).join(', ')} … and ${ids.length - 3} more`
-      : joinAnd(ids)
-  debug(`fetch: ${ids.length} GHSA details for ${displayIds}`)
+    ids.length > 3 ? `${ids.slice(0, 3).join(", ")} … and ${ids.length - 3} more` : joinAnd(ids);
+  debug(`fetch: ${ids.length} GHSA details for ${displayIds}`);
 
-  const ghsaDetails = await fetchGhsaDetails(ids)
-  const scanBaseNames = new Set(scanFilepaths.map(p => path.basename(p)))
+  const ghsaDetails = await fetchGhsaDetails(ids);
+  const scanBaseNames = new Set(scanFilepaths.map((p) => path.basename(p)));
 
-  debug(`found: ${ghsaDetails.size} GHSA details`)
+  debug(`found: ${ghsaDetails.size} GHSA details`);
 
   // Filter out already-fixed GHSAs to avoid duplicate work.
-  const unprocessedIds: string[] = []
+  const unprocessedIds: string[] = [];
   for (let i = 0, { length } = ids; i < length; i += 1) {
-    const ghsaId = ids[i]!
-    const alreadyFixed = await isGhsaFixed(cwd, ghsaId)
+    const ghsaId = ids[i]!;
+    const alreadyFixed = await isGhsaFixed(cwd, ghsaId);
     if (!alreadyFixed) {
-      unprocessedIds.push(ghsaId)
+      unprocessedIds.push(ghsaId);
     }
   }
 
-  const skippedCount = ids.length - unprocessedIds.length
+  const skippedCount = ids.length - unprocessedIds.length;
   if (skippedCount > 0) {
     logger.info(
-      `Skipping ${skippedCount} already-fixed ${pluralize('GHSA', { count: skippedCount })}`,
-    )
+      `Skipping ${skippedCount} already-fixed ${pluralize("GHSA", { count: skippedCount })}`,
+    );
   }
 
   // Clean up stale and merged Socket Fix PRs before creating new ones.
   if (shouldOpenPrs && fixEnv.repoInfo) {
-    logger.substep('Cleaning up stale and merged Socket Fix PRs...')
+    logger.substep("Cleaning up stale and merged Socket Fix PRs…");
 
     for (let i = 0, { length } = unprocessedIds; i < length; i += 1) {
-      const ghsaId = unprocessedIds[i]!
+      const ghsaId = unprocessedIds[i]!;
       try {
         const cleaned = await cleanupSocketFixPrs(
           fixEnv.repoInfo.owner,
           fixEnv.repoInfo.repo,
           ghsaId,
-        )
+        );
         if (cleaned.length) {
-          debug(`pr: cleaned ${cleaned.length} PRs for ${ghsaId}`)
+          debug(`pr: cleaned ${cleaned.length} PRs for ${ghsaId}`);
         }
       } catch (e) {
-        debug(`pr: cleanup failed for ${ghsaId}`)
-        debugDir(e)
+        debug(`pr: cleanup failed for ${ghsaId}`);
+        debugDir(e);
       }
     }
   }
 
-  let count = 0
-  let overallFixed = false
-  const ghsaFixResults: GhsaFixResult[] = []
+  let count = 0;
+  let overallFixed = false;
+  const ghsaFixResults: GhsaFixResult[] = [];
 
   // Process each GHSA ID individually.
   // Use unprocessedIds instead of ids to skip already-fixed GHSAs.
   for (let i = 0, { length } = unprocessedIds; i < length; i += 1) {
-    const ghsaId = unprocessedIds[i]!
-    debug(`check: ${ghsaId}`)
+    const ghsaId = unprocessedIds[i]!;
+    debug(`check: ${ghsaId}`);
 
     // Apply fix for single GHSA ID.
     const fixCResult = await spawnCoanaDlx(
       [
         ...coanaSilenceArgs,
-        'compute-fixes-and-upgrade-purls',
+        "compute-fixes-and-upgrade-purls",
         cwd,
-        '--manifests-tar-hash',
+        "--manifests-tar-hash",
         tarHash,
-        '--apply-fixes-to',
+        "--apply-fixes-to",
         ghsaId,
-        ...(fixConfig.rangeStyle
-          ? ['--range-style', fixConfig.rangeStyle]
-          : []),
-        ...(minimumReleaseAge
-          ? ['--minimum-release-age', minimumReleaseAge]
-          : []),
-        ...(include.length ? ['--include', ...include] : []),
-        ...(exclude.length ? ['--exclude', ...exclude] : []),
-        ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
-        ...(debugFlag ? ['--debug'] : []),
-        ...(disableExternalToolChecks
-          ? ['--disable-external-tool-checks']
-          : []),
-        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-        ...(showAffectedDirectDependencies
-          ? ['--show-affected-direct-dependencies']
-          : []),
+        ...(fixConfig.rangeStyle ? ["--range-style", fixConfig.rangeStyle] : []),
+        ...(minimumReleaseAge ? ["--minimum-release-age", minimumReleaseAge] : []),
+        ...(include.length ? ["--include", ...include] : []),
+        ...(exclude.length ? ["--exclude", ...exclude] : []),
+        ...(ecosystems.length ? ["--purl-types", ...ecosystems] : []),
+        ...(debugFlag ? ["--debug"] : []),
+        ...(disableExternalToolChecks ? ["--disable-external-tool-checks"] : []),
+        ...(disableMajorUpdates ? ["--disable-major-updates"] : []),
+        ...(showAffectedDirectDependencies ? ["--show-affected-direct-dependencies"] : []),
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
       { coanaVersion, cwd, spinner, stdio: coanaStdio },
-    )
+    );
 
     if (!fixCResult.ok) {
-      logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
-      continue
+      logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`);
+      continue;
     }
 
     // Check for modified files after applying the fix.
-    const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
+    const unstagedCResult = await gitUnstagedModifiedFiles(cwd);
     const modifiedFiles = unstagedCResult.ok
-      ? unstagedCResult.data.filter(relPath =>
-          scanBaseNames.has(path.basename(relPath)),
-        )
-      : []
+      ? unstagedCResult.data.filter((relPath) => scanBaseNames.has(path.basename(relPath)))
+      : [];
 
     if (!modifiedFiles.length) {
-      debug(`skip: no changes for ${ghsaId}`)
-      continue
+      debug(`skip: no changes for ${ghsaId}`);
+      continue;
     }
 
-    overallFixed = true
+    overallFixed = true;
 
-    const branch = getSocketFixBranchName(ghsaId)
+    const branch = getSocketFixBranchName(ghsaId);
 
     try {
       // Check for existing open PRs for this GHSA before creating a new one.
-      const existingPrs = await getSocketFixPrs(
-        fixEnv.repoInfo.owner,
-        fixEnv.repoInfo.repo,
-        { ghsaId, states: GQL_PR_STATE_OPEN },
-      )
+      const existingPrs = await getSocketFixPrs(fixEnv.repoInfo.owner, fixEnv.repoInfo.repo, {
+        ghsaId,
+        states: GQL_PR_STATE_OPEN,
+      });
 
       if (existingPrs.length) {
-        debug(`pr: found ${existingPrs.length} existing open PRs for ${ghsaId}`)
+        debug(`pr: found ${existingPrs.length} existing open PRs for ${ghsaId}`);
 
         // Close outdated PRs with explanatory comment.
-        for (
-          let j = 0, { length: prLength } = existingPrs;
-          j < prLength;
-          j += 1
-        ) {
-          const pr = existingPrs[j]!
+        for (let j = 0, { length: prLength } = existingPrs; j < prLength; j += 1) {
+          const pr = existingPrs[j]!;
           try {
-            const octokit = getOctokit()
+            const octokit = getOctokit();
             await octokit.issues.createComment({
               owner: fixEnv.repoInfo.owner,
               repo: fixEnv.repoInfo.repo,
               issue_number: pr.number,
-              body: 'Closing this PR as a newer fix is available.',
-            })
+              body: "Closing this PR as a newer fix is available.",
+            });
 
             await octokit.pulls.update({
               owner: fixEnv.repoInfo.owner,
               repo: fixEnv.repoInfo.repo,
               pull_number: pr.number,
-              state: 'closed',
-            })
+              state: "closed",
+            });
 
-            debug(`pr: closed superseded PR #${pr.number} for ${ghsaId}`)
-            logPrEvent('superseded', pr.number, ghsaId)
+            debug(`pr: closed superseded PR #${pr.number} for ${ghsaId}`);
+            logPrEvent("superseded", pr.number, ghsaId);
           } catch (e) {
-            debug(`pr: failed to close superseded PR #${pr.number}`)
-            debugDir(e)
+            debug(`pr: failed to close superseded PR #${pr.number}`);
+            debugDir(e);
           }
         }
       }
 
       // Check if an open PR already exists for this GHSA.
-      const existingOpenPrs = await getSocketFixPrs(
-        fixEnv.repoInfo.owner,
-        fixEnv.repoInfo.repo,
-        { ghsaId, states: GQL_PR_STATE_OPEN },
-      )
+      const existingOpenPrs = await getSocketFixPrs(fixEnv.repoInfo.owner, fixEnv.repoInfo.repo, {
+        ghsaId,
+        states: GQL_PR_STATE_OPEN,
+      });
 
       if (existingOpenPrs.length > 0) {
-        const [firstPr] = existingOpenPrs
-        const prNum = firstPr?.number
+        const [firstPr] = existingOpenPrs;
+        const prNum = firstPr?.number;
         if (prNum) {
-          logger.info(`PR #${prNum} already exists for ${ghsaId}, skipping.`)
-          debug(`skip: open PR #${prNum} exists for ${ghsaId}`)
+          logger.info(`PR #${prNum} already exists for ${ghsaId}, skipping.`);
+          debug(`skip: open PR #${prNum} exists for ${ghsaId}`);
         }
-        continue
+        continue;
       }
 
       // If branch exists but no open PR, delete the stale branch.
       // This handles cases where PR creation failed but branch was pushed.
       if (await gitRemoteBranchExists(branch, cwd)) {
-        const shouldContinue = await cleanupStaleBranch(branch, ghsaId, cwd)
+        const shouldContinue = await cleanupStaleBranch(branch, ghsaId, cwd);
         if (!shouldContinue) {
-          continue
+          continue;
         }
       }
 
       // Check for GitHub token before doing any git operations.
       if (!fixEnv.githubToken) {
         logger.error(
-          'Cannot create pull request: SOCKET_CLI_GITHUB_TOKEN environment variable is not set.\n' +
-            'Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.',
-        )
-        debug(`skip: missing GitHub token for ${ghsaId}`)
-        continue
+          "Cannot create pull request: SOCKET_CLI_GITHUB_TOKEN environment variable is not set.\n" +
+            "Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.",
+        );
+        debug(`skip: missing GitHub token for ${ghsaId}`);
+        continue;
       }
 
-      debug(`pr: creating for ${ghsaId}`)
+      debug(`pr: creating for ${ghsaId}`);
 
-      const details = ghsaDetails.get(ghsaId)
-      debug(`ghsa: ${ghsaId} details ${details ? 'found' : 'missing'}`)
+      const details = ghsaDetails.get(ghsaId);
+      debug(`ghsa: ${ghsaId} details ${details ? "found" : "missing"}`);
 
       const pushed =
         (await gitCreateBranch(branch, cwd)) &&
         (await gitCheckoutBranch(branch, cwd)) &&
-        (await gitCommit(
-          getSocketFixCommitMessage(ghsaId, details),
-          modifiedFiles,
-          {
-            cwd,
-            email: fixEnv.gitEmail,
-            user: fixEnv.gitUser,
-          },
-        )) &&
-        (await gitPushBranch(branch, cwd))
+        (await gitCommit(getSocketFixCommitMessage(ghsaId, details), modifiedFiles, {
+          cwd,
+          email: fixEnv.gitEmail,
+          user: fixEnv.gitUser,
+        })) &&
+        (await gitPushBranch(branch, cwd));
 
       if (!pushed) {
-        logger.warn(`Push failed for ${ghsaId}, skipping PR creation.`)
+        logger.warn(`Push failed for ${ghsaId}, skipping PR creation.`);
         // Clean up branches after push failure.
         try {
-          const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
-          await cleanupErrorBranches(branch, cwd, remoteBranchExists)
+          const remoteBranchExists = await gitRemoteBranchExists(branch, cwd);
+          await cleanupErrorBranches(branch, cwd, remoteBranchExists);
         } catch (e) {
-          debug('pr: failed to cleanup branches after push failure')
-          debugDir(e)
+          debug("pr: failed to cleanup branches after push failure");
+          debugDir(e);
         }
         // Clean up local state.
-        await gitResetAndClean(fixEnv.baseBranch, cwd)
-        await gitCheckoutBranch(fixEnv.baseBranch, cwd)
-        continue
+        await gitResetAndClean(fixEnv.baseBranch, cwd);
+        await gitCheckoutBranch(fixEnv.baseBranch, cwd);
+        continue;
       }
 
       // Set up git remote.
@@ -603,7 +557,7 @@ export async function coanaFix(
         fixEnv.repoInfo.repo,
         fixEnv.githubToken,
         cwd,
-      )
+      );
 
       const prResult = await openSocketFixPr(
         fixEnv.repoInfo.owner,
@@ -616,108 +570,98 @@ export async function coanaFix(
           cwd,
           ghsaDetails,
         },
-      )
+      );
 
       if (prResult.ok) {
-        const { data } = prResult.pr
-        const prRef = `PR #${data.number}`
+        const { data } = prResult.pr;
+        const prRef = `PR #${data.number}`;
 
-        logger.success(`Opened ${prRef} for ${ghsaId}.`)
-        logger.info(`PR URL: ${data.html_url}`)
-        logPrEvent('created', data.number, ghsaId, data.html_url)
+        logger.success(`Opened ${prRef} for ${ghsaId}.`);
+        logger.info(`PR URL: ${data.html_url}`);
+        logPrEvent("created", data.number, ghsaId, data.html_url);
 
         ghsaFixResults.push({
           fixed: true,
           ghsaId,
           pullRequestLink: data.html_url,
           pullRequestNumber: data.number,
-        })
+        });
 
         // Mark GHSA as fixed in tracker.
-        await markGhsaFixed(cwd, ghsaId, data.number, branch)
+        await markGhsaFixed(cwd, ghsaId, data.number, branch);
 
         if (autopilot) {
-          logger.indent()
-          spinner?.indent()
-          const { details, enabled } = await enablePrAutoMerge(data)
+          logger.indent();
+          spinner?.indent();
+          const { details, enabled } = await enablePrAutoMerge(data);
           if (enabled) {
-            logger.info(`Auto-merge enabled for ${prRef}.`)
+            logger.info(`Auto-merge enabled for ${prRef}.`);
           } else {
             const message = `Failed to enable auto-merge for ${prRef}${
-              details ? `:\n${details.map(d => ` - ${d}`).join('\n')}` : '.'
-            }`
-            logger.error(message)
+              details ? `:\n${details.map((d) => ` - ${d}`).join("\n")}` : "."
+            }`;
+            logger.error(message);
           }
-          logger.dedent()
-          spinner?.dedent()
+          logger.dedent();
+          spinner?.dedent();
         }
 
         // Clean up local branch only - keep remote branch for PR merge.
-        await cleanupSuccessfulPrLocalBranch(branch, cwd)
+        await cleanupSuccessfulPrLocalBranch(branch, cwd);
       } else {
         // Handle PR creation failures.
-        if (prResult.reason === 'already_exists') {
+        if (prResult.reason === "already_exists") {
           logger.info(
             `PR already exists for ${ghsaId} (this should not happen due to earlier check).`,
-          )
+          );
           // Don't delete branch - PR exists and needs it.
-        } else if (prResult.reason === 'validation_error') {
-          logger.error(
-            `Failed to create PR for ${ghsaId}:\n${prResult.details}`,
-          )
-          await cleanupFailedPrBranches(branch, cwd)
-        } else if (prResult.reason === 'permission_denied') {
+        } else if (prResult.reason === "validation_error") {
+          logger.error(`Failed to create PR for ${ghsaId}:\n${prResult.details}`);
+          await cleanupFailedPrBranches(branch, cwd);
+        } else if (prResult.reason === "permission_denied") {
           logger.error(
             `Failed to create PR for ${ghsaId}: Permission denied. Check SOCKET_CLI_GITHUB_TOKEN permissions.`,
-          )
-          await cleanupFailedPrBranches(branch, cwd)
-        } else if (prResult.reason === 'network_error') {
-          logger.error(
-            `Failed to create PR for ${ghsaId}: Network error. Please try again.`,
-          )
-          await cleanupFailedPrBranches(branch, cwd)
+          );
+          await cleanupFailedPrBranches(branch, cwd);
+        } else if (prResult.reason === "network_error") {
+          logger.error(`Failed to create PR for ${ghsaId}: Network error. Please try again.`);
+          await cleanupFailedPrBranches(branch, cwd);
         } else {
-          logger.error(
-            `Failed to create PR for ${ghsaId}: ${prResult.error.message}`,
-          )
-          await cleanupFailedPrBranches(branch, cwd)
+          logger.error(`Failed to create PR for ${ghsaId}: ${prResult.error.message}`);
+          await cleanupFailedPrBranches(branch, cwd);
         }
       }
 
       // Reset back to base branch for next iteration.
-      await gitResetAndClean(fixEnv.baseBranch, cwd)
-      await gitCheckoutBranch(fixEnv.baseBranch, cwd)
+      await gitResetAndClean(fixEnv.baseBranch, cwd);
+      await gitCheckoutBranch(fixEnv.baseBranch, cwd);
     } catch (e) {
-      logger.warn(
-        `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
-      )
-      debugDir(e)
+      logger.warn(`Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`);
+      debugDir(e);
       // Clean up branches after unexpected error.
       try {
-        const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
-        await cleanupErrorBranches(branch, cwd, remoteBranchExists)
+        const remoteBranchExists = await gitRemoteBranchExists(branch, cwd);
+        await cleanupErrorBranches(branch, cwd, remoteBranchExists);
       } catch (cleanupError) {
-        debug('pr: failed to cleanup branches during exception cleanup')
-        debugDir(cleanupError)
+        debug("pr: failed to cleanup branches during exception cleanup");
+        debugDir(cleanupError);
       }
       // Clean up local state.
-      await gitResetAndClean(fixEnv.baseBranch, cwd)
-      await gitCheckoutBranch(fixEnv.baseBranch, cwd)
+      await gitResetAndClean(fixEnv.baseBranch, cwd);
+      await gitCheckoutBranch(fixEnv.baseBranch, cwd);
     }
 
-    count += 1
-    debug(
-      `increment: count ${count}/${Math.min(adjustedLimit, unprocessedIds.length)}`,
-    )
+    count += 1;
+    debug(`increment: count ${count}/${Math.min(adjustedLimit, unprocessedIds.length)}`);
     if (count >= adjustedLimit) {
-      break
+      break;
     }
   }
 
-  spinner?.stop()
+  spinner?.stop();
 
   return {
     ok: true,
     data: { fixedAll: overallFixed, ghsaDetails: ghsaFixResults },
-  }
+  };
 }

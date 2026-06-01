@@ -1,62 +1,59 @@
-import path from 'node:path'
+import path from "node:path";
 
-import { debug } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { debug } from "@socketsecurity/lib-stable/debug/output";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
-import { outputManifest } from './output-manifest.mts'
-import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
-import { SOCKET_JSON } from '../../constants/socket.mts'
-import { outputDryRunExecute } from '../../util/dry-run/output.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mjs'
-import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { convertSbtToMaven } from "./convert-sbt-to-maven.mts";
+import { outputManifest } from "./output-manifest.mts";
+import { REQUIREMENTS_TXT } from "../../constants/paths.mjs";
+import { SOCKET_JSON } from "../../constants/socket.mts";
+import { outputDryRunExecute } from "../../util/dry-run/output.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mjs";
+import { readOrDefaultSocketJson } from "../../util/socket/json.mts";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 // Flags interface for type safety.
 interface ScalaFlags {
-  bin: string | undefined
-  out: string | undefined
-  sbtOpts: string | undefined
-  stdout: boolean | undefined
-  verbose: boolean | undefined
+  bin: string | undefined;
+  out: string | undefined;
+  sbtOpts: string | undefined;
+  stdout: boolean | undefined;
+  verbose: boolean | undefined;
 }
 
 const config = {
-  commandName: 'scala',
-  description:
-    "[beta] Generate a manifest file (`pom.xml`) from Scala's `build.sbt` file",
-  hidden: false,
+  commandName: "scala",
+  description: "[beta] Generate a manifest file (`pom.xml`) from Scala's `build.sbt` file",
   flags: defineFlags({
     ...commonFlags,
     bin: {
-      type: 'string',
-      description: 'Location of sbt binary to use',
+      type: "string",
+      description: "Location of sbt binary to use",
     },
     out: {
-      type: 'string',
-      description:
-        'Path of output file; where to store the resulting manifest, see also --stdout',
+      type: "string",
+      description: "Path of output file; where to store the resulting manifest, see also --stdout",
     },
     stdout: {
-      type: 'boolean',
-      description: 'Print resulting pom.xml to stdout (supersedes --out)',
+      type: "boolean",
+      description: "Print resulting pom.xml to stdout (supersedes --out)",
     },
     sbtOpts: {
-      type: 'string',
-      description: 'Additional options to pass on to sbt, as per `sbt --help`',
+      type: "string",
+      description: "Additional options to pass on to sbt, as per `sbt --help`",
     },
     verbose: {
-      type: 'boolean',
-      description: 'Print debug messages',
+      type: "boolean",
+      description: "Print debug messages",
     },
   }),
   help: (command: string, config: { flags: MeowFlags }) => `
@@ -96,13 +93,14 @@ const config = {
       $ ${command}
       $ ${command} ./proj --bin=/usr/bin/sbt --file=boot.sbt
   `,
-}
+  hidden: false,
+};
 
 export const cmdManifestScala = {
   description: config.description,
   hidden: config.hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -114,77 +112,70 @@ export async function run(
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const { json = false, markdown = false } = cli.flags
+  const { json = false, markdown = false } = cli.flags;
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
-  let [cwd = '.'] = cli.input
+  let [cwd = "."] = cli.input;
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
+  cwd = path.resolve(process.cwd(), cwd);
 
   // Feature request: Pass outputKind to convertSbtToMaven for json/md output support.
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
-  const sockJson = readOrDefaultSocketJson(cwd)
+  const sockJson = readOrDefaultSocketJson(cwd);
 
-  debug(`override: ${SOCKET_JSON} sbt: ${sockJson?.defaults?.manifest?.sbt}`)
+  debug(`override: ${SOCKET_JSON} sbt: ${sockJson?.defaults?.manifest?.sbt}`);
 
-  let { bin, out, sbtOpts, stdout, verbose } =
-    cli.flags as unknown as ScalaFlags
+  let { bin, out, sbtOpts, stdout, verbose } = cli.flags as unknown as ScalaFlags;
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
     if (sockJson.defaults?.manifest?.sbt?.bin) {
-      bin = sockJson.defaults?.manifest?.sbt?.bin
-      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
+      bin = sockJson.defaults?.manifest?.sbt?.bin;
+      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin);
     } else {
-      bin = 'sbt'
+      bin = "sbt";
     }
   }
-  if (
-    stdout === undefined &&
-    sockJson.defaults?.manifest?.sbt?.stdout !== undefined
-  ) {
-    stdout = sockJson.defaults?.manifest?.sbt?.stdout
-    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout)
+  if (stdout === undefined && sockJson.defaults?.manifest?.sbt?.stdout !== undefined) {
+    stdout = sockJson.defaults?.manifest?.sbt?.stdout;
+    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout);
   }
   if (stdout) {
-    out = '-'
+    out = "-";
   } else if (!out) {
     if (sockJson.defaults?.manifest?.sbt?.outfile) {
-      out = sockJson.defaults?.manifest?.sbt?.outfile
-      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
+      out = sockJson.defaults?.manifest?.sbt?.outfile;
+      logger.info(`Using default --out from ${SOCKET_JSON}:`, out);
     } else {
-      out = './socket.pom.xml'
+      out = "./socket.pom.xml";
     }
   }
   if (!sbtOpts) {
     if (sockJson.defaults?.manifest?.sbt?.sbtOpts) {
-      sbtOpts = sockJson.defaults?.manifest?.sbt?.sbtOpts
-      logger.info(`Using default --sbt-opts from ${SOCKET_JSON}:`, sbtOpts)
+      sbtOpts = sockJson.defaults?.manifest?.sbt?.sbtOpts;
+      logger.info(`Using default --sbt-opts from ${SOCKET_JSON}:`, sbtOpts);
     } else {
-      sbtOpts = ''
+      sbtOpts = "";
     }
   }
-  if (
-    verbose === undefined &&
-    sockJson.defaults?.manifest?.sbt?.verbose !== undefined
-  ) {
-    verbose = sockJson.defaults?.manifest?.sbt?.verbose
-    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
+  if (verbose === undefined && sockJson.defaults?.manifest?.sbt?.verbose !== undefined) {
+    verbose = sockJson.defaults?.manifest?.sbt?.verbose;
+    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose);
   } else if (verbose === undefined) {
-    verbose = false
+    verbose = false;
   }
 
   if (verbose) {
-    logger.group('- ', parentName, config.commandName, ':')
-    logger.group('- flags:', cli.flags)
-    logger.groupEnd()
-    logger.log('- input:', cli.input)
-    logger.groupEnd()
+    logger.group("- ", parentName, config.commandName, ":");
+    logger.group("- flags:", cli.flags);
+    logger.groupEnd();
+    logger.log("- input:", cli.input);
+    logger.groupEnd();
   }
 
   // Note: stdin input not supported. SBT manifest generation requires a directory
@@ -194,34 +185,34 @@ export async function run(
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
     test: cli.input.length <= 1,
-    message: 'Can only accept one DIR (make sure to escape spaces!)',
+    message: "Can only accept one DIR (make sure to escape spaces!)",
     fail: `received ${cli.input.length}`,
-  })
+  });
   if (!wasValidInput) {
-    return
+    return;
   }
 
   if (verbose) {
-    logger.group()
-    logger.log('- target:', cwd)
-    logger.log('- sbt bin:', bin)
-    logger.log('- out:', out)
-    logger.groupEnd()
+    logger.group();
+    logger.log("- target:", cwd);
+    logger.log("- sbt bin:", bin);
+    logger.log("- out:", out);
+    logger.groupEnd();
   }
 
   if (dryRun) {
-    const args = [cwd]
+    const args = [cwd];
     if (bin) {
-      args.push('--bin', String(bin))
+      args.push("--bin", String(bin));
     }
     if (out) {
-      args.push('--out', String(out))
+      args.push("--out", String(out));
     }
     if (sbtOpts) {
-      args.push('--sbt-opts', String(sbtOpts))
+      args.push("--sbt-opts", String(sbtOpts));
     }
-    outputDryRunExecute('sbt', args, 'generate pom.xml from Scala project')
-    return
+    outputDryRunExecute("sbt", args, "generate pom.xml from Scala project");
+    return;
   }
 
   const result = await convertSbtToMaven({
@@ -230,15 +221,15 @@ export async function run(
     out: String(out),
     outputKind,
     sbtOpts: String(sbtOpts)
-      .split(' ')
-      .map(s => s.trim())
+      .split(" ")
+      .map((s) => s.trim())
       .filter(Boolean),
     verbose: Boolean(verbose),
-  })
+  });
 
   // In text mode, output is already handled by convertSbtToMaven.
   // For json/markdown modes, we need to call the output helper.
-  if (outputKind !== 'text') {
-    await outputManifest(result, outputKind, String(out))
+  if (outputKind !== "text") {
+    await outputManifest(result, outputKind, String(out));
   }
 }

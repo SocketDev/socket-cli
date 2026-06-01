@@ -14,7 +14,7 @@
  * utility.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -24,148 +24,143 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
-}))
+}));
 
 // Mock meowWithSubcommands.
-const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
+const mockMeowWithSubcommands = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/util/cli/with-subcommands.mjs', () => ({
+vi.mock(import("../../../../src/util/cli/with-subcommands.mjs"), () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
-}))
+}));
 
 // Mock all subcommands.
-vi.mock('../../../../src/commands/manifest/cmd-manifest-auto.mts', () => ({
-  cmdManifestAuto: { description: 'Auto-detect', hidden: false },
-}))
+vi.mock(import("../../../../src/commands/manifest/cmd-manifest-auto.mts"), () => ({
+  cmdManifestAuto: { description: "Auto-detect", hidden: false },
+}));
 
-vi.mock('../../../../src/commands/manifest/cmd-manifest-cdxgen.mts', () => ({
-  cmdManifestCdxgen: { description: 'Run cdxgen', hidden: false },
-}))
+vi.mock(import("../../../../src/commands/manifest/cmd-manifest-cdxgen.mts"), () => ({
+  cmdManifestCdxgen: { description: "Run cdxgen", hidden: false },
+}));
 
-vi.mock('../../../../src/commands/manifest/cmd-manifest-conda.mts', () => ({
-  cmdManifestConda: { description: 'Generate conda manifest', hidden: false },
-}))
+vi.mock(import("../../../../src/commands/manifest/cmd-manifest-conda.mts"), () => ({
+  cmdManifestConda: { description: "Generate conda manifest", hidden: false },
+}));
 
-vi.mock('../../../../src/commands/manifest/cmd-manifest-gradle.mts', () => ({
-  cmdManifestGradle: { description: 'Generate gradle manifest', hidden: false },
-}))
+vi.mock(import("../../../../src/commands/manifest/cmd-manifest-gradle.mts"), () => ({
+  cmdManifestGradle: { description: "Generate gradle manifest", hidden: false },
+}));
 
-vi.mock('../../../../src/commands/manifest/cmd-manifest-kotlin.mts', () => ({
-  cmdManifestKotlin: { description: 'Generate kotlin manifest', hidden: false },
-}))
+vi.mock(import("../../../../src/commands/manifest/cmd-manifest-kotlin.mts"), () => ({
+  cmdManifestKotlin: { description: "Generate kotlin manifest", hidden: false },
+}));
 
-vi.mock('../../../../src/commands/manifest/cmd-manifest-scala.mts', () => ({
-  cmdManifestScala: { description: 'Generate scala manifest', hidden: false },
-}))
+vi.mock(import("../../../../src/commands/manifest/cmd-manifest-scala.mts"), () => ({
+  cmdManifestScala: { description: "Generate scala manifest", hidden: false },
+}));
 
-vi.mock('../../../../src/commands/manifest/cmd-manifest-setup.mts', () => ({
-  cmdManifestSetup: { description: 'Setup manifest config', hidden: false },
-}))
+vi.mock(import("../../../../src/commands/manifest/cmd-manifest-setup.mts"), () => ({
+  cmdManifestSetup: { description: "Setup manifest config", hidden: false },
+}));
 
 // Import after mocks.
-const { cmdManifest } =
-  await import('../../../../src/commands/manifest/cmd-manifest.mts')
+const { cmdManifest } = await import("../../../../src/commands/manifest/cmd-manifest.mts");
 
-describe('cmd-manifest', () => {
+describe("cmd-manifest", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdManifest.description).toBe(
-        'Generate a dependency manifest for certain ecosystems',
-      )
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdManifest.description).toBe("Generate a dependency manifest for certain ecosystems");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdManifest.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdManifest.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-manifest.mts' }
-    const context = { parentName: 'socket' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-manifest.mts" };
+    const context = { parentName: "socket" };
 
-    it('should call meowWithSubcommands with correct command name', async () => {
-      await cmdManifest.run([], importMeta, context)
+    it("should call meowWithSubcommands with correct command name", async () => {
+      await cmdManifest.run([], importMeta, context);
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: 'socket manifest',
+          name: "socket manifest",
           argv: [],
           importMeta,
         }),
         expect.any(Object),
-      )
-    })
+      );
+    });
 
-    it('should register all subcommands', async () => {
-      await cmdManifest.run([], importMeta, context)
+    it("should register all subcommands", async () => {
+      await cmdManifest.run([], importMeta, context);
 
-      const callArgs = mockMeowWithSubcommands.mock.calls[0]
-      const subcommands = callArgs[0].subcommands
+      const callArgs = mockMeowWithSubcommands.mock.calls[0];
+      const subcommands = callArgs[0].subcommands;
 
-      expect(subcommands).toHaveProperty('auto')
-      expect(subcommands).toHaveProperty('cdxgen')
-      expect(subcommands).toHaveProperty('conda')
-      expect(subcommands).toHaveProperty('gradle')
-      expect(subcommands).toHaveProperty('kotlin')
-      expect(subcommands).toHaveProperty('scala')
-      expect(subcommands).toHaveProperty('setup')
-    })
+      expect(subcommands).toHaveProperty("auto");
+      expect(subcommands).toHaveProperty("cdxgen");
+      expect(subcommands).toHaveProperty("conda");
+      expect(subcommands).toHaveProperty("gradle");
+      expect(subcommands).toHaveProperty("kotlin");
+      expect(subcommands).toHaveProperty("scala");
+      expect(subcommands).toHaveProperty("setup");
+    });
 
-    it('should register yolo as hidden alias for auto', async () => {
-      await cmdManifest.run([], importMeta, context)
+    it("should register yolo as hidden alias for auto", async () => {
+      await cmdManifest.run([], importMeta, context);
 
-      const callArgs = mockMeowWithSubcommands.mock.calls[0]
-      const aliases = callArgs[1].aliases
+      const callArgs = mockMeowWithSubcommands.mock.calls[0];
+      const aliases = callArgs[1].aliases;
 
       expect(aliases.yolo).toEqual({
-        description: 'Generate a dependency manifest for certain ecosystems',
+        description: "Generate a dependency manifest for certain ecosystems",
         hidden: true,
-        argv: ['auto'],
-      })
-    })
+        argv: ["auto"],
+      });
+    });
 
-    it('should pass common flags configuration', async () => {
-      await cmdManifest.run(['--dry-run'], importMeta, context)
+    it("should pass common flags configuration", async () => {
+      await cmdManifest.run(["--dry-run"], importMeta, context);
 
-      const callArgs = mockMeowWithSubcommands.mock.calls[0]
-      const config = callArgs[1]
+      const callArgs = mockMeowWithSubcommands.mock.calls[0];
+      const config = callArgs[1];
 
-      expect(config.description).toBe(
-        'Generate a dependency manifest for certain ecosystems',
-      )
-      expect(config.flags).toBeDefined()
-      expect(config.flags).toHaveProperty('dryRun')
-      expect(config.flags).toHaveProperty('help')
-    })
+      expect(config.description).toBe("Generate a dependency manifest for certain ecosystems");
+      expect(config.flags).toBeDefined();
+      expect(config.flags).toHaveProperty("dryRun");
+      expect(config.flags).toHaveProperty("help");
+    });
 
-    it('should forward arguments to subcommands', async () => {
-      await cmdManifest.run(['scala', '.'], importMeta, context)
+    it("should forward arguments to subcommands", async () => {
+      await cmdManifest.run(["scala", "."], importMeta, context);
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         expect.objectContaining({
-          argv: ['scala', '.'],
+          argv: ["scala", "."],
         }),
         expect.any(Object),
-      )
-    })
+      );
+    });
 
-    it('should handle flags in argv', async () => {
-      await cmdManifest.run(['--dry-run', 'auto'], importMeta, context)
+    it("should handle flags in argv", async () => {
+      await cmdManifest.run(["--dry-run", "auto"], importMeta, context);
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         expect.objectContaining({
-          argv: ['--dry-run', 'auto'],
+          argv: ["--dry-run", "auto"],
         }),
         expect.any(Object),
-      )
-    })
-  })
-})
+      );
+    });
+  });
+});

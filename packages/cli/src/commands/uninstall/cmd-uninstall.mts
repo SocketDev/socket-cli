@@ -1,9 +1,9 @@
-import { cmdUninstallCompletion } from './cmd-uninstall-completion.mts'
-import { meowWithSubcommands } from '../../util/cli/with-subcommands.mjs'
+import { cmdUninstallCompletion } from "./cmd-uninstall-completion.mts";
+import { meowWithSubcommands } from "../../util/cli/with-subcommands.mjs";
 
-import type { CliSubcommand } from '../../util/cli/with-subcommands.mjs'
+import type { CliSubcommand } from "../../util/cli/with-subcommands.mjs";
 
-const description = 'Uninstall Socket CLI tab completion'
+const description = "Uninstall Socket CLI tab completion";
 
 export const cmdUninstall: CliSubcommand = {
   description,
@@ -19,6 +19,6 @@ export const cmdUninstall: CliSubcommand = {
         },
       },
       { description },
-    )
+    );
   },
-}
+};

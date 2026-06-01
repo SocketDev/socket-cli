@@ -46,13 +46,13 @@
  * @returns Markdown formatted error string
  */
 export function mdError(message: string, cause?: string): string {
-  const parts = [mdHeader('Error'), '', mdKeyValue('Error', message)]
+  const parts = [mdHeader("Error"), "", mdKeyValue("Error", message)];
 
   if (cause) {
-    parts.push('', mdKeyValue('Cause', cause))
+    parts.push("", mdKeyValue("Cause", cause));
   }
 
-  return parts.join('\n')
+  return parts.join("\n");
 }
 
 /**
@@ -68,8 +68,8 @@ export function mdError(message: string, cause?: string): string {
  * @returns Markdown header string
  */
 export function mdHeader(title: string, level = 1): string {
-  const headerLevel = Math.max(1, Math.min(6, level))
-  return `${'#'.repeat(headerLevel)} ${title}`
+  const headerLevel = Math.max(1, Math.min(6, level));
+  return `${"#".repeat(headerLevel)} ${title}`;
 }
 
 /**
@@ -91,11 +91,11 @@ export function mdKeyValue(
   value: string | number | undefined,
   escaped = false,
 ): string {
-  const displayValue = value === undefined ? 'N/A' : String(value)
+  const displayValue = value === undefined ? "N/A" : String(value);
   const finalValue = escaped
-    ? displayValue.replaceAll('*', '\\*').replaceAll('_', '\\_')
-    : displayValue
-  return `**${label}**: ${finalValue}`
+    ? displayValue.replaceAll("*", "\\*").replaceAll("_", "\\_")
+    : displayValue;
+  return `**${label}**: ${finalValue}`;
 }
 
 /**
@@ -117,33 +117,33 @@ export function mdKeyValue(
 export function mdList(
   items: string[],
   options?: {
-    ordered?: boolean | undefined
-    indent?: number | undefined
-    truncateAt?: number | undefined
+    ordered?: boolean | undefined;
+    indent?: number | undefined;
+    truncateAt?: number | undefined;
   },
 ): string {
-  const { indent = 0, ordered = false, truncateAt } = { ...options }
+  const { indent = 0, ordered = false, truncateAt } = { ...options };
 
   if (!items.length) {
-    return ''
+    return "";
   }
 
-  const indentStr = '  '.repeat(indent)
-  let displayItems = items
-  let suffix = ''
+  const indentStr = "  ".repeat(indent);
+  let displayItems = items;
+  let suffix = "";
 
   if (truncateAt && items.length > truncateAt) {
-    displayItems = items.slice(0, truncateAt)
-    const remaining = items.length - truncateAt
-    suffix = `${indentStr}...and ${remaining} more`
+    displayItems = items.slice(0, truncateAt);
+    const remaining = items.length - truncateAt;
+    suffix = `${indentStr}...and ${remaining} more`;
   }
 
   const lines = displayItems.map((item, index) => {
-    const prefix = ordered ? `${index + 1}.` : '-'
-    return `${indentStr}${prefix} ${item}`
-  })
+    const prefix = ordered ? `${index + 1}.` : "-";
+    return `${indentStr}${prefix} ${item}`;
+  });
 
-  return suffix ? `${lines.join('\n')}\n${suffix}` : lines.join('\n')
+  return suffix ? `${lines.join("\n")}\n${suffix}` : lines.join("\n");
 }
 
 /**
@@ -162,14 +162,10 @@ export function mdList(
  *
  * @returns Markdown formatted section
  */
-export function mdSection(
-  title: string,
-  content: string | string[],
-  level = 2,
-): string {
-  const header = mdHeader(title, level)
-  const body = Array.isArray(content) ? content.join('\n') : content
-  return `${header}\n\n${body}`
+export function mdSection(title: string, content: string | string[], level = 2): string {
+  const header = mdHeader(title, level);
+  const body = Array.isArray(content) ? content.join("\n") : content;
+  return `${header}\n\n${body}`;
 }
 
 export function mdTable<T extends Array<Record<string, string>>>(
@@ -180,43 +176,39 @@ export function mdTable<T extends Array<Record<string, string>>>(
   titles: string[] = cols,
 ): string {
   // Max col width required to fit all data in that column
-  const cws = cols.map(col => col.length)
+  const cws = cols.map((col) => col.length);
 
   for (let i = 0, { length } = logs; i < length; i += 1) {
-    const log = logs[i]!
+    const log = logs[i]!;
     for (let i = 0, { length } = cols; i < length; i += 1) {
-      const val: unknown = log[cols[i] ?? ''] ?? ''
-      cws[i] = Math.max(
-        cws[i] ?? 0,
-        String(val).length,
-        (titles[i] || '').length,
-      )
+      const val: unknown = log[cols[i] ?? ""] ?? "";
+      cws[i] = Math.max(cws[i] ?? 0, String(val).length, (titles[i] || "").length);
     }
   }
 
-  let div = '|'
+  let div = "|";
   for (let i = 0, { length } = cws; i < length; i += 1) {
-    const cw = cws[i]!
-    div += ` ${'-'.repeat(cw)} |`
+    const cw = cws[i]!;
+    div += ` ${"-".repeat(cw)} |`;
   }
 
-  let header = '|'
+  let header = "|";
   for (let i = 0, { length } = titles; i < length; i += 1) {
-    header += ` ${String(titles[i]).padEnd(cws[i] ?? 0, ' ')} |`
+    header += ` ${String(titles[i]).padEnd(cws[i] ?? 0, " ")} |`;
   }
 
-  let body = ''
+  let body = "";
   for (let i = 0, { length } = logs; i < length; i += 1) {
-    const log = logs[i]!
-    body += '|'
+    const log = logs[i]!;
+    body += "|";
     for (let i = 0, { length } = cols; i < length; i += 1) {
-      const val: unknown = log[cols[i] ?? ''] ?? ''
-      body += ` ${String(val).padEnd(cws[i] ?? 0, ' ')} |`
+      const val: unknown = log[cols[i] ?? ""] ?? "";
+      body += ` ${String(val).padEnd(cws[i] ?? 0, " ")} |`;
     }
-    body += '\n'
+    body += "\n";
   }
 
-  return [div, header, div, body.trim(), div].filter(s => s.trim()).join('\n')
+  return [div, header, div, body.trim(), div].filter((s) => s.trim()).join("\n");
 }
 
 export function mdTableOfPairs(
@@ -226,33 +218,33 @@ export function mdTableOfPairs(
   cols: string[],
 ): string {
   // Max col width required to fit all data in that column
-  const cws = cols.map(col => col.length)
+  const cws = cols.map((col) => col.length);
 
   for (const [key, val] of arr) {
-    cws[0] = Math.max(cws[0] ?? 0, String(key).length)
-    cws[1] = Math.max(cws[1] ?? 0, String(val ?? '').length)
+    cws[0] = Math.max(cws[0] ?? 0, String(key).length);
+    cws[1] = Math.max(cws[1] ?? 0, String(val ?? "").length);
   }
 
-  let div = '|'
+  let div = "|";
   for (let i = 0, { length } = cws; i < length; i += 1) {
-    const cw = cws[i]!
-    div += ` ${'-'.repeat(cw)} |`
+    const cw = cws[i]!;
+    div += ` ${"-".repeat(cw)} |`;
   }
 
-  let header = '|'
+  let header = "|";
   for (let i = 0, { length } = cols; i < length; i += 1) {
-    header += ` ${String(cols[i]).padEnd(cws[i] ?? 0, ' ')} |`
+    header += ` ${String(cols[i]).padEnd(cws[i] ?? 0, " ")} |`;
   }
 
-  let body = ''
+  let body = "";
   for (const [key, val] of arr) {
-    body += '|'
-    body += ` ${String(key).padEnd(cws[0] ?? 0, ' ')} |`
-    body += ` ${String(val ?? '').padEnd(cws[1] ?? 0, ' ')} |`
-    body += '\n'
+    body += "|";
+    body += ` ${String(key).padEnd(cws[0] ?? 0, " ")} |`;
+    body += ` ${String(val ?? "").padEnd(cws[1] ?? 0, " ")} |`;
+    body += "\n";
   }
 
-  return [div, header, div, body.trim(), div].filter(s => s.trim()).join('\n')
+  return [div, header, div, body.trim(), div].filter((s) => s.trim()).join("\n");
 }
 
 export function mdTableStringNumber(
@@ -264,22 +256,20 @@ export function mdTableStringNumber(
   // | ----------- | ------ |
   // | Header      | 201464 |
   // | Paragraph   |     18 |
-  let mw1 = title1.length
-  let mw2 = title2.length
+  let mw1 = title1.length;
+  let mw2 = title2.length;
   for (const { 0: key, 1: value } of Object.entries(obj)) {
-    mw1 = Math.max(mw1, key.length)
-    mw2 = Math.max(mw2, String(value ?? '').length)
+    mw1 = Math.max(mw1, key.length);
+    mw2 = Math.max(mw2, String(value ?? "").length);
   }
 
-  const lines = []
-  lines.push(`| ${title1.padEnd(mw1, ' ')} | ${title2.padEnd(mw2)} |`)
-  lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
+  const lines = [];
+  lines.push(`| ${title1.padEnd(mw1, " ")} | ${title2.padEnd(mw2)} |`);
+  lines.push(`| ${"-".repeat(mw1)} | ${"-".repeat(mw2)} |`);
   for (const { 0: key, 1: value } of Object.entries(obj)) {
-    lines.push(
-      `| ${key.padEnd(mw1, ' ')} | ${String(value ?? '').padStart(mw2, ' ')} |`,
-    )
+    lines.push(`| ${key.padEnd(mw1, " ")} | ${String(value ?? "").padStart(mw2, " ")} |`);
   }
-  lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
+  lines.push(`| ${"-".repeat(mw1)} | ${"-".repeat(mw2)} |`);
 
-  return lines.join('\n')
+  return lines.join("\n");
 }

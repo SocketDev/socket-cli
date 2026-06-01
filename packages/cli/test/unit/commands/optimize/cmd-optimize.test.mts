@@ -4,9 +4,9 @@
  * Tests the command that optimizes dependencies with @socketregistry overrides.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -16,190 +16,177 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 // Mock dependencies.
-const mockHandleOptimize = vi.hoisted(() => vi.fn())
+const mockHandleOptimize = vi.hoisted(() => vi.fn());
 const mockDetectAndValidatePackageEnvironment = vi.hoisted(() =>
   vi.fn().mockResolvedValue({
     ok: true,
     data: {
-      agent: 'npm',
-      agentVersion: '10.0.0',
-      pkgPath: '/test/path',
+      agent: "npm",
+      agentVersion: "10.0.0",
+      pkgPath: "/test/path",
     },
   }),
-)
+);
 
-vi.mock('../../../../src/commands/optimize/handle-optimize.mts', () => ({
+vi.mock(import("../../../../src/commands/optimize/handle-optimize.mts"), () => ({
   handleOptimize: mockHandleOptimize,
-}))
+}));
 
-vi.mock('../../../../src/util/ecosystem/environment.mjs', () => ({
+vi.mock(import("../../../../src/util/ecosystem/environment.mjs"), () => ({
   detectAndValidatePackageEnvironment: mockDetectAndValidatePackageEnvironment,
-}))
+}));
 
 // Import after mocks.
-const { cmdOptimize } =
-  await import('../../../../src/commands/optimize/cmd-optimize.mts')
+const { cmdOptimize } = await import("../../../../src/commands/optimize/cmd-optimize.mts");
 
-describe('cmd-optimize', () => {
+describe("cmd-optimize", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdOptimize.description).toBe(
-        'Optimize dependencies with @socketregistry overrides',
-      )
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdOptimize.description).toBe("Optimize dependencies with @socketregistry overrides");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdOptimize.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdOptimize.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-optimize.mts' }
-    const context = { parentName: 'socket' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-optimize.mts" };
+    const context = { parentName: "socket" };
 
-    it('should support --dry-run flag', async () => {
-      await cmdOptimize.run(['--dry-run'], importMeta, context)
+    it("should support --dry-run flag", async () => {
+      await cmdOptimize.run(["--dry-run"], importMeta, context);
 
-      expect(mockHandleOptimize).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('DryRun'),
-      )
-    })
+      expect(mockHandleOptimize).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("DryRun"));
+    });
 
-    it('should detect package environment in dry-run mode', async () => {
-      await cmdOptimize.run(['--dry-run'], importMeta, context)
+    it("should detect package environment in dry-run mode", async () => {
+      await cmdOptimize.run(["--dry-run"], importMeta, context);
 
       expect(mockDetectAndValidatePackageEnvironment).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          cmdName: 'socket optimize',
+          cmdName: "socket optimize",
           prod: false,
         }),
-      )
-    })
+      );
+    });
 
-    it('should show failure in dry-run when package environment detection fails', async () => {
+    it("should show failure in dry-run when package environment detection fails", async () => {
       mockDetectAndValidatePackageEnvironment.mockResolvedValueOnce({
         ok: false,
-        error: 'No package.json found',
-      })
+        error: "No package.json found",
+      });
 
-      await cmdOptimize.run(['--dry-run'], importMeta, context)
+      await cmdOptimize.run(["--dry-run"], importMeta, context);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Would fail'),
-      )
-    })
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("Would fail"));
+    });
 
-    it('should call handleOptimize without dry-run flag', async () => {
-      await cmdOptimize.run([], importMeta, context)
+    it("should call handleOptimize without dry-run flag", async () => {
+      await cmdOptimize.run([], importMeta, context);
 
       expect(mockHandleOptimize).toHaveBeenCalledWith(
         expect.objectContaining({
           cwd: expect.any(String),
           pin: false,
-          outputKind: 'text',
+          outputKind: "text",
           prod: false,
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --pin flag to handleOptimize', async () => {
-      await cmdOptimize.run(['--pin'], importMeta, context)
+    it("should pass --pin flag to handleOptimize", async () => {
+      await cmdOptimize.run(["--pin"], importMeta, context);
 
       expect(mockHandleOptimize).toHaveBeenCalledWith(
         expect.objectContaining({
           pin: true,
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --prod flag to handleOptimize', async () => {
-      await cmdOptimize.run(['--prod'], importMeta, context)
+    it("should pass --prod flag to handleOptimize", async () => {
+      await cmdOptimize.run(["--prod"], importMeta, context);
 
       expect(mockHandleOptimize).toHaveBeenCalledWith(
         expect.objectContaining({
           prod: true,
         }),
-      )
-    })
+      );
+    });
 
-    it('should support custom cwd argument', async () => {
-      await cmdOptimize.run(['./custom/path'], importMeta, context)
-
-      expect(mockHandleOptimize).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cwd: expect.stringContaining('custom/path'),
-        }),
-      )
-    })
-
-    it('should support --json output mode', async () => {
-      await cmdOptimize.run(['--json'], importMeta, context)
+    it("should support custom cwd argument", async () => {
+      await cmdOptimize.run(["./custom/path"], importMeta, context);
 
       expect(mockHandleOptimize).toHaveBeenCalledWith(
         expect.objectContaining({
-          outputKind: 'json',
+          cwd: expect.stringContaining("custom/path"),
         }),
-      )
-    })
+      );
+    });
 
-    it('should support --markdown output mode', async () => {
-      await cmdOptimize.run(['--markdown'], importMeta, context)
+    it("should support --json output mode", async () => {
+      await cmdOptimize.run(["--json"], importMeta, context);
 
       expect(mockHandleOptimize).toHaveBeenCalledWith(
         expect.objectContaining({
-          outputKind: 'markdown',
+          outputKind: "json",
         }),
-      )
-    })
+      );
+    });
 
-    it('should include pin and prod in dry-run details', async () => {
-      await cmdOptimize.run(
-        ['--dry-run', '--pin', '--prod'],
-        importMeta,
-        context,
-      )
+    it("should support --markdown output mode", async () => {
+      await cmdOptimize.run(["--markdown"], importMeta, context);
+
+      expect(mockHandleOptimize).toHaveBeenCalledWith(
+        expect.objectContaining({
+          outputKind: "markdown",
+        }),
+      );
+    });
+
+    it("should include pin and prod in dry-run details", async () => {
+      await cmdOptimize.run(["--dry-run", "--pin", "--prod"], importMeta, context);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('pin to specific versions'),
-      )
+        expect.stringContaining("pin to specific versions"),
+      );
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('production dependencies only'),
-      )
-    })
+        expect.stringContaining("production dependencies only"),
+      );
+    });
 
-    it('should show agent version in dry-run mode', async () => {
+    it("should show agent version in dry-run mode", async () => {
       mockDetectAndValidatePackageEnvironment.mockResolvedValueOnce({
         ok: true,
         data: {
-          agent: 'pnpm',
-          agentVersion: '9.0.0',
-          pkgPath: '/test/path',
+          agent: "pnpm",
+          agentVersion: "9.0.0",
+          pkgPath: "/test/path",
         },
-      })
+      });
 
-      await cmdOptimize.run(['--dry-run'], importMeta, context)
+      await cmdOptimize.run(["--dry-run"], importMeta, context);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('pnpm v9.0.0'),
-      )
-    })
-  })
-})
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("pnpm v9.0.0"));
+    });
+  });
+});

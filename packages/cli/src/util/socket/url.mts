@@ -14,25 +14,21 @@
  * documentation - Scan report links - Ecosystem-specific URL formatting.
  */
 
-import { SOCKET_WEBSITE_URL } from '../../constants/socket.mjs'
-import { getPurlObject } from '../purl/parse.mts'
+import { SOCKET_WEBSITE_URL } from "../../constants/socket.mjs";
+import { getPurlObject } from "../purl/parse.mts";
 
-import type { SocketArtifact } from '../alert/artifact.mts'
-import type { PURL_Type } from '../ecosystem/types.mjs'
-import type { PackageURL } from '@socketregistry/packageurl-js-stable'
+import type { SocketArtifact } from "../alert/artifact.mts";
+import type { PURL_Type } from "../ecosystem/types.mjs";
+import type { PackageURL } from "@socketregistry/packageurl-js-stable";
 
-export function getPkgFullNameFromPurl(
-  purl: string | PackageURL | SocketArtifact,
-): string {
-  const purlObj = getPurlObject(purl)
-  const { name, namespace } = purlObj
-  return namespace
-    ? `${namespace}${purlObj.type === 'maven' ? ':' : '/'}${name}`
-    : name!
+export function getPkgFullNameFromPurl(purl: string | PackageURL | SocketArtifact): string {
+  const purlObj = getPurlObject(purl);
+  const { name, namespace } = purlObj;
+  return namespace ? `${namespace}${purlObj.type === "maven" ? ":" : "/"}${name}` : name!;
 }
 
 export function getSocketDevAlertUrl(alertType: string): string {
-  return `${SOCKET_WEBSITE_URL}/alerts/${alertType}`
+  return `${SOCKET_WEBSITE_URL}/alerts/${alertType}`;
 }
 
 export function getSocketDevPackageOverviewUrl(
@@ -40,16 +36,16 @@ export function getSocketDevPackageOverviewUrl(
   fullName: string,
   version?: string | undefined,
 ): string {
-  const url = `${SOCKET_WEBSITE_URL}/${ecosystem}/package/${fullName}`
-  return ecosystem === 'golang'
-    ? `${url}${version ? `?section=overview&version=${version}` : ''}`
-    : `${url}${version ? `/overview/${version}` : ''}`
+  const url = `${SOCKET_WEBSITE_URL}/${ecosystem}/package/${fullName}`;
+  return ecosystem === "golang"
+    ? `${url}${version ? `?section=overview&version=${version}` : ""}`
+    : `${url}${version ? `/overview/${version}` : ""}`;
 }
 
 export function getSocketDevPackageOverviewUrlFromPurl(
   purl: string | PackageURL | SocketArtifact,
 ): string {
-  const purlObj = getPurlObject(purl)
-  const fullName = getPkgFullNameFromPurl(purlObj)
-  return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version)
+  const purlObj = getPurlObject(purl);
+  const fullName = getPkgFullNameFromPurl(purlObj);
+  return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version);
 }

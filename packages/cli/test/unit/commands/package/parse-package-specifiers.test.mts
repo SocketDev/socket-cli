@@ -19,54 +19,52 @@
  * (implementation)
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from "vitest";
 
-import { parsePackageSpecifiers } from '../../../../src/commands/package/parse-package-specifiers.mts'
+import { parsePackageSpecifiers } from "../../../../src/commands/package/parse-package-specifiers.mts";
 
-describe('parse-package-specifiers', async () => {
-  it('should parse a simple `npm babel`', () => {
-    const { purls, valid } = parsePackageSpecifiers('npm', ['babel'])
-    expect(valid).toBe(true)
-    expect(purls).toStrictEqual(['pkg:npm/babel'])
-  })
+describe("parse-package-specifiers", async () => {
+  it("should parse a simple `npm babel`", () => {
+    const { purls, valid } = parsePackageSpecifiers("npm", ["babel"]);
+    expect(valid).toBe(true);
+    expect(purls).toStrictEqual(["pkg:npm/babel"]);
+  });
 
-  it('should parse a simple purl with prefix', () => {
-    expect(parsePackageSpecifiers('pkg:npm/babel', [])).toMatchInlineSnapshot(`
+  it("should parse a simple purl with prefix", () => {
+    expect(parsePackageSpecifiers("pkg:npm/babel", [])).toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:npm/babel",
         ],
         "valid": true,
       }
-    `)
-  })
+    `);
+  });
 
-  it('should support npm scoped packages', () => {
-    expect(parsePackageSpecifiers('npm', ['@babel/core']))
-      .toMatchInlineSnapshot(`
+  it("should support npm scoped packages", () => {
+    expect(parsePackageSpecifiers("npm", ["@babel/core"])).toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:npm/@babel/core",
         ],
         "valid": true,
       }
-    `)
-  })
+    `);
+  });
 
-  it('should parse a simple purl without prefix', () => {
-    expect(parsePackageSpecifiers('npm/babel', [])).toMatchInlineSnapshot(`
+  it("should parse a simple purl without prefix", () => {
+    expect(parsePackageSpecifiers("npm/babel", [])).toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:npm/babel",
         ],
         "valid": true,
       }
-    `)
-  })
+    `);
+  });
 
-  it('should parse a multiple purls', () => {
-    expect(parsePackageSpecifiers('npm/babel', ['golang/foo']))
-      .toMatchInlineSnapshot(`
+  it("should parse a multiple purls", () => {
+    expect(parsePackageSpecifiers("npm/babel", ["golang/foo"])).toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:npm/babel",
@@ -74,13 +72,12 @@ describe('parse-package-specifiers', async () => {
         ],
         "valid": true,
       }
-    `)
-  })
+    `);
+  });
 
-  it('should parse a mixed names and purls', () => {
-    expect(
-      parsePackageSpecifiers('npm', ['golang/foo', 'babel', 'pkg:npm/tenko']),
-    ).toMatchInlineSnapshot(`
+  it("should parse a mixed names and purls", () => {
+    expect(parsePackageSpecifiers("npm", ["golang/foo", "babel", "pkg:npm/tenko"]))
+      .toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:npm/golang/foo",
@@ -89,82 +86,79 @@ describe('parse-package-specifiers', async () => {
         ],
         "valid": true,
       }
-    `)
-  })
+    `);
+  });
 
-  it('should complain when seeing an unscoped package without namespace', () => {
-    expect(parsePackageSpecifiers('golang/foo', ['babel', 'pkg:npm/tenko']))
-      .toMatchInlineSnapshot(`
+  it("should complain when seeing an unscoped package without namespace", () => {
+    expect(parsePackageSpecifiers("golang/foo", ["babel", "pkg:npm/tenko"])).toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:golang/foo",
         ],
         "valid": false,
       }
-    `)
-  })
+    `);
+  });
 
-  it('should complain when only getting a namespace', () => {
-    expect(parsePackageSpecifiers('npm', [])).toMatchInlineSnapshot(`
+  it("should complain when only getting a namespace", () => {
+    expect(parsePackageSpecifiers("npm", [])).toMatchInlineSnapshot(`
       {
         "purls": [],
         "valid": false,
       }
-    `)
-  })
+    `);
+  });
 
-  it('should complain when getting an empty namespace', () => {
-    expect(parsePackageSpecifiers('', [])).toMatchInlineSnapshot(`
+  it("should complain when getting an empty namespace", () => {
+    expect(parsePackageSpecifiers("", [])).toMatchInlineSnapshot(`
       {
         "purls": [],
         "valid": false,
       }
-    `)
-  })
+    `);
+  });
 
-  it('flags valid:false when an empty package name appears in the list', () => {
+  it("flags valid:false when an empty package name appears in the list", () => {
     // Exercises the inner `if (!pkg) { valid = false; break }` branch.
-    expect(parsePackageSpecifiers('npm', ['babel', '', 'lodash']))
-      .toMatchInlineSnapshot(`
+    expect(parsePackageSpecifiers("npm", ["babel", "", "lodash"])).toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:npm/babel",
         ],
         "valid": false,
       }
-    `)
-  })
+    `);
+  });
 
-  it('returns valid:false when purl-mode has nothing parseable', () => {
+  it("returns valid:false when purl-mode has nothing parseable", () => {
     // Exercise the !purls.length branch in the purl-mode path.
-    expect(parsePackageSpecifiers('not-a-purl', ['also-bad']))
-      .toMatchInlineSnapshot(`
+    expect(parsePackageSpecifiers("not-a-purl", ["also-bad"])).toMatchInlineSnapshot(`
       {
         "purls": [],
         "valid": false,
       }
-    `)
-  })
+    `);
+  });
 
-  it('handles undefined slot in pkgs array (sparse) for npm-mode', () => {
+  it("handles undefined slot in pkgs array (sparse) for npm-mode", () => {
     // pkgs[0] = undefined → `pkgs[i] ?? ''` returns '', then breaks valid.
     // Use Array.from with explicit undefined.
-    const sparse = [undefined as unknown]
-    expect(parsePackageSpecifiers('npm', sparse)).toMatchInlineSnapshot(`
+    const sparse = [undefined as unknown];
+    expect(parsePackageSpecifiers("npm", sparse)).toMatchInlineSnapshot(`
       {
         "purls": [],
         "valid": false,
       }
-    `)
-  })
+    `);
+  });
 
-  it('handles undefined slot in pkgs array (sparse) for purl-mode', () => {
-    const sparse = [undefined as unknown]
-    expect(parsePackageSpecifiers('not-a-purl', sparse)).toMatchInlineSnapshot(`
+  it("handles undefined slot in pkgs array (sparse) for purl-mode", () => {
+    const sparse = [undefined as unknown];
+    expect(parsePackageSpecifiers("not-a-purl", sparse)).toMatchInlineSnapshot(`
       {
         "purls": [],
         "valid": false,
       }
-    `)
-  })
-})
+    `);
+  });
+});

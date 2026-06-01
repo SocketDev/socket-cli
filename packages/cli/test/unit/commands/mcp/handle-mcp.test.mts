@@ -29,231 +29,228 @@
  * - Src/util/socket/sdk.mts - getDefaultApiToken (mocked)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   info: vi.fn(),
   log: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 const { mockGetDefaultApiToken } = vi.hoisted(() => ({
   mockGetDefaultApiToken: vi.fn(),
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mts', () => ({
+vi.mock(import("../../../../src/util/socket/sdk.mts"), () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
-}))
+}));
 
 const { mockRunHttpTransport, mockRunStdioTransport } = vi.hoisted(() => ({
   mockRunHttpTransport: vi.fn().mockResolvedValue(undefined),
   mockRunStdioTransport: vi.fn().mockResolvedValue(undefined),
-}))
+}));
 
-vi.mock('../../../../src/commands/mcp/transport-stdio.mts', () => ({
+vi.mock(import("../../../../src/commands/mcp/transport-stdio.mts"), () => ({
   runStdioTransport: mockRunStdioTransport,
-}))
+}));
 
-vi.mock('../../../../src/commands/mcp/transport-http.mts', () => ({
+vi.mock(import("../../../../src/commands/mcp/transport-http.mts"), () => ({
   runHttpTransport: mockRunHttpTransport,
-}))
+}));
 
 // Use a getter so individual tests can flip the inlined version to
 // undefined and exercise the `|| '0.0.0'` fallback branch.
-const versionRef = { current: '7.7.7' as string | undefined }
-vi.mock('../../../../src/constants.mts', () => ({
+const versionRef = { current: "7.7.7" as string | undefined };
+vi.mock(import("../../../../src/constants.mts"), () => ({
   constants: {
     ENV: {
       get INLINED_VERSION() {
-        return versionRef.current
+        return versionRef.current;
       },
     },
   },
-}))
+}));
 
-const { handleMcp } =
-  await import('../../../../src/commands/mcp/handle-mcp.mts')
+const { handleMcp } = await import("../../../../src/commands/mcp/handle-mcp.mts");
 
 const exitSpy = vi
-  .spyOn(process, 'exit')
+  .spyOn(process, "exit")
   .mockImplementation((_code?: string | number | null | undefined) => {
     // Throw so the test can assert "exit was called" without actually
     // killing the worker.
-    throw new Error('process.exit called')
-  })
+    throw new Error("process.exit called");
+  });
 
 beforeEach(() => {
-  vi.clearAllMocks()
-  versionRef.current = '7.7.7'
-  mockGetDefaultApiToken.mockReturnValue('test_default_token')
-})
+  vi.clearAllMocks();
+  versionRef.current = "7.7.7";
+  mockGetDefaultApiToken.mockReturnValue("test_default_token");
+});
 
-describe('handleMcp — version fallback', () => {
+describe("handleMcp — version fallback", () => {
   it('uses "0.0.0" as version when INLINED_VERSION is undefined', async () => {
-    versionRef.current = undefined
-    await handleMcp({ http: false, port: 3000, trustProxy: false })
+    versionRef.current = undefined;
+    await handleMcp({ http: false, port: 3000, trustProxy: false });
     expect(mockRunStdioTransport).toHaveBeenCalledWith(
-      expect.objectContaining({ version: '0.0.0' }),
-    )
-  })
+      expect.objectContaining({ version: "0.0.0" }),
+    );
+  });
 
-  it('uses the inlined version when present', async () => {
-    versionRef.current = '12.34.56'
-    await handleMcp({ http: false, port: 3000, trustProxy: false })
+  it("uses the inlined version when present", async () => {
+    versionRef.current = "12.34.56";
+    await handleMcp({ http: false, port: 3000, trustProxy: false });
     expect(mockRunStdioTransport).toHaveBeenCalledWith(
-      expect.objectContaining({ version: '12.34.56' }),
-    )
-  })
-})
+      expect.objectContaining({ version: "12.34.56" }),
+    );
+  });
+});
 
-describe('handleMcp — stdio path', () => {
-  it('forwards to runStdioTransport with the resolved version + getApiToken', async () => {
+describe("handleMcp — stdio path", () => {
+  it("forwards to runStdioTransport with the resolved version + getApiToken", async () => {
     await handleMcp({
       http: false,
       port: 3000,
       trustProxy: false,
-    })
-    expect(mockRunStdioTransport).toHaveBeenCalledTimes(1)
-    expect(mockRunHttpTransport).not.toHaveBeenCalled()
-    const config = mockRunStdioTransport.mock.calls[0]![0]
-    expect(config.serverName).toBe('socket')
-    expect(config.version).toBe('7.7.7')
-    expect(config.getApiToken()).toBe('test_default_token')
-  })
+    });
+    expect(mockRunStdioTransport).toHaveBeenCalledTimes(1);
+    expect(mockRunHttpTransport).not.toHaveBeenCalled();
+    const config = mockRunStdioTransport.mock.calls[0]![0];
+    expect(config.serverName).toBe("socket");
+    expect(config.version).toBe("7.7.7");
+    expect(config.getApiToken()).toBe("test_default_token");
+  });
 
-  it('exits with code 1 when no token is configured', async () => {
-    mockGetDefaultApiToken.mockReturnValue(undefined)
-    await expect(
-      handleMcp({ http: false, port: 3000, trustProxy: false }),
-    ).rejects.toThrow('process.exit called')
+  it("exits with code 1 when no token is configured", async () => {
+    mockGetDefaultApiToken.mockReturnValue(undefined);
+    await expect(handleMcp({ http: false, port: 3000, trustProxy: false })).rejects.toThrow(
+      "process.exit called",
+    );
     expect(mockLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('No SOCKET_API_TOKEN configured'),
-    )
-    expect(exitSpy).toHaveBeenCalledWith(1)
-    expect(mockRunStdioTransport).not.toHaveBeenCalled()
-  })
-})
+      expect.stringContaining("No SOCKET_API_TOKEN configured"),
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mockRunStdioTransport).not.toHaveBeenCalled();
+  });
+});
 
-describe('handleMcp — HTTP path', () => {
-  it('forwards to runHttpTransport with all options when OAuth is fully configured', async () => {
+describe("handleMcp — HTTP path", () => {
+  it("forwards to runHttpTransport with all options when OAuth is fully configured", async () => {
     await handleMcp({
       http: true,
-      oauthClientId: 'client-id',
-      oauthClientSecret: 'client-secret',
-      oauthIssuer: 'https://auth.example.com',
+      oauthClientId: "client-id",
+      oauthClientSecret: "client-secret",
+      oauthIssuer: "https://auth.example.com",
       port: 4000,
       trustProxy: true,
-    })
-    expect(mockRunHttpTransport).toHaveBeenCalledTimes(1)
-    const config = mockRunHttpTransport.mock.calls[0]![0]
-    expect(config.serverName).toBe('socket')
-    expect(config.version).toBe('7.7.7')
-    expect(config.oauthIssuer).toBe('https://auth.example.com')
-    expect(config.oauthClientId).toBe('client-id')
-    expect(config.oauthClientSecret).toBe('client-secret')
-    expect(config.port).toBe(4000)
-    expect(config.trustProxy).toBe(true)
-  })
+    });
+    expect(mockRunHttpTransport).toHaveBeenCalledTimes(1);
+    const config = mockRunHttpTransport.mock.calls[0]![0];
+    expect(config.serverName).toBe("socket");
+    expect(config.version).toBe("7.7.7");
+    expect(config.oauthIssuer).toBe("https://auth.example.com");
+    expect(config.oauthClientId).toBe("client-id");
+    expect(config.oauthClientSecret).toBe("client-secret");
+    expect(config.port).toBe(4000);
+    expect(config.trustProxy).toBe(true);
+  });
 
-  it('uses the default OAuth scopes when caller omits them', async () => {
+  it("uses the default OAuth scopes when caller omits them", async () => {
     await handleMcp({
       http: true,
-      oauthClientId: 'a',
-      oauthClientSecret: 'b',
-      oauthIssuer: 'https://issuer',
+      oauthClientId: "a",
+      oauthClientSecret: "b",
+      oauthIssuer: "https://issuer",
       port: 3000,
       trustProxy: false,
-    })
-    const config = mockRunHttpTransport.mock.calls[0]![0]
-    expect(config.oauthRequiredScopes).toEqual(['packages:list'])
-  })
+    });
+    const config = mockRunHttpTransport.mock.calls[0]![0];
+    expect(config.oauthRequiredScopes).toEqual(["packages:list"]);
+  });
 
-  it('forwards a custom oauthRequiredScopes list', async () => {
+  it("forwards a custom oauthRequiredScopes list", async () => {
     await handleMcp({
       http: true,
-      oauthClientId: 'a',
-      oauthClientSecret: 'b',
-      oauthIssuer: 'https://issuer',
-      oauthRequiredScopes: ['foo:read', 'bar:write'],
+      oauthClientId: "a",
+      oauthClientSecret: "b",
+      oauthIssuer: "https://issuer",
+      oauthRequiredScopes: ["foo:read", "bar:write"],
       port: 3000,
       trustProxy: false,
-    })
-    const config = mockRunHttpTransport.mock.calls[0]![0]
-    expect(config.oauthRequiredScopes).toEqual(['foo:read', 'bar:write'])
-  })
+    });
+    const config = mockRunHttpTransport.mock.calls[0]![0];
+    expect(config.oauthRequiredScopes).toEqual(["foo:read", "bar:write"]);
+  });
 
-  it('runs HTTP without OAuth when only the local token is set', async () => {
-    await handleMcp({ http: true, port: 3000, trustProxy: false })
-    expect(mockRunHttpTransport).toHaveBeenCalledTimes(1)
-    const config = mockRunHttpTransport.mock.calls[0]![0]
-    expect(config.oauthIssuer).toBe('')
-    expect(config.oauthClientId).toBe('')
-    expect(config.oauthClientSecret).toBe('')
-  })
+  it("runs HTTP without OAuth when only the local token is set", async () => {
+    await handleMcp({ http: true, port: 3000, trustProxy: false });
+    expect(mockRunHttpTransport).toHaveBeenCalledTimes(1);
+    const config = mockRunHttpTransport.mock.calls[0]![0];
+    expect(config.oauthIssuer).toBe("");
+    expect(config.oauthClientId).toBe("");
+    expect(config.oauthClientSecret).toBe("");
+  });
 
-  it('exits with code 1 when OAuth is partially configured (issuer only)', async () => {
+  it("exits with code 1 when OAuth is partially configured (issuer only)", async () => {
     await expect(
       handleMcp({
         http: true,
-        oauthIssuer: 'https://issuer',
+        oauthIssuer: "https://issuer",
         port: 3000,
         trustProxy: false,
       }),
-    ).rejects.toThrow('process.exit called')
+    ).rejects.toThrow("process.exit called");
     expect(mockLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Incomplete OAuth configuration'),
-    )
-    expect(mockRunHttpTransport).not.toHaveBeenCalled()
-  })
+      expect.stringContaining("Incomplete OAuth configuration"),
+    );
+    expect(mockRunHttpTransport).not.toHaveBeenCalled();
+  });
 
-  it('exits with code 1 when OAuth is partially configured (clientId only)', async () => {
+  it("exits with code 1 when OAuth is partially configured (clientId only)", async () => {
     await expect(
       handleMcp({
         http: true,
-        oauthClientId: 'client-id',
+        oauthClientId: "client-id",
         port: 3000,
         trustProxy: false,
       }),
-    ).rejects.toThrow('process.exit called')
+    ).rejects.toThrow("process.exit called");
     expect(mockLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Incomplete OAuth configuration'),
-    )
-  })
+      expect.stringContaining("Incomplete OAuth configuration"),
+    );
+  });
 
-  it('exits with code 1 when OAuth is partially configured (clientSecret only)', async () => {
+  it("exits with code 1 when OAuth is partially configured (clientSecret only)", async () => {
     await expect(
       handleMcp({
         http: true,
-        oauthClientSecret: 'shh',
+        oauthClientSecret: "shh",
         port: 3000,
         trustProxy: false,
       }),
-    ).rejects.toThrow('process.exit called')
+    ).rejects.toThrow("process.exit called");
     expect(mockLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Incomplete OAuth configuration'),
-    )
-  })
+      expect.stringContaining("Incomplete OAuth configuration"),
+    );
+  });
 
-  it('exits with code 1 when neither OAuth nor a local token is set', async () => {
-    mockGetDefaultApiToken.mockReturnValue(undefined)
-    await expect(
-      handleMcp({ http: true, port: 3000, trustProxy: false }),
-    ).rejects.toThrow('process.exit called')
+  it("exits with code 1 when neither OAuth nor a local token is set", async () => {
+    mockGetDefaultApiToken.mockReturnValue(undefined);
+    await expect(handleMcp({ http: true, port: 3000, trustProxy: false })).rejects.toThrow(
+      "process.exit called",
+    );
     expect(mockLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'No SOCKET_API_TOKEN configured and OAuth is not enabled',
-      ),
-    )
-    expect(mockRunHttpTransport).not.toHaveBeenCalled()
-  })
-})
+      expect.stringContaining("No SOCKET_API_TOKEN configured and OAuth is not enabled"),
+    );
+    expect(mockRunHttpTransport).not.toHaveBeenCalled();
+  });
+});

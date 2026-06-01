@@ -8,96 +8,96 @@
  * Related Files: - util/command/registry-define.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies.
-const mockRegister = vi.hoisted(() => vi.fn())
+const mockRegister = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/util/command/registry.mts', () => ({
+vi.mock(import("../../../../src/util/command/registry.mts"), () => ({
   registry: {
     register: mockRegister,
   },
-}))
+}));
 
-import { defineCommand } from '../../../../src/util/command/registry-define.mts'
+import { defineCommand } from "../../../../src/util/command/registry-define.mts";
 
-import type { CommandDefinition } from '../../../../src/util/command/registry-types.mjs'
+import type { CommandDefinition } from "../../../../src/util/command/registry-types.mjs";
 
-describe('registry-define', () => {
+describe("registry-define", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  describe('defineCommand', () => {
-    it('registers the command with the global registry', () => {
+  describe("defineCommand", () => {
+    it("registers the command with the global registry", () => {
       const definition: CommandDefinition = {
-        name: 'test-cmd',
-        description: 'A test command',
+        name: "test-cmd",
+        description: "A test command",
         run: vi.fn(),
-      }
+      };
 
-      defineCommand(definition)
+      defineCommand(definition);
 
-      expect(mockRegister).toHaveBeenCalledTimes(1)
-      expect(mockRegister).toHaveBeenCalledWith(definition)
-    })
+      expect(mockRegister).toHaveBeenCalledTimes(1);
+      expect(mockRegister).toHaveBeenCalledWith(definition);
+    });
 
-    it('returns the definition unchanged', () => {
+    it("returns the definition unchanged", () => {
       const definition: CommandDefinition = {
-        name: 'test-cmd',
-        description: 'A test command',
+        name: "test-cmd",
+        description: "A test command",
         run: vi.fn(),
-      }
+      };
 
-      const result = defineCommand(definition)
+      const result = defineCommand(definition);
 
-      expect(result).toBe(definition)
-    })
+      expect(result).toBe(definition);
+    });
 
-    it('handles command with flags', () => {
+    it("handles command with flags", () => {
       const definition: CommandDefinition = {
-        name: 'test-cmd',
-        description: 'A test command',
+        name: "test-cmd",
+        description: "A test command",
         flags: {
           verbose: {
-            type: 'boolean',
-            description: 'Verbose output',
+            type: "boolean",
+            description: "Verbose output",
           },
         },
         run: vi.fn(),
-      }
+      };
 
-      const result = defineCommand(definition)
+      const result = defineCommand(definition);
 
-      expect(mockRegister).toHaveBeenCalledWith(definition)
-      expect(result.flags).toBeDefined()
-      expect(result.flags!['verbose']).toBeDefined()
-    })
+      expect(mockRegister).toHaveBeenCalledWith(definition);
+      expect(result.flags).toBeDefined();
+      expect(result.flags!["verbose"]).toBeDefined();
+    });
 
-    it('handles command with aliases', () => {
+    it("handles command with aliases", () => {
       const definition: CommandDefinition = {
-        name: 'test-cmd',
-        description: 'A test command',
-        aliases: ['tc', 't'],
+        name: "test-cmd",
+        description: "A test command",
+        aliases: ["tc", "t"],
         run: vi.fn(),
-      }
+      };
 
-      const result = defineCommand(definition)
+      const result = defineCommand(definition);
 
-      expect(result.aliases).toEqual(['tc', 't'])
-    })
+      expect(result.aliases).toEqual(["tc", "t"]);
+    });
 
-    it('handles command with parent', () => {
+    it("handles command with parent", () => {
       const definition: CommandDefinition = {
-        name: 'create',
-        description: 'Create something',
-        parent: 'organization',
+        name: "create",
+        description: "Create something",
+        parent: "organization",
         run: vi.fn(),
-      }
+      };
 
-      const result = defineCommand(definition)
+      const result = defineCommand(definition);
 
-      expect(result.parent).toBe('organization')
-    })
-  })
-})
+      expect(result.parent).toBe("organization");
+    });
+  });
+});

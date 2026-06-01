@@ -1,1 +1,1 @@
-export const CMD_NAME = 'socket optimize'
+export const CMD_NAME = "socket optimize";

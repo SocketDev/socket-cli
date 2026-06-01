@@ -1,30 +1,15 @@
-import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
+import type { EnvDetails } from "../../util/ecosystem/environment.mjs";
 
 export function getDependencyEntries(pkgEnvDetails: EnvDetails) {
-  const {
-    dependencies,
-    devDependencies,
-    optionalDependencies,
-    peerDependencies,
-  } = pkgEnvDetails.editablePkgJson.content
+  const { dependencies, devDependencies, optionalDependencies, peerDependencies } =
+    pkgEnvDetails.editablePkgJson.content;
   return [
+    ["dependencies", dependencies ? { __proto__: null, ...dependencies } : undefined],
+    ["devDependencies", devDependencies ? { __proto__: null, ...devDependencies } : undefined],
+    ["peerDependencies", peerDependencies ? { __proto__: null, ...peerDependencies } : undefined],
     [
-      'dependencies',
-      dependencies ? { __proto__: null, ...dependencies } : undefined,
+      "optionalDependencies",
+      optionalDependencies ? { __proto__: null, ...optionalDependencies } : undefined,
     ],
-    [
-      'devDependencies',
-      devDependencies ? { __proto__: null, ...devDependencies } : undefined,
-    ],
-    [
-      'peerDependencies',
-      peerDependencies ? { __proto__: null, ...peerDependencies } : undefined,
-    ],
-    [
-      'optionalDependencies',
-      optionalDependencies
-        ? { __proto__: null, ...optionalDependencies }
-        : undefined,
-    ],
-  ].filter(({ 1: o }) => o) as Array<[string, NonNullable<typeof dependencies>]>
+  ].filter(({ 1: o }) => o) as Array<[string, NonNullable<typeof dependencies>]>;
 }

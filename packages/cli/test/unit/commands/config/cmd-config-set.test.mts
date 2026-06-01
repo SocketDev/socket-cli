@@ -32,11 +32,11 @@
  * - Src/commands/config/config-command-factory.mts - Factory
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as ConfigModule from '../../../../src/util/config.mts'
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
+import type * as ConfigModule from "../../../../src/util/config.mts";
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
+import type * as WithSubcommandsModule from "../../../../src/util/cli/with-subcommands.mjs";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -46,566 +46,510 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 // Mock handler.
-const mockHandleConfigSet = vi.hoisted(() => vi.fn())
+const mockHandleConfigSet = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/commands/config/handle-config-set.mts', () => ({
+vi.mock(import("../../../../src/commands/config/handle-config-set.mts"), () => ({
   handleConfigSet: mockHandleConfigSet,
-}))
+}));
 
 // Mock config utilities.
-const mockIsSupportedConfigKey = vi.hoisted(() => vi.fn(() => true))
+const mockIsSupportedConfigKey = vi.hoisted(() => vi.fn(() => true));
 const mockGetSupportedConfigEntries = vi.hoisted(() =>
   vi.fn(() => [
-    ['apiBaseUrl', 'API base URL'],
-    ['apiProxy', 'API proxy URL'],
-    ['apiToken', 'API authentication token'],
-    ['defaultOrg', 'Default organization slug'],
+    ["apiBaseUrl", "API base URL"],
+    ["apiProxy", "API proxy URL"],
+    ["apiToken", "API authentication token"],
+    ["defaultOrg", "Default organization slug"],
   ]),
-)
+);
 
-vi.mock('../../../../src/util/config.mts', async importOriginal => {
-  const actual = await importOriginal<typeof ConfigModule>()
+vi.mock(import("../../../../src/util/config.mts"), async (importOriginal) => {
+  const actual = await importOriginal<typeof ConfigModule>();
   return {
     ...actual,
     getSupportedConfigEntries: mockGetSupportedConfigEntries,
     isSupportedConfigKey: mockIsSupportedConfigKey,
-  }
-})
+  };
+});
 
 // Mock dry-run output.
-const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
+const mockOutputDryRunWrite = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/util/dry-run/output.mts', () => ({
+vi.mock(import("../../../../src/util/dry-run/output.mts"), () => ({
   outputDryRunWrite: mockOutputDryRunWrite,
-}))
+}));
 
 // Mock output mode utilities.
-const mockGetOutputKind = vi.hoisted(() => vi.fn(() => 'text'))
+const mockGetOutputKind = vi.hoisted(() => vi.fn(() => "text"));
 
-vi.mock('../../../../src/util/output/mode.mjs', () => ({
+vi.mock(import("../../../../src/util/output/mode.mjs"), () => ({
   getOutputKind: mockGetOutputKind,
-}))
+}));
 
 // Mock validation utilities.
-const mockCheckCommandInput = vi.hoisted(() => vi.fn(() => true))
+const mockCheckCommandInput = vi.hoisted(() => vi.fn(() => true));
 
-vi.mock('../../../../src/util/validation/check-input.mts', () => ({
+vi.mock(import("../../../../src/util/validation/check-input.mts"), () => ({
   checkCommandInput: mockCheckCommandInput,
-}))
+}));
 
 // Mock meowOrExit to prevent actual CLI parsing.
 const mockMeowOrExit = vi.hoisted(() =>
   vi.fn((options: { argv: string[] | readonly string[] }) => {
-    const argv = options.argv
+    const argv = options.argv;
     const flags: Record<string, unknown> = {
       dryRun: false,
       json: false,
       markdown: false,
-    }
-    const input: string[] = []
+    };
+    const input: string[] = [];
 
     // Parse flags from argv.
     for (let i = 0; i < argv.length; i++) {
-      const arg = argv[i]
-      if (arg === '--dry-run') {
-        flags['dryRun'] = true
-      } else if (arg === '--json') {
-        flags['json'] = true
-      } else if (arg === '--markdown') {
-        flags['markdown'] = true
-      } else if (!arg.startsWith('--')) {
-        input.push(arg)
+      const arg = argv[i];
+      if (arg === "--dry-run") {
+        flags["dryRun"] = true;
+      } else if (arg === "--json") {
+        flags["json"] = true;
+      } else if (arg === "--markdown") {
+        flags["markdown"] = true;
+      } else if (!arg.startsWith("--")) {
+        input.push(arg);
       }
     }
 
     return {
       flags,
-      help: '',
+      help: "",
       input,
       pkg: {},
-    }
+    };
   }),
-)
+);
 
-vi.mock(
-  '../../../../src/util/cli/with-subcommands.mjs',
-  async importOriginal => {
-    const actual = await importOriginal<typeof WithSubcommandsModule>()
-    return {
-      ...actual,
-      meowOrExit: mockMeowOrExit,
-    }
-  },
-)
+vi.mock(import("../../../../src/util/cli/with-subcommands.mjs"), async (importOriginal) => {
+  const actual = await importOriginal<typeof WithSubcommandsModule>();
+  return {
+    ...actual,
+    meowOrExit: mockMeowOrExit,
+  };
+});
 
 // Import after mocks.
 const { CMD_NAME, cmdConfigSet } =
-  await import('../../../../src/commands/config/cmd-config-set.mts')
+  await import("../../../../src/commands/config/cmd-config-set.mts");
 
-describe('cmd-config-set', () => {
+describe("cmd-config-set", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-    process.env['HOME'] = '/test/home'
-    mockIsSupportedConfigKey.mockReturnValue(true)
-    mockCheckCommandInput.mockReturnValue(true)
-    mockGetOutputKind.mockReturnValue('text')
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+    process.env["HOME"] = "/test/home";
+    mockIsSupportedConfigKey.mockReturnValue(true);
+    mockCheckCommandInput.mockReturnValue(true);
+    mockGetOutputKind.mockReturnValue("text");
+  });
 
-  describe('command metadata', () => {
-    it('should export CMD_NAME as set', () => {
-      expect(CMD_NAME).toBe('set')
-    })
+  describe("command metadata", () => {
+    it("should export CMD_NAME as set", () => {
+      expect(CMD_NAME).toBe("set");
+    });
 
-    it('should have correct description', () => {
-      expect(cmdConfigSet.description).toBe(
-        'Update the value of a local CLI config item',
-      )
-    })
+    it("should have correct description", () => {
+      expect(cmdConfigSet.description).toBe("Update the value of a local CLI config item");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdConfigSet.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdConfigSet.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-config-set.mts' }
-    const context = { parentName: 'socket config' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-config-set.mts" };
+    const context = { parentName: "socket config" };
 
-    describe('valid config key and value', () => {
-      it('should call handler with correct parameters', async () => {
-        await cmdConfigSet.run(['defaultOrg', 'my-org'], importMeta, context)
+    describe("valid config key and value", () => {
+      it("should call handler with correct parameters", async () => {
+        await cmdConfigSet.run(["defaultOrg", "my-org"], importMeta, context);
 
         expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'text',
-          value: 'my-org',
-        })
-      })
+          key: "defaultOrg",
+          outputKind: "text",
+          value: "my-org",
+        });
+      });
 
-      it('should validate config key', async () => {
-        await cmdConfigSet.run(['apiToken', 'token-value'], importMeta, context)
+      it("should validate config key", async () => {
+        await cmdConfigSet.run(["apiToken", "token-value"], importMeta, context);
 
-        expect(mockIsSupportedConfigKey).toHaveBeenCalledWith('apiToken')
-      })
+        expect(mockIsSupportedConfigKey).toHaveBeenCalledWith("apiToken");
+      });
 
-      it('should handle multiple valid config keys', async () => {
+      it("should handle multiple valid config keys", async () => {
         const testCases = [
-          { key: 'apiToken', value: 'abc123' },
-          { key: 'defaultOrg', value: 'test-org' },
-          { key: 'apiBaseUrl', value: 'https://api.example.com' },
-          { key: 'apiProxy', value: 'https://proxy.example.com' },
-        ]
+          { key: "apiToken", value: "abc123" },
+          { key: "defaultOrg", value: "test-org" },
+          { key: "apiBaseUrl", value: "https://api.example.com" },
+          { key: "apiProxy", value: "https://proxy.example.com" },
+        ];
 
         for (const { key, value } of testCases) {
-          vi.clearAllMocks()
-          mockCheckCommandInput.mockReturnValue(true)
+          vi.clearAllMocks();
+          mockCheckCommandInput.mockReturnValue(true);
 
-          await cmdConfigSet.run([key, value], importMeta, context)
+          await cmdConfigSet.run([key, value], importMeta, context);
 
           expect(mockHandleConfigSet).toHaveBeenCalledWith({
             key,
-            outputKind: 'text',
+            outputKind: "text",
             value,
-          })
+          });
         }
-      })
+      });
 
-      it('should handle values with spaces by joining remaining args', async () => {
+      it("should handle values with spaces by joining remaining args", async () => {
         await cmdConfigSet.run(
-          ['apiProxy', 'https://proxy.example.com', 'with', 'spaces'],
+          ["apiProxy", "https://proxy.example.com", "with", "spaces"],
           importMeta,
           context,
-        )
+        );
 
         expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'apiProxy',
-          outputKind: 'text',
-          value: 'https://proxy.example.com with spaces',
-        })
-      })
+          key: "apiProxy",
+          outputKind: "text",
+          value: "https://proxy.example.com with spaces",
+        });
+      });
 
       it('should handle "test" key specially', async () => {
-        mockCheckCommandInput.mockReturnValue(true)
+        mockCheckCommandInput.mockReturnValue(true);
 
-        await cmdConfigSet.run(['test', 'test-value'], importMeta, context)
+        await cmdConfigSet.run(["test", "test-value"], importMeta, context);
 
         // "test" key bypasses isSupportedConfigKey check in validation.
-        expect(mockIsSupportedConfigKey).not.toHaveBeenCalled()
+        expect(mockIsSupportedConfigKey).not.toHaveBeenCalled();
         expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'test',
-          outputKind: 'text',
-          value: 'test-value',
-        })
-      })
-    })
+          key: "test",
+          outputKind: "text",
+          value: "test-value",
+        });
+      });
+    });
 
-    describe('invalid config key', () => {
-      it('should not call handler when config key is invalid', async () => {
-        mockIsSupportedConfigKey.mockReturnValue(false)
-        mockCheckCommandInput.mockReturnValue(false)
+    describe("invalid config key", () => {
+      it("should not call handler when config key is invalid", async () => {
+        mockIsSupportedConfigKey.mockReturnValue(false);
+        mockCheckCommandInput.mockReturnValue(false);
 
-        await cmdConfigSet.run(['invalidKey', 'value'], importMeta, context)
+        await cmdConfigSet.run(["invalidKey", "value"], importMeta, context);
 
-        expect(mockHandleConfigSet).not.toHaveBeenCalled()
-      })
+        expect(mockHandleConfigSet).not.toHaveBeenCalled();
+      });
 
-      it('should not call handler when config key is missing', async () => {
-        mockCheckCommandInput.mockReturnValue(false)
+      it("should not call handler when config key is missing", async () => {
+        mockCheckCommandInput.mockReturnValue(false);
 
-        await cmdConfigSet.run([], importMeta, context)
+        await cmdConfigSet.run([], importMeta, context);
 
-        expect(mockHandleConfigSet).not.toHaveBeenCalled()
-      })
+        expect(mockHandleConfigSet).not.toHaveBeenCalled();
+      });
 
-      it('should validate empty string key', async () => {
-        mockIsSupportedConfigKey.mockReturnValue(false)
-        mockCheckCommandInput.mockReturnValue(false)
+      it("should validate empty string key", async () => {
+        mockIsSupportedConfigKey.mockReturnValue(false);
+        mockCheckCommandInput.mockReturnValue(false);
 
-        await cmdConfigSet.run(['', 'value'], importMeta, context)
+        await cmdConfigSet.run(["", "value"], importMeta, context);
 
-        expect(mockIsSupportedConfigKey).toHaveBeenCalledWith('')
-        expect(mockHandleConfigSet).not.toHaveBeenCalled()
-      })
-    })
+        expect(mockIsSupportedConfigKey).toHaveBeenCalledWith("");
+        expect(mockHandleConfigSet).not.toHaveBeenCalled();
+      });
+    });
 
-    describe('value validation', () => {
-      it('should not call handler when value is missing', async () => {
-        mockCheckCommandInput.mockReturnValue(false)
+    describe("value validation", () => {
+      it("should not call handler when value is missing", async () => {
+        mockCheckCommandInput.mockReturnValue(false);
 
-        await cmdConfigSet.run(['apiToken'], importMeta, context)
+        await cmdConfigSet.run(["apiToken"], importMeta, context);
 
-        expect(mockHandleConfigSet).not.toHaveBeenCalled()
-      })
+        expect(mockHandleConfigSet).not.toHaveBeenCalled();
+      });
 
-      it('should validate that value is required', async () => {
-        await cmdConfigSet.run(['apiToken'], importMeta, context)
+      it("should validate that value is required", async () => {
+        await cmdConfigSet.run(["apiToken"], importMeta, context);
 
-        expect(mockCheckCommandInput).toHaveBeenCalled()
-        const call = mockCheckCommandInput.mock.calls[0]
-        const validations = call.slice(1)
+        expect(mockCheckCommandInput).toHaveBeenCalled();
+        const call = mockCheckCommandInput.mock.calls[0];
+        const validations = call.slice(1);
 
         // Should have value validation that checks for presence.
         const valueValidation = validations.find(
-          (v: unknown) =>
-            v.message &&
-            (v.message.includes('value') || v.message.includes('unset')),
-        )
-        expect(valueValidation).toBeDefined()
-        expect(valueValidation.test).toBe(false)
-      })
+          (v: unknown) => v.message && (v.message.includes("value") || v.message.includes("unset")),
+        );
+        expect(valueValidation).toBeDefined();
+        expect(valueValidation.test).toBe(false);
+      });
 
-      it('should accept empty string as valid value', async () => {
-        await cmdConfigSet.run(['apiToken', ''], importMeta, context)
+      it("should accept empty string as valid value", async () => {
+        await cmdConfigSet.run(["apiToken", ""], importMeta, context);
 
-        expect(mockCheckCommandInput).toHaveBeenCalled()
-        const call = mockCheckCommandInput.mock.calls[0]
-        const validations = call.slice(1)
+        expect(mockCheckCommandInput).toHaveBeenCalled();
+        const call = mockCheckCommandInput.mock.calls[0];
+        const validations = call.slice(1);
 
         const valueValidation = validations.find(
-          (v: unknown) =>
-            v.message &&
-            (v.message.includes('value') || v.message.includes('unset')),
-        )
+          (v: unknown) => v.message && (v.message.includes("value") || v.message.includes("unset")),
+        );
         // Empty string after the key means no value, so test should be false.
-        expect(valueValidation.test).toBe(false)
-      })
+        expect(valueValidation.test).toBe(false);
+      });
 
-      it('should handle numeric values', async () => {
-        await cmdConfigSet.run(['apiToken', '12345'], importMeta, context)
-
-        expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'apiToken',
-          outputKind: 'text',
-          value: '12345',
-        })
-      })
-
-      it('should handle special characters in value', async () => {
-        await cmdConfigSet.run(
-          ['apiToken', 'abc!@#$%^&*()'],
-          importMeta,
-          context,
-        )
+      it("should handle numeric values", async () => {
+        await cmdConfigSet.run(["apiToken", "12345"], importMeta, context);
 
         expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'apiToken',
-          outputKind: 'text',
-          value: 'abc!@#$%^&*()',
-        })
-      })
+          key: "apiToken",
+          outputKind: "text",
+          value: "12345",
+        });
+      });
 
-      it('should handle URL values', async () => {
-        await cmdConfigSet.run(
-          ['apiBaseUrl', 'https://api.socket.dev/v0'],
-          importMeta,
-          context,
-        )
+      it("should handle special characters in value", async () => {
+        await cmdConfigSet.run(["apiToken", "abc!@#$%^&*()"], importMeta, context);
 
         expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'apiBaseUrl',
-          outputKind: 'text',
-          value: 'https://api.socket.dev/v0',
-        })
-      })
-    })
+          key: "apiToken",
+          outputKind: "text",
+          value: "abc!@#$%^&*()",
+        });
+      });
 
-    describe('--dry-run flag', () => {
-      it('should show preview without calling handler', async () => {
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--dry-run'],
-          importMeta,
-          context,
-        )
+      it("should handle URL values", async () => {
+        await cmdConfigSet.run(["apiBaseUrl", "https://api.socket.dev/v0"], importMeta, context);
+
+        expect(mockHandleConfigSet).toHaveBeenCalledWith({
+          key: "apiBaseUrl",
+          outputKind: "text",
+          value: "https://api.socket.dev/v0",
+        });
+      });
+    });
+
+    describe("--dry-run flag", () => {
+      it("should show preview without calling handler", async () => {
+        await cmdConfigSet.run(["defaultOrg", "my-org", "--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          '/test/home/.config/socket/config.json',
+          "/test/home/.config/socket/config.json",
           'set config value for "defaultOrg"',
           ['Set "defaultOrg" to: my-org'],
-        )
-        expect(mockHandleConfigSet).not.toHaveBeenCalled()
-      })
+        );
+        expect(mockHandleConfigSet).not.toHaveBeenCalled();
+      });
 
-      it('should construct correct config path in dry-run', async () => {
-        process.env['HOME'] = '/custom/home'
+      it("should construct correct config path in dry-run", async () => {
+        process.env["HOME"] = "/custom/home";
 
-        await cmdConfigSet.run(
-          ['apiToken', 'token', '--dry-run'],
-          importMeta,
-          context,
-        )
+        await cmdConfigSet.run(["apiToken", "token", "--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          '/custom/home/.config/socket/config.json',
+          "/custom/home/.config/socket/config.json",
           'set config value for "apiToken"',
           ['Set "apiToken" to: token'],
-        )
-      })
+        );
+      });
 
-      it('should not execute handler in dry-run mode', async () => {
+      it("should not execute handler in dry-run mode", async () => {
+        await cmdConfigSet.run(["apiToken", "token", "--dry-run"], importMeta, context);
+
+        expect(mockHandleConfigSet).not.toHaveBeenCalled();
+      });
+
+      it("should show value with spaces in dry-run", async () => {
         await cmdConfigSet.run(
-          ['apiToken', 'token', '--dry-run'],
+          ["apiProxy", "https://proxy.example.com", "with", "path", "--dry-run"],
           importMeta,
           context,
-        )
-
-        expect(mockHandleConfigSet).not.toHaveBeenCalled()
-      })
-
-      it('should show value with spaces in dry-run', async () => {
-        await cmdConfigSet.run(
-          [
-            'apiProxy',
-            'https://proxy.example.com',
-            'with',
-            'path',
-            '--dry-run',
-          ],
-          importMeta,
-          context,
-        )
+        );
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
           expect.any(String),
           'set config value for "apiProxy"',
           ['Set "apiProxy" to: https://proxy.example.com with path'],
-        )
-      })
-    })
+        );
+      });
+    });
 
-    describe('output formats', () => {
-      it('should pass text output kind when no format flag provided', async () => {
-        mockGetOutputKind.mockReturnValue('text')
+    describe("output formats", () => {
+      it("should pass text output kind when no format flag provided", async () => {
+        mockGetOutputKind.mockReturnValue("text");
 
-        await cmdConfigSet.run(['defaultOrg', 'my-org'], importMeta, context)
+        await cmdConfigSet.run(["defaultOrg", "my-org"], importMeta, context);
 
-        expect(mockGetOutputKind).toHaveBeenCalledWith(false, false)
+        expect(mockGetOutputKind).toHaveBeenCalledWith(false, false);
         expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'text',
-          value: 'my-org',
-        })
-      })
+          key: "defaultOrg",
+          outputKind: "text",
+          value: "my-org",
+        });
+      });
 
-      it('should pass json output kind when --json flag provided', async () => {
-        mockGetOutputKind.mockReturnValue('json')
+      it("should pass json output kind when --json flag provided", async () => {
+        mockGetOutputKind.mockReturnValue("json");
 
+        await cmdConfigSet.run(["defaultOrg", "my-org", "--json"], importMeta, context);
+
+        expect(mockGetOutputKind).toHaveBeenCalledWith(true, false);
+        expect(mockHandleConfigSet).toHaveBeenCalledWith({
+          key: "defaultOrg",
+          outputKind: "json",
+          value: "my-org",
+        });
+      });
+
+      it("should pass markdown output kind when --markdown flag provided", async () => {
+        mockGetOutputKind.mockReturnValue("markdown");
+
+        await cmdConfigSet.run(["defaultOrg", "my-org", "--markdown"], importMeta, context);
+
+        expect(mockGetOutputKind).toHaveBeenCalledWith(false, true);
+        expect(mockHandleConfigSet).toHaveBeenCalledWith({
+          key: "defaultOrg",
+          outputKind: "markdown",
+          value: "my-org",
+        });
+      });
+    });
+
+    describe("flag validation", () => {
+      it("should validate that --json and --markdown are not used together", async () => {
         await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--json'],
+          ["defaultOrg", "my-org", "--json", "--markdown"],
           importMeta,
           context,
-        )
+        );
 
-        expect(mockGetOutputKind).toHaveBeenCalledWith(true, false)
-        expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'json',
-          value: 'my-org',
-        })
-      })
-
-      it('should pass markdown output kind when --markdown flag provided', async () => {
-        mockGetOutputKind.mockReturnValue('markdown')
-
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--markdown'],
-          importMeta,
-          context,
-        )
-
-        expect(mockGetOutputKind).toHaveBeenCalledWith(false, true)
-        expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'markdown',
-          value: 'my-org',
-        })
-      })
-    })
-
-    describe('flag validation', () => {
-      it('should validate that --json and --markdown are not used together', async () => {
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--json', '--markdown'],
-          importMeta,
-          context,
-        )
-
-        expect(mockCheckCommandInput).toHaveBeenCalled()
-        const call = mockCheckCommandInput.mock.calls[0]
+        expect(mockCheckCommandInput).toHaveBeenCalled();
+        const call = mockCheckCommandInput.mock.calls[0];
 
         // Check that validation includes the conflicting flags check.
-        const validations = call.slice(1)
+        const validations = call.slice(1);
         const conflictCheck = validations.find(
           (v: unknown) =>
-            v.message &&
-            v.message.includes('--json') &&
-            v.message.includes('--markdown'),
-        )
-        expect(conflictCheck).toBeDefined()
-        expect(conflictCheck.nook).toBe(true)
-        expect(conflictCheck.test).toBe(false)
-      })
+            v.message && v.message.includes("--json") && v.message.includes("--markdown"),
+        );
+        expect(conflictCheck).toBeDefined();
+        expect(conflictCheck.nook).toBe(true);
+        expect(conflictCheck.test).toBe(false);
+      });
 
-      it('should not call handler when flag validation fails', async () => {
-        mockCheckCommandInput.mockReturnValue(false)
+      it("should not call handler when flag validation fails", async () => {
+        mockCheckCommandInput.mockReturnValue(false);
 
         await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--json', '--markdown'],
+          ["defaultOrg", "my-org", "--json", "--markdown"],
           importMeta,
           context,
-        )
+        );
 
-        expect(mockHandleConfigSet).not.toHaveBeenCalled()
-      })
-    })
+        expect(mockHandleConfigSet).not.toHaveBeenCalled();
+      });
+    });
 
-    describe('edge cases', () => {
-      it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze([
-          'defaultOrg',
-          'my-org',
-        ]) as readonly string[]
+    describe("edge cases", () => {
+      it("should handle readonly argv array", async () => {
+        const readonlyArgv = Object.freeze(["defaultOrg", "my-org"]) as readonly string[];
 
-        await cmdConfigSet.run(readonlyArgv, importMeta, context)
+        await cmdConfigSet.run(readonlyArgv, importMeta, context);
 
         expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'defaultOrg',
-          outputKind: 'text',
-          value: 'my-org',
-        })
-      })
+          key: "defaultOrg",
+          outputKind: "text",
+          value: "my-org",
+        });
+      });
 
-      it('should handle missing HOME environment variable in dry-run', async () => {
-        delete process.env['HOME']
+      it("should handle missing HOME environment variable in dry-run", async () => {
+        delete process.env["HOME"];
 
-        await cmdConfigSet.run(
-          ['defaultOrg', 'my-org', '--dry-run'],
-          importMeta,
-          context,
-        )
+        await cmdConfigSet.run(["defaultOrg", "my-org", "--dry-run"], importMeta, context);
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          expect.stringContaining('config.json'),
+          expect.stringContaining("config.json"),
           expect.any(String),
           expect.any(Array),
-        )
-      })
+        );
+      });
 
-      it('should handle value that looks like a flag', async () => {
-        await cmdConfigSet.run(
-          ['apiProxy', '--not-a-flag'],
-          importMeta,
-          context,
-        )
+      it("should handle value that looks like a flag", async () => {
+        await cmdConfigSet.run(["apiProxy", "--not-a-flag"], importMeta, context);
 
         // meowOrExit would parse --not-a-flag as a flag, so this tests that behavior.
-        const callArgs = mockHandleConfigSet.mock.calls[0]
-        expect(callArgs).toBeDefined()
-      })
+        const callArgs = mockHandleConfigSet.mock.calls[0];
+        expect(callArgs).toBeDefined();
+      });
 
-      it('should handle very long values', async () => {
-        const longValue = 'a'.repeat(1000)
-        await cmdConfigSet.run(['apiToken', longValue], importMeta, context)
+      it("should handle very long values", async () => {
+        const longValue = "a".repeat(1000);
+        await cmdConfigSet.run(["apiToken", longValue], importMeta, context);
 
         expect(mockHandleConfigSet).toHaveBeenCalledWith({
-          key: 'apiToken',
-          outputKind: 'text',
+          key: "apiToken",
+          outputKind: "text",
           value: longValue,
-        })
-      })
-    })
+        });
+      });
+    });
 
-    describe('validation flow', () => {
-      it('should check all validations in correct order', async () => {
-        await cmdConfigSet.run(['apiToken', 'token'], importMeta, context)
+    describe("validation flow", () => {
+      it("should check all validations in correct order", async () => {
+        await cmdConfigSet.run(["apiToken", "token"], importMeta, context);
 
-        expect(mockCheckCommandInput).toHaveBeenCalled()
-        const call = mockCheckCommandInput.mock.calls[0]
-        const validations = call.slice(1)
+        expect(mockCheckCommandInput).toHaveBeenCalled();
+        const call = mockCheckCommandInput.mock.calls[0];
+        const validations = call.slice(1);
 
         // Should have at least 3 validations: key, value, and flag conflict.
-        expect(validations.length).toBeGreaterThanOrEqual(3)
+        expect(validations.length).toBeGreaterThanOrEqual(3);
 
         // First validation: key check.
         expect(validations[0]).toMatchObject({
           test: true,
-          message: 'Config key should be the first arg',
-        })
+          message: "Config key should be the first arg",
+        });
 
         // Second validation: value check.
         expect(validations[1]).toMatchObject({
           test: true,
-        })
+        });
 
         // Last validation: flag conflict check.
-        const lastValidation = validations[validations.length - 1]
+        const lastValidation = validations[validations.length - 1];
         expect(lastValidation).toMatchObject({
           nook: true,
           test: true,
-          fail: 'bad',
-        })
-      })
+          fail: "bad",
+        });
+      });
 
-      it('should always pass value parameter to handler', async () => {
-        await cmdConfigSet.run(['apiToken', 'token'], importMeta, context)
+      it("should always pass value parameter to handler", async () => {
+        await cmdConfigSet.run(["apiToken", "token"], importMeta, context);
 
-        const callArgs = mockHandleConfigSet.mock.calls[0][0]
-        expect(callArgs).toHaveProperty('value')
-        expect(callArgs).toHaveProperty('key')
-        expect(callArgs).toHaveProperty('outputKind')
-        expect(callArgs.value).toBe('token')
-      })
-    })
-  })
-})
+        const callArgs = mockHandleConfigSet.mock.calls[0][0];
+        expect(callArgs).toHaveProperty("value");
+        expect(callArgs).toHaveProperty("key");
+        expect(callArgs).toHaveProperty("outputKind");
+        expect(callArgs.value).toBe("token");
+      });
+    });
+  });
+});

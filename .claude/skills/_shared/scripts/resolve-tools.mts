@@ -17,10 +17,10 @@
  * a repo needs a different tool, that's drift — surface it in the manifest,
  * don't fork the resolver.
  */
-import { existsSync } from 'node:fs'
-import path from 'node:path'
+import { existsSync } from "node:fs";
+import path from "node:path";
 
-import { spawn } from '@socketsecurity/lib/process/spawn/child'
+import { spawn } from "@socketsecurity/lib/process/spawn/child";
 
 /**
  * Result of a resolver. `args` is the full argv passed to `pnpm exec`,
@@ -31,91 +31,91 @@ export type ResolvedTool = {
   /**
    * Full argv for `pnpm exec`, starting with the tool name.
    */
-  readonly args: readonly string[]
+  readonly args: readonly string[];
   /**
    * Environment variables to merge into the spawn env.
    */
-  readonly envs: Readonly<Record<string, string>>
-}
+  readonly envs: Readonly<Record<string, string>>;
+};
 
 export type ResolveLinterOptions = {
   /**
    * `'check'` reports violations; `'fix'` rewrites files in place.
    */
-  readonly mode?: 'check' | 'fix' | undefined
+  readonly mode?: "check" | "fix" | undefined;
   /**
    * Path to the lint config; defaults to repo-root `.oxlintrc.json`.
    */
-  readonly config?: string | undefined
+  readonly config?: string | undefined;
   /**
    * Files / globs to lint; defaults to `['.']`.
    */
-  readonly paths?: readonly string[] | undefined
-}
+  readonly paths?: readonly string[] | undefined;
+};
 
 export type ResolveFormatterOptions = {
   /**
    * `'check'` fails on diff; `'fix'` rewrites files in place.
    */
-  readonly mode?: 'check' | 'fix' | undefined
+  readonly mode?: "check" | "fix" | undefined;
   /**
    * Path to the formatter config; defaults to repo-root `.oxfmtrc.json`.
    */
-  readonly config?: string | undefined
+  readonly config?: string | undefined;
   /**
    * Files / globs to format; defaults to `['.']`.
    */
-  readonly paths?: readonly string[] | undefined
-}
+  readonly paths?: readonly string[] | undefined;
+};
 
 export type ResolveTypeCheckerOptions = {
   /**
    * Path to the tsconfig that drives the type check.
    */
-  readonly project: string
-}
+  readonly project: string;
+};
 
 export type ResolveTestRunnerOptions = {
   /**
    * `'run'` for one-shot, `'watch'` for the dev loop.
    */
-  readonly mode?: 'run' | 'watch' | undefined
+  readonly mode?: "run" | "watch" | undefined;
   /**
    * Path to vitest config; defaults to `.config/vitest.config.mts`.
    */
-  readonly config?: string | undefined
+  readonly config?: string | undefined;
   /**
    * Whether to collect coverage.
    */
-  readonly coverage?: boolean | undefined
-}
+  readonly coverage?: boolean | undefined;
+};
 
 export type ResolveBundlerOptions = {
   /**
    * Path to the build script that owns the run; informational only.
    */
-  readonly script?: string | undefined
-}
+  readonly script?: string | undefined;
+};
 
 export type RunResolvedOptions = {
   /**
    * Working directory for the spawn.
    */
-  readonly cwd?: string | undefined
+  readonly cwd?: string | undefined;
   /**
    * Extra args appended after the resolver's defaults.
    */
-  readonly extraArgs?: readonly string[] | undefined
+  readonly extraArgs?: readonly string[] | undefined;
   /**
    * If true, `stdout` / `stderr` are buffered and returned on the resolved
    * result. Default false (inherit terminal).
    */
-  readonly capture?: boolean | undefined
-}
+  readonly capture?: boolean | undefined;
+};
 
-const FLEET_LINTER_CONFIG = '.oxlintrc.json'
-const FLEET_FORMATTER_CONFIG = '.oxfmtrc.json'
-const FLEET_TEST_CONFIG = '.config/vitest.config.mts'
+const FLEET_LINTER_CONFIG = ".oxlintrc.json";
+const FLEET_FORMATTER_CONFIG = ".oxfmtrc.json";
+const FLEET_TEST_CONFIG = ".config/vitest.config.mts";
 
 /**
  * Resolve the fleet's linter (currently Oxlint).
@@ -124,41 +124,29 @@ const FLEET_TEST_CONFIG = '.config/vitest.config.mts'
  * a tool with different config-discovery rules doesn't silently change
  * behavior.
  */
-export function resolveLinter(
-  options: ResolveLinterOptions = {},
-): ResolvedTool {
-  const {
-    config = FLEET_LINTER_CONFIG,
-    mode = 'check',
-    paths = ['.'],
-  } = options
-  const args: string[] = ['oxlint', '--config', config]
-  if (mode === 'fix') {
-    args.push('--fix')
+export function resolveLinter(options: ResolveLinterOptions = {}): ResolvedTool {
+  const { config = FLEET_LINTER_CONFIG, mode = "check", paths = ["."] } = options;
+  const args: string[] = ["oxlint", "--config", config];
+  if (mode === "fix") {
+    args.push("--fix");
   }
-  args.push(...paths)
-  return { args, envs: {} }
+  args.push(...paths);
+  return { args, envs: {} };
 }
 
 /**
  * Resolve the fleet's formatter (currently Oxfmt).
  */
-export function resolveFormatter(
-  options: ResolveFormatterOptions = {},
-): ResolvedTool {
-  const {
-    config = FLEET_FORMATTER_CONFIG,
-    mode = 'fix',
-    paths = ['.'],
-  } = options
-  const args: string[] = ['oxfmt', '--config', config]
-  if (mode === 'check') {
-    args.push('--check')
+export function resolveFormatter(options: ResolveFormatterOptions = {}): ResolvedTool {
+  const { config = FLEET_FORMATTER_CONFIG, mode = "fix", paths = ["."] } = options;
+  const args: string[] = ["oxfmt", "--config", config];
+  if (mode === "check") {
+    args.push("--check");
   } else {
-    args.push('--write')
+    args.push("--write");
   }
-  args.push(...paths)
-  return { args, envs: {} }
+  args.push(...paths);
+  return { args, envs: {} };
 }
 
 /**
@@ -168,28 +156,24 @@ export function resolveFormatter(
  * Always emits `--noEmit` because the fleet's `type` script is for checking
  * only — emitting goes through the bundler.
  */
-export function resolveTypeChecker(
-  options: ResolveTypeCheckerOptions,
-): ResolvedTool {
-  const { project } = options
+export function resolveTypeChecker(options: ResolveTypeCheckerOptions): ResolvedTool {
+  const { project } = options;
   return {
-    args: ['tsgo', '--noEmit', '-p', project],
+    args: ["tsgo", "--noEmit", "-p", project],
     envs: {},
-  }
+  };
 }
 
 /**
  * Resolve the fleet's test runner (currently Vitest).
  */
-export function resolveTestRunner(
-  options: ResolveTestRunnerOptions = {},
-): ResolvedTool {
-  const { config = FLEET_TEST_CONFIG, coverage = false, mode = 'run' } = options
-  const args: string[] = ['vitest', mode, '--config', config]
+export function resolveTestRunner(options: ResolveTestRunnerOptions = {}): ResolvedTool {
+  const { config = FLEET_TEST_CONFIG, coverage = false, mode = "run" } = options;
+  const args: string[] = ["vitest", mode, "--config", config];
   if (coverage) {
-    args.push('--coverage')
+    args.push("--coverage");
   }
-  return { args, envs: {} }
+  return { args, envs: {} };
 }
 
 /**
@@ -202,13 +186,11 @@ export function resolveTestRunner(
  * exec`), so this resolver returns the binary name only — the caller picks
  * which API surface to import.
  */
-export function resolveBundler(
-  _options: ResolveBundlerOptions = {},
-): ResolvedTool {
+export function resolveBundler(_options: ResolveBundlerOptions = {}): ResolvedTool {
   return {
-    args: ['esbuild'],
+    args: ["esbuild"],
     envs: {},
-  }
+  };
 }
 
 /**
@@ -220,23 +202,23 @@ export async function runResolved(
   resolved: ResolvedTool,
   options: RunResolvedOptions = {},
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
-  const { capture = false, cwd = process.cwd(), extraArgs = [] } = options
+  const { capture = false, cwd = process.cwd(), extraArgs = [] } = options;
 
-  const env = { ...process.env, ...resolved.envs }
-  const argv = ['exec', ...resolved.args, ...extraArgs]
+  const env = { ...process.env, ...resolved.envs };
+  const argv = ["exec", ...resolved.args, ...extraArgs];
 
-  const result = await spawn('pnpm', argv, {
+  const result = await spawn("pnpm", argv, {
     cwd,
     env,
     stdioString: true,
-    ...(capture ? {} : { stdio: 'inherit' as const }),
-  })
+    ...(capture ? {} : { stdio: "inherit" as const }),
+  });
 
   return {
     exitCode: result.code ?? 0,
-    stdout: String(result.stdout ?? ''),
-    stderr: String(result.stderr ?? ''),
-  }
+    stdout: String(result.stdout ?? ""),
+    stderr: String(result.stderr ?? ""),
+  };
 }
 
 /**
@@ -244,9 +226,6 @@ export async function runResolved(
  * `node_modules/.bin/`? Useful for soft-failing when a repo opted out of one of
  * the fleet's tools.
  */
-export function hasResolvedTool(
-  name: string,
-  cwd: string = process.cwd(),
-): boolean {
-  return existsSync(path.join(cwd, 'node_modules', '.bin', name))
+export function hasResolvedTool(name: string, cwd: string = process.cwd()): boolean {
+  return existsSync(path.join(cwd, "node_modules", ".bin", name));
 }

@@ -21,192 +21,189 @@
  * fetcher - test/helpers/sdk-test-helpers.mts - SDK mocking utilities.
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from "vitest";
 
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
-import { fetchAuditLog } from '../../../../src/commands/audit-log/fetch-audit-log.mts'
+} from "../../../helpers/sdk-test-helpers.mts";
+import { fetchAuditLog } from "../../../../src/commands/audit-log/fetch-audit-log.mts";
 
 // Mock the dependencies.
-vi.mock('../../../../src/util/socket/api.mts', () => ({
+vi.mock(import("../../../../src/util/socket/api.mts"), () => ({
   handleApiCall: vi.fn(),
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mts', () => ({
+vi.mock(import("../../../../src/util/socket/sdk.mts"), () => ({
   setupSdk: vi.fn(),
-}))
+}));
 
-describe('fetchAuditLog', () => {
-  it('fetches audit log successfully', async () => {
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'getAuditLogEvents',
-      {
-        events: [
-          {
-            id: 'event-1',
-            action: 'package.scan',
-            actor: 'user@example.com',
-            timestamp: '2025-01-20T10:00:00Z',
-          },
-          {
-            id: 'event-2',
-            action: 'repository.create',
-            actor: 'admin@example.com',
-            timestamp: '2025-01-20T11:00:00Z',
-          },
-        ],
-        total: 2,
-      },
-    )
+describe("fetchAuditLog", () => {
+  it("fetches audit log successfully", async () => {
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess("getAuditLogEvents", {
+      events: [
+        {
+          id: "event-1",
+          action: "package.scan",
+          actor: "user@example.com",
+          timestamp: "2025-01-20T10:00:00Z",
+        },
+        {
+          id: "event-2",
+          action: "repository.create",
+          actor: "admin@example.com",
+          timestamp: "2025-01-20T11:00:00Z",
+        },
+      ],
+      total: 2,
+    });
 
     const config = {
-      logType: 'all',
-      orgSlug: 'test-org',
-      outputKind: 'json' as const,
+      logType: "all",
+      orgSlug: "test-org",
+      outputKind: "json" as const,
       page: 1,
       perPage: 100,
-    }
+    };
 
-    const result = await fetchAuditLog(config)
+    const result = await fetchAuditLog(config);
 
-    expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith('test-org', {
+    expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith("test-org", {
       outputJson: true,
       outputMarkdown: false,
-      orgSlug: 'test-org',
-      type: 'all',
+      orgSlug: "test-org",
+      type: "all",
       page: 1,
       per_page: 100,
-    })
+    });
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'audit log for test-org',
-    })
-    expect(result.ok).toBe(true)
-  })
+      description: "audit log for test-org",
+    });
+    expect(result.ok).toBe(true);
+  });
 
-  it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', {
+  it("handles SDK setup failure", async () => {
+    await setupSdkSetupFailure("Failed to setup SDK", {
       code: 1,
-      cause: 'Invalid API token',
-    })
+      cause: "Invalid API token",
+    });
 
     const config = {
-      logType: 'all',
-      orgSlug: 'my-org',
-      outputKind: 'text' as const,
+      logType: "all",
+      orgSlug: "my-org",
+      outputKind: "text" as const,
       page: 1,
       perPage: 50,
-    }
+    };
 
-    const result = await fetchAuditLog(config)
+    const result = await fetchAuditLog(config);
 
-    expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
-  })
+    expect(result.ok).toBe(false);
+    expect(result.message).toBe("Failed to setup SDK");
+  });
 
-  it('handles API call failure', async () => {
-    await setupSdkMockError('getAuditLogEvents', 'Unauthorized access', 403)
+  it("handles API call failure", async () => {
+    await setupSdkMockError("getAuditLogEvents", "Unauthorized access", 403);
 
     const config = {
-      logType: 'security',
-      orgSlug: 'restricted-org',
-      outputKind: 'json' as const,
+      logType: "security",
+      orgSlug: "restricted-org",
+      outputKind: "json" as const,
       page: 1,
       perPage: 100,
-    }
+    };
 
-    const result = await fetchAuditLog(config)
+    const result = await fetchAuditLog(config);
 
-    expect(result.ok).toBe(false)
-    expect(result.code).toBe(403)
-  })
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe(403);
+  });
 
-  it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('getAuditLogEvents', {})
+  it("passes custom SDK options", async () => {
+    const { mockSetupSdk } = await setupSdkMockSuccess("getAuditLogEvents", {});
 
     const sdkOpts = {
-      apiToken: 'audit-token',
-      baseUrl: 'https://audit.api.com',
-    }
+      apiToken: "audit-token",
+      baseUrl: "https://audit.api.com",
+    };
 
     const config = {
-      logType: 'all',
-      orgSlug: 'custom-org',
-      outputKind: 'json' as const,
+      logType: "all",
+      orgSlug: "custom-org",
+      outputKind: "json" as const,
       page: 1,
       perPage: 100,
-    }
+    };
 
-    await fetchAuditLog(config, { sdkOpts })
+    await fetchAuditLog(config, { sdkOpts });
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
-  })
+    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts);
+  });
 
-  it('handles pagination parameters', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('getAuditLogEvents', {})
+  it("handles pagination parameters", async () => {
+    const { mockSdk } = await setupSdkMockSuccess("getAuditLogEvents", {});
 
     const config = {
-      logType: 'all',
-      orgSlug: 'test-org',
-      outputKind: 'json' as const,
+      logType: "all",
+      orgSlug: "test-org",
+      outputKind: "json" as const,
       page: 5,
       perPage: 25,
-    }
+    };
 
-    await fetchAuditLog(config)
+    await fetchAuditLog(config);
 
     expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith(
-      'test-org',
+      "test-org",
       expect.objectContaining({
         page: 5,
         per_page: 25,
       }),
-    )
-  })
+    );
+  });
 
-  it('handles date filtering', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('getAuditLogEvents', {})
+  it("handles date filtering", async () => {
+    const { mockSdk } = await setupSdkMockSuccess("getAuditLogEvents", {});
 
-    const logTypes = ['all', 'security', 'configuration', 'access']
+    const logTypes = ["all", "security", "configuration", "access"];
 
     for (let i = 0, { length } = logTypes; i < length; i += 1) {
-      const logType = logTypes[i]
+      const logType = logTypes[i];
       const config = {
         logType,
-        orgSlug: 'test-org',
-        outputKind: 'json' as const,
+        orgSlug: "test-org",
+        outputKind: "json" as const,
         page: 1,
         perPage: 100,
-      }
+      };
 
-      await fetchAuditLog(config)
+      await fetchAuditLog(config);
 
       expect(mockSdk.getAuditLogEvents).toHaveBeenCalledWith(
-        'test-org',
+        "test-org",
         expect.objectContaining({
           type: logType,
         }),
-      )
+      );
     }
-  })
+  });
 
-  it('uses null prototype for options', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('getAuditLogEvents', {})
+  it("uses null prototype for options", async () => {
+    const { mockSdk } = await setupSdkMockSuccess("getAuditLogEvents", {});
 
     const config = {
-      logType: 'all',
-      orgSlug: 'test-org',
-      outputKind: 'json' as const,
+      logType: "all",
+      orgSlug: "test-org",
+      outputKind: "json" as const,
       page: 1,
       perPage: 100,
-    }
+    };
 
     // This tests that the function properly uses __proto__: null.
-    await fetchAuditLog(config)
+    await fetchAuditLog(config);
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getAuditLogEvents).toHaveBeenCalled()
-  })
-})
+    expect(mockSdk.getAuditLogEvents).toHaveBeenCalled();
+  });
+});

@@ -1,73 +1,73 @@
-import colors from 'yoctocolors-cjs'
+import colors from "yoctocolors-cjs";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger/symbols'
-import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { LOG_SYMBOLS } from "@socketsecurity/lib-stable/logger/symbols";
+import { stripAnsi } from "@socketsecurity/lib-stable/ansi/strip";
 
-import { failMsgWithBadge } from '../error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../output/result-json.mts'
+import { failMsgWithBadge } from "../error/fail-msg-with-badge.mts";
+import { serializeResultJson } from "../output/result-json.mts";
 
-import type { OutputKind } from '../../types.mjs'
-const logger = getDefaultLogger()
+import type { OutputKind } from "../../types.mjs";
+const logger = getDefaultLogger();
 
 export function checkCommandInput(
   outputKind: OutputKind,
   ...checks: Array<{
-    fail: string
-    message: string
-    test: boolean
-    nook?: boolean | undefined
-    pass?: string | undefined
+    fail: string;
+    message: string;
+    test: boolean;
+    nook?: boolean | undefined;
+    pass?: string | undefined;
   }>
 ): boolean {
-  if (checks.every(d => d.test)) {
-    return true
+  if (checks.every((d) => d.test)) {
+    return true;
   }
 
-  const msg = ['Please review the input requirements and try again', '']
+  const msg = ["Please review the input requirements and try again", ""];
   for (let i = 0, { length } = checks; i < length; i += 1) {
-    const d = checks[i]!
+    const d = checks[i]!;
     // If nook, then ignore when test is ok
     if (d.nook && d.test) {
-      continue
+      continue;
     }
     // Skip empty messages.
     if (!d.message) {
-      continue
+      continue;
     }
-    const lines = d.message.split('\n')
-    const { length: lineCount } = lines
+    const lines = d.message.split("\n");
+    const { length: lineCount } = lines;
     // If the message has newlines then format the first line with the input
     // expectation and the rest indented below it.
-    const logSymbol = d.test ? LOG_SYMBOLS['success'] : LOG_SYMBOLS['fail']
-    const reason = d.test ? d.pass : d.fail
-    let listItem = `  ${logSymbol} ${lines[0]}`
+    const logSymbol = d.test ? LOG_SYMBOLS["success"] : LOG_SYMBOLS["fail"];
+    const reason = d.test ? d.pass : d.fail;
+    let listItem = `  ${logSymbol} ${lines[0]}`;
     if (reason) {
-      const styledReason = d.test ? colors.green(reason) : colors.red(reason)
-      listItem += ` (${styledReason})`
+      const styledReason = d.test ? colors.green(reason) : colors.red(reason);
+      listItem += ` (${styledReason})`;
     }
-    msg.push(listItem)
+    msg.push(listItem);
     if (lineCount > 1) {
-      msg.push(...lines.slice(1).map(str => `    ${str}`))
+      msg.push(...lines.slice(1).map((str) => `    ${str}`));
     }
   }
 
   // Use exit status of 2 to indicate incorrect usage, generally invalid
   // options or missing arguments.
   // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-  process.exitCode = 2
+  process.exitCode = 2;
 
-  if (outputKind === 'json') {
+  if (outputKind === "json") {
     logger.log(
       serializeResultJson({
         ok: false,
-        message: 'Input error',
-        data: stripAnsi(msg.join('\n').trim()),
+        message: "Input error",
+        data: stripAnsi(msg.join("\n").trim()),
       }),
-    )
+    );
   } else {
-    logger.fail(failMsgWithBadge('Input error', msg.join('\n').trim()))
+    logger.fail(failMsgWithBadge("Input error", msg.join("\n").trim()));
   }
 
-  return false
+  return false;
 }

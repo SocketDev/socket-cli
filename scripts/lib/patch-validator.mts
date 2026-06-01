@@ -2,69 +2,69 @@
  * @file Patch validation and compatibility checking Validates patches before
  *   applying to prevent build failures.
  */
-import { promises as fs } from 'node:fs'
+import { promises as fs } from "node:fs";
 
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
 interface PatchMetadata {
-  description: string | null
-  nodeVersions: string[]
-  requires: string[]
-  conflicts: string[]
+  description: string | null;
+  nodeVersions: string[];
+  requires: string[];
+  conflicts: string[];
 }
 
 interface CompatibilityResult {
-  compatible: boolean
-  reason: string | null
+  compatible: boolean;
+  reason: string | null;
 }
 
 interface ValidationResult {
-  valid: boolean
-  reason?: string | null | undefined
-  metadata: PatchMetadata | null
+  valid: boolean;
+  reason?: string | null | undefined;
+  metadata: PatchMetadata | null;
 }
 
 interface PatchAnalysis {
-  modifiesV8Includes: boolean
-  modifiesSEA: boolean
-  modifiesFiles: string[]
+  modifiesV8Includes: boolean;
+  modifiesSEA: boolean;
+  modifiesFiles: string[];
 }
 
 interface PatchInfo {
-  name: string
-  analysis: PatchAnalysis
+  name: string;
+  analysis: PatchAnalysis;
 }
 
 interface PatchConflict {
-  type: string
-  file?: string | undefined
-  patches: string[]
-  message: string
-  severity?: string | undefined
+  type: string;
+  file?: string | undefined;
+  patches: string[];
+  message: string;
+  severity?: string | undefined;
 }
 
 interface PatchApplicationResult {
-  canApply: boolean
-  reason: string | null
-  stderr?: string | Buffer | undefined
+  canApply: boolean;
+  reason: string | null;
+  stderr?: string | Buffer | undefined;
 }
 
 /**
  * Compare Node.js versions.
  */
 export function compareVersions(v1: string, v2: string): number {
-  const parts1 = v1.replace('v', '').split('.').map(Number)
-  const parts2 = v2.replace('v', '').split('.').map(Number)
+  const parts1 = v1.replace("v", "").split(".").map(Number);
+  const parts2 = v2.replace("v", "").split(".").map(Number);
 
   for (let i = 0; i < 3; i++) {
     if ((parts1[i] ?? 0) > (parts2[i] ?? 0)) {
-      return 1
+      return 1;
     }
     if ((parts1[i] ?? 0) < (parts2[i] ?? 0)) {
-      return -1
+      return -1;
     }
   }
-  return 0
+  return 0;
 }
 
 /**
@@ -75,178 +75,162 @@ function analyzePatchContent(patchContent: string): PatchAnalysis {
     modifiesV8Includes: false,
     modifiesSEA: false,
     modifiesFiles: [],
-  }
+  };
 
-  const lines = patchContent.split('\n')
-  let currentFile: string | undefined
+  const lines = patchContent.split("\n");
+  let currentFile: string | undefined;
 
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i]
+    const line = lines[i];
     // Track which files are modified.
-    if (line.startsWith('---') || line.startsWith('+++')) {
-      const match = line.match(/[+-]{3}\s+(?:a\/|b\/)?(.+)/)
+    if (line.startsWith("---") || line.startsWith("+++")) {
+      const match = line.match(/[+-]{3}\s+(?:a\/|b\/)?(.+)/);
       if (match) {
-        currentFile = match[1]
-        if (
-          currentFile !== '/dev/null' &&
-          !analysis.modifiesFiles.includes(currentFile)
-        ) {
-          analysis.modifiesFiles.push(currentFile)
+        currentFile = match[1];
+        if (currentFile !== "/dev/null" && !analysis.modifiesFiles.includes(currentFile)) {
+          analysis.modifiesFiles.push(currentFile);
         }
       }
     }
 
     // Check for V8 include modifications.
-    if (
-      line.includes('#include') &&
-      line.includes('base/') &&
-      currentFile?.includes('deps/v8')
-    ) {
-      analysis.modifiesV8Includes = true
+    if (line.includes("#include") && line.includes("base/") && currentFile?.includes("deps/v8")) {
+      analysis.modifiesV8Includes = true;
     }
 
     // Check for SEA modifications.
-    if (line.includes('isSea') && currentFile?.includes('lib/sea.js')) {
-      analysis.modifiesSEA = true
+    if (line.includes("isSea") && currentFile?.includes("lib/sea.js")) {
+      analysis.modifiesSEA = true;
     }
   }
 
-  return analysis
+  return analysis;
 }
 
 /**
  * Check for patch conflicts.
  */
-function checkPatchConflicts(
-  patches: PatchInfo[],
-  nodeVersion: string,
-): PatchConflict[] {
-  const conflicts: PatchConflict[] = []
+function checkPatchConflicts(patches: PatchInfo[], nodeVersion: string): PatchConflict[] {
+  const conflicts: PatchConflict[] = [];
 
   // Check for multiple patches modifying same files.
-  const fileModifications = new Map<string, string[]>()
+  const fileModifications = new Map<string, string[]>();
 
   for (let i = 0, { length } = patches; i < length; i += 1) {
-    const patch = patches[i]
+    const patch = patches[i];
     for (const file of patch.analysis.modifiesFiles) {
       if (!fileModifications.has(file)) {
-        fileModifications.set(file, [])
+        fileModifications.set(file, []);
       }
-      fileModifications.get(file)!.push(patch.name)
+      fileModifications.get(file)!.push(patch.name);
     }
   }
 
   for (const [file, patchNames] of fileModifications) {
     if (patchNames.length > 1) {
       conflicts.push({
-        type: 'file',
+        type: "file",
         file,
         patches: patchNames,
-        message: `Multiple patches modify ${file}: ${patchNames.join(', ')}`,
-      })
+        message: `Multiple patches modify ${file}: ${patchNames.join(", ")}`,
+      });
     }
   }
 
   // Check for V8 include modifications on v24.10.0+.
-  if (compareVersions(nodeVersion, 'v24.10.0') >= 0) {
-    const v8Patches = patches.filter(p => p.analysis.modifiesV8Includes)
+  if (compareVersions(nodeVersion, "v24.10.0") >= 0) {
+    const v8Patches = patches.filter((p) => p.analysis.modifiesV8Includes);
     if (v8Patches.length > 0) {
       conflicts.push({
-        type: 'version',
-        patches: v8Patches.map(p => p.name),
+        type: "version",
+        patches: v8Patches.map((p) => p.name),
         message: `Patches modify V8 includes but ${nodeVersion} doesn't need this fix`,
-        severity: 'error',
-      })
+        severity: "error",
+      });
     }
   }
 
-  return conflicts
+  return conflicts;
 }
 
 /**
  * Check if patch is compatible with Node version.
  */
-function isPatchCompatible(
-  metadata: PatchMetadata,
-  nodeVersion: string,
-): CompatibilityResult {
+function isPatchCompatible(metadata: PatchMetadata, nodeVersion: string): CompatibilityResult {
   if (metadata.nodeVersions.length === 0) {
     // No version restriction = compatible with all.
-    return { compatible: true, reason: undefined }
+    return { compatible: true, reason: undefined };
   }
 
   // Check version ranges.
   for (const versionSpec of metadata.nodeVersions) {
-    if (versionSpec.includes('+')) {
+    if (versionSpec.includes("+")) {
       // v24.10.0+ means v24.10.0 and later.
-      const baseVersion = versionSpec.replace('+', '')
+      const baseVersion = versionSpec.replace("+", "");
       if (compareVersions(nodeVersion, baseVersion) >= 0) {
-        return { compatible: true, reason: undefined }
+        return { compatible: true, reason: undefined };
       }
-    } else if (versionSpec.includes('-')) {
+    } else if (versionSpec.includes("-")) {
       // v24.9.0-v24.9.5 means range.
-      const [min, max] = versionSpec.split('-')
-      if (
-        compareVersions(nodeVersion, min) >= 0 &&
-        compareVersions(nodeVersion, max) <= 0
-      ) {
-        return { compatible: true, reason: undefined }
+      const [min, max] = versionSpec.split("-");
+      if (compareVersions(nodeVersion, min) >= 0 && compareVersions(nodeVersion, max) <= 0) {
+        return { compatible: true, reason: undefined };
       }
     } else {
       // Exact version.
       if (nodeVersion === versionSpec) {
-        return { compatible: true, reason: undefined }
+        return { compatible: true, reason: undefined };
       }
     }
   }
 
   return {
     compatible: false,
-    reason: `Patch supports ${metadata.nodeVersions.join(', ')} but you're using ${nodeVersion}`,
-  }
+    reason: `Patch supports ${metadata.nodeVersions.join(", ")} but you're using ${nodeVersion}`,
+  };
 }
 
 /**
  * Parse patch metadata from header comments.
  */
 function parsePatchMetadata(patchContent: string): PatchMetadata {
-  const lines = patchContent.split('\n')
+  const lines = patchContent.split("\n");
   const metadata: PatchMetadata = {
     description: undefined,
     nodeVersions: [],
     requires: [],
     conflicts: [],
-  }
+  };
 
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i]
+    const line = lines[i];
     // Stop at first non-comment
-    if (!line.startsWith('#')) {
-      break
+    if (!line.startsWith("#")) {
+      break;
     }
 
     // Parse metadata directives.
-    if (line.includes('@node-versions:')) {
+    if (line.includes("@node-versions:")) {
       const versions = line
-        .split(':')[1]
+        .split(":")[1]
         .trim()
-        .split(/[,\s]+/)
-      metadata.nodeVersions.push(...versions)
+        .split(/[,\s]+/);
+      metadata.nodeVersions.push(...versions);
     }
-    if (line.includes('@requires:')) {
-      const required = line.split(':')[1].trim()
-      metadata.requires.push(required)
+    if (line.includes("@requires:")) {
+      const required = line.split(":")[1].trim();
+      metadata.requires.push(required);
     }
-    if (line.includes('@conflicts:')) {
-      const conflicted = line.split(':')[1].trim()
-      metadata.conflicts.push(conflicted)
+    if (line.includes("@conflicts:")) {
+      const conflicted = line.split(":")[1].trim();
+      metadata.conflicts.push(conflicted);
     }
-    if (line.includes('@description:')) {
-      metadata.description = line.split(':')[1].trim()
+    if (line.includes("@description:")) {
+      metadata.description = line.split(":")[1].trim();
     }
   }
 
-  return metadata
+  return metadata;
 }
 
 /**
@@ -260,94 +244,91 @@ async function testPatchApplication(
   try {
     // Use /bin/sh wrapper to ensure patch command is found in PATH.
     // This matches the pattern used in the build script for applying patches.
-    const patchCommand = `patch -p${stripLevel} --dry-run --batch --forward < "${patchPath}"`
-    const result = await spawn('/bin/sh', ['-c', patchCommand], {
+    const patchCommand = `patch -p${stripLevel} --dry-run --batch --forward < "${patchPath}"`;
+    const result = await spawn("/bin/sh", ["-c", patchCommand], {
       cwd: targetDir,
-      stdio: 'pipe',
-    })
+      stdio: "pipe",
+    });
 
     if (result.code === 0) {
       return {
         canApply: true,
         reason: undefined,
-      }
+      };
     }
 
     return {
       canApply: false,
       reason: `Patch dry-run failed with exit code ${result.code}`,
       stderr: result.stderr,
-    }
+    };
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
+    const message = e instanceof Error ? e.message : String(e);
     return {
       canApply: false,
       reason: `Patch dry-run error: ${message}`,
-    }
+    };
   }
 }
 
 /**
  * Validate patch file before applying.
  */
-async function validatePatch(
-  patchPath: string,
-  nodeVersion: string,
-): Promise<ValidationResult> {
+async function validatePatch(patchPath: string, nodeVersion: string): Promise<ValidationResult> {
   try {
-    const content = await fs.readFile(patchPath, 'utf8')
+    const content = await fs.readFile(patchPath, "utf8");
 
     // Parse metadata.
-    const metadata = parsePatchMetadata(content)
+    const metadata = parsePatchMetadata(content);
 
     // Check version compatibility.
-    const compatibility = isPatchCompatible(metadata, nodeVersion)
+    const compatibility = isPatchCompatible(metadata, nodeVersion);
     if (!compatibility.compatible) {
       return {
         valid: false,
         reason: compatibility.reason,
         metadata,
-      }
+      };
     }
 
     // Check patch is not empty.
-    if (!content.includes('diff ') && !content.includes('---')) {
+    if (!content.includes("diff ") && !content.includes("---")) {
       return {
         valid: false,
-        reason: 'Patch file contains no diff content',
+        reason: "Patch file contains no diff content",
         metadata,
-      }
+      };
     }
 
     // Check for suspicious patterns.
     const suspiciousPatterns = [
       {
         pattern: /<html>/i,
-        reason: 'Patch contains HTML (probably download error)',
+        reason: "Patch contains HTML (probably download error)",
       },
-      { pattern: /404 not found/i, reason: 'Patch contains 404 error' },
+      { pattern: /404 not found/i, reason: "Patch contains 404 error" },
       {
         pattern: /access denied/i,
-        reason: 'Patch contains access denied error',
+        reason: "Patch contains access denied error",
       },
-    ]
+    ];
 
     for (const { pattern, reason } of suspiciousPatterns) {
       if (pattern.test(content)) {
-        return { valid: false, reason, metadata }
+        return { valid: false, reason, metadata };
       }
     }
 
     return {
       valid: true,
       metadata,
-    }
+    };
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
+    const message = e instanceof Error ? e.message : String(e);
     return {
       valid: false,
       reason: `Cannot read patch: ${message}`,
       metadata: undefined,
-    }
+    };
   }
 }

@@ -3,6 +3,6 @@
  * that require Socket API access.
  */
 
-import { env } from 'node:process'
+import { env } from "node:process";
 
-export const RUN_INTEGRATION_TESTS = env['RUN_INTEGRATION_TESTS']
+export const RUN_INTEGRATION_TESTS = env["RUN_INTEGRATION_TESTS"];

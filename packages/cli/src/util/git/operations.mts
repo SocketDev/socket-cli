@@ -22,247 +22,223 @@
  * hash.
  */
 
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
-import { isDebug } from '@socketsecurity/lib-stable/debug/namespace'
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { whichReal } from "@socketsecurity/lib-stable/bin/which";
+import { isDebug } from "@socketsecurity/lib-stable/debug/namespace";
+import { debug, debugDir } from "@socketsecurity/lib-stable/debug/output";
 import {
   getGithubBaseRef,
   getGithubRefName,
   getGithubRefType,
-} from '@socketsecurity/lib-stable/env/github'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+} from "@socketsecurity/lib-stable/env/github";
+import { normalizePath } from "@socketsecurity/lib-stable/paths/normalize";
+import { isSpawnError } from "@socketsecurity/lib-stable/process/spawn/errors";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { FLAG_QUIET } from '../../constants/cli.mts'
-import { SOCKET_CLI_GIT_USER_EMAIL } from '../../env/socket-cli-git-user-email.mts'
-import { SOCKET_CLI_GIT_USER_NAME } from '../../env/socket-cli-git-user-name.mts'
-import {
-  SOCKET_DEFAULT_BRANCH,
-  SOCKET_DEFAULT_REPOSITORY,
-} from '../../constants/socket.mts'
-import { debugGit } from '../debug.mts'
-import { extractName, extractOwner } from '../sanitize-names.mts'
+import { FLAG_QUIET } from "../../constants/cli.mts";
+import { SOCKET_CLI_GIT_USER_EMAIL } from "../../env/socket-cli-git-user-email.mts";
+import { SOCKET_CLI_GIT_USER_NAME } from "../../env/socket-cli-git-user-name.mts";
+import { SOCKET_DEFAULT_BRANCH, SOCKET_DEFAULT_REPOSITORY } from "../../constants/socket.mts";
+import { debugGit } from "../debug.mts";
+import { extractName, extractOwner } from "../sanitize-names.mts";
 
-import type { CResult } from '../../types.mjs'
-import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
+import type { CResult } from "../../types.mjs";
+import type { SpawnOptions } from "@socketsecurity/lib-stable/process/spawn/types";
 
 // Cache git executable path
-let gitPath: string | undefined = undefined
+let gitPath: string | undefined = undefined;
 
 // Listed in order of check preference.
 const COMMON_DEFAULT_BRANCH_NAMES = [
   // Modern default (GitHub, GitLab, Bitbucket have switched to this).
-  'main',
+  "main",
   // inclusive-language: external-api — git's historical default branch.
-  'master',
+  "master",
   // Common in Git Flow workflows (main for stable, develop for ongoing work).
-  'develop',
+  "develop",
   // Used by teams adopting trunk-based development practices.
-  'trunk',
+  "trunk",
   // Used in some older enterprise setups and tools.
-  'default',
-]
+  "default",
+];
 
-const parsedGitRemoteUrlCache = new Map<string, RepoInfo | undefined>()
+const parsedGitRemoteUrlCache = new Map<string, RepoInfo | undefined>();
 
 /**
  * Try to detect the default branch name by checking common patterns. Returns
  * the first branch that exists in the repository.
  */
-export async function detectDefaultBranch(
-  cwd = process.cwd(),
-): Promise<string> {
+export async function detectDefaultBranch(cwd = process.cwd()): Promise<string> {
   // First pass: check all local branches
-  for (
-    let i = 0, { length } = COMMON_DEFAULT_BRANCH_NAMES;
-    i < length;
-    i += 1
-  ) {
-    const branch = COMMON_DEFAULT_BRANCH_NAMES[i]!
+  for (let i = 0, { length } = COMMON_DEFAULT_BRANCH_NAMES; i < length; i += 1) {
+    const branch = COMMON_DEFAULT_BRANCH_NAMES[i]!;
     if (await gitLocalBranchExists(branch, cwd)) {
-      return branch
+      return branch;
     }
   }
   // Second pass: check remote branches only if no local branch found
-  for (
-    let i = 0, { length } = COMMON_DEFAULT_BRANCH_NAMES;
-    i < length;
-    i += 1
-  ) {
-    const branch = COMMON_DEFAULT_BRANCH_NAMES[i]!
+  for (let i = 0, { length } = COMMON_DEFAULT_BRANCH_NAMES; i < length; i += 1) {
+    const branch = COMMON_DEFAULT_BRANCH_NAMES[i]!;
     if (await gitRemoteBranchExists(branch, cwd)) {
-      return branch
+      return branch;
     }
   }
-  return SOCKET_DEFAULT_BRANCH
+  return SOCKET_DEFAULT_BRANCH;
 }
 
 export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   // 1. In a pull request, this is always the base branch.
-  const githubBaseRef = getGithubBaseRef()
+  const githubBaseRef = getGithubBaseRef();
   if (githubBaseRef) {
-    return githubBaseRef
+    return githubBaseRef;
   }
   // 2. If it's a branch (not a tag), GITHUB_REF_TYPE should be 'branch'.
-  const githubRefType = getGithubRefType()
-  const githubRefName = getGithubRefName()
-  if (githubRefType === 'branch' && githubRefName) {
-    return githubRefName
+  const githubRefType = getGithubRefType();
+  const githubRefName = getGithubRefName();
+  if (githubRefType === "branch" && githubRefName) {
+    return githubRefName;
   }
   // 3. Try to resolve the default remote branch using 'git remote show origin'.
   // This handles detached HEADs or workflows triggered by tags/releases.
   try {
-    const gitPath = await getGitPath()
-    const result = await spawn(gitPath, ['remote', 'show', 'origin'], { cwd })
+    const gitPath = await getGitPath();
+    const result = await spawn(gitPath, ["remote", "show", "origin"], { cwd });
 
     if (!result) {
-      return 'main'
+      return "main";
     }
 
-    const originDetails =
-      result.stdout
+    const originDetails = result.stdout;
 
-    const match = /(?<=HEAD branch: ).+/.exec(originDetails)
+    const match = /(?<=HEAD branch: ).+/.exec(originDetails);
     if (match && match.length > 0 && match[0]) {
-      return match[0].trim()
+      return match[0].trim();
     }
   } catch {}
   // GitHub and GitLab default to branch name "main"
   // https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches#about-the-default-branch
-  return 'main'
+  return "main";
 }
 
 export async function getGitPath(): Promise<string> {
   if (!gitPath) {
-    const result = await whichReal('git', { nothrow: true })
+    const result = await whichReal("git", { nothrow: true });
     if (!result || Array.isArray(result)) {
       throw new Error(
-        `git executable not found on PATH (whichReal returned ${Array.isArray(result) ? 'multiple matches' : 'null'}); install git (e.g. \`brew install git\`, \`apt install git\`) and make sure it is reachable on PATH`,
-      )
+        `git executable not found on PATH (whichReal returned ${Array.isArray(result) ? "multiple matches" : "null"}); install git (e.g. \`brew install git\`, \`apt install git\`) and make sure it is reachable on PATH`,
+      );
     }
-    gitPath = result
+    gitPath = result;
   }
-  return gitPath
+  return gitPath;
 }
 
 export type RepoInfo = {
-  owner: string
-  repo: string
-}
+  owner: string;
+  repo: string;
+};
 
-export async function getRepoInfo(
-  cwd = process.cwd(),
-): Promise<RepoInfo | undefined> {
-  let info: RepoInfo | undefined
+export async function getRepoInfo(cwd = process.cwd()): Promise<RepoInfo | undefined> {
+  let info: RepoInfo | undefined;
   try {
-    const gitPath = await getGitPath()
-    const result = await spawn(gitPath, ['remote', 'get-url', 'origin'], {
+    const gitPath = await getGitPath();
+    const result = await spawn(gitPath, ["remote", "get-url", "origin"], {
       cwd,
-    })
+    });
 
     if (!result) {
-      return undefined
+      return undefined;
     }
 
-    const remoteUrl =
-      result.stdout
-    info = parseGitRemoteUrl(remoteUrl)
+    const remoteUrl = result.stdout;
+    info = parseGitRemoteUrl(remoteUrl);
     if (!info) {
-      debug(`Unmatched git remote URL format: ${remoteUrl}`)
-      debugDir({ remoteUrl })
+      debug(`Unmatched git remote URL format: ${remoteUrl}`);
+      debugDir({ remoteUrl });
     }
   } catch (e) {
     // Expected failure when not in a git repo.
-    debugDir({ message: 'git remote get-url failed', error: e })
+    debugDir({ message: "git remote get-url failed", error: e });
   }
-  return info
+  return info;
 }
 
 export async function getRepoName(cwd = process.cwd()): Promise<string> {
-  const repoInfo = await getRepoInfo(cwd)
-  return repoInfo?.repo ? extractName(repoInfo.repo) : SOCKET_DEFAULT_REPOSITORY
+  const repoInfo = await getRepoInfo(cwd);
+  return repoInfo?.repo ? extractName(repoInfo.repo) : SOCKET_DEFAULT_REPOSITORY;
 }
 
-export async function getRepoOwner(
-  cwd = process.cwd(),
-): Promise<string | undefined> {
-  const repoInfo = await getRepoInfo(cwd)
-  return repoInfo?.owner ? extractOwner(repoInfo.owner) : undefined
+export async function getRepoOwner(cwd = process.cwd()): Promise<string | undefined> {
+  const repoInfo = await getRepoInfo(cwd);
+  return repoInfo?.owner ? extractOwner(repoInfo.owner) : undefined;
 }
 
-export async function gitBranch(
-  cwd = process.cwd(),
-): Promise<string | undefined> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
+export async function gitBranch(cwd = process.cwd()): Promise<string | undefined> {
+  const stdioPipeOptions: SpawnOptions = { cwd };
   // Try symbolic-ref first which returns the branch name or fails in a
   // detached HEAD state.
   try {
     const gitSymbolicRefResult = await spawn(
-      'git',
-      ['symbolic-ref', '--short', 'HEAD'],
+      "git",
+      ["symbolic-ref", "--short", "HEAD"],
       stdioPipeOptions,
-    )
-    return gitSymbolicRefResult.stdout as string
+    );
+    return gitSymbolicRefResult.stdout as string;
   } catch (e) {
     // Expected in detached HEAD state, fallback to rev-parse.
-    debugDir({ message: 'In detached HEAD state', error: e })
+    debugDir({ message: "In detached HEAD state", error: e });
   }
   // Fallback to using rev-parse to get the short commit hash in a
   // detached HEAD state.
   try {
     const gitRevParseResult = await spawn(
-      'git',
-      ['rev-parse', '--short', 'HEAD'],
+      "git",
+      ["rev-parse", "--short", "HEAD"],
       stdioPipeOptions,
-    )
-    return gitRevParseResult.stdout as string
+    );
+    return gitRevParseResult.stdout as string;
   } catch (e) {
     // Both methods failed, likely not in a git repo.
-    debugDir({ message: 'Unable to determine git branch', error: e })
+    debugDir({ message: "Unable to determine git branch", error: e });
   }
-  return undefined
+  return undefined;
 }
 
-export async function gitCheckoutBranch(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
+export async function gitCheckoutBranch(branch: string, cwd = process.cwd()): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+    stdio: isDebug() ? "inherit" : "ignore",
+  };
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['checkout', branch], stdioIgnoreOptions)
-    debugGit(`checkout ${branch}`, true)
-    return true
+    const gitPath = await getGitPath();
+    await spawn(gitPath, ["checkout", branch], stdioIgnoreOptions);
+    debugGit(`checkout ${branch}`, true);
+    return true;
   } catch (e) {
-    debugGit(`checkout ${branch}`, false, { error: e })
+    debugGit(`checkout ${branch}`, false, { error: e });
   }
-  return false
+  return false;
 }
 
 type GitCreateAndPushBranchOptions = {
-  cwd?: string | undefined
-  email?: string | undefined
-  user?: string | undefined
-}
+  cwd?: string | undefined;
+  email?: string | undefined;
+  user?: string | undefined;
+};
 
 export async function gitCleanFdx(cwd = process.cwd()): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+    stdio: isDebug() ? "inherit" : "ignore",
+  };
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['clean', '-fdx'], stdioIgnoreOptions)
-    debugGit('clean -fdx', true)
-    return true
+    const gitPath = await getGitPath();
+    await spawn(gitPath, ["clean", "-fdx"], stdioIgnoreOptions);
+    debugGit("clean -fdx", true);
+    return true;
   } catch (e) {
-    debugGit('clean -fdx', false, { error: e })
+    debugGit("clean -fdx", false, { error: e });
   }
-  return false
+  return false;
 }
 
 export async function gitCommit(
@@ -271,112 +247,99 @@ export async function gitCommit(
   options?: GitCreateAndPushBranchOptions | undefined,
 ): Promise<boolean> {
   if (!filepaths.length) {
-    debug('miss: no filepaths to add')
-    return false
+    debug("miss: no filepaths to add");
+    return false;
   }
   const {
     cwd = process.cwd(),
     email = SOCKET_CLI_GIT_USER_EMAIL,
     user = SOCKET_CLI_GIT_USER_NAME,
-  } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
+  } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions;
 
-  await gitEnsureIdentity(user || '', email || '', cwd)
+  await gitEnsureIdentity(user || "", email || "", cwd);
 
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+    stdio: isDebug() ? "inherit" : "ignore",
+  };
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['add', ...filepaths], stdioIgnoreOptions)
-    debugGit('add', true, { count: filepaths.length })
+    const gitPath = await getGitPath();
+    await spawn(gitPath, ["add", ...filepaths], stdioIgnoreOptions);
+    debugGit("add", true, { count: filepaths.length });
   } catch (e) {
-    debugGit('add', false, { error: e })
-    debugDir({ filepaths })
-    return false
+    debugGit("add", false, { error: e });
+    debugDir({ filepaths });
+    return false;
   }
 
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['commit', '-m', commitMsg], stdioIgnoreOptions)
-    debugGit('commit', true)
-    return true
+    const gitPath = await getGitPath();
+    await spawn(gitPath, ["commit", "-m", commitMsg], stdioIgnoreOptions);
+    debugGit("commit", true);
+    return true;
   } catch (e) {
-    debugGit('commit', false, { error: e })
-    debugDir({ commitMsg })
+    debugGit("commit", false, { error: e });
+    debugDir({ commitMsg });
   }
-  return false
+  return false;
 }
 
-export async function gitCreateBranch(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
+export async function gitCreateBranch(branch: string, cwd = process.cwd()): Promise<boolean> {
   if (await gitLocalBranchExists(branch)) {
-    return true
+    return true;
   }
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+    stdio: isDebug() ? "inherit" : "ignore",
+  };
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['branch', branch], stdioIgnoreOptions)
-    debugGit(`branch ${branch}`, true)
-    return true
+    const gitPath = await getGitPath();
+    await spawn(gitPath, ["branch", branch], stdioIgnoreOptions);
+    debugGit(`branch ${branch}`, true);
+    return true;
   } catch (e) {
-    debugGit(`branch ${branch}`, false, { error: e })
+    debugGit(`branch ${branch}`, false, { error: e });
   }
-  return false
+  return false;
 }
 
-export async function gitDeleteBranch(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
+export async function gitDeleteBranch(branch: string, cwd = process.cwd()): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+    stdio: isDebug() ? "inherit" : "ignore",
+  };
   try {
     // Will throw with exit code 1 if branch does not exist.
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['branch', '-D', branch], stdioIgnoreOptions)
-    return true
+    const gitPath = await getGitPath();
+    await spawn(gitPath, ["branch", "-D", branch], stdioIgnoreOptions);
+    return true;
   } catch (e) {
     // Expected failure when branch doesn't exist.
     debugDir({
       message: `Branch deletion failed (may not exist): ${branch}`,
       error: e,
-    })
+    });
   }
-  return false
+  return false;
 }
 
-export async function gitDeleteRemoteBranch(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
+export async function gitDeleteRemoteBranch(branch: string, cwd = process.cwd()): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+    stdio: isDebug() ? "inherit" : "ignore",
+  };
   try {
     // Will throw with exit code 1 if branch does not exist.
-    await spawn(
-      'git',
-      ['push', 'origin', '--delete', branch],
-      stdioIgnoreOptions,
-    )
-    return true
+    await spawn("git", ["push", "origin", "--delete", branch], stdioIgnoreOptions);
+    return true;
   } catch (e) {
     // Expected failure when remote branch doesn't exist.
     debugDir({
       message: `Remote branch deletion failed (may not exist): ${branch}`,
       error: e,
-    })
+    });
   }
-  return false
+  return false;
 }
 
 export async function gitEnsureIdentity(
@@ -384,202 +347,167 @@ export async function gitEnsureIdentity(
   email: string,
   cwd = process.cwd(),
 ): Promise<void> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
+  const stdioPipeOptions: SpawnOptions = { cwd };
   const identEntries: Array<[string, string]> = [
-    ['user.email', email],
-    ['user.name', name],
-  ]
+    ["user.email", email],
+    ["user.name", name],
+  ];
   await Promise.allSettled(
     identEntries.map(async ({ 0: prop, 1: value }) => {
-      let configValue: string | Buffer | undefined
+      let configValue: string | Buffer | undefined;
       try {
         // Will throw with exit code 1 if the config property is not set.
-        const gitConfigResult = await spawn(
-          'git',
-          ['config', '--get', prop],
-          stdioPipeOptions,
-        )
-        configValue = gitConfigResult.stdout
+        const gitConfigResult = await spawn("git", ["config", "--get", prop], stdioPipeOptions);
+        configValue = gitConfigResult.stdout;
       } catch (e) {
         // Expected when config property is not set.
         debugDir({
           message: `Git config property not set: ${prop}`,
           error: e,
-        })
+        });
       }
       if (configValue !== value) {
         const stdioIgnoreOptions: SpawnOptions = {
           cwd,
-          stdio: isDebug() ? 'inherit' : 'ignore',
-        }
+          stdio: isDebug() ? "inherit" : "ignore",
+        };
         try {
-          const gitPath = await getGitPath()
-          await spawn(gitPath, ['config', prop, value], stdioIgnoreOptions)
+          const gitPath = await getGitPath();
+          await spawn(gitPath, ["config", prop, value], stdioIgnoreOptions);
         } catch (e) {
-          debug(`Failed to set git config: ${prop}`)
-          debugDir(e)
-          debugDir({ value })
+          debug(`Failed to set git config: ${prop}`);
+          debugDir(e);
+          debugDir({ value });
         }
       }
     }),
-  )
+  );
 }
 
-export async function gitLocalBranchExists(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
+export async function gitLocalBranchExists(branch: string, cwd = process.cwd()): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+    stdio: isDebug() ? "inherit" : "ignore",
+  };
   try {
     // Will throw with exit code 1 if the branch does not exist.
-    await spawn(
-      'git',
-      ['show-ref', FLAG_QUIET, `refs/heads/${branch}`],
-      stdioIgnoreOptions,
-    )
-    return true
+    await spawn("git", ["show-ref", FLAG_QUIET, `refs/heads/${branch}`], stdioIgnoreOptions);
+    return true;
   } catch {
     // Expected when branch doesn't exist - no logging needed.
   }
-  return false
+  return false;
 }
 
-export async function gitPushBranch(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
+export async function gitPushBranch(branch: string, cwd = process.cwd()): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+    stdio: isDebug() ? "inherit" : "ignore",
+  };
   try {
-    await spawn(
-      'git',
-      ['push', '--force', '--set-upstream', 'origin', branch],
-      stdioIgnoreOptions,
-    )
-    debugGit(`push ${branch}`, true)
-    return true
+    await spawn("git", ["push", "--force", "--set-upstream", "origin", branch], stdioIgnoreOptions);
+    debugGit(`push ${branch}`, true);
+    return true;
   } catch (e) {
     if (isSpawnError(e) && e.code === 128) {
-      debug(
-        "Push denied: token requires write permissions for 'contents' and 'pull-requests'",
-      )
-      debugDir(e)
-      debugDir({ branch })
+      debug("Push denied: token requires write permissions for 'contents' and 'pull-requests'");
+      debugDir(e);
+      debugDir({ branch });
     } else {
-      debugGit(`push ${branch}`, false, { error: e })
+      debugGit(`push ${branch}`, false, { error: e });
     }
   }
-  return false
+  return false;
 }
 
-export async function gitRemoteBranchExists(
-  branch: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
+export async function gitRemoteBranchExists(branch: string, cwd = process.cwd()): Promise<boolean> {
+  const stdioPipeOptions: SpawnOptions = { cwd };
   try {
     const lsRemoteResult = await spawn(
-      'git',
-      ['ls-remote', '--heads', 'origin', branch],
+      "git",
+      ["ls-remote", "--heads", "origin", branch],
       stdioPipeOptions,
-    )
-    return lsRemoteResult.stdout.length > 0
+    );
+    return lsRemoteResult.stdout.length > 0;
   } catch (e) {
     // Expected when remote is not accessible or branch doesn't exist.
     debugDir({
       message: `Remote branch check failed: ${branch}`,
       error: e,
-    })
+    });
   }
-  return false
+  return false;
 }
 
-export async function gitResetAndClean(
-  branch = 'HEAD',
-  cwd = process.cwd(),
-): Promise<void> {
+export async function gitResetAndClean(branch = "HEAD", cwd = process.cwd()): Promise<void> {
   // Discards tracked changes.
-  await gitResetHard(branch, cwd)
+  await gitResetHard(branch, cwd);
   // Deletes all untracked files and directories.
-  await gitCleanFdx(cwd)
+  await gitCleanFdx(cwd);
 }
 
-export async function gitResetHard(
-  branch = 'HEAD',
-  cwd = process.cwd(),
-): Promise<boolean> {
+export async function gitResetHard(branch = "HEAD", cwd = process.cwd()): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+    stdio: isDebug() ? "inherit" : "ignore",
+  };
   try {
-    const gitPath = await getGitPath()
-    await spawn(gitPath, ['reset', '--hard', branch], stdioIgnoreOptions)
-    debugGit(`reset --hard ${branch}`, true)
-    return true
+    const gitPath = await getGitPath();
+    await spawn(gitPath, ["reset", "--hard", branch], stdioIgnoreOptions);
+    debugGit(`reset --hard ${branch}`, true);
+    return true;
   } catch (e) {
-    debugGit(`reset --hard ${branch}`, false, { error: e })
+    debugGit(`reset --hard ${branch}`, false, { error: e });
   }
-  return false
+  return false;
 }
 
-export async function gitUnstagedModifiedFiles(
-  cwd = process.cwd(),
-): Promise<CResult<string[]>> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
+export async function gitUnstagedModifiedFiles(cwd = process.cwd()): Promise<CResult<string[]>> {
+  const stdioPipeOptions: SpawnOptions = { cwd };
   try {
-    const gitDiffResult = await spawn(
-      'git',
-      ['diff', '--name-only'],
-      stdioPipeOptions,
-    )
-    const changedFilesDetails = gitDiffResult.stdout as string
-    const relPaths = changedFilesDetails.split('\n')
+    const gitDiffResult = await spawn("git", ["diff", "--name-only"], stdioPipeOptions);
+    const changedFilesDetails = gitDiffResult.stdout as string;
+    const relPaths = changedFilesDetails.split("\n");
     return {
       ok: true,
       data: relPaths.map((p: string) => normalizePath(p)),
-    }
+    };
   } catch (e) {
-    debug('Failed to get unstaged modified files')
-    debugDir(e)
+    debug("Failed to get unstaged modified files");
+    debugDir(e);
     return {
       ok: false,
-      message: 'Git Error',
-      cause: 'Unexpected error while trying to ask git whether repo is dirty',
-    }
+      message: "Git Error",
+      cause: "Unexpected error while trying to ask git whether repo is dirty",
+    };
   }
 }
 
 export function parseGitRemoteUrl(remoteUrl: string): RepoInfo | undefined {
-  let result = parsedGitRemoteUrlCache.get(remoteUrl)
+  let result = parsedGitRemoteUrlCache.get(remoteUrl);
   if (result) {
-    return { ...result }
+    return { ...result };
   }
   // Handle SSH-style
-  const sshMatch = /^git@[^:]+:([^/]+)\/(.+?)(?:\.git)?$/.exec(remoteUrl)
+  const sshMatch = /^git@[^:]+:([^/]+)\/(.+?)(?:\.git)?$/.exec(remoteUrl);
   // 1. Handle SSH-style, e.g. git@github.com:owner/repo.git
   if (sshMatch) {
-    result = { owner: sshMatch[1]!, repo: sshMatch[2]! }
+    result = { owner: sshMatch[1]!, repo: sshMatch[2]! };
   } else {
     // 2. Handle HTTPS/URL-style, e.g. https://github.com/owner/repo.git
     try {
-      const parsed = new URL(remoteUrl)
+      const parsed = new URL(remoteUrl);
       // Remove leading slashes from pathname and split by "/" to extract segments.
-      const segments = parsed.pathname.replace(/^\/+/, '').split('/')
+      const segments = parsed.pathname.replace(/^\/+/, "").split("/");
       // The second-to-last segment is expected to be the owner (e.g., "owner" in /owner/repo.git).
-      const owner = segments.at(-2)
+      const owner = segments.at(-2);
       // The last segment is expected to be the repo name, so we remove the ".git" suffix if present.
-      const repo = segments.at(-1)?.replace(/\.git$/, '')
+      const repo = segments.at(-1)?.replace(/\.git$/, "");
       if (owner && repo) {
-        result = { owner, repo }
+        result = { owner, repo };
       }
     } catch {}
   }
-  parsedGitRemoteUrlCache.set(remoteUrl, result)
-  return result ? { ...result } : result
+  parsedGitRemoteUrlCache.set(remoteUrl, result);
+  return result ? { ...result } : result;
 }

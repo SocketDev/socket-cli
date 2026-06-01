@@ -1,17 +1,16 @@
-import { handleUninstallCompletion } from './handle-uninstall-completion.mts'
-import { outputDryRunDelete } from '../../util/dry-run/output.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { handleUninstallCompletion } from "./handle-uninstall-completion.mts";
+import { outputDryRunDelete } from "../../util/dry-run/output.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagListOutput } from "../../util/output/formatting.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
 const config = {
-  commandName: 'completion',
-  description: 'Uninstall bash completion for Socket CLI',
-  hidden: false,
+  commandName: "completion",
+  description: "Uninstall bash completion for Socket CLI",
   flags: defineFlags({
     ...commonFlags,
   }),
@@ -35,13 +34,14 @@ const config = {
       $ ${command}
       $ ${command} sd
   `,
-}
+  hidden: false,
+};
 
 export const cmdUninstallCompletion = {
   description: config.description,
   hidden: config.hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -53,17 +53,14 @@ export async function run(
     config,
     parentName,
     importMeta,
-  })
-  const dryRun = !!cli.flags['dryRun']
-  const targetName = cli.input[0] || 'socket'
+  });
+  const dryRun = !!cli.flags["dryRun"];
+  const targetName = cli.input[0] || "socket";
 
   if (dryRun) {
-    outputDryRunDelete(
-      'bash completion',
-      `completion for "${targetName}" from ~/.bashrc`,
-    )
-    return
+    outputDryRunDelete("bash completion", `completion for "${targetName}" from ~/.bashrc`);
+    return;
   }
 
-  await handleUninstallCompletion(String(targetName))
+  await handleUninstallCompletion(String(targetName));
 }

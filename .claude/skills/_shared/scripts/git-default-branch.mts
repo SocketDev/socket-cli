@@ -9,19 +9,19 @@
  * Cross-platform: shells out to git via @socketsecurity/lib/spawn, which works
  * the same on macOS / Linux / Windows.
  */
-import { isSpawnError } from '@socketsecurity/lib/process/spawn/errors'
-import { spawn } from '@socketsecurity/lib/process/spawn/child'
+import { isSpawnError } from "@socketsecurity/lib/process/spawn/errors";
+import { spawn } from "@socketsecurity/lib/process/spawn/child";
 
 export type ResolveDefaultBranchOptions = {
   /**
    * Working directory; defaults to process.cwd().
    */
-  readonly cwd?: string | undefined
+  readonly cwd?: string | undefined;
   /**
    * Remote name; defaults to 'origin'.
    */
-  readonly remote?: string | undefined
-}
+  readonly remote?: string | undefined;
+};
 
 /**
  * Resolve the remote's default branch, preferring `main` and falling back to
@@ -39,57 +39,50 @@ export type ResolveDefaultBranchOptions = {
 export async function resolveDefaultBranch(
   options: ResolveDefaultBranchOptions = {},
 ): Promise<string> {
-  const { cwd = process.cwd(), remote = 'origin' } = options
+  const { cwd = process.cwd(), remote = "origin" } = options;
 
   // Step 1: ask the remote what its HEAD points to.
   try {
     const ref = await runGit(
-      ['symbolic-ref', '--quiet', '--short', `refs/remotes/${remote}/HEAD`],
+      ["symbolic-ref", "--quiet", "--short", `refs/remotes/${remote}/HEAD`],
       cwd,
-    )
+    );
     if (ref) {
       // Strip the "<remote>/" prefix.
-      return ref.startsWith(`${remote}/`) ? ref.slice(remote.length + 1) : ref
+      return ref.startsWith(`${remote}/`) ? ref.slice(remote.length + 1) : ref;
     }
   } catch {
     // Fall through.
   }
 
   // Step 2 + 3: probe main, then master.
-  for (const branch of ['main', 'master']) {
+  for (const branch of ["main", "master"]) {
     if (await branchExists(branch, cwd, remote)) {
-      return branch
+      return branch;
     }
   }
 
   // Step 4: last resort.
-  return 'main'
+  return "main";
 }
 
-async function branchExists(
-  branch: string,
-  cwd: string,
-  remote: string,
-): Promise<boolean> {
+async function branchExists(branch: string, cwd: string, remote: string): Promise<boolean> {
   try {
-    await runGit(
-      ['show-ref', '--verify', '--quiet', `refs/remotes/${remote}/${branch}`],
-      cwd,
-    )
-    return true
+    await runGit(["show-ref", "--verify", "--quiet", `refs/remotes/${remote}/${branch}`], cwd);
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
 async function runGit(args: readonly string[], cwd: string): Promise<string> {
   try {
-    const result = await spawn('git', args, { cwd, stdioString: true })
-    return String(result.stdout ?? '').trim()
+    const result = await spawn("git", args, { cwd, stdioString: true });
+    return String(result.stdout ?? "").trim();
   } catch (e) {
     if (isSpawnError(e)) {
-      throw e
+      throw e;
     }
-    throw e
+    throw e;
   }
 }

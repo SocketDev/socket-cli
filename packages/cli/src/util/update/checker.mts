@@ -14,52 +14,52 @@
  * compatibility checks.
  */
 
-import https from 'node:https'
+import https from "node:https";
 
-import semver from 'semver'
+import semver from "semver";
 
-import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
-import { debug } from '@socketsecurity/lib-stable/debug/output'
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { onExit } from '@socketsecurity/lib-stable/events/exit/handler'
-import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
+import { NPM_REGISTRY_URL } from "@socketsecurity/lib-stable/constants/agents";
+import { debug } from "@socketsecurity/lib-stable/debug/output";
+import { errorMessage } from "@socketsecurity/lib-stable/errors";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { onExit } from "@socketsecurity/lib-stable/events/exit/handler";
+import { isNonEmptyString } from "@socketsecurity/lib-stable/strings/predicates";
 
-import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'
+import { UPDATE_NOTIFIER_TIMEOUT } from "../../constants/cache.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 export interface AuthInfo {
-  token: string
-  type: string
+  token: string;
+  type: string;
 }
 
 // Type compatibility with registry-auth-token.
 interface NpmCredentials {
-  token: string
-  type: string
+  token: string;
+  type: string;
 }
 
 interface UpdateCheckOptions {
-  authInfo?: AuthInfo | NpmCredentials | undefined
-  name: string
-  registryUrl?: string | undefined
-  version: string
+  authInfo?: AuthInfo | NpmCredentials | undefined;
+  name: string;
+  registryUrl?: string | undefined;
+  version: string;
 }
 
 export interface UpdateCheckResult {
-  current: string
-  latest: string
-  updateAvailable: boolean
+  current: string;
+  latest: string;
+  updateAvailable: boolean;
 }
 
 interface FetchOptions {
-  authInfo?: AuthInfo | NpmCredentials | undefined
+  authInfo?: AuthInfo | NpmCredentials | undefined;
 }
 
 interface GetLatestVersionOptions {
-  authInfo?: AuthInfo | NpmCredentials | undefined
-  registryUrl?: string | undefined
+  authInfo?: AuthInfo | NpmCredentials | undefined;
+  registryUrl?: string | undefined;
 }
 
 /**
@@ -78,102 +78,91 @@ const NetworkUtils = {
   ): Promise<{ version?: string | undefined }> {
     if (!isNonEmptyString(url)) {
       throw new Error(
-        `NetworkUtils.fetch(url) requires a non-empty string (got: ${typeof url === 'string' ? '""' : typeof url}); pass a valid registry URL like https://registry.npmjs.org/<package>`,
-      )
+        `NetworkUtils.fetch(url) requires a non-empty string (got: ${typeof url === "string" ? '""' : typeof url}); pass a valid registry URL like https://registry.npmjs.org/<package>`,
+      );
     }
 
-    const { authInfo } = { __proto__: null, ...options } as FetchOptions
+    const { authInfo } = { __proto__: null, ...options } as FetchOptions;
 
-    const parsedUrl = new URL(url)
+    const parsedUrl = new URL(url);
     const headers: Record<string, string> = {
-      Accept:
-        'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*',
-      'User-Agent': 'socket-cli-updater/1.0',
-    }
+      Accept: "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
+      "User-Agent": "socket-cli-updater/1.0",
+    };
 
-    if (
-      authInfo &&
-      isNonEmptyString(authInfo.token) &&
-      isNonEmptyString(authInfo.type)
-    ) {
-      headers['Authorization'] = `${authInfo.type} ${authInfo.token}`
+    if (authInfo && isNonEmptyString(authInfo.token) && isNonEmptyString(authInfo.type)) {
+      headers["Authorization"] = `${authInfo.type} ${authInfo.token}`;
     }
 
     return new Promise((resolve, reject) => {
       // Cleanup function to remove exit handler and prevent memory leak.
       /* c8 ignore next - exitHandler only fires on actual process exit */
-      const exitHandler = () => req.destroy()
-      const removeExitHandler = onExit(exitHandler)
+      const exitHandler = () => req.destroy();
+      const removeExitHandler = onExit(exitHandler);
 
       const cleanup = () => {
-        removeExitHandler()
-      }
+        removeExitHandler();
+      };
 
       const req = https.request(
         {
           agent: false, // Disable connection pooling.
           headers,
           hostname: parsedUrl.hostname,
-          method: 'GET',
+          method: "GET",
           path: parsedUrl.pathname + parsedUrl.search,
           port: parsedUrl.port,
           timeout: timeoutMs,
         },
-        res => {
-          let data = ''
+        (res) => {
+          let data = "";
 
-          res.on('data', chunk => {
-            data += chunk
-          })
+          res.on("data", (chunk) => {
+            data += chunk;
+          });
 
-          res.on('end', () => {
-            cleanup()
+          res.on("end", () => {
+            cleanup();
             try {
               if (res.statusCode !== 200) {
-                reject(
-                  new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`),
-                )
-                return
+                reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+                return;
               }
 
-              const json = JSON.parse(data) as unknown
+              const json = JSON.parse(data) as unknown;
 
-              if (!json || typeof json !== 'object') {
-                reject(new Error('Invalid JSON response from registry'))
-                return
+              if (!json || typeof json !== "object") {
+                reject(new Error("Invalid JSON response from registry"));
+                return;
               }
 
-              resolve(json as { version?: string | undefined })
+              resolve(json as { version?: string | undefined });
               /* c8 ignore start - JSON parse failure path; tests inject pre-parsed mock responses */
             } catch (parseError) {
-              const contentType = res.headers['content-type']
-              if (!contentType || !contentType.includes('application/json')) {
-                debug(`Unexpected content type: ${contentType}`)
+              const contentType = res.headers["content-type"];
+              if (!contentType || !contentType.includes("application/json")) {
+                debug(`Unexpected content type: ${contentType}`);
               }
-              reject(
-                new Error(
-                  `Failed to parse JSON response: ${errorMessage(parseError)}`,
-                ),
-              )
+              reject(new Error(`Failed to parse JSON response: ${errorMessage(parseError)}`));
             }
             /* c8 ignore stop */
-          })
+          });
         },
-      )
+      );
 
-      req.on('timeout', () => {
-        cleanup()
-        req.destroy()
-        reject(new Error(`Request timed out after ${timeoutMs}ms`))
-      })
+      req.on("timeout", () => {
+        cleanup();
+        req.destroy();
+        reject(new Error(`Request timed out after ${timeoutMs}ms`));
+      });
 
-      req.on('error', error => {
-        cleanup()
-        reject(new Error(`Network request failed: ${error.message}`))
-      })
+      req.on("error", (error) => {
+        cleanup();
+        reject(new Error(`Network request failed: ${error.message}`));
+      });
 
-      req.end()
-    })
+      req.end();
+    });
   },
 
   /**
@@ -185,127 +174,118 @@ const NetworkUtils = {
   ): Promise<string | undefined> {
     if (!isNonEmptyString(name)) {
       throw new Error(
-        `getLatestVersion(name) requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
-      )
+        `getLatestVersion(name) requires a non-empty string (got: ${typeof name === "string" ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+      );
     }
 
     const { authInfo, registryUrl = NPM_REGISTRY_URL } = {
       __proto__: null,
       ...options,
-    } as GetLatestVersionOptions
+    } as GetLatestVersionOptions;
 
     if (!isNonEmptyString(registryUrl)) {
       throw new Error(
-        `getLatestVersion options.registryUrl must be a non-empty string (got: ${typeof registryUrl === 'string' ? '""' : typeof registryUrl}); omit it to default to ${NPM_REGISTRY_URL}`,
-      )
+        `getLatestVersion options.registryUrl must be a non-empty string (got: ${typeof registryUrl === "string" ? '""' : typeof registryUrl}); omit it to default to ${NPM_REGISTRY_URL}`,
+      );
     }
 
-    let normalizedRegistryUrl: string
+    let normalizedRegistryUrl: string;
     try {
-      const url = new URL(registryUrl)
-      normalizedRegistryUrl = url.toString()
+      const url = new URL(registryUrl);
+      normalizedRegistryUrl = url.toString();
     } catch {
       throw new Error(
         `options.registryUrl "${registryUrl}" is not a valid URL (new URL() threw); pass an absolute http(s) URL like ${NPM_REGISTRY_URL}`,
-      )
+      );
     }
 
-    const maybeSlash = normalizedRegistryUrl.endsWith('/') ? '' : '/'
-    const latestUrl = `${normalizedRegistryUrl}${maybeSlash}${encodeURIComponent(name)}/latest`
+    const maybeSlash = normalizedRegistryUrl.endsWith("/") ? "" : "/";
+    const latestUrl = `${normalizedRegistryUrl}${maybeSlash}${encodeURIComponent(name)}/latest`;
 
-    let attempts = 0
-    const maxAttempts = 3
-    const baseDelay = 1_000 // 1 second
+    let attempts = 0;
+    const maxAttempts = 3;
+    const baseDelay = 1000; // 1 second
 
     while (attempts < maxAttempts) {
       try {
-        const json = await NetworkUtils.fetch(
-          latestUrl,
-          authInfo ? { authInfo } : {},
-        )
+        const json = await NetworkUtils.fetch(latestUrl, authInfo ? { authInfo } : {});
 
         if (!json || !isNonEmptyString(json.version)) {
           throw new Error(
-            `${latestUrl} responded without a .version string (got: ${JSON.stringify(json)?.slice(0, 200) ?? 'null'}); the registry may be misconfigured or ${name} may not exist — verify the URL in a browser`,
-          )
+            `${latestUrl} responded without a .version string (got: ${JSON.stringify(json)?.slice(0, 200) ?? "null"}); the registry may be misconfigured or ${name} may not exist — verify the URL in a browser`,
+          );
         }
 
-        return json.version
+        return json.version;
       } catch (e) {
-        attempts++
-        const isLastAttempt = attempts === maxAttempts
+        attempts++;
+        const isLastAttempt = attempts === maxAttempts;
 
         if (isLastAttempt) {
-          logger.warn(
-            `Failed to fetch version after ${maxAttempts} attempts: ${errorMessage(e)}`,
-          )
-          throw e
+          logger.warn(`Failed to fetch version after ${maxAttempts} attempts: ${errorMessage(e)}`);
+          throw e;
         }
 
         // Exponential backoff with cap to prevent integer overflow.
-        const delay = Math.min(baseDelay * 2 ** (attempts - 1), 60_000)
-        logger.log(
-          `Attempt ${attempts} failed, retrying in ${delay}ms: ${errorMessage(e)}`,
-        )
+        const delay = Math.min(baseDelay * 2 ** (attempts - 1), 60_000);
+        logger.log(`Attempt ${attempts} failed, retrying in ${delay}ms: ${errorMessage(e)}`);
 
-        await new Promise(resolve => setTimeout(resolve, delay))
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
     /* c8 ignore start - unreachable: while loop either returns on success or throws on last attempt */
-    return undefined
+    return undefined;
     /* c8 ignore stop */
   },
-}
+};
 
 /**
  * Check for available updates for a package. Fetches latest version from
  * registry and compares with current.
  */
-export async function checkForUpdates(
-  options: UpdateCheckOptions,
-): Promise<UpdateCheckResult> {
+export async function checkForUpdates(options: UpdateCheckOptions): Promise<UpdateCheckResult> {
   const { authInfo, name, registryUrl, version } = {
     __proto__: null,
     ...options,
-  } as UpdateCheckOptions
+  } as UpdateCheckOptions;
 
   if (!isNonEmptyString(name)) {
     throw new Error(
-      `checkForUpdates options.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
-    )
+      `checkForUpdates options.name requires a non-empty string (got: ${typeof name === "string" ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+    );
   }
 
   if (!isNonEmptyString(version)) {
     throw new Error(
-      `checkForUpdates options.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
-    )
+      `checkForUpdates options.version requires a non-empty string (got: ${typeof version === "string" ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
+    );
   }
 
   try {
     const latest = await NetworkUtils.getLatestVersion(name, {
       ...(authInfo ? { authInfo } : {}),
       ...(registryUrl ? { registryUrl } : {}),
-    })
+    });
 
     /* c8 ignore start - defensive: getLatestVersion throws on empty so this guard never fires */
     if (!isNonEmptyString(latest)) {
       throw new Error(
         `registry returned no latest version for ${name} (getLatestVersion resolved to ${JSON.stringify(latest)}); check that ${name} exists on ${registryUrl || NPM_REGISTRY_URL}`,
-      )
+      );
     }
     /* c8 ignore stop */
 
-    const updateAvailable = isUpdateAvailable(version, latest)
+    const updateAvailable = isUpdateAvailable(version, latest);
 
     return {
       current: version,
       latest,
       updateAvailable,
-    }
+    };
   } catch (e) {
-    logger.log(`Failed to check for updates: ${errorMessage(e)}`)
-    throw e
+    logger.log(`Failed to check for updates: ${errorMessage(e)}`);
+    throw e;
   }
 }
 
@@ -315,20 +295,20 @@ export async function checkForUpdates(
 export function isUpdateAvailable(current: string, latest: string): boolean {
   try {
     // Use semver for robust version comparison.
-    const currentClean = semver.clean(current)
-    const latestClean = semver.clean(latest)
+    const currentClean = semver.clean(current);
+    const latestClean = semver.clean(latest);
 
     if (!currentClean || !latestClean) {
       // Fallback to string comparison if semver parsing fails.
-      return latest !== current
+      return latest !== current;
     }
 
-    return semver.gt(latestClean, currentClean)
+    return semver.gt(latestClean, currentClean);
     /* c8 ignore start - semver.gt fallback for non-semver inputs; both inputs already passed semver.coerce */
   } catch {
-    return latest !== current
+    return latest !== current;
   }
   /* c8 ignore stop */
 }
 
-export { NetworkUtils }
+export { NetworkUtils };

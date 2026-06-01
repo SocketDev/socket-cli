@@ -1,13 +1,13 @@
-import { cmdRepositoryCreate } from './cmd-repository-create.mts'
-import { cmdRepositoryDel } from './cmd-repository-del.mts'
-import { cmdRepositoryList } from './cmd-repository-list.mts'
-import { cmdRepositoryUpdate } from './cmd-repository-update.mts'
-import { cmdRepositoryView } from './cmd-repository-view.mts'
-import { meowWithSubcommands } from '../../util/cli/with-subcommands.mjs'
+import { cmdRepositoryCreate } from "./cmd-repository-create.mts";
+import { cmdRepositoryDel } from "./cmd-repository-del.mts";
+import { cmdRepositoryList } from "./cmd-repository-list.mts";
+import { cmdRepositoryUpdate } from "./cmd-repository-update.mts";
+import { cmdRepositoryView } from "./cmd-repository-view.mts";
+import { meowWithSubcommands } from "../../util/cli/with-subcommands.mjs";
 
-import type { CliSubcommand } from '../../util/cli/with-subcommands.mjs'
+import type { CliSubcommand } from "../../util/cli/with-subcommands.mjs";
 
-const description = 'Manage registered repositories'
+const description = "Manage registered repositories";
 
 export const cmdRepository: CliSubcommand = {
   description,
@@ -26,6 +26,6 @@ export const cmdRepository: CliSubcommand = {
         },
       },
       { description },
-    )
+    );
   },
-}
+};

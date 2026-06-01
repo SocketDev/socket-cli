@@ -8,34 +8,34 @@
  * is historical; the machinery is build-type-agnostic.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { getCI } from "@socketsecurity/lib-stable/env/ci";
 
 /**
  * Build stage directory names inside build/<mode>/.
  */
 const BUILD_STAGES = {
-  BUNDLED: 'Bundled',
-  FINAL: 'Final',
-  OPTIMIZED: 'Optimized',
-  RELEASE: 'Release',
-  STRIPPED: 'Stripped',
-  SEA: 'Sea',
-  SYNC: 'Sync',
-  TYPES: 'Types',
-}
+  BUNDLED: "Bundled",
+  FINAL: "Final",
+  OPTIMIZED: "Optimized",
+  RELEASE: "Release",
+  SEA: "Sea",
+  STRIPPED: "Stripped",
+  SYNC: "Sync",
+  TYPES: "Types",
+};
 
 /**
  * Canonical checkpoint names. Each pipeline stage picks one.
  */
 const CHECKPOINTS = {
-  CLI: 'cli',
-  FINALIZED: 'finalized',
-  SEA: 'sea',
-}
+  CLI: "cli",
+  FINALIZED: "finalized",
+  SEA: "sea",
+};
 
-const VALID_CHECKPOINT_VALUES = new Set(Object.values(CHECKPOINTS))
+const VALID_CHECKPOINT_VALUES = new Set(Object.values(CHECKPOINTS));
 
 /**
  * Checkpoint chain for socket-cli's build pipeline. Order: newest → oldest
@@ -46,38 +46,38 @@ const VALID_CHECKPOINT_VALUES = new Set(Object.values(CHECKPOINTS))
  */
 const CHECKPOINT_CHAINS = {
   cli: () => [CHECKPOINTS.FINALIZED, CHECKPOINTS.SEA, CHECKPOINTS.CLI],
-}
+};
 
 /**
  * Validate a checkpoint chain at runtime.
  */
 export function validateCheckpointChain(chain: string[], packageName: string) {
   if (!Array.isArray(chain)) {
-    throw new Error(`${packageName}: Checkpoint chain must be an array`)
+    throw new Error(`${packageName}: Checkpoint chain must be an array`);
   }
   if (chain.length === 0) {
-    throw new Error(`${packageName}: Checkpoint chain cannot be empty`)
+    throw new Error(`${packageName}: Checkpoint chain cannot be empty`);
   }
-  const invalid = chain.filter(cp => !VALID_CHECKPOINT_VALUES.has(cp))
+  const invalid = chain.filter((cp) => !VALID_CHECKPOINT_VALUES.has(cp));
   if (invalid.length) {
     throw new Error(
-      `${packageName}: Invalid checkpoint names in chain: ${invalid.join(', ')}. ` +
-        `Valid: ${Object.values(CHECKPOINTS).join(', ')}`,
-    )
+      `${packageName}: Invalid checkpoint names in chain: ${invalid.join(", ")}. ` +
+        `Valid: ${Object.values(CHECKPOINTS).join(", ")}`,
+    );
   }
-  const seen = new Set()
+  const seen = new Set();
   for (let i = 0, { length } = chain; i < length; i += 1) {
-    const cp = chain[i]
+    const cp = chain[i];
     if (seen.has(cp)) {
-      throw new Error(`${packageName}: Duplicate checkpoint in chain: ${cp}`)
+      throw new Error(`${packageName}: Duplicate checkpoint in chain: ${cp}`);
     }
-    seen.add(cp)
+    seen.add(cp);
   }
 }
 
 // Validate chain registry at module load.
 for (const [name, generator] of Object.entries(CHECKPOINT_CHAINS)) {
-  validateCheckpointChain(generator(), `CHECKPOINT_CHAINS.${name}`)
+  validateCheckpointChain(generator(), `CHECKPOINT_CHAINS.${name}`);
 }
 
 /**
@@ -88,21 +88,21 @@ export function getBuildMode(args?: string[] | Set<string>): string {
   if (args) {
     const has = Array.isArray(args)
       ? (flag: string) => args.includes(flag)
-      : (flag: string) => args.has(flag)
-    if (has('--prod')) {
-      return 'prod'
+      : (flag: string) => args.has(flag);
+    if (has("--prod")) {
+      return "prod";
     }
-    if (has('--dev')) {
-      return 'dev'
+    if (has("--dev")) {
+      return "dev";
     }
   }
-  if (process.env['BUILD_MODE']) {
-    return process.env['BUILD_MODE']
+  if (process.env["BUILD_MODE"]) {
+    return process.env["BUILD_MODE"];
   }
-  return getCI() ? 'prod' : 'dev'
+  return getCI() ? "prod" : "dev";
 }
 
 /**
  * Path used by platform-mappings.isMusl() for Alpine detection.
  */
-export const ALPINE_RELEASE_FILE = '/etc/alpine-release'
+export const ALPINE_RELEASE_FILE = "/etc/alpine-release";

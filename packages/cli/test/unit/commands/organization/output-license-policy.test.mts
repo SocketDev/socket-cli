@@ -21,19 +21,16 @@
  * fetcher.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  createErrorResult,
-  createSuccessResult,
-} from '../../../../test/helpers/index.mts'
+import { createErrorResult, createSuccessResult } from "../../../../test/helpers/index.mts";
 
-describe('outputLicensePolicy', () => {
+describe("outputLicensePolicy", () => {
   beforeEach(async () => {
-    vi.resetModules()
-  })
+    vi.resetModules();
+  });
 
-  it('outputs JSON format for successful result', async () => {
+  it("outputs JSON format for successful result", async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -42,39 +39,39 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+    };
+    const mockSerializeResultJson = vi.fn((result) => JSON.stringify(result));
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
+    }));
+    vi.doMock(import("../../../../src/util/output/result-json.mjs"), () => ({
       serializeResultJson: mockSerializeResultJson,
-    }))
+    }));
 
     // Dynamic import AFTER mocks.
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
-        'GPL-3.0': { allowed: false },
-        'Apache-2.0': { allowed: true },
+        "GPL-3.0": { allowed: false },
+        "Apache-2.0": { allowed: true },
       },
-    })
+    });
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'json')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result as unknown, "json");
 
-    expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
-    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
-    expect(process.exitCode).toBeUndefined()
-  })
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(result);
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result));
+    expect(process.exitCode).toBeUndefined();
+  });
 
-  it('outputs error in JSON format', async () => {
+  it("outputs error in JSON format", async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -83,35 +80,35 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+    };
+    const mockSerializeResultJson = vi.fn((result) => JSON.stringify(result));
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
+    }));
+    vi.doMock(import("../../../../src/util/output/result-json.mjs"), () => ({
       serializeResultJson: mockSerializeResultJson,
-    }))
+    }));
 
     // Dynamic import AFTER mocks.
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
-    const result = createErrorResult('Unauthorized', {
+    const result = createErrorResult("Unauthorized", {
       code: 2,
-      cause: 'Invalid API token',
-    })
+      cause: "Invalid API token",
+    });
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result, 'json')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result, "json");
 
-    expect(mockLogger.log).toHaveBeenCalled()
-    expect(process.exitCode).toBe(2)
-  })
+    expect(mockLogger.log).toHaveBeenCalled();
+    expect(process.exitCode).toBe(2);
+  });
 
-  it('outputs text format with license table', async () => {
+  it("outputs text format with license table", async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -120,49 +117,47 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
+    };
+    const mockMdTableOfPairs = vi.fn((pairs) => `Table with ${pairs.length} rows`);
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
-      mdHeader: vi.fn(title => `# ${title}`),
+    }));
+    vi.doMock(import("../../../../src/util/output/markdown.mts"), () => ({
+      mdHeader: vi.fn((title) => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
-    }))
+    }));
 
     // Dynamic import AFTER mocks.
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
-        'BSD-3-Clause': { allowed: true },
-        'GPL-3.0': { allowed: false },
+        "BSD-3-Clause": { allowed: true },
+        "GPL-3.0": { allowed: false },
       },
-    })
+    });
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'text')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result as unknown, "text");
 
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      'Use --json to get the full result',
-    )
-    expect(mockLogger.log).toHaveBeenCalledWith('# License policy')
+    expect(mockLogger.info).toHaveBeenCalledWith("Use --json to get the full result");
+    expect(mockLogger.log).toHaveBeenCalledWith("# License policy");
     expect(mockMdTableOfPairs).toHaveBeenCalledWith(
       expect.arrayContaining([
-        ['BSD-3-Clause', ' yes'],
-        ['GPL-3.0', ' no'],
-        ['MIT', ' yes'],
+        ["BSD-3-Clause", " yes"],
+        ["GPL-3.0", " no"],
+        ["MIT", " yes"],
       ]),
-      ['License Name', 'Allowed'],
-    )
-  })
+      ["License Name", "Allowed"],
+    );
+  });
 
-  it('outputs error in text format', async () => {
+  it("outputs error in text format", async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -171,39 +166,36 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
+    };
+    const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`);
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
+    }));
+    vi.doMock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
       failMsgWithBadge: mockFailMsgWithBadge,
-    }))
+    }));
 
     // Dynamic import AFTER mocks.
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
-    const result = createErrorResult('Failed to fetch policy', {
+    const result = createErrorResult("Failed to fetch policy", {
       code: 1,
-      cause: 'Network error',
-    })
+      cause: "Network error",
+    });
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result, 'text')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result, "text");
 
-    expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
-      'Failed to fetch policy',
-      'Network error',
-    )
-    expect(mockLogger.fail).toHaveBeenCalled()
-    expect(process.exitCode).toBe(1)
-  })
+    expect(mockFailMsgWithBadge).toHaveBeenCalledWith("Failed to fetch policy", "Network error");
+    expect(mockLogger.fail).toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+  });
 
-  it('handles markdown output format', async () => {
+  it("handles markdown output format", async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -212,39 +204,37 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
+    };
+    const mockMdTableOfPairs = vi.fn((pairs) => `Table with ${pairs.length} rows`);
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
-      mdHeader: vi.fn(title => `# ${title}`),
+    }));
+    vi.doMock(import("../../../../src/util/output/markdown.mts"), () => ({
+      mdHeader: vi.fn((title) => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
-    }))
+    }));
 
     // Dynamic import AFTER mocks.
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
     const result = createSuccessResult({
       license_policy: {
         MIT: { allowed: true },
       },
-    })
+    });
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'markdown')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result as unknown, "markdown");
 
-    expect(mockLogger.log).toHaveBeenCalledWith('# License policy')
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining('Table'),
-    )
-  })
+    expect(mockLogger.log).toHaveBeenCalledWith("# License policy");
+    expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining("Table"));
+  });
 
-  it('handles empty license policy', async () => {
+  it("handles empty license policy", async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -253,37 +243,34 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
+    };
+    const mockMdTableOfPairs = vi.fn((pairs) => `Table with ${pairs.length} rows`);
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
-      mdHeader: vi.fn(title => `# ${title}`),
+    }));
+    vi.doMock(import("../../../../src/util/output/markdown.mts"), () => ({
+      mdHeader: vi.fn((title) => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
-    }))
+    }));
 
     // Dynamic import AFTER mocks.
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
     const result = createSuccessResult({
       license_policy: {},
-    })
+    });
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'text')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result as unknown, "text");
 
-    expect(mockMdTableOfPairs).toHaveBeenCalledWith(
-      [],
-      ['License Name', 'Allowed'],
-    )
-  })
+    expect(mockMdTableOfPairs).toHaveBeenCalledWith([], ["License Name", "Allowed"]);
+  });
 
-  it('handles null license policy', async () => {
+  it("handles null license policy", async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -292,37 +279,34 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockMdTableOfPairs = vi.fn(pairs => `Table with ${pairs.length} rows`)
+    };
+    const mockMdTableOfPairs = vi.fn((pairs) => `Table with ${pairs.length} rows`);
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
-      mdHeader: vi.fn(title => `# ${title}`),
+    }));
+    vi.doMock(import("../../../../src/util/output/markdown.mts"), () => ({
+      mdHeader: vi.fn((title) => `# ${title}`),
       mdTableOfPairs: mockMdTableOfPairs,
-    }))
+    }));
 
     // Dynamic import AFTER mocks.
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
     const result = createSuccessResult({
       license_policy: undefined,
-    })
+    });
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'text')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result as unknown, "text");
 
-    expect(mockMdTableOfPairs).toHaveBeenCalledWith(
-      [],
-      ['License Name', 'Allowed'],
-    )
-  })
+    expect(mockMdTableOfPairs).toHaveBeenCalledWith([], ["License Name", "Allowed"]);
+  });
 
-  it('sets default exit code when code is undefined', async () => {
+  it("sets default exit code when code is undefined", async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -331,31 +315,31 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+    };
+    const mockSerializeResultJson = vi.fn((result) => JSON.stringify(result));
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
+    }));
+    vi.doMock(import("../../../../src/util/output/result-json.mjs"), () => ({
       serializeResultJson: mockSerializeResultJson,
-    }))
+    }));
 
     // Dynamic import AFTER mocks.
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
-    const result = createErrorResult('Error')
+    const result = createErrorResult("Error");
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'json')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result as unknown, "json");
 
-    expect(process.exitCode).toBe(1)
-  })
+    expect(process.exitCode).toBe(1);
+  });
 
-  it('falls back to exitCode 1 when result has no code field', async () => {
+  it("falls back to exitCode 1 when result has no code field", async () => {
     const mockLogger = {
       fail: vi.fn(),
       info: vi.fn(),
@@ -363,34 +347,34 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
+    };
+    const mockSerializeResultJson = vi.fn((result) => JSON.stringify(result));
 
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/output/result-json.mjs', () => ({
+    }));
+    vi.doMock(import("../../../../src/util/output/result-json.mjs"), () => ({
       serializeResultJson: mockSerializeResultJson,
-    }))
+    }));
 
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
     // Manually construct error result without `code` to exercise `?? 1`.
     const result = {
       ok: false as const,
-      message: 'No code',
-      cause: 'no code',
-    }
+      message: "No code",
+      cause: "no code",
+    };
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'json')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result as unknown, "json");
 
-    expect(process.exitCode).toBe(1)
-  })
+    expect(process.exitCode).toBe(1);
+  });
 
-  it('handles license policy with non-allowed entries (no for value)', async () => {
+  it("handles license policy with non-allowed entries (no for value)", async () => {
     const mockLogger = {
       fail: vi.fn(),
       info: vi.fn(),
@@ -398,24 +382,24 @@ describe('outputLicensePolicy', () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }
-    const mockMdHeader = vi.fn(text => `# ${text}`)
+    };
+    const mockMdHeader = vi.fn((text) => `# ${text}`);
     const mockMdTableOfPairs = vi.fn(
       (pairs: Array<[string, string]>, header: string[]) =>
-        `${header.join(' | ')}\n${pairs.map(p => p.join(' | ')).join('\n')}`,
-    )
+        `${header.join(" | ")}\n${pairs.map((p) => p.join(" | ")).join("\n")}`,
+    );
 
-    vi.doMock('@socketsecurity/lib-stable/logger', () => ({
+    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }))
-    vi.doMock('../../../../src/util/output/markdown.mts', () => ({
+    }));
+    vi.doMock(import("../../../../src/util/output/markdown.mts"), () => ({
       mdHeader: mockMdHeader,
       mdTableOfPairs: mockMdTableOfPairs,
-    }))
+    }));
 
     const { outputLicensePolicy } =
-      await import('../../../../src/commands/organization/output-license-policy.mts')
+      await import("../../../../src/commands/organization/output-license-policy.mts");
 
     const result = createSuccessResult({
       license_policy: {
@@ -424,17 +408,15 @@ describe('outputLicensePolicy', () => {
         // Entry without an `allowed` field — exercises the falsy branch on line 37.
         CUSTOM: {},
       },
-    })
+    });
 
-    process.exitCode = undefined
-    await outputLicensePolicy(result as unknown, 'text')
+    process.exitCode = undefined;
+    await outputLicensePolicy(result as unknown, "text");
 
-    expect(mockMdTableOfPairs).toHaveBeenCalled()
+    expect(mockMdTableOfPairs).toHaveBeenCalled();
     // mockMdTableOfPairs is called with sorted pairs.
-    const sortedPairs = mockMdTableOfPairs.mock.calls[0]![0] as Array<
-      [string, string]
-    >
-    const customPair = sortedPairs.find(p => p[0] === 'CUSTOM')
-    expect(customPair?.[1]).toBe(' no')
-  })
-})
+    const sortedPairs = mockMdTableOfPairs.mock.calls[0]![0] as Array<[string, string]>;
+    const customPair = sortedPairs.find((p) => p[0] === "CUSTOM");
+    expect(customPair?.[1]).toBe(" no");
+  });
+});

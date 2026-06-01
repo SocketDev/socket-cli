@@ -1,37 +1,31 @@
-import { handleListScans } from './handle-list-scans.mts'
-import { outputDryRunFetch } from '../../util/dry-run/output.mts'
-import { InputError } from '../../util/error/errors.mts'
-import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import {
-  getFlagApiRequirementsOutput,
-  getFlagListOutput,
-} from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mjs'
-import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { webLink } from '../../util/terminal/link.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { handleListScans } from "./handle-list-scans.mts";
+import { outputDryRunFetch } from "../../util/dry-run/output.mts";
+import { InputError } from "../../util/error/errors.mts";
+import { V1_MIGRATION_GUIDE_URL } from "../../constants/socket.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags, outputFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mjs";
+import { determineOrgSlug } from "../../util/socket/org-slug.mjs";
+import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
+import { webLink } from "../../util/terminal/link.mts";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type {
-  CliCommandContext,
-  CliSubcommand,
-} from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext, CliSubcommand } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
-export const CMD_NAME = 'list'
+export const CMD_NAME = "list";
 
-const description = 'List the scans for an organization'
+const description = "List the scans for an organization";
 
-const hidden = false
+const hidden = false;
 
 export const cmdScanList: CliSubcommand = {
   description,
   hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -46,56 +40,54 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
       branch: {
-        type: 'string',
-        description: 'Filter to show only scans with this branch name',
+        type: "string",
+        description: "Filter to show only scans with this branch name",
       },
       direction: {
-        type: 'string',
-        shortFlag: 'd',
-        default: 'desc',
-        description: 'Direction option (`desc` or `asc`) - Default is `desc`',
+        type: "string",
+        shortFlag: "d",
+        default: "desc",
+        description: "Direction option (`desc` or `asc`) - Default is `desc`",
       },
       fromTime: {
-        type: 'string',
-        shortFlag: 'f',
-        default: '',
-        description: 'From time - as a unix timestamp',
+        type: "string",
+        shortFlag: "f",
+        default: "",
+        description: "From time - as a unix timestamp",
       },
       interactive: {
-        type: 'boolean',
+        type: "boolean",
         default: true,
         description:
-          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+          "Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.",
       },
       page: {
-        type: 'number',
-        shortFlag: 'p',
+        type: "number",
+        shortFlag: "p",
         default: 1,
-        description: 'Page number - Default is 1',
+        description: "Page number - Default is 1",
       },
       perPage: {
-        type: 'number',
-        shortFlag: 'pp',
+        type: "number",
+        shortFlag: "pp",
         default: 30,
-        description: 'Results per page - Default is 30',
+        description: "Results per page - Default is 30",
       },
       org: {
-        type: 'string',
-        description:
-          'Force override the organization slug, overrides the default org from config',
+        type: "string",
+        description: "Force override the organization slug, overrides the default org from config",
       },
       sort: {
-        type: 'string',
-        shortFlag: 's',
-        default: 'created_at',
-        description:
-          'Sorting option (`name` or `created_at`) - default is `created_at`',
+        type: "string",
+        shortFlag: "s",
+        default: "created_at",
+        description: "Sorting option (`name` or `created_at`) - default is `created_at`",
       },
       untilTime: {
-        type: 'string',
-        shortFlag: 'u',
-        default: '',
-        description: 'Until time - as a unix timestamp',
+        type: "string",
+        shortFlag: "u",
+        default: "",
+        description: "Until time - as a unix timestamp",
       },
     }),
     help: (command: string, config: { flags: MeowFlags }) => `
@@ -116,112 +108,107 @@ export async function run(
       $ ${command}
       $ ${command} webtools badbranch --markdown
   `,
-  }
+  };
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const { branch: branchFlag, json, markdown, org: orgFlag } = cli.flags
+  const { branch: branchFlag, json, markdown, org: orgFlag } = cli.flags;
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = !!cli.flags["interactive"];
 
-  const noLegacy = !cli.flags['repo']
+  const noLegacy = !cli.flags["repo"];
 
-  const [repo = '', branchArg = ''] = cli.input
+  const [repo = "", branchArg = ""] = cli.input;
 
-  const branch = String(branchFlag || branchArg || '')
+  const branch = String(branchFlag || branchArg || "");
 
-  const hasApiToken = hasDefaultApiToken()
+  const hasApiToken = hasDefaultApiToken();
 
-  const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
-    interactive,
-    dryRun,
-  )
+  const { 0: orgSlug } = await determineOrgSlug(String(orgFlag || ""), interactive, dryRun);
 
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
       test: noLegacy,
-      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-      fail: 'received legacy flags',
+      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, "v1 migration guide")}.`,
+      fail: "received legacy flags",
     },
     {
       nook: true,
       test: !!orgSlug,
-      message: 'Org name by default setting, --org, or auto-discovered',
-      fail: 'dot is an invalid org, most likely you forgot the org name here?',
+      message: "Org name by default setting, --org, or auto-discovered",
+      fail: "dot is an invalid org, most likely you forgot the org name here?",
     },
     {
       nook: true,
       test: !json || !markdown,
-      message: 'The json and markdown flags cannot be both set, pick one',
-      fail: 'omit one',
+      message: "The json and markdown flags cannot be both set, pick one",
+      fail: "omit one",
     },
     {
       nook: true,
       test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
+      message: "This command requires a Socket API token for access",
+      fail: "try `socket login`",
     },
     {
       nook: true,
       test: !branchFlag || !branchArg,
-      message:
-        'You should not set --branch and also give a second arg for branch name',
-      fail: 'received flag and second arg',
+      message: "You should not set --branch and also give a second arg for branch name",
+      fail: "received flag and second arg",
     },
-  )
+  );
   if (!wasValidInput) {
-    return
+    return;
   }
 
   // Validate numeric pagination parameters.
-  const validatedPage = Number(cli.flags['page'] || 1)
-  const validatedPerPage = Number(cli.flags['perPage'] || 30)
+  const validatedPage = Number(cli.flags["page"] || 1);
+  const validatedPerPage = Number(cli.flags["perPage"] || 30);
 
   if (dryRun) {
-    outputDryRunFetch('scans', {
+    outputDryRunFetch("scans", {
       organization: orgSlug,
       repo: repo || undefined,
       branch: branch || undefined,
-      sort: String(cli.flags['sort'] || 'created_at'),
-      direction: String(cli.flags['direction'] || 'desc'),
+      sort: String(cli.flags["sort"] || "created_at"),
+      direction: String(cli.flags["direction"] || "desc"),
       page: validatedPage,
       perPage: validatedPerPage,
-    })
-    return
+    });
+    return;
   }
 
   if (Number.isNaN(validatedPage) || validatedPage < 1) {
     throw new InputError(
-      `--page must be a positive integer (saw: "${cli.flags['page']}"); pass a number like --page=1`,
-    )
+      `--page must be a positive integer (saw: "${cli.flags["page"]}"); pass a number like --page=1`,
+    );
   }
   if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
     throw new InputError(
-      `--per-page must be a positive integer (saw: "${cli.flags['perPage']}"); pass a number like --per-page=30`,
-    )
+      `--per-page must be a positive integer (saw: "${cli.flags["perPage"]}"); pass a number like --per-page=30`,
+    );
   }
 
   await handleListScans({
-    branch: branch ? String(branch) : '',
-    direction: String(cli.flags['direction'] || ''),
-    from_time: String(cli.flags['fromTime'] || ''),
+    branch: branch ? String(branch) : "",
+    direction: String(cli.flags["direction"] || ""),
+    from_time: String(cli.flags["fromTime"] || ""),
     orgSlug,
     outputKind,
     page: validatedPage,
     perPage: validatedPerPage,
-    repo: repo ? String(repo) : '',
-    sort: String(cli.flags['sort'] || ''),
-  })
+    repo: repo ? String(repo) : "",
+    sort: String(cli.flags["sort"] || ""),
+  });
 }

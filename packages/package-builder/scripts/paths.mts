@@ -5,35 +5,23 @@
  * pattern: build/{mode}/out/{package}
  */
 
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Package-builder root directory.
-const PACKAGE_BUILDER_ROOT = path.join(__dirname, '..')
+const PACKAGE_BUILDER_ROOT = path.join(__dirname, "..");
 
 // Template directories.
-const TEMPLATES_DIR = path.join(PACKAGE_BUILDER_ROOT, 'templates')
-export const CLI_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-package')
-export const CLI_SENTRY_TEMPLATE_DIR = path.join(
-  TEMPLATES_DIR,
-  'cli-sentry-package',
-)
-export const SOCKET_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'socket-package')
-export const SOCKETADDON_MAIN_TEMPLATE_DIR = path.join(
-  TEMPLATES_DIR,
-  'socketaddon-main',
-)
-export const SOCKETADDON_TEMPLATE_DIR = path.join(
-  TEMPLATES_DIR,
-  'socketaddon-package',
-)
-export const SOCKETBIN_TEMPLATE_DIR = path.join(
-  TEMPLATES_DIR,
-  'socketbin-package',
-)
+const TEMPLATES_DIR = path.join(PACKAGE_BUILDER_ROOT, "templates");
+export const CLI_TEMPLATE_DIR = path.join(TEMPLATES_DIR, "cli-package");
+export const CLI_SENTRY_TEMPLATE_DIR = path.join(TEMPLATES_DIR, "cli-sentry-package");
+export const SOCKET_TEMPLATE_DIR = path.join(TEMPLATES_DIR, "socket-package");
+export const SOCKETADDON_MAIN_TEMPLATE_DIR = path.join(TEMPLATES_DIR, "socketaddon-main");
+export const SOCKETADDON_TEMPLATE_DIR = path.join(TEMPLATES_DIR, "socketaddon-package");
+export const SOCKETBIN_TEMPLATE_DIR = path.join(TEMPLATES_DIR, "socketbin-package");
 
 /**
  * Get build mode (dev/prod).
@@ -46,20 +34,20 @@ export const SOCKETBIN_TEMPLATE_DIR = path.join(
  */
 export function getBuildMode() {
   // Check CLI args.
-  const args = process.argv.slice(2)
-  if (args.includes('--dev')) {
-    return 'dev'
+  const args = process.argv.slice(2);
+  if (args.includes("--dev")) {
+    return "dev";
   }
-  if (args.includes('--prod')) {
-    return 'prod'
+  if (args.includes("--prod")) {
+    return "prod";
   }
   // Check env var.
-  if (process.env['BUILD_MODE']) {
-    return process.env['BUILD_MODE']
+  if (process.env["BUILD_MODE"]) {
+    return process.env["BUILD_MODE"];
   }
   // Default based on CI.
-  const isCI = process.env['CI'] === '1' || process.env['CI'] === 'true'
-  return isCI ? 'prod' : 'dev'
+  const isCI = process.env["CI"] === "1" || process.env["CI"] === "true";
+  return isCI ? "prod" : "dev";
 }
 
 /**
@@ -71,7 +59,7 @@ export function getBuildMode() {
  * @returns {string} Path to build output root.
  */
 export function getBuildOutDir(mode = getBuildMode()) {
-  return path.join(PACKAGE_BUILDER_ROOT, 'build', mode, 'out')
+  return path.join(PACKAGE_BUILDER_ROOT, "build", mode, "out");
 }
 
 /**
@@ -85,7 +73,7 @@ export function getBuildOutDir(mode = getBuildMode()) {
  * @returns {string} Path to package output directory.
  */
 export function getPackageOutDir(packageName: string, mode = getBuildMode()) {
-  return path.join(getBuildOutDir(mode), packageName)
+  return path.join(getBuildOutDir(mode), packageName);
 }
 
 /**
@@ -108,10 +96,10 @@ export function getSocketaddonPackageDir(
   mode = getBuildMode(),
 ) {
   // Normalize win32 → win for directory naming.
-  const releasePlatform = platform === 'win32' ? 'win' : platform
-  const muslSuffix = libc === 'musl' ? '-musl' : ''
-  const packageName = `socketaddon-iocraft-${releasePlatform}-${arch}${muslSuffix}`
-  return getPackageOutDir(packageName, mode)
+  const releasePlatform = platform === "win32" ? "win" : platform;
+  const muslSuffix = libc === "musl" ? "-musl" : "";
+  const packageName = `socketaddon-iocraft-${releasePlatform}-${arch}${muslSuffix}`;
+  return getPackageOutDir(packageName, mode);
 }
 
 /**
@@ -133,12 +121,8 @@ export function getSocketbinBinaryPath(
   mode = getBuildMode(),
 ) {
   // Accept both win and win32 for Windows detection.
-  const binaryName =
-    platform === 'win' || platform === 'win32' ? 'socket.exe' : 'socket'
-  return path.join(
-    getSocketbinPackageDir(platform, arch, libc, mode),
-    binaryName,
-  )
+  const binaryName = platform === "win" || platform === "win32" ? "socket.exe" : "socket";
+  return path.join(getSocketbinPackageDir(platform, arch, libc, mode), binaryName);
 }
 
 /**
@@ -161,8 +145,8 @@ export function getSocketbinPackageDir(
   mode = getBuildMode(),
 ) {
   // Normalize win32 → win for directory naming.
-  const releasePlatform = platform === 'win32' ? 'win' : platform
-  const muslSuffix = libc === 'musl' ? '-musl' : ''
-  const packageName = `socketbin-cli-${releasePlatform}-${arch}${muslSuffix}`
-  return getPackageOutDir(packageName, mode)
+  const releasePlatform = platform === "win32" ? "win" : platform;
+  const muslSuffix = libc === "musl" ? "-musl" : "";
+  const packageName = `socketbin-cli-${releasePlatform}-${arch}${muslSuffix}`;
+  return getPackageOutDir(packageName, mode);
 }

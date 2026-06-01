@@ -16,17 +16,17 @@
  * `defineAutoDispatch` for the auto-dispatcher.
  */
 
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { downloadGitHubReleaseBinary, spawnToolVfs } from './spawn.mts'
-import { areExternalToolsAvailable } from './vfs-extract.mjs'
-import { isSeaBinary } from '../sea/detect.mts'
+import { downloadGitHubReleaseBinary, spawnToolVfs } from "./spawn.mts";
+import { areExternalToolsAvailable } from "./vfs-extract.mjs";
+import { isSeaBinary } from "../sea/detect.mts";
 
-import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
-import type { BinaryResolution } from './resolve-binary.mts'
-import type { ExternalTool } from './vfs-extract.mts'
-import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
+import type { DlxOptions, DlxSpawnResult } from "./spawn.mts";
+import type { BinaryResolution } from "./resolve-binary.mts";
+import type { ExternalTool } from "./vfs-extract.mts";
+import type { StdioOptions } from "node:child_process";
+import type { SpawnExtra } from "@socketsecurity/lib-stable/process/spawn/types";
 
 /**
  * Argument shape for every spawn function the factory emits.
@@ -35,10 +35,10 @@ type ToolSpawnFn = (
   args: string[] | readonly string[],
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-) => Promise<DlxSpawnResult>
+) => Promise<DlxSpawnResult>;
 
 export function capitalize(s: string): string {
-  return s.length ? s[0]!.toUpperCase() + s.slice(1) : s
+  return s.length ? s[0]!.toUpperCase() + s.slice(1) : s;
 }
 
 /**
@@ -46,17 +46,14 @@ export function capitalize(s: string): string {
  *
  * Used by every tool wrapper in the dlx/spawn-* family.
  */
-export function defineAutoDispatch(opts: {
-  vfs: ToolSpawnFn
-  dlx: ToolSpawnFn
-}): ToolSpawnFn {
-  const { dlx, vfs } = opts
+export function defineAutoDispatch(opts: { vfs: ToolSpawnFn; dlx: ToolSpawnFn }): ToolSpawnFn {
+  const { dlx, vfs } = opts;
   return async (args, options, spawnExtra) => {
     if (isSeaBinary() && areExternalToolsAvailable()) {
-      return await vfs(args, options, spawnExtra)
+      return await vfs(args, options, spawnExtra);
     }
-    return await dlx(args, options, spawnExtra)
-  }
+    return await dlx(args, options, spawnExtra);
+  };
 }
 
 /**
@@ -65,25 +62,25 @@ export function defineAutoDispatch(opts: {
  * resolver-contract error if the resolver returns a non-github-release type.
  */
 export function defineGitHubReleaseSpawn(opts: {
-  toolName: string
-  resolve: () => BinaryResolution
+  toolName: string;
+  resolve: () => BinaryResolution;
 }): ToolSpawnFn {
-  const { resolve, toolName } = opts
+  const { resolve, toolName } = opts;
   return async (args, options, spawnExtra) => {
-    const resolution = resolve()
+    const resolution = resolve();
 
-    if (resolution.type !== 'github-release') {
+    if (resolution.type !== "github-release") {
       throw new Error(
         `internal: resolve${capitalize(toolName)} returned resolution.type="${resolution.type}" (expected "github-release"); this is a resolver contract bug — re-run with --debug and report the output`,
-      )
+      );
     }
 
     const { env: spawnEnv, ...dlxOptions } = {
       __proto__: null,
       ...options,
-    } as DlxOptions
+    } as DlxOptions;
 
-    const binaryPath = await downloadGitHubReleaseBinary(resolution.details)
+    const binaryPath = await downloadGitHubReleaseBinary(resolution.details);
 
     const spawnPromise = spawn(binaryPath, args, {
       ...dlxOptions,
@@ -91,11 +88,11 @@ export function defineGitHubReleaseSpawn(opts: {
         ...process.env,
         ...spawnEnv,
       },
-      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-    })
+      stdio: (spawnExtra?.["stdio"] as StdioOptions | undefined) ?? "inherit",
+    });
 
-    return { spawnPromise }
-  }
+    return { spawnPromise };
+  };
 }
 
 /**
@@ -105,21 +102,21 @@ export function defineGitHubReleaseSpawn(opts: {
  * and Dlx/Vfs are the underlying spawners.
  */
 export function defineToolSpawn(opts: {
-  toolName: string
-  vfsName: ExternalTool
-  resolve: () => BinaryResolution
+  toolName: string;
+  vfsName: ExternalTool;
+  resolve: () => BinaryResolution;
 }): {
-  Dlx: ToolSpawnFn
-  Vfs: ToolSpawnFn
-  auto: ToolSpawnFn
+  Dlx: ToolSpawnFn;
+  Vfs: ToolSpawnFn;
+  auto: ToolSpawnFn;
 } {
   const Dlx = defineGitHubReleaseSpawn({
     toolName: opts.toolName,
     resolve: opts.resolve,
-  })
-  const Vfs = defineVfsSpawn(opts.vfsName)
-  const auto = defineAutoDispatch({ vfs: Vfs, dlx: Dlx })
-  return { Dlx, Vfs, auto }
+  });
+  const Vfs = defineVfsSpawn(opts.vfsName);
+  const auto = defineAutoDispatch({ vfs: Vfs, dlx: Dlx });
+  return { Dlx, Vfs, auto };
 }
 
 /**
@@ -129,6 +126,6 @@ export function defineToolSpawn(opts: {
  */
 export function defineVfsSpawn(vfsName: ExternalTool): ToolSpawnFn {
   return async (args, options, spawnExtra) => {
-    return await spawnToolVfs(vfsName, args, options, spawnExtra)
-  }
+    return await spawnToolVfs(vfsName, args, options, spawnExtra);
+  };
 }

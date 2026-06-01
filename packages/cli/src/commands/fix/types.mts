@@ -1,31 +1,31 @@
-import type { OutputKind } from '../../types.mts'
-import type { PURL_Type } from '../../util/ecosystem/types.mts'
-import type { RangeStyle } from '../../util/semver.mts'
-import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
+import type { OutputKind } from "../../types.mts";
+import type { PURL_Type } from "../../util/ecosystem/types.mts";
+import type { RangeStyle } from "../../util/semver.mts";
+import type { SpinnerInstance } from "@socketsecurity/lib-stable/spinner/types";
 
 export type FixConfig = {
-  all: boolean
-  applyFixes: boolean
-  autopilot: boolean
-  coanaVersion: string | undefined
-  cwd: string
-  debug: boolean
-  disableExternalToolChecks: boolean
-  disableMajorUpdates: boolean
-  ecosystems: PURL_Type[]
-  exclude: string[]
-  ghsas: string[]
-  include: string[]
-  minimumReleaseAge: string
-  minSatisfying: boolean
-  orgSlug: string
-  outputFile: string
-  outputKind: OutputKind
-  prCheck: boolean
-  prLimit: number
-  rangeStyle: RangeStyle
-  showAffectedDirectDependencies: boolean
-  silence: boolean
-  spinner: SpinnerInstance | undefined
-  unknownFlags: string[]
-}
+  all: boolean;
+  applyFixes: boolean;
+  autopilot: boolean;
+  coanaVersion: string | undefined;
+  cwd: string;
+  debug: boolean;
+  disableExternalToolChecks: boolean;
+  disableMajorUpdates: boolean;
+  ecosystems: PURL_Type[];
+  exclude: string[];
+  ghsas: string[];
+  include: string[];
+  minimumReleaseAge: string;
+  minSatisfying: boolean;
+  orgSlug: string;
+  outputFile: string;
+  outputKind: OutputKind;
+  prCheck: boolean;
+  prLimit: number;
+  rangeStyle: RangeStyle;
+  showAffectedDirectDependencies: boolean;
+  silence: boolean;
+  spinner: SpinnerInstance | undefined;
+  unknownFlags: string[];
+};

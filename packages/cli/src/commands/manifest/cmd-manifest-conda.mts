@@ -1,69 +1,64 @@
-import path from 'node:path'
+import path from "node:path";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { handleManifestConda } from './handle-manifest-conda.mts'
-import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
-import {
-  ENVIRONMENT_YAML,
-  ENVIRONMENT_YML,
-  REQUIREMENTS_TXT,
-} from '../../constants/paths.mjs'
-import { SOCKET_JSON } from '../../constants/socket.mts'
-import { outputDryRunExecute } from '../../util/dry-run/output.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mjs'
-import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { handleManifestConda } from "./handle-manifest-conda.mts";
+import { FLAG_JSON, FLAG_MARKDOWN } from "../../constants/cli.mjs";
+import { ENVIRONMENT_YAML, ENVIRONMENT_YML, REQUIREMENTS_TXT } from "../../constants/paths.mjs";
+import { SOCKET_JSON } from "../../constants/socket.mts";
+import { outputDryRunExecute } from "../../util/dry-run/output.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags, outputFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mjs";
+import { readOrDefaultSocketJson } from "../../util/socket/json.mts";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 // Flags interface for type safety.
 interface CondaFlags {
-  dryRun: boolean
-  file: string
-  json: boolean
-  markdown: boolean
-  out: string
-  stdin: boolean | undefined
-  stdout: boolean | undefined
-  verbose: boolean | undefined
+  dryRun: boolean;
+  file: string;
+  json: boolean;
+  markdown: boolean;
+  out: string;
+  stdin: boolean | undefined;
+  stdout: boolean | undefined;
+  verbose: boolean | undefined;
 }
 
 const config = {
-  commandName: 'conda',
+  commandName: "conda",
   description: `[beta] Convert a Conda ${ENVIRONMENT_YML} file to a python ${REQUIREMENTS_TXT}`,
-  hidden: false,
   flags: defineFlags({
     ...commonFlags,
     ...outputFlags,
     file: {
-      type: 'string',
-      default: '',
+      type: "string",
+      default: "",
       description: `Input file name (by default for Conda this is "${ENVIRONMENT_YML}"), relative to cwd`,
     },
     stdin: {
-      type: 'boolean',
-      description: 'Read the input from stdin (supersedes --file)',
+      type: "boolean",
+      description: "Read the input from stdin (supersedes --file)",
     },
     out: {
-      type: 'string',
-      default: '',
-      description: 'Output path (relative to cwd)',
+      type: "string",
+      default: "",
+      description: "Output path (relative to cwd)",
     },
     stdout: {
-      type: 'boolean',
+      type: "boolean",
       description: `Print resulting ${REQUIREMENTS_TXT} to stdout (supersedes --out)`,
     },
     verbose: {
-      type: 'boolean',
-      description: 'Print debug messages',
+      type: "boolean",
+      description: "Print debug messages",
     },
   }),
   help: (command: string, config: { flags: MeowFlags }) => `
@@ -87,13 +82,14 @@ const config = {
       $ ${command}
       $ ${command} ./project/foo --file ${ENVIRONMENT_YAML}
   `,
-}
+  hidden: false,
+};
 
 export const cmdManifestConda = {
   description: config.description,
   hidden: config.hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -105,111 +101,96 @@ export async function run(
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const { dryRun, json, markdown } = cli.flags as unknown as CondaFlags
+  const { dryRun, json, markdown } = cli.flags as unknown as CondaFlags;
 
-  let [cwd = '.'] = cli.input
+  let [cwd = "."] = cli.input;
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
+  cwd = path.resolve(process.cwd(), cwd);
 
-  const sockJson = readOrDefaultSocketJson(cwd)
+  const sockJson = readOrDefaultSocketJson(cwd);
 
-  let {
-    file: filename,
-    out,
-    stdin,
-    stdout,
-    verbose,
-  } = cli.flags as unknown as CondaFlags
+  let { file: filename, out, stdin, stdout, verbose } = cli.flags as unknown as CondaFlags;
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
-  if (
-    stdin === undefined &&
-    sockJson.defaults?.manifest?.conda?.stdin !== undefined
-  ) {
-    stdin = sockJson.defaults?.manifest?.conda?.stdin
-    logger.info(`Using default --stdin from ${SOCKET_JSON}:`, stdin)
+  if (stdin === undefined && sockJson.defaults?.manifest?.conda?.stdin !== undefined) {
+    stdin = sockJson.defaults?.manifest?.conda?.stdin;
+    logger.info(`Using default --stdin from ${SOCKET_JSON}:`, stdin);
   }
   if (stdin) {
-    filename = '-'
+    filename = "-";
   } else if (!filename) {
     if (sockJson.defaults?.manifest?.conda?.infile) {
-      filename = sockJson.defaults?.manifest?.conda?.infile
-      logger.info(`Using default --file from ${SOCKET_JSON}:`, filename)
+      filename = sockJson.defaults?.manifest?.conda?.infile;
+      logger.info(`Using default --file from ${SOCKET_JSON}:`, filename);
     } else {
-      filename = ENVIRONMENT_YML
+      filename = ENVIRONMENT_YML;
     }
   }
-  if (
-    stdout === undefined &&
-    sockJson.defaults?.manifest?.conda?.stdout !== undefined
-  ) {
-    stdout = sockJson.defaults?.manifest?.conda?.stdout
-    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout)
+  if (stdout === undefined && sockJson.defaults?.manifest?.conda?.stdout !== undefined) {
+    stdout = sockJson.defaults?.manifest?.conda?.stdout;
+    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout);
   }
   if (stdout) {
-    out = '-'
+    out = "-";
   } else if (!out) {
     if (sockJson.defaults?.manifest?.conda?.outfile) {
-      out = sockJson.defaults?.manifest?.conda?.outfile
-      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
+      out = sockJson.defaults?.manifest?.conda?.outfile;
+      logger.info(`Using default --out from ${SOCKET_JSON}:`, out);
     } else {
-      out = REQUIREMENTS_TXT
+      out = REQUIREMENTS_TXT;
     }
   }
-  if (
-    verbose === undefined &&
-    sockJson.defaults?.manifest?.conda?.verbose !== undefined
-  ) {
-    verbose = sockJson.defaults?.manifest?.conda?.verbose
-    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
+  if (verbose === undefined && sockJson.defaults?.manifest?.conda?.verbose !== undefined) {
+    verbose = sockJson.defaults?.manifest?.conda?.verbose;
+    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose);
   } else if (verbose === undefined) {
-    verbose = false
+    verbose = false;
   }
 
   if (verbose) {
-    logger.group('- ', parentName, config.commandName, ':')
-    logger.group('- flags:', cli.flags)
-    logger.groupEnd()
-    logger.log('- target:', cwd)
-    logger.log('- output:', out)
-    logger.groupEnd()
+    logger.group("- ", parentName, config.commandName, ":");
+    logger.group("- flags:", cli.flags);
+    logger.groupEnd();
+    logger.log("- target:", cwd);
+    logger.log("- output:", out);
+    logger.groupEnd();
   }
 
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
       test: cli.input.length <= 1,
-      message: 'Can only accept one DIR (make sure to escape spaces!)',
+      message: "Can only accept one DIR (make sure to escape spaces!)",
       fail: `received ${cli.input.length}`,
     },
     {
       nook: true,
       test: !json || !markdown,
       message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
-      fail: 'bad',
+      fail: "bad",
     },
-  )
+  );
   if (!wasValidInput) {
-    return
+    return;
   }
 
   logger.warn(
-    'Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.',
-  )
+    "Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.",
+  );
 
   if (dryRun) {
     outputDryRunExecute(
-      'conda converter',
+      "conda converter",
       [filename, out],
       `convert Conda ${ENVIRONMENT_YML} to ${REQUIREMENTS_TXT}`,
-    )
-    return
+    );
+    return;
   }
 
   await handleManifestConda({
@@ -218,5 +199,5 @@ export async function run(
     out,
     outputKind,
     verbose,
-  })
+  });
 }

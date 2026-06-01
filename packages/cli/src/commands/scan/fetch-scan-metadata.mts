@@ -1,36 +1,33 @@
-import { handleApiCall } from '../../util/socket/api.mjs'
-import { setupSdk } from '../../util/socket/sdk.mjs'
+import { handleApiCall } from "../../util/socket/api.mjs";
+import { setupSdk } from "../../util/socket/sdk.mjs";
 
-import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { CResult } from "../../types.mts";
+import type { SetupSdkOptions } from "../../util/socket/sdk.mjs";
+import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
 
 type FetchScanMetadataOptions = {
-  commandPath?: string | undefined
-  sdkOpts?: SetupSdkOptions | undefined
-}
+  commandPath?: string | undefined;
+  sdkOpts?: SetupSdkOptions | undefined;
+};
 
 export async function fetchScanMetadata(
   orgSlug: string,
   scanId: string,
   options?: FetchScanMetadataOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getFullScanMetadata'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<"getFullScanMetadata">["data"]>> {
   const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
-  } as FetchScanMetadataOptions
+  } as FetchScanMetadataOptions;
 
-  const sockSdkCResult = await setupSdk(sdkOpts)
+  const sockSdkCResult = await setupSdk(sdkOpts);
   if (!sockSdkCResult.ok) {
-    return sockSdkCResult
+    return sockSdkCResult;
   }
-  const sockSdk = sockSdkCResult.data
+  const sockSdk = sockSdkCResult.data;
 
-  return await handleApiCall<'getFullScanMetadata'>(
-    sockSdk.getFullScanMetadata(orgSlug, scanId),
-    {
-      commandPath,
-      description: 'meta data for a full scan',
-    },
-  )
+  return await handleApiCall<"getFullScanMetadata">(sockSdk.getFullScanMetadata(orgSlug, scanId), {
+    commandPath,
+    description: "meta data for a full scan",
+  });
 }

@@ -13,172 +13,162 @@
  * Related Files: - util/yarn/version.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies before importing the module under test.
-vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
+vi.mock(import("@socketsecurity/lib-stable/process/spawn/child"), () => ({
   spawnSync: vi.fn(),
-}))
+}));
 
-vi.mock('../../../../src/util/yarn/paths.mts', () => ({
-  getYarnBinPath: vi.fn(() => '/usr/bin/yarn'),
-}))
+vi.mock(import("../../../../src/util/yarn/paths.mts"), () => ({
+  getYarnBinPath: vi.fn(() => "/usr/bin/yarn"),
+}));
 
-describe('yarn version utilities', () => {
-  let spawnSyncMock: ReturnType<typeof vi.fn>
-  let getYarnBinPathMock: ReturnType<typeof vi.fn>
+describe("yarn version utilities", () => {
+  let spawnSyncMock: ReturnType<typeof vi.fn>;
+  let getYarnBinPathMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
-    vi.resetModules()
-    const spawnModule = await import('@socketsecurity/lib-stable/process/spawn/child')
-    const pathsModule = await import('../../../../src/util/yarn/paths.mts')
-    spawnSyncMock = spawnModule.spawnSync as ReturnType<typeof vi.fn>
-    getYarnBinPathMock = pathsModule.getYarnBinPath as ReturnType<typeof vi.fn>
-  })
+    vi.resetModules();
+    const spawnModule = await import("@socketsecurity/lib-stable/process/spawn/child");
+    const pathsModule = await import("../../../../src/util/yarn/paths.mts");
+    spawnSyncMock = spawnModule.spawnSync as ReturnType<typeof vi.fn>;
+    getYarnBinPathMock = pathsModule.getYarnBinPath as ReturnType<typeof vi.fn>;
+  });
 
   afterEach(() => {
-    vi.clearAllMocks()
-    vi.resetModules()
-  })
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
 
-  describe('isYarnBerry', () => {
-    it('returns true for yarn 2.x', async () => {
+  describe("isYarnBerry", () => {
+    it("returns true for yarn 2.x", async () => {
       spawnSyncMock.mockReturnValue({
         status: 0,
-        stdout: '2.4.3\n',
-      })
+        stdout: "2.4.3\n",
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
+      const result = isYarnBerry();
 
-      expect(result).toBe(true)
-      expect(getYarnBinPathMock).toHaveBeenCalled()
-    })
+      expect(result).toBe(true);
+      expect(getYarnBinPathMock).toHaveBeenCalled();
+    });
 
-    it('returns true for yarn 3.x', async () => {
+    it("returns true for yarn 3.x", async () => {
       spawnSyncMock.mockReturnValue({
         status: 0,
-        stdout: '3.6.1\n',
-      })
+        stdout: "3.6.1\n",
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
+      const result = isYarnBerry();
 
-      expect(result).toBe(true)
-    })
+      expect(result).toBe(true);
+    });
 
-    it('returns true for yarn 4.x', async () => {
+    it("returns true for yarn 4.x", async () => {
       spawnSyncMock.mockReturnValue({
         status: 0,
-        stdout: '4.0.0',
-      })
+        stdout: "4.0.0",
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
+      const result = isYarnBerry();
 
-      expect(result).toBe(true)
-    })
+      expect(result).toBe(true);
+    });
 
-    it('returns false for yarn 1.x (Classic)', async () => {
+    it("returns false for yarn 1.x (Classic)", async () => {
       spawnSyncMock.mockReturnValue({
         status: 0,
-        stdout: '1.22.19\n',
-      })
+        stdout: "1.22.19\n",
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
+      const result = isYarnBerry();
 
-      expect(result).toBe(false)
-    })
+      expect(result).toBe(false);
+    });
 
-    it('returns false when spawn fails', async () => {
+    it("returns false when spawn fails", async () => {
       spawnSyncMock.mockReturnValue({
         status: 1,
-        stdout: '',
-      })
+        stdout: "",
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
+      const result = isYarnBerry();
 
-      expect(result).toBe(false)
-    })
+      expect(result).toBe(false);
+    });
 
-    it('returns false when spawn returns non-zero status', async () => {
+    it("returns false when spawn returns non-zero status", async () => {
       spawnSyncMock.mockReturnValue({
         status: 127,
-        stdout: Buffer.from(''),
-      })
+        stdout: Buffer.from(""),
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
+      const result = isYarnBerry();
 
-      expect(result).toBe(false)
-    })
+      expect(result).toBe(false);
+    });
 
-    it('handles invalid version string', async () => {
+    it("handles invalid version string", async () => {
       spawnSyncMock.mockReturnValue({
         status: 0,
-        stdout: 'invalid-version\n',
-      })
+        stdout: "invalid-version\n",
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
+      const result = isYarnBerry();
 
-      expect(result).toBe(false)
-    })
+      expect(result).toBe(false);
+    });
 
-    it('handles empty version string', async () => {
+    it("handles empty version string", async () => {
       spawnSyncMock.mockReturnValue({
         status: 0,
-        stdout: '',
-      })
+        stdout: "",
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
+      const result = isYarnBerry();
 
-      expect(result).toBe(false)
-    })
+      expect(result).toBe(false);
+    });
 
-    it('returns false when an error is thrown', async () => {
+    it("returns false when an error is thrown", async () => {
       spawnSyncMock.mockImplementation(() => {
-        throw new Error('spawn failed')
-      })
+        throw new Error("spawn failed");
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
-      const result = isYarnBerry()
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
+      const result = isYarnBerry();
 
-      expect(result).toBe(false)
-    })
+      expect(result).toBe(false);
+    });
 
-    it('caches result on subsequent calls', async () => {
+    it("caches result on subsequent calls", async () => {
       spawnSyncMock.mockReturnValue({
         status: 0,
-        stdout: '3.0.0\n',
-      })
+        stdout: "3.0.0\n",
+      });
 
-      const { isYarnBerry } =
-        await import('../../../../src/util/yarn/version.mts')
+      const { isYarnBerry } = await import("../../../../src/util/yarn/version.mts");
 
       // Call multiple times.
-      const result1 = isYarnBerry()
-      const result2 = isYarnBerry()
-      const result3 = isYarnBerry()
+      const result1 = isYarnBerry();
+      const result2 = isYarnBerry();
+      const result3 = isYarnBerry();
 
-      expect(result1).toBe(true)
-      expect(result2).toBe(true)
-      expect(result3).toBe(true)
+      expect(result1).toBe(true);
+      expect(result2).toBe(true);
+      expect(result3).toBe(true);
 
       // spawnSync should only be called once due to caching.
-      expect(spawnSyncMock).toHaveBeenCalledTimes(1)
-    })
-  })
-})
+      expect(spawnSyncMock).toHaveBeenCalledTimes(1);
+    });
+  });
+});

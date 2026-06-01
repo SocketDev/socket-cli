@@ -26,10 +26,10 @@ export default function babelPluginStrictMode({ types: t }) {
     octalEscapes: 0,
     withStatements: 0,
     strictDirectives: 0,
-  }
+  };
 
   return {
-    name: 'babel-plugin-strict-mode',
+    name: "babel-plugin-strict-mode",
 
     visitor: {
       /**
@@ -37,33 +37,27 @@ export default function babelPluginStrictMode({ types: t }) {
        */
       Program: {
         enter(path) {
-          const { body, directives } = path.node
+          const { body, directives } = path.node;
 
           // Check if already has 'use strict'
           const hasUseStrict =
-            directives?.some(d => d.value.value === 'use strict') ||
+            directives?.some((d) => d.value.value === "use strict") ||
             body.some(
-              n =>
+              (n) =>
                 t.isExpressionStatement(n) &&
                 t.isStringLiteral(n.expression) &&
-                n.expression.value === 'use strict',
-            )
+                n.expression.value === "use strict",
+            );
 
           if (!hasUseStrict) {
             // Add 'use strict' directive at the beginning
-            path.unshiftContainer(
-              'directives',
-              t.directive(t.directiveLiteral('use strict')),
-            )
-            stats.strictDirectives++
+            path.unshiftContainer("directives", t.directive(t.directiveLiteral("use strict")));
+            stats.strictDirectives++;
           }
         },
 
         exit(path) {
-          const totalTransforms = Object.values(stats).reduce(
-            (a, b) => a + b,
-            0,
-          )
+          const totalTransforms = Object.values(stats).reduce((a, b) => a + b, 0);
 
           if (totalTransforms > 0) {
             const statsComment = `
@@ -73,9 +67,9 @@ Strict Mode Transformation Stats:
   - With statements found: ${stats.withStatements}
   - Strict directives added: ${stats.strictDirectives}
   Total transformations: ${totalTransforms}
-            `.trim()
+            `.trim();
 
-            path.addComment('trailing', statsComment)
+            path.addComment("trailing", statsComment);
           }
         },
       },
@@ -88,21 +82,18 @@ Strict Mode Transformation Stats:
        *   // Output: var x = 83
        */
       NumericLiteral(path) {
-        const { node } = path
-        const { extra } = node
+        const { node } = path;
+        const { extra } = node;
 
         // Check if this is a legacy octal literal (starts with 0)
         if (extra?.raw) {
-          const decimal = convertOctalLiteral(extra.raw)
+          const decimal = convertOctalLiteral(extra.raw);
           if (decimal !== null) {
             // Replace with decimal equivalent
-            path.replaceWith(t.numericLiteral(decimal))
-            stats.octalLiterals++
+            path.replaceWith(t.numericLiteral(decimal));
+            stats.octalLiterals++;
 
-            path.addComment(
-              'leading',
-              ` Strict-mode: Transformed octal ${extra.raw} → ${decimal}`,
-            )
+            path.addComment("leading", ` Strict-mode: Transformed octal ${extra.raw} → ${decimal}`);
           }
         }
       },
@@ -115,23 +106,20 @@ Strict Mode Transformation Stats:
        *   // Output: var str = "Hello\nWorld"
        */
       StringLiteral(path) {
-        const { node } = path
-        const { extra } = node
+        const { node } = path;
+        const { extra } = node;
 
         if (extra?.raw) {
           // Check if string contains octal escapes
           if (/\\[0-7]/.test(extra.raw)) {
-            const originalValue = node.value
-            const transformed = transformOctalEscapes(originalValue)
+            const originalValue = node.value;
+            const transformed = transformOctalEscapes(originalValue);
 
             if (transformed !== originalValue) {
-              path.replaceWith(t.stringLiteral(transformed))
-              stats.octalEscapes++
+              path.replaceWith(t.stringLiteral(transformed));
+              stats.octalEscapes++;
 
-              path.addComment(
-                'leading',
-                ' Strict-mode: Transformed octal escapes',
-              )
+              path.addComment("leading", " Strict-mode: Transformed octal escapes");
             }
           }
         }
@@ -145,56 +133,48 @@ Strict Mode Transformation Stats:
        *   // Output: Error thrown
        */
       WithStatement(path) {
-        stats.withStatements++
+        stats.withStatements++;
 
         // Add a warning comment
-        path.addComment(
-          'leading',
-          ' ERROR: "with" statement is not allowed in strict mode!',
-        )
+        path.addComment("leading", ' ERROR: "with" statement is not allowed in strict mode!');
 
         // Throw an error to prevent compilation
         throw path.buildCodeFrameError(
-          'WithStatement is not allowed in strict mode and cannot be safely transformed. ' +
+          "WithStatement is not allowed in strict mode and cannot be safely transformed. " +
             'Please refactor your code to avoid using "with" statements.',
-        )
+        );
       },
 
       /**
        * Transform template literals with octal escapes.
        */
       TemplateLiteral(path) {
-        const { node } = path
-        let transformed = false
+        const { node } = path;
+        let transformed = false;
 
         for (let i = 0, { length } = node.quasis; i < length; i += 1) {
-          const quasi = node.quasis[i]
-          const { value } = quasi
+          const quasi = node.quasis[i];
+          const { value } = quasi;
           if (value.raw && /\\[0-7]/.test(value.raw)) {
-            const transformedCooked = transformOctalEscapes(
-              value.cooked || value.raw,
-            )
+            const transformedCooked = transformOctalEscapes(value.cooked || value.raw);
             if (transformedCooked !== value.cooked) {
-              quasi.value.cooked = transformedCooked
+              quasi.value.cooked = transformedCooked;
               quasi.value.raw = transformedCooked
-                .replace(/\n/g, '\\n')
-                .replace(/\r/g, '\\r')
-                .replace(/\t/g, '\\t')
-              transformed = true
+                .replace(/\n/g, "\\n")
+                .replace(/\r/g, "\\r")
+                .replace(/\t/g, "\\t");
+              transformed = true;
             }
           }
         }
 
         if (transformed) {
-          stats.octalEscapes++
-          path.addComment(
-            'leading',
-            ' Strict-mode: Transformed octal escapes in template',
-          )
+          stats.octalEscapes++;
+          path.addComment("leading", " Strict-mode: Transformed octal escapes in template");
         }
       },
     },
-  }
+  };
 }
 
 /**
@@ -206,13 +186,13 @@ Strict Mode Transformation Stats:
  */
 function convertOctalLiteral(value) {
   // Match legacy octal: starts with 0, followed by octal digits (0-7)
-  const octalMatch = /^0([0-7]+)$/.exec(value)
+  const octalMatch = /^0([0-7]+)$/.exec(value);
   if (!octalMatch) {
-    return undefined
+    return undefined;
   }
 
-  const octalDigits = octalMatch[1]
-  return Number.parseInt(octalDigits, 8)
+  const octalDigits = octalMatch[1];
+  return Number.parseInt(octalDigits, 8);
 }
 
 /**
@@ -226,54 +206,54 @@ function transformOctalEscapes(str) {
   // Common octal escapes and their replacements
   const commonOctals = {
     // Null (allowed in strict mode if not followed by digit)
-    '\\0': '\\0',
+    "\\0": "\\0",
     // Start of Heading
-    '\\1': '\\x01',
+    "\\1": "\\x01",
     // Start of Text
-    '\\2': '\\x02',
+    "\\2": "\\x02",
     // End of Text
-    '\\3': '\\x03',
+    "\\3": "\\x03",
     // End of Transmission
-    '\\4': '\\x04',
+    "\\4": "\\x04",
     // Enquiry
-    '\\5': '\\x05',
+    "\\5": "\\x05",
     // Acknowledge
-    '\\6': '\\x06',
+    "\\6": "\\x06",
     // Bell
-    '\\7': '\\x07',
+    "\\7": "\\x07",
     // Backspace
-    '\\10': '\\b',
+    "\\10": "\\b",
     // Tab
-    '\\11': '\\t',
+    "\\11": "\\t",
     // Line Feed
-    '\\12': '\\n',
+    "\\12": "\\n",
     // Vertical Tab
-    '\\13': '\\v',
+    "\\13": "\\v",
     // Form Feed
-    '\\14': '\\f',
+    "\\14": "\\f",
     // Carriage Return
-    '\\15': '\\r',
-  }
+    "\\15": "\\r",
+  };
 
-  let result = str
+  let result = str;
 
   // Replace common named escapes first
   for (const [octal, replacement] of Object.entries(commonOctals)) {
     // Use word boundary to avoid matching longer sequences
     result = result.replace(
-      new RegExp(`${octal.replace(/\\/g, '\\\\')}(?![0-7])`, 'g'),
+      new RegExp(`${octal.replace(/\\/g, "\\\\")}(?![0-7])`, "g"),
       replacement,
-    )
+    );
   }
 
   // Replace any remaining octal escapes (\16-\377) with hex escapes
   result = result.replace(/\\([0-7]{1,3})/g, (_match, octalDigits) => {
-    const codePoint = Number.parseInt(octalDigits, 8)
+    const codePoint = Number.parseInt(octalDigits, 8);
     if (codePoint <= 0xff) {
-      return `\\x${codePoint.toString(16).padStart(2, '0')}`
+      return `\\x${codePoint.toString(16).padStart(2, "0")}`;
     }
-    return `\\u${codePoint.toString(16).padStart(4, '0')}`
-  })
+    return `\\u${codePoint.toString(16).padStart(4, "0")}`;
+  });
 
-  return result
+  return result;
 }

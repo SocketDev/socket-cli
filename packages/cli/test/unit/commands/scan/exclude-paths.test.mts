@@ -5,7 +5,7 @@
  * into projectIgnorePaths and Coana --exclude-dirs values.
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from "vitest";
 
 import {
   applyFullExcludePaths,
@@ -13,198 +13,178 @@ import {
   excludePathToProjectIgnorePath,
   pathRelativeToTarget,
   projectIgnorePathsToReachExcludePaths,
-} from '../../../../src/commands/scan/exclude-paths.mts'
-import { InputError } from '../../../../src/util/error/errors.mts'
+} from "../../../../src/commands/scan/exclude-paths.mts";
+import { InputError } from "../../../../src/util/error/errors.mts";
 
-describe('exclude-paths', () => {
-  describe('assertNoNegationPatterns', () => {
-    it('allows positive patterns', () => {
-      expect(() =>
-        assertNoNegationPatterns(['tests', 'packages/*']),
-      ).not.toThrow()
-    })
+describe("exclude-paths", () => {
+  describe("assertNoNegationPatterns", () => {
+    it("allows positive patterns", () => {
+      expect(() => assertNoNegationPatterns(["tests", "packages/*"])).not.toThrow();
+    });
 
-    it('rejects negation patterns', () => {
-      expect(() => assertNoNegationPatterns(['!tests/keep'])).toThrow(
-        InputError,
-      )
-      expect(() => assertNoNegationPatterns(['!tests/keep'])).toThrow(
+    it("rejects negation patterns", () => {
+      expect(() => assertNoNegationPatterns(["!tests/keep"])).toThrow(InputError);
+      expect(() => assertNoNegationPatterns(["!tests/keep"])).toThrow(
         "--exclude-paths does not support negation patterns. Got: '!tests/keep'.",
-      )
-    })
-  })
+      );
+    });
+  });
 
-  describe('excludePathToProjectIgnorePath', () => {
+  describe("excludePathToProjectIgnorePath", () => {
     it.each([
-      ['packages/*', 'packages/*/**'],
-      ['tests', 'tests/**'],
-      ['tests/', 'tests/**'],
-      ['tests/**', 'tests/**'],
-    ])('converts %s to %s', (input, expected) => {
-      expect(excludePathToProjectIgnorePath(input)).toBe(expected)
-    })
-  })
+      ["packages/*", "packages/*/**"],
+      ["tests", "tests/**"],
+      ["tests/", "tests/**"],
+      ["tests/**", "tests/**"],
+    ])("converts %s to %s", (input, expected) => {
+      expect(excludePathToProjectIgnorePath(input)).toBe(expected);
+    });
+  });
 
-  describe('projectIgnorePathsToReachExcludePaths', () => {
-    it('normalizes positive project ignore paths for Coana', () => {
+  describe("projectIgnorePathsToReachExcludePaths", () => {
+    it("normalizes positive project ignore paths for Coana", () => {
+      expect(
+        projectIgnorePathsToReachExcludePaths(["tests", "dist/", "fixtures/**"], {
+          cwd: "/repo",
+          target: "/repo",
+        }),
+      ).toEqual(["**/tests", "**/tests/**", "**/dist", "**/dist/**", "fixtures/**"]);
+    });
+
+    it("keeps project-root paths relative to nested Coana targets", () => {
       expect(
         projectIgnorePathsToReachExcludePaths(
-          ['tests', 'dist/', 'fixtures/**'],
+          ["tests/**", "apps/api/tests/**", "apps/api/packages/*/**"],
           {
-            cwd: '/repo',
-            target: '/repo',
+            cwd: "/repo",
+            target: "/repo/apps/api",
           },
         ),
-      ).toEqual([
-        '**/tests',
-        '**/tests/**',
-        '**/dist',
-        '**/dist/**',
-        'fixtures/**',
-      ])
-    })
+      ).toEqual(["tests/**", "packages/*/**"]);
+    });
 
-    it('keeps project-root paths relative to nested Coana targets', () => {
+    it("returns no paths when project ignore paths use negation", () => {
       expect(
-        projectIgnorePathsToReachExcludePaths(
-          ['tests/**', 'apps/api/tests/**', 'apps/api/packages/*/**'],
-          {
-            cwd: '/repo',
-            target: '/repo/apps/api',
-          },
-        ),
-      ).toEqual(['tests/**', 'packages/*/**'])
-    })
+        projectIgnorePathsToReachExcludePaths(["fixtures/**", "!fixtures/keep"], {
+          cwd: "/repo",
+          target: "/repo",
+        }),
+      ).toEqual([]);
+    });
 
-    it('returns no paths when project ignore paths use negation', () => {
-      expect(
-        projectIgnorePathsToReachExcludePaths(
-          ['fixtures/**', '!fixtures/keep'],
-          {
-            cwd: '/repo',
-            target: '/repo',
-          },
-        ),
-      ).toEqual([])
-    })
-
-    it('passes ** through verbatim from expandReachExcludePath', () => {
+    it("passes ** through verbatim from expandReachExcludePath", () => {
       // Path that exactly equals target → translates to '**'.
       expect(
-        projectIgnorePathsToReachExcludePaths(['apps/api'], {
-          cwd: '/repo',
-          target: 'apps/api',
+        projectIgnorePathsToReachExcludePaths(["apps/api"], {
+          cwd: "/repo",
+          target: "apps/api",
         }),
-      ).toEqual(['**'])
-    })
+      ).toEqual(["**"]);
+    });
 
-    it('strips recursive ${target}/**/ prefix (line 175-178)', () => {
+    it("strips recursive ${target}/**/ prefix (line 175-178)", () => {
       // When the path begins with target/**/, only the targetPrefix is
       // sliced off; the **/ remainder stays. (The wrapping
       // projectIgnorePaths→reach expansion adds the trailing /** variant.)
       expect(
-        projectIgnorePathsToReachExcludePaths(['apps/api/**/dist'], {
-          cwd: '/repo',
-          target: 'apps/api',
+        projectIgnorePathsToReachExcludePaths(["apps/api/**/dist"], {
+          cwd: "/repo",
+          target: "apps/api",
         }),
-      ).toEqual(['**/dist', '**/dist/**'])
-    })
-  })
+      ).toEqual(["**/dist", "**/dist/**"]);
+    });
+  });
 
-  describe('applyFullExcludePaths', () => {
-    it('returns input config unchanged when no exclude paths are provided', () => {
+  describe("applyFullExcludePaths", () => {
+    it("returns input config unchanged when no exclude paths are provided", () => {
       const reachabilityOptions = {
         excludePaths: [],
-        reachExcludePaths: ['existing'],
-      } as unknown
-      const socketConfig = { foo: 'bar' } as unknown
+        reachExcludePaths: ["existing"],
+      } as unknown;
+      const socketConfig = { foo: "bar" } as unknown;
 
       const result = applyFullExcludePaths({
-        cwd: '/repo',
+        cwd: "/repo",
         reachabilityOptions,
         socketConfig,
-        target: '.',
-      })
+        target: ".",
+      });
 
-      expect(result.effectiveSocketConfig).toBe(socketConfig)
-      expect(result.mergedReachabilityOptions).toBe(reachabilityOptions)
-    })
+      expect(result.effectiveSocketConfig).toBe(socketConfig);
+      expect(result.mergedReachabilityOptions).toBe(reachabilityOptions);
+    });
 
-    it('merges excludePaths into projectIgnorePaths and reach excludes', () => {
+    it("merges excludePaths into projectIgnorePaths and reach excludes", () => {
       const reachabilityOptions = {
-        excludePaths: ['tests', 'fixtures'],
-        reachExcludePaths: ['existing-reach'],
-      } as unknown
+        excludePaths: ["tests", "fixtures"],
+        reachExcludePaths: ["existing-reach"],
+      } as unknown;
       const socketConfig = {
         version: 2,
         issueRules: { x: true },
         githubApp: {},
-        projectIgnorePaths: ['cfg-ignore'],
-      } as unknown
+        projectIgnorePaths: ["cfg-ignore"],
+      } as unknown;
 
       const result = applyFullExcludePaths({
-        cwd: '/repo',
+        cwd: "/repo",
         reachabilityOptions,
         socketConfig,
-        target: '.',
-      })
+        target: ".",
+      });
 
       expect(result.effectiveSocketConfig.projectIgnorePaths).toEqual(
-        expect.arrayContaining(['cfg-ignore']),
-      )
+        expect.arrayContaining(["cfg-ignore"]),
+      );
       expect(result.mergedReachabilityOptions.reachExcludePaths).toEqual(
-        expect.arrayContaining(['existing-reach']),
-      )
-    })
+        expect.arrayContaining(["existing-reach"]),
+      );
+    });
 
-    it('initializes config defaults when socketConfig is missing fields', () => {
+    it("initializes config defaults when socketConfig is missing fields", () => {
       const result = applyFullExcludePaths({
-        cwd: '/repo',
+        cwd: "/repo",
         reachabilityOptions: {
-          excludePaths: ['tests'],
+          excludePaths: ["tests"],
           reachExcludePaths: [],
         } as unknown,
         socketConfig: undefined,
-        target: '.',
-      })
+        target: ".",
+      });
 
-      expect(result.effectiveSocketConfig).toBeDefined()
-      expect(result.effectiveSocketConfig?.version).toBe(2)
+      expect(result.effectiveSocketConfig).toBeDefined();
+      expect(result.effectiveSocketConfig?.version).toBe(2);
       expect(result.effectiveSocketConfig?.projectIgnorePaths).toEqual(
         expect.arrayContaining([expect.any(String)]),
-      )
-    })
-  })
+      );
+    });
+  });
 
-  describe('pathRelativeToTarget', () => {
+  describe("pathRelativeToTarget", () => {
     it('returns the normalized path when target is "."', () => {
-      expect(pathRelativeToTarget('foo/bar', '.')).toBe('foo/bar')
-    })
+      expect(pathRelativeToTarget("foo/bar", ".")).toBe("foo/bar");
+    });
 
-    it('returns the normalized path when target is empty string', () => {
-      expect(pathRelativeToTarget('foo/bar', '')).toBe('foo/bar')
-    })
+    it("returns the normalized path when target is empty string", () => {
+      expect(pathRelativeToTarget("foo/bar", "")).toBe("foo/bar");
+    });
 
     it('returns "**" when path equals target', () => {
-      expect(pathRelativeToTarget('packages/cli', 'packages/cli')).toBe('**')
-    })
+      expect(pathRelativeToTarget("packages/cli", "packages/cli")).toBe("**");
+    });
 
-    it('strips the target prefix from a nested path', () => {
-      expect(pathRelativeToTarget('packages/cli/src/foo', 'packages/cli')).toBe(
-        'src/foo',
-      )
-    })
+    it("strips the target prefix from a nested path", () => {
+      expect(pathRelativeToTarget("packages/cli/src/foo", "packages/cli")).toBe("src/foo");
+    });
 
-    it('strips the target prefix when path uses recursive **/  prefix (line 177)', () => {
+    it("strips the target prefix when path uses recursive **/  prefix (line 177)", () => {
       // path = "packages/cli/**/dist/foo" with target = "packages/cli"
       // → matches recursiveTargetPrefix "packages/cli/**/" branch.
-      expect(
-        pathRelativeToTarget('packages/cli/**/dist/foo', 'packages/cli'),
-      ).toBe('**/dist/foo')
-    })
+      expect(pathRelativeToTarget("packages/cli/**/dist/foo", "packages/cli")).toBe("**/dist/foo");
+    });
 
-    it('returns undefined when path is outside the target', () => {
-      expect(pathRelativeToTarget('other/dir', 'packages/cli')).toBeUndefined()
-    })
-  })
-})
+    it("returns undefined when path is outside the target", () => {
+      expect(pathRelativeToTarget("other/dir", "packages/cli")).toBeUndefined();
+    });
+  });
+});

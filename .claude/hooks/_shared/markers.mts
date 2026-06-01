@@ -17,7 +17,7 @@
 // bare form (`socket-hook: allow`) leaves capture undefined and means
 // "blanket suppress every scanner on this line."
 export const SOCKET_HOOK_MARKER_RE: RegExp =
-  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/;
 
 /**
  * Legacy marker names recognized as equivalent to a current rule for one
@@ -32,8 +32,8 @@ export const RULE_ALIASES: Readonly<Record<string, string>> = Object.freeze({
   // process.std{out,err}.write; renamed to `console` once console.*
   // entered scope. Keep the alias one cycle so existing markers in
   // downstream repos don't have to migrate atomically.
-  logger: 'console',
-} as unknown as Record<string, string>)
+  logger: "console",
+} as unknown as Record<string, string>);
 
 /**
  * True when `marker` and `rule` name the same logical rule, either directly or
@@ -41,9 +41,9 @@ export const RULE_ALIASES: Readonly<Record<string, string>> = Object.freeze({
  */
 export function aliasMatches(marker: string, rule: string): boolean {
   if (marker === rule) {
-    return true
+    return true;
   }
-  return RULE_ALIASES[marker] === rule || RULE_ALIASES[rule] === marker
+  return RULE_ALIASES[marker] === rule || RULE_ALIASES[rule] === marker;
 }
 
 /**
@@ -55,16 +55,16 @@ export function aliasMatches(marker: string, rule: string): boolean {
  * line-iteration helpers that don't carry a rule context.
  */
 export function lineIsSuppressed(line: string, rule?: string): boolean {
-  const m = line.match(SOCKET_HOOK_MARKER_RE)
+  const m = line.match(SOCKET_HOOK_MARKER_RE);
   if (!m) {
-    return false
+    return false;
   }
   // No rule named on the marker → blanket allow.
   if (!m[1]) {
-    return true
+    return true;
   }
   if (rule === undefined) {
-    return true
+    return true;
   }
-  return aliasMatches(m[1], rule)
+  return aliasMatches(m[1], rule);
 }

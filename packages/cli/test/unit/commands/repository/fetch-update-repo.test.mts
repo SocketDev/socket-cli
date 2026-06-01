@@ -17,229 +17,210 @@
  * setup)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from "vitest";
 
-import { fetchUpdateRepo } from '../../../../src/commands/repository/fetch-update-repo.mts'
+import { fetchUpdateRepo } from "../../../../src/commands/repository/fetch-update-repo.mts";
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from "../../../helpers/sdk-test-helpers.mts";
 
 // Mock the dependencies.
-vi.mock('../../../../src/util/socket/api.mts', () => ({
+vi.mock(import("../../../../src/util/socket/api.mts"), () => ({
   handleApiCall: vi.fn(),
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mts', () => ({
+vi.mock(import("../../../../src/util/socket/sdk.mts"), () => ({
   setupSdk: vi.fn(),
-}))
+}));
 
-describe('fetchUpdateRepo', () => {
-  it('updates repository successfully', async () => {
+describe("fetchUpdateRepo", () => {
+  it("updates repository successfully", async () => {
     const mockData = {
-      id: 'repo-123',
-      name: 'updated-repo',
-      description: 'Updated description',
-      visibility: 'private',
-    }
+      id: "repo-123",
+      name: "updated-repo",
+      description: "Updated description",
+      visibility: "private",
+    };
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'updateRepository',
-      mockData,
-    )
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess("updateRepository", mockData);
 
     const config = {
-      defaultBranch: 'main',
-      description: 'Updated description',
-      homepage: 'https://example.com',
-      orgSlug: 'test-org',
-      repoName: 'updated-repo',
-      visibility: 'private',
-    }
+      defaultBranch: "main",
+      description: "Updated description",
+      homepage: "https://example.com",
+      orgSlug: "test-org",
+      repoName: "updated-repo",
+      visibility: "private",
+    };
 
-    const result = await fetchUpdateRepo(config)
+    const result = await fetchUpdateRepo(config);
 
-    expect(mockSdk.updateRepository).toHaveBeenCalledWith(
-      'test-org',
-      'updated-repo',
-      {
-        default_branch: 'main',
-        description: 'Updated description',
-        homepage: 'https://example.com',
-        name: 'updated-repo',
-        orgSlug: 'test-org',
-        visibility: 'private',
-      },
-    )
+    expect(mockSdk.updateRepository).toHaveBeenCalledWith("test-org", "updated-repo", {
+      default_branch: "main",
+      description: "Updated description",
+      homepage: "https://example.com",
+      name: "updated-repo",
+      orgSlug: "test-org",
+      visibility: "private",
+    });
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'to update a repository',
-    })
-    expect(result.ok).toBe(true)
-  })
+      description: "to update a repository",
+    });
+    expect(result.ok).toBe(true);
+  });
 
-  it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', {
+  it("handles SDK setup failure", async () => {
+    await setupSdkSetupFailure("Failed to setup SDK", {
       code: 1,
-      cause: 'Missing API token',
-    })
+      cause: "Missing API token",
+    });
 
     const config = {
-      defaultBranch: 'main',
-      description: 'Test',
-      homepage: 'https://test.com',
-      orgSlug: 'org',
-      repoName: 'repo',
-      visibility: 'public',
-    }
+      defaultBranch: "main",
+      description: "Test",
+      homepage: "https://test.com",
+      orgSlug: "org",
+      repoName: "repo",
+      visibility: "public",
+    };
 
-    const result = await fetchUpdateRepo(config)
+    const result = await fetchUpdateRepo(config);
 
-    expect(result.ok).toBe(false)
-  })
+    expect(result.ok).toBe(false);
+  });
 
-  it('handles API call failure', async () => {
-    await setupSdkMockError('updateRepository', 'Repository not found', 404)
+  it("handles API call failure", async () => {
+    await setupSdkMockError("updateRepository", "Repository not found", 404);
 
     const config = {
-      defaultBranch: 'main',
-      description: 'Test',
-      homepage: 'https://test.com',
-      orgSlug: 'org',
-      repoName: 'nonexistent',
-      visibility: 'public',
-    }
+      defaultBranch: "main",
+      description: "Test",
+      homepage: "https://test.com",
+      orgSlug: "org",
+      repoName: "nonexistent",
+      visibility: "public",
+    };
 
-    const result = await fetchUpdateRepo(config)
+    const result = await fetchUpdateRepo(config);
 
-    expect(result.ok).toBe(false)
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.code).toBe(404)
+      expect(result.code).toBe(404);
     }
-  })
+  });
 
-  it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('updateRepository', {})
+  it("passes custom SDK options", async () => {
+    const { mockSetupSdk } = await setupSdkMockSuccess("updateRepository", {});
 
     const config = {
-      defaultBranch: 'develop',
-      description: 'Custom update',
-      homepage: 'https://custom.com',
-      orgSlug: 'my-org',
-      repoName: 'custom-repo',
-      visibility: 'internal',
-    }
+      defaultBranch: "develop",
+      description: "Custom update",
+      homepage: "https://custom.com",
+      orgSlug: "my-org",
+      repoName: "custom-repo",
+      visibility: "internal",
+    };
 
     const sdkOpts = {
-      apiToken: 'update-token',
-      baseUrl: 'https://update.api.com',
-    }
+      apiToken: "update-token",
+      baseUrl: "https://update.api.com",
+    };
 
-    await fetchUpdateRepo(config, { sdkOpts })
+    await fetchUpdateRepo(config, { sdkOpts });
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
-  })
+    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts);
+  });
 
-  it('handles visibility changes', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('updateRepository', {})
-
-    const config = {
-      defaultBranch: 'main',
-      description: 'Making repo private',
-      homepage: '',
-      orgSlug: 'secure-org',
-      repoName: 'secret-repo',
-      visibility: 'private',
-    }
-
-    await fetchUpdateRepo(config)
-
-    expect(mockSdk.updateRepository).toHaveBeenCalledWith(
-      'secure-org',
-      'secret-repo',
-      {
-        default_branch: 'main',
-        description: 'Making repo private',
-        homepage: '',
-        name: 'secret-repo',
-        orgSlug: 'secure-org',
-        visibility: 'private',
-      },
-    )
-  })
-
-  it('handles default branch updates', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('updateRepository', {})
+  it("handles visibility changes", async () => {
+    const { mockSdk } = await setupSdkMockSuccess("updateRepository", {});
 
     const config = {
-      defaultBranch: 'develop',
-      description: 'Switching to develop branch',
-      homepage: 'https://dev.example.com',
-      orgSlug: 'branch-org',
-      repoName: 'branch-test',
-      visibility: 'public',
-    }
+      defaultBranch: "main",
+      description: "Making repo private",
+      homepage: "",
+      orgSlug: "secure-org",
+      repoName: "secret-repo",
+      visibility: "private",
+    };
 
-    await fetchUpdateRepo(config)
+    await fetchUpdateRepo(config);
 
-    expect(mockSdk.updateRepository).toHaveBeenCalledWith(
-      'branch-org',
-      'branch-test',
-      {
-        default_branch: 'develop',
-        description: 'Switching to develop branch',
-        homepage: 'https://dev.example.com',
-        name: 'branch-test',
-        orgSlug: 'branch-org',
-        visibility: 'public',
-      },
-    )
-  })
+    expect(mockSdk.updateRepository).toHaveBeenCalledWith("secure-org", "secret-repo", {
+      default_branch: "main",
+      description: "Making repo private",
+      homepage: "",
+      name: "secret-repo",
+      orgSlug: "secure-org",
+      visibility: "private",
+    });
+  });
 
-  it('handles empty or minimal updates', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('updateRepository', {})
+  it("handles default branch updates", async () => {
+    const { mockSdk } = await setupSdkMockSuccess("updateRepository", {});
 
     const config = {
-      defaultBranch: '',
-      description: '',
-      homepage: '',
-      orgSlug: 'minimal-org',
-      repoName: 'minimal-repo',
-      visibility: '',
-    }
+      defaultBranch: "develop",
+      description: "Switching to develop branch",
+      homepage: "https://dev.example.com",
+      orgSlug: "branch-org",
+      repoName: "branch-test",
+      visibility: "public",
+    };
 
-    await fetchUpdateRepo(config)
+    await fetchUpdateRepo(config);
 
-    expect(mockSdk.updateRepository).toHaveBeenCalledWith(
-      'minimal-org',
-      'minimal-repo',
-      {
-        default_branch: '',
-        description: '',
-        homepage: '',
-        name: 'minimal-repo',
-        orgSlug: 'minimal-org',
-        visibility: '',
-      },
-    )
-  })
+    expect(mockSdk.updateRepository).toHaveBeenCalledWith("branch-org", "branch-test", {
+      default_branch: "develop",
+      description: "Switching to develop branch",
+      homepage: "https://dev.example.com",
+      name: "branch-test",
+      orgSlug: "branch-org",
+      visibility: "public",
+    });
+  });
 
-  it('uses null prototype for options', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('updateRepository', {})
+  it("handles empty or minimal updates", async () => {
+    const { mockSdk } = await setupSdkMockSuccess("updateRepository", {});
 
     const config = {
-      defaultBranch: 'main',
-      description: 'Test',
-      homepage: 'https://test.com',
-      orgSlug: 'test-org',
-      repoName: 'test-repo',
-      visibility: 'public',
-    }
+      defaultBranch: "",
+      description: "",
+      homepage: "",
+      orgSlug: "minimal-org",
+      repoName: "minimal-repo",
+      visibility: "",
+    };
+
+    await fetchUpdateRepo(config);
+
+    expect(mockSdk.updateRepository).toHaveBeenCalledWith("minimal-org", "minimal-repo", {
+      default_branch: "",
+      description: "",
+      homepage: "",
+      name: "minimal-repo",
+      orgSlug: "minimal-org",
+      visibility: "",
+    });
+  });
+
+  it("uses null prototype for options", async () => {
+    const { mockSdk } = await setupSdkMockSuccess("updateRepository", {});
+
+    const config = {
+      defaultBranch: "main",
+      description: "Test",
+      homepage: "https://test.com",
+      orgSlug: "test-org",
+      repoName: "test-repo",
+      visibility: "public",
+    };
 
     // This tests that the function properly uses __proto__: null.
-    await fetchUpdateRepo(config)
+    await fetchUpdateRepo(config);
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.updateRepository).toHaveBeenCalled()
-  })
-})
+    expect(mockSdk.updateRepository).toHaveBeenCalled();
+  });
+});

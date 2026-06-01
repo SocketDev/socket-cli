@@ -8,9 +8,9 @@
  * Related Files: - src/bootstrap/shared/paths.mts.
  */
 
-import path from 'node:path'
+import path from "node:path";
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   getCliEntryPoint,
@@ -18,87 +18,85 @@ import {
   getCliPackageName,
   getDlxDir,
   getSocketHome,
-} from '../../../../src/bootstrap/shared/paths.mts'
+} from "../../../../src/bootstrap/shared/paths.mts";
 
 const SAVED_KEYS = [
-  'SOCKET_HOME',
-  'SOCKET_NPM_REGISTRY',
-  'NPM_REGISTRY',
-  'SOCKET_CLI_PACKAGE',
-] as const
+  "SOCKET_HOME",
+  "SOCKET_NPM_REGISTRY",
+  "NPM_REGISTRY",
+  "SOCKET_CLI_PACKAGE",
+] as const;
 
-describe('bootstrap/shared/paths', () => {
-  let saved: Record<string, string | undefined>
+describe("bootstrap/shared/paths", () => {
+  let saved: Record<string, string | undefined>;
 
   beforeEach(() => {
-    saved = Object.create(null)
+    saved = Object.create(null);
     for (let i = 0, { length } = SAVED_KEYS; i < length; i += 1) {
-      const key = SAVED_KEYS[i]
-      saved[key] = process.env[key]
-      delete process.env[key]
+      const key = SAVED_KEYS[i];
+      saved[key] = process.env[key];
+      delete process.env[key];
     }
-  })
+  });
 
   afterEach(() => {
     for (let i = 0, { length } = SAVED_KEYS; i < length; i += 1) {
-      const key = SAVED_KEYS[i]
+      const key = SAVED_KEYS[i];
       if (saved[key] !== undefined) {
-        process.env[key] = saved[key]
+        process.env[key] = saved[key];
       } else {
-        delete process.env[key]
+        delete process.env[key];
       }
     }
-  })
+  });
 
-  describe('getSocketHome', () => {
-    it('uses SOCKET_HOME when set', () => {
-      process.env['SOCKET_HOME'] = '/custom/socket-home'
-      expect(getSocketHome()).toBe('/custom/socket-home')
-    })
+  describe("getSocketHome", () => {
+    it("uses SOCKET_HOME when set", () => {
+      process.env["SOCKET_HOME"] = "/custom/socket-home";
+      expect(getSocketHome()).toBe("/custom/socket-home");
+    });
 
-    it('falls back to ~/.socket when SOCKET_HOME is not set', () => {
-      const result = getSocketHome()
-      expect(result).toContain('.socket')
-    })
+    it("falls back to ~/.socket when SOCKET_HOME is not set", () => {
+      const result = getSocketHome();
+      expect(result).toContain(".socket");
+    });
 
-    it('falls back when SOCKET_HOME is empty string', () => {
-      process.env['SOCKET_HOME'] = ''
-      const result = getSocketHome()
-      expect(result).toContain('.socket')
-    })
-  })
+    it("falls back when SOCKET_HOME is empty string", () => {
+      process.env["SOCKET_HOME"] = "";
+      const result = getSocketHome();
+      expect(result).toContain(".socket");
+    });
+  });
 
-  describe('getDlxDir', () => {
-    it('appends _dlx to the socket home', () => {
-      process.env['SOCKET_HOME'] = '/x'
-      expect(getDlxDir()).toBe(path.join('/x', '_dlx'))
-    })
-  })
+  describe("getDlxDir", () => {
+    it("appends _dlx to the socket home", () => {
+      process.env["SOCKET_HOME"] = "/x";
+      expect(getDlxDir()).toBe(path.join("/x", "_dlx"));
+    });
+  });
 
-  describe('getCliPackageDir', () => {
-    it('appends cli to the DLX dir', () => {
-      process.env['SOCKET_HOME'] = '/x'
-      expect(getCliPackageDir()).toBe(path.join('/x', '_dlx', 'cli'))
-    })
-  })
+  describe("getCliPackageDir", () => {
+    it("appends cli to the DLX dir", () => {
+      process.env["SOCKET_HOME"] = "/x";
+      expect(getCliPackageDir()).toBe(path.join("/x", "_dlx", "cli"));
+    });
+  });
 
-  describe('getCliEntryPoint', () => {
-    it('appends dist/cli.js to the CLI package dir', () => {
-      process.env['SOCKET_HOME'] = '/x'
-      expect(getCliEntryPoint()).toBe(
-        path.join('/x', '_dlx', 'cli', 'dist', 'cli.js'),
-      )
-    })
-  })
+  describe("getCliEntryPoint", () => {
+    it("appends dist/cli.js to the CLI package dir", () => {
+      process.env["SOCKET_HOME"] = "/x";
+      expect(getCliEntryPoint()).toBe(path.join("/x", "_dlx", "cli", "dist", "cli.js"));
+    });
+  });
 
-  describe('getCliPackageName', () => {
-    it('uses SOCKET_CLI_PACKAGE when set', () => {
-      process.env['SOCKET_CLI_PACKAGE'] = '@my-org/socket'
-      expect(getCliPackageName()).toBe('@my-org/socket')
-    })
+  describe("getCliPackageName", () => {
+    it("uses SOCKET_CLI_PACKAGE when set", () => {
+      process.env["SOCKET_CLI_PACKAGE"] = "@my-org/socket";
+      expect(getCliPackageName()).toBe("@my-org/socket");
+    });
 
-    it('falls back to @socketsecurity/cli', () => {
-      expect(getCliPackageName()).toBe('@socketsecurity/cli')
-    })
-  })
-})
+    it("falls back to @socketsecurity/cli", () => {
+      expect(getCliPackageName()).toBe("@socketsecurity/cli");
+    });
+  });
+});

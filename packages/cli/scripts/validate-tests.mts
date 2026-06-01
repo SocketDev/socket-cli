@@ -2,150 +2,147 @@
  * @file Validates test infrastructure to catch issues early before CI.
  */
 
-import { existsSync, promises as fs } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync, promises as fs } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { pEach } from '@socketsecurity/lib-stable/promises/iterate'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { pEach } from "@socketsecurity/lib-stable/promises/iterate";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
-const TEST_DIR = path.join(rootPath, 'test')
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootPath = path.join(__dirname, "..");
+const TEST_DIR = path.join(rootPath, "test");
 
 const VALIDATION_CHECKS = {
   __proto__: null,
-  BUILD_ARTIFACTS: 'build-artifacts',
-  IMPORT_SYNTAX: 'import-syntax',
-  SNAPSHOT_FILES: 'snapshot-files',
-  TEST_STRUCTURE: 'test-structure',
-}
+  BUILD_ARTIFACTS: "build-artifacts",
+  IMPORT_SYNTAX: "import-syntax",
+  SNAPSHOT_FILES: "snapshot-files",
+  TEST_STRUCTURE: "test-structure",
+};
 
 /**
  * Format validation results for display.
  */
 function formatResults(results) {
-  const errors = []
-  const warnings = []
-  const infos = []
+  const errors = [];
+  const warnings = [];
+  const infos = [];
 
   for (let i = 0, { length } = results; i < length; i += 1) {
-    const result = results[i]
+    const result = results[i];
     if (result.issues.length === 0) {
-      continue
+      continue;
     }
 
     for (const issue of result.issues) {
-      const message = `${result.file}: ${issue.message}`
-      if (issue.severity === 'error') {
-        errors.push(message)
-        const logger = getDefaultLogger()
-        logger.fail(message)
-      } else if (issue.severity === 'warning') {
-        warnings.push(message)
-        logger.warn(message)
+      const message = `${result.file}: ${issue.message}`;
+      if (issue.severity === "error") {
+        errors.push(message);
+        const logger = getDefaultLogger();
+        logger.fail(message);
+      } else if (issue.severity === "warning") {
+        warnings.push(message);
+        logger.warn(message);
       } else {
-        infos.push(message)
+        infos.push(message);
       }
     }
   }
 
-  return { errors, infos, warnings }
+  return { errors, infos, warnings };
 }
 
 /**
  * Get list of test files to validate.
  */
 async function getTestFiles() {
-  const files = []
+  const files = [];
 
   /**
    * Recursively collect test files.
    */
   async function collectFiles(dir) {
-    const entries = await fs.readdir(dir, { withFileTypes: true })
+    const entries = await fs.readdir(dir, { withFileTypes: true });
     for (let i = 0, { length } = entries; i < length; i += 1) {
-      const entry = entries[i]
-      const fullPath = path.join(dir, entry.name)
-      if (entry.isDirectory() && !entry.name.startsWith('.')) {
-        await collectFiles(fullPath)
-      } else if (
-        entry.isFile() &&
-        /\.test\.(?:js|mjs|mts|ts)$/.test(entry.name)
-      ) {
-        files.push(fullPath)
+      const entry = entries[i];
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory() && !entry.name.startsWith(".")) {
+        await collectFiles(fullPath);
+      } else if (entry.isFile() && /\.test\.(?:js|mjs|mts|ts)$/.test(entry.name)) {
+        files.push(fullPath);
       }
     }
   }
 
-  await collectFiles(TEST_DIR)
-  return files
+  await collectFiles(TEST_DIR);
+  return files;
 }
 
 /**
  * Validate that required build artifacts exist.
  */
 async function validateBuildArtifacts() {
-  const issues = []
-  const distPath = path.join(rootPath, 'dist')
+  const issues = [];
+  const distPath = path.join(rootPath, "dist");
 
   if (!existsSync(distPath)) {
     issues.push({
       type: VALIDATION_CHECKS.BUILD_ARTIFACTS,
-      severity: 'error',
-      message: 'dist/ directory not found. Run pnpm run build:cli first',
-    })
-    return issues
+      severity: "error",
+      message: "dist/ directory not found. Run pnpm run build:cli first",
+    });
+    return issues;
   }
 
   // Check for key entry points.
-  const requiredArtifacts = ['build/cli.js', 'dist/index.js']
+  const requiredArtifacts = ["build/cli.js", "dist/index.js"];
 
   for (let i = 0, { length } = requiredArtifacts; i < length; i += 1) {
-    const artifact = requiredArtifacts[i]
-    const fullPath = path.join(rootPath, artifact)
+    const artifact = requiredArtifacts[i];
+    const fullPath = path.join(rootPath, artifact);
     if (!existsSync(fullPath)) {
       issues.push({
         type: VALIDATION_CHECKS.BUILD_ARTIFACTS,
-        severity: 'error',
+        severity: "error",
         message: `Required build artifact missing: ${artifact}`,
-      })
+      });
     }
   }
 
-  return issues
+  return issues;
 }
 
 /**
  * Validate import statements in test files.
  */
 async function validateImportSyntax(testFile) {
-  const issues = []
-  const relativePath = path.relative(rootPath, testFile)
+  const issues = [];
+  const relativePath = path.relative(rootPath, testFile);
 
   try {
-    const content = await fs.readFile(testFile, 'utf8')
+    const content = await fs.readFile(testFile, "utf8");
 
     // Check for problematic import patterns.
     const problematicPatterns = [
       {
         pattern: /import .+ from ['"]node:/,
-        fix: 'Always use node: prefix for built-in modules',
-        severity: 'info',
+        fix: "Always use node: prefix for built-in modules",
+        severity: "info",
       },
       {
         pattern: /require\(/,
-        fix: 'Use ES modules (import) instead of CommonJS (require)',
-        severity: 'warning',
+        fix: "Use ES modules (import) instead of CommonJS (require)",
+        severity: "warning",
       },
       {
         pattern: /from ['"]\.\.\/..\//,
-        fix: 'Avoid excessive relative path traversal',
-        severity: 'info',
+        fix: "Avoid excessive relative path traversal",
+        severity: "info",
       },
-    ]
+    ];
 
     for (const { fix, pattern, severity } of problematicPatterns) {
       if (pattern.test(content)) {
@@ -153,193 +150,186 @@ async function validateImportSyntax(testFile) {
           type: VALIDATION_CHECKS.IMPORT_SYNTAX,
           severity,
           message: `${fix} in ${relativePath}`,
-        })
+        });
       }
     }
 
     // Check for missing @fileoverview.
-    if (!content.includes('@fileoverview')) {
+    if (!content.includes("@fileoverview")) {
       issues.push({
         type: VALIDATION_CHECKS.IMPORT_SYNTAX,
-        severity: 'warning',
+        severity: "warning",
         message: `Missing @fileoverview header in ${relativePath}`,
-      })
+      });
     }
   } catch (e) {
     issues.push({
       type: VALIDATION_CHECKS.IMPORT_SYNTAX,
-      severity: 'error',
+      severity: "error",
       message: `Failed to read ${relativePath}: ${e.message}`,
-    })
+    });
   }
 
-  return issues
+  return issues;
 }
 
 /**
  * Check for orphaned snapshot files.
  */
 async function validateSnapshotFiles(testFile) {
-  const issues = []
-  const relativePath = path.relative(rootPath, testFile)
-  const snapshotDir = path.join(path.dirname(testFile), '__snapshots__')
+  const issues = [];
+  const relativePath = path.relative(rootPath, testFile);
+  const snapshotDir = path.join(path.dirname(testFile), "__snapshots__");
 
   if (!existsSync(snapshotDir)) {
-    return issues
+    return issues;
   }
 
-  const testFileName = path.basename(testFile)
-  const snapshotFile = path.join(
-    snapshotDir,
-    testFileName.replace(/\.mts$/, '.mts.snap'),
-  )
+  const testFileName = path.basename(testFile);
+  const snapshotFile = path.join(snapshotDir, testFileName.replace(/\.mts$/, ".mts.snap"));
 
   if (!existsSync(snapshotFile)) {
     // Check if snapshot directory exists but has no matching snapshot.
-    const entries = await fs.readdir(snapshotDir)
+    const entries = await fs.readdir(snapshotDir);
     if (entries.length > 0) {
       issues.push({
         type: VALIDATION_CHECKS.SNAPSHOT_FILES,
-        severity: 'info',
+        severity: "info",
         message: `Snapshot directory exists but no snapshot for ${relativePath}`,
-      })
+      });
     }
   }
 
-  return issues
+  return issues;
 }
 
 /**
  * Run all validations for a test file.
  */
 async function validateTestFile(testFile) {
-  const allIssues = []
+  const allIssues = [];
 
   const validations = [
     validateTestStructure(testFile),
     validateImportSyntax(testFile),
     validateSnapshotFiles(testFile),
-  ]
+  ];
 
-  const results = await Promise.allSettled(validations)
+  const results = await Promise.allSettled(validations);
   for (let i = 0, { length } = results; i < length; i += 1) {
-    const result = results[i]
-    if (result.status === 'fulfilled') {
-      allIssues.push(...result.value)
+    const result = results[i];
+    if (result.status === "fulfilled") {
+      allIssues.push(...result.value);
     }
   }
 
   return {
     file: path.relative(rootPath, testFile),
     issues: allIssues,
-    hasErrors: allIssues.some(issue => issue.severity === 'error'),
-    hasWarnings: allIssues.some(issue => issue.severity === 'warning'),
-  }
+    hasErrors: allIssues.some((issue) => issue.severity === "error"),
+    hasWarnings: allIssues.some((issue) => issue.severity === "warning"),
+  };
 }
 
 /**
  * Validate test file structure and naming.
  */
 async function validateTestStructure(testFile) {
-  const issues = []
-  const relativePath = path.relative(rootPath, testFile)
+  const issues = [];
+  const relativePath = path.relative(rootPath, testFile);
 
   // Check naming convention.
-  if (!testFile.endsWith('.test.mts')) {
+  if (!testFile.endsWith(".test.mts")) {
     issues.push({
       type: VALIDATION_CHECKS.TEST_STRUCTURE,
-      severity: 'warning',
+      severity: "warning",
       message: `Test file should use .test.mts extension: ${relativePath}`,
-    })
+    });
   }
 
   // Check if corresponding source file exists for unit tests.
-  if (relativePath.includes('test/unit')) {
-    const sourceFile = testFile
-      .replace('/test/unit/', '/src/')
-      .replace('.test.mts', '.mts')
+  if (relativePath.includes("test/unit")) {
+    const sourceFile = testFile.replace("/test/unit/", "/src/").replace(".test.mts", ".mts");
 
     if (!existsSync(sourceFile)) {
       issues.push({
         type: VALIDATION_CHECKS.TEST_STRUCTURE,
-        severity: 'info',
+        severity: "info",
         message: `No corresponding source file found for ${relativePath}`,
-      })
+      });
     }
   }
 
-  return issues
+  return issues;
 }
 
 /**
  * Main validation flow.
  */
 async function main() {
-  logger.info('Starting test validation...')
-  logger.error('')
+  logger.info("Starting test validation…");
+  logger.error("");
 
   // Validate build artifacts first.
-  const buildIssues = await validateBuildArtifacts()
-  if (buildIssues.some(issue => issue.severity === 'error')) {
+  const buildIssues = await validateBuildArtifacts();
+  if (buildIssues.some((issue) => issue.severity === "error")) {
     for (let i = 0, { length } = buildIssues; i < length; i += 1) {
-      const issue = buildIssues[i]
-      logger.fail(issue.message)
+      const issue = buildIssues[i];
+      logger.fail(issue.message);
     }
-    logger.error('')
-    logger.fail('Build artifacts validation failed. Run build before testing.')
-    process.exitCode = 1
-    return
+    logger.error("");
+    logger.fail("Build artifacts validation failed. Run build before testing.");
+    process.exitCode = 1;
+    return;
   }
 
-  const testFiles = await getTestFiles()
-  logger.info(`Found ${testFiles.length} test files to validate`)
-  logger.error('')
+  const testFiles = await getTestFiles();
+  logger.info(`Found ${testFiles.length} test files to validate`);
+  logger.error("");
 
-  const results = []
+  const results = [];
   await pEach(
     testFiles,
-    async file => {
-      const result = await validateTestFile(file)
-      results.push(result)
+    async (file) => {
+      const result = await validateTestFile(file);
+      results.push(result);
     },
     { concurrency: 10 },
-  )
+  );
 
-  logger.error('')
-  logger.info('--- Validation Results ---')
-  logger.error('')
-  const { errors, infos, warnings } = formatResults(results)
+  logger.error("");
+  logger.info("--- Validation Results ---");
+  logger.error("");
+  const { errors, infos, warnings } = formatResults(results);
 
-  logger.error('')
-  logger.info('--- Summary ---')
-  logger.info(`Total test files: ${testFiles.length}`)
-  logger.info(`Passed: ${results.filter(r => r.issues.length === 0).length}`)
-  logger.info(
-    `With warnings: ${results.filter(r => r.hasWarnings && !r.hasErrors).length}`,
-  )
-  logger.info(`With errors: ${results.filter(r => r.hasErrors).length}`)
+  logger.error("");
+  logger.info("--- Summary ---");
+  logger.info(`Total test files: ${testFiles.length}`);
+  logger.info(`Passed: ${results.filter((r) => r.issues.length === 0).length}`);
+  logger.info(`With warnings: ${results.filter((r) => r.hasWarnings && !r.hasErrors).length}`);
+  logger.info(`With errors: ${results.filter((r) => r.hasErrors).length}`);
 
   if (errors.length > 0) {
-    logger.error('')
-    logger.fail(`${errors.length} error(s) found`)
-    process.exitCode = 1
+    logger.error("");
+    logger.fail(`${errors.length} error(s) found`);
+    process.exitCode = 1;
   } else if (warnings.length > 0) {
-    logger.error('')
-    logger.warn(`${warnings.length} warning(s) found`)
+    logger.error("");
+    logger.warn(`${warnings.length} warning(s) found`);
     if (infos.length > 0) {
-      logger.info(`${infos.length} info message(s)`)
+      logger.info(`${infos.length} info message(s)`);
     }
   } else {
-    logger.error('')
-    logger.success('All tests validated successfully!')
+    logger.error("");
+    logger.success("All tests validated successfully!");
     if (infos.length > 0) {
-      logger.info(`${infos.length} info message(s)`)
+      logger.info(`${infos.length} info message(s)`);
     }
   }
 }
 
-main().catch(e => {
-  logger.fail(`Validation failed: ${e.message}`)
-  logger.fail(e.stack)
-  process.exitCode = 1
-})
+main().catch((e) => {
+  logger.fail(`Validation failed: ${e.message}`);
+  logger.fail(e.stack);
+  process.exitCode = 1;
+});

@@ -19,24 +19,24 @@
 // (`github.com:SocketDev/<name>`). Sorted; add new fleet repos here and
 // both consuming guards pick them up.
 export const FLEET_REPO_NAMES = [
-  'claude-code',
-  'skills',
-  'socket-addon',
-  'socket-btm',
-  'socket-cli',
-  'socket-lib',
-  'socket-packageurl-js',
-  'socket-registry',
-  'socket-sdk-js',
-  'socket-sdxgen',
-  'socket-stuie',
-  'socket-vscode',
-  'socket-webext',
-  'socket-wheelhouse',
-  'ultrathink',
-] as const
+  "claude-code",
+  "skills",
+  "socket-addon",
+  "socket-btm",
+  "socket-cli",
+  "socket-lib",
+  "socket-packageurl-js",
+  "socket-registry",
+  "socket-sdk-js",
+  "socket-sdxgen",
+  "socket-stuie",
+  "socket-vscode",
+  "socket-webext",
+  "socket-wheelhouse",
+  "ultrathink",
+] as const;
 
-const FLEET_REPO_SET: ReadonlySet<string> = new Set(FLEET_REPO_NAMES)
+const FLEET_REPO_SET: ReadonlySet<string> = new Set(FLEET_REPO_NAMES);
 
 /**
  * True when `slug` (a bare repo name like `socket-cli`) is a fleet member.
@@ -44,7 +44,7 @@ const FLEET_REPO_SET: ReadonlySet<string> = new Set(FLEET_REPO_NAMES)
  * typed in any case.
  */
 export function isFleetRepo(slug: string): boolean {
-  return FLEET_REPO_SET.has(slug.toLowerCase())
+  return FLEET_REPO_SET.has(slug.toLowerCase());
 }
 
 /**
@@ -60,16 +60,16 @@ export function isFleetRepo(slug: string): boolean {
  * different owner is still not a fleet push target.
  */
 export function slugFromRemoteUrl(url: string): string | undefined {
-  const trimmed = url.trim()
+  const trimmed = url.trim();
   if (!trimmed) {
-    return undefined
+    return undefined;
   }
   // Capture `<owner>/<repo>` from any of the three remote shapes, then
   // strip a trailing `.git`. The `[^/:]+` owner segment is bounded by the
   // `:` (scp form) or `/` (URL forms) that precedes it.
-  const match = /[:/]([^/:]+)\/([^/]+?)(?:\.git)?\/?$/.exec(trimmed)
+  const match = /[:/]([^/:]+)\/([^/]+?)(?:\.git)?\/?$/.exec(trimmed);
   if (!match) {
-    return undefined
+    return undefined;
   }
-  return match[2]!.toLowerCase()
+  return match[2]!.toLowerCase();
 }

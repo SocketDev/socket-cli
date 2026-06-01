@@ -11,26 +11,21 @@
  * logic.
  */
 
-import { describe, expect } from 'vitest'
+import { describe, expect } from "vitest";
 
-import {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-  FLAG_ORG,
-} from '../../../src/constants/cli.mts'
-import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
-import { cmdit, spawnSocketCli } from '../../utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_ORG } from "../../../src/constants/cli.mts";
+import { getBinCliPath } from "../../../src/constants/paths.mts";
+import { expectDryRunOutput } from "../../helpers/output-assertions.mts";
+import { cmdit, spawnSocketCli } from "../../utils.mts";
 
-const binCliPath = getBinCliPath()
+const binCliPath = getBinCliPath();
 
-describe('socket repository update', async () => {
+describe("socket repository update", async () => {
   cmdit(
-    ['repository', 'update', FLAG_HELP, FLAG_CONFIG, '{}'],
+    ["repository", "update", FLAG_HELP, FLAG_CONFIG, "{}"],
     `should support ${FLAG_HELP}`,
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
       expect(stdout).toMatchInlineSnapshot(`
         "Update a repository in an organization
 
@@ -54,28 +49,26 @@ describe('socket repository update', async () => {
               Examples
                 $ socket repository update test-repo
                 $ socket repository update test-repo --homepage https://example.com"
-      `)
+      `);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository update\`, cwd: <redacted>"
-      `)
+      `);
 
-      expect(code, 'explicit help should exit with code 0').toBe(0)
-      expect(stderr, 'banner includes base command').toContain(
-        '`socket repository update`',
-      )
+      expect(code, "explicit help should exit with code 0").toBe(0);
+      expect(stderr, "banner includes base command").toContain("`socket repository update`");
     },
-  )
+  );
 
   cmdit(
-    ['repository', 'update', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
-    'should require args with just dry-run',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+    ["repository", "update", FLAG_DRY_RUN, FLAG_CONFIG, "{}"],
+    "should require args with just dry-run",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`""`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -83,7 +76,7 @@ describe('socket repository update', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository update\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        \\u203c Unable to determine the target org. Trying to auto-discover it now…
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -93,25 +86,18 @@ describe('socket repository update', async () => {
           \\xd7 Org name by default setting, --org, or auto-discovered (missing)
           \\xd7 Repository name as first argument (missing)
         "
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+      expect(code, "dry-run should exit with code 2 if missing input").toBe(2);
     },
-  )
+  );
 
   cmdit(
-    [
-      'repository',
-      'update',
-      'reponame',
-      FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should report missing org name',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+    ["repository", "update", "reponame", FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    "should report missing org name",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`""`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -119,7 +105,7 @@ describe('socket repository update', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository update\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        \\u203c Unable to determine the target org. Trying to auto-discover it now…
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -128,24 +114,24 @@ describe('socket repository update', async () => {
 
           \\xd7 Org name by default setting, --org, or auto-discovered (missing)
           \\u221a Repository name as first argument"
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+      expect(code, "dry-run should exit with code 2 if missing input").toBe(2);
     },
-  )
+  );
 
   cmdit(
     [
-      'repository',
-      'update',
+      "repository",
+      "update",
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
-    'should only report missing repo name with default org',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+    "should only report missing repo name with default org",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`""`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -156,26 +142,26 @@ describe('socket repository update', async () => {
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 Repository name as first argument (missing)"
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+      expect(code, "dry-run should exit with code 2 if missing input").toBe(2);
     },
-  )
+  );
 
   cmdit(
     [
-      'repository',
-      'update',
+      "repository",
+      "update",
       FLAG_ORG,
-      'forcedorg',
+      "forcedorg",
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should only report missing repo name with --org flag',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+    "should only report missing repo name with --org flag",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`""`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -186,37 +172,37 @@ describe('socket repository update', async () => {
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 Repository name as first argument (missing)"
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+      expect(code, "dry-run should exit with code 2 if missing input").toBe(2);
     },
-  )
+  );
 
   cmdit(
     [
-      'repository',
-      'update',
-      'fakerepo',
+      "repository",
+      "update",
+      "fakerepo",
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
-    'should run to dryrun',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+    "should run to dryrun",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stdout);
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket repository update\`, cwd: <redacted>"
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
     },
-  )
-})
+  );
+});

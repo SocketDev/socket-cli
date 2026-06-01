@@ -2,23 +2,23 @@
  * Shared utilities for fetching GitHub releases.
  */
 
-import path from 'node:path'
+import path from "node:path";
 
-import { createTtlCache } from '@socketsecurity/lib-stable/cache/ttl/store'
-import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
-import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { pRetry } from '@socketsecurity/lib-stable/promises/retry'
+import { createTtlCache } from "@socketsecurity/lib-stable/cache/ttl/store";
+import { safeMkdir } from "@socketsecurity/lib-stable/fs/safe";
+import { httpDownload } from "@socketsecurity/lib-stable/http-request/download";
+import { httpRequest } from "@socketsecurity/lib-stable/http-request/request";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { pRetry } from "@socketsecurity/lib-stable/promises/retry";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 // Cache GitHub API responses for 4 hours to reduce API calls and avoid rate limiting.
 const cache = createTtlCache({
   memoize: true,
-  prefix: 'github-releases',
+  prefix: "github-releases",
   ttl: 4 * 60 * 60 * 1000, // 4 hours.
-})
+});
 
 /**
  * Download a specific release asset.
@@ -48,14 +48,14 @@ export async function downloadReleaseAsset(
   // Get the browser_download_url for the asset (doesn't consume API quota for download).
   const downloadUrl = await getReleaseAssetUrl(owner, repo, tag, assetName, {
     quiet,
-  })
+  });
 
   if (!downloadUrl) {
-    throw new Error(`Asset ${assetName} not found in release ${tag}`)
+    throw new Error(`Asset ${assetName} not found in release ${tag}`);
   }
 
   // Create output directory.
-  await safeMkdir(path.dirname(outputPath))
+  await safeMkdir(path.dirname(outputPath));
 
   // Download using httpDownload which supports redirects and retries.
   // This avoids consuming GitHub API quota for the actual download.
@@ -63,8 +63,8 @@ export async function downloadReleaseAsset(
     logger: quiet ? undefined : logger,
     progressInterval: 10,
     retries: 2,
-    retryDelay: 5_000,
-  })
+    retryDelay: 5000,
+  });
 }
 
 /**
@@ -73,15 +73,15 @@ export async function downloadReleaseAsset(
  * @returns {object} - Headers object with Authorization if token exists.
  */
 export function getAuthHeaders() {
-  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
   const headers = {
-    Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  }
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
   if (token) {
-    headers.Authorization = `Bearer ${token}`
+    headers.Authorization = `Bearer ${token}`;
   }
-  return headers
+  return headers;
 }
 
 /**
@@ -96,12 +96,8 @@ export function getAuthHeaders() {
  *
  * @returns {Promise<string | null>} - Latest release tag or null if not found.
  */
-export async function getLatestRelease(
-  owner,
-  repo,
-  { prefix, quiet = false } = {},
-) {
-  const cacheKey = `latest-release:${owner}/${repo}:${prefix || 'latest'}`
+export async function getLatestRelease(owner, repo, { prefix, quiet = false } = {}) {
+  const cacheKey = `latest-release:${owner}/${repo}:${prefix || "latest"}`;
 
   return await cache.getOrFetch(cacheKey, async () => {
     return await pRetry(
@@ -111,69 +107,67 @@ export async function getLatestRelease(
           {
             headers: getAuthHeaders(),
           },
-        )
+        );
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch releases: ${response.status}`)
+          throw new Error(`Failed to fetch releases: ${response.status}`);
         }
 
-        let releases
+        let releases;
         try {
-          releases = JSON.parse(response.body)
+          releases = JSON.parse(response.body);
         } catch (e) {
           throw new Error(
             `Failed to parse GitHub API response: ${e instanceof Error ? e.message : String(e)}`,
-          )
+          );
         }
 
         // If no prefix specified, return the first (latest) release.
         if (!prefix) {
           if (!releases.length) {
             if (!quiet) {
-              logger.info(`  No releases found for ${owner}/${repo}`)
+              logger.info(`  No releases found for ${owner}/${repo}`);
             }
-            return undefined
+            return undefined;
           }
-          const tag = releases[0].tag_name
+          const tag = releases[0].tag_name;
           if (!quiet) {
-            logger.info(`  Found latest release: ${tag}`)
+            logger.info(`  Found latest release: ${tag}`);
           }
-          return tag
+          return tag;
         }
 
         // Find the first release matching the prefix.
         for (let i = 0, { length } = releases; i < length; i += 1) {
-          const release = releases[i]
-          const { tag_name: tag } = release
+          const release = releases[i];
+          const { tag_name: tag } = release;
           if (tag.startsWith(`${prefix}-`)) {
             if (!quiet) {
-              logger.info(`  Found release: ${tag}`)
+              logger.info(`  Found release: ${tag}`);
             }
-            return tag
+            return tag;
           }
         }
 
         // No matching release found in the list.
         if (!quiet) {
-          logger.info(`  No ${prefix} release found in latest 100 releases`)
+          logger.info(`  No ${prefix} release found in latest 100 releases`);
         }
-        return undefined
+        return undefined;
       },
       {
         backoffFactor: 2,
-        baseDelayMs: 3_000,
+        baseDelayMs: 3000,
         onRetry: (attempt, error) => {
           if (!quiet) {
-            logger.info(
-              `  Retry attempt ${attempt + 1}/3 for ${owner}/${repo} release list...`,
-            )
-            logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
+            logger.info(`  Retry attempt ${attempt + 1}/3 for ${owner}/${repo} release list…`);
+            logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`);
           }
         },
         retries: 2,
       },
-    )
-  })
+    );
+  });
 }
 
 /**
@@ -191,14 +185,8 @@ export async function getLatestRelease(
  *
  * @returns {Promise<string | null>} - Download URL or null if not found.
  */
-export async function getReleaseAssetUrl(
-  owner,
-  repo,
-  tag,
-  assetName,
-  { quiet = false } = {},
-) {
-  const cacheKey = `asset-url:${owner}/${repo}:${tag}:${assetName}`
+export async function getReleaseAssetUrl(owner, repo, tag, assetName, { quiet = false } = {}) {
+  const cacheKey = `asset-url:${owner}/${repo}:${tag}:${assetName}`;
 
   return await cache.getOrFetch(cacheKey, async () => {
     return await pRetry(
@@ -208,45 +196,45 @@ export async function getReleaseAssetUrl(
           {
             headers: getAuthHeaders(),
           },
-        )
+        );
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch release ${tag}: ${response.status}`)
+          throw new Error(`Failed to fetch release ${tag}: ${response.status}`);
         }
 
-        let release
+        let release;
         try {
-          release = JSON.parse(response.body)
+          release = JSON.parse(response.body);
         } catch (e) {
           throw new Error(
             `Failed to parse GitHub release ${tag}: ${e instanceof Error ? e.message : String(e)}`,
-          )
+          );
         }
 
         // Find the matching asset.
-        const asset = release.assets.find(a => a.name === assetName)
+        const asset = release.assets.find((a) => a.name === assetName);
 
         if (!asset) {
-          throw new Error(`Asset ${assetName} not found in release ${tag}`)
+          throw new Error(`Asset ${assetName} not found in release ${tag}`);
         }
 
         if (!quiet) {
-          logger.info(`  Found asset: ${assetName}`)
+          logger.info(`  Found asset: ${assetName}`);
         }
 
-        return asset.browser_download_url
+        return asset.browser_download_url;
       },
       {
         backoffFactor: 2,
-        baseDelayMs: 3_000,
+        baseDelayMs: 3000,
         onRetry: (attempt, error) => {
           if (!quiet) {
-            logger.info(`  Retry attempt ${attempt + 1}/3 for asset URL...`)
-            logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
+            logger.info(`  Retry attempt ${attempt + 1}/3 for asset URL…`);
+            logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`);
           }
         },
         retries: 2,
       },
-    )
-  })
+    );
+  });
 }

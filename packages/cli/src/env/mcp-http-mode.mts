@@ -9,8 +9,8 @@
  * value.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
 export function getMcpHttpMode(): boolean {
-  return process.env['MCP_HTTP_MODE'] === 'true'
+  return process.env["MCP_HTTP_MODE"] === "true";
 }

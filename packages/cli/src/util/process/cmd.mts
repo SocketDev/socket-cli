@@ -15,54 +15,54 @@
  * Remove debug-related flags - stripHelpFlags: Remove help flags (-h, --help)
  */
 
-import { FLAG_HELP } from '../../constants/cli.mjs'
-import { camelToKebab } from '../data/strings.mts'
+import { FLAG_HELP } from "../../constants/cli.mjs";
+import { camelToKebab } from "../data/strings.mts";
 
-const helpFlags = new Set([FLAG_HELP, '-h'])
+const helpFlags = new Set([FLAG_HELP, "-h"]);
 
 /**
  * Convert flag values to array format for processing.
  */
 export function cmdFlagValueToArray(value: unknown): string[] {
-  if (typeof value === 'string') {
-    return value.trim().split(/, */).filter(Boolean)
+  if (typeof value === "string") {
+    return value.trim().split(/, */).filter(Boolean);
   }
   if (Array.isArray(value)) {
-    return value.flatMap(cmdFlagValueToArray)
+    return value.flatMap(cmdFlagValueToArray);
   }
-  return []
+  return [];
 }
 
 /**
  * Convert command arguments to a properly formatted string representation.
  */
 export function cmdFlagsToString(args: string[] | readonly string[]): string {
-  const result = []
+  const result = [];
   for (let i = 0, { length } = args; i < length; i += 1) {
-    const arg = args[i]?.trim()
-    if (arg?.startsWith('--')) {
-      const nextArg = i + 1 < length ? args[i + 1]?.trim() : undefined
+    const arg = args[i]?.trim();
+    if (arg?.startsWith("--")) {
+      const nextArg = i + 1 < length ? args[i + 1]?.trim() : undefined;
       // Check if the next item exists and is NOT another flag.
-      if (nextArg && !nextArg.startsWith('--') && !nextArg.startsWith('-')) {
-        result.push(`${arg}=${nextArg}`)
-        i += 1
+      if (nextArg && !nextArg.startsWith("--") && !nextArg.startsWith("-")) {
+        result.push(`${arg}=${nextArg}`);
+        i += 1;
       } else {
-        result.push(arg)
+        result.push(arg);
       }
     } else if (arg) {
       // Include non-flag arguments (commands, package names, etc.).
-      result.push(arg)
+      result.push(arg);
     }
   }
-  return result.join(' ')
+  return result.join(" ");
 }
 
 /**
  * Add command name prefix to message text.
  */
 export function cmdPrefixMessage(cmdName: string, text: string): string {
-  const cmdPrefix = cmdName ? `${cmdName}: ` : ''
-  return `${cmdPrefix}${text}`
+  const cmdPrefix = cmdName ? `${cmdName}: ` : "";
+  return `${cmdPrefix}${text}`;
 }
 
 /**
@@ -70,77 +70,71 @@ export function cmdPrefixMessage(cmdName: string, text: string): string {
  */
 export function filterFlags(
   argv: readonly string[],
-  flagsToFilter: Record<
-    string,
-    { shortFlag?: string | undefined; type?: string | undefined }
-  >,
+  flagsToFilter: Record<string, { shortFlag?: string | undefined; type?: string | undefined }>,
   exceptions?: string[] | undefined,
 ): string[] {
-  const filtered: string[] = []
+  const filtered: string[] = [];
 
   // Build set of flags to filter from the provided flag objects.
-  const flagsToFilterSet = new Set<string>()
-  const flagsWithValueSet = new Set<string>()
+  const flagsToFilterSet = new Set<string>();
+  const flagsWithValueSet = new Set<string>();
 
   for (const [flagName, flag] of Object.entries(flagsToFilter)) {
-    const longFlag = `--${camelToKebab(flagName)}`
+    const longFlag = `--${camelToKebab(flagName)}`;
     // Special case for negated booleans.
-    if (flagName === 'banner' || flagName === 'spinner') {
-      flagsToFilterSet.add(`--no-${flagName}`)
+    if (flagName === "banner" || flagName === "spinner") {
+      flagsToFilterSet.add(`--no-${flagName}`);
     } else {
-      flagsToFilterSet.add(longFlag)
+      flagsToFilterSet.add(longFlag);
     }
     if (flag?.shortFlag) {
-      flagsToFilterSet.add(`-${flag.shortFlag}`)
+      flagsToFilterSet.add(`-${flag.shortFlag}`);
     }
     // Track flags that take values.
-    if (flag.type !== 'boolean') {
-      flagsWithValueSet.add(longFlag)
+    if (flag.type !== "boolean") {
+      flagsWithValueSet.add(longFlag);
       if (flag?.shortFlag) {
-        flagsWithValueSet.add(`-${flag.shortFlag}`)
+        flagsWithValueSet.add(`-${flag.shortFlag}`);
       }
     }
   }
 
   for (let i = 0, { length } = argv; i < length; i += 1) {
-    const arg = argv[i]!
+    const arg = argv[i]!;
     // Check if this flag should be kept as an exception.
     if (exceptions?.includes(arg)) {
-      filtered.push(arg)
+      filtered.push(arg);
       // Handle flags that take values.
       if (flagsWithValueSet.has(arg)) {
         // Include the next argument (the flag value).
-        i += 1
+        i += 1;
         if (i < length) {
-          filtered.push(argv[i]!)
+          filtered.push(argv[i]!);
         }
       }
     } else if (flagsToFilterSet.has(arg)) {
       // Skip flags that take values.
       if (flagsWithValueSet.has(arg)) {
         // Skip the next argument (the flag value).
-        i += 1
+        i += 1;
       }
       // Skip boolean flags (no additional argument to skip).
-    } else if (
-      arg &&
-      Array.from(flagsWithValueSet).some(flag => arg.startsWith(`${flag}=`))
-    ) {
+    } else if (arg && Array.from(flagsWithValueSet).some((flag) => arg.startsWith(`${flag}=`))) {
       // Skip --flag=value format for Socket flags unless it's an exception.
-      if (exceptions?.some(exc => arg.startsWith(`${exc}=`))) {
-        filtered.push(arg)
+      if (exceptions?.some((exc) => arg.startsWith(`${exc}=`))) {
+        filtered.push(arg);
       }
       // Otherwise skip it.
     } else {
-      filtered.push(arg!)
+      filtered.push(arg!);
     }
   }
-  return filtered
+  return filtered;
 }
 
 /**
  * Check if argument is a help flag.
  */
 export function isHelpFlag(cmdArg: string): boolean {
-  return helpFlags.has(cmdArg)
+  return helpFlags.has(cmdArg);
 }

@@ -1,20 +1,19 @@
-
 /**
  * @file Unit tests for checkSocketWrapperSetup.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockReadFileSync = vi.hoisted(() => vi.fn())
+const mockReadFileSync = vi.hoisted(() => vi.fn());
 
-vi.mock('node:fs', () => ({
+vi.mock(import("node:fs"), () => ({
   readFileSync: mockReadFileSync,
   default: {
     readFileSync: mockReadFileSync,
   },
-}))
+}));
 
-import { checkSocketWrapperSetup } from '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
+import { checkSocketWrapperSetup } from "../../../../src/commands/wrapper/check-socket-wrapper-setup.mts";
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -23,87 +22,85 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}))
+}));
 
-describe('checkSocketWrapperSetup', () => {
+describe("checkSocketWrapperSetup", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   afterEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('detects npm alias in file', () => {
-    mockReadFileSync.mockReturnValue('alias npm="socket npm"\nother content')
+  it("detects npm alias in file", () => {
+    mockReadFileSync.mockReturnValue('alias npm="socket npm"\nother content');
 
-    const result = checkSocketWrapperSetup('/home/user/.bashrc')
+    const result = checkSocketWrapperSetup("/home/user/.bashrc");
 
-    expect(result).toBe(true)
-    expect(mockReadFileSync).toHaveBeenCalledWith('/home/user/.bashrc', 'utf8')
-  })
+    expect(result).toBe(true);
+    expect(mockReadFileSync).toHaveBeenCalledWith("/home/user/.bashrc", "utf8");
+  });
 
-  it('detects pnpm exec alias in file', () => {
-    mockReadFileSync.mockReturnValue('alias npx="socket npx"\nother content')
+  it("detects pnpm exec alias in file", () => {
+    mockReadFileSync.mockReturnValue('alias npx="socket npx"\nother content');
 
-    const result = checkSocketWrapperSetup('/home/user/.bashrc')
+    const result = checkSocketWrapperSetup("/home/user/.bashrc");
 
-    expect(result).toBe(true)
-  })
+    expect(result).toBe(true);
+  });
 
-  it('detects both aliases in file', () => {
+  it("detects both aliases in file", () => {
     mockReadFileSync.mockReturnValue(
       'alias npm="socket npm"\nalias npx="socket npx"\nother content',
-    )
+    );
 
-    const result = checkSocketWrapperSetup('/home/user/.zshrc')
+    const result = checkSocketWrapperSetup("/home/user/.zshrc");
 
-    expect(result).toBe(true)
-  })
+    expect(result).toBe(true);
+  });
 
-  it('returns false when no aliases found', () => {
-    mockReadFileSync.mockReturnValue('some other content\nno aliases here')
+  it("returns false when no aliases found", () => {
+    mockReadFileSync.mockReturnValue("some other content\nno aliases here");
 
-    const result = checkSocketWrapperSetup('/home/user/.bashrc')
+    const result = checkSocketWrapperSetup("/home/user/.bashrc");
 
-    expect(result).toBe(false)
-  })
+    expect(result).toBe(false);
+  });
 
-  it('returns false for empty file', () => {
-    mockReadFileSync.mockReturnValue('')
+  it("returns false for empty file", () => {
+    mockReadFileSync.mockReturnValue("");
 
-    const result = checkSocketWrapperSetup('/home/user/.bashrc')
+    const result = checkSocketWrapperSetup("/home/user/.bashrc");
 
-    expect(result).toBe(false)
-  })
+    expect(result).toBe(false);
+  });
 
-  it('logs instructions when wrapper is set up', () => {
-    mockReadFileSync.mockReturnValue('alias npm="socket npm"')
+  it("logs instructions when wrapper is set up", () => {
+    mockReadFileSync.mockReturnValue('alias npm="socket npm"');
 
-    checkSocketWrapperSetup('/home/user/.bashrc')
+    checkSocketWrapperSetup("/home/user/.bashrc");
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      'The Socket npm/npx wrapper is set up in your bash profile (/home/user/.bashrc).',
-    )
-    expect(mockLogger.log).toHaveBeenCalledWith('    source /home/user/.bashrc')
-  })
+      "The Socket npm/npx wrapper is set up in your bash profile (/home/user/.bashrc).",
+    );
+    expect(mockLogger.log).toHaveBeenCalledWith("    source /home/user/.bashrc");
+  });
 
-  it('ignores partial alias matches', () => {
-    mockReadFileSync.mockReturnValue(
-      'alias npm="other-tool npm"\nalias npx="other-tool npx"',
-    )
+  it("ignores partial alias matches", () => {
+    mockReadFileSync.mockReturnValue('alias npm="other-tool npm"\nalias npx="other-tool npx"');
 
-    const result = checkSocketWrapperSetup('/home/user/.bashrc')
+    const result = checkSocketWrapperSetup("/home/user/.bashrc");
 
-    expect(result).toBe(false)
-  })
+    expect(result).toBe(false);
+  });
 
-  it('handles multiline file with aliases mixed in', () => {
+  it("handles multiline file with aliases mixed in", () => {
     mockReadFileSync.mockReturnValue(
       `#!/bin/bash
 # User bashrc
@@ -111,38 +108,38 @@ export PATH=$PATH:/usr/local/bin
 alias npm="socket npm"
 alias ll="ls -la"
 export NODE_ENV=development`,
-    )
+    );
 
-    const result = checkSocketWrapperSetup('/home/user/.bashrc')
+    const result = checkSocketWrapperSetup("/home/user/.bashrc");
 
-    expect(result).toBe(true)
-  })
+    expect(result).toBe(true);
+  });
 
-  it('is case-sensitive for alias detection', () => {
-    mockReadFileSync.mockReturnValue('ALIAS NPM="SOCKET NPM"')
+  it("is case-sensitive for alias detection", () => {
+    mockReadFileSync.mockReturnValue('ALIAS NPM="SOCKET NPM"');
 
-    const result = checkSocketWrapperSetup('/home/user/.bashrc')
+    const result = checkSocketWrapperSetup("/home/user/.bashrc");
 
-    expect(result).toBe(false)
-  })
+    expect(result).toBe(false);
+  });
 
-  it('handles files with Windows line endings', () => {
+  it("handles files with Windows line endings", () => {
     mockReadFileSync.mockReturnValue(
       'line1\r\nalias npm="socket npm"\r\nalias npx="socket npx"\r\n',
-    )
+    );
 
-    const result = checkSocketWrapperSetup('/home/user/.bashrc')
+    const result = checkSocketWrapperSetup("/home/user/.bashrc");
 
-    expect(result).toBe(false)
-  })
+    expect(result).toBe(false);
+  });
 
-  it('returns false when readFileSync throws (deleted/unreadable file)', () => {
+  it("returns false when readFileSync throws (deleted/unreadable file)", () => {
     mockReadFileSync.mockImplementation(() => {
-      const err = new Error('ENOENT') as NodeJS.ErrnoException
-      err.code = 'ENOENT'
-      throw err
-    })
-    const result = checkSocketWrapperSetup('/home/user/.bashrc-missing')
-    expect(result).toBe(false)
-  })
-})
+      const err = new Error("ENOENT") as NodeJS.ErrnoException;
+      err.code = "ENOENT";
+      throw err;
+    });
+    const result = checkSocketWrapperSetup("/home/user/.bashrc-missing");
+    expect(result).toBe(false);
+  });
+});

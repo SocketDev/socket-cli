@@ -4,7 +4,7 @@
  * Tests the parent command that routes to package analysis subcommands.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -13,60 +13,58 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
-}))
+}));
 
-const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
+const mockMeowWithSubcommands = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/util/cli/with-subcommands.mts', () => ({
+vi.mock(import("../../../../src/util/cli/with-subcommands.mts"), () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
-}))
+}));
 
 // Import after mocks.
-const { cmdPackage } =
-  await import('../../../../src/commands/package/cmd-package.mts')
-const { cmdPackageScore } =
-  await import('../../../../src/commands/package/cmd-package-score.mts')
+const { cmdPackage } = await import("../../../../src/commands/package/cmd-package.mts");
+const { cmdPackageScore } = await import("../../../../src/commands/package/cmd-package-score.mts");
 const { cmdPackageShallow } =
-  await import('../../../../src/commands/package/cmd-package-shallow.mts')
+  await import("../../../../src/commands/package/cmd-package-shallow.mts");
 
-describe('cmd-package', () => {
+describe("cmd-package", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdPackage.description).toBe('Look up published package details')
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdPackage.description).toBe("Look up published package details");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdPackage.hidden).toBe(false)
-    })
+    it("should not be hidden", () => {
+      expect(cmdPackage.hidden).toBe(false);
+    });
 
-    it('should have a run method', () => {
-      expect(typeof cmdPackage.run).toBe('function')
-    })
-  })
+    it("should have a run method", () => {
+      expect(typeof cmdPackage.run).toBe("function");
+    });
+  });
 
-  describe('subcommand routing', () => {
-    const importMeta = { url: 'file:///test/cmd-package.mts' }
-    const context = { parentName: 'socket' }
+  describe("subcommand routing", () => {
+    const importMeta = { url: "file:///test/cmd-package.mts" };
+    const context = { parentName: "socket" };
 
-    it('should call meowWithSubcommands with correct configuration', async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined)
+    it("should call meowWithSubcommands with correct configuration", async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined);
 
-      await cmdPackage.run(['score'], importMeta, context)
+      await cmdPackage.run(["score"], importMeta, context);
 
-      expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
+      expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1);
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         {
-          argv: ['score'],
+          argv: ["score"],
           importMeta,
-          name: 'socket package',
+          name: "socket package",
           subcommands: {
             score: cmdPackageScore,
             shallow: cmdPackageShallow,
@@ -75,150 +73,134 @@ describe('cmd-package', () => {
         {
           aliases: {
             deep: {
-              argv: ['score'],
-              description: 'Look up published package details',
+              argv: ["score"],
+              description: "Look up published package details",
               hidden: true,
             },
           },
-          description: 'Look up published package details',
+          description: "Look up published package details",
         },
-      )
-    })
+      );
+    });
 
-    it('should construct correct command name from parent', async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined)
+    it("should construct correct command name from parent", async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined);
 
-      await cmdPackage.run(['shallow'], importMeta, {
-        parentName: 'custom-parent',
-      })
-
-      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'custom-parent package',
-        }),
-        expect.anything(),
-      )
-    })
-
-    it('should include all subcommands', async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined)
-
-      await cmdPackage.run([], importMeta, context)
-
-      const call = mockMeowWithSubcommands.mock.calls[0]
-      const subcommands = call[0].subcommands
-
-      expect(Object.keys(subcommands)).toEqual(['score', 'shallow'])
-    })
-
-    it('should pass through argv unchanged', async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined)
-      const argv = ['score', 'npm/lodash', '--json']
-
-      await cmdPackage.run(argv, importMeta, context)
+      await cmdPackage.run(["shallow"], importMeta, {
+        parentName: "custom-parent",
+      });
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         expect.objectContaining({
-          argv,
+          name: "custom-parent package",
         }),
         expect.anything(),
-      )
-    })
+      );
+    });
 
-    it('should handle readonly argv', async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined)
-      const argv = Object.freeze(['shallow', 'npm/react']) as readonly string[]
+    it("should include all subcommands", async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined);
 
-      await cmdPackage.run(argv, importMeta, context)
+      await cmdPackage.run([], importMeta, context);
+
+      const call = mockMeowWithSubcommands.mock.calls[0];
+      const subcommands = call[0].subcommands;
+
+      expect(Object.keys(subcommands)).toEqual(["score", "shallow"]);
+    });
+
+    it("should pass through argv unchanged", async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined);
+      const argv = ["score", "npm/lodash", "--json"];
+
+      await cmdPackage.run(argv, importMeta, context);
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         expect.objectContaining({
           argv,
         }),
         expect.anything(),
-      )
-    })
-  })
+      );
+    });
 
-  describe('subcommand validation', () => {
-    it('should reference correct subcommand objects', async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined)
+    it("should handle readonly argv", async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined);
+      const argv = Object.freeze(["shallow", "npm/react"]) as readonly string[];
 
-      await cmdPackage.run(
-        [],
-        { url: 'file:///test' },
-        { parentName: 'socket' },
-      )
+      await cmdPackage.run(argv, importMeta, context);
 
-      const call = mockMeowWithSubcommands.mock.calls[0]
-      const subcommands = call[0].subcommands
+      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
+        expect.objectContaining({
+          argv,
+        }),
+        expect.anything(),
+      );
+    });
+  });
 
-      expect(subcommands.score).toBe(cmdPackageScore)
-      expect(subcommands.shallow).toBe(cmdPackageShallow)
-    })
-  })
+  describe("subcommand validation", () => {
+    it("should reference correct subcommand objects", async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined);
 
-  describe('aliases configuration', () => {
-    it('should configure deep alias for score', async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined)
+      await cmdPackage.run([], { url: "file:///test" }, { parentName: "socket" });
 
-      await cmdPackage.run(
-        [],
-        { url: 'file:///test' },
-        { parentName: 'socket' },
-      )
+      const call = mockMeowWithSubcommands.mock.calls[0];
+      const subcommands = call[0].subcommands;
 
-      const call = mockMeowWithSubcommands.mock.calls[0]
-      const aliases = call[1].aliases
+      expect(subcommands.score).toBe(cmdPackageScore);
+      expect(subcommands.shallow).toBe(cmdPackageShallow);
+    });
+  });
+
+  describe("aliases configuration", () => {
+    it("should configure deep alias for score", async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined);
+
+      await cmdPackage.run([], { url: "file:///test" }, { parentName: "socket" });
+
+      const call = mockMeowWithSubcommands.mock.calls[0];
+      const aliases = call[1].aliases;
 
       expect(aliases.deep).toEqual({
-        argv: ['score'],
-        description: 'Look up published package details',
+        argv: ["score"],
+        description: "Look up published package details",
         hidden: true,
-      })
-    })
+      });
+    });
 
-    it('should mark deep alias as hidden', async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined)
+    it("should mark deep alias as hidden", async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined);
 
-      await cmdPackage.run(
-        [],
-        { url: 'file:///test' },
-        { parentName: 'socket' },
-      )
+      await cmdPackage.run([], { url: "file:///test" }, { parentName: "socket" });
 
-      const call = mockMeowWithSubcommands.mock.calls[0]
-      const aliases = call[1].aliases
+      const call = mockMeowWithSubcommands.mock.calls[0];
+      const aliases = call[1].aliases;
 
-      expect(aliases.deep.hidden).toBe(true)
-    })
-  })
+      expect(aliases.deep.hidden).toBe(true);
+    });
+  });
 
-  describe('error handling', () => {
-    it('should propagate errors from meowWithSubcommands', async () => {
-      const testError = new Error('Subcommand error')
-      mockMeowWithSubcommands.mockRejectedValue(testError)
+  describe("error handling", () => {
+    it("should propagate errors from meowWithSubcommands", async () => {
+      const testError = new Error("Subcommand error");
+      mockMeowWithSubcommands.mockRejectedValue(testError);
 
       await expect(
-        cmdPackage.run([], { url: 'file:///test' }, { parentName: 'socket' }),
-      ).rejects.toThrow('Subcommand error')
-    })
-  })
+        cmdPackage.run([], { url: "file:///test" }, { parentName: "socket" }),
+      ).rejects.toThrow("Subcommand error");
+    });
+  });
 
-  describe('options configuration', () => {
-    it('should pass description in options', async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined)
+  describe("options configuration", () => {
+    it("should pass description in options", async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined);
 
-      await cmdPackage.run(
-        [],
-        { url: 'file:///test' },
-        { parentName: 'socket' },
-      )
+      await cmdPackage.run([], { url: "file:///test" }, { parentName: "socket" });
 
-      const call = mockMeowWithSubcommands.mock.calls[0]
-      const options = call[1]
+      const call = mockMeowWithSubcommands.mock.calls[0];
+      const options = call[1];
 
-      expect(options.description).toBe('Look up published package details')
-    })
-  })
-})
+      expect(options.description).toBe("Look up published package details");
+    });
+  });
+});

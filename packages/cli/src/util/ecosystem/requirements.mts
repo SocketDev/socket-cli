@@ -10,15 +10,15 @@
  * text.
  */
 
-import requirements from '../../../data/command-api-requirements.json' with { type: 'json' }
+import requirements from "../../../data/command-api-requirements.json" with { type: "json" };
 
 export function getRequirements() {
-  return requirements
+  return requirements;
 }
 
 /**
  * Convert command path to requirements key.
  */
 export function getRequirementsKey(cmdPath: string): string {
-  return cmdPath.replace(/^socket[: ]/, '').replace(/ +/g, ':')
+  return cmdPath.replace(/^socket[: ]/, "").replace(/ +/g, ":");
 }

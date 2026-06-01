@@ -10,7 +10,7 @@
  * (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -20,90 +20,87 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
-}))
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+}));
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
-}))
+}));
 
 // Mock utilities.
-vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: (msg: string, cause?: string) =>
-    cause ? `${msg}: ${cause}` : msg,
-}))
+vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
+  failMsgWithBadge: (msg: string, cause?: string) => (cause ? `${msg}: ${cause}` : msg),
+}));
 
-import { outputManifestSetup } from '../../../../src/commands/manifest/output-manifest-setup.mts'
+import { outputManifestSetup } from "../../../../src/commands/manifest/output-manifest-setup.mts";
 
-import type { CResult } from '../../../../src/types.mts'
+import type { CResult } from "../../../../src/types.mts";
 
-describe('output-manifest-setup', () => {
+describe("output-manifest-setup", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
-  describe('outputManifestSetup', () => {
-    describe('success output', () => {
-      it('outputs setup complete message', async () => {
+  describe("outputManifestSetup", () => {
+    describe("success output", () => {
+      it("outputs setup complete message", async () => {
         const result: CResult<unknown> = {
           ok: true,
           data: {},
-        }
+        };
 
-        await outputManifestSetup(result)
+        await outputManifestSetup(result);
 
-        expect(mockLogger.success).toHaveBeenCalledWith('Setup complete')
-      })
+        expect(mockLogger.success).toHaveBeenCalledWith("Setup complete");
+      });
 
-      it('does not set exit code on success', async () => {
+      it("does not set exit code on success", async () => {
         const result: CResult<unknown> = {
           ok: true,
           data: { configured: true },
-        }
+        };
 
-        await outputManifestSetup(result)
+        await outputManifestSetup(result);
 
-        expect(process.exitCode).toBeUndefined()
-      })
-    })
+        expect(process.exitCode).toBeUndefined();
+      });
+    });
 
-    describe('error output', () => {
-      it('outputs error with fail message', async () => {
+    describe("error output", () => {
+      it("outputs error with fail message", async () => {
         const result: CResult<unknown> = {
           ok: false,
-          message: 'Setup failed',
-          cause: 'Missing configuration',
-        }
+          message: "Setup failed",
+          cause: "Missing configuration",
+        };
 
-        await outputManifestSetup(result)
+        await outputManifestSetup(result);
 
-        expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining('Setup failed'),
-        )
-        expect(process.exitCode).toBe(1)
-      })
+        expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("Setup failed"));
+        expect(process.exitCode).toBe(1);
+      });
 
-      it('uses custom exit code when provided', async () => {
+      it("uses custom exit code when provided", async () => {
         const result: CResult<unknown> = {
           ok: false,
-          message: 'Configuration error',
+          message: "Configuration error",
           code: 2,
-        }
+        };
 
-        await outputManifestSetup(result)
+        await outputManifestSetup(result);
 
-        expect(process.exitCode).toBe(2)
-      })
+        expect(process.exitCode).toBe(2);
+      });
 
-      it('does not call success on error', async () => {
+      it("does not call success on error", async () => {
         const result: CResult<unknown> = {
           ok: false,
-          message: 'Failed',
-        }
+          message: "Failed",
+        };
 
-        await outputManifestSetup(result)
+        await outputManifestSetup(result);
 
-        expect(mockLogger.success).not.toHaveBeenCalled()
-      })
-    })
-  })
-})
+        expect(mockLogger.success).not.toHaveBeenCalled();
+      });
+    });
+  });
+});

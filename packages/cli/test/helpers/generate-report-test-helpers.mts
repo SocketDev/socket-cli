@@ -1,4 +1,4 @@
-import type { SocketArtifact } from '../../src/util/alert/artifact.mts'
+import type { SocketArtifact } from "../../src/util/alert/artifact.mts";
 
 /**
  * Helper function to create a scan with environment variable alerts.
@@ -6,13 +6,13 @@ import type { SocketArtifact } from '../../src/util/alert/artifact.mts'
 export function getScanWithEnvVars(): SocketArtifact[] {
   return [
     {
-      id: '12521',
-      author: ['typescript-bot'],
-      size: 33965,
-      type: 'npm',
-      name: 'tslib',
-      version: '1.14.1',
-      license: '0BSD',
+      id: "12521",
+      author: ["typescript-bot"],
+      size: 33_965,
+      type: "npm",
+      name: "tslib",
+      version: "1.14.1",
+      license: "0BSD",
       licenseDetails: [],
       score: {
         license: 1,
@@ -24,36 +24,36 @@ export function getScanWithEnvVars(): SocketArtifact[] {
       },
       alerts: [
         {
-          type: 'envVars',
-          key: 'package/which.js',
+          type: "envVars",
+          key: "package/which.js",
           start: 54,
           end: 72,
           props: {
             // Test data.
-            envVars: 'XYZ',
+            envVars: "XYZ",
           },
         },
         {
-          type: 'envVars',
-          key: 'package/which.js',
+          type: "envVars",
+          key: "package/which.js",
           start: 200,
           end: 250,
           props: {
             // Test data.
-            envVars: 'ABC',
+            envVars: "ABC",
           },
         },
       ],
       manifestFiles: [
         {
-          file: 'package-lock.json',
-          start: 600172,
-          end: 600440,
+          file: "package-lock.json",
+          start: 600_172,
+          end: 600_440,
         },
       ],
-      topLevelAncestors: ['15903631404'],
+      topLevelAncestors: ["15903631404"],
     },
-  ]
+  ];
 }
 
 /**
@@ -63,13 +63,13 @@ export function getScanWithEnvVars(): SocketArtifact[] {
 export function getScanWithMultiplePackages(): SocketArtifact[] {
   return [
     {
-      id: '12521',
-      author: ['typescript-bot'],
-      size: 33965,
-      type: 'npm',
-      name: 'tslib',
-      version: '1.14.1',
-      license: '0BSD',
+      id: "12521",
+      author: ["typescript-bot"],
+      size: 33_965,
+      type: "npm",
+      name: "tslib",
+      version: "1.14.1",
+      license: "0BSD",
       licenseDetails: [],
       score: {
         license: 1,
@@ -81,43 +81,43 @@ export function getScanWithMultiplePackages(): SocketArtifact[] {
       },
       alerts: [
         {
-          type: 'envVars',
-          key: 'package/which.js',
+          type: "envVars",
+          key: "package/which.js",
           start: 54,
           end: 72,
           props: {
             // Test data.
-            envVars: 'XYZ',
+            envVars: "XYZ",
           },
         },
         {
-          type: 'envVars',
-          key: 'package/which.js',
+          type: "envVars",
+          key: "package/which.js",
           start: 200,
           end: 250,
           props: {
             // Test data.
-            envVars: 'ABC',
+            envVars: "ABC",
           },
         },
       ],
       manifestFiles: [
         {
-          file: 'package-lock.json',
-          start: 600172,
-          end: 600440,
+          file: "package-lock.json",
+          start: 600_172,
+          end: 600_440,
         },
       ],
-      topLevelAncestors: ['15903631404'],
+      topLevelAncestors: ["15903631404"],
     },
     {
-      id: '12345',
-      author: ['lodash-team'],
-      size: 1400000,
-      type: 'npm',
-      name: 'lodash',
-      version: '4.17.21',
-      license: 'MIT',
+      id: "12345",
+      author: ["lodash-team"],
+      size: 1_400_000,
+      type: "npm",
+      name: "lodash",
+      version: "4.17.21",
+      license: "MIT",
       licenseDetails: [],
       score: {
         license: 1,
@@ -129,26 +129,26 @@ export function getScanWithMultiplePackages(): SocketArtifact[] {
       },
       alerts: [
         {
-          type: 'envVars',
-          key: 'lodash.js',
+          type: "envVars",
+          key: "lodash.js",
           start: 100,
           end: 120,
           props: {
             // Test data.
-            envVars: 'SECRET_KEY',
+            envVars: "SECRET_KEY",
           },
         },
       ],
       manifestFiles: [
         {
-          file: 'package-lock.json',
-          start: 700000,
-          end: 700500,
+          file: "package-lock.json",
+          start: 700_000,
+          end: 700_500,
         },
       ],
-      topLevelAncestors: ['15903631405'],
+      topLevelAncestors: ["15903631405"],
     },
-  ]
+  ];
 }
 
 /**
@@ -157,13 +157,13 @@ export function getScanWithMultiplePackages(): SocketArtifact[] {
 export function getSimpleCleanScan(): SocketArtifact[] {
   return [
     {
-      id: '12521',
-      author: ['typescript-bot'],
-      size: 33965,
-      type: 'npm',
-      name: 'tslib',
-      version: '1.14.1',
-      license: '0BSD',
+      id: "12521",
+      author: ["typescript-bot"],
+      size: 33_965,
+      type: "npm",
+      name: "tslib",
+      version: "1.14.1",
+      license: "0BSD",
       licenseDetails: [],
       score: {
         license: 1,
@@ -176,12 +176,12 @@ export function getSimpleCleanScan(): SocketArtifact[] {
       alerts: [],
       manifestFiles: [
         {
-          file: 'package-lock.json',
-          start: 600172,
-          end: 600440,
+          file: "package-lock.json",
+          start: 600_172,
+          end: 600_440,
         },
       ],
-      topLevelAncestors: ['15903631404'],
+      topLevelAncestors: ["15903631404"],
     },
-  ]
+  ];
 }

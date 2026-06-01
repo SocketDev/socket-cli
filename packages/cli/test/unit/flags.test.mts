@@ -19,20 +19,20 @@
  *   - src/flags.mts - Flag definitions and memory management
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Store mock values that can be changed per test.
 const mockValues = vi.hoisted(() => ({
   maxOldSpaceSize: 0,
   maxSemiSpaceSize: 0,
-  nodeOptions: '',
+  nodeOptions: "",
   totalMem: 8 * 1024 * 1024 * 1024, // 8GB default.
-}))
+}));
 
 // Mock meow to return controlled flag values. defineFlags is re-exported
 // as the identity helper since flags.mts uses it to declare commonFlags
 // / outputFlags / validationFlags.
-vi.mock('../../src/meow.mts', () => ({
+vi.mock(import("../../src/meow.mts"), () => ({
   meow: vi.fn(() => ({
     flags: {
       maxOldSpaceSize: mockValues.maxOldSpaceSize,
@@ -40,26 +40,26 @@ vi.mock('../../src/meow.mts', () => ({
     },
   })),
   defineFlags: <T,>(flags: T): T => flags,
-}))
+}));
 
 // Mock node:os to control total memory.
-vi.mock('node:os', async importOriginal => {
-  const original = await importOriginal<typeof OsModule>()
+vi.mock(import("node:os"), async (importOriginal) => {
+  const original = await importOriginal<typeof OsModule>();
   return {
     ...original,
     default: {
       ...original.default,
       totalmem: () => mockValues.totalMem,
     },
-  }
-})
+  };
+});
 
 // Mock NODE_OPTIONS to be controllable.
-vi.mock('../../src/env/node-options.mts', () => ({
+vi.mock(import("../../src/env/node-options.mts"), () => ({
   get NODE_OPTIONS() {
-    return mockValues.nodeOptions
+    return mockValues.nodeOptions;
   },
-}))
+}));
 
 import {
   commonFlags,
@@ -67,238 +67,237 @@ import {
   getMaxSemiSpaceSizeFlag,
   outputFlags,
   resetFlagCache,
-} from '../../src/flags.mts'
+} from "../../src/flags.mts";
 
-import type * as OsModule from 'node:os'
+import type * as OsModule from "node:os";
 
-describe('flags', () => {
+describe("flags", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    resetFlagCache()
+    vi.clearAllMocks();
+    resetFlagCache();
     // Reset mock values to defaults.
-    mockValues.maxOldSpaceSize = 0
-    mockValues.maxSemiSpaceSize = 0
-    mockValues.nodeOptions = ''
-    mockValues.totalMem = 8 * 1024 * 1024 * 1024 // 8GB.
-  })
+    mockValues.maxOldSpaceSize = 0;
+    mockValues.maxSemiSpaceSize = 0;
+    mockValues.nodeOptions = "";
+    mockValues.totalMem = 8 * 1024 * 1024 * 1024; // 8GB.
+  });
 
   afterEach(() => {
-    resetFlagCache()
-  })
+    resetFlagCache();
+  });
 
-  describe('getMaxOldSpaceSizeFlag', () => {
-    it('returns default based on system memory', () => {
-      const result = getMaxOldSpaceSizeFlag()
+  describe("getMaxOldSpaceSizeFlag", () => {
+    it("returns default based on system memory", () => {
+      const result = getMaxOldSpaceSizeFlag();
 
       // Should be 75% of 8GB in MiB.
-      expect(result).toBe(Math.floor(8 * 1024 * 0.75))
-      expect(result).toBe(6144)
-    })
+      expect(result).toBe(Math.floor(8 * 1024 * 0.75));
+      expect(result).toBe(6144);
+    });
 
-    it('respects NODE_OPTIONS', () => {
-      mockValues.nodeOptions = '--max-old-space-size=512'
-      resetFlagCache()
+    it("respects NODE_OPTIONS", () => {
+      mockValues.nodeOptions = "--max-old-space-size=512";
+      resetFlagCache();
 
-      const result = getMaxOldSpaceSizeFlag()
-      expect(result).toBe(512)
-    })
+      const result = getMaxOldSpaceSizeFlag();
+      expect(result).toBe(512);
+    });
 
-    it('respects user-provided flag', () => {
-      mockValues.maxOldSpaceSize = 1024
-      resetFlagCache()
+    it("respects user-provided flag", () => {
+      mockValues.maxOldSpaceSize = 1024;
+      resetFlagCache();
 
-      const result = getMaxOldSpaceSizeFlag()
-      expect(result).toBe(1024)
-    })
+      const result = getMaxOldSpaceSizeFlag();
+      expect(result).toBe(1024);
+    });
 
-    it('handles low memory systems', () => {
-      mockValues.maxOldSpaceSize = 256
-      resetFlagCache()
+    it("handles low memory systems", () => {
+      mockValues.maxOldSpaceSize = 256;
+      resetFlagCache();
 
-      const result = getMaxOldSpaceSizeFlag()
+      const result = getMaxOldSpaceSizeFlag();
       // Should respect the explicitly set low value.
-      expect(result).toBe(256)
-    })
+      expect(result).toBe(256);
+    });
 
-    it('calculates for 4GB system', () => {
-      mockValues.totalMem = 4 * 1024 * 1024 * 1024 // 4GB.
-      resetFlagCache()
+    it("calculates for 4GB system", () => {
+      mockValues.totalMem = 4 * 1024 * 1024 * 1024; // 4GB.
+      resetFlagCache();
 
-      const result = getMaxOldSpaceSizeFlag()
+      const result = getMaxOldSpaceSizeFlag();
       // Should be 75% of 4GB in MiB = 3072.
-      expect(result).toBe(3072)
-    })
+      expect(result).toBe(3072);
+    });
 
-    it('handles invalid NODE_OPTIONS value gracefully', () => {
+    it("handles invalid NODE_OPTIONS value gracefully", () => {
       // Set NODE_OPTIONS with an invalid pattern (non-numeric after equals).
       // Since the regex only matches digits, this will fall through to default.
-      mockValues.nodeOptions = '--max-old-space-size=abc'
-      resetFlagCache()
+      mockValues.nodeOptions = "--max-old-space-size=abc";
+      resetFlagCache();
 
-      const result = getMaxOldSpaceSizeFlag()
+      const result = getMaxOldSpaceSizeFlag();
       // Should fall back to default (75% of 8GB).
-      expect(result).toBe(6144)
-    })
-  })
+      expect(result).toBe(6144);
+    });
+  });
 
-  describe('getMaxSemiSpaceSizeFlag', () => {
-    it('calculates based on old space size for small heaps', () => {
+  describe("getMaxSemiSpaceSizeFlag", () => {
+    it("calculates based on old space size for small heaps", () => {
       // With default 8GB, old space is 6144 MiB, so semi should be 64.
-      const result = getMaxSemiSpaceSizeFlag()
-      expect(result).toBe(64)
-    })
+      const result = getMaxSemiSpaceSizeFlag();
+      expect(result).toBe(64);
+    });
 
-    it('respects NODE_OPTIONS', () => {
-      mockValues.nodeOptions = '--max-semi-space-size=16'
-      resetFlagCache()
+    it("respects NODE_OPTIONS", () => {
+      mockValues.nodeOptions = "--max-semi-space-size=16";
+      resetFlagCache();
 
-      const result = getMaxSemiSpaceSizeFlag()
-      expect(result).toBe(16)
-    })
+      const result = getMaxSemiSpaceSizeFlag();
+      expect(result).toBe(16);
+    });
 
-    it('respects user-provided flag', () => {
-      mockValues.maxSemiSpaceSize = 32
-      resetFlagCache()
+    it("respects user-provided flag", () => {
+      mockValues.maxSemiSpaceSize = 32;
+      resetFlagCache();
 
-      const result = getMaxSemiSpaceSizeFlag()
-      expect(result).toBe(32)
-    })
+      const result = getMaxSemiSpaceSizeFlag();
+      expect(result).toBe(32);
+    });
 
-    it('scales for very small heaps', () => {
-      mockValues.maxOldSpaceSize = 512
-      resetFlagCache()
+    it("scales for very small heaps", () => {
+      mockValues.maxOldSpaceSize = 512;
+      resetFlagCache();
 
-      const result = getMaxSemiSpaceSizeFlag()
+      const result = getMaxSemiSpaceSizeFlag();
       // 512 MiB heap should use 4 MiB semi-space.
-      expect(result).toBe(4)
-    })
+      expect(result).toBe(4);
+    });
 
-    it('scales for large heaps', () => {
-      mockValues.maxOldSpaceSize = 16384
-      resetFlagCache()
+    it("scales for large heaps", () => {
+      mockValues.maxOldSpaceSize = 16_384;
+      resetFlagCache();
 
-      const result = getMaxSemiSpaceSizeFlag()
+      const result = getMaxSemiSpaceSizeFlag();
       // 16384 MiB (16 GiB) heap: log2(16384) = 14, 14 * 8 = 112.
-      expect(result).toBe(112)
-    })
+      expect(result).toBe(112);
+    });
 
-    it('scales for medium heaps', () => {
-      mockValues.maxOldSpaceSize = 2048
-      resetFlagCache()
+    it("scales for medium heaps", () => {
+      mockValues.maxOldSpaceSize = 2048;
+      resetFlagCache();
 
-      const result = getMaxSemiSpaceSizeFlag()
+      const result = getMaxSemiSpaceSizeFlag();
       // 2048 MiB heap should use 16 MiB semi-space.
-      expect(result).toBe(16)
-    })
+      expect(result).toBe(16);
+    });
 
-    it('scales for 1024 MiB heap', () => {
-      mockValues.maxOldSpaceSize = 1024
-      resetFlagCache()
+    it("scales for 1024 MiB heap", () => {
+      mockValues.maxOldSpaceSize = 1024;
+      resetFlagCache();
 
-      const result = getMaxSemiSpaceSizeFlag()
+      const result = getMaxSemiSpaceSizeFlag();
       // 1024 MiB heap should use 8 MiB semi-space.
-      expect(result).toBe(8)
-    })
+      expect(result).toBe(8);
+    });
 
-    it('scales for 4096 MiB heap', () => {
-      mockValues.maxOldSpaceSize = 4096
-      resetFlagCache()
+    it("scales for 4096 MiB heap", () => {
+      mockValues.maxOldSpaceSize = 4096;
+      resetFlagCache();
 
-      const result = getMaxSemiSpaceSizeFlag()
+      const result = getMaxSemiSpaceSizeFlag();
       // 4096 MiB heap should use 32 MiB semi-space.
-      expect(result).toBe(32)
-    })
+      expect(result).toBe(32);
+    });
 
-    it('handles invalid NODE_OPTIONS for semi-space gracefully', () => {
+    it("handles invalid NODE_OPTIONS for semi-space gracefully", () => {
       // Set NODE_OPTIONS with a non-matching pattern.
-      mockValues.nodeOptions = '--max-semi-space-size=xyz'
-      resetFlagCache()
+      mockValues.nodeOptions = "--max-semi-space-size=xyz";
+      resetFlagCache();
 
-      const result = getMaxSemiSpaceSizeFlag()
+      const result = getMaxSemiSpaceSizeFlag();
       // Should fall back to calculated default based on old space.
-      expect(result).toBe(64) // Default for 6144 MiB old space.
-    })
-  })
+      expect(result).toBe(64); // Default for 6144 MiB old space.
+    });
+  });
 
-  describe('commonFlags', () => {
-    it('exports common CLI flags', () => {
-      expect(commonFlags).toBeDefined()
-      expect(typeof commonFlags).toBe('object')
+  describe("commonFlags", () => {
+    it("exports common CLI flags", () => {
+      expect(commonFlags).toBeDefined();
+      expect(typeof commonFlags).toBe("object");
 
       // Check for expected common flags.
-      expect(commonFlags).toHaveProperty('banner')
-      expect(commonFlags).toHaveProperty('compactHeader')
-      expect(commonFlags).toHaveProperty('config')
-      expect(commonFlags).toHaveProperty('dryRun')
-      expect(commonFlags).toHaveProperty('help')
-      expect(commonFlags).toHaveProperty('helpFull')
-      expect(commonFlags).toHaveProperty('maxOldSpaceSize')
-      expect(commonFlags).toHaveProperty('maxSemiSpaceSize')
-      expect(commonFlags).toHaveProperty('spinner')
+      expect(commonFlags).toHaveProperty("banner");
+      expect(commonFlags).toHaveProperty("compactHeader");
+      expect(commonFlags).toHaveProperty("config");
+      expect(commonFlags).toHaveProperty("dryRun");
+      expect(commonFlags).toHaveProperty("help");
+      expect(commonFlags).toHaveProperty("helpFull");
+      expect(commonFlags).toHaveProperty("maxOldSpaceSize");
+      expect(commonFlags).toHaveProperty("maxSemiSpaceSize");
+      expect(commonFlags).toHaveProperty("spinner");
 
       // Check flag types.
-      expect(commonFlags.banner?.type).toBe('boolean')
-      expect(commonFlags.compactHeader?.type).toBe('boolean')
-      expect(commonFlags.config?.type).toBe('string')
-      expect(commonFlags.dryRun?.type).toBe('boolean')
-      expect(commonFlags.help?.type).toBe('boolean')
-      expect(commonFlags.helpFull?.type).toBe('boolean')
-      expect(commonFlags.maxOldSpaceSize?.type).toBe('number')
-      expect(commonFlags.maxSemiSpaceSize?.type).toBe('number')
-      expect(commonFlags.spinner?.type).toBe('boolean')
-    })
+      expect(commonFlags.banner?.type).toBe("boolean");
+      expect(commonFlags.compactHeader?.type).toBe("boolean");
+      expect(commonFlags.config?.type).toBe("string");
+      expect(commonFlags.dryRun?.type).toBe("boolean");
+      expect(commonFlags.help?.type).toBe("boolean");
+      expect(commonFlags.helpFull?.type).toBe("boolean");
+      expect(commonFlags.maxOldSpaceSize?.type).toBe("number");
+      expect(commonFlags.maxSemiSpaceSize?.type).toBe("number");
+      expect(commonFlags.spinner?.type).toBe("boolean");
+    });
 
-    it('has descriptions for all flags', () => {
+    it("has descriptions for all flags", () => {
       for (const [, flag] of Object.entries(commonFlags)) {
-        expect(flag).toHaveProperty('description')
-        expect(typeof flag.description).toBe('string')
-        expect(flag.description.length).toBeGreaterThan(0)
+        expect(flag).toHaveProperty("description");
+        expect(typeof flag.description).toBe("string");
+        expect(flag.description.length).toBeGreaterThan(0);
       }
-    })
+    });
 
-    it('has short flags for common options', () => {
-      expect(commonFlags.config?.shortFlag).toBe('c')
-      expect(commonFlags.help?.shortFlag).toBe('h')
-    })
+    it("has short flags for common options", () => {
+      expect(commonFlags.config?.shortFlag).toBe("c");
+      expect(commonFlags.help?.shortFlag).toBe("h");
+    });
 
-    it('exposes default getters for memory flags', () => {
+    it("exposes default getters for memory flags", () => {
       // The max*SpaceSize flags use accessor properties for default.
       // Reading them invokes the getter body.
-      const oldDefault = (commonFlags.maxOldSpaceSize as unknown)?.default
-      const semiDefault = (commonFlags.maxSemiSpaceSize as unknown)?.default
-      expect(typeof oldDefault).toBe('number')
-      expect(typeof semiDefault).toBe('number')
-      expect(oldDefault).toBeGreaterThanOrEqual(0)
-      expect(semiDefault).toBeGreaterThanOrEqual(0)
-    })
-  })
+      const oldDefault = (commonFlags.maxOldSpaceSize as unknown)?.default;
+      const semiDefault = (commonFlags.maxSemiSpaceSize as unknown)?.default;
+      expect(typeof oldDefault).toBe("number");
+      expect(typeof semiDefault).toBe("number");
+      expect(oldDefault).toBeGreaterThanOrEqual(0);
+      expect(semiDefault).toBeGreaterThanOrEqual(0);
+    });
+  });
 
-  describe('outputFlags', () => {
-    it('exports output formatting flags', () => {
-      expect(outputFlags).toBeDefined()
-      expect(typeof outputFlags).toBe('object')
+  describe("outputFlags", () => {
+    it("exports output formatting flags", () => {
+      expect(outputFlags).toBeDefined();
+      expect(typeof outputFlags).toBe("object");
 
       // Check for expected output flags.
-      expect(outputFlags).toHaveProperty('json')
-      expect(outputFlags).toHaveProperty('markdown')
+      expect(outputFlags).toHaveProperty("json");
+      expect(outputFlags).toHaveProperty("markdown");
 
       // Check flag types.
-      expect(outputFlags.json?.type).toBe('boolean')
-      expect(outputFlags.markdown?.type).toBe('boolean')
-    })
+      expect(outputFlags.json?.type).toBe("boolean");
+      expect(outputFlags.markdown?.type).toBe("boolean");
+    });
 
-    it('has descriptions for all flags', () => {
+    it("has descriptions for all flags", () => {
       for (const [, flag] of Object.entries(outputFlags)) {
-        expect(flag).toHaveProperty('description')
-        expect(typeof flag.description).toBe('string')
-        expect(flag.description.length).toBeGreaterThan(0)
+        expect(flag).toHaveProperty("description");
+        expect(typeof flag.description).toBe("string");
+        expect(flag.description.length).toBeGreaterThan(0);
       }
-    })
+    });
 
-    it('has short flags for output options', () => {
-      expect(outputFlags.json?.shortFlag).toBe('j')
-      expect(outputFlags.markdown?.shortFlag).toBe('m')
-    })
-  })
-
-})
+    it("has short flags for output options", () => {
+      expect(outputFlags.json?.shortFlag).toBe("j");
+      expect(outputFlags.markdown?.shortFlag).toBe("m");
+    });
+  });
+});

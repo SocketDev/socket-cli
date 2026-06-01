@@ -1,16 +1,16 @@
-import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { joinAnd } from "@socketsecurity/lib-stable/arrays/join";
 
-import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
+import { SOCKET_WEBSITE_URL } from "../../constants/socket.mts";
 
-import type { GhsaDetails } from '../../util/git/github.mts'
+import type { GhsaDetails } from "../../util/git/github.mts";
 
-const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
+const GITHUB_ADVISORIES_URL = "https://github.com/advisories";
 
 // GHSA ID pattern: GHSA-xxxx-xxxx-xxxx (4 alphanumeric segments).
-const GHSA_ID_PATTERN = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i
+const GHSA_ID_PATTERN = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i;
 
 export function getSocketFixBranchName(ghsaId: string): string {
-  return `socket/fix/${ghsaId}`
+  return `socket/fix/${ghsaId}`;
 }
 
 export function getSocketFixBranchPattern(ghsaId?: string | undefined): RegExp {
@@ -18,66 +18,64 @@ export function getSocketFixBranchPattern(ghsaId?: string | undefined): RegExp {
   const pattern = ghsaId
     ? GHSA_ID_PATTERN.test(ghsaId)
       ? ghsaId
-      : ghsaId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    : '.+'
-  return new RegExp(`^socket/fix/(${pattern})$`)
+      : ghsaId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    : ".+";
+  return new RegExp(`^socket/fix/(${pattern})$`);
 }
 
 export function getSocketFixCommitMessage(
   ghsaId: string,
   details?: GhsaDetails | undefined,
 ): string {
-  const summary = details?.summary
-  return `fix: ${ghsaId}${summary ? ` - ${summary}` : ''}`
+  const summary = details?.summary;
+  return `fix: ${ghsaId}${summary ? ` - ${summary}` : ""}`;
 }
 
 export function getSocketFixPullRequestBody(
   ghsaIds: string[],
   ghsaDetails?: Map<string, GhsaDetails> | undefined,
 ): string {
-  const vulnCount = ghsaIds.length
-  const firstGhsa = ghsaIds[0]
+  const vulnCount = ghsaIds.length;
+  const firstGhsa = ghsaIds[0];
   if (vulnCount === 1 && firstGhsa) {
-    const ghsaId = firstGhsa
-    const details = ghsaDetails?.get(ghsaId)
-    const body = `[Socket](${SOCKET_WEBSITE_URL}) fix for [${ghsaId}](${GITHUB_ADVISORIES_URL}/${ghsaId}).`
+    const ghsaId = firstGhsa;
+    const details = ghsaDetails?.get(ghsaId);
+    const body = `[Socket](${SOCKET_WEBSITE_URL}) fix for [${ghsaId}](${GITHUB_ADVISORIES_URL}/${ghsaId}).`;
     if (!details) {
-      return body
+      return body;
     }
-    const packages = getUniquePackages(details)
+    const packages = getUniquePackages(details);
     return [
       body,
-      '',
-      '',
+      "",
+      "",
       `**Vulnerability Summary:** ${details.summary}`,
-      '',
+      "",
       `**Severity:** ${details.severity}`,
-      '',
+      "",
       `**Affected Packages:** ${joinAnd(packages)}`,
-    ].join('\n')
+    ].join("\n");
   }
   return [
     `[Socket](${SOCKET_WEBSITE_URL}) fixes for ${vulnCount} GHSAs.`,
-    '',
-    '**Fixed Vulnerabilities:**',
-    ...ghsaIds.map(id => {
-      const details = ghsaDetails?.get(id)
-      const item = `- [${id}](${GITHUB_ADVISORIES_URL}/${id})`
+    "",
+    "**Fixed Vulnerabilities:**",
+    ...ghsaIds.map((id) => {
+      const details = ghsaDetails?.get(id);
+      const item = `- [${id}](${GITHUB_ADVISORIES_URL}/${id})`;
       if (details) {
-        const packages = getUniquePackages(details)
-        return `${item} - ${details.summary} (${joinAnd(packages)})`
+        const packages = getUniquePackages(details);
+        return `${item} - ${details.summary} (${joinAnd(packages)})`;
       }
-      return item
+      return item;
     }),
-  ].join('\n')
+  ].join("\n");
 }
 
 export function getSocketFixPullRequestTitle(ghsaIds: string[]): string {
-  const vulnCount = ghsaIds.length
-  const firstGhsa = ghsaIds[0]
-  return vulnCount === 1 && firstGhsa
-    ? `Fix for ${firstGhsa}`
-    : `Fixes for ${vulnCount} GHSAs`
+  const vulnCount = ghsaIds.length;
+  const firstGhsa = ghsaIds[0];
+  return vulnCount === 1 && firstGhsa ? `Fix for ${firstGhsa}` : `Fixes for ${vulnCount} GHSAs`;
 }
 
 /**
@@ -86,9 +84,7 @@ export function getSocketFixPullRequestTitle(ghsaIds: string[]): string {
 export function getUniquePackages(details: GhsaDetails): string[] {
   return [
     ...new Set(
-      details.vulnerabilities.nodes.map(
-        v => `${v.package.name} (${v.package.ecosystem})`,
-      ),
+      details.vulnerabilities.nodes.map((v) => `${v.package.name} (${v.package.ecosystem})`),
     ),
-  ]
+  ];
 }

@@ -1,22 +1,22 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { DRY_RUN_LABEL } from '../../constants/cli.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { DRY_RUN_LABEL } from "../../constants/cli.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags, outputFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
+import { serializeResultJson } from "../../util/output/result-json.mjs";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
-export const CMD_NAME = 'oops'
+export const CMD_NAME = "oops";
 
-const description = 'Trigger an intentional error (for development)'
+const description = "Trigger an intentional error (for development)";
 
-const hidden = true
+const hidden = true;
 
 // Command handler.
 
@@ -33,78 +33,70 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
       throw: {
-        type: 'boolean',
+        type: "boolean",
         default: false,
-        description:
-          'Throw an explicit error even if --json or --markdown are set',
+        description: "Throw an explicit error even if --json or --markdown are set",
       },
     }),
-    help: (
-      parentName: string,
-      config: { commandName: string; flags: MeowFlags },
-    ) => `
+    help: (parentName: string, config: { commandName: string; flags: MeowFlags }) => `
     Usage
       $ ${parentName} ${config.commandName}
 
     Don't run me.
   `,
-  }
+  };
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const { json, markdown, throw: justThrow } = cli.flags
+  const { json, markdown, throw: justThrow } = cli.flags;
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
   if (dryRun) {
     // Dry-run previews are contextual output; route to stderr per the
     // stream discipline rule so stdout stays payload-only.
-    logger.error('')
-    logger.error(`${DRY_RUN_LABEL}: Would trigger an intentional error`)
-    logger.error('')
-    logger.error(
-      '  This command throws an error for development/testing purposes.',
-    )
-    logger.error(`  Error message: "This error was intentionally left blank."`)
-    logger.error('')
+    logger.error("");
+    logger.error(`${DRY_RUN_LABEL}: Would trigger an intentional error`);
+    logger.error("");
+    logger.error("  This command throws an error for development/testing purposes.");
+    logger.error(`  Error message: "This error was intentionally left blank."`);
+    logger.error("");
     if (json && !justThrow) {
-      logger.error('  Output format: JSON error response')
+      logger.error("  Output format: JSON error response");
     } else if (markdown && !justThrow) {
-      logger.error('  Output format: Markdown error message')
+      logger.error("  Output format: Markdown error message");
     } else {
-      logger.error('  Output format: Thrown Error exception')
+      logger.error("  Output format: Thrown Error exception");
     }
-    logger.error('')
-    logger.error('  Run without --dry-run to trigger the error.')
-    logger.error('')
-    return
+    logger.error("");
+    logger.error("  Run without --dry-run to trigger the error.");
+    logger.error("");
+    return;
   }
 
   if (json && !justThrow) {
-    process.exitCode = 1
+    process.exitCode = 1;
     logger.log(
       serializeResultJson({
         ok: false,
-        message: 'Oops',
-        cause: 'This error was intentionally left blank',
+        message: "Oops",
+        cause: "This error was intentionally left blank",
       }),
-    )
+    );
   }
 
   if (markdown && !justThrow) {
-    process.exitCode = 1
-    logger.fail(
-      failMsgWithBadge('Oops', 'This error was intentionally left blank'),
-    )
-    return
+    process.exitCode = 1;
+    logger.fail(failMsgWithBadge("Oops", "This error was intentionally left blank"));
+    return;
   }
 
-  throw new Error('This error was intentionally left blank.')
+  throw new Error("This error was intentionally left blank.");
 }
 
 // Exported command.
@@ -113,4 +105,4 @@ export const cmdOops = {
   description,
   hidden,
   run,
-}
+};

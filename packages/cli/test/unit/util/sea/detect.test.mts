@@ -14,94 +14,89 @@
  * Related Files: - src/util/sea/detect.mts (implementation)
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from "vitest";
 
-import {
-  canSelfUpdate,
-  getSeaBinaryPath,
-  isSeaBinary,
-} from '../../../../src/util/sea/detect.mts'
+import { canSelfUpdate, getSeaBinaryPath, isSeaBinary } from "../../../../src/util/sea/detect.mts";
 
-import type * as ModuleModule from 'node:module'
+import type * as ModuleModule from "node:module";
 
-describe('SEA detection utilities', () => {
-  describe('isSeaBinary', () => {
-    it('returns false in non-SEA environment', () => {
+describe("SEA detection utilities", () => {
+  describe("isSeaBinary", () => {
+    it("returns false in non-SEA environment", () => {
       // In a test environment running via Node.js (not SEA), this should return false.
-      expect(isSeaBinary()).toBe(false)
-    })
+      expect(isSeaBinary()).toBe(false);
+    });
 
-    it('returns consistent results on multiple calls', () => {
+    it("returns consistent results on multiple calls", () => {
       // The result should be cached and consistent.
-      const result1 = isSeaBinary()
-      const result2 = isSeaBinary()
-      const result3 = isSeaBinary()
+      const result1 = isSeaBinary();
+      const result2 = isSeaBinary();
+      const result3 = isSeaBinary();
 
-      expect(result1).toBe(result2)
-      expect(result2).toBe(result3)
-    })
+      expect(result1).toBe(result2);
+      expect(result2).toBe(result3);
+    });
 
-    it('returns a boolean', () => {
-      expect(typeof isSeaBinary()).toBe('boolean')
-    })
-  })
+    it("returns a boolean", () => {
+      expect(typeof isSeaBinary()).toBe("boolean");
+    });
+  });
 
-  describe('getSeaBinaryPath', () => {
-    it('returns undefined in non-SEA environment', () => {
+  describe("getSeaBinaryPath", () => {
+    it("returns undefined in non-SEA environment", () => {
       // Since we're not running as SEA, this should return undefined.
-      expect(getSeaBinaryPath()).toBeUndefined()
-    })
+      expect(getSeaBinaryPath()).toBeUndefined();
+    });
 
-    it('returns undefined or string type', () => {
-      const result = getSeaBinaryPath()
-      expect(result === undefined || typeof result === 'string').toBe(true)
-    })
-  })
+    it("returns undefined or string type", () => {
+      const result = getSeaBinaryPath();
+      expect(result === undefined || typeof result === "string").toBe(true);
+    });
+  });
 
-  describe('canSelfUpdate', () => {
-    it('returns false in non-SEA environment', () => {
+  describe("canSelfUpdate", () => {
+    it("returns false in non-SEA environment", () => {
       // Self-update requires SEA binary, so false in test environment.
-      expect(canSelfUpdate()).toBe(false)
-    })
+      expect(canSelfUpdate()).toBe(false);
+    });
 
-    it('returns a boolean', () => {
-      expect(typeof canSelfUpdate()).toBe('boolean')
-    })
-  })
+    it("returns a boolean", () => {
+      expect(typeof canSelfUpdate()).toBe("boolean");
+    });
+  });
 
-  describe('function exports', () => {
-    it('exports isSeaBinary function', () => {
-      expect(typeof isSeaBinary).toBe('function')
-    })
+  describe("function exports", () => {
+    it("exports isSeaBinary function", () => {
+      expect(typeof isSeaBinary).toBe("function");
+    });
 
-    it('exports getSeaBinaryPath function', () => {
-      expect(typeof getSeaBinaryPath).toBe('function')
-    })
+    it("exports getSeaBinaryPath function", () => {
+      expect(typeof getSeaBinaryPath).toBe("function");
+    });
 
-    it('exports canSelfUpdate function', () => {
-      expect(typeof canSelfUpdate).toBe('function')
-    })
-  })
+    it("exports canSelfUpdate function", () => {
+      expect(typeof canSelfUpdate).toBe("function");
+    });
+  });
 
-  describe('isSeaBinary catch fallback', () => {
-    it('returns false when node:sea cannot be required (older Node)', async () => {
+  describe("isSeaBinary catch fallback", () => {
+    it("returns false when node:sea cannot be required (older Node)", async () => {
       // Force require('node:sea') to throw via vi.doMock + a fresh module
       // import. This exercises the catch arm of isSeaBinary().
-      const { vi } = await import('vitest')
-      vi.resetModules()
-      vi.doMock('node:module', async importOriginal => {
-        const actual = await importOriginal<typeof ModuleModule>()
+      const { vi } = await import("vitest");
+      vi.resetModules();
+      vi.doMock(import("node:module"), async (importOriginal) => {
+        const actual = await importOriginal<typeof ModuleModule>();
         return {
           ...actual,
           createRequire: () => () => {
-            throw new Error('Cannot find module node:sea')
+            throw new Error("Cannot find module node:sea");
           },
-        }
-      })
-      const fresh =
-        await import('../../../../src/util/sea/detect.mts?cache_bust=throw')
-      expect(fresh.isSeaBinary()).toBe(false)
-      vi.doUnmock('node:module')
-    })
-  })
-})
+        };
+      });
+      const fresh = await import("../../../../src/util/sea/detect.mts?cache_bust=throw");
+      expect(fresh.isSeaBinary()).toBe(false);
+      vi.doUnmock(import("node:module"));
+    });
+  });
+});

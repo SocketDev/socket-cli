@@ -16,10 +16,10 @@
  * Related Files: - src/commands/oops/cmd-oops.mts - Implementation.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
+import type * as WithSubcommandsModule from "../../../../src/util/cli/with-subcommands.mjs";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -29,32 +29,28 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 // Mock output utilities.
-const mockSerializeResultJson = vi.hoisted(() =>
-  vi.fn(data => JSON.stringify(data)),
-)
+const mockSerializeResultJson = vi.hoisted(() => vi.fn((data) => JSON.stringify(data)));
 
-vi.mock('../../../../src/util/output/result-json.mjs', () => ({
+vi.mock(import("../../../../src/util/output/result-json.mjs"), () => ({
   serializeResultJson: mockSerializeResultJson,
-}))
+}));
 
-const mockFailMsgWithBadge = vi.hoisted(() =>
-  vi.fn((title, message) => `${title}: ${message}`),
-)
+const mockFailMsgWithBadge = vi.hoisted(() => vi.fn((title, message) => `${title}: ${message}`));
 
-vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
+vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
   failMsgWithBadge: mockFailMsgWithBadge,
-}))
+}));
 
 // Mock meowOrExit to prevent actual CLI parsing. Also invoke the
 // help() callback so its template-string body is recorded as covered;
@@ -63,291 +59,275 @@ vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
 // (parentName, config) so we pass a fake config too.
 const mockMeowOrExit = vi.hoisted(() =>
   vi.fn((options: unknown) => {
-    const argv = options.argv as string[] | readonly string[]
-    const flags: Record<string, unknown> = {}
+    const argv = options.argv as string[] | readonly string[];
+    const flags: Record<string, unknown> = {};
 
     if (options.config?.help) {
       try {
-        options.config.help('socket', {
-          commandName: 'oops',
+        options.config.help("socket", {
+          commandName: "oops",
           flags: {},
-        })
+        });
       } catch {}
     }
 
     // Parse flags from argv.
-    if (argv.includes('--dry-run')) {
-      flags['dryRun'] = true
+    if (argv.includes("--dry-run")) {
+      flags["dryRun"] = true;
     }
-    if (argv.includes('--json')) {
-      flags['json'] = true
+    if (argv.includes("--json")) {
+      flags["json"] = true;
     }
-    if (argv.includes('--markdown')) {
-      flags['markdown'] = true
+    if (argv.includes("--markdown")) {
+      flags["markdown"] = true;
     }
-    if (argv.includes('--throw')) {
-      flags['throw'] = true
+    if (argv.includes("--throw")) {
+      flags["throw"] = true;
     }
 
     return {
       flags,
-      help: '',
+      help: "",
       input: [],
       pkg: {},
-    }
+    };
   }),
-)
+);
 
-vi.mock(
-  '../../../../src/util/cli/with-subcommands.mjs',
-  async importOriginal => {
-    const actual = await importOriginal<typeof WithSubcommandsModule>()
-    return {
-      ...actual,
-      meowOrExit: mockMeowOrExit,
-    }
-  },
-)
+vi.mock(import("../../../../src/util/cli/with-subcommands.mjs"), async (importOriginal) => {
+  const actual = await importOriginal<typeof WithSubcommandsModule>();
+  return {
+    ...actual,
+    meowOrExit: mockMeowOrExit,
+  };
+});
 
 // Import after mocks.
-const { CMD_NAME, cmdOops } =
-  await import('../../../../src/commands/oops/cmd-oops.mts')
+const { CMD_NAME, cmdOops } = await import("../../../../src/commands/oops/cmd-oops.mts");
 
-describe('cmd-oops', () => {
+describe("cmd-oops", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
-  describe('command metadata', () => {
-    it('should export CMD_NAME as oops', () => {
-      expect(CMD_NAME).toBe('oops')
-    })
+  describe("command metadata", () => {
+    it("should export CMD_NAME as oops", () => {
+      expect(CMD_NAME).toBe("oops");
+    });
 
-    it('should have correct description', () => {
-      expect(cmdOops.description).toBe(
-        'Trigger an intentional error (for development)',
-      )
-    })
+    it("should have correct description", () => {
+      expect(cmdOops.description).toBe("Trigger an intentional error (for development)");
+    });
 
-    it('should be hidden', () => {
-      expect(cmdOops.hidden).toBe(true)
-    })
-  })
+    it("should be hidden", () => {
+      expect(cmdOops.hidden).toBe(true);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-oops.mts' }
-    const context = { parentName: 'socket' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-oops.mts" };
+    const context = { parentName: "socket" };
 
-    describe('--dry-run flag', () => {
-      it('should show preview without throwing error', async () => {
-        await cmdOops.run(['--dry-run'], importMeta, context)
+    describe("--dry-run flag", () => {
+      it("should show preview without throwing error", async () => {
+        await cmdOops.run(["--dry-run"], importMeta, context);
 
-        expect(mockLogger.error).toHaveBeenCalledWith('')
+        expect(mockLogger.error).toHaveBeenCalledWith("");
         expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining('Would trigger an intentional error'),
-        )
+          expect.stringContaining("Would trigger an intentional error"),
+        );
         expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining(
-            'This command throws an error for development/testing purposes.',
-          ),
-        )
+          expect.stringContaining("This command throws an error for development/testing purposes."),
+        );
         expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining('This error was intentionally left blank'),
-        )
-      })
+          expect.stringContaining("This error was intentionally left blank"),
+        );
+      });
 
-      it('should indicate thrown error format in dry-run', async () => {
-        await cmdOops.run(['--dry-run'], importMeta, context)
+      it("should indicate thrown error format in dry-run", async () => {
+        await cmdOops.run(["--dry-run"], importMeta, context);
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining('Output format: Thrown Error exception'),
-        )
-      })
+          expect.stringContaining("Output format: Thrown Error exception"),
+        );
+      });
 
-      it('should indicate JSON format in dry-run with --json', async () => {
-        await cmdOops.run(['--dry-run', '--json'], importMeta, context)
-
-        expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining('Output format: JSON error response'),
-        )
-      })
-
-      it('should indicate markdown format in dry-run with --markdown', async () => {
-        await cmdOops.run(['--dry-run', '--markdown'], importMeta, context)
+      it("should indicate JSON format in dry-run with --json", async () => {
+        await cmdOops.run(["--dry-run", "--json"], importMeta, context);
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining('Output format: Markdown error message'),
-        )
-      })
+          expect.stringContaining("Output format: JSON error response"),
+        );
+      });
 
-      it('should indicate thrown format when --throw flag present', async () => {
-        await cmdOops.run(
-          ['--dry-run', '--json', '--throw'],
-          importMeta,
-          context,
-        )
+      it("should indicate markdown format in dry-run with --markdown", async () => {
+        await cmdOops.run(["--dry-run", "--markdown"], importMeta, context);
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining('Output format: Thrown Error exception'),
-        )
-      })
+          expect.stringContaining("Output format: Markdown error message"),
+        );
+      });
 
-      it('should show run instruction in dry-run', async () => {
-        await cmdOops.run(['--dry-run'], importMeta, context)
+      it("should indicate thrown format when --throw flag present", async () => {
+        await cmdOops.run(["--dry-run", "--json", "--throw"], importMeta, context);
 
         expect(mockLogger.error).toHaveBeenCalledWith(
-          expect.stringContaining('Run without --dry-run to trigger the error'),
-        )
-      })
-    })
+          expect.stringContaining("Output format: Thrown Error exception"),
+        );
+      });
 
-    describe('default error behavior', () => {
-      it('should throw error when no output flags provided', async () => {
+      it("should show run instruction in dry-run", async () => {
+        await cmdOops.run(["--dry-run"], importMeta, context);
+
+        expect(mockLogger.error).toHaveBeenCalledWith(
+          expect.stringContaining("Run without --dry-run to trigger the error"),
+        );
+      });
+    });
+
+    describe("default error behavior", () => {
+      it("should throw error when no output flags provided", async () => {
         await expect(cmdOops.run([], importMeta, context)).rejects.toThrow(
-          'This error was intentionally left blank.',
-        )
-      })
+          "This error was intentionally left blank.",
+        );
+      });
 
-      it('should throw error with exact message', async () => {
+      it("should throw error with exact message", async () => {
         try {
-          await cmdOops.run([], importMeta, context)
-          expect.fail('Should have thrown an error')
+          await cmdOops.run([], importMeta, context);
+          expect.fail("Should have thrown an error");
         } catch (e: unknown) {
-          expect(e).toBeInstanceOf(Error)
+          expect(e).toBeInstanceOf(Error);
           if (e instanceof Error) {
-            expect(e.message).toBe('This error was intentionally left blank.')
+            expect(e.message).toBe("This error was intentionally left blank.");
           }
         }
-      })
-    })
+      });
+    });
 
-    describe('--json flag', () => {
-      it('should output JSON error and still throw', async () => {
-        await expect(
-          cmdOops.run(['--json'], importMeta, context),
-        ).rejects.toThrow('This error was intentionally left blank.')
+    describe("--json flag", () => {
+      it("should output JSON error and still throw", async () => {
+        await expect(cmdOops.run(["--json"], importMeta, context)).rejects.toThrow(
+          "This error was intentionally left blank.",
+        );
 
         expect(mockSerializeResultJson).toHaveBeenCalledWith({
           ok: false,
-          message: 'Oops',
-          cause: 'This error was intentionally left blank',
-        })
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          expect.stringContaining('ok'),
-        )
-      })
+          message: "Oops",
+          cause: "This error was intentionally left blank",
+        });
+        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining("ok"));
+      });
 
-      it('should set exit code to 1 with --json before throwing', async () => {
+      it("should set exit code to 1 with --json before throwing", async () => {
         try {
-          await cmdOops.run(['--json'], importMeta, context)
+          await cmdOops.run(["--json"], importMeta, context);
         } catch {
           // Expected to throw
         }
 
-        expect(process.exitCode).toBe(1)
-      })
+        expect(process.exitCode).toBe(1);
+      });
 
-      it('should throw error even with --json', async () => {
-        await expect(
-          cmdOops.run(['--json'], importMeta, context),
-        ).rejects.toThrow('This error was intentionally left blank.')
-      })
-    })
+      it("should throw error even with --json", async () => {
+        await expect(cmdOops.run(["--json"], importMeta, context)).rejects.toThrow(
+          "This error was intentionally left blank.",
+        );
+      });
+    });
 
-    describe('--markdown flag', () => {
-      it('should output markdown error without throwing', async () => {
-        await cmdOops.run(['--markdown'], importMeta, context)
+    describe("--markdown flag", () => {
+      it("should output markdown error without throwing", async () => {
+        await cmdOops.run(["--markdown"], importMeta, context);
 
         expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
-          'Oops',
-          'This error was intentionally left blank',
-        )
-        expect(mockLogger.fail).toHaveBeenCalled()
-      })
+          "Oops",
+          "This error was intentionally left blank",
+        );
+        expect(mockLogger.fail).toHaveBeenCalled();
+      });
 
-      it('should set exit code to 1 with --markdown', async () => {
-        await cmdOops.run(['--markdown'], importMeta, context)
+      it("should set exit code to 1 with --markdown", async () => {
+        await cmdOops.run(["--markdown"], importMeta, context);
 
-        expect(process.exitCode).toBe(1)
-      })
+        expect(process.exitCode).toBe(1);
+      });
 
-      it('should not throw error with --markdown', async () => {
-        await expect(
-          cmdOops.run(['--markdown'], importMeta, context),
-        ).resolves.not.toThrow()
-      })
-    })
+      it("should not throw error with --markdown", async () => {
+        await expect(cmdOops.run(["--markdown"], importMeta, context)).resolves.not.toThrow();
+      });
+    });
 
-    describe('--throw flag', () => {
-      it('should throw error even with --json when --throw is provided', async () => {
-        await expect(
-          cmdOops.run(['--json', '--throw'], importMeta, context),
-        ).rejects.toThrow('This error was intentionally left blank.')
-      })
+    describe("--throw flag", () => {
+      it("should throw error even with --json when --throw is provided", async () => {
+        await expect(cmdOops.run(["--json", "--throw"], importMeta, context)).rejects.toThrow(
+          "This error was intentionally left blank.",
+        );
+      });
 
-      it('should throw error even with --markdown when --throw is provided', async () => {
-        await expect(
-          cmdOops.run(['--markdown', '--throw'], importMeta, context),
-        ).rejects.toThrow('This error was intentionally left blank.')
-      })
+      it("should throw error even with --markdown when --throw is provided", async () => {
+        await expect(cmdOops.run(["--markdown", "--throw"], importMeta, context)).rejects.toThrow(
+          "This error was intentionally left blank.",
+        );
+      });
 
-      it('should not output JSON when --throw overrides --json', async () => {
+      it("should not output JSON when --throw overrides --json", async () => {
         try {
-          await cmdOops.run(['--json', '--throw'], importMeta, context)
-          expect.fail('Should have thrown an error')
+          await cmdOops.run(["--json", "--throw"], importMeta, context);
+          expect.fail("Should have thrown an error");
         } catch {
-          expect(mockSerializeResultJson).not.toHaveBeenCalled()
+          expect(mockSerializeResultJson).not.toHaveBeenCalled();
         }
-      })
+      });
 
-      it('should not output markdown when --throw overrides --markdown', async () => {
+      it("should not output markdown when --throw overrides --markdown", async () => {
         try {
-          await cmdOops.run(['--markdown', '--throw'], importMeta, context)
-          expect.fail('Should have thrown an error')
+          await cmdOops.run(["--markdown", "--throw"], importMeta, context);
+          expect.fail("Should have thrown an error");
         } catch {
-          expect(mockFailMsgWithBadge).not.toHaveBeenCalled()
+          expect(mockFailMsgWithBadge).not.toHaveBeenCalled();
         }
-      })
-    })
+      });
+    });
 
-    describe('flag combinations', () => {
-      it('should handle --json and --markdown together (outputs JSON then returns)', async () => {
-        await cmdOops.run(['--json', '--markdown'], importMeta, context)
+    describe("flag combinations", () => {
+      it("should handle --json and --markdown together (outputs JSON then returns)", async () => {
+        await cmdOops.run(["--json", "--markdown"], importMeta, context);
 
         expect(mockSerializeResultJson).toHaveBeenCalledWith({
           ok: false,
-          message: 'Oops',
-          cause: 'This error was intentionally left blank',
-        })
+          message: "Oops",
+          cause: "This error was intentionally left blank",
+        });
         expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
-          'Oops',
-          'This error was intentionally left blank',
-        )
-      })
+          "Oops",
+          "This error was intentionally left blank",
+        );
+      });
 
-      it('should handle all flags together', async () => {
+      it("should handle all flags together", async () => {
         await expect(
-          cmdOops.run(['--json', '--markdown', '--throw'], importMeta, context),
-        ).rejects.toThrow('This error was intentionally left blank.')
-      })
-    })
+          cmdOops.run(["--json", "--markdown", "--throw"], importMeta, context),
+        ).rejects.toThrow("This error was intentionally left blank.");
+      });
+    });
 
-    describe('edge cases', () => {
-      it('should handle readonly argv array', async () => {
-        const readonlyArgv = Object.freeze(['--markdown']) as readonly string[]
+    describe("edge cases", () => {
+      it("should handle readonly argv array", async () => {
+        const readonlyArgv = Object.freeze(["--markdown"]) as readonly string[];
 
-        await cmdOops.run(readonlyArgv, importMeta, context)
+        await cmdOops.run(readonlyArgv, importMeta, context);
 
-        expect(process.exitCode).toBe(1)
-        expect(mockLogger.fail).toHaveBeenCalled()
-      })
+        expect(process.exitCode).toBe(1);
+        expect(mockLogger.fail).toHaveBeenCalled();
+      });
 
-      it('should handle empty flags object', async () => {
+      it("should handle empty flags object", async () => {
         await expect(cmdOops.run([], importMeta, context)).rejects.toThrow(
-          'This error was intentionally left blank.',
-        )
-      })
-    })
-  })
-})
+          "This error was intentionally left blank.",
+        );
+      });
+    });
+  });
+});

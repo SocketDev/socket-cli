@@ -27,75 +27,71 @@
  * - Src/util/config.mts - Config file utilities
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getDefaultOrgSlug } from '../../../../src/commands/ci/fetch-default-org-slug.mts'
+import { getDefaultOrgSlug } from "../../../../src/commands/ci/fetch-default-org-slug.mts";
 
 // Create mock functions with hoisting.
-const { mockOrgSlug, mockFetchOrganization, mockGetConfigValueOrUndef } =
-  vi.hoisted(() => {
-    return {
-      mockGetConfigValueOrUndef: vi.fn(),
-      mockFetchOrganization: vi.fn(),
-      mockOrgSlug: { value: undefined as string | undefined },
-    }
-  })
+const { mockOrgSlug, mockFetchOrganization, mockGetConfigValueOrUndef } = vi.hoisted(() => {
+  return {
+    mockGetConfigValueOrUndef: vi.fn(),
+    mockFetchOrganization: vi.fn(),
+    mockOrgSlug: { value: undefined as string | undefined },
+  };
+});
 
 // Mock the dependencies.
-vi.mock('../../../../src/util/config.mts', () => ({
+vi.mock(import("../../../../src/util/config.mts"), () => ({
   getConfigValueOrUndef: mockGetConfigValueOrUndef,
-}))
+}));
 
 // Mock the SOCKET_CLI_ORG_SLUG environment variable module.
-vi.mock('../../../../src/env/socket-cli-org-slug.mts', () => ({
+vi.mock(import("../../../../src/env/socket-cli-org-slug.mts"), () => ({
   get SOCKET_CLI_ORG_SLUG() {
-    return mockOrgSlug.value
+    return mockOrgSlug.value;
   },
-}))
+}));
 
-vi.mock(
-  '../../../../src/commands/organization/fetch-organization-list.mts',
-  () => ({
-    fetchOrganization: mockFetchOrganization,
-  }),
-)
+vi.mock(import("../../../../src/commands/organization/fetch-organization-list.mts"), () => ({
+  fetchOrganization: mockFetchOrganization,
+}));
 
-describe('getDefaultOrgSlug', () => {
-  const mockFn = mockGetConfigValueOrUndef
-  const mockFetchFn = mockFetchOrganization
+describe("getDefaultOrgSlug", () => {
+  const mockFn = mockGetConfigValueOrUndef;
+  const mockFetchFn = mockFetchOrganization;
 
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockOrgSlug.value = undefined
-  })
+    vi.clearAllMocks();
+    mockOrgSlug.value = undefined;
+  });
 
-  it('uses config defaultOrg when set', async () => {
-    mockFn.mockReturnValue('config-org-slug')
+  it("uses config defaultOrg when set", async () => {
+    mockFn.mockReturnValue("config-org-slug");
 
-    const result = await getDefaultOrgSlug()
-
-    expect(result).toEqual({
-      ok: true,
-      data: 'config-org-slug',
-    })
-    expect(mockFn).toHaveBeenCalledWith('defaultOrg')
-  })
-
-  it('uses environment variable when no config', async () => {
-    mockFn.mockReturnValue(undefined)
-    mockOrgSlug.value = 'env-org-slug'
-
-    const result = await getDefaultOrgSlug()
+    const result = await getDefaultOrgSlug();
 
     expect(result).toEqual({
       ok: true,
-      data: 'env-org-slug',
-    })
-  })
+      data: "config-org-slug",
+    });
+    expect(mockFn).toHaveBeenCalledWith("defaultOrg");
+  });
 
-  it('fetches from API when no config or env', async () => {
-    mockFn.mockReturnValue(undefined)
-    mockOrgSlug.value = undefined
+  it("uses environment variable when no config", async () => {
+    mockFn.mockReturnValue(undefined);
+    mockOrgSlug.value = "env-org-slug";
+
+    const result = await getDefaultOrgSlug();
+
+    expect(result).toEqual({
+      ok: true,
+      data: "env-org-slug",
+    });
+  });
+
+  it("fetches from API when no config or env", async () => {
+    mockFn.mockReturnValue(undefined);
+    mockOrgSlug.value = undefined;
 
     mockFetchFn.mockResolvedValue({
       ok: true,
@@ -104,101 +100,99 @@ describe('getDefaultOrgSlug', () => {
         // objects before returning, so mock the array shape directly.
         organizations: [
           {
-            id: 'org-1',
-            name: 'Test Organization',
-            slug: 'test-org',
+            id: "org-1",
+            name: "Test Organization",
+            slug: "test-org",
           },
         ],
       },
-    })
+    });
 
-    const result = await getDefaultOrgSlug()
+    const result = await getDefaultOrgSlug();
 
     expect(result).toEqual({
       ok: true,
-      message: 'Retrieved default org from server',
-      data: 'test-org',
-    })
-  })
+      message: "Retrieved default org from server",
+      data: "test-org",
+    });
+  });
 
-  it('returns slug (not display name) for orgs with spaces', async () => {
+  it("returns slug (not display name) for orgs with spaces", async () => {
     // Regression guard: orgs whose display name has spaces produce
     // URLs like `/v0/orgs/Example%20Org%20Ltd/...` that 404.
-    mockFn.mockReturnValue(undefined)
-    mockOrgSlug.value = undefined
+    mockFn.mockReturnValue(undefined);
+    mockOrgSlug.value = undefined;
 
     mockFetchFn.mockResolvedValue({
       ok: true,
       data: {
-        organizations: [
-          { id: 'org-1', name: 'Example Org Ltd', slug: 'example-org-ltd' },
-        ],
+        organizations: [{ id: "org-1", name: "Example Org Ltd", slug: "example-org-ltd" }],
       },
-    })
+    });
 
-    const result = await getDefaultOrgSlug()
+    const result = await getDefaultOrgSlug();
 
     expect(result).toEqual({
       ok: true,
-      message: 'Retrieved default org from server',
-      data: 'example-org-ltd',
-    })
-  })
+      message: "Retrieved default org from server",
+      data: "example-org-ltd",
+    });
+  });
 
-  it('returns error when fetchOrganization fails', async () => {
-    mockFn.mockReturnValue(undefined)
-    mockOrgSlug.value = undefined
+  it("returns error when fetchOrganization fails", async () => {
+    mockFn.mockReturnValue(undefined);
+    mockOrgSlug.value = undefined;
 
     const error = {
       ok: false,
       code: 401,
-      message: 'Unauthorized',
-    }
-    mockFetchFn.mockResolvedValue(error)
+      message: "Unauthorized",
+    };
+    mockFetchFn.mockResolvedValue(error);
 
-    const result = await getDefaultOrgSlug()
+    const result = await getDefaultOrgSlug();
 
-    expect(result).toEqual(error)
-  })
+    expect(result).toEqual(error);
+  });
 
-  it('returns error when no organizations found', async () => {
-    mockFn.mockReturnValue(undefined)
-    mockOrgSlug.value = undefined
+  it("returns error when no organizations found", async () => {
+    mockFn.mockReturnValue(undefined);
+    mockOrgSlug.value = undefined;
 
     mockFetchFn.mockResolvedValue({
       ok: true,
       data: {
         organizations: [],
       },
-    })
+    });
 
-    const result = await getDefaultOrgSlug()
+    const result = await getDefaultOrgSlug();
 
     expect(result).toEqual({
       ok: false,
-      message: 'Failed to establish identity',
-      data: 'No organization associated with the Socket API token. Unable to continue.',
-    })
-  })
+      message: "Failed to establish identity",
+      data: "No organization associated with the Socket API token. Unable to continue.",
+    });
+  });
 
-  it('returns error when organization has no slug', async () => {
-    mockFn.mockReturnValue(undefined)
-    mockOrgSlug.value = undefined
+  it("returns error when organization has no slug", async () => {
+    mockFn.mockReturnValue(undefined);
+    mockOrgSlug.value = undefined;
 
     mockFetchFn.mockResolvedValue({
       ok: true,
       data: {
         // Missing slug — defensive check in case the API ever omits it.
-        organizations: [{ id: 'org-1', name: 'Test Org' }],
+        organizations: [{ id: "org-1", name: "Test Org" }],
       },
-    })
+    });
 
-    const result = await getDefaultOrgSlug()
+    const result = await getDefaultOrgSlug();
 
     expect(result).toEqual({
       ok: false,
-      message: 'Failed to establish identity',
-      data: 'Cannot determine the default organization for the API token. Unable to continue.',
-    })
-  })
-})
+      message: "Failed to establish identity",
+      data: "Cannot determine the default organization for the API token. Unable to continue.",
+    });
+  });
+});

@@ -5,7 +5,7 @@
  *   standard pattern directly:
  *
  * @example
- *   ```typescript
+ *   ;```typescript
  *   import { describe, expect, it, vi } from 'vitest'
  *
  *   // Setup mocks at module level (before describe)

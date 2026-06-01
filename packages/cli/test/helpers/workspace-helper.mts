@@ -4,11 +4,11 @@
  *   and source files.
  */
 
-import { existsSync, promises as fs } from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
+import { existsSync, promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { safeDelete, safeMkdir } from "@socketsecurity/lib-stable/fs/safe";
 
 /**
  * File content specification for workspace setup.
@@ -17,11 +17,11 @@ interface WorkspaceFile {
   /**
    * File path relative to workspace root.
    */
-  path: string
+  path: string;
   /**
    * File content (string or JSON-serializable object)
    */
-  content: string | Record<string, unknown>
+  content: string | Record<string, unknown>;
 }
 
 /**
@@ -31,27 +31,27 @@ interface PackageJsonConfig {
   /**
    * Package name.
    */
-  name?: string | undefined
+  name?: string | undefined;
   /**
    * Package version.
    */
-  version?: string | undefined
+  version?: string | undefined;
   /**
    * Dependencies map.
    */
-  dependencies?: Record<string, string> | undefined
+  dependencies?: Record<string, string> | undefined;
   /**
    * DevDependencies map.
    */
-  devDependencies?: Record<string, string> | undefined
+  devDependencies?: Record<string, string> | undefined;
   /**
    * Scripts map.
    */
-  scripts?: Record<string, string> | undefined
+  scripts?: Record<string, string> | undefined;
   /**
    * Additional package.json fields.
    */
-  [key: string]: unknown
+  [key: string]: unknown;
 }
 
 /**
@@ -61,19 +61,19 @@ interface WorkspaceConfig {
   /**
    * Workspace files to create.
    */
-  files?: WorkspaceFile[] | undefined
+  files?: WorkspaceFile[] | undefined;
   /**
    * Package.json configuration.
    */
-  packageJson?: PackageJsonConfig | undefined
+  packageJson?: PackageJsonConfig | undefined;
   /**
    * Whether to initialize git repository (default: false)
    */
-  initGit?: boolean | undefined
+  initGit?: boolean | undefined;
   /**
    * Whether to create node_modules directory (default: false)
    */
-  createNodeModules?: boolean | undefined
+  createNodeModules?: boolean | undefined;
 }
 
 /**
@@ -83,34 +83,34 @@ export interface Workspace {
   /**
    * Absolute path to workspace directory.
    */
-  path: string
+  path: string;
   /**
    * Cleanup function to remove workspace.
    */
-  cleanup: () => Promise<void>
+  cleanup: () => Promise<void>;
   /**
    * Write additional file to workspace.
    */
-  writeFile: (relativePath: string, content: string) => Promise<void>
+  writeFile: (relativePath: string, content: string) => Promise<void>;
   /**
    * Read file from workspace.
    */
-  readFile: (relativePath: string) => Promise<string>
+  readFile: (relativePath: string) => Promise<string>;
   /**
    * Check if file exists in workspace.
    */
-  fileExists: (relativePath: string) => boolean
+  fileExists: (relativePath: string) => boolean;
   /**
    * Get absolute path for relative path in workspace.
    */
-  resolve: (...segments: string[]) => string
+  resolve: (...segments: string[]) => string;
 }
 
 /**
  * Create a temporary test workspace with specified files and configuration.
  *
  * @example
- *   ```typescript
+ *   ;```typescript
  *   const workspace = await createTestWorkspace({
  *     packageJson: {
  *       name: 'test-project',
@@ -141,54 +141,52 @@ export async function createTestWorkspace(
   } = {
     __proto__: null,
     ...config,
-  } as WorkspaceConfig
+  } as WorkspaceConfig;
 
   // Create unique temporary directory
-  const tempBaseDir = os.tmpdir()
-  const tempDirName = `socket-cli-workspace-${Date.now()}-${Math.random().toString(36).slice(2)}`
-  const workspacePath = path.join(tempBaseDir, tempDirName)
+  const tempBaseDir = os.tmpdir();
+  const tempDirName = `socket-cli-workspace-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const workspacePath = path.join(tempBaseDir, tempDirName);
 
-  await safeMkdir(workspacePath, { recursive: true })
+  await safeMkdir(workspacePath, { recursive: true });
 
   // Create package.json if specified
   if (packageJson) {
     const pkgContent = {
-      name: 'test-workspace',
-      version: '1.0.0',
+      name: "test-workspace",
+      version: "1.0.0",
       ...packageJson,
-    }
+    };
     await fs.writeFile(
-      path.join(workspacePath, 'package.json'),
+      path.join(workspacePath, "package.json"),
       JSON.stringify(pkgContent, null, 2),
-      'utf8',
-    )
+      "utf8",
+    );
   }
 
   // Create specified files
   for (let i = 0, { length } = files; i < length; i += 1) {
-    const file = files[i]!
-    const filePath = path.join(workspacePath, file.path)
-    const fileDir = path.dirname(filePath)
-    await safeMkdir(fileDir, { recursive: true })
+    const file = files[i]!;
+    const filePath = path.join(workspacePath, file.path);
+    const fileDir = path.dirname(filePath);
+    await safeMkdir(fileDir, { recursive: true });
 
     const content =
-      typeof file.content === 'string'
-        ? file.content
-        : JSON.stringify(file.content, null, 2)
+      typeof file.content === "string" ? file.content : JSON.stringify(file.content, null, 2);
 
-    await fs.writeFile(filePath, content, 'utf8')
+    await fs.writeFile(filePath, content, "utf8");
   }
 
   // Create node_modules directory if requested
   if (createNodeModules) {
-    await safeMkdir(path.join(workspacePath, 'node_modules'), {
+    await safeMkdir(path.join(workspacePath, "node_modules"), {
       recursive: true,
-    })
+    });
   }
 
   // Initialize git repository if requested
   if (initGit) {
-    await safeMkdir(path.join(workspacePath, '.git'), { recursive: true })
+    await safeMkdir(path.join(workspacePath, ".git"), { recursive: true });
   }
 
   // Create workspace instance
@@ -197,32 +195,31 @@ export async function createTestWorkspace(
 
     cleanup: async () => {
       try {
-        await safeDelete(workspacePath)
+        await safeDelete(workspacePath);
       } catch {
         // Ignore cleanup errors.
       }
     },
 
     fileExists: (relativePath: string) => {
-      return existsSync(path.join(workspacePath, relativePath))
+      return existsSync(path.join(workspacePath, relativePath));
     },
 
     readFile: async (relativePath: string) => {
-      return fs.readFile(path.join(workspacePath, relativePath), 'utf8')
+      return fs.readFile(path.join(workspacePath, relativePath), "utf8");
     },
 
     resolve: (...segments: string[]) => {
-      return path.join(workspacePath, ...segments)
+      return path.join(workspacePath, ...segments);
     },
 
     writeFile: async (relativePath: string, content: string) => {
-      const filePath = path.join(workspacePath, relativePath)
-      const fileDir = path.dirname(filePath)
-      await safeMkdir(fileDir, { recursive: true })
-      await fs.writeFile(filePath, content, 'utf8')
+      const filePath = path.join(workspacePath, relativePath);
+      const fileDir = path.dirname(filePath);
+      await safeMkdir(fileDir, { recursive: true });
+      await fs.writeFile(filePath, content, "utf8");
     },
-  }
+  };
 
-  return workspace
+  return workspace;
 }
-

@@ -1,53 +1,50 @@
-import path from 'node:path'
+import path from "node:path";
 
-import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
+import { getSocketCliGithubToken } from "@socketsecurity/lib-stable/env/socket-cli";
 
-import { handleCreateGithubScan } from './handle-create-github-scan.mts'
-import { outputScanGithub } from './output-scan-github.mts'
-import { suggestOrgSlug } from './suggest-org-slug.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { outputDryRunUpload } from '../../util/dry-run/output.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import {
-  getFlagApiRequirementsOutput,
-  getFlagListOutput,
-} from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mjs'
-import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
-import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { handleCreateGithubScan } from "./handle-create-github-scan.mts";
+import { outputScanGithub } from "./output-scan-github.mts";
+import { suggestOrgSlug } from "./suggest-org-slug.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags, outputFlags } from "../../flags.mts";
+import { outputDryRunUpload } from "../../util/dry-run/output.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mjs";
+import { readOrDefaultSocketJson } from "../../util/socket/json.mts";
+import { determineOrgSlug } from "../../util/socket/org-slug.mjs";
+import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
 // Flags interface for type safety.
 interface ScanGithubFlags {
-  all: boolean | undefined
-  githubApiUrl: string
-  githubToken: string
-  interactive: boolean
-  json: boolean
-  markdown: boolean
-  org: string
-  orgGithub: string
-  repos: string
+  all: boolean | undefined;
+  githubApiUrl: string;
+  githubToken: string;
+  interactive: boolean;
+  json: boolean;
+  markdown: boolean;
+  org: string;
+  orgGithub: string;
+  repos: string;
 }
 
-export const CMD_NAME = 'github'
+export const CMD_NAME = "github";
 
-const DEFAULT_GITHUB_URL = 'https://api.github.com'
+const DEFAULT_GITHUB_URL = "https://api.github.com";
 
-const description = 'Create a scan for given GitHub repo'
+const description = "Create a scan for given GitHub repo";
 
-const hidden = true
+const hidden = true;
 
 export const cmdScanGithub = {
   description,
   hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -62,44 +59,42 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
       all: {
-        type: 'boolean',
+        type: "boolean",
         description:
-          'Apply for all known repositories reported by the Socket API. Supersedes `repos`.',
+          "Apply for all known repositories reported by the Socket API. Supersedes `repos`.",
       },
       githubToken: {
-        type: 'string',
+        type: "string",
         default: getSocketCliGithubToken(),
         description:
-          'Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.',
+          "Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.",
       },
       githubApiUrl: {
-        type: 'string',
+        type: "string",
         default: DEFAULT_GITHUB_URL,
         description: `Base URL of the GitHub API (default: ${DEFAULT_GITHUB_URL})`,
       },
       interactive: {
-        type: 'boolean',
+        type: "boolean",
         default: true,
         description:
-          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+          "Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.",
       },
       org: {
-        type: 'string',
-        default: '',
-        description:
-          'Force override the organization slug, overrides the default org from config',
+        type: "string",
+        default: "",
+        description: "Force override the organization slug, overrides the default org from config",
       },
       orgGithub: {
-        type: 'string',
-        default: '',
-        description:
-          'Alternate GitHub Org if the name is different than the Socket Org',
+        type: "string",
+        default: "",
+        description: "Alternate GitHub Org if the name is different than the Socket Org",
       },
       repos: {
-        type: 'string',
-        default: '',
+        type: "string",
+        default: "",
         description:
-          'List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.',
+          "List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.",
       },
     }),
     help: (command: string, config: { flags: MeowFlags }) => `
@@ -128,14 +123,14 @@ export async function run(
       $ ${command}
       $ ${command} ./proj
   `,
-  }
+  };
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  })
+  });
 
   const {
     githubToken = getSocketCliGithubToken(),
@@ -143,86 +138,81 @@ export async function run(
     json,
     markdown,
     org: orgFlag,
-  } = cli.flags as unknown as ScanGithubFlags
+  } = cli.flags as unknown as ScanGithubFlags;
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
-  let { all, githubApiUrl, orgGithub, repos } =
-    cli.flags as unknown as ScanGithubFlags
+  let { all, githubApiUrl, orgGithub, repos } = cli.flags as unknown as ScanGithubFlags;
 
-  let [cwd = '.'] = cli.input
+  let [cwd = "."] = cli.input;
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
+  cwd = path.resolve(process.cwd(), cwd);
 
-  let { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
-    interactive,
-    dryRun,
-  )
-  const sockJson = readOrDefaultSocketJson(cwd)
+  let { 0: orgSlug } = await determineOrgSlug(String(orgFlag || ""), interactive, dryRun);
+  const sockJson = readOrDefaultSocketJson(cwd);
 
   if (all === undefined) {
     if (sockJson.defaults?.scan?.github?.all !== undefined) {
-      all = sockJson.defaults?.scan?.github?.all
+      all = sockJson.defaults?.scan?.github?.all;
     } else {
-      all = false
+      all = false;
     }
   }
   /* c8 ignore start - githubApiUrl flag has DEFAULT_GITHUB_URL as its default, so this block only runs when both the flag default AND CLI input are empty */
   if (!githubApiUrl) {
     if (sockJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
-      githubApiUrl = sockJson.defaults.scan.github.githubApiUrl
+      githubApiUrl = sockJson.defaults.scan.github.githubApiUrl;
     } else {
-      githubApiUrl = DEFAULT_GITHUB_URL
+      githubApiUrl = DEFAULT_GITHUB_URL;
     }
   }
   /* c8 ignore stop */
   if (!orgGithub) {
     if (sockJson.defaults?.scan?.github?.orgGithub !== undefined) {
-      orgGithub = sockJson.defaults.scan.github.orgGithub
+      orgGithub = sockJson.defaults.scan.github.orgGithub;
     } else {
       // Default to Socket org slug. Often that's fine. Vanity and all that.
-      orgGithub = orgSlug
+      orgGithub = orgSlug;
     }
   }
   if (!all && !repos) {
     if (sockJson.defaults?.scan?.github?.repos !== undefined) {
-      repos = sockJson.defaults.scan.github.repos
+      repos = sockJson.defaults.scan.github.repos;
     } else {
-      repos = ''
+      repos = "";
     }
   }
 
   // We will also be needing that GitHub token.
-  const hasGithubApiToken = !!githubToken
+  const hasGithubApiToken = !!githubToken;
 
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
   // If the api-token is not set, ignore it for the sake of suggestions.
-  const hasSocketApiToken = hasDefaultApiToken()
+  const hasSocketApiToken = hasDefaultApiToken();
 
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
   // Only do suggestions with an apiToken and when not in dryRun mode
   if (hasSocketApiToken && !dryRun && interactive) {
     if (!orgSlug) {
-      const suggestion = await suggestOrgSlug()
+      const suggestion = await suggestOrgSlug();
       if (suggestion === undefined) {
         await outputScanGithub(
           {
             ok: false,
-            message: 'Canceled by user',
-            cause: 'Org selector was canceled by user',
+            message: "Canceled by user",
+            cause: "Org selector was canceled by user",
           },
           outputKind,
-        )
-        return
+        );
+        return;
       }
       if (suggestion) {
-        orgSlug = suggestion
+        orgSlug = suggestion;
       }
     }
   }
@@ -232,23 +222,23 @@ export async function run(
     {
       nook: true,
       test: !json || !markdown,
-      message: 'The json and markdown flags cannot be both set, pick one',
-      fail: 'omit one',
+      message: "The json and markdown flags cannot be both set, pick one",
+      fail: "omit one",
     },
     {
       nook: true,
       test: hasSocketApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
+      message: "This command requires a Socket API token for access",
+      fail: "try `socket login`",
     },
     {
       test: hasGithubApiToken,
-      message: 'This command requires a GitHub API token for access',
-      fail: 'missing',
+      message: "This command requires a GitHub API token for access",
+      fail: "missing",
     },
-  )
+  );
   if (!wasValidInput) {
-    return
+    return;
   }
 
   // Note exiting earlier to skirt a hidden auth requirement
@@ -257,24 +247,24 @@ export async function run(
       organization: orgSlug,
       githubOrganization: orgGithub,
       githubApiUrl,
-    }
+    };
     if (all) {
-      details['scope'] = 'all repositories'
+      details["scope"] = "all repositories";
     } else if (repos) {
-      details['repositories'] = repos
+      details["repositories"] = repos;
     }
-    outputDryRunUpload('GitHub scan', details)
-    return
+    outputDryRunUpload("GitHub scan", details);
+    return;
   }
 
   await handleCreateGithubScan({
     all: Boolean(all),
     githubApiUrl,
-    githubToken: githubToken || '',
+    githubToken: githubToken || "",
     interactive: Boolean(interactive),
     orgSlug,
     orgGithub,
     outputKind,
     repos,
-  })
+  });
 }

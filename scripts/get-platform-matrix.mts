@@ -8,14 +8,14 @@
  * # Outputs: {"include":[...]}
  */
 
-import { PLATFORM_CONFIGS } from '../packages/build-infra/lib/platform-targets.mts'
+import { PLATFORM_CONFIGS } from "../packages/build-infra/lib/platform-targets.mts";
 
 interface MatrixEntry {
-  arch: string
-  libc: string | null
-  platform: string
-  releasePlatform: string
-  runner: string
+  arch: string;
+  libc: string | null;
+  platform: string;
+  releasePlatform: string;
+  runner: string;
 }
 
 const matrix: { include: MatrixEntry[] } = {
@@ -28,6 +28,6 @@ const matrix: { include: MatrixEntry[] } = {
       runner: c.runner,
     }),
   ),
-}
+};
 
-logger.log(JSON.stringify(matrix))
+logger.log(JSON.stringify(matrix));

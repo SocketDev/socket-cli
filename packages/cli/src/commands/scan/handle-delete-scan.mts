@@ -1,7 +1,7 @@
-import { fetchDeleteOrgFullScan } from './fetch-delete-org-full-scan.mts'
-import { outputDeleteScan } from './output-delete-scan.mts'
+import { fetchDeleteOrgFullScan } from "./fetch-delete-org-full-scan.mts";
+import { outputDeleteScan } from "./output-delete-scan.mts";
 
-import type { OutputKind } from '../../types.mts'
+import type { OutputKind } from "../../types.mts";
 
 export async function handleDeleteScan(
   orgSlug: string,
@@ -9,8 +9,8 @@ export async function handleDeleteScan(
   outputKind: OutputKind,
 ): Promise<void> {
   const data = await fetchDeleteOrgFullScan(orgSlug, scanId, {
-    commandPath: 'socket scan del',
-  })
+    commandPath: "socket scan del",
+  });
 
-  await outputDeleteScan(data, outputKind)
+  await outputDeleteScan(data, outputKind);
 }

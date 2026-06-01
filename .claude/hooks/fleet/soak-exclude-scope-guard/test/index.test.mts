@@ -63,6 +63,19 @@ test('adding @socketsecurity/* glob passes', async () => {
   assert.strictEqual(r.code, 0)
 })
 
+test('adding @stuie/* first-party glob passes', async () => {
+  const p = tmpYaml('minimumReleaseAgeExclude:\n  - \'@socketregistry/*\'\n')
+  const r = await runHook({
+    tool_name: 'Write',
+    tool_input: {
+      file_path: p,
+      content:
+        "minimumReleaseAgeExclude:\n  - '@socketregistry/*'\n  - '@stuie/*'\n",
+    },
+  })
+  assert.strictEqual(r.code, 0)
+})
+
 test('adding @socketsecurity/lib@6.0.0 exact pin passes', async () => {
   const p = tmpYaml('minimumReleaseAgeExclude:\n  - \'@socketregistry/*\'\n')
   const r = await runHook({

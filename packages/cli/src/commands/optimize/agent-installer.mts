@@ -12,29 +12,29 @@
  * indication - CI-mode configuration for non-interactive execution.
  */
 
-import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
+import { NPM, PNPM } from "@socketsecurity/lib-stable/constants/agents";
 import {
   getNodeDisableSigusr1Flags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
-} from '@socketsecurity/lib-stable/constants/node'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+} from "@socketsecurity/lib-stable/constants/node";
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { getOwn } from "@socketsecurity/lib-stable/objects/inspect";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { cmdFlagsToString } from '../../util/process/cmd.mts'
+import { cmdFlagsToString } from "../../util/process/cmd.mts";
 
-import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
-import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
+import type { EnvDetails } from "../../util/ecosystem/environment.mjs";
+import type { SpinnerInstance } from "@socketsecurity/lib-stable/spinner/types";
 
-type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
+type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>;
 
 interface AgentInstallOptions extends SpawnOption {
-  args?: string[] | readonly string[] | undefined
-  spinner?: SpinnerInstance | undefined
+  args?: string[] | readonly string[] | undefined;
+  spinner?: SpinnerInstance | undefined;
 }
 
-type AgentSpawnResult = ReturnType<typeof spawn>
+type AgentSpawnResult = ReturnType<typeof spawn>;
 
 /**
  * Execute package installation with the detected package manager agent. Handles
@@ -44,40 +44,40 @@ export function runAgentInstall(
   pkgEnvDetails: EnvDetails,
   options?: AgentInstallOptions | undefined,
 ): AgentSpawnResult {
-  const { agent, agentExecPath, pkgPath } = pkgEnvDetails
-  const isNpm = agent === NPM
-  const isPnpm = agent === PNPM
+  const { agent, agentExecPath, pkgPath } = pkgEnvDetails;
+  const isNpm = agent === NPM;
+  const isPnpm = agent === PNPM;
 
   const {
     args = [],
     spinner,
     ...spawnOpts
-  } = { __proto__: null, ...options } as AgentInstallOptions
+  } = { __proto__: null, ...options } as AgentInstallOptions;
 
   // Skip harden flags for older pnpm versions.
-  const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
+  const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11;
 
   // Configure package manager specific install arguments.
-  let installArgs: string[]
+  let installArgs: string[];
   if (isNpm) {
     installArgs = [
-      'install',
+      "install",
       // Avoid code paths for 'audit' and 'fund'.
-      '--no-audit',
-      '--no-fund',
+      "--no-audit",
+      "--no-fund",
       ...args,
-    ]
+    ];
   } else if (isPnpm) {
     installArgs = [
-      'install',
+      "install",
       // Prevent interactive prompts in CI environments.
-      '--config.confirmModulesPurge=false',
+      "--config.confirmModulesPurge=false",
       // Allow lockfile updates (required for optimization).
-      '--no-frozen-lockfile',
+      "--no-frozen-lockfile",
       ...args,
-    ]
+    ];
   } else {
-    installArgs = ['install', ...args]
+    installArgs = ["install", ...args];
   }
 
   return spawn(agentExecPath, installArgs, {
@@ -85,19 +85,19 @@ export function runAgentInstall(
     // Package managers on Windows often require shell execution.
     shell: WIN32,
     spinner,
-    stdio: 'inherit',
+    stdio: "inherit",
     ...spawnOpts,
     env: {
       ...process.env,
       // Set CI mode for pnpm to ensure consistent behavior.
-      ...(isPnpm ? { CI: '1' } : {}),
+      ...(isPnpm ? { CI: "1" } : {}),
       NODE_OPTIONS: cmdFlagsToString([
         ...(skipNodeHardenFlags ? [] : getNodeHardenFlags()),
         ...getNodeNoWarningsFlags(),
         ...getNodeDisableSigusr1Flags(),
       ]),
       // @ts-expect-error - getOwn may return undefined, but spread handles it
-      ...getOwn(spawnOpts, 'env'),
+      ...getOwn(spawnOpts, "env"),
     },
-  })
+  });
 }

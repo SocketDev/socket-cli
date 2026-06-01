@@ -3,6 +3,6 @@
  * containing NLP model files (ONNX models and tokenizers).
  */
 
-import { env } from 'node:process'
+import { env } from "node:process";
 
-export const SOCKET_CLI_MODELS_PATH = env['SOCKET_CLI_MODELS_PATH']
+export const SOCKET_CLI_MODELS_PATH = env["SOCKET_CLI_MODELS_PATH"];

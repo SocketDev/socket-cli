@@ -1,17 +1,17 @@
-import { existsSync, readFileSync } from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync, readFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from "vitest/config";
 
 // Pin TZ in the parent process before vitest spawns its workers, so
 // every worker inherits TZ=UTC from spawn env. V8 caches the timezone
 // at the first Date op per-worker, so it must be present before any
 // test code (or vitest worker bootstrap) runs. test.env below sets it
 // on the worker for additional belt-and-suspenders coverage.
-if (!process.env['TZ']) {
-  process.env['TZ'] = 'UTC'
+if (!process.env["TZ"]) {
+  process.env["TZ"] = "UTC";
 }
 
 // Inject INLINED_* env vars from bundle-tools.json before workers
@@ -22,35 +22,35 @@ if (!process.env['TZ']) {
 // constants/env.mts → env/coana-version.mts) get the values *before*
 // they evaluate, so single-file vitest runs no longer fail with
 // "process.env.INLINED_COANA_VERSION is empty at runtime".
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const bundleToolsPath = path.join(__dirname, 'bundle-tools.json')
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const bundleToolsPath = path.join(__dirname, "bundle-tools.json");
 if (existsSync(bundleToolsPath)) {
   try {
-    const tools = JSON.parse(readFileSync(bundleToolsPath, 'utf8'))
+    const tools = JSON.parse(readFileSync(bundleToolsPath, "utf8"));
     const toolVersions: Record<string, string | undefined> = {
-      INLINED_CDXGEN_VERSION: tools['@cyclonedx/cdxgen']?.version,
-      INLINED_COANA_VERSION: tools['@coana-tech/cli']?.version,
-      INLINED_CYCLONEDX_CDXGEN_VERSION: tools['@cyclonedx/cdxgen']?.version,
-      INLINED_HOMEPAGE: 'https://github.com/SocketDev/socket-cli',
-      INLINED_NAME: '@socketsecurity/cli',
-      INLINED_OPENGREP_VERSION: tools['opengrep']?.version,
-      INLINED_PUBLISHED_BUILD: '',
-      INLINED_PYCLI_VERSION: tools['socketsecurity']?.version,
-      INLINED_PYTHON_BUILD_TAG: tools['python']?.tag,
-      INLINED_PYTHON_VERSION: tools['python']?.version,
-      INLINED_SENTRY_BUILD: '',
-      INLINED_SFW_NPM_VERSION: tools['sfw']?.npm?.version,
-      INLINED_SFW_VERSION: tools['sfw']?.version,
-      INLINED_SOCKET_PATCH_VERSION: tools['socket-patch']?.version,
-      INLINED_SYNP_VERSION: tools['synp']?.version,
-      INLINED_TRIVY_VERSION: tools['trivy']?.version,
-      INLINED_TRUFFLEHOG_VERSION: tools['trufflehog']?.version,
-      INLINED_VERSION: '0.0.0-test',
-      INLINED_VERSION_HASH: '0.0.0-test:abc1234:test',
-    }
+      INLINED_CDXGEN_VERSION: tools["@cyclonedx/cdxgen"]?.version,
+      INLINED_COANA_VERSION: tools["@coana-tech/cli"]?.version,
+      INLINED_CYCLONEDX_CDXGEN_VERSION: tools["@cyclonedx/cdxgen"]?.version,
+      INLINED_HOMEPAGE: "https://github.com/SocketDev/socket-cli",
+      INLINED_NAME: "@socketsecurity/cli",
+      INLINED_OPENGREP_VERSION: tools["opengrep"]?.version,
+      INLINED_PUBLISHED_BUILD: "",
+      INLINED_PYCLI_VERSION: tools["socketsecurity"]?.version,
+      INLINED_PYTHON_BUILD_TAG: tools["python"]?.tag,
+      INLINED_PYTHON_VERSION: tools["python"]?.version,
+      INLINED_SENTRY_BUILD: "",
+      INLINED_SFW_NPM_VERSION: tools["sfw"]?.npm?.version,
+      INLINED_SFW_VERSION: tools["sfw"]?.version,
+      INLINED_SOCKET_PATCH_VERSION: tools["socket-patch"]?.version,
+      INLINED_SYNP_VERSION: tools["synp"]?.version,
+      INLINED_TRIVY_VERSION: tools["trivy"]?.version,
+      INLINED_TRUFFLEHOG_VERSION: tools["trufflehog"]?.version,
+      INLINED_VERSION: "0.0.0-test",
+      INLINED_VERSION_HASH: "0.0.0-test:abc1234:test",
+    };
     for (const [key, value] of Object.entries(toolVersions)) {
       if (!process.env[key] && value) {
-        process.env[key] = value
+        process.env[key] = value;
       }
     }
   } catch {
@@ -59,27 +59,26 @@ if (existsSync(bundleToolsPath)) {
 }
 
 const isCoverageEnabled =
-  process.env['npm_lifecycle_event'] === 'cover' ||
-  process.argv.includes('--coverage')
+  process.env["npm_lifecycle_event"] === "cover" || process.argv.includes("--coverage");
 
 // Detect if running in CI.
-const isCI = 'CI' in process.env
+const isCI = "CI" in process.env;
 
 // Detect if running in CI on macOS.
-const isMacCI = isCI && process.platform === 'darwin'
+const isMacCI = isCI && process.platform === "darwin";
 
 // Calculate optimal thread count based on environment.
 // macOS CI runners have limited memory, so use fewer threads to prevent SIGABRT.
 export function getMaxThreads(): number {
   if (isCoverageEnabled) {
-    return 1
+    return 1;
   }
   if (isMacCI) {
     // Use 50% of CPUs on macOS CI to prevent memory exhaustion.
-    return Math.max(2, Math.floor(os.cpus().length / 2))
+    return Math.max(2, Math.floor(os.cpus().length / 2));
   }
   // Use all CPUs on other platforms.
-  return os.cpus().length
+  return os.cpus().length;
 }
 
 // oxlint-disable-next-line socket/no-default-export -- vitest config file requires default export
@@ -89,7 +88,7 @@ export default defineConfig({
   },
   test: {
     globals: false,
-    environment: 'node',
+    environment: "node",
     // Pin timezone for stable date-formatting snapshots regardless of
     // how vitest is invoked. CI runners are UTC; without this, devs on
     // local timezones see shifted dates (a 2025-04-19T04:50Z fixture
@@ -97,23 +96,23 @@ export default defineConfig({
     // worker process before any module loads, so this is set early
     // enough that V8's internal timezone cache picks it up.
     env: {
-      TZ: 'UTC',
+      TZ: "UTC",
     },
-    include: ['test/**/*.test.{mts,ts}'],
+    include: ["test/**/*.test.{mts,ts}"],
     exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/.{idea,git,cache,output,temp}/**',
-      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.{idea,git,cache,output,temp}/**",
+      "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*",
       // Exclude E2E tests from regular test runs.
-      '**/*.e2e.test.mts',
+      "**/*.e2e.test.mts",
       // Exclude integration tests (run separately via scripts/integration.mts).
-      'test/integration/**',
+      "test/integration/**",
     ],
-    reporters: ['default'],
-    setupFiles: ['./test/setup.mts'],
+    reporters: ["default"],
+    setupFiles: ["./test/setup.mts"],
     // Use threads for better performance.
-    pool: 'threads',
+    pool: "threads",
     // Maximize parallel execution to offset isolate: true performance cost.
     // Use CPU count for better hardware utilization.
     // Reduce threads on macOS CI to prevent memory exhaustion (SIGABRT).
@@ -144,37 +143,37 @@ export default defineConfig({
     // Large test files (like cmd-scan-reach.test.mts) will run in separate threads.
     fileParallelism: true,
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html', 'lcov', 'clover'],
+      provider: "v8",
+      reporter: ["text", "json", "html", "lcov", "clover"],
       // Prevent v8 coverage segfaults by processing in smaller chunks.
       processingConcurrency: 1,
       // Use less memory-intensive options.
       reportOnFailure: true,
-      reportsDirectory: './coverage',
+      reportsDirectory: "./coverage",
       exclude: [
-        '**/*.config.*',
-        '**/node_modules/**',
-        '**/[.]**',
-        '**/*.d.mts',
-        '**/*.d.ts',
-        '**/virtual:*',
-        'bin/**',
-        'coverage/**',
-        'dist/**',
-        'external/**',
-        'pnpmfile.*',
-        'scripts/**',
-        'src/**/types.mts',
-        'test/**',
-        'perf/**',
+        "**/*.config.*",
+        "**/node_modules/**",
+        "**/[.]**",
+        "**/*.d.mts",
+        "**/*.d.ts",
+        "**/virtual:*",
+        "bin/**",
+        "coverage/**",
+        "dist/**",
+        "external/**",
+        "pnpmfile.*",
+        "scripts/**",
+        "src/**/types.mts",
+        "test/**",
+        "perf/**",
         // Explicit root-level exclusions
-        '/scripts/**',
-        '/test/**',
+        "/scripts/**",
+        "/test/**",
       ],
-      include: ['src/**/*.mts', 'src/**/*.ts'],
+      include: ["src/**/*.mts", "src/**/*.ts"],
       clean: true,
       skipFull: false,
-      ignoreClassMethods: ['constructor'],
+      ignoreClassMethods: ["constructor"],
       thresholds: {
         lines: 0,
         functions: 0,
@@ -183,4 +182,4 @@ export default defineConfig({
       },
     },
   },
-})
+});

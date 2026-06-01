@@ -1,7 +1,7 @@
-import { convertCondaToRequirements } from './convert-conda-to-requirements.mts'
-import { outputRequirements } from './output-requirements.mts'
+import { convertCondaToRequirements } from "./convert-conda-to-requirements.mts";
+import { outputRequirements } from "./output-requirements.mts";
 
-import type { OutputKind } from '../../types.mts'
+import type { OutputKind } from "../../types.mts";
 
 export async function handleManifestConda({
   cwd,
@@ -10,13 +10,13 @@ export async function handleManifestConda({
   outputKind,
   verbose,
 }: {
-  cwd: string
-  filename: string
-  out: string
-  outputKind: OutputKind
-  verbose: boolean
+  cwd: string;
+  filename: string;
+  out: string;
+  outputKind: OutputKind;
+  verbose: boolean;
 }): Promise<void> {
-  const data = await convertCondaToRequirements(filename, cwd, verbose)
+  const data = await convertCondaToRequirements(filename, cwd, verbose);
 
-  await outputRequirements(data, outputKind, out)
+  await outputRequirements(data, outputKind, out);
 }

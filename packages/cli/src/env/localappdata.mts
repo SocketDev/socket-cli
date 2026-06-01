@@ -3,6 +3,6 @@
  * systems).
  */
 
-import { env } from 'node:process'
+import { env } from "node:process";
 
-export const LOCALAPPDATA = env['LOCALAPPDATA']
+export const LOCALAPPDATA = env["LOCALAPPDATA"];

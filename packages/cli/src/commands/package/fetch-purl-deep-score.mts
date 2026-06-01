@@ -1,67 +1,65 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { queryApiSafeJson } from '../../util/socket/api.mjs'
+import { queryApiSafeJson } from "../../util/socket/api.mjs";
 
-import type { CResult } from '../../types.mts'
+import type { CResult } from "../../types.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 export interface PurlDataResponse {
-  purl: string
+  purl: string;
   self: {
-    purl: string
+    purl: string;
     score: {
-      license: number
-      maintenance: number
-      overall: number
-      quality: number
-      supplyChain: number
-      vulnerability: number
-    }
-    capabilities: string[]
+      license: number;
+      maintenance: number;
+      overall: number;
+      quality: number;
+      supplyChain: number;
+      vulnerability: number;
+    };
+    capabilities: string[];
     alerts: Array<{
-      name: string
-      severity: string
-      category: string
-      example: string
-    }>
-  }
+      name: string;
+      severity: string;
+      category: string;
+      example: string;
+    }>;
+  };
   transitively: {
-    dependencyCount: number
-    func: string
+    dependencyCount: number;
+    func: string;
     score: {
-      license: number
-      maintenance: number
-      overall: number
-      quality: number
-      supplyChain: number
-      vulnerability: number
-    }
+      license: number;
+      maintenance: number;
+      overall: number;
+      quality: number;
+      supplyChain: number;
+      vulnerability: number;
+    };
     lowest: {
-      license: string
-      maintenance: string
-      overall: string
-      quality: string
-      supplyChain: string
-      vulnerability: string
-    }
-    capabilities: string[]
+      license: string;
+      maintenance: string;
+      overall: string;
+      quality: string;
+      supplyChain: string;
+      vulnerability: string;
+    };
+    capabilities: string[];
     alerts: Array<{
-      name: string
-      severity: string
-      category: string
-      example: string
-    }>
-  }
+      name: string;
+      severity: string;
+      category: string;
+      example: string;
+    }>;
+  };
 }
 
-export async function fetchPurlDeepScore(
-  purl: string,
-): Promise<CResult<PurlDataResponse>> {
-  logger.info(`Requesting deep score data for this purl: ${purl}`)
+export async function fetchPurlDeepScore(purl: string): Promise<CResult<PurlDataResponse>> {
+  logger.info(`Requesting deep score data for this purl: ${purl}`);
 
   return await queryApiSafeJson<PurlDataResponse>(
     `purl/score/${encodeURIComponent(purl)}`,
-    'the deep package scores',
-  )
+    "the deep package scores",
+  );
 }

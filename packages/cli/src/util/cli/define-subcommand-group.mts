@@ -14,39 +14,39 @@
  * meta: { argv: ['metadata'], hidden: true, … } }, })
  */
 
-import { commonFlags } from '../../flags.mts'
-import { defineFlags } from '../../meow.mts'
-import { meowWithSubcommands } from './with-subcommands.mts'
+import { commonFlags } from "../../flags.mts";
+import { defineFlags } from "../../meow.mts";
+import { meowWithSubcommands } from "./with-subcommands.mts";
 
-import type { MeowFlags } from '../../flags.mts'
-import type { CliAliases, CliSubcommand } from './with-subcommands-shared.mts'
+import type { MeowFlags } from "../../flags.mts";
+import type { CliAliases, CliSubcommand } from "./with-subcommands-shared.mts";
 
 interface DefineSubcommandGroupOptions {
   /**
    * Group name as it appears under `socket`. Used as the second token of the
    * usage string (`socket <name> <subcommand>`).
    */
-  name: string
+  name: string;
   /**
    * One-line description for the parent command's help bucket and the `socket
    * --help` listing.
    */
-  description: string
+  description: string;
   /**
    * Hide the group from `socket --help`. Defaults to false.
    */
-  hidden?: boolean | undefined
+  hidden?: boolean | undefined;
   /**
    * Map of subcommand name → CliSubcommand. The router routes the first
    * positional arg to the matching entry.
    */
-  subcommands: Record<string, CliSubcommand>
+  subcommands: Record<string, CliSubcommand>;
   /**
    * Optional aliases. Each key is an alternative name for the group; its `argv`
    * is the canonical command tokens to invoke (e.g. `aliases: { deps: { argv:
    * ['dependencies'], … } }`).
    */
-  aliases?: CliAliases | undefined
+  aliases?: CliAliases | undefined;
   /**
    * If true, pass the standard `commonFlags` (--dry-run, --help, --json,
    * --markdown, etc.) to meowWithSubcommands so the group's `--help` page lists
@@ -57,13 +57,13 @@ interface DefineSubcommandGroupOptions {
    * existing help output and any test assertions that inspect the outgoing
    * `config.flags`.
    */
-  passCommonFlags?: boolean | undefined
+  passCommonFlags?: boolean | undefined;
   /**
    * Override the flags passed to meowWithSubcommands. Takes precedence over
    * `passCommonFlags`. Useful for groups that need extra flags beyond the
    * common set.
    */
-  flags?: MeowFlags | undefined
+  flags?: MeowFlags | undefined;
 }
 
 /**
@@ -75,21 +75,10 @@ interface DefineSubcommandGroupOptions {
  * never had a `hidden` field at all) and keeps existing test assertions about
  * object identity / strict shape working.
  */
-export function defineSubcommandGroup(
-  opts: DefineSubcommandGroupOptions,
-): CliSubcommand {
-  const {
-    aliases,
-    description,
-    flags,
-    hidden,
-    name,
-    passCommonFlags,
-    subcommands,
-  } = opts
+export function defineSubcommandGroup(opts: DefineSubcommandGroupOptions): CliSubcommand {
+  const { aliases, description, flags, hidden, name, passCommonFlags, subcommands } = opts;
 
-  const effectiveFlags =
-    flags ?? (passCommonFlags ? defineFlags({ ...commonFlags }) : undefined)
+  const effectiveFlags = flags ?? (passCommonFlags ? defineFlags({ ...commonFlags }) : undefined);
 
   const result: CliSubcommand = {
     description,
@@ -106,13 +95,13 @@ export function defineSubcommandGroup(
           description,
           ...(effectiveFlags ? { flags: effectiveFlags } : {}),
         },
-      )
+      );
     },
-  }
+  };
 
   if (hidden !== undefined) {
-    result.hidden = hidden
+    result.hidden = hidden;
   }
 
-  return result
+  return result;
 }

@@ -6,138 +6,138 @@
  * execution, and the dlx fallback.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockSpawn = vi.hoisted(() => vi.fn())
-const mockSpawnDlx = vi.hoisted(() => vi.fn())
-const mockResolveSfw = vi.hoisted(() => vi.fn())
-const mockDetectExecutableType = vi.hoisted(() => vi.fn())
-const mockApplyMachineModeIfActive = vi.hoisted(() => vi.fn())
-const mockInferSubcommand = vi.hoisted(() => vi.fn())
+const mockSpawn = vi.hoisted(() => vi.fn());
+const mockSpawnDlx = vi.hoisted(() => vi.fn());
+const mockResolveSfw = vi.hoisted(() => vi.fn());
+const mockDetectExecutableType = vi.hoisted(() => vi.fn());
+const mockApplyMachineModeIfActive = vi.hoisted(() => vi.fn());
+const mockInferSubcommand = vi.hoisted(() => vi.fn());
 
-vi.mock('@socketsecurity/lib-stable/process/spawn/child', () => ({
+vi.mock(import("@socketsecurity/lib-stable/process/spawn/child"), () => ({
   spawn: mockSpawn,
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/dlx/detect', () => ({
+vi.mock(import("@socketsecurity/lib-stable/dlx/detect"), () => ({
   detectExecutableType: mockDetectExecutableType,
-}))
+}));
 
-vi.mock('../../../../src/util/dlx/spawn.mts', () => ({
+vi.mock(import("../../../../src/util/dlx/spawn.mts"), () => ({
   spawnDlx: mockSpawnDlx,
-}))
+}));
 
-vi.mock('../../../../src/util/dlx/resolve-binary.mts', () => ({
+vi.mock(import("../../../../src/util/dlx/resolve-binary.mts"), () => ({
   resolveSfw: mockResolveSfw,
-}))
+}));
 
-vi.mock('../../../../src/util/spawn/apply-machine-mode.mts', () => ({
+vi.mock(import("../../../../src/util/spawn/apply-machine-mode.mts"), () => ({
   applyMachineModeIfActive: mockApplyMachineModeIfActive,
   inferSubcommand: mockInferSubcommand,
-}))
+}));
 
-import { spawnSfwDlx } from '../../../../src/util/dlx/spawn-sfw.mts'
+import { spawnSfwDlx } from "../../../../src/util/dlx/spawn-sfw.mts";
 
-describe('spawnSfwDlx', () => {
+describe("spawnSfwDlx", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockInferSubcommand.mockReturnValue(undefined)
+    vi.clearAllMocks();
+    mockInferSubcommand.mockReturnValue(undefined);
     mockApplyMachineModeIfActive.mockReturnValue({
       args: [],
       env: {},
-    })
-  })
+    });
+  });
 
-  it('runs a local sfw binary when SOCKET_CLI_SFW_LOCAL_PATH is set', async () => {
+  it("runs a local sfw binary when SOCKET_CLI_SFW_LOCAL_PATH is set", async () => {
     mockResolveSfw.mockReturnValue({
-      type: 'local',
-      path: '/local/sfw',
-    })
-    mockDetectExecutableType.mockReturnValue({ type: 'binary' })
+      type: "local",
+      path: "/local/sfw",
+    });
+    mockDetectExecutableType.mockReturnValue({ type: "binary" });
     mockApplyMachineModeIfActive.mockReturnValue({
-      args: ['install'],
-      env: { MACHINE: '1' },
-    })
-    mockSpawn.mockReturnValue('spawn-promise')
+      args: ["install"],
+      env: { MACHINE: "1" },
+    });
+    mockSpawn.mockReturnValue("spawn-promise");
 
-    const result = await spawnSfwDlx(['npm', 'install'], undefined, undefined)
+    const result = await spawnSfwDlx(["npm", "install"], undefined, undefined);
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      '/local/sfw',
-      ['npm', 'install'],
-      expect.objectContaining({ stdio: 'inherit' }),
-    )
-    expect(result).toEqual({ spawnPromise: 'spawn-promise' })
-  })
+      "/local/sfw",
+      ["npm", "install"],
+      expect.objectContaining({ stdio: "inherit" }),
+    );
+    expect(result).toEqual({ spawnPromise: "spawn-promise" });
+  });
 
-  it('runs the local script via node when not a binary', async () => {
+  it("runs the local script via node when not a binary", async () => {
     mockResolveSfw.mockReturnValue({
-      type: 'local',
-      path: '/local/sfw.js',
-    })
-    mockDetectExecutableType.mockReturnValue({ type: 'script' })
-    mockSpawn.mockReturnValue('p')
+      type: "local",
+      path: "/local/sfw.js",
+    });
+    mockDetectExecutableType.mockReturnValue({ type: "script" });
+    mockSpawn.mockReturnValue("p");
 
-    await spawnSfwDlx(['npm'], undefined, undefined)
+    await spawnSfwDlx(["npm"], undefined, undefined);
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      'node',
-      ['/local/sfw.js', 'npm'],
-      expect.objectContaining({ stdio: 'inherit' }),
-    )
-  })
+      "node",
+      ["/local/sfw.js", "npm"],
+      expect.objectContaining({ stdio: "inherit" }),
+    );
+  });
 
   it('falls back to spawnDlx when resolution.type is "dlx"', async () => {
     mockResolveSfw.mockReturnValue({
-      type: 'dlx',
-      details: { name: 'sfw', version: '1.0.0' },
-    })
-    mockSpawnDlx.mockResolvedValue({ spawnPromise: 'dlx-promise' })
+      type: "dlx",
+      details: { name: "sfw", version: "1.0.0" },
+    });
+    mockSpawnDlx.mockResolvedValue({ spawnPromise: "dlx-promise" });
 
-    const result = await spawnSfwDlx(['npm', 'install'], undefined, undefined)
+    const result = await spawnSfwDlx(["npm", "install"], undefined, undefined);
 
-    expect(mockSpawnDlx).toHaveBeenCalled()
-    expect(result).toEqual({ spawnPromise: 'dlx-promise' })
-  })
+    expect(mockSpawnDlx).toHaveBeenCalled();
+    expect(result).toEqual({ spawnPromise: "dlx-promise" });
+  });
 
-  it('throws when resolveSfw returns an unexpected type', async () => {
+  it("throws when resolveSfw returns an unexpected type", async () => {
     mockResolveSfw.mockReturnValue({
-      type: 'github-release',
+      type: "github-release",
       details: {} as unknown,
-    })
+    });
 
     await expect(spawnSfwDlx([], undefined, undefined)).rejects.toThrow(
       /resolveSfw returned resolution\.type="github-release"/,
-    )
-  })
+    );
+  });
 
-  it('honors a custom stdio passed via spawnExtra', async () => {
+  it("honors a custom stdio passed via spawnExtra", async () => {
     mockResolveSfw.mockReturnValue({
-      type: 'local',
-      path: '/local/sfw',
-    })
-    mockDetectExecutableType.mockReturnValue({ type: 'binary' })
-    mockSpawn.mockReturnValue('p')
+      type: "local",
+      path: "/local/sfw",
+    });
+    mockDetectExecutableType.mockReturnValue({ type: "binary" });
+    mockSpawn.mockReturnValue("p");
 
-    await spawnSfwDlx(['npm'], undefined, { stdio: 'pipe' } as unknown)
+    await spawnSfwDlx(["npm"], undefined, { stdio: "pipe" } as unknown);
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      '/local/sfw',
+      "/local/sfw",
       expect.any(Array),
-      expect.objectContaining({ stdio: 'pipe' }),
-    )
-  })
+      expect.objectContaining({ stdio: "pipe" }),
+    );
+  });
 
-  it('handles an empty args array (no inner tool)', async () => {
+  it("handles an empty args array (no inner tool)", async () => {
     mockResolveSfw.mockReturnValue({
-      type: 'dlx',
-      details: { name: 'sfw', version: '1.0.0' },
-    })
-    mockSpawnDlx.mockResolvedValue({ spawnPromise: 'p' })
+      type: "dlx",
+      details: { name: "sfw", version: "1.0.0" },
+    });
+    mockSpawnDlx.mockResolvedValue({ spawnPromise: "p" });
 
-    await spawnSfwDlx([], undefined, undefined)
+    await spawnSfwDlx([], undefined, undefined);
 
     // applyMachineModeIfActive should NOT have been called for empty args.
-    expect(mockApplyMachineModeIfActive).not.toHaveBeenCalled()
-  })
-})
+    expect(mockApplyMachineModeIfActive).not.toHaveBeenCalled();
+  });
+});

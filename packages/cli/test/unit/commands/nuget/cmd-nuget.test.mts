@@ -20,57 +20,54 @@
  * src/util/process/cmd.mts - Flag filtering utilities.
  */
 
-import EventEmitter from 'node:events'
+import EventEmitter from "node:events";
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setupTestEnvironment } from '../../../helpers/index.mts'
+import { setupTestEnvironment } from "../../../helpers/index.mts";
 
-const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
-const mockMeowOrExit = vi.hoisted(() => vi.fn())
-const mockFilterFlags = vi.hoisted(() => vi.fn())
+const mockSpawnSfwDlx = vi.hoisted(() => vi.fn());
+const mockMeowOrExit = vi.hoisted(() => vi.fn());
+const mockFilterFlags = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/util/dlx/spawn.mts', () => ({
+vi.mock(import("../../../../src/util/dlx/spawn.mts"), () => ({
   spawnSfwDlx: mockSpawnSfwDlx,
-}))
+}));
 
-vi.mock('../../../../src/util/cli/with-subcommands.mjs', () => ({
+vi.mock(import("../../../../src/util/cli/with-subcommands.mjs"), () => ({
   meowOrExit: mockMeowOrExit,
-}))
+}));
 
-vi.mock('../../../../src/util/process/cmd.mts', () => ({
+vi.mock(import("../../../../src/util/process/cmd.mts"), () => ({
   filterFlags: mockFilterFlags,
-}))
+}));
 
-const { cmdNuget } =
-  await import('../../../../src/commands/nuget/cmd-nuget.mts')
+const { cmdNuget } = await import("../../../../src/commands/nuget/cmd-nuget.mts");
 
-describe('cmd-nuget', () => {
-  setupTestEnvironment()
+describe("cmd-nuget", () => {
+  setupTestEnvironment();
 
   beforeEach(() => {
-    mockFilterFlags.mockReturnValue([])
-  })
+    mockFilterFlags.mockReturnValue([]);
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdNuget.description).toBe(
-        'Run nuget with Socket Firewall security',
-      )
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdNuget.description).toBe("Run nuget with Socket Firewall security");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdNuget.hidden).toBe(false)
-    })
+    it("should not be hidden", () => {
+      expect(cmdNuget.hidden).toBe(false);
+    });
 
-    it('should have a run function', () => {
-      expect(typeof cmdNuget.run).toBe('function')
-    })
+    it("should have a run function", () => {
+      expect(typeof cmdNuget.run).toBe("function");
+    });
 
-    it('renders help text via the meow help callback', async () => {
-      mockMeowOrExit.mockImplementation(args => {
-        const helpText = args.config.help('socket nuget')
-        expect(helpText).toContain('socket nuget')
+    it("renders help text via the meow help callback", async () => {
+      mockMeowOrExit.mockImplementation((args) => {
+        const helpText = args.config.help("socket nuget");
+        expect(helpText).toContain("socket nuget");
         return {
           flags: {},
           help: helpText,
@@ -79,399 +76,375 @@ describe('cmd-nuget', () => {
           showHelp: vi.fn(),
           showVersion: vi.fn(),
           unknownFlags: [],
-        }
-      })
-      const EventEmitter = (await import('node:events')).default
-      const mockChildProcess = new EventEmitter()
+        };
+      });
+      const EventEmitter = (await import("node:events")).default;
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      mockSpawnPromise.process = mockChildProcess
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
-      mockFilterFlags.mockReturnValue([])
-      const runPromise = cmdNuget.run(
-        [],
-        { url: import.meta.url },
-        { parentName: 'socket' },
-      )
-      setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
-      await runPromise
-      expect(mockMeowOrExit).toHaveBeenCalled()
-    })
-  })
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      mockSpawnPromise.process = mockChildProcess;
+      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise });
+      mockFilterFlags.mockReturnValue([]);
+      const runPromise = cmdNuget.run([], { url: import.meta.url }, { parentName: "socket" });
+      setImmediate(() => mockChildProcess.emit("exit", 0, undefined));
+      await runPromise;
+      expect(mockMeowOrExit).toHaveBeenCalled();
+    });
+  });
 
-  describe('run', () => {
-    it('should call meowOrExit with correct config', async () => {
-      const mockChildProcess = new EventEmitter()
+  describe("run", () => {
+    it("should call meowOrExit with correct config", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['install', 'Newtonsoft.Json'])
+      mockFilterFlags.mockReturnValue(["install", "Newtonsoft.Json"]);
 
       const runPromise = cmdNuget.run(
-        ['install', 'Newtonsoft.Json'],
+        ["install", "Newtonsoft.Json"],
         { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+        { parentName: "socket" },
+      );
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
+        mockChildProcess.emit("exit", 0, undefined);
+      });
 
-      await runPromise
+      await runPromise;
 
       expect(mockMeowOrExit).toHaveBeenCalledWith({
-        argv: ['install', 'Newtonsoft.Json'],
+        argv: ["install", "Newtonsoft.Json"],
         config: expect.objectContaining({
-          commandName: 'nuget',
-          description: 'Run nuget with Socket Firewall security',
+          commandName: "nuget",
+          description: "Run nuget with Socket Firewall security",
           hidden: false,
         }),
         importMeta: { url: import.meta.url },
-        parentName: 'socket',
-      })
-    })
+        parentName: "socket",
+      });
+    });
 
-    it('should forward filtered arguments to spawnSfwDlx', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should forward filtered arguments to spawnSfwDlx", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['restore'])
+      mockFilterFlags.mockReturnValue(["restore"]);
 
       const runPromise = cmdNuget.run(
-        ['restore', '--config', 'socket.config.json'],
+        ["restore", "--config", "socket.config.json"],
         { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+        { parentName: "socket" },
+      );
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
+        mockChildProcess.emit("exit", 0, undefined);
+      });
 
-      await runPromise
+      await runPromise;
 
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['nuget', 'restore'], {
-        stdio: 'inherit',
-      })
-    })
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["nuget", "restore"], {
+        stdio: "inherit",
+      });
+    });
 
-    it('should filter out Socket CLI flags', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should filter out Socket CLI flags", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      const filteredArgs = ['list']
-      mockFilterFlags.mockReturnValue(filteredArgs)
+      const filteredArgs = ["list"];
+      mockFilterFlags.mockReturnValue(filteredArgs);
 
       const runPromise = cmdNuget.run(
-        ['list', '--org', 'my-org'],
+        ["list", "--org", "my-org"],
         { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+        { parentName: "socket" },
+      );
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
+        mockChildProcess.emit("exit", 0, undefined);
+      });
 
-      await runPromise
+      await runPromise;
 
-      expect(mockFilterFlags).toHaveBeenCalled()
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['nuget', ...filteredArgs], {
-        stdio: 'inherit',
-      })
-    })
+      expect(mockFilterFlags).toHaveBeenCalled();
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["nuget", ...filteredArgs], {
+        stdio: "inherit",
+      });
+    });
 
-    it('skips exit/kill when both code and signal are null', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("skips exit/kill when both code and signal are null", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: undefined,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
-      mockFilterFlags.mockReturnValue([])
+      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise });
+      mockFilterFlags.mockReturnValue([]);
 
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
-      mockExit.mockClear()
-      const mockKill = vi
-        .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as unknown)
-      mockKill.mockClear()
+      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
+      mockExit.mockClear();
+      const mockKill = vi.spyOn(process, "kill").mockImplementation((() => {}) as unknown);
+      mockKill.mockClear();
 
       cmdNuget.run(
         [],
         { url: import.meta.url } as unknown,
         {
-          parentName: 'socket',
+          parentName: "socket",
         } as unknown,
-      )
+      );
 
-      await new Promise(resolve => setImmediate(resolve))
-      const exitBefore = mockExit.mock.calls.length
-      const killBefore = mockKill.mock.calls.length
+      await new Promise((resolve) => setImmediate(resolve));
+      const exitBefore = mockExit.mock.calls.length;
+      const killBefore = mockKill.mock.calls.length;
 
-      mockChildProcess.emit('exit', undefined, undefined)
+      mockChildProcess.emit("exit", undefined, undefined);
 
-      await new Promise(resolve => setImmediate(resolve))
+      await new Promise((resolve) => setImmediate(resolve));
 
-      expect(mockExit.mock.calls.length).toBe(exitBefore)
-      expect(mockKill.mock.calls.length).toBe(killBefore)
+      expect(mockExit.mock.calls.length).toBe(exitBefore);
+      expect(mockKill.mock.calls.length).toBe(killBefore);
 
-      mockExit.mockRestore()
-      mockKill.mockRestore()
-    })
+      mockExit.mockRestore();
+      mockKill.mockRestore();
+    });
 
-    it('should set default exit code to 1', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should set default exit code to 1", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['install', 'Newtonsoft.Json'])
+      mockFilterFlags.mockReturnValue(["install", "Newtonsoft.Json"]);
 
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
+      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-      process.exitCode = undefined
+      process.exitCode = undefined;
 
-      cmdNuget.run(
-        ['install', 'Newtonsoft.Json'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdNuget.run(["install", "Newtonsoft.Json"], { url: import.meta.url } as ImportMeta, {
+        parentName: "socket",
+      });
 
       // Check that exit code was set to 1 before child process exits.
       await vi.waitFor(() => {
-        expect(process.exitCode).toBe(1)
-      })
+        expect(process.exitCode).toBe(1);
+      });
 
       // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, undefined)
+      mockChildProcess.emit("exit", 0, undefined);
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
-      expect(mockExit).toHaveBeenCalledWith(0)
+      expect(mockExit).toHaveBeenCalledWith(0);
 
-      mockExit.mockRestore()
-    })
+      mockExit.mockRestore();
+    });
 
-    it('should handle child process exit with code', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should handle child process exit with code", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['install', 'Newtonsoft.Json'])
+      mockFilterFlags.mockReturnValue(["install", "Newtonsoft.Json"]);
 
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
+      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-      cmdNuget.run(
-        ['install', 'Newtonsoft.Json'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdNuget.run(["install", "Newtonsoft.Json"], { url: import.meta.url } as ImportMeta, {
+        parentName: "socket",
+      });
 
       // Wait for event listeners to be registered.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
       // Simulate exit with code 0.
-      mockChildProcess.emit('exit', 0, undefined)
+      mockChildProcess.emit("exit", 0, undefined);
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
-      expect(mockExit).toHaveBeenCalledWith(0)
+      expect(mockExit).toHaveBeenCalledWith(0);
 
-      mockExit.mockRestore()
-    })
+      mockExit.mockRestore();
+    });
 
-    it('should handle child process exit with signal', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should handle child process exit with signal", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: undefined,
-        signal: 'SIGTERM',
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        signal: "SIGTERM",
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['install', 'Newtonsoft.Json'])
+      mockFilterFlags.mockReturnValue(["install", "Newtonsoft.Json"]);
 
-      const mockKill = vi
-        .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as unknown)
+      const mockKill = vi.spyOn(process, "kill").mockImplementation((() => {}) as unknown);
 
-      cmdNuget.run(
-        ['install', 'Newtonsoft.Json'],
-        { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+      cmdNuget.run(["install", "Newtonsoft.Json"], { url: import.meta.url } as ImportMeta, {
+        parentName: "socket",
+      });
 
       // Wait for event listeners to be registered.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
       // Simulate exit with signal.
-      mockChildProcess.emit('exit', undefined, 'SIGTERM')
+      mockChildProcess.emit("exit", undefined, "SIGTERM");
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
-      expect(mockKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+      expect(mockKill).toHaveBeenCalledWith(process.pid, "SIGTERM");
 
-      mockKill.mockRestore()
-    })
+      mockKill.mockRestore();
+    });
 
-    it('should handle empty arguments', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should handle empty arguments", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue([])
+      mockFilterFlags.mockReturnValue([]);
 
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
+      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
       cmdNuget.run([], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+        parentName: "socket",
+      });
 
       // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, undefined)
+      mockChildProcess.emit("exit", 0, undefined);
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['nuget'], {
-        stdio: 'inherit',
-      })
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["nuget"], {
+        stdio: "inherit",
+      });
 
-      mockExit.mockRestore()
-    })
+      mockExit.mockRestore();
+    });
 
-    it('should handle context with parentName', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should handle context with parentName", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['help'])
+      mockFilterFlags.mockReturnValue(["help"]);
 
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
+      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-      cmdNuget.run(['help'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+      cmdNuget.run(["help"], { url: import.meta.url } as ImportMeta, {
+        parentName: "socket",
+      });
 
       // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, undefined)
+      mockChildProcess.emit("exit", 0, undefined);
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
       expect(mockMeowOrExit).toHaveBeenCalledWith(
         expect.objectContaining({
-          parentName: 'socket',
+          parentName: "socket",
         }),
-      )
+      );
 
-      mockExit.mockRestore()
-    })
-  })
-})
+      mockExit.mockRestore();
+    });
+  });
+});

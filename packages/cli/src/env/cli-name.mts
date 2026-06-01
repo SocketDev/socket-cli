@@ -6,8 +6,8 @@
  * build metadata into the binary.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
 export function getCliName(): string {
-  return process.env['INLINED_NAME']!
+  return process.env["INLINED_NAME"]!;
 }

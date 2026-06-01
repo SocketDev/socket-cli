@@ -13,21 +13,21 @@
  * Related Files: - src/removeSocketWrapper.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockReadFileSync = vi.hoisted(() => vi.fn())
-const mockWriteFileSync = vi.hoisted(() => vi.fn())
+const mockReadFileSync = vi.hoisted(() => vi.fn());
+const mockWriteFileSync = vi.hoisted(() => vi.fn());
 
-vi.mock('node:fs', () => ({
+vi.mock(import("node:fs"), () => ({
   readFileSync: mockReadFileSync,
   writeFileSync: mockWriteFileSync,
   default: {
     readFileSync: mockReadFileSync,
     writeFileSync: mockWriteFileSync,
   },
-}))
+}));
 
-import { removeSocketWrapper } from '../../../../src/commands/wrapper/remove-socket-wrapper.mts'
+import { removeSocketWrapper } from "../../../../src/commands/wrapper/remove-socket-wrapper.mts";
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -36,193 +36,178 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}))
+}));
 
-describe('removeSocketWrapper', () => {
+describe("removeSocketWrapper", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockWriteFileSync.mockImplementation(() => undefined)
-  })
+    vi.clearAllMocks();
+    mockWriteFileSync.mockImplementation(() => undefined);
+  });
 
   afterEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('successfully removes both aliases from file', async () => {
-    await import('@socketsecurity/lib-stable/logger')
+  it("successfully removes both aliases from file", async () => {
+    await import("@socketsecurity/lib-stable/logger");
 
     mockReadFileSync.mockReturnValue(
       'alias npm="socket npm"\nalias npx="socket npx"\nother content',
-    )
+    );
 
-    removeSocketWrapper('/home/user/.bashrc')
+    removeSocketWrapper("/home/user/.bashrc");
 
-    expect(mockReadFileSync).toHaveBeenCalledWith('/home/user/.bashrc', 'utf8')
-    expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/home/user/.bashrc',
-      'other content',
-      'utf8',
-    )
+    expect(mockReadFileSync).toHaveBeenCalledWith("/home/user/.bashrc", "utf8");
+    expect(mockWriteFileSync).toHaveBeenCalledWith("/home/user/.bashrc", "other content", "utf8");
     expect(mockLogger.success).toHaveBeenCalledWith(
-      expect.stringContaining('The alias was removed from /home/user/.bashrc'),
-    )
+      expect.stringContaining("The alias was removed from /home/user/.bashrc"),
+    );
     expect(mockLogger.info).toHaveBeenCalledWith(
-      expect.stringContaining('restart existing terminal sessions'),
-    )
-  })
+      expect.stringContaining("restart existing terminal sessions"),
+    );
+  });
 
-  it('removes only socket aliases, leaving others intact', () => {
+  it("removes only socket aliases, leaving others intact", () => {
     mockReadFileSync.mockReturnValue(
       'alias ll="ls -la"\nalias npm="socket npm"\nalias gs="git status"\nalias npx="socket npx"',
-    )
+    );
 
-    removeSocketWrapper('/home/user/.zshrc')
+    removeSocketWrapper("/home/user/.zshrc");
 
     expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/home/user/.zshrc',
+      "/home/user/.zshrc",
       'alias ll="ls -la"\nalias gs="git status"',
-      'utf8',
-    )
-  })
+      "utf8",
+    );
+  });
 
-  it('handles read error gracefully', async () => {
-    await import('@socketsecurity/lib-stable/logger')
-    const readError = new Error('Permission denied')
+  it("handles read error gracefully", async () => {
+    await import("@socketsecurity/lib-stable/logger");
+    const readError = new Error("Permission denied");
 
     mockReadFileSync.mockImplementation(() => {
-      throw readError
-    })
+      throw readError;
+    });
 
-    removeSocketWrapper('/etc/protected-file')
+    removeSocketWrapper("/etc/protected-file");
 
     expect(mockLogger.fail).toHaveBeenCalledWith(
-      expect.stringContaining('There was an error removing the alias'),
-    )
-    expect(mockLogger.error).toHaveBeenCalledWith(readError)
-    expect(mockWriteFileSync).not.toHaveBeenCalled()
-  })
+      expect.stringContaining("There was an error removing the alias"),
+    );
+    expect(mockLogger.error).toHaveBeenCalledWith(readError);
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
 
-  it('handles write error gracefully', async () => {
-    await import('@socketsecurity/lib-stable/logger')
-    const writeError = new Error('Disk full')
+  it("handles write error gracefully", async () => {
+    await import("@socketsecurity/lib-stable/logger");
+    const writeError = new Error("Disk full");
 
-    mockReadFileSync.mockReturnValue('alias npm="socket npm"')
+    mockReadFileSync.mockReturnValue('alias npm="socket npm"');
     mockWriteFileSync.mockImplementation(() => {
-      throw writeError
-    })
+      throw writeError;
+    });
 
-    removeSocketWrapper('/home/user/.bashrc')
+    removeSocketWrapper("/home/user/.bashrc");
 
-    expect(mockLogger.error).toHaveBeenCalledWith(writeError)
-    expect(mockLogger.success).not.toHaveBeenCalled()
-  })
+    expect(mockLogger.error).toHaveBeenCalledWith(writeError);
+    expect(mockLogger.success).not.toHaveBeenCalled();
+  });
 
-  it('handles file with no socket aliases', async () => {
-    await import('@socketsecurity/lib-stable/logger')
+  it("handles file with no socket aliases", async () => {
+    await import("@socketsecurity/lib-stable/logger");
 
-    mockReadFileSync.mockReturnValue(
-      'alias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin',
-    )
+    mockReadFileSync.mockReturnValue('alias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin');
 
-    removeSocketWrapper('/home/user/.bashrc')
+    removeSocketWrapper("/home/user/.bashrc");
 
     // When no socket aliases are removed, success message is still shown.
     expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/home/user/.bashrc',
+      "/home/user/.bashrc",
       'alias ll="ls -la"\nexport PATH=$PATH:/usr/local/bin',
-      'utf8',
-    )
+      "utf8",
+    );
     // File is written successfully, so success is logged.
     expect(mockLogger.success).toHaveBeenCalledWith(
-      expect.stringContaining('The alias was removed from /home/user/.bashrc'),
-    )
-  })
+      expect.stringContaining("The alias was removed from /home/user/.bashrc"),
+    );
+  });
 
-  it('preserves empty lines when removing aliases', () => {
+  it("preserves empty lines when removing aliases", () => {
     mockReadFileSync.mockReturnValue(
       '\nalias npm="socket npm"\n\nalias npx="socket npx"\n\nother content\n',
-    )
+    );
 
-    removeSocketWrapper('/home/user/.bashrc')
-
-    expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/home/user/.bashrc',
-      '\n\n\nother content\n',
-      'utf8',
-    )
-  })
-
-  it('handles empty file', async () => {
-    await import('@socketsecurity/lib-stable/logger')
-
-    mockReadFileSync.mockReturnValue('')
-
-    removeSocketWrapper('/home/user/.bashrc')
+    removeSocketWrapper("/home/user/.bashrc");
 
     expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/home/user/.bashrc',
-      '',
-      'utf8',
-    )
+      "/home/user/.bashrc",
+      "\n\n\nother content\n",
+      "utf8",
+    );
+  });
+
+  it("handles empty file", async () => {
+    await import("@socketsecurity/lib-stable/logger");
+
+    mockReadFileSync.mockReturnValue("");
+
+    removeSocketWrapper("/home/user/.bashrc");
+
+    expect(mockWriteFileSync).toHaveBeenCalledWith("/home/user/.bashrc", "", "utf8");
     // File is written successfully, so success is logged.
     expect(mockLogger.success).toHaveBeenCalledWith(
-      expect.stringContaining('The alias was removed from /home/user/.bashrc'),
-    )
-  })
+      expect.stringContaining("The alias was removed from /home/user/.bashrc"),
+    );
+  });
 
-  it('removes only exact matches', () => {
+  it("removes only exact matches", () => {
     mockReadFileSync.mockReturnValue(
       [
         'alias npm="socket npm"',
         'alias npm2="socket npm"',
         'alias npx="socket npx"',
         'alias npx-extra="socket pnpm exec --extra"',
-      ].join('\n'),
-    )
+      ].join("\n"),
+    );
 
-    removeSocketWrapper('/home/user/.bashrc')
+    removeSocketWrapper("/home/user/.bashrc");
 
     expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/home/user/.bashrc',
-      [
-        'alias npm2="socket npm"',
-        'alias npx-extra="socket pnpm exec --extra"',
-      ].join('\n'),
-      'utf8',
-    )
-  })
+      "/home/user/.bashrc",
+      ['alias npm2="socket npm"', 'alias npx-extra="socket pnpm exec --extra"'].join("\n"),
+      "utf8",
+    );
+  });
 
-  it('handles undefined error in read catch', async () => {
-    await import('@socketsecurity/lib-stable/logger')
+  it("handles undefined error in read catch", async () => {
+    await import("@socketsecurity/lib-stable/logger");
 
     mockReadFileSync.mockImplementation(() => {
-      throw undefined
-    })
+      throw undefined;
+    });
 
-    removeSocketWrapper('/home/user/.bashrc')
+    removeSocketWrapper("/home/user/.bashrc");
 
-    expect(mockLogger.fail).toHaveBeenCalledWith(
-      'There was an error removing the alias.',
-    )
-    expect(mockLogger.error).not.toHaveBeenCalled()
-  })
+    expect(mockLogger.fail).toHaveBeenCalledWith("There was an error removing the alias.");
+    expect(mockLogger.error).not.toHaveBeenCalled();
+  });
 
-  it('handles undefined error in write catch', async () => {
-    await import('@socketsecurity/lib-stable/logger')
+  it("handles undefined error in write catch", async () => {
+    await import("@socketsecurity/lib-stable/logger");
 
-    mockReadFileSync.mockReturnValue('alias npm="socket npm"')
+    mockReadFileSync.mockReturnValue('alias npm="socket npm"');
     mockWriteFileSync.mockImplementation(() => {
-      throw undefined
-    })
+      throw undefined;
+    });
 
-    removeSocketWrapper('/home/user/.bashrc')
+    removeSocketWrapper("/home/user/.bashrc");
 
-    expect(mockLogger.error).not.toHaveBeenCalled()
-    expect(mockLogger.success).not.toHaveBeenCalled()
-  })
-})
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogger.success).not.toHaveBeenCalled();
+  });
+});

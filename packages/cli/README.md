@@ -310,12 +310,12 @@ All commands support multiple output formats:
 
 ```typescript
 // Controlled by --json, --markdown flags
-type OutputKind = 'json' | 'markdown' | 'text'
+type OutputKind = "json" | "markdown" | "text";
 
 // CResult pattern for JSON output
 type CResult<T> =
   | { ok: true; data: T; message?: string }
-  | { ok: false; message: string; cause?: string; code?: number }
+  | { ok: false; message: string; cause?: string; code?: number };
 ```
 
 ### Configuration
@@ -421,12 +421,12 @@ Socket SDK integration:
 
 ```typescript
 // src/util/socket/api.mts
-import { SocketSdkClient } from '@socketsecurity/sdk'
+import { SocketSdkClient } from "@socketsecurity/sdk";
 
 // Automatic error handling with spinners
-const result = await handleApiCall(sdk => sdk.createFullScan(params), {
-  cmdPath: 'socket scan:create',
-})
+const result = await handleApiCall((sdk) => sdk.createFullScan(params), {
+  cmdPath: "socket scan:create",
+});
 
 // Features:
 // - Automatic retry on transient failures

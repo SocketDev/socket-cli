@@ -4,10 +4,10 @@
  * Tests the command that retrieves scan metadata.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
+import type * as SdkModule from "../../../../src/util/socket/sdk.mjs";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -17,272 +17,219 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 // Mock dependencies.
-const mockHandleOrgScanMetadata = vi.hoisted(() => vi.fn())
-const mockDetermineOrgSlug = vi.hoisted(() =>
-  vi.fn().mockResolvedValue(['test-org', 'test-org']),
-)
-const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true))
+const mockHandleOrgScanMetadata = vi.hoisted(() => vi.fn());
+const mockDetermineOrgSlug = vi.hoisted(() => vi.fn().mockResolvedValue(["test-org", "test-org"]));
+const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true));
 
-vi.mock('../../../../src/commands/scan/handle-scan-metadata.mts', () => ({
+vi.mock(import("../../../../src/commands/scan/handle-scan-metadata.mts"), () => ({
   handleOrgScanMetadata: mockHandleOrgScanMetadata,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/org-slug.mjs', () => ({
+vi.mock(import("../../../../src/util/socket/org-slug.mjs"), () => ({
   determineOrgSlug: mockDetermineOrgSlug,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof SdkModule>()
+vi.mock(import("../../../../src/util/socket/sdk.mjs"), async (importOriginal) => {
+  const actual = await importOriginal<typeof SdkModule>();
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
-  }
-})
+  };
+});
 
 // Import after mocks.
-const { cmdScanMetadata } =
-  await import('../../../../src/commands/scan/cmd-scan-metadata.mts')
+const { cmdScanMetadata } = await import("../../../../src/commands/scan/cmd-scan-metadata.mts");
 
-describe('cmd-scan-metadata', () => {
+describe("cmd-scan-metadata", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdScanMetadata.description).toBe("Get a scan's metadata")
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdScanMetadata.description).toBe("Get a scan's metadata");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdScanMetadata.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdScanMetadata.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-scan-metadata.mts' }
-    const context = { parentName: 'socket scan' }
-    const testScanId = '000aaaa1-0000-0a0a-00a0-00a0000000a0'
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-scan-metadata.mts" };
+    const context = { parentName: "socket scan" };
+    const testScanId = "000aaaa1-0000-0a0a-00a0-00a0000000a0";
 
-    it('should support --dry-run flag', async () => {
-      await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
+    it("should support --dry-run flag", async () => {
+      await cmdScanMetadata.run(["--dry-run", testScanId], importMeta, context);
 
-      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('DryRun'),
-      )
-    })
+      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("DryRun"));
+    });
 
-    it('should fail without Socket API token', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(false)
+    it("should fail without Socket API token", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(false);
 
-      await cmdScanMetadata.run([testScanId], importMeta, context)
+      await cmdScanMetadata.run([testScanId], importMeta, context);
 
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled();
+    });
 
-    it('should fail without scan ID', async () => {
-      await cmdScanMetadata.run([], importMeta, context)
+    it("should fail without scan ID", async () => {
+      await cmdScanMetadata.run([], importMeta, context);
 
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled();
+    });
 
-    it('should call handleOrgScanMetadata with scan ID', async () => {
-      await cmdScanMetadata.run([testScanId], importMeta, context)
+    it("should call handleOrgScanMetadata with scan ID", async () => {
+      await cmdScanMetadata.run([testScanId], importMeta, context);
 
-      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith(
-        'test-org',
-        testScanId,
-        'text',
-      )
-    })
+      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith("test-org", testScanId, "text");
+    });
 
-    it('should pass --org flag to determineOrgSlug', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['custom-org', 'custom-org'])
+    it("should pass --org flag to determineOrgSlug", async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(["custom-org", "custom-org"]);
 
-      await cmdScanMetadata.run(
-        [testScanId, '--org', 'custom-org'],
-        importMeta,
-        context,
-      )
+      await cmdScanMetadata.run([testScanId, "--org", "custom-org"], importMeta, context);
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
-        'custom-org',
-        true,
-        false,
-      )
-      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith(
-        'custom-org',
-        testScanId,
-        'text',
-      )
-    })
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("custom-org", true, false);
+      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith("custom-org", testScanId, "text");
+    });
 
-    it('should support --json output mode', async () => {
-      await cmdScanMetadata.run([testScanId, '--json'], importMeta, context)
+    it("should support --json output mode", async () => {
+      await cmdScanMetadata.run([testScanId, "--json"], importMeta, context);
 
-      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith(
-        'test-org',
-        testScanId,
-        'json',
-      )
-    })
+      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith("test-org", testScanId, "json");
+    });
 
-    it('should support --markdown output mode', async () => {
-      await cmdScanMetadata.run([testScanId, '--markdown'], importMeta, context)
+    it("should support --markdown output mode", async () => {
+      await cmdScanMetadata.run([testScanId, "--markdown"], importMeta, context);
 
-      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith(
-        'test-org',
-        testScanId,
-        'markdown',
-      )
-    })
+      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith("test-org", testScanId, "markdown");
+    });
 
-    it('should fail if both --json and --markdown are provided', async () => {
-      await cmdScanMetadata.run(
-        [testScanId, '--json', '--markdown'],
-        importMeta,
-        context,
-      )
+    it("should fail if both --json and --markdown are provided", async () => {
+      await cmdScanMetadata.run([testScanId, "--json", "--markdown"], importMeta, context);
 
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled();
+    });
 
-    it('should pass --no-interactive to determineOrgSlug', async () => {
-      await cmdScanMetadata.run(
-        [testScanId, '--no-interactive'],
-        importMeta,
-        context,
-      )
+    it("should pass --no-interactive to determineOrgSlug", async () => {
+      await cmdScanMetadata.run([testScanId, "--no-interactive"], importMeta, context);
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', false, false)
-    })
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("", false, false);
+    });
 
-    it('should fail if org slug cannot be determined', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
+    it("should fail if org slug cannot be determined", async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(["", ""]);
 
-      await cmdScanMetadata.run([testScanId], importMeta, context)
+      await cmdScanMetadata.run([testScanId], importMeta, context);
 
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled();
+    });
 
-    it('should show scan ID in dry-run', async () => {
-      await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
+    it("should show scan ID in dry-run", async () => {
+      await cmdScanMetadata.run(["--dry-run", testScanId], importMeta, context);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining(testScanId),
-      )
-    })
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining(testScanId));
+    });
 
-    it('should show organization in dry-run', async () => {
-      await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
+    it("should show organization in dry-run", async () => {
+      await cmdScanMetadata.run(["--dry-run", testScanId], importMeta, context);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('test-org'),
-      )
-    })
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("test-org"));
+    });
 
-    it('should show metadata operation in dry-run', async () => {
-      await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
+    it("should show metadata operation in dry-run", async () => {
+      await cmdScanMetadata.run(["--dry-run", testScanId], importMeta, context);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringMatching(/metadata/i),
-      )
-    })
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringMatching(/metadata/i));
+    });
 
-    it('should pass dry-run flag to determineOrgSlug', async () => {
-      await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
+    it("should pass dry-run flag to determineOrgSlug", async () => {
+      await cmdScanMetadata.run(["--dry-run", testScanId], importMeta, context);
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', true, true)
-    })
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("", true, true);
+    });
 
-    it('should default interactive to true', async () => {
-      await cmdScanMetadata.run([testScanId], importMeta, context)
+    it("should default interactive to true", async () => {
+      await cmdScanMetadata.run([testScanId], importMeta, context);
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', true, false)
-    })
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("", true, false);
+    });
 
-    it('should handle empty org flag as empty string', async () => {
-      await cmdScanMetadata.run([testScanId, '--org', ''], importMeta, context)
+    it("should handle empty org flag as empty string", async () => {
+      await cmdScanMetadata.run([testScanId, "--org", ""], importMeta, context);
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', true, false)
-    })
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("", true, false);
+    });
 
     it('shows dot-as-org-name failure message when orgSlug is "."', async () => {
       // determineOrgSlug returns '.' as orgSlug — orgSlug truthy so the
       // !!orgSlug test passes, but the failure-message branch for '.' is
       // still evaluated (the conditional is in the `fail:` field).
       // We just confirm the function runs without error.
-      mockDetermineOrgSlug.mockResolvedValueOnce(['.', '.'])
+      mockDetermineOrgSlug.mockResolvedValueOnce([".", "."]);
 
-      await cmdScanMetadata.run([testScanId, '--org', '.'], importMeta, context)
+      await cmdScanMetadata.run([testScanId, "--org", "."], importMeta, context);
 
       // No throw; covers the orgSlug === '.' ternary at line 102.
-      expect(true).toBe(true)
-    })
+      expect(true).toBe(true);
+    });
 
-    it('should pass correct command path context to handler', async () => {
-      mockHandleOrgScanMetadata.mockImplementationOnce(
-        async (orgSlug, scanId, outputKind) => {
-          expect(orgSlug).toBe('test-org')
-          expect(scanId).toBe(testScanId)
-          expect(outputKind).toBe('text')
-        },
-      )
+    it("should pass correct command path context to handler", async () => {
+      mockHandleOrgScanMetadata.mockImplementationOnce(async (orgSlug, scanId, outputKind) => {
+        expect(orgSlug).toBe("test-org");
+        expect(scanId).toBe(testScanId);
+        expect(outputKind).toBe("text");
+      });
 
-      await cmdScanMetadata.run([testScanId], importMeta, context)
+      await cmdScanMetadata.run([testScanId], importMeta, context);
 
-      expect(mockHandleOrgScanMetadata).toHaveBeenCalledTimes(1)
-    })
+      expect(mockHandleOrgScanMetadata).toHaveBeenCalledTimes(1);
+    });
 
-    it('should support all common flags', async () => {
+    it("should support all common flags", async () => {
       await cmdScanMetadata.run(
-        [testScanId, '--config', 'custom-config.json', '--no-spinner'],
+        [testScanId, "--config", "custom-config.json", "--no-spinner"],
         importMeta,
         context,
-      )
+      );
 
-      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith(
-        'test-org',
-        testScanId,
-        'text',
-      )
-    })
+      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith("test-org", testScanId, "text");
+    });
 
-    it('should call handler when all validations pass', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['valid-org', 'valid-org'])
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should call handler when all validations pass", async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(["valid-org", "valid-org"]);
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdScanMetadata.run([testScanId], importMeta, context)
+      await cmdScanMetadata.run([testScanId], importMeta, context);
 
-      expect(mockHandleOrgScanMetadata).toHaveBeenCalledTimes(1)
-      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith(
-        'valid-org',
-        testScanId,
-        'text',
-      )
-    })
+      expect(mockHandleOrgScanMetadata).toHaveBeenCalledTimes(1);
+      expect(mockHandleOrgScanMetadata).toHaveBeenCalledWith("valid-org", testScanId, "text");
+    });
 
-    it('should not call handler in dry-run mode', async () => {
-      await cmdScanMetadata.run(['--dry-run', testScanId], importMeta, context)
+    it("should not call handler in dry-run mode", async () => {
+      await cmdScanMetadata.run(["--dry-run", testScanId], importMeta, context);
 
-      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalled()
-    })
-  })
-})
+      expect(mockHandleOrgScanMetadata).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalled();
+    });
+  });
+});

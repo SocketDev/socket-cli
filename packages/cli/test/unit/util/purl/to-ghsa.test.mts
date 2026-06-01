@@ -12,64 +12,62 @@
  * Related Files: - util/purl/to-ghsa.mts (implementation)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from "vitest";
 
-import { convertPurlToGhsas } from '../../../../src/util/purl/to-ghsa.mts'
+import { convertPurlToGhsas } from "../../../../src/util/purl/to-ghsa.mts";
 
 // Mock the dependencies.
-const mockCacheFetch = vi.hoisted(() => vi.fn())
-const mockGetOctokit = vi.hoisted(() => vi.fn())
-const mockGetPurlObject = vi.hoisted(() => vi.fn())
-const mockGetErrorCause = vi.hoisted(() => vi.fn(e => e?.message || String(e)))
+const mockCacheFetch = vi.hoisted(() => vi.fn());
+const mockGetOctokit = vi.hoisted(() => vi.fn());
+const mockGetPurlObject = vi.hoisted(() => vi.fn());
+const mockGetErrorCause = vi.hoisted(() => vi.fn((e) => e?.message || String(e)));
 
-vi.mock('../../../../src/util/git/github.mts', () => ({
+vi.mock(import("../../../../src/util/git/github.mts"), () => ({
   cacheFetch: mockCacheFetch,
   getOctokit: mockGetOctokit,
-}))
+}));
 
-vi.mock('../../../../src/util/purl/parse.mts', () => ({
+vi.mock(import("../../../../src/util/purl/parse.mts"), () => ({
   getPurlObject: mockGetPurlObject,
-}))
+}));
 
-vi.mock('../../../../src/util/error/errors.mts', () => ({
+vi.mock(import("../../../../src/util/error/errors.mts"), () => ({
   getErrorCause: mockGetErrorCause,
-}))
+}));
 
-describe('convertPurlToGhsas', () => {
-  it('returns error for invalid PURL format', async () => {
-    mockGetPurlObject.mockReturnValue(undefined)
+describe("convertPurlToGhsas", () => {
+  it("returns error for invalid PURL format", async () => {
+    mockGetPurlObject.mockReturnValue(undefined);
 
-    const result = await convertPurlToGhsas('invalid-purl')
-
-    expect(result).toEqual({
-      ok: false,
-      message: 'Invalid PURL format: invalid-purl',
-    })
-  })
-
-  it('returns error for unsupported ecosystem', async () => {
-    mockGetPurlObject.mockReturnValue({
-      name: 'some-package',
-      type: 'unsupported-ecosystem',
-      version: '1.0.0',
-    } as unknown)
-
-    const result = await convertPurlToGhsas(
-      'pkg:unsupported/some-package@1.0.0',
-    )
+    const result = await convertPurlToGhsas("invalid-purl");
 
     expect(result).toEqual({
       ok: false,
-      message: 'Unsupported PURL ecosystem: unsupported-ecosystem',
-    })
-  })
+      message: "Invalid PURL format: invalid-purl",
+    });
+  });
 
-  it('converts npm PURL to GHSA IDs', async () => {
+  it("returns error for unsupported ecosystem", async () => {
     mockGetPurlObject.mockReturnValue({
-      name: 'lodash',
-      type: 'npm',
-      version: '4.17.20',
-    } as unknown)
+      name: "some-package",
+      type: "unsupported-ecosystem",
+      version: "1.0.0",
+    } as unknown);
+
+    const result = await convertPurlToGhsas("pkg:unsupported/some-package@1.0.0");
+
+    expect(result).toEqual({
+      ok: false,
+      message: "Unsupported PURL ecosystem: unsupported-ecosystem",
+    });
+  });
+
+  it("converts npm PURL to GHSA IDs", async () => {
+    mockGetPurlObject.mockReturnValue({
+      name: "lodash",
+      type: "npm",
+      version: "4.17.20",
+    } as unknown);
 
     const mockOctokit = {
       rest: {
@@ -77,36 +75,33 @@ describe('convertPurlToGhsas', () => {
           listGlobalAdvisories: vi.fn(),
         },
       },
-    }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as unknown);
 
     mockCacheFetch.mockImplementation(async (_key, _fn) => {
       return {
-        data: [
-          { ghsa_id: 'GHSA-1234-5678-9abc' },
-          { ghsa_id: 'GHSA-abcd-efgh-ijkl' },
-        ],
-      }
-    })
+        data: [{ ghsa_id: "GHSA-1234-5678-9abc" }, { ghsa_id: "GHSA-abcd-efgh-ijkl" }],
+      };
+    });
 
-    const result = await convertPurlToGhsas('pkg:npm/lodash@4.17.20')
+    const result = await convertPurlToGhsas("pkg:npm/lodash@4.17.20");
 
     expect(result).toEqual({
       ok: true,
-      data: ['GHSA-1234-5678-9abc', 'GHSA-abcd-efgh-ijkl'],
-    })
+      data: ["GHSA-1234-5678-9abc", "GHSA-abcd-efgh-ijkl"],
+    });
     expect(mockCacheFetch).toHaveBeenCalledWith(
-      'purl-to-ghsa::npm::lodash::4.17.20',
+      "purl-to-ghsa::npm::lodash::4.17.20",
       expect.any(Function),
-    )
-  })
+    );
+  });
 
-  it('converts pypi PURL to pip ecosystem', async () => {
+  it("converts pypi PURL to pip ecosystem", async () => {
     mockGetPurlObject.mockReturnValue({
-      name: 'requests',
-      type: 'pypi',
-      version: '2.31.0',
-    } as unknown)
+      name: "requests",
+      type: "pypi",
+      version: "2.31.0",
+    } as unknown);
 
     const mockOctokit = {
       rest: {
@@ -114,31 +109,29 @@ describe('convertPurlToGhsas', () => {
           listGlobalAdvisories: vi.fn(),
         },
       },
-    }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as unknown);
 
     mockCacheFetch.mockImplementation(async (_key, fn) => {
       // Call the function to verify correct parameters.
-      await fn()
-      return { data: [] }
-    })
+      await fn();
+      return { data: [] };
+    });
 
-    await convertPurlToGhsas('pkg:pypi/requests@2.31.0')
+    await convertPurlToGhsas("pkg:pypi/requests@2.31.0");
 
-    expect(
-      mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
-    ).toHaveBeenCalledWith({
-      ecosystem: 'pip',
-      affects: 'requests@2.31.0',
-    })
-  })
+    expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
+      ecosystem: "pip",
+      affects: "requests@2.31.0",
+    });
+  });
 
-  it('handles PURL without version', async () => {
+  it("handles PURL without version", async () => {
     mockGetPurlObject.mockReturnValue({
-      name: 'express',
-      type: 'npm',
+      name: "express",
+      type: "npm",
       version: undefined,
-    } as unknown)
+    } as unknown);
 
     const mockOctokit = {
       rest: {
@@ -146,34 +139,32 @@ describe('convertPurlToGhsas', () => {
           listGlobalAdvisories: vi.fn(),
         },
       },
-    }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as unknown);
 
     mockCacheFetch.mockImplementation(async (_key, fn) => {
-      await fn()
-      return { data: [] }
-    })
+      await fn();
+      return { data: [] };
+    });
 
-    await convertPurlToGhsas('pkg:npm/express')
+    await convertPurlToGhsas("pkg:npm/express");
 
-    expect(
-      mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
-    ).toHaveBeenCalledWith({
-      ecosystem: 'npm',
-      affects: 'express',
-    })
+    expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
+      ecosystem: "npm",
+      affects: "express",
+    });
     expect(mockCacheFetch).toHaveBeenCalledWith(
-      'purl-to-ghsa::npm::express::latest',
+      "purl-to-ghsa::npm::express::latest",
       expect.any(Function),
-    )
-  })
+    );
+  });
 
-  it('maps cargo to rust ecosystem', async () => {
+  it("maps cargo to rust ecosystem", async () => {
     mockGetPurlObject.mockReturnValue({
-      name: 'tokio',
-      type: 'cargo',
-      version: '1.0.0',
-    } as unknown)
+      name: "tokio",
+      type: "cargo",
+      version: "1.0.0",
+    } as unknown);
 
     const mockOctokit = {
       rest: {
@@ -181,30 +172,28 @@ describe('convertPurlToGhsas', () => {
           listGlobalAdvisories: vi.fn(),
         },
       },
-    }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as unknown);
 
     mockCacheFetch.mockImplementation(async (_key, fn) => {
-      await fn()
-      return { data: [] }
-    })
+      await fn();
+      return { data: [] };
+    });
 
-    await convertPurlToGhsas('pkg:cargo/tokio@1.0.0')
+    await convertPurlToGhsas("pkg:cargo/tokio@1.0.0");
 
-    expect(
-      mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
-    ).toHaveBeenCalledWith({
-      ecosystem: 'rust',
-      affects: 'tokio@1.0.0',
-    })
-  })
+    expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
+      ecosystem: "rust",
+      affects: "tokio@1.0.0",
+    });
+  });
 
-  it('maps gem to rubygems ecosystem', async () => {
+  it("maps gem to rubygems ecosystem", async () => {
     mockGetPurlObject.mockReturnValue({
-      name: 'rails',
-      type: 'gem',
-      version: '7.0.0',
-    } as unknown)
+      name: "rails",
+      type: "gem",
+      version: "7.0.0",
+    } as unknown);
 
     const mockOctokit = {
       rest: {
@@ -212,68 +201,66 @@ describe('convertPurlToGhsas', () => {
           listGlobalAdvisories: vi.fn(),
         },
       },
-    }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as unknown);
 
     mockCacheFetch.mockImplementation(async (_key, fn) => {
-      await fn()
-      return { data: [] }
-    })
+      await fn();
+      return { data: [] };
+    });
 
-    await convertPurlToGhsas('pkg:gem/rails@7.0.0')
+    await convertPurlToGhsas("pkg:gem/rails@7.0.0");
 
-    expect(
-      mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
-    ).toHaveBeenCalledWith({
-      ecosystem: 'rubygems',
-      affects: 'rails@7.0.0',
-    })
-  })
+    expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
+      ecosystem: "rubygems",
+      affects: "rails@7.0.0",
+    });
+  });
 
-  it('handles API errors gracefully', async () => {
+  it("handles API errors gracefully", async () => {
     mockGetPurlObject.mockReturnValue({
-      name: 'package',
-      type: 'npm',
-      version: '1.0.0',
-    } as unknown)
+      name: "package",
+      type: "npm",
+      version: "1.0.0",
+    } as unknown);
 
-    mockGetOctokit.mockReturnValue({} as unknown)
-    mockCacheFetch.mockRejectedValue(new Error('API rate limit exceeded'))
+    mockGetOctokit.mockReturnValue({} as unknown);
+    mockCacheFetch.mockRejectedValue(new Error("API rate limit exceeded"));
 
-    const result = await convertPurlToGhsas('pkg:npm/package@1.0.0')
+    const result = await convertPurlToGhsas("pkg:npm/package@1.0.0");
 
     expect(result).toEqual({
       ok: false,
-      message: 'Failed to convert PURL to GHSA: API rate limit exceeded',
-    })
-  })
+      message: "Failed to convert PURL to GHSA: API rate limit exceeded",
+    });
+  });
 
-  it('returns empty array when no advisories found', async () => {
+  it("returns empty array when no advisories found", async () => {
     mockGetPurlObject.mockReturnValue({
-      name: 'safe-package',
-      type: 'npm',
-      version: '1.0.0',
-    } as unknown)
+      name: "safe-package",
+      type: "npm",
+      version: "1.0.0",
+    } as unknown);
 
-    mockGetOctokit.mockReturnValue({} as unknown)
-    mockCacheFetch.mockResolvedValue({ data: [] })
+    mockGetOctokit.mockReturnValue({} as unknown);
+    mockCacheFetch.mockResolvedValue({ data: [] });
 
-    const result = await convertPurlToGhsas('pkg:npm/safe-package@1.0.0')
+    const result = await convertPurlToGhsas("pkg:npm/safe-package@1.0.0");
 
     expect(result).toEqual({
       ok: true,
       data: [],
-    })
-  })
+    });
+  });
 
-  it('supports all ecosystem mappings', async () => {
+  it("supports all ecosystem mappings", async () => {
     const ecosystemMappings = [
-      { purl: 'golang', github: 'go' },
-      { purl: 'maven', github: 'maven' },
-      { purl: 'nuget', github: 'nuget' },
-      { purl: 'composer', github: 'composer' },
-      { purl: 'swift', github: 'swift' },
-    ]
+      { purl: "golang", github: "go" },
+      { purl: "maven", github: "maven" },
+      { purl: "nuget", github: "nuget" },
+      { purl: "composer", github: "composer" },
+      { purl: "swift", github: "swift" },
+    ];
 
     const mockOctokit = {
       rest: {
@@ -281,28 +268,26 @@ describe('convertPurlToGhsas', () => {
           listGlobalAdvisories: vi.fn(),
         },
       },
-    }
-    mockGetOctokit.mockReturnValue(mockOctokit as unknown)
+    };
+    mockGetOctokit.mockReturnValue(mockOctokit as unknown);
     mockCacheFetch.mockImplementation(async (_key, fn) => {
-      await fn()
-      return { data: [] }
-    })
+      await fn();
+      return { data: [] };
+    });
 
     for (const { github, purl } of ecosystemMappings) {
       mockGetPurlObject.mockReturnValue({
-        name: 'test-package',
+        name: "test-package",
         type: purl,
-        version: '1.0.0',
-      } as unknown)
+        version: "1.0.0",
+      } as unknown);
 
-      await convertPurlToGhsas(`pkg:${purl}/test-package@1.0.0`)
+      await convertPurlToGhsas(`pkg:${purl}/test-package@1.0.0`);
 
-      expect(
-        mockOctokit.rest.securityAdvisories.listGlobalAdvisories,
-      ).toHaveBeenCalledWith({
+      expect(mockOctokit.rest.securityAdvisories.listGlobalAdvisories).toHaveBeenCalledWith({
         ecosystem: github,
-        affects: 'test-package@1.0.0',
-      })
+        affects: "test-package@1.0.0",
+      });
     }
-  })
-})
+  });
+});

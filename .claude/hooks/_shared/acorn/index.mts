@@ -8,37 +8,37 @@
  *   common "lint a specific identifier call" pattern that hooks need.
  */
 
-import { parse as wasmParse, simple as wasmSimple } from './acorn-wasm-sync.mts'
+import { parse as wasmParse, simple as wasmSimple } from "./acorn-wasm-sync.mts";
 
 export interface AcornNode {
-  type: string
-  start: number
-  end: number
+  type: string;
+  start: number;
+  end: number;
   // Index signature lets hooks read whatever the node type exposes.
-  [key: string]: unknown
+  [key: string]: unknown;
 }
 
 export interface ParseOptions {
   /**
    * ECMAScript version. Default 2026 — matches the fleet's Node 26 floor.
    */
-  ecmaVersion?: number | undefined
+  ecmaVersion?: number | undefined;
   /**
    * `module` (default) or `script`. Hooks should leave this alone unless
    * inspecting CJS source where top-level `await` would surprise them.
    */
-  sourceType?: 'module' | 'script' | undefined
+  sourceType?: "module" | "script" | undefined;
   /**
    * Allow TypeScript syntax (type annotations, generics, satisfies, etc.).
    * Default `true` because every fleet hook file is `.ts` / `.mts` / `.cts`.
    * Set to `false` only when you genuinely need strict JS-only parsing.
    */
-  typescript?: boolean | undefined
+  typescript?: boolean | undefined;
   /**
    * Allow JSX. Default `false` — hooks rarely parse JSX. Pure-JSX detectors set
    * this `true`.
    */
-  jsx?: boolean | undefined
+  jsx?: boolean | undefined;
   /**
    * Collect comments. Default `false` — most hooks don't inspect comments and
    * pay zero scanner cost when this is off.
@@ -47,16 +47,16 @@ export interface ParseOptions {
    * populated `CommentSite[]`. Modeled on oxc-project's collection-on-demand
    * model.
    */
-  comments?: boolean | undefined
+  comments?: boolean | undefined;
 }
 
 const DEFAULT_PARSE_OPTIONS: Required<ParseOptions> = {
   ecmaVersion: 2026,
-  sourceType: 'module',
+  sourceType: "module",
   typescript: true,
   jsx: false,
   comments: false,
-}
+};
 
 /**
  * Pre-classify a comment body into a `CommentContent` annotation variant.
@@ -75,55 +75,53 @@ export function classifyCommentContent(
   // `Hashbang` and `Line` comments don't carry block-only annotations.
   // We still classify `Line` against the Pure / NoSideEffects / coverage
   // markers because some tools (uglify, terser) accept them in line form.
-  const trimmedBody = body.trim()
+  const trimmedBody = body.trim();
 
   // Block-style annotations — only relevant when this is a block.
-  if (kind === 'MultiLineBlock' || kind === 'SingleLineBlock') {
+  if (kind === "MultiLineBlock" || kind === "SingleLineBlock") {
     // Legal: `/*!` opener OR contains `@license` / `@preserve`.
-    const isLegalMarker = fullText.startsWith('/*!')
-    const hasLegalAnnotation = /@(?:license|preserve)\b/.test(body)
+    const isLegalMarker = fullText.startsWith("/*!");
+    const hasLegalAnnotation = /@(?:license|preserve)\b/.test(body);
     // Jsdoc: `/**` opener (but NOT `/***`).
-    const isJsdoc = fullText.startsWith('/**') && !fullText.startsWith('/***')
+    const isJsdoc = fullText.startsWith("/**") && !fullText.startsWith("/***");
 
     if (isJsdoc && hasLegalAnnotation) {
-      return 'JsdocLegal'
+      return "JsdocLegal";
     }
     if (isJsdoc) {
-      return 'Jsdoc'
+      return "Jsdoc";
     }
     if (isLegalMarker || hasLegalAnnotation) {
-      return 'Legal'
+      return "Legal";
     }
     if (/^\s*#__PURE__\s*$/.test(trimmedBody)) {
-      return 'Pure'
+      return "Pure";
     }
     if (/^\s*#__NO_SIDE_EFFECTS__\s*$/.test(trimmedBody)) {
-      return 'NoSideEffects'
+      return "NoSideEffects";
     }
     if (/@vite-ignore\b/.test(body)) {
-      return 'Vite'
+      return "Vite";
     }
     if (/\bwebpack[A-Z]\w*\s*:/.test(body)) {
-      return 'Webpack'
+      return "Webpack";
     }
     if (/\bturbopack[A-Z]\w*\s*:/.test(body)) {
-      return 'Turbopack'
+      return "Turbopack";
     }
   }
 
   // Coverage-ignore markers can appear in `Line` form too.
-  if (
-    /\b(?:v8\s+ignore|c8\s+ignore|node:coverage|istanbul\s+ignore)\b/.test(body)
-  ) {
-    return 'CoverageIgnore'
+  if (/\b(?:v8\s+ignore|c8\s+ignore|node:coverage|istanbul\s+ignore)\b/.test(body)) {
+    return "CoverageIgnore";
   }
 
   // `//!` opener — terser/uglify treat this as a legal line comment.
-  if (kind === 'Line' && fullText.startsWith('//!')) {
-    return 'Legal'
+  if (kind === "Line" && fullText.startsWith("//!")) {
+    return "Legal";
   }
 
-  return 'None'
+  return "None";
 }
 
 /**
@@ -137,11 +135,7 @@ export function classifyCommentContent(
  * hashbang IS comment-shaped trivia that hooks may want to walk uniformly with
  * line/block comments.
  */
-export type CommentKind =
-  | 'Line'
-  | 'SingleLineBlock'
-  | 'MultiLineBlock'
-  | 'Hashbang'
+export type CommentKind = "Line" | "SingleLineBlock" | "MultiLineBlock" | "Hashbang";
 
 /**
  * Pre-classified comment content. Modeled on oxc's `CommentContent` — saves
@@ -153,16 +147,16 @@ export type CommentKind =
  * Most code comments fall here.
  */
 export type CommentContent =
-  | 'None'
-  | 'Legal' // /*! …*\/ or starts with /*! / //! or contains @license / @preserve
-  | 'Jsdoc' // /** … *\/ — block opening with /**, not /***
-  | 'JsdocLegal' // /** … @preserve / @license *\/
-  | 'Pure' // /* #__PURE__ *\/
-  | 'NoSideEffects' // /* #__NO_SIDE_EFFECTS__ *\/
-  | 'Webpack' // /* webpackChunkName: "…" *\/ / /* webpack* *\/
-  | 'Vite' // /* @vite-ignore *\/
-  | 'CoverageIgnore' // /* v8 ignore *\/ / /* c8 ignore *\/ / /* node:coverage *\/ / /* istanbul ignore *\/
-  | 'Turbopack' // /* turbopack* *\/
+  | "None"
+  | "Legal" // /*! …*\/ or starts with /*! / //! or contains @license / @preserve
+  | "Jsdoc" // /** … *\/ — block opening with /**, not /***
+  | "JsdocLegal" // /** … @preserve / @license *\/
+  | "Pure" // /* #__PURE__ *\/
+  | "NoSideEffects" // /* #__NO_SIDE_EFFECTS__ *\/
+  | "Webpack" // /* webpackChunkName: "…" *\/ / /* webpack* *\/
+  | "Vite" // /* @vite-ignore *\/
+  | "CoverageIgnore" // /* v8 ignore *\/ / /* c8 ignore *\/ / /* node:coverage *\/ / /* istanbul ignore *\/
+  | "Turbopack"; // /* turbopack* *\/
 
 /**
  * Where the comment sits relative to the nearest token.
@@ -177,7 +171,7 @@ export type CommentContent =
  * doc-extractor) read this. Hooks that just grade comment bodies usually don't
  * need it.
  */
-export type CommentPosition = 'Leading' | 'Trailing'
+export type CommentPosition = "Leading" | "Trailing";
 
 /**
  * Bitflag-style record of newlines around a comment. Encoded as a flat object
@@ -188,12 +182,12 @@ export interface CommentNewlines {
   /**
    * True if a newline appears before the opening marker.
    */
-  before: boolean
+  before: boolean;
   /**
    * True if a newline appears after the closing marker (or end-of-line for
    * `Line`).
    */
-  after: boolean
+  after: boolean;
 }
 
 /**
@@ -203,14 +197,14 @@ export interface CommentNewlines {
  * `CommentSite` (which adds the legacy `line` / `text` / `value` fields).
  */
 interface ParsedComment {
-  start: number
-  end: number
-  attachedTo: number | null
-  kind: CommentKind
-  content: CommentContent
-  position: CommentPosition
-  newlineBefore: boolean
-  newlineAfter: boolean
+  start: number;
+  end: number;
+  attachedTo: number | null;
+  kind: CommentKind;
+  content: CommentContent;
+  position: CommentPosition;
+  newlineBefore: boolean;
+  newlineAfter: boolean;
 }
 
 /**
@@ -221,46 +215,46 @@ export interface CommentSite {
   /**
    * Line / SingleLineBlock / MultiLineBlock / Hashbang.
    */
-  kind: CommentKind
+  kind: CommentKind;
   /**
    * Pre-classified annotation kind. `None` for ordinary comments.
    */
-  content: CommentContent
+  content: CommentContent;
   /**
    * Position relative to the nearest token.
    */
-  position: CommentPosition
+  position: CommentPosition;
   /**
    * Newlines before / after the comment.
    */
-  newlines: CommentNewlines
+  newlines: CommentNewlines;
   /**
    * Byte offset of the start of the comment (including marker).
    */
-  start: number
+  start: number;
   /**
    * Byte offset of the end of the comment (after closing marker).
    */
-  end: number
+  end: number;
   /**
    * Byte offset of the next non-trivia token after a leading comment. `-1` when
    * the comment is trailing or has no following token. Mirrors oxc's
    * `attached_to`. Hooks that want to associate a comment with the symbol it
    * documents read this.
    */
-  attachedTo: number
+  attachedTo: number;
   /**
    * Raw comment body (text between markers, no marker chars).
    */
-  value: string
+  value: string;
   /**
    * 1-based line of the opening marker.
    */
-  line: number
+  line: number;
   /**
    * Trimmed source line containing the comment opening.
    */
-  text: string
+  text: string;
 }
 
 /**
@@ -272,13 +266,11 @@ export interface CommentSite {
  * @deprecated Read `c.kind` directly. Will be removed once all hooks
  *   are migrated.
  */
-export function commentTypeCompat(
-  kind: CommentKind,
-): 'Line' | 'Block' | 'Hashbang' {
-  if (kind === 'MultiLineBlock' || kind === 'SingleLineBlock') {
-    return 'Block'
+export function commentTypeCompat(kind: CommentKind): "Line" | "Block" | "Hashbang" {
+  if (kind === "MultiLineBlock" || kind === "SingleLineBlock") {
+    return "Block";
   }
-  return kind
+  return kind;
 }
 
 /**
@@ -304,64 +296,64 @@ export function findBareCallsTo(
          * Optional lint-rule name. When provided, calls whose preceding line
          * contains `oxlint-disable-next-line <ruleName>` are filtered out.
          */
-        oxlintRuleName?: string | undefined
+        oxlintRuleName?: string | undefined;
       })
     | undefined,
 ): CallSite[] {
-  const matches: CallSite[] = []
-  const lines = splitLines(source)
+  const matches: CallSite[] = [];
+  const lines = splitLines(source);
   const disableMarker = options?.oxlintRuleName
     ? `oxlint-disable-next-line ${options.oxlintRuleName}`
-    : undefined
+    : undefined;
 
   walkSimple(
     source,
     {
       CallExpression(node) {
-        const callee = node['callee'] as AcornNode | undefined
-        if (!callee || callee.type !== 'Identifier') {
-          return
+        const callee = node["callee"] as AcornNode | undefined;
+        if (!callee || callee.type !== "Identifier") {
+          return;
         }
-        if ((callee['name'] as string) !== identifierName) {
-          return
+        if ((callee["name"] as string) !== identifierName) {
+          return;
         }
-        const start = node['start'] as number | undefined
-        if (typeof start !== 'number') {
-          return
+        const start = node["start"] as number | undefined;
+        if (typeof start !== "number") {
+          return;
         }
-        const { line, column } = offsetToLineCol(source, start)
+        const { line, column } = offsetToLineCol(source, start);
         if (disableMarker && line >= 2) {
-          const prev = lines[line - 2] ?? ''
+          const prev = lines[line - 2] ?? "";
           if (prev.includes(disableMarker)) {
-            return
+            return;
           }
         }
         matches.push({
           line,
           column,
-          text: (lines[line - 1] ?? '').trim(),
-        })
+          text: (lines[line - 1] ?? "").trim(),
+        });
       },
     },
     options,
-  )
-  return matches
+  );
+  return matches;
 }
 
 export interface MemberCallSite extends CallSite {
   /**
    * First-argument source text if a string literal, else undefined.
    */
-  firstStringArg: string | undefined
+  firstStringArg: string | undefined;
   /**
    * Number of arguments (positional + spreads).
    */
-  argCount: number
+  argCount: number;
   /**
    * True when every argument is a string Literal (callers use this for
    * "all-literal call site" detection like path.join('a', 'b', 'c')).
    */
-  allStringLiteralArgs: boolean
+  allStringLiteralArgs: boolean;
 }
 
 /**
@@ -381,101 +373,96 @@ export function findMemberCalls(
   property: string,
   options?: ParseOptions | undefined,
 ): MemberCallSite[] {
-  const matches: MemberCallSite[] = []
-  const lines = splitLines(source)
-  const objectChain = object.split('.')
+  const matches: MemberCallSite[] = [];
+  const lines = splitLines(source);
+  const objectChain = object.split(".");
 
   function calleeMatches(callee: AcornNode | undefined): boolean {
-    if (!callee || callee.type !== 'MemberExpression') {
-      return false
+    if (!callee || callee.type !== "MemberExpression") {
+      return false;
     }
-    const prop = callee['property'] as AcornNode | undefined
-    if (
-      !prop ||
-      prop.type !== 'Identifier' ||
-      (prop['name'] as string) !== property
-    ) {
-      return false
+    const prop = callee["property"] as AcornNode | undefined;
+    if (!prop || prop.type !== "Identifier" || (prop["name"] as string) !== property) {
+      return false;
     }
-    let head: AcornNode | undefined = callee['object'] as AcornNode | undefined
+    let head: AcornNode | undefined = callee["object"] as AcornNode | undefined;
     // Walk the dotted chain right-to-left. For object='process.stdout',
     // we expect head to be MemberExpression{object: process, property: stdout}.
     for (let i = objectChain.length - 1; i >= 0; i -= 1) {
-      const segment = objectChain[i]!
+      const segment = objectChain[i]!;
       if (i === 0) {
         // Leftmost segment must be an Identifier.
-        if (!head || head.type !== 'Identifier') {
-          return false
+        if (!head || head.type !== "Identifier") {
+          return false;
         }
-        return (head['name'] as string) === segment
+        return (head["name"] as string) === segment;
       }
       // Inner segments are MemberExpression{property: segment}.
-      if (!head || head.type !== 'MemberExpression') {
-        return false
+      if (!head || head.type !== "MemberExpression") {
+        return false;
       }
-      const innerProp = head['property'] as AcornNode | undefined
+      const innerProp = head["property"] as AcornNode | undefined;
       if (
         !innerProp ||
-        innerProp.type !== 'Identifier' ||
-        (innerProp['name'] as string) !== segment
+        innerProp.type !== "Identifier" ||
+        (innerProp["name"] as string) !== segment
       ) {
-        return false
+        return false;
       }
-      head = head['object'] as AcornNode | undefined
+      head = head["object"] as AcornNode | undefined;
     }
-    return true
+    return true;
   }
 
   walkSimple(
     source,
     {
       CallExpression(node) {
-        if (!calleeMatches(node['callee'] as AcornNode | undefined)) {
-          return
+        if (!calleeMatches(node["callee"] as AcornNode | undefined)) {
+          return;
         }
-        const start = node['start'] as number | undefined
-        if (typeof start !== 'number') {
-          return
+        const start = node["start"] as number | undefined;
+        if (typeof start !== "number") {
+          return;
         }
-        const args = (node['arguments'] as AcornNode[] | undefined) ?? []
-        let firstStringArg: string | undefined
-        let allStringLiteralArgs = args.length > 0
+        const args = (node["arguments"] as AcornNode[] | undefined) ?? [];
+        let firstStringArg: string | undefined;
+        let allStringLiteralArgs = args.length > 0;
         for (let i = 0; i < args.length; i += 1) {
-          const arg = args[i]!
-          const isStringLit =
-            arg.type === 'Literal' && typeof arg['value'] === 'string'
+          const arg = args[i]!;
+          const isStringLit = arg.type === "Literal" && typeof arg["value"] === "string";
           if (!isStringLit) {
-            allStringLiteralArgs = false
+            allStringLiteralArgs = false;
           }
           if (i === 0 && isStringLit) {
-            firstStringArg = arg['value'] as string
+            firstStringArg = arg["value"] as string;
           }
         }
-        const { line, column } = offsetToLineCol(source, start)
+        const { line, column } = offsetToLineCol(source, start);
         matches.push({
           line,
           column,
-          text: (lines[line - 1] ?? '').trim(),
+          text: (lines[line - 1] ?? "").trim(),
           firstStringArg,
           argCount: args.length,
           allStringLiteralArgs,
-        })
+        });
       },
     },
     options,
-  )
-  return matches
+  );
+  return matches;
 }
 
 export interface RegexLiteralSite extends CallSite {
   /**
    * The regex pattern source (without surrounding `/`).
    */
-  pattern: string
+  pattern: string;
   /**
    * The flags string (`g`, `i`, `m`, etc.).
    */
-  flags: string
+  flags: string;
 }
 
 /**
@@ -490,36 +477,34 @@ export function findRegexLiterals(
   source: string,
   options?: ParseOptions | undefined,
 ): RegexLiteralSite[] {
-  const matches: RegexLiteralSite[] = []
-  const lines = splitLines(source)
+  const matches: RegexLiteralSite[] = [];
+  const lines = splitLines(source);
 
   walkSimple(
     source,
     {
       Literal(node) {
-        const regex = node['regex'] as
-          | { pattern: string; flags: string }
-          | undefined
-        if (!regex || typeof regex.pattern !== 'string') {
-          return
+        const regex = node["regex"] as { pattern: string; flags: string } | undefined;
+        if (!regex || typeof regex.pattern !== "string") {
+          return;
         }
-        const start = node['start'] as number | undefined
-        if (typeof start !== 'number') {
-          return
+        const start = node["start"] as number | undefined;
+        if (typeof start !== "number") {
+          return;
         }
-        const { line, column } = offsetToLineCol(source, start)
+        const { line, column } = offsetToLineCol(source, start);
         matches.push({
           line,
           column,
-          text: (lines[line - 1] ?? '').trim(),
+          text: (lines[line - 1] ?? "").trim(),
           pattern: regex.pattern,
-          flags: regex.flags ?? '',
-        })
+          flags: regex.flags ?? "",
+        });
       },
     },
     options,
-  )
-  return matches
+  );
+  return matches;
 }
 
 export interface TemplateLiteralSite extends CallSite {
@@ -532,11 +517,11 @@ export interface TemplateLiteralSite extends CallSite {
    * Example: a backtick template with two expression slots and three static
    * parts yields a string with two `\0` sentinels separating those parts.
    */
-  segments: string
+  segments: string;
   /**
    * Number of `${…}` expressions in the template.
    */
-  expressionCount: number
+  expressionCount: number;
 }
 
 /**
@@ -552,64 +537,64 @@ export function findTemplateLiterals(
   source: string,
   options?: ParseOptions | undefined,
 ): TemplateLiteralSite[] {
-  const matches: TemplateLiteralSite[] = []
-  const lines = splitLines(source)
+  const matches: TemplateLiteralSite[] = [];
+  const lines = splitLines(source);
 
   walkSimple(
     source,
     {
       TemplateLiteral(node) {
-        const start = node['start'] as number | undefined
-        if (typeof start !== 'number') {
-          return
+        const start = node["start"] as number | undefined;
+        if (typeof start !== "number") {
+          return;
         }
         // Look backward through whitespace for a tag prefix
         // (Identifier / `)` / `]`). If found, this is a tagged
         // template; the tag changes semantics so we skip.
-        let i = start - 1
+        let i = start - 1;
         while (i >= 0 && /\s/.test(source[i]!)) {
-          i -= 1
+          i -= 1;
         }
         if (i >= 0 && /[\w$)\]]/.test(source[i]!)) {
-          return
+          return;
         }
-        const quasis = (node['quasis'] as AcornNode[] | undefined) ?? []
-        const parts: string[] = []
+        const quasis = (node["quasis"] as AcornNode[] | undefined) ?? [];
+        const parts: string[] = [];
         for (let qi = 0; qi < quasis.length; qi += 1) {
-          const q = quasis[qi]!
-          const value = q['value'] as
+          const q = quasis[qi]!;
+          const value = q["value"] as
             | { raw?: string | undefined; cooked?: string | undefined }
-            | undefined
-          const cooked = value?.cooked ?? value?.raw ?? ''
-          parts.push(cooked)
+            | undefined;
+          const cooked = value?.cooked ?? value?.raw ?? "";
+          parts.push(cooked);
           if (qi < quasis.length - 1) {
-            parts.push('\0')
+            parts.push("\0");
           }
         }
-        const { line, column } = offsetToLineCol(source, start)
+        const { line, column } = offsetToLineCol(source, start);
         matches.push({
           line,
           column,
-          text: (lines[line - 1] ?? '').trim(),
-          segments: parts.join(''),
+          text: (lines[line - 1] ?? "").trim(),
+          segments: parts.join(""),
           expressionCount: Math.max(0, quasis.length - 1),
-        })
+        });
       },
     },
     options,
-  )
-  return matches
+  );
+  return matches;
 }
 
 export interface ThrowSite extends CallSite {
   /**
    * The constructor name used in `throw new <ctor>(…)`.
    */
-  ctorName: string
+  ctorName: string;
   /**
    * First-argument source text if a string literal, else undefined.
    */
-  message: string | undefined
+  message: string | undefined;
 }
 
 /**
@@ -627,58 +612,54 @@ export function findThrowNew(
   ctor: string | RegExp | undefined,
   options?: ParseOptions | undefined,
 ): ThrowSite[] {
-  const matches: ThrowSite[] = []
-  const lines = splitLines(source)
+  const matches: ThrowSite[] = [];
+  const lines = splitLines(source);
 
   walkSimple(
     source,
     {
       ThrowStatement(node) {
-        const arg = node['argument'] as AcornNode | undefined
-        if (!arg || arg.type !== 'NewExpression') {
-          return
+        const arg = node["argument"] as AcornNode | undefined;
+        if (!arg || arg.type !== "NewExpression") {
+          return;
         }
-        const callee = arg['callee'] as AcornNode | undefined
-        if (!callee || callee.type !== 'Identifier') {
-          return
+        const callee = arg["callee"] as AcornNode | undefined;
+        if (!callee || callee.type !== "Identifier") {
+          return;
         }
-        const calleeName = callee['name'] as string
+        const calleeName = callee["name"] as string;
         if (ctor !== undefined) {
-          if (typeof ctor === 'string') {
+          if (typeof ctor === "string") {
             if (calleeName !== ctor) {
-              return
+              return;
             }
           } else if (!ctor.test(calleeName)) {
-            return
+            return;
           }
         }
-        const args = (arg['arguments'] as AcornNode[] | undefined) ?? []
-        let message: string | undefined
-        const first = args[0]
-        if (
-          first &&
-          first.type === 'Literal' &&
-          typeof first['value'] === 'string'
-        ) {
-          message = first['value'] as string
+        const args = (arg["arguments"] as AcornNode[] | undefined) ?? [];
+        let message: string | undefined;
+        const first = args[0];
+        if (first && first.type === "Literal" && typeof first["value"] === "string") {
+          message = first["value"] as string;
         }
-        const start = node['start'] as number | undefined
-        if (typeof start !== 'number') {
-          return
+        const start = node["start"] as number | undefined;
+        if (typeof start !== "number") {
+          return;
         }
-        const { line, column } = offsetToLineCol(source, start)
+        const { line, column } = offsetToLineCol(source, start);
         matches.push({
           line,
           column,
-          text: (lines[line - 1] ?? '').trim(),
+          text: (lines[line - 1] ?? "").trim(),
           ctorName: calleeName,
           message,
-        })
+        });
       },
     },
     options,
-  )
-  return matches
+  );
+  return matches;
 }
 
 /**
@@ -690,42 +671,39 @@ export function findThrowNew(
  * agrees with `splitLines(source)[line - 1]` regardless of the source's newline
  * convention.
  */
-export function offsetToLineCol(
-  source: string,
-  offset: number,
-): { line: number; column: number } {
-  let line = 1
-  let lineStart = 0
+export function offsetToLineCol(source: string, offset: number): { line: number; column: number } {
+  let line = 1;
+  let lineStart = 0;
   for (let i = 0; i < offset && i < source.length; i += 1) {
-    const code = source.charCodeAt(i)
+    const code = source.charCodeAt(i);
     if (code === 13 /* \r */) {
-      line += 1
+      line += 1;
       // `\r\n` counts as one newline — skip the `\n` if present.
       if (source.charCodeAt(i + 1) === 10) {
-        i += 1
+        i += 1;
       }
-      lineStart = i + 1
+      lineStart = i + 1;
     } else if (code === 10 /* \n */) {
-      line += 1
-      lineStart = i + 1
+      line += 1;
+      lineStart = i + 1;
     }
   }
-  return { line, column: offset - lineStart }
+  return { line, column: offset - lineStart };
 }
 
 export interface CallSite {
   /**
    * 1-based line number of the call.
    */
-  line: number
+  line: number;
   /**
    * 0-based column of the call.
    */
-  column: number
+  column: number;
   /**
    * Source snippet of the line containing the call (best-effort).
    */
-  text: string
+  text: string;
 }
 
 /**
@@ -740,7 +718,7 @@ export interface CallSite {
  */
 export function splitLines(source: string): string[] {
   // Single regex pass: collapse `\r\n` and bare `\r` to `\n`, then split.
-  return source.replace(/\r\n?/g, '\n').split('\n')
+  return source.replace(/\r\n?/g, "\n").split("\n");
 }
 
 /**
@@ -757,9 +735,9 @@ export function tryParse(
       __proto__: null,
       ...DEFAULT_PARSE_OPTIONS,
       ...options,
-    } as unknown as ParseOptions) as AcornNode
+    } as unknown as ParseOptions) as AcornNode;
   } catch {
-    return undefined
+    return undefined;
   }
 }
 
@@ -802,14 +780,11 @@ export function tryParse(
  * to the parser-level callback. The scanner stays as the fragment-tolerant
  * fallback when the parser rejects the input.
  */
-export function walkComments(
-  source: string,
-  options?: ParseOptions | undefined,
-): CommentSite[] {
+export function walkComments(source: string, options?: ParseOptions | undefined): CommentSite[] {
   // Opt-in. Default is OFF — caller must explicitly enable with
   // `{ comments: true }`. Modeled on oxc's collection-on-demand.
   if (options?.comments !== true) {
-    return []
+    return [];
   }
   // Fast path: parser-level collection. The vendored Rust acorn-wasm
   // now exposes Options.collectComments — when set, the AST root
@@ -825,24 +800,22 @@ export function walkComments(
       collectComments: true,
     } as unknown as ParseOptions) as
       | (AcornNode & { comments?: ParsedComment[] | undefined })
-      | undefined
-    const parsedComments = parsed?.['comments']
+      | undefined;
+    const parsedComments = parsed?.["comments"];
     if (Array.isArray(parsedComments) && parsedComments.length >= 0) {
-      const lines = splitLines(source)
+      const lines = splitLines(source);
       return parsedComments.map((pc): CommentSite => {
-        const { line } = offsetToLineCol(source, pc.start)
-        const fullText = source.slice(pc.start, pc.end)
-        let value: string
-        if (pc.kind === 'Line') {
-          value = fullText.startsWith('//') ? fullText.slice(2) : fullText
-        } else if (pc.kind === 'Hashbang') {
-          value = fullText.startsWith('#!') ? fullText.slice(2) : fullText
+        const { line } = offsetToLineCol(source, pc.start);
+        const fullText = source.slice(pc.start, pc.end);
+        let value: string;
+        if (pc.kind === "Line") {
+          value = fullText.startsWith("//") ? fullText.slice(2) : fullText;
+        } else if (pc.kind === "Hashbang") {
+          value = fullText.startsWith("#!") ? fullText.slice(2) : fullText;
         } else {
           // SingleLineBlock or MultiLineBlock.
           value =
-            fullText.startsWith('/*') && fullText.endsWith('*/')
-              ? fullText.slice(2, -2)
-              : fullText
+            fullText.startsWith("/*") && fullText.endsWith("*/") ? fullText.slice(2, -2) : fullText;
         }
         return {
           kind: pc.kind,
@@ -857,9 +830,9 @@ export function walkComments(
           attachedTo: pc.attachedTo == null ? -1 : pc.attachedTo,
           value,
           line,
-          text: (lines[line - 1] ?? '').trim(),
-        }
-      })
+          text: (lines[line - 1] ?? "").trim(),
+        };
+      });
     }
   } catch {
     // Parser rejected the input (fragment, syntax error, future-syntax
@@ -870,115 +843,111 @@ export function walkComments(
   // `newlines`, `attachedTo`, and `content` in a second pass after
   // the full comment list is known.
   interface PendingComment {
-    kind: CommentKind
-    start: number
-    end: number
-    value: string
-    fullText: string
-    line: number
-    text: string
+    kind: CommentKind;
+    start: number;
+    end: number;
+    value: string;
+    fullText: string;
+    line: number;
+    text: string;
   }
-  const pending: PendingComment[] = []
-  const lines = splitLines(source)
-  const len = source.length
-  let i = 0
-  let stringQuote: string | undefined
-  let templateDepth = 0
+  const pending: PendingComment[] = [];
+  const lines = splitLines(source);
+  const len = source.length;
+  let i = 0;
+  let stringQuote: string | undefined;
+  let templateDepth = 0;
   // Hashbang: only valid at offset 0 per ES2023 grammar.
-  if (
-    len >= 2 &&
-    source.charCodeAt(0) === 35 /* # */ &&
-    source.charCodeAt(1) === 33 /* ! */
-  ) {
-    let j = 2
+  if (len >= 2 && source.charCodeAt(0) === 35 /* # */ && source.charCodeAt(1) === 33 /* ! */) {
+    let j = 2;
     while (j < len && source.charCodeAt(j) !== 10 /* \n */) {
-      j += 1
+      j += 1;
     }
     pending.push({
-      kind: 'Hashbang',
+      kind: "Hashbang",
       start: 0,
       end: j,
       value: source.slice(2, j),
       fullText: source.slice(0, j),
       line: 1,
-      text: (lines[0] ?? '').trim(),
-    })
-    i = j
+      text: (lines[0] ?? "").trim(),
+    });
+    i = j;
   }
   while (i < len) {
-    const c = source[i]!
+    const c = source[i]!;
     if (stringQuote !== undefined) {
-      if (c === '\\') {
-        i += 2
-        continue
+      if (c === "\\") {
+        i += 2;
+        continue;
       }
       if (c === stringQuote) {
-        stringQuote = undefined
+        stringQuote = undefined;
       }
-      i += 1
-      continue
+      i += 1;
+      continue;
     }
     if (templateDepth > 0) {
-      if (c === '\\') {
-        i += 2
-        continue
+      if (c === "\\") {
+        i += 2;
+        continue;
       }
       // `${` opens an expression slot — drop out of template mode.
-      if (c === '$' && source[i + 1] === '{') {
-        templateDepth -= 1
-        i += 2
-        continue
+      if (c === "$" && source[i + 1] === "{") {
+        templateDepth -= 1;
+        i += 2;
+        continue;
       }
-      if (c === '`') {
-        templateDepth -= 1
+      if (c === "`") {
+        templateDepth -= 1;
       }
-      i += 1
-      continue
+      i += 1;
+      continue;
     }
     if (c === '"' || c === "'") {
-      stringQuote = c
-      i += 1
-      continue
+      stringQuote = c;
+      i += 1;
+      continue;
     }
-    if (c === '`') {
-      templateDepth += 1
-      i += 1
-      continue
+    if (c === "`") {
+      templateDepth += 1;
+      i += 1;
+      continue;
     }
-    if (c === '/' && source[i + 1] === '/') {
-      const start = i
-      let j = i + 2
+    if (c === "/" && source[i + 1] === "/") {
+      const start = i;
+      let j = i + 2;
       while (j < len && source.charCodeAt(j) !== 10) {
-        j += 1
+        j += 1;
       }
-      const { line } = offsetToLineCol(source, start)
+      const { line } = offsetToLineCol(source, start);
       pending.push({
-        kind: 'Line',
+        kind: "Line",
         start,
         end: j,
         value: source.slice(start + 2, j),
         fullText: source.slice(start, j),
         line,
-        text: (lines[line - 1] ?? '').trim(),
-      })
-      i = j
-      continue
+        text: (lines[line - 1] ?? "").trim(),
+      });
+      i = j;
+      continue;
     }
-    if (c === '/' && source[i + 1] === '*') {
-      const start = i
-      let j = i + 2
+    if (c === "/" && source[i + 1] === "*") {
+      const start = i;
+      let j = i + 2;
       while (j < len - 1) {
-        if (source[j] === '*' && source[j + 1] === '/') {
-          j += 2
-          break
+        if (source[j] === "*" && source[j + 1] === "/") {
+          j += 2;
+          break;
         }
-        j += 1
+        j += 1;
       }
-      const body = source.slice(start + 2, j - 2)
+      const body = source.slice(start + 2, j - 2);
       // SingleLine vs MultiLine block — does the body contain a newline?
-      const isMulti = body.includes('\n') || body.includes('\r')
-      const kind: CommentKind = isMulti ? 'MultiLineBlock' : 'SingleLineBlock'
-      const { line } = offsetToLineCol(source, start)
+      const isMulti = body.includes("\n") || body.includes("\r");
+      const kind: CommentKind = isMulti ? "MultiLineBlock" : "SingleLineBlock";
+      const { line } = offsetToLineCol(source, start);
       pending.push({
         kind,
         start,
@@ -986,12 +955,12 @@ export function walkComments(
         value: body,
         fullText: source.slice(start, j),
         line,
-        text: (lines[line - 1] ?? '').trim(),
-      })
-      i = j
-      continue
+        text: (lines[line - 1] ?? "").trim(),
+      });
+      i = j;
+      continue;
     }
-    i += 1
+    i += 1;
   }
 
   // Second pass: compute position / newlines / attachedTo / content.
@@ -999,76 +968,68 @@ export function walkComments(
   // comment to fill in `attachedTo`. Approach: scan forward from each
   // comment's end, skipping whitespace and any subsequent comments.
   function nextNonTriviaOffset(from: number): number {
-    let p = from
+    let p = from;
     while (p < len) {
-      const ch = source.charCodeAt(p)
+      const ch = source.charCodeAt(p);
       // Whitespace.
-      if (
-        ch === 32 /* space */ ||
-        ch === 9 /* tab */ ||
-        ch === 10 /* \n */ ||
-        ch === 13 /* \r */
-      ) {
-        p += 1
-        continue
+      if (ch === 32 /* space */ || ch === 9 /* tab */ || ch === 10 /* \n */ || ch === 13 /* \r */) {
+        p += 1;
+        continue;
       }
       // Line comment to skip.
       if (ch === 47 /* / */ && source.charCodeAt(p + 1) === 47 /* / */) {
         while (p < len && source.charCodeAt(p) !== 10) {
-          p += 1
+          p += 1;
         }
-        continue
+        continue;
       }
       // Block comment to skip.
       if (ch === 47 /* / */ && source.charCodeAt(p + 1) === 42 /* * */) {
-        p += 2
+        p += 2;
         while (p < len - 1) {
-          if (
-            source.charCodeAt(p) === 42 /* * */ &&
-            source.charCodeAt(p + 1) === 47 /* / */
-          ) {
-            p += 2
-            break
+          if (source.charCodeAt(p) === 42 /* * */ && source.charCodeAt(p + 1) === 47 /* / */) {
+            p += 2;
+            break;
           }
-          p += 1
+          p += 1;
         }
-        continue
+        continue;
       }
-      return p
+      return p;
     }
-    return -1
+    return -1;
   }
 
   function hasNewlineBefore(offset: number): boolean {
-    let p = offset - 1
+    let p = offset - 1;
     while (p >= 0) {
-      const ch = source.charCodeAt(p)
+      const ch = source.charCodeAt(p);
       if (ch === 10 /* \n */ || ch === 13 /* \r */) {
-        return true
+        return true;
       }
       if (ch !== 32 && ch !== 9) {
-        return false
+        return false;
       }
-      p -= 1
+      p -= 1;
     }
     // Start-of-file counts as having a newline before (the start
     // boundary is effectively a newline for attachment purposes).
-    return true
+    return true;
   }
 
   function hasNewlineAfter(offset: number): boolean {
-    let p = offset
+    let p = offset;
     while (p < len) {
-      const ch = source.charCodeAt(p)
+      const ch = source.charCodeAt(p);
       if (ch === 10 /* \n */ || ch === 13 /* \r */) {
-        return true
+        return true;
       }
       if (ch !== 32 && ch !== 9) {
-        return false
+        return false;
       }
-      p += 1
+      p += 1;
     }
-    return true
+    return true;
   }
 
   return pending.map((pc): CommentSite => {
@@ -1076,11 +1037,11 @@ export function walkComments(
     // AND there IS a token earlier on the same line. Easiest detector:
     // the preceding source line up to `start` contains a non-comment
     // non-whitespace char with no intervening newline.
-    const before = hasNewlineBefore(pc.start)
-    const after = hasNewlineAfter(pc.end)
-    const position: CommentPosition = before ? 'Leading' : 'Trailing'
-    const attachedTo = position === 'Leading' ? nextNonTriviaOffset(pc.end) : -1
-    const content = classifyCommentContent(pc.kind, pc.fullText, pc.value)
+    const before = hasNewlineBefore(pc.start);
+    const after = hasNewlineAfter(pc.end);
+    const position: CommentPosition = before ? "Leading" : "Trailing";
+    const attachedTo = position === "Leading" ? nextNonTriviaOffset(pc.end) : -1;
+    const content = classifyCommentContent(pc.kind, pc.fullText, pc.value);
     return {
       kind: pc.kind,
       content,
@@ -1092,8 +1053,8 @@ export function walkComments(
       value: pc.value,
       line: pc.line,
       text: pc.text,
-    }
-  })
+    };
+  });
 }
 
 /**
@@ -1115,7 +1076,7 @@ export function walkSimple(
         ...DEFAULT_PARSE_OPTIONS,
         ...options,
       } as unknown as ParseOptions,
-    )
+    );
   } catch {
     // Parse failure — caller's hook should fail open.
   }

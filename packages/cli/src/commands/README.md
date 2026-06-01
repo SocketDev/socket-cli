@@ -201,18 +201,18 @@ Commands are exported from `src/commands.mts`:
 export const rootCommands = {
   analytics: cmdAnalytics,
   ask: cmdAsk,
-  'audit-log': cmdAuditLog,
+  "audit-log": cmdAuditLog,
   // ... all root commands
-}
+};
 ```
 
 Parent commands register subcommands using `meowWithSubcommands()`:
 
 ```typescript
-import type { CliSubcommand } from '../../util/cli/with-subcommands.mjs'
+import type { CliSubcommand } from "../../util/cli/with-subcommands.mjs";
 
 export const cmdScan: CliSubcommand = {
-  description: 'Manage Socket scans',
+  description: "Manage Socket scans",
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
@@ -231,9 +231,9 @@ export const cmdScan: CliSubcommand = {
           // Optional aliases configuration
         },
       },
-    )
+    );
   },
-}
+};
 ```
 
 ## Command Aliases
@@ -272,19 +272,16 @@ mkdir -p src/commands/mycommand
 **`src/commands/mycommand/cmd-mycommand.mts`:**
 
 ```typescript
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../util/cli/with-subcommands.mjs'
+import type { CliCommandConfig, CliCommandContext } from "../../util/cli/with-subcommands.mjs";
 
-export const CMD_NAME = 'mycommand'
-const description = 'My command description'
+export const CMD_NAME = "mycommand";
+const description = "My command description";
 
 export const cmdMyCommand = {
   description,
   hidden: false,
   run,
-}
+};
 
 async function run(
   argv: string[],
@@ -300,12 +297,12 @@ async function run(
 **`src/commands.mts`:**
 
 ```typescript
-import { cmdMyCommand } from './commands/mycommand/cmd-mycommand.mts'
+import { cmdMyCommand } from "./commands/mycommand/cmd-mycommand.mts";
 
 export const rootCommands = {
   // ... existing commands
   mycommand: cmdMyCommand,
-}
+};
 ```
 
 ### 4. Add E2E Test
@@ -315,8 +312,8 @@ export const rootCommands = {
 ```typescript
 const commands = [
   // ... existing commands
-  'mycommand',
-]
+  "mycommand",
+];
 ```
 
 ### 5. Update This README

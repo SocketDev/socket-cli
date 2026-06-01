@@ -19,180 +19,177 @@
  * setup)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from "vitest";
 
-import { fetchListAllRepos } from '../../../../src/commands/repository/fetch-list-all-repos.mts'
+import { fetchListAllRepos } from "../../../../src/commands/repository/fetch-list-all-repos.mts";
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from "../../../helpers/sdk-test-helpers.mts";
 
 // Mock the dependencies.
-vi.mock('../../../../src/util/socket/api.mts', () => ({
+vi.mock(import("../../../../src/util/socket/api.mts"), () => ({
   handleApiCall: vi.fn(),
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mts', () => ({
+vi.mock(import("../../../../src/util/socket/sdk.mts"), () => ({
   setupSdk: vi.fn(),
-}))
+}));
 
-describe('fetchListAllRepos', () => {
-  it('lists all repositories successfully', async () => {
+describe("fetchListAllRepos", () => {
+  it("lists all repositories successfully", async () => {
     const mockData = {
       results: [
-        { id: 'repo-1', name: 'first-repo' },
-        { id: 'repo-2', name: 'second-repo' },
+        { id: "repo-1", name: "first-repo" },
+        { id: "repo-2", name: "second-repo" },
       ],
       nextPage: undefined,
-    }
+    };
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'listRepositories',
-      mockData,
-    )
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess("listRepositories", mockData);
 
-    const result = await fetchListAllRepos('test-org')
+    const result = await fetchListAllRepos("test-org");
 
-    expect(mockSdk.listRepositories).toHaveBeenCalledWith('test-org', {
+    expect(mockSdk.listRepositories).toHaveBeenCalledWith("test-org", {
       sort: undefined,
       direction: undefined,
       per_page: 100,
       page: 0,
-    })
+    });
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'list of repositories',
-    })
-    expect(result.ok).toBe(true)
-  })
+      description: "list of repositories",
+    });
+    expect(result.ok).toBe(true);
+  });
 
-  it('handles SDK setup failure', async () => {
-    await setupSdkSetupFailure('Failed to setup SDK', {
+  it("handles SDK setup failure", async () => {
+    await setupSdkSetupFailure("Failed to setup SDK", {
       code: 1,
-      cause: 'Missing API token',
-    })
+      cause: "Missing API token",
+    });
 
-    const result = await fetchListAllRepos('org')
+    const result = await fetchListAllRepos("org");
 
-    expect(result.ok).toBe(false)
-  })
+    expect(result.ok).toBe(false);
+  });
 
-  it('handles API call failure', async () => {
-    await setupSdkMockError('listRepositories', 'Access denied', 403)
+  it("handles API call failure", async () => {
+    await setupSdkMockError("listRepositories", "Access denied", 403);
 
-    const result = await fetchListAllRepos('private-org')
+    const result = await fetchListAllRepos("private-org");
 
-    expect(result.ok).toBe(false)
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.code).toBe(403)
+      expect(result.code).toBe(403);
     }
-  })
+  });
 
-  it('handles multiple pages of repositories', async () => {
+  it("handles multiple pages of repositories", async () => {
     // Mock with initial setup that returns first page.
-    const { mockHandleApi } = await setupSdkMockSuccess('listRepositories', {
-      results: [{ id: 'repo-1', name: 'first-repo' }],
+    const { mockHandleApi } = await setupSdkMockSuccess("listRepositories", {
+      results: [{ id: "repo-1", name: "first-repo" }],
       nextPage: 1,
-    })
+    });
 
     // Mock second page - reset and provide both pages.
-    mockHandleApi.mockClear()
+    mockHandleApi.mockClear();
     mockHandleApi
       .mockResolvedValueOnce({
         ok: true,
         data: {
-          results: [{ id: 'repo-1', name: 'first-repo' }],
+          results: [{ id: "repo-1", name: "first-repo" }],
           nextPage: 1,
         },
       })
       .mockResolvedValueOnce({
         ok: true,
         data: {
-          results: [{ id: 'repo-2', name: 'second-repo' }],
+          results: [{ id: "repo-2", name: "second-repo" }],
           nextPage: undefined,
         },
-      })
+      });
 
-    const result = await fetchListAllRepos('big-org')
+    const result = await fetchListAllRepos("big-org");
 
-    expect(mockHandleApi).toHaveBeenCalledTimes(2)
-    expect(result.ok).toBe(true)
+    expect(mockHandleApi).toHaveBeenCalledTimes(2);
+    expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.results).toHaveLength(2)
-      expect(result.data.nextPage).toBeNull()
+      expect(result.data.results).toHaveLength(2);
+      expect(result.data.nextPage).toBeNull();
     }
-  })
+  });
 
-  it('passes sort and direction options', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
+  it("passes sort and direction options", async () => {
+    const { mockSdk } = await setupSdkMockSuccess("listRepositories", {
       results: [],
       nextPage: undefined,
-    })
+    });
 
-    await fetchListAllRepos('sorted-org', {
-      sort: 'name',
-      direction: 'asc',
-    })
+    await fetchListAllRepos("sorted-org", {
+      sort: "name",
+      direction: "asc",
+    });
 
-    expect(mockSdk.listRepositories).toHaveBeenCalledWith('sorted-org', {
-      sort: 'name',
-      direction: 'asc',
+    expect(mockSdk.listRepositories).toHaveBeenCalledWith("sorted-org", {
+      sort: "name",
+      direction: "asc",
       per_page: 100,
       page: 0,
-    })
-  })
+    });
+  });
 
-  it('handles infinite loop protection', async () => {
-    const { mockHandleApi } = await setupSdkMockSuccess('listRepositories', {
-      results: [{ id: 'repo-1', name: 'repo' }],
+  it("handles infinite loop protection", async () => {
+    const { mockHandleApi } = await setupSdkMockSuccess("listRepositories", {
+      results: [{ id: "repo-1", name: "repo" }],
       nextPage: 1,
-    })
+    });
 
     // Clear initial setup calls and always return the same nextPage to trigger protection.
-    mockHandleApi.mockClear()
+    mockHandleApi.mockClear();
     mockHandleApi.mockResolvedValue({
       ok: true,
       data: {
-        results: [{ id: 'repo-1', name: 'repo' }],
+        results: [{ id: "repo-1", name: "repo" }],
         nextPage: 1,
       },
-    })
+    });
 
-    const result = await fetchListAllRepos('infinite-org')
+    const result = await fetchListAllRepos("infinite-org");
 
-    expect(result.ok).toBe(false)
-    expect(result.message).toBe('Infinite loop detected')
+    expect(result.ok).toBe(false);
+    expect(result.message).toBe("Infinite loop detected");
     // The protection triggers after ++protection > 100, but BEFORE the API call.
     // So handleApiCall is called exactly 100 times before protection kicks in.
-    expect(mockHandleApi).toHaveBeenCalledTimes(100)
-  })
+    expect(mockHandleApi).toHaveBeenCalledTimes(100);
+  });
 
-  it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('listRepositories', {
+  it("passes custom SDK options", async () => {
+    const { mockSetupSdk } = await setupSdkMockSuccess("listRepositories", {
       results: [],
       nextPage: undefined,
-    })
+    });
 
     const sdkOpts = {
-      apiToken: 'list-token',
-      baseUrl: 'https://list.api.com',
-    }
+      apiToken: "list-token",
+      baseUrl: "https://list.api.com",
+    };
 
-    await fetchListAllRepos('my-org', { sdkOpts })
+    await fetchListAllRepos("my-org", { sdkOpts });
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
-  })
+    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts);
+  });
 
-  it('uses null prototype for options', async () => {
-    const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
+  it("uses null prototype for options", async () => {
+    const { mockSdk } = await setupSdkMockSuccess("listRepositories", {
       results: [],
       nextPage: undefined,
-    })
+    });
 
     // This tests that the function properly uses __proto__: null.
-    await fetchListAllRepos('test-org')
+    await fetchListAllRepos("test-org");
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.listRepositories).toHaveBeenCalled()
-  })
-})
+    expect(mockSdk.listRepositories).toHaveBeenCalled();
+  });
+});

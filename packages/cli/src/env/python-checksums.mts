@@ -4,13 +4,13 @@
  * replace direct process.env['KEY'] references.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
-import type { PythonChecksums } from '../types.mjs'
+import type { PythonChecksums } from "../types.mjs";
 
-import { parseChecksums, requireChecksum } from './checksum-utils.mjs'
+import { parseChecksums, requireChecksum } from "./checksum-utils.mjs";
 
-const TOOL_NAME = 'Python'
+const TOOL_NAME = "Python";
 
 /**
  * Get Python checksums from inlined environment variable. Returns a map of
@@ -18,7 +18,7 @@ const TOOL_NAME = 'Python'
  */
 export function getPythonChecksums(): PythonChecksums {
   // MUST use direct process.env access for esbuild inlining.
-  return parseChecksums(process.env['INLINED_PYTHON_CHECKSUMS'], TOOL_NAME)
+  return parseChecksums(process.env["INLINED_PYTHON_CHECKSUMS"], TOOL_NAME);
 }
 
 /**
@@ -26,5 +26,5 @@ export function getPythonChecksums(): PythonChecksums {
  * is missing. In dev mode, returns undefined to allow development.
  */
 export function requirePythonChecksum(assetName: string): string | undefined {
-  return requireChecksum(getPythonChecksums(), assetName, TOOL_NAME)
+  return requireChecksum(getPythonChecksums(), assetName, TOOL_NAME);
 }

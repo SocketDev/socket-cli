@@ -1,4 +1,4 @@
-type NestedMap<T> = Map<string, T | NestedMap<T>>
+type NestedMap<T> = Map<string, T | NestedMap<T>>;
 
 export function* walkNestedMap<T>(
   map: NestedMap<T>,
@@ -6,9 +6,9 @@ export function* walkNestedMap<T>(
 ): Generator<{ keys: string[]; value: T }> {
   for (const { 0: key, 1: value } of map.entries()) {
     if (value instanceof Map) {
-      yield* walkNestedMap(value as NestedMap<T>, [...keys, key])
+      yield* walkNestedMap(value as NestedMap<T>, [...keys, key]);
     } else {
-      yield { keys: [...keys, key], value: value }
+      yield { keys: [...keys, key], value: value };
     }
   }
 }

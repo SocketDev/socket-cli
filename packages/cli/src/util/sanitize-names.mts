@@ -1,4 +1,4 @@
-import { SOCKET_DEFAULT_REPOSITORY } from '../constants/socket.mts'
+import { SOCKET_DEFAULT_REPOSITORY } from "../constants/socket.mts";
 
 /**
  * Extracts and sanitizes a repository name.
@@ -8,8 +8,8 @@ import { SOCKET_DEFAULT_REPOSITORY } from '../constants/socket.mts'
  * @returns Sanitized repository name, or default repository name if empty
  */
 export function extractName(name: string): string {
-  const sanitized = sanitizeName(name)
-  return sanitized || SOCKET_DEFAULT_REPOSITORY
+  const sanitized = sanitizeName(name);
+  return sanitized || SOCKET_DEFAULT_REPOSITORY;
 }
 
 /**
@@ -21,10 +21,10 @@ export function extractName(name: string): string {
  */
 export function extractOwner(owner: string): string | undefined {
   if (!owner) {
-    return undefined
+    return undefined;
   }
-  const sanitized = sanitizeName(owner)
-  return sanitized || undefined
+  const sanitized = sanitizeName(owner);
+  return sanitized || undefined;
 }
 
 /**
@@ -39,21 +39,21 @@ export function extractOwner(owner: string): string | undefined {
  */
 export function sanitizeName(name: string): string {
   if (!name) {
-    return ''
+    return "";
   }
 
   // Replace sequences of illegal characters with underscores.
   const sanitized = name
     // Replace any sequence of non-alphanumeric characters (except ., _, -) with underscore.
-    .replace(/[^A-Za-z0-9._-]+/g, '_')
+    .replace(/[^A-Za-z0-9._-]+/g, "_")
     // Replace sequences of multiple allowed special chars with single underscore.
-    .replace(/[._-]{2,}/g, '_')
+    .replace(/[._-]{2,}/g, "_")
     // Remove leading special characters.
-    .replace(/^[._-]+/, '')
+    .replace(/^[._-]+/, "")
     // Remove trailing special characters.
-    .replace(/[._-]+$/, '')
+    .replace(/[._-]+$/, "")
     // Truncate to 100 characters max.
-    .slice(0, 100)
+    .slice(0, 100);
 
-  return sanitized
+  return sanitized;
 }

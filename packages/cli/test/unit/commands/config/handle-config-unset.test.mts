@@ -18,13 +18,10 @@
  * src/commands/config/output-config-unset.mts - Output formatter.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { handleConfigUnset } from '../../../../src/commands/config/handle-config-unset.mts'
-import {
-  createErrorResult,
-  createSuccessResult,
-} from '../../../helpers/mocks.mts'
+import { handleConfigUnset } from "../../../../src/commands/config/handle-config-unset.mts";
+import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -32,137 +29,132 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
 // Mock the dependencies.
-const mockOutputConfigUnset = vi.hoisted(() => vi.fn())
-const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
+const mockOutputConfigUnset = vi.hoisted(() => vi.fn());
+const mockUpdateConfigValue = vi.hoisted(() => vi.fn());
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}))
+}));
 
-vi.mock('../../../../src/commands/config/output-config-unset.mts', () => ({
+vi.mock(import("../../../../src/commands/config/output-config-unset.mts"), () => ({
   outputConfigUnset: mockOutputConfigUnset,
-}))
-vi.mock('../../../../src/util/config.mts', () => ({
+}));
+vi.mock(import("../../../../src/util/config.mts"), () => ({
   updateConfigValue: mockUpdateConfigValue,
-}))
+}));
 
-describe('handleConfigUnset', () => {
+describe("handleConfigUnset", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('unsets config value successfully', async () => {
-    const { updateConfigValue } =
-      await import('../../../../src/util/config.mts')
+  it("unsets config value successfully", async () => {
+    const { updateConfigValue } = await import("../../../../src/util/config.mts");
     const { outputConfigUnset } =
-      await import('../../../../src/commands/config/output-config-unset.mts')
+      await import("../../../../src/commands/config/output-config-unset.mts");
 
-    const mockResult = createSuccessResult(undefined)
-    mockUpdateConfigValue.mockReturnValue(mockResult)
+    const mockResult = createSuccessResult(undefined);
+    mockUpdateConfigValue.mockReturnValue(mockResult);
 
     await handleConfigUnset({
-      key: 'apiToken',
-      outputKind: 'json',
-    })
+      key: "apiToken",
+      outputKind: "json",
+    });
 
-    expect(updateConfigValue).toHaveBeenCalledWith('apiToken', undefined)
-    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'json')
-  })
+    expect(updateConfigValue).toHaveBeenCalledWith("apiToken", undefined);
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, "json");
+  });
 
-  it('handles unset failure', async () => {
-    const { updateConfigValue } =
-      await import('../../../../src/util/config.mts')
+  it("handles unset failure", async () => {
+    const { updateConfigValue } = await import("../../../../src/util/config.mts");
     const { outputConfigUnset } =
-      await import('../../../../src/commands/config/output-config-unset.mts')
+      await import("../../../../src/commands/config/output-config-unset.mts");
 
-    const mockResult = createErrorResult('Cannot unset config')
-    mockUpdateConfigValue.mockReturnValue(mockResult)
+    const mockResult = createErrorResult("Cannot unset config");
+    mockUpdateConfigValue.mockReturnValue(mockResult);
 
     await handleConfigUnset({
-      key: 'org',
-      outputKind: 'text',
-    })
+      key: "org",
+      outputKind: "text",
+    });
 
-    expect(updateConfigValue).toHaveBeenCalledWith('org', undefined)
-    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'text')
-  })
+    expect(updateConfigValue).toHaveBeenCalledWith("org", undefined);
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, "text");
+  });
 
-  it('handles markdown output', async () => {
-    const { updateConfigValue } =
-      await import('../../../../src/util/config.mts')
+  it("handles markdown output", async () => {
+    const { updateConfigValue } = await import("../../../../src/util/config.mts");
     const { outputConfigUnset } =
-      await import('../../../../src/commands/config/output-config-unset.mts')
+      await import("../../../../src/commands/config/output-config-unset.mts");
 
-    const mockResult = createSuccessResult(undefined)
-    mockUpdateConfigValue.mockReturnValue(mockResult)
+    const mockResult = createSuccessResult(undefined);
+    mockUpdateConfigValue.mockReturnValue(mockResult);
 
     await handleConfigUnset({
-      key: 'repoName',
-      outputKind: 'markdown',
-    })
+      key: "repoName",
+      outputKind: "markdown",
+    });
 
-    expect(updateConfigValue).toHaveBeenCalledWith('repoName', undefined)
-    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'markdown')
-  })
+    expect(updateConfigValue).toHaveBeenCalledWith("repoName", undefined);
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, "markdown");
+  });
 
-  it('handles different config keys', async () => {
-    const { updateConfigValue } =
-      await import('../../../../src/util/config.mts')
+  it("handles different config keys", async () => {
+    const { updateConfigValue } = await import("../../../../src/util/config.mts");
     const { outputConfigUnset } =
-      await import('../../../../src/commands/config/output-config-unset.mts')
+      await import("../../../../src/commands/config/output-config-unset.mts");
 
-    const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
+    const keys = ["apiToken", "org", "repoName", "apiBaseUrl", "apiProxy"];
 
     for (let i = 0, { length } = keys; i < length; i += 1) {
-      const key = keys[i]
-      const mockResult = createSuccessResult(undefined)
-      mockUpdateConfigValue.mockReturnValue(mockResult)
+      const key = keys[i];
+      const mockResult = createSuccessResult(undefined);
+      mockUpdateConfigValue.mockReturnValue(mockResult);
 
       await handleConfigUnset({
         key: key as unknown,
-        outputKind: 'json',
-      })
+        outputKind: "json",
+      });
 
-      expect(updateConfigValue).toHaveBeenCalledWith(key, undefined)
-      expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'json')
+      expect(updateConfigValue).toHaveBeenCalledWith(key, undefined);
+      expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, "json");
     }
-  })
+  });
 
-  it('handles text output', async () => {
+  it("handles text output", async () => {
     const { outputConfigUnset } =
-      await import('../../../../src/commands/config/output-config-unset.mts')
+      await import("../../../../src/commands/config/output-config-unset.mts");
 
-    const mockResult = createSuccessResult(undefined)
-    mockUpdateConfigValue.mockReturnValue(mockResult)
+    const mockResult = createSuccessResult(undefined);
+    mockUpdateConfigValue.mockReturnValue(mockResult);
 
     await handleConfigUnset({
-      key: 'apiToken',
-      outputKind: 'text',
-    })
+      key: "apiToken",
+      outputKind: "text",
+    });
 
-    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'text')
-  })
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, "text");
+  });
 
-  it('handles already unset config value', async () => {
-    const { updateConfigValue } =
-      await import('../../../../src/util/config.mts')
+  it("handles already unset config value", async () => {
+    const { updateConfigValue } = await import("../../../../src/util/config.mts");
     const { outputConfigUnset } =
-      await import('../../../../src/commands/config/output-config-unset.mts')
+      await import("../../../../src/commands/config/output-config-unset.mts");
 
     // Even if already unset, the function should still succeed.
-    const mockResult = createSuccessResult(undefined)
-    mockUpdateConfigValue.mockReturnValue(mockResult)
+    const mockResult = createSuccessResult(undefined);
+    mockUpdateConfigValue.mockReturnValue(mockResult);
 
     await handleConfigUnset({
-      key: 'org',
-      outputKind: 'json',
-    })
+      key: "org",
+      outputKind: "json",
+    });
 
-    expect(updateConfigValue).toHaveBeenCalledWith('org', undefined)
-    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, 'json')
-  })
-})
+    expect(updateConfigValue).toHaveBeenCalledWith("org", undefined);
+    expect(outputConfigUnset).toHaveBeenCalledWith(mockResult, "json");
+  });
+});

@@ -10,14 +10,14 @@
  * - Src/commands/install/setup-tab-completion.mts
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockExistsSync = vi.hoisted(() => vi.fn())
-const mockReadFileSync = vi.hoisted(() => vi.fn())
-const mockAppendFileSync = vi.hoisted(() => vi.fn())
-const mockWriteFileSync = vi.hoisted(() => vi.fn())
+const mockExistsSync = vi.hoisted(() => vi.fn());
+const mockReadFileSync = vi.hoisted(() => vi.fn());
+const mockAppendFileSync = vi.hoisted(() => vi.fn());
+const mockWriteFileSync = vi.hoisted(() => vi.fn());
 
-vi.mock('node:fs', () => ({
+vi.mock(import("node:fs"), () => ({
   existsSync: mockExistsSync,
   readFileSync: mockReadFileSync,
   appendFileSync: mockAppendFileSync,
@@ -28,170 +28,165 @@ vi.mock('node:fs', () => ({
     appendFileSync: mockAppendFileSync,
     writeFileSync: mockWriteFileSync,
   },
-}))
+}));
 
-const mockSafeMkdirSync = vi.hoisted(() => vi.fn())
-vi.mock('@socketsecurity/lib-stable/fs/safe', () => ({
+const mockSafeMkdirSync = vi.hoisted(() => vi.fn());
+vi.mock(import("@socketsecurity/lib-stable/fs/safe"), () => ({
   safeMkdirSync: mockSafeMkdirSync,
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/debug/output', () => ({
+vi.mock(import("@socketsecurity/lib-stable/debug/output"), () => ({
   debug: vi.fn(),
-}))
+}));
 
-const mockGetBashrcDetails = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/util/cli/completion.mts', () => ({
+const mockGetBashrcDetails = vi.hoisted(() => vi.fn());
+vi.mock(import("../../../../src/util/cli/completion.mts"), () => ({
   getBashrcDetails: mockGetBashrcDetails,
-}))
+}));
 
-const mockGetCliVersionHash = vi.hoisted(() => vi.fn(() => 'v1.2.3'))
-vi.mock('../../../../src/env/cli-version-hash.mts', () => ({
+const mockGetCliVersionHash = vi.hoisted(() => vi.fn(() => "v1.2.3"));
+vi.mock(import("../../../../src/env/cli-version-hash.mts"), () => ({
   getCliVersionHash: mockGetCliVersionHash,
-}))
+}));
 
-vi.mock('../../../../src/constants/paths.mts', () => ({
-  homePath: '/home/user',
-}))
+vi.mock(import("../../../../src/constants/paths.mts"), () => ({
+  homePath: "/home/user",
+}));
 
 import {
   setupTabCompletion,
   updateInstalledTabCompletionScript,
-} from '../../../../src/commands/install/setup-tab-completion.mts'
+} from "../../../../src/commands/install/setup-tab-completion.mts";
 
-describe('setupTabCompletion', () => {
+describe("setupTabCompletion", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.clearAllMocks();
     mockGetBashrcDetails.mockReturnValue({
       ok: true,
       data: {
-        completionCommand: 'complete -F _socket_complete socket',
-        sourcingCommand: 'source ~/.local/share/socket/completion.bash',
-        targetPath: '/home/user/.local/share/socket/completion.bash',
-        toAddToBashrc: '\n# Socket completion\nsource ...\n',
+        completionCommand: "complete -F _socket_complete socket",
+        sourcingCommand: "source ~/.local/share/socket/completion.bash",
+        targetPath: "/home/user/.local/share/socket/completion.bash",
+        toAddToBashrc: "\n# Socket completion\nsource ...\n",
       },
-    })
+    });
     // Default: target dir exists, source script exists.
-    mockExistsSync.mockReturnValue(true)
-    mockReadFileSync.mockReturnValue('completion script content')
-  })
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue("completion script content");
+  });
 
   afterEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('returns error when getBashrcDetails fails', async () => {
+  it("returns error when getBashrcDetails fails", async () => {
     mockGetBashrcDetails.mockReturnValueOnce({
       ok: false,
-      message: 'Unsupported shell',
-    })
+      message: "Unsupported shell",
+    });
 
-    const result = await setupTabCompletion('socket')
+    const result = await setupTabCompletion("socket");
 
-    expect(result.ok).toBe(false)
-  })
+    expect(result.ok).toBe(false);
+  });
 
-  it('creates target dir when it does not exist', async () => {
-    mockExistsSync.mockImplementation(
-      (p: string) => p !== '/home/user/.local/share/socket',
-    )
+  it("creates target dir when it does not exist", async () => {
+    mockExistsSync.mockImplementation((p: string) => p !== "/home/user/.local/share/socket");
 
-    await setupTabCompletion('socket')
+    await setupTabCompletion("socket");
 
-    expect(mockSafeMkdirSync).toHaveBeenCalledWith(
-      '/home/user/.local/share/socket',
-      { recursive: true },
-    )
-  })
+    expect(mockSafeMkdirSync).toHaveBeenCalledWith("/home/user/.local/share/socket", {
+      recursive: true,
+    });
+  });
 
-  it('appends sourcing line to .bashrc when missing', async () => {
-    mockReadFileSync.mockReturnValueOnce('completion script content')
-    mockReadFileSync.mockReturnValueOnce('# unrelated bashrc')
+  it("appends sourcing line to .bashrc when missing", async () => {
+    mockReadFileSync.mockReturnValueOnce("completion script content");
+    mockReadFileSync.mockReturnValueOnce("# unrelated bashrc");
 
-    const result = await setupTabCompletion('socket')
+    const result = await setupTabCompletion("socket");
 
-    expect(mockAppendFileSync).toHaveBeenCalled()
-    expect(result.ok).toBe(true)
+    expect(mockAppendFileSync).toHaveBeenCalled();
+    expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.bashrcUpdated).toBe(true)
+      expect(result.data.bashrcUpdated).toBe(true);
     }
-  })
+  });
 
-  it('does not re-append when sourcing line is already present', async () => {
+  it("does not re-append when sourcing line is already present", async () => {
     // First read: completion script (for write).
     // Second read: bashrc that already contains the sourcing line.
-    mockReadFileSync.mockReturnValueOnce('completion script content')
-    mockReadFileSync.mockReturnValueOnce(
-      'source ~/.local/share/socket/completion.bash\n',
-    )
+    mockReadFileSync.mockReturnValueOnce("completion script content");
+    mockReadFileSync.mockReturnValueOnce("source ~/.local/share/socket/completion.bash\n");
 
-    const result = await setupTabCompletion('socket')
+    const result = await setupTabCompletion("socket");
 
-    expect(mockAppendFileSync).not.toHaveBeenCalled()
+    expect(mockAppendFileSync).not.toHaveBeenCalled();
     if (result.ok) {
-      expect(result.data.bashrcUpdated).toBe(false)
-      expect(result.data.foundBashrc).toBe(true)
+      expect(result.data.bashrcUpdated).toBe(false);
+      expect(result.data.foundBashrc).toBe(true);
     }
-  })
+  });
 
-  it('handles missing .bashrc gracefully', async () => {
+  it("handles missing .bashrc gracefully", async () => {
     mockExistsSync.mockImplementation(
       (p: string) =>
         // Source script + target dir exist, .bashrc does not.
-        !p.endsWith('.bashrc'),
-    )
+        !p.endsWith(".bashrc"),
+    );
 
-    const result = await setupTabCompletion('socket')
+    const result = await setupTabCompletion("socket");
 
-    expect(result.ok).toBe(true)
+    expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.foundBashrc).toBe(false)
-      expect(result.data.bashrcUpdated).toBe(false)
+      expect(result.data.foundBashrc).toBe(false);
+      expect(result.data.bashrcUpdated).toBe(false);
     }
-  })
+  });
 
-  it('swallows readFileSync errors on .bashrc (deleted between checks)', async () => {
+  it("swallows readFileSync errors on .bashrc (deleted between checks)", async () => {
     // First read for completion script.
-    mockReadFileSync.mockReturnValueOnce('completion script content')
+    mockReadFileSync.mockReturnValueOnce("completion script content");
     // Second read (.bashrc) throws.
     mockReadFileSync.mockImplementationOnce(() => {
-      throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
-    })
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    });
 
-    const result = await setupTabCompletion('socket')
+    const result = await setupTabCompletion("socket");
 
-    expect(result.ok).toBe(true)
+    expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.bashrcUpdated).toBe(false)
+      expect(result.data.bashrcUpdated).toBe(false);
     }
-  })
-})
+  });
+});
 
-describe('updateInstalledTabCompletionScript', () => {
+describe("updateInstalledTabCompletionScript", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockExistsSync.mockReturnValue(true)
-    mockReadFileSync.mockReturnValue('VERSION=%SOCKET_VERSION_TOKEN%')
-  })
+    vi.clearAllMocks();
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue("VERSION=%SOCKET_VERSION_TOKEN%");
+  });
 
-  it('writes the completion script with version token replaced', () => {
-    const result = updateInstalledTabCompletionScript('/target/completion.bash')
+  it("writes the completion script with version token replaced", () => {
+    const result = updateInstalledTabCompletionScript("/target/completion.bash");
 
-    expect(result.ok).toBe(true)
+    expect(result.ok).toBe(true);
     expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/target/completion.bash',
-      'VERSION=v1.2.3',
-      'utf8',
-    )
-  })
+      "/target/completion.bash",
+      "VERSION=v1.2.3",
+      "utf8",
+    );
+  });
 
-  it('returns error when source completion script is missing', () => {
-    mockExistsSync.mockReturnValue(false)
+  it("returns error when source completion script is missing", () => {
+    mockExistsSync.mockReturnValue(false);
 
-    const result = updateInstalledTabCompletionScript('/target/completion.bash')
+    const result = updateInstalledTabCompletionScript("/target/completion.bash");
 
-    expect(result.ok).toBe(false)
+    expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toContain('Source not found')
+      expect(result.message).toContain("Source not found");
     }
-  })
-})
+  });
+});

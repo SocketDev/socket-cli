@@ -17,10 +17,10 @@
  * src/commands/audit-log/handle-audit-log.mts - Handler.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
+import type * as SdkModule from "../../../../src/util/socket/sdk.mjs";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -30,344 +30,324 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 // Mock dependencies.
-const mockHandleAuditLog = vi.hoisted(() => vi.fn())
-const mockDetermineOrgSlug = vi.hoisted(() =>
-  vi.fn().mockResolvedValue(['test-org', 'test-org']),
-)
-const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true))
+const mockHandleAuditLog = vi.hoisted(() => vi.fn());
+const mockDetermineOrgSlug = vi.hoisted(() => vi.fn().mockResolvedValue(["test-org", "test-org"]));
+const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(true));
 
-vi.mock('../../../../src/commands/audit-log/handle-audit-log.mts', () => ({
+vi.mock(import("../../../../src/commands/audit-log/handle-audit-log.mts"), () => ({
   handleAuditLog: mockHandleAuditLog,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/org-slug.mjs', () => ({
+vi.mock(import("../../../../src/util/socket/org-slug.mjs"), () => ({
   determineOrgSlug: mockDetermineOrgSlug,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof SdkModule>()
+vi.mock(import("../../../../src/util/socket/sdk.mjs"), async (importOriginal) => {
+  const actual = await importOriginal<typeof SdkModule>();
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
-  }
-})
+  };
+});
 
 // Import after mocks.
-const { cmdAuditLog } =
-  await import('../../../../src/commands/audit-log/cmd-audit-log.mts')
+const { cmdAuditLog } = await import("../../../../src/commands/audit-log/cmd-audit-log.mts");
 
-describe('cmd-audit-log', () => {
+describe("cmd-audit-log", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdAuditLog.description).toBe(
-        'Look up the audit log for an organization',
-      )
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdAuditLog.description).toBe("Look up the audit log for an organization");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdAuditLog.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdAuditLog.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-audit-log.mts' }
-    const context = { parentName: 'socket' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-audit-log.mts" };
+    const context = { parentName: "socket" };
 
-    it('should support --dry-run flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --dry-run flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--dry-run'], importMeta, context)
+      await cmdAuditLog.run(["--dry-run"], importMeta, context);
 
-      expect(mockHandleAuditLog).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('DryRun'),
-      )
-    })
+      expect(mockHandleAuditLog).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("DryRun"));
+    });
 
-    it('should fail without Socket API token', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(false)
+    it("should fail without Socket API token", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(false);
 
-      await cmdAuditLog.run([], importMeta, context)
+      await cmdAuditLog.run([], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAuditLog).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAuditLog).not.toHaveBeenCalled();
+    });
 
-    it('should call handleAuditLog with default values', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should call handleAuditLog with default values", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run([], importMeta, context)
+      await cmdAuditLog.run([], importMeta, context);
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith({
-        logType: '',
-        orgSlug: 'test-org',
-        outputKind: 'text',
+        logType: "",
+        orgSlug: "test-org",
+        outputKind: "text",
         page: 0,
         perPage: 30,
-      })
-    })
+      });
+    });
 
-    it('should pass type filter as first argument', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass type filter as first argument", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['deleteReport'], importMeta, context)
-
-      expect(mockHandleAuditLog).toHaveBeenCalledWith(
-        expect.objectContaining({
-          logType: 'DeleteReport',
-        }),
-      )
-    })
-
-    it('should capitalize first letter of type filter', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdAuditLog.run(['createApiToken'], importMeta, context)
+      await cmdAuditLog.run(["deleteReport"], importMeta, context);
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
-          logType: 'CreateApiToken',
+          logType: "DeleteReport",
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --page flag to handleAuditLog', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should capitalize first letter of type filter", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--page', '2'], importMeta, context)
+      await cmdAuditLog.run(["createApiToken"], importMeta, context);
+
+      expect(mockHandleAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          logType: "CreateApiToken",
+        }),
+      );
+    });
+
+    it("should pass --page flag to handleAuditLog", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdAuditLog.run(["--page", "2"], importMeta, context);
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
           page: 2,
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --per-page flag to handleAuditLog', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --per-page flag to handleAuditLog", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--per-page', '50'], importMeta, context)
+      await cmdAuditLog.run(["--per-page", "50"], importMeta, context);
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
           perPage: 50,
         }),
-      )
-    })
+      );
+    });
 
-    it('should pass --org flag to determineOrgSlug', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['custom-org', 'custom-org'])
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --org flag to determineOrgSlug", async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(["custom-org", "custom-org"]);
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--org', 'custom-org'], importMeta, context)
+      await cmdAuditLog.run(["--org", "custom-org"], importMeta, context);
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
-        'custom-org',
-        true,
-        false,
-      )
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("custom-org", true, false);
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
-          orgSlug: 'custom-org',
+          orgSlug: "custom-org",
         }),
-      )
-    })
+      );
+    });
 
-    it('should support --json output mode', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --json output mode", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--json'], importMeta, context)
+      await cmdAuditLog.run(["--json"], importMeta, context);
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
-          outputKind: 'json',
+          outputKind: "json",
         }),
-      )
-    })
+      );
+    });
 
-    it('should support --markdown output mode', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --markdown output mode", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--markdown'], importMeta, context)
+      await cmdAuditLog.run(["--markdown"], importMeta, context);
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
-          outputKind: 'markdown',
+          outputKind: "markdown",
         }),
-      )
-    })
+      );
+    });
 
-    it('should fail if both --json and --markdown are set', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should fail if both --json and --markdown are set", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--json', '--markdown'], importMeta, context)
+      await cmdAuditLog.run(["--json", "--markdown"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAuditLog).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAuditLog).not.toHaveBeenCalled();
+    });
 
-    it('should fail without organization slug', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should fail without organization slug", async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(["", ""]);
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run([], importMeta, context)
-
-      // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAuditLog).not.toHaveBeenCalled()
-    })
-
-    it('should handle --no-interactive flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdAuditLog.run(['--no-interactive'], importMeta, context)
-
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', false, false)
-    })
-
-    it('should validate type filter is alphabetic', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdAuditLog.run(['invalid-123'], importMeta, context)
+      await cmdAuditLog.run([], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleAuditLog).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAuditLog).not.toHaveBeenCalled();
+    });
 
-    it('should allow empty type filter', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should handle --no-interactive flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run([], importMeta, context)
+      await cmdAuditLog.run(["--no-interactive"], importMeta, context);
+
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("", false, false);
+    });
+
+    it("should validate type filter is alphabetic", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdAuditLog.run(["invalid-123"], importMeta, context);
+
+      // Exit code 2 = invalid usage/validation failure.
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleAuditLog).not.toHaveBeenCalled();
+    });
+
+    it("should allow empty type filter", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdAuditLog.run([], importMeta, context);
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
-          logType: '',
+          logType: "",
         }),
-      )
-    })
+      );
+    });
 
-    it('should show dry-run output with all parameters', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should show dry-run output with all parameters", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdAuditLog.run(
-        ['--dry-run', 'deleteReport', '--page', '2', '--per-page', '10'],
+        ["--dry-run", "deleteReport", "--page", "2", "--per-page", "10"],
         importMeta,
         context,
-      )
+      );
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('audit log entries'),
-      )
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('deleteReport'),
-      )
-    })
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("audit log entries"));
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("deleteReport"));
+    });
 
-    it('should validate page is numeric', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate page is numeric", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await expect(
-        cmdAuditLog.run(['--page', 'invalid'], importMeta, context),
-      ).rejects.toThrow(/--page must be a non-negative integer/)
-    })
+      await expect(cmdAuditLog.run(["--page", "invalid"], importMeta, context)).rejects.toThrow(
+        /--page must be a non-negative integer/,
+      );
+    });
 
-    it('should validate per-page is numeric', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should validate per-page is numeric", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await expect(
-        cmdAuditLog.run(['--per-page', 'invalid'], importMeta, context),
-      ).rejects.toThrow(/--per-page must be a non-negative integer/)
-    })
+      await expect(cmdAuditLog.run(["--per-page", "invalid"], importMeta, context)).rejects.toThrow(
+        /--per-page must be a non-negative integer/,
+      );
+    });
 
-    it('should reject negative page numbers', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should reject negative page numbers", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await expect(
-        cmdAuditLog.run(['--page', '-1'], importMeta, context),
-      ).rejects.toThrow(/--page must be a non-negative integer/)
-    })
+      await expect(cmdAuditLog.run(["--page", "-1"], importMeta, context)).rejects.toThrow(
+        /--page must be a non-negative integer/,
+      );
+    });
 
-    it('should reject negative per-page numbers', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should reject negative per-page numbers", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await expect(
-        cmdAuditLog.run(['--per-page', '-1'], importMeta, context),
-      ).rejects.toThrow(/--per-page must be a non-negative integer/)
-    })
+      await expect(cmdAuditLog.run(["--per-page", "-1"], importMeta, context)).rejects.toThrow(
+        /--per-page must be a non-negative integer/,
+      );
+    });
 
-    it('should accept zero as page number', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should accept zero as page number", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--page', '0'], importMeta, context)
+      await cmdAuditLog.run(["--page", "0"], importMeta, context);
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
           page: 0,
         }),
-      )
-    })
+      );
+    });
 
-    it('should combine type filter and pagination flags', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should combine type filter and pagination flags", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdAuditLog.run(
-        ['sendInvitation', '--page', '3', '--per-page', '20'],
+        ["sendInvitation", "--page", "3", "--per-page", "20"],
         importMeta,
         context,
-      )
+      );
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
-          logType: 'SendInvitation',
+          logType: "SendInvitation",
           page: 3,
           perPage: 20,
         }),
-      )
-    })
+      );
+    });
 
-    it('should show dry-run with default filter value', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should show dry-run with default filter value", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--dry-run'], importMeta, context)
+      await cmdAuditLog.run(["--dry-run"], importMeta, context);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('any'),
-      )
-    })
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("any"));
+    });
 
-    it('should handle organization with special characters', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce([
-        'org-with-dash',
-        'org-with-dash',
-      ])
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should handle organization with special characters", async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(["org-with-dash", "org-with-dash"]);
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdAuditLog.run(['--org', 'org-with-dash'], importMeta, context)
+      await cmdAuditLog.run(["--org", "org-with-dash"], importMeta, context);
 
       expect(mockHandleAuditLog).toHaveBeenCalledWith(
         expect.objectContaining({
-          orgSlug: 'org-with-dash',
+          orgSlug: "org-with-dash",
         }),
-      )
-    })
-  })
-})
+      );
+    });
+  });
+});

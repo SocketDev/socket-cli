@@ -1,102 +1,100 @@
-import { existsSync, readFileSync } from 'node:fs'
-import path from 'node:path'
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { stripAnsi } from "@socketsecurity/lib-stable/ansi/strip";
 
-import type { CResult } from '../../types.mts'
-const logger = getDefaultLogger()
+import type { CResult } from "../../types.mts";
+const logger = getDefaultLogger();
 
 export async function convertCondaToRequirements(
   filename: string,
   cwd: string,
   verbose: boolean,
 ): Promise<CResult<{ content: string; pip: string }>> {
-  let content: string
-  if (filename === '-') {
+  let content: string;
+  if (filename === "-") {
     if (verbose) {
-      logger.info('[VERBOSE] reading input from stdin')
+      logger.info("[VERBOSE] reading input from stdin");
     }
 
-    const strings: string[] = []
+    const strings: string[] = [];
     content = await new Promise((resolve, reject) => {
       const cleanup = () => {
-        process.stdin.off('data', dataHandler)
-        process.stdin.off('end', endHandler)
-        process.stdin.off('error', errorHandler)
-        process.stdin.off('close', closeHandler)
-      }
+        process.stdin.off("data", dataHandler);
+        process.stdin.off("end", endHandler);
+        process.stdin.off("error", errorHandler);
+        process.stdin.off("close", closeHandler);
+      };
 
       const dataHandler = (chunk: Buffer) => {
-        strings.push(chunk.toString())
-      }
+        strings.push(chunk.toString());
+      };
 
       const endHandler = () => {
-        cleanup()
-        resolve(prepareContent(strings.join('')))
-      }
+        cleanup();
+        resolve(prepareContent(strings.join("")));
+      };
 
       const errorHandler = (e: Error) => {
-        cleanup()
+        cleanup();
         if (verbose) {
-          logger.error('Unexpected error while reading from stdin:', e)
+          logger.error("Unexpected error while reading from stdin:", e);
         }
-        reject(e)
-      }
+        reject(e);
+      };
 
       const closeHandler = () => {
-        cleanup()
+        cleanup();
         if (strings.length) {
           if (verbose) {
-            logger.error(
-              'warning: stdin closed explicitly with some data received',
-            )
+            logger.error("warning: stdin closed explicitly with some data received");
           }
-          resolve(prepareContent(strings.join('')))
+          resolve(prepareContent(strings.join("")));
         } else {
           if (verbose) {
-            logger.error('stdin closed explicitly without data received')
+            logger.error("stdin closed explicitly without data received");
           }
-          reject(new Error('No data received from stdin'))
+          reject(new Error("No data received from stdin"));
         }
-      }
+      };
 
-      process.stdin.on('data', dataHandler)
-      process.stdin.on('end', endHandler)
-      process.stdin.on('error', errorHandler)
-      process.stdin.on('close', closeHandler)
-    })
+      process.stdin.on("data", dataHandler);
+      process.stdin.on("end", endHandler);
+      process.stdin.on("error", errorHandler);
+      process.stdin.on("close", closeHandler);
+    });
 
     if (!content) {
       return {
         ok: false,
-        message: 'Manifest Generation Failed',
-        cause: 'No data received from stdin',
-      }
+        message: "Manifest Generation Failed",
+        cause: "No data received from stdin",
+      };
     }
   } else {
-    const filepath = path.join(cwd, filename)
+    const filepath = path.join(cwd, filename);
 
     if (verbose) {
-      logger.info(`[VERBOSE] target: ${filepath}`)
+      logger.info(`[VERBOSE] target: ${filepath}`);
     }
 
     if (!existsSync(filepath)) {
       return {
         ok: false,
-        message: 'Manifest Generation Failed',
+        message: "Manifest Generation Failed",
         cause: `The file was not found at ${filepath}`,
-      }
+      };
     }
 
-    content = readFileSync(filepath, 'utf8')
+    content = readFileSync(filepath, "utf8");
 
     if (!content) {
       return {
         ok: false,
-        message: 'Manifest Generation Failed',
+        message: "Manifest Generation Failed",
         cause: `File at ${filepath} is empty`,
-      }
+      };
     }
   }
 
@@ -106,71 +104,71 @@ export async function convertCondaToRequirements(
       content,
       pip: convertCondaToRequirementsFromInput(content),
     },
-  }
+  };
 }
 
 // Just extract the first pip block, if one exists at all.
 export function convertCondaToRequirementsFromInput(input: string): string {
-  let collecting = false
-  let delim = '-'
-  let indent = ''
-  const keeping: string[] = []
-  for (const line of input.split('\n')) {
-    const trimmed = line.trim()
+  let collecting = false;
+  let delim = "-";
+  let indent = "";
+  const keeping: string[] = [];
+  for (const line of input.split("\n")) {
+    const trimmed = line.trim();
     if (!trimmed) {
       // Ignore empty lines.
-      continue
+      continue;
     }
     if (collecting) {
-      if (line.startsWith('#')) {
+      if (line.startsWith("#")) {
         // Ignore comment lines (keep?).
-        continue
+        continue;
       }
       if (line.startsWith(delim)) {
         // In this case we have a line with the same indentation as the
         // `- pip:` line, so we have reached the end of the pip block.
-        break
+        break;
       }
       if (!indent) {
         // Store the indentation of the block.
-        if (trimmed.startsWith('-') && line.includes('-')) {
-          const parts = line.split('-')
+        if (trimmed.startsWith("-") && line.includes("-")) {
+          const parts = line.split("-");
           /* c8 ignore start - String.split always returns ≥1 element */
           if (!parts.length) {
-            break
+            break;
           }
           /* c8 ignore stop */
-          indent = `${parts[0]}-`
+          indent = `${parts[0]}-`;
           if (indent.length <= delim.length) {
             // The first line after the `pip:` line does not indent further
             // than that so the block is empty?
-            break
+            break;
           }
         }
       }
       if (line.startsWith(indent)) {
-        keeping.push(line.slice(indent.length).trim())
+        keeping.push(line.slice(indent.length).trim());
       } else {
         // Unexpected input. bail.
-        break
+        break;
       }
     }
     // Note: the line may end with a line comment so don't === it.
-    else if (trimmed.startsWith('- pip:') && line.includes('-')) {
-      const parts = line.split('-')
+    else if (trimmed.startsWith("- pip:") && line.includes("-")) {
+      const parts = line.split("-");
       /* c8 ignore start - String.split always returns ≥1 element */
       if (!parts.length) {
-        continue
+        continue;
       }
       /* c8 ignore stop */
-      delim = `${parts[0]}-`
-      collecting = true
+      delim = `${parts[0]}-`;
+      collecting = true;
     }
   }
 
-  return prepareContent(keeping.join('\n'))
+  return prepareContent(keeping.join("\n"));
 }
 
 export function prepareContent(content: string): string {
-  return stripAnsi(content.trim())
+  return stripAnsi(content.trim());
 }

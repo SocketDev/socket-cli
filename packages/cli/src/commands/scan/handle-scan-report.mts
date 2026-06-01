@@ -1,19 +1,19 @@
-import { fetchScanData } from './fetch-report-data.mts'
-import { outputScanReport } from './output-scan-report.mts'
+import { fetchScanData } from "./fetch-report-data.mts";
+import { outputScanReport } from "./output-scan-report.mts";
 
-import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
-import type { OutputKind } from '../../types.mts'
+import type { FOLD_SETTING, REPORT_LEVEL } from "./types.mts";
+import type { OutputKind } from "../../types.mts";
 
 type HandleScanReportConfig = {
-  orgSlug: string
-  scanId: string
-  includeLicensePolicy: boolean
-  outputKind: OutputKind
-  filepath: string
-  fold: FOLD_SETTING
-  reportLevel: REPORT_LEVEL
-  short: boolean
-}
+  orgSlug: string;
+  scanId: string;
+  includeLicensePolicy: boolean;
+  outputKind: OutputKind;
+  filepath: string;
+  fold: FOLD_SETTING;
+  reportLevel: REPORT_LEVEL;
+  short: boolean;
+};
 
 export async function handleScanReport({
   filepath,
@@ -27,7 +27,7 @@ export async function handleScanReport({
 }: HandleScanReportConfig): Promise<void> {
   const scanDataCResult = await fetchScanData(orgSlug, scanId, {
     includeLicensePolicy,
-  })
+  });
 
   await outputScanReport(scanDataCResult, {
     filepath,
@@ -38,5 +38,5 @@ export async function handleScanReport({
     outputKind,
     reportLevel,
     short,
-  })
+  });
 }

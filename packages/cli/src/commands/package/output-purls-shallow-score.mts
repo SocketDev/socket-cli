@@ -1,93 +1,84 @@
-import colors from 'yoctocolors-cjs'
+import colors from "yoctocolors-cjs";
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { debug } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { joinAnd } from "@socketsecurity/lib-stable/arrays/join";
+import { debug } from "@socketsecurity/lib-stable/debug/output";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
+import { serializeResultJson } from "../../util/output/result-json.mjs";
 
-import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketArtifact } from '../../util/alert/artifact.mts'
-const logger = getDefaultLogger()
+import type { CResult, OutputKind } from "../../types.mts";
+import type { SocketArtifact } from "../../util/alert/artifact.mts";
+const logger = getDefaultLogger();
 
-export function formatReportCard(
-  artifact: DedupedArtifact,
-  colorize: boolean,
-): string {
+export function formatReportCard(artifact: DedupedArtifact, colorize: boolean): string {
   const scoreResult = {
-    'Supply Chain Risk': Math.floor((artifact.score?.supplyChain ?? 0) * 100),
+    "Supply Chain Risk": Math.floor((artifact.score?.supplyChain ?? 0) * 100),
     Maintenance: Math.floor((artifact.score?.maintenance ?? 0) * 100),
     Quality: Math.floor((artifact.score?.quality ?? 0) * 100),
     Vulnerabilities: Math.floor((artifact.score?.vulnerability ?? 0) * 100),
     License: Math.floor((artifact.score?.license ?? 0) * 100),
-  }
-  const alertString = getAlertString(artifact.alerts, { colorize })
+  };
+  const alertString = getAlertString(artifact.alerts, { colorize });
   /* c8 ignore start - artifact.ecosystem is required by the SDK contract */
   if (!artifact.ecosystem) {
-    debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
+    debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`);
   }
   /* c8 ignore stop */
-  const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
+  const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? `@${artifact.version}` : ""}`;
 
   // Calculate proper padding based on longest label.
-  const maxLabelLength = Math.max(
-    ...Object.keys(scoreResult).map(label => label.length),
-  )
-  const labelPadding = maxLabelLength + 2 // +2 for ": "
+  const maxLabelLength = Math.max(...Object.keys(scoreResult).map((label) => label.length));
+  const labelPadding = maxLabelLength + 2; // +2 for ": "
 
   return [
     `Package: ${colorize ? colors.bold(purl) : purl}`,
-    '',
+    "",
     ...Object.entries(scoreResult).map(
-      score =>
-        `- ${score[0]}:`.padEnd(labelPadding, ' ') +
-        `  ${formatScore(score[1], { colorize })}`,
+      (score) =>
+        `- ${score[0]}:`.padEnd(labelPadding, " ") + `  ${formatScore(score[1], { colorize })}`,
     ),
     alertString,
-  ].join('\n')
+  ].join("\n");
 }
 
 type FormatScoreOptions = {
-  colorize?: boolean | undefined
-  padding?: number | undefined
-}
+  colorize?: boolean | undefined;
+  padding?: number | undefined;
+};
 
-export function formatScore(
-  score: number,
-  options?: FormatScoreOptions | undefined,
-): string {
+export function formatScore(score: number, options?: FormatScoreOptions | undefined): string {
   const { colorize, padding = 3 } = {
     __proto__: null,
     ...options,
-  } as FormatScoreOptions
-  const padded = String(score).padStart(padding, ' ')
+  } as FormatScoreOptions;
+  const padded = String(score).padStart(padding, " ");
   if (!colorize) {
-    return padded
+    return padded;
   }
   if (score >= 80) {
-    return colors.green(padded)
+    return colors.green(padded);
   }
   if (score >= 60) {
-    return colors.yellow(padded)
+    return colors.yellow(padded);
   }
-  return colors.red(padded)
+  return colors.red(padded);
 }
 
 export function generateMarkdownReport(
   artifacts: Map<string, DedupedArtifact>,
   missing: string[],
 ): string {
-  const blocks: string[] = []
-  const dupes: Set<string> = new Set()
+  const blocks: string[] = [];
+  const dupes: Set<string> = new Set();
   for (const artifact of artifacts.values()) {
-    const block = `## ${formatReportCard(artifact, false)}`
+    const block = `## ${formatReportCard(artifact, false)}`;
     if (dupes.has(block)) {
       // Omit duplicate blocks.
-      continue
+      continue;
     }
-    dupes.add(block)
-    blocks.push(block)
+    dupes.add(block);
+    blocks.push(block);
   }
   return `
 # Shallow Package Report
@@ -97,114 +88,112 @@ This report contains the response for requesting data on some package url(s).
 Please note: The listed scores are ONLY for the package itself. It does NOT
              reflect the scores of any dependencies, transitive or otherwise.
 
-${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => `- ${purl}\n`).join('')}` : ''}
+${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map((purl) => `- ${purl}\n`).join("")}` : ""}
 
-${blocks.join('\n\n\n')}
-    `.trim()
+${blocks.join("\n\n\n")}
+    `.trim();
 }
 
 export function generateTextReport(
   artifacts: Map<string, DedupedArtifact>,
   missing: string[],
 ): string {
-  const o: string[] = []
-  o.push(`\n${colors.bold('Shallow Package Score')}\n`)
+  const o: string[] = [];
+  o.push(`\n${colors.bold("Shallow Package Score")}\n`);
   o.push(
-    'Please note: The listed scores are ONLY for the package itself. It does NOT\n' +
-      '             reflect the scores of any dependencies, transitive or otherwise.',
-  )
+    "Please note: The listed scores are ONLY for the package itself. It does NOT\n" +
+      "             reflect the scores of any dependencies, transitive or otherwise.",
+  );
   if (missing.length) {
     o.push(
-      `\nAt least one package had no response or the purl was not canonical:\n${missing.map(purl => `\n- ${colors.bold(purl)}`).join('')}`,
-    )
+      `\nAt least one package had no response or the purl was not canonical:\n${missing.map((purl) => `\n- ${colors.bold(purl)}`).join("")}`,
+    );
   }
-  const dupes: Set<string> = new Set()
+  const dupes: Set<string> = new Set();
   for (const artifact of artifacts.values()) {
-    const block = formatReportCard(artifact, true)
+    const block = formatReportCard(artifact, true);
     if (dupes.has(block)) {
       // Omit duplicate blocks.
-      continue
+      continue;
     }
-    dupes.add(block)
-    o.push('\n')
-    o.push(block)
+    dupes.add(block);
+    o.push("\n");
+    o.push(block);
   }
-  o.push('')
+  o.push("");
 
-  return o.join('\n')
+  return o.join("\n");
 }
 
 type AlertStringOptions = {
-  colorize?: boolean | undefined
-}
+  colorize?: boolean | undefined;
+};
 
 export function getAlertString(
-  alerts: DedupedArtifact['alerts'],
+  alerts: DedupedArtifact["alerts"],
   options?: AlertStringOptions | undefined,
 ): string {
-  const { colorize } = { __proto__: null, ...options } as AlertStringOptions
+  const { colorize } = { __proto__: null, ...options } as AlertStringOptions;
 
   if (!alerts.size) {
-    return `- Alerts: ${colorize ? colors.green('none') : 'none'}!`
+    return `- Alerts: ${colorize ? colors.green("none") : "none"}!`;
   }
 
-  const o = Array.from(alerts.values())
+  const o = Array.from(alerts.values());
 
   const bad = o
-    .filter(alert => alert.severity !== 'low' && alert.severity !== 'middle')
-    .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+    .filter((alert) => alert.severity !== "low" && alert.severity !== "middle")
+    .toSorted((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0));
 
   const mid = o
-    .filter(alert => alert.severity === 'middle')
-    .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+    .filter((alert) => alert.severity === "middle")
+    .toSorted((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0));
 
   const low = o
-    .filter(alert => alert.severity === 'low')
-    .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+    .filter((alert) => alert.severity === "low")
+    .toSorted((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0));
 
   // We need to create the no-color string regardless because the actual string
   // contains a bunch of invisible ANSI chars which would screw up length checks.
-  const colorless = `- Alerts (${bad.length}/${mid.length}/${low.length}):`
-  const padding = `  ${' '.repeat(Math.max(0, 20 - colorless.length))}`
+  const colorless = `- Alerts (${bad.length}/${mid.length}/${low.length}):`;
+  const padding = `  ${" ".repeat(Math.max(0, 20 - colorless.length))}`;
 
   if (colorize) {
     return `- Alerts (${colors.red(String(bad.length))}/${colors.yellow(String(mid.length))}/${low.length}):${
       padding
     }${joinAnd([
-      ...bad.map(a => colors.red(`${colors.dim(`[${a.severity}] `)}${a.type}`)),
-      ...mid.map(a =>
-        colors.yellow(`${colors.dim(`[${a.severity}] `)}${a.type}`),
-      ),
-      ...low.map(a => `${colors.dim(`[${a.severity}] `)}${a.type}`),
-    ])}`
+      ...bad.map((a) => colors.red(`${colors.dim(`[${a.severity}] `)}${a.type}`)),
+      ...mid.map((a) => colors.yellow(`${colors.dim(`[${a.severity}] `)}${a.type}`)),
+      ...low.map((a) => `${colors.dim(`[${a.severity}] `)}${a.type}`),
+    ])}`;
   }
   return `${colorless}${padding}${joinAnd([
-    ...bad.map(a => `[${a.severity}] ${a.type}`),
-    ...mid.map(a => `[${a.severity}] ${a.type}`),
-    ...low.map(a => `[${a.severity}] ${a.type}`),
-  ])}`
+    ...bad.map((a) => `[${a.severity}] ${a.type}`),
+    ...mid.map((a) => `[${a.severity}] ${a.type}`),
+    ...low.map((a) => `[${a.severity}] ${a.type}`),
+  ])}`;
 }
 
 // This is a simplified view of an artifact. Potentially merged with other artifacts.
 interface DedupedArtifact {
-  ecosystem: string // artifact.type
-  namespace: string
-  name: string
-  version: string
+  ecosystem: string; // artifact.type
+  namespace: string;
+  name: string;
+  version: string;
   score: {
-    supplyChain: number
-    maintenance: number
-    quality: number
-    vulnerability: number
-    license: number
-  }
+    supplyChain: number;
+    maintenance: number;
+    quality: number;
+    vulnerability: number;
+    license: number;
+  };
   alerts: Map<
     string,
     {
-      type: string
-      severity: string
+      type: string;
+      severity: string;
     }
-  >
+  >;
 }
 
 export function outputPurlsShallowScore(
@@ -213,28 +202,28 @@ export function outputPurlsShallowScore(
   outputKind: OutputKind,
 ): void {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1
+    process.exitCode = result.code ?? 1;
   }
 
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    return
+  if (outputKind === "json") {
+    logger.log(serializeResultJson(result));
+    return;
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
+    logger.fail(failMsgWithBadge(result.message, result.cause));
+    return;
   }
 
-  const { missing, rows } = preProcess(result.data, purls)
+  const { missing, rows } = preProcess(result.data, purls);
 
-  if (outputKind === 'markdown') {
-    const md = generateMarkdownReport(rows, missing)
-    logger.log(md)
-    return
+  if (outputKind === "markdown") {
+    const md = generateMarkdownReport(rows, missing);
+    logger.log(md);
+    return;
   }
 
-  const txt = generateTextReport(rows, missing)
-  logger.log(txt)
+  const txt = generateTextReport(rows, missing);
+  logger.log(txt);
 }
 
 export function preProcess(
@@ -249,90 +238,85 @@ export function preProcess(
 
   // API does not tell us which purls were not found.
   // Generate all purls to try so we can try to match search request.
-  const purls: Set<string> = new Set()
+  const purls: Set<string> = new Set();
   for (let i = 0, { length } = artifacts; i < length; i += 1) {
-    const data = artifacts[i]!
+    const data = artifacts[i]!;
     purls.add(
-      `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}@${data.version}`,
-    )
-    purls.add(`pkg:${data.type}/${data.name}@${data.version}`)
-    purls.add(`pkg:${data.type}/${data.name}`)
-    purls.add(
-      `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}`,
-    )
+      `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ""}${data.name}@${data.version}`,
+    );
+    purls.add(`pkg:${data.type}/${data.name}@${data.version}`);
+    purls.add(`pkg:${data.type}/${data.name}`);
+    purls.add(`pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ""}${data.name}`);
   }
   // Try to match the searched purls against this list
-  const missing = requestedPurls.filter(purl => {
+  const missing = requestedPurls.filter((purl) => {
     if (purls.has(purl)) {
-      return false
+      return false;
     }
-    if (
-      purl.endsWith('@latest') &&
-      purls.has(purl.slice(0, -'@latest'.length))
-    ) {
-      return false
+    if (purl.endsWith("@latest") && purls.has(purl.slice(0, -"@latest".length))) {
+      return false;
     }
     // Not found.
-    return true
-  })
+    return true;
+  });
 
   // Create a unique set of rows which represents each artifact that is returned
   // while deduping when the artifact (main) meta data only differs due to the
   // .release field (observed with python, at least).
   // Merge the alerts for duped packages. Use lowest score between all of them.
-  const rows: Map<string, DedupedArtifact> = new Map()
+  const rows: Map<string, DedupedArtifact> = new Map();
   for (let i = 0, { length } = artifacts; i < length; i += 1) {
-    const artifact = artifacts[i]!
-    const purl = `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
+    const artifact = artifacts[i]!;
+    const purl = `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ""}${artifact.name}${artifact.version ? `@${artifact.version}` : ""}`;
     if (rows.has(purl)) {
-      const row = rows.get(purl)
+      const row = rows.get(purl);
       /* c8 ignore start - rows.has just confirmed; .get cannot return undefined here */
       if (!row) {
-        continue
+        continue;
       }
       /* c8 ignore stop */
       if ((artifact.score?.supplyChain ?? 100) < row.score.supplyChain) {
-        row.score.supplyChain = artifact.score?.supplyChain ?? 100
+        row.score.supplyChain = artifact.score?.supplyChain ?? 100;
       }
       if ((artifact.score?.maintenance ?? 100) < row.score.maintenance) {
-        row.score.maintenance = artifact.score?.maintenance ?? 100
+        row.score.maintenance = artifact.score?.maintenance ?? 100;
       }
       if ((artifact.score?.quality ?? 100) < row.score.quality) {
-        row.score.quality = artifact.score?.quality ?? 100
+        row.score.quality = artifact.score?.quality ?? 100;
       }
       if ((artifact.score?.vulnerability ?? 100) < row.score.vulnerability) {
-        row.score.vulnerability = artifact.score?.vulnerability ?? 100
+        row.score.vulnerability = artifact.score?.vulnerability ?? 100;
       }
       if ((artifact.score?.license ?? 100) < row.score.license) {
-        row.score.license = artifact.score?.license ?? 100
+        row.score.license = artifact.score?.license ?? 100;
       }
 
       // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
       artifact.alerts?.forEach((alert: { type: string; severity?: string | undefined }) => {
-        const severity = alert.severity ?? ''
-        const { type } = alert
+        const severity = alert.severity ?? "";
+        const { type } = alert;
         row.alerts.set(`${type}:${severity}`, {
           type,
           severity,
-        })
-      })
+        });
+      });
     } else {
-      const alerts = new Map<string, { type: string; severity: string }>()
+      const alerts = new Map<string, { type: string; severity: string }>();
       // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
       artifact.alerts?.forEach((alert: { type: string; severity?: string | undefined }) => {
-        const severity = alert.severity ?? ''
-        const { type } = alert
+        const severity = alert.severity ?? "";
+        const { type } = alert;
         alerts.set(`${type}:${severity}`, {
           type,
           severity,
-        })
-      })
+        });
+      });
 
       rows.set(purl, {
         ecosystem: artifact.type,
-        namespace: artifact.namespace || '',
+        namespace: artifact.namespace || "",
         name: artifact.name!,
-        version: artifact.version || '',
+        version: artifact.version || "",
         score: {
           supplyChain: artifact.score?.supplyChain ?? 100,
           maintenance: artifact.score?.maintenance ?? 100,
@@ -341,9 +325,9 @@ export function preProcess(
           license: artifact.score?.license ?? 100,
         },
         alerts,
-      })
+      });
     }
   }
 
-  return { rows, missing }
+  return { rows, missing };
 }

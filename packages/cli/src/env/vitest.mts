@@ -3,6 +3,6 @@
  * Vitest test runner.
  */
 
-import { getVitest } from '@socketsecurity/lib-stable/env/test'
+import { getVitest } from "@socketsecurity/lib-stable/env/test";
 
-export const VITEST = getVitest()
+export const VITEST = getVitest();

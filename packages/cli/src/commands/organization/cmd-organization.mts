@@ -1,14 +1,14 @@
-import { cmdOrganizationDependencies } from './cmd-organization-dependencies.mts'
-import { cmdOrganizationList } from './cmd-organization-list.mts'
-import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
-import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
-import { cmdOrganizationPolicy } from './cmd-organization-policy.mts'
-import { cmdOrganizationQuota } from './cmd-organization-quota.mts'
-import { defineSubcommandGroup } from '../../util/cli/define-subcommand-group.mts'
+import { cmdOrganizationDependencies } from "./cmd-organization-dependencies.mts";
+import { cmdOrganizationList } from "./cmd-organization-list.mts";
+import { cmdOrganizationPolicyLicense } from "./cmd-organization-policy-license.mts";
+import { cmdOrganizationPolicySecurity } from "./cmd-organization-policy-security.mts";
+import { cmdOrganizationPolicy } from "./cmd-organization-policy.mts";
+import { cmdOrganizationQuota } from "./cmd-organization-quota.mts";
+import { defineSubcommandGroup } from "../../util/cli/define-subcommand-group.mts";
 
 export const cmdOrganization = defineSubcommandGroup({
-  name: 'organization',
-  description: 'Manage Socket organization account details',
+  name: "organization",
+  description: "Manage Socket organization account details",
   hidden: false,
   subcommands: {
     dependencies: cmdOrganizationDependencies,
@@ -20,17 +20,17 @@ export const cmdOrganization = defineSubcommandGroup({
     deps: {
       description: cmdOrganizationDependencies.description,
       hidden: true,
-      argv: ['dependencies'],
+      argv: ["dependencies"],
     },
     license: {
       description: cmdOrganizationPolicyLicense.description,
       hidden: true,
-      argv: ['policy', 'license'],
+      argv: ["policy", "license"],
     },
     security: {
       description: cmdOrganizationPolicySecurity.description,
       hidden: true,
-      argv: ['policy', 'security'],
+      argv: ["policy", "security"],
     },
   },
-})
+});

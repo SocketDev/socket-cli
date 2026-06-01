@@ -8,22 +8,22 @@
  * - SpawnCoana: auto-detect SEA vs npm-CLI mode and dispatch.
  */
 
-import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { detectExecutableType } from "@socketsecurity/lib-stable/dlx/detect";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { spawnDlx, spawnToolVfs } from './spawn.mts'
-import { resolveCoana } from './resolve-binary.mjs'
-import { areExternalToolsAvailable } from './vfs-extract.mjs'
-import { getDefaultOrgSlug } from '../../commands/ci/fetch-default-org-slug.mjs'
-import { getCliVersion } from '../../env/cli-version.mts'
-import { getErrorCause } from '../error/errors.mts'
-import { isSeaBinary } from '../sea/detect.mts'
-import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
+import { spawnDlx, spawnToolVfs } from "./spawn.mts";
+import { resolveCoana } from "./resolve-binary.mjs";
+import { areExternalToolsAvailable } from "./vfs-extract.mjs";
+import { getDefaultOrgSlug } from "../../commands/ci/fetch-default-org-slug.mjs";
+import { getCliVersion } from "../../env/cli-version.mts";
+import { getErrorCause } from "../error/errors.mts";
+import { isSeaBinary } from "../sea/detect.mts";
+import { getDefaultApiToken, getDefaultProxyUrl } from "../socket/sdk.mjs";
 
-import type { CoanaDlxOptions, DlxSpawnResult } from './spawn.mts'
-import type { CResult } from '../../types.mjs'
-import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
+import type { CoanaDlxOptions, DlxSpawnResult } from "./spawn.mts";
+import type { CResult } from "../../types.mjs";
+import type { StdioOptions } from "node:child_process";
+import type { SpawnExtra } from "@socketsecurity/lib-stable/process/spawn/types";
 
 /**
  * Spawn Coana CLI. Auto-detects SEA mode and uses appropriate spawn method.
@@ -35,9 +35,9 @@ export async function spawnCoana(
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   if (isSeaBinary() && areExternalToolsAvailable()) {
-    return await spawnCoanaVfs(args, options, spawnExtra)
+    return await spawnCoanaVfs(args, options, spawnExtra);
   }
-  return await spawnCoanaDlx(args, orgSlug, options, spawnExtra)
+  return await spawnCoanaDlx(args, orgSlug, options, spawnExtra);
 }
 
 /**
@@ -61,67 +61,65 @@ export async function spawnCoanaDlx(
   } = {
     __proto__: null,
     ...options,
-  } as CoanaDlxOptions
+  } as CoanaDlxOptions;
 
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: getCliVersion(),
-  }
-  const defaultApiToken = getDefaultApiToken()
+  };
+  const defaultApiToken = getDefaultApiToken();
   if (defaultApiToken) {
-    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
+    mixinsEnv["SOCKET_CLI_API_TOKEN"] = defaultApiToken;
   }
 
   if (orgSlug) {
-    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlug
+    mixinsEnv["SOCKET_ORG_SLUG"] = orgSlug;
   } else {
-    const orgSlugCResult = await getDefaultOrgSlug()
+    const orgSlugCResult = await getDefaultOrgSlug();
     if (orgSlugCResult.ok) {
-      mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
+      mixinsEnv["SOCKET_ORG_SLUG"] = orgSlugCResult.data;
     }
   }
 
-  const proxyUrl = getDefaultProxyUrl()
+  const proxyUrl = getDefaultProxyUrl();
   if (proxyUrl) {
-    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
+    mixinsEnv["SOCKET_CLI_API_PROXY"] = proxyUrl;
   }
 
   try {
-    const resolution = resolveCoana()
+    const resolution = resolveCoana();
 
     // Use local Coana CLI if available.
-    if (resolution.type === 'local') {
-      const detection = detectExecutableType(resolution.path)
+    if (resolution.type === "local") {
+      const detection = detectExecutableType(resolution.path);
 
       const finalEnv = {
         ...process.env,
         ...mixinsEnv,
         ...spawnEnv,
-      }
+      };
 
-      const spawnArgs =
-        detection.type === 'binary' ? args : [resolution.path, ...args]
-      const spawnCommand =
-        detection.type === 'binary' ? resolution.path : 'node'
+      const spawnArgs = detection.type === "binary" ? args : [resolution.path, ...args];
+      const spawnCommand = detection.type === "binary" ? resolution.path : "node";
 
       const spawnPromise = spawn(spawnCommand, spawnArgs, {
         ...dlxOptions,
         env: finalEnv,
-        stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-      })
+        stdio: (spawnExtra?.["stdio"] as StdioOptions | undefined) ?? "inherit",
+      });
 
-      const output = await spawnPromise
+      const output = await spawnPromise;
 
       return {
         ok: true,
-        data: output.stdout?.toString() ?? '',
-      }
+        data: output.stdout?.toString() ?? "",
+      };
     }
 
     // Use dlx version (resolveCoana only returns 'local' or 'dlx' types).
-    if (resolution.type !== 'dlx') {
+    if (resolution.type !== "dlx") {
       throw new Error(
         `internal: resolveCoana returned resolution.type="${resolution.type}" (expected "dlx"); this is a resolver contract bug — re-run with --debug and report the output`,
-      )
+      );
     }
     const result: DlxSpawnResult = await spawnDlx(
       {
@@ -139,21 +137,21 @@ export async function spawnCoanaDlx(
         },
       },
       spawnExtra,
-    )
-    const output = await result.spawnPromise
+    );
+    const output = await result.spawnPromise;
     return {
       ok: true,
-      data: output.stdout?.toString() ?? '',
-    }
+      data: output.stdout?.toString() ?? "",
+    };
   } catch (e) {
-    const stderr = (e as { stderr?: string | undefined } | undefined)?.stderr
-    const cause = getErrorCause(e)
-    const message = stderr || cause
+    const stderr = (e as { stderr?: string | undefined } | undefined)?.stderr;
+    const cause = getErrorCause(e);
+    const message = stderr || cause;
     return {
       ok: false,
       data: e,
       message,
-    }
+    };
   }
 }
 
@@ -168,29 +166,29 @@ export async function spawnCoanaVfs(
   const { env: spawnEnv, ...dlxOptions } = {
     __proto__: null,
     ...options,
-  } as CoanaDlxOptions
+  } as CoanaDlxOptions;
 
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: getCliVersion(),
-  }
-  const defaultApiToken = getDefaultApiToken()
+  };
+  const defaultApiToken = getDefaultApiToken();
   if (defaultApiToken) {
-    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
+    mixinsEnv["SOCKET_CLI_API_TOKEN"] = defaultApiToken;
   }
 
-  const orgSlugCResult = await getDefaultOrgSlug()
+  const orgSlugCResult = await getDefaultOrgSlug();
   if (orgSlugCResult.ok) {
-    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
+    mixinsEnv["SOCKET_ORG_SLUG"] = orgSlugCResult.data;
   }
 
-  const proxyUrl = getDefaultProxyUrl()
+  const proxyUrl = getDefaultProxyUrl();
   if (proxyUrl) {
-    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
+    mixinsEnv["SOCKET_CLI_API_PROXY"] = proxyUrl;
   }
 
   try {
     const result = await spawnToolVfs(
-      'coana',
+      "coana",
       args,
       {
         ...dlxOptions,
@@ -201,21 +199,21 @@ export async function spawnCoanaVfs(
         },
       },
       spawnExtra,
-    )
+    );
 
-    const output = await result.spawnPromise
+    const output = await result.spawnPromise;
     return {
       ok: true,
-      data: output.stdout?.toString() ?? '',
-    }
+      data: output.stdout?.toString() ?? "",
+    };
   } catch (e) {
-    const stderr = (e as { stderr?: string | undefined } | undefined)?.stderr
-    const cause = getErrorCause(e)
-    const message = stderr || cause
+    const stderr = (e as { stderr?: string | undefined } | undefined)?.stderr;
+    const cause = getErrorCause(e);
+    const message = stderr || cause;
     return {
       ok: false,
       data: e,
       message,
-    }
+    };
   }
 }

@@ -9,10 +9,10 @@
  * one exists (so child_process can spawn it without `shell: true`).
  */
 
-import { existsSync, readFileSync } from 'node:fs'
-import path from 'node:path'
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
 
 /**
  * Given a bin path that might be an extensionless shim, return the matching
@@ -26,27 +26,27 @@ import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
  */
 export function preferWindowsCmdShim(binPath: string, binName: string): string {
   if (!WIN32) {
-    return binPath
+    return binPath;
   }
 
   // Relative paths might be shell commands or aliases, not file paths.
   if (!path.isAbsolute(binPath)) {
-    return binPath
+    return binPath;
   }
 
   // Already has an extension (.exe / .bat / etc.) — assume a Windows binary.
-  if (path.extname(binPath) !== '') {
-    return binPath
+  if (path.extname(binPath) !== "") {
+    return binPath;
   }
 
   // Belt-and-suspenders: ensure binPath actually points to the named binary,
   // not a parent directory that happens to match.
   if (path.basename(binPath).toLowerCase() !== binName.toLowerCase()) {
-    return binPath
+    return binPath;
   }
 
-  const cmdShim = path.join(path.dirname(binPath), `${binName}.cmd`)
-  return existsSync(cmdShim) ? cmdShim : binPath
+  const cmdShim = path.join(path.dirname(binPath), `${binName}.cmd`);
+  return existsSync(cmdShim) ? cmdShim : binPath;
 }
 
 /**
@@ -60,25 +60,25 @@ export function preferWindowsCmdShim(binPath: string, binName: string): string {
  */
 export function resolveBinPathSync(binPath: string): string {
   if (!existsSync(binPath)) {
-    return binPath
+    return binPath;
   }
 
   try {
-    const content = readFileSync(binPath, 'utf8')
+    const content = readFileSync(binPath, "utf8");
     // Look for common shim patterns:
     //   node "C:\path\to\npm-cli.js" "$@"
     //   "%_prog%"  "%dp0%\node_modules\npm\bin\npm-cli.js" %*
     const nodePathMatch = content.match(
       /(?:"%dp0%\\|node\s+["'])([^"'\s]+(?:npm-cli|pnpm|yarn)\.(?:c?js|mjs))["'\s]/i,
-    )
+    );
     if (nodePathMatch && nodePathMatch.length > 1 && nodePathMatch[1]) {
-      const matchedPath = nodePathMatch[1]
+      const matchedPath = nodePathMatch[1];
       return path.isAbsolute(matchedPath)
         ? matchedPath
-        : path.resolve(path.dirname(binPath), matchedPath)
+        : path.resolve(path.dirname(binPath), matchedPath);
     }
   } catch {
     // Unreadable/unparseable shim — fall through to the input path.
   }
-  return binPath
+  return binPath;
 }

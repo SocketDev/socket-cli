@@ -21,151 +21,149 @@
  * formatting.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { handleManifestSetup } from '../../../../src/commands/manifest/handle-manifest-setup.mts'
+import { handleManifestSetup } from "../../../../src/commands/manifest/handle-manifest-setup.mts";
 
 // Mock the dependencies.
-const mockOutputManifestSetup = vi.hoisted(() => vi.fn())
-const mockSetupManifestConfig = vi.hoisted(() => vi.fn())
+const mockOutputManifestSetup = vi.hoisted(() => vi.fn());
+const mockSetupManifestConfig = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/commands/manifest/output-manifest-setup.mts', () => ({
+vi.mock(import("../../../../src/commands/manifest/output-manifest-setup.mts"), () => ({
   outputManifestSetup: mockOutputManifestSetup,
-}))
-vi.mock('../../../../src/commands/manifest/setup-manifest-config.mts', () => ({
+}));
+vi.mock(import("../../../../src/commands/manifest/setup-manifest-config.mts"), () => ({
   setupManifestConfig: mockSetupManifestConfig,
-}))
+}));
 
-describe('handleManifestSetup', () => {
+describe("handleManifestSetup", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('sets up manifest config successfully', async () => {
+  it("sets up manifest config successfully", async () => {
     const { setupManifestConfig } =
-      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+      await import("../../../../src/commands/manifest/setup-manifest-config.mts");
     const { outputManifestSetup } =
-      await import('../../../../src/commands/manifest/output-manifest-setup.mts')
+      await import("../../../../src/commands/manifest/output-manifest-setup.mts");
 
     const mockResult = {
       ok: true,
       data: {
-        manifestPath: '/test/project/socket.json',
+        manifestPath: "/test/project/socket.json",
         config: {
-          projectIgnorePaths: ['node_modules', 'dist'],
-          manifestFiles: ['package.json', 'yarn.lock'],
+          projectIgnorePaths: ["node_modules", "dist"],
+          manifestFiles: ["package.json", "yarn.lock"],
         },
       },
-    }
-    mockSetupManifestConfig.mockResolvedValue(mockResult)
+    };
+    mockSetupManifestConfig.mockResolvedValue(mockResult);
 
-    await handleManifestSetup('/test/project', false)
+    await handleManifestSetup("/test/project", false);
 
-    expect(setupManifestConfig).toHaveBeenCalledWith('/test/project', false)
-    expect(outputManifestSetup).toHaveBeenCalledWith(mockResult)
-  })
+    expect(setupManifestConfig).toHaveBeenCalledWith("/test/project", false);
+    expect(outputManifestSetup).toHaveBeenCalledWith(mockResult);
+  });
 
-  it('handles setup failure', async () => {
+  it("handles setup failure", async () => {
     const { setupManifestConfig } =
-      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+      await import("../../../../src/commands/manifest/setup-manifest-config.mts");
     const { outputManifestSetup } =
-      await import('../../../../src/commands/manifest/output-manifest-setup.mts')
+      await import("../../../../src/commands/manifest/output-manifest-setup.mts");
 
     const mockError = {
       ok: false,
-      error: new Error('Failed to setup manifest'),
-    }
-    mockSetupManifestConfig.mockResolvedValue(mockError)
+      error: new Error("Failed to setup manifest"),
+    };
+    mockSetupManifestConfig.mockResolvedValue(mockError);
 
-    await handleManifestSetup('/test/project', true)
+    await handleManifestSetup("/test/project", true);
 
-    expect(setupManifestConfig).toHaveBeenCalledWith('/test/project', true)
-    expect(outputManifestSetup).toHaveBeenCalledWith(mockError)
-  })
+    expect(setupManifestConfig).toHaveBeenCalledWith("/test/project", true);
+    expect(outputManifestSetup).toHaveBeenCalledWith(mockError);
+  });
 
-  it('handles defaultOnReadError flag true', async () => {
+  it("handles defaultOnReadError flag true", async () => {
     const { setupManifestConfig } =
-      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+      await import("../../../../src/commands/manifest/setup-manifest-config.mts");
     const { outputManifestSetup } =
-      await import('../../../../src/commands/manifest/output-manifest-setup.mts')
+      await import("../../../../src/commands/manifest/output-manifest-setup.mts");
 
     const mockResult = {
       ok: true,
-      data: { manifestPath: '/test/socket.json' },
-    }
-    mockSetupManifestConfig.mockResolvedValue(mockResult)
+      data: { manifestPath: "/test/socket.json" },
+    };
+    mockSetupManifestConfig.mockResolvedValue(mockResult);
 
-    await handleManifestSetup('/some/dir', true)
+    await handleManifestSetup("/some/dir", true);
 
-    expect(setupManifestConfig).toHaveBeenCalledWith('/some/dir', true)
-    expect(outputManifestSetup).toHaveBeenCalledWith(mockResult)
-  })
+    expect(setupManifestConfig).toHaveBeenCalledWith("/some/dir", true);
+    expect(outputManifestSetup).toHaveBeenCalledWith(mockResult);
+  });
 
-  it('handles defaultOnReadError flag false', async () => {
+  it("handles defaultOnReadError flag false", async () => {
     const { setupManifestConfig } =
-      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+      await import("../../../../src/commands/manifest/setup-manifest-config.mts");
 
     mockSetupManifestConfig.mockResolvedValue({
       ok: true,
       data: {},
-    })
+    });
 
-    await handleManifestSetup('/project', false)
+    await handleManifestSetup("/project", false);
 
-    expect(setupManifestConfig).toHaveBeenCalledWith('/project', false)
-  })
+    expect(setupManifestConfig).toHaveBeenCalledWith("/project", false);
+  });
 
-  it('handles empty data result', async () => {
-    await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+  it("handles empty data result", async () => {
+    await import("../../../../src/commands/manifest/setup-manifest-config.mts");
     const { outputManifestSetup } =
-      await import('../../../../src/commands/manifest/output-manifest-setup.mts')
+      await import("../../../../src/commands/manifest/output-manifest-setup.mts");
 
     const mockResult = {
       ok: true,
       data: {},
-    }
-    mockSetupManifestConfig.mockResolvedValue(mockResult)
+    };
+    mockSetupManifestConfig.mockResolvedValue(mockResult);
 
-    await handleManifestSetup('/test', false)
+    await handleManifestSetup("/test", false);
 
-    expect(outputManifestSetup).toHaveBeenCalledWith(mockResult)
-  })
+    expect(outputManifestSetup).toHaveBeenCalledWith(mockResult);
+  });
 
-  it('handles async errors', async () => {
-    await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+  it("handles async errors", async () => {
+    await import("../../../../src/commands/manifest/setup-manifest-config.mts");
 
-    mockSetupManifestConfig.mockRejectedValue(new Error('Async error'))
+    mockSetupManifestConfig.mockRejectedValue(new Error("Async error"));
 
-    await expect(handleManifestSetup('/test', false)).rejects.toThrow(
-      'Async error',
-    )
-  })
+    await expect(handleManifestSetup("/test", false)).rejects.toThrow("Async error");
+  });
 
-  it('handles current directory path', async () => {
+  it("handles current directory path", async () => {
     const { setupManifestConfig } =
-      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+      await import("../../../../src/commands/manifest/setup-manifest-config.mts");
 
     mockSetupManifestConfig.mockResolvedValue({
       ok: true,
-      data: { manifestPath: './socket.json' },
-    })
+      data: { manifestPath: "./socket.json" },
+    });
 
-    await handleManifestSetup('.', false)
+    await handleManifestSetup(".", false);
 
-    expect(setupManifestConfig).toHaveBeenCalledWith('.', false)
-  })
+    expect(setupManifestConfig).toHaveBeenCalledWith(".", false);
+  });
 
-  it('handles absolute path', async () => {
+  it("handles absolute path", async () => {
     const { setupManifestConfig } =
-      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+      await import("../../../../src/commands/manifest/setup-manifest-config.mts");
 
     mockSetupManifestConfig.mockResolvedValue({
       ok: true,
-      data: { manifestPath: '/absolute/path/socket.json' },
-    })
+      data: { manifestPath: "/absolute/path/socket.json" },
+    });
 
-    await handleManifestSetup('/absolute/path', true)
+    await handleManifestSetup("/absolute/path", true);
 
-    expect(setupManifestConfig).toHaveBeenCalledWith('/absolute/path', true)
-  })
-})
+    expect(setupManifestConfig).toHaveBeenCalledWith("/absolute/path", true);
+  });
+});

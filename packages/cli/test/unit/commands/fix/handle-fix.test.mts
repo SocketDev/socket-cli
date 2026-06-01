@@ -23,18 +23,18 @@
  * src/commands/fix/coana-fix.mts - Coana API integration for applying fixes.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { convertIdsToGhsas } from '../../../../src/commands/fix/handle-fix.mts'
+import { convertIdsToGhsas } from "../../../../src/commands/fix/handle-fix.mts";
 
 // Mock the dependencies.
-const mockJoinAnd = vi.hoisted(() => vi.fn(arr => arr.join(' and ')))
-const mockCoanaFix = vi.hoisted(() => vi.fn())
-const mockOutputFixResult = vi.hoisted(() => vi.fn())
+const mockJoinAnd = vi.hoisted(() => vi.fn((arr) => arr.join(" and ")));
+const mockCoanaFix = vi.hoisted(() => vi.fn());
+const mockOutputFixResult = vi.hoisted(() => vi.fn());
 
-vi.mock('@socketsecurity/lib-stable/arrays/join', () => ({
+vi.mock(import("@socketsecurity/lib-stable/arrays/join"), () => ({
   joinAnd: mockJoinAnd,
-}))
+}));
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -43,307 +43,268 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}))
+}));
 
-const mockConvertCveToGhsa = vi.hoisted(() => vi.fn())
-const mockConvertPurlToGhsas = vi.hoisted(() => vi.fn())
+const mockConvertCveToGhsa = vi.hoisted(() => vi.fn());
+const mockConvertPurlToGhsas = vi.hoisted(() => vi.fn());
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}))
-vi.mock('../../../../src/commands/fix/coana-fix.mts', () => ({
+}));
+vi.mock(import("../../../../src/commands/fix/coana-fix.mts"), () => ({
   coanaFix: mockCoanaFix,
-}))
-vi.mock('../../../../src/commands/fix/output-fix-result.mts', () => ({
+}));
+vi.mock(import("../../../../src/commands/fix/output-fix-result.mts"), () => ({
   outputFixResult: mockOutputFixResult,
-}))
-vi.mock('../../../../src/util/cve-to-ghsa.mts', () => ({
+}));
+vi.mock(import("../../../../src/util/cve-to-ghsa.mts"), () => ({
   convertCveToGhsa: mockConvertCveToGhsa,
-}))
-vi.mock('../../../../src/util/purl/to-ghsa.mts', () => ({
+}));
+vi.mock(import("../../../../src/util/purl/to-ghsa.mts"), () => ({
   convertPurlToGhsas: mockConvertPurlToGhsas,
-}))
+}));
 
-describe('convertIdsToGhsas', () => {
+describe("convertIdsToGhsas", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('preserves valid GHSA IDs', async () => {
-    const ghsas = ['GHSA-1234-5678-9abc', 'GHSA-abcd-efgh-ijkl']
-    const result = await convertIdsToGhsas(ghsas)
+  it("preserves valid GHSA IDs", async () => {
+    const ghsas = ["GHSA-1234-5678-9abc", "GHSA-abcd-efgh-ijkl"];
+    const result = await convertIdsToGhsas(ghsas);
 
-    expect(result).toEqual(ghsas)
-  })
+    expect(result).toEqual(ghsas);
+  });
 
-  it('converts CVE IDs to GHSA IDs', async () => {
+  it("converts CVE IDs to GHSA IDs", async () => {
     mockConvertCveToGhsa.mockResolvedValueOnce({
       ok: true,
-      data: 'GHSA-1234-5678-9abc',
-    })
+      data: "GHSA-1234-5678-9abc",
+    });
     mockConvertCveToGhsa.mockResolvedValueOnce({
       ok: true,
-      data: 'GHSA-abcd-efgh-ijkl',
-    })
+      data: "GHSA-abcd-efgh-ijkl",
+    });
 
-    const result = await convertIdsToGhsas(['CVE-2021-12345', 'CVE-2022-98765'])
+    const result = await convertIdsToGhsas(["CVE-2021-12345", "CVE-2022-98765"]);
 
-    expect(mockConvertCveToGhsa).toHaveBeenCalledWith('CVE-2021-12345')
-    expect(mockConvertCveToGhsa).toHaveBeenCalledWith('CVE-2022-98765')
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      'Converted CVE-2021-12345 to GHSA-1234-5678-9abc',
-    )
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      'Converted CVE-2022-98765 to GHSA-abcd-efgh-ijkl',
-    )
-    expect(result).toEqual(['GHSA-1234-5678-9abc', 'GHSA-abcd-efgh-ijkl'])
-  })
+    expect(mockConvertCveToGhsa).toHaveBeenCalledWith("CVE-2021-12345");
+    expect(mockConvertCveToGhsa).toHaveBeenCalledWith("CVE-2022-98765");
+    expect(mockLogger.info).toHaveBeenCalledWith("Converted CVE-2021-12345 to GHSA-1234-5678-9abc");
+    expect(mockLogger.info).toHaveBeenCalledWith("Converted CVE-2022-98765 to GHSA-abcd-efgh-ijkl");
+    expect(result).toEqual(["GHSA-1234-5678-9abc", "GHSA-abcd-efgh-ijkl"]);
+  });
 
-  it('converts PURL IDs to GHSA IDs', async () => {
+  it("converts PURL IDs to GHSA IDs", async () => {
     mockConvertPurlToGhsas.mockResolvedValue({
       ok: true,
-      data: ['GHSA-test-purl-ghsa'],
-    })
+      data: ["GHSA-test-purl-ghsa"],
+    });
 
-    const result = await convertIdsToGhsas(['pkg:npm/package@1.0.0'])
+    const result = await convertIdsToGhsas(["pkg:npm/package@1.0.0"]);
 
-    expect(mockConvertPurlToGhsas).toHaveBeenCalledWith('pkg:npm/package@1.0.0')
-    expect(result).toEqual(['GHSA-test-purl-ghsa'])
-  })
+    expect(mockConvertPurlToGhsas).toHaveBeenCalledWith("pkg:npm/package@1.0.0");
+    expect(result).toEqual(["GHSA-test-purl-ghsa"]);
+  });
 
-  it('handles invalid GHSA format', async () => {
-    const result = await convertIdsToGhsas([
-      'GHSA-invalid',
-      'GHSA-1234-5678-9abc',
-    ])
+  it("handles invalid GHSA format", async () => {
+    const result = await convertIdsToGhsas(["GHSA-invalid", "GHSA-1234-5678-9abc"]);
 
-    expect(result).toEqual(['GHSA-1234-5678-9abc'])
+    expect(result).toEqual(["GHSA-1234-5678-9abc"]);
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /Skipped 1 invalid IDs.*Invalid GHSA format: GHSA-invalid/s,
-      ),
-    )
-  })
+      expect.stringMatching(/Skipped 1 invalid IDs.*Invalid GHSA format: GHSA-invalid/s),
+    );
+  });
 
-  it('handles invalid CVE format', async () => {
+  it("handles invalid CVE format", async () => {
     mockConvertCveToGhsa.mockResolvedValue({
       ok: true,
-      data: 'GHSA-1234-5678-9abc',
-    })
+      data: "GHSA-1234-5678-9abc",
+    });
 
-    const result = await convertIdsToGhsas(['CVE-invalid', 'CVE-2021-12345'])
+    const result = await convertIdsToGhsas(["CVE-invalid", "CVE-2021-12345"]);
 
-    expect(result).toEqual(['GHSA-1234-5678-9abc'])
+    expect(result).toEqual(["GHSA-1234-5678-9abc"]);
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /Skipped 1 invalid IDs.*Invalid CVE format: CVE-invalid/s,
-      ),
-    )
-  })
+      expect.stringMatching(/Skipped 1 invalid IDs.*Invalid CVE format: CVE-invalid/s),
+    );
+  });
 
-  it('handles CVE conversion failure', async () => {
+  it("handles CVE conversion failure", async () => {
     mockConvertCveToGhsa.mockResolvedValue({
       ok: false,
-      message: 'No GHSA found for CVE CVE-2021-99999',
-      error: new Error('CVE not found'),
-    })
+      message: "No GHSA found for CVE CVE-2021-99999",
+      error: new Error("CVE not found"),
+    });
 
-    const result = await convertIdsToGhsas(['CVE-2021-99999'])
+    const result = await convertIdsToGhsas(["CVE-2021-99999"]);
 
-    expect(result).toEqual([])
+    expect(result).toEqual([]);
+    expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining("Skipped 1 invalid IDs:"));
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Skipped 1 invalid IDs:'),
-    )
-    expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'CVE-2021-99999: No GHSA found for CVE CVE-2021-99999',
-      ),
-    )
-  })
+      expect.stringContaining("CVE-2021-99999: No GHSA found for CVE CVE-2021-99999"),
+    );
+  });
 
-  it('handles PURL conversion failure', async () => {
+  it("handles PURL conversion failure", async () => {
     mockConvertPurlToGhsas.mockResolvedValue({
       ok: false,
-      message: 'Package not found',
-      error: new Error('Package not found'),
-    })
+      message: "Package not found",
+      error: new Error("Package not found"),
+    });
 
-    const result = await convertIdsToGhsas(['pkg:npm/nonexistent@1.0.0'])
+    const result = await convertIdsToGhsas(["pkg:npm/nonexistent@1.0.0"]);
 
-    expect(result).toEqual([])
+    expect(result).toEqual([]);
     expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringMatching(
         /Skipped 1 invalid IDs.*pkg:npm\/nonexistent@1\.0\.0.*Package not found/s,
       ),
-    )
-  })
+    );
+  });
 
-  it('handles empty PURL conversion result', async () => {
+  it("handles empty PURL conversion result", async () => {
     mockConvertPurlToGhsas.mockResolvedValue({
       ok: true,
       data: [],
-    })
+    });
 
-    const result = await convertIdsToGhsas(['pkg:npm/safe-package@1.0.0'])
+    const result = await convertIdsToGhsas(["pkg:npm/safe-package@1.0.0"]);
 
-    expect(result).toEqual([])
+    expect(result).toEqual([]);
     expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringMatching(
         /Skipped 1 invalid IDs.*pkg:npm\/safe-package@1\.0\.0.*No GHSAs found/s,
       ),
-    )
-  })
+    );
+  });
 
-  it('handles mixed ID types', async () => {
+  it("handles mixed ID types", async () => {
     mockConvertCveToGhsa.mockResolvedValue({
       ok: true,
-      data: 'GHSA-from-cve-test',
-    })
+      data: "GHSA-from-cve-test",
+    });
     mockConvertPurlToGhsas.mockResolvedValue({
       ok: true,
-      data: ['GHSA-from-purl-test'],
-    })
+      data: ["GHSA-from-purl-test"],
+    });
 
     const result = await convertIdsToGhsas([
-      'GHSA-1234-5678-9abc',
-      'CVE-2021-12345',
-      'pkg:npm/package@1.0.0',
-    ])
+      "GHSA-1234-5678-9abc",
+      "CVE-2021-12345",
+      "pkg:npm/package@1.0.0",
+    ]);
 
-    expect(result).toEqual([
-      'GHSA-1234-5678-9abc',
-      'GHSA-from-cve-test',
-      'GHSA-from-purl-test',
-    ])
+    expect(result).toEqual(["GHSA-1234-5678-9abc", "GHSA-from-cve-test", "GHSA-from-purl-test"]);
+    expect(mockLogger.info).toHaveBeenCalledWith("Converted CVE-2021-12345 to GHSA-from-cve-test");
     expect(mockLogger.info).toHaveBeenCalledWith(
-      'Converted CVE-2021-12345 to GHSA-from-cve-test',
-    )
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      expect.stringContaining('Converted pkg:npm/package@1.0.0 to 1 GHSA(s)'),
-    )
-  })
+      expect.stringContaining("Converted pkg:npm/package@1.0.0 to 1 GHSA(s)"),
+    );
+  });
 
-  it('warns about IDs that are neither GHSA, CVE, nor PURL', async () => {
-    const result = await convertIdsToGhsas(['some-other-format'])
+  it("warns about IDs that are neither GHSA, CVE, nor PURL", async () => {
+    const result = await convertIdsToGhsas(["some-other-format"]);
 
-    expect(result).toEqual([])
-    expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Unsupported ID format'),
-    )
-  })
+    expect(result).toEqual([]);
+    expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining("Unsupported ID format"));
+  });
 
-  it('trims whitespace from IDs', async () => {
-    const result = await convertIdsToGhsas([
-      '  GHSA-1234-5678-9abc  ',
-      '\tGHSA-abcd-efgh-ijkl\n',
-    ])
+  it("trims whitespace from IDs", async () => {
+    const result = await convertIdsToGhsas(["  GHSA-1234-5678-9abc  ", "\tGHSA-abcd-efgh-ijkl\n"]);
 
-    expect(result).toEqual(['GHSA-1234-5678-9abc', 'GHSA-abcd-efgh-ijkl'])
-  })
-})
+    expect(result).toEqual(["GHSA-1234-5678-9abc", "GHSA-abcd-efgh-ijkl"]);
+  });
+});
 
-describe('handleFix', () => {
+describe("handleFix", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockCoanaFix.mockResolvedValue({ ok: true, data: {} })
-  })
+    vi.clearAllMocks();
+    mockCoanaFix.mockResolvedValue({ ok: true, data: {} });
+  });
 
-  it('runs coanaFix and pipes the result through outputFixResult', async () => {
-    const { handleFix } =
-      await import('../../../../src/commands/fix/handle-fix.mts')
+  it("runs coanaFix and pipes the result through outputFixResult", async () => {
+    const { handleFix } = await import("../../../../src/commands/fix/handle-fix.mts");
 
     await handleFix({
       all: false,
       applyFixes: false,
       autopilot: false,
-      coanaVersion: '1.0.0',
-      cwd: '/proj',
+      coanaVersion: "1.0.0",
+      cwd: "/proj",
       debug: false,
       disableExternalToolChecks: false,
       disableMajorUpdates: false,
-      ecosystems: ['npm'],
+      ecosystems: ["npm"],
       exclude: [],
-      ghsas: ['GHSA-1234-5678-9abc'],
+      ghsas: ["GHSA-1234-5678-9abc"],
       include: [],
       minSatisfying: false,
-      minimumReleaseAge: '7d',
-      orgSlug: 'my-org',
-      outputFile: '',
-      outputKind: 'json',
+      minimumReleaseAge: "7d",
+      orgSlug: "my-org",
+      outputFile: "",
+      outputKind: "json",
       prCheck: false,
       prLimit: 5,
-      rangeStyle: 'caret',
+      rangeStyle: "caret",
       showAffectedDirectDependencies: false,
       silence: false,
       spinner: undefined,
       unknownFlags: [],
-    })
+    });
 
     expect(mockCoanaFix).toHaveBeenCalledWith(
       expect.objectContaining({
-        ghsas: ['GHSA-1234-5678-9abc'],
-        orgSlug: 'my-org',
+        ghsas: ["GHSA-1234-5678-9abc"],
+        orgSlug: "my-org",
       }),
-    )
-    expect(mockOutputFixResult).toHaveBeenCalledWith(
-      expect.objectContaining({ ok: true }),
-      'json',
-    )
-  })
+    );
+    expect(mockOutputFixResult).toHaveBeenCalledWith(expect.objectContaining({ ok: true }), "json");
+  });
 
-  it('converts mixed CVE/PURL/GHSA inputs before calling coanaFix', async () => {
+  it("converts mixed CVE/PURL/GHSA inputs before calling coanaFix", async () => {
     mockConvertCveToGhsa.mockResolvedValueOnce({
       ok: true,
-      data: 'GHSA-from-cve',
-    })
+      data: "GHSA-from-cve",
+    });
     mockConvertPurlToGhsas.mockResolvedValueOnce({
       ok: true,
-      data: ['GHSA-from-purl'],
-    })
+      data: ["GHSA-from-purl"],
+    });
 
-    const { handleFix } =
-      await import('../../../../src/commands/fix/handle-fix.mts')
+    const { handleFix } = await import("../../../../src/commands/fix/handle-fix.mts");
 
     await handleFix({
       all: false,
       applyFixes: true,
       autopilot: false,
-      coanaVersion: '1.0.0',
-      cwd: '/proj',
+      coanaVersion: "1.0.0",
+      cwd: "/proj",
       debug: false,
       disableExternalToolChecks: false,
       disableMajorUpdates: false,
       ecosystems: [],
       exclude: [],
-      ghsas: [
-        'GHSA-1234-5678-9abc',
-        'CVE-2021-44228',
-        'pkg:npm/lodash@4.17.21',
-      ],
+      ghsas: ["GHSA-1234-5678-9abc", "CVE-2021-44228", "pkg:npm/lodash@4.17.21"],
       include: [],
       minSatisfying: false,
-      minimumReleaseAge: '0',
-      orgSlug: 'my-org',
-      outputFile: '',
-      outputKind: 'text',
+      minimumReleaseAge: "0",
+      orgSlug: "my-org",
+      outputFile: "",
+      outputKind: "text",
       prCheck: false,
       prLimit: 5,
-      rangeStyle: 'caret',
+      rangeStyle: "caret",
       showAffectedDirectDependencies: false,
       silence: false,
       spinner: undefined,
       unknownFlags: [],
-    })
+    });
 
     expect(mockCoanaFix).toHaveBeenCalledWith(
       expect.objectContaining({
-        ghsas: expect.arrayContaining([
-          'GHSA-1234-5678-9abc',
-          'GHSA-from-cve',
-          'GHSA-from-purl',
-        ]),
+        ghsas: expect.arrayContaining(["GHSA-1234-5678-9abc", "GHSA-from-cve", "GHSA-from-purl"]),
       }),
-    )
-  })
-})
+    );
+  });
+});

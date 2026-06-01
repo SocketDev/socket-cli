@@ -25,11 +25,11 @@
  * - Ensures type safety for ecosystem operations
  */
 
-import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+import { NPM } from "@socketsecurity/lib-stable/constants/agents";
 
-import type { components } from '@socketsecurity/sdk-stable/types/api'
+import type { components } from "@socketsecurity/sdk-stable/types/api";
 
-export type PURL_Type = components['schemas']['SocketPURL_Type']
+export type PURL_Type = components["schemas"]["SocketPURL_Type"];
 
 // Type checking utilities to ensure ecosystem types are properly aligned.
 // NOTE: Commented out because EcosystemString has additional types not in PURL_Type
@@ -43,42 +43,42 @@ export type PURL_Type = components['schemas']['SocketPURL_Type']
 //   ExpectNever<ExtraInEcosystemString>
 
 export const ALL_ECOSYSTEMS = [
-  'alpm',
-  'apk',
-  'bitbucket',
-  'cargo',
-  'chrome',
-  'cocoapods',
-  'composer',
-  'conan',
-  'conda',
-  'cran',
-  'deb',
-  'docker',
-  'gem',
-  'generic',
-  'github',
-  'gitlab' as PURL_Type,
-  'golang',
-  'hackage',
-  'hex',
-  'huggingface',
-  'maven',
-  'mlflow',
+  "alpm",
+  "apk",
+  "bitbucket",
+  "cargo",
+  "chrome",
+  "cocoapods",
+  "composer",
+  "conan",
+  "conda",
+  "cran",
+  "deb",
+  "docker",
+  "gem",
+  "generic",
+  "github",
+  "gitlab" as PURL_Type,
+  "golang",
+  "hackage",
+  "hex",
+  "huggingface",
+  "maven",
+  "mlflow",
   NPM,
-  'nuget',
-  'oci',
-  'pub',
-  'pypi',
-  'rpm',
-  'swift',
-  'vscode',
+  "nuget",
+  "oci",
+  "pub",
+  "pypi",
+  "rpm",
+  "swift",
+  "vscode",
   // The following are in EcosystemString but not in PURL_Type:
   // 'qpkg',
   // 'swid',
   // 'unknown',
   // 'vcs',
-] as const satisfies readonly PURL_Type[]
+] as const satisfies readonly PURL_Type[];
 
 // Type checking utilities to ensure ALL_ECOSYSTEMS array is properly aligned.
 // NOTE: Commented out because of type alignment issues between PURL_Type from SDK
@@ -92,7 +92,5 @@ export const ALL_ECOSYSTEMS = [
 //   ExpectNever<ExtraInAllEcosystems>
 
 export function getEcosystemChoicesForMeow(): string[] {
-  return [...ALL_ECOSYSTEMS]
+  return [...ALL_ECOSYSTEMS];
 }
-
-

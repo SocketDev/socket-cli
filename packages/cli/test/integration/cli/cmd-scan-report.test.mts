@@ -12,26 +12,21 @@
  * src/commands/scan/output-scan-report.mts - Formatting.
  */
 
-import { describe, expect } from 'vitest'
+import { describe, expect } from "vitest";
 
-import {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-  FLAG_ORG,
-} from '../../../src/constants/cli.mts'
-import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
-import { cmdit, spawnSocketCli } from '../../utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_ORG } from "../../../src/constants/cli.mts";
+import { getBinCliPath } from "../../../src/constants/paths.mts";
+import { expectDryRunOutput } from "../../helpers/output-assertions.mts";
+import { cmdit, spawnSocketCli } from "../../utils.mts";
 
-const binCliPath = getBinCliPath()
+const binCliPath = getBinCliPath();
 
-describe('socket scan report', async () => {
+describe("socket scan report", async () => {
   cmdit(
-    ['scan', 'report', FLAG_HELP, FLAG_CONFIG, '{}'],
+    ["scan", "report", FLAG_HELP, FLAG_CONFIG, "{}"],
     `should support ${FLAG_HELP}`,
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
       expect(stdout).toMatchInlineSnapshot(`
         "Check whether a scan result passes the organizational policies (security, license)
 
@@ -80,28 +75,26 @@ describe('socket scan report', async () => {
               Examples
                 $ socket scan report [UUID] --json --fold=version
                 $ socket scan report [UUID] --license --markdown --short"
-      `)
+      `);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan report\`, cwd: <redacted>"
-      `)
+      `);
 
-      expect(code, 'explicit help should exit with code 0').toBe(0)
-      expect(stderr, 'banner includes base command').toContain(
-        '`socket scan report`',
-      )
+      expect(code, "explicit help should exit with code 0").toBe(0);
+      expect(stderr, "banner includes base command").toContain("`socket scan report`");
     },
-  )
+  );
 
   cmdit(
-    ['scan', 'report', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
-    'should require args with just dry-run',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+    ["scan", "report", FLAG_DRY_RUN, FLAG_CONFIG, "{}"],
+    "should require args with just dry-run",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`""`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -109,7 +102,7 @@ describe('socket scan report', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan report\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        \\u203c Unable to determine the target org. Trying to auto-discover it now…
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -119,40 +112,40 @@ describe('socket scan report', async () => {
           \\xd7 Org name by default setting, --org, or auto-discovered (dot is an invalid org, most likely you forgot the org name here?)
           \\xd7 Scan ID to report on (missing)
         "
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+      expect(code, "dry-run should exit with code 2 if missing input").toBe(2);
     },
-  )
+  );
 
   cmdit(
     [
-      'scan',
-      'report',
-      'org',
-      'report-id',
+      "scan",
+      "report",
+      "org",
+      "report-id",
       FLAG_DRY_RUN,
       FLAG_ORG,
-      'fakeOrg',
+      "fakeOrg",
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should be ok with org name and id',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+    "should be ok with org name and id",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stdout);
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan report\`, cwd: <redacted>"
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
     },
-  )
-})
+  );
+});

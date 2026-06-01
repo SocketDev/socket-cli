@@ -11,20 +11,17 @@
  * apply); Vfs + auto-dispatch use the shared helpers.
  */
 
-import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { detectExecutableType } from "@socketsecurity/lib-stable/dlx/detect";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
-import { spawnDlx } from './spawn.mts'
-import { resolveSfw } from './resolve-binary.mjs'
-import {
-  applyMachineModeIfActive,
-  inferSubcommand,
-} from '../spawn/apply-machine-mode.mts'
+import { defineAutoDispatch, defineVfsSpawn } from "./define-tool-spawn.mts";
+import { spawnDlx } from "./spawn.mts";
+import { resolveSfw } from "./resolve-binary.mjs";
+import { applyMachineModeIfActive, inferSubcommand } from "../spawn/apply-machine-mode.mts";
 
-import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
-import type { StdioOptions } from 'node:child_process'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
+import type { DlxOptions, DlxSpawnResult } from "./spawn.mts";
+import type { StdioOptions } from "node:child_process";
+import type { SpawnExtra } from "@socketsecurity/lib-stable/process/spawn/types";
 
 /**
  * Helper to spawn Socket Firewall (sfw) with dlx. If SOCKET_CLI_SFW_LOCAL_PATH
@@ -36,8 +33,8 @@ export async function spawnSfwDlx(
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<DlxSpawnResult> {
-  const [innerTool, ...innerArgs] = args
-  const innerSubcommand = inferSubcommand(innerArgs)
+  const [innerTool, ...innerArgs] = args;
+  const innerSubcommand = inferSubcommand(innerArgs);
   const innerApplied = innerTool
     ? applyMachineModeIfActive({
         args: innerArgs,
@@ -45,26 +42,22 @@ export async function spawnSfwDlx(
         subcommand: innerSubcommand,
         tool: innerTool,
       })
-    : { args: [...innerArgs], env: {} }
-  const effectiveArgs = innerTool
-    ? [innerTool, ...innerApplied.args]
-    : [...args]
+    : { args: [...innerArgs], env: {} };
+  const effectiveArgs = innerTool ? [innerTool, ...innerApplied.args] : [...args];
 
-  const resolution = resolveSfw()
+  const resolution = resolveSfw();
 
   // Use local sfw if available.
-  if (resolution.type === 'local') {
-    const detection = detectExecutableType(resolution.path)
+  if (resolution.type === "local") {
+    const detection = detectExecutableType(resolution.path);
     const { env: spawnEnv, ...dlxOptions } = {
       __proto__: null,
       ...options,
-    } as DlxOptions
+    } as DlxOptions;
 
     const spawnArgs =
-      detection.type === 'binary'
-        ? effectiveArgs
-        : [resolution.path, ...effectiveArgs]
-    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
+      detection.type === "binary" ? effectiveArgs : [resolution.path, ...effectiveArgs];
+    const spawnCommand = detection.type === "binary" ? resolution.path : "node";
 
     const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
@@ -73,19 +66,19 @@ export async function spawnSfwDlx(
         ...innerApplied.env,
         ...spawnEnv,
       },
-      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-    })
+      stdio: (spawnExtra?.["stdio"] as StdioOptions | undefined) ?? "inherit",
+    });
 
     return {
       spawnPromise,
-    }
+    };
   }
 
   // Use dlx version (resolveSfw only returns 'local' or 'dlx' types).
-  if (resolution.type !== 'dlx') {
+  if (resolution.type !== "dlx") {
     throw new Error(
       `internal: resolveSfw returned resolution.type="${resolution.type}" (expected "dlx"); this is a resolver contract bug — re-run with --debug and report the output`,
-    )
+    );
   }
   return await spawnDlx(
     resolution.details,
@@ -99,12 +92,12 @@ export async function spawnSfwDlx(
       },
     },
     spawnExtra,
-  )
+  );
 }
 
-export const spawnSfwVfs = defineVfsSpawn('sfw')
+export const spawnSfwVfs = defineVfsSpawn("sfw");
 
 export const spawnSfw = defineAutoDispatch({
   vfs: spawnSfwVfs,
   dlx: spawnSfwDlx,
-})
+});

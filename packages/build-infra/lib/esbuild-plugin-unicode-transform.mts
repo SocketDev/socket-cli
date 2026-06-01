@@ -11,9 +11,9 @@
  *   }
  */
 
-import type { BuildResult, PluginBuild } from 'esbuild'
+import type { BuildResult, PluginBuild } from "esbuild";
 
-import { transformUnicodePropertyEscapes } from './unicode-property-escape-transform.mts'
+import { transformUnicodePropertyEscapes } from "./unicode-property-escape-transform.mts";
 
 /**
  * Create esbuild plugin for Unicode property escape transformations.
@@ -22,25 +22,25 @@ import { transformUnicodePropertyEscapes } from './unicode-property-escape-trans
  */
 export function unicodeTransformPlugin() {
   return {
-    name: 'unicode-transform',
+    name: "unicode-transform",
     setup(build: PluginBuild) {
       build.onEnd((result: BuildResult) => {
-        const outputs = result.outputFiles
+        const outputs = result.outputFiles;
         if (!outputs || !outputs.length) {
-          return
+          return;
         }
 
         for (let i = 0, { length } = outputs; i < length; i += 1) {
-          const output = outputs[i]
-          let content = output.text
+          const output = outputs[i];
+          let content = output.text;
 
           // Transform Unicode property escapes for --with-intl=none compatibility.
-          content = transformUnicodePropertyEscapes(content)
+          content = transformUnicodePropertyEscapes(content);
 
           // Update the output content.
-          output.contents = Buffer.from(content, 'utf8')
+          output.contents = Buffer.from(content, "utf8");
         }
-      })
+      });
     },
-  }
+  };
 }

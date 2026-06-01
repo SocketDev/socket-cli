@@ -5,60 +5,56 @@
  * Socket CLI features like tab completion.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
+import type * as WithSubcommandsModule from "../../../../src/util/cli/with-subcommands.mjs";
 
 // Mock meowWithSubcommands.
-const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
+const mockMeowWithSubcommands = vi.hoisted(() => vi.fn());
 
-vi.mock(
-  '../../../../src/util/cli/with-subcommands.mjs',
-  async importOriginal => {
-    const actual = await importOriginal<typeof WithSubcommandsModule>()
-    return {
-      ...actual,
-      meowWithSubcommands: mockMeowWithSubcommands,
-    }
-  },
-)
+vi.mock(import("../../../../src/util/cli/with-subcommands.mjs"), async (importOriginal) => {
+  const actual = await importOriginal<typeof WithSubcommandsModule>();
+  return {
+    ...actual,
+    meowWithSubcommands: mockMeowWithSubcommands,
+  };
+});
 
 // Import after mocks.
-const { cmdInstall } =
-  await import('../../../../src/commands/install/cmd-install.mts')
+const { cmdInstall } = await import("../../../../src/commands/install/cmd-install.mts");
 
-describe('cmd-install', () => {
+describe("cmd-install", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdInstall.description).toBe('Install Socket CLI tab completion')
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdInstall.description).toBe("Install Socket CLI tab completion");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdInstall.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdInstall.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-install.mts' }
-    const context = { parentName: 'socket' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-install.mts" };
+    const context = { parentName: "socket" };
 
-    it('should call meowWithSubcommands with correct parameters', async () => {
-      const argv = ['completion']
+    it("should call meowWithSubcommands with correct parameters", async () => {
+      const argv = ["completion"];
 
-      await cmdInstall.run(argv, importMeta, context)
+      await cmdInstall.run(argv, importMeta, context);
 
-      expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
+      expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1);
 
-      const [meowConfig, options] = mockMeowWithSubcommands.mock.calls[0]
+      const [meowConfig, options] = mockMeowWithSubcommands.mock.calls[0];
 
       // Verify config structure.
       expect(meowConfig).toMatchObject({
         argv,
-        name: 'socket install',
+        name: "socket install",
         importMeta,
         subcommands: expect.objectContaining({
           completion: expect.objectContaining({
@@ -67,55 +63,55 @@ describe('cmd-install', () => {
             run: expect.any(Function),
           }),
         }),
-      })
+      });
 
       // Verify options.
       expect(options).toMatchObject({
-        description: 'Install Socket CLI tab completion',
-      })
-    })
+        description: "Install Socket CLI tab completion",
+      });
+    });
 
-    it('should include completion subcommand', async () => {
-      await cmdInstall.run([], importMeta, context)
+    it("should include completion subcommand", async () => {
+      await cmdInstall.run([], importMeta, context);
 
-      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0]
+      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0];
 
-      expect(meowConfig.subcommands).toHaveProperty('completion')
+      expect(meowConfig.subcommands).toHaveProperty("completion");
       expect(meowConfig.subcommands.completion).toMatchObject({
         description: expect.any(String),
         hidden: expect.any(Boolean),
         run: expect.any(Function),
-      })
-    })
+      });
+    });
 
-    it('should construct correct command name from parentName', async () => {
-      const customContext = { parentName: 'custom-socket' }
+    it("should construct correct command name from parentName", async () => {
+      const customContext = { parentName: "custom-socket" };
 
-      await cmdInstall.run([], importMeta, customContext)
+      await cmdInstall.run([], importMeta, customContext);
 
-      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0]
+      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0];
 
-      expect(meowConfig.name).toBe('custom-socket install')
-    })
+      expect(meowConfig.name).toBe("custom-socket install");
+    });
 
-    it('should pass through argv to meowWithSubcommands', async () => {
-      const customArgv = ['completion', '--help']
+    it("should pass through argv to meowWithSubcommands", async () => {
+      const customArgv = ["completion", "--help"];
 
-      await cmdInstall.run(customArgv, importMeta, context)
+      await cmdInstall.run(customArgv, importMeta, context);
 
-      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0]
+      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0];
 
-      expect(meowConfig.argv).toBe(customArgv)
-    })
+      expect(meowConfig.argv).toBe(customArgv);
+    });
 
-    it('should pass through importMeta to meowWithSubcommands', async () => {
-      const customImportMeta = { url: 'file:///custom/path.mts' }
+    it("should pass through importMeta to meowWithSubcommands", async () => {
+      const customImportMeta = { url: "file:///custom/path.mts" };
 
-      await cmdInstall.run([], customImportMeta, context)
+      await cmdInstall.run([], customImportMeta, context);
 
-      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0]
+      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0];
 
-      expect(meowConfig.importMeta).toBe(customImportMeta)
-    })
-  })
-})
+      expect(meowConfig.importMeta).toBe(customImportMeta);
+    });
+  });
+});

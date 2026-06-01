@@ -19,7 +19,7 @@
  *      hook wedges the session."
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from "node:fs";
 
 /**
  * Is any canonical bypass phrase present in a recent user turn? Substring
@@ -54,9 +54,9 @@ function normalizeBypassText(text: string): string {
   // can a user accidentally type a phrase that fails to match because
   // an editor inserted a zero-width-space.
   return text
-    .normalize('NFKC')
-    .replace(/\p{Cf}/gu, '')
-    .replace(/[-—–\s]+/g, ' ')
+    .normalize("NFKC")
+    .replace(/\p{Cf}/gu, "")
+    .replace(/[-—–\s]+/g, " ");
 }
 
 export function bypassPhrasePresent(
@@ -64,23 +64,23 @@ export function bypassPhrasePresent(
   phrases: string | readonly string[],
   lookbackUserTurns?: number | undefined,
 ): boolean {
-  const list = typeof phrases === 'string' ? [phrases] : phrases
-  const { length } = list
+  const list = typeof phrases === "string" ? [phrases] : phrases;
+  const { length } = list;
   if (length === 0) {
-    return false
+    return false;
   }
-  const text = readUserText(transcriptPath, lookbackUserTurns)
+  const text = readUserText(transcriptPath, lookbackUserTurns);
   if (!text) {
-    return false
+    return false;
   }
-  const haystack = normalizeBypassText(text)
+  const haystack = normalizeBypassText(text);
   for (let i = 0; i < length; i += 1) {
-    const needle = normalizeBypassText(list[i]!)
+    const needle = normalizeBypassText(list[i]!);
     if (haystack.includes(needle)) {
-      return true
+      return true;
     }
   }
-  return false
+  return false;
 }
 
 /**
@@ -106,12 +106,8 @@ export function bypassPhraseRemaining(
   priorActionCount: number,
   lookbackUserTurns?: number | undefined,
 ): number {
-  const phraseCount = countBypassPhrases(
-    transcriptPath,
-    phrases,
-    lookbackUserTurns,
-  )
-  return phraseCount - priorActionCount
+  const phraseCount = countBypassPhrases(transcriptPath, phrases, lookbackUserTurns);
+  return phraseCount - priorActionCount;
 }
 
 /**
@@ -132,20 +128,20 @@ export function countBypassPhrases(
   phrases: string | readonly string[],
   lookbackUserTurns?: number | undefined,
 ): number {
-  const list = typeof phrases === 'string' ? [phrases] : phrases
-  const { length } = list
+  const list = typeof phrases === "string" ? [phrases] : phrases;
+  const { length } = list;
   if (length === 0) {
-    return 0
+    return 0;
   }
-  const rawText = readUserText(transcriptPath, lookbackUserTurns)
+  const rawText = readUserText(transcriptPath, lookbackUserTurns);
   if (!rawText) {
-    return 0
+    return 0;
   }
   // Normalize hyphens / em-dashes / runs of whitespace to single
   // spaces so `Allow workflow-scope bypass` and `Allow workflow scope
   // bypass` match the same phrase. Indices below run in the
   // normalized string's coordinate space.
-  const text = normalizeBypassText(rawText)
+  const text = normalizeBypassText(rawText);
   // Track which `[start, end)` spans were already counted by a prior
   // phrase so a shorter phrase that's a substring of a longer one
   // doesn't double-count (e.g. `Allow workflow-dispatch bypass: build`
@@ -153,25 +149,25 @@ export function countBypassPhrases(
   // build.yml`). Sort longest-first so the more specific phrase
   // claims the span first.
   const sorted = [...list]
-    .filter(p => p)
-    .map(p => normalizeBypassText(p))
-    .toSorted((a, b) => b.length - a.length)
-  const claimed: Array<[number, number]> = []
-  let total = 0
+    .filter((p) => p)
+    .map((p) => normalizeBypassText(p))
+    .toSorted((a, b) => b.length - a.length);
+  const claimed: Array<[number, number]> = [];
+  let total = 0;
   for (let i = 0, sortedLen = sorted.length; i < sortedLen; i += 1) {
-    const phrase = sorted[i]!
-    let idx = 0
+    const phrase = sorted[i]!;
+    let idx = 0;
     while ((idx = text.indexOf(phrase, idx)) !== -1) {
-      const start = idx
-      const end = idx + phrase.length
-      const overlaps = claimed.some(([cs, ce]) => start < ce && end > cs)
+      const start = idx;
+      const end = idx + phrase.length;
+      const overlaps = claimed.some(([cs, ce]) => start < ce && end > cs);
       if (!overlaps) {
         // Word-boundary check on the trailing edge: the char right
         // after `end` must not be an identifier char (alnum / . / -),
         // otherwise we matched a prefix of a longer token (e.g.
         // "build" inside "build.yml" without the longer phrase
         // having claimed it for whatever reason).
-        const next = text.charCodeAt(end)
+        const next = text.charCodeAt(end);
         // 0–9 (48–57), A–Z (65–90), a–z (97–122), `-` (45), `.` (46), `_` (95)
         const isIdentChar =
           (next >= 48 && next <= 57) ||
@@ -179,16 +175,16 @@ export function countBypassPhrases(
           (next >= 97 && next <= 122) ||
           next === 45 ||
           next === 46 ||
-          next === 95
+          next === 95;
         if (!isIdentChar) {
-          total += 1
-          claimed.push([start, end])
+          total += 1;
+          claimed.push([start, end]);
         }
       }
-      idx = end
+      idx = end;
     }
   }
-  return total
+  return total;
 }
 
 /**
@@ -201,25 +197,25 @@ export function countBypassPhrases(
  * the assistant wrote rather than the prose around it.
  */
 export interface CodeFence {
-  lang: string
-  body: string
+  lang: string;
+  body: string;
 }
 
 export function extractCodeFences(text: string): CodeFence[] {
-  const out: CodeFence[] = []
+  const out: CodeFence[] = [];
   // Match ```optional-lang\n...code...\n```
   // The lang tag is optional; the content is anything (non-greedy) up
   // to the closing fence. We're permissive — bad markdown still gets
   // captured as a block.
-  const re = /```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/g
-  let match: RegExpExecArray | null
+  const re = /```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/g;
+  let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
-    const body = match[2]
+    const body = match[2];
     if (body !== undefined) {
-      out.push({ lang: match[1] ?? '', body })
+      out.push({ lang: match[1] ?? "", body });
     }
   }
-  return out
+  return out;
 }
 
 /**
@@ -234,8 +230,8 @@ export function extractCodeFences(text: string): CodeFence[] {
  * Write/Edit).
  */
 export interface ToolUseEvent {
-  readonly name: string
-  readonly input: Record<string, unknown>
+  readonly name: string;
+  readonly input: Record<string, unknown>;
 }
 
 /**
@@ -244,29 +240,29 @@ export interface ToolUseEvent {
  */
 export function extractToolUseBlocks(content: unknown): ToolUseEvent[] {
   if (!Array.isArray(content)) {
-    return []
+    return [];
   }
-  const out: ToolUseEvent[] = []
+  const out: ToolUseEvent[] = [];
   for (let i = 0, { length } = content; i < length; i += 1) {
-    const block = content[i]
-    if (!block || typeof block !== 'object') {
-      continue
+    const block = content[i];
+    if (!block || typeof block !== "object") {
+      continue;
     }
-    const b = block as Record<string, unknown>
-    if (b['type'] !== 'tool_use') {
-      continue
+    const b = block as Record<string, unknown>;
+    if (b["type"] !== "tool_use") {
+      continue;
     }
-    const name = typeof b['name'] === 'string' ? b['name'] : undefined
-    const input = b['input']
-    if (!name || !input || typeof input !== 'object') {
-      continue
+    const name = typeof b["name"] === "string" ? b["name"] : undefined;
+    const input = b["input"];
+    if (!name || !input || typeof input !== "object") {
+      continue;
     }
-    out.push({ name, input: input as Record<string, unknown> })
+    out.push({ name, input: input as Record<string, unknown> });
   }
-  return out
+  return out;
 }
 
-type Role = 'user' | 'assistant'
+type Role = "user" | "assistant";
 
 /**
  * Extract this turn's text content into a flat array of pieces. Handles the 3
@@ -274,25 +270,25 @@ type Role = 'user' | 'assistant'
  * message.content).
  */
 export function extractTurnPieces(content: unknown): string[] {
-  const pieces: string[] = []
-  if (typeof content === 'string') {
-    pieces.push(content)
+  const pieces: string[] = [];
+  if (typeof content === "string") {
+    pieces.push(content);
   } else if (Array.isArray(content)) {
     for (let i = 0, { length } = content; i < length; i += 1) {
-      const block = content[i]!
-      if (typeof block === 'string') {
-        pieces.push(block)
-      } else if (block && typeof block === 'object') {
-        const b = block as Record<string, unknown>
-        if (typeof b['text'] === 'string') {
-          pieces.push(b['text'])
-        } else if (typeof b['content'] === 'string') {
-          pieces.push(b['content'])
+      const block = content[i]!;
+      if (typeof block === "string") {
+        pieces.push(block);
+      } else if (block && typeof block === "object") {
+        const b = block as Record<string, unknown>;
+        if (typeof b["text"] === "string") {
+          pieces.push(b["text"]);
+        } else if (typeof b["content"] === "string") {
+          pieces.push(b["content"]);
         }
       }
     }
   }
-  return pieces
+  return pieces;
 }
 
 /**
@@ -300,10 +296,8 @@ export function extractTurnPieces(content: unknown): string[] {
  * `readUserText`; used by hooks (excuse-detector) that scan what the assistant
  * just said rather than what the user typed.
  */
-export function readLastAssistantText(
-  transcriptPath: string | undefined,
-): string {
-  return readRoleText(transcriptPath, 'assistant', 1)
+export function readLastAssistantText(transcriptPath: string | undefined): string {
+  return readRoleText(transcriptPath, "assistant", 1);
 }
 
 /**
@@ -316,21 +310,21 @@ export function readLastAssistantText(
 export function readLastAssistantToolUses(
   transcriptPath: string | undefined,
 ): readonly ToolUseEvent[] {
-  const lines = readLines(transcriptPath)
+  const lines = readLines(transcriptPath);
   for (let i = lines.length - 1; i >= 0; i -= 1) {
-    let evt: unknown
+    let evt: unknown;
     try {
-      evt = JSON.parse(lines[i]!)
+      evt = JSON.parse(lines[i]!);
     } catch {
-      continue
+      continue;
     }
-    const r = resolveRoleAndContent(evt)
-    if (!r || r.role !== 'assistant') {
-      continue
+    const r = resolveRoleAndContent(evt);
+    if (!r || r.role !== "assistant") {
+      continue;
     }
-    return extractToolUseBlocks(r.content)
+    return extractToolUseBlocks(r.content);
   }
-  return []
+  return [];
 }
 
 /**
@@ -340,15 +334,15 @@ export function readLastAssistantToolUses(
  */
 export function readLines(transcriptPath: string | undefined): string[] {
   if (!transcriptPath || !existsSync(transcriptPath)) {
-    return []
+    return [];
   }
-  let raw: string
+  let raw: string;
   try {
-    raw = readFileSync(transcriptPath, 'utf8')
+    raw = readFileSync(transcriptPath, "utf8");
   } catch {
-    return []
+    return [];
   }
-  return raw.split('\n').filter(Boolean)
+  return raw.split("\n").filter(Boolean);
 }
 
 /**
@@ -365,34 +359,34 @@ export function readRoleText(
   role: Role,
   lookback?: number | undefined,
 ): string {
-  const lines = readLines(transcriptPath)
-  const out: string[] = []
-  let matched = 0
+  const lines = readLines(transcriptPath);
+  const out: string[] = [];
+  let matched = 0;
   for (let i = lines.length - 1; i >= 0; i -= 1) {
-    let evt: unknown
+    let evt: unknown;
     try {
-      evt = JSON.parse(lines[i]!)
+      evt = JSON.parse(lines[i]!);
     } catch {
-      continue
+      continue;
     }
-    const r = resolveRoleAndContent(evt)
+    const r = resolveRoleAndContent(evt);
     if (!r || r.role !== role) {
-      continue
+      continue;
     }
-    const pieces = extractTurnPieces(r.content)
+    const pieces = extractTurnPieces(r.content);
     if (pieces.length) {
       // Buffer this turn's blocks together so the final reverse swaps
       // *turn order*, not intra-turn block order.
-      out.push(pieces.join('\n'))
+      out.push(pieces.join("\n"));
     }
-    matched += 1
+    matched += 1;
     if (lookback !== undefined && matched >= lookback) {
-      break
+      break;
     }
   }
   // Reverse to chronological order so substring matches that span
   // multiple turns (rare) read naturally.
-  return out.toReversed().join('\n')
+  return out.toReversed().join("\n");
 }
 
 /**
@@ -400,14 +394,14 @@ export function readRoleText(
  * slurp the JSON payload Claude Code sends.
  */
 export function readStdin(): Promise<string> {
-  return new Promise(resolve => {
-    let buf = ''
-    process.stdin.setEncoding('utf8')
-    process.stdin.on('data', chunk => {
-      buf += chunk
-    })
-    process.stdin.on('end', () => resolve(buf))
-  })
+  return new Promise((resolve) => {
+    let buf = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => {
+      buf += chunk;
+    });
+    process.stdin.on("end", () => resolve(buf));
+  });
 }
 
 /**
@@ -420,7 +414,7 @@ export function readUserText(
   transcriptPath: string | undefined,
   lookbackUserTurns?: number | undefined,
 ): string {
-  return readRoleText(transcriptPath, 'user', lookbackUserTurns)
+  return readRoleText(transcriptPath, "user", lookbackUserTurns);
 }
 
 /**
@@ -435,27 +429,27 @@ export function readUserText(
  */
 export function resolveRoleAndContent(evt: unknown):
   | {
-      content: unknown
-      role: string | undefined
+      content: unknown;
+      role: string | undefined;
     }
   | undefined {
-  if (!evt || typeof evt !== 'object') {
-    return undefined
+  if (!evt || typeof evt !== "object") {
+    return undefined;
   }
-  const e = evt as Record<string, unknown>
+  const e = evt as Record<string, unknown>;
   const role =
-    typeof e['role'] === 'string'
-      ? e['role']
-      : typeof e['type'] === 'string'
-        ? e['type']
-        : undefined
-  const message = e['message']
+    typeof e["role"] === "string"
+      ? e["role"]
+      : typeof e["type"] === "string"
+        ? e["type"]
+        : undefined;
+  const message = e["message"];
   const content =
-    e['content'] ??
-    (message && typeof message === 'object'
-      ? (message as Record<string, unknown>)['content']
-      : undefined)
-  return { content, role }
+    e["content"] ??
+    (message && typeof message === "object"
+      ? (message as Record<string, unknown>)["content"]
+      : undefined);
+  return { content, role };
 }
 
 /**
@@ -465,7 +459,7 @@ export function resolveRoleAndContent(evt: unknown):
  * detectors. Cheap to run: two regex passes, O(n) over the input.
  */
 export function stripCodeFences(text: string): string {
-  return text.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`\n]*`/g, ' ')
+  return text.replace(/```[\s\S]*?```/g, " ").replace(/`[^`\n]*`/g, " ");
 }
 
 /**
@@ -495,8 +489,8 @@ export function stripQuotedSpans(text: string): string {
   // Smart quotes get their own pass — Unicode codepoints don't fit
   // the ASCII charset and benefit from a separate, simpler regex.
   return text
-    .replace(/"[^"\n]{1,80}"/g, ' ')
-    .replace(/(^|[\s([{,;:>])'[^'\n]{1,80}'/g, '$1 ')
-    .replace(/“[^”\n]{1,80}”/g, ' ')
-    .replace(/‘[^’\n]{1,80}’/g, ' ')
+    .replace(/"[^"\n]{1,80}"/g, " ")
+    .replace(/(^|[\s([{,;:>])'[^'\n]{1,80}'/g, "$1 ")
+    .replace(/“[^”\n]{1,80}”/g, " ")
+    .replace(/‘[^’\n]{1,80}’/g, " ");
 }

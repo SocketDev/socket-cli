@@ -9,7 +9,7 @@
  * Related Files: - src/constants.mts (implementation)
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from "vitest";
 
 import {
   FLAG_DRY_RUN,
@@ -27,74 +27,74 @@ import {
   YARN,
   constants,
   getCliVersion,
-} from '../../src/constants.mts'
+} from "../../src/constants.mts";
 
-describe('constants barrel exports', () => {
-  describe('named exports', () => {
-    it('exports flag constants', () => {
+describe("constants barrel exports", () => {
+  describe("named exports", () => {
+    it("exports flag constants", () => {
       // Flags include the -- prefix.
-      expect(FLAG_DRY_RUN).toBe('--dry-run')
-      expect(FLAG_JSON).toBe('--json')
-      expect(FLAG_ORG).toBe('--org')
-    })
+      expect(FLAG_DRY_RUN).toBe("--dry-run");
+      expect(FLAG_JSON).toBe("--json");
+      expect(FLAG_ORG).toBe("--org");
+    });
 
-    it('exports output format constants', () => {
-      expect(OUTPUT_JSON).toBe('json')
-      expect(OUTPUT_MARKDOWN).toBe('markdown')
-      expect(OUTPUT_TEXT).toBe('text')
-    })
+    it("exports output format constants", () => {
+      expect(OUTPUT_JSON).toBe("json");
+      expect(OUTPUT_MARKDOWN).toBe("markdown");
+      expect(OUTPUT_TEXT).toBe("text");
+    });
 
-    it('exports agent constants', () => {
-      expect(NPM).toBe('npm')
-      expect(PNPM).toBe('pnpm')
-      expect(YARN).toBe('yarn')
-    })
+    it("exports agent constants", () => {
+      expect(NPM).toBe("npm");
+      expect(PNPM).toBe("pnpm");
+      expect(YARN).toBe("yarn");
+    });
 
-    it('exports error constants', () => {
-      expect(typeof LOOP_SENTINEL).toBe('number')
-    })
+    it("exports error constants", () => {
+      expect(typeof LOOP_SENTINEL).toBe("number");
+    });
 
-    it('exports package name constants', () => {
-      expect(SOCKET_CLI_BIN_NAME).toBe('socket')
+    it("exports package name constants", () => {
+      expect(SOCKET_CLI_BIN_NAME).toBe("socket");
       // SOCKET_CLI_PACKAGE_NAME is the npm package name 'socket'.
-      expect(SOCKET_CLI_PACKAGE_NAME).toBe('socket')
-    })
+      expect(SOCKET_CLI_PACKAGE_NAME).toBe("socket");
+    });
 
-    it('exports VITEST constant', () => {
-      expect(VITEST).toBe(true)
-    })
+    it("exports VITEST constant", () => {
+      expect(VITEST).toBe(true);
+    });
 
-    it('exports getCliVersion function', () => {
-      expect(typeof getCliVersion).toBe('function')
-    })
-  })
+    it("exports getCliVersion function", () => {
+      expect(typeof getCliVersion).toBe("function");
+    });
+  });
 
-  describe('default export', () => {
-    it('exports an object with constants', () => {
-      expect(typeof constants).toBe('object')
-    })
+  describe("default export", () => {
+    it("exports an object with constants", () => {
+      expect(typeof constants).toBe("object");
+    });
 
-    it('includes flag constants', () => {
-      expect(constants.FLAG_DRY_RUN).toBe('--dry-run')
-      expect(constants.FLAG_JSON).toBe('--json')
-    })
+    it("includes flag constants", () => {
+      expect(constants.FLAG_DRY_RUN).toBe("--dry-run");
+      expect(constants.FLAG_JSON).toBe("--json");
+    });
 
-    it('includes output format constants', () => {
-      expect(constants.OUTPUT_JSON).toBe('json')
-      expect(constants.OUTPUT_MARKDOWN).toBe('markdown')
-    })
+    it("includes output format constants", () => {
+      expect(constants.OUTPUT_JSON).toBe("json");
+      expect(constants.OUTPUT_MARKDOWN).toBe("markdown");
+    });
 
-    it('includes agent constants', () => {
-      expect(constants.NPM).toBe('npm')
-      expect(constants.PNPM).toBe('pnpm')
-    })
+    it("includes agent constants", () => {
+      expect(constants.NPM).toBe("npm");
+      expect(constants.PNPM).toBe("pnpm");
+    });
 
-    it('includes ENV object', () => {
-      expect(typeof constants.ENV).toBe('object')
-    })
+    it("includes ENV object", () => {
+      expect(typeof constants.ENV).toBe("object");
+    });
 
-    it('includes getCliVersion function', () => {
-      expect(typeof constants.getCliVersion).toBe('function')
-    })
-  })
-})
+    it("includes getCliVersion function", () => {
+      expect(typeof constants.getCliVersion).toBe("function");
+    });
+  });
+});

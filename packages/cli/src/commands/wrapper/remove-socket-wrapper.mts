@@ -1,40 +1,38 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from "node:fs";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-const logger = getDefaultLogger()
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+const logger = getDefaultLogger();
 
 export function removeSocketWrapper(filepath: string): void {
-  let content: string | undefined
+  let content: string | undefined;
   try {
-    content = readFileSync(filepath, 'utf8')
+    content = readFileSync(filepath, "utf8");
   } catch (e) {
-    logger.fail(`There was an error removing the alias${e ? ':' : '.'}`)
+    logger.fail(`There was an error removing the alias${e ? ":" : "."}`);
     if (e) {
-      logger.error(e)
+      logger.error(e);
     }
-    return
+    return;
   }
 
   const linesWithoutSocketAlias = content
-    .split('\n')
-    .filter(
-      l => l !== 'alias npm="socket npm"' && l !== 'alias npx="socket npx"',
-    )
-  const updatedContent = linesWithoutSocketAlias.join('\n')
+    .split("\n")
+    .filter((l) => l !== 'alias npm="socket npm"' && l !== 'alias npx="socket npx"');
+  const updatedContent = linesWithoutSocketAlias.join("\n");
   try {
-    writeFileSync(filepath, updatedContent, 'utf8')
+    writeFileSync(filepath, updatedContent, "utf8");
   } catch (e) {
     if (e) {
-      logger.error(e)
+      logger.error(e);
     }
-    return
+    return;
   }
 
   logger.success(
     `The alias was removed from ${filepath}. Running 'npm install' will now run the standard npm command in new terminals going forward.`,
-  )
-  logger.log('')
+  );
+  logger.log("");
   logger.info(
-    'Note: We cannot deactivate the alias from current terminal sessions. You have to restart existing terminal sessions to finalize this step.',
-  )
+    "Note: We cannot deactivate the alias from current terminal sessions. You have to restart existing terminal sessions to finalize this step.",
+  );
 }

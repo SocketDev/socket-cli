@@ -1,90 +1,86 @@
-import path from 'node:path'
+import path from "node:path";
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { joinAnd } from "@socketsecurity/lib-stable/arrays/join";
 
-import { assertNoNegationPatterns } from './exclude-paths.mts'
-import { handleScanReach } from './handle-scan-reach.mts'
-import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
-import { suggestTarget } from './suggest_target.mts'
-import { validateReachabilityTarget } from './validate-reachability-target.mts'
-import { outputDryRunExecute } from '../../util/dry-run/output.mts'
-import { InputError } from '../../util/error/errors.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mts'
-import { getEcosystemChoicesForMeow } from '../../util/ecosystem/types.mts'
-import {
-  getFlagApiRequirementsOutput,
-  getFlagListOutput,
-} from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mts'
-import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
-import { determineOrgSlug } from '../../util/socket/org-slug.mts'
-import { hasDefaultApiToken } from '../../util/socket/sdk.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { assertNoNegationPatterns } from "./exclude-paths.mts";
+import { handleScanReach } from "./handle-scan-reach.mts";
+import { excludePathsFlag, reachabilityFlags } from "./reachability-flags.mts";
+import { suggestTarget } from "./suggest_target.mts";
+import { validateReachabilityTarget } from "./validate-reachability-target.mts";
+import { outputDryRunExecute } from "../../util/dry-run/output.mts";
+import { InputError } from "../../util/error/errors.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags, outputFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mts";
+import { getEcosystemChoicesForMeow } from "../../util/ecosystem/types.mts";
+import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mts";
+import { cmdFlagValueToArray } from "../../util/process/cmd.mts";
+import { determineOrgSlug } from "../../util/socket/org-slug.mts";
+import { hasDefaultApiToken } from "../../util/socket/sdk.mts";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type { MeowFlags } from '../../flags.mts'
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
-import type { PURL_Type } from '../../util/ecosystem/types.mts'
+import type { MeowFlags } from "../../flags.mts";
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mts";
+import type { PURL_Type } from "../../util/ecosystem/types.mts";
 
 // Flags interface for type safety.
 interface ScanReachFlags {
-  cwd: string
-  interactive: boolean
-  json: boolean
-  markdown: boolean
-  org: string
-  output: string
-  reachAnalysisMemoryLimit: number
-  reachAnalysisTimeout: number
-  reachConcurrency: number
-  reachDebug: boolean
-  reachDetailedAnalysisLogFile: boolean
-  reachDisableAnalytics: boolean
-  reachDisableExternalToolChecks: boolean
-  reachEnableAnalysisSplitting: boolean
-  reachLazyMode: boolean
-  reachMinSeverity: string
-  reachSkipCache: boolean
-  reachUseOnlyPregeneratedSboms: boolean
-  reachUseUnreachableFromPrecomputation: boolean
-  reachVersion: string
+  cwd: string;
+  interactive: boolean;
+  json: boolean;
+  markdown: boolean;
+  org: string;
+  output: string;
+  reachAnalysisMemoryLimit: number;
+  reachAnalysisTimeout: number;
+  reachConcurrency: number;
+  reachDebug: boolean;
+  reachDetailedAnalysisLogFile: boolean;
+  reachDisableAnalytics: boolean;
+  reachDisableExternalToolChecks: boolean;
+  reachEnableAnalysisSplitting: boolean;
+  reachLazyMode: boolean;
+  reachMinSeverity: string;
+  reachSkipCache: boolean;
+  reachUseOnlyPregeneratedSboms: boolean;
+  reachUseUnreachableFromPrecomputation: boolean;
+  reachVersion: string;
 }
 
-export const CMD_NAME = 'reach'
+export const CMD_NAME = "reach";
 
-const description = 'Compute tier 1 reachability'
+const description = "Compute tier 1 reachability";
 
-const hidden = true
+const hidden = true;
 
 const generalFlags: MeowFlags = {
   ...commonFlags,
   ...outputFlags,
   cwd: {
-    type: 'string',
-    default: '',
-    description: 'working directory, defaults to process.cwd()',
+    type: "string",
+    default: "",
+    description: "working directory, defaults to process.cwd()",
   },
   org: {
-    type: 'string',
-    default: '',
-    description:
-      'Force override the organization slug, overrides the default org from config',
+    type: "string",
+    default: "",
+    description: "Force override the organization slug, overrides the default org from config",
   },
   output: {
-    type: 'string',
-    default: '',
+    type: "string",
+    default: "",
     description:
-      'Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.',
-    shortFlag: 'o',
+      "Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.",
+    shortFlag: "o",
   },
-}
+};
 
 export const cmdScanReach = {
   description,
   hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -129,14 +125,14 @@ export async function run(
       $ ${command} --output custom-report.json
       $ ${command} ./proj --output ./reports/analysis.json
   `,
-  }
+  };
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  })
+  });
 
   const {
     cwd: cwdOverride,
@@ -159,145 +155,139 @@ export async function run(
     reachUseOnlyPregeneratedSboms,
     reachUseUnreachableFromPrecomputation,
     reachVersion,
-  } = cli.flags as unknown as ScanReachFlags
+  } = cli.flags as unknown as ScanReachFlags;
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
   // Process comma-separated values for isMultiple flags.
-  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
-  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
-  const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
-  assertNoNegationPatterns(excludePaths)
+  const excludePaths = cmdFlagValueToArray(cli.flags["excludePaths"]);
+  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags["reachEcosystems"]);
+  const reachExcludePaths = cmdFlagValueToArray(cli.flags["reachExcludePaths"]);
+  assertNoNegationPatterns(excludePaths);
 
   // Validate ecosystem values.
-  const reachEcosystems: PURL_Type[] = []
-  const validEcosystems = getEcosystemChoicesForMeow()
+  const reachEcosystems: PURL_Type[] = [];
+  const validEcosystems = getEcosystemChoicesForMeow();
   for (let i = 0, { length } = reachEcosystemsRaw; i < length; i += 1) {
-    const ecosystem = reachEcosystemsRaw[i]!
+    const ecosystem = reachEcosystemsRaw[i]!;
     if (!validEcosystems.includes(ecosystem)) {
       throw new InputError(
         `--reach-ecosystems must be one of: ${joinAnd(validEcosystems)} (saw: "${ecosystem}"); pass a supported ecosystem like --reach-ecosystems=${validEcosystems[0]}`,
-      )
+      );
     }
-    reachEcosystems.push(ecosystem as PURL_Type)
+    reachEcosystems.push(ecosystem as PURL_Type);
   }
 
-  const processCwd = process.cwd()
+  const processCwd = process.cwd();
   const cwd =
-    cwdOverride && cwdOverride !== '.' && cwdOverride !== processCwd
+    cwdOverride && cwdOverride !== "." && cwdOverride !== processCwd
       ? path.resolve(processCwd, cwdOverride)
-      : processCwd
+      : processCwd;
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input.length ? [...cli.input] : [cwd]
+  let targets = cli.input.length ? [...cli.input] : [cwd];
 
   /* c8 ignore start - defensive: targets always has at least [cwd] from the line above, so this branch never fires in practice */
   if (!targets.length && !dryRun && interactive) {
-    targets = await suggestTarget()
+    targets = await suggestTarget();
   }
   /* c8 ignore stop */
 
-  const { 0: orgSlug } = await determineOrgSlug(orgFlag, interactive, dryRun)
+  const { 0: orgSlug } = await determineOrgSlug(orgFlag, interactive, dryRun);
 
-  const hasApiToken = hasDefaultApiToken()
+  const hasApiToken = hasDefaultApiToken();
 
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
   // Validate target constraints for reachability analysis.
-  const targetValidation = await validateReachabilityTarget(targets, cwd)
+  const targetValidation = await validateReachabilityTarget(targets, cwd);
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
       test: !!orgSlug,
-      message: 'Org name by default setting, --org, or auto-discovered',
-      fail: 'missing',
+      message: "Org name by default setting, --org, or auto-discovered",
+      fail: "missing",
     },
     {
       nook: true,
       test: hasApiToken,
-      message: 'This command requires an API token for access',
-      fail: 'try `socket login`',
+      message: "This command requires an API token for access",
+      fail: "try `socket login`",
     },
     {
       nook: true,
       test: !json || !markdown,
-      message: 'The json and markdown flags cannot be both set, pick one',
-      fail: 'omit one',
+      message: "The json and markdown flags cannot be both set, pick one",
+      fail: "omit one",
     },
     {
       nook: true,
-      test: !outputPath || outputPath.endsWith('.json'),
-      message: 'The --output path must end with .json',
-      fail: 'use a path ending with .json',
+      test: !outputPath || outputPath.endsWith(".json"),
+      message: "The --output path must end with .json",
+      fail: "use a path ending with .json",
     },
     {
       nook: true,
       test: targetValidation.isValid,
-      message: 'Reachability analysis requires exactly one target directory',
-      fail: 'provide exactly one directory path',
+      message: "Reachability analysis requires exactly one target directory",
+      fail: "provide exactly one directory path",
     },
     {
       nook: true,
       test: targetValidation.isDirectory,
-      message: 'Reachability analysis target must be a directory',
-      fail: 'provide a directory path, not a file',
+      message: "Reachability analysis target must be a directory",
+      fail: "provide a directory path, not a file",
     },
     {
       nook: true,
       test: targetValidation.targetExists,
-      message: 'Target directory must exist',
-      fail: 'provide an existing directory path',
+      message: "Target directory must exist",
+      fail: "provide an existing directory path",
     },
     {
       nook: true,
       test: targetValidation.isInsideCwd,
-      message: 'Target directory must be inside the current working directory',
-      fail: 'provide a path inside the working directory',
+      message: "Target directory must be inside the current working directory",
+      fail: "provide a path inside the working directory",
     },
-  )
+  );
   if (!wasValidInput) {
-    return
+    return;
   }
 
   if (dryRun) {
-    const args: string[] = []
+    const args: string[] = [];
     if (targets[0]) {
-      args.push('--target', targets[0])
+      args.push("--target", targets[0]);
     }
     if (orgSlug) {
-      args.push('--org', orgSlug)
+      args.push("--org", orgSlug);
     }
     if (reachEcosystems.length > 0) {
-      args.push('--ecosystems', reachEcosystems.join(','))
+      args.push("--ecosystems", reachEcosystems.join(","));
     }
-    outputDryRunExecute('coana', args, 'reachability analysis')
-    return
+    outputDryRunExecute("coana", args, "reachability analysis");
+    return;
   }
 
   // Validate numeric flag conversions.
-  const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit)
-  if (
-    reachAnalysisMemoryLimit !== undefined &&
-    Number.isNaN(validatedReachAnalysisMemoryLimit)
-  ) {
+  const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit);
+  if (reachAnalysisMemoryLimit !== undefined && Number.isNaN(validatedReachAnalysisMemoryLimit)) {
     throw new InputError(
       `--reach-analysis-memory-limit must be a number of megabytes (saw: "${reachAnalysisMemoryLimit}"); pass an integer like --reach-analysis-memory-limit=4096`,
-    )
+    );
   }
 
-  const validatedReachAnalysisTimeout = Number(reachAnalysisTimeout)
-  if (
-    reachAnalysisTimeout !== undefined &&
-    Number.isNaN(validatedReachAnalysisTimeout)
-  ) {
+  const validatedReachAnalysisTimeout = Number(reachAnalysisTimeout);
+  if (reachAnalysisTimeout !== undefined && Number.isNaN(validatedReachAnalysisTimeout)) {
     throw new InputError(
       `--reach-analysis-timeout must be a number of seconds (saw: "${reachAnalysisTimeout}"); pass an integer like --reach-analysis-timeout=300`,
-    )
+    );
   }
 
-  const validatedReachConcurrency = Number(reachConcurrency)
+  const validatedReachConcurrency = Number(reachConcurrency);
   if (
     reachConcurrency !== undefined &&
     (Number.isNaN(validatedReachConcurrency) ||
@@ -306,7 +296,7 @@ export async function run(
   ) {
     throw new InputError(
       `--reach-concurrency must be a positive integer (saw: "${reachConcurrency}"); pass a number like --reach-concurrency=4`,
-    )
+    );
   }
 
   await handleScanReach({
@@ -314,7 +304,7 @@ export async function run(
     interactive,
     orgSlug,
     outputKind,
-    outputPath: outputPath || '',
+    outputPath: outputPath || "",
     targets,
     reachabilityOptions: {
       excludePaths,
@@ -332,10 +322,8 @@ export async function run(
       reachMinSeverity: String(reachMinSeverity),
       reachSkipCache: Boolean(reachSkipCache),
       reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
-      reachUseUnreachableFromPrecomputation: Boolean(
-        reachUseUnreachableFromPrecomputation,
-      ),
+      reachUseUnreachableFromPrecomputation: Boolean(reachUseUnreachableFromPrecomputation),
       reachVersion: reachVersion || undefined,
     },
-  })
+  });
 }

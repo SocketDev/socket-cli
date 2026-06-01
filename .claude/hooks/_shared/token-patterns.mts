@@ -30,7 +30,7 @@ export const SOCKET_FLEET_TOKEN_PATTERNS: readonly RegExp[] = [
   /^SOCKET_API_(?:KEY|TOKEN)$/,
   /^SOCKET_CLI_API_(?:KEY|TOKEN)$/,
   /^SOCKET_SECURITY_API_(?:KEY|TOKEN)$/,
-]
+];
 
 // ── LLM providers ────────────────────────────────────────────────────
 // Each entry uses the vendor's published env-var name. CLAUDE_API_KEY
@@ -53,7 +53,7 @@ export const LLM_TOKEN_PATTERNS: readonly RegExp[] = [
   /^OPENROUTER_API_KEY$/,
   /^DEEPSEEK_API_KEY$/,
   /^XAI_API_KEY$/,
-]
+];
 
 // ── Source control / code hosting ───────────────────────────────────
 export const VCS_TOKEN_PATTERNS: readonly RegExp[] = [
@@ -61,7 +61,7 @@ export const VCS_TOKEN_PATTERNS: readonly RegExp[] = [
   /^GITHUB_(?:PAT|TOKEN)$/,
   /^GITLAB_(?:PAT|PRIVATE_TOKEN|TOKEN)$/,
   /^BITBUCKET_(?:APP_PASSWORD|TOKEN)$/,
-]
+];
 
 // ── Product tracking / docs ──────────────────────────────────────────
 export const PRODUCT_TOKEN_PATTERNS: readonly RegExp[] = [
@@ -73,7 +73,7 @@ export const PRODUCT_TOKEN_PATTERNS: readonly RegExp[] = [
   /^ASANA_(?:ACCESS_TOKEN|API_TOKEN|PERSONAL_ACCESS_TOKEN|TOKEN)$/,
   /^TRELLO_(?:API_KEY|API_TOKEN|TOKEN)$/,
   /^MONDAY_API_(?:KEY|TOKEN)$/,
-]
+];
 
 // ── Chat / comms ─────────────────────────────────────────────────────
 export const CHAT_TOKEN_PATTERNS: readonly RegExp[] = [
@@ -81,7 +81,7 @@ export const CHAT_TOKEN_PATTERNS: readonly RegExp[] = [
   /^DISCORD_(?:BOT_TOKEN|TOKEN|WEBHOOK_URL)$/,
   /^TELEGRAM_BOT_TOKEN$/,
   /^TWILIO_(?:API_KEY|API_SECRET|AUTH_TOKEN)$/,
-]
+];
 
 // ── Cloud providers ──────────────────────────────────────────────────
 export const CLOUD_TOKEN_PATTERNS: readonly RegExp[] = [
@@ -94,7 +94,7 @@ export const CLOUD_TOKEN_PATTERNS: readonly RegExp[] = [
   /^CLOUDFLARE_(?:API_KEY|API_TOKEN)$/,
   /^FLY_API_TOKEN$/,
   /^HEROKU_API_KEY$/,
-]
+];
 
 // ── Package registries ──────────────────────────────────────────────
 export const REGISTRY_TOKEN_PATTERNS: readonly RegExp[] = [
@@ -104,14 +104,14 @@ export const REGISTRY_TOKEN_PATTERNS: readonly RegExp[] = [
   /^CARGO_REGISTRY_TOKEN$/,
   /^RUBYGEMS_(?:API_KEY|HOST)$/,
   /^MAVEN_(?:PASSWORD|USERNAME)$/,
-]
+];
 
 // ── Payments / billing ──────────────────────────────────────────────
 export const PAYMENT_TOKEN_PATTERNS: readonly RegExp[] = [
   /^STRIPE_(?:API|PUBLISHABLE|RESTRICTED|SECRET)_KEY$/,
   /^SQUARE_ACCESS_TOKEN$/,
   /^PAYPAL_(?:API_KEY|CLIENT_SECRET)$/,
-]
+];
 
 // ── Email / messaging providers ─────────────────────────────────────
 export const EMAIL_TOKEN_PATTERNS: readonly RegExp[] = [
@@ -120,7 +120,7 @@ export const EMAIL_TOKEN_PATTERNS: readonly RegExp[] = [
   /^POSTMARK_(?:API_TOKEN|SERVER_TOKEN)$/,
   /^RESEND_API_KEY$/,
   /^MAILCHIMP_API_KEY$/,
-]
+];
 
 // ── Observability ───────────────────────────────────────────────────
 export const OBSERVABILITY_TOKEN_PATTERNS: readonly RegExp[] = [
@@ -130,7 +130,7 @@ export const OBSERVABILITY_TOKEN_PATTERNS: readonly RegExp[] = [
   /^HONEYCOMB_API_KEY$/,
   /^GRAFANA_API_KEY$/,
   /^LOGTAIL_(?:API_KEY|TOKEN)$/,
-]
+];
 
 // ── CI providers ────────────────────────────────────────────────────
 export const CI_TOKEN_PATTERNS: readonly RegExp[] = [
@@ -138,7 +138,7 @@ export const CI_TOKEN_PATTERNS: readonly RegExp[] = [
   /^TRAVIS_API_TOKEN$/,
   /^BUILDKITE_API_TOKEN$/,
   /^DRONE_(?:API_TOKEN|TOKEN)$/,
-]
+];
 
 /**
  * Flat union of every named category above. Default catalog for consumers that
@@ -156,7 +156,7 @@ export const ALL_TOKEN_KEY_PATTERNS: readonly RegExp[] = [
   ...EMAIL_TOKEN_PATTERNS,
   ...OBSERVABILITY_TOKEN_PATTERNS,
   ...CI_TOKEN_PATTERNS,
-]
+];
 
 /**
  * Fallback: anything that _looks_ like a token by suffix. Catches vendors not
@@ -169,7 +169,7 @@ export const ALL_TOKEN_KEY_PATTERNS: readonly RegExp[] = [
  * bare `KEY=`/`TOKEN=` keys (which are usually loop indices, not secrets).
  */
 export const GENERIC_TOKEN_SUFFIX_RE =
-  /^[A-Z_]*(?:ACCESS|API|AUTH|BOT|CLIENT|PRIVATE|SECRET|SESSION|WEBHOOK)_(?:KEY|SECRET|TOKEN)$/
+  /^[A-Z_]*(?:ACCESS|API|AUTH|BOT|CLIENT|PRIVATE|SECRET|SESSION|WEBHOOK)_(?:KEY|SECRET|TOKEN)$/;
 
 /**
  * Convenience: returns true if the given key name matches any pattern in
@@ -179,12 +179,12 @@ export const GENERIC_TOKEN_SUFFIX_RE =
  */
 export function isTokenKey(key: string): boolean {
   for (let i = 0, { length } = ALL_TOKEN_KEY_PATTERNS; i < length; i += 1) {
-    const re = ALL_TOKEN_KEY_PATTERNS[i]!
+    const re = ALL_TOKEN_KEY_PATTERNS[i]!;
     if (re.test(key)) {
-      return true
+      return true;
     }
   }
-  return false
+  return false;
 }
 
 /**
@@ -200,14 +200,14 @@ export function isTokenKey(key: string): boolean {
  * occurrence in arbitrary text.
  */
 export const SENSITIVE_NAME_FRAGMENTS: readonly string[] = [
-  'TOKEN',
-  'SECRET',
-  'PASSWORD',
-  'PASS',
-  'API_KEY',
-  'APIKEY',
-  'SIGNING_KEY',
-  'PRIVATE_KEY',
-  'AUTH',
-  'CREDENTIAL',
-]
+  "TOKEN",
+  "SECRET",
+  "PASSWORD",
+  "PASS",
+  "API_KEY",
+  "APIKEY",
+  "SIGNING_KEY",
+  "PRIVATE_KEY",
+  "AUTH",
+  "CREDENTIAL",
+];

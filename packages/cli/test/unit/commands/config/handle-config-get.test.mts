@@ -18,13 +18,10 @@
  * src/commands/config/output-config-get.mts - Output formatter.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { handleConfigGet } from '../../../../src/commands/config/handle-config-get.mts'
-import {
-  createErrorResult,
-  createSuccessResult,
-} from '../../../helpers/mocks.mts'
+import { handleConfigGet } from "../../../../src/commands/config/handle-config-get.mts";
+import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -32,133 +29,129 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
 // Mock the dependencies.
-const mockOutputConfigGet = vi.hoisted(() => vi.fn())
-const mockGetConfigValue = vi.hoisted(() => vi.fn())
+const mockOutputConfigGet = vi.hoisted(() => vi.fn());
+const mockGetConfigValue = vi.hoisted(() => vi.fn());
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}))
+}));
 
-vi.mock('../../../../src/commands/config/output-config-get.mts', () => ({
+vi.mock(import("../../../../src/commands/config/output-config-get.mts"), () => ({
   outputConfigGet: mockOutputConfigGet,
-}))
-vi.mock('../../../../src/util/config.mts', () => ({
+}));
+vi.mock(import("../../../../src/util/config.mts"), () => ({
   getConfigValue: mockGetConfigValue,
-}))
+}));
 
-describe('handleConfigGet', () => {
+describe("handleConfigGet", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('gets config value successfully', async () => {
-    const { getConfigValue } = await import('../../../../src/util/config.mts')
+  it("gets config value successfully", async () => {
+    const { getConfigValue } = await import("../../../../src/util/config.mts");
     const { outputConfigGet } =
-      await import('../../../../src/commands/config/output-config-get.mts')
+      await import("../../../../src/commands/config/output-config-get.mts");
 
-    const mockResult = createSuccessResult('test-token')
-    mockGetConfigValue.mockReturnValue(mockResult)
+    const mockResult = createSuccessResult("test-token");
+    mockGetConfigValue.mockReturnValue(mockResult);
 
     await handleConfigGet({
-      key: 'apiToken',
-      outputKind: 'json',
-    })
+      key: "apiToken",
+      outputKind: "json",
+    });
 
-    expect(getConfigValue).toHaveBeenCalledWith('apiToken')
-    expect(outputConfigGet).toHaveBeenCalledWith('apiToken', mockResult, 'json')
-  })
+    expect(getConfigValue).toHaveBeenCalledWith("apiToken");
+    expect(outputConfigGet).toHaveBeenCalledWith("apiToken", mockResult, "json");
+  });
 
-  it('handles missing config value', async () => {
-    const { getConfigValue } = await import('../../../../src/util/config.mts')
+  it("handles missing config value", async () => {
+    const { getConfigValue } = await import("../../../../src/util/config.mts");
     const { outputConfigGet } =
-      await import('../../../../src/commands/config/output-config-get.mts')
+      await import("../../../../src/commands/config/output-config-get.mts");
 
-    const mockResult = createErrorResult('Config value not found')
-    mockGetConfigValue.mockReturnValue(mockResult)
+    const mockResult = createErrorResult("Config value not found");
+    mockGetConfigValue.mockReturnValue(mockResult);
 
     await handleConfigGet({
-      key: 'org',
-      outputKind: 'text',
-    })
+      key: "org",
+      outputKind: "text",
+    });
 
-    expect(getConfigValue).toHaveBeenCalledWith('org')
-    expect(outputConfigGet).toHaveBeenCalledWith('org', mockResult, 'text')
-  })
+    expect(getConfigValue).toHaveBeenCalledWith("org");
+    expect(outputConfigGet).toHaveBeenCalledWith("org", mockResult, "text");
+  });
 
-  it('handles markdown output', async () => {
-    const { getConfigValue } = await import('../../../../src/util/config.mts')
+  it("handles markdown output", async () => {
+    const { getConfigValue } = await import("../../../../src/util/config.mts");
     const { outputConfigGet } =
-      await import('../../../../src/commands/config/output-config-get.mts')
+      await import("../../../../src/commands/config/output-config-get.mts");
 
-    const mockResult = createSuccessResult('https://api.socket.dev')
-    mockGetConfigValue.mockReturnValue(mockResult)
+    const mockResult = createSuccessResult("https://api.socket.dev");
+    mockGetConfigValue.mockReturnValue(mockResult);
 
     await handleConfigGet({
-      key: 'apiBaseUrl',
-      outputKind: 'markdown',
-    })
+      key: "apiBaseUrl",
+      outputKind: "markdown",
+    });
 
-    expect(getConfigValue).toHaveBeenCalledWith('apiBaseUrl')
-    expect(outputConfigGet).toHaveBeenCalledWith(
-      'apiBaseUrl',
-      mockResult,
-      'markdown',
-    )
-  })
+    expect(getConfigValue).toHaveBeenCalledWith("apiBaseUrl");
+    expect(outputConfigGet).toHaveBeenCalledWith("apiBaseUrl", mockResult, "markdown");
+  });
 
-  it('handles different config keys', async () => {
-    const { getConfigValue } = await import('../../../../src/util/config.mts')
+  it("handles different config keys", async () => {
+    const { getConfigValue } = await import("../../../../src/util/config.mts");
     const { outputConfigGet } =
-      await import('../../../../src/commands/config/output-config-get.mts')
+      await import("../../../../src/commands/config/output-config-get.mts");
 
-    const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
+    const keys = ["apiToken", "org", "repoName", "apiBaseUrl", "apiProxy"];
 
     for (let i = 0, { length } = keys; i < length; i += 1) {
-      const key = keys[i]
-      const mockResult = createSuccessResult(`value-for-${key}`)
-      mockGetConfigValue.mockReturnValue(mockResult)
+      const key = keys[i];
+      const mockResult = createSuccessResult(`value-for-${key}`);
+      mockGetConfigValue.mockReturnValue(mockResult);
 
       await handleConfigGet({
         key: key as unknown,
-        outputKind: 'json',
-      })
+        outputKind: "json",
+      });
 
-      expect(getConfigValue).toHaveBeenCalledWith(key)
-      expect(outputConfigGet).toHaveBeenCalledWith(key, mockResult, 'json')
+      expect(getConfigValue).toHaveBeenCalledWith(key);
+      expect(outputConfigGet).toHaveBeenCalledWith(key, mockResult, "json");
     }
-  })
+  });
 
-  it('handles empty config value', async () => {
+  it("handles empty config value", async () => {
     const { outputConfigGet } =
-      await import('../../../../src/commands/config/output-config-get.mts')
+      await import("../../../../src/commands/config/output-config-get.mts");
 
-    const mockResult = createSuccessResult('')
-    mockGetConfigValue.mockReturnValue(mockResult)
+    const mockResult = createSuccessResult("");
+    mockGetConfigValue.mockReturnValue(mockResult);
 
     await handleConfigGet({
-      key: 'apiToken',
-      outputKind: 'json',
-    })
+      key: "apiToken",
+      outputKind: "json",
+    });
 
-    expect(outputConfigGet).toHaveBeenCalledWith('apiToken', mockResult, 'json')
-  })
+    expect(outputConfigGet).toHaveBeenCalledWith("apiToken", mockResult, "json");
+  });
 
-  it('handles undefined config value', async () => {
+  it("handles undefined config value", async () => {
     const { outputConfigGet } =
-      await import('../../../../src/commands/config/output-config-get.mts')
+      await import("../../../../src/commands/config/output-config-get.mts");
 
-    const mockResult = createSuccessResult(undefined)
-    mockGetConfigValue.mockReturnValue(mockResult)
+    const mockResult = createSuccessResult(undefined);
+    mockGetConfigValue.mockReturnValue(mockResult);
 
     await handleConfigGet({
-      key: 'org',
-      outputKind: 'text',
-    })
+      key: "org",
+      outputKind: "text",
+    });
 
-    expect(outputConfigGet).toHaveBeenCalledWith('org', mockResult, 'text')
-  })
-})
+    expect(outputConfigGet).toHaveBeenCalledWith("org", mockResult, "text");
+  });
+});

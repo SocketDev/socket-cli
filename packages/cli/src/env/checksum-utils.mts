@@ -7,9 +7,9 @@
  * validation logic.
  */
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { joinAnd } from "@socketsecurity/lib-stable/arrays/join";
 
-export type Checksums = Record<string, string>
+export type Checksums = Record<string, string>;
 
 /**
  * Parse checksums from a JSON string. Returns empty object if parsing fails or
@@ -22,21 +22,18 @@ export type Checksums = Record<string, string>
  *
  * @throws Error if JSON is malformed (not empty).
  */
-export function parseChecksums(
-  jsonString: string | undefined,
-  toolName: string,
-): Checksums {
+export function parseChecksums(jsonString: string | undefined, toolName: string): Checksums {
   if (!jsonString) {
     // In development mode (not inlined), return empty object.
     // Build validation will catch missing checksums at build time.
-    return {}
+    return {};
   }
   try {
-    return JSON.parse(jsonString) as Checksums
+    return JSON.parse(jsonString) as Checksums;
   } catch (e) {
     throw new Error(
       `inlined checksums for ${toolName} are not valid JSON at runtime (JSON.parse threw: ${e instanceof Error ? e.message : String(e)}); the build-time inline step produced corrupt data — rebuild socket-cli (\`pnpm run build:cli\`) and verify the matching checksums entry in bundle-tools.json`,
-    )
+    );
   }
 }
 
@@ -61,16 +58,16 @@ export function requireChecksum(
   // In dev mode, checksums are not inlined so the object is empty.
   // Allow downloads without verification during development.
   if (Object.keys(checksums).length === 0) {
-    return undefined
+    return undefined;
   }
 
   // In production mode, checksums are inlined.
   // Require checksum for every asset - missing checksum is a HARD ERROR.
-  const sha256 = checksums[assetName]
+  const sha256 = checksums[assetName];
   if (!sha256) {
     throw new Error(
-      `${toolName} has no SHA-256 checksum for asset "${assetName}" (known assets: ${joinAnd(Object.keys(checksums)) || '<empty>'}); add it to the matching entry in bundle-tools.json via \`pnpm run sync-checksums\` — do NOT ship without verification`,
-    )
+      `${toolName} has no SHA-256 checksum for asset "${assetName}" (known assets: ${joinAnd(Object.keys(checksums)) || "<empty>"}); add it to the matching entry in bundle-tools.json via \`pnpm run sync-checksums\` — do NOT ship without verification`,
+    );
   }
-  return sha256
+  return sha256;
 }

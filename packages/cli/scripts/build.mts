@@ -2,44 +2,44 @@
  * Build script for Socket CLI. Options: --quiet, --verbose, --force, --watch.
  */
 
-import { copyFileSync, promises as fs } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { copyFileSync, promises as fs } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const packageRoot = path.resolve(__dirname, '..')
-const repoRoot = path.resolve(__dirname, '../../..')
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const packageRoot = path.resolve(__dirname, "..");
+const repoRoot = path.resolve(__dirname, "../../..");
 
 // Node options for memory allocation.
-const NODE_MEMORY_FLAGS = ['--max-old-space-size=8192']
+const NODE_MEMORY_FLAGS = ["--max-old-space-size=8192"];
 
 // Simple CLI helpers without registry dependencies.
-const isQuiet = () => process.argv.includes('--quiet')
-const isVerbose = () => process.argv.includes('--verbose')
+const isQuiet = () => process.argv.includes("--quiet");
+const isVerbose = () => process.argv.includes("--verbose");
 
-const printHeader = title => {
-  logger.log('')
-  logger.log(title)
-  logger.log('='.repeat(title.length))
-  logger.log('')
-}
-const printFooter = () => logger.log('')
-const printSuccess = msg => {
-  logger.log('')
-  logger.success(msg)
-  logger.log('')
-}
-const printError = msg => {
-  logger.log('')
-  logger.error(msg)
-  logger.log('')
-}
+const printHeader = (title) => {
+  logger.log("");
+  logger.log(title);
+  logger.log("=".repeat(title.length));
+  logger.log("");
+};
+const printFooter = () => logger.log("");
+const printSuccess = (msg) => {
+  logger.log("");
+  logger.success(msg);
+  logger.log("");
+};
+const printError = (msg) => {
+  logger.log("");
+  logger.error(msg);
+  logger.log("");
+};
 
 /**
  * Post-process bundled files to break node-gyp require.resolve strings. This
@@ -51,36 +51,34 @@ const printError = msg => {
  * @param {boolean} options.verbose - Show detailed output.
  */
 async function fixNodeGypStrings(dir, options = {}) {
-  const { quiet = false, verbose = false } = options
+  const { quiet = false, verbose = false } = options;
 
   // Find all .js files in build directory.
-  const files = await fs.readdir(dir, { withFileTypes: true })
+  const files = await fs.readdir(dir, { withFileTypes: true });
 
   for (let i = 0, { length } = files; i < length; i += 1) {
-    const file = files[i]
-    const filePath = path.join(dir, file.name)
+    const file = files[i];
+    const filePath = path.join(dir, file.name);
 
     if (file.isDirectory()) {
       // Recursively process subdirectories.
-      await fixNodeGypStrings(filePath, options)
-    } else if (file.name.endsWith('.js')) {
+      await fixNodeGypStrings(filePath, options);
+    } else if (file.name.endsWith(".js")) {
       // Read file contents.
-      const contents = await fs.readFile(filePath, 'utf-8')
+      const contents = await fs.readFile(filePath, "utf-8");
 
       // Check if file contains the problematic pattern.
-      if (contents.includes('node-gyp/bin/node-gyp.js')) {
+      if (contents.includes("node-gyp/bin/node-gyp.js")) {
         // Replace literal string with concatenated version.
         const fixed = contents.replace(
           /["']node-gyp\/bin\/node-gyp\.js["']/g,
           '"node-" + "gyp/bin/node-gyp.js"',
-        )
+        );
 
-        await fs.writeFile(filePath, fixed, 'utf-8')
+        await fs.writeFile(filePath, fixed, "utf-8");
 
         if (!quiet && verbose) {
-          logger.info(
-            `Fixed node-gyp string in ${path.relative(packageRoot, filePath)}`,
-          )
+          logger.info(`Fixed node-gyp string in ${path.relative(packageRoot, filePath)}`);
         }
       }
     }
@@ -88,215 +86,210 @@ async function fixNodeGypStrings(dir, options = {}) {
 }
 
 async function main() {
-  const quiet = isQuiet()
-  const verbose = isVerbose()
-  const watch = process.argv.includes('--watch')
-  const force = process.argv.includes('--force')
+  const quiet = isQuiet();
+  const verbose = isVerbose();
+  const watch = process.argv.includes("--watch");
+  const force = process.argv.includes("--force");
 
   // Pass --force flag via environment variable.
   if (force) {
-    process.env.SOCKET_CLI_FORCE_BUILD = '1'
+    process.env.SOCKET_CLI_FORCE_BUILD = "1";
   }
 
   // Delegate to watch mode.
   if (watch) {
     if (!quiet) {
-      logger.info('Starting watch mode...')
+      logger.info("Starting watch mode…");
     }
 
     const watchResult = await spawn(
-      'node',
-      [...NODE_MEMORY_FLAGS, '.config/rolldown.cli.mts', '--watch'],
+      "node",
+      [...NODE_MEMORY_FLAGS, ".config/rolldown.cli.mts", "--watch"],
       {
         shell: WIN32,
-        stdio: 'inherit',
+        stdio: "inherit",
       },
-    )
+    );
 
     if (!watchResult || watchResult.code !== 0) {
-      process.exitCode = watchResult?.code ?? 1
-      throw new Error(
-        `Watch mode failed with exit code ${watchResult?.code ?? 1}`,
-      )
+      process.exitCode = watchResult?.code ?? 1;
+      throw new Error(`Watch mode failed with exit code ${watchResult?.code ?? 1}`);
     }
-    return
+    return;
   }
 
   try {
     if (!quiet) {
-      printHeader('Build Runner')
+      printHeader("Build Runner");
     }
 
     // If force build, always clean first.
-    const shouldClean = force
+    const shouldClean = force;
 
     // Phase 1: Clean (if needed).
     if (shouldClean) {
       if (!quiet) {
-        logger.step('Phase 1: Cleaning...')
+        logger.step("Phase 1: Cleaning…");
       }
-      const result = await spawn('pnpm', ['run', 'clean:dist'], {
+      const result = await spawn("pnpm", ["run", "clean:dist"], {
         shell: WIN32,
-        stdio: 'inherit',
-      })
+        stdio: "inherit",
+      });
       if (result.code !== 0) {
         if (!quiet) {
-          logger.error(`Clean failed (exit code: ${result.code})`)
-          printError('Build failed')
+          logger.error(`Clean failed (exit code: ${result.code})`);
+          printError("Build failed");
         }
-        process.exitCode = 1
-        return
+        process.exitCode = 1;
+        return;
       }
       if (!quiet && verbose) {
-        logger.success('Clean completed')
+        logger.success("Clean completed");
       }
     }
 
     // Phase 2: Generate packages and download assets in parallel.
     if (!quiet) {
-      logger.step('Phase 2: Preparing build (parallel)...')
+      logger.step("Phase 2: Preparing build (parallel)...");
     }
 
     const parallelPrep = await Promise.allSettled([
-      spawn('node', ['scripts/generate-packages.mts'], {
+      spawn("node", ["scripts/generate-packages.mts"], {
         shell: WIN32,
-        stdio: 'inherit',
-      }).then(result => ({ name: 'Generate Packages', result })),
-      spawn('node', [...NODE_MEMORY_FLAGS, 'scripts/download-assets.mts'], {
+        stdio: "inherit",
+      }).then((result) => ({ name: "Generate Packages", result })),
+      spawn("node", [...NODE_MEMORY_FLAGS, "scripts/download-assets.mts"], {
         shell: WIN32,
-        stdio: 'inherit',
-      }).then(result => ({ name: 'Download Assets', result })),
-    ])
+        stdio: "inherit",
+      }).then((result) => ({ name: "Download Assets", result })),
+    ]);
 
     for (let i = 0, { length } = parallelPrep; i < length; i += 1) {
-      const settled = parallelPrep[i]
-      if (settled.status === 'rejected') {
+      const settled = parallelPrep[i];
+      if (settled.status === "rejected") {
         if (!quiet) {
-          logger.error(`Parallel preparation failed: ${settled.reason}`)
-          printError('Build failed')
+          logger.error(`Parallel preparation failed: ${settled.reason}`);
+          printError("Build failed");
         }
-        process.exitCode = 1
-        return
+        process.exitCode = 1;
+        return;
       }
 
-      const { name, result } = settled.value
+      const { name, result } = settled.value;
 
       // Check for null spawn result.
       if (!result) {
         if (!quiet) {
-          logger.error(`${name} failed to start`)
-          printError('Build failed')
+          logger.error(`${name} failed to start`);
+          printError("Build failed");
         }
-        process.exitCode = 1
-        return
+        process.exitCode = 1;
+        return;
       }
 
       if (result.code !== 0) {
         if (!quiet) {
-          logger.error(`${name} failed (exit code: ${result.code})`)
-          printError('Build failed')
+          logger.error(`${name} failed (exit code: ${result.code})`);
+          printError("Build failed");
         }
-        process.exitCode = result.code ?? 1
-        return
+        process.exitCode = result.code ?? 1;
+        return;
       }
 
       if (!quiet && verbose) {
-        logger.success(`${name} completed`)
+        logger.success(`${name} completed`);
       }
     }
 
     // Phase 3: Build all variants.
     if (!quiet) {
-      logger.step('Phase 3: Building variants...')
+      logger.step("Phase 3: Building variants…");
     }
 
     // Ensure dist directory exists before building variants.
-    await fs.mkdir(path.join(packageRoot, 'dist'), { recursive: true })
+    await fs.mkdir(path.join(packageRoot, "dist"), { recursive: true });
 
     const buildResult = await spawn(
-      'node',
-      [...NODE_MEMORY_FLAGS, '.config/rolldown.build.mts', 'all'],
+      "node",
+      [...NODE_MEMORY_FLAGS, ".config/rolldown.build.mts", "all"],
       {
         shell: WIN32,
-        stdio: 'inherit',
+        stdio: "inherit",
       },
-    )
+    );
 
     if (buildResult.code !== 0) {
       if (!quiet) {
-        logger.error(`Build failed (exit code: ${buildResult.code})`)
-        printError('Build failed')
+        logger.error(`Build failed (exit code: ${buildResult.code})`);
+        printError("Build failed");
       }
-      process.exitCode = 1
-      return
+      process.exitCode = 1;
+      return;
     }
 
     if (!quiet && verbose) {
-      logger.success('Build completed')
+      logger.success("Build completed");
     }
 
     // Phase 4: Post-processing (parallel).
     if (!quiet) {
-      logger.step('Phase 4: Post-processing (parallel)...')
+      logger.step("Phase 4: Post-processing (parallel)...");
     }
 
     const postResults = await Promise.allSettled([
       // Copy CLI bundle to dist (required for dist/index.js to work).
       (async () => {
-        copyFileSync('build/cli.js', 'dist/cli.js')
+        copyFileSync("build/cli.js", "dist/cli.js");
         if (!quiet && verbose) {
-          logger.success('CLI bundle copied')
+          logger.success("CLI bundle copied");
         }
       })(),
 
       // Fix node-gyp strings to prevent bundler issues.
       (async () => {
-        await fixNodeGypStrings(path.join(packageRoot, 'build'), {
+        await fixNodeGypStrings(path.join(packageRoot, "build"), {
           quiet,
           verbose,
-        })
+        });
         if (!quiet && verbose) {
-          logger.success('Build output post-processed')
+          logger.success("Build output post-processed");
         }
       })(),
 
       // Copy CHANGELOG.md from repo root (LICENSE and logos are already in cli package).
       (async () => {
-        await fs.cp(
-          path.join(repoRoot, 'CHANGELOG.md'),
-          path.join(packageRoot, 'CHANGELOG.md'),
-        )
+        await fs.cp(path.join(repoRoot, "CHANGELOG.md"), path.join(packageRoot, "CHANGELOG.md"));
         if (!quiet && verbose) {
-          logger.success('CHANGELOG.md copied from repo root')
+          logger.success("CHANGELOG.md copied from repo root");
         }
       })(),
-    ])
+    ]);
 
-    const postFailed = postResults.filter(r => r.status === 'rejected')
+    const postFailed = postResults.filter((r) => r.status === "rejected");
     if (postFailed.length > 0) {
       for (let i = 0, { length } = postFailed; i < length; i += 1) {
-        const r = postFailed[i]
-        logger.error(`Post-processing failed: ${r.reason?.message ?? r.reason}`)
+        const r = postFailed[i];
+        logger.error(`Post-processing failed: ${r.reason?.message ?? r.reason}`);
       }
-      throw new Error('Post-processing step(s) failed')
+      throw new Error("Post-processing step(s) failed");
     }
 
     if (!quiet) {
-      printSuccess('Build completed')
-      printFooter()
+      printSuccess("Build completed");
+      printFooter();
     }
   } catch (e) {
     if (!quiet) {
-      printError(`Build failed: ${e.message}`)
+      printError(`Build failed: ${e.message}`);
     }
     if (verbose) {
-      logger.error(e)
+      logger.error(e);
     }
-    process.exitCode = 1
+    process.exitCode = 1;
   }
 }
 
-main().catch(e => {
-  logger.error(e)
-  process.exitCode = 1
-})
+main().catch((e) => {
+  logger.error(e);
+  process.exitCode = 1;
+});

@@ -13,66 +13,65 @@
  * Related Files: - util/semver.mts (implementation)
  */
 
-import semver from 'semver'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import semver from "semver";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RangeStyles, getMajor } from '../../../src/util/semver.mts'
+import { RangeStyles, getMajor } from "../../../src/util/semver.mts";
 
 // Mock semver.
-vi.mock('semver', () => ({
+vi.mock(import("semver"), () => ({
   default: {
     coerce: vi.fn(),
     major: vi.fn(),
     minVersion: vi.fn(),
   },
-}))
+}));
 
-describe('semver utilities', () => {
+describe("semver utilities", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  describe('RangeStyles', () => {
-    it('contains expected styles', () => {
-      expect(RangeStyles).toEqual(['pin', 'preserve'])
-    })
-  })
+  describe("RangeStyles", () => {
+    it("contains expected styles", () => {
+      expect(RangeStyles).toEqual(["pin", "preserve"]);
+    });
+  });
 
-  describe('getMajor', () => {
-    it('returns major version for valid semver', () => {
-      vi.mocked(semver.coerce).mockReturnValue({ version: '1.2.3' } as unknown)
-      vi.mocked(semver.major).mockReturnValue(1)
+  describe("getMajor", () => {
+    it("returns major version for valid semver", () => {
+      vi.mocked(semver.coerce).mockReturnValue({ version: "1.2.3" } as unknown);
+      vi.mocked(semver.major).mockReturnValue(1);
 
-      const result = getMajor('1.2.3')
-      expect(result).toBe(1)
-      expect(semver.coerce).toHaveBeenCalledWith('1.2.3')
-      expect(semver.major).toHaveBeenCalledWith({ version: '1.2.3' })
-    })
+      const result = getMajor("1.2.3");
+      expect(result).toBe(1);
+      expect(semver.coerce).toHaveBeenCalledWith("1.2.3");
+      expect(semver.major).toHaveBeenCalledWith({ version: "1.2.3" });
+    });
 
-    it('returns undefined when coerce returns null', () => {
-      vi.mocked(semver.coerce).mockReturnValue(undefined)
+    it("returns undefined when coerce returns null", () => {
+      vi.mocked(semver.coerce).mockReturnValue(undefined);
 
-      const result = getMajor('invalid')
-      expect(result).toBeUndefined()
-    })
+      const result = getMajor("invalid");
+      expect(result).toBeUndefined();
+    });
 
-    it('returns undefined when coerce throws', () => {
+    it("returns undefined when coerce throws", () => {
       vi.mocked(semver.coerce).mockImplementation(() => {
-        throw new Error('Invalid version')
-      })
+        throw new Error("Invalid version");
+      });
 
-      const result = getMajor('bad-version')
-      expect(result).toBeUndefined()
-    })
+      const result = getMajor("bad-version");
+      expect(result).toBeUndefined();
+    });
 
-    it('handles non-string input', () => {
-      vi.mocked(semver.coerce).mockReturnValue(undefined)
+    it("handles non-string input", () => {
+      vi.mocked(semver.coerce).mockReturnValue(undefined);
 
-      expect(getMajor(123)).toBeUndefined()
-      expect(getMajor(undefined)).toBeUndefined()
-      expect(getMajor(undefined)).toBeUndefined()
-      expect(getMajor({})).toBeUndefined()
-    })
-  })
-
-})
+      expect(getMajor(123)).toBeUndefined();
+      expect(getMajor(undefined)).toBeUndefined();
+      expect(getMajor(undefined)).toBeUndefined();
+      expect(getMajor({})).toBeUndefined();
+    });
+  });
+});

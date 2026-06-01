@@ -18,9 +18,9 @@
  *      a rule it can't read).
  */
 
-import { existsSync } from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
+import { existsSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 /**
  * Walk the candidate list and return the first hit. Cheap — at most 5 file-stat
@@ -29,33 +29,32 @@ import path from 'node:path'
 export function findWheelhouseRoot(
   options: { startDir?: string | undefined } = {},
 ): string | undefined {
-  const startDir =
-    options.startDir ?? process.env['CLAUDE_PROJECT_DIR'] ?? process.cwd()
+  const startDir = options.startDir ?? process.env["CLAUDE_PROJECT_DIR"] ?? process.cwd();
 
   // 1. Override via env var — used by CI / non-standard layouts.
-  const envOverride = process.env['SOCKET_WHEELHOUSE_DIR']
+  const envOverride = process.env["SOCKET_WHEELHOUSE_DIR"];
   if (envOverride && isWheelhouseRoot(envOverride)) {
-    return envOverride
+    return envOverride;
   }
 
   const candidates: string[] = [
     // 2. The session's project dir IS the wheelhouse.
     startDir,
     // 3. A sibling repo named socket-wheelhouse.
-    path.join(startDir, '..', 'socket-wheelhouse'),
+    path.join(startDir, "..", "socket-wheelhouse"),
     // 4. Worktree layout — wheelhouse is two levels up.
-    path.join(startDir, '..', '..', 'socket-wheelhouse'),
+    path.join(startDir, "..", "..", "socket-wheelhouse"),
     // 5. Documented fleet layout under $HOME.
-    path.join(os.homedir(), 'projects', 'socket-wheelhouse'),
-  ]
+    path.join(os.homedir(), "projects", "socket-wheelhouse"),
+  ];
 
   for (let i = 0, { length } = candidates; i < length; i += 1) {
-    const candidate = candidates[i]!
+    const candidate = candidates[i]!;
     if (isWheelhouseRoot(candidate)) {
-      return path.resolve(candidate)
+      return path.resolve(candidate);
     }
   }
-  return undefined
+  return undefined;
 }
 
 /**
@@ -65,11 +64,11 @@ export function findWheelhouseRoot(
 export function findWheelhouseTemplateClaudeMd(
   options: { startDir?: string | undefined } = {},
 ): string | undefined {
-  const root = findWheelhouseRoot(options)
+  const root = findWheelhouseRoot(options);
   if (!root) {
-    return undefined
+    return undefined;
   }
-  return path.join(root, 'template', 'CLAUDE.md')
+  return path.join(root, "template", "CLAUDE.md");
 }
 
 /**
@@ -79,7 +78,7 @@ export function findWheelhouseTemplateClaudeMd(
  */
 export function isWheelhouseRoot(dir: string): boolean {
   if (!existsSync(dir)) {
-    return false
+    return false;
   }
-  return existsSync(path.join(dir, 'template', 'CLAUDE.md'))
+  return existsSync(path.join(dir, "template", "CLAUDE.md"));
 }

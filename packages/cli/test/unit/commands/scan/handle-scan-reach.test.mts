@@ -14,12 +14,9 @@
  * Related Files: - src/commands/handleScanReach.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  createErrorResult,
-  createSuccessResult,
-} from '../../../helpers/mocks.mts'
+import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -29,100 +26,90 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}))
+}));
 
-const mockStart = vi.hoisted(() => vi.fn())
-const mockStop = vi.hoisted(() => vi.fn())
-const mockSuccessAndStop = vi.hoisted(() => vi.fn())
+const mockStart = vi.hoisted(() => vi.fn());
+const mockStop = vi.hoisted(() => vi.fn());
+const mockSuccessAndStop = vi.hoisted(() => vi.fn());
 const mockGetSpinner = vi.hoisted(() =>
   vi.fn(() => ({
     start: mockStart,
     stop: mockStop,
     successAndStop: mockSuccessAndStop,
   })),
-)
-const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn())
-const mockOutputScanReach = vi.hoisted(() => vi.fn())
-const mockPerformReachabilityAnalysis = vi.hoisted(() => vi.fn())
-const mockCheckCommandInput = vi.hoisted(() => vi.fn())
-const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
-const mockPluralize = vi.hoisted(() => vi.fn(str => str))
+);
+const mockFetchSupportedScanFileNames = vi.hoisted(() => vi.fn());
+const mockOutputScanReach = vi.hoisted(() => vi.fn());
+const mockPerformReachabilityAnalysis = vi.hoisted(() => vi.fn());
+const mockCheckCommandInput = vi.hoisted(() => vi.fn());
+const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn());
+const mockPluralize = vi.hoisted(() => vi.fn((str) => str));
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/spinner/default', () => ({
+vi.mock(import("@socketsecurity/lib-stable/spinner/default"), () => ({
   getDefaultSpinner: mockGetSpinner,
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/words/pluralize', () => ({
+vi.mock(import("@socketsecurity/lib-stable/words/pluralize"), () => ({
   pluralize: mockPluralize,
-}))
+}));
 
-vi.mock(
-  '../../../../src/commands/scan/fetch-supported-scan-file-names.mts',
-  () => ({
-    fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
-  }),
-)
+vi.mock(import("../../../../src/commands/scan/fetch-supported-scan-file-names.mts"), () => ({
+  fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
+}));
 
-vi.mock('../../../../src/commands/scan/output-scan-reach.mts', () => ({
+vi.mock(import("../../../../src/commands/scan/output-scan-reach.mts"), () => ({
   outputScanReach: mockOutputScanReach,
-}))
+}));
 
-vi.mock(
-  '../../../../src/commands/scan/perform-reachability-analysis.mts',
-  () => ({
-    performReachabilityAnalysis: mockPerformReachabilityAnalysis,
-  }),
-)
+vi.mock(import("../../../../src/commands/scan/perform-reachability-analysis.mts"), () => ({
+  performReachabilityAnalysis: mockPerformReachabilityAnalysis,
+}));
 
-vi.mock('../../../../src/util/validation/check-input.mts', () => ({
+vi.mock(import("../../../../src/util/validation/check-input.mts"), () => ({
   checkCommandInput: mockCheckCommandInput,
-}))
+}));
 
-vi.mock('../../../../src/util/fs/path-resolve.mjs', () => ({
+vi.mock(import("../../../../src/util/fs/path-resolve.mjs"), () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
-}))
+}));
 
-const { handleScanReach } =
-  await import('../../../../src/commands/scan/handle-scan-reach.mts')
+const { handleScanReach } = await import("../../../../src/commands/scan/handle-scan-reach.mts");
 
-describe('handleScanReach', () => {
+describe("handleScanReach", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('performs reachability analysis successfully', async () => {
-    const mockFetchSupported = mockFetchSupportedScanFileNames
-    const mockOutput = mockOutputScanReach
-    const mockPerformAnalysis = mockPerformReachabilityAnalysis
-    const mockCheckInput = mockCheckCommandInput
-    const mockGetPackageFiles = mockGetPackageFilesForScan
+  it("performs reachability analysis successfully", async () => {
+    const mockFetchSupported = mockFetchSupportedScanFileNames;
+    const mockOutput = mockOutputScanReach;
+    const mockPerformAnalysis = mockPerformReachabilityAnalysis;
+    const mockCheckInput = mockCheckCommandInput;
+    const mockGetPackageFiles = mockGetPackageFilesForScan;
 
     mockFetchSupported.mockResolvedValue(
-      createSuccessResult(['package.json', 'package-lock.json']),
-    )
-    mockGetPackageFiles.mockResolvedValue([
-      '/project/package.json',
-      '/project/package-lock.json',
-    ])
-    mockCheckInput.mockReturnValue(true)
+      createSuccessResult(["package.json", "package-lock.json"]),
+    );
+    mockGetPackageFiles.mockResolvedValue(["/project/package.json", "/project/package-lock.json"]);
+    mockCheckInput.mockReturnValue(true);
     mockPerformAnalysis.mockResolvedValue(
       createSuccessResult({
         reachablePackages: 10,
         totalPackages: 50,
       }),
-    )
+    );
 
     await handleScanReach({
-      cwd: '/project',
+      cwd: "/project",
       interactive: false,
-      orgSlug: 'test-org',
-      outputKind: 'json',
-      outputPath: '',
+      orgSlug: "test-org",
+      outputKind: "json",
+      outputPath: "",
       reachabilityOptions: {
         excludePaths: [],
         reachAnalysisTimeout: 300,
@@ -130,18 +117,18 @@ describe('handleScanReach', () => {
         reachDisableAnalytics: false,
         reachEcosystems: [],
         reachExcludePaths: [],
-        reachMinSeverity: 'low',
+        reachMinSeverity: "low",
         reachSkipCache: false,
         reachUseUnreachableFromPrecomputation: false,
       },
-      targets: ['src'],
-    })
+      targets: ["src"],
+    });
 
     expect(mockPerformAnalysis).toHaveBeenCalledWith({
-      cwd: '/project',
-      orgSlug: 'test-org',
-      outputPath: '',
-      packagePaths: ['/project/package.json', '/project/package-lock.json'],
+      cwd: "/project",
+      orgSlug: "test-org",
+      outputPath: "",
+      packagePaths: ["/project/package.json", "/project/package-lock.json"],
       reachabilityOptions: {
         excludePaths: [],
         reachAnalysisTimeout: 300,
@@ -149,98 +136,98 @@ describe('handleScanReach', () => {
         reachDisableAnalytics: false,
         reachEcosystems: [],
         reachExcludePaths: [],
-        reachMinSeverity: 'low',
+        reachMinSeverity: "low",
         reachSkipCache: false,
         reachUseUnreachableFromPrecomputation: false,
       },
       spinner: expect.any(Object),
-      target: 'src',
+      target: "src",
       uploadManifests: true,
-    })
-    expect(mockOutput).toHaveBeenCalled()
-  })
+    });
+    expect(mockOutput).toHaveBeenCalled();
+  });
 
-  it('handles supported files fetch failure', async () => {
-    const mockFetchSupported = mockFetchSupportedScanFileNames
-    const mockOutput = mockOutputScanReach
+  it("handles supported files fetch failure", async () => {
+    const mockFetchSupported = mockFetchSupportedScanFileNames;
+    const mockOutput = mockOutputScanReach;
 
-    const mockError = createErrorResult('Failed to fetch supported files')
-    mockFetchSupported.mockResolvedValue(mockError)
+    const mockError = createErrorResult("Failed to fetch supported files");
+    mockFetchSupported.mockResolvedValue(mockError);
 
     await handleScanReach({
-      cwd: '/project',
+      cwd: "/project",
       interactive: false,
-      orgSlug: 'test-org',
-      outputKind: 'text',
-      outputPath: '',
+      orgSlug: "test-org",
+      outputKind: "text",
+      outputPath: "",
       reachabilityOptions: {},
       targets: [],
-    })
+    });
 
     expect(mockOutput).toHaveBeenCalledWith(mockError, {
-      outputKind: 'text',
-      outputPath: '',
-    })
-  })
+      outputKind: "text",
+      outputPath: "",
+    });
+  });
 
-  it('handles no eligible files found', async () => {
-    const mockFetchSupported = mockFetchSupportedScanFileNames
-    const mockCheckInput = mockCheckCommandInput
-    const mockGetPackageFiles = mockGetPackageFilesForScan
+  it("handles no eligible files found", async () => {
+    const mockFetchSupported = mockFetchSupportedScanFileNames;
+    const mockCheckInput = mockCheckCommandInput;
+    const mockGetPackageFiles = mockGetPackageFilesForScan;
 
-    mockFetchSupported.mockResolvedValue(createSuccessResult(['package.json']))
-    mockGetPackageFiles.mockResolvedValue([])
-    mockCheckInput.mockReturnValue(false)
+    mockFetchSupported.mockResolvedValue(createSuccessResult(["package.json"]));
+    mockGetPackageFiles.mockResolvedValue([]);
+    mockCheckInput.mockReturnValue(false);
 
     await handleScanReach({
-      cwd: '/empty',
+      cwd: "/empty",
       interactive: false,
-      orgSlug: 'test-org',
-      outputKind: 'json',
-      outputPath: '',
+      orgSlug: "test-org",
+      outputKind: "json",
+      outputPath: "",
       reachabilityOptions: { excludePaths: [], reachExcludePaths: [] },
-      targets: ['nonexistent'],
-    })
+      targets: ["nonexistent"],
+    });
 
-    expect(mockCheckInput).toHaveBeenCalledWith('json', {
+    expect(mockCheckInput).toHaveBeenCalledWith("json", {
       nook: true,
       test: false,
-      fail: 'found no eligible files to analyze',
+      fail: "found no eligible files to analyze",
       message: expect.any(String),
-    })
-  })
+    });
+  });
 
-  it('handles reachability analysis failure', async () => {
-    const mockFetchSupported = mockFetchSupportedScanFileNames
-    const mockOutput = mockOutputScanReach
-    const mockPerformAnalysis = mockPerformReachabilityAnalysis
-    const mockCheckInput = mockCheckCommandInput
-    const mockGetPackageFiles = mockGetPackageFilesForScan
+  it("handles reachability analysis failure", async () => {
+    const mockFetchSupported = mockFetchSupportedScanFileNames;
+    const mockOutput = mockOutputScanReach;
+    const mockPerformAnalysis = mockPerformReachabilityAnalysis;
+    const mockCheckInput = mockCheckCommandInput;
+    const mockGetPackageFiles = mockGetPackageFilesForScan;
 
-    mockFetchSupported.mockResolvedValue(createSuccessResult(['package.json']))
-    mockGetPackageFiles.mockResolvedValue(['/project/package.json'])
-    mockCheckInput.mockReturnValue(true)
+    mockFetchSupported.mockResolvedValue(createSuccessResult(["package.json"]));
+    mockGetPackageFiles.mockResolvedValue(["/project/package.json"]);
+    mockCheckInput.mockReturnValue(true);
 
-    const analysisError = createErrorResult('Analysis failed')
-    mockPerformAnalysis.mockResolvedValue(analysisError)
+    const analysisError = createErrorResult("Analysis failed");
+    mockPerformAnalysis.mockResolvedValue(analysisError);
 
     await handleScanReach({
-      cwd: '/project',
+      cwd: "/project",
       interactive: true,
-      orgSlug: 'test-org',
-      outputKind: 'markdown',
-      outputPath: '',
+      orgSlug: "test-org",
+      outputKind: "markdown",
+      outputPath: "",
       reachabilityOptions: {
         excludePaths: [],
         reachExcludePaths: [],
         maxDepth: 10,
       },
-      targets: ['./'],
-    })
+      targets: ["./"],
+    });
 
     expect(mockOutput).toHaveBeenCalledWith(analysisError, {
-      outputKind: 'markdown',
-      outputPath: '',
-    })
-  })
-})
+      outputKind: "markdown",
+      outputPath: "",
+    });
+  });
+});

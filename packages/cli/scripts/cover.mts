@@ -1,4 +1,3 @@
-
 /**
  * @file Unified coverage script - runs tests with coverage reporting.
  *   Standardized across all socket-* repositories. Usage: node
@@ -9,314 +8,296 @@
  *   summary (hide detailed output)
  */
 
-import { isQuiet, isVerbose } from '@socketsecurity/lib-stable/argv/flag-predicates'
-import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { isQuiet, isVerbose } from "@socketsecurity/lib-stable/argv/flag-predicates";
+import { parseArgs } from "@socketsecurity/lib-stable/argv/parse";
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-import { PACKAGE_ROOT } from './paths.mts'
+import { PACKAGE_ROOT } from "./paths.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 export function printError(message) {
-  logger.error(`✖ ${message}`)
+  logger.error(`✖ ${message}`);
 }
 
 export function printHeader(message) {
-  logger.error('')
-  logger.error('═══════════════════════════════════════════════════════')
-  logger.error(`  ${message}`)
-  logger.error('═══════════════════════════════════════════════════════')
-  logger.error('')
+  logger.error("");
+  logger.error("═══════════════════════════════════════════════════════");
+  logger.error(`  ${message}`);
+  logger.error("═══════════════════════════════════════════════════════");
+  logger.error("");
 }
 
 export function printSuccess(message) {
-  logger.log(`✔ ${message}`)
+  logger.log(`✔ ${message}`);
 }
 
 async function main() {
-  const quiet = isQuiet()
-  const verbose = isVerbose()
-  const open = process.argv.includes('--open')
+  const quiet = isQuiet();
+  const verbose = isVerbose();
+  const open = process.argv.includes("--open");
 
   // Parse custom coverage flags
   const { values } = parseArgs({
     options: {
-      'code-only': { type: 'boolean', default: false },
-      'type-only': { type: 'boolean', default: false },
-      summary: { type: 'boolean', default: false },
+      "code-only": { type: "boolean", default: false },
+      "type-only": { type: "boolean", default: false },
+      summary: { type: "boolean", default: false },
     },
     strict: false,
-  })
+  });
 
   try {
     if (!quiet) {
-      printHeader('Test Coverage')
-      logger.log('')
+      printHeader("Test Coverage");
+      logger.log("");
     }
 
     // Run vitest with coverage enabled, capturing output
     // Filter out custom flags that vitest doesn't understand
-    const customFlags = ['--code-only', '--type-only', '--summary']
+    const customFlags = ["--code-only", "--type-only", "--summary"];
     const vitestArgs = [
-      'exec',
-      'vitest',
-      'run',
-      '--coverage',
-      '--passWithNoTests',
-      ...process.argv.slice(2).filter(arg => !customFlags.includes(arg)),
-    ]
-    const typeCoverageArgs = ['exec', 'type-coverage']
+      "exec",
+      "vitest",
+      "run",
+      "--coverage",
+      "--passWithNoTests",
+      ...process.argv.slice(2).filter((arg) => !customFlags.includes(arg)),
+    ];
+    const typeCoverageArgs = ["exec", "type-coverage"];
 
-    let exitCode = 0
-    let codeCoverageResult
-    let typeCoverageResult
+    let exitCode = 0;
+    let codeCoverageResult;
+    let typeCoverageResult;
 
     // Handle --type-only flag
-    if (values['type-only']) {
-      typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
+    if (values["type-only"]) {
+      typeCoverageResult = await spawn("pnpm", typeCoverageArgs, {
         cwd: PACKAGE_ROOT,
-        encoding: 'utf8',
+        encoding: "utf8",
         shell: WIN32,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      })
-      exitCode = typeCoverageResult.code
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      exitCode = typeCoverageResult.code;
 
       if (!quiet) {
         // Display type coverage only
-        const typeCoverageOutput = (
-          typeCoverageResult.stdout + typeCoverageResult.stderr
-        ).trim()
-        const typeCoverageMatch = typeCoverageOutput.match(
-          /\([\d\s/]+\)\s+([\d.]+)%/,
-        )
+        const typeCoverageOutput = (typeCoverageResult.stdout + typeCoverageResult.stderr).trim();
+        const typeCoverageMatch = typeCoverageOutput.match(/\([\d\s/]+\)\s+([\d.]+)%/);
 
         if (typeCoverageMatch) {
-          const typeCoveragePercent = Number.parseFloat(typeCoverageMatch[1])
-          logger.log('')
-          logger.log(' Coverage Summary')
-          logger.log(' ───────────────────────────────')
-          logger.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`)
-          logger.log('')
+          const typeCoveragePercent = Number.parseFloat(typeCoverageMatch[1]);
+          logger.log("");
+          logger.log(" Coverage Summary");
+          logger.log(" ───────────────────────────────");
+          logger.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`);
+          logger.log("");
         }
       }
 
       if (exitCode === 0) {
         if (!quiet) {
-          printSuccess('Coverage completed successfully')
+          printSuccess("Coverage completed successfully");
         }
       } else {
         if (!quiet) {
-          printError('Coverage failed')
+          printError("Coverage failed");
         }
-        process.exitCode = 1
+        process.exitCode = 1;
       }
-      return
+      return;
     }
 
     // Handle --code-only flag
-    if (values['code-only']) {
-      codeCoverageResult = await spawn('pnpm', vitestArgs, {
+    if (values["code-only"]) {
+      codeCoverageResult = await spawn("pnpm", vitestArgs, {
         cwd: PACKAGE_ROOT,
-        encoding: 'utf8',
+        encoding: "utf8",
         shell: WIN32,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      })
-      exitCode = codeCoverageResult.code
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      exitCode = codeCoverageResult.code;
 
       if (!quiet) {
         // Process code coverage output only
-        const ansiRegex = new RegExp(
-          `${String.fromCharCode(27)}\\[[0-9;]*m`,
-          'g',
-        )
+        const ansiRegex = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
         const output = (codeCoverageResult.stdout + codeCoverageResult.stderr)
-          .replace(ansiRegex, '')
-          .replace(/(?:⚡|✧|︎)\s*/g, '')
-          .trim()
+          .replace(ansiRegex, "")
+          .replace(/(?:⚡|✧|︎)\s*/g, "")
+          .trim();
 
         // Extract and display test summary
         const testSummaryMatch = output.match(
           /Test Files\s+\d+[^\n]*\n[\s\S]*?Duration\s+[\d.]+m?s[^\n]*/,
-        )
+        );
         if (!values.summary && testSummaryMatch) {
-          logger.log('')
-          logger.log(testSummaryMatch[0])
-          logger.log('')
+          logger.log("");
+          logger.log(testSummaryMatch[0]);
+          logger.log("");
         }
 
         // Extract and display coverage summary
         const coverageHeaderMatch = output.match(
           / % Coverage report from v8\n([-|]+)\n([^\n]+)\n\1/,
-        )
-        const allFilesMatch = output.match(
-          /All files\s+\|\s+([\d.]+)\s+\|[^\n]*/,
-        )
+        );
+        const allFilesMatch = output.match(/All files\s+\|\s+([\d.]+)\s+\|[^\n]*/);
 
         if (coverageHeaderMatch && allFilesMatch) {
           if (!values.summary) {
-            logger.log(' % Coverage report from v8')
-            logger.log(coverageHeaderMatch[1])
-            logger.log(coverageHeaderMatch[2])
-            logger.log(coverageHeaderMatch[1])
-            logger.log(allFilesMatch[0])
-            logger.log(coverageHeaderMatch[1])
-            logger.log('')
+            logger.log(" % Coverage report from v8");
+            logger.log(coverageHeaderMatch[1]);
+            logger.log(coverageHeaderMatch[2]);
+            logger.log(coverageHeaderMatch[1]);
+            logger.log(allFilesMatch[0]);
+            logger.log(coverageHeaderMatch[1]);
+            logger.log("");
           }
 
-          const codeCoveragePercent = Number.parseFloat(allFilesMatch[1])
-          logger.log(' Coverage Summary')
-          logger.log(' ───────────────────────────────')
-          logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
-          logger.log('')
+          const codeCoveragePercent = Number.parseFloat(allFilesMatch[1]);
+          logger.log(" Coverage Summary");
+          logger.log(" ───────────────────────────────");
+          logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`);
+          logger.log("");
         } else if (exitCode !== 0) {
-          logger.log('')
-          logger.log('--- Output ---')
-          logger.log(output)
+          logger.log("");
+          logger.log("--- Output ---");
+          logger.log(output);
         }
       }
 
       if (exitCode === 0) {
         if (!quiet) {
-          printSuccess('Coverage completed successfully')
+          printSuccess("Coverage completed successfully");
         }
       } else {
         if (!quiet) {
-          printError('Coverage failed')
+          printError("Coverage failed");
         }
-        process.exitCode = 1
+        process.exitCode = 1;
       }
-      return
+      return;
     }
 
     // Default: run both code and type coverage
-    codeCoverageResult = await spawn('pnpm', vitestArgs, {
+    codeCoverageResult = await spawn("pnpm", vitestArgs, {
       cwd: PACKAGE_ROOT,
-      encoding: 'utf8',
+      encoding: "utf8",
       shell: WIN32,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    })
-    exitCode = codeCoverageResult.code
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    exitCode = codeCoverageResult.code;
 
     // Run type coverage
-    typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
+    typeCoverageResult = await spawn("pnpm", typeCoverageArgs, {
       cwd: PACKAGE_ROOT,
-      encoding: 'utf8',
+      encoding: "utf8",
       shell: WIN32,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    })
+      stdio: ["pipe", "pipe", "pipe"],
+    });
 
     // Combine and clean output - remove ANSI color codes and spinner artifacts
-    const ansiRegex = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
+    const ansiRegex = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
     const output = (codeCoverageResult.stdout + codeCoverageResult.stderr)
       // Remove ANSI color codes
-      .replace(ansiRegex, '')
+      .replace(ansiRegex, "")
       // Remove spinner artifacts
-      .replace(/(?:⚡|✧|︎)\s*/g, '')
-      .trim()
+      .replace(/(?:⚡|✧|︎)\s*/g, "")
+      .trim();
 
     // Extract test summary (Test Files ... Duration)
     const testSummaryMatch = output.match(
       /Test Files\s+\d+[^\n]*\n[\s\S]*?Duration\s+[\d.]+m?s[^\n]*/,
-    )
+    );
 
     // Extract coverage summary: header + All files row
     // Match from "% Coverage" header through the All files line and closing border
-    const coverageHeaderMatch = output.match(
-      / % Coverage report from v8\n([-|]+)\n([^\n]+)\n\1/,
-    )
-    const allFilesMatch = output.match(/All files\s+\|\s+([\d.]+)\s+\|[^\n]*/)
+    const coverageHeaderMatch = output.match(/ % Coverage report from v8\n([-|]+)\n([^\n]+)\n\1/);
+    const allFilesMatch = output.match(/All files\s+\|\s+([\d.]+)\s+\|[^\n]*/);
 
     // Extract type coverage percentage
-    const typeCoverageOutput = (
-      typeCoverageResult.stdout + typeCoverageResult.stderr
-    ).trim()
-    const typeCoverageMatch = typeCoverageOutput.match(
-      /\([\d\s/]+\)\s+([\d.]+)%/,
-    )
+    const typeCoverageOutput = (typeCoverageResult.stdout + typeCoverageResult.stderr).trim();
+    const typeCoverageMatch = typeCoverageOutput.match(/\([\d\s/]+\)\s+([\d.]+)%/);
 
     // Display clean output
     if (!quiet) {
       if (!values.summary && testSummaryMatch) {
-        logger.log('')
-        logger.log(testSummaryMatch[0])
-        logger.log('')
+        logger.log("");
+        logger.log(testSummaryMatch[0]);
+        logger.log("");
       }
 
       if (coverageHeaderMatch && allFilesMatch) {
         if (!values.summary) {
-          logger.log(' % Coverage report from v8')
+          logger.log(" % Coverage report from v8");
           // Top border
-          logger.log(coverageHeaderMatch[1])
+          logger.log(coverageHeaderMatch[1]);
           // Header row
-          logger.log(coverageHeaderMatch[2])
+          logger.log(coverageHeaderMatch[2]);
           // Middle border
-          logger.log(coverageHeaderMatch[1])
+          logger.log(coverageHeaderMatch[1]);
           // All files row
-          logger.log(allFilesMatch[0])
+          logger.log(allFilesMatch[0]);
           // Bottom border
-          logger.log(coverageHeaderMatch[1])
-          logger.log('')
+          logger.log(coverageHeaderMatch[1]);
+          logger.log("");
         }
 
         // Display type coverage and cumulative summary
         if (typeCoverageMatch) {
-          const codeCoveragePercent = Number.parseFloat(allFilesMatch[1])
-          const typeCoveragePercent = Number.parseFloat(typeCoverageMatch[1])
-          const cumulativePercent = (
-            (codeCoveragePercent + typeCoveragePercent) /
-            2
-          ).toFixed(2)
+          const codeCoveragePercent = Number.parseFloat(allFilesMatch[1]);
+          const typeCoveragePercent = Number.parseFloat(typeCoverageMatch[1]);
+          const cumulativePercent = ((codeCoveragePercent + typeCoveragePercent) / 2).toFixed(2);
 
-          logger.log(' Coverage Summary')
-          logger.log(' ───────────────────────────────')
-          logger.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`)
-          logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`)
-          logger.log(' ───────────────────────────────')
-          logger.log(` Cumulative:    ${cumulativePercent}%`)
-          logger.log('')
+          logger.log(" Coverage Summary");
+          logger.log(" ───────────────────────────────");
+          logger.log(` Type Coverage: ${typeCoveragePercent.toFixed(2)}%`);
+          logger.log(` Code Coverage: ${codeCoveragePercent.toFixed(2)}%`);
+          logger.log(" ───────────────────────────────");
+          logger.log(` Cumulative:    ${cumulativePercent}%`);
+          logger.log("");
         }
       }
     }
 
     if (exitCode !== 0) {
       if (!quiet) {
-        printError('Coverage failed')
+        printError("Coverage failed");
         // Show relevant output on failure for debugging
         if (!testSummaryMatch && !coverageHeaderMatch) {
-          logger.log('')
-          logger.log('--- Output ---')
-          logger.log(output)
+          logger.log("");
+          logger.log("--- Output ---");
+          logger.log(output);
         }
       }
-      process.exitCode = 1
+      process.exitCode = 1;
     } else {
       if (!quiet) {
-        printSuccess('Coverage completed successfully')
+        printSuccess("Coverage completed successfully");
 
         // Open coverage report if requested
         if (open) {
-          logger.info('Opening coverage report...')
-          await spawn('open', ['coverage/index.html'], {
+          logger.info("Opening coverage report…");
+          await spawn("open", ["coverage/index.html"], {
             shell: WIN32,
-            stdio: 'ignore',
-          })
+            stdio: "ignore",
+          });
         }
       }
     }
   } catch (e) {
     if (!quiet) {
-      printError(`Coverage failed: ${e.message}`)
+      printError(`Coverage failed: ${e.message}`);
     }
     if (verbose) {
-      logger.error(e)
+      logger.error(e);
     }
-    process.exitCode = 1
+    process.exitCode = 1;
   }
 }
 
-main().catch(e => {
-  logger.error(e)
-  process.exitCode = 1
-})
+main().catch((e) => {
+  logger.error(e);
+  process.exitCode = 1;
+});

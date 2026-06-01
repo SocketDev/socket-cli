@@ -1,25 +1,24 @@
-import path from 'node:path'
+import path from "node:path";
 
-import { handleManifestSetup } from './handle-manifest-setup.mts'
-import { SOCKET_JSON } from '../../constants/socket.mts'
-import { outputDryRunWrite } from '../../util/dry-run/output.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { handleManifestSetup } from "./handle-manifest-setup.mts";
+import { SOCKET_JSON } from "../../constants/socket.mts";
+import { outputDryRunWrite } from "../../util/dry-run/output.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagListOutput } from "../../util/output/formatting.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
 const config = {
-  commandName: 'setup',
+  commandName: "setup",
   description:
-    'Start interactive configurator to customize default flag values for `socket manifest` in this dir',
-  hidden: false,
+    "Start interactive configurator to customize default flag values for `socket manifest` in this dir",
   flags: defineFlags({
     ...commonFlags,
     defaultOnReadError: {
-      type: 'boolean',
+      type: "boolean",
       description: `If reading the ${SOCKET_JSON} fails, just use a default config? Warning: This might override the existing json file!`,
     },
   }),
@@ -53,13 +52,14 @@ const config = {
       $ ${command}
       $ ${command} ./proj
   `,
-}
+  hidden: false,
+};
 
 export const cmdManifestSetup = {
   description: config.description,
   hidden: config.hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -71,29 +71,25 @@ export async function run(
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const { defaultOnReadError = false } = cli.flags
-  const dryRun = !!cli.flags['dryRun']
+  const { defaultOnReadError = false } = cli.flags;
+  const dryRun = !!cli.flags["dryRun"];
 
-  let [cwd = '.'] = cli.input
+  let [cwd = "."] = cli.input;
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
+  cwd = path.resolve(process.cwd(), cwd);
 
   if (dryRun) {
-    const socketJsonPath = path.join(cwd, SOCKET_JSON)
-    outputDryRunWrite(
-      socketJsonPath,
-      'create or update manifest configuration',
-      [
-        'Detect supported ecosystems',
-        'Configure manifest generation defaults',
-        'Enable/disable specific ecosystems',
-      ],
-    )
-    return
+    const socketJsonPath = path.join(cwd, SOCKET_JSON);
+    outputDryRunWrite(socketJsonPath, "create or update manifest configuration", [
+      "Detect supported ecosystems",
+      "Configure manifest generation defaults",
+      "Enable/disable specific ecosystems",
+    ]);
+    return;
   }
 
-  await handleManifestSetup(cwd, Boolean(defaultOnReadError))
+  await handleManifestSetup(cwd, Boolean(defaultOnReadError));
 }

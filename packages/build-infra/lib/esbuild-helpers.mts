@@ -25,4 +25,4 @@
  */
 export const IMPORT_META_URL_BANNER = {
   js: 'const __importMetaUrl = require("node:url").pathToFileURL(__filename).href;',
-}
+};

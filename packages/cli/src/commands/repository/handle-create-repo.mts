@@ -1,9 +1,9 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { debug, debugDir } from "@socketsecurity/lib-stable/debug/output";
 
-import { fetchCreateRepo } from './fetch-create-repo.mts'
-import { outputCreateRepo } from './output-create-repo.mts'
+import { fetchCreateRepo } from "./fetch-create-repo.mts";
+import { outputCreateRepo } from "./output-create-repo.mts";
 
-import type { OutputKind } from '../../types.mts'
+import type { OutputKind } from "../../types.mts";
 
 export async function handleCreateRepo(
   {
@@ -14,16 +14,16 @@ export async function handleCreateRepo(
     repoName,
     visibility,
   }: {
-    orgSlug: string
-    repoName: string
-    description: string
-    homepage: string
-    defaultBranch: string
-    visibility: 'private' | 'public'
+    orgSlug: string;
+    repoName: string;
+    description: string;
+    homepage: string;
+    defaultBranch: string;
+    visibility: "private" | "public";
   },
   outputKind: OutputKind,
 ): Promise<void> {
-  debug(`Creating repository ${orgSlug}/${repoName}`)
+  debug(`Creating repository ${orgSlug}/${repoName}`);
   debugDir({
     defaultBranch,
     description,
@@ -32,7 +32,7 @@ export async function handleCreateRepo(
     repoName,
     visibility,
     outputKind,
-  })
+  });
 
   const data = await fetchCreateRepo(
     {
@@ -44,12 +44,12 @@ export async function handleCreateRepo(
       visibility,
     },
     {
-      commandPath: 'socket repository create',
+      commandPath: "socket repository create",
     },
-  )
+  );
 
-  debug(`Repository creation ${data.ok ? 'succeeded' : 'failed'}`)
-  debugDir({ data })
+  debug(`Repository creation ${data.ok ? "succeeded" : "failed"}`);
+  debugDir({ data });
 
-  outputCreateRepo(data, repoName, outputKind)
+  outputCreateRepo(data, repoName, outputKind);
 }

@@ -20,102 +20,102 @@
  * scripts/wasm.mts --help.
  */
 
-import { existsSync, promises as fs } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync, promises as fs } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
-const externalDir = path.join(rootPath, 'external')
-const outputFile = path.join(externalDir, 'socket-ai-sync.mjs')
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootPath = path.join(__dirname, "..");
+const externalDir = path.join(rootPath, "external");
+const outputFile = path.join(externalDir, "socket-ai-sync.mjs");
 
-const GITHUB_REPO = 'SocketDev/socket-cli'
-const WASM_ASSET_NAME = 'socket-ai-sync.mjs'
+const GITHUB_REPO = "SocketDev/socket-cli";
+const WASM_ASSET_NAME = "socket-ai-sync.mjs";
 
 /**
  * Build WASM bundle from source.
  */
 async function buildWasm() {
-  const isDev = process.argv.includes('--dev')
+  const isDev = process.argv.includes("--dev");
 
-  logger.info('╔═══════════════════════════════════════════════════╗')
+  logger.info("╔═══════════════════════════════════════════════════╗");
   if (isDev) {
-    logger.info('║   Building WASM Bundle (Dev Mode)                ║')
-    logger.info('║   3-5x faster builds with minimal optimization   ║')
+    logger.info("║   Building WASM Bundle (Dev Mode)                ║");
+    logger.info("║   3-5x faster builds with minimal optimization   ║");
   } else {
-    logger.info('║   Building WASM Bundle from Source               ║')
+    logger.info("║   Building WASM Bundle from Source               ║");
   }
-  logger.info('╚═══════════════════════════════════════════════════╝')
-  logger.error('')
+  logger.info("╚═══════════════════════════════════════════════════╝");
+  logger.error("");
 
-  const convertScript = path.join(__dirname, 'wasm', 'convert-codet5.mts')
-  const buildScript = path.join(__dirname, 'wasm', 'build-unified-wasm.mts')
+  const convertScript = path.join(__dirname, "wasm", "convert-codet5.mts");
+  const buildScript = path.join(__dirname, "wasm", "build-unified-wasm.mts");
 
   // Step 1: Convert CodeT5 models to INT4.
-  logger.info('Step 1: Converting CodeT5 models to ONNX INT4...')
-  logger.error('')
+  logger.info("Step 1: Converting CodeT5 models to ONNX INT4…");
+  logger.error("");
   try {
-    await exec('node', [convertScript], { stdio: 'inherit' })
+    await exec("node", [convertScript], { stdio: "inherit" });
   } catch (e) {
-    logger.error('')
-    logger.fail('❌ CodeT5 conversion failed')
-    logger.error(`Error: ${e.message}`)
-    throw new Error('CodeT5 conversion failed')
+    logger.error("");
+    logger.fail("❌ CodeT5 conversion failed");
+    logger.error(`Error: ${e.message}`);
+    throw new Error("CodeT5 conversion failed");
   }
 
   // Step 2: Build unified WASM bundle.
-  logger.error('')
-  logger.info('Step 2: Building unified WASM bundle...')
-  logger.error('')
+  logger.error("");
+  logger.info("Step 2: Building unified WASM bundle…");
+  logger.error("");
   try {
-    const buildArgs = [buildScript]
+    const buildArgs = [buildScript];
     if (isDev) {
-      buildArgs.push('--dev')
+      buildArgs.push("--dev");
     }
-    await exec('node', buildArgs, { stdio: 'inherit' })
+    await exec("node", buildArgs, { stdio: "inherit" });
   } catch (e) {
-    logger.error('')
-    logger.fail('❌ WASM bundle build failed')
-    logger.error(`Error: ${e.message}`)
-    throw new Error('WASM bundle build failed')
+    logger.error("");
+    logger.fail("❌ WASM bundle build failed");
+    logger.error(`Error: ${e.message}`);
+    throw new Error("WASM bundle build failed");
   }
 
   // Verify output file exists.
   if (!existsSync(outputFile)) {
-    logger.error('')
-    logger.fail(`❌ Output file not found: ${outputFile}`)
-    throw new Error(`Output file not found: ${outputFile}`)
+    logger.error("");
+    logger.fail(`❌ Output file not found: ${outputFile}`);
+    throw new Error(`Output file not found: ${outputFile}`);
   }
 
-  const stats = await fs.stat(outputFile)
-  logger.error('')
-  logger.info('╔═══════════════════════════════════════════════════╗')
-  logger.info('║   Build Complete                                  ║')
-  logger.info('╚═══════════════════════════════════════════════════╝')
-  logger.error('')
-  logger.done(' WASM bundle built successfully')
-  logger.info(`✓ Output: ${outputFile}`)
-  logger.info(`✓ Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
-  logger.error('')
+  const stats = await fs.stat(outputFile);
+  logger.error("");
+  logger.info("╔═══════════════════════════════════════════════════╗");
+  logger.info("║   Build Complete                                  ║");
+  logger.info("╚═══════════════════════════════════════════════════╝");
+  logger.error("");
+  logger.done(" WASM bundle built successfully");
+  logger.info(`✓ Output: ${outputFile}`);
+  logger.info(`✓ Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+  logger.error("");
 }
 
 /**
  * Check Node.js version requirement.
  */
 function checkNodeVersion() {
-  const nodeVersion = process.versions.node
-  const major = Number.parseInt(nodeVersion.split('.')[0], 10)
+  const nodeVersion = process.versions.node;
+  const major = Number.parseInt(nodeVersion.split(".")[0], 10);
 
   if (major < 18) {
-    logger.error(' Node.js version 18 or higher is required')
-    logger.error(`Current version: ${nodeVersion}`)
-    logger.error('Please upgrade: https://nodejs.org/')
-    throw new Error('Node.js version 18 or higher is required')
+    logger.error(" Node.js version 18 or higher is required");
+    logger.error(`Current version: ${nodeVersion}`);
+    logger.error("Please upgrade: https://nodejs.org/");
+    throw new Error("Node.js version 18 or higher is required");
   }
 }
 
@@ -123,39 +123,39 @@ function checkNodeVersion() {
  * Download file with progress.
  */
 export async function downloadFile(url, outputPath, expectedSize) {
-  logger.progress(' Downloading from GitHub...')
-  logger.substep(`URL: ${url}`)
-  logger.substep(`Size: ${(expectedSize / 1024 / 1024).toFixed(2)} MB`)
-  logger.error('')
+  logger.progress(" Downloading from GitHub…");
+  logger.substep(`URL: ${url}`);
+  logger.substep(`Size: ${(expectedSize / 1024 / 1024).toFixed(2)} MB`);
+  logger.error("");
 
   try {
     // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- needs response.arrayBuffer() to write binary WASM bundle; helpers only return decoded string/json.
     const response = await fetch(url, {
       headers: {
-        Accept: 'application/octet-stream',
-        'User-Agent': 'socket-cli-wasm-downloader',
+        Accept: "application/octet-stream",
+        "User-Agent": "socket-cli-wasm-downloader",
       },
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Download failed: ${response.statusText}`)
+      throw new Error(`Download failed: ${response.statusText}`);
     }
 
-    const buffer = await response.arrayBuffer()
-    await fs.writeFile(outputPath, Buffer.from(buffer))
+    const buffer = await response.arrayBuffer();
+    await fs.writeFile(outputPath, Buffer.from(buffer));
 
-    const stats = await fs.stat(outputPath)
-    logger.info(`✓ Downloaded ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
-    logger.info(`✓ Saved to ${outputPath}`)
-    logger.error('')
+    const stats = await fs.stat(outputPath);
+    logger.info(`✓ Downloaded ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+    logger.info(`✓ Saved to ${outputPath}`);
+    logger.error("");
   } catch (e) {
-    logger.error(' Download failed')
-    logger.error(`Error: ${e.message}`)
-    logger.error('')
-    logger.error('Try building from source instead:')
-    logger.error('node scripts/wasm.mts --build')
-    logger.error('')
-    throw new Error('Download failed')
+    logger.error(" Download failed");
+    logger.error(`Error: ${e.message}`);
+    logger.error("");
+    logger.error("Try building from source instead:");
+    logger.error("node scripts/wasm.mts --build");
+    logger.error("");
+    throw new Error("Download failed");
   }
 }
 
@@ -163,54 +163,54 @@ export async function downloadFile(url, outputPath, expectedSize) {
  * Download pre-built WASM bundle from GitHub releases.
  */
 async function downloadWasm() {
-  logger.info('╔═══════════════════════════════════════════════════╗')
-  logger.info('║   Downloading Pre-built WASM Bundle               ║')
-  logger.info('╚═══════════════════════════════════════════════════╝')
-  logger.error('')
+  logger.info("╔═══════════════════════════════════════════════════╗");
+  logger.info("║   Downloading Pre-built WASM Bundle               ║");
+  logger.info("╚═══════════════════════════════════════════════════╝");
+  logger.error("");
 
   // Check if output file already exists.
   if (existsSync(outputFile)) {
-    const stats = await fs.stat(outputFile)
-    logger.warn(' WASM bundle already exists:')
-    logger.substep(`${outputFile}`)
-    logger.substep(`Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
-    logger.error('')
+    const stats = await fs.stat(outputFile);
+    logger.warn(" WASM bundle already exists:");
+    logger.substep(`${outputFile}`);
+    logger.substep(`Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+    logger.error("");
 
     // Ask user if they want to overwrite (simple y/n).
-    logger.info('Overwrite? (y/N): ')
-    const answer = await new Promise(resolve => {
-      process.stdin.once('data', data => {
-        resolve(data.toString().trim().toLowerCase())
-      })
-    })
+    logger.info("Overwrite? (y/N): ");
+    const answer = await new Promise((resolve) => {
+      process.stdin.once("data", (data) => {
+        resolve(data.toString().trim().toLowerCase());
+      });
+    });
 
-    if (answer !== 'y' && answer !== 'yes') {
-      logger.success('Keeping existing file')
-      return
+    if (answer !== "y" && answer !== "yes") {
+      logger.success("Keeping existing file");
+      return;
     }
 
-    logger.info()
+    logger.info();
   }
 
   // Get latest release info.
-  const release = await getLatestWasmRelease()
-  logger.info(`✓ Found release: ${release.name}`)
-  logger.substep(`Tag: ${release.tagName}`)
-  logger.error('')
+  const release = await getLatestWasmRelease();
+  logger.info(`✓ Found release: ${release.name}`);
+  logger.substep(`Tag: ${release.tagName}`);
+  logger.error("");
 
   // Ensure output directory exists.
-  await fs.mkdir(externalDir, { recursive: true })
+  await fs.mkdir(externalDir, { recursive: true });
 
   // Download the file.
-  await downloadFile(release.url, outputFile, release.asset.size)
+  await downloadFile(release.url, outputFile, release.asset.size);
 
-  logger.info('╔═══════════════════════════════════════════════════╗')
-  logger.info('║   Download Complete                               ║')
-  logger.info('╚═══════════════════════════════════════════════════╝')
-  logger.error('')
-  logger.done(' WASM bundle downloaded successfully')
-  logger.info(`✓ Output: ${outputFile}`)
-  logger.error('')
+  logger.info("╔═══════════════════════════════════════════════════╗");
+  logger.info("║   Download Complete                               ║");
+  logger.info("╚═══════════════════════════════════════════════════╝");
+  logger.error("");
+  logger.done(" WASM bundle downloaded successfully");
+  logger.info(`✓ Output: ${outputFile}`);
+  logger.error("");
 }
 
 /**
@@ -218,83 +218,77 @@ async function downloadWasm() {
  */
 export async function exec(command, args, options = {}) {
   const result = await spawn(command, args, {
-    stdio: options.stdio || 'pipe',
+    stdio: options.stdio || "pipe",
     stdioString: true,
     stripAnsi: false,
     ...options,
-  })
+  });
 
   if (result.code !== 0) {
-    throw new Error(`Command failed with exit code ${result.code}`)
+    throw new Error(`Command failed with exit code ${result.code}`);
   }
 
   return {
     code: result.code ?? 0,
-    stderr: result.stderr ?? '',
-    stdout: result.stdout ?? '',
-  }
+    stderr: result.stderr ?? "",
+    stdout: result.stdout ?? "",
+  };
 }
 
 /**
  * Get latest WASM build release from GitHub.
  */
 async function getLatestWasmRelease() {
-  logger.info('📡 Fetching latest WASM build from GitHub...')
-  logger.error('')
+  logger.info("📡 Fetching latest WASM build from GitHub…");
+  logger.error("");
 
   try {
-    const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/releases`
+    const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/releases`;
     // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- dev script wants response.statusText in diagnostic error; helpers throw HttpError without that exact field.
     const response = await fetch(apiUrl, {
       headers: {
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'socket-cli-wasm-downloader',
+        Accept: "application/vnd.github+json",
+        "User-Agent": "socket-cli-wasm-downloader",
       },
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`GitHub API request failed: ${response.statusText}`)
+      throw new Error(`GitHub API request failed: ${response.statusText}`);
     }
 
-    const releases = await response.json()
+    const releases = await response.json();
 
     // Validate API response structure.
     if (!Array.isArray(releases) || releases.length === 0) {
-      throw new Error(
-        'Invalid API response: expected non-empty array of releases',
-      )
+      throw new Error("Invalid API response: expected non-empty array of releases");
     }
 
     // Find the latest WASM build release (tagged with wasm-build-*).
-    const wasmRelease = releases.find(r =>
-      r?.tag_name?.startsWith('wasm-build-'),
-    )
+    const wasmRelease = releases.find((r) => r?.tag_name?.startsWith("wasm-build-"));
 
     if (!wasmRelease) {
-      throw new Error('No WASM build releases found')
+      throw new Error("No WASM build releases found");
     }
 
     if (!wasmRelease.tag_name) {
-      throw new Error('Invalid release data: missing tag_name')
+      throw new Error("Invalid release data: missing tag_name");
     }
 
     if (!Array.isArray(wasmRelease.assets)) {
-      throw new Error(`Release ${wasmRelease.tag_name} has no assets`)
+      throw new Error(`Release ${wasmRelease.tag_name} has no assets`);
     }
 
     // Find the asset.
-    const asset = wasmRelease.assets.find(a => a?.name === WASM_ASSET_NAME)
+    const asset = wasmRelease.assets.find((a) => a?.name === WASM_ASSET_NAME);
 
     if (!asset) {
-      throw new Error(
-        `Asset "${WASM_ASSET_NAME}" not found in release ${wasmRelease.tag_name}`,
-      )
+      throw new Error(`Asset "${WASM_ASSET_NAME}" not found in release ${wasmRelease.tag_name}`);
     }
 
     if (!asset.browser_download_url) {
       throw new Error(
         `Asset "${WASM_ASSET_NAME}" missing browser_download_url in release ${wasmRelease.tag_name}`,
-      )
+      );
     }
 
     return {
@@ -302,15 +296,15 @@ async function getLatestWasmRelease() {
       name: wasmRelease.name,
       tagName: wasmRelease.tag_name,
       url: asset.browser_download_url,
-    }
+    };
   } catch (e) {
-    logger.error(' Failed to fetch release information')
-    logger.error(`Error: ${e.message}`)
-    logger.error('')
-    logger.error('Try building from source instead:')
-    logger.error('node scripts/wasm.mts --build')
-    logger.error('')
-    throw new Error('Failed to fetch release information')
+    logger.error(" Failed to fetch release information");
+    logger.error(`Error: ${e.message}`);
+    logger.error("");
+    logger.error("Try building from source instead:");
+    logger.error("node scripts/wasm.mts --build");
+    logger.error("");
+    throw new Error("Failed to fetch release information");
   }
 }
 
@@ -368,7 +362,7 @@ Notes:
   - The WASM bundle contains all AI models with INT4 quantization
   - INT4 provides 50% size reduction with only 1-2% quality loss
   - Output location: external/socket-ai-sync.mjs (~115MB)
-`)
+`);
 }
 
 /**
@@ -376,32 +370,32 @@ Notes:
  */
 async function main() {
   // Check Node.js version first.
-  checkNodeVersion()
+  checkNodeVersion();
 
-  const args = process.argv.slice(2)
+  const args = process.argv.slice(2);
 
-  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
-    showHelp()
-    return
+  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
+    showHelp();
+    return;
   }
 
-  if (args.includes('--build')) {
-    await buildWasm()
-    return
+  if (args.includes("--build")) {
+    await buildWasm();
+    return;
   }
 
-  if (args.includes('--download')) {
-    await downloadWasm()
-    return
+  if (args.includes("--download")) {
+    await downloadWasm();
+    return;
   }
 
-  logger.error(' Unknown command')
-  logger.error('')
-  showHelp()
-  throw new Error('Unknown command')
+  logger.error(" Unknown command");
+  logger.error("");
+  showHelp();
+  throw new Error("Unknown command");
 }
 
-main().catch(e => {
-  logger.error(' Unexpected error:', e)
-  process.exitCode = 1
-})
+main().catch((e) => {
+  logger.error(" Unexpected error:", e);
+  process.exitCode = 1;
+});

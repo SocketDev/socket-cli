@@ -29,10 +29,11 @@ The hook fires on Edit/Write to `pnpm-workspace.yaml` when the
 edit adds an entry under `minimumReleaseAgeExclude:` whose package
 name is NOT scoped to one of:
 
-    @socketsecurity/*
-    @socketregistry/*
-    @socketbin/*
     @socketaddon/*
+    @socketbin/*
+    @socketregistry/*
+    @socketsecurity/*
+    @stuie/*
 
 Both glob-form (`@socketsecurity/*`) and exact-pin form
 (`@socketsecurity/lib@6.0.0`) are accepted; the hook splits on

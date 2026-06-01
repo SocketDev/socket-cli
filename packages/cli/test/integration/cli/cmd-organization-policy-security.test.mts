@@ -14,29 +14,20 @@
  * src/commands/organization/handle-organization-policy-security.mts - Logic.
  */
 
-import { describe, expect } from 'vitest'
+import { describe, expect } from "vitest";
 
-import {
-  FLAG_CONFIG,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-  FLAG_ORG,
-} from '../../../src/constants/cli.mts'
-import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { cmdit, spawnSocketCli } from '../../utils.mts'
+import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_ORG } from "../../../src/constants/cli.mts";
+import { getBinCliPath } from "../../../src/constants/paths.mts";
+import { cmdit, spawnSocketCli } from "../../utils.mts";
 
-const binCliPath = getBinCliPath()
+const binCliPath = getBinCliPath();
 
-describe('socket organization policy security', async () => {
+describe("socket organization policy security", async () => {
   cmdit(
-    ['organization', 'policy', 'security', FLAG_HELP, FLAG_CONFIG, '{}'],
+    ["organization", "policy", "security", FLAG_HELP, FLAG_CONFIG, "{}"],
     `should support ${FLAG_HELP}`,
-    async cmd => {
-      const {
-        code: _code,
-        stderr,
-        stdout,
-      } = await spawnSocketCli(binCliPath, cmd)
+    async (cmd) => {
+      const { code: _code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
       expect(stdout).toMatchInlineSnapshot(`
         "Retrieve the security policy of an organization
 
@@ -59,28 +50,28 @@ describe('socket organization policy security', async () => {
               Examples
                 $ socket organization policy security
                 $ socket organization policy security --json"
-      `)
+      `);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>"
-      `)
+      `);
 
       //expect(code, 'explicit help should exit with code 0').toBe(0)
-      expect(stderr, 'banner includes base command').toContain(
-        '`socket organization policy security`',
-      )
+      expect(stderr, "banner includes base command").toContain(
+        "`socket organization policy security`",
+      );
     },
-  )
+  );
 
   cmdit(
-    ['organization', 'policy', 'security', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
-    'should reject dry run without proper args',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
+    ["organization", "policy", "security", FLAG_DRY_RUN, FLAG_CONFIG, "{}"],
+    "should reject dry run without proper args",
+    async (cmd) => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`""`);
       // expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       //   "
       //      _____         _       _        /---------------
@@ -98,59 +89,59 @@ describe('socket organization policy security', async () => {
       //   "
       // `)
 
-      expect(code, 'dry-run should exit with code 2 if input bad').toBe(2)
+      expect(code, "dry-run should exit with code 2 if input bad").toBe(2);
     },
-  )
+  );
 
   cmdit(
     [
-      'organization',
-      'policy',
-      'security',
+      "organization",
+      "policy",
+      "security",
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"isTestingV1": true, "apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
-    'should accept default org in v1',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    "should accept default org in v1",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>"
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
     },
-  )
+  );
 
   cmdit(
     [
-      'organization',
-      'policy',
-      'security',
+      "organization",
+      "policy",
+      "security",
       FLAG_ORG,
-      'forcedorg',
+      "forcedorg",
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"isTestingV1": true, "apiToken":"fakeToken"}',
     ],
-    'should accept --org flag in v1',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    "should accept --org flag in v1",
+    async (cmd) => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>"
-      `)
+      `);
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
     },
-  )
-})
+  );
+});

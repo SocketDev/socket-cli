@@ -7,27 +7,27 @@ concurrency:
 on:
   push:
     branches: [main]
-    tags: ['*']
+    tags: ["*"]
     paths:
-      - 'packages/cli/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - '.github/workflows/ci.yml'
+      - "packages/cli/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/ci.yml"
   pull_request:
     branches: [main]
     paths:
-      - 'packages/cli/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - '.github/workflows/ci.yml'
+      - "packages/cli/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/ci.yml"
   workflow_dispatch:
     inputs:
       force:
-        description: 'Force rebuild (ignore cache)'
+        description: "Force rebuild (ignore cache)"
         type: boolean
         default: false
       node-versions:
-        description: 'Node.js versions to test (JSON array)'
+        description: "Node.js versions to test (JSON array)"
         required: false
         type: string
         # Default should match .node-version file.
@@ -110,7 +110,7 @@ jobs:
 
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@bb4bb872b58d7c97f828caea595ff534b78c507b # main (2026-05-15)
         with:
-          checkout: 'false'
+          checkout: "false"
 
       - name: Run lint
         shell: bash
@@ -169,7 +169,7 @@ jobs:
 
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@bb4bb872b58d7c97f828caea595ff534b78c507b # main (2026-05-15)
         with:
-          checkout: 'false'
+          checkout: "false"
 
       - name: Run type check
         shell: bash
@@ -235,7 +235,7 @@ jobs:
 
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@bb4bb872b58d7c97f828caea595ff534b78c507b # main (2026-05-15)
         with:
-          checkout: 'false'
+          checkout: "false"
           node-version: ${{ matrix.node-version }}
 
       - name: Build CLI
@@ -318,7 +318,7 @@ jobs:
 
       - uses: SocketDev/socket-registry/.github/actions/setup-and-install@bb4bb872b58d7c97f828caea595ff534b78c507b # main (2026-05-15)
         with:
-          checkout: 'false'
+          checkout: "false"
           node-version: ${{ matrix.node-version }}
 
       - name: Build CLI

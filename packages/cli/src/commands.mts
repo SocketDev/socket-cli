@@ -1,52 +1,52 @@
 #!/usr/bin/env node
 
-import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
-import { cmdAsk } from './commands/ask/cmd-ask.mts'
-import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
-import { cmdBundler } from './commands/bundler/cmd-bundler.mts'
-import { cmdCargo } from './commands/cargo/cmd-cargo.mts'
-import { cmdCI } from './commands/ci/cmd-ci.mts'
-import { cmdConfig } from './commands/config/cmd-config.mts'
-import { cmdFix } from './commands/fix/cmd-fix.mts'
-import { cmdGem } from './commands/gem/cmd-gem.mts'
-import { cmdGo } from './commands/go/cmd-go.mts'
-import { cmdInstall } from './commands/install/cmd-install.mts'
-import { cmdJson } from './commands/json/cmd-json.mts'
-import { cmdLogin } from './commands/login/cmd-login.mts'
-import { cmdLogout } from './commands/logout/cmd-logout.mts'
-import { cmdManifestCdxgen } from './commands/manifest/cmd-manifest-cdxgen.mts'
-import { cmdManifest } from './commands/manifest/cmd-manifest.mts'
-import { cmdMcp } from './commands/mcp/cmd-mcp.mts'
-import { cmdNpm } from './commands/npm/cmd-npm.mts'
-import { cmdNpx } from './commands/npx/cmd-npx.mts'
-import { cmdNuget } from './commands/nuget/cmd-nuget.mts'
-import { cmdOops } from './commands/oops/cmd-oops.mts'
-import { cmdOptimize } from './commands/optimize/cmd-optimize.mts'
-import { cmdOrganizationDependencies } from './commands/organization/cmd-organization-dependencies.mts'
-import { cmdOrganizationPolicyLicense } from './commands/organization/cmd-organization-policy-license.mts'
-import { cmdOrganizationPolicySecurity } from './commands/organization/cmd-organization-policy-security.mts'
-import { cmdOrganization } from './commands/organization/cmd-organization.mts'
-import { cmdPackage } from './commands/package/cmd-package.mts'
-import { cmdPatch } from './commands/patch/cmd-patch.mts'
-import { cmdPip } from './commands/pip/cmd-pip.mts'
-import { cmdPnpm } from './commands/pnpm/cmd-pnpm.mts'
-import { cmdPyCli } from './commands/pycli/cmd-pycli.mts'
-import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
-import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx.mts'
-import { cmdRepository } from './commands/repository/cmd-repository.mts'
-import { cmdScan } from './commands/scan/cmd-scan.mts'
-import { cmdSfw } from './commands/sfw/cmd-sfw.mts'
-import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
-import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
-import { cmdUv } from './commands/uv/cmd-uv.mts'
-import { cmdWhoami } from './commands/whoami/cmd-whoami.mts'
-import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
-import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
+import { cmdAnalytics } from "./commands/analytics/cmd-analytics.mts";
+import { cmdAsk } from "./commands/ask/cmd-ask.mts";
+import { cmdAuditLog } from "./commands/audit-log/cmd-audit-log.mts";
+import { cmdBundler } from "./commands/bundler/cmd-bundler.mts";
+import { cmdCargo } from "./commands/cargo/cmd-cargo.mts";
+import { cmdCI } from "./commands/ci/cmd-ci.mts";
+import { cmdConfig } from "./commands/config/cmd-config.mts";
+import { cmdFix } from "./commands/fix/cmd-fix.mts";
+import { cmdGem } from "./commands/gem/cmd-gem.mts";
+import { cmdGo } from "./commands/go/cmd-go.mts";
+import { cmdInstall } from "./commands/install/cmd-install.mts";
+import { cmdJson } from "./commands/json/cmd-json.mts";
+import { cmdLogin } from "./commands/login/cmd-login.mts";
+import { cmdLogout } from "./commands/logout/cmd-logout.mts";
+import { cmdManifestCdxgen } from "./commands/manifest/cmd-manifest-cdxgen.mts";
+import { cmdManifest } from "./commands/manifest/cmd-manifest.mts";
+import { cmdMcp } from "./commands/mcp/cmd-mcp.mts";
+import { cmdNpm } from "./commands/npm/cmd-npm.mts";
+import { cmdNpx } from "./commands/npx/cmd-npx.mts";
+import { cmdNuget } from "./commands/nuget/cmd-nuget.mts";
+import { cmdOops } from "./commands/oops/cmd-oops.mts";
+import { cmdOptimize } from "./commands/optimize/cmd-optimize.mts";
+import { cmdOrganizationDependencies } from "./commands/organization/cmd-organization-dependencies.mts";
+import { cmdOrganizationPolicyLicense } from "./commands/organization/cmd-organization-policy-license.mts";
+import { cmdOrganizationPolicySecurity } from "./commands/organization/cmd-organization-policy-security.mts";
+import { cmdOrganization } from "./commands/organization/cmd-organization.mts";
+import { cmdPackage } from "./commands/package/cmd-package.mts";
+import { cmdPatch } from "./commands/patch/cmd-patch.mts";
+import { cmdPip } from "./commands/pip/cmd-pip.mts";
+import { cmdPnpm } from "./commands/pnpm/cmd-pnpm.mts";
+import { cmdPyCli } from "./commands/pycli/cmd-pycli.mts";
+import { cmdRawNpm } from "./commands/raw-npm/cmd-raw-npm.mts";
+import { cmdRawNpx } from "./commands/raw-npx/cmd-raw-npx.mts";
+import { cmdRepository } from "./commands/repository/cmd-repository.mts";
+import { cmdScan } from "./commands/scan/cmd-scan.mts";
+import { cmdSfw } from "./commands/sfw/cmd-sfw.mts";
+import { cmdThreatFeed } from "./commands/threat-feed/cmd-threat-feed.mts";
+import { cmdUninstall } from "./commands/uninstall/cmd-uninstall.mts";
+import { cmdUv } from "./commands/uv/cmd-uv.mts";
+import { cmdWhoami } from "./commands/whoami/cmd-whoami.mts";
+import { cmdWrapper } from "./commands/wrapper/cmd-wrapper.mts";
+import { cmdYarn } from "./commands/yarn/cmd-yarn.mts";
 
 export const rootCommands = {
   analytics: cmdAnalytics,
   ask: cmdAsk,
-  'audit-log': cmdAuditLog,
+  "audit-log": cmdAuditLog,
   bundler: cmdBundler,
   cargo: cmdCargo,
   cdxgen: cmdManifestCdxgen,
@@ -74,19 +74,19 @@ export const rootCommands = {
   pip: cmdPip,
   pnpm: cmdPnpm,
   pycli: cmdPyCli,
-  'raw-npm': cmdRawNpm,
-  'raw-npx': cmdRawNpx,
+  "raw-npm": cmdRawNpm,
+  "raw-npx": cmdRawNpx,
   repository: cmdRepository,
   scan: cmdScan,
   security: cmdOrganizationPolicySecurity,
   sfw: cmdSfw,
-  'threat-feed': cmdThreatFeed,
+  "threat-feed": cmdThreatFeed,
   uninstall: cmdUninstall,
   uv: cmdUv,
   whoami: cmdWhoami,
   wrapper: cmdWrapper,
   yarn: cmdYarn,
-}
+};
 
 /**
  * Bucket assignments for the `socket --help` layout.
@@ -104,127 +104,127 @@ export const rootCommands = {
  * `rootCommands` would be a compile error (TypeScript narrows the keys). - A
  * command in `rootCommands` but not here = unbucketed, which is a valid state.
  */
-type RootCommandBucket = 'main' | 'api' | 'tools' | 'config'
+type RootCommandBucket = "main" | "api" | "tools" | "config";
 
 export const rootCommandBuckets: Readonly<
   Partial<Record<keyof typeof rootCommands, RootCommandBucket>>
 > = {
   // Main commands — the "hero" actions surfaced first in `socket --help`.
-  fix: 'main',
-  optimize: 'main',
-  cdxgen: 'main',
-  ci: 'main',
+  fix: "main",
+  optimize: "main",
+  cdxgen: "main",
+  ci: "main",
   // Socket API — commands that hit the Socket.dev REST API.
-  analytics: 'api',
-  'audit-log': 'api',
-  organization: 'api',
-  package: 'api',
-  repository: 'api',
-  scan: 'api',
-  'threat-feed': 'api',
+  analytics: "api",
+  "audit-log": "api",
+  organization: "api",
+  package: "api",
+  repository: "api",
+  scan: "api",
+  "threat-feed": "api",
   // Local tools — commands that wrap a local toolchain (npm, pip, …)
   // or operate on the local filesystem without API calls.
-  manifest: 'tools',
-  npm: 'tools',
-  npx: 'tools',
-  pycli: 'tools',
-  'raw-npm': 'tools',
-  'raw-npx': 'tools',
-  sfw: 'tools',
+  manifest: "tools",
+  npm: "tools",
+  npx: "tools",
+  pycli: "tools",
+  "raw-npm": "tools",
+  "raw-npx": "tools",
+  sfw: "tools",
   // CLI configuration — login / logout / install / etc.
-  config: 'config',
-  install: 'config',
-  login: 'config',
-  logout: 'config',
-  uninstall: 'config',
-  whoami: 'config',
-  wrapper: 'config',
-}
+  config: "config",
+  install: "config",
+  login: "config",
+  logout: "config",
+  uninstall: "config",
+  whoami: "config",
+  wrapper: "config",
+};
 
 export const rootAliases = {
   audit: {
     description: `${cmdAuditLog.description} (alias)`,
     hidden: false,
-    argv: ['audit-log'],
+    argv: ["audit-log"],
+  },
+  "audit-logs": {
+    description: cmdAuditLog.description,
+    hidden: true,
+    argv: ["audit-log"],
   },
   auditLog: {
     description: cmdAuditLog.description,
     hidden: true,
-    argv: ['audit-log'],
+    argv: ["audit-log"],
   },
   auditLogs: {
     description: cmdAuditLog.description,
     hidden: true,
-    argv: ['audit-log'],
-  },
-  'audit-logs': {
-    description: cmdAuditLog.description,
-    hidden: true,
-    argv: ['audit-log'],
+    argv: ["audit-log"],
   },
   deps: {
     description: `${cmdOrganizationDependencies.description} (alias)`,
     hidden: false,
-    argv: ['dependencies'],
+    argv: ["dependencies"],
   },
   feed: {
     description: `${cmdThreatFeed.description} (alias)`,
     hidden: false,
-    argv: ['threat-feed'],
+    argv: ["threat-feed"],
   },
   firewall: {
     description: `${cmdSfw.description} (alias)`,
     hidden: false,
-    argv: ['sfw'],
-  },
-  pip3: {
-    description: `${cmdPip.description} (alias)`,
-    hidden: true,
-    argv: ['pip'],
+    argv: ["sfw"],
   },
   org: {
     description: `${cmdOrganization.description} (alias)`,
     hidden: false,
-    argv: ['organization'],
-  },
-  orgs: {
-    description: cmdOrganization.description,
-    hidden: true,
-    argv: ['organization'],
-  },
-  organizations: {
-    description: cmdOrganization.description,
-    hidden: true,
-    argv: ['organization'],
+    argv: ["organization"],
   },
   organisation: {
     description: cmdOrganization.description,
     hidden: true,
-    argv: ['organization'],
+    argv: ["organization"],
   },
   organisations: {
     description: cmdOrganization.description,
     hidden: true,
-    argv: ['organization'],
+    argv: ["organization"],
+  },
+  organizations: {
+    description: cmdOrganization.description,
+    hidden: true,
+    argv: ["organization"],
+  },
+  orgs: {
+    description: cmdOrganization.description,
+    hidden: true,
+    argv: ["organization"],
+  },
+  pip3: {
+    description: `${cmdPip.description} (alias)`,
+    hidden: true,
+    argv: ["pip"],
   },
   pkg: {
     description: `${cmdPackage.description} (alias)`,
     hidden: false,
-    argv: ['package'],
+    argv: ["package"],
   },
   repo: {
     description: `${cmdRepository.description} (alias)`,
     hidden: false,
-    argv: ['repository'],
+    argv: ["repository"],
   },
   repos: {
     description: cmdRepository.description,
     hidden: true,
-    argv: ['repository'],
+    argv: ["repository"],
   },
   repositories: {
     description: cmdRepository.description,
     hidden: true,
-    argv: ['repository'],
+    argv: ["repository"],
   },
-}
+};

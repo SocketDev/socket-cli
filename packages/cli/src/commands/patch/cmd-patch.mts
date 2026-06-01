@@ -1,32 +1,29 @@
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { spawnSocketPatchDlx } from '../../util/dlx/spawn.mjs'
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { spawnSocketPatchDlx } from "../../util/dlx/spawn.mjs";
 
-import type {
-  CliCommandContext,
-  CliSubcommand,
-} from '../../util/cli/with-subcommands.mjs'
+import type { CliCommandContext, CliSubcommand } from "../../util/cli/with-subcommands.mjs";
 
-export const CMD_NAME = 'patch'
+export const CMD_NAME = "patch";
 
-const description = 'Manage CVE patches for dependencies'
+const description = "Manage CVE patches for dependencies";
 
-const hidden = false
+const hidden = false;
 
 export const cmdPatch: CliSubcommand = {
   description,
   hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   context: CliCommandContext,
 ): Promise<void> {
-  const { parentName } = { __proto__: null, ...context } as CliCommandContext
+  const { parentName } = { __proto__: null, ...context } as CliCommandContext;
 
   // Check if there are any non-flag arguments (subcommands).
-  const hasSubcommand = argv.some(arg => !arg.startsWith('-'))
+  const hasSubcommand = argv.some((arg) => !arg.startsWith("-"));
 
   // Only show Socket CLI help if no subcommand is provided.
   // If a subcommand is present (like 'list', 'info'), forward to socket-patch.
@@ -47,7 +44,7 @@ export async function run(
       $ ${command} get <package>
       $ ${command} apply
     `,
-    }
+    };
 
     // Parse arguments to handle --help for patch-level help.
     meowOrExit({
@@ -55,22 +52,22 @@ export async function run(
       config,
       importMeta,
       parentName,
-    })
+    });
   }
 
-  process.exitCode = 1
+  process.exitCode = 1;
 
   // Forward all arguments to socket-patch via DLX.
   const { spawnPromise } = await spawnSocketPatchDlx([...argv], {
-    stdio: 'inherit',
-  })
+    stdio: "inherit",
+  });
 
   // Wait for the spawn to complete and set exit code.
-  const result = await spawnPromise
+  const result = await spawnPromise;
 
   if (result.code != null && result.code !== 0) {
-    process.exitCode = result.code
+    process.exitCode = result.code;
   } else if (result.code === 0) {
-    process.exitCode = 0
+    process.exitCode = 0;
   }
 }

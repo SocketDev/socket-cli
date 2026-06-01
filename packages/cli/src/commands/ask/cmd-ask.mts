@@ -1,27 +1,24 @@
-import { handleAsk } from './handle-ask.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { InputError } from '../../util/error/errors.mjs'
-import {
-  getFlagApiRequirementsOutput,
-  getFlagListOutput,
-} from '../../util/output/formatting.mts'
+import { handleAsk } from "./handle-ask.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { InputError } from "../../util/error/errors.mjs";
+import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
-export const CMD_NAME = 'ask'
+export const CMD_NAME = "ask";
 
-const description = 'Ask in plain English'
+const description = "Ask in plain English";
 
-const hidden = false
+const hidden = false;
 
 export const cmdAsk = {
   description,
   hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -35,15 +32,15 @@ export async function run(
     flags: defineFlags({
       ...commonFlags,
       execute: {
-        type: 'boolean',
-        shortFlag: 'e',
+        type: "boolean",
+        shortFlag: "e",
         default: false,
-        description: 'Execute the command directly',
+        description: "Execute the command directly",
       },
       explain: {
-        type: 'boolean',
+        type: "boolean",
         default: false,
-        description: 'Show detailed explanation',
+        description: "Show detailed explanation",
       },
     }),
     help: (command: string, config: { flags: MeowFlags }) => `
@@ -69,29 +66,29 @@ export async function run(
       - Use severity levels: critical, high, medium, low
       - Say "dry run" to preview changes
   `,
-  }
+  };
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const query = cli.input[0]
+  const query = cli.input[0];
 
   if (!query) {
     throw new InputError(
       'socket ask requires a QUERY positional argument; pass a question like `socket ask "scan for vulnerabilities"`',
-    )
+    );
   }
 
-  const execute = !!cli.flags['execute']
-  const explain = !!cli.flags['explain']
+  const execute = !!cli.flags["execute"];
+  const explain = !!cli.flags["explain"];
 
   await handleAsk({
     query,
     execute,
     explain,
-  })
+  });
 }

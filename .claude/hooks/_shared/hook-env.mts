@@ -17,7 +17,7 @@
  *      single stderr.write. Plain process.stderr is the right tool here.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
 /**
  * Convert a hook slug (kebab-case) to its canonical disable env-var name. Pure
@@ -31,8 +31,8 @@ import process from 'node:process'
  * 'SOCKET_AUTH_ROTATION_REMINDER_DISABLED'
  */
 export function hookDisableEnvVar(slug: string): string {
-  const upper = slug.toUpperCase().replace(/-/g, '_')
-  return `SOCKET_${upper}_DISABLED`
+  const upper = slug.toUpperCase().replace(/-/g, "_");
+  return `SOCKET_${upper}_DISABLED`;
 }
 
 /**
@@ -44,13 +44,13 @@ export function hookDisableEnvVar(slug: string): string {
  * after blank\n.
  */
 export function hookLog(slug: string, ...lines: readonly string[]): void {
-  const prefix = `[${slug}] `
+  const prefix = `[${slug}] `;
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    const ln = lines[i]!
-    if (ln === '') {
-      process.stderr.write('\n')
+    const ln = lines[i]!;
+    if (ln === "") {
+      process.stderr.write("\n");
     } else {
-      process.stderr.write(`${prefix}${ln}\n`)
+      process.stderr.write(`${prefix}${ln}\n`);
     }
   }
 }
@@ -63,5 +63,5 @@ export function hookLog(slug: string, ...lines: readonly string[]): void {
  * should `unset` the var.
  */
 export function isHookDisabled(slug: string): boolean {
-  return Boolean(process.env[hookDisableEnvVar(slug)])
+  return Boolean(process.env[hookDisableEnvVar(slug)]);
 }

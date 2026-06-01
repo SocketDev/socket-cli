@@ -6,47 +6,47 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
-import { hasKeys, isObject } from '@socketsecurity/lib-stable/objects/predicates'
+} from "@socketsecurity/lib-stable/constants/agents";
+import { hasKeys, isObject } from "@socketsecurity/lib-stable/objects/predicates";
 
-import { updatePnpmWorkspaceYamlOverrides } from './update-pnpm-workspace-yaml.mts'
+import { updatePnpmWorkspaceYamlOverrides } from "./update-pnpm-workspace-yaml.mts";
 
-import type { Overrides } from './types.mts'
-import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
-import type { Agent } from '../../util/ecosystem/environment.mjs'
-import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
+import type { Overrides } from "./types.mts";
+import type { EnvDetails } from "../../util/ecosystem/environment.mjs";
+import type { Agent } from "../../util/ecosystem/environment.mjs";
+import type { EditablePackageJson } from "@socketsecurity/lib-stable/packages/types";
 
 const depFields = [
-  'dependencies',
-  'devDependencies',
-  'peerDependencies',
-  'peerDependenciesMeta',
-  'optionalDependencies',
-  'bundleDependencies',
-]
+  "dependencies",
+  "devDependencies",
+  "peerDependencies",
+  "peerDependenciesMeta",
+  "optionalDependencies",
+  "bundleDependencies",
+];
 
 export function getEntryIndexes(
   entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ): number[] {
   return keys
-    .map(n => entries.findIndex(p => p[0] === n))
-    .filter(n => n !== -1)
-    .sort((a, b) => a - b)
+    .map((n) => entries.findIndex((p) => p[0] === n))
+    .filter((n) => n !== -1)
+    .toSorted((a, b) => a - b);
 }
 
 export function getHighestEntryIndex(
   entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ) {
-  return getEntryIndexes(entries, keys)?.at(-1) ?? -1
+  return getEntryIndexes(entries, keys)?.at(-1) ?? -1;
 }
 
 export function getLowestEntryIndex(
   entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ) {
-  return getEntryIndexes(entries, keys)?.[0] ?? -1
+  return getEntryIndexes(entries, keys)?.[0] ?? -1;
 }
 
 /**
@@ -68,42 +68,39 @@ export async function updateManifest(
   pkgEnvDetails: EnvDetails,
   overrides: Overrides,
 ): Promise<void> {
-  const { editablePkgJson } = pkgEnvDetails
+  const { editablePkgJson } = pkgEnvDetails;
   switch (agent) {
     case BUN:
-      updateResolutionsField(editablePkgJson, overrides)
-      return
+      updateResolutionsField(editablePkgJson, overrides);
+      return;
     case PNPM:
       if (usesPnpmWorkspaceOverrides(pkgEnvDetails)) {
         // Route to pnpm-workspace.yaml. Also clear any stale
         // `pnpm.overrides` in package.json — pnpm 11 ignores it, but
         // leaving it there is misleading + drift-prone.
-        updatePnpmField(editablePkgJson, {})
-        await updatePnpmWorkspaceYamlOverrides(pkgEnvDetails.pkgPath, overrides)
+        updatePnpmField(editablePkgJson, {});
+        await updatePnpmWorkspaceYamlOverrides(pkgEnvDetails.pkgPath, overrides);
       } else {
-        updatePnpmField(editablePkgJson, overrides)
+        updatePnpmField(editablePkgJson, overrides);
       }
-      return
+      return;
     case VLT:
-      updateOverridesField(editablePkgJson, overrides)
-      return
+      updateOverridesField(editablePkgJson, overrides);
+      return;
     case YARN_BERRY:
-      updateResolutionsField(editablePkgJson, overrides)
-      return
+      updateResolutionsField(editablePkgJson, overrides);
+      return;
     case YARN_CLASSIC:
-      updateResolutionsField(editablePkgJson, overrides)
-      return
+      updateResolutionsField(editablePkgJson, overrides);
+      return;
     default:
-      updateOverridesField(editablePkgJson, overrides)
-      return
+      updateOverridesField(editablePkgJson, overrides);
+      return;
   }
 }
 
-export function updateOverridesField(
-  editablePkgJson: EditablePackageJson,
-  overrides: Overrides,
-) {
-  updatePkgJsonField(editablePkgJson, OVERRIDES, overrides)
+export function updateOverridesField(editablePkgJson: EditablePackageJson, overrides: Overrides) {
+  updatePkgJsonField(editablePkgJson, OVERRIDES, overrides);
 }
 
 export function updatePkgJsonField(
@@ -111,103 +108,86 @@ export function updatePkgJsonField(
   field: string,
   value: unknown,
 ) {
-  const oldValue = editablePkgJson.content[field]
+  const oldValue = editablePkgJson.content[field];
   if (oldValue) {
     // The field already exists so we simply update the field value.
     if (field === PNPM) {
-      const isPnpmObj = isObject(oldValue)
+      const isPnpmObj = isObject(oldValue);
       if (hasKeys(value)) {
         editablePkgJson.update({
           [field]: {
             ...(isPnpmObj ? oldValue : {}),
             [OVERRIDES]: value,
           },
-        } as typeof editablePkgJson.content)
+        } as typeof editablePkgJson.content);
       } else if (isPnpmObj) {
         // Drop the overrides key but keep the rest of the pnpm config.
-        const { overrides: _omitted, ...rest } = oldValue as Record<
-          string,
-          unknown
-        >
+        const { overrides: _omitted, ...rest } = oldValue as Record<string, unknown>;
         editablePkgJson.update({
           [field]: hasKeys(rest) ? rest : undefined,
-        } as typeof editablePkgJson.content)
+        } as typeof editablePkgJson.content);
       } else {
         editablePkgJson.update({
           [field]: undefined,
-        } as typeof editablePkgJson.content)
+        } as typeof editablePkgJson.content);
       }
     } else if (field === OVERRIDES || field === RESOLUTIONS) {
       // Properties with undefined values are deleted when saved as JSON.
       editablePkgJson.update({
         [field]: hasKeys(value) ? value : undefined,
-      } as typeof editablePkgJson.content)
+      } as typeof editablePkgJson.content);
     } else {
-      editablePkgJson.update({ [field]: value })
+      editablePkgJson.update({ [field]: value });
     }
-    return
+    return;
   }
-  if (
-    (field === OVERRIDES || field === PNPM || field === RESOLUTIONS) &&
-    !hasKeys(value)
-  ) {
-    return
+  if ((field === OVERRIDES || field === PNPM || field === RESOLUTIONS) && !hasKeys(value)) {
+    return;
   }
   // Since the field doesn't exist we want to insert it into the package.json
   // in a place that makes sense, e.g. close to the "dependencies" field. If
   // we can't find a place to insert the field we'll add it to the bottom.
-  const entries = Object.entries(editablePkgJson.content)
-  let insertIndex = -1
-  let isPlacingHigher = false
+  const entries = Object.entries(editablePkgJson.content);
+  let insertIndex = -1;
+  let isPlacingHigher = false;
   if (field === OVERRIDES) {
-    insertIndex = getLowestEntryIndex(entries, [RESOLUTIONS])
+    insertIndex = getLowestEntryIndex(entries, [RESOLUTIONS]);
     if (insertIndex === -1) {
-      isPlacingHigher = true
-      insertIndex = getHighestEntryIndex(entries, [...depFields, PNPM])
+      isPlacingHigher = true;
+      insertIndex = getHighestEntryIndex(entries, [...depFields, PNPM]);
     }
   } else if (field === RESOLUTIONS) {
-    isPlacingHigher = true
-    insertIndex = getHighestEntryIndex(entries, [...depFields, OVERRIDES, PNPM])
+    isPlacingHigher = true;
+    insertIndex = getHighestEntryIndex(entries, [...depFields, OVERRIDES, PNPM]);
   } else if (field === PNPM) {
-    insertIndex = getLowestEntryIndex(entries, [OVERRIDES, RESOLUTIONS])
+    insertIndex = getLowestEntryIndex(entries, [OVERRIDES, RESOLUTIONS]);
     if (insertIndex === -1) {
-      isPlacingHigher = true
-      insertIndex = getHighestEntryIndex(entries, depFields)
+      isPlacingHigher = true;
+      insertIndex = getHighestEntryIndex(entries, depFields);
     }
   }
   if (insertIndex === -1) {
-    insertIndex = getLowestEntryIndex(entries, ['engines', 'files'])
+    insertIndex = getLowestEntryIndex(entries, ["engines", "files"]);
   }
   if (insertIndex === -1) {
-    isPlacingHigher = true
-    insertIndex = getHighestEntryIndex(entries, ['exports', 'imports', 'main'])
+    isPlacingHigher = true;
+    insertIndex = getHighestEntryIndex(entries, ["exports", "imports", "main"]);
   }
   if (insertIndex === -1) {
-    insertIndex = entries.length
+    insertIndex = entries.length;
   } else if (isPlacingHigher) {
-    insertIndex += 1
+    insertIndex += 1;
   }
-  entries.splice(insertIndex, 0, [
-    field,
-    field === PNPM ? { [OVERRIDES]: value } : value,
-  ])
-  editablePkgJson.fromJSON(
-    `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`,
-  )
+  entries.splice(insertIndex, 0, [field, field === PNPM ? { [OVERRIDES]: value } : value]);
+  editablePkgJson.fromJSON(`${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`);
 }
 
-export function updatePnpmField(
-  editablePkgJson: EditablePackageJson,
-  overrides: Overrides,
-) {
-  updatePkgJsonField(editablePkgJson, PNPM, overrides)
+export function updatePnpmField(editablePkgJson: EditablePackageJson, overrides: Overrides) {
+  updatePkgJsonField(editablePkgJson, PNPM, overrides);
 }
 
-export function updateResolutionsField(
-  editablePkgJson: EditablePackageJson,
-  overrides: Overrides,
-) {
-  updatePkgJsonField(editablePkgJson, RESOLUTIONS, overrides)
+export function updateResolutionsField(editablePkgJson: EditablePackageJson, overrides: Overrides) {
+  updatePkgJsonField(editablePkgJson, RESOLUTIONS, overrides);
 }
 
 /**
@@ -217,7 +197,7 @@ export function updateResolutionsField(
  * file instead of package.json.
  */
 export function usesPnpmWorkspaceOverrides(
-  pkgEnvDetails: Pick<EnvDetails, 'agent' | 'agentVersion'>,
+  pkgEnvDetails: Pick<EnvDetails, "agent" | "agentVersion">,
 ): boolean {
-  return pkgEnvDetails.agent === PNPM && pkgEnvDetails.agentVersion.major >= 11
+  return pkgEnvDetails.agent === PNPM && pkgEnvDetails.agentVersion.major >= 11;
 }

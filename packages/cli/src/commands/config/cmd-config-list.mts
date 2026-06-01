@@ -1,27 +1,26 @@
-import { outputConfigList } from './output-config-list.mts'
-import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
-import { outputDryRunFetch } from '../../util/dry-run/output.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { outputConfigList } from "./output-config-list.mts";
+import { FLAG_JSON, FLAG_MARKDOWN } from "../../constants/cli.mjs";
+import { outputDryRunFetch } from "../../util/dry-run/output.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags, outputFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mjs";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
 const config = {
-  commandName: 'list',
-  description: 'Show all local CLI config items and their values',
-  hidden: false,
+  commandName: "list",
+  description: "Show all local CLI config items and their values",
   flags: defineFlags({
     ...commonFlags,
     ...outputFlags,
     full: {
-      type: 'boolean',
+      type: "boolean",
       default: false,
-      description: 'Show full tokens in plaintext (unsafe)',
+      description: "Show full tokens in plaintext (unsafe)",
     },
   }),
   help: (command: string, config: { flags: MeowFlags }) => `
@@ -34,13 +33,14 @@ const config = {
     Examples
       $ ${command}
   `,
-}
+  hidden: false,
+};
 
 export const cmdConfigList = {
   description: config.description,
   hidden: config.hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -52,33 +52,33 @@ export async function run(
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const { full, json, markdown } = cli.flags
+  const { full, json, markdown } = cli.flags;
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
     test: !json || !markdown,
     message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
-    fail: 'bad',
-  })
+    fail: "bad",
+  });
   if (!wasValidInput) {
-    return
+    return;
   }
 
   if (dryRun) {
-    outputDryRunFetch('configuration settings', {
-      showFullTokens: full ? 'yes' : 'no (masked)',
-    })
-    return
+    outputDryRunFetch("configuration settings", {
+      showFullTokens: full ? "yes" : "no (masked)",
+    });
+    return;
   }
 
   await outputConfigList({
     full: !!full,
     outputKind,
-  })
+  });
 }

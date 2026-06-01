@@ -20,54 +20,54 @@
  * src/util/process/cmd.mts - Flag filtering utilities.
  */
 
-import EventEmitter from 'node:events'
+import EventEmitter from "node:events";
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setupTestEnvironment } from '../../../helpers/index.mts'
+import { setupTestEnvironment } from "../../../helpers/index.mts";
 
-const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
-const mockMeowOrExit = vi.hoisted(() => vi.fn())
-const mockFilterFlags = vi.hoisted(() => vi.fn())
+const mockSpawnSfwDlx = vi.hoisted(() => vi.fn());
+const mockMeowOrExit = vi.hoisted(() => vi.fn());
+const mockFilterFlags = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/util/dlx/spawn.mts', () => ({
+vi.mock(import("../../../../src/util/dlx/spawn.mts"), () => ({
   spawnSfwDlx: mockSpawnSfwDlx,
-}))
+}));
 
-vi.mock('../../../../src/util/cli/with-subcommands.mjs', () => ({
+vi.mock(import("../../../../src/util/cli/with-subcommands.mjs"), () => ({
   meowOrExit: mockMeowOrExit,
-}))
+}));
 
-vi.mock('../../../../src/util/process/cmd.mts', () => ({
+vi.mock(import("../../../../src/util/process/cmd.mts"), () => ({
   filterFlags: mockFilterFlags,
-}))
+}));
 
-const { cmdGo } = await import('../../../../src/commands/go/cmd-go.mts')
+const { cmdGo } = await import("../../../../src/commands/go/cmd-go.mts");
 
-describe('cmd-go', () => {
-  setupTestEnvironment()
+describe("cmd-go", () => {
+  setupTestEnvironment();
 
   beforeEach(() => {
-    mockFilterFlags.mockReturnValue([])
-  })
+    mockFilterFlags.mockReturnValue([]);
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdGo.description).toBe('Run go with Socket Firewall security')
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdGo.description).toBe("Run go with Socket Firewall security");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdGo.hidden).toBe(false)
-    })
+    it("should not be hidden", () => {
+      expect(cmdGo.hidden).toBe(false);
+    });
 
-    it('should have a run function', () => {
-      expect(typeof cmdGo.run).toBe('function')
-    })
+    it("should have a run function", () => {
+      expect(typeof cmdGo.run).toBe("function");
+    });
 
-    it('renders help text via the meow help callback', async () => {
-      mockMeowOrExit.mockImplementation(args => {
-        const helpText = args.config.help('socket go')
-        expect(helpText).toContain('socket go')
+    it("renders help text via the meow help callback", async () => {
+      mockMeowOrExit.mockImplementation((args) => {
+        const helpText = args.config.help("socket go");
+        expect(helpText).toContain("socket go");
         return {
           flags: {},
           help: helpText,
@@ -76,355 +76,333 @@ describe('cmd-go', () => {
           showHelp: vi.fn(),
           showVersion: vi.fn(),
           unknownFlags: [],
-        }
-      })
-      const EventEmitter = (await import('node:events')).default
-      const mockChildProcess = new EventEmitter()
+        };
+      });
+      const EventEmitter = (await import("node:events")).default;
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      mockSpawnPromise.process = mockChildProcess
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
-      mockFilterFlags.mockReturnValue([])
-      const runPromise = cmdGo.run(
-        [],
-        { url: import.meta.url },
-        { parentName: 'socket' },
-      )
-      setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
-      await runPromise
-      expect(mockMeowOrExit).toHaveBeenCalled()
-    })
-  })
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      mockSpawnPromise.process = mockChildProcess;
+      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise });
+      mockFilterFlags.mockReturnValue([]);
+      const runPromise = cmdGo.run([], { url: import.meta.url }, { parentName: "socket" });
+      setImmediate(() => mockChildProcess.emit("exit", 0, undefined));
+      await runPromise;
+      expect(mockMeowOrExit).toHaveBeenCalled();
+    });
+  });
 
-  describe('run', () => {
-    it('should call meowOrExit with correct config', async () => {
-      const mockChildProcess = new EventEmitter()
+  describe("run", () => {
+    it("should call meowOrExit with correct config", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['get', 'github.com/gin-gonic/gin'])
+      mockFilterFlags.mockReturnValue(["get", "github.com/gin-gonic/gin"]);
 
       const runPromise = cmdGo.run(
-        ['get', 'github.com/gin-gonic/gin'],
+        ["get", "github.com/gin-gonic/gin"],
         { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+        { parentName: "socket" },
+      );
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
+        mockChildProcess.emit("exit", 0, undefined);
+      });
 
-      await runPromise
+      await runPromise;
 
       expect(mockMeowOrExit).toHaveBeenCalledWith({
-        argv: ['get', 'github.com/gin-gonic/gin'],
+        argv: ["get", "github.com/gin-gonic/gin"],
         config: expect.objectContaining({
-          commandName: 'go',
-          description: 'Run go with Socket Firewall security',
+          commandName: "go",
+          description: "Run go with Socket Firewall security",
           hidden: false,
         }),
         importMeta: { url: import.meta.url },
-        parentName: 'socket',
-      })
-    })
+        parentName: "socket",
+      });
+    });
 
-    it('should forward filtered arguments to spawnSfwDlx', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should forward filtered arguments to spawnSfwDlx", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue([
-        'install',
-        'golang.org/x/tools/cmd/goimports',
-      ])
+      mockFilterFlags.mockReturnValue(["install", "golang.org/x/tools/cmd/goimports"]);
 
       const runPromise = cmdGo.run(
-        [
-          'install',
-          'golang.org/x/tools/cmd/goimports',
-          '--config',
-          'socket.config.json',
-        ],
+        ["install", "golang.org/x/tools/cmd/goimports", "--config", "socket.config.json"],
         { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+        { parentName: "socket" },
+      );
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
+        mockChildProcess.emit("exit", 0, undefined);
+      });
 
-      await runPromise
+      await runPromise;
 
       expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['go', 'install', 'golang.org/x/tools/cmd/goimports'],
-        { stdio: 'inherit' },
-      )
-    })
+        ["go", "install", "golang.org/x/tools/cmd/goimports"],
+        { stdio: "inherit" },
+      );
+    });
 
-    it('should filter out Socket CLI flags', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should filter out Socket CLI flags", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      const filteredArgs = ['mod', 'download']
-      mockFilterFlags.mockReturnValue(filteredArgs)
+      const filteredArgs = ["mod", "download"];
+      mockFilterFlags.mockReturnValue(filteredArgs);
 
       const runPromise = cmdGo.run(
-        ['mod', 'download', '--org', 'my-org'],
+        ["mod", "download", "--org", "my-org"],
         { url: import.meta.url } as ImportMeta,
-        { parentName: 'socket' },
-      )
+        { parentName: "socket" },
+      );
 
       // Simulate successful exit.
       setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
+        mockChildProcess.emit("exit", 0, undefined);
+      });
 
-      await runPromise
+      await runPromise;
 
-      expect(mockFilterFlags).toHaveBeenCalled()
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['go', ...filteredArgs], {
-        stdio: 'inherit',
-      })
-    })
+      expect(mockFilterFlags).toHaveBeenCalled();
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["go", ...filteredArgs], {
+        stdio: "inherit",
+      });
+    });
 
-    it('should set default exit code to 1', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should set default exit code to 1", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['get', 'package'])
+      mockFilterFlags.mockReturnValue(["get", "package"]);
 
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
+      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-      process.exitCode = undefined
+      process.exitCode = undefined;
 
-      cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+      cmdGo.run(["get", "package"], { url: import.meta.url } as ImportMeta, {
+        parentName: "socket",
+      });
 
       // Check that exit code was set to 1 before child process exits.
       await vi.waitFor(() => {
-        expect(process.exitCode).toBe(1)
-      })
+        expect(process.exitCode).toBe(1);
+      });
 
       // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, undefined)
+      mockChildProcess.emit("exit", 0, undefined);
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
-      expect(mockExit).toHaveBeenCalledWith(0)
+      expect(mockExit).toHaveBeenCalledWith(0);
 
-      mockExit.mockRestore()
-    })
+      mockExit.mockRestore();
+    });
 
-    it('should handle child process exit with code', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should handle child process exit with code", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['get', 'package'])
+      mockFilterFlags.mockReturnValue(["get", "package"]);
 
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
+      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-      cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+      cmdGo.run(["get", "package"], { url: import.meta.url } as ImportMeta, {
+        parentName: "socket",
+      });
 
       // Wait for event listeners to be registered.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
       // Simulate exit with code 0.
-      mockChildProcess.emit('exit', 0, undefined)
+      mockChildProcess.emit("exit", 0, undefined);
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
-      expect(mockExit).toHaveBeenCalledWith(0)
+      expect(mockExit).toHaveBeenCalledWith(0);
 
-      mockExit.mockRestore()
-    })
+      mockExit.mockRestore();
+    });
 
-    it('should handle child process exit with signal', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should handle child process exit with signal", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: undefined,
-        signal: 'SIGTERM',
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        signal: "SIGTERM",
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['get', 'package'])
+      mockFilterFlags.mockReturnValue(["get", "package"]);
 
-      const mockKill = vi
-        .spyOn(process, 'kill')
-        .mockImplementation((() => {}) as unknown)
+      const mockKill = vi.spyOn(process, "kill").mockImplementation((() => {}) as unknown);
 
-      cmdGo.run(['get', 'package'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+      cmdGo.run(["get", "package"], { url: import.meta.url } as ImportMeta, {
+        parentName: "socket",
+      });
 
       // Wait for event listeners to be registered.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
       // Simulate exit with signal.
-      mockChildProcess.emit('exit', undefined, 'SIGTERM')
+      mockChildProcess.emit("exit", undefined, "SIGTERM");
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
-      expect(mockKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+      expect(mockKill).toHaveBeenCalledWith(process.pid, "SIGTERM");
 
-      mockKill.mockRestore()
-    })
+      mockKill.mockRestore();
+    });
 
-    it('should handle empty arguments', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should handle empty arguments", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue([])
+      mockFilterFlags.mockReturnValue([]);
 
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
+      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
       cmdGo.run([], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+        parentName: "socket",
+      });
 
       // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, undefined)
+      mockChildProcess.emit("exit", 0, undefined);
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
-      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['go'], { stdio: 'inherit' })
+      expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["go"], { stdio: "inherit" });
 
-      mockExit.mockRestore()
-    })
+      mockExit.mockRestore();
+    });
 
-    it('should handle context with parentName', async () => {
-      const mockChildProcess = new EventEmitter()
+    it("should handle context with parentName", async () => {
+      const mockChildProcess = new EventEmitter();
       const mockSpawnPromise = Promise.resolve({
         code: 0,
         signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
+        stderr: Buffer.from(""),
+        stdout: Buffer.from(""),
+      });
+      (mockSpawnPromise as unknown).process = mockChildProcess;
 
       mockSpawnSfwDlx.mockResolvedValue({
         spawnPromise: mockSpawnPromise,
-      })
+      });
 
-      mockFilterFlags.mockReturnValue(['version'])
+      mockFilterFlags.mockReturnValue(["version"]);
 
-      const mockExit = vi
-        .spyOn(process, 'exit')
-        .mockImplementation((() => {}) as unknown)
+      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-      cmdGo.run(['version'], { url: import.meta.url } as ImportMeta, {
-        parentName: 'socket',
-      })
+      cmdGo.run(["version"], { url: import.meta.url } as ImportMeta, {
+        parentName: "socket",
+      });
 
       // Simulate successful exit.
-      mockChildProcess.emit('exit', 0, undefined)
+      mockChildProcess.emit("exit", 0, undefined);
 
       // Wait for event handler to execute.
-      await new Promise(resolve => {
-        setImmediate(resolve)
-      })
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
 
       expect(mockMeowOrExit).toHaveBeenCalledWith(
         expect.objectContaining({
-          parentName: 'socket',
+          parentName: "socket",
         }),
-      )
+      );
 
-      mockExit.mockRestore()
-    })
-  })
-})
+      mockExit.mockRestore();
+    });
+  });
+});

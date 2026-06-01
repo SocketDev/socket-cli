@@ -9,7 +9,7 @@
  * Related Files: - src/commands/scan/output-scan-github.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -18,86 +18,79 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
   fail: vi.fn(),
   success: vi.fn(),
-}))
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+}));
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
-}))
+}));
 
 // Mock utilities.
-vi.mock('../../../../src/util/error/fail-msg-with-badge.mts', () => ({
-  failMsgWithBadge: (msg: string, cause?: string) =>
-    cause ? `${msg}: ${cause}` : msg,
-}))
+vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
+  failMsgWithBadge: (msg: string, cause?: string) => (cause ? `${msg}: ${cause}` : msg),
+}));
 
-vi.mock('../../../../src/util/output/result-json.mjs', () => ({
+vi.mock(import("../../../../src/util/output/result-json.mjs"), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
-}))
+}));
 
-import { outputScanGithub } from '../../../../src/commands/scan/output-scan-github.mts'
+import { outputScanGithub } from "../../../../src/commands/scan/output-scan-github.mts";
 
-import type { CResult } from '../../../../src/types.mts'
+import type { CResult } from "../../../../src/types.mts";
 
-describe('output-scan-github', () => {
+describe("output-scan-github", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  describe('outputScanGithub', () => {
-    describe('JSON output', () => {
-      it('outputs success result as JSON', async () => {
+  describe("outputScanGithub", () => {
+    describe("JSON output", () => {
+      it("outputs success result as JSON", async () => {
         const result: CResult<{ scanId: string }> = {
           ok: true,
-          data: { scanId: '123' },
-        }
+          data: { scanId: "123" },
+        };
 
-        await outputScanGithub(result, 'json')
+        await outputScanGithub(result, "json");
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          expect.stringContaining('"ok": true'),
-        )
-      })
+        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok": true'));
+      });
 
-      it('outputs error result as JSON', async () => {
+      it("outputs error result as JSON", async () => {
         const result: CResult<unknown> = {
           ok: false,
-          message: 'Scan failed',
-          cause: 'Invalid repository',
-        }
+          message: "Scan failed",
+          cause: "Invalid repository",
+        };
 
-        await outputScanGithub(result, 'json')
+        await outputScanGithub(result, "json");
 
-        expect(mockLogger.log).toHaveBeenCalledWith(
-          expect.stringContaining('"ok": false'),
-        )
-      })
-    })
+        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok": false'));
+      });
+    });
 
-    describe('Text output', () => {
-      it('outputs success message', async () => {
+    describe("Text output", () => {
+      it("outputs success message", async () => {
         const result: CResult<unknown> = {
           ok: true,
           data: {},
-        }
+        };
 
-        await outputScanGithub(result, 'text')
+        await outputScanGithub(result, "text");
 
-        expect(mockLogger.success).toHaveBeenCalledWith('Finished!')
-        expect(mockLogger.log).toHaveBeenCalledWith('')
-      })
+        expect(mockLogger.success).toHaveBeenCalledWith("Finished!");
+        expect(mockLogger.log).toHaveBeenCalledWith("");
+      });
 
-      it('outputs error with fail message', async () => {
+      it("outputs error with fail message", async () => {
         const result: CResult<unknown> = {
           ok: false,
-          message: 'Scan failed',
-          cause: 'Invalid repository',
-        }
+          message: "Scan failed",
+          cause: "Invalid repository",
+        };
 
-        await outputScanGithub(result, 'text')
+        await outputScanGithub(result, "text");
 
-        expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining('Scan failed'),
-        )
-      })
-    })
-  })
-})
+        expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("Scan failed"));
+      });
+    });
+  });
+});

@@ -9,7 +9,7 @@ import type {
   CompactSocketArtifactAlert,
   SocketArtifact,
   SocketArtifactAlert,
-} from '@socketsecurity/sdk-stable'
+} from "@socketsecurity/sdk-stable";
 
 export type {
   ALERT_ACTION,
@@ -18,11 +18,10 @@ export type {
   CompactSocketArtifactAlert,
   SocketArtifact,
   SocketArtifactAlert,
-}
+};
 
 export type CveProps = {
-  firstPatchedVersionIdentifier?: string | undefined
-  vulnerableVersionRange: string
-  [key: string]: unknown
-}
-
+  firstPatchedVersionIdentifier?: string | undefined;
+  vulnerableVersionRange: string;
+  [key: string]: unknown;
+};

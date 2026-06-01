@@ -9,7 +9,7 @@
  * Related Files: - src/commands/scan/stream-scan.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -19,165 +19,163 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
-}))
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+}));
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
-}))
+}));
 
 // Mock SDK setup.
-const mockSetupSdk = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/util/socket/sdk.mjs', () => ({
+const mockSetupSdk = vi.hoisted(() => vi.fn());
+vi.mock(import("../../../../src/util/socket/sdk.mjs"), () => ({
   setupSdk: mockSetupSdk,
-}))
+}));
 
 // Mock API handler.
-const mockHandleApiCall = vi.hoisted(() => vi.fn())
-vi.mock('../../../../src/util/socket/api.mjs', () => ({
+const mockHandleApiCall = vi.hoisted(() => vi.fn());
+vi.mock(import("../../../../src/util/socket/api.mjs"), () => ({
   handleApiCall: mockHandleApiCall,
-}))
+}));
 
-import { streamScan } from '../../../../src/commands/scan/stream-scan.mts'
+import { streamScan } from "../../../../src/commands/scan/stream-scan.mts";
 
-describe('stream-scan', () => {
+describe("stream-scan", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  describe('streamScan', () => {
-    const mockStreamFullScan = vi.fn()
+  describe("streamScan", () => {
+    const mockStreamFullScan = vi.fn();
     const mockSdk = {
       streamFullScan: mockStreamFullScan,
-    }
+    };
 
-    it('returns error when SDK setup fails', async () => {
+    it("returns error when SDK setup fails", async () => {
       mockSetupSdk.mockResolvedValue({
         ok: false,
-        message: 'Invalid API token',
-      })
+        message: "Invalid API token",
+      });
 
-      const result = await streamScan('my-org', 'scan-123')
+      const result = await streamScan("my-org", "scan-123");
 
       expect(result).toEqual({
         ok: false,
-        message: 'Invalid API token',
-      })
-      expect(mockHandleApiCall).not.toHaveBeenCalled()
-    })
+        message: "Invalid API token",
+      });
+      expect(mockHandleApiCall).not.toHaveBeenCalled();
+    });
 
-    it('streams scan data successfully', async () => {
+    it("streams scan data successfully", async () => {
       mockSetupSdk.mockResolvedValue({
         ok: true,
         data: mockSdk,
-      })
-      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }))
-      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} })
+      });
+      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }));
+      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} });
 
-      const result = await streamScan('my-org', 'scan-123')
+      const result = await streamScan("my-org", "scan-123");
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Requesting data from API...',
-      )
-      expect(mockStreamFullScan).toHaveBeenCalledWith('my-org', 'scan-123', {
+      expect(mockLogger.info).toHaveBeenCalledWith("Requesting data from API…");
+      expect(mockStreamFullScan).toHaveBeenCalledWith("my-org", "scan-123", {
         output: undefined,
-      })
-      expect(result).toEqual({ ok: true, data: {} })
-    })
+      });
+      expect(result).toEqual({ ok: true, data: {} });
+    });
 
-    it('passes file option for output', async () => {
+    it("passes file option for output", async () => {
       mockSetupSdk.mockResolvedValue({
         ok: true,
         data: mockSdk,
-      })
-      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }))
-      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} })
+      });
+      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }));
+      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} });
 
-      await streamScan('my-org', 'scan-123', { file: '/output.json' })
+      await streamScan("my-org", "scan-123", { file: "/output.json" });
 
-      expect(mockStreamFullScan).toHaveBeenCalledWith('my-org', 'scan-123', {
-        output: '/output.json',
-      })
-    })
+      expect(mockStreamFullScan).toHaveBeenCalledWith("my-org", "scan-123", {
+        output: "/output.json",
+      });
+    });
 
-    it('uses stdout when file is dash', async () => {
+    it("uses stdout when file is dash", async () => {
       mockSetupSdk.mockResolvedValue({
         ok: true,
         data: mockSdk,
-      })
-      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }))
-      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} })
+      });
+      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }));
+      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} });
 
-      await streamScan('my-org', 'scan-123', { file: '-' })
+      await streamScan("my-org", "scan-123", { file: "-" });
 
-      expect(mockStreamFullScan).toHaveBeenCalledWith('my-org', 'scan-123', {
+      expect(mockStreamFullScan).toHaveBeenCalledWith("my-org", "scan-123", {
         output: undefined,
-      })
-    })
+      });
+    });
 
-    it('passes command path to API handler', async () => {
+    it("passes command path to API handler", async () => {
       mockSetupSdk.mockResolvedValue({
         ok: true,
         data: mockSdk,
-      })
-      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }))
-      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} })
+      });
+      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }));
+      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} });
 
-      await streamScan('my-org', 'scan-123', { commandPath: 'scan stream' })
+      await streamScan("my-org", "scan-123", { commandPath: "scan stream" });
 
       expect(mockHandleApiCall).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
-          commandPath: 'scan stream',
-          description: 'a scan',
+          commandPath: "scan stream",
+          description: "a scan",
         }),
-      )
-    })
+      );
+    });
 
-    it('passes SDK options', async () => {
+    it("passes SDK options", async () => {
       mockSetupSdk.mockResolvedValue({
         ok: true,
         data: mockSdk,
-      })
-      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }))
-      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} })
+      });
+      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }));
+      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} });
 
-      await streamScan('my-org', 'scan-123', {
-        sdkOpts: { apiToken: 'custom-token' },
-      })
+      await streamScan("my-org", "scan-123", {
+        sdkOpts: { apiToken: "custom-token" },
+      });
 
-      expect(mockSetupSdk).toHaveBeenCalledWith({ apiToken: 'custom-token' })
-    })
+      expect(mockSetupSdk).toHaveBeenCalledWith({ apiToken: "custom-token" });
+    });
 
-    it('handles API call failure', async () => {
+    it("handles API call failure", async () => {
       mockSetupSdk.mockResolvedValue({
         ok: true,
         data: mockSdk,
-      })
-      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: false }))
+      });
+      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: false }));
       mockHandleApiCall.mockResolvedValue({
         ok: false,
-        message: 'Scan not found',
-      })
+        message: "Scan not found",
+      });
 
-      const result = await streamScan('my-org', 'scan-123')
+      const result = await streamScan("my-org", "scan-123");
 
       expect(result).toEqual({
         ok: false,
-        message: 'Scan not found',
-      })
-    })
+        message: "Scan not found",
+      });
+    });
 
-    it('works with no options', async () => {
+    it("works with no options", async () => {
       mockSetupSdk.mockResolvedValue({
         ok: true,
         data: mockSdk,
-      })
-      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }))
-      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} })
+      });
+      mockStreamFullScan.mockReturnValue(Promise.resolve({ ok: true }));
+      mockHandleApiCall.mockResolvedValue({ ok: true, data: {} });
 
-      const result = await streamScan('my-org', 'scan-123')
+      const result = await streamScan("my-org", "scan-123");
 
-      expect(mockSetupSdk).toHaveBeenCalledWith(undefined)
-      expect(result.ok).toBe(true)
-    })
-  })
-})
+      expect(mockSetupSdk).toHaveBeenCalledWith(undefined);
+      expect(result.ok).toBe(true);
+    });
+  });
+});

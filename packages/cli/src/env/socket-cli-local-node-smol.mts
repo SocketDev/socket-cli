@@ -4,7 +4,7 @@
  * the specified path or a warning will be shown.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
 export const SOCKET_CLI_LOCAL_NODE_SMOL: string | undefined =
-  process.env['SOCKET_CLI_LOCAL_NODE_SMOL']
+  process.env["SOCKET_CLI_LOCAL_NODE_SMOL"];

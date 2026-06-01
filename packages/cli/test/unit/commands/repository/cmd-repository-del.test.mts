@@ -4,10 +4,10 @@
  * Tests the command that deletes a repository in an organization.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
-import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
+import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
+import type * as SdkModule from "../../../../src/util/socket/sdk.mjs";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -17,270 +17,198 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', async importOriginal => {
-  const actual = await importOriginal<typeof LoggerModule>()
+vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
+  const actual = await importOriginal<typeof LoggerModule>();
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  }
-})
+  };
+});
 
 // Mock dependencies.
-const mockHandleDeleteRepo = vi.hoisted(() => vi.fn())
-const mockDetermineOrgSlug = vi.hoisted(() =>
-  vi.fn().mockResolvedValue(['test-org', 'test-org']),
-)
-const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
+const mockHandleDeleteRepo = vi.hoisted(() => vi.fn());
+const mockDetermineOrgSlug = vi.hoisted(() => vi.fn().mockResolvedValue(["test-org", "test-org"]));
+const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false));
 
-vi.mock('../../../../src/commands/repository/handle-delete-repo.mts', () => ({
+vi.mock(import("../../../../src/commands/repository/handle-delete-repo.mts"), () => ({
   handleDeleteRepo: mockHandleDeleteRepo,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/org-slug.mjs', () => ({
+vi.mock(import("../../../../src/util/socket/org-slug.mjs"), () => ({
   determineOrgSlug: mockDetermineOrgSlug,
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof SdkModule>()
+vi.mock(import("../../../../src/util/socket/sdk.mjs"), async (importOriginal) => {
+  const actual = await importOriginal<typeof SdkModule>();
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
-  }
-})
+  };
+});
 
 // Import after mocks.
 const { cmdRepositoryDel } =
-  await import('../../../../src/commands/repository/cmd-repository-del.mts')
+  await import("../../../../src/commands/repository/cmd-repository-del.mts");
 
-describe('cmd-repository-del', () => {
+describe("cmd-repository-del", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    process.exitCode = undefined
-  })
+    vi.clearAllMocks();
+    process.exitCode = undefined;
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdRepositoryDel.description).toBe(
-        'Delete a repository in an organization',
-      )
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdRepositoryDel.description).toBe("Delete a repository in an organization");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdRepositoryDel.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdRepositoryDel.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-repository-del.mts' }
-    const context = { parentName: 'socket repository' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-repository-del.mts" };
+    const context = { parentName: "socket repository" };
 
-    it('should support --dry-run flag', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should support --dry-run flag", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdRepositoryDel.run(
-        ['test-repo', '--dry-run'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryDel.run(["test-repo", "--dry-run"], importMeta, context);
 
-      expect(mockHandleDeleteRepo).not.toHaveBeenCalled()
+      expect(mockHandleDeleteRepo).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("DryRun"));
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('DryRun'),
-      )
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Would delete repository'),
-      )
-    })
+        expect.stringContaining("Would delete repository"),
+      );
+    });
 
-    it('should fail without Socket API token', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(false)
+    it("should fail without Socket API token", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(false);
 
-      await cmdRepositoryDel.run(
-        ['test-repo', '--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryDel.run(["test-repo", "--no-interactive"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleDeleteRepo).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleDeleteRepo).not.toHaveBeenCalled();
+    });
 
-    it('should fail without org slug', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should fail without org slug", async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(["", ""]);
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdRepositoryDel.run(
-        ['test-repo', '--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryDel.run(["test-repo", "--no-interactive"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleDeleteRepo).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleDeleteRepo).not.toHaveBeenCalled();
+    });
 
-    it('should fail without repository name', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should fail without repository name", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdRepositoryDel.run(['--no-interactive'], importMeta, context)
-
-      // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleDeleteRepo).not.toHaveBeenCalled()
-    })
-
-    it('should call handleDeleteRepo with correct parameters', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdRepositoryDel.run(
-        ['test-repo', '--no-interactive'],
-        importMeta,
-        context,
-      )
-
-      expect(mockHandleDeleteRepo).toHaveBeenCalledWith(
-        'test-org',
-        'test-repo',
-        'text',
-      )
-    })
-
-    it('should pass --org flag to determineOrgSlug', async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(['custom-org', 'custom-org'])
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdRepositoryDel.run(
-        ['test-repo', '--org', 'custom-org', '--no-interactive'],
-        importMeta,
-        context,
-      )
-
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
-        'custom-org',
-        false,
-        false,
-      )
-      expect(mockHandleDeleteRepo).toHaveBeenCalledWith(
-        'custom-org',
-        'test-repo',
-        'text',
-      )
-    })
-
-    it('should pass --json flag to handleDeleteRepo', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdRepositoryDel.run(
-        ['test-repo', '--json', '--no-interactive'],
-        importMeta,
-        context,
-      )
-
-      expect(mockHandleDeleteRepo).toHaveBeenCalledWith(
-        'test-org',
-        'test-repo',
-        'json',
-      )
-    })
-
-    it('should pass --markdown flag to handleDeleteRepo', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdRepositoryDel.run(
-        ['test-repo', '--markdown', '--no-interactive'],
-        importMeta,
-        context,
-      )
-
-      expect(mockHandleDeleteRepo).toHaveBeenCalledWith(
-        'test-org',
-        'test-repo',
-        'markdown',
-      )
-    })
-
-    it('should fail when both --json and --markdown flags are set', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdRepositoryDel.run(
-        ['test-repo', '--json', '--markdown', '--no-interactive'],
-        importMeta,
-        context,
-      )
+      await cmdRepositoryDel.run(["--no-interactive"], importMeta, context);
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2)
-      expect(mockHandleDeleteRepo).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleDeleteRepo).not.toHaveBeenCalled();
+    });
 
-    it('should show repository identifier in dry-run mode', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should call handleDeleteRepo with correct parameters", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
-      await cmdRepositoryDel.run(['my-repo', '--dry-run'], importMeta, context)
+      await cmdRepositoryDel.run(["test-repo", "--no-interactive"], importMeta, context);
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('test-org/my-repo'),
-      )
-    })
+      expect(mockHandleDeleteRepo).toHaveBeenCalledWith("test-org", "test-repo", "text");
+    });
 
-    it('should pass interactive flag to determineOrgSlug', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdRepositoryDel.run(
-        ['test-repo', '--interactive'],
-        importMeta,
-        context,
-      )
-
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', true, false)
-    })
-
-    it('should pass dry-run flag to determineOrgSlug', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --org flag to determineOrgSlug", async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(["custom-org", "custom-org"]);
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdRepositoryDel.run(
-        ['test-repo', '--dry-run'],
+        ["test-repo", "--org", "custom-org", "--no-interactive"],
         importMeta,
         context,
-      )
+      );
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', true, true)
-    })
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("custom-org", false, false);
+      expect(mockHandleDeleteRepo).toHaveBeenCalledWith("custom-org", "test-repo", "text");
+    });
 
-    it('should handle repository names with special characters', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should pass --json flag to handleDeleteRepo", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdRepositoryDel.run(["test-repo", "--json", "--no-interactive"], importMeta, context);
+
+      expect(mockHandleDeleteRepo).toHaveBeenCalledWith("test-org", "test-repo", "json");
+    });
+
+    it("should pass --markdown flag to handleDeleteRepo", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdRepositoryDel.run(
-        ['my-special-repo-123', '--no-interactive'],
+        ["test-repo", "--markdown", "--no-interactive"],
         importMeta,
         context,
-      )
+      );
 
-      expect(mockHandleDeleteRepo).toHaveBeenCalledWith(
-        'test-org',
-        'my-special-repo-123',
-        'text',
-      )
-    })
+      expect(mockHandleDeleteRepo).toHaveBeenCalledWith("test-org", "test-repo", "markdown");
+    });
 
-    it('should handle repository deletion with json output', async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
+    it("should fail when both --json and --markdown flags are set", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
 
       await cmdRepositoryDel.run(
-        ['my-repo', '--json', '--no-interactive'],
+        ["test-repo", "--json", "--markdown", "--no-interactive"],
         importMeta,
         context,
-      )
+      );
 
-      expect(mockHandleDeleteRepo).toHaveBeenCalledWith(
-        'test-org',
-        'my-repo',
-        'json',
-      )
-    })
-  })
-})
+      // Exit code 2 = invalid usage/validation failure.
+      expect(process.exitCode).toBe(2);
+      expect(mockHandleDeleteRepo).not.toHaveBeenCalled();
+    });
+
+    it("should show repository identifier in dry-run mode", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdRepositoryDel.run(["my-repo", "--dry-run"], importMeta, context);
+
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("test-org/my-repo"));
+    });
+
+    it("should pass interactive flag to determineOrgSlug", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdRepositoryDel.run(["test-repo", "--interactive"], importMeta, context);
+
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("", true, false);
+    });
+
+    it("should pass dry-run flag to determineOrgSlug", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdRepositoryDel.run(["test-repo", "--dry-run"], importMeta, context);
+
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("", true, true);
+    });
+
+    it("should handle repository names with special characters", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdRepositoryDel.run(["my-special-repo-123", "--no-interactive"], importMeta, context);
+
+      expect(mockHandleDeleteRepo).toHaveBeenCalledWith("test-org", "my-special-repo-123", "text");
+    });
+
+    it("should handle repository deletion with json output", async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true);
+
+      await cmdRepositoryDel.run(["my-repo", "--json", "--no-interactive"], importMeta, context);
+
+      expect(mockHandleDeleteRepo).toHaveBeenCalledWith("test-org", "my-repo", "json");
+    });
+  });
+});

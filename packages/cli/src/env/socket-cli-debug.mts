@@ -3,6 +3,6 @@
  * debug output.
  */
 
-import { env } from 'node:process'
+import { env } from "node:process";
 
-export const SOCKET_CLI_DEBUG = env['SOCKET_CLI_DEBUG']
+export const SOCKET_CLI_DEBUG = env["SOCKET_CLI_DEBUG"];

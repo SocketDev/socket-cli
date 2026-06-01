@@ -6,8 +6,8 @@
  * embedding version info into the binary.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
 export function getCdxgenVersion(): string {
-  return process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']!
+  return process.env["INLINED_CYCLONEDX_CDXGEN_VERSION"]!;
 }

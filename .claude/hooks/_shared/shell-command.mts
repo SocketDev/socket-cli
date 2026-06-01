@@ -33,49 +33,49 @@
 // entries are bare strings, `{ op }` operator objects, or `{ comment }`
 // objects. Type it locally.
 // oxlint-disable-next-line no-explicit-any -- shell-quote has no types; parse is the documented entry point.
-import { parse as shellQuoteParse } from 'shell-quote'
+import { parse as shellQuoteParse } from "shell-quote";
 
-type ParseEntry = string | { op: string } | { comment: string }
+type ParseEntry = string | { op: string } | { comment: string };
 
-const parse = shellQuoteParse as unknown as (cmd: string) => ParseEntry[]
+const parse = shellQuoteParse as unknown as (cmd: string) => ParseEntry[];
 
 // shell-quote emits operator objects ({ op }), comment objects ({ comment }),
 // and bare strings. These ops separate one command from the next.
-const COMMAND_SEPARATORS = new Set(['\n', '&', '&&', ';', '|', '||'])
+const COMMAND_SEPARATORS = new Set(["\n", "&", "&&", ";", "|", "||"]);
 
 export interface Command {
   /**
    * The resolved binary (first non-assignment token), or '' when it could not
    * be statically resolved (e.g. `$VAR` indirection).
    */
-  readonly binary: string
+  readonly binary: string;
   /**
    * Arguments after the binary, bare strings only (ops/comments dropped).
    */
-  readonly args: readonly string[]
+  readonly args: readonly string[];
   /**
    * Leading `NAME=value` assignments that prefixed the command.
    */
-  readonly assignments: readonly string[]
+  readonly assignments: readonly string[];
   /**
    * True when the binary token came from a variable (`$g push` → '').
    */
-  readonly viaVariable: boolean
+  readonly viaVariable: boolean;
   /**
    * True when the binary is `eval` (the command it runs is opaque).
    */
-  readonly viaEval: boolean
+  readonly viaEval: boolean;
 }
 
 function isOp(e: ParseEntry): e is { op: string } {
-  return typeof e === 'object' && e !== null && 'op' in e
+  return typeof e === "object" && e !== null && "op" in e;
 }
 
 function isComment(e: ParseEntry): boolean {
-  return typeof e === 'object' && e !== null && 'comment' in e
+  return typeof e === "object" && e !== null && "comment" in e;
 }
 
-const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/
+const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/;
 
 /**
  * Parse a shell command line into its constituent Command segments.
@@ -92,16 +92,16 @@ const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/
  * - An empty-string binary token means the binary was `$VAR`-sourced.
  */
 export function parseCommands(command: string): Command[] {
-  let entries: ParseEntry[]
+  let entries: ParseEntry[];
   try {
-    entries = parse(command)
+    entries = parse(command);
   } catch {
-    return []
+    return [];
   }
 
-  const commands: Command[] = []
-  let tokens: string[] = []
-  let sawVarPlaceholder = false
+  const commands: Command[] = [];
+  let tokens: string[] = [];
+  let sawVarPlaceholder = false;
 
   const flush = () => {
     if (tokens.length === 0) {
@@ -109,45 +109,45 @@ export function parseCommands(command: string): Command[] {
       // the binary was variable-sourced.
       if (sawVarPlaceholder) {
         commands.push({
-          binary: '',
+          binary: "",
           args: [],
           assignments: [],
           viaVariable: true,
           viaEval: false,
-        })
+        });
       }
-      sawVarPlaceholder = false
-      return
+      sawVarPlaceholder = false;
+      return;
     }
-    const assignments: string[] = []
-    let i = 0
+    const assignments: string[] = [];
+    let i = 0;
     while (i < tokens.length && ASSIGNMENT_RE.test(tokens[i]!)) {
-      assignments.push(tokens[i]!)
-      i += 1
+      assignments.push(tokens[i]!);
+      i += 1;
     }
-    const binary = i < tokens.length ? tokens[i]! : ''
-    const args = tokens.slice(i + 1)
+    const binary = i < tokens.length ? tokens[i]! : "";
+    const args = tokens.slice(i + 1);
     commands.push({
       binary,
       args,
       assignments,
       // Empty binary after assignments means a `$VAR` placeholder collapsed
       // to '' sat in the binary slot.
-      viaVariable: binary === '' && sawVarPlaceholder,
-      viaEval: binary === 'eval',
-    })
-    tokens = []
-    sawVarPlaceholder = false
-  }
+      viaVariable: binary === "" && sawVarPlaceholder,
+      viaEval: binary === "eval",
+    });
+    tokens = [];
+    sawVarPlaceholder = false;
+  };
 
   for (let i = 0, { length } = entries; i < length; i += 1) {
-    const e = entries[i]!
+    const e = entries[i]!;
     if (isComment(e)) {
-      continue
+      continue;
     }
     if (isOp(e)) {
-      if (COMMAND_SEPARATORS.has(e.op) || e.op === '(' || e.op === ')') {
-        flush()
+      if (COMMAND_SEPARATORS.has(e.op) || e.op === "(" || e.op === ")") {
+        flush();
       }
       // Redirect ops (`>`, `>>`, `<`, etc.) and the `$` substitution sigil
       // are not separators; the redirect TARGET that follows is dropped by
@@ -155,31 +155,31 @@ export function parseCommands(command: string): Command[] {
       // treat a redirect op as ending the meaningful args (skip the rest of
       // this segment's tokens until a separator). We keep it lenient — args
       // after a redirect aren't binaries.
-      continue
+      continue;
     }
     // Bare string token.
-    if (e === '') {
+    if (e === "") {
       // shell-quote collapses `$VAR` / `${VAR}` to ''. Mark indirection;
       // hold a placeholder so an all-variable command still flushes.
-      sawVarPlaceholder = true
-      tokens.push('')
-      continue
+      sawVarPlaceholder = true;
+      tokens.push("");
+      continue;
     }
-    tokens.push(e)
+    tokens.push(e);
   }
-  flush()
-  return commands
+  flush();
+  return commands;
 }
 
 export interface InvocationQuery {
   /**
    * Binary name to match, e.g. 'git' or 'gh'. Case-sensitive.
    */
-  readonly binary: string
+  readonly binary: string;
   /**
    * Optional first non-flag argument, e.g. 'push' or 'workflow'.
    */
-  readonly subcommand?: string | undefined
+  readonly subcommand?: string | undefined;
 }
 
 /**
@@ -193,17 +193,14 @@ export interface InvocationQuery {
  * attempted — instead we scan for `subcommand` among the non-flag args, which
  * is robust for the subcommand-detection use case.
  */
-export function findInvocation(
-  command: string,
-  query: InvocationQuery,
-): boolean {
-  const commands = parseCommands(command)
+export function findInvocation(command: string, query: InvocationQuery): boolean {
+  const commands = parseCommands(command);
   for (const cmd of commands) {
     if (cmd.binary !== query.binary) {
-      continue
+      continue;
     }
     if (query.subcommand === undefined) {
-      return true
+      return true;
     }
     // Scan ALL non-flag args for the subcommand verb. The first non-flag
     // token is NOT reliable: a global option's separate-word VALUE (e.g.
@@ -211,11 +208,11 @@ export function findInvocation(
     // shadow the real subcommand. Scanning every non-flag arg is safe
     // because those VALUES are paths / kv strings, not subcommand verbs
     // like `push` / `workflow`, so a match on the verb is unambiguous.
-    if (cmd.args.some(a => !a.startsWith('-') && a === query.subcommand)) {
-      return true
+    if (cmd.args.some((a) => !a.startsWith("-") && a === query.subcommand)) {
+      return true;
     }
   }
-  return false
+  return false;
 }
 
 /**
@@ -229,7 +226,7 @@ export function findInvocation(
  * appearing in a path, a sibling command, or a quoted string).
  */
 export function commandsFor(command: string, binary: string): Command[] {
-  return parseCommands(command).filter(c => c.binary === binary)
+  return parseCommands(command).filter((c) => c.binary === binary);
 }
 
 /**
@@ -243,16 +240,16 @@ export function invocationHasFlag(
   binary: string,
   flags: readonly string[],
 ): boolean {
-  const flagSet = new Set(flags)
-  return commandsFor(command, binary).some(c =>
-    c.args.some(a => {
+  const flagSet = new Set(flags);
+  return commandsFor(command, binary).some((c) =>
+    c.args.some((a) => {
       if (flagSet.has(a)) {
-        return true
+        return true;
       }
-      const eq = a.indexOf('=')
-      return eq > 0 && flagSet.has(a.slice(0, eq))
+      const eq = a.indexOf("=");
+      return eq > 0 && flagSet.has(a.slice(0, eq));
     }),
-  )
+  );
 }
 
 /**
@@ -262,5 +259,5 @@ export function invocationHasFlag(
  * guard that wants to stay permissive can ignore it.
  */
 export function hasOpaqueInvocation(command: string): boolean {
-  return parseCommands(command).some(c => c.viaVariable || c.viaEval)
+  return parseCommands(command).some((c) => c.viaVariable || c.viaEval);
 }

@@ -1,21 +1,20 @@
-
 /**
  * @file Utilities for creating pnpm patches using Babel AST + MagicString.
  *   Provides helpers for transforming node_modules files and generating patch
  *   files.
  */
 
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import path from 'node:path'
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
-import { parse } from '@babel/core'
-import MagicString from 'magic-string'
+import { parse } from "@babel/core";
+import MagicString from "magic-string";
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 /**
  * Run pnpm patch-commit command to finalize patch.
@@ -24,17 +23,17 @@ const logger = getDefaultLogger()
  * @param {string} packageName - Package name for logging.
  */
 async function commitPatch(patchPath, packageName) {
-  logger.log(`Committing patch for ${packageName}...`)
-  const result = await spawn('pnpm', ['patch-commit', patchPath], {
+  logger.log(`Committing patch for ${packageName}...`);
+  const result = await spawn("pnpm", ["patch-commit", patchPath], {
     shell: WIN32,
-    stdio: 'inherit',
-  })
+    stdio: "inherit",
+  });
 
   if (result.code !== 0) {
-    throw new Error(`Failed to commit patch for ${packageName}`)
+    throw new Error(`Failed to commit patch for ${packageName}`);
   }
 
-  logger.log(`✓ Patch created for ${packageName}`)
+  logger.log(`✓ Patch created for ${packageName}`);
 }
 
 /**
@@ -50,58 +49,57 @@ async function commitPatch(patchPath, packageName) {
  * @returns {Promise<void>}
  */
 async function createPatch(patchDef) {
-  const { description, files, packageName, transform, version } = patchDef
-  const packageSpec = `${packageName}@${version}`
+  const { description, files, packageName, transform, version } = patchDef;
+  const packageSpec = `${packageName}@${version}`;
 
-  logger.log('')
-  logger.log(`=== Creating patch: ${packageName} ===`)
-  logger.log(`Description: ${description}`)
+  logger.log("");
+  logger.log(`=== Creating patch: ${packageName} ===`);
+  logger.log(`Description: ${description}`);
 
-  let patchPath
+  let patchPath;
   try {
     // Start pnpm patch.
-    patchPath = await startPatch(packageSpec)
+    patchPath = await startPatch(packageSpec);
 
     // Transform each file.
     const utils = {
       MagicString,
       parseCode,
-      readFile: filePath => readPatchFile(patchPath, filePath),
-      writeFile: (filePath, content) =>
-        writePatchFile(patchPath, filePath, content),
-    }
+      readFile: (filePath) => readPatchFile(patchPath, filePath),
+      writeFile: (filePath, content) => writePatchFile(patchPath, filePath, content),
+    };
 
-    let hasChanges = false
+    let hasChanges = false;
     for (let i = 0, { length } = files; i < length; i += 1) {
-      const file = files[i]
-      logger.log(`Transforming ${file}...`)
-      const changed = await transform(file, utils)
+      const file = files[i];
+      logger.log(`Transforming ${file}...`);
+      const changed = await transform(file, utils);
       if (changed) {
-        hasChanges = true
-        logger.log(`✓ Transformed ${file}`)
+        hasChanges = true;
+        logger.log(`✓ Transformed ${file}`);
       } else {
-        logger.log(`- No changes needed for ${file}`)
+        logger.log(`- No changes needed for ${file}`);
       }
     }
 
     if (!hasChanges) {
-      logger.log('No changes made, skipping patch commit')
+      logger.log("No changes made, skipping patch commit");
       // Cleanup temp directory.
       if (existsSync(patchPath)) {
-        rmSync(patchPath, { force: true, recursive: true })
+        rmSync(patchPath, { force: true, recursive: true });
       }
-      return
+      return;
     }
 
     // Commit the patch.
-    await commitPatch(patchPath, packageName)
+    await commitPatch(patchPath, packageName);
   } catch (e) {
-    logger.error(`Error creating patch for ${packageName}:`, e.message)
+    logger.error(`Error creating patch for ${packageName}:`, e.message);
     // Cleanup temp directory on error.
     if (patchPath && existsSync(patchPath)) {
-      rmSync(patchPath, { force: true, recursive: true })
+      rmSync(patchPath, { force: true, recursive: true });
     }
-    throw e
+    throw e;
   }
 }
 
@@ -115,10 +113,10 @@ async function createPatch(patchDef) {
  */
 function parseCode(code, options = {}) {
   return parse(code, {
-    sourceType: 'module',
+    sourceType: "module",
     plugins: [],
     ...options,
-  })
+  });
 }
 
 /**
@@ -131,24 +129,24 @@ function parseCode(code, options = {}) {
  * @returns {Promise<boolean>} True if user answered yes, false otherwise.
  */
 async function promptYesNo(question, defaultAnswer = false) {
-  const readline = await import('node:readline')
+  const readline = await import("node:readline");
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-  })
+  });
 
-  return new Promise(resolve => {
-    const defaultHint = defaultAnswer ? 'Y/n' : 'y/N'
-    rl.question(`${question} (${defaultHint}): `, answer => {
-      rl.close()
-      const normalized = answer.trim().toLowerCase()
-      if (normalized === '') {
-        resolve(defaultAnswer)
+  return new Promise((resolve) => {
+    const defaultHint = defaultAnswer ? "Y/n" : "y/N";
+    rl.question(`${question} (${defaultHint}): `, (answer) => {
+      rl.close();
+      const normalized = answer.trim().toLowerCase();
+      if (normalized === "") {
+        resolve(defaultAnswer);
       } else {
-        resolve(normalized === 'y' || normalized === 'yes')
+        resolve(normalized === "y" || normalized === "yes");
       }
-    })
-  })
+    });
+  });
 }
 
 /**
@@ -160,11 +158,11 @@ async function promptYesNo(question, defaultAnswer = false) {
  * @returns {string} File contents.
  */
 function readPatchFile(packagePath, filePath) {
-  const fullPath = path.join(packagePath, filePath)
+  const fullPath = path.join(packagePath, filePath);
   if (!existsSync(fullPath)) {
-    throw new Error(`File not found: ${fullPath}`)
+    throw new Error(`File not found: ${fullPath}`);
   }
-  return readFileSync(fullPath, 'utf-8')
+  return readFileSync(fullPath, "utf-8");
 }
 
 /**
@@ -175,67 +173,62 @@ function readPatchFile(packagePath, filePath) {
  * @returns {Promise<string>} Path to temporary patch directory.
  */
 async function startPatch(packageSpec) {
-  logger.log(`Starting patch for ${packageSpec}...`)
+  logger.log(`Starting patch for ${packageSpec}...`);
 
   // First, try to run pnpm patch to see if directory already exists.
-  let result = await spawn('pnpm', ['patch', packageSpec], {
+  let result = await spawn("pnpm", ["patch", packageSpec], {
     shell: WIN32,
     // Capture stdout and stderr.
-    stdio: ['inherit', 'pipe', 'pipe'],
+    stdio: ["inherit", "pipe", "pipe"],
     stdioString: true,
-  })
+  });
 
   // Check if the error is about existing patch directory.
   // pnpm outputs errors to stdout, not stderr.
-  if (result.code !== 0 && result.stdout.includes('is not empty')) {
-    const match = result.stdout.match(/directory (.+?) is not empty/)
-    const existingPatchDir = match ? match[1] : undefined
+  if (result.code !== 0 && result.stdout.includes("is not empty")) {
+    const match = result.stdout.match(/directory (.+?) is not empty/);
+    const existingPatchDir = match ? match[1] : undefined;
 
     if (existingPatchDir) {
-      logger.log('')
-      logger.log(`Existing patch directory found: ${existingPatchDir}`)
-      const shouldOverwrite = await promptYesNo(
-        'Overwrite existing patch directory?',
-        false,
-      )
+      logger.log("");
+      logger.log(`Existing patch directory found: ${existingPatchDir}`);
+      const shouldOverwrite = await promptYesNo("Overwrite existing patch directory?", false);
 
       if (!shouldOverwrite) {
-        throw new Error('Patch creation cancelled by user')
+        throw new Error("Patch creation cancelled by user");
       }
 
       // Remove existing patch directory.
-      logger.log('Removing existing patch directory...')
-      rmSync(existingPatchDir, { force: true, recursive: true })
+      logger.log("Removing existing patch directory…");
+      rmSync(existingPatchDir, { force: true, recursive: true });
 
       // Try pnpm patch again.
-      result = await spawn('pnpm', ['patch', packageSpec], {
+      result = await spawn("pnpm", ["patch", packageSpec], {
         shell: WIN32,
-        stdio: ['inherit', 'pipe', 'inherit'],
+        stdio: ["inherit", "pipe", "inherit"],
         stdioString: true,
-      })
+      });
     }
   }
 
   if (result.code !== 0) {
-    throw new Error(`Failed to start patch for ${packageSpec}`)
+    throw new Error(`Failed to start patch for ${packageSpec}`);
   }
 
   // Extract path from output.
   // pnpm patch outputs: "Patch: You can now edit the package at:\n\n  /path/to/package\n\n..."
   // We need to find the line with the path (starts with whitespace and contains the package name).
-  const lines = result.stdout.split('\n')
-  const packageNamePart = packageSpec.split('@')[0]
+  const lines = result.stdout.split("\n");
+  const packageNamePart = packageSpec.split("@")[0];
   const pathLine = lines.find(
-    line => line.trim().startsWith('/') && line.includes(packageNamePart),
-  )
+    (line) => line.trim().startsWith("/") && line.includes(packageNamePart),
+  );
 
   if (!pathLine) {
-    throw new Error(
-      `Could not find patch directory path in output:\n${result.stdout}`,
-    )
+    throw new Error(`Could not find patch directory path in output:\n${result.stdout}`);
   }
 
-  return pathLine.trim()
+  return pathLine.trim();
 }
 
 /**
@@ -246,6 +239,6 @@ async function startPatch(packageSpec) {
  * @param {string} content - File contents to write.
  */
 function writePatchFile(packagePath, filePath, content) {
-  const fullPath = path.join(packagePath, filePath)
-  writeFileSync(fullPath, content, 'utf-8')
+  const fullPath = path.join(packagePath, filePath);
+  writeFileSync(fullPath, content, "utf-8");
 }

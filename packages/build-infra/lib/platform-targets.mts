@@ -26,96 +26,96 @@
  */
 export const PLATFORM_CONFIGS = Object.freeze([
   {
-    arch: 'arm64',
-    binExt: '',
-    cpu: 'arm64',
-    description: 'macOS ARM64 (Apple Silicon)',
-    os: 'darwin',
-    platform: 'darwin',
-    releasePlatform: 'darwin',
-    runner: 'macos-latest',
+    arch: "arm64",
+    binExt: "",
+    cpu: "arm64",
+    description: "macOS ARM64 (Apple Silicon)",
+    os: "darwin",
+    platform: "darwin",
+    releasePlatform: "darwin",
+    runner: "macos-latest",
   },
   {
-    arch: 'x64',
-    binExt: '',
-    cpu: 'x64',
-    description: 'macOS x64 (Intel)',
-    os: 'darwin',
-    platform: 'darwin',
-    releasePlatform: 'darwin',
-    runner: 'macos-latest',
+    arch: "x64",
+    binExt: "",
+    cpu: "x64",
+    description: "macOS x64 (Intel)",
+    os: "darwin",
+    platform: "darwin",
+    releasePlatform: "darwin",
+    runner: "macos-latest",
   },
   {
-    arch: 'arm64',
-    binExt: '',
-    cpu: 'arm64',
-    description: 'Linux ARM64 (glibc)',
-    os: 'linux',
-    platform: 'linux',
-    releasePlatform: 'linux',
-    runner: 'ubuntu-latest',
+    arch: "arm64",
+    binExt: "",
+    cpu: "arm64",
+    description: "Linux ARM64 (glibc)",
+    os: "linux",
+    platform: "linux",
+    releasePlatform: "linux",
+    runner: "ubuntu-latest",
   },
   {
-    arch: 'arm64',
-    binExt: '',
-    cpu: 'arm64',
-    description: 'Linux ARM64 (musl/Alpine)',
-    libc: 'musl',
-    os: 'linux',
-    platform: 'linux',
-    releasePlatform: 'linux',
-    runner: 'ubuntu-latest',
+    arch: "arm64",
+    binExt: "",
+    cpu: "arm64",
+    description: "Linux ARM64 (musl/Alpine)",
+    libc: "musl",
+    os: "linux",
+    platform: "linux",
+    releasePlatform: "linux",
+    runner: "ubuntu-latest",
   },
   {
-    arch: 'x64',
-    binExt: '',
-    cpu: 'x64',
-    description: 'Linux x64 (glibc)',
-    os: 'linux',
-    platform: 'linux',
-    releasePlatform: 'linux',
-    runner: 'ubuntu-latest',
+    arch: "x64",
+    binExt: "",
+    cpu: "x64",
+    description: "Linux x64 (glibc)",
+    os: "linux",
+    platform: "linux",
+    releasePlatform: "linux",
+    runner: "ubuntu-latest",
   },
   {
-    arch: 'x64',
-    binExt: '',
-    cpu: 'x64',
-    description: 'Linux x64 (musl/Alpine)',
-    libc: 'musl',
-    os: 'linux',
-    platform: 'linux',
-    releasePlatform: 'linux',
-    runner: 'ubuntu-latest',
+    arch: "x64",
+    binExt: "",
+    cpu: "x64",
+    description: "Linux x64 (musl/Alpine)",
+    libc: "musl",
+    os: "linux",
+    platform: "linux",
+    releasePlatform: "linux",
+    runner: "ubuntu-latest",
   },
   {
-    arch: 'arm64',
-    binExt: '.exe',
-    cpu: 'arm64',
-    description: 'Windows ARM64',
-    os: 'win32',
-    platform: 'win32',
-    releasePlatform: 'win',
-    runner: 'windows-latest',
+    arch: "arm64",
+    binExt: ".exe",
+    cpu: "arm64",
+    description: "Windows ARM64",
+    os: "win32",
+    platform: "win32",
+    releasePlatform: "win",
+    runner: "windows-latest",
   },
   {
-    arch: 'x64',
-    binExt: '.exe',
-    cpu: 'x64',
-    description: 'Windows x64',
-    os: 'win32',
-    platform: 'win32',
-    releasePlatform: 'win',
-    runner: 'windows-latest',
+    arch: "x64",
+    binExt: ".exe",
+    cpu: "x64",
+    description: "Windows x64",
+    os: "win32",
+    platform: "win32",
+    releasePlatform: "win",
+    runner: "windows-latest",
   },
-])
+]);
 
 /**
  * Valid platform targets for SEA builds (using releasePlatform for naming).
  * Format: <releasePlatform>-<arch>[-musl] Derived from PLATFORM_CONFIGS.
  */
 const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
-  c => `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}`,
-)
+  (c) => `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ""}`,
+);
 
 /**
  * Get the release platform name for file/folder/npm naming. Converts win32 →
@@ -126,18 +126,18 @@ const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
  * @returns {string} Release platform (darwin, linux, win).
  */
 export function getReleasePlatform(platform) {
-  return platform === 'win32' ? 'win' : platform
+  return platform === "win32" ? "win" : platform;
 }
 
 /**
  * Valid platforms (Node.js process.platform values).
  */
-const VALID_PLATFORMS = ['darwin', 'linux', 'win32']
+const VALID_PLATFORMS = ["darwin", "linux", "win32"];
 
 /**
  * Valid architectures.
  */
-const VALID_ARCHS = ['arm64', 'x64']
+const VALID_ARCHS = ["arm64", "x64"];
 
 /**
  * Parsed platform target information.
@@ -172,36 +172,32 @@ const VALID_ARCHS = ['arm64', 'x64']
  * @returns {PlatformTargetInfo | null} Parsed info or null if invalid.
  */
 export function parsePlatformTarget(target) {
-  if (!target || typeof target !== 'string') {
-    return undefined
+  if (!target || typeof target !== "string") {
+    return undefined;
   }
 
   // Handle musl suffix (linux-arm64-musl, linux-x64-musl).
-  if (target.endsWith('-musl')) {
-    const base = target.slice(0, -5) // Remove '-musl'.
-    const parts = base.split('-')
-    if (
-      parts.length === 2 &&
-      parts[0] === 'linux' &&
-      VALID_ARCHS.includes(parts[1])
-    ) {
-      return { arch: parts[1], libc: 'musl', platform: 'linux' }
+  if (target.endsWith("-musl")) {
+    const base = target.slice(0, -5); // Remove '-musl'.
+    const parts = base.split("-");
+    if (parts.length === 2 && parts[0] === "linux" && VALID_ARCHS.includes(parts[1])) {
+      return { arch: parts[1], libc: "musl", platform: "linux" };
     }
-    return undefined
+    return undefined;
   }
 
   // Handle standard platform-arch.
-  const parts = target.split('-')
+  const parts = target.split("-");
   if (parts.length === 2) {
-    const [rawPlatform, arch] = parts
+    const [rawPlatform, arch] = parts;
     // Normalize 'win' to 'win32' for internal use.
-    const platform = rawPlatform === 'win' ? 'win32' : rawPlatform
+    const platform = rawPlatform === "win" ? "win32" : rawPlatform;
     if (VALID_PLATFORMS.includes(platform) && VALID_ARCHS.includes(arch)) {
-      return { arch, platform }
+      return { arch, platform };
     }
   }
 
-  return undefined
+  return undefined;
 }
 
 /**
@@ -213,7 +209,7 @@ export function parsePlatformTarget(target) {
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
 export function isPlatformTarget(target) {
-  return PLATFORM_TARGETS.includes(target)
+  return PLATFORM_TARGETS.includes(target);
 }
 
 /**
@@ -229,11 +225,10 @@ export function isPlatformTarget(target) {
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
 export function getPlatformConfig(target) {
   return PLATFORM_CONFIGS.find(
-    c =>
-      `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` ===
-        target ||
-      `${c.platform}-${c.arch}${c.libc ? `-${c.libc}` : ''}` === target,
-  )
+    (c) =>
+      `${c.releasePlatform}-${c.arch}${c.libc ? `-${c.libc}` : ""}` === target ||
+      `${c.platform}-${c.arch}${c.libc ? `-${c.libc}` : ""}` === target,
+  );
 }
 
 /**
@@ -247,8 +242,8 @@ export function getPlatformConfig(target) {
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
 export function formatPlatformTarget(platform, arch, libc) {
-  const muslSuffix = libc === 'musl' ? '-musl' : ''
-  return `${platform}-${arch}${muslSuffix}`
+  const muslSuffix = libc === "musl" ? "-musl" : "";
+  return `${platform}-${arch}${muslSuffix}`;
 }
 
 /**
@@ -278,37 +273,37 @@ export function formatPlatformTarget(platform, arch, libc) {
  */
 // oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
 export function parsePlatformArgs(args) {
-  const result = { arch: undefined, libc: undefined, platform: undefined }
+  const result = { arch: undefined, libc: undefined, platform: undefined };
 
   for (let i = 0, { length } = args; i < length; i += 1) {
-    const arg = args[i]
-    if (arg.startsWith('--platform=')) {
-      const parts = arg.split('=')
+    const arg = args[i];
+    if (arg.startsWith("--platform=")) {
+      const parts = arg.split("=");
       if (parts.length >= 2) {
-        result.platform = parts[1]
+        result.platform = parts[1];
       }
-    } else if (arg.startsWith('--arch=')) {
-      const parts = arg.split('=')
+    } else if (arg.startsWith("--arch=")) {
+      const parts = arg.split("=");
       if (parts.length >= 2) {
-        result.arch = parts[1]
+        result.arch = parts[1];
       }
-    } else if (arg.startsWith('--libc=')) {
-      const parts = arg.split('=')
+    } else if (arg.startsWith("--libc=")) {
+      const parts = arg.split("=");
       if (parts.length >= 2) {
-        result.libc = parts[1]
+        result.libc = parts[1];
       }
-    } else if (arg.startsWith('--target=')) {
-      const parts = arg.split('=')
+    } else if (arg.startsWith("--target=")) {
+      const parts = arg.split("=");
       if (parts.length >= 2) {
-        const parsed = parsePlatformTarget(parts[1])
+        const parsed = parsePlatformTarget(parts[1]);
         if (parsed) {
-          result.platform = parsed.platform
-          result.arch = parsed.arch
-          result.libc = parsed.libc ?? undefined
+          result.platform = parsed.platform;
+          result.arch = parsed.arch;
+          result.libc = parsed.libc ?? undefined;
         }
       }
     }
   }
 
-  return result
+  return result;
 }

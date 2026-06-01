@@ -15,59 +15,59 @@
  * API calls - E2E testing with controlled responses.
  */
 
-import type { CResult } from '../src/types.mts'
+import type { CResult } from "../src/types.mts";
 
 interface MockAuthOptions {
   /**
    * Whether the operation should succeed.
    */
-  shouldSucceed?: boolean | undefined
+  shouldSucceed?: boolean | undefined;
   /**
    * Custom delay in milliseconds to simulate network latency.
    */
-  delay?: number | undefined
+  delay?: number | undefined;
   /**
    * Custom error message for failure scenarios.
    */
-  errorMessage?: string | undefined
+  errorMessage?: string | undefined;
   /**
    * Custom response data for success scenarios.
    */
-  responseData?: unknown | undefined
+  responseData?: unknown | undefined;
 }
 
 interface MockLoginOptions extends MockAuthOptions {
   /**
    * Mock email address for login.
    */
-  email?: string | undefined
+  email?: string | undefined;
   /**
    * Mock organization slug.
    */
-  orgSlug?: string | undefined
+  orgSlug?: string | undefined;
   /**
    * Mock API token to return.
    */
-  apiToken?: string | undefined
+  apiToken?: string | undefined;
   /**
    * Whether to simulate MFA requirement.
    */
-  requireMfa?: boolean | undefined
+  requireMfa?: boolean | undefined;
 }
 
 interface MockTokenOptions extends MockAuthOptions {
   /**
    * The token to validate.
    */
-  token?: string | undefined
+  token?: string | undefined;
   /**
    * Token permissions/scopes.
    */
-  scopes?: string[] | readonly string[] | undefined
+  scopes?: string[] | readonly string[] | undefined;
   /**
    * Token expiration time.
    */
-  expiresAt?: Date | undefined
+  expiresAt?: Date | undefined;
 }
 
 interface MockOrgOptions extends MockAuthOptions {
@@ -76,21 +76,21 @@ interface MockOrgOptions extends MockAuthOptions {
    */
   organizations?:
     | Array<{
-        id: string
-        slug: string
-        name: string
-        role: string
+        id: string;
+        slug: string;
+        name: string;
+        role: string;
       }>
-    | undefined
+    | undefined;
   /**
    * Selected organization index.
    */
-  selectedIndex?: number | undefined
+  selectedIndex?: number | undefined;
 }
 
-const MILLISECONDS_1_DAY = Date.now() + 24 * 60 * 60 * 1000
+const MILLISECONDS_1_DAY = Date.now() + 24 * 60 * 60 * 1000;
 
-const MILLISECONDS_30_DAYS = Date.now() + 30 * 24 * 60 * 60 * 1000
+const MILLISECONDS_30_DAYS = Date.now() + 30 * 24 * 60 * 60 * 1000;
 
 /**
  * Mock API token authentication.
@@ -100,24 +100,24 @@ export async function mockApiTokenAuth(
 ): Promise<CResult<{ valid: boolean; user?: unknown | undefined }>> {
   const {
     delay = 50,
-    errorMessage = 'Invalid token',
+    errorMessage = "Invalid token",
     expiresAt = new Date(MILLISECONDS_30_DAYS),
-    scopes = ['read', 'write'],
+    scopes = ["read", "write"],
     shouldSucceed = true,
-    token = 'test-token',
+    token = "test-token",
   } = {
     __proto__: null,
     ...options,
-  } as MockTokenOptions
+  } as MockTokenOptions;
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 401,
       message: errorMessage,
-    }
+    };
   }
 
   return {
@@ -125,14 +125,14 @@ export async function mockApiTokenAuth(
     data: {
       valid: true,
       user: {
-        id: 'user-123',
-        email: 'test@example.com',
+        id: "user-123",
+        email: "test@example.com",
         token,
         scopes,
         expiresAt,
       },
     },
-  }
+  };
 }
 
 /**
@@ -140,40 +140,40 @@ export async function mockApiTokenAuth(
  */
 export async function mockGenerateApiKey(
   options?: MockAuthOptions & {
-    keyName?: string | undefined
-    scopes?: string[] | undefined
+    keyName?: string | undefined;
+    scopes?: string[] | undefined;
   },
 ): Promise<CResult<{ apiKey: string; keyId: string }>> {
   const {
     delay = 150,
-    errorMessage = 'API key generation failed',
-    keyName = 'test-key',
+    errorMessage = "API key generation failed",
+    keyName = "test-key",
     shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
   } as MockAuthOptions & {
-    keyName?: string | undefined
-    scopes?: string[] | undefined
-  }
+    keyName?: string | undefined;
+    scopes?: string[] | undefined;
+  };
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 500,
       message: errorMessage,
-    }
+    };
   }
 
   return {
     ok: true,
     data: {
-      apiKey: `sk_test_${Buffer.from(keyName).toString('base64').substring(0, 16)}`,
+      apiKey: `sk_test_${Buffer.from(keyName).toString("base64").substring(0, 16)}`,
       keyId: `key_${Date.now()}`,
     },
-  }
+  };
 }
 
 /**
@@ -183,23 +183,23 @@ export async function mockGitHubAuth(
   options?: MockAuthOptions & { code?: string | undefined },
 ): Promise<CResult<{ accessToken: string; user: unknown }>> {
   const {
-    code = 'github-auth-code-123',
+    code = "github-auth-code-123",
     delay = 200,
-    errorMessage = 'GitHub authentication failed',
+    errorMessage = "GitHub authentication failed",
     shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions & { code?: string | undefined }
+  } as MockAuthOptions & { code?: string | undefined };
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 403,
       message: errorMessage,
-    }
+    };
   }
 
   return {
@@ -207,13 +207,13 @@ export async function mockGitHubAuth(
     data: {
       accessToken: `gho_${code}_accesstoken`,
       user: {
-        id: 'github-user-123',
-        login: 'testuser',
-        email: 'test@github.com',
-        name: 'Test User',
+        id: "github-user-123",
+        login: "testuser",
+        email: "test@github.com",
+        name: "Test User",
       },
     },
-  }
+  };
 }
 
 /**
@@ -223,30 +223,30 @@ export async function mockInteractiveLogin(
   options?: MockLoginOptions | undefined,
 ): Promise<CResult<{ apiToken: string; orgSlug: string }>> {
   const {
-    apiToken = 'test-token-123',
+    apiToken = "test-token-123",
     delay = 100,
-    errorMessage = 'Login failed',
-    orgSlug = 'test-org',
+    errorMessage = "Login failed",
+    orgSlug = "test-org",
     requireMfa = false,
     shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
-  } as MockLoginOptions
+  } as MockLoginOptions;
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 401,
       message: errorMessage,
-    }
+    };
   }
 
   if (requireMfa) {
     // Simulate MFA flow.
-    await simulateDelay(delay)
+    await simulateDelay(delay);
   }
 
   return {
@@ -255,38 +255,36 @@ export async function mockInteractiveLogin(
       apiToken,
       orgSlug,
     },
-  }
+  };
 }
 
 /**
  * Mock logout flow.
  */
-export async function mockLogout(
-  options?: MockAuthOptions,
-): Promise<CResult<void>> {
+export async function mockLogout(options?: MockAuthOptions): Promise<CResult<void>> {
   const {
     delay = 50,
-    errorMessage = 'Logout failed',
+    errorMessage = "Logout failed",
     shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions
+  } as MockAuthOptions;
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 500,
       message: errorMessage,
-    }
+    };
   }
 
   return {
     ok: true,
     data: undefined,
-  }
+  };
 }
 
 /**
@@ -297,43 +295,43 @@ export async function mockOrgSelection(
 ): Promise<CResult<{ orgSlug: string; orgId: string }>> {
   const {
     delay = 50,
-    errorMessage = 'Organization selection failed',
+    errorMessage = "Organization selection failed",
     organizations = [
-      { id: 'org-1', slug: 'test-org-1', name: 'Test Org 1', role: 'admin' },
-      { id: 'org-2', slug: 'test-org-2', name: 'Test Org 2', role: 'member' },
+      { id: "org-1", slug: "test-org-1", name: "Test Org 1", role: "admin" },
+      { id: "org-2", slug: "test-org-2", name: "Test Org 2", role: "member" },
     ],
     selectedIndex = 0,
     shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
-  } as MockOrgOptions
+  } as MockOrgOptions;
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 500,
       message: errorMessage,
-    }
+    };
   }
 
   if (!organizations.length) {
     return {
       ok: false,
       code: 404,
-      message: 'No organizations available',
-    }
+      message: "No organizations available",
+    };
   }
 
-  const selected = organizations[selectedIndex]
+  const selected = organizations[selectedIndex];
   if (!selected) {
     return {
       ok: false,
       code: 400,
-      message: 'Invalid organization selection',
-    }
+      message: "Invalid organization selection",
+    };
   }
 
   return {
@@ -342,7 +340,7 @@ export async function mockOrgSelection(
       orgSlug: selected.slug,
       orgId: selected.id,
     },
-  }
+  };
 }
 
 /**
@@ -354,21 +352,21 @@ export async function mockRefreshToken(
 ): Promise<CResult<{ accessToken: string; expiresIn: number }>> {
   const {
     delay = 100,
-    errorMessage = 'Token refresh failed',
+    errorMessage = "Token refresh failed",
     shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions
+  } as MockAuthOptions;
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 401,
       message: errorMessage,
-    }
+    };
   }
 
   return {
@@ -377,7 +375,7 @@ export async function mockRefreshToken(
       accessToken: `refreshed-token-${Date.now()}`,
       expiresIn: 3600, // 1 hour.
     },
-  }
+  };
 }
 
 /**
@@ -385,32 +383,32 @@ export async function mockRefreshToken(
  */
 export async function mockSsoAuth(
   options?: MockAuthOptions & {
-    ssoProvider?: string | undefined
-    ssoOrgSlug?: string | undefined
+    ssoProvider?: string | undefined;
+    ssoOrgSlug?: string | undefined;
   },
 ): Promise<CResult<{ apiToken: string; user: unknown }>> {
   const {
     delay = 300,
-    errorMessage = 'SSO authentication failed',
+    errorMessage = "SSO authentication failed",
     shouldSucceed = true,
-    ssoOrgSlug = 'sso-org',
-    ssoProvider = 'okta',
+    ssoOrgSlug = "sso-org",
+    ssoProvider = "okta",
   } = {
     __proto__: null,
     ...options,
   } as MockAuthOptions & {
-    ssoProvider?: string | undefined
-    ssoOrgSlug?: string | undefined
-  }
+    ssoProvider?: string | undefined;
+    ssoOrgSlug?: string | undefined;
+  };
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 403,
       message: errorMessage,
-    }
+    };
   }
 
   return {
@@ -418,14 +416,14 @@ export async function mockSsoAuth(
     data: {
       apiToken: `sso-token-${ssoProvider}-${Date.now()}`,
       user: {
-        id: 'sso-user-123',
+        id: "sso-user-123",
         email: `user@${ssoOrgSlug}.com`,
-        name: 'SSO User',
+        name: "SSO User",
         provider: ssoProvider,
         orgSlug: ssoOrgSlug,
       },
     },
-  }
+  };
 }
 
 /**
@@ -437,30 +435,30 @@ export async function mockTokenValidation(
 ): Promise<CResult<boolean>> {
   const {
     delay = 30,
-    errorMessage = 'Token validation failed',
+    errorMessage = "Token validation failed",
     shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions
+  } as MockAuthOptions;
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 401,
       message: errorMessage,
-    }
+    };
   }
 
   // Simulate basic token validation.
-  const isValid = token.length > 10 && token.startsWith('test-')
+  const isValid = token.length > 10 && token.startsWith("test-");
 
   return {
     ok: true,
     data: isValid,
-  }
+  };
 }
 
 /**
@@ -472,24 +470,24 @@ export async function mockValidateSession(
 ): Promise<CResult<{ valid: boolean; expiresAt?: Date | undefined }>> {
   const {
     delay = 50,
-    errorMessage = 'Session validation failed',
+    errorMessage = "Session validation failed",
     shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
-  } as MockAuthOptions
+  } as MockAuthOptions;
 
-  await simulateDelay(delay)
+  await simulateDelay(delay);
 
   if (!shouldSucceed) {
     return {
       ok: false,
       code: 401,
       message: errorMessage,
-    }
+    };
   }
 
-  const isValid = sessionId.startsWith('sess_')
+  const isValid = sessionId.startsWith("sess_");
 
   return {
     ok: true,
@@ -497,12 +495,12 @@ export async function mockValidateSession(
       valid: isValid,
       expiresAt: isValid ? new Date(MILLISECONDS_1_DAY) : undefined,
     },
-  }
+  };
 }
 
 /**
  * Simulate a delay for realistic async behavior.
  */
 function simulateDelay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

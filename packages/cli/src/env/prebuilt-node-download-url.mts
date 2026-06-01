@@ -4,7 +4,6 @@
  * 'https://nodejs.org/download/release' or custom URL.
  */
 
-import { env } from 'node:process'
+import { env } from "node:process";
 
-export const PREBUILT_NODE_DOWNLOAD_URL =
-  env['PREBUILT_NODE_DOWNLOAD_URL'] || 'socket-btm'
+export const PREBUILT_NODE_DOWNLOAD_URL = env["PREBUILT_NODE_DOWNLOAD_URL"] || "socket-btm";

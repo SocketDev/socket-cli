@@ -16,7 +16,7 @@
  * logic.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -26,763 +26,641 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}))
+}));
 
-vi.mock('@socketsecurity/lib-stable/logger', () => ({
+vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
   getDefaultLogger: () => mockLogger,
-}))
+}));
 
 // Mock runCdxgen to prevent actual cdxgen execution.
-const mockRunCdxgen = vi.hoisted(() => vi.fn())
+const mockRunCdxgen = vi.hoisted(() => vi.fn());
 const mockDetectNodejsCdxgenSources = vi.hoisted(() =>
   // Default to "sources available" so pre-existing tests don't trip the
   // empty-components hard gate.
   vi.fn().mockResolvedValue({ hasLockfile: true, hasNodeModules: true }),
-)
-const mockIsNodejsCdxgenType = vi.hoisted(() => vi.fn().mockReturnValue(true))
+);
+const mockIsNodejsCdxgenType = vi.hoisted(() => vi.fn().mockReturnValue(true));
 
-vi.mock('../../../../src/commands/manifest/run-cdxgen.mts', () => ({
+vi.mock(import("../../../../src/commands/manifest/run-cdxgen.mts"), () => ({
   detectNodejsCdxgenSources: mockDetectNodejsCdxgenSources,
   isNodejsCdxgenType: mockIsNodejsCdxgenType,
   runCdxgen: mockRunCdxgen,
-}))
+}));
 
 // Import after mocks.
 const { cmdManifestCdxgen } =
-  await import('../../../../src/commands/manifest/cmd-manifest-cdxgen.mts')
+  await import("../../../../src/commands/manifest/cmd-manifest-cdxgen.mts");
 
-describe('cmd-manifest-cdxgen', () => {
+describe("cmd-manifest-cdxgen", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.clearAllMocks();
     mockDetectNodejsCdxgenSources.mockResolvedValue({
       hasLockfile: true,
       hasNodeModules: true,
-    })
-    mockIsNodejsCdxgenType.mockReturnValue(true)
-    process.exitCode = undefined
-  })
+    });
+    mockIsNodejsCdxgenType.mockReturnValue(true);
+    process.exitCode = undefined;
+  });
 
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdManifestCdxgen.description).toBe(
-        'Run cdxgen for SBOM generation',
-      )
-    })
+  describe("command metadata", () => {
+    it("should have correct description", () => {
+      expect(cmdManifestCdxgen.description).toBe("Run cdxgen for SBOM generation");
+    });
 
-    it('should not be hidden', () => {
-      expect(cmdManifestCdxgen.hidden).toBe(false)
-    })
-  })
+    it("should not be hidden", () => {
+      expect(cmdManifestCdxgen.hidden).toBe(false);
+    });
+  });
 
-  describe('run', () => {
-    const importMeta = { url: 'file:///test/cmd-manifest-cdxgen.mts' }
-    const context = { parentName: 'socket manifest' }
+  describe("run", () => {
+    const importMeta = { url: "file:///test/cmd-manifest-cdxgen.mts" };
+    const context = { parentName: "socket manifest" };
 
-    it('should support --dry-run flag', async () => {
-      await cmdManifestCdxgen.run(['--dry-run'], importMeta, context)
+    it("should support --dry-run flag", async () => {
+      await cmdManifestCdxgen.run(["--dry-run"], importMeta, context);
 
       // Dry run should not call runCdxgen.
-      expect(mockRunCdxgen).not.toHaveBeenCalled()
+      expect(mockRunCdxgen).not.toHaveBeenCalled();
       // Should log the dry run message.
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('DryRun'),
-      )
-    })
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("DryRun"));
+    });
 
-    it('should show command args in dry-run output', async () => {
-      await cmdManifestCdxgen.run(
-        ['--dry-run', '--type', 'npm', './project'],
-        importMeta,
-        context,
-      )
+    it("should show command args in dry-run output", async () => {
+      await cmdManifestCdxgen.run(["--dry-run", "--type", "npm", "./project"], importMeta, context);
 
-      expect(mockRunCdxgen).not.toHaveBeenCalled()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Command: cdxgen'),
-      )
-    })
+      expect(mockRunCdxgen).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("Command: cdxgen"));
+    });
 
-    it('should fail on unknown arguments', async () => {
-      await cmdManifestCdxgen.run(['unknown-fake-arg'], importMeta, context)
+    it("should fail on unknown arguments", async () => {
+      await cmdManifestCdxgen.run(["unknown-fake-arg"], importMeta, context);
 
-      expect(process.exitCode).toBe(2)
-      expect(mockLogger.fail).toHaveBeenCalledWith(
-        expect.stringContaining('Unknown argument'),
-      )
-      expect(mockRunCdxgen).not.toHaveBeenCalled()
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("Unknown argument"));
+      expect(mockRunCdxgen).not.toHaveBeenCalled();
+    });
 
-    it('should fail on multiple unknown arguments', async () => {
-      await cmdManifestCdxgen.run(
-        ['fake-arg-1', 'fake-arg-2'],
-        importMeta,
-        context,
-      )
+    it("should fail on multiple unknown arguments", async () => {
+      await cmdManifestCdxgen.run(["fake-arg-1", "fake-arg-2"], importMeta, context);
 
-      expect(process.exitCode).toBe(2)
-      expect(mockLogger.fail).toHaveBeenCalledWith(
-        expect.stringContaining('Unknown arguments'),
-      )
-    })
+      expect(process.exitCode).toBe(2);
+      expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("Unknown arguments"));
+    });
 
-    describe('exit code handling', () => {
-      it('skips exit/kill when both code and signal are null', async () => {
+    describe("exit code handling", () => {
+      it("skips exit/kill when both code and signal are null", async () => {
         const mockSpawnPromise = Promise.resolve({
           code: undefined,
           signal: undefined,
-        })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+        });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
-        const mockKill = vi
-          .spyOn(process, 'kill')
-          .mockImplementation((() => true) as unknown)
-        mockExit.mockClear()
-        mockKill.mockClear()
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
+        const mockKill = vi.spyOn(process, "kill").mockImplementation((() => true) as unknown);
+        mockExit.mockClear();
+        mockKill.mockClear();
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(mockExit).not.toHaveBeenCalled()
-        expect(mockKill).not.toHaveBeenCalled()
-        mockExit.mockRestore()
-        mockKill.mockRestore()
-      })
+        expect(mockExit).not.toHaveBeenCalled();
+        expect(mockKill).not.toHaveBeenCalled();
+        mockExit.mockRestore();
+        mockKill.mockRestore();
+      });
 
-      it('should call process.exit with exit code 0 on success', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should call process.exit with exit code 0 on success", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(mockExit).toHaveBeenCalledWith(0)
-        mockExit.mockRestore()
-      })
+        expect(mockExit).toHaveBeenCalledWith(0);
+        mockExit.mockRestore();
+      });
 
-      it('should call process.exit with non-zero exit code on failure', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 1, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should call process.exit with non-zero exit code on failure", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 1, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(mockExit).toHaveBeenCalledWith(1)
-        mockExit.mockRestore()
-      })
+        expect(mockExit).toHaveBeenCalledWith(1);
+        mockExit.mockRestore();
+      });
 
-      it('should propagate specific exit code from cdxgen', async () => {
+      it("should propagate specific exit code from cdxgen", async () => {
         const mockSpawnPromise = Promise.resolve({
           code: 42,
           signal: undefined,
-        })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+        });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(mockExit).toHaveBeenCalledWith(42)
-        mockExit.mockRestore()
-      })
+        expect(mockExit).toHaveBeenCalledWith(42);
+        mockExit.mockRestore();
+      });
 
-      it('should set default exit code to 1 before spawning', async () => {
-        let exitCodeDuringSpawn: number | undefined
+      it("should set default exit code to 1 before spawning", async () => {
+        let exitCodeDuringSpawn: number | undefined;
 
         mockRunCdxgen.mockImplementation(() => {
-          exitCodeDuringSpawn = process.exitCode
+          exitCodeDuringSpawn = process.exitCode;
           return Promise.resolve({
             spawnPromise: Promise.resolve({ code: 0, signal: undefined }),
-          })
-        })
+          });
+        });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(exitCodeDuringSpawn).toBe(1)
-        mockExit.mockRestore()
-      })
-    })
+        expect(exitCodeDuringSpawn).toBe(1);
+        mockExit.mockRestore();
+      });
+    });
 
-    describe('signal handling', () => {
-      it('should call process.kill with signal when cdxgen receives SIGTERM', async () => {
+    describe("signal handling", () => {
+      it("should call process.kill with signal when cdxgen receives SIGTERM", async () => {
         const mockSpawnPromise = Promise.resolve({
           code: undefined,
-          signal: 'SIGTERM',
-        })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+          signal: "SIGTERM",
+        });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockKill = vi
-          .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as unknown)
+        const mockKill = vi.spyOn(process, "kill").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(mockKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
-        mockKill.mockRestore()
-      })
+        expect(mockKill).toHaveBeenCalledWith(process.pid, "SIGTERM");
+        mockKill.mockRestore();
+      });
 
-      it('should call process.kill with SIGINT signal', async () => {
+      it("should call process.kill with SIGINT signal", async () => {
         const mockSpawnPromise = Promise.resolve({
           code: undefined,
-          signal: 'SIGINT',
-        })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+          signal: "SIGINT",
+        });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockKill = vi
-          .spyOn(process, 'kill')
-          .mockImplementation((() => {}) as unknown)
+        const mockKill = vi.spyOn(process, "kill").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(mockKill).toHaveBeenCalledWith(process.pid, 'SIGINT')
-        mockKill.mockRestore()
-      })
-    })
+        expect(mockKill).toHaveBeenCalledWith(process.pid, "SIGINT");
+        mockKill.mockRestore();
+      });
+    });
 
-    describe('lifecycle defaults', () => {
-      it('should set lifecycle to pre-build by default', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+    describe("lifecycle defaults", () => {
+      it("should set lifecycle to pre-build by default", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            lifecycle: 'pre-build',
-            'install-deps': false,
+            lifecycle: "pre-build",
+            "install-deps": false,
           }),
-        )
+        );
 
         expect(mockLogger.info).toHaveBeenCalledWith(
           expect.stringContaining('Setting cdxgen --lifecycle to "pre-build"'),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should set output to socket-cdx.json by default', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should set output to socket-cdx.json by default", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            output: 'socket-cdx.json',
+            output: "socket-cdx.json",
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should not override lifecycle when explicitly set', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should not override lifecycle when explicitly set", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(
-          ['--lifecycle', 'build', '.'],
-          importMeta,
-          context,
-        )
+        await cmdManifestCdxgen.run(["--lifecycle", "build", "."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            lifecycle: 'build',
+            lifecycle: "build",
           }),
-        )
+        );
 
         // Should not log the default lifecycle message.
         expect(mockLogger.info).not.toHaveBeenCalledWith(
-          expect.stringContaining('Setting cdxgen --lifecycle'),
-        )
+          expect.stringContaining("Setting cdxgen --lifecycle"),
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should not override output when explicitly set', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should not override output when explicitly set", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(
-          ['--output', 'custom.json', '.'],
-          importMeta,
-          context,
-        )
+        await cmdManifestCdxgen.run(["--output", "custom.json", "."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            output: 'custom.json',
+            output: "custom.json",
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
-    })
+        mockExit.mockRestore();
+      });
+    });
 
-    describe('empty-components hard gate', () => {
-      it('fails when default pre-build path has no lockfile and no node_modules', async () => {
+    describe("empty-components hard gate", () => {
+      it("fails when default pre-build path has no lockfile and no node_modules", async () => {
         mockDetectNodejsCdxgenSources.mockResolvedValue({
           hasLockfile: false,
           hasNodeModules: false,
-        })
+        });
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(process.exitCode).toBe(2)
-        expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining('no lockfile'),
-        )
-        expect(mockRunCdxgen).not.toHaveBeenCalled()
-      })
+        expect(process.exitCode).toBe(2);
+        expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("no lockfile"));
+        expect(mockRunCdxgen).not.toHaveBeenCalled();
+      });
 
-      it('allows the run when only a lockfile is present', async () => {
+      it("allows the run when only a lockfile is present", async () => {
         mockDetectNodejsCdxgenSources.mockResolvedValue({
           hasLockfile: true,
           hasNodeModules: false,
-        })
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        });
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(mockRunCdxgen).toHaveBeenCalled()
-        mockExit.mockRestore()
-      })
+        expect(mockRunCdxgen).toHaveBeenCalled();
+        mockExit.mockRestore();
+      });
 
-      it('allows the run when only node_modules/ is present', async () => {
+      it("allows the run when only node_modules/ is present", async () => {
         mockDetectNodejsCdxgenSources.mockResolvedValue({
           hasLockfile: false,
           hasNodeModules: true,
-        })
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        });
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, context)
+        await cmdManifestCdxgen.run(["."], importMeta, context);
 
-        expect(mockRunCdxgen).toHaveBeenCalled()
-        mockExit.mockRestore()
-      })
+        expect(mockRunCdxgen).toHaveBeenCalled();
+        mockExit.mockRestore();
+      });
 
-      it('skips the gate when user passes --lifecycle explicitly', async () => {
+      it("skips the gate when user passes --lifecycle explicitly", async () => {
         mockDetectNodejsCdxgenSources.mockResolvedValue({
           hasLockfile: false,
           hasNodeModules: false,
-        })
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        });
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(
-          ['--lifecycle', 'build', '.'],
-          importMeta,
-          context,
-        )
+        await cmdManifestCdxgen.run(["--lifecycle", "build", "."], importMeta, context);
 
-        expect(mockDetectNodejsCdxgenSources).not.toHaveBeenCalled()
-        expect(mockRunCdxgen).toHaveBeenCalled()
-        mockExit.mockRestore()
-      })
+        expect(mockDetectNodejsCdxgenSources).not.toHaveBeenCalled();
+        expect(mockRunCdxgen).toHaveBeenCalled();
+        mockExit.mockRestore();
+      });
 
-      it('skips the gate for non-Node.js project types', async () => {
-        mockIsNodejsCdxgenType.mockReturnValue(false)
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+      it("skips the gate for non-Node.js project types", async () => {
+        mockIsNodejsCdxgenType.mockReturnValue(false);
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(
-          ['--type', 'python', '.'],
-          importMeta,
-          context,
-        )
+        await cmdManifestCdxgen.run(["--type", "python", "."], importMeta, context);
 
-        expect(mockDetectNodejsCdxgenSources).not.toHaveBeenCalled()
-        expect(mockRunCdxgen).toHaveBeenCalled()
-        mockExit.mockRestore()
-      })
-    })
+        expect(mockDetectNodejsCdxgenSources).not.toHaveBeenCalled();
+        expect(mockRunCdxgen).toHaveBeenCalled();
+        mockExit.mockRestore();
+      });
+    });
 
-    describe('help flag handling', () => {
-      it('should pass --help flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+    describe("help flag handling", () => {
+      it("should pass --help flag to cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['--help'], importMeta, context)
+        await cmdManifestCdxgen.run(["--help"], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
             help: true,
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should pass -h flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should pass -h flag to cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['-h'], importMeta, context)
+        await cmdManifestCdxgen.run(["-h"], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
             help: true,
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should not set lifecycle/output defaults when --help is passed', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should not set lifecycle/output defaults when --help is passed", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['--help'], importMeta, context)
+        await cmdManifestCdxgen.run(["--help"], importMeta, context);
 
-        const callArg = mockRunCdxgen.mock.calls[0]?.[0]
+        const callArg = mockRunCdxgen.mock.calls[0]?.[0];
 
         // Should have help but not lifecycle/output defaults.
-        expect(callArg.help).toBe(true)
-        expect(callArg.lifecycle).toBeUndefined()
+        expect(callArg.help).toBe(true);
+        expect(callArg.lifecycle).toBeUndefined();
         // Output is undefined because help is true.
-        expect(callArg.output).toBeUndefined()
+        expect(callArg.output).toBeUndefined();
 
-        mockExit.mockRestore()
-      })
-    })
+        mockExit.mockRestore();
+      });
+    });
 
-    describe('cdxgen flag forwarding', () => {
-      it('should forward --type flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+    describe("cdxgen flag forwarding", () => {
+      it("should forward --type flag to cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['--type', 'npm', '.'], importMeta, context)
+        await cmdManifestCdxgen.run(["--type", "npm", "."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: ['npm'],
+            type: ["npm"],
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should forward multiple --type flags to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should forward multiple --type flags to cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(
-          ['--type', 'npm', '--type', 'pypi', '.'],
-          importMeta,
-          context,
-        )
+        await cmdManifestCdxgen.run(["--type", "npm", "--type", "pypi", "."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: ['npm', 'pypi'],
+            type: ["npm", "pypi"],
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should forward --print flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should forward --print flag to cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['--print', '.'], importMeta, context)
+        await cmdManifestCdxgen.run(["--print", "."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
             print: true,
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should forward --no-recurse flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should forward --no-recurse flag to cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['--no-recurse', '.'], importMeta, context)
+        await cmdManifestCdxgen.run(["--no-recurse", "."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
             recurse: false,
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should forward --spec-version flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should forward --spec-version flag to cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(
-          ['--spec-version', '1.5', '.'],
-          importMeta,
-          context,
-        )
+        await cmdManifestCdxgen.run(["--spec-version", "1.5", "."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            'spec-version': '1.5',
+            "spec-version": "1.5",
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should forward --deep flag to cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should forward --deep flag to cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['--deep', '.'], importMeta, context)
+        await cmdManifestCdxgen.run(["--deep", "."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
             deep: true,
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
-    })
+        mockExit.mockRestore();
+      });
+    });
 
-    describe('path argument handling', () => {
-      it('should accept path as positional argument', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+    describe("path argument handling", () => {
+      it("should accept path as positional argument", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['./my-project'], importMeta, context)
+        await cmdManifestCdxgen.run(["./my-project"], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            _: ['./my-project'],
+            _: ["./my-project"],
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should accept multiple paths', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should accept multiple paths", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(
-          ['./project1', './project2'],
-          importMeta,
-          context,
-        )
+        await cmdManifestCdxgen.run(["./project1", "./project2"], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            _: ['./project1', './project2'],
+            _: ["./project1", "./project2"],
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should accept absolute paths', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should accept absolute paths", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(
-          ['/absolute/path/to/project'],
-          importMeta,
-          context,
-        )
+        await cmdManifestCdxgen.run(["/absolute/path/to/project"], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
-            _: ['/absolute/path/to/project'],
+            _: ["/absolute/path/to/project"],
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
-    })
+        mockExit.mockRestore();
+      });
+    });
 
-    describe('Socket flag filtering', () => {
-      it('should filter out --config flag from cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+    describe("Socket flag filtering", () => {
+      it("should filter out --config flag from cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(
-          ['--config', '{}', '.'],
-          importMeta,
-          context,
-        )
+        await cmdManifestCdxgen.run(["--config", "{}", "."], importMeta, context);
 
-        const callArg = mockRunCdxgen.mock.calls[0]?.[0]
-        expect(callArg.config).toBeUndefined()
+        const callArg = mockRunCdxgen.mock.calls[0]?.[0];
+        expect(callArg.config).toBeUndefined();
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should keep --no-banner flag for cdxgen', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should keep --no-banner flag for cdxgen", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['--no-banner', '.'], importMeta, context)
+        await cmdManifestCdxgen.run(["--no-banner", "."], importMeta, context);
 
         expect(mockRunCdxgen).toHaveBeenCalledWith(
           expect.objectContaining({
             banner: false,
           }),
-        )
+        );
 
-        mockExit.mockRestore()
-      })
-    })
+        mockExit.mockRestore();
+      });
+    });
 
-    describe('edge cases', () => {
-      it('should handle readonly argv array', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+    describe("edge cases", () => {
+      it("should handle readonly argv array", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        const readonlyArgv = Object.freeze(['.']) as readonly string[]
+        const readonlyArgv = Object.freeze(["."]) as readonly string[];
 
-        await cmdManifestCdxgen.run(readonlyArgv, importMeta, context)
+        await cmdManifestCdxgen.run(readonlyArgv, importMeta, context);
 
-        expect(mockRunCdxgen).toHaveBeenCalled()
+        expect(mockRunCdxgen).toHaveBeenCalled();
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should handle empty context object', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should handle empty context object", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, {})
+        await cmdManifestCdxgen.run(["."], importMeta, {});
 
-        expect(mockRunCdxgen).toHaveBeenCalled()
+        expect(mockRunCdxgen).toHaveBeenCalled();
 
-        mockExit.mockRestore()
-      })
+        mockExit.mockRestore();
+      });
 
-      it('should handle context with additional properties', async () => {
-        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined })
-        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise })
+      it("should handle context with additional properties", async () => {
+        const mockSpawnPromise = Promise.resolve({ code: 0, signal: undefined });
+        mockRunCdxgen.mockResolvedValue({ spawnPromise: mockSpawnPromise });
 
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
+        const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {}) as unknown);
 
-        await cmdManifestCdxgen.run(['.'], importMeta, {
-          parentName: 'socket manifest',
-          extraProp: 'ignored',
-        } as unknown)
+        await cmdManifestCdxgen.run(["."], importMeta, {
+          parentName: "socket manifest",
+          extraProp: "ignored",
+        } as unknown);
 
-        expect(mockRunCdxgen).toHaveBeenCalled()
+        expect(mockRunCdxgen).toHaveBeenCalled();
 
-        mockExit.mockRestore()
-      })
-    })
-  })
-})
+        mockExit.mockRestore();
+      });
+    });
+  });
+});

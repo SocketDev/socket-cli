@@ -3,90 +3,85 @@
  *   build. Copies data/ and images from packages/cli.
  */
 
-import { promises as fs } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
-const repoRoot = path.join(__dirname, '../../..')
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootPath = path.join(__dirname, "..");
+const repoRoot = path.join(__dirname, "../../..");
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 async function main() {
   try {
-    const cliPath = path.join(rootPath, '..', 'cli')
+    const cliPath = path.join(rootPath, "..", "cli");
 
     // Build CLI bundle.
-    logger.info('Building CLI bundle...')
-    let result = await spawn('node', ['.config/rolldown.cli.mts'], {
+    logger.info("Building CLI bundle…");
+    let result = await spawn("node", [".config/rolldown.cli.mts"], {
       shell: WIN32,
-      stdio: 'inherit',
+      stdio: "inherit",
       cwd: rootPath,
-    })
+    });
 
     if (!result) {
-      throw new Error('Failed to start CLI bundle build')
+      throw new Error("Failed to start CLI bundle build");
     }
 
     if (result.code !== 0) {
-      throw new Error(`CLI bundle build failed with exit code ${result.code}`)
+      throw new Error(`CLI bundle build failed with exit code ${result.code}`);
     }
-    logger.success('Built CLI bundle')
+    logger.success("Built CLI bundle");
 
     // Build index loader.
-    logger.info('Building index loader...')
-    result = await spawn('node', ['.config/rolldown.index.mts'], {
+    logger.info("Building index loader…");
+    result = await spawn("node", [".config/rolldown.index.mts"], {
       shell: WIN32,
-      stdio: 'inherit',
+      stdio: "inherit",
       cwd: rootPath,
-    })
+    });
 
     if (!result) {
-      throw new Error('Failed to start index loader build')
+      throw new Error("Failed to start index loader build");
     }
 
     if (result.code !== 0) {
-      throw new Error(`Index loader build failed with exit code ${result.code}`)
+      throw new Error(`Index loader build failed with exit code ${result.code}`);
     }
-    logger.success('Built index loader')
+    logger.success("Built index loader");
 
     // Copy CLI to dist.
-    logger.info('Copying CLI to dist...')
+    logger.info("Copying CLI to dist…");
     await fs.copyFile(
-      path.join(rootPath, 'build', 'cli.js'),
-      path.join(rootPath, 'dist', 'cli.js'),
-    )
-    logger.success('Copied CLI to dist')
+      path.join(rootPath, "build", "cli.js"),
+      path.join(rootPath, "dist", "cli.js"),
+    );
+    logger.success("Copied CLI to dist");
 
     // Copy data directory from packages/cli.
-    logger.info('Copying data/ from packages/cli...')
-    await fs.cp(path.join(cliPath, 'data'), path.join(rootPath, 'data'), {
+    logger.info("Copying data/ from packages/cli…");
+    await fs.cp(path.join(cliPath, "data"), path.join(rootPath, "data"), {
       recursive: true,
-    })
-    logger.success('Copied data/')
+    });
+    logger.success("Copied data/");
 
     // Copy files from repo root.
-    logger.info('Copying files from repo root...')
-    const filesToCopy = [
-      'CHANGELOG.md',
-      'LICENSE',
-      'logo-dark.png',
-      'logo-light.png',
-    ]
+    logger.info("Copying files from repo root…");
+    const filesToCopy = ["CHANGELOG.md", "LICENSE", "logo-dark.png", "logo-light.png"];
     for (let i = 0, { length } = filesToCopy; i < length; i += 1) {
-      const file = filesToCopy[i]
-      await fs.cp(path.join(repoRoot, file), path.join(rootPath, file))
+      const file = filesToCopy[i];
+      await fs.cp(path.join(repoRoot, file), path.join(rootPath, file));
     }
-    logger.success('Copied files from repo root')
+    logger.success("Copied files from repo root");
   } catch (e) {
-    logger.error(`Build failed: ${e.message}`)
-    process.exitCode = 1
+    logger.error(`Build failed: ${e.message}`);
+    process.exitCode = 1;
   }
 }
 
-main()
+main();

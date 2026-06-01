@@ -5,12 +5,12 @@
  *   drop-in replacements without modifying existing code.
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from "node:fs";
 
-import { AssetManager } from './asset-manager.mts'
+import { AssetManager } from "./asset-manager.mts";
 
 // Cache for libc detection (only need to check once per process).
-let cachedLibc
+let cachedLibc;
 
 /**
  * Detect if running on musl libc (Alpine Linux, etc.). Uses multiple detection
@@ -20,22 +20,22 @@ let cachedLibc
  */
 export function detectMusl() {
   // Only check on Linux.
-  if (process.platform !== 'linux') {
-    return false
+  if (process.platform !== "linux") {
+    return false;
   }
 
   // Check cached result.
   if (cachedLibc !== undefined) {
-    return cachedLibc === 'musl'
+    return cachedLibc === "musl";
   }
 
   // Method 1: Check /etc/os-release for Alpine.
   try {
-    if (existsSync('/etc/os-release')) {
-      const osRelease = readFileSync('/etc/os-release', 'utf8')
-      if (osRelease.includes('Alpine') || osRelease.includes('alpine')) {
-        cachedLibc = 'musl'
-        return true
+    if (existsSync("/etc/os-release")) {
+      const osRelease = readFileSync("/etc/os-release", "utf8");
+      if (osRelease.includes("Alpine") || osRelease.includes("alpine")) {
+        cachedLibc = "musl";
+        return true;
       }
     }
   } catch {
@@ -44,12 +44,9 @@ export function detectMusl() {
 
   // Method 2: Check if ld-musl dynamic linker exists.
   try {
-    if (
-      existsSync('/lib/ld-musl-x86_64.so.1') ||
-      existsSync('/lib/ld-musl-aarch64.so.1')
-    ) {
-      cachedLibc = 'musl'
-      return true
+    if (existsSync("/lib/ld-musl-x86_64.so.1") || existsSync("/lib/ld-musl-aarch64.so.1")) {
+      cachedLibc = "musl";
+      return true;
     }
   } catch {
     // Ignore errors.
@@ -57,19 +54,19 @@ export function detectMusl() {
 
   // Method 3: Check /proc/version for musl indicators.
   try {
-    if (existsSync('/proc/version')) {
-      const version = readFileSync('/proc/version', 'utf8')
-      if (version.includes('musl')) {
-        cachedLibc = 'musl'
-        return true
+    if (existsSync("/proc/version")) {
+      const version = readFileSync("/proc/version", "utf8");
+      if (version.includes("musl")) {
+        cachedLibc = "musl";
+        return true;
       }
     }
   } catch {
     // Ignore errors.
   }
 
-  cachedLibc = 'glibc'
-  return false
+  cachedLibc = "glibc";
+  return false;
 }
 
 /**
@@ -79,7 +76,7 @@ export function detectMusl() {
 const assetManager = new AssetManager({
   cacheEnabled: true,
   quiet: false,
-})
+});
 
 /**
  * Download Node.js binary for a specific platform (backward-compatible
@@ -102,11 +99,11 @@ export async function downloadNodeBinary(version, platform, arch, libc) {
   return assetManager.downloadBinary({
     arch,
     libc,
-    localOverride: 'SOCKET_CLI_LOCAL_NODE_SMOL',
+    localOverride: "SOCKET_CLI_LOCAL_NODE_SMOL",
     platform,
-    tool: 'node-smol',
+    tool: "node-smol",
     version,
-  })
+  });
 }
 
 /**
@@ -122,19 +119,19 @@ export async function downloadNodeBinary(version, platform, arch, libc) {
  * @returns {Promise<string>} Absolute path to downloaded binject binary.
  */
 export async function downloadBinject(version) {
-  const platform = process.platform
-  const arch = process.arch
+  const platform = process.platform;
+  const arch = process.arch;
 
   // Detect actual libc on Linux (musl for Alpine, glibc for standard distros).
-  const libc = detectMusl() ? 'musl' : undefined
+  const libc = detectMusl() ? "musl" : undefined;
 
   return assetManager.downloadBinary({
     arch,
     libc,
     platform,
-    tool: 'binject',
+    tool: "binject",
     version,
-  })
+  });
 }
 
 /**
@@ -155,7 +152,6 @@ export async function downloadBinject(version) {
 export async function getLatestBinjectVersion() {
   // Delegate to original implementation for now.
   // TODO: Move this to AssetManager in Phase 4.
-  const { getLatestBinjectVersion: getLatest } =
-    await import('../sea-build-util/downloads.mts')
-  return getLatest()
+  const { getLatestBinjectVersion: getLatest } = await import("../sea-build-util/downloads.mts");
+  return getLatest();
 }

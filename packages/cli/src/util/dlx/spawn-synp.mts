@@ -10,12 +10,12 @@
  * use the standard helpers from define-tool-spawn.
  */
 
-import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
-import { spawnDlx } from './spawn.mts'
-import { getSynpVersion } from '../../env/synp-version.mts'
+import { defineAutoDispatch, defineVfsSpawn } from "./define-tool-spawn.mts";
+import { spawnDlx } from "./spawn.mts";
+import { getSynpVersion } from "../../env/synp-version.mts";
 
-import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
-import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
+import type { DlxOptions, DlxSpawnResult } from "./spawn.mts";
+import type { SpawnExtra } from "@socketsecurity/lib-stable/process/spawn/types";
 
 /**
  * Helper to spawn synp with dlx.
@@ -27,18 +27,18 @@ export async function spawnSynpDlx(
 ): Promise<DlxSpawnResult> {
   return await spawnDlx(
     {
-      name: 'synp',
+      name: "synp",
       version: getSynpVersion(),
     },
     args,
     { force: false, ...options },
     spawnExtra,
-  )
+  );
 }
 
-export const spawnSynpVfs = defineVfsSpawn('synp')
+export const spawnSynpVfs = defineVfsSpawn("synp");
 
 export const spawnSynp = defineAutoDispatch({
   vfs: spawnSynpVfs,
   dlx: spawnSynpDlx,
-})
+});

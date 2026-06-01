@@ -1,47 +1,44 @@
-import { handleListRepos } from './handle-list-repos.mts'
-import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
-import { outputDryRunFetch } from '../../util/dry-run/output.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import {
-  getFlagApiRequirementsOutput,
-  getFlagListOutput,
-} from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mjs'
-import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { handleListRepos } from "./handle-list-repos.mts";
+import { FLAG_JSON, FLAG_MARKDOWN } from "../../constants/cli.mjs";
+import { outputDryRunFetch } from "../../util/dry-run/output.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags, outputFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mjs";
+import { determineOrgSlug } from "../../util/socket/org-slug.mjs";
+import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type { Direction } from './types.mts'
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { Direction } from "./types.mts";
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
 // Flags interface for type safety.
 interface RepositoryListFlags {
-  all: boolean
-  direction: Direction
-  dryRun: boolean
-  interactive: boolean
-  json: boolean
-  markdown: boolean
-  org: string
-  page: number
-  perPage: number
-  sort: string
+  all: boolean;
+  direction: Direction;
+  dryRun: boolean;
+  interactive: boolean;
+  json: boolean;
+  markdown: boolean;
+  org: string;
+  page: number;
+  perPage: number;
+  sort: string;
 }
 
-export const CMD_NAME = 'list'
+export const CMD_NAME = "list";
 
-const description = 'List repositories in an organization'
+const description = "List repositories in an organization";
 
-const hidden = false
+const hidden = false;
 
 export const cmdRepositoryList = {
   description,
   hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -56,45 +53,44 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
       all: {
-        type: 'boolean',
+        type: "boolean",
         default: false,
         description:
-          'By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --per-page.',
+          "By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --per-page.",
       },
       direction: {
-        type: 'string',
-        default: 'desc',
-        description: 'Direction option',
+        type: "string",
+        default: "desc",
+        description: "Direction option",
       },
       interactive: {
-        type: 'boolean',
+        type: "boolean",
         default: true,
         description:
-          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+          "Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.",
       },
       org: {
-        type: 'string',
-        default: '',
-        description:
-          'Force override the organization slug, overrides the default org from config',
+        type: "string",
+        default: "",
+        description: "Force override the organization slug, overrides the default org from config",
       },
       perPage: {
-        type: 'number',
+        type: "number",
         default: 30,
-        description: 'Number of results per page',
-        shortFlag: 'pp',
+        description: "Number of results per page",
+        shortFlag: "pp",
       },
       page: {
-        type: 'number',
+        type: "number",
         default: 1,
-        description: 'Page number',
-        shortFlag: 'p',
+        description: "Page number",
+        shortFlag: "p",
       },
       sort: {
-        type: 'string',
-        default: 'created_at',
-        description: 'Sorting option',
-        shortFlag: 's',
+        type: "string",
+        default: "created_at",
+        description: "Sorting option",
+        shortFlag: "s",
       },
     }),
     help: (command: string, config: { flags: MeowFlags }) => `
@@ -111,18 +107,18 @@ export async function run(
       $ ${command}
       $ ${command} --json
   `,
-  }
+  };
 
   const cli = meowOrExit({
     argv,
     config,
     parentName,
     importMeta,
-  })
+  });
 
   const {
     all,
-    direction = 'desc',
+    direction = "desc",
     dryRun,
     interactive,
     json,
@@ -131,55 +127,55 @@ export async function run(
     page,
     perPage,
     sort,
-  } = cli.flags as unknown as RepositoryListFlags
+  } = cli.flags as unknown as RepositoryListFlags;
 
-  const hasApiToken = hasDefaultApiToken()
+  const hasApiToken = hasDefaultApiToken();
 
-  const { 0: orgSlug } = await determineOrgSlug(orgFlag, interactive, dryRun)
+  const { 0: orgSlug } = await determineOrgSlug(orgFlag, interactive, dryRun);
 
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
       test: !!orgSlug,
-      message: 'Org name by default setting, --org, or auto-discovered',
-      fail: 'missing',
+      message: "Org name by default setting, --org, or auto-discovered",
+      fail: "missing",
     },
     {
       nook: true,
       test: !json || !markdown,
       message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
-      fail: 'bad',
+      fail: "bad",
     },
     {
       nook: true,
       test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
+      message: "This command requires a Socket API token for access",
+      fail: "try `socket login`",
     },
     {
       nook: true,
-      test: direction === 'asc' || direction === 'desc',
+      test: direction === "asc" || direction === "desc",
       message: 'The --direction value must be "asc" or "desc"',
-      fail: 'unexpected value',
+      fail: "unexpected value",
     },
-  )
+  );
   if (!wasValidInput) {
-    return
+    return;
   }
 
   if (dryRun) {
-    outputDryRunFetch('repositories', {
+    outputDryRunFetch("repositories", {
       organization: orgSlug,
       all: all || undefined,
       sort,
       direction,
       page: all ? undefined : page,
       perPage: all ? undefined : perPage,
-    })
-    return
+    });
+    return;
   }
 
   await handleListRepos({
@@ -190,5 +186,5 @@ export async function run(
     page,
     perPage,
     sort,
-  })
+  });
 }

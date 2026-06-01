@@ -186,9 +186,9 @@ When no checksums.txt is available:
 
 ```javascript
 // Script computes SHA-256 by streaming the downloaded file
-const hash = crypto.createHash('sha256')
-const stream = fs.createReadStream(filePath)
-stream.pipe(hash)
+const hash = crypto.createHash("sha256");
+const stream = fs.createReadStream(filePath);
+stream.pipe(hash);
 // Result: hex-encoded SHA-256
 ```
 

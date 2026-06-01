@@ -15,178 +15,161 @@
  * Related Files: - src/commands/ScanMetadata.mts (implementation)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from "vitest";
 
-import { setupSdkMockSuccess } from '../../../helpers/sdk-test-helpers.mts'
+import { setupSdkMockSuccess } from "../../../helpers/sdk-test-helpers.mts";
 
 // Mock the dependencies.
-vi.mock('../../../../src/util/socket/api.mts', () => ({
+vi.mock(import("../../../../src/util/socket/api.mts"), () => ({
   handleApiCall: vi.fn(),
-}))
+}));
 
-vi.mock('../../../../src/util/socket/sdk.mts', () => ({
+vi.mock(import("../../../../src/util/socket/sdk.mts"), () => ({
   setupSdk: vi.fn(),
-}))
+}));
 
-describe('fetchScanMetadata', () => {
-  it('fetches scan metadata successfully', async () => {
+describe("fetchScanMetadata", () => {
+  it("fetches scan metadata successfully", async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+      await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
-      'getFullScanMetadata',
-      {
-        id: 'scan-123',
-        status: 'completed',
-        packageCount: 150,
-      },
-    )
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess("getFullScanMetadata", {
+      id: "scan-123",
+      status: "completed",
+      packageCount: 150,
+    });
 
-    const result = await fetchScanMetadata('test-org', 'scan-123')
+    const result = await fetchScanMetadata("test-org", "scan-123");
 
-    expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(
-      'test-org',
-      'scan-123',
-    )
+    expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith("test-org", "scan-123");
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: 'meta data for a full scan',
-    })
-    expect(result.ok).toBe(true)
-    expect(result.data?.id).toBe('scan-123')
-  })
+      description: "meta data for a full scan",
+    });
+    expect(result.ok).toBe(true);
+    expect(result.data?.id).toBe("scan-123");
+  });
 
-  it('handles SDK setup failure', async () => {
+  it("handles SDK setup failure", async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
-    const { setupSdkSetupFailure } =
-      await import('../../../helpers/sdk-test-helpers.mts')
+      await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
+    const { setupSdkSetupFailure } = await import("../../../helpers/sdk-test-helpers.mts");
 
-    await setupSdkSetupFailure('Failed to setup SDK', {
-      cause: 'Invalid configuration',
-    })
+    await setupSdkSetupFailure("Failed to setup SDK", {
+      cause: "Invalid configuration",
+    });
 
-    const result = await fetchScanMetadata('test-org', 'scan-123')
+    const result = await fetchScanMetadata("test-org", "scan-123");
 
-    expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
-    expect(result.cause).toBe('Invalid configuration')
-  })
+    expect(result.ok).toBe(false);
+    expect(result.message).toBe("Failed to setup SDK");
+    expect(result.cause).toBe("Invalid configuration");
+  });
 
-  it('handles API call failure', async () => {
+  it("handles API call failure", async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
-    const { setupSdkMockError } =
-      await import('../../../helpers/sdk-test-helpers.mts')
+      await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
+    const { setupSdkMockError } = await import("../../../helpers/sdk-test-helpers.mts");
 
-    await setupSdkMockError('getFullScanMetadata', 'Not found', 404)
+    await setupSdkMockError("getFullScanMetadata", "Not found", 404);
 
-    const result = await fetchScanMetadata('test-org', 'nonexistent-scan')
+    const result = await fetchScanMetadata("test-org", "nonexistent-scan");
 
-    expect(result.ok).toBe(false)
-    expect(result.code).toBe(404)
-  })
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe(404);
+  });
 
-  it('passes custom SDK options', async () => {
+  it("passes custom SDK options", async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+      await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
 
-    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
-      'getFullScanMetadata',
-      {},
-    )
+    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess("getFullScanMetadata", {});
 
     const options = {
       sdkOpts: {
-        apiToken: 'custom-token',
-        baseUrl: 'https://api.example.com',
+        apiToken: "custom-token",
+        baseUrl: "https://api.example.com",
       },
-    }
+    };
 
-    await fetchScanMetadata('custom-org', 'scan-456', options)
+    await fetchScanMetadata("custom-org", "scan-456", options);
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
-    expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(
-      'custom-org',
-      'scan-456',
-    )
-  })
+    expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts);
+    expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith("custom-org", "scan-456");
+  });
 
-  it('handles different org slugs and scan IDs', async () => {
+  it("handles different org slugs and scan IDs", async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+      await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
 
-    const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {})
+    const { mockSdk } = await setupSdkMockSuccess("getFullScanMetadata", {});
 
     const testCases = [
-      ['org-with-dashes', 'scan-123'],
-      ['simple_org', 'uuid-456-789-abc'],
-      ['org123', 'scan_with_underscore'],
-      ['long.org.name', 'scan.with.dots'],
-    ]
+      ["org-with-dashes", "scan-123"],
+      ["simple_org", "uuid-456-789-abc"],
+      ["org123", "scan_with_underscore"],
+      ["long.org.name", "scan.with.dots"],
+    ];
 
     for (const [org, scanId] of testCases) {
-      await fetchScanMetadata(org, scanId)
-      expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(org, scanId)
+      await fetchScanMetadata(org, scanId);
+      expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(org, scanId);
     }
-  })
+  });
 
-  it('handles empty metadata response', async () => {
+  it("handles empty metadata response", async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+      await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
 
-    await setupSdkMockSuccess('getFullScanMetadata', undefined)
+    await setupSdkMockSuccess("getFullScanMetadata", undefined);
 
-    const result = await fetchScanMetadata('test-org', 'empty-scan')
+    const result = await fetchScanMetadata("test-org", "empty-scan");
 
-    expect(result.ok).toBe(true)
-    expect(result.data).toBe(undefined)
-  })
+    expect(result.ok).toBe(true);
+    expect(result.data).toBe(undefined);
+  });
 
-  it('handles pending scan metadata', async () => {
+  it("handles pending scan metadata", async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+      await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
 
-    await setupSdkMockSuccess('getFullScanMetadata', {
-      id: 'scan-pending',
-      status: 'pending',
+    await setupSdkMockSuccess("getFullScanMetadata", {
+      id: "scan-pending",
+      status: "pending",
       progress: 45,
-    })
+    });
 
-    const result = await fetchScanMetadata('test-org', 'scan-pending')
+    const result = await fetchScanMetadata("test-org", "scan-pending");
 
-    expect(result.ok).toBe(true)
-    expect(result.data?.status).toBe('pending')
-    expect(result.data?.progress).toBe(45)
-  })
+    expect(result.ok).toBe(true);
+    expect(result.data?.status).toBe("pending");
+    expect(result.data?.progress).toBe(45);
+  });
 
-  it('handles special characters in scan IDs', async () => {
+  it("handles special characters in scan IDs", async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+      await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
 
-    const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {
-      id: 'scan-with-special-chars',
-    })
+    const { mockSdk } = await setupSdkMockSuccess("getFullScanMetadata", {
+      id: "scan-with-special-chars",
+    });
 
-    const specialScanId = 'scan-123_with-special.chars@example.com'
+    const specialScanId = "scan-123_with-special.chars@example.com";
 
-    await fetchScanMetadata('test-org', specialScanId)
+    await fetchScanMetadata("test-org", specialScanId);
 
-    expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith(
-      'test-org',
-      specialScanId,
-    )
-  })
+    expect(mockSdk.getFullScanMetadata).toHaveBeenCalledWith("test-org", specialScanId);
+  });
 
-  it('uses null prototype for options', async () => {
+  it("uses null prototype for options", async () => {
     const { fetchScanMetadata } =
-      await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+      await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
 
-    const { mockSdk } = await setupSdkMockSuccess('getFullScanMetadata', {})
+    const { mockSdk } = await setupSdkMockSuccess("getFullScanMetadata", {});
 
     // This tests that the function properly uses __proto__: null.
-    await fetchScanMetadata('test-org', 'scan-123')
+    await fetchScanMetadata("test-org", "scan-123");
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getFullScanMetadata).toHaveBeenCalled()
-  })
-})
+    expect(mockSdk.getFullScanMetadata).toHaveBeenCalled();
+  });
+});

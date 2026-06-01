@@ -1,23 +1,22 @@
-import { select } from '@socketsecurity/lib-stable/stdio/prompts'
+import { select } from "@socketsecurity/lib-stable/stdio/prompts";
 
 export async function suggestTarget(): Promise<string[]> {
   // We could prefill this with sub-dirs of the current
   // dir ... but is that going to be useful?
   const proceed = await select({
-    message: 'No TARGET given. Do you want to use the current directory?',
+    message: "No TARGET given. Do you want to use the current directory?",
     choices: [
       {
-        name: 'Yes',
+        name: "Yes",
         value: true,
-        description: 'Target the current directory',
+        description: "Target the current directory",
       },
       {
-        name: 'No',
+        name: "No",
         value: false,
-        description:
-          'Do not use the current directory (this will end in a no-op)',
+        description: "Do not use the current directory (this will end in a no-op)",
       },
     ],
-  })
-  return proceed ? ['.'] : []
+  });
+  return proceed ? ["."] : [];
 }

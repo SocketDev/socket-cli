@@ -163,14 +163,14 @@
     "pnpm": ">=11.4.0"
   },
   "packageManager": "pnpm@11.4.0",
-  "npm-run-all2": {
-    "nodeRun": true
-  },
   "allowScripts": {
     "cpu-features": false,
     "protobufjs": false,
     "rolldown": true,
     "postject": false,
     "ssh2": false
+  },
+  "npm-run-all2": {
+    "nodeRun": true
   }
 }

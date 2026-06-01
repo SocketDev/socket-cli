@@ -3,11 +3,11 @@
  *   Manages the list of supported platforms and Node.js version selection.
  */
 
-import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
+import { logTransientErrorHelp } from "build-infra/lib/github-error-utils";
 
-import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
+import { httpRequest } from "@socketsecurity/lib-stable/http-request/request";
 
-import { getAuthHeaders } from './downloads.mts'
+import { getAuthHeaders } from "./downloads.mts";
 
 /**
  * Generate build targets for different platforms. Returns array of 8 platform
@@ -23,60 +23,60 @@ import { getAuthHeaders } from './downloads.mts'
  * @returns Array of build target configurations.
  */
 export async function getBuildTargets() {
-  const defaultNodeVersion = await getDefaultNodeVersion()
+  const defaultNodeVersion = await getDefaultNodeVersion();
 
   return [
     {
-      arch: 'arm64',
+      arch: "arm64",
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-win-arm64.exe',
-      platform: 'win32',
+      outputName: "socket-win-arm64.exe",
+      platform: "win32",
     },
     {
-      arch: 'x64',
+      arch: "x64",
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-win-x64.exe',
-      platform: 'win32',
+      outputName: "socket-win-x64.exe",
+      platform: "win32",
     },
     {
-      arch: 'arm64',
+      arch: "arm64",
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-darwin-arm64',
-      platform: 'darwin',
+      outputName: "socket-darwin-arm64",
+      platform: "darwin",
     },
     {
-      arch: 'x64',
+      arch: "x64",
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-darwin-x64',
-      platform: 'darwin',
+      outputName: "socket-darwin-x64",
+      platform: "darwin",
     },
     {
-      arch: 'arm64',
+      arch: "arm64",
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-linux-arm64',
-      platform: 'linux',
+      outputName: "socket-linux-arm64",
+      platform: "linux",
     },
     {
-      arch: 'x64',
+      arch: "x64",
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-linux-x64',
-      platform: 'linux',
+      outputName: "socket-linux-x64",
+      platform: "linux",
     },
     {
-      arch: 'arm64',
-      libc: 'musl',
+      arch: "arm64",
+      libc: "musl",
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-linux-arm64-musl',
-      platform: 'linux',
+      outputName: "socket-linux-arm64-musl",
+      platform: "linux",
     },
     {
-      arch: 'x64',
-      libc: 'musl',
+      arch: "x64",
+      libc: "musl",
       nodeVersion: defaultNodeVersion,
-      outputName: 'socket-linux-x64-musl',
-      platform: 'linux',
+      outputName: "socket-linux-x64-musl",
+      platform: "linux",
     },
-  ]
+  ];
 }
 
 /**
@@ -91,12 +91,12 @@ export async function getBuildTargets() {
  * @returns Node.js version tag suffix.
  */
 export async function getDefaultNodeVersion() {
-  if (process.env['SOCKET_CLI_SEA_NODE_VERSION']) {
-    return process.env['SOCKET_CLI_SEA_NODE_VERSION']
+  if (process.env["SOCKET_CLI_SEA_NODE_VERSION"]) {
+    return process.env["SOCKET_CLI_SEA_NODE_VERSION"];
   }
 
   // Fetch the latest node-smol release tag from socket-btm.
-  return await getLatestSocketBtmNodeRelease()
+  return await getLatestSocketBtmNodeRelease();
 }
 
 /**
@@ -114,65 +114,61 @@ export async function getDefaultNodeVersion() {
 async function getLatestSocketBtmNodeRelease() {
   try {
     const response = await httpRequest(
-      'https://api.github.com/repos/SocketDev/socket-btm/releases',
+      "https://api.github.com/repos/SocketDev/socket-btm/releases",
       {
         headers: getAuthHeaders(),
       },
-    )
+    );
 
     if (!response.ok) {
       // Detect specific error types.
       if (response.status === 401) {
         throw new Error(
-          'GitHub API authentication failed. Please check your GH_TOKEN or GITHUB_TOKEN environment variable.',
-        )
+          "GitHub API authentication failed. Please check your GH_TOKEN or GITHUB_TOKEN environment variable.",
+        );
       }
 
       if (response.status === 403) {
-        const rateLimitReset = response.headers['x-ratelimit-reset']
+        const rateLimitReset = response.headers["x-ratelimit-reset"];
         const resetTime = rateLimitReset
-          ? new Date(Number(rateLimitReset) * 1_000).toLocaleString()
-          : 'unknown'
+          ? new Date(Number(rateLimitReset) * 1000).toLocaleString()
+          : "unknown";
         throw new Error(
           `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
-            'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
-            '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
-        )
+            "Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits " +
+            "(unauthenticated: 60/hour, authenticated: 5,000/hour).",
+        );
       }
 
       throw new Error(
         `Failed to fetch socket-btm releases: ${response.status} ${response.statusText}`,
-      )
+      );
     }
 
-    const releases = JSON.parse(response.body.toString('utf8'))
+    const releases = JSON.parse(response.body.toString("utf8"));
 
     // Validate API response structure.
     if (!Array.isArray(releases) || releases.length === 0) {
-      throw new Error(
-        'Invalid API response: expected non-empty array of releases',
-      )
+      throw new Error("Invalid API response: expected non-empty array of releases");
     }
 
     // Find the latest node-smol release.
-    const nodeSmolRelease = releases.find(release =>
-      release?.tag_name?.startsWith('node-smol-'),
-    )
+    const nodeSmolRelease = releases.find((release) => release?.tag_name?.startsWith("node-smol-"));
 
     if (!nodeSmolRelease) {
-      throw new Error('No node-smol release found in socket-btm')
+      throw new Error("No node-smol release found in socket-btm");
     }
 
     if (!nodeSmolRelease.tag_name) {
-      throw new Error('Invalid release data: missing tag_name')
+      throw new Error("Invalid release data: missing tag_name");
     }
 
     // Extract the tag suffix (e.g., "node-smol-20251213-7cf90d2" -> "20251213-7cf90d2").
-    return nodeSmolRelease.tag_name.replace('node-smol-', '')
+    return nodeSmolRelease.tag_name.replace("node-smol-", "");
   } catch (e) {
-    await logTransientErrorHelp(e)
-    throw new Error('Failed to fetch latest socket-btm node-smol release', {
+    await logTransientErrorHelp(e);
+    throw new Error("Failed to fetch latest socket-btm node-smol release", {
       cause: e,
-    })
+    });
   }
 }

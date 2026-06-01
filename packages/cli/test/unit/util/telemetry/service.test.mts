@@ -10,22 +10,22 @@
  * Related Files: - util/telemetry/service.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock setupSdk.
-const mockSetupSdk = vi.hoisted(() => vi.fn())
-const mockGetOrgTelemetryConfig = vi.hoisted(() => vi.fn())
-const mockPostOrgTelemetry = vi.hoisted(() => vi.fn())
+const mockSetupSdk = vi.hoisted(() => vi.fn());
+const mockGetOrgTelemetryConfig = vi.hoisted(() => vi.fn());
+const mockPostOrgTelemetry = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/util/socket/sdk.mts', () => ({
+vi.mock(import("../../../../src/util/socket/sdk.mts"), () => ({
   setupSdk: mockSetupSdk,
-}))
+}));
 
-import { TelemetryService } from '../../../../src/util/telemetry/service.mts'
+import { TelemetryService } from "../../../../src/util/telemetry/service.mts";
 
-describe('TelemetryService', () => {
+describe("TelemetryService", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.clearAllMocks();
 
     // Default mock implementations.
     mockGetOrgTelemetryConfig.mockResolvedValue({
@@ -35,11 +35,11 @@ describe('TelemetryService', () => {
           enabled: true,
         },
       },
-    })
+    });
 
     mockPostOrgTelemetry.mockResolvedValue({
       success: true,
-    })
+    });
 
     mockSetupSdk.mockResolvedValue({
       ok: true,
@@ -47,151 +47,151 @@ describe('TelemetryService', () => {
         getOrgTelemetryConfig: mockGetOrgTelemetryConfig,
         postOrgTelemetry: mockPostOrgTelemetry,
       },
-    })
-  })
+    });
+  });
 
   afterEach(async () => {
     // Clean up singleton instance after each test.
-    const instance = TelemetryService.getCurrentInstance()
+    const instance = TelemetryService.getCurrentInstance();
     if (instance) {
-      await instance.destroy()
+      await instance.destroy();
     }
-  })
+  });
 
-  describe('getCurrentInstance', () => {
-    it('returns undefined when no instance exists', () => {
-      const instance = TelemetryService.getCurrentInstance()
-      expect(instance).toBeUndefined()
-    })
+  describe("getCurrentInstance", () => {
+    it("returns undefined when no instance exists", () => {
+      const instance = TelemetryService.getCurrentInstance();
+      expect(instance).toBeUndefined();
+    });
 
-    it('returns instance after initialization', async () => {
-      await TelemetryService.getTelemetryClient('test-org')
+    it("returns instance after initialization", async () => {
+      await TelemetryService.getTelemetryClient("test-org");
 
-      const instance = TelemetryService.getCurrentInstance()
-      expect(instance).not.toBeUndefined()
-    })
-  })
+      const instance = TelemetryService.getCurrentInstance();
+      expect(instance).not.toBeUndefined();
+    });
+  });
 
-  describe('getTelemetryClient', () => {
-    it('creates a new instance when none exists', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
-      expect(client).toBeDefined()
-    })
+  describe("getTelemetryClient", () => {
+    it("creates a new instance when none exists", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
+      expect(client).toBeDefined();
+    });
 
-    it('returns same instance on subsequent calls', async () => {
-      const client1 = await TelemetryService.getTelemetryClient('test-org')
-      const client2 = await TelemetryService.getTelemetryClient('test-org')
-      expect(client1).toBe(client2)
-    })
+    it("returns same instance on subsequent calls", async () => {
+      const client1 = await TelemetryService.getTelemetryClient("test-org");
+      const client2 = await TelemetryService.getTelemetryClient("test-org");
+      expect(client1).toBe(client2);
+    });
 
-    it('returns same instance even with different org slug', async () => {
-      const client1 = await TelemetryService.getTelemetryClient('org-1')
-      const client2 = await TelemetryService.getTelemetryClient('org-2')
-      expect(client1).toBe(client2)
-    })
+    it("returns same instance even with different org slug", async () => {
+      const client1 = await TelemetryService.getTelemetryClient("org-1");
+      const client2 = await TelemetryService.getTelemetryClient("org-2");
+      expect(client1).toBe(client2);
+    });
 
-    it('uses default config when SDK setup fails', async () => {
+    it("uses default config when SDK setup fails", async () => {
       mockSetupSdk.mockResolvedValue({
         ok: false,
-        message: 'SDK setup failed',
-      })
+        message: "SDK setup failed",
+      });
 
-      const client = await TelemetryService.getTelemetryClient('test-org')
-      expect(client).toBeDefined()
-    })
+      const client = await TelemetryService.getTelemetryClient("test-org");
+      expect(client).toBeDefined();
+    });
 
-    it('uses default config when telemetry config fetch fails', async () => {
+    it("uses default config when telemetry config fetch fails", async () => {
       mockGetOrgTelemetryConfig.mockResolvedValue({
         success: false,
-        error: 'Config fetch failed',
-      })
+        error: "Config fetch failed",
+      });
 
-      const client = await TelemetryService.getTelemetryClient('test-org')
-      expect(client).toBeDefined()
-    })
-  })
+      const client = await TelemetryService.getTelemetryClient("test-org");
+      expect(client).toBeDefined();
+    });
+  });
 
-  describe('track', () => {
-    it('queues events when telemetry is enabled', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+  describe("track", () => {
+    it("queues events when telemetry is enabled", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
+      });
 
       // Event should be queued, not sent immediately (unless batch size reached).
-      expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
-    })
+      expect(mockPostOrgTelemetry).not.toHaveBeenCalled();
+    });
 
-    it('ignores events when service is destroyed', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
-      await client.destroy()
+    it("ignores events when service is destroyed", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
+      await client.destroy();
 
       // Create a new client and immediately destroy it.
-      const client2 = await TelemetryService.getTelemetryClient('test-org')
-      await client2.destroy()
+      const client2 = await TelemetryService.getTelemetryClient("test-org");
+      await client2.destroy();
 
       // Create another client to test tracking after destroy.
-      const client3 = await TelemetryService.getTelemetryClient('test-org')
+      const client3 = await TelemetryService.getTelemetryClient("test-org");
 
       // Track event - this should work since we have a fresh instance.
       client3.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
+      });
 
       // The event tracking itself succeeds.
-      await client3.destroy()
-    })
+      await client3.destroy();
+    });
 
-    it('clears queue without sending when telemetry disabled mid-queue (lines 328-330)', async () => {
+    it("clears queue without sending when telemetry disabled mid-queue (lines 328-330)", async () => {
       // Initially enabled — track an event so it lands in the queue.
-      const client = await TelemetryService.getTelemetryClient('test-org')
+      const client = await TelemetryService.getTelemetryClient("test-org");
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'first_event',
+        event_type: "first_event",
         context: {},
-      })
+      });
       // Mutate the in-memory config to disable telemetry, then flush.
-      ;(client as unknown).config = { telemetry: { enabled: false } }
-      mockPostOrgTelemetry.mockClear()
-      await client.flush()
+      (client as unknown).config = { telemetry: { enabled: false } };
+      mockPostOrgTelemetry.mockClear();
+      await client.flush();
       // Queue should be drained without a network call.
-      expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
-      expect((client as unknown).eventQueue).toEqual([])
-    })
+      expect(mockPostOrgTelemetry).not.toHaveBeenCalled();
+      expect((client as unknown).eventQueue).toEqual([]);
+    });
 
-    it('returns early on track() after destroy on same instance (lines 284-285)', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+    it("returns early on track() after destroy on same instance (lines 284-285)", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
       // Hold the same reference, destroy it, then track on the destroyed
       // instance directly — exercises the early-return at lines 283-286.
-      await client.destroy()
+      await client.destroy();
       // No throw expected; track returns void synchronously.
       expect(() =>
         client.track({
           event_sender_created_at: new Date().toISOString(),
-          event_type: 'after_destroy',
+          event_type: "after_destroy",
           context: {},
         }),
-      ).not.toThrow()
+      ).not.toThrow();
       // postOrgTelemetry should NOT be called since the instance is destroyed.
       // (Counts may be > 0 from earlier tests; reset and verify no NEW call.)
-      mockPostOrgTelemetry.mockClear()
+      mockPostOrgTelemetry.mockClear();
       // Trigger another track on the destroyed instance.
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'still_destroyed',
+        event_type: "still_destroyed",
         context: {},
-      })
+      });
       // Allow microtasks to settle.
-      await new Promise(resolve => setTimeout(resolve, 10))
-      expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
-    })
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(mockPostOrgTelemetry).not.toHaveBeenCalled();
+    });
 
-    it('ignores events when telemetry is disabled', async () => {
+    it("ignores events when telemetry is disabled", async () => {
       mockGetOrgTelemetryConfig.mockResolvedValue({
         success: true,
         data: {
@@ -199,51 +199,51 @@ describe('TelemetryService', () => {
             enabled: false,
           },
         },
-      })
+      });
 
-      const client = await TelemetryService.getTelemetryClient('test-org')
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
+      });
 
       // Event should be ignored.
-      await client.flush()
-      expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
-    })
-  })
+      await client.flush();
+      expect(mockPostOrgTelemetry).not.toHaveBeenCalled();
+    });
+  });
 
-  describe('flush', () => {
-    it('sends all queued events', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+  describe("flush", () => {
+    it("sends all queued events", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'event_1',
+        event_type: "event_1",
         context: {},
-      })
+      });
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'event_2',
+        event_type: "event_2",
         context: {},
-      })
+      });
 
-      await client.flush()
+      await client.flush();
 
-      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(2)
-    })
+      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(2);
+    });
 
-    it('does nothing when queue is empty', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+    it("does nothing when queue is empty", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
-      await client.flush()
+      await client.flush();
 
-      expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
-    })
+      expect(mockPostOrgTelemetry).not.toHaveBeenCalled();
+    });
 
-    it('clears queue when telemetry is disabled', async () => {
+    it("clears queue when telemetry is disabled", async () => {
       mockGetOrgTelemetryConfig.mockResolvedValue({
         success: true,
         data: {
@@ -251,191 +251,191 @@ describe('TelemetryService', () => {
             enabled: false,
           },
         },
-      })
+      });
 
-      const client = await TelemetryService.getTelemetryClient('test-org')
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       // Queue should be cleared without sending.
-      await client.flush()
-      expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
-    })
+      await client.flush();
+      expect(mockPostOrgTelemetry).not.toHaveBeenCalled();
+    });
 
-    it('handles API errors gracefully', async () => {
-      mockPostOrgTelemetry.mockRejectedValue(new Error('API error'))
+    it("handles API errors gracefully", async () => {
+      mockPostOrgTelemetry.mockRejectedValue(new Error("API error"));
 
-      const client = await TelemetryService.getTelemetryClient('test-org')
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
+      });
 
       // Should not throw.
-      await expect(client.flush()).resolves.not.toThrow()
-    })
-  })
+      await expect(client.flush()).resolves.not.toThrow();
+    });
+  });
 
-  describe('destroy', () => {
-    it('flushes remaining events before destroying', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+  describe("destroy", () => {
+    it("flushes remaining events before destroying", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
+      });
 
-      await client.destroy()
+      await client.destroy();
 
-      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(1)
-    })
+      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(1);
+    });
 
-    it('clears singleton instance', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+    it("clears singleton instance", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
-      await client.destroy()
+      await client.destroy();
 
-      expect(TelemetryService.getCurrentInstance()).toBeUndefined()
-    })
+      expect(TelemetryService.getCurrentInstance()).toBeUndefined();
+    });
 
-    it('is idempotent', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+    it("is idempotent", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
-      await client.destroy()
-      await client.destroy()
+      await client.destroy();
+      await client.destroy();
 
-      expect(TelemetryService.getCurrentInstance()).toBeUndefined()
-    })
+      expect(TelemetryService.getCurrentInstance()).toBeUndefined();
+    });
 
-    it('does not flush when service is destroyed', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
-      await client.destroy()
+    it("does not flush when service is destroyed", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
+      await client.destroy();
 
       // Now try to flush on a destroyed instance.
-      await client.flush()
+      await client.flush();
 
       // Should not send anything because service is destroyed.
-      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(0)
-    })
+      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(0);
+    });
 
-    it('handles SDK setup failure during flush gracefully', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+    it("handles SDK setup failure during flush gracefully", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
+      });
 
       // Make SDK setup fail during flush.
       mockSetupSdk.mockResolvedValue({
         ok: false,
-        message: 'SDK setup failed',
-      })
+        message: "SDK setup failed",
+      });
 
       // Should not throw.
-      await expect(client.flush()).resolves.not.toThrow()
-    })
+      await expect(client.flush()).resolves.not.toThrow();
+    });
 
-    it('handles exceptions during initialization gracefully', async () => {
-      mockSetupSdk.mockRejectedValue(new Error('Unexpected error'))
+    it("handles exceptions during initialization gracefully", async () => {
+      mockSetupSdk.mockRejectedValue(new Error("Unexpected error"));
 
       // Should not throw and return a client with default config.
-      const client = await TelemetryService.getTelemetryClient('error-org')
-      expect(client).toBeDefined()
-    })
-  })
+      const client = await TelemetryService.getTelemetryClient("error-org");
+      expect(client).toBeDefined();
+    });
+  });
 
-  describe('concurrent initialization', () => {
-    it('handles concurrent calls to getTelemetryClient', async () => {
+  describe("concurrent initialization", () => {
+    it("handles concurrent calls to getTelemetryClient", async () => {
       // Simulate concurrent calls.
       const [client1, client2, client3] = await Promise.all([
-        TelemetryService.getTelemetryClient('test-org'),
-        TelemetryService.getTelemetryClient('test-org'),
-        TelemetryService.getTelemetryClient('test-org'),
-      ])
+        TelemetryService.getTelemetryClient("test-org"),
+        TelemetryService.getTelemetryClient("test-org"),
+        TelemetryService.getTelemetryClient("test-org"),
+      ]);
 
       // All should return the same instance.
-      expect(client1).toBe(client2)
-      expect(client2).toBe(client3)
+      expect(client1).toBe(client2);
+      expect(client2).toBe(client3);
 
       // SDK setup should only be called once.
-      expect(mockSetupSdk).toHaveBeenCalledTimes(1)
-    })
-  })
+      expect(mockSetupSdk).toHaveBeenCalledTimes(1);
+    });
+  });
 
-  describe('sendEvents error handling', () => {
-    it('tracks success and failure counts correctly', async () => {
+  describe("sendEvents error handling", () => {
+    it("tracks success and failure counts correctly", async () => {
       // Make some events succeed and some fail.
-      let callCount = 0
+      let callCount = 0;
       mockPostOrgTelemetry.mockImplementation(async () => {
-        callCount++
+        callCount++;
         if (callCount % 2 === 0) {
-          return { success: false, error: 'Failed' }
+          return { success: false, error: "Failed" };
         }
-        return { success: true }
-      })
+        return { success: true };
+      });
 
-      const client = await TelemetryService.getTelemetryClient('test-org')
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'event_1',
+        event_type: "event_1",
         context: {},
-      })
+      });
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'event_2',
+        event_type: "event_2",
         context: {},
-      })
+      });
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'event_3',
+        event_type: "event_3",
         context: {},
-      })
+      });
 
-      await client.flush()
+      await client.flush();
 
-      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(3)
-    })
+      expect(mockPostOrgTelemetry).toHaveBeenCalledTimes(3);
+    });
 
-    it('handles rejected promises during send', async () => {
-      let callCount = 0
+    it("handles rejected promises during send", async () => {
+      let callCount = 0;
       mockPostOrgTelemetry.mockImplementation(async () => {
-        callCount++
+        callCount++;
         if (callCount === 2) {
-          throw new Error('Network error')
+          throw new Error("Network error");
         }
-        return { success: true }
-      })
+        return { success: true };
+      });
 
-      const client = await TelemetryService.getTelemetryClient('test-org')
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'event_1',
+        event_type: "event_1",
         context: {},
-      })
+      });
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'event_2',
+        event_type: "event_2",
         context: {},
-      })
+      });
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'event_3',
+        event_type: "event_3",
         context: {},
-      })
+      });
 
       // Should not throw despite one event failing.
-      await expect(client.flush()).resolves.not.toThrow()
-    })
-  })
+      await expect(client.flush()).resolves.not.toThrow();
+    });
+  });
 
-  describe('auto-flush on batch size', () => {
-    it('automatically flushes when batch size is reached', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+  describe("auto-flush on batch size", () => {
+    it("automatically flushes when batch size is reached", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
 
       // Add 10 events (default batch size).
       for (let i = 0; i < 10; i++) {
@@ -443,72 +443,68 @@ describe('TelemetryService', () => {
           event_sender_created_at: new Date().toISOString(),
           event_type: `event_${i}`,
           context: {},
-        })
+        });
       }
 
       // Give time for auto-flush to complete.
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Events should have been sent.
-      expect(mockPostOrgTelemetry).toHaveBeenCalled()
-    })
-  })
+      expect(mockPostOrgTelemetry).toHaveBeenCalled();
+    });
+  });
 
-  describe('flush error/timeout branches', () => {
-    it('handles errors thrown by setupSdk during flush (lines 351-366)', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+  describe("flush error/timeout branches", () => {
+    it("handles errors thrown by setupSdk during flush (lines 351-366)", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
+      });
       // Make the second setupSdk call (the one inside sendEvents) throw.
-      mockSetupSdk.mockRejectedValueOnce(new Error('SDK init failed'))
+      mockSetupSdk.mockRejectedValueOnce(new Error("SDK init failed"));
       // Flush swallows the error and discards events.
-      await expect(client.flush()).resolves.toBeUndefined()
-    })
+      await expect(client.flush()).resolves.toBeUndefined();
+    });
 
-    it('handles timeout-message errors during flush (lines 356-363)', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+    it("handles timeout-message errors during flush (lines 356-363)", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
+      });
       // Reject with an error whose message contains "timed out" — exercises
       // the timeout-detection branch in the flush() catch block.
-      mockSetupSdk.mockRejectedValueOnce(
-        new Error('Telemetry flush timed out after 2000ms'),
-      )
-      await expect(client.flush()).resolves.toBeUndefined()
-    })
-  })
+      mockSetupSdk.mockRejectedValueOnce(new Error("Telemetry flush timed out after 2000ms"));
+      await expect(client.flush()).resolves.toBeUndefined();
+    });
+  });
 
-  describe('destroy error/timeout branches', () => {
-    it('handles errors thrown during destroy flush (lines 459-478)', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+  describe("destroy error/timeout branches", () => {
+    it("handles errors thrown during destroy flush (lines 459-478)", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
+      });
       // The next setupSdk call (inside destroy → sendEvents) throws.
-      mockSetupSdk.mockRejectedValueOnce(new Error('SDK init failed'))
+      mockSetupSdk.mockRejectedValueOnce(new Error("SDK init failed"));
       // destroy() should not throw even when its internal flush fails.
-      await expect(client.destroy()).resolves.toBeUndefined()
-    })
+      await expect(client.destroy()).resolves.toBeUndefined();
+    });
 
-    it('handles timeout-message errors during destroy flush (lines 463-473)', async () => {
-      const client = await TelemetryService.getTelemetryClient('test-org')
+    it("handles timeout-message errors during destroy flush (lines 463-473)", async () => {
+      const client = await TelemetryService.getTelemetryClient("test-org");
       client.track({
         event_sender_created_at: new Date().toISOString(),
-        event_type: 'test_event',
+        event_type: "test_event",
         context: {},
-      })
-      mockSetupSdk.mockRejectedValueOnce(
-        new Error('flush during destroy timed out after 2000ms'),
-      )
-      await expect(client.destroy()).resolves.toBeUndefined()
-    })
-  })
-})
+      });
+      mockSetupSdk.mockRejectedValueOnce(new Error("flush during destroy timed out after 2000ms"));
+      await expect(client.destroy()).resolves.toBeUndefined();
+    });
+  });
+});

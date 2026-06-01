@@ -19,85 +19,80 @@
  * examples: ['install ripgrep', 'build', 'add serde'], })
  */
 
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from './with-subcommands.mts'
-import { spawnSfw, spawnSfwDlx } from '../dlx/spawn.mjs'
-import { outputDryRunExecute } from '../dry-run/output.mts'
-import { getFlagApiRequirementsOutput } from '../output/formatting.mts'
-import { filterFlags } from '../process/cmd.mts'
-import {
-  trackSubprocessExit,
-  trackSubprocessStart,
-} from '../telemetry/integration.mts'
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "./with-subcommands.mts";
+import { spawnSfw, spawnSfwDlx } from "../dlx/spawn.mjs";
+import { outputDryRunExecute } from "../dry-run/output.mts";
+import { getFlagApiRequirementsOutput } from "../output/formatting.mts";
+import { filterFlags } from "../process/cmd.mts";
+import { trackSubprocessExit, trackSubprocessStart } from "../telemetry/integration.mts";
 
-import type { CliCommandContext } from './with-subcommands.mts'
-import type { CliSubcommand } from './with-subcommands-shared.mts'
+import type { CliCommandContext } from "./with-subcommands.mts";
+import type { CliSubcommand } from "./with-subcommands-shared.mts";
 
 interface DefineHandoffCommandOptions {
   /**
    * Command name as it appears under `socket`. Forwarded to sfw as the first
    * arg unless `binaryPicker` overrides it.
    */
-  name: string
+  name: string;
   /**
    * One-line description for the help bucket and `socket --help` listing.
    */
-  description: string
+  description: string;
   /**
    * Hide the command from `socket --help`. Defaults to false.
    */
-  hidden?: boolean | undefined
+  hidden?: boolean | undefined;
   /**
    * Spawn strategy: - 'auto' (= spawnSfw): VFS-extract in SEA mode,
    * dlx-download otherwise. Used by npm/npx because those binaries are bundled
    * in the SEA. - 'dlx' (= spawnSfwDlx): always pnpm-dlx-download. Used by yarn
    * / pip / cargo / go / etc. where the SEA doesn't bundle the binary.
    */
-  spawnMode: 'auto' | 'dlx'
+  spawnMode: "auto" | "dlx";
   /**
    * Examples to render under "Examples" in the help text. Each line is
    * automatically prefixed with "$ ${command} ". Pass the args portion only.
    */
-  examples: readonly string[]
+  examples: readonly string[];
   /**
    * Optional dynamic binary picker. If provided, runs after flag parsing and
    * its return value replaces `name` as the first arg passed to sfw. Used by
    * `socket pip` to fall back to `pip3` when `pip` is missing.
    */
-  binaryPicker?:
-    | ((context: CliCommandContext) => Promise<string> | string)
-    | undefined
+  binaryPicker?: ((context: CliCommandContext) => Promise<string> | string) | undefined;
   /**
    * Extra free-form notes appended after the standard "Note: Everything after X
    * is forwarded…" line. Each entry becomes one indented line.
    */
-  helpNotes?: readonly string[] | undefined
+  helpNotes?: readonly string[] | undefined;
   /**
    * If true, emit the "API Token Requirements" section in help by looking up
    * the cmdPath `<parent>:<name>` in the requirements registry.
    */
-  showApiRequirements?: boolean | undefined
+  showApiRequirements?: boolean | undefined;
   /**
    * If true, append the "Use `socket wrapper on` to alias this command as X"
    * hint after the forwarding note.
    */
-  wrapperHint?: boolean | undefined
+  wrapperHint?: boolean | undefined;
   /**
    * If true, support `--dry-run` (renders sfw invocation and bails). Default
    * true.
    */
-  supportDryRun?: boolean | undefined
+  supportDryRun?: boolean | undefined;
   /**
    * If true, surround the spawn with `trackSubprocessStart` /
    * `trackSubprocessExit` telemetry. Default true.
    */
-  trackTelemetry?: boolean | undefined
+  trackTelemetry?: boolean | undefined;
 }
 
-const DEFAULT_HIDDEN = false
-const DEFAULT_SUPPORT_DRY_RUN = true
-const DEFAULT_TRACK_TELEMETRY = true
+const DEFAULT_HIDDEN = false;
+const DEFAULT_SUPPORT_DRY_RUN = true;
+const DEFAULT_TRACK_TELEMETRY = true;
 
 /**
  * Build the help-text generator function used by meow.
@@ -106,53 +101,50 @@ export function buildHelp(
   opts: DefineHandoffCommandOptions,
   parentName: string,
 ): (command: string) => string {
-  const { examples, helpNotes, name, showApiRequirements, wrapperHint } = opts
+  const { examples, helpNotes, name, showApiRequirements, wrapperHint } = opts;
 
   return (command: string) => {
-    const lines: string[] = []
-    lines.push('', '    Usage', `      $ ${command} ...`)
+    const lines: string[] = [];
+    lines.push("", "    Usage", `      $ ${command} ...`);
 
     if (showApiRequirements) {
       lines.push(
-        '',
-        '    API Token Requirements',
+        "",
+        "    API Token Requirements",
         `      ${getFlagApiRequirementsOutput(`${parentName}:${name}`)}`,
-      )
+      );
     }
 
     lines.push(
-      '',
+      "",
       `    Note: Everything after "${name}" is forwarded to Socket Firewall (sfw).`,
       `          Socket Firewall provides real-time security scanning for ${name} packages.`,
-    )
+    );
 
     if (helpNotes && helpNotes.length) {
       for (let i = 0, { length } = helpNotes; i < length; i += 1) {
-        const note = helpNotes[i]
-        lines.push(`          ${note}`)
+        const note = helpNotes[i];
+        lines.push(`          ${note}`);
       }
     }
 
     if (wrapperHint) {
-      lines.push(
-        '',
-        `    Use \`socket wrapper on\` to alias this command as \`${name}\`.`,
-      )
+      lines.push("", `    Use \`socket wrapper on\` to alias this command as \`${name}\`.`);
     }
 
     if (examples.length) {
-      lines.push('', '    Examples')
+      lines.push("", "    Examples");
       for (let i = 0, { length } = examples; i < length; i += 1) {
-        const example = examples[i]
+        const example = examples[i];
         // Trim trailing whitespace so a bare-command example renders as
         // `$ socket npm` (no trailing space) instead of `$ socket npm `.
-        lines.push(`      $ ${command} ${example}`.trimEnd())
+        lines.push(`      $ ${command} ${example}`.trimEnd());
       }
     }
 
-    lines.push('')
-    return lines.join('\n')
-  }
+    lines.push("");
+    return lines.join("\n");
+  };
 }
 
 /**
@@ -160,9 +152,7 @@ export function buildHelp(
  *
  * Returns a CliSubcommand-shaped object ready to plug into the meow router.
  */
-export function defineHandoffCommand(
-  opts: DefineHandoffCommandOptions,
-): CliSubcommand {
+export function defineHandoffCommand(opts: DefineHandoffCommandOptions): CliSubcommand {
   const {
     description,
     hidden = DEFAULT_HIDDEN,
@@ -170,7 +160,7 @@ export function defineHandoffCommand(
     spawnMode,
     supportDryRun = DEFAULT_SUPPORT_DRY_RUN,
     trackTelemetry = DEFAULT_TRACK_TELEMETRY,
-  } = opts
+  } = opts;
 
   async function run(
     argv: string[] | readonly string[],
@@ -180,7 +170,7 @@ export function defineHandoffCommand(
     const { parentName } = {
       __proto__: null,
       ...context,
-    } as CliCommandContext
+    } as CliCommandContext;
 
     const config = {
       commandName: name,
@@ -188,55 +178,47 @@ export function defineHandoffCommand(
       hidden,
       flags: defineFlags({ ...commonFlags }),
       help: buildHelp(opts, parentName),
-    }
+    };
 
-    const cli = meowOrExit({ argv, config, importMeta, parentName })
+    const cli = meowOrExit({ argv, config, importMeta, parentName });
 
     // Pass an explicit empty `exceptions` array so test-side assertions
     // that match the legacy 3-arg call shape stay green.
-    const filteredArgv = filterFlags(argv, config.flags, [])
+    const filteredArgv = filterFlags(argv, config.flags, []);
 
-    if (supportDryRun && cli.flags['dryRun']) {
-      outputDryRunExecute(
-        'sfw',
-        [name, ...filteredArgv],
-        `${name} with Socket security scanning`,
-      )
-      return
+    if (supportDryRun && cli.flags["dryRun"]) {
+      outputDryRunExecute("sfw", [name, ...filteredArgv], `${name} with Socket security scanning`);
+      return;
     }
 
     // Resolve the actual binary to forward (pip → pip/pip3 fallback, etc.).
-    const binaryName = opts.binaryPicker
-      ? await opts.binaryPicker(context)
-      : name
+    const binaryName = opts.binaryPicker ? await opts.binaryPicker(context) : name;
 
     // Default to failure; child's exit listener overwrites on success.
-    process.exitCode = 1
+    process.exitCode = 1;
 
-    const subprocessStartTime = trackTelemetry
-      ? await trackSubprocessStart(name)
-      : undefined
+    const subprocessStartTime = trackTelemetry ? await trackSubprocessStart(name) : undefined;
 
-    const spawnFn = spawnMode === 'auto' ? spawnSfw : spawnSfwDlx
+    const spawnFn = spawnMode === "auto" ? spawnSfw : spawnSfwDlx;
     const { spawnPromise } = await spawnFn([binaryName, ...filteredArgv], {
-      stdio: 'inherit',
-    })
+      stdio: "inherit",
+    });
 
     const { process: childProcess } = spawnPromise as unknown as {
       process: NodeJS.Process & {
-        on: (event: string, listener: (...args: unknown[]) => void) => void
-      }
-    }
+        on: (event: string, listener: (...args: unknown[]) => void) => void;
+      };
+    };
     wireChildExit(childProcess, {
       name,
       subprocessStartTime,
       trackTelemetry,
-    })
+    });
 
-    await spawnPromise
+    await spawnPromise;
   }
 
-  return { description, hidden, run }
+  return { description, hidden, run };
 }
 
 /**
@@ -245,33 +227,30 @@ export function defineHandoffCommand(
  */
 export function wireChildExit(
   childProcess: NodeJS.Process & {
-    on: (event: string, listener: (...args: unknown[]) => void) => void
+    on: (event: string, listener: (...args: unknown[]) => void) => void;
   },
   options: {
-    name: string
-    trackTelemetry: boolean
-    subprocessStartTime: number | undefined
+    name: string;
+    trackTelemetry: boolean;
+    subprocessStartTime: number | undefined;
   },
 ): void {
-  const { name, subprocessStartTime, trackTelemetry } = options
-  childProcess.on(
-    'exit',
-    (code: number | null, signalName: NodeJS.Signals | null) => {
-      const exitProcess = () => {
-        if (signalName) {
-          process.kill(process.pid, signalName)
-        } else if (typeof code === 'number') {
-          process.exit(code)
-        }
+  const { name, subprocessStartTime, trackTelemetry } = options;
+  childProcess.on("exit", (code: number | null, signalName: NodeJS.Signals | null) => {
+    const exitProcess = () => {
+      if (signalName) {
+        process.kill(process.pid, signalName);
+      } else if (typeof code === "number") {
+        process.exit(code);
       }
-      if (trackTelemetry && subprocessStartTime !== undefined) {
-        // .then/.catch so the exit happens even when telemetry flush fails.
-        void trackSubprocessExit(name, subprocessStartTime, code)
-          .then(exitProcess)
-          .catch(exitProcess)
-      } else {
-        exitProcess()
-      }
-    },
-  )
+    };
+    if (trackTelemetry && subprocessStartTime !== undefined) {
+      // .then/.catch so the exit happens even when telemetry flush fails.
+      void trackSubprocessExit(name, subprocessStartTime, code)
+        .then(exitProcess)
+        .catch(exitProcess);
+    } else {
+      exitProcess();
+    }
+  });
 }

@@ -7,23 +7,23 @@
  * scripts/download-assets.mts models # Download specific assets (parallel) node
  * scripts/download-assets.mts --no-parallel # Download all assets (sequential)
  *
- * Assets: binject - Binary injection tool. models - AI models tar.gz
- * (MiniLM, CodeT5). node-smol - Minimal Node.js binaries.
+ * Assets: binject - Binary injection tool. models - AI models tar.gz (MiniLM,
+ * CodeT5). node-smol - Minimal Node.js binaries.
  */
 
-import { existsSync, promises as fs } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync, promises as fs } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
+import { logTransientErrorHelp } from "build-infra/lib/github-error-utils";
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { downloadSocketBtmRelease } from '@socketsecurity/lib-stable/releases/socket-btm'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { downloadSocketBtmRelease } from "@socketsecurity/lib-stable/releases/socket-btm";
+import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
-const logger = getDefaultLogger()
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootPath = path.join(__dirname, "..");
+const logger = getDefaultLogger();
 
 /**
  * Asset configuration. Each asset defines how to download and process it.
@@ -31,88 +31,88 @@ const logger = getDefaultLogger()
 const ASSETS = {
   __proto__: null,
   binject: {
-    description: 'Binary injection tool for SEA builds',
+    description: "Binary injection tool for SEA builds",
     download: {
       cwd: rootPath,
-      downloadDir: '../../packages/build-infra/build/downloaded/binject',
-      envVar: 'SOCKET_BTM_BINJECT_TAG',
+      downloadDir: "../../packages/build-infra/build/downloaded/binject",
+      envVar: "SOCKET_BTM_BINJECT_TAG",
       quiet: false,
-      tool: 'binject',
+      tool: "binject",
     },
-    name: 'binject',
-    type: 'binary',
+    name: "binject",
+    type: "binary",
   },
   models: {
-    description: 'AI models (MiniLM-L6-v2, CodeT5)',
+    description: "AI models (MiniLM-L6-v2, CodeT5)",
     download: {
-      asset: 'models-*.tar.gz',
+      asset: "models-*.tar.gz",
       cwd: rootPath,
-      downloadDir: '../../packages/build-infra/build/downloaded/models',
+      downloadDir: "../../packages/build-infra/build/downloaded/models",
       quiet: false,
-      tool: 'models',
+      tool: "models",
     },
     extract: {
-      format: 'tar.gz',
-      outputDir: path.join(rootPath, 'build/models'),
+      format: "tar.gz",
+      outputDir: path.join(rootPath, "build/models"),
     },
-    name: 'models',
-    type: 'archive',
+    name: "models",
+    type: "archive",
   },
-  'node-smol': {
-    description: 'Minimal Node.js v24.10.0 binaries',
+  "node-smol": {
+    description: "Minimal Node.js v24.10.0 binaries",
     download: {
-      bin: 'node',
+      bin: "node",
       cwd: rootPath,
-      downloadDir: '../../packages/build-infra/build/downloaded/node-smol',
-      envVar: 'SOCKET_BTM_NODE_SMOL_TAG',
+      downloadDir: "../../packages/build-infra/build/downloaded/node-smol",
+      envVar: "SOCKET_BTM_NODE_SMOL_TAG",
       quiet: false,
-      tool: 'node-smol',
+      tool: "node-smol",
     },
-    name: 'node-smol',
-    type: 'binary',
+    name: "node-smol",
+    type: "binary",
   },
-}
+};
 
 /**
  * Download a single asset.
  */
 async function downloadAsset(config) {
-  const { description, download, extract, name, type } = config
+  const { description, download, extract, name, type } = config;
 
   try {
-    logger.group(`Extracting ${name} from socket-btm releases...`)
-    logger.info(description)
+    logger.group(`Extracting ${name} from socket-btm releases…`);
+    logger.info(description);
 
     // Download the asset.
-    let assetPath
+    let assetPath;
     try {
       // Extract tool name from download config.
-      const { tool, ...downloadOptions } = download
-      assetPath = await downloadSocketBtmRelease(tool, downloadOptions)
-      logger.info(`Downloaded to ${assetPath}`)
+      const { tool, ...downloadOptions } = download;
+      assetPath = await downloadSocketBtmRelease(tool, downloadOptions);
+      logger.info(`Downloaded to ${assetPath}`);
     } catch (e) {
       // Some assets are optional (models).
-      if (name === 'models') {
-        logger.warn(`${name} not available: ${e.message}`)
-        logger.groupEnd()
-        return { name, ok: true, skipped: true }
+      if (name === "models") {
+        logger.warn(`${name} not available: ${e.message}`);
+        logger.groupEnd();
+        return { name, ok: true, skipped: true };
       }
-      throw e
+      throw e;
     }
 
     // Process based on asset type.
-    if (type === 'archive' && extract) {
-      await extractArchive(assetPath, extract, name)
+    if (type === "archive" && extract) {
+      await extractArchive(assetPath, extract, name);
     }
 
-    logger.groupEnd()
-    logger.success(`${name} extraction complete`)
-    return { name, ok: true }
+    logger.groupEnd();
+    logger.success(`${name} extraction complete`);
+    return { name, ok: true };
   } catch (e) {
-    logger.groupEnd()
-    logger.error(`Failed to extract ${name}: ${e.message}`)
-    await logTransientErrorHelp(e)
-    return { error: e, name, ok: false }
+    logger.groupEnd();
+    logger.error(`Failed to extract ${name}: ${e.message}`);
+    await logTransientErrorHelp(e);
+    return { error: e, name, ok: false };
   }
 }
 
@@ -126,31 +126,29 @@ async function downloadAsset(config) {
  */
 async function downloadAssets(assetNames, parallel = true) {
   if (parallel) {
-    const settled = await Promise.allSettled(
-      assetNames.map(name => downloadAsset(ASSETS[name])),
-    )
+    const settled = await Promise.allSettled(assetNames.map((name) => downloadAsset(ASSETS[name])));
 
     const failed = settled.filter(
-      r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok),
-    )
+      (r) => r.status === "rejected" || (r.status === "fulfilled" && !r.value.ok),
+    );
     if (failed.length > 0) {
-      logger.error('')
-      logger.error(`${failed.length} asset(s) failed:`)
+      logger.error("");
+      logger.error(`${failed.length} asset(s) failed:`);
       for (let i = 0, { length } = failed; i < length; i += 1) {
-        const r = failed[i]
+        const r = failed[i];
         logger.error(
-          `  - ${r.status === 'rejected' ? (r.reason?.message ?? r.reason) : r.value.name}`,
-        )
+          `  - ${r.status === "rejected" ? (r.reason?.message ?? r.reason) : r.value.name}`,
+        );
       }
-      process.exitCode = 1
+      process.exitCode = 1;
     }
   } else {
     for (let i = 0, { length } = assetNames; i < length; i += 1) {
-      const name = assetNames[i]
-      const result = await downloadAsset(ASSETS[name])
+      const name = assetNames[i];
+      const result = await downloadAsset(ASSETS[name]);
       if (!result.ok && !result.skipped) {
-        process.exitCode = 1
-        return
+        process.exitCode = 1;
+        return;
       }
     }
   }
@@ -160,57 +158,56 @@ async function downloadAssets(assetNames, parallel = true) {
  * Extract tar.gz archive.
  */
 async function extractArchive(tarGzPath, extractConfig, assetName) {
-  const { outputDir } = extractConfig
+  const { outputDir } = extractConfig;
 
-  await fs.mkdir(outputDir, { recursive: true })
+  await fs.mkdir(outputDir, { recursive: true });
 
-  const versionPath = path.join(outputDir, '.version')
-  const assetDir = path.dirname(tarGzPath)
-  const sourceVersionPath = path.join(assetDir, '.version')
+  const versionPath = path.join(outputDir, ".version");
+  const assetDir = path.dirname(tarGzPath);
+  const sourceVersionPath = path.join(assetDir, ".version");
 
   // Get release tag for cache validation.
   if (!existsSync(sourceVersionPath)) {
     throw new Error(
       `Source version file not found: ${sourceVersionPath}. ` +
-        'Please download assets first using the build system.',
-    )
+        "Please download assets first using the build system.",
+    );
   }
 
-  const tag = (await fs.readFile(sourceVersionPath, 'utf8')).trim()
+  const tag = (await fs.readFile(sourceVersionPath, "utf8")).trim();
   if (!tag || tag.length === 0) {
     throw new Error(
-      `Invalid version file content at ${sourceVersionPath}. ` +
-        'Please re-download assets.',
-    )
+      `Invalid version file content at ${sourceVersionPath}. ` + "Please re-download assets.",
+    );
   }
 
   // Check if already extracted and up to date.
   if (existsSync(versionPath)) {
-    const cachedVersion = await fs.readFile(versionPath, 'utf-8')
+    const cachedVersion = await fs.readFile(versionPath, "utf-8");
     if (cachedVersion.trim() === tag) {
-      logger.info(`${assetName} already up to date`)
-      return
+      logger.info(`${assetName} already up to date`);
+      return;
     }
-    logger.info(`${assetName} out of date, re-extracting...`)
+    logger.info(`${assetName} out of date, re-extracting…`);
   } else {
-    logger.info(`Extracting ${assetName} (this may take a minute)...`)
+    logger.info(`Extracting ${assetName} (this may take a minute)...`);
   }
 
   // Extract tar.gz using tar command.
-  const result = await spawn('tar', ['-xzf', tarGzPath, '-C', outputDir], {
-    stdio: 'inherit',
-  })
+  const result = await spawn("tar", ["-xzf", tarGzPath, "-C", outputDir], {
+    stdio: "inherit",
+  });
 
   if (!result) {
-    throw new Error('Failed to start tar extraction')
+    throw new Error("Failed to start tar extraction");
   }
 
   if (result.code !== 0) {
-    throw new Error(`tar extraction failed with code ${result.code}`)
+    throw new Error(`tar extraction failed with code ${result.code}`);
   }
 
   // Write version file with release tag.
-  await fs.writeFile(versionPath, tag, 'utf-8')
+  await fs.writeFile(versionPath, tag, "utf-8");
 }
 
 /**
@@ -221,35 +218,35 @@ async function main() {
   // Useful for repeated local builds where assets are already cached,
   // or when GitHub API rate limits are exhausted.
   if (process.env.SKIP_ASSET_DOWNLOAD) {
-    logger.info('Skipping asset downloads (SKIP_ASSET_DOWNLOAD is set)')
-    return
+    logger.info("Skipping asset downloads (SKIP_ASSET_DOWNLOAD is set)");
+    return;
   }
 
-  const args = process.argv.slice(2)
-  const parallel = !args.includes('--no-parallel')
-  const assetArgs = args.filter(arg => !arg.startsWith('--'))
+  const args = process.argv.slice(2);
+  const parallel = !args.includes("--no-parallel");
+  const assetArgs = args.filter((arg) => !arg.startsWith("--"));
 
   // Determine which assets to download.
-  const assetNames = assetArgs.length > 0 ? assetArgs : Object.keys(ASSETS)
+  const assetNames = assetArgs.length > 0 ? assetArgs : Object.keys(ASSETS);
 
   // Validate asset names.
   for (let i = 0, { length } = assetNames; i < length; i += 1) {
-    const name = assetNames[i]
+    const name = assetNames[i];
     if (!(name in ASSETS)) {
-      logger.error(`Unknown asset: ${name}`)
-      logger.error(`Available assets: ${Object.keys(ASSETS).join(', ')}`)
-      process.exitCode = 1
-      return
+      logger.error(`Unknown asset: ${name}`);
+      logger.error(`Available assets: ${Object.keys(ASSETS).join(", ")}`);
+      process.exitCode = 1;
+      return;
     }
   }
 
-  await downloadAssets(assetNames, parallel)
+  await downloadAssets(assetNames, parallel);
 }
 
 // Run if invoked directly.
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  main().catch(error => {
-    logger.error('Asset download failed:', error)
-    process.exitCode = 1
-  })
+  main().catch((error) => {
+    logger.error("Asset download failed:", error);
+    process.exitCode = 1;
+  });
 }

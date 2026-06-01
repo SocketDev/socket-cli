@@ -13,33 +13,28 @@
  * formatting - Handles kebab-case conversion for flags.
  */
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
-import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
-import { indentString } from '@socketsecurity/lib-stable/strings/format'
-import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
+import { joinAnd } from "@socketsecurity/lib-stable/arrays/join";
+import { isObject } from "@socketsecurity/lib-stable/objects/predicates";
+import { naturalCompare } from "@socketsecurity/lib-stable/sorts/natural";
+import { indentString } from "@socketsecurity/lib-stable/strings/format";
+import { pluralize } from "@socketsecurity/lib-stable/words/pluralize";
 
-import { camelToKebab } from '../data/strings.mts'
-import {
-  getRequirements,
-  getRequirementsKey,
-} from '../ecosystem/requirements.mts'
+import { camelToKebab } from "../data/strings.mts";
+import { getRequirements, getRequirementsKey } from "../ecosystem/requirements.mts";
 
-import type { MeowFlags } from '../../flags.mts'
+import type { MeowFlags } from "../../flags.mts";
 
 type ApiRequirementsOptions = {
-  indent?: number | undefined
-}
+  indent?: number | undefined;
+};
 
 type HelpListOptions = {
-  indent?: number | undefined
-  keyPrefix?: string | undefined
-  padName?: number | undefined
-}
+  indent?: number | undefined;
+  keyPrefix?: string | undefined;
+  padName?: number | undefined;
+};
 
-type ListDescription =
-  | { description: string }
-  | { description: string; hidden: boolean }
+type ListDescription = { description: string } | { description: string; hidden: boolean };
 
 export function getFlagApiRequirementsOutput(
   cmdPath: string,
@@ -48,54 +43,48 @@ export function getFlagApiRequirementsOutput(
   const { indent = 6 } = {
     __proto__: null,
     ...options,
-  } as ApiRequirementsOptions
-  const key = getRequirementsKey(cmdPath)
-  const requirements = getRequirements()
+  } as ApiRequirementsOptions;
+  const key = getRequirementsKey(cmdPath);
+  const requirements = getRequirements();
   const data = (
     requirements.api as Record<
       string,
-      | { quota?: number | undefined; permissions?: string[] | undefined }
-      | undefined
+      { quota?: number | undefined; permissions?: string[] | undefined } | undefined
     >
-  )[key]
-  let result = ''
+  )[key];
+  let result = "";
   if (data) {
-    const quota: number = data.quota ?? 0
-    const rawPerms: string[] = data.permissions ?? []
-    const padding = ''.padEnd(indent)
-    const lines = []
+    const quota: number = data.quota ?? 0;
+    const rawPerms: string[] = data.permissions ?? [];
+    const padding = "".padEnd(indent);
+    const lines = [];
     if (Number.isFinite(quota) && quota > 0) {
-      lines.push(
-        `${padding}- Quota: ${quota} ${pluralize('unit', { count: quota })}`,
-      )
+      lines.push(`${padding}- Quota: ${quota} ${pluralize("unit", { count: quota })}`);
     }
     if (Array.isArray(rawPerms) && rawPerms.length) {
-      const perms = rawPerms.slice().sort(naturalCompare)
-      lines.push(`${padding}- Permissions: ${joinAnd(perms)}`)
+      const perms = rawPerms.slice().toSorted(naturalCompare);
+      lines.push(`${padding}- Permissions: ${joinAnd(perms)}`);
     }
-    result += lines.join('\n')
+    result += lines.join("\n");
   }
-  return result.trim() || '(none)'
+  return result.trim() || "(none)";
 }
 
-export function getFlagListOutput(
-  list: MeowFlags,
-  options?: HelpListOptions | undefined,
-): string {
-  const { keyPrefix = '--' } = {
+export function getFlagListOutput(list: MeowFlags, options?: HelpListOptions | undefined): string {
+  const { keyPrefix = "--" } = {
     __proto__: null,
     ...options,
-  } as HelpListOptions
+  } as HelpListOptions;
   return getHelpListOutput(
     {
       ...list,
     },
     { ...options, keyPrefix },
-  )
+  );
 }
 
 // Alias for testing compatibility.
-export const getFlagsHelpOutput = getFlagListOutput
+export const getFlagsHelpOutput = getFlagListOutput;
 
 export function getHelpListOutput(
   list: Record<string, ListDescription>,
@@ -103,35 +92,33 @@ export function getHelpListOutput(
 ): string {
   const {
     indent = 6,
-    keyPrefix = '',
+    keyPrefix = "",
     padName = 20,
   } = {
     __proto__: null,
     ...options,
-  } as HelpListOptions
-  let result = ''
-  const names = Object.keys(list).sort(naturalCompare)
+  } as HelpListOptions;
+  let result = "";
+  const names = Object.keys(list).toSorted(naturalCompare);
   for (let i = 0, { length } = names; i < length; i += 1) {
-    const name = names[i]!
-    const entry = list[name]
-    const entryIsObj = isObject(entry)
-    if (entryIsObj && 'hidden' in entry && entry['hidden']) {
-      continue
+    const name = names[i]!;
+    const entry = list[name];
+    const entryIsObj = isObject(entry);
+    if (entryIsObj && "hidden" in entry && entry["hidden"]) {
+      continue;
     }
-    const printedName = `${keyPrefix}${camelToKebab(name)}`
-    const preDescription = `${''.padEnd(indent)}${printedName.padEnd(Math.max(printedName.length + 2, padName))}`
+    const printedName = `${keyPrefix}${camelToKebab(name)}`;
+    const preDescription = `${"".padEnd(indent)}${printedName.padEnd(Math.max(printedName.length + 2, padName))}`;
 
-    result += preDescription
+    result += preDescription;
 
-    const description = entryIsObj
-      ? String(entry['description'] ?? '')
-      : String(entry)
+    const description = entryIsObj ? String(entry["description"] ?? "") : String(entry);
     if (description) {
       result += indentString(description, {
         count: preDescription.length,
-      }).trimStart()
+      }).trimStart();
     }
-    result += '\n'
+    result += "\n";
   }
-  return result.trim() || '(none)'
+  return result.trim() || "(none)";
 }

@@ -243,7 +243,7 @@ catalogs:
 
 overrides:
   '@socketregistry/packageurl-js': npm:@socketregistry/packageurl-js@1.4.2
-  '@socketsecurity/lib': 6.0.5
+  '@socketsecurity/lib': 6.0.6
   '@socketsecurity/registry': npm:@socketsecurity/registry@2.0.2
   '@socketsecurity/sdk': npm:@socketsecurity/sdk@4.0.1
   uuid: 11.1.1
@@ -251,7 +251,7 @@ overrides:
   '@octokit/request-error': 7.0.0
   '@sigstore/sign': 4.1.0
   '@socketregistry/packageurl-js-stable': npm:@socketregistry/packageurl-js@1.4.2
-  '@socketsecurity/lib-stable': npm:@socketsecurity/lib@6.0.5
+  '@socketsecurity/lib-stable': npm:@socketsecurity/lib@6.0.6
   '@socketsecurity/registry-stable': npm:@socketsecurity/registry@2.0.2
   '@socketsecurity/sdk-stable': npm:@socketsecurity/sdk@4.0.1
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
@@ -403,11 +403,11 @@ importers:
         specifier: 'catalog:'
         version: 1.0.25
       '@socketsecurity/lib':
-        specifier: 6.0.5
-        version: 6.0.5(typescript@5.9.3)
+        specifier: 6.0.6
+        version: 6.0.6(typescript@5.9.3)
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@6.0.5
-        version: '@socketsecurity/lib@6.0.5(typescript@5.9.3)'
+        specifier: npm:@socketsecurity/lib@6.0.6
+        version: '@socketsecurity/lib@6.0.6(typescript@5.9.3)'
       '@socketsecurity/registry':
         specifier: npm:@socketsecurity/registry@2.0.2
         version: 2.0.2(typescript@5.9.3)
@@ -592,11 +592,11 @@ importers:
         specifier: 'catalog:'
         version: 0.34.49
       '@socketsecurity/lib':
-        specifier: 6.0.5
-        version: 6.0.5(typescript@5.9.3)
+        specifier: 6.0.6
+        version: 6.0.6(typescript@5.9.3)
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@6.0.5
-        version: '@socketsecurity/lib@6.0.5(typescript@5.9.3)'
+        specifier: npm:@socketsecurity/lib@6.0.6
+        version: '@socketsecurity/lib@6.0.6(typescript@5.9.3)'
       magic-string:
         specifier: 'catalog:'
         version: 0.30.19
@@ -652,11 +652,11 @@ importers:
         specifier: 'catalog:'
         version: 1.0.25
       '@socketsecurity/lib':
-        specifier: 6.0.5
-        version: 6.0.5(typescript@5.9.3)
+        specifier: 6.0.6
+        version: 6.0.6(typescript@5.9.3)
       '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@6.0.5
-        version: '@socketsecurity/lib@6.0.5(typescript@5.9.3)'
+        specifier: npm:@socketsecurity/lib@6.0.6
+        version: '@socketsecurity/lib@6.0.6(typescript@5.9.3)'
       '@socketsecurity/registry':
         specifier: npm:@socketsecurity/registry@2.0.2
         version: 2.0.2(typescript@5.9.3)
@@ -781,8 +781,8 @@ importers:
   packages/package-builder:
     dependencies:
       '@socketsecurity/lib':
-        specifier: 6.0.5
-        version: 6.0.5(typescript@5.9.3)
+        specifier: 6.0.6
+        version: 6.0.6(typescript@5.9.3)
       build-infra:
         specifier: workspace:*
         version: link:../build-infra
@@ -1969,8 +1969,8 @@ packages:
     resolution: {integrity: sha512-f8AqJMH1+BL15G6bHDzb1jyY+wW4gOYQs5JumSxmnE/H/+KgqbIZgaPwDdRwoeciDGojoSVrRHiTZjbe7n7dJA==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/lib@6.0.5':
-    resolution: {integrity: sha512-Ka2k1xdm+tj0ttq/MmMKdcItI5AmNeJOxvibXAzt5NCq7WlnoqD7UFc/asduICekx2vC2V0ojG1wtMrhbH/bJA==}
+  '@socketsecurity/lib@6.0.6':
+    resolution: {integrity: sha512-PpQmnoqKnBONOtimHWB1Mp/qzJhpPXIN4hwQUS99F015DiG1VGNNW5nARPVvHfxOSADCdK5mvtMM+Gl8giGOFg==}
     engines: {node: '>=22', npm: '>=11.16.0', pnpm: '>=11.4.0'}
     hasBin: true
     peerDependencies:
@@ -5745,7 +5745,7 @@ snapshots:
     dependencies:
       yoctocolors-cjs: 2.1.3
 
-  '@socketsecurity/lib@6.0.5(typescript@5.9.3)':
+  '@socketsecurity/lib@6.0.6(typescript@5.9.3)':
     optionalDependencies:
       typescript: 5.9.3
 

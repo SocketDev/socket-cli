@@ -24,18 +24,18 @@
  * - UpdateConfigValue: Persist configuration changes
  */
 
-import { statSync, writeFileSync } from 'node:fs'
-import path from 'node:path'
+import { statSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
-import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
-import { safeReadFileSync } from '@socketsecurity/lib-stable/fs/read-file'
-import { safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
-import { getEditableJsonClass } from '@socketsecurity/lib-stable/json/edit'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
+import { debugDirNs, debugNs } from "@socketsecurity/lib-stable/debug/output";
+import { safeReadFileSync } from "@socketsecurity/lib-stable/fs/read-file";
+import { safeMkdirSync } from "@socketsecurity/lib-stable/fs/safe";
+import { getEditableJsonClass } from "@socketsecurity/lib-stable/json/edit";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { naturalCompare } from "@socketsecurity/lib-stable/sorts/natural";
 
-import { debugConfig } from './debug.mts'
-import { parseSocketConfig } from './socket-yaml.mts'
+import { debugConfig } from "./debug.mts";
+import { parseSocketConfig } from "./socket-yaml.mts";
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -43,127 +43,118 @@ import {
   CONFIG_KEY_DEFAULT_ORG,
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
-} from '../constants/config.mts'
-import { getSocketAppDataPath } from '../constants/paths.mts'
-import { SOCKET_YAML, SOCKET_YML } from '../constants/socket.mts'
-import { getErrorCause } from './error/errors.mts'
+} from "../constants/config.mts";
+import { getSocketAppDataPath } from "../constants/paths.mts";
+import { SOCKET_YAML, SOCKET_YML } from "../constants/socket.mts";
+import { getErrorCause } from "./error/errors.mts";
 
-import type { CResult } from '../types.mts'
-import type { SocketYml } from './socket-yaml.mts'
+import type { CResult } from "../types.mts";
+import type { SocketYml } from "./socket-yaml.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 export interface LocalConfig {
-  apiBaseUrl?: string | null | undefined
-  apiProxy?: string | null | undefined
-  apiToken?: string | null | undefined
-  defaultOrg?: string | undefined
-  enforcedOrgs?: string[] | readonly string[] | null | undefined
-  skipAskToPersistDefaultOrg?: boolean | undefined
+  apiBaseUrl?: string | null | undefined;
+  apiProxy?: string | null | undefined;
+  apiToken?: string | null | undefined;
+  defaultOrg?: string | undefined;
+  enforcedOrgs?: string[] | readonly string[] | null | undefined;
+  skipAskToPersistDefaultOrg?: boolean | undefined;
   // Convenience alias for defaultOrg.
-  org?: string | undefined
+  org?: string | undefined;
 }
 
-const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set([
-  CONFIG_KEY_API_TOKEN,
-])
+const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set([CONFIG_KEY_API_TOKEN]);
 
 const supportedConfig: Map<keyof LocalConfig, string> = new Map([
-  [CONFIG_KEY_API_BASE_URL, 'Base URL of the Socket API endpoint'],
-  [CONFIG_KEY_API_PROXY, 'A proxy through which to access the Socket API'],
-  [
-    CONFIG_KEY_API_TOKEN,
-    'The Socket API token required to access most Socket API endpoints',
-  ],
+  [CONFIG_KEY_API_BASE_URL, "Base URL of the Socket API endpoint"],
+  [CONFIG_KEY_API_PROXY, "A proxy through which to access the Socket API"],
+  [CONFIG_KEY_API_TOKEN, "The Socket API token required to access most Socket API endpoints"],
   [
     CONFIG_KEY_DEFAULT_ORG,
-    'The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.',
+    "The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.",
   ],
   [
     CONFIG_KEY_ENFORCED_ORGS,
-    'Orgs in this list have their security policies enforced on this machine',
+    "Orgs in this list have their security policies enforced on this machine",
   ],
   [
-    'skipAskToPersistDefaultOrg',
-    'This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively',
+    "skipAskToPersistDefaultOrg",
+    "This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively",
   ],
-  [CONFIG_KEY_ORG, 'Alias for defaultOrg'],
-])
+  [CONFIG_KEY_ORG, "Alias for defaultOrg"],
+]);
 
-const supportedConfigEntries = [...supportedConfig.entries()].sort((a, b) =>
+const supportedConfigEntries = [...supportedConfig.entries()].toSorted((a, b) =>
   naturalCompare(a[0], b[0]),
-)
-const supportedConfigKeys = supportedConfigEntries.map(p => p[0])
+);
+const supportedConfigKeys = supportedConfigEntries.map((p) => p[0]);
 
-const MAX_CONFIG_READ_RETRIES = 3
+const MAX_CONFIG_READ_RETRIES = 3;
 
 // Ensure export because dist/utils.js is required in src/constants.mts.
-if (typeof exports === 'object' && exports !== null) {
-  exports.getConfigValueOrUndef = getConfigValueOrUndef
+if (typeof exports === "object" && exports !== null) {
+  exports.getConfigValueOrUndef = getConfigValueOrUndef;
 }
 
-let cachedConfig: LocalConfig | undefined
+let cachedConfig: LocalConfig | undefined;
 
-let cachedConfigMtime: number | undefined
+let cachedConfigMtime: number | undefined;
 
-let cachedConfigPath: string | undefined
+let cachedConfigPath: string | undefined;
 
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
-let configFromFlag = false
+let configFromFlag = false;
 
-let pendingSave = false
+let pendingSave = false;
 
 type FoundSocketYml = {
-  path: string
-  parsed: SocketYml
-}
+  path: string;
+  parsed: SocketYml;
+};
 
-export function findSocketYmlSync(
-  dir = process.cwd(),
-): CResult<FoundSocketYml | undefined> {
-  let prevDir = undefined
+export function findSocketYmlSync(dir = process.cwd()): CResult<FoundSocketYml | undefined> {
+  let prevDir = undefined;
   while (dir !== prevDir) {
-    let ymlPath = path.join(dir, SOCKET_YML)
-    let yml = safeReadFileSync(ymlPath)
+    let ymlPath = path.join(dir, SOCKET_YML);
+    let yml = safeReadFileSync(ymlPath);
     if (yml === undefined) {
-      ymlPath = path.join(dir, SOCKET_YAML)
-      yml = safeReadFileSync(ymlPath)
+      ymlPath = path.join(dir, SOCKET_YAML);
+      yml = safeReadFileSync(ymlPath);
     }
     if (yml !== undefined) {
       try {
-        const ymlString = Buffer.isBuffer(yml) ? yml.toString('utf8') : yml
+        const ymlString = Buffer.isBuffer(yml) ? yml.toString("utf8") : yml;
         return {
           ok: true,
           data: {
             path: ymlPath,
             parsed: parseSocketConfig(ymlString),
           },
-        }
+        };
       } catch (e) {
-        debugNs('error', `Failed to parse config file: ${ymlPath}`)
-        debugDirNs('error', e)
+        debugNs("error", `Failed to parse config file: ${ymlPath}`);
+        debugDirNs("error", e);
         return {
           ok: false,
           message: `Found file but was unable to parse ${ymlPath}`,
           cause: getErrorCause(e),
-        }
+        };
       }
     }
-    prevDir = dir
-    dir = path.join(dir, '..')
+    prevDir = dir;
+    dir = path.join(dir, "..");
   }
-  return { ok: true, data: undefined }
+  return { ok: true, data: undefined };
 }
 
-export function getConfigValue<Key extends keyof LocalConfig>(
-  key: Key,
-): CResult<LocalConfig[Key]> {
-  const localConfig = getConfigValues()
-  const keyResult = normalizeConfigKey(key)
+export function getConfigValue<Key extends keyof LocalConfig>(key: Key): CResult<LocalConfig[Key]> {
+  const localConfig = getConfigValues();
+  const keyResult = normalizeConfigKey(key);
   if (!keyResult.ok) {
-    return keyResult
+    return keyResult;
   }
-  return { ok: true, data: localConfig[keyResult.data as Key] }
+  return { ok: true, data: localConfig[keyResult.data as Key] };
 }
 
 // This version squashes errors, returning undefined instead.
@@ -171,28 +162,28 @@ export function getConfigValue<Key extends keyof LocalConfig>(
 export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
   key: Key,
 ): LocalConfig[Key] | undefined {
-  const localConfig = getConfigValues()
-  const keyResult = normalizeConfigKey(key)
+  const localConfig = getConfigValues();
+  const keyResult = normalizeConfigKey(key);
   if (!keyResult.ok) {
-    return undefined
+    return undefined;
   }
-  return localConfig[keyResult.data as Key]
+  return localConfig[keyResult.data as Key];
 }
 
 export function getConfigValues(retryCount = 0): LocalConfig {
   // Order: env var > --config flag > file.
   // If config is from flag/env override, skip file-based caching.
   if (configFromFlag && cachedConfig !== undefined) {
-    return cachedConfig
+    return cachedConfig;
   }
 
-  const socketAppDataPath = getSocketAppDataPath()
+  const socketAppDataPath = getSocketAppDataPath();
   if (socketAppDataPath) {
-    const configFilePath = path.join(socketAppDataPath, 'config.json')
+    const configFilePath = path.join(socketAppDataPath, "config.json");
 
     try {
-      const stats = statSync(configFilePath)
-      const currentMtime = stats.mtimeMs
+      const stats = statSync(configFilePath);
+      const currentMtime = stats.mtimeMs;
 
       // Invalidate cache if not yet loaded, file modified, or path changed.
       // On first run, cachedConfig is undefined, triggering initial load.
@@ -201,11 +192,11 @@ export function getConfigValues(retryCount = 0): LocalConfig {
         cachedConfigMtime !== currentMtime ||
         cachedConfigPath !== configFilePath
       ) {
-        cachedConfig = {} as LocalConfig
-        const raw = safeReadFileSync(configFilePath)
+        cachedConfig = {} as LocalConfig;
+        const raw = safeReadFileSync(configFilePath);
 
         // Verify mtime hasn't changed during read to prevent TOCTOU race.
-        const statsAfter = statSync(configFilePath)
+        const statsAfter = statSync(configFilePath);
         if (statsAfter.mtimeMs !== currentMtime) {
           // File was modified during read, retry with limit.
           if (retryCount >= MAX_CONFIG_READ_RETRIES) {
@@ -214,144 +205,142 @@ export function getConfigValues(retryCount = 0): LocalConfig {
             // (e.g., editor auto-save). Better to warn than hard fail.
             logger.warn(
               `Config file modified ${retryCount} times during read, using potentially stale data`,
-            )
+            );
           } else {
-            return getConfigValues(retryCount + 1)
+            return getConfigValues(retryCount + 1);
           }
         }
 
         if (raw !== undefined) {
           try {
-            const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw
-            const decoded = Buffer.from(rawString, 'base64').toString('utf8')
+            const rawString = Buffer.isBuffer(raw) ? raw.toString("utf8") : raw;
+            const decoded = Buffer.from(rawString, "base64").toString("utf8");
             // Check for invalid UTF-8 sequences (replacement character).
-            if (decoded.includes('\ufffd')) {
+            if (decoded.includes("\ufffd")) {
               throw new Error(
                 `SOCKET_CLI_CONFIG contains invalid UTF-8 after base64-decode (replacement-character in output); the env var may have been truncated or double-encoded — re-export it with \`echo '{...}' | base64\``,
-              )
+              );
             }
-            const parsed = JSON.parse(decoded)
+            const parsed = JSON.parse(decoded);
             // Only copy supported config keys to prevent prototype pollution.
-            if (parsed && typeof parsed === 'object') {
+            if (parsed && typeof parsed === "object") {
               for (const key of Object.keys(parsed)) {
                 if (isSupportedConfigKey(key)) {
-                  ;(cachedConfig as Record<string, unknown>)[key] = parsed[key]
+                  (cachedConfig as Record<string, unknown>)[key] = parsed[key];
                 }
               }
             }
-            debugConfig(configFilePath, true)
+            debugConfig(configFilePath, true);
             /* c8 ignore start - config parse failure path; tests pass valid JSON or use empty config */
           } catch (e) {
-            logger.warn(`Failed to parse config at ${configFilePath}`)
-            debugConfig(configFilePath, false, e)
+            logger.warn(`Failed to parse config at ${configFilePath}`);
+            debugConfig(configFilePath, false, e);
           }
           /* c8 ignore stop */
         }
-        cachedConfigMtime = currentMtime
-        cachedConfigPath = configFilePath
+        cachedConfigMtime = currentMtime;
+        cachedConfigPath = configFilePath;
       }
     } catch {
       // File doesn't exist - clear cache and create directory.
       if (cachedConfig === undefined || cachedConfigPath !== configFilePath) {
-        cachedConfig = {} as LocalConfig
-        cachedConfigMtime = undefined
-        cachedConfigPath = configFilePath
-        safeMkdirSync(socketAppDataPath, { recursive: true })
+        cachedConfig = {} as LocalConfig;
+        cachedConfigMtime = undefined;
+        cachedConfigPath = configFilePath;
+        safeMkdirSync(socketAppDataPath, { recursive: true });
       }
     }
     /* c8 ignore start - socketAppDataPath undefined fallback; tests always have HOME set so getSocketAppDataPath returns a path */
   } else if (cachedConfig === undefined) {
-    cachedConfig = {} as LocalConfig
+    cachedConfig = {} as LocalConfig;
   }
   /* c8 ignore stop */
-  return cachedConfig
+  return cachedConfig;
 }
 
 export function getSupportedConfigEntries() {
-  return [...supportedConfigEntries]
+  return [...supportedConfigEntries];
 }
 
 export function getSupportedConfigKeys() {
-  return [...supportedConfigKeys]
+  return [...supportedConfigKeys];
 }
 
 export function isConfigFromFlag() {
-  return configFromFlag
+  return configFromFlag;
 }
 
 export function isSensitiveConfigKey(key: string): key is keyof LocalConfig {
-  return sensitiveConfigKeyLookup.has(key as keyof LocalConfig)
+  return sensitiveConfigKeyLookup.has(key as keyof LocalConfig);
 }
 
 export function isSupportedConfigKey(key: string): key is keyof LocalConfig {
-  return supportedConfig.has(key as keyof LocalConfig)
+  return supportedConfig.has(key as keyof LocalConfig);
 }
 
-export function normalizeConfigKey(
-  key: keyof LocalConfig,
-): CResult<keyof LocalConfig> {
+export function normalizeConfigKey(key: keyof LocalConfig): CResult<keyof LocalConfig> {
   // Note: `org` is a convenience alias for `defaultOrg`
-  const normalizedKey = key === CONFIG_KEY_ORG ? CONFIG_KEY_DEFAULT_ORG : key
+  const normalizedKey = key === CONFIG_KEY_ORG ? CONFIG_KEY_DEFAULT_ORG : key;
   if (!isSupportedConfigKey(normalizedKey)) {
     return {
       ok: false,
       message: `Invalid config key: ${normalizedKey}`,
       data: undefined,
-    }
+    };
   }
-  return { ok: true, data: normalizedKey }
+  return { ok: true, data: normalizedKey };
 }
 
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
-  debugNs('notice', 'override: full config (not stored)')
+  debugNs("notice", "override: full config (not stored)");
 
-  let config: unknown
+  let config: unknown;
   try {
-    config = JSON.parse(String(jsonConfig))
-    if (!config || typeof config !== 'object') {
+    config = JSON.parse(String(jsonConfig));
+    if (!config || typeof config !== "object") {
       // `null` is valid json, so are primitive values.
       // They're not valid config objects :)
       return {
         ok: false,
-        message: 'Could not parse Config as JSON',
+        message: "Could not parse Config as JSON",
         cause:
           "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again.",
-      }
+      };
     }
   } catch {
     // Force set an empty config to prevent accidentally using system settings.
-    cachedConfig = {} as LocalConfig
-    configFromFlag = true
+    cachedConfig = {} as LocalConfig;
+    configFromFlag = true;
 
     return {
       ok: false,
-      message: 'Could not parse Config as JSON',
+      message: "Could not parse Config as JSON",
       cause:
         "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again.",
-    }
+    };
   }
 
   // Only copy supported config keys to prevent prototype pollution.
-  cachedConfig = {} as LocalConfig
-  const configObj = config as Record<string, unknown>
+  cachedConfig = {} as LocalConfig;
+  const configObj = config as Record<string, unknown>;
   for (const key of Object.keys(configObj)) {
     if (isSupportedConfigKey(key)) {
-      ;(cachedConfig as Record<string, unknown>)[key] = configObj[key]
+      (cachedConfig as Record<string, unknown>)[key] = configObj[key];
     }
   }
-  configFromFlag = true
+  configFromFlag = true;
 
-  return { ok: true, data: undefined }
+  return { ok: true, data: undefined };
 }
 
 export function overrideConfigApiToken(apiToken: unknown) {
-  debugNs('notice', 'override: Socket API token (not stored)')
+  debugNs("notice", "override: Socket API token (not stored)");
   // Set token to the local cached config and mark it read-only so it doesn't persist.
   cachedConfig = {
     ...cachedConfig,
     ...(apiToken === undefined ? {} : { apiToken: String(apiToken) }),
-  } as LocalConfig
-  configFromFlag = true
+  } as LocalConfig;
+  configFromFlag = true;
 }
 
 /**
@@ -361,94 +350,91 @@ export function overrideConfigApiToken(apiToken: unknown) {
  * @internal
  */
 export function resetConfigForTesting(): void {
-  cachedConfig = undefined
-  cachedConfigMtime = undefined
-  cachedConfigPath = undefined
-  configFromFlag = false
+  cachedConfig = undefined;
+  cachedConfigMtime = undefined;
+  cachedConfigPath = undefined;
+  configFromFlag = false;
 }
 
 export function updateConfigValue<Key extends keyof LocalConfig>(
   configKey: keyof LocalConfig,
   value: LocalConfig[Key],
 ): CResult<undefined | string> {
-  const localConfig = getConfigValues()
-  const keyResult = normalizeConfigKey(configKey)
+  const localConfig = getConfigValues();
+  const keyResult = normalizeConfigKey(configKey);
   if (!keyResult.ok) {
-    return keyResult
+    return keyResult;
   }
-  const key: Key = keyResult.data as Key
+  const key: Key = keyResult.data as Key;
   // Implicitly deleting when serializing.
-  let wasDeleted = value === undefined
-  if (key === 'skipAskToPersistDefaultOrg') {
-    if (value === 'false' || value === 'true') {
-      localConfig.skipAskToPersistDefaultOrg = value === 'true'
+  let wasDeleted = value === undefined;
+  if (key === "skipAskToPersistDefaultOrg") {
+    if (value === "false" || value === "true") {
+      localConfig.skipAskToPersistDefaultOrg = value === "true";
     } else {
-      delete localConfig.skipAskToPersistDefaultOrg
-      wasDeleted = true
+      delete localConfig.skipAskToPersistDefaultOrg;
+      wasDeleted = true;
     }
   } else {
-    if (value === 'false' || value === 'true' || value === 'undefined') {
+    if (value === "false" || value === "true" || value === "undefined") {
       logger.warn(
         `Note: The value is set to "${value}", as a string (!). Use \`socket config unset\` to reset a key.`,
-      )
+      );
     }
-    localConfig[key] = value
+    localConfig[key] = value;
   }
 
   if (configFromFlag) {
     return {
       ok: true,
-      message: `Config key '${key}' was ${wasDeleted ? 'deleted' : 'updated'}`,
-      data: 'Change applied but not persisted; current config is overridden through env var or flag',
-    }
+      message: `Config key '${key}' was ${wasDeleted ? "deleted" : "updated"}`,
+      data: "Change applied but not persisted; current config is overridden through env var or flag",
+    };
   }
 
   if (!pendingSave) {
-    pendingSave = true
+    pendingSave = true;
     process.nextTick(() => {
-      pendingSave = false
-      const socketAppDataPath = getSocketAppDataPath()
+      pendingSave = false;
+      const socketAppDataPath = getSocketAppDataPath();
       if (socketAppDataPath) {
-        safeMkdirSync(socketAppDataPath, { recursive: true })
-        const configFilePath = path.join(socketAppDataPath, 'config.json')
+        safeMkdirSync(socketAppDataPath, { recursive: true });
+        const configFilePath = path.join(socketAppDataPath, "config.json");
         // Read existing file to preserve formatting, then update with new values.
-        const existingRaw = safeReadFileSync(configFilePath)
-        const EditableJson = getEditableJsonClass<LocalConfig>()
-        const editor = new EditableJson()
+        const existingRaw = safeReadFileSync(configFilePath);
+        const EditableJson = getEditableJsonClass<LocalConfig>();
+        const editor = new EditableJson();
         if (existingRaw !== undefined) {
           const rawString = Buffer.isBuffer(existingRaw)
-            ? existingRaw.toString('utf8')
-            : existingRaw
+            ? existingRaw.toString("utf8")
+            : existingRaw;
           try {
-            const decoded = Buffer.from(rawString, 'base64').toString('utf8')
-            editor.fromJSON(decoded)
+            const decoded = Buffer.from(rawString, "base64").toString("utf8");
+            editor.fromJSON(decoded);
           } catch {
             // If decoding fails, start fresh.
           }
         }
-        editor.update(localConfig)
-        const jsonContent = JSON.stringify(editor.content)
-        writeFileSync(
-          configFilePath,
-          Buffer.from(jsonContent).toString('base64'),
-        )
+        editor.update(localConfig);
+        const jsonContent = JSON.stringify(editor.content);
+        writeFileSync(configFilePath, Buffer.from(jsonContent).toString("base64"));
         // Invalidate mtime cache AFTER write completes to prevent stale reads.
-        cachedConfigMtime = undefined
+        cachedConfigMtime = undefined;
         // Update mtime cache with new value.
         try {
-          const stats = statSync(configFilePath)
-          cachedConfigMtime = stats.mtimeMs
-          cachedConfigPath = configFilePath
+          const stats = statSync(configFilePath);
+          cachedConfigMtime = stats.mtimeMs;
+          cachedConfigPath = configFilePath;
         } catch {
           // Keep mtime undefined if stat fails.
         }
       }
-    })
+    });
   }
 
   return {
     ok: true,
-    message: `Config key '${key}' was ${wasDeleted ? 'deleted' : 'updated'}`,
+    message: `Config key '${key}' was ${wasDeleted ? "deleted" : "updated"}`,
     data: undefined,
-  }
+  };
 }

@@ -30,23 +30,23 @@
  * - Src/commands/package/fixtures/*.json (test fixtures)
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from "vitest";
 
-import goDeep from '../../../../src/commands/package/fixtures/go_deep.json' with { type: 'json' }
-import mavenDeep from '../../../../src/commands/package/fixtures/maven_deep.json' with { type: 'json' }
-import npmDeep from '../../../../src/commands/package/fixtures/npm_deep.json' with { type: 'json' }
-import nugetDeep from '../../../../src/commands/package/fixtures/nuget_deep.json' with { type: 'json' }
-import pythonDeep from '../../../../src/commands/package/fixtures/python_deep.json' with { type: 'json' }
-import rubyDeep from '../../../../src/commands/package/fixtures/ruby_deep.json' with { type: 'json' }
+import goDeep from "../../../../src/commands/package/fixtures/go_deep.json" with { type: "json" };
+import mavenDeep from "../../../../src/commands/package/fixtures/maven_deep.json" with { type: "json" };
+import npmDeep from "../../../../src/commands/package/fixtures/npm_deep.json" with { type: "json" };
+import nugetDeep from "../../../../src/commands/package/fixtures/nuget_deep.json" with { type: "json" };
+import pythonDeep from "../../../../src/commands/package/fixtures/python_deep.json" with { type: "json" };
+import rubyDeep from "../../../../src/commands/package/fixtures/ruby_deep.json" with { type: "json" };
 import {
   createMarkdownReport,
   outputPurlsDeepScore,
-} from '../../../../src/commands/package/output-purls-deep-score.mts'
+} from "../../../../src/commands/package/output-purls-deep-score.mts";
 
-describe('package score output', async () => {
-  describe('npm', () => {
-    it('should report deep as markdown', () => {
-      const txt = createMarkdownReport(npmDeep.data, [])
+describe("package score output", async () => {
+  describe("npm", () => {
+    it("should report deep as markdown", () => {
+      const txt = createMarkdownReport(npmDeep.data, []);
       expect(txt).toMatchInlineSnapshot(`
         "# Complete Package Score
 
@@ -164,13 +164,13 @@ describe('package score output', async () => {
         | low      | unmaintained           | npm/bowserify@10.2.1         |
         | -------- | ---------------------- | ---------------------------- |
         "
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  describe('go', () => {
-    it('should report deep as markdown', () => {
-      const txt = createMarkdownReport(goDeep.data, [])
+  describe("go", () => {
+    it("should report deep as markdown", () => {
+      const txt = createMarkdownReport(goDeep.data, []);
       expect(txt).toMatchInlineSnapshot(`
         "# Complete Package Score
 
@@ -263,13 +263,13 @@ describe('package score output', async () => {
         | low      | unidentifiedLicense    | golang/gopkg.in/yaml.v3@v3.0.1                                |
         | -------- | ---------------------- | ------------------------------------------------------------- |
         "
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  describe('ruby', () => {
-    it('should report deep as markdown', () => {
-      const txt = createMarkdownReport(rubyDeep.data, [])
+  describe("ruby", () => {
+    it("should report deep as markdown", () => {
+      const txt = createMarkdownReport(rubyDeep.data, []);
       expect(txt).toMatchInlineSnapshot(`
         "# Complete Package Score
 
@@ -359,13 +359,13 @@ describe('package score output', async () => {
         | low      | nonpermissiveLicense | gem/diff-lcs@1.4.4           |
         | -------- | -------------------- | ---------------------------- |
         "
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  describe('nuget', () => {
-    it('should report deep as markdown', () => {
-      const txt = createMarkdownReport(nugetDeep.data, [])
+  describe("nuget", () => {
+    it("should report deep as markdown", () => {
+      const txt = createMarkdownReport(nugetDeep.data, []);
       expect(txt).toMatchInlineSnapshot(`
         "# Complete Package Score
 
@@ -451,13 +451,13 @@ describe('package score output', async () => {
         | low      | unidentifiedLicense | nuget/dotnetzip@1.9.1.8      |
         | -------- | ------------------- | ---------------------------- |
         "
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  describe('maven', () => {
-    it('should report deep as markdown', () => {
-      const txt = createMarkdownReport(mavenDeep.data, [])
+  describe("maven", () => {
+    it("should report deep as markdown", () => {
+      const txt = createMarkdownReport(mavenDeep.data, []);
       expect(txt).toMatchInlineSnapshot(`
         "# Complete Package Score
 
@@ -556,13 +556,13 @@ describe('package score output', async () => {
         | low      | unmaintained           | maven/log4j/log4j@1.2.17                             |
         | -------- | ---------------------- | ---------------------------------------------------- |
         "
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  describe('python', () => {
-    it('should report deep as markdown', () => {
-      const txt = createMarkdownReport(pythonDeep.data, [])
+  describe("python", () => {
+    it("should report deep as markdown", () => {
+      const txt = createMarkdownReport(pythonDeep.data, []);
       expect(txt).toMatchInlineSnapshot(`
         "# Complete Package Score
 
@@ -657,16 +657,16 @@ describe('package score output', async () => {
         | low      | unmaintained         | pypi/webencodings@0.5.1       |
         | -------- | -------------------- | ----------------------------- |
         "
-      `)
-    })
-  })
+      `);
+    });
+  });
 
-  describe('no-dependencies edge case', () => {
-    it('renders the dependency-free path when transitively.dependencyCount is 0', () => {
+  describe("no-dependencies edge case", () => {
+    it("renders the dependency-free path when transitively.dependencyCount is 0", () => {
       const data = {
-        purl: 'pkg:npm/single@1.0.0',
+        purl: "pkg:npm/single@1.0.0",
         self: {
-          purl: 'pkg:npm/single@1.0.0',
+          purl: "pkg:npm/single@1.0.0",
           alerts: [],
           capabilities: [],
           score: {
@@ -682,7 +682,7 @@ describe('package score output', async () => {
           alerts: [],
           capabilities: [],
           dependencyCount: 0,
-          func: 'identity',
+          func: "identity",
           lowest: {
             overall: 100,
             maintenance: 100,
@@ -700,26 +700,26 @@ describe('package score output', async () => {
             license: 100,
           },
         },
-      } as unknown
+      } as unknown;
 
-      const txt = createMarkdownReport(data)
-      expect(txt).toContain('It has *no dependencies*')
+      const txt = createMarkdownReport(data);
+      expect(txt).toContain("It has *no dependencies*");
       expect(txt).toContain(
-        'Since it has no dependencies, the shallow score is also the deep score',
-      )
-      expect(txt).toContain('## Report')
+        "Since it has no dependencies, the shallow score is also the deep score",
+      );
+      expect(txt).toContain("## Report");
       // Transitive section is omitted for the no-deps path.
-      expect(txt).not.toContain('## Transitive Package Results')
-    })
+      expect(txt).not.toContain("## Transitive Package Results");
+    });
 
-    it('renders self-alerts variant when no dependencies exist (line 134)', () => {
+    it("renders self-alerts variant when no dependencies exist (line 134)", () => {
       // dependencyCount=0 + non-empty selfAlerts → exercises line 134
       // ('These are the alerts found for this package:').
       const data = {
-        purl: 'pkg:npm/lonely@1.0.0',
+        purl: "pkg:npm/lonely@1.0.0",
         self: {
-          purl: 'pkg:npm/lonely@1.0.0',
-          alerts: [{ severity: 'high', name: 'cve' }],
+          purl: "pkg:npm/lonely@1.0.0",
+          alerts: [{ severity: "high", name: "cve" }],
           capabilities: [],
           score: {
             overall: 80,
@@ -734,7 +734,7 @@ describe('package score output', async () => {
           alerts: [],
           capabilities: [],
           dependencyCount: 0,
-          func: 'identity',
+          func: "identity",
           lowest: {
             overall: 80,
             maintenance: 80,
@@ -752,19 +752,19 @@ describe('package score output', async () => {
             license: 80,
           },
         },
-      } as unknown
+      } as unknown;
 
-      const txt = createMarkdownReport(data)
-      expect(txt).toContain('These are the alerts found for this package:')
-    })
+      const txt = createMarkdownReport(data);
+      expect(txt).toContain("These are the alerts found for this package:");
+    });
 
-    it('renders empty-deep-results section (lines 189-210)', () => {
+    it("renders empty-deep-results section (lines 189-210)", () => {
       // dependencyCount > 0 but transitively.alerts and capabilities empty
       // → exercises lines 189-191 (no capabilities) and 208-210 (no alerts).
       const data = {
-        purl: 'pkg:npm/silent@2.0.0',
+        purl: "pkg:npm/silent@2.0.0",
         self: {
-          purl: 'pkg:npm/silent@2.0.0',
+          purl: "pkg:npm/silent@2.0.0",
           alerts: [],
           capabilities: [],
           score: {
@@ -780,14 +780,14 @@ describe('package score output', async () => {
           alerts: [],
           capabilities: [],
           dependencyCount: 5,
-          func: 'min',
+          func: "min",
           lowest: {
-            overall: 'pkg:npm/dep@1.0.0',
-            maintenance: 'pkg:npm/dep@1.0.0',
-            quality: 'pkg:npm/dep@1.0.0',
-            supplyChain: 'pkg:npm/dep@1.0.0',
-            vulnerability: 'pkg:npm/dep@1.0.0',
-            license: 'pkg:npm/dep@1.0.0',
+            overall: "pkg:npm/dep@1.0.0",
+            maintenance: "pkg:npm/dep@1.0.0",
+            quality: "pkg:npm/dep@1.0.0",
+            supplyChain: "pkg:npm/dep@1.0.0",
+            vulnerability: "pkg:npm/dep@1.0.0",
+            license: "pkg:npm/dep@1.0.0",
           },
           score: {
             overall: 90,
@@ -798,72 +798,72 @@ describe('package score output', async () => {
             license: 90,
           },
         },
-      } as unknown
+      } as unknown;
 
-      const txt = createMarkdownReport(data)
-      expect(txt).toContain('This package had no capabilities')
-      expect(txt).toContain('This package had no alerts')
-    })
-  })
+      const txt = createMarkdownReport(data);
+      expect(txt).toContain("This package had no capabilities");
+      expect(txt).toContain("This package had no alerts");
+    });
+  });
 
-  describe('outputPurlsDeepScore', () => {
-    it('sets exit code from error result code', async () => {
+  describe("outputPurlsDeepScore", () => {
+    it("sets exit code from error result code", async () => {
       const result = {
         ok: false as const,
-        message: 'Failed',
+        message: "Failed",
         code: 7,
-      }
-      process.exitCode = undefined
-      await outputPurlsDeepScore('pkg:npm/test', result as unknown, 'json')
-      expect(process.exitCode).toBe(7)
-      process.exitCode = undefined
-    })
+      };
+      process.exitCode = undefined;
+      await outputPurlsDeepScore("pkg:npm/test", result as unknown, "json");
+      expect(process.exitCode).toBe(7);
+      process.exitCode = undefined;
+    });
 
-    it('falls back exit code to 1 when result.code missing', async () => {
+    it("falls back exit code to 1 when result.code missing", async () => {
       const result = {
         ok: false as const,
-        message: 'Failed without code',
-      }
-      process.exitCode = undefined
-      await outputPurlsDeepScore('pkg:npm/test', result as unknown, 'json')
-      expect(process.exitCode).toBe(1)
-      process.exitCode = undefined
-    })
+        message: "Failed without code",
+      };
+      process.exitCode = undefined;
+      await outputPurlsDeepScore("pkg:npm/test", result as unknown, "json");
+      expect(process.exitCode).toBe(1);
+      process.exitCode = undefined;
+    });
 
-    it('returns early after fail message in text mode for error result', async () => {
+    it("returns early after fail message in text mode for error result", async () => {
       const result = {
         ok: false as const,
-        message: 'fail',
-        cause: 'reason',
-      }
+        message: "fail",
+        cause: "reason",
+      };
       // Should not throw / resolve to undefined.
       await expect(
-        outputPurlsDeepScore('pkg:npm/test', result as unknown, 'text'),
-      ).resolves.toBeUndefined()
-    })
+        outputPurlsDeepScore("pkg:npm/test", result as unknown, "text"),
+      ).resolves.toBeUndefined();
+    });
 
-    it('renders markdown report on success (lines 29-34)', async () => {
+    it("renders markdown report on success (lines 29-34)", async () => {
       // Exercises the `outputKind === 'markdown'` branch that emits
       // logger.success + logger.log(md) + return.
       const result = {
         ok: true as const,
         data: nugetDeep.data,
-      }
+      };
       await expect(
-        outputPurlsDeepScore('pkg:nuget/test', result as unknown, 'markdown'),
-      ).resolves.toBeUndefined()
-    })
+        outputPurlsDeepScore("pkg:nuget/test", result as unknown, "markdown"),
+      ).resolves.toBeUndefined();
+    });
 
-    it('renders text fallback on success (lines 36-40)', async () => {
+    it("renders text fallback on success (lines 36-40)", async () => {
       // Exercises the default text-output branch (logger.log of the data
       // object after the markdown branch returns).
       const result = {
         ok: true as const,
         data: nugetDeep.data,
-      }
+      };
       await expect(
-        outputPurlsDeepScore('pkg:nuget/test', result as unknown, 'text'),
-      ).resolves.toBeUndefined()
-    })
-  })
-})
+        outputPurlsDeepScore("pkg:nuget/test", result as unknown, "text"),
+      ).resolves.toBeUndefined();
+    });
+  });
+});

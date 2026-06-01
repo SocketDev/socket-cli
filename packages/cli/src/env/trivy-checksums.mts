@@ -4,13 +4,13 @@
  * replace direct process.env['KEY'] references.
  */
 
-import process from 'node:process'
+import process from "node:process";
 
-import type { TrivyChecksums } from '../types.mjs'
+import type { TrivyChecksums } from "../types.mjs";
 
-import { parseChecksums, requireChecksum } from './checksum-utils.mjs'
+import { parseChecksums, requireChecksum } from "./checksum-utils.mjs";
 
-const TOOL_NAME = 'Trivy'
+const TOOL_NAME = "Trivy";
 
 /**
  * Get Trivy checksums from inlined environment variable. Returns a map of asset
@@ -18,7 +18,7 @@ const TOOL_NAME = 'Trivy'
  */
 export function getTrivyChecksums(): TrivyChecksums {
   // MUST use direct process.env access for esbuild inlining.
-  return parseChecksums(process.env['INLINED_TRIVY_CHECKSUMS'], TOOL_NAME)
+  return parseChecksums(process.env["INLINED_TRIVY_CHECKSUMS"], TOOL_NAME);
 }
 
 /**
@@ -26,5 +26,5 @@ export function getTrivyChecksums(): TrivyChecksums {
  * is missing. In dev mode, returns undefined to allow development.
  */
 export function requireTrivyChecksum(assetName: string): string | undefined {
-  return requireChecksum(getTrivyChecksums(), assetName, TOOL_NAME)
+  return requireChecksum(getTrivyChecksums(), assetName, TOOL_NAME);
 }

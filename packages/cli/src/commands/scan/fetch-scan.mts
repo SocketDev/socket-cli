@@ -1,9 +1,9 @@
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { debug, debugDir } from "@socketsecurity/lib-stable/debug/output";
 
-import { queryApiSafeText } from '../../util/socket/api.mjs'
+import { queryApiSafeText } from "../../util/socket/api.mjs";
 
-import type { CResult } from '../../types.mts'
-import type { SocketArtifact } from '../../util/alert/artifact.mts'
+import type { CResult } from "../../types.mts";
+import type { SocketArtifact } from "../../util/alert/artifact.mts";
 
 export async function fetchScan(
   orgSlug: string,
@@ -11,34 +11,34 @@ export async function fetchScan(
 ): Promise<CResult<SocketArtifact[]>> {
   const result = await queryApiSafeText(
     `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}`,
-    'a scan',
-  )
+    "a scan",
+  );
 
   if (!result.ok) {
-    return result
+    return result;
   }
 
-  const jsonsString = result.data
+  const jsonsString = result.data;
 
   // This is nd-json; each line is a json object.
-  const lines = jsonsString.split('\n').filter(Boolean)
-  const data: SocketArtifact[] = []
+  const lines = jsonsString.split("\n").filter(Boolean);
+  const data: SocketArtifact[] = [];
 
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i]!
+    const line = lines[i]!;
     try {
-      data.push(JSON.parse(line))
+      data.push(JSON.parse(line));
     } catch (e) {
-      debug('Failed to parse scan result line as JSON')
-      debugDir({ error: e, line })
+      debug("Failed to parse scan result line as JSON");
+      debugDir({ error: e, line });
       return {
         ok: false,
-        message: 'Invalid Socket API response',
+        message: "Invalid Socket API response",
         cause:
-          'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
-      }
+          "The Socket API responded with at least one line that was not valid JSON. Please report if this persists.",
+      };
     }
   }
 
-  return { ok: true, data }
+  return { ok: true, data };
 }

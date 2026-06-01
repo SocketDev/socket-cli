@@ -12,165 +12,146 @@
  * Related Files: - util/socket/url.mts (implementation)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from "vitest";
 
 import {
   getPkgFullNameFromPurl,
   getSocketDevAlertUrl,
   getSocketDevPackageOverviewUrl,
   getSocketDevPackageOverviewUrlFromPurl,
-} from '../../../../src/util/socket/url.mts'
+} from "../../../../src/util/socket/url.mts";
 
 // Mock constants.
-vi.mock('../../../../src/constants.mts', () => ({
+vi.mock(import("../../../../src/constants.mts"), () => ({
   constants: {
-    SOCKET_WEBSITE_URL: 'https://socket.dev',
+    SOCKET_WEBSITE_URL: "https://socket.dev",
   },
-}))
+}));
 
 // Mock purl.
-const mockGetPurlObject = vi.hoisted(() => vi.fn())
+const mockGetPurlObject = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../src/util/purl/parse.mts', () => ({
+vi.mock(import("../../../../src/util/purl/parse.mts"), () => ({
   getPurlObject: mockGetPurlObject,
-}))
+}));
 
-describe('socket-url utilities', () => {
-  describe('getPkgFullNameFromPurl', () => {
-    it('returns name for packages without namespace', () => {
+describe("socket-url utilities", () => {
+  describe("getPkgFullNameFromPurl", () => {
+    it("returns name for packages without namespace", () => {
       mockGetPurlObject.mockImplementation((purl: unknown) => {
-        if (typeof purl === 'string') {
+        if (typeof purl === "string") {
           return {
-            type: 'npm',
+            type: "npm",
             namespace: undefined,
-            name: 'express',
-            version: '4.18.0',
-          }
+            name: "express",
+            version: "4.18.0",
+          };
         }
-        return purl
-      })
-      const result = getPkgFullNameFromPurl('pkg:npm/express@4.18.0')
-      expect(result).toBe('express')
-    })
+        return purl;
+      });
+      const result = getPkgFullNameFromPurl("pkg:npm/express@4.18.0");
+      expect(result).toBe("express");
+    });
 
-    it('returns scoped name for npm packages', async () => {
+    it("returns scoped name for npm packages", async () => {
       const purlObj = {
-        type: 'npm',
-        namespace: '@babel',
-        name: 'core',
-        version: '7.0.0',
-      }
-      mockGetPurlObject.mockReturnValue(purlObj as unknown)
+        type: "npm",
+        namespace: "@babel",
+        name: "core",
+        version: "7.0.0",
+      };
+      mockGetPurlObject.mockReturnValue(purlObj as unknown);
 
-      const result = getPkgFullNameFromPurl('pkg:npm/@babel/core@7.0.0')
-      expect(result).toBe('@babel/core')
-    })
+      const result = getPkgFullNameFromPurl("pkg:npm/@babel/core@7.0.0");
+      expect(result).toBe("@babel/core");
+    });
 
-    it('handles maven packages with colon separator', async () => {
+    it("handles maven packages with colon separator", async () => {
       const purlObj = {
-        type: 'maven',
-        namespace: 'org.apache',
-        name: 'commons',
-        version: '3.0',
-      }
-      mockGetPurlObject.mockReturnValue(purlObj as unknown)
+        type: "maven",
+        namespace: "org.apache",
+        name: "commons",
+        version: "3.0",
+      };
+      mockGetPurlObject.mockReturnValue(purlObj as unknown);
 
-      const result = getPkgFullNameFromPurl(purlObj as unknown)
-      expect(result).toBe('org.apache:commons')
-    })
+      const result = getPkgFullNameFromPurl(purlObj as unknown);
+      expect(result).toBe("org.apache:commons");
+    });
 
-    it('handles other packages with slash separator', async () => {
+    it("handles other packages with slash separator", async () => {
       const purlObj = {
-        type: 'pypi',
-        namespace: 'django',
-        name: 'rest-framework',
-        version: '3.0',
-      }
-      mockGetPurlObject.mockReturnValue(purlObj as unknown)
+        type: "pypi",
+        namespace: "django",
+        name: "rest-framework",
+        version: "3.0",
+      };
+      mockGetPurlObject.mockReturnValue(purlObj as unknown);
 
-      const result = getPkgFullNameFromPurl(purlObj as unknown)
-      expect(result).toBe('django/rest-framework')
-    })
-  })
+      const result = getPkgFullNameFromPurl(purlObj as unknown);
+      expect(result).toBe("django/rest-framework");
+    });
+  });
 
-  describe('getSocketDevAlertUrl', () => {
-    it('generates alert URL', () => {
-      const result = getSocketDevAlertUrl('prototype-pollution')
-      expect(result).toBe('https://socket.dev/alerts/prototype-pollution')
-    })
+  describe("getSocketDevAlertUrl", () => {
+    it("generates alert URL", () => {
+      const result = getSocketDevAlertUrl("prototype-pollution");
+      expect(result).toBe("https://socket.dev/alerts/prototype-pollution");
+    });
 
-    it('handles different alert types', () => {
-      expect(getSocketDevAlertUrl('supply-chain-risk')).toBe(
-        'https://socket.dev/alerts/supply-chain-risk',
-      )
-      expect(getSocketDevAlertUrl('typosquat')).toBe(
-        'https://socket.dev/alerts/typosquat',
-      )
-      expect(getSocketDevAlertUrl('malware')).toBe(
-        'https://socket.dev/alerts/malware',
-      )
-    })
-  })
+    it("handles different alert types", () => {
+      expect(getSocketDevAlertUrl("supply-chain-risk")).toBe(
+        "https://socket.dev/alerts/supply-chain-risk",
+      );
+      expect(getSocketDevAlertUrl("typosquat")).toBe("https://socket.dev/alerts/typosquat");
+      expect(getSocketDevAlertUrl("malware")).toBe("https://socket.dev/alerts/malware");
+    });
+  });
 
-  describe('getSocketDevPackageOverviewUrl', () => {
-    it('generates npm package URL without version', () => {
-      const result = getSocketDevPackageOverviewUrl('npm', 'express')
-      expect(result).toBe('https://socket.dev/npm/package/express')
-    })
+  describe("getSocketDevPackageOverviewUrl", () => {
+    it("generates npm package URL without version", () => {
+      const result = getSocketDevPackageOverviewUrl("npm", "express");
+      expect(result).toBe("https://socket.dev/npm/package/express");
+    });
 
-    it('generates npm package URL with version', () => {
-      const result = getSocketDevPackageOverviewUrl('npm', 'express', '4.18.0')
+    it("generates npm package URL with version", () => {
+      const result = getSocketDevPackageOverviewUrl("npm", "express", "4.18.0");
+      expect(result).toBe("https://socket.dev/npm/package/express/overview/4.18.0");
+    });
+
+    it("generates golang package URL with query params", () => {
+      const result = getSocketDevPackageOverviewUrl("golang", "github.com/gin-gonic/gin", "v1.9.0");
       expect(result).toBe(
-        'https://socket.dev/npm/package/express/overview/4.18.0',
-      )
-    })
+        "https://socket.dev/golang/package/github.com/gin-gonic/gin?section=overview&version=v1.9.0",
+      );
+    });
 
-    it('generates golang package URL with query params', () => {
-      const result = getSocketDevPackageOverviewUrl(
-        'golang',
-        'github.com/gin-gonic/gin',
-        'v1.9.0',
-      )
-      expect(result).toBe(
-        'https://socket.dev/golang/package/github.com/gin-gonic/gin?section=overview&version=v1.9.0',
-      )
-    })
+    it("generates golang package URL without version", () => {
+      const result = getSocketDevPackageOverviewUrl("golang", "github.com/gin-gonic/gin");
+      expect(result).toBe("https://socket.dev/golang/package/github.com/gin-gonic/gin");
+    });
 
-    it('generates golang package URL without version', () => {
-      const result = getSocketDevPackageOverviewUrl(
-        'golang',
-        'github.com/gin-gonic/gin',
-      )
-      expect(result).toBe(
-        'https://socket.dev/golang/package/github.com/gin-gonic/gin',
-      )
-    })
+    it("handles other ecosystems", () => {
+      expect(getSocketDevPackageOverviewUrl("pypi", "flask", "2.0.0")).toBe(
+        "https://socket.dev/pypi/package/flask/overview/2.0.0",
+      );
+      expect(getSocketDevPackageOverviewUrl("gem", "rails", "7.0.0")).toBe(
+        "https://socket.dev/gem/package/rails/overview/7.0.0",
+      );
+    });
+  });
 
-    it('handles other ecosystems', () => {
-      expect(getSocketDevPackageOverviewUrl('pypi', 'flask', '2.0.0')).toBe(
-        'https://socket.dev/pypi/package/flask/overview/2.0.0',
-      )
-      expect(getSocketDevPackageOverviewUrl('gem', 'rails', '7.0.0')).toBe(
-        'https://socket.dev/gem/package/rails/overview/7.0.0',
-      )
-    })
-  })
-
-  describe('getSocketDevPackageOverviewUrlFromPurl', () => {
-    it('generates URL from PURL string', async () => {
+  describe("getSocketDevPackageOverviewUrlFromPurl", () => {
+    it("generates URL from PURL string", async () => {
       mockGetPurlObject.mockReturnValue({
-        type: 'npm',
+        type: "npm",
         namespace: undefined,
-        name: 'express',
-        version: '4.18.0',
-      } as unknown)
+        name: "express",
+        version: "4.18.0",
+      } as unknown);
 
-      const result = getSocketDevPackageOverviewUrlFromPurl(
-        'pkg:npm/express@4.18.0',
-      )
-      expect(result).toBe(
-        'https://socket.dev/npm/package/express/overview/4.18.0',
-      )
-    })
-  })
-})
+      const result = getSocketDevPackageOverviewUrlFromPurl("pkg:npm/express@4.18.0");
+      expect(result).toBe("https://socket.dev/npm/package/express/overview/4.18.0");
+    });
+  });
+});

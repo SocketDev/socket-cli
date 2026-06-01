@@ -1,52 +1,50 @@
-import path from 'node:path'
+import path from "node:path";
 
-import { debug } from '@socketsecurity/lib-stable/debug/output'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { debug } from "@socketsecurity/lib-stable/debug/output";
+import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
 
-import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
-import { outputManifest } from './output-manifest.mts'
-import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
-import { SOCKET_JSON } from '../../constants/socket.mts'
-import { outputDryRunExecute } from '../../util/dry-run/output.mts'
-import { defineFlags } from '../../meow.mts'
-import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../util/output/formatting.mts'
-import { getOutputKind } from '../../util/output/mode.mjs'
-import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { convertGradleToMaven } from "./convert-gradle-to-maven.mts";
+import { outputManifest } from "./output-manifest.mts";
+import { REQUIREMENTS_TXT } from "../../constants/paths.mjs";
+import { SOCKET_JSON } from "../../constants/socket.mts";
+import { outputDryRunExecute } from "../../util/dry-run/output.mts";
+import { defineFlags } from "../../meow.mts";
+import { commonFlags } from "../../flags.mts";
+import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { getFlagListOutput } from "../../util/output/formatting.mts";
+import { getOutputKind } from "../../util/output/mode.mjs";
+import { readOrDefaultSocketJson } from "../../util/socket/json.mts";
+import { checkCommandInput } from "../../util/validation/check-input.mts";
 
-import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { MeowFlags } from '../../flags.mts'
+import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { MeowFlags } from "../../flags.mts";
 
-const logger = getDefaultLogger()
+const logger = getDefaultLogger();
 
 // Flags interface for type safety.
 interface GradleFlags {
-  bin: string | undefined
-  gradleOpts: string | undefined
-  verbose: boolean | undefined
+  bin: string | undefined;
+  gradleOpts: string | undefined;
+  verbose: boolean | undefined;
 }
 
 const config = {
-  commandName: 'gradle',
+  commandName: "gradle",
   description:
-    '[beta] Use Gradle to generate a manifest file (`pom.xml`) for a Gradle/Java/Kotlin/etc project',
-  hidden: false,
+    "[beta] Use Gradle to generate a manifest file (`pom.xml`) for a Gradle/Java/Kotlin/etc project",
   flags: defineFlags({
     ...commonFlags,
     bin: {
-      type: 'string',
-      description: 'Location of gradlew binary to use, default: CWD/gradlew',
+      type: "string",
+      description: "Location of gradlew binary to use, default: CWD/gradlew",
     },
     gradleOpts: {
-      type: 'string',
-      description:
-        'Additional options to pass on to ./gradlew, see `./gradlew --help`',
+      type: "string",
+      description: "Additional options to pass on to ./gradlew, see `./gradlew --help`",
     },
     verbose: {
-      type: 'boolean',
-      description: 'Print debug messages',
+      type: "boolean",
+      description: "Print debug messages",
     },
   }),
   help: (command: string, config: { flags: MeowFlags }) => `
@@ -81,13 +79,14 @@ const config = {
       $ ${command} .
       $ ${command} --bin=../gradlew .
   `,
-}
+  hidden: false,
+};
 
 export const cmdManifestGradle = {
   description: config.description,
   hidden: config.hidden,
   run,
-}
+};
 
 export async function run(
   argv: string[] | readonly string[],
@@ -99,63 +98,58 @@ export async function run(
     config,
     importMeta,
     parentName,
-  })
+  });
 
-  const { json = false, markdown = false } = cli.flags
+  const { json = false, markdown = false } = cli.flags;
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = !!cli.flags["dryRun"];
 
   // Feature request: Pass outputKind to convertGradleToMaven for json/md output support.
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(json, markdown);
 
-  let [cwd = '.'] = cli.input
+  let [cwd = "."] = cli.input;
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
+  cwd = path.resolve(process.cwd(), cwd);
 
-  const sockJson = readOrDefaultSocketJson(cwd)
+  const sockJson = readOrDefaultSocketJson(cwd);
 
-  debug(
-    `override: ${SOCKET_JSON} gradle: ${sockJson?.defaults?.manifest?.gradle}`,
-  )
+  debug(`override: ${SOCKET_JSON} gradle: ${sockJson?.defaults?.manifest?.gradle}`);
 
-  let { bin, gradleOpts, verbose } = cli.flags as unknown as GradleFlags
+  let { bin, gradleOpts, verbose } = cli.flags as unknown as GradleFlags;
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
     if (sockJson.defaults?.manifest?.gradle?.bin) {
-      bin = sockJson.defaults?.manifest?.gradle?.bin
-      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
+      bin = sockJson.defaults?.manifest?.gradle?.bin;
+      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin);
     } else {
-      bin = path.join(cwd, 'gradlew')
+      bin = path.join(cwd, "gradlew");
     }
   }
   if (!gradleOpts) {
     if (sockJson.defaults?.manifest?.gradle?.gradleOpts) {
-      gradleOpts = sockJson.defaults?.manifest?.gradle?.gradleOpts
-      logger.info(
-        `Using default --gradle-opts from ${SOCKET_JSON}:`,
-        gradleOpts,
-      )
+      gradleOpts = sockJson.defaults?.manifest?.gradle?.gradleOpts;
+      logger.info(`Using default --gradle-opts from ${SOCKET_JSON}:`, gradleOpts);
     } else {
-      gradleOpts = ''
+      gradleOpts = "";
     }
   }
   if (verbose === undefined) {
     if (sockJson.defaults?.manifest?.gradle?.verbose !== undefined) {
-      verbose = sockJson.defaults?.manifest?.gradle?.verbose
-      logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
+      verbose = sockJson.defaults?.manifest?.gradle?.verbose;
+      logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose);
     } else {
-      verbose = false
+      verbose = false;
     }
   }
 
   if (verbose) {
-    logger.group('- ', parentName, config.commandName, ':')
-    logger.group('- flags:', cli.flags)
-    logger.groupEnd()
-    logger.log('- input:', cli.input)
-    logger.groupEnd()
+    logger.group("- ", parentName, config.commandName, ":");
+    logger.group("- flags:", cli.flags);
+    logger.groupEnd();
+    logger.log("- input:", cli.input);
+    logger.groupEnd();
   }
 
   // Note: stdin input not supported. Gradle manifest generation requires a directory
@@ -165,46 +159,46 @@ export async function run(
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
     test: cli.input.length <= 1,
-    message: 'Can only accept one DIR (make sure to escape spaces!)',
+    message: "Can only accept one DIR (make sure to escape spaces!)",
     fail: `received ${cli.input.length}`,
-  })
+  });
   if (!wasValidInput) {
-    return
+    return;
   }
 
   if (verbose) {
-    logger.group()
-    logger.info('- cwd:', cwd)
-    logger.info('- gradle bin:', bin)
-    logger.groupEnd()
+    logger.group();
+    logger.info("- cwd:", cwd);
+    logger.info("- gradle bin:", bin);
+    logger.groupEnd();
   }
 
   if (dryRun) {
-    const args = [cwd]
+    const args = [cwd];
     if (bin) {
-      args.push('--bin', String(bin))
+      args.push("--bin", String(bin));
     }
     if (gradleOpts) {
-      args.push('--gradle-opts', String(gradleOpts))
+      args.push("--gradle-opts", String(gradleOpts));
     }
-    outputDryRunExecute('gradlew', args, 'generate pom.xml from Gradle project')
-    return
+    outputDryRunExecute("gradlew", args, "generate pom.xml from Gradle project");
+    return;
   }
 
   const result = await convertGradleToMaven({
     bin: String(bin),
     cwd,
-    gradleOpts: String(gradleOpts || '')
-      .split(' ')
-      .map(s => s.trim())
+    gradleOpts: String(gradleOpts || "")
+      .split(" ")
+      .map((s) => s.trim())
       .filter(Boolean),
     outputKind,
     verbose: Boolean(verbose),
-  })
+  });
 
   // In text mode, output is already handled by convertGradleToMaven.
   // For json/markdown modes, we need to call the output helper.
-  if (outputKind !== 'text') {
-    await outputManifest(result, outputKind, '-')
+  if (outputKind !== "text") {
+    await outputManifest(result, outputKind, "-");
   }
 }
