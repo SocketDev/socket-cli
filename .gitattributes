@@ -83,6 +83,7 @@
 .config/lockstep.schema.json linguist-generated=true
 .config/repo/rolldown/define-guarded.mts linguist-generated=true
 .config/repo/rolldown/lib-stub.mts linguist-generated=true
+.config/repo/vitest.config.mts linguist-generated=true
 .config/socket-registry-pins.json linguist-generated=true
 .config/socket-wheelhouse-schema.json linguist-generated=true
 .git-hooks linguist-generated=true
