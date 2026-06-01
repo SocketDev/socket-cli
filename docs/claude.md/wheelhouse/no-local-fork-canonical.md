@@ -45,3 +45,21 @@ The fix is mechanical:
 Local forks turn into "drift to preserve" hacks. Every cascade subagent has to be told to skip the locally-forked file, which makes the cascade fragile. Worse, those forks block fleet-wide improvements from reaching the forked repo: when the template's version of the file gets a real upgrade (e.g. a new fix predicate, a new exception case), the downstream repo's local copy never gets it.
 
 The fleet's value is the shared canon. Branching locally splits the canon and erodes the value.
+
+## Trust the wheelhouse (don't verify in downstream)
+
+Companion behavior to the no-fork rule: **don't read, grep, or debug wheelhouse-canonical files in a downstream repo to verify what they contain or how they behave**.
+
+- **DO NOT** grep a downstream repo's copy of `.config/oxlint-plugin/`, `.claude/hooks/fleet/`, `.git-hooks/`, `docs/claude.md/fleet/`, or the `CLAUDE.md` fleet block to check what's in it. Read from `socket-wheelhouse/template/...` instead.
+- **DO NOT** debug the behavior of a cascaded hook by reading its downstream copy. The cascade overwrites those files; their content is the wheelhouse's content. Read upstream.
+- **DO** treat any divergence as the downstream being stale. The wheelhouse is the oracle.
+
+This matters because:
+
+1. The downstream copy may already be a few cascade-steps behind the wheelhouse. Reading it gives stale information.
+2. A "verify the bypass landed" loop in downstream is double work — once to read the file, once to act on it — when the wheelhouse already has the answer.
+3. Per-session re-derivation of "what does this canonical file do?" burns tokens for zero net learning vs. just trusting that the wheelhouse + the cascade are correct.
+
+When the user says "the wheelhouse has X," X is true. Act on it without verification.
+
+If a cascaded file genuinely seems wrong, the fix lives in `socket-wheelhouse/template/...`, never in the downstream copy. Open the template file in `socket-wheelhouse/`, read it there, edit it there, cascade.

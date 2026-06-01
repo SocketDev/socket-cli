@@ -5,22 +5,17 @@
  *   `skill-usage-logger` hook writes to) and emits a histogram + per-skill
  *   freshness so the operator can identify high-leverage skills (promote
  *   patterns to lint rules / hooks) and dead-weight skills (drop them per
- *   CLAUDE.md _Compound lessons_).
+ *   CLAUDE.md _Compound lessons_). Output format (TSV by default):
+ *   <skill-name>\t<invocations>\t<last-seen-ISO>\t<unique-cwds> Pass `--days N`
+ *   to filter to invocations in the last N days. Pass `--unused-days N` to
+ *   print ONLY skills with zero invocations in the last N days (the
+ *   drop-candidate list). Exit codes:
  *
- *   Output format (TSV by default):
- *
- *     <skill-name>\t<invocations>\t<last-seen-ISO>\t<unique-cwds>
- *
- *   Pass `--days N` to filter to invocations in the last N days. Pass
- *   `--unused-days N` to print ONLY skills with zero invocations in the
- *   last N days (the drop-candidate list).
- *
- *   Exit codes:
- *     - 0 — clean (reports printed)
- *     - 1 — log directory missing / nothing to aggregate
+ *   - 0 — clean (reports printed)
+ *   - 1 — log directory missing / nothing to aggregate
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -202,7 +197,9 @@ function main(): void {
 
   const filtered = withinDays(allEntries, days ?? 0)
   const stats = aggregate(filtered)
-  const sorted = Array.from(stats.values()).sort((a, b) => b.count - a.count)
+  const sorted = Array.from(stats.values()).toSorted(
+    (a, b) => b.count - a.count,
+  )
 
   process.stdout.write(`skill\tinvocations\tlast-seen\tunique-cwds\n`)
   for (let i = 0, { length } = sorted; i < length; i += 1) {

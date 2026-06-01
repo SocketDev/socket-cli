@@ -109,7 +109,7 @@ test('Write adds a fresh exclude — blocked', async () => {
   assert.ok(String(r.stderr).includes('sketchy-pkg'))
 })
 
-test('Edit with bypass phrase in transcript — passes', async () => {
+async function runBypassCase(bypassText: string): Promise<{ code: number }> {
   const filePath = tmpYaml('minimumReleaseAge:\n  exclude:\n    - pkg-a\n')
   const dir = mkdtempSync(path.join(os.tmpdir(), 'mra-guard-tx-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
@@ -117,10 +117,10 @@ test('Edit with bypass phrase in transcript — passes', async () => {
     transcriptPath,
     JSON.stringify({
       type: 'user',
-      message: { content: 'Allow minimumReleaseAge bypass' },
+      message: { content: bypassText },
     }) + '\n',
   )
-  const r = await runHook({
+  return await runHook({
     tool_name: 'Edit',
     tool_input: {
       file_path: filePath,
@@ -129,5 +129,19 @@ test('Edit with bypass phrase in transcript — passes', async () => {
     },
     transcript_path: transcriptPath,
   })
+}
+
+test('Edit with canonical soak-time bypass phrase — passes', async () => {
+  const r = await runBypassCase('Allow soak-time bypass')
+  assert.strictEqual(r.code, 0)
+})
+
+test('Edit with hyphen-folded "Allow soak time bypass" — passes', async () => {
+  const r = await runBypassCase('Allow soak time bypass')
+  assert.strictEqual(r.code, 0)
+})
+
+test('Edit with legacy minimumReleaseAge bypass alias — passes', async () => {
+  const r = await runBypassCase('Allow minimumReleaseAge bypass')
   assert.strictEqual(r.code, 0)
 })

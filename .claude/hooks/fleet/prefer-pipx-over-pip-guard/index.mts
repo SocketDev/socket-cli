@@ -17,7 +17,6 @@
 // user turn. Fails open on regex / parse errors.
 
 import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import process from 'node:process'
 
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'

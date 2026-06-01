@@ -1,15 +1,15 @@
 ---
 name: scanning-quality
-description: Scans the codebase for bugs, logic errors, cache races, workflow problems, insecure defaults, security regressions in the diff, and variant analysis on prior findings. Spawns specialized Task agents per scan type, deduplicates findings, and produces an A-F prioritized report. Use when preparing a release, investigating quality issues, running pre-merge checks, or whenever a recent diff touches security-sensitive code.
+description: Scans the codebase for bugs, logic errors, cache races, workflow problems, insecure defaults, security regressions in the diff, and variant analysis on prior findings. Runs a Workflow that fans out one finder per scan type in parallel, runs variant-analysis as a dependent stage, adversarially verifies High/Critical findings, deduplicates, and produces an A-F prioritized report. Use when preparing a release, investigating quality issues, running pre-merge checks, or whenever a recent diff touches security-sensitive code.
 user-invocable: true
-allowed-tools: Task, Read, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(pnpm run test:*), Bash(pnpm test:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*)
+allowed-tools: Workflow, Task, Read, Grep, Glob, Write, AskUserQuestion, Bash(pnpm run check:*), Bash(pnpm run test:*), Bash(pnpm test:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*)
 model: claude-opus-4-8
 context: fork
 ---
 
 # scanning-quality
 
-Quality analysis across the codebase using specialized Task agents. Cleans up junk files, runs structural validation, dispatches one agent per scan type, deduplicates findings, and produces an A-F prioritized report.
+Quality analysis across the codebase via a `Workflow`. Cleans up junk files, runs structural validation, then fans out one finder agent per scan type in parallel (variant-analysis as a dependent stage, adversarial verify on High/Critical), deduplicates, and produces an A-F prioritized report.
 
 ## Modes
 
@@ -90,25 +90,24 @@ In **non-interactive** mode, run all scan types; no prompt.
 
 ### Phase 7: Execute Scans
 
-For each enabled scan type, spawn a Task agent with the corresponding prompt:
+Run the enabled scans as a **`Workflow`** (not ad-hoc `Task` spawns). The scan set is independent fan-out + a dependent variant-analysis stage + a dedup/synthesize barrier — exactly what `Workflow` models, and the structured-output schema makes each finder return validated data instead of free text the orchestrator re-parses. The skill invoking `Workflow` is a sanctioned opt-in; pass the enabled-scan list as `args`.
 
-- Legacy types (1–8): prompt from `reference.md`.
-- Modular types (9+): prompt from `scans/<type>.md`.
+Author the script inline (don't pre-Write it). Shape:
 
-Run sequentially in priority order: critical, logic, cache, workflow, security, then the modular scans (variant-analysis depends on earlier findings so runs after them; insecure-defaults and differential are independent), then documentation last.
+1. **`phase('Scan')` — parallel independent finders.** One `agent()` per enabled scan type whose prompt is the scan's `reference.md` section (legacy 1–8) or `scans/<type>.md` (modular). Each uses `agentType: 'Explore'` (read-only sweep), a `FINDINGS_SCHEMA` (`{ scanType, findings: [{ file, line, issue, severity: critical|high|medium|low, pattern, trigger, fix, impact }] }`), and runs under `parallel(...)` — `variant-analysis` is NOT in this batch (it depends on the others).
+2. **Barrier → dedup.** Collect all finder results, `.filter(Boolean)`, flatten findings, dedup by `file:line:issue` in plain code (genuinely needs all findings at once — the barrier is justified).
+3. **`phase('Variant')` — dependent stage.** For each High/Critical deduped finding, one `agent()` (the `scans/variant-analysis.md` prompt) searching the repo for the same shape; merge new variants in.
+4. **`phase('Verify')` — adversarial pass** (thorough/release runs only): per High/Critical finding, spawn a skeptic that tries to REFUTE it (`{ isReal, why }` schema); drop findings ≥majority refute. Skip for a quick scan — `log()` that it was skipped so the report doesn't read as fully verified.
+5. **Synthesize** — a final `agent()` takes the deduped+verified JSON and writes the A-F prioritized markdown report (sections by severity, file:line refs, fixes, coverage metrics).
 
-Each agent reports findings as:
+Return `{ report, findingCount, bySeverity }` from the script. Each finder's `FINDINGS_SCHEMA` replaces the old free-text "File / Issue / Severity / Pattern / Trigger / Fix / Impact" shape — same fields, now validated.
 
-- File: path:line
-- Issue, Severity, Pattern, Trigger, Fix, Impact
+### Phase 8: Save the report
 
-### Phase 8: Aggregate and Report
+The Workflow returns the synthesized A-F markdown. Save it:
 
-- Deduplicate findings across scan types
-- Sort by severity: Critical > High > Medium > Low
-- Generate markdown report with file:line references, suggested fixes, and coverage metrics
 - **Interactive**: offer to save to `reports/scanning-quality-YYYY-MM-DD.md` via `AskUserQuestion`.
-- **Non-interactive**: save the report unconditionally to `reports/scanning-quality-YYYY-MM-DD.md` (create the directory if missing) so the artifact is visible to the orchestrating runner. If the `Write` tool isn't in the allow list, emit the full markdown to stdout with a leading `=== REPORT MARKDOWN ===` marker so the runner can capture and persist it.
+- **Non-interactive**: save unconditionally to `reports/scanning-quality-YYYY-MM-DD.md` (create the dir if missing). If `Write` isn't in the allow list, emit the full markdown to stdout with a leading `=== REPORT MARKDOWN ===` marker so the runner can capture it.
 
 ### Phase 9: Summary
 

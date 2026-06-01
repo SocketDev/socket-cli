@@ -73,8 +73,22 @@ If the wheelhouse template change includes a `@socketsecurity/lib` catalog bump 
 - Worktree-add fails: another worktree at the target path; cleanup with `git worktree remove --force <wt>`.
 - Push rejected on direct base: the script automatically falls back to PR. Confirm via the PR URL printed to stdout.
 
+## Recovery playbook (the judgment exceptions a plain run can't decide)
+
+The cascade script (`lib/cascade-template.mts`) is deterministic — it `--no-verify` commits + pushes per repo and always cleans up its worktree (verified: the success path, every early-exit, and the PR-fallback all run `worktree remove --force` + `branch -D`). What it CANNOT decide are these three situations. Each needs a human/agent call, not a script branch:
+
+1. **Dirty downstream checkout** (`<repo>: working tree dirty — manual sync needed`). The script skips dirty checkouts so it never sweeps another agent's work. To unblock:
+   - If the dirt is **mechanical sync/format drift** (oxlintrc array-collapse, jsdoc reflow, `.gitattributes`/CLAUDE.md fleet-block) — commit it as `chore(wheelhouse): cascade template@<sha>` (or `style:` for pure reflow). Safe; it IS cascade output.
+   - If the dirt is **hand-authored feature work** in `src/` touched recently — leave it; that's a live session. Re-run the cascade after they land.
+   - A `pnpm-lock.yaml` left dirty by a pre-commit `pnpm install` is regenerable: `git checkout -- pnpm-lock.yaml` before rebase/push.
+
+2. **Stranded local commits** (local `main` diverged with un-pushed `chore(wheelhouse): cascade …` commits that origin already superseded). Confirm with `git branch -r --contains <sha>` (empty = local-only) and `git log --oneline HEAD..origin/main` (origin has newer cascades). If origin already has the work in canonical form, `git reset --hard origin/main` (needs `Allow reset bypass`) — nothing real is lost. Otherwise rebase the genuine local-unique commits on top.
+
+3. **Soak-bypassing a tool bump** (pnpm/zizmor/sfw newer than the 7-day `minimumReleaseAge`). The auto-updater (`scripts/update-external-tools.mts`) skips fresh releases. To bump anyway: hand-pin `external-tools.json` (version + every platform asset + recomputed sha256 integrity from the upstream GitHub release; npm-tarball platforms use npm `dist.integrity`), needs `Allow soak-time bypass` (alias: `Allow minimumReleaseAge bypass`). Then run `socket-registry/scripts/cascade-internal.mts` to bump-until-stable the internal action pins, push, and `scripts/fleet/cascade-registry-pins.mts --sha <M'>` to propagate the new pin fleet-wide. **Why:** 2026-06-01 a stale pnpm pin (11.4.0 vs runner 11.3.0) red-lined fleet CI; the bump to 11.5.0 also surfaced an `allowBuilds: esbuild` placeholder that `ERR_PNPM_IGNORED_BUILDS` then blocked on.
+
 ## Reference
 
 - FLEET_SYNC sentinel: `template/.claude/hooks/fleet/no-revert-guard/` + `template/.claude/hooks/fleet/overeager-staging-guard/`.
 - Wheelhouse sync-scaffolding: `socket-wheelhouse/scripts/sync-scaffolding/cli.mts`.
 - Fleet-repo manifest: `lib/fleet-repos.txt`.
+- Registry-pin cascade (Mode 2): `socket-registry/scripts/cascade-internal.mts` (intra-registry bump-until-stable) → `scripts/fleet/cascade-registry-pins.mts --sha <M'>` (fleet-wide).

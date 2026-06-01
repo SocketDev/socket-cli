@@ -159,7 +159,7 @@ For non-trivial work (multi-file refactor, new feature, migration), the plan its
 
 ### Never fork fleet-canonical files locally
 
-🚨 Edit fleet-canonical files (anything in the sync manifest) ONLY in `socket-wheelhouse/template/...` — never in a downstream repo. Spot a missing helper in a downstream copy? Lift it upstream and re-cascade (enforced by `.claude/hooks/fleet/no-fleet-fork-guard/`; bypass: `Allow fleet-fork bypass`). Full canonical-surface list + lifting workflow: [`docs/claude.md/wheelhouse/no-local-fork-canonical.md`](docs/claude.md/wheelhouse/no-local-fork-canonical.md).
+🚨 Edit fleet-canonical files ONLY in `socket-wheelhouse/template/...` — never downstream. Lift missing helpers upstream + re-cascade. **Trust the wheelhouse:** don't grep / read / debug canonical files in downstream repos to verify contents — treat the wheelhouse as oracle (enforced by `.claude/hooks/fleet/no-fleet-fork-guard/`; bypass: `Allow fleet-fork bypass`). Full ruleset: [`docs/claude.md/wheelhouse/no-local-fork-canonical.md`](docs/claude.md/wheelhouse/no-local-fork-canonical.md).
 
 ### Code style
 

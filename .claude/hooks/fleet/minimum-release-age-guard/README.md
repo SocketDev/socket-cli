@@ -29,7 +29,10 @@ emergency CVE patches.
 
 Type the canonical phrase in a new message:
 
-    Allow minimumReleaseAge bypass
+    Allow soak-time bypass
+
+`Allow minimumReleaseAge bypass` still works as an alias. The matcher folds
+hyphens to spaces, so `Allow soak time bypass` matches too.
 
 Use sparingly. The legitimate cases are:
 

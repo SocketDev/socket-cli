@@ -1,15 +1,17 @@
 ---
 name: updating-security
-description: Resolve open GitHub Dependabot security alerts on a fleet repo. Fetches alerts via `gh api`, applies fixes (direct dep bump, pnpm override for transitives, or principled dismissal for unfixable), validates with `pnpm run check`, commits per-alert, and reports remaining advisories. Sibling of `updating-lockstep` under the `updating` umbrella.
+description: Resolve open GitHub Dependabot security alerts on a fleet repo. Fetches alerts via `gh api`, then runs a Workflow that pipelines each alert through classify → fix (direct dep bump, pnpm override for transitives, or principled dismissal) → validate → commit independently, with a major-cross benignity gate before risky bumps land. Reports remaining advisories. Sibling of `updating-lockstep` under the `updating` umbrella.
 user-invocable: true
-allowed-tools: AskUserQuestion, Read, Edit, Grep, Glob, Bash(gh api:*), Bash(gh auth:*), Bash(pnpm:*), Bash(git:*), Bash(node:*), Bash(jq:*)
+allowed-tools: Workflow, AskUserQuestion, Read, Edit, Grep, Glob, Bash(gh api:*), Bash(gh auth:*), Bash(pnpm:*), Bash(git:*), Bash(node:*), Bash(jq:*)
 ---
 
 # updating-security
 
 Walk open Dependabot security alerts on the current repo and fix
-them via the cheapest principled mechanism. Invoked directly via
-`/update-security` or as Phase 5 of the `updating` umbrella.
+them via the cheapest principled mechanism. Discovers the alert set
+inline, then runs a `Workflow` that pipelines each alert through
+classify → fix → validate → commit independently. Invoked directly
+via `/update-security` or as Phase 5 of the `updating` umbrella.
 
 ## When to use
 
@@ -36,16 +38,31 @@ them via the cheapest principled mechanism. Invoked directly via
 
 ## Phases
 
+Phase 1 (Discover) runs inline — one `gh api` call to build the work-list. The per-alert work (Phases 2–5) is independent fan-out where each alert classifies → fixes → validates → commits on its own timeline, so it runs as a **`Workflow`** `pipeline()`. Phases 6–8 (push / verify / report) run inline after the pipeline returns, because push and verify need the full committed set at once.
+
 | #   | Phase                | Outcome                                                                                                                                                                                                                                                           |
 | --- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Discover             | `gh api repos/{owner}/{repo}/dependabot/alerts?state=open`. Group by package + relationship (direct / transitive).                                                                                                                                                |
-| 2   | Classify             | Each alert → one of: `direct-fix` (bump the catalog / `package.json` pin), `override-fix` (pnpm override for transitive), `dismiss-with-reason`. Resolve the PIN TARGET = highest soaked release sharing `first_patched`'s major (see reference.md "Pin target"). |
-| 3   | Apply direct fixes   | For each direct dep: bump to the resolved exact pin version; commit per alert.                                                                                                                                                                                    |
-| 4   | Apply override fixes | For each transitive: add an EXACT pin to `overrides:` in **pnpm-workspace.yaml** (not `package.json`); `pnpm install`; commit per row.                                                                                                                            |
-| 5   | Validate             | `pnpm run check --all` (interactive) or `pnpm run check --staged` (CI). Roll back any commit whose check fails.                                                                                                                                                   |
-| 6   | Push                 | Per CLAUDE.md push policy: `git push origin <branch>`, fall back to PR on rejection. NEVER force-push.                                                                                                                                                            |
-| 7   | Verify resolution    | After push lands, `gh api .../dependabot/alerts` should show each fixed alert as `auto_dismissed` or `fixed`. Log remaining.                                                                                                                                      |
-| 8   | Report               | Per-alert table: alert # / pkg / severity / action taken / state.                                                                                                                                                                                                 |
+| 1   | Discover (inline)    | `gh api repos/{owner}/{repo}/dependabot/alerts?state=open`. Group by package + relationship (direct / transitive). This is the pipeline work-list.                                                                                                                |
+| 2   | Classify (pipeline)  | Each alert → one of: `direct-fix` (bump the catalog / `package.json` pin), `override-fix` (pnpm override for transitive), `dismiss-with-reason`. Resolve the PIN TARGET = highest soaked release sharing `first_patched`'s major (see reference.md "Pin target"). |
+| 3   | Apply fix (pipeline) | Direct: bump to the resolved exact pin. Transitive: add an EXACT pin to `overrides:` in **pnpm-workspace.yaml** (not `package.json`); `pnpm install`. Commit per alert.                                                                                            |
+| 4   | Validate (pipeline)  | `pnpm run check --all` (interactive) or `pnpm run check --staged` (CI). Roll back this alert's commit if its check fails; the failed item drops out of the pipeline.                                                                                               |
+| 5   | Push (inline)        | After the pipeline returns: per CLAUDE.md push policy, `git push origin <branch>`, fall back to PR on rejection. NEVER force-push.                                                                                                                                |
+| 6   | Verify resolution    | `gh api .../dependabot/alerts` should show each fixed alert as `auto_dismissed` or `fixed`. Log remaining.                                                                                                                                                        |
+| 7   | Report               | Per-alert table: alert # / pkg / severity / action taken / state. Roll the pipeline's per-item `RESULT_SCHEMA` rows into this table.                                                                                                                              |
+
+### The per-alert pipeline: author a `Workflow`
+
+The skill invoking `Workflow` is a sanctioned opt-in. Pass the discovered alert list as `args`. Author the script inline (don't pre-`Write` it). Shape:
+
+```
+pipeline(alerts, classify, applyAndValidate)
+```
+
+1. **`classify` stage** — one `agent()` per alert returning `CLASSIFY_SCHEMA`: `{ alertNumber, package, relationship: direct|transitive, action: direct-fix|override-fix|dismiss-with-reason|awaiting-soak, pinTarget, crossesMajor, dismissReason? }`. The pin-target resolution (highest soaked release in `first_patched`'s major) is per-alert and independent — perfect for the pipeline's first stage.
+2. **`applyAndValidate` stage** — receives the classification, applies the fix (`direct-fix` → bump pin; `override-fix` → `pnpm-workspace.yaml` `overrides:` + `pnpm install`; `dismiss-with-reason` → record the dismissal), commits `chore(security): …`, runs `pnpm run check`, and returns `RESULT_SCHEMA`: `{ alertNumber, package, severity, actionTaken, committed: boolean, state: fixed|awaiting-soak|dismissed|check-failed }`. A check failure rolls back that commit and the stage throws, dropping the item to `null` (filter before reporting).
+3. **Major-cross gate** — when `crossesMajor` is true, the `applyAndValidate` stage first spawns a benignity-check `agent()` (the socket-lib `spawnAiAgent` equivalent) returning `{ verdict: BENIGN|BREAKING|UNAVAILABLE, why }`. `BENIGN` auto-applies with a Phase-7 notice; `BREAKING`/`UNAVAILABLE` skips the fix and flags the alert for `AskUserQuestion` signoff (interactive) or `awaiting-review` (non-interactive). Never auto-cross a major without a `BENIGN` verdict.
+
+`awaiting-soak` alerts (patched version inside the 7-day window) return from `classify` with no fix stage work — the pipeline records them and moves on; the soak guard is never bypassed.
 
 ## Hard requirements
 

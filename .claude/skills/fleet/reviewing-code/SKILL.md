@@ -1,15 +1,15 @@
 ---
 name: reviewing-code
-description: Reviews the current branch against a base ref using multiple AI backends. Routes discovery, discovery-secondary, remediation, and verify passes through the available agents (codex, claude, opencode, kimi, …), gracefully skipping any backend that isn't installed. Writes a markdown findings report under docs/. Use when preparing or updating a PR, before merging a feature branch, or when wanting an independent second opinion from a different agent.
+description: Reviews the current branch against a base ref using multiple AI backends. Runs a Workflow that streams the diff through discovery, discovery-secondary, remediation, and adversarial-verify stages, routing each stage to the available agents (codex, claude, opencode, kimi, …) and gracefully skipping any backend that isn't installed. Writes a markdown findings report under docs/. Use when preparing or updating a PR, before merging a feature branch, or when wanting an independent second opinion from a different agent.
 user-invocable: true
-allowed-tools: Read, Grep, Glob, Bash(node:*), Bash(git:*), Bash(command -v:*)
+allowed-tools: Workflow, Read, Grep, Glob, Bash(node:*), Bash(git:*), Bash(command -v:*)
 model: claude-opus-4-8
 context: fork
 ---
 
 # reviewing-code
 
-Four-pass multi-agent code review of the current branch against a base ref. Each pass is a separate agent run with a focused prompt; the results fold into one markdown report.
+Four-pass multi-agent code review of the current branch against a base ref via a `Workflow`. The diff streams through discovery → discovery-secondary → remediation → verify stages, each routed to a different AI backend; findings are adversarially verified before they fold into one markdown report.
 
 ## When to use
 
@@ -41,28 +41,16 @@ When the same review finding has fired in two consecutive runs (or across two re
 
 ## Usage
 
-```bash
-# Default: codex×3 + claude×1, output under docs/<branch-slug>-review-findings.md
-node .claude/skills/reviewing-code/run.mts
+Invoke the skill; it authors the `Workflow` inline. The following knobs are passed as `args` (the Workflow reads them when building scope + routing):
 
-# Custom base
-node .claude/skills/reviewing-code/run.mts --base origin/main
-
-# Custom output
-node .claude/skills/reviewing-code/run.mts --output docs/reviews/my-branch.md
-
-# Skip the verify pass entirely
-node .claude/skills/reviewing-code/run.mts --skip-verify
-
-# Override one or more passes
-node .claude/skills/reviewing-code/run.mts --pass discovery=kimi --pass verify=opencode
-
-# Cleanup the temp dir on exit (default keeps logs for inspection)
-node .claude/skills/reviewing-code/run.mts --cleanup-temp
-
-# Run only a subset of passes
-node .claude/skills/reviewing-code/run.mts --only discovery,verify
-```
+| Arg                          | Effect                                                            |
+| ---------------------------- | ----------------------------------------------------------------- |
+| _(none)_                     | Default: codex×3 + claude×1, output under `docs/<branch-slug>-review-findings.md` |
+| `--base origin/main`         | Custom base ref for the diff                                      |
+| `--output docs/reviews/x.md` | Custom report path                                                |
+| `--skip-verify`              | Skip the adversarial verify phase (report marked unverified)      |
+| `--pass discovery=kimi`      | Override one or more passes' routed backend (repeatable)          |
+| `--only discovery,verify`    | Run only a subset of passes                                       |
 
 ## Configuration via env vars
 
@@ -94,14 +82,17 @@ A single markdown file (`docs/<branch-slug>-review-findings.md` by default) with
    fix soundness, missed findings, overall recommendation.
 ```
 
-## How the runner works
+## How the passes run: author a `Workflow`
 
-`run.mts` is a self-contained TypeScript runner that:
+Run the four passes as a **`Workflow`** (not ad-hoc `Task` spawns). The four passes are a strict pipeline — discovery feeds discovery-secondary feeds remediation feeds verify — and each finding carries structured fields the next stage reads, so the staged-`agent()` chain plus per-finding schemas is exactly the shape `Workflow` models. The skill invoking `Workflow` is a sanctioned opt-in; pass the base ref + pass overrides as `args`.
 
-1. Resolves base ref + merge base + commit list + diff stat.
-2. Detects which agent CLIs are available on PATH.
-3. For each pass, picks the preferred backend per the fallback order (or skips with a documented note).
-4. Writes per-pass prompts to a temp dir and runs the agent non-interactively.
-5. Folds outputs into the final report.
+Author the script inline (don't pre-Write it). Shape:
 
-The prompts live in the runner: single source of truth so the pipeline and the prompts can't drift apart.
+1. **Resolve scope first (plain code, no agents).** Compute base ref + merge base + commit list + diff stat via `Bash(git:*)`. Detect which agent CLIs are on PATH via `Bash(command -v:*)`. Build a `pass → backend` map from the fallback order in [`_shared/multi-agent-backends.md`](../_shared/multi-agent-backends.md); `log()` any pass whose preferred backend is absent and which fallback (or skip) it took.
+2. **`phase('Discovery')` — the find stages, streamed.** Model the review dimensions (the diffed files, or the configured `--only` subset) as a `pipeline(dimensions, discover, discoverSecondary)` so each dimension flows find → secondary-find without a barrier between dimensions. Each stage is an `agent()` whose `agentType` is the routed backend (codex / claude / opencode / kimi), `isolation` is read-only, and whose prompt is the pass prompt scoped to the base-ref diff. Every finder returns a `FINDINGS_SCHEMA` (`{ pass, findings: [{ file, line, severity: critical|high|medium|low, claim, affectedCode, why, impact }] }`). discovery-secondary merges only NEW findings (drop duplicates by `file:line:claim`).
+3. **`phase('Remediation')` — dependent stage.** For each finding, one `agent()` (the remediation backend) adds `{ suggestedFix, suggestedRegressionTests }` to the finding. This depends on the full discovery set, so it runs after the discovery pipeline drains.
+4. **`phase('Verify')` — adversarial pass.** Per High/Critical finding, spawn a skeptic `agent()` (the verify backend, default `claude`) that tries to REFUTE the finding against the actual diff, returning a `VERDICT_SCHEMA` (`{ isReal, verdict: confirmed|likely|false-positive, why }`). Drop findings the skeptic refutes before they land in the report; mark survivors `CONFIRMED`. Skip this phase when `--skip-verify` is set and `log()` that the report is unverified.
+5. **`phase('Variant')` — for every `CONFIRMED` High/Critical finding**, one `agent()` searching the repo for the same shape per [`_shared/variant-analysis.md`](../_shared/variant-analysis.md); merge variants in. Omit the section entirely when none are found.
+6. **Synthesize** — a final `agent()` takes the verified+variant JSON and writes the markdown report in the structure under [Output](#output) (overwrite on discovery, append the `## <Backend> Verification` section from the verify verdicts).
+
+Return `{ report, findingCount, bySeverity }` from the script. The per-finding `FINDINGS_SCHEMA` / `VERDICT_SCHEMA` replace the free-text fold-up: each stage returns validated data the next stage reads instead of re-parsing prose. Backends absent from PATH are skipped with a `log()` note rather than failing the Workflow — the graceful-detect / skip-with-note policy in [`_shared/multi-agent-backends.md`](../_shared/multi-agent-backends.md) still governs routing. The pass prompts are the single source of truth so the pipeline and the prompts can't drift apart.

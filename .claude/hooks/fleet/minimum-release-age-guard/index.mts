@@ -15,9 +15,11 @@
 //   - For Write: compares against current contents (absent file = empty
 //     exclude array).
 //
-// Bypass: `Allow minimumReleaseAge bypass` typed verbatim in a recent user
-// turn — for emergency CVE patches where a legitimately-published-yesterday
-// fix must be installed before the 7-day window closes.
+// Bypass: `Allow soak-time bypass` (alias: `Allow minimumReleaseAge bypass`)
+// typed verbatim in a recent user turn — for emergency CVE patches where a
+// legitimately-published-yesterday fix must be installed before the 7-day
+// window closes. The matcher folds hyphens to spaces, so `soak-time` and
+// `soak time` both match the same phrase.
 //
 // Fails open on parse errors (better to under-block than to brick edits
 // when the file isn't parseable YAML).
@@ -33,7 +35,13 @@ import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
 const logger = getDefaultLogger()
 
-const BYPASS_PHRASE = 'Allow minimumReleaseAge bypass'
+// `soak-time` is the canonical phrase; `minimumReleaseAge` is kept as an alias
+// so older transcripts / muscle memory still authorize the bypass. Both fold
+// through normalizeBypassText, so spacing/hyphen variants of each also match.
+const BYPASS_PHRASES = [
+  'Allow soak-time bypass',
+  'Allow minimumReleaseAge bypass',
+]
 
 // Permissive YAML extraction tailored to the `minimumReleaseAge.exclude`
 // block. We don't pull in a full YAML library — the block shape is narrow:
@@ -148,7 +156,7 @@ await withEditGuard((filePath, content, payload) => {
 
   if (
     payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
+    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)
   ) {
     return
   }
@@ -175,7 +183,7 @@ await withEditGuard((filePath, content, payload) => {
       '    node scripts/soak-bypass.mts <pkg>@<version>',
       '  (the daily updating-daily job removes the entry once its soak clears).',
       '',
-      `  Bypass (to hand-edit anyway): type "${BYPASS_PHRASE}" in a new message, then retry.`,
+      `  Bypass (to hand-edit anyway): type "${BYPASS_PHRASES[0]}" in a new message, then retry.`,
       '',
     ].join('\n'),
   )

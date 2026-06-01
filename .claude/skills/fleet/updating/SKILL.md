@@ -1,15 +1,15 @@
 ---
 name: updating
-description: Umbrella update skill for a Socket fleet repo. Runs `pnpm run update` (npm), validates `lockstep.json` via `pnpm run lockstep` (if present), optionally bumps submodules, checks workflow SHA pins, resolves open Dependabot security alerts, refreshes the README coverage badge when applicable, and audits GitHub repo + Actions settings drift via `scripts/lint-github-settings.mts`. Use when asked to update dependencies, sync upstreams, fix security advisories, refresh coverage, or prepare for a release.
+description: Umbrella update skill for a Socket fleet repo. Runs `pnpm run update` (npm), validates `lockstep.json` via `pnpm run lockstep` (if present), optionally bumps submodules, checks workflow SHA pins, resolves open Dependabot security alerts, refreshes the README coverage badge when applicable, and audits GitHub repo + Actions settings drift via `scripts/lint-github-settings.mts`. Discovers what applies via a parallel read-only Workflow sweep, then applies per-category drift (per-row lockstep bumps, per-alert security) as pipeline fan-out. Use when asked to update dependencies, sync upstreams, fix security advisories, refresh coverage, or prepare for a release.
 user-invocable: true
-allowed-tools: Task, Skill, Read, Edit, Grep, Glob, Bash(pnpm run:*), Bash(pnpm test:*), Bash(pnpm install:*), Bash(git:*), Bash(claude --version)
+allowed-tools: Workflow, Skill, Read, Edit, Grep, Glob, Bash(pnpm run:*), Bash(pnpm test:*), Bash(pnpm install:*), Bash(git:*), Bash(claude --version)
 model: claude-haiku-4-5
 context: fork
 ---
 
 # updating
 
-Umbrella update skill. Runs `pnpm run update` for npm deps, then adapts to whatever the repo has: lockstep manifest, submodules, workflow SHA pins. Validates with check/test before reporting done.
+Umbrella update skill. Runs `pnpm run update` for npm deps, then adapts to whatever the repo has: lockstep manifest, submodules, workflow SHA pins. A `Workflow` does the discovery (parallel read-only probes for what applies) and the per-category drift apply (per-row lockstep bumps, per-alert security run as pipelines); the ordered phases that must stay sequential (npm before lockstep, validate before push) run inline around it. Validates with check/test before reporting done.
 
 ## When to use
 
@@ -59,6 +59,18 @@ Why reference, not duplicate: the cascade procedure is fleet-canonical knowledge
 | 8   | GH settings drift    | Skipped under `CI=true`. Otherwise: `node scripts/lint-github-settings.mts --force --json` and surface findings (repo-settings drift, missing apps (cursor/claude/socket-security/etc), custom-property/visibility mismatches). Read-only; operator follows the fixUrl in each finding. |
 | 9   | Final validation     | Interactive only: `pnpm run check --all && pnpm test && pnpm run build`. CI skips (validated separately).                                                                                                                                                                               |
 | 10  | Report               | Per-category summary: npm / lockstep / submodules / security / SHA pins / coverage / settings drift / validation / next steps.                                                                                                                                                          |
+
+### What runs inline vs. in the `Workflow`
+
+The phases have a hard ordering on the spine: env-check → npm bump → lockstep *validate* must run in sequence inline, because each gates the next (a dirty tree blocks npm; npm changes feed lockstep). The fan-out lives in two places, and that's what the `Workflow` owns:
+
+- **Discovery** (parallel barrier) — once the spine is clean, one read-only `agent()` per category probes "does this apply, and what's the work?": lockstep rows (`pnpm run lockstep --json`), un-pinned submodules, stale workflow SHAs, coverage-script presence, settings drift. Use `agentType: 'Explore'`. Each returns a small `DISCOVERY_SCHEMA` (`{ category, applies, items: [...] }`). A barrier here is justified — the apply step needs the full picture to order commits.
+- **Apply** (pipelines) — the independent per-item work:
+  - lockstep `version-pin` rows → `pipeline(rows, bumpRow, validateRow)`, one atomic commit per row.
+  - Dependabot alerts → delegate to the `updating-security` sub-skill (itself now a per-alert pipeline). The umbrella passes the discovered alert list; don't re-implement its pipeline here.
+  - coverage badge / settings drift → single linear ops, run inline after the pipelines (no fan-out).
+
+Keep the umbrella's fan-out modest: it runs in CI under `model: claude-haiku-4-5` with the four-flag lockdown, and each `agent()` spends tokens. Discovery is a handful of probes, not a deep sweep. The heavy per-item loops (security alerts especially) belong to the sub-skills.
 
 Full bash, exit-code tables, mode contracts, and failure recovery in [`reference.md`](reference.md).
 
