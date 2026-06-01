@@ -43,6 +43,22 @@ const useShell = process.platform === 'win32'
 
 const LINTABLE_EXTS = new Set(['.cjs', '.cts', '.js', '.mjs', '.mts', '.ts'])
 
+// Two-file extends layout: `.config/fleet/<config>.json` is fleet-canonical
+// (byte-identical across the fleet, owned by the wheelhouse cascade).
+// A repo with overrides ships `.config/repo/<config>.json` that uses
+// `extends: ['../fleet/<config>.json']` + a small `overrides` block.
+// Auto-discover: prefer the repo overlay if it exists, else the fleet
+// canonical. Picks at invocation time — adding the overlay doesn't
+// require touching scripts. The basename (oxlintrc.json / oxfmtrc.json)
+// stays identical on both sides; only the directory differs.
+function pickConfig(basename: string): string {
+  const repoOverlay = path.join('.config', 'repo', basename)
+  if (existsSync(repoOverlay)) {
+    return repoOverlay
+  }
+  return path.join('.config', 'fleet', basename)
+}
+
 // Paths that, when touched, force a full-workspace lint.
 const ESCALATION_PATTERNS = [
   /^\.config\//,
@@ -168,7 +184,7 @@ function runAll(): number {
     'exec',
     'oxfmt',
     '-c',
-    '.config/fleet/oxfmtrc.json',
+    pickConfig('oxfmtrc.json'),
     '--ignore-path',
     '.config/fleet/.prettierignore',
     fix ? '--write' : '--check',
@@ -179,7 +195,7 @@ function runAll(): number {
     return 1
   }
   log('Running oxlint on all files…')
-  const oxlintArgs = ['exec', 'oxlint', '-c', '.config/fleet/oxlintrc.json']
+  const oxlintArgs = ['exec', 'oxlint', '-c', pickConfig('oxlintrc.json')]
   if (fix) {
     oxlintArgs.push('--fix')
   }
@@ -247,7 +263,7 @@ function runFiles(files: string[]): number {
     'exec',
     'oxfmt',
     '-c',
-    '.config/fleet/oxfmtrc.json',
+    pickConfig('oxfmtrc.json'),
     '--ignore-path',
     '.config/fleet/.prettierignore',
     fix ? '--write' : '--check',
@@ -268,7 +284,7 @@ function runFiles(files: string[]): number {
     'exec',
     'oxlint',
     '-c',
-    '.config/fleet/oxlintrc.json',
+    pickConfig('oxlintrc.json'),
     '--no-error-on-unmatched-pattern',
   ]
   if (fix) {
