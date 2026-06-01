@@ -543,6 +543,9 @@ importers:
       semver:
         specifier: 7.7.2
         version: 7.7.2
+      shell-quote:
+        specifier: 1.8.3
+        version: 1.8.3
       ssri:
         specifier: 'catalog:'
         version: 12.0.0

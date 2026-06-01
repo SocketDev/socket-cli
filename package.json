@@ -129,6 +129,7 @@
     "registry-auth-token": "catalog:",
     "registry-url": "catalog:",
     "semver": "catalog:",
+    "shell-quote": "catalog:",
     "ssri": "catalog:",
     "taze": "19.11.0",
     "terminal-link": "catalog:",
