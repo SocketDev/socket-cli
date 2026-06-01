@@ -5,10 +5,9 @@
  *   emits a text-format report listing every repo the maven extension generated;
  *   `parseShowExtensionOutput` extracts the names of hub repos (items annotated
  *   with `(imported by ...)`) and skips generated per-artifact repos.
- * - Legacy WORKSPACE path: probe a fixed list of conventional Maven hub names
- *   (plus any names the customer passed via `--bazel-maven-repo=`). Each probe
- *   is classified into `populated` / `empty` / `not-defined`; the orchestrator
- *   keeps only the `populated` candidates.
+ * - Legacy WORKSPACE path: probe a fixed list of conventional Maven hub names.
+ *   Each probe is classified into `populated` / `empty` / `not-defined`; the
+ *   orchestrator keeps only the `populated` candidates.
  *
  * No Starlark source is read by this module. All semantic interpretation
  * comes from Bazel itself (`mod show_extension`, `cquery`).
