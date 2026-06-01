@@ -590,6 +590,11 @@ export async function extractBazelToMaven(
       )
       for (const repoName of candidates) {
         anyRepos = true
+        if (verbose) {
+          logger.log(
+            `[VERBOSE] workspace ${relPath || '.'}: running metadata cquery for @${repoName} (timeout ${perRepoTimeoutMs}ms)`,
+          )
+        }
         // eslint-disable-next-line no-await-in-loop
         const result: CqueryRepoResult = await runMetadataCqueryForRepo({
           opts: queryOptsFor(outputUserRoot),

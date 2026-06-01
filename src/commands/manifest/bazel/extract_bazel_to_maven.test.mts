@@ -11,6 +11,8 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 // Mock collaborators BEFORE importing the orchestrator. The orchestrator
 // composes pure-function discovery + the metadata cquery + a workspace
 // walker; mocking these lets us drive end-to-end behaviour without a
@@ -665,6 +667,34 @@ Fetched repositories:
     )
     // show_extension must NOT be called in pure WORKSPACE mode.
     expect(runBazelModShowMavenExtension).not.toHaveBeenCalled()
+  })
+
+  it('narrates the per-hub cquery under verbose without changing the outcome', async () => {
+    const logSpy = vi.spyOn(logger, 'log').mockImplementation(() => logger)
+    try {
+      vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+        mkResult({
+          artifacts: [mkArt('com.example:a:1.0', 'a')],
+          repoName: 'maven',
+        }),
+      )
+      const result = await extractBazelToMaven({
+        bazelFlags: undefined,
+        bazelOutputBase: undefined,
+        bazelRc: undefined,
+        bin: undefined,
+        cwd: tmp,
+        out: tmp,
+        outLayout: 'flat',
+        verbose: true,
+      })
+      expect(result.status).toBe('complete')
+      const logged = logSpy.mock.calls.map(c => String(c[0])).join('\n')
+      expect(logged).toMatch(/running metadata cquery for @maven/)
+      expect(logged).toMatch(/status=ok.*->.*maven_install\.json/)
+    } finally {
+      logSpy.mockRestore()
+    }
   })
 
   it('writes maven_install.json into .socket-auto-manifest in flat layout', async () => {
