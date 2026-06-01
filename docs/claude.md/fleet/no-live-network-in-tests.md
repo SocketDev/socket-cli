@@ -46,8 +46,8 @@ handler makes the call regardless of what you assert. Stub it with a catch-all
 
 Three layers enforce this:
 
-1. **Runtime fail-closed** — the fleet `test/setup.mts` (wired via vitest
-   `setupFiles`) calls `nock.disableNetConnect()` once, allowing only
+1. **Runtime fail-closed** — the fleet `test/scripts/fleet/setup.mts` (wired via
+   vitest `setupFiles`) calls `nock.disableNetConnect()` once, allowing only
    `127.0.0.1` / `localhost` (for fixture servers). Any unmocked request throws
    `NetConnectNotAllowedError` at run time, so a missing stub fails loudly
    instead of silently reaching the internet.

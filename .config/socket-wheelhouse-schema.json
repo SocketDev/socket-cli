@@ -235,7 +235,7 @@
       "type": "object",
       "properties": {
         "apps": {
-          "description": "GitHub App slugs that must be installed on the repo (e.g. `cursor`, `socket-security`, `socket-trufflehog`). Audited by `scripts/lint-github-settings.mts` — apps whose installation cannot be reliably detected via check-suites are trusted via this manifest.",
+          "description": "GitHub App slugs that must be installed on the repo (e.g. `cursor`, `socket-security`, `socket-trufflehog`). Audited by `scripts/fleet/lint-github-settings.mts` — apps whose installation cannot be reliably detected via check-suites are trusted via this manifest.",
           "type": "array",
           "items": {
             "type": "string"

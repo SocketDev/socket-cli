@@ -5,8 +5,8 @@
  *   duplicating the path string + its rationale comment. Examples of
  *   consumers:
  *
- *   - `no-file-scope-oxlint-disable` exempts `scripts/paths.mts` (deliberate
- *     flow-ordered exports, see PATHS_FILE constant below).
+ *   - `no-file-scope-oxlint-disable` exempts `scripts/fleet/paths.mts`
+ *     (deliberate flow-ordered exports, see PATHS_FILE constant below).
  *   - `socket/prefer-cached-for-loop` and `socket/no-cached-for-on-iterable`
  *     share `lib/iterable-kind.mts` for the binding-kind heuristic — sibling
  *     pattern. When a new rule needs to recognize one of these path patterns,
@@ -41,7 +41,7 @@ export function isPluginInternalPath(filename: string): boolean {
 }
 
 /**
- * True when `filename` points at the fleet-canonical `scripts/paths.mts`.
+ * True when `filename` points at the fleet-canonical `scripts/fleet/paths.mts`.
  */
 export function isPathsModule(filename: string): boolean {
   return filename.endsWith(PATHS_FILE)

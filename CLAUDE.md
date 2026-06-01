@@ -205,7 +205,7 @@ When a regex matches against a path string, **normalize the path first** with `n
 
 Never use `Bash(run_in_background: true)` for test / build commands (`vitest`, `pnpm test`, `pnpm build`, `tsgo`) — backgrounded runs you don't poll leak Node workers. Background mode is for dev servers and long migrations whose results you'll consume. Kill hangs with `pkill -f "vitest/dist/workers"`; `.claude/hooks/fleet/stale-process-sweeper/` reaps orphans on Stop. `.DS_Store` files swept at turn-end by `.claude/hooks/fleet/sweep-ds-store/` — no bypass; never wanted in a repo. When writing Bash-allowlist hooks, prefer **AST-based parsing** (via `.claude/hooks/_shared/shell-command.mts` / `findInvocation`, wraps `shell-quote`) over regex when the rule reasons about command structure — regex approves `git $(echo rm) foo.txt`; AST blocks it.
 
-🚨 Tests never connect to third-party servers — mock HTTP with `nock` (`disableNetConnect()` + stubs; `registry-*.test.mts` are canonical). Fleet `test/setup.mts` fails closed; localhost stays allowed. Bypass: `Allow unmocked-network-in-tests bypass` (enforced by `.claude/hooks/fleet/no-unmocked-network-in-tests-guard/`).
+🚨 Tests never connect to third-party servers — mock HTTP with `nock` (`disableNetConnect()` + stubs; `registry-*.test.mts` are canonical). Fleet `test/scripts/fleet/setup.mts` fails closed; localhost stays allowed. Bypass: `Allow unmocked-network-in-tests bypass` (enforced by `.claude/hooks/fleet/no-unmocked-network-in-tests-guard/`).
 
 ### Judgment & self-evaluation
 

@@ -28,5 +28,5 @@ Type `Allow unmocked-network-in-tests bypass` verbatim in a recent message.
 live `api.anaconda.org` / `hub.docker.com`, timing out at 15s. Full rationale:
 `docs/claude.md/fleet/no-live-network-in-tests.md`.
 
-Defense in depth with the fleet `test/setup.mts` (runtime `disableNetConnect()`)
+Defense in depth with the fleet `test/scripts/fleet/setup.mts` (runtime `disableNetConnect()`)
 and the CLAUDE.md rule.

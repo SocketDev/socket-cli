@@ -19,7 +19,7 @@ import {
   KNOWN_SIBLING_PACKAGES,
   MODE_SEGMENTS,
   STAGE_SEGMENTS,
-} from '../../.claude/hooks/fleet/path-guard/segments.mts'
+} from '../../../.claude/hooks/fleet/path-guard/segments.mts'
 import { pushFinding } from './state.mts'
 
 // Locate `path.join(` or `path.resolve(` call sites; argument-list

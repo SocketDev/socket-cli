@@ -39,7 +39,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import {
   updateReleaseAssets,
   writeChecksumsFile,
-} from '../packages/build-infra/lib/release-checksums/producer.mts'
+} from '../../packages/build-infra/lib/release-checksums/producer.mts'
 import { gitShortSha, runInherit } from './publish-shared.mts'
 
 const logger = getDefaultLogger()

@@ -248,7 +248,7 @@ const GithubSchema = Type.Object(
     apps: Type.Optional(
       Type.Array(Type.String(), {
         description:
-          'GitHub App slugs that must be installed on the repo (e.g. `cursor`, `socket-security`, `socket-trufflehog`). Audited by `scripts/lint-github-settings.mts` — apps whose installation cannot be reliably detected via check-suites are trusted via this manifest.',
+          'GitHub App slugs that must be installed on the repo (e.g. `cursor`, `socket-security`, `socket-trufflehog`). Audited by `scripts/fleet/lint-github-settings.mts` — apps whose installation cannot be reliably detected via check-suites are trusted via this manifest.',
       }),
     ),
   },
