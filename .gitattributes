@@ -70,7 +70,6 @@
 .claude/skills/fleet/updating/SKILL.md linguist-generated=true
 .claude/skills/fleet/updating/reference.md linguist-generated=true
 .claude/skills/fleet/worktree-management/SKILL.md linguist-generated=true
-.config/.prettierignore linguist-generated=true
 .config/fleet/.markdownlint-cli2.jsonc linguist-generated=true
 .config/fleet/.prettierignore linguist-generated=true
 .config/fleet/markdownlint-rules linguist-generated=true

@@ -52,6 +52,7 @@ const WH_SCRIPT = path.join(
   PROJECTS,
   'socket-wheelhouse',
   'scripts',
+  'repo',
   'sync-scaffolding',
   'cli.mts',
 )

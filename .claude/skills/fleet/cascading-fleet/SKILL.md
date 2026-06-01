@@ -29,7 +29,7 @@ Propagates a `socket-wheelhouse/template/` SHA to every fleet repo. The flow:
 
 1. For each fleet repo:
 2. Worktree off `origin/<default-branch>` on a fresh `chore/wheelhouse-<sha>` branch.
-3. Run `socket-wheelhouse/scripts/sync-scaffolding/cli.mts --target <wt> --fix`.
+3. Run `socket-wheelhouse/scripts/repo/sync-scaffolding/cli.mts --target <wt> --fix`.
 4. If the cascade modified anything: surgical-stage with `FLEET_SYNC=1 git add --update`, commit `chore(wheelhouse): cascade template@<sha>`, push direct to base.
 5. If direct push is rejected: push the branch, open a PR.
 6. Clean up the worktree + the temp branch.
@@ -89,6 +89,6 @@ The cascade script (`lib/cascade-template.mts`) is deterministic — it `--no-ve
 ## Reference
 
 - FLEET_SYNC sentinel: `template/.claude/hooks/fleet/no-revert-guard/` + `template/.claude/hooks/fleet/overeager-staging-guard/`.
-- Wheelhouse sync-scaffolding: `socket-wheelhouse/scripts/sync-scaffolding/cli.mts`.
+- Wheelhouse sync-scaffolding: `socket-wheelhouse/scripts/repo/sync-scaffolding/cli.mts`.
 - Fleet-repo manifest: `lib/fleet-repos.txt`.
 - Registry-pin cascade (Mode 2): `socket-registry/scripts/cascade-internal.mts` (intra-registry bump-until-stable) → `scripts/fleet/cascade-registry-pins.mts --sha <M'>` (fleet-wide).
