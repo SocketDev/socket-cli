@@ -103,6 +103,7 @@ const mkResult = (over: Partial<CqueryRepoResult>): CqueryRepoResult => ({
   repoName: 'maven',
   status: 'ok',
   stderr: '',
+  unresolvedLabels: [],
   workspaceRelPath: '',
   ...over,
 })
@@ -408,6 +409,26 @@ describe('normalizeToMavenInstallJson', () => {
         },
       ]),
     ).toThrow(/Conflicting versions/)
+  })
+
+  it('builds the dependencies map from resolved coordinate deps', () => {
+    const result = normalizeToMavenInstallJson([
+      {
+        deps: ['com.google.guava:failureaccess'],
+        mavenCoordinates: 'com.google.guava:guava:33.0.0-jre',
+        ruleKind: 'jvm_import',
+        ruleName: 'com_google_guava_guava',
+      },
+      {
+        deps: [],
+        mavenCoordinates: 'com.google.guava:failureaccess:1.0.2',
+        ruleKind: 'jvm_import',
+        ruleName: 'com_google_guava_failureaccess',
+      },
+    ])
+    expect(result.dependencies['com.google.guava:guava']).toEqual([
+      'com.google.guava:failureaccess',
+    ])
   })
 
   it('preserves the first artifact’s sha256 when subsequent dupes lack one', () => {

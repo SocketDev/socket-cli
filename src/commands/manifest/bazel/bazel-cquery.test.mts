@@ -10,6 +10,7 @@ import {
   buildMetadataCqueryArgv,
   parseCqueryJsonproto,
   runMetadataCqueryForRepo,
+  versionlessCoordinate,
 } from './bazel-cquery.mts'
 
 // Sample envelope shape Bazel 5+ emits: `{ "results": [ { "target": {...} } ] }`.
@@ -28,12 +29,6 @@ const ENVELOPE_FIXTURE = JSON.stringify({
               name: 'maven_coordinates',
               type: 'STRING',
               stringValue: 'androidx.annotation:annotation:1.8.2',
-            },
-            {
-              name: 'maven_url',
-              type: 'STRING',
-              stringValue:
-                'https://maven.google.com/androidx/annotation/annotation/1.8.2/annotation-1.8.2.jar',
             },
             {
               name: 'tags',
@@ -66,6 +61,77 @@ const ENVELOPE_FIXTURE = JSON.stringify({
   ],
 })
 
+// Build a single-rule envelope with the given attributes. Keeps the
+// edge-resolution fixtures compact.
+function ruleEnvelope(
+  rules: Array<{
+    name: string
+    ruleClass?: string
+    coord?: string
+    deps?: string[]
+    exports?: string[]
+    runtimeDeps?: string[]
+  }>,
+): string {
+  return JSON.stringify({
+    results: rules.map(r => {
+      const attribute: unknown[] = []
+      if (r.coord) {
+        attribute.push({
+          name: 'maven_coordinates',
+          type: 'STRING',
+          stringValue: r.coord,
+        })
+      }
+      if (r.deps) {
+        attribute.push({
+          name: 'deps',
+          type: 'LABEL_LIST',
+          stringListValue: r.deps,
+        })
+      }
+      if (r.exports) {
+        attribute.push({
+          name: 'exports',
+          type: 'LABEL_LIST',
+          stringListValue: r.exports,
+        })
+      }
+      if (r.runtimeDeps) {
+        attribute.push({
+          name: 'runtime_deps',
+          type: 'LABEL_LIST',
+          stringListValue: r.runtimeDeps,
+        })
+      }
+      return {
+        target: {
+          type: 'RULE',
+          rule: {
+            name: r.name,
+            ruleClass: r.ruleClass ?? 'jvm_import',
+            attribute,
+          },
+        },
+      }
+    }),
+  })
+}
+
+describe('versionlessCoordinate', () => {
+  it('strips only the trailing version, preserving packaging/classifier', () => {
+    expect(versionlessCoordinate('g:a:1.0')).toBe('g:a')
+    expect(versionlessCoordinate('g:a:aar:1.0')).toBe('g:a:aar')
+    expect(versionlessCoordinate('g:a:jar:linux-x86_64:1.0')).toBe(
+      'g:a:jar:linux-x86_64',
+    )
+  })
+
+  it('returns coordinates with no version segment unchanged', () => {
+    expect(versionlessCoordinate('g:a')).toBe('g:a')
+  })
+})
+
 describe('buildMetadataCqueryArgv', () => {
   it('builds the union expression and the documented flag set', () => {
     const argv = buildMetadataCqueryArgv('maven', {
@@ -75,15 +141,27 @@ describe('buildMetadataCqueryArgv', () => {
     })
     expect(argv).toContain('cquery')
     expect(argv).toContain('--output=jsonproto')
-    expect(argv).toContain(
-      '--proto:output_rule_attrs=tags,maven_coordinates,maven_url',
-    )
     expect(argv).toContain('--keep_going')
     expect(argv).toContain('--lockfile_mode=off')
     const expr = argv.find(a => a.includes('attr("tags"'))
     expect(expr).toContain('attr("tags", "\\bmaven_coordinates=", @maven//...)')
     expect(expr).toContain('attr("maven_coordinates", ".+", @maven//...)')
-    expect(expr).toContain('attr("maven_url", ".+", @maven//...)')
+    // maven_url selector dropped (finding G).
+    expect(expr).not.toContain('maven_url')
+  })
+
+  it('requests the dependency-edge attributes in output_rule_attrs', () => {
+    const argv = buildMetadataCqueryArgv('maven', {
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+    const attrFlag = argv.find(a => a.startsWith('--proto:output_rule_attrs='))!
+    expect(attrFlag).toContain('deps')
+    expect(attrFlag).toContain('exports')
+    expect(attrFlag).toContain('runtime_deps')
+    expect(attrFlag).toContain('tags')
+    expect(attrFlag).toContain('maven_coordinates')
   })
 
   it('threads outputUserRoot, bazelRc, and bazelOutputBase as startup flags before cquery', () => {
@@ -127,30 +205,33 @@ describe('buildMetadataCqueryArgv', () => {
 
 describe('parseCqueryJsonproto', () => {
   it('parses Bazel-5+ envelope shape and returns one artifact per rule', () => {
-    const out = parseCqueryJsonproto(ENVELOPE_FIXTURE, 'maven', '')
-    expect(out).toHaveLength(2)
-    const first = out[0]!
-    expect(first.mavenCoordinates).toBe('androidx.annotation:annotation:1.8.2')
-    expect(first.mavenUrl).toBe(
-      'https://maven.google.com/androidx/annotation/annotation/1.8.2/annotation-1.8.2.jar',
+    const { artifacts, unresolvedLabels } = parseCqueryJsonproto(
+      ENVELOPE_FIXTURE,
+      'maven',
+      '',
     )
+    expect(artifacts).toHaveLength(2)
+    expect(unresolvedLabels).toEqual([])
+    const first = artifacts[0]!
+    expect(first.mavenCoordinates).toBe('androidx.annotation:annotation:1.8.2')
     expect(first.ruleKind).toBe('jvm_import')
     expect(first.ruleName).toBe('androidx_annotation_annotation')
     expect(first.sourceRepo).toBe('maven')
+    expect(first.deps).toEqual([])
 
-    const second = out[1]!
+    const second = artifacts[1]!
     expect(second.mavenCoordinates).toBe('com.example:plain:1.0')
     expect(second.ruleKind).toBe('java_library')
     expect(second.ruleName).toBe('plain_lib')
   })
 
   it('emits workspace:<rel>+repo:<name> provenance via sourceRepo when workspaceRelPath is set', () => {
-    const out = parseCqueryJsonproto(
+    const { artifacts } = parseCqueryJsonproto(
       ENVELOPE_FIXTURE,
       'maven',
       'examples/dagger',
     )
-    expect(out[0]?.sourceRepo).toBe('examples/dagger:maven')
+    expect(artifacts[0]?.sourceRepo).toBe('examples/dagger:maven')
   })
 
   it('falls back to snake_case payload keys (string_value, string_list_value)', () => {
@@ -176,10 +257,10 @@ describe('parseCqueryJsonproto', () => {
         },
       ],
     })
-    const out = parseCqueryJsonproto(snakeCase, 'maven', '')
-    expect(out).toHaveLength(1)
-    expect(out[0]?.mavenCoordinates).toBe('com.example:snake:2.0')
-    expect(out[0]?.ruleKind).toBe('kt_jvm_import')
+    const { artifacts } = parseCqueryJsonproto(snakeCase, 'maven', '')
+    expect(artifacts).toHaveLength(1)
+    expect(artifacts[0]?.mavenCoordinates).toBe('com.example:snake:2.0')
+    expect(artifacts[0]?.ruleKind).toBe('kt_jvm_import')
   })
 
   it('falls back to per-line jsonproto stream when envelope is absent', () => {
@@ -213,8 +294,8 @@ describe('parseCqueryJsonproto', () => {
         },
       }),
     ].join('\n')
-    const out = parseCqueryJsonproto(streamed, 'maven', '')
-    expect(out.map(a => a.mavenCoordinates)).toEqual(['g:a:1', 'g:b:2'])
+    const { artifacts } = parseCqueryJsonproto(streamed, 'maven', '')
+    expect(artifacts.map(a => a.mavenCoordinates)).toEqual(['g:a:1', 'g:b:2'])
   })
 
   it('skips rules with no recoverable maven coordinate', () => {
@@ -238,7 +319,7 @@ describe('parseCqueryJsonproto', () => {
         },
       ],
     })
-    expect(parseCqueryJsonproto(noCoord, 'maven', '')).toEqual([])
+    expect(parseCqueryJsonproto(noCoord, 'maven', '').artifacts).toEqual([])
   })
 
   it('prefers the direct maven_coordinates attr over the tag fallback', () => {
@@ -267,13 +348,179 @@ describe('parseCqueryJsonproto', () => {
         },
       ],
     })
-    const out = parseCqueryJsonproto(conflicting, 'maven', '')
-    expect(out[0]?.mavenCoordinates).toBe('g:direct:1')
+    const { artifacts } = parseCqueryJsonproto(conflicting, 'maven', '')
+    expect(artifacts[0]?.mavenCoordinates).toBe('g:direct:1')
   })
 
   it('returns [] on empty stdout', () => {
-    expect(parseCqueryJsonproto('', 'maven', '')).toEqual([])
-    expect(parseCqueryJsonproto('   \n\n', 'maven', '')).toEqual([])
+    expect(parseCqueryJsonproto('', 'maven', '').artifacts).toEqual([])
+    expect(parseCqueryJsonproto('   \n\n', 'maven', '').artifacts).toEqual([])
+  })
+
+  describe('dependency-edge resolution', () => {
+    it('resolves a simple deps edge to a versionless coordinate', () => {
+      const stdout = ruleEnvelope([
+        {
+          name: '@maven//:junit_junit',
+          coord: 'junit:junit:4.13.2',
+          deps: ['@maven//:org_hamcrest_hamcrest_core'],
+        },
+        {
+          name: '@maven//:org_hamcrest_hamcrest_core',
+          coord: 'org.hamcrest:hamcrest-core:1.3',
+        },
+      ])
+      const { artifacts, unresolvedLabels } = parseCqueryJsonproto(
+        stdout,
+        'maven',
+        '',
+      )
+      expect(unresolvedLabels).toEqual([])
+      const junit = artifacts.find(a => a.ruleName === 'junit_junit')!
+      expect(junit.deps).toEqual(['org.hamcrest:hamcrest-core'])
+    })
+
+    it('resolves an exports-only edge', () => {
+      const stdout = ruleEnvelope([
+        {
+          name: '@maven//:a',
+          coord: 'g:a:1',
+          exports: ['@maven//:b'],
+        },
+        { name: '@maven//:b', coord: 'g:b:1' },
+      ])
+      const { artifacts } = parseCqueryJsonproto(stdout, 'maven', '')
+      expect(artifacts.find(a => a.ruleName === 'a')!.deps).toEqual(['g:b'])
+    })
+
+    it('drops a dep label to a non-maven target without counting it', () => {
+      const stdout = ruleEnvelope([
+        {
+          name: '@maven//:a',
+          coord: 'g:a:1',
+          deps: ['@platforms//os:linux', ':src'],
+        },
+      ])
+      const { artifacts, unresolvedLabels } = parseCqueryJsonproto(
+        stdout,
+        'maven',
+        '',
+      )
+      expect(artifacts[0]!.deps).toEqual([])
+      expect(unresolvedLabels).toEqual([])
+    })
+
+    it('skips a selected non-coordinate rule (not emitted as an artifact)', () => {
+      const stdout = ruleEnvelope([
+        { name: '@maven//:no_coords_rule', ruleClass: 'java_library' },
+      ])
+      expect(parseCqueryJsonproto(stdout, 'maven', '').artifacts).toEqual([])
+    })
+
+    it('flips partial when a dep points at a hub-prefixed target not in the selected set (apparent form)', () => {
+      const stdout = ruleEnvelope([
+        {
+          name: '@maven//:a',
+          coord: 'g:a:1',
+          deps: ['@maven//:missing'],
+        },
+      ])
+      const { artifacts, unresolvedLabels } = parseCqueryJsonproto(
+        stdout,
+        'maven',
+        '',
+      )
+      expect(artifacts[0]!.deps).toEqual([])
+      expect(unresolvedLabels).toEqual(['@maven//:missing'])
+    })
+
+    it('flips partial for an unresolved hub-prefixed dep in bzlmod-canonical form', () => {
+      const canonical = '@@rules_jvm_external++maven+maven//'
+      const stdout = ruleEnvelope([
+        {
+          name: `${canonical}:a`,
+          coord: 'g:a:1',
+          deps: [`${canonical}:missing`],
+        },
+      ])
+      const { unresolvedLabels } = parseCqueryJsonproto(stdout, 'maven', '')
+      expect(unresolvedLabels).toEqual([`${canonical}:missing`])
+    })
+
+    it('resolves by full label and flips partial only on ambiguous suffix-only matches', () => {
+      // Two coordinate-bearing targets in different packages share the bare
+      // name `:widget`. A dep label that full-matches one resolves; a dep
+      // label that only suffix-matches (ambiguous) flips partial.
+      const stdout = ruleEnvelope([
+        {
+          name: '@maven//pkg1:widget',
+          coord: 'g:widget1:1',
+        },
+        {
+          name: '@maven//pkg2:widget',
+          coord: 'g:widget2:1',
+        },
+        {
+          name: '@maven//:consumer',
+          coord: 'g:consumer:1',
+          // Full-match resolves to widget1; bare-suffix-only is ambiguous.
+          deps: ['@maven//pkg1:widget', '@maven//other:widget'],
+        },
+      ])
+      const { artifacts, unresolvedLabels } = parseCqueryJsonproto(
+        stdout,
+        'maven',
+        '',
+      )
+      const consumer = artifacts.find(a => a.ruleName === 'consumer')!
+      expect(consumer.deps).toEqual(['g:widget1'])
+      expect(unresolvedLabels).toEqual(['@maven//other:widget'])
+    })
+
+    it('keeps the :aar segment on classifier/aar artifacts and matches inbound edges', () => {
+      const stdout = ruleEnvelope([
+        {
+          name: '@maven//:consumer',
+          coord: 'g:consumer:1',
+          deps: ['@maven//:androidx_test_monitor'],
+        },
+        {
+          name: '@maven//:androidx_test_monitor',
+          coord: 'androidx.test:monitor:aar:1.7.2',
+        },
+      ])
+      const { artifacts } = parseCqueryJsonproto(stdout, 'maven', '')
+      const monitor = artifacts.find(
+        a => a.ruleName === 'androidx_test_monitor',
+      )!
+      // Key keeps the :aar packaging segment.
+      expect(versionlessCoordinate(monitor.mavenCoordinates)).toBe(
+        'androidx.test:monitor:aar',
+      )
+      const consumer = artifacts.find(a => a.ruleName === 'consumer')!
+      expect(consumer.deps).toEqual(['androidx.test:monitor:aar'])
+    })
+
+    it('unions deps, exports, and runtime_deps', () => {
+      const stdout = ruleEnvelope([
+        {
+          name: '@maven//:a',
+          coord: 'g:a:1',
+          deps: ['@maven//:b'],
+          exports: ['@maven//:c'],
+          runtimeDeps: ['@maven//:d'],
+        },
+        { name: '@maven//:b', coord: 'g:b:1' },
+        { name: '@maven//:c', coord: 'g:c:1' },
+        { name: '@maven//:d', coord: 'g:d:1' },
+      ])
+      const { artifacts } = parseCqueryJsonproto(stdout, 'maven', '')
+      expect(artifacts.find(a => a.ruleName === 'a')!.deps.sort()).toEqual([
+        'g:b',
+        'g:c',
+        'g:d',
+      ])
+    })
   })
 })
 
@@ -300,7 +547,25 @@ describe('runMetadataCqueryForRepo', () => {
     })
     expect(r.status).toBe('ok')
     expect(r.artifacts).toHaveLength(2)
+    expect(r.unresolvedLabels).toEqual([])
     expect(r.stderr).toBe('')
+  })
+
+  it('returns status:partial on a clean run with unresolved hub-prefixed edges', async () => {
+    const stdout = ruleEnvelope([
+      { name: '@maven//:a', coord: 'g:a:1', deps: ['@maven//:missing'] },
+    ])
+    // @ts-ignore — narrow return shape for the test.
+    mocked.mockResolvedValueOnce({ code: 0, stdout, stderr: '' })
+    const r = await runMetadataCqueryForRepo({
+      opts: { bin: 'bazel', cwd: '/r', invocationFlags: [] },
+      repoName: 'maven',
+      timeoutMs: 60_000,
+      workspaceRelPath: '',
+      workspaceRoot: '/r',
+    })
+    expect(r.status).toBe('partial')
+    expect(r.unresolvedLabels).toEqual(['@maven//:missing'])
   })
 
   it('returns status:empty when stdout has no parsed artifacts on exit 0', async () => {

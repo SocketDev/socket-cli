@@ -94,67 +94,15 @@ type MavenInstallJsonCurrent = {
   repositories?: Record<string, string[]>
 }
 
-type LabelCoordIndex = {
-  fullLabels: Map<string, string>
-  suffixToCoords: Map<string, Set<string>>
-}
-
-// Builds a lookup from rule label suffix (e.g. ":com_google_guava_guava") to canonical coord.
-function buildLabelToCoordMap(artifacts: ExtractedArtifact[]): LabelCoordIndex {
-  const fullLabels = new Map<string, string>()
-  const suffixToCoords = new Map<string, Set<string>>()
-  for (const a of artifacts) {
-    // The rule name (e.g. "com_google_guava_guava") becomes the path under @<repo>//:<name>.
-    // We record by ":<name>" suffix so we can look up regardless of repo name.
-    const suffix = `:${a.ruleName}`
-    const coords = suffixToCoords.get(suffix) ?? new Set<string>()
-    coords.add(a.mavenCoordinates)
-    suffixToCoords.set(suffix, coords)
-    if (a.sourceRepo) {
-      fullLabels.set(`@${a.sourceRepo}//${suffix}`, a.mavenCoordinates)
-    }
-  }
-  return { fullLabels, suffixToCoords }
-}
-
-// Converts a Bazel dep label to a Maven coordinate, using the label-to-coord map.
-// Returns null when the label is not recognised.
-function depLabelToCoord(
-  label: string,
-  labelToCoord: LabelCoordIndex,
-): string | null {
-  // label may be "@maven//:com_google_guava_failureaccess".
-  const colon = label.lastIndexOf(':')
-  if (colon < 0) {
-    return null
-  }
-  const fullMatch = labelToCoord.fullLabels.get(label)
-  if (fullMatch) {
-    return fullMatch
-  }
-  const key = label.slice(colon)
-  const suffixMatches = labelToCoord.suffixToCoords.get(key)
-  if (!suffixMatches) {
-    return null
-  }
-  if (suffixMatches.size > 1) {
-    throw new Error(
-      `Ambiguous Bazel dependency label ${label} maps rule suffix ${key} to multiple Maven coordinates: ${Array.from(
-        suffixMatches,
-      )
-        .sort()
-        .join(
-          ', ',
-        )}. The generated maven_install.json cannot resolve this dependency label losslessly.`,
-    )
-  }
-  return Array.from(suffixMatches)[0] ?? null
-}
-
+// Builds a modern `maven_install.json` from artifacts whose `deps` already
+// hold resolved versionless coordinates (the cquery parser resolves edge
+// labels against each repo's own targets while `repoName` is in scope, so no
+// label-to-coordinate resolution happens here). Keys are versionless `g:a`
+// (preserving any packaging/classifier segments); dependency values are the
+// resolved coordinate sets.
 export function normalizeToMavenInstallJson(
   artifacts: ExtractedArtifact[],
 ): MavenInstallJsonCurrent {
-  const labelToCoord = buildLabelToCoordMap(artifacts)
   const out: MavenInstallJsonCurrent = {
     artifacts: {},
     dependencies: {},
@@ -191,21 +139,8 @@ export function normalizeToMavenInstallJson(
     // matching the canonical rules_jvm_external lockfile shape.
     const depKey = split.groupArtifact
     const depCoords = dependencySets.get(depKey) ?? new Set<string>()
-    for (const depLabel of a.deps) {
-      const c = depLabelToCoord(depLabel, labelToCoord)
-      if (c) {
-        const cs = splitCoord(c)
-        depCoords.add(cs ? cs.groupArtifact : c)
-      } else if (
-        depLabel.includes(':') &&
-        !depLabel.startsWith('@') &&
-        !depLabel.startsWith(':')
-      ) {
-        const parts = depLabel.split(':')
-        depCoords.add(
-          parts.length >= 3 ? parts.slice(0, -1).join(':') : depLabel,
-        )
-      }
+    for (const depCoord of a.deps) {
+      depCoords.add(depCoord)
     }
     if (depCoords.size) {
       dependencySets.set(depKey, depCoords)
@@ -499,6 +434,13 @@ export async function extractBazelToMaven(
           workspaceRoot,
         })
         allArtifacts.push(...result.artifacts)
+        if (result.unresolvedLabels.length) {
+          // A scan must never silently upload a graph missing edges it knows
+          // it dropped: warn unconditionally with the count and labels.
+          logger.warn(
+            `@${repoName}: dropped ${result.unresolvedLabels.length} unresolved dependency edge(s): ${result.unresolvedLabels.join(', ')}`,
+          )
+        }
         if (result.status === 'ok' || result.status === 'partial') {
           logger.info(
             `@${repoName}: ${result.artifacts.length} artifact(s) (status=${result.status})`,
