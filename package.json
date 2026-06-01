@@ -49,7 +49,7 @@
     "postinstall": "node scripts/setup.mts --install --quiet",
     "prepare": "node scripts/install-git-hooks.mts",
     "pretest": "pnpm run build:cli",
-    "setup-security-tools": "node .claude/hooks/setup-security-tools/install.mts",
+    "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",
     "ci:local": "agent-ci run --all"
   },
   "devDependencies": {
