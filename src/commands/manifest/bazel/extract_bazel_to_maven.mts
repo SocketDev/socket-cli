@@ -26,6 +26,7 @@ import {
 } from './bazel-workspace-detect.mts'
 import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
+import { IGNORED_DIRS } from '../../../utils/glob.mts'
 
 import type { CqueryRepoResult, ExtractedArtifact } from './bazel-cquery.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
@@ -85,6 +86,26 @@ export type ExtractBazelResult = {
 
 const DEFAULT_PER_REPO_TIMEOUT_MS = 60_000
 const REAP_TIMEOUT_MS = 10_000
+
+// Default directory-prune policy for the Bazel workspace walk. The
+// orchestrator applies this unconditionally so neither caller (the explicit
+// `socket manifest bazel` command nor `--auto-manifest`) can omit it and let
+// the walk descend `node_modules`/VCS/vendored trees (finding A). Callers may
+// pass extra names/prefixes to EXTEND, not replace, this set.
+export const DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES: ReadonlySet<string> =
+  new Set([
+    ...IGNORED_DIRS,
+    '.hg',
+    '.idea',
+    '.pnpm-store',
+    '.socket-auto-manifest',
+    '.svn',
+    '.vscode',
+  ])
+// Bazel's `bazel-*` output_base symlinks.
+export const DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES: readonly string[] = [
+  'bazel-',
+]
 
 type CoordPair = { groupArtifact: string; version: string }
 
@@ -498,12 +519,20 @@ export async function extractBazelToMaven(
   let hubsFailed = 0
 
   try {
+    // Always apply the default prune policy so no caller can forget it
+    // (finding A); callers EXTEND it via ignoreDirNames/ignoreDirPrefixes.
+    const ignoreDirNames = new Set([
+      ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
+      ...(opts.ignoreDirNames ?? []),
+    ])
+    const ignoreDirPrefixes = [
+      ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
+      ...(opts.ignoreDirPrefixes ?? []),
+    ]
     const workspaceRoots = findWorkspaceRoots({
       cwd,
-      ...(opts.ignoreDirNames ? { ignoreDirNames: opts.ignoreDirNames } : {}),
-      ...(opts.ignoreDirPrefixes
-        ? { ignoreDirPrefixes: opts.ignoreDirPrefixes }
-        : {}),
+      ignoreDirNames,
+      ignoreDirPrefixes,
       verbose,
     })
     if (!workspaceRoots.length) {

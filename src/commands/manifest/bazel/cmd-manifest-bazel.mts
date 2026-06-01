@@ -10,24 +10,9 @@ import { commonFlags } from '../../../flags.mts'
 import { checkCommandInput } from '../../../utils/check-input.mts'
 import { InputError } from '../../../utils/errors.mts'
 import { getOutputKind } from '../../../utils/get-output-kind.mts'
-import { IGNORED_DIRS } from '../../../utils/glob.mts'
 import { meowOrExit } from '../../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../../utils/socket-json.mts'
-
-// Walker prune policy for `socket manifest bazel`. Combines the
-// codebase-wide ignore list with VCS/IDE dirs and the walker's own
-// output dir, and Bazel's `bazel-*` output_base symlinks (prefix).
-const BAZEL_WALKER_IGNORE_DIR_NAMES: ReadonlySet<string> = new Set([
-  ...IGNORED_DIRS,
-  '.hg',
-  '.idea',
-  '.pnpm-store',
-  '.socket-auto-manifest',
-  '.svn',
-  '.vscode',
-])
-const BAZEL_WALKER_IGNORE_DIR_PREFIXES: readonly string[] = ['bazel-']
 
 import type { ExtractBazelStatus } from './extract_bazel_to_maven.mts'
 import type {
@@ -351,8 +336,6 @@ async function run(
         bazelRc: bazelRc as string | undefined,
         bin: bazel as string | undefined,
         cwd,
-        ignoreDirNames: BAZEL_WALKER_IGNORE_DIR_NAMES,
-        ignoreDirPrefixes: BAZEL_WALKER_IGNORE_DIR_PREFIXES,
         out: out as string,
         verbose: Boolean(verbose),
       })

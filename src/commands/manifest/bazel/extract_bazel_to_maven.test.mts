@@ -490,6 +490,60 @@ Fetched repositories:
     expect(result.manifestPaths).toEqual([])
   })
 
+  it('applies the default walker prune policy even when the caller passes none (A)', async () => {
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    const call = vi.mocked(findWorkspaceRoots).mock.calls.at(-1)![0]
+    const names = [...(call.ignoreDirNames ?? [])]
+    expect(names).toContain('node_modules')
+    expect(names).toContain('.git')
+    expect(names).toContain('.socket-auto-manifest')
+    expect(call.ignoreDirPrefixes).toContain('bazel-')
+  })
+
+  it('extends (not replaces) the default prune policy with caller-supplied dirs', async () => {
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      ignoreDirNames: new Set(['custom_dir']),
+      ignoreDirPrefixes: ['gen-'],
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    const call = vi.mocked(findWorkspaceRoots).mock.calls.at(-1)![0]
+    const names = [...(call.ignoreDirNames ?? [])]
+    expect(names).toEqual(
+      expect.arrayContaining(['node_modules', 'custom_dir']),
+    )
+    expect(call.ignoreDirPrefixes).toEqual(
+      expect.arrayContaining(['bazel-', 'gen-']),
+    )
+  })
+
   it('keeps only root-imported hubs, dropping transitive ruleset hubs (B)', async () => {
     vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
       code: 0,
