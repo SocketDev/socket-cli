@@ -563,11 +563,24 @@ export async function runMetadataCqueryForRepo(
     const { artifacts, unresolvedLabels } = stdout
       ? parseCqueryJsonproto(stdout, repoName, workspaceRelPath)
       : { artifacts: [], unresolvedLabels: [] }
+    // The registry `spawn` rejects on a non-zero exit, so a `--keep_going`
+    // cquery that exits non-zero but still emitted a usable subset lands here
+    // — not in the try block. Classify by what we parsed (subset present =>
+    // `partial`, nothing parsed => `error`) so that partial subset is written
+    // best-effort rather than discarded as a hard error. Timeout stays
+    // distinct so the orchestrator can reap the wedged server.
+    const code = typeof err.code === 'number' ? err.code : 1
     return {
       artifacts,
       durationMs: Date.now() - startedAt,
       repoName,
-      status: timedOut ? 'timeout' : 'error',
+      status: timedOut
+        ? 'timeout'
+        : classifyCqueryOutcome(
+            code,
+            artifacts.length,
+            unresolvedLabels.length,
+          ),
       stderr,
       unresolvedLabels,
       workspaceRelPath,

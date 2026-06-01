@@ -81,6 +81,13 @@ const config: CliCommandConfig = {
     Note: this command generates dependency manifests for Bazel workspaces.
     It does not run reachability analysis.
 
+    Maven hub discovery: under Bzlmod, hubs are enumerated from
+    \`bazel mod show_extension\` and filtered to the root module's own hubs.
+    Under legacy WORKSPACE mode (no \`show_extension\`), only conventionally
+    named hubs are probed (\`maven\`, \`maven_install\`, \`maven_dev\`, …). A hub
+    with a non-conventional name that \`show_extension\` does not enumerate is
+    not discovered yet; a flag to name extra hubs is planned.
+
     To generate AND upload in one step, use \`socket scan create --auto-manifest\`
     instead — it detects Bazel workspaces, generates Maven manifests by
     default, and uploads the result. This subcommand is for generation only.

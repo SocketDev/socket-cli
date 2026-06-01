@@ -603,6 +603,27 @@ describe('runMetadataCqueryForRepo', () => {
     expect(r.artifacts).toHaveLength(2)
   })
 
+  it('returns status:partial when spawn REJECTS on a non-zero exit but stdout still parses (production --keep_going)', async () => {
+    // The registry spawn rejects on non-zero exit, so a real --keep_going
+    // partial lands in the catch block, not the resolved path above.
+    mocked.mockRejectedValueOnce(
+      Object.assign(new Error('command failed'), {
+        code: 1,
+        stdout: ENVELOPE_FIXTURE,
+        stderr: 'WARNING: analysis failed for some targets\n',
+      }),
+    )
+    const r = await runMetadataCqueryForRepo({
+      opts: { bin: 'bazel', cwd: '/r', invocationFlags: [] },
+      repoName: 'maven',
+      timeoutMs: 60_000,
+      workspaceRelPath: '',
+      workspaceRoot: '/r',
+    })
+    expect(r.status).toBe('partial')
+    expect(r.artifacts).toHaveLength(2)
+  })
+
   it('returns status:error on non-zero exit with no parsed targets', async () => {
     // @ts-ignore — narrow return shape for the test.
     mocked.mockResolvedValueOnce({
