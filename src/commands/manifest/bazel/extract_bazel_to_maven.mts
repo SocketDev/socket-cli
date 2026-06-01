@@ -26,8 +26,7 @@ import {
 import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import { getErrorCause } from '../../../utils/errors.mts'
 
-import type { ExtractedArtifact } from './bazel-build-parser.mts'
-import type { CqueryRepoResult } from './bazel-cquery.mts'
+import type { CqueryRepoResult, ExtractedArtifact } from './bazel-cquery.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
 import type { WorkspaceMode } from './bazel-workspace-detect.mts'
 
@@ -89,9 +88,31 @@ function splitCoord(c: string): CoordPair | null {
 }
 
 type MavenInstallJsonCurrent = {
-  artifacts: Record<string, { shasums: { jar?: string }; version: string }>
+  artifacts: Record<string, { version: string }>
   dependencies: Record<string, string[]>
   repositories?: Record<string, string[]>
+}
+
+export type NormalizeResult = {
+  json: MavenInstallJsonCurrent
+  // Versionless keys skipped because the coordinate was malformed (key shape
+  // outside 2-4 non-empty segments, or an empty version). Known data loss.
+  droppedArtifacts: string[]
+  // `source -> target` edges pruned because one endpoint wasn't an emitted
+  // artifact. Known data loss.
+  prunedEdges: string[]
+}
+
+// A versionless `maven_install.json` key must have 2-4 non-empty
+// colon-separated segments (`g:a`, `g:a:ext`, `g:a:ext:classifier`) — exactly
+// the range depscan's `coordinateToParts` accepts. A key outside that range,
+// or with an empty segment, is rejected after upload, so reject it locally.
+function isValidVersionlessKey(key: string): boolean {
+  const parts = key.split(':')
+  if (parts.length < 2 || parts.length > 4) {
+    return false
+  }
+  return parts.every(p => p.length > 0)
 }
 
 // Builds a modern `maven_install.json` from artifacts whose `deps` already
@@ -100,56 +121,82 @@ type MavenInstallJsonCurrent = {
 // label-to-coordinate resolution happens here). Keys are versionless `g:a`
 // (preserving any packaging/classifier segments); dependency values are the
 // resolved coordinate sets.
+//
+// Two-phase so the emitted graph is internally closed and survives the server
+// parser, which rejects malformed coordinates and edges referencing unlisted
+// artifacts (and can abort after enough errors). Phase 1 builds (and
+// validates) the artifact keys; phase 2 emits only edges whose source AND
+// target are valid emitted keys. Anything dropped is reported so the caller
+// can flip the hub partial — never silently lost post-upload.
 export function normalizeToMavenInstallJson(
   artifacts: ExtractedArtifact[],
-): MavenInstallJsonCurrent {
+): NormalizeResult {
   const out: MavenInstallJsonCurrent = {
     artifacts: {},
     dependencies: {},
   }
+  const droppedArtifacts: string[] = []
+  const prunedEdges: string[] = []
   const versionsByGroupArtifact = new Map<string, string>()
-  const dependencySets = new Map<string, Set<string>>()
+  // Phase 1: artifacts. Validate each key (shape + non-empty version) before
+  // accepting it; record the set of valid emitted keys.
+  const depsByKey = new Map<string, Set<string>>()
   for (const a of artifacts) {
     const split = splitCoord(a.mavenCoordinates)
     if (!split) {
+      droppedArtifacts.push(a.mavenCoordinates)
       continue
     }
-    const existingVersion = versionsByGroupArtifact.get(split.groupArtifact)
+    const key = split.groupArtifact
+    // A `g:a:` coordinate strips to the valid-shaped key `g:a` but an empty
+    // version, which the server rejects — require both.
+    if (!isValidVersionlessKey(key) || !split.version) {
+      droppedArtifacts.push(a.mavenCoordinates)
+      continue
+    }
+    const existingVersion = versionsByGroupArtifact.get(key)
     if (existingVersion && existingVersion !== split.version) {
       throw new Error(
-        `Conflicting versions for ${split.groupArtifact}: ${existingVersion}, ${split.version}. The generated maven_install.json cannot represent multiple versions for the same group:artifact losslessly.`,
+        `Conflicting versions for ${key}: ${existingVersion}, ${split.version}. The generated maven_install.json cannot represent multiple versions for the same group:artifact losslessly.`,
       )
     }
     if (!existingVersion) {
-      versionsByGroupArtifact.set(split.groupArtifact, split.version)
-      out.artifacts[split.groupArtifact] = {
-        shasums: a.mavenSha256 ? { jar: a.mavenSha256 } : {},
-        version: split.version,
-      }
-    } else if (
-      a.mavenSha256 &&
-      !out.artifacts[split.groupArtifact]?.shasums.jar
-    ) {
-      out.artifacts[split.groupArtifact] = {
-        shasums: { jar: a.mavenSha256 },
-        version: split.version,
-      }
+      versionsByGroupArtifact.set(key, split.version)
+      out.artifacts[key] = { version: split.version }
     }
-    // Dependency keys in maven_install.json use "g:a" (no version),
-    // matching the canonical rules_jvm_external lockfile shape.
-    const depKey = split.groupArtifact
-    const depCoords = dependencySets.get(depKey) ?? new Set<string>()
+    // Accumulate the candidate edge set keyed by "g:a" (no version), matching
+    // the canonical rules_jvm_external lockfile shape. Pruned against valid
+    // keys in phase 2.
+    const depCoords = depsByKey.get(key) ?? new Set<string>()
     for (const depCoord of a.deps) {
       depCoords.add(depCoord)
     }
     if (depCoords.size) {
-      dependencySets.set(depKey, depCoords)
+      depsByKey.set(key, depCoords)
     }
   }
-  for (const [depKey, depCoords] of dependencySets) {
-    out.dependencies[depKey] = Array.from(depCoords)
+  // Phase 2: edges. Emit only where both source and target are emitted keys.
+  const validKeys = new Set(Object.keys(out.artifacts))
+  for (const [key, depCoords] of depsByKey) {
+    if (!validKeys.has(key)) {
+      for (const target of depCoords) {
+        prunedEdges.push(`${key} -> ${target}`)
+      }
+      continue
+    }
+    const kept: string[] = []
+    for (const target of depCoords) {
+      if (validKeys.has(target)) {
+        kept.push(target)
+      } else {
+        prunedEdges.push(`${key} -> ${target}`)
+      }
+    }
+    if (kept.length) {
+      out.dependencies[key] = kept
+    }
   }
-  return out
+  return { droppedArtifacts, json: out, prunedEdges }
 }
 
 // Cross-workspace dedup keyed on the full Maven coordinate string
@@ -160,7 +207,7 @@ export function normalizeToMavenInstallJson(
 // its own repo's targets, so the resolved `deps` can legitimately differ
 // between occurrences; union them rather than keeping only the first, or
 // real graph edges would be silently dropped.
-function dedupArtifactsByCoord(
+export function dedupArtifactsByCoord(
   artifacts: ExtractedArtifact[],
 ): ExtractedArtifact[] {
   const byCoord = new Map<string, ExtractedArtifact>()
@@ -477,7 +524,21 @@ export async function extractBazelToMaven(
     }
 
     const deduped = dedupArtifactsByCoord(allArtifacts)
-    const normalized = normalizeToMavenInstallJson(deduped)
+    const {
+      droppedArtifacts,
+      json: normalized,
+      prunedEdges,
+    } = normalizeToMavenInstallJson(deduped)
+    if (droppedArtifacts.length) {
+      logger.warn(
+        `Dropped ${droppedArtifacts.length} malformed Maven coordinate(s): ${droppedArtifacts.join(', ')}`,
+      )
+    }
+    if (prunedEdges.length) {
+      logger.warn(
+        `Pruned ${prunedEdges.length} dependency edge(s) referencing unlisted artifacts: ${prunedEdges.join(', ')}`,
+      )
+    }
     const layout = opts.outLayout ?? 'standalone'
     const manifestDir =
       layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out

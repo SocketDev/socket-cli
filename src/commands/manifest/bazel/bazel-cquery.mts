@@ -28,8 +28,20 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { splitBazelFlags } from './bazel-query-runner.mts'
 
-import type { ExtractedArtifact } from './bazel-build-parser.mts'
 import type { BazelQueryOptions } from './bazel-query-runner.mts'
+
+// One Maven artifact recovered from the cquery stream. `ruleKind` is whatever
+// `ruleClass` jsonproto reports (`jvm_import`, `aar_import`, `java_library`,
+// `kt_jvm_import`, any future rules_jvm_external rule), so the type is open.
+// `deps` holds resolved versionless Maven coordinates (the parser resolves the
+// rule's label edges against this repo's own targets), not raw Bazel labels.
+export type ExtractedArtifact = {
+  deps: string[]
+  mavenCoordinates: string
+  ruleKind: string
+  ruleName: string
+  sourceRepo?: string | undefined
+}
 
 export type CqueryStatus = 'ok' | 'partial' | 'timeout' | 'empty' | 'error'
 

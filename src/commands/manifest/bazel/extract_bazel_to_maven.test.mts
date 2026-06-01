@@ -69,12 +69,12 @@ import { parseShowExtensionOutput } from './bazel-repo-discovery.mts'
 import { detectWorkspaceMode } from './bazel-workspace-detect.mts'
 import { findWorkspaceRoots } from './bazel-workspace-walk.mts'
 import {
+  dedupArtifactsByCoord,
   extractBazelToMaven,
   normalizeToMavenInstallJson,
 } from './extract_bazel_to_maven.mts'
 
-import type { ExtractedArtifact } from './bazel-build-parser.mts'
-import type { CqueryRepoResult } from './bazel-cquery.mts'
+import type { CqueryRepoResult, ExtractedArtifact } from './bazel-cquery.mts'
 
 async function defaultMavenProbe(_: string): Promise<{
   code: number
@@ -229,9 +229,7 @@ describe('extractBazelToMaven', () => {
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({
         artifacts: [
-          mkArt('com.google.guava:guava:33.0.0-jre', 'com_google_guava_guava', {
-            deps: ['com.x:x'],
-          }),
+          mkArt('com.google.guava:guava:33.0.0-jre', 'com_google_guava_guava'),
         ],
         repoName: 'maven',
         workspaceRelPath: '',
@@ -240,10 +238,8 @@ describe('extractBazelToMaven', () => {
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({
         artifacts: [
-          // Same coord as the root workspace — must be deduped, but its edges
-          // (resolved against its own repo) must be unioned, not dropped.
+          // Same coord as the root workspace — must be deduped.
           mkArt('com.google.guava:guava:33.0.0-jre', 'com_google_guava_guava', {
-            deps: ['com.y:y'],
             sourceRepo: 'examples/dagger:maven',
           }),
           mkArt('com.google.dagger:dagger:2.50', 'com_google_dagger_dagger', {
@@ -273,11 +269,29 @@ describe('extractBazelToMaven', () => {
       'com.google.dagger:dagger',
       'com.google.guava:guava',
     ])
-    // Edges from both occurrences of the deduped coordinate are unioned.
-    expect(manifest.dependencies['com.google.guava:guava']?.sort()).toEqual([
-      'com.x:x',
-      'com.y:y',
-    ])
+  })
+
+  it('unions resolved edges across deduped occurrences of a coordinate', () => {
+    // The dedup keeps one artifact per full coordinate but must union the
+    // resolved edges of every occurrence; otherwise edges resolved against a
+    // second workspace's targets would be silently dropped. Verified directly
+    // on the dedup+normalize path so the edge targets need to be listed.
+    const manifest = normalizeToMavenInstallJson(
+      dedupArtifactsByCoord([
+        mkArt('com.google.guava:guava:33.0.0-jre', 'guava', {
+          deps: ['com.google.dagger:dagger'],
+        }),
+        mkArt('com.google.guava:guava:33.0.0-jre', 'guava', {
+          deps: ['com.x:x'],
+        }),
+        mkArt('com.google.dagger:dagger:2.50', 'dagger'),
+        mkArt('com.x:x:1.0', 'x'),
+      ]),
+    )
+    expect(
+      manifest.json.dependencies['com.google.guava:guava']?.sort(),
+    ).toEqual(['com.google.dagger:dagger', 'com.x:x'])
+    expect(manifest.prunedEdges).toEqual([])
   })
 
   it('reports ok:false on per-repo timeout but keeps going', async () => {
@@ -399,7 +413,9 @@ describe('normalizeToMavenInstallJson', () => {
         ruleName: 'com_google_guava_guava',
       },
     ])
-    expect(Object.keys(result.artifacts)).toEqual(['com.google.guava:guava'])
+    expect(Object.keys(result.json.artifacts)).toEqual([
+      'com.google.guava:guava',
+    ])
   })
 
   it('fails on conflicting versions for the same group:artifact', () => {
@@ -421,7 +437,22 @@ describe('normalizeToMavenInstallJson', () => {
     ).toThrow(/Conflicting versions/)
   })
 
-  it('builds the dependencies map from resolved coordinate deps', () => {
+  it('emits no shasums key on artifacts', () => {
+    const result = normalizeToMavenInstallJson([
+      {
+        deps: [],
+        mavenCoordinates: 'com.example:lib:1.0',
+        ruleKind: 'jvm_import',
+        ruleName: 'a',
+      },
+    ])
+    expect(result.json.artifacts['com.example:lib']).toEqual({ version: '1.0' })
+    expect(result.json.artifacts['com.example:lib']).not.toHaveProperty(
+      'shasums',
+    )
+  })
+
+  it('emits a closed graph: all edges between emitted artifacts survive', () => {
     const result = normalizeToMavenInstallJson([
       {
         deps: ['com.google.guava:failureaccess'],
@@ -436,30 +467,62 @@ describe('normalizeToMavenInstallJson', () => {
         ruleName: 'com_google_guava_failureaccess',
       },
     ])
-    expect(result.dependencies['com.google.guava:guava']).toEqual([
+    expect(result.json.dependencies['com.google.guava:guava']).toEqual([
       'com.google.guava:failureaccess',
     ])
+    expect(result.droppedArtifacts).toEqual([])
+    expect(result.prunedEdges).toEqual([])
   })
 
-  it('preserves the first artifact’s sha256 when subsequent dupes lack one', () => {
+  it('keeps the :aar packaging segment on the artifact key', () => {
     const result = normalizeToMavenInstallJson([
       {
         deps: [],
-        mavenCoordinates: 'com.example:lib:1.0',
-        mavenSha256: 'a'.repeat(64),
-        ruleKind: 'jvm_import',
-        ruleName: 'a',
+        mavenCoordinates: 'androidx.test:monitor:aar:1.7.2',
+        ruleKind: 'aar_import',
+        ruleName: 'androidx_test_monitor',
       },
+    ])
+    expect(Object.keys(result.json.artifacts)).toEqual([
+      'androidx.test:monitor:aar',
+    ])
+  })
+
+  it('skips a malformed coordinate (empty version) and reports it as dropped', () => {
+    const result = normalizeToMavenInstallJson([
       {
         deps: [],
-        mavenCoordinates: 'com.example:lib:1.0',
+        // `g:a:` strips to the valid-shaped key `g:a` but an empty version.
+        mavenCoordinates: 'com.example:lib:',
         ruleKind: 'jvm_import',
         ruleName: 'a',
       },
     ])
-    expect(result.artifacts['com.example:lib']?.shasums.jar).toBe(
-      'a'.repeat(64),
-    )
+    expect(Object.keys(result.json.artifacts)).toEqual([])
+    expect(result.droppedArtifacts).toEqual(['com.example:lib:'])
+  })
+
+  it('prunes a dangling edge whose target was never emitted and reports it', () => {
+    const result = normalizeToMavenInstallJson([
+      {
+        // Target `g:a:` is malformed and dropped, so the inbound edge dangles.
+        deps: ['com.example:lib'],
+        mavenCoordinates: 'com.example:consumer:1.0',
+        ruleKind: 'jvm_import',
+        ruleName: 'consumer',
+      },
+      {
+        deps: [],
+        mavenCoordinates: 'com.example:lib:',
+        ruleKind: 'jvm_import',
+        ruleName: 'lib',
+      },
+    ])
+    expect(result.json.dependencies['com.example:consumer']).toBeUndefined()
+    expect(result.prunedEdges).toEqual([
+      'com.example:consumer -> com.example:lib',
+    ])
+    expect(result.droppedArtifacts).toEqual(['com.example:lib:'])
   })
 })
 
