@@ -257,10 +257,23 @@ jobs:
           PUBLISHED_VERSION=$(node -p "require('./package.json').version")
           TAG="v$PUBLISHED_VERSION"
 
-          # Look up any existing tag via the API. 200 → exists; 404 → absent.
-          EXISTING_JSON=$(gh api "repos/$REPO/git/ref/tags/$TAG" 2>/dev/null || echo "")
-          if [ -n "$EXISTING_JSON" ]; then
-            EXISTING_SHA=$(echo "$EXISTING_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).object.sha")
+          # Look up any existing tag ref. gh api exits non-zero on 404 (tag
+          # absent) and writes the error body to stdout, so branch on the
+          # exit code — never on whether stdout is empty. EXISTING_JSON is
+          # only valid JSON when the call succeeded.
+          if EXISTING_JSON=$(gh api "repos/$REPO/git/ref/tags/$TAG" 2>/dev/null); then
+            # The ref's object is either a commit (lightweight tag) or a tag
+            # object (annotated/signed tag, e.g. the hand-created `git tag -s`
+            # tags). For an annotated tag, object.sha is the tag-object SHA,
+            # not the commit — dereference it via git/tags to get the commit
+            # the tag actually points at before comparing.
+            REF_TYPE=$(echo "$EXISTING_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).object.type")
+            REF_OBJECT_SHA=$(echo "$EXISTING_JSON" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).object.sha")
+            if [ "$REF_TYPE" = "tag" ]; then
+              EXISTING_SHA=$(gh api "repos/$REPO/git/tags/$REF_OBJECT_SHA" --jq '.object.sha')
+            else
+              EXISTING_SHA="$REF_OBJECT_SHA"
+            fi
             if [ "$EXISTING_SHA" = "$PUBLISHED_SHA" ]; then
               echo "Tag $TAG already exists at $PUBLISHED_SHA — no-op."
               exit 0
