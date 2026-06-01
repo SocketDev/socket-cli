@@ -362,7 +362,7 @@ async function main(): Promise<void> {
   }
   out.push('  Spec: docs/claude.md/fleet/parser-comments.md §5–6.')
   out.push(
-    '  CI gate: scripts/check-lock-step-refs.mts (run via `pnpm check`).',
+    '  CI gate: scripts/fleet/check-lock-step-refs.mts (run via `pnpm check`).',
   )
   out.push('  Bypass: "Allow lock-step bypass" in a recent user message, or')
   out.push(`  ${ENV_DISABLE}=1.`)

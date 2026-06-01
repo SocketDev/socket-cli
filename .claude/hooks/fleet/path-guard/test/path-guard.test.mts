@@ -251,7 +251,7 @@ describe('path-guard — exempt files', () => {
     const source = `
       const PATTERNS = [path.join('build', 'Final', 'wasm')]
     `
-    const { code } = runHook('Write', 'scripts/check-paths.mts', source)
+    const { code } = runHook('Write', 'scripts/fleet/check-paths.mts', source)
     assert.equal(code, 0)
   })
 

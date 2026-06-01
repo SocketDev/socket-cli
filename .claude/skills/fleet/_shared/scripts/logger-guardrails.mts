@@ -27,7 +27,7 @@
  * custom matchers (the inline-logger hoist requirement) or conditional scope
  * (dynamic-import bans only outside the bundled tree) that oxlint's built-in
  * rule set doesn't express. A small TS scanner is cheaper than a full oxlint
- * plugin and runs in the existing scripts/check.mts pipeline.
+ * plugin and runs in the existing scripts/fleet/check.mts pipeline.
  *
  * Usage: import { checkLoggerGuardrails } from
  * '.../_shared/scripts/logger-guardrails.mts' const { violations } = await

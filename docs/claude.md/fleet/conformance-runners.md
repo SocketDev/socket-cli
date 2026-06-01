@@ -38,7 +38,7 @@ adjacent rules on vendored trees.
 
 Conformance corpora are large but our runners exercise narrow
 subtrees. Add a `sparse-checkout = <patterns>` field to `.gitmodules`
-and use `scripts/git-partial-submodule.mts clone <path>` for fresh
+and use `scripts/fleet/git-partial-submodule.mts clone <path>` for fresh
 checkouts. Vanilla `git submodule update` ignores the field; the
 fleet utility reads it.
 

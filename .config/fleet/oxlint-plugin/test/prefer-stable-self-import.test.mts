@@ -37,7 +37,7 @@ describe('socket/prefer-stable-self-import', () => {
         },
         {
           name: 'test files under scripts/ are exempt',
-          filename: 'scripts/test/foo.test.mts',
+          filename: 'scripts/fleet/test/foo.test.mts',
           packageJson: OWNED,
           code: "import { x } from '@socketsecurity/lib/y'\n",
         },

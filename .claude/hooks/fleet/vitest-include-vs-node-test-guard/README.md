@@ -6,14 +6,14 @@ vitest `include` glob would pick up if that file imports `node:test`.
 ## Why
 
 Mismatched runners produce confusing errors. A file at
-`scripts/test/foo.test.mts` that uses `import test from 'node:test'` belongs
+`scripts/fleet/test/foo.test.mts` that uses `import test from 'node:test'` belongs
 to Node's built-in test runner. But if the repo's `vitest.config.*` has
 `include: ['scripts/**/*.test.*']`, vitest will load it, see no
 `describe`/`it`/`test` registration, and emit:
 
-    Error: No test suite found in file scripts/test/foo.test.mts
+    Error: No test suite found in file scripts/fleet/test/foo.test.mts
 
-This was a real instance in socket-stuie — 4 `scripts/test/` files cascaded
+This was a real instance in socket-stuie — 4 `scripts/fleet/test/` files cascaded
 from wheelhouse used `node:test` while the repo's vitest include caught
 them.
 

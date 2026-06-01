@@ -8,7 +8,7 @@ plugin install lives in a **cache** at
 the cache is lost the next time `pnpm run install-claude-plugins` runs.
 
 The durable fix: keep the change as a checked-in patch in
-`scripts/plugin-patches/`, and have `install-claude-plugins.mts` reapply it over
+`scripts/fleet/plugin-patches/`, and have `install-claude-plugins.mts` reapply it over
 the freshly-installed cache as a post-reconcile pass (`reapplyPluginPatches()`).
 
 ## Smallest patch footprint (prefer a sidecar over inlining)
@@ -105,5 +105,5 @@ skipped with a warning.
   patches (wired via `pnpm-workspace.yaml` `patchedDependencies`). A
   plugin-cache patch there would imply pnpm owns it.
 
-`scripts/plugin-patches/` is plainly ours, next to its only consumer
+`scripts/fleet/plugin-patches/` is plainly ours, next to its only consumer
 (`install-claude-plugins.mts`).

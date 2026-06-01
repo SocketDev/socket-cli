@@ -20,7 +20,7 @@
  * is load-bearing for code review. Anything keyed on per-file behavior that
  * recognizes `paths.mts` should match by suffix.
  */
-export const PATHS_FILE = 'scripts/paths.mts'
+export const PATHS_FILE = 'scripts/fleet/paths.mts'
 
 /**
  * Plugin-internal rule + test directories. Rule files often contain the banned

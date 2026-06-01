@@ -34,7 +34,7 @@ let tmpRoot: string
 
 beforeEach(() => {
   tmpRoot = mkdtempSync(path.join(os.tmpdir(), 'paths-mts-inherit-guard-'))
-  // Repo-root scripts/paths.mts — ancestor exists for sub-packages.
+  // Repo-root scripts/fleet/paths.mts — ancestor exists for sub-packages.
   mkdirSync(path.join(tmpRoot, 'scripts'), { recursive: true })
   writeFileSync(
     path.join(tmpRoot, 'scripts', 'paths.mts'),
@@ -66,7 +66,7 @@ describe('paths-mts-inherit-guard', () => {
     assert.equal(r.code, 0)
   })
 
-  test('allows repo-root scripts/paths.mts (no ancestor)', () => {
+  test('allows repo-root scripts/fleet/paths.mts (no ancestor)', () => {
     const r = runHook({
       tool_name: 'Write',
       tool_input: {

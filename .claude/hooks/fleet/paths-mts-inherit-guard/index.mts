@@ -27,7 +27,7 @@
 //     on disk (the ancestor may also be a fresh Edit in the same
 //     diff — we trust the consumer's intent).
 //
-// Repo-root scripts/paths.mts is exempt — there's no ancestor to
+// Repo-root scripts/fleet/paths.mts is exempt — there's no ancestor to
 // inherit from. We detect "is repo root" by checking whether any
 // parent dir between the file and the filesystem root contains
 // another scripts/paths.{mts,cts}.

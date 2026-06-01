@@ -22,7 +22,7 @@
  *     await fs.stat(p)` with metadata access (`s.size`, `s.isDirectory()`)
  *     needs to stay a stat call. The right rewrite depends on the surrounding
  *     code, but the pattern is mechanical enough for the AI step to handle
- *     reliably with the canonical guidance in scripts/ai-lint-fix.mts.
+ *     reliably with the canonical guidance in scripts/fleet/ai-lint-fix.mts.
  */
 
 import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'

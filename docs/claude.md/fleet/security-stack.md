@@ -80,9 +80,9 @@ node .claude/hooks/fleet/setup-signing/install.mts           # commit signing (1
 ## Post-hoc forensics
 
 ```sh
-node scripts/audit-transcript.mts --recent    # scan most recent session
-node scripts/audit-transcript.mts <path>      # scan a specific transcript
-node scripts/audit-transcript.mts --json …    # JSON output for tooling
+node scripts/fleet/audit-transcript.mts --recent    # scan most recent session
+node scripts/fleet/audit-transcript.mts <path>      # scan a specific transcript
+node scripts/fleet/audit-transcript.mts --json …    # JSON output for tooling
 ```
 
 Read-only diagnostic. Reads the Claude Code transcript JSONL and flags tool-use patterns that touched security-sensitive surfaces: `gh auth` flows, keychain CLI reads, `dscl -authonly` calls, `sudo` invocations, private-key file access, workflow YAML edits, git pushes. Never blocks; surfaces what an agent session did with privileged tooling.

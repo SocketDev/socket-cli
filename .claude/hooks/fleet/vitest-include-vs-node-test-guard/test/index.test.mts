@@ -68,7 +68,7 @@ test('non-test file passes', async () => {
 test('vitest API file matches include — passes', async () => {
   const { repoRoot, testFile } = makeFixture({
     vitestInclude: ['scripts/**/*.test.*'],
-    testFilePath: 'scripts/test/foo.test.mts',
+    testFilePath: 'scripts/fleet/test/foo.test.mts',
     testFileContent: "import { test } from 'vitest'\ntest('x', () => {})\n",
   })
   const r = await runHook({
@@ -85,7 +85,7 @@ test('vitest API file matches include — passes', async () => {
 test('node:test file under vitest include — blocked', async () => {
   const { repoRoot, testFile } = makeFixture({
     vitestInclude: ['scripts/**/*.test.*'],
-    testFilePath: 'scripts/test/foo.test.mts',
+    testFilePath: 'scripts/fleet/test/foo.test.mts',
     testFileContent: '',
   })
   const r = await runHook({
@@ -103,7 +103,7 @@ test('node:test file under vitest include — blocked', async () => {
 test('node:test file outside vitest include — passes', async () => {
   const { repoRoot, testFile } = makeFixture({
     vitestInclude: ['test/**/*.test.*'],
-    testFilePath: 'scripts/test/foo.test.mts',
+    testFilePath: 'scripts/fleet/test/foo.test.mts',
     testFileContent: '',
   })
   const r = await runHook({
@@ -120,7 +120,7 @@ test('node:test file outside vitest include — passes', async () => {
 test('bypass phrase passes', async () => {
   const { repoRoot, testFile } = makeFixture({
     vitestInclude: ['scripts/**/*.test.*'],
-    testFilePath: 'scripts/test/foo.test.mts',
+    testFilePath: 'scripts/fleet/test/foo.test.mts',
     testFileContent: '',
   })
   const txDir = mkdtempSync(path.join(os.tmpdir(), 'vit-guard-tx-'))

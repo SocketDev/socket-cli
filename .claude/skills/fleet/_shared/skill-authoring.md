@@ -147,7 +147,7 @@ export async function test(): Promise<{
 
 The Rust dispatcher then execs `binPath` with the user's args. Swapping the tool = changing one resolver; the dispatcher doesn't care.
 
-**Why the fleet should borrow this:** today every fleet repo carries 200–450-line `scripts/check.mts` / `scripts/fix.mts` / `scripts/test.mts` files that duplicate "find the tool binary, build the right args, exec it." Real drift surface — the same logic written 12 times rarely stays in sync.
+**Why the fleet should borrow this:** today every fleet repo carries 200–450-line `scripts/check.mts` / `scripts/fix.mts` / `scripts/fleet/test.mts` files that duplicate "find the tool binary, build the right args, exec it." Real drift surface — the same logic written 12 times rarely stays in sync.
 
 **Implemented:** `_shared/scripts/resolve-tools.mts` (fleet-shared, byte-identical) exports `resolveLinter()` / `resolveFormatter()` / `resolveTypeChecker()` / `resolveTestRunner()` / `resolveBundler()` — each returning `{ args, envs }` where `args` is the full `pnpm exec` argv (tool name first) and `envs` is the env-var overrides. A `runResolved()` convenience runs the resolved tool and returns `{ exitCode, stdout, stderr }`.
 

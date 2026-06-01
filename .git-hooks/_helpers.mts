@@ -983,7 +983,7 @@ const OXLINT_WIRING_PATH_RE =
 // Path (relative to repo root) of the rule-wiring generator. Present only in
 // the wheelhouse — downstream fleet repos don't carry it, so the gate no-ops
 // there (they have no plugin rule files to wire).
-const SYNC_OXLINT_RULES_REL = 'scripts/sync-oxlint-rules.mts'
+const SYNC_OXLINT_RULES_REL = 'scripts/fleet/sync-oxlint-rules.mts'
 
 /**
  * Commit-time gate for oxlint plugin rule WIRING. When a commit stages any file

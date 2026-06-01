@@ -26,7 +26,7 @@ The strategy lives in three artifacts that ship together:
 
 1. **CLAUDE.md rule**: the mantra and detection rules in plain language. Every fleet repo's CLAUDE.md carries `## 1 path, 1 reference`. Synced from [`_shared/path-guard-rule.md`](../_shared/path-guard-rule.md).
 2. **Hook**: `.claude/hooks/fleet/path-guard/index.mts` runs `PreToolUse` on `Edit` / `Write` of `.mts` / `.cts` files. Blocks new violations at edit time.
-3. **Gate**: `scripts/check-paths.mts` runs in `pnpm check` (and CI). Whole-repo scan. Fails the build on any unsanctioned violation.
+3. **Gate**: `scripts/fleet/check-paths.mts` runs in `pnpm check` (and CI). Whole-repo scan. Fails the build on any unsanctioned violation.
 
 The hook and gate share their stage / build-root / mode / sibling-package vocabulary via `.claude/hooks/fleet/path-guard/segments.mts`: a single canonical source. Adding a new stage segment or fleet package means editing one file; the two consumers can never drift on what counts as a build-output path.
 
@@ -82,13 +82,13 @@ For Socket repos that don't yet have the gate:
 
 1. Copy the gate file:
    ```bash
-   cp .claude/skills/guarding-paths/templates/check-paths.mts.tmpl scripts/check-paths.mts
+   cp .claude/skills/guarding-paths/templates/check-paths.mts.tmpl scripts/fleet/check-paths.mts
    ```
 2. Copy the empty allowlist:
    ```bash
    cp .claude/skills/guarding-paths/templates/paths-allowlist.yml.tmpl .github/paths-allowlist.yml
    ```
-3. Add `"check:paths": "node scripts/check-paths.mts"` to `package.json`.
+3. Add `"check:paths": "node scripts/fleet/check-paths.mts"` to `package.json`.
 4. Wire `runPathHygieneCheck()` into `scripts/check.mts` (after the existing checks).
 5. Append the rule snippet from [`_shared/path-guard-rule.md`](../_shared/path-guard-rule.md) to the repo's `CLAUDE.md` if a `1 path, 1 reference` section is missing.
 6. Add the hook entry to `.claude/settings.json` `PreToolUse` matcher `Edit|Write`:

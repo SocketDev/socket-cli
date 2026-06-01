@@ -77,7 +77,7 @@ Find junk files (interactive mode confirms each batch via `AskUserQuestion`; non
 ### Phase 5: Structural Validation
 
 ```bash
-node scripts/check-paths.mts
+node scripts/fleet/check-paths.mts
 ```
 
 Report errors as Critical findings. Warnings are Low findings. (The fleet's structural validator is `check-paths.mts`, the path-hygiene gate. If a repo has a richer structural validator under a different name, run that instead. Every fleet repo ships `check-paths.mts`.)

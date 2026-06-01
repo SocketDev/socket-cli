@@ -22,12 +22,12 @@ Each package's `scripts/paths.mts` exports at minimum:
 
 ## Enforcement (three levels)
 
-| Level       | Surface                                         | What it catches                                                        |
-| ----------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
-| Edit-time   | `.claude/hooks/fleet/path-guard/`               | Build-path construction outside `paths.mts`                            |
-| Edit-time   | `.claude/hooks/fleet/paths-mts-inherit-guard/`  | Sub-package `paths.mts` that doesn't inherit from the nearest ancestor |
-| Commit-time | `scripts/check-paths.mts` (run by `pnpm check`) | Whole-repo path-hygiene scan                                           |
-| Audit + fix | `/guarding-paths` skill                         | Interactive cleanup                                                    |
+| Level       | Surface                                               | What it catches                                                        |
+| ----------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
+| Edit-time   | `.claude/hooks/fleet/path-guard/`                     | Build-path construction outside `paths.mts`                            |
+| Edit-time   | `.claude/hooks/fleet/paths-mts-inherit-guard/`        | Sub-package `paths.mts` that doesn't inherit from the nearest ancestor |
+| Commit-time | `scripts/fleet/check-paths.mts` (run by `pnpm check`) | Whole-repo path-hygiene scan                                           |
+| Audit + fix | `/guarding-paths` skill                               | Interactive cleanup                                                    |
 
 ## Common mistakes
 

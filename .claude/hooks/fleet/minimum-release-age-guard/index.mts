@@ -180,7 +180,7 @@ await withEditGuard((filePath, content, payload) => {
       '',
       "  Don't hand-edit the exclude list — run the canonical helper, which",
       '  looks up the npm publish date and writes the dated annotation for you:',
-      '    node scripts/soak-bypass.mts <pkg>@<version>',
+      '    node scripts/fleet/soak-bypass.mts <pkg>@<version>',
       '  (the daily updating-daily job removes the entry once its soak clears).',
       '',
       `  Bypass (to hand-edit anyway): type "${BYPASS_PHRASES[0]}" in a new message, then retry.`,

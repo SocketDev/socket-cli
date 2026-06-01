@@ -2,7 +2,7 @@
 // Claude Code PreToolUse hook — plugin-patch-format-guard.
 //
 // Blocks Edit/Write tool calls that would write a plugin-cache patch
-// (`scripts/plugin-patches/*.patch`) in a non-canonical shape. The
+// (`scripts/fleet/plugin-patches/*.patch`) in a non-canonical shape. The
 // runtime consumer is `install-claude-plugins.mts`'s
 // `reapplyPluginPatches()`, which: parses the filename via
 // `parsePatchFileName`, strips the `# @key: value` header via
@@ -58,7 +58,7 @@ type ToolInput = {
 
 // <plugin>-<version>-<slug>.patch — lowercase-kebab plugin, dotted
 // semver version, lowercase-kebab slug. Mirrors `PATCH_FILE_NAME` in
-// scripts/install-claude-plugins.mts so the hook and the consumer agree.
+// scripts/fleet/install-claude-plugins.mts so the hook and the consumer agree.
 const PATCH_FILE_NAME = /^[a-z0-9-]+-(\d+\.\d+\.\d+)-[a-z0-9-]+\.patch$/
 
 // The four header keys the consumer's provenance block requires.
@@ -76,7 +76,7 @@ const HEADER_PLUGIN_VERSION = /^# @plugin-version:\s*(\d+\.\d+\.\d+)\s*$/m
 type Verdict = { ok: true } | { ok: false; reason: string }
 
 /**
- * Is the target file path a plugin-cache patch under `scripts/plugin-patches/`?
+ * Is the target file path a plugin-cache patch under `scripts/fleet/plugin-patches/`?
  * Normalizes to `/`-separators first so the check is cross-platform (per the
  * fleet path-regex-normalize rule), then matches the canonical dir + `.patch`
  * extension.
@@ -86,7 +86,7 @@ export function isPluginPatchPath(filePath: string): boolean {
   // Match the dir segment with or without a leading slash so a (malformed)
   // relative path is still recognized as a plugin patch — the caller then
   // flags the non-absolute path rather than letting it slip past as "not a
-  // patch". `/scripts/plugin-patches/` (mid-path) and `scripts/plugin-patches/`
+  // patch". `/scripts/plugin-patches/` (mid-path) and `scripts/fleet/plugin-patches/`
   // (path start) both count.
   return (
     /(?:^|\/)scripts\/plugin-patches\//.test(normalized) &&
@@ -244,7 +244,7 @@ async function main(): Promise<void> {
         `  Saw:   a relative path; wanted an absolute path (PreToolUse ` +
         `always passes one).\n` +
         `  Fix:   pass the absolute path to the patch under ` +
-        `scripts/plugin-patches/.\n`,
+        `scripts/fleet/plugin-patches/.\n`,
     )
     process.exitCode = 2
     return

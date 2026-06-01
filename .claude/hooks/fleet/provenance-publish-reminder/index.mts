@@ -113,7 +113,7 @@ async function main(): Promise<void> {
     [
       `[provenance-publish-reminder] ${stateKey} is published but missing:`,
       ...missing.map(m => `  - ${m}`),
-      `  Verify with: pnpm exec node scripts/check-provenance.mts ${pkg.name} --version ${pkg.version}`,
+      `  Verify with: pnpm exec node scripts/fleet/check-provenance.mts ${pkg.name} --version ${pkg.version}`,
       `  This typically means the publish workflow regressed (e.g. fell back from staged-publish + OIDC to a classic-token publish).`,
       '',
     ].join('\n'),

@@ -21,7 +21,7 @@ The umbrella rule: **`version-pin` is mechanical** (safe to auto-apply with `tra
 ```bash
 test -f lockstep.json || { echo "no lockstep.json; skill n/a"; exit 0; }
 test -f lockstep.schema.json || { echo "lockstep.schema.json missing — malformed scaffolding"; exit 1; }
-test -f scripts/lockstep.mts || { echo "scripts/lockstep.mts missing — malformed scaffolding"; exit 1; }
+test -f scripts/fleet/lockstep.mts || { echo "scripts/fleet/lockstep.mts missing — malformed scaffolding"; exit 1; }
 
 git status --porcelain | grep -v '^??' && { echo "dirty tree; aborting"; exit 1; } || true
 

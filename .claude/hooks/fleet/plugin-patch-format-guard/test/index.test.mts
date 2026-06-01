@@ -150,7 +150,7 @@ test('classifyPluginPatch: version/filename mismatch blocks', () => {
   }
 })
 
-test('isPluginPatchPath: matches only scripts/plugin-patches/*.patch', () => {
+test('isPluginPatchPath: matches only scripts/fleet/plugin-patches/*.patch', () => {
   assert.strictEqual(isPluginPatchPath(PATCH_PATH), true)
   assert.strictEqual(
     isPluginPatchPath(
@@ -244,7 +244,7 @@ test('hook: relative plugin-patch path blocks (PreToolUse always passes absolute
   const result = await runHook({
     tool_input: {
       content: VALID_PATCH,
-      file_path: 'scripts/plugin-patches/codex-1.0.1-stdin-eagain.patch',
+      file_path: 'scripts/fleet/plugin-patches/codex-1.0.1-stdin-eagain.patch',
     },
     tool_name: 'Write',
   })

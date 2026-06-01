@@ -57,7 +57,7 @@ Forking copies the parent conversation context to the new model; that has token 
 
 ## AI-assisted lint fix routing
 
-The same tiering applies to `scripts/ai-lint-fix/cli.mts`, which spawns a headless `claude --print` per file to apply rule-driven rewrites. Routing lives in `scripts/ai-lint-fix/rule-guidance.mts`:
+The same tiering applies to `scripts/fleet/ai-lint-fix/cli.mts`, which spawns a headless `claude --print` per file to apply rule-driven rewrites. Routing lives in `scripts/fleet/ai-lint-fix/rule-guidance.mts`:
 
 - `RULE_MODEL_TIER` — per-rule tier label (`haiku` | `sonnet` | `opus`).
 - `TIER_MODEL` — tier-label → model-ID map. Single source of truth for global model bumps.

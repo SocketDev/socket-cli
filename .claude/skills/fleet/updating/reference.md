@@ -104,13 +104,13 @@ local cache and the umbrella honours that.
 ```bash
 if [ "$CI" = "true" ] || [ -n "$GITHUB_ACTIONS" ]; then
   echo "CI mode: skipping GH settings audit"
-elif [ -f scripts/lint-github-settings.mts ]; then
-  node scripts/lint-github-settings.mts --force --json | tee /tmp/gh-settings-audit.json
+elif [ -f scripts/fleet/lint-github-settings.mts ]; then
+  node scripts/fleet/lint-github-settings.mts --force --json | tee /tmp/gh-settings-audit.json
   # Findings are not auto-fixed by the umbrella — operator decides
   # per-finding whether to follow the URL or `pnpm exec node
-  # scripts/lint-github-settings.mts --fix` (needs repo:admin).
+  # scripts/fleet/lint-github-settings.mts --fix` (needs repo:admin).
 else
-  echo "No scripts/lint-github-settings.mts in this repo; skip"
+  echo "No scripts/fleet/lint-github-settings.mts in this repo; skip"
 fi
 ```
 

@@ -42,7 +42,7 @@ Bumping the version resets the throttle (different stateKey).
 
 ## Why this exists
 
-Even with the canonical `scripts/publish.mts --staged + --approve`
+Even with the canonical `scripts/fleet/publish.mts --staged + --approve`
 flow, an OIDC regression in CI (workflow YAML drift, missing
 `id-token: write` permission, fallback to a classic token) can publish
 a version without provenance. The publish workflow exits 0; nothing

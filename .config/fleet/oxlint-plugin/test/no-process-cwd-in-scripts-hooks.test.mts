@@ -26,7 +26,7 @@ describe('socket/no-process-cwd-in-scripts-hooks', () => {
         },
         {
           name: 'process.cwd inside test/ (exempt)',
-          filename: 'scripts/test/foo.test.mts',
+          filename: 'scripts/fleet/test/foo.test.mts',
           code: 'const x = process.cwd()\nconsole.log(x)\n',
         },
       ],

@@ -75,7 +75,7 @@ Full ruleset (docs lead with pnpm, `packageManager` field, `.config/` placement,
 
 ### Claude Code plugin pins
 
-🚨 Fleet-blessed Claude Code plugins are SHA-pinned in the wheelhouse-canonical [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json), with companion human-readable metadata (pin date, pinner) in [`.claude-plugin/README.md`](../.claude-plugin/README.md). The pair is enforced together: every `plugins[].source.sha` in `marketplace.json` must have a row in the README table with matching `version` + `sha` + an ISO-8601 `date`. Same staleness signal the GHA `uses:` SHA-pin comments carry. Bump the SHA → bump the row. Run `pnpm run install-claude-plugins` to reconcile a machine to the pinned set — adds the marketplace + installs each plugin at its pinned SHA, then reapplies `scripts/plugin-patches/*.patch` for upstream bugs we can't land yet (fleet `# @`-header + plain `diff -u` body, `patch -p1`; regenerate via `regenerating-plugin-patches`; full spec [`docs/claude.md/fleet/plugin-cache-patches.md`](docs/claude.md/fleet/plugin-cache-patches.md)) (enforced by `.claude/hooks/fleet/marketplace-comment-guard/`, `.claude/hooks/fleet/plugin-patch-format-guard/`).
+🚨 Fleet-blessed Claude Code plugins are SHA-pinned in the wheelhouse-canonical [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json), with companion human-readable metadata (pin date, pinner) in [`.claude-plugin/README.md`](../.claude-plugin/README.md). The pair is enforced together: every `plugins[].source.sha` in `marketplace.json` must have a row in the README table with matching `version` + `sha` + an ISO-8601 `date`. Same staleness signal the GHA `uses:` SHA-pin comments carry. Bump the SHA → bump the row. Run `pnpm run install-claude-plugins` to reconcile a machine to the pinned set — adds the marketplace + installs each plugin at its pinned SHA, then reapplies `scripts/fleet/plugin-patches/*.patch` for upstream bugs we can't land yet (fleet `# @`-header + plain `diff -u` body, `patch -p1`; regenerate via `regenerating-plugin-patches`; full spec [`docs/claude.md/fleet/plugin-cache-patches.md`](docs/claude.md/fleet/plugin-cache-patches.md)) (enforced by `.claude/hooks/fleet/marketplace-comment-guard/`, `.claude/hooks/fleet/plugin-patch-format-guard/`).
 
 ### Token minification
 
@@ -191,7 +191,7 @@ Soft cap **500 lines**, hard cap **1000 lines** per source file. Past those, spl
 
 ### 1 path, 1 reference
 
-🚨 A path is constructed exactly once; everywhere else references the constructed value. Per-package `scripts/paths.mts` is the canonical owner; sub-packages inherit via `export *`. Build outputs live at `<package-root>/build/<mode>/<platform-arch>/out/Final/<artifact>`. Enforced at three levels: `.claude/hooks/fleet/path-guard/` (edit-time, build-path construction outside `paths.mts`), `.claude/hooks/fleet/paths-mts-inherit-guard/` (edit-time, sub-package inheritance), `scripts/check-paths.mts` (commit-time, whole-repo). `/guarding-paths` is the audit-and-fix skill. Full ruleset + canonical layout + common mistakes in [`docs/claude.md/fleet/path-hygiene.md`](docs/claude.md/fleet/path-hygiene.md).
+🚨 A path is constructed exactly once; everywhere else references the constructed value. Per-package `scripts/paths.mts` is the canonical owner; sub-packages inherit via `export *`. Build outputs live at `<package-root>/build/<mode>/<platform-arch>/out/Final/<artifact>`. Enforced at three levels: `.claude/hooks/fleet/path-guard/` (edit-time, build-path construction outside `paths.mts`), `.claude/hooks/fleet/paths-mts-inherit-guard/` (edit-time, sub-package inheritance), `scripts/fleet/check-paths.mts` (commit-time, whole-repo). `/guarding-paths` is the audit-and-fix skill. Full ruleset + canonical layout + common mistakes in [`docs/claude.md/fleet/path-hygiene.md`](docs/claude.md/fleet/path-hygiene.md).
 
 ### Conformance runners
 
@@ -236,7 +236,7 @@ Use `isError` / `isErrnoException` / `errorMessage` / `errorStack` from `@socket
 
 ### Commit signing
 
-🚨 Commits on `main`/`master` must be signed. Three layers: pre-commit config gate, pre-push signature check (`%G?` ∈ {`N`,`B`} blocks), GitHub `required_signatures`. Setup: `node .claude/hooks/fleet/setup-signing/install.mts`. Bypass envs `SOCKET_PRE_{COMMIT,PUSH}_ALLOW_UNSIGNED=1`. Full spec: [`docs/claude.md/fleet/commit-signing.md`](docs/claude.md/fleet/commit-signing.md). Post-hoc audit: `node scripts/audit-transcript.mts --recent` flags privileged tool uses in a session ([full stack](docs/claude.md/fleet/security-stack.md)).
+🚨 Commits on `main`/`master` must be signed. Three layers: pre-commit config gate, pre-push signature check (`%G?` ∈ {`N`,`B`} blocks), GitHub `required_signatures`. Setup: `node .claude/hooks/fleet/setup-signing/install.mts`. Bypass envs `SOCKET_PRE_{COMMIT,PUSH}_ALLOW_UNSIGNED=1`. Full spec: [`docs/claude.md/fleet/commit-signing.md`](docs/claude.md/fleet/commit-signing.md). Post-hoc audit: `node scripts/fleet/audit-transcript.mts --recent` flags privileged tool uses in a session ([full stack](docs/claude.md/fleet/security-stack.md)).
 
 ### Agents & skills
 
