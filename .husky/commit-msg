@@ -1,0 +1,6 @@
+if [ -n "${DISABLE_PRECOMMIT_PII_CHECK}" ]; then
+  echo "Skipping Claude PII check due to DISABLE_PRECOMMIT_PII_CHECK env var"
+  exit 0
+fi
+
+node ./scripts/check-commit-pii.js "$1"

@@ -120,20 +120,19 @@ export async function performReachabilityAnalysis(
 
     const sockSdk = sockSdkCResult.data
 
-    // Exclude any .socket.facts.json files that happen to be in the scan
-    // folder before the analysis was run.
-    const filepathsToUpload = packagePaths.filter(
-      p =>
-        path.basename(p).toLowerCase() !== constants.DOT_SOCKET_DOT_FACTS_JSON,
-    )
-
     spinner?.start('Uploading manifests for reachability analysis...')
 
     // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path
+    // NOTE: previously stripped any `.socket.facts.json` from packagePaths
+    // here to avoid uploading leftover post-reachability output. With the
+    // producer flow (`socket manifest gradle --facts`) those files are
+    // legitimate INPUT to compute-artifacts, so we now upload them. Stale
+    // facts files are cleaned up downstream — see the post-success
+    // deletion in handle-create-new-scan.mts.
     const uploadCResult = await handleApiCall(
       sockSdk.uploadManifestFiles(
         orgSlug,
-        filepathsToUpload,
+        packagePaths,
         path.resolve(cwd, analysisTarget),
       ),
       {
@@ -268,12 +267,22 @@ export async function performReachabilityAnalysis(
     return coanaResult
   }
 
+  // Coana writes the facts file relative to the scan `cwd` (it is spawned
+  // with `cwd` above), so resolve the read path against `cwd` too. Reading
+  // the bare relative path would resolve against `process.cwd()` and miss
+  // the file whenever `cwd !== process.cwd()` (e.g. `--cwd <dir>`), silently
+  // dropping the tier 1 scan id and skipping finalize downstream.
+  const resolvedReportPath = path.resolve(cwd, outputFilePath)
+
   return {
     ok: true,
     data: {
-      // Use the actual output filename for the scan.
+      // Use the actual output filename for the scan. Keep this `cwd`-relative
+      // so the upload (which relativizes against `cwd`) and the post-success
+      // unlink (`path.resolve(cwd, reachabilityReport)`) keep working.
       reachabilityReport: outputFilePath,
-      tier1ReachabilityScanId: extractTier1ReachabilityScanId(outputFilePath),
+      tier1ReachabilityScanId:
+        extractTier1ReachabilityScanId(resolvedReportPath),
     },
   }
 }

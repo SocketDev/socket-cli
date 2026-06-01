@@ -5,10 +5,84 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
-
-### Added
 - **`socket manifest bazel [beta]`** — Generate Bazel JVM SBOM manifests by running `bazel query` against discovered Maven repos in a Bazel workspace. Closes the inline-Maven-declaration gap that lockfile-only parsing misses for repos like envoy, ray, tensorflow, tink-java, and or-tools. Auto-detects Bzlmod and legacy `WORKSPACE`.
 - **`socket scan create --auto-manifest`** now covers Bazel workspaces in addition to Gradle/Scala/Kotlin/Conda. Repos with `MODULE.bazel`, `WORKSPACE`, or `WORKSPACE.bazel` are detected automatically and their Maven dependencies extracted as part of the standard scan-create flow.
+- **Bazel PyPI extraction** — `socket manifest bazel --ecosystem pypi` now generates `requirements.txt` for Python Bazel workspaces. Discovers custom `rules_python` pip hub names with Bazel command output first, queries `py_library` / `py_binary` / `py_test` dependencies, resolves canonical pinned versions from `requirements_lock.txt`, and emits PEP 503-normalized `name==version` lines. Supports both Bzlmod (`pip.parse`) and legacy `WORKSPACE` (`pip_parse` / `pip_install`) configurations. PyPI remains explicit opt-in for `socket scan create --auto-manifest` until real-world no-lockfile recovery is validated.
+
+### Changed
+- **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
+
+## [1.1.112](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.112) - 2026-05-29
+
+### Fixed
+- `socket fix` and `socket scan create` no longer abort with `EACCES: permission denied, scandir` when the project contains a directory the running user cannot read (for example a postgres `pgdata` data directory owned by another uid, or a Docker volume mount). Manifest discovery walks a project for `.gitignore` files before applying any path exclusions; that walk now honors `--exclude-paths` and `socket.yml` `projectIgnorePaths`, and skips unreadable directories rather than crashing. This makes `--exclude-paths` effective for unreadable directories — previously the crash happened before the exclusion was ever applied.
+
+## [1.1.111](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.111) - 2026-05-29
+
+### Changed
+- Updated the Coana CLI to v `15.3.15`.
+
+## [1.1.110](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.110) - 2026-05-29
+
+### Fixed
+- Resolved intermittent ~5-second timeouts affecting manifest uploads for reachability analysis and `socket fix`, along with other long-running API requests. Socket CLI now uses an explicit HTTP agent for all API traffic, so slow uploads and large streaming responses are no longer dropped prematurely.
+
+## [1.1.109](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.109) - 2026-05-28
+
+### Added
+- **`socket fix --exclude-paths`** — Skip matching paths from the scan entirely: manifests under these paths are not uploaded, and fixes are not applied to workspaces under them. Use this to skip directories the current user cannot read (e.g. a postgres `pgdata` directory inside the repo) so they do not abort manifest collection. The pre-existing `--exclude` flag keeps its previous fix-application-only semantic but is now hidden in `--help` in favor of `--exclude-paths`.
+
+## [1.1.108](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.108) - 2026-05-28
+
+### Changed
+- Updated the Coana CLI to v `15.3.12`.
+
+## [1.1.107](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.107) - 2026-05-28
+
+### Changed
+- **`socket manifest gradle --facts [beta]`** (and its `kotlin` alias) gained `--configs` and `--ignore-unresolved`, matching `socket manifest scala --facts`. `--configs` takes comma-separated glob patterns (e.g. `*CompileClasspath,*RuntimeClasspath`) to restrict resolution to matching Gradle configurations; unresolved dependencies are now a fatal error by default — pass `--ignore-unresolved` for the previous lenient behavior.
+- **`socket manifest scala --facts --configs`** now accepts glob patterns too (e.g. `*Test*`) for consistency with the gradle command. Bare names (no `*`/`?`) keep working as exact-name filters, so existing usages are unchanged.
+
+### Fixed
+- **`socket manifest gradle --facts`** now works on Gradle builds with the configuration cache enabled (default on Gradle 9), which previously failed with `Task.project at execution time` errors.
+
+## [1.1.106](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.106) - 2026-05-27
+
+### Added
+- **`socket manifest scala --facts [beta]`** — Emit a `.socket.facts.json` dependency graph from an sbt build for `socket scan create` to consume as a pregenerated SBOM. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
+
+## [1.1.105](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.105) - 2026-05-27
+
+### Changed
+- Updated the Coana CLI to v `15.3.11`.
+
+## [1.1.104](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.104) - 2026-05-26
+
+### Fixed
+- Coana CLI invocation: strip `npm_package_*` env vars before spawning the npm-install fallback. Prevents `spawn E2BIG` failures in large monorepos where the parent process has hundreds of `npm_package_*` env vars populated from the root `package.json`. Preserves `npm_config_*` (registry / proxy / cache from `.npmrc`).
+
+## [1.1.103](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.103) - 2026-05-26
+
+### Changed
+- Updated the Coana CLI to v `15.3.9`.
+
+## [1.1.98](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.98) - 2026-05-22
+
+### Added
+- **`socket manifest gradle --facts [beta]`** (and its `socket manifest kotlin --facts` alias) — Emit a `.socket.facts.json` dependency graph from a Gradle build for `socket scan create` to consume as a pregenerated SBOM. Toggle also exposed via the `socket manifest setup` wizard for use with `--auto-manifest`.
+
+### Changed
+- Updated the Coana CLI to v `15.3.8`.
+
+## [1.1.101](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.101) - 2026-05-22
+
+### Changed
+- Updated the Coana CLI to v `15.3.6`.
+
+## [1.1.100](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.100) - 2026-05-21
+
+### Changed
+- Updated the Coana CLI to v `15.3.4`.
 
 ## [1.1.99](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.99) - 2026-05-20
 

@@ -232,23 +232,48 @@ export async function globWithGitIgnore(
 
   const ignores = new Set<string>(IGNORED_DIR_PATTERNS)
 
+  // CLI-supplied `additionalIgnores` are already anchored minimatch — they
+  // must not pass through the `ignore` package (whose gitignore "match
+  // anywhere" semantics would re-interpret a bare `tests` to match
+  // `subdir/tests/foo.json`). Keep them in fast-glob's ignore list across
+  // both paths; only gitignore-translated entries go into the `ig` matcher.
+  const cliMinimatchIgnores = additionalIgnores ?? []
+
   const projectIgnorePaths = socketConfig?.projectIgnorePaths
-  if (Array.isArray(projectIgnorePaths)) {
-    const ignorePatterns = ignoreFileLinesToGlobPatterns(
-      projectIgnorePaths,
-      path.join(cwd, '.gitignore'),
-      cwd,
-    )
-    for (const pattern of ignorePatterns) {
-      ignores.add(pattern)
-    }
+  const projectIgnoreGlobs = Array.isArray(projectIgnorePaths)
+    ? ignoreFileLinesToGlobPatterns(
+        projectIgnorePaths,
+        path.join(cwd, '.gitignore'),
+        cwd,
+      )
+    : []
+  for (const pattern of projectIgnoreGlobs) {
+    ignores.add(pattern)
   }
 
+  // The .gitignore discovery walk has to honor the same directory exclusions
+  // as the package walk below. Otherwise an unreadable subtree (e.g. a
+  // postgres `pgdata` dir owned by another uid, or a Docker volume mount) makes
+  // fast-glob throw `EACCES: permission denied, scandir` *here* — before
+  // --exclude-paths (`cliMinimatchIgnores`) or projectIgnorePaths are ever
+  // applied to the main walk, which is why excluding the path did not help.
+  // `suppressErrors` is the backstop: a directory the user simply cannot read
+  // cannot contain manifests they could scan anyway, so skip it instead of
+  // aborting the whole `socket fix` / `socket scan` run. Negated patterns are
+  // dropped — for a discovery walk they could only re-include a subtree (never
+  // prevent a crash), and fast-glob treats `!` ignore entries inconsistently.
   const gitIgnoreStream = fastGlob.globStream(['**/.gitignore'], {
     absolute: true,
     cwd,
     dot: true,
-    ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
+    ignore: [
+      ...DEFAULT_IGNORE_FOR_GIT_IGNORE,
+      ...projectIgnoreGlobs,
+      ...cliMinimatchIgnores,
+    ]
+      .filter(p => p.charCodeAt(0) !== 33 /*'!'*/)
+      .map(stripTrailingSlash),
+    suppressErrors: true,
   })
   for await (const ignorePatterns of transform(
     gitIgnoreStream,
@@ -273,13 +298,6 @@ export async function globWithGitIgnore(
     }
   }
 
-  // CLI-supplied `additionalIgnores` are already anchored minimatch — they
-  // must not pass through the `ignore` package (whose gitignore "match
-  // anywhere" semantics would re-interpret a bare `tests` to match
-  // `subdir/tests/foo.json`). Keep them in fast-glob's ignore list across
-  // both paths; only gitignore-translated entries go into the `ig` matcher.
-  const cliMinimatchIgnores = additionalIgnores ?? []
-
   const globOptions = {
     __proto__: null,
     absolute: true,
@@ -289,6 +307,13 @@ export async function globWithGitIgnore(
       ? [...defaultIgnore, ...cliMinimatchIgnores]
       : [...ignores, ...cliMinimatchIgnores].map(stripTrailingSlash),
     ...additionalOptions,
+    // Skip directories the running user cannot read rather than aborting the
+    // whole walk on the first `EACCES` (see the .gitignore discovery walk
+    // above for the full rationale). Pinned after `...additionalOptions` so a
+    // caller's options bag cannot accidentally flip it back to `false` and
+    // re-introduce the crash — `suppressErrors` is a safety invariant here, not
+    // a tunable.
+    suppressErrors: true,
   } as GlobOptions
 
   // When no filter is provided and no negated patterns exist, use the fast path.

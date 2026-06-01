@@ -54,30 +54,34 @@ import type {
 const MAX_REDIRECTS = 20
 const NO_ERROR_MESSAGE = 'No error message returned'
 
-// Cached HTTPS agent for extra CA certificate support in direct API calls.
+// Cached HTTPS agent for direct API calls. Undefined only until the first
+// getHttpsAgent() call lazily creates it.
 let _httpsAgent: HttpsAgent | undefined
-let _httpsAgentResolved = false
 
-// Returns an HTTPS agent configured with extra CA certificates when
-// SSL_CERT_FILE is set but NODE_EXTRA_CA_CERTS is not.
-function getHttpsAgent(): HttpsAgent | undefined {
-  if (_httpsAgentResolved) {
+// Returns an explicit HTTPS agent for direct API calls, carrying extra CA
+// certificates when SSL_CERT_FILE is set but NODE_EXTRA_CA_CERTS is not. An
+// explicit agent is always returned. Node >=19's global agent enables keepAlive
+// with a 5s socket timeout that Node applies as a per-socket inactivity
+// timeout. A request made without an explicit agent inherits it and is torn
+// down after 5s of socket inactivity, prematurely dropping slow or idle-gapped
+// requests (e.g. streaming full-scan responses, large downloads) even when no
+// timeout was requested. A fresh Agent carries no timeout.
+function getHttpsAgent(): HttpsAgent {
+  if (_httpsAgent) {
     return _httpsAgent
   }
-  _httpsAgentResolved = true
   const ca = getExtraCaCerts()
-  if (!ca) {
-    return undefined
-  }
-  _httpsAgent = new HttpsAgent({ ca })
-  return _httpsAgent
+  const agent = ca ? new HttpsAgent({ ca }) : new HttpsAgent()
+  _httpsAgent = agent
+  return agent
 }
 
 // All outbound API requests use node:https.request rather than global fetch.
 // This ensures no body timeout is applied — large streaming ND-JSON responses
-// (e.g. full scan results) can transfer without a hard deadline. When
-// SSL_CERT_FILE is configured, a custom HttpsAgent carrying the extra CA
-// certificates is passed; otherwise the default agent is used.
+// (e.g. full scan results) can transfer without a hard deadline. An explicit
+// HttpsAgent is always passed (carrying extra CA certificates when
+// SSL_CERT_FILE is configured) so requests do not inherit Node's global-agent
+// keepAlive socket timeout.
 export type ApiFetchInit = {
   body?: string | undefined
   headers?: Record<string, string> | undefined
@@ -88,7 +92,7 @@ export type ApiFetchInit = {
 function _httpsRequestFetch(
   url: string,
   init: ApiFetchInit,
-  agent: HttpsAgent | undefined,
+  agent: HttpsAgent,
   redirectCount: number,
 ): Promise<Response> {
   return new Promise((resolve, reject) => {

@@ -3,6 +3,8 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
+import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
@@ -35,26 +37,40 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
-    logger.log('Detected a Scala sbt build, generating pom files with sbt...')
-    await convertSbtToMaven({
-      // Note: `sbt` is more likely to be resolved against PATH env
+    // Args shared by both paths. The facts-only knobs (`configs`,
+    // `ignoreUnresolved`) and the pom-only `out` are added per branch so
+    // neither handler is spread properties it doesn't accept.
+    const sbtArgs = {
+      // Note: `sbt` is more likely to be resolved against PATH env.
       bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
       cwd,
-      out: sockJson.defaults?.manifest?.sbt?.outfile ?? './pom.xml',
       sbtOpts:
         sockJson.defaults?.manifest?.sbt?.sbtOpts
           ?.split(' ')
           .map(s => s.trim())
           .filter(Boolean) ?? [],
       verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
-    })
+    }
+    if (sockJson.defaults?.manifest?.sbt?.facts) {
+      logger.log('Detected a Scala sbt build, generating Socket facts...')
+      await convertSbtToFacts({
+        ...sbtArgs,
+        configs: sockJson.defaults?.manifest?.sbt?.configs ?? '',
+        ignoreUnresolved: Boolean(
+          sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
+        ),
+      })
+    } else {
+      logger.log('Detected a Scala sbt build, generating pom files with sbt...')
+      await convertSbtToMaven({
+        ...sbtArgs,
+        out: sockJson.defaults?.manifest?.sbt?.outfile ?? './pom.xml',
+      })
+    }
   }
 
   if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {
-    logger.log(
-      'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
-    )
-    await convertGradleToMaven({
+    const gradleArgs = {
       // Note: `gradlew` is more likely to be resolved against cwd.
       // Note: .resolve() won't butcher an absolute path.
       // TODO: `gradlew` (or anything else given) may want to resolve against PATH.
@@ -68,7 +84,24 @@ export async function generateAutoManifest({
           ?.split(' ')
           .map(s => s.trim())
           .filter(Boolean) ?? [],
-    })
+    }
+    if (sockJson.defaults?.manifest?.gradle?.facts) {
+      logger.log(
+        'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts...',
+      )
+      await convertGradleToFacts({
+        ...gradleArgs,
+        configs: sockJson.defaults?.manifest?.gradle?.configs ?? '',
+        ignoreUnresolved: Boolean(
+          sockJson.defaults?.manifest?.gradle?.ignoreUnresolved,
+        ),
+      })
+    } else {
+      logger.log(
+        'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
+      )
+      await convertGradleToMaven(gradleArgs)
+    }
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {
@@ -86,27 +119,30 @@ export async function generateAutoManifest({
 
   if (!sockJson?.defaults?.manifest?.bazel?.disabled && detected.bazel) {
     const bazelConfig = sockJson?.defaults?.manifest?.bazel
+
     logger.log(
       'Detected a Bazel workspace, extracting Maven dependencies via bazel query...',
     )
-    const bazelResult = await extractBazelToMaven({
+    const mavenResult = await extractBazelToMaven({
       bazelFlags: bazelConfig?.bazelFlags,
       bazelOutputBase: bazelConfig?.bazelOutputBase,
       bazelRc: bazelConfig?.bazelRc,
       bin: bazelConfig?.bazel ?? bazelConfig?.bin,
       cwd,
-      // Auto-manifest writes into a sibling directory instead of the repo root
-      // so scan discovery can pick it up without colliding with a checked-in
-      // rules_jvm_external lockfile or repo-root gitignore patterns.
       out: bazelConfig?.out ?? cwd,
       outLayout: 'flat',
       verbose: Boolean(bazelConfig?.verbose) || verbose,
     })
-    if (!bazelResult.ok) {
-      throw new Error('Bazel auto-manifest generation failed')
+
+    if (!mavenResult.ok && !mavenResult.noEcosystemFound) {
+      throw new Error(
+        'Bazel auto-manifest generation failed for ecosystem(s): maven',
+      )
     }
-    if (bazelResult.manifestPath) {
-      generatedFiles.push(bazelResult.manifestPath)
+    if (mavenResult.ok && mavenResult.manifestPath) {
+      generatedFiles.push(mavenResult.manifestPath)
+    } else if (mavenResult.noEcosystemFound) {
+      logger.info('No supported Bazel Maven ecosystem detected.')
     }
   }
 

@@ -15,9 +15,16 @@ vi.mock('../../../constants.mts', () => ({
   },
 }))
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { buildProbeFor, runBazelQuery } from './bazel-query-runner.mts'
+import {
+  buildProbeFor,
+  buildPypiProbeFor,
+  runBazelModShowPipExtension,
+  runBazelModShowVisibleRepos,
+  runBazelQuery,
+} from './bazel-query-runner.mts'
 import constants from '../../../constants.mts'
 
 describe('runBazelQuery', () => {
@@ -186,6 +193,77 @@ describe('runBazelQuery', () => {
     })
     expect(r).toEqual({ code: -1, stdout: '', stderr: 'missing bazel' })
   })
+
+  it('emits bounded subprocess trace when verbose is true', async () => {
+    const logSpy = vi.spyOn(logger, 'log').mockImplementation(() => logger)
+    try {
+      // @ts-ignore — narrow return shape for the test's purposes.
+      mocked.mockResolvedValueOnce({ code: 7, stdout: 'OUT', stderr: 'ERR' })
+      await runBazelQuery('q', {
+        bin: 'bazel',
+        cwd: '/r',
+        invocationFlags: [],
+        verbose: true,
+      })
+      const text = logSpy.mock.calls
+        .map(args => args.map(a => String(a)).join(' '))
+        .join('\n')
+      expect(text).toContain('bazel subprocess trace')
+      expect(text).toContain('bazel stderr tail')
+      expect(text).toContain('bazel-query-failed')
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+})
+
+describe('runBazelModShowVisibleRepos', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({ code: 0, stdout: '{}', stderr: '' })
+  })
+
+  it('uses the Bazel 7-compatible root repo mapping command', async () => {
+    await runBazelModShowVisibleRepos({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toEqual(['mod', 'dump_repo_mapping', '', '--output=json'])
+    expect(argv).not.toContain('--all_visible_repos')
+    expect(argv).not.toContain('--output=streamed_jsonproto')
+  })
+})
+
+describe('runBazelModShowPipExtension', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({ code: 0, stdout: 'pip.parse()', stderr: '' })
+  })
+
+  it('uses the rules_python pip extension usage command', async () => {
+    await runBazelModShowPipExtension({
+      bin: 'bazel',
+      cwd: '/repo',
+      invocationFlags: [],
+    })
+
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toEqual([
+      'mod',
+      'show_extension',
+      '@rules_python//python/extensions:pip.bzl%pip',
+      '--extension_usages=<root>',
+    ])
+  })
 })
 
 describe('buildProbeFor', () => {
@@ -216,5 +294,52 @@ describe('buildProbeFor', () => {
       stdout: expect.stringContaining('maven_coordinates'),
       code: 0,
     })
+  })
+})
+
+describe('buildPypiProbeFor', () => {
+  const mocked = vi.mocked(spawn)
+
+  beforeEach(() => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({
+      code: 0,
+      stdout: '@pypi//requests:pkg\n@pypi//flask:pkg\n',
+      stderr: '',
+    })
+  })
+
+  it('builds a hub-wide query for a pip hub name', async () => {
+    const probe = buildPypiProbeFor({
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+    })
+    const result = await probe('pypi')
+    const argv = mocked.mock.calls[0]![1] as string[]
+    expect(argv).toContain('@pypi//...')
+    expect(result).toEqual({
+      stdout: expect.stringContaining('@pypi//requests:pkg'),
+      code: 0,
+    })
+  })
+
+  it('returns non-zero code when the hub has no :pkg targets', async () => {
+    mocked.mockReset()
+    // @ts-ignore — narrow return shape for the test's purposes.
+    mocked.mockResolvedValue({
+      code: 0,
+      stdout: '',
+      stderr: '',
+    })
+    const probe = buildPypiProbeFor({
+      bin: 'bazel',
+      cwd: '/r',
+      invocationFlags: [],
+    })
+    const result = await probe('empty_hub')
+    expect(result.code).toBe(0)
+    expect(result.stdout).toBe('')
   })
 })

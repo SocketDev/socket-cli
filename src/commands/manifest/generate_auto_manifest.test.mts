@@ -127,7 +127,7 @@ describe('generateAutoManifest — bazel branch', () => {
     )
   })
 
-  it('returns generated Bazel sidecar manifests', async () => {
+  it('returns generated Bazel Maven sidecar manifest by default', async () => {
     const result = await generateAutoManifest({
       cwd: '/tmp/repo',
       detected: { ...baseDetected, bazel: true, count: 1 },
@@ -140,12 +140,27 @@ describe('generateAutoManifest — bazel branch', () => {
     ])
   })
 
-  it('throws when Bazel extraction fails', async () => {
+  it('does not run PyPI by default when Maven has no discovery', async () => {
+    vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
+      artifactCount: 0,
+      noEcosystemFound: true,
+      ok: false,
+    })
+    const result = await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, bazel: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
+    })
+
+    expect(result.generatedFiles).toEqual([])
+  })
+
+  it('throws when Maven hard-fails', async () => {
     vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
       artifactCount: 0,
       ok: false,
     })
-
     await expect(
       generateAutoManifest({
         cwd: '/tmp/repo',
@@ -153,7 +168,25 @@ describe('generateAutoManifest — bazel branch', () => {
         outputKind: 'text',
         verbose: false,
       }),
-    ).rejects.toThrow('Bazel auto-manifest generation failed')
+    ).rejects.toThrow(
+      'Bazel auto-manifest generation failed for ecosystem(s): maven',
+    )
+  })
+
+  it('does NOT throw when Maven has no discovery', async () => {
+    vi.mocked(extractBazelToMaven).mockResolvedValueOnce({
+      artifactCount: 0,
+      noEcosystemFound: true,
+      ok: false,
+    })
+    const result = await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, bazel: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
+    })
+
+    expect(result.generatedFiles).toEqual([])
   })
 
   it('runs BOTH bazel and gradle branches when both are detected', async () => {

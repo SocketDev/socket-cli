@@ -109,14 +109,30 @@ function apparentNameFromJsonValue(value: unknown): string | undefined {
   return undefined
 }
 
+function apparentNamesFromRepoMapping(value: unknown): string[] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return []
+  }
+  const candidates: string[] = []
+  for (const [name, canonicalName] of Object.entries(value)) {
+    if (name.startsWith('@') || typeof canonicalName !== 'string') {
+      continue
+    }
+    if (BAZEL_REPO_NAME_RE.test(name)) {
+      candidates.push(name)
+    }
+  }
+  return candidates
+}
+
 function normalizeRepoName(name: string): string | undefined {
   const repo = name.startsWith('@') ? name.slice(1) : name
   return BAZEL_REPO_NAME_RE.test(repo) ? repo : undefined
 }
 
-// Parse `bazel mod show_repo --all_visible_repos --output=streamed_jsonproto`
-// output. Bazel's JSON proto field casing may vary by formatter; accept both
-// lowerCamel and snake_case, and tolerate wrapper objects around Repository.
+// Parse `bazel mod dump_repo_mapping "" --output=json` output. Also accept the
+// older streamed jsonproto shape in case older Bazel versions or fixtures still
+// return repository records with apparentName fields.
 export function parseVisibleRepoCandidates(output: string): string[] {
   const candidates: string[] = []
   for (const line of output.split(/\r?\n/)) {
@@ -126,6 +142,7 @@ export function parseVisibleRepoCandidates(output: string): string[] {
     }
     try {
       const parsed = JSON.parse(trimmed) as unknown
+      candidates.push(...apparentNamesFromRepoMapping(parsed))
       const apparentName = apparentNameFromJsonValue(parsed)
       if (apparentName) {
         const repo = normalizeRepoName(apparentName)

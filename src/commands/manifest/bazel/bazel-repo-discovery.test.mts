@@ -120,6 +120,26 @@ describe('bazel-repo-discovery', () => {
   })
 
   describe('parseVisibleRepoCandidates', () => {
+    it('parses apparent repo names from dump_repo_mapping JSON output', () => {
+      const output = JSON.stringify({
+        '': '',
+        '@invalid': 'canonical-invalid',
+        bazel_tools: 'bazel_tools',
+        maven: 'rules_jvm_external~~maven~maven',
+        'maven-prod': 'rules_jvm_external~~maven~prod',
+        pypi: 'rules_python~~pip~pypi',
+        'third.party.maven': 'rules_jvm_external~~maven~third_party',
+      })
+
+      expect(parseVisibleRepoCandidates(output)).toEqual([
+        'bazel_tools',
+        'maven',
+        'maven-prod',
+        'pypi',
+        'third.party.maven',
+      ])
+    })
+
     it('parses apparent repo names from streamed jsonproto output', () => {
       const output = [
         JSON.stringify({

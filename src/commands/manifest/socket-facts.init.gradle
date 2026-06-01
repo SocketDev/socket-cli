@@ -1,0 +1,429 @@
+// Gradle init script that emits a single `.socket.facts.json` file at the
+// build root describing the resolved compile/runtime dependency graph of
+// every subproject combined.
+//
+// Schema matches the canonical SocketFacts shape consumed by depscan
+// (`workspaces/lib/src/socket-facts/socket-facts-schema.ts`):
+//
+//     { components: SF_Artifact[] }
+//
+// Each Maven SF_Artifact is `{ type: 'maven', namespace, name, version?,
+// qualifiers? } & { id, direct?, dev?, tooling?, dependencies? }`.
+// `qualifiers` is strict on `{ classifier?, ext? }` — anything else is
+// dropped.
+//
+// Invoke via:
+//   ./gradlew --init-script socket-facts.init.gradle socketFacts
+//
+// Structure:
+//   - per-subproject `socketFactsCollect` tasks resolve that subproject's
+//     configurations and contribute to shared accumulators on gradle.ext
+//   - the root `socketFacts` task depends on every collector, then
+//     serializes the accumulated graph to a single JSON file at the build
+//     root
+//
+// Intra-project dependencies (i.e. `project(':lib')` style edges between
+// subprojects in the same build) are dropped from the output entirely.
+// Their reasoning: each subproject contributes its own external deps to
+// the shared facts; the inter-project edges would just be noise that
+// downstream consumers (coana mvn dependency:get) would try to resolve
+// against Maven Central and fail. The externals each intra-project dep
+// brings in are picked up via that subproject's own collector.
+
+import java.util.Collections
+import groovy.json.JsonOutput
+
+// Must stay in sync with `DOT_SOCKET_DOT_FACTS_JSON` in
+// src/constants.mts (TS side). Groovy can't import the TS constant, so
+// the two strings are intentionally duplicated; if you change one,
+// change the other.
+ext.SOCKET_FACTS_FILENAME = '.socket.facts.json'
+
+// Shared accumulators across all subprojects' contributions. Synchronized
+// collections so --parallel-enabled builds don't race. The accumulator
+// lives on `gradle.ext` so every subproject's collector and the root
+// aggregator share the same instance.
+gradle.ext.socketFactsState = [
+  // id -> [coord, children, prod, nonTooling]
+  nodes              : Collections.synchronizedMap([:]),
+  // first-level dep ids
+  directIds          : Collections.synchronizedSet([] as Set),
+  // selectors we've already logged as unresolved (deduped across configs)
+  reportedUnresolved : Collections.synchronizedSet([] as Set),
+  // "group:name" of every project in this build — used to filter
+  // intra-project deps. Populated once all projects are evaluated.
+  projectKeys        : Collections.synchronizedSet([] as Set),
+]
+
+// Capture every project's (group:name) once all projects are configured so
+// per-subproject collectors can filter intra-project deps without an
+// ordering dependency on other subprojects.
+gradle.projectsEvaluated { g ->
+  g.rootProject.allprojects.each { p ->
+    g.socketFactsState.projectKeys.add("${p.group ?: ''}:${p.name}")
+  }
+}
+
+allprojects { project ->
+  def collectTask = project.tasks.create('socketFactsCollect') {
+    description = "Resolves ${project.path}'s configurations into the build-wide Socket facts accumulator"
+    // Dependency resolution depends on state Gradle's up-to-date tracking
+    // can't represent reliably.
+    outputs.upToDateWhen { false }
+
+    doLast {
+      def state = gradle.socketFactsState
+      def nodes = state.nodes
+      def directIds = state.directIds
+      def reportedUnresolved = state.reportedUnresolved
+      def projectKeys = state.projectKeys
+
+      // `id` omits ext so Gradle's variant artifacts (e.g.
+      // `java-classes-directory` and `jar` for the same project dep)
+      // dedupe into a single component. Classifier stays in the id since
+      // it identifies a distinct artifact (sources, javadoc, etc.).
+      def coordId = { coord ->
+        def parts = [coord.groupId, coord.artifactId]
+        if (coord.classifier) parts << coord.classifier
+        parts << coord.version
+        parts.join(':')
+      }
+
+      def isIntraProject = { String group, String name ->
+        projectKeys.contains("${group ?: ''}:${name}")
+      }
+
+      // Atomic upsert: bracket the read-modify-write under the nodes map's
+      // monitor so concurrent contributions don't lose flag updates.
+      def upsertNode = { Map coord, boolean isProd, boolean isNonTooling ->
+        def id = coordId(coord)
+        synchronized (nodes) {
+          def node = nodes[id]
+          if (node == null) {
+            node = [coord: coord, children: [] as Set, prod: false, nonTooling: false]
+            nodes[id] = node
+          } else if (!node.coord.ext && coord.ext) {
+            // Upgrade to the variant whose Gradle artifact has a real
+            // packaging extension. Compile classpath visits often arrive
+            // with no ext (a project dep exposes only its classes-directory
+            // variant there); the runtime classpath visit then fills in
+            // the canonical jar/aar.
+            node.coord = coord
+          }
+          if (isProd) {
+            node.prod = true
+          }
+          if (isNonTooling) {
+            node.nonTooling = true
+          }
+        }
+        id
+      }
+
+      // Walk a resolved dependency, emitting nodes for itself and its
+      // transitive closure. `cache` is keyed by ResolvedDependency identity
+      // and short-circuits revisits in diamond/cyclic graphs.
+      //
+      // We never touch `artifact.file` — that forces Gradle to *download*
+      // the underlying file (catastrophic on large builds that declare
+      // distribution archives as dependencies). `artifact.extension` and
+      // `artifact.classifier` read from metadata that resolution already
+      // needed.
+      //
+      // Intra-project deps (project(':lib') and friends) are dropped at
+      // visit time: we return an empty produced-id set, don't emit a node,
+      // and don't recurse into the dep's children. The transitives those
+      // intra-project deps expose are picked up via the consumer
+      // subproject's classpath directly (Gradle merges them) and via the
+      // intra-project's own collector.
+      def visit
+      visit = { dep, boolean isProd, boolean isNonTooling, Map cache ->
+        if (cache.containsKey(dep)) {
+          return cache[dep]
+        }
+        if (isIntraProject(dep.moduleGroup, dep.moduleName)) {
+          def empty = [] as Set
+          cache[dep] = empty
+          return empty
+        }
+        // Pre-populate the cache to break cycles before we recurse.
+        def producedIds = [] as Set
+        cache[dep] = producedIds
+
+        def artifacts = dep.moduleArtifacts
+        if (artifacts.isEmpty()) {
+          producedIds << upsertNode([
+            groupId   : dep.moduleGroup ?: '',
+            artifactId: dep.moduleName,
+            version   : dep.moduleVersion ?: '',
+            classifier: '',
+            ext       : '',
+          ], isProd, isNonTooling)
+        } else {
+          artifacts.each { a ->
+            producedIds << upsertNode([
+              groupId   : dep.moduleGroup ?: '',
+              artifactId: dep.moduleName,
+              version   : dep.moduleVersion ?: '',
+              classifier: a.classifier ?: '',
+              // Use the file extension Gradle reports. For Gradle-internal
+              // directory variants (java-classes-directory etc.) the
+              // extension is empty — we let that through and emit no ext
+              // qualifier. Never fall back to artifact.type, which is
+              // Gradle's variant attribute, not Maven packaging.
+              ext       : a.extension ?: '',
+            ], isProd, isNonTooling)
+          }
+        }
+
+        def childIds = [] as Set
+        dep.children.each { child ->
+          childIds.addAll(visit(child, isProd, isNonTooling, cache))
+        }
+        synchronized (nodes) {
+          producedIds.each { pid ->
+            nodes[pid].children.addAll(childIds)
+          }
+        }
+        producedIds
+      }
+
+      // Configuration selection by name pattern. We match the conventional
+      // suffixes used across Gradle plugins for resolvable classpath configs:
+      // Java (`compileClasspath`, `runtimeClasspath`,
+      // `testCompileClasspath`, `testRuntimeClasspath`), Kotlin Gradle Plugin
+      // (`jvmMainCompileClasspath`, `linuxX64MainRuntimeClasspath`, ...) and
+      // AGP per-variant (`debugCompileClasspath`, `releaseRuntimeClasspath`,
+      // `debugUnitTestRuntimeClasspath`, ...).
+      //
+      // Beyond classpaths we also walk other resolvable configurations
+      // (annotation processors, linter classpaths, etc.) so build-tooling
+      // deps land in the output too — tagged `tooling: true` so downstream
+      // reachability scanners can skip them.
+      //
+      // We exclude AGP's instrumented-test classpaths (`*AndroidTest*`)
+      // because their variant resolution requires consumer attributes
+      // (target SDK, device/host runtime) that an init-script-driven
+      // resolution doesn't set, and they produce ambiguity errors at
+      // resolution time. Unit-test classpaths (`*UnitTest*`) resolve fine.
+      def isClasspath = { String name ->
+        def lower = name.toLowerCase()
+        lower.endsWith('compileclasspath') || lower.endsWith('runtimeclasspath')
+      }
+      def isAndroidInstrumentedTest = { String name ->
+        name.toLowerCase().contains('androidtest')
+      }
+      def isTestConfig = { String name -> name.toLowerCase().contains('test') }
+
+      // Optional user-supplied filter: comma-separated glob patterns matched
+      // against full configuration names (case-sensitive — Gradle config
+      // names are canonical camelCase, and matching the user's literal input
+      // is more predictable than silently lower-casing). `*` matches any
+      // sequence of characters, `?` matches a single character. When set,
+      // only configurations whose name matches at least one pattern are
+      // walked. e.g. `--configs=*CompileClasspath,*RuntimeClasspath` keeps
+      // every variant of the standard classpath configs while filtering out
+      // tooling configs like `annotationProcessor` and
+      // `kotlinCompilerClasspath`.
+      def globToRegex = { String glob ->
+        def sb = new StringBuilder()
+        glob.each { String ch ->
+          switch (ch) {
+            case '*': sb << '.*'; break
+            case '?': sb << '.'; break
+            case '.': case '\\': case '^': case '$': case '|':
+            case '+': case '(': case ')':
+            case '[': case ']': case '{': case '}':
+              sb << '\\' << ch; break
+            default: sb << ch
+          }
+        }
+        java.util.regex.Pattern.compile(sb.toString())
+      }
+      def configsProp = project.findProperty('socket.configs')?.toString()
+      def requestedPatterns = null
+      if (configsProp != null && !configsProp.trim().isEmpty()) {
+        requestedPatterns = configsProp.split(',')
+          .collect { it.trim() }
+          .findAll { !it.isEmpty() }
+          .collect { globToRegex(it) }
+        if (requestedPatterns.isEmpty()) {
+          requestedPatterns = null
+        }
+      }
+
+      def targetConfigs = project.configurations.findAll {
+        if (!it.canBeResolved) return false
+        if (isAndroidInstrumentedTest(it.name)) return false
+        if (requestedPatterns != null) {
+          return requestedPatterns.any { p -> p.matcher(it.name).matches() }
+        }
+        return true
+      }
+
+      targetConfigs.each { cfg ->
+        def isProd = !isTestConfig(cfg.name)
+        def isNonTooling = isClasspath(cfg.name)
+        // Per-configuration try/catch: AGP-style configurations can fail
+        // with "variant ambiguity" when resolved from an init-script
+        // context that doesn't carry the consumer attributes AGP sets
+        // internally. We log and continue so a single ambiguous config
+        // doesn't sink the whole facts file.
+        try {
+          def lenient = cfg.resolvedConfiguration.lenientConfiguration
+          def cache = [:]
+          lenient.firstLevelModuleDependencies.each { dep ->
+            directIds.addAll(visit(dep, isProd, isNonTooling, cache))
+          }
+          // Unresolved deps drive the abort/warn decision in the root
+          // aggregator but are deliberately NOT emitted as nodes — the
+          // selector-only coordinates (no classifier, no ext, possibly
+          // empty version) would surface as half-formed entries downstream
+          // and a consumer like coana's `mvn dependency:get` would try to
+          // fetch a phantom artifact. Matches the sbt plugin, whose
+          // `isEmittable` filter drops these the same way.
+          lenient.unresolvedModuleDependencies.each { dep ->
+            if (isIntraProject(dep.selector.group, dep.selector.name)) {
+              return
+            }
+            def selectorKey = dep.selector.toString()
+            if (reportedUnresolved.add(selectorKey)) {
+              def reason = dep.problem?.message?.readLines()?.first() ?: 'unknown reason'
+              println "[socket-facts] unresolved: ${selectorKey} in ${project.path}: ${reason}"
+            }
+          }
+        } catch (Exception e) {
+          println "[socket-facts] skipping ${project.path}:${cfg.name}: ${e.message?.readLines()?.first()}"
+        }
+      }
+    }
+  }
+}
+
+rootProject { rp ->
+  // Capture project-derived values at configuration time so the task action
+  // doesn't reach back into `project` at execution time. Gradle's
+  // configuration cache forbids `Task.project` invocations from task
+  // actions; the Socket CLI disables the cache for the facts run via the
+  // `-Dorg.gradle.configuration-cache=false` flag, but hoisting these
+  // reads is cheap defensive code that keeps the script working even if
+  // a caller re-enables the cache by other means.
+  def outDirOverride = rp.findProperty('socket.outputDirectory')?.toString()
+  def outFileOverride = rp.findProperty('socket.outputFile')?.toString()
+  def defaultOutDir = rp.projectDir
+  def factsFileName = SOCKET_FACTS_FILENAME
+  // Unresolved dependencies are fatal by default — the user's environment is
+  // expected to resolve their declared deps. `-Psocket.ignoreUnresolved=true`
+  // (set by the CLI's `--ignore-unresolved`) downgrades that to a warning so
+  // the facts file still emits with whatever did resolve.
+  def ignoreUnresolved = rp.findProperty('socket.ignoreUnresolved')?.toString()?.toLowerCase() == 'true'
+
+  rp.tasks.create('socketFacts') {
+    group = 'socket'
+    description = 'Aggregates a single Socket facts JSON for the entire build'
+    outputs.upToDateWhen { false }
+
+    doLast {
+      def state = gradle.socketFactsState
+      def nodes = state.nodes
+      def directIds = state.directIds
+      def reportedUnresolved = state.reportedUnresolved
+
+      // Fail the build (or warn) once we've seen every collector's
+      // contributions. Subproject collectors already log each unresolved dep
+      // inline; this is the summary + decision point.
+      if (!reportedUnresolved.isEmpty()) {
+        def sorted = (reportedUnresolved as List).sort()
+        if (ignoreUnresolved) {
+          println "[socket-facts] ignoring ${sorted.size()} unresolved dependency(ies):"
+          sorted.each { println "  - ${it}" }
+        } else {
+          println "[socket-facts] could not resolve ${sorted.size()} dependency(ies):"
+          sorted.each { println "  - ${it}" }
+          throw new GradleException(
+            "Socket facts aborted: ${sorted.size()} unresolved dependency(ies). " +
+            "Pass --ignore-unresolved to skip them, or fix resolution (repositories, " +
+            "credentials, offline cache) and retry."
+          )
+        }
+      }
+
+      // Snapshot the accumulators under the same monitor used by writers in
+      // each subproject's socketFactsCollect doLast. Task dependencies
+      // (`aggregator.dependsOn(collector)`) already guarantee a
+      // happens-before edge between writes and this read, but we
+      // synchronize on `nodes` here so the read path is symmetric with the
+      // write path — no implicit reliance on Gradle's task-graph ordering
+      // semantics for memory visibility of plain HashMap/HashSet fields.
+      def components
+      synchronized (nodes) {
+        components = nodes.collect { id, node ->
+          [id: id, coord: node.coord, prod: node.prod, nonTooling: node.nonTooling, children: (node.children as List).sort()]
+        }
+      }
+
+      components = components.collect { snapshot ->
+        def id = snapshot.id
+        def coord = snapshot.coord
+        def component = [
+          type     : 'maven',
+          namespace: coord.groupId,
+          name     : coord.artifactId,
+        ]
+        if (coord.version) {
+          component.version = coord.version
+        }
+        def qualifiers = [:]
+        if (coord.classifier) {
+          qualifiers.classifier = coord.classifier
+        }
+        if (coord.ext) {
+          qualifiers.ext = coord.ext
+        }
+        if (!qualifiers.isEmpty()) {
+          component.qualifiers = qualifiers
+        }
+        component.id = id
+        if (directIds.contains(id)) {
+          component.direct = true
+        }
+        if (!snapshot.prod) {
+          component.dev = true
+        }
+        if (!snapshot.nonTooling) {
+          component.tooling = true
+        }
+        if (!snapshot.children.isEmpty()) {
+          component.dependencies = snapshot.children
+        }
+        component
+      }
+
+      if (components.isEmpty()) {
+        println "[socket-facts] no resolvable dependencies in build, skipping"
+        return
+      }
+
+      def outputDir = outDirOverride ? new File(outDirOverride) : defaultOutDir
+      outputDir.mkdirs()
+      def fileName = outFileOverride ?: factsFileName
+      def outFile = new File(outputDir, fileName)
+      outFile.text = JsonOutput.prettyPrint(JsonOutput.toJson([components: components]))
+      println "Socket facts file written to: ${outFile.absolutePath}"
+    }
+  }
+}
+
+// Wire every subproject's collector as a dependency of the root aggregator
+// so the aggregator runs after all contributions have been made.
+gradle.projectsEvaluated { g ->
+  def aggregator = g.rootProject.tasks.findByName('socketFacts')
+  if (aggregator) {
+    g.rootProject.allprojects.each { p ->
+      def collector = p.tasks.findByName('socketFactsCollect')
+      if (collector) {
+        aggregator.dependsOn(collector)
+      }
+    }
+  }
+}

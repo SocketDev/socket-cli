@@ -283,6 +283,15 @@ async function setupGradle(
     delete config.gradleOpts
   }
 
+  const facts = await askForFactsFlag(config.facts)
+  if (facts === undefined) {
+    return canceledByUser()
+  } else if (facts === 'yes' || facts === 'no') {
+    config.facts = facts === 'yes'
+  } else {
+    delete config.facts
+  }
+
   const verbose = await askForVerboseFlag(config.verbose)
   if (verbose === undefined) {
     return canceledByUser()
@@ -323,29 +332,42 @@ async function setupSbt(
     delete config.sbtOpts
   }
 
-  const stdout = await askForStdout(config.stdout)
-  if (stdout === undefined) {
+  const facts = await askForFactsFlag(config.facts)
+  if (facts === undefined) {
     return canceledByUser()
-  } else if (stdout === 'yes') {
-    config.stdout = true
-  } else if (stdout === 'no') {
-    config.stdout = false
+  } else if (facts === 'yes' || facts === 'no') {
+    config.facts = facts === 'yes'
   } else {
-    delete config.stdout
+    delete config.facts
   }
 
-  if (config.stdout !== true) {
-    const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
-    if (out === undefined) {
+  // --facts emits a .socket.facts.json instead of pom.xml files, so the pom
+  // output questions (stdout/outfile) don't apply when it is enabled.
+  if (config.facts !== true) {
+    const stdout = await askForStdout(config.stdout)
+    if (stdout === undefined) {
       return canceledByUser()
-    } else if (out === '-') {
+    } else if (stdout === 'yes') {
       config.stdout = true
+    } else if (stdout === 'no') {
+      config.stdout = false
     } else {
       delete config.stdout
-      if (out) {
-        config.outfile = out
+    }
+
+    if (config.stdout !== true) {
+      const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
+      if (out === undefined) {
+        return canceledByUser()
+      } else if (out === '-') {
+        config.stdout = true
       } else {
-        delete config.outfile
+        delete config.stdout
+        if (out) {
+          config.outfile = out
+        } else {
+          delete config.outfile
+        }
       }
     }
   }
@@ -469,6 +491,34 @@ async function askForVerboseFlag(
         name: 'yes',
         value: 'yes',
         description: 'Run this manifest in verbose mode',
+      },
+      {
+        name: '(leave default)',
+        value: '',
+        description: 'Do not store a setting for this',
+      },
+    ],
+    default: current === true ? 'yes' : current === false ? 'no' : '',
+  })
+}
+
+async function askForFactsFlag(
+  current: boolean | undefined,
+): Promise<string | undefined> {
+  return await select({
+    message:
+      '(--facts) Emit a Socket facts JSON file instead of generating pom.xml?',
+    choices: [
+      {
+        name: 'no',
+        value: 'no',
+        description: 'Generate pom.xml files (default behavior)',
+      },
+      {
+        name: 'yes',
+        value: 'yes',
+        description:
+          'Generate a .socket.facts.json file describing the resolved dependency graph',
       },
       {
         name: '(leave default)',
