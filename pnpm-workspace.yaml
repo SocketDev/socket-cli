@@ -83,7 +83,7 @@ catalog:
   '@types/which': 3.0.4
   '@types/yargs-parser': 21.0.3
   '@typescript/native-preview': 7.0.0-dev.20260510.1
-  '@vitest/coverage-v8': 4.0.3
+  '@vitest/coverage-v8': 4.1.6
   '@vitest/ui': 4.1.6
   '@yao-pkg/pkg': 6.8.0
   '@yarnpkg/parsers': 3.0.3
@@ -171,7 +171,7 @@ catalog:
   # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
   # bundled rolldown up to the catalog's 1.0.3.
   vite: 8.0.14
-  vitest: 4.0.3
+  vitest: 4.1.6
   wrap-ansi: 9.0.2
   xml2js: 0.6.2
   yaml: 2.8.1
@@ -407,5 +407,11 @@ saveExact: true
 strictPeerDependencies: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
+  # Transitive dep of @vitest/coverage-v8@4.1.6. Same maintainer
+  # (ariperkkio) + same repo + provenance attestation as earlier
+  # versions; the downgrade flag reflects a trusted-publisher ->
+  # provenance evidence-class change, not a takeover.
+  # published: 2026-05-25 | removable: 2026-06-01
+  - 'ast-v8-to-istanbul@1.0.2'
   - undici@6.21.3
   - 'compromise@14.15.0'
