@@ -25,8 +25,8 @@ import process from 'node:process'
  * env-var name in their disable hint.
  *
  * HookDisableEnvVar('no-revert-guard') → 'SOCKET_NO_REVERT_GUARD_DISABLED'
- * hookDisableEnvVar('comment-tone-reminder') →
- * 'SOCKET_COMMENT_TONE_REMINDER_DISABLED'
+ * hookDisableEnvVar('prose-tone-reminder') →
+ * 'SOCKET_PROSE_TONE_REMINDER_DISABLED'
  * hookDisableEnvVar('auth-rotation-reminder') →
  * 'SOCKET_AUTH_ROTATION_REMINDER_DISABLED'
  */

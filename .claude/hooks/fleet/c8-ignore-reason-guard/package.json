@@ -1,5 +1,5 @@
 {
-  "name": "hook-comment-tone-reminder",
+  "name": "hook-c8-ignore-reason-guard",
   "private": true,
   "type": "module",
   "main": "./index.mts",

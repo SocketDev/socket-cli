@@ -156,6 +156,13 @@
         "nuget"
       ]
     },
+    "skillspector": {
+      "description": "NVIDIA's third-party-skill security scanner (LangGraph-based; YARA + AST + OSV.dev CVE lookups + optional LLM analysis). No PyPI release / no GH tags upstream — pinned to a git SHA on main + installed via pipx. Sibling to AgentShield: AgentShield audits the operator's .claude/ config; SkillSpector audits untrusted upstream skills before install.",
+      "release": "pipx-git",
+      "repository": "github:NVIDIA/skillspector",
+      "version": "2eb84478",
+      "versionDate": "2026-05-18"
+    },
     "trufflehog": {
       "description": "TruffleHog — secrets scanner used by socket-basics SAST workflow.",
       "version": "3.93.8",

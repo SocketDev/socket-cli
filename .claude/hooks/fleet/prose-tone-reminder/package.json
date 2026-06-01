@@ -1,5 +1,5 @@
 {
-  "name": "hook-perfectionist-reminder",
+  "name": "hook-prose-tone-reminder",
   "private": true,
   "type": "module",
   "main": "./index.mts",

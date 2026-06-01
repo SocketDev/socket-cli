@@ -1,5 +1,5 @@
 {
-  "name": "hook-identifying-users-reminder",
+  "name": "hook-skill-usage-logger",
   "private": true,
   "type": "module",
   "main": "./index.mts",

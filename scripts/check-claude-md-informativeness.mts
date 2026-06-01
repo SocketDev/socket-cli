@@ -1,25 +1,22 @@
 #!/usr/bin/env node
 /**
- * @file Whole-file commit-time gate that audits CLAUDE.md `###` section
- *   bodies for informativeness. Every section between two `### ` headings
- *   must contain at least one of:
+ * @file Whole-file commit-time gate that audits CLAUDE.md `###` section bodies
+ *   for informativeness. Every section between two `### ` headings must contain
+ *   at least one of:
  *
- *     1. A hook citation: `(enforced by \`.claude/hooks/...\`)` or
- *        `enforced by \`.claude/hooks/...\``
- *     2. A docs link: `[anything](docs/claude.md/...)` or
- *        `[anything](docs/...)` pointing at a same-repo detail file
- *     3. An explicit opt-out: `(advisory, no enforcement)` anywhere
- *        in the section body
+ *   1. A hook citation: `(enforced by \`.claude/hooks/...`)` or `enforced by
+ *      `.claude/hooks/...``
+ *   2. A docs link: `[anything](docs/claude.md/...)` or `[anything](docs/...)`
+ *      pointing at a same-repo detail file
+ *   3. An explicit opt-out: `(advisory, no enforcement)` anywhere in the section
+ *      body Sections that are pure prose without one of these three signals are
+ *      reported as findings. Per the Salesforce agentic-engineering article,
+ *      CLAUDE.md variance is a direct quality driver; the size guard already
+ *      keeps each section terse, this guard keeps each section anchored to
+ *      either an enforcer or a detail page. Exit codes:
  *
- *   Sections that are pure prose without one of these three signals are
- *   reported as findings. Per the Salesforce agentic-engineering article,
- *   CLAUDE.md variance is a direct quality driver; the size guard already
- *   keeps each section terse, this guard keeps each section anchored to
- *   either an enforcer or a detail page.
- *
- *   Exit codes:
- *     - 0 — every section anchors to an enforcer / docs link / advisory opt-out
- *     - 1 — at least one section is pure prose without any of the three
+ *   - 0 — every section anchors to an enforcer / docs link / advisory opt-out
+ *   - 1 — at least one section is pure prose without any of the three
  */
 
 import { existsSync, readFileSync } from 'node:fs'

@@ -32,7 +32,6 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import process from 'node:process'
 
 import { withBashGuard } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'

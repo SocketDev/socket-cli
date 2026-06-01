@@ -43,6 +43,7 @@ import preferEnvAsBoolean from './rules/prefer-env-as-boolean.mts'
 import preferErrorMessage from './rules/prefer-error-message.mts'
 import preferExistsSync from './rules/prefer-exists-sync.mts'
 import preferFunctionDeclaration from './rules/prefer-function-declaration.mts'
+import preferMockImport from './rules/prefer-mock-import.mts'
 import preferNodeBuiltinImports from './rules/prefer-node-builtin-imports.mts'
 import preferNodeModulesDotCache from './rules/prefer-node-modules-dot-cache.mts'
 import preferNonCapturingGroup from './rules/prefer-non-capturing-group.mts'
@@ -106,6 +107,7 @@ const plugin = {
     'prefer-error-message': preferErrorMessage,
     'prefer-exists-sync': preferExistsSync,
     'prefer-function-declaration': preferFunctionDeclaration,
+    'prefer-mock-import': preferMockImport,
     'prefer-node-builtin-imports': preferNodeBuiltinImports,
     'prefer-node-modules-dot-cache': preferNodeModulesDotCache,
     'prefer-non-capturing-group': preferNonCapturingGroup,

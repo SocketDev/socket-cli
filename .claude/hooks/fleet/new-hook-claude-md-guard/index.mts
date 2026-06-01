@@ -35,7 +35,11 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+
+const logger = getDefaultLogger()
 
 interface PreToolUsePayload {
   readonly tool_name?: string | undefined
@@ -186,35 +190,60 @@ async function main(): Promise<void> {
   const braceRe = new RegExp(
     `\`\\.claude/hooks/${escape(prefix)}\\{[^}]*\\b${escape(leaf)}\\b[^}]*\\}/\``,
   )
-  const found =
-    content.includes(literalSlashed) ||
-    content.includes(literalBare) ||
-    braceRe.test(content)
-  if (found) {
+  const citedIn = (text: string): boolean =>
+    text.includes(literalSlashed) ||
+    text.includes(literalBare) ||
+    braceRe.test(text)
+
+  // A citation in the linked hook-registry doc counts too. CLAUDE.md is
+  // size-capped (claude-md-size-guard), so the registry — which CLAUDE.md's
+  // `### Hook registry` section explicitly points at as the "full listing"
+  // — is the canonical low-cost home for per-hook associations. The registry
+  // lists each fleet hook as a `- \`<leaf>\` — description` bullet, so a
+  // backticked leaf there satisfies the gate (in addition to the path forms).
+  const registryPath = claudeMdPath.replace(
+    /CLAUDE\.md$/,
+    'docs/claude.md/fleet/hook-registry.md',
+  )
+  let registryCited = false
+  if (registryPath !== claudeMdPath && existsSync(registryPath)) {
+    try {
+      const registry = readFileSync(registryPath, 'utf8')
+      const bulletRe = new RegExp(`^\\s*-\\s*\`${escape(leaf)}\``, 'm')
+      registryCited = citedIn(registry) || bulletRe.test(registry)
+    } catch {
+      // Registry unreadable — fall back to the CLAUDE.md result.
+    }
+  }
+
+  if (citedIn(content) || registryCited) {
     return
   }
 
   const lines = [
-    `[new-hook-claude-md-guard] Hook "${hookPathSuffix}" missing CLAUDE.md reference.`,
+    `[new-hook-claude-md-guard] Hook "${hookPathSuffix}" missing its enforcement reference.`,
     '',
-    `  ${toolName} blocked: template/CLAUDE.md must contain a one-line`,
-    `  reference to the hook before it lands. Expected form (inline,`,
-    `  attached to the rule the hook enforces):`,
+    `  ${toolName} blocked: the hook needs a one-line association before it`,
+    '  lands, in EITHER place:',
     '',
-    `      (enforced by \`.claude/hooks/${hookPathSuffix}/\`)`,
+    `    - the hook-registry doc (preferred — CLAUDE.md is size-capped):`,
+    `        docs/claude.md/fleet/hook-registry.md, as a bullet:`,
+    `          - \`${leaf}\` — <one-line description>`,
+    `    - or inline in CLAUDE.md, attached to the rule it enforces:`,
+    `          (enforced by \`.claude/hooks/${hookPathSuffix}/\`)`,
     '',
-    '  Why: fleet repos read CLAUDE.md as the source of truth. A hook',
-    "  without a CLAUDE.md entry is policy that doesn't exist on paper —",
-    "  users won't know why they got blocked. Keep the entry minimal,",
-    '  attached to an existing rule whenever possible.',
+    '  Why: fleet repos read CLAUDE.md + its linked docs as the source of',
+    "  truth. A hook with no entry is policy that doesn't exist on paper —",
+    "  users won't know why they got blocked. Prefer the registry bullet;",
+    '  it keeps CLAUDE.md under the 40 KB cap.',
     '',
-    '  Bypass (use sparingly, e.g. when adding the CLAUDE.md entry in',
-    '  a follow-up commit on the same PR): type "Allow new-hook bypass"',
-    '  in a recent message.',
+    '  Bypass (use sparingly, e.g. when adding the entry in a follow-up',
+    '  commit on the same PR): type "Allow new-hook bypass" in a recent',
+    '  message.',
     '',
   ]
-  process.stderr.write(lines.join('\n') + '\n')
-  process.exit(2)
+  logger.error(lines.join('\n') + '\n')
+  process.exitCode = 2
 }
 
 main().catch(() => {

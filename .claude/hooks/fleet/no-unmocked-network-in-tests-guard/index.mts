@@ -27,21 +27,14 @@
 
 import process from 'node:process'
 
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
+const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow unmocked-network-in-tests bypass'
-
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?:
-    | {
-        readonly file_path?: string | undefined
-        readonly new_string?: string | undefined
-        readonly content?: string | undefined
-      }
-    | undefined
-  readonly transcript_path?: string | undefined
-}
 
 // A path is a test file if its basename matches `*.test.*` / `*.spec.*` or it
 // lives under a `test/` or `__tests__/` directory.
@@ -94,67 +87,49 @@ export function shouldBlock(filePath: string, content: string): boolean {
   return true
 }
 
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction, and fail-open on any throw.
 async function main(): Promise<void> {
-  const raw = await readStdin()
-  if (!raw) {
-    return
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    return
-  }
+  await withEditGuard((filePath, content, payload) => {
+    if (!shouldBlock(filePath, content ?? '')) {
+      return
+    }
 
-  const toolName = payload.tool_name
-  if (toolName !== 'Edit' && toolName !== 'Write') {
-    return
-  }
+    if (
+      payload.transcript_path &&
+      bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
+    ) {
+      return
+    }
 
-  const filePath = payload.tool_input?.file_path
-  if (!filePath) {
-    return
-  }
-
-  const content =
-    payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
-  if (!shouldBlock(filePath, content)) {
-    return
-  }
-
-  if (
-    payload.transcript_path &&
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
-  ) {
-    process.exit(0)
-  }
-
-  process.stderr.write(
-    [
-      '[no-unmocked-network-in-tests-guard] Blocked: test makes a live third-party connection',
-      '',
-      `  File: ${filePath}`,
-      '',
-      '  This test calls httpJson/httpText/httpRequest/fetch against a',
-      '  non-localhost host with no `nock` mock in the file. Live network in',
-      '  tests is flaky, slow, and a data-exfil surface.',
-      '',
-      '  Fix: mock the endpoint with nock, like the registry-*.test.mts suites:',
-      "    import nock from 'nock'",
-      '    beforeEach(() => nock.disableNetConnect())',
-      '    afterEach(() => { nock.cleanAll(); nock.enableNetConnect() })',
-      "    nock('https://host').get('/path').reply(200, { ... })",
-      '',
-      '  Detail: docs/claude.md/fleet/no-live-network-in-tests.md',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '',
-    ].join('\n'),
-  )
-  process.exit(2)
+    logger.error(
+      [
+        '[no-unmocked-network-in-tests-guard] Blocked: test makes a live third-party connection',
+        '',
+        `  File: ${filePath}`,
+        '',
+        '  This test calls httpJson/httpText/httpRequest/fetch against a',
+        '  non-localhost host with no `nock` mock in the file. Live network in',
+        '  tests is flaky, slow, and a data-exfil surface.',
+        '',
+        '  Fix: mock the endpoint with nock, like the registry-*.test.mts suites:',
+        "    import nock from 'nock'",
+        '    beforeEach(() => nock.disableNetConnect())',
+        '    afterEach(() => { nock.cleanAll(); nock.enableNetConnect() })',
+        "    nock('https://host').get('/path').reply(200, { ... })",
+        '',
+        '  Detail: docs/claude.md/fleet/no-live-network-in-tests.md',
+        `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
+        '',
+      ].join('\n'),
+    )
+    process.exitCode = 2
+  })
 }
 
-main().catch(e => {
-  process.stderr.write(
-    `[no-unmocked-network-in-tests-guard] hook error (allowing): ${(e as Error).message}\n`,
-  )
-})
+// Only drain stdin + run the guard when invoked as the hook entrypoint.
+// The test suite imports the exported helpers directly; without this gate
+// importing the module would call readStdin() and hang.
+if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+  await main()
+}

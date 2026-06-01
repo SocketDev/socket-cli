@@ -17,6 +17,7 @@ import process from 'node:process'
 import {
   readLastAssistantText,
   readStdin,
+  readUserText,
   stripCodeFences,
   stripQuotedSpans,
 } from './transcript.mts'
@@ -91,6 +92,121 @@ export interface ReminderConfig {
 }
 
 /**
+ * A reminder rule-group for the multiplexed `runStopReminders`. Same shape as
+ * ReminderConfig minus the process-lifecycle bits (name + per-group env var +
+ * patterns + hint); `blocking` is intentionally absent — a multiplexed group is
+ * informational only (mixing block + non-block decisions across groups in one
+ * process can't emit a single coherent Stop decision).
+ */
+export interface ReminderGroup {
+  readonly name: string
+  readonly disabledEnvVar: string
+  readonly patterns: readonly RuleViolation[]
+  readonly closingHint?: string | undefined
+  readonly stripQuotedSpans?: boolean | undefined
+}
+
+/**
+ * Scan `text` against a pattern list (+ optional extraCheck), returning hits.
+ * The pure core shared by `runStopReminder` and `runStopReminders`.
+ */
+export async function scanReminderText(
+  text: string,
+  patterns: readonly RuleViolation[],
+  extraCheck?: ReminderConfig['extraCheck'],
+): Promise<ReminderHit[]> {
+  const hits: ReminderHit[] = []
+  for (let i = 0, { length } = patterns; i < length; i += 1) {
+    const pattern = patterns[i]!
+    const match = pattern.regex.exec(text)
+    if (!match) {
+      continue
+    }
+    hits.push({
+      label: pattern.label,
+      why: pattern.why,
+      snippet: extractSnippet(text, match.index, match[0].length),
+    })
+  }
+  if (extraCheck) {
+    try {
+      const extra = await extraCheck(text)
+      for (let i = 0, { length } = extra; i < length; i += 1) {
+        hits.push(extra[i]!)
+      }
+    } catch {
+      // Fail-open: a buggy extra-check must not suppress the regex hits.
+    }
+  }
+  return hits
+}
+
+/**
+ * Format the stderr block for one group's hits.
+ */
+export function formatReminderBlock(
+  name: string,
+  hits: readonly ReminderHit[],
+  closingHint?: string | undefined,
+): string {
+  const lines = [
+    `[${name}] Assistant turn matched reminder patterns:`,
+    '',
+    ...hits.flatMap(h => [`  • "${h.label}" — ${h.snippet}`, `      ${h.why}`]),
+  ]
+  if (closingHint) {
+    lines.push('', `  ${closingHint}`)
+  }
+  lines.push('')
+  return lines.join('\n')
+}
+
+/**
+ * Run several informational reminder groups in ONE Stop-hook process. Reads
+ * stdin + the most-recent assistant turn once, then scans each group whose
+ * `disabledEnvVar` is unset — preserving per-group disabling exactly as if each
+ * were its own hook. Emits one stderr block per group with hits. Always exits 0.
+ * Use when merging pure-table reminders to cut process count without losing the
+ * granular disable env vars.
+ */
+export async function runStopReminders(
+  groups: readonly ReminderGroup[],
+): Promise<void> {
+  const payloadRaw = await readStdin()
+  let payload: StopPayload
+  try {
+    payload = JSON.parse(payloadRaw) as StopPayload
+  } catch {
+    process.exit(0)
+  }
+  const rawText = readLastAssistantText(payload.transcript_path)
+  if (!rawText) {
+    process.exit(0)
+  }
+  const fencesStripped = stripCodeFences(rawText)
+  const blocks: string[] = []
+  for (let i = 0, { length } = groups; i < length; i += 1) {
+    const group = groups[i]!
+    if (process.env[group.disabledEnvVar]) {
+      continue
+    }
+    const text = group.stripQuotedSpans
+      ? stripQuotedSpans(fencesStripped)
+      : fencesStripped
+    // eslint-disable-next-line no-await-in-loop
+    const hits = await scanReminderText(text, group.patterns)
+    if (hits.length > 0) {
+      blocks.push(formatReminderBlock(group.name, hits, group.closingHint))
+    }
+  }
+  if (blocks.length === 0) {
+    process.exit(0)
+  }
+  process.stderr.write(blocks.join('\n') + '\n')
+  process.exit(0)
+}
+
+/**
  * Run a Stop-hook reminder. Reads stdin, scans the most-recent assistant turn,
  * and writes hits to stderr. Always exits 0.
  */
@@ -115,51 +231,13 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
     ? stripQuotedSpans(fencesStripped)
     : fencesStripped
 
-  const hits: ReminderHit[] = []
-  const { patterns } = config
-  const { length: patternsLength } = patterns
-  for (let i = 0; i < patternsLength; i += 1) {
-    const pattern = patterns[i]!
-    const match = pattern.regex.exec(text)
-    if (!match) {
-      continue
-    }
-    hits.push({
-      label: pattern.label,
-      why: pattern.why,
-      snippet: extractSnippet(text, match.index, match[0].length),
-    })
-  }
-
-  if (config.extraCheck) {
-    try {
-      const extra = await config.extraCheck(text)
-      for (
-        let i = 0, { length: extraLength } = extra;
-        i < extraLength;
-        i += 1
-      ) {
-        hits.push(extra[i]!)
-      }
-    } catch {
-      // Fail-open: a buggy extra-check must not suppress the regex hits.
-    }
-  }
+  const hits = await scanReminderText(text, config.patterns, config.extraCheck)
 
   if (hits.length === 0) {
     process.exit(0)
   }
 
-  const lines = [
-    `[${config.name}] Assistant turn matched reminder patterns:`,
-    '',
-    ...hits.flatMap(h => [`  • "${h.label}" — ${h.snippet}`, `      ${h.why}`]),
-  ]
-  if (config.closingHint) {
-    lines.push('', `  ${config.closingHint}`)
-  }
-  lines.push('')
-  const message = lines.join('\n')
+  const message = formatReminderBlock(config.name, hits, config.closingHint)
 
   // Blocking mode: emit a Stop-hook block decision so Claude must
   // continue the turn and address the matched phrase. Suppressed
@@ -174,5 +252,94 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
   }
 
   process.stderr.write(message + '\n')
+  process.exit(0)
+}
+
+/**
+ * Config for a turn-pair reminder: fires only when the last USER turn matches a
+ * trigger AND the most-recent ASSISTANT turn matches a deflection. The shape
+ * shared by answer-passing-questions / answer-status-requests /
+ * follow-direct-imperative — "user asked X, assistant did Y instead".
+ */
+/**
+ * A turn-pair matcher. `label` + `why` describe it; matching is by `regex`
+ * OR — when the rule needs logic a regex can't express (word-count bounds,
+ * first-word-only, question filtering, like follow-direct-imperative's
+ * `looksLikeImperative`) — by an explicit `match` predicate. Exactly one of
+ * `regex` / `match` is consulted (`match` wins when present).
+ */
+export interface TurnPairRule {
+  readonly label: string
+  readonly why: string
+  readonly regex?: RegExp | undefined
+  readonly match?: ((text: string) => boolean) | undefined
+}
+
+export interface TurnPairConfig {
+  readonly name: string
+  readonly disabledEnvVar: string
+  readonly userTriggers: readonly TurnPairRule[]
+  readonly assistantDeflections: readonly TurnPairRule[]
+  readonly closingHint?: string | undefined
+}
+
+function turnPairMatches(rule: TurnPairRule, text: string): boolean {
+  if (rule.match) {
+    return rule.match(text)
+  }
+  return rule.regex ? rule.regex.test(text) : false
+}
+
+/**
+ * Run a turn-pair Stop reminder. Reads the last user turn + the most-recent
+ * assistant turn (via transcript.mts — no per-hook re-implementation of
+ * JSONL parsing / role detection / content flattening), and emits a reminder
+ * only when BOTH a user trigger and an assistant deflection match. Always
+ * exits 0. The fired message names the matched trigger + deflection so the
+ * reader sees what pair tripped it.
+ */
+export async function runTurnPairReminder(
+  config: TurnPairConfig,
+): Promise<void> {
+  const payloadRaw = await readStdin()
+  if (process.env[config.disabledEnvVar]) {
+    process.exit(0)
+  }
+  let payload: StopPayload
+  try {
+    payload = JSON.parse(payloadRaw) as StopPayload
+  } catch {
+    process.exit(0)
+  }
+  const userText = stripCodeFences(readUserText(payload.transcript_path, 1))
+  const assistantText = stripCodeFences(
+    readLastAssistantText(payload.transcript_path),
+  )
+  if (!userText || !assistantText) {
+    process.exit(0)
+  }
+  const trigger = config.userTriggers.find(p => turnPairMatches(p, userText))
+  if (!trigger) {
+    process.exit(0)
+  }
+  const deflection = config.assistantDeflections.find(p =>
+    turnPairMatches(p, assistantText),
+  )
+  if (!deflection) {
+    process.exit(0)
+  }
+  const userPreview = userText.trim().slice(0, 60).replace(/\s+/g, ' ')
+  const lines = [
+    `[${config.name}] User asked, assistant deflected:`,
+    '',
+    `  User trigger: "${trigger.label}" — "${userPreview}"`,
+    `  Assistant deflection: "${deflection.label}"`,
+    `      ${deflection.why}`,
+  ]
+  if (config.closingHint) {
+    lines.push('', `  ${config.closingHint}`)
+  }
+  lines.push('')
+  process.stderr.write(lines.join('\n') + '\n')
   process.exit(0)
 }

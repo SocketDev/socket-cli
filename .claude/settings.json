@@ -46,6 +46,10 @@
           },
           {
             "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/c8-ignore-reason-guard/index.mts"
+          },
+          {
+            "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/markdown-filename-guard/index.mts"
           },
           {
@@ -186,6 +190,10 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/codex-no-write-guard/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/programmatic-claude-lockdown-guard/index.mts"
           },
           {
             "type": "command",
@@ -360,7 +368,11 @@
           },
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/comment-tone-reminder/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/prose-tone-reminder/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/prose-antipattern-reminder/index.mts"
           },
           {
             "type": "command",
@@ -404,19 +416,11 @@
           },
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/identifying-users-reminder/index.mts"
-          },
-          {
-            "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/judgment-reminder/index.mts"
           },
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/parallel-agent-on-stop-reminder/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/perfectionist-reminder/index.mts"
           },
           {
             "type": "command",

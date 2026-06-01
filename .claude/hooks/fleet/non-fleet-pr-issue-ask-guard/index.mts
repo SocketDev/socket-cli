@@ -36,18 +36,16 @@
 
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isFleetRepo, slugFromRemoteUrl } from '../_shared/fleet-repos.mts'
 import { extractGitCwd } from '../_shared/git-cwd.mts'
+import { withBashGuard } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: string | undefined } | undefined
-  readonly transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow non-fleet-publish bypass'
 
@@ -105,24 +103,15 @@ export function findPublicGhInvocation(
   return undefined
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  let payload: ToolInput
-  try {
-    payload = raw ? JSON.parse(raw) : {}
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = payload.tool_input?.command ?? ''
-  if (!command || !/\bgh\b/.test(command)) {
-    process.exit(0)
+// withBashGuard handles the stdin drain, tool_name gate, command narrow,
+// and fail-open on any throw.
+await withBashGuard((command, payload) => {
+  if (!/\bgh\b/.test(command)) {
+    return
   }
   const subcommand = findPublicGhInvocation(command)
   if (!subcommand) {
-    process.exit(0)
+    return
   }
 
   // Resolve target slug. `--repo` carries owner/repo (shown
@@ -139,7 +128,7 @@ async function main(): Promise<void> {
   if (!slug) {
     // Fail open — can't determine target. The user gets the gh
     // command's own error if it's malformed.
-    process.exit(0)
+    return
   }
   const slashIdx = slug.indexOf('/')
   const bareSlug = slashIdx === -1 ? slug : slug.slice(slashIdx + 1)
@@ -147,7 +136,7 @@ async function main(): Promise<void> {
   if (isFleetRepo(bareSlug)) {
     // Fleet repo — fall through. The action is authorized by being
     // inside the fleet.
-    process.exit(0)
+    return
   }
 
   // Non-fleet target. Check bypass phrase.
@@ -155,10 +144,10 @@ async function main(): Promise<void> {
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    process.exit(0)
+    return
   }
 
-  process.stderr.write(
+  logger.error(
     [
       'non-fleet-pr-issue-ask-guard: blocked',
       '',
@@ -178,12 +167,5 @@ async function main(): Promise<void> {
       '  yes/no before re-attempting.',
     ].join('\n') + '\n',
   )
-  process.exit(2)
-}
-
-main().catch(err => {
-  process.stderr.write(
-    `non-fleet-pr-issue-ask-guard: hook crashed, failing open: ${err instanceof Error ? err.message : String(err)}\n`,
-  )
-  process.exit(0)
+  process.exitCode = 2
 })

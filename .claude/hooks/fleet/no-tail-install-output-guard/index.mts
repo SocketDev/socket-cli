@@ -36,13 +36,13 @@
 
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // oxlint-disable-next-line no-explicit-any -- shell-quote ships no types; runtime contract is stable.
 import { parse as shellQuoteParse } from 'shell-quote'
 
-interface ToolInput {
-  readonly tool_input?: { readonly command?: string | undefined } | undefined
-  readonly tool_name?: string | undefined
-}
+import { withBashGuard } from '../_shared/payload.mts'
+
+const logger = getDefaultLogger()
 
 type ParseEntry = string | { op: string } | { comment: string }
 
@@ -81,10 +81,12 @@ const PNPM_RUN_SCRIPTS = new Set([
 // `head`. Pipes are the only operator that matters — `&&`, `||`, `;`,
 // `&` separate independent commands, so `pnpm i && echo done | tail -5`
 // is NOT the bad pattern (the tail consumes `echo`, not `pnpm`).
-function findOffendingPipe(command: string): {
-  install: string
-  truncator: string
-} | undefined {
+function findOffendingPipe(command: string):
+  | {
+      install: string
+      truncator: string
+    }
+  | undefined {
   let entries: ParseEntry[]
   try {
     entries = parse(command)
@@ -111,7 +113,14 @@ function findOffendingPipe(command: string): {
       continue
     }
     if (isOp(e)) {
-      if (e.op === '|' || e.op === '||' || e.op === '&&' || e.op === ';' || e.op === '&' || e.op === '\n') {
+      if (
+        e.op === '|' ||
+        e.op === '||' ||
+        e.op === '&&' ||
+        e.op === ';' ||
+        e.op === '&' ||
+        e.op === '\n'
+      ) {
         flush(e.op)
         continue
       }
@@ -192,56 +201,34 @@ function describeInstallShape(tokens: string[]): string | undefined {
   return undefined
 }
 
-let payloadRaw = ''
-process.stdin.setEncoding('utf8')
-process.stdin.on('data', chunk => {
-  payloadRaw += chunk
-})
-process.stdin.on('end', () => {
-  try {
-    let payload: ToolInput
-    try {
-      payload = JSON.parse(payloadRaw) as ToolInput
-    } catch {
-      process.exit(0)
-    }
-
-    if (payload.tool_name !== 'Bash') {
-      process.exit(0)
-    }
-    const command = payload.tool_input?.command ?? ''
-    const hit = findOffendingPipe(command)
-    if (!hit) {
-      process.exit(0)
-    }
-
-    process.stderr.write(
-      [
-        '[no-tail-install-output-guard] Blocked: install/check output piped to ' +
-          `\`${hit.truncator}\`.`,
-        '',
-        `  Offending shape: \`${hit.install} ... | ${hit.truncator} -N\``,
-        '',
-        '  Why this is blocked:',
-        '    pnpm prints its Socket Firewall footer last. Critical warnings',
-        '    ([ERR_PNPM_IGNORED_BUILDS], peer-dep mismatches, soak-bypass',
-        '    tripwires) print ABOVE the footer. A small `tail`/`head` window',
-        '    captures the footer and hides every warning — a known local-passes-',
-        '    CI-fails failure mode (v6.0.4 shipped with red CI this way).',
-        '',
-        '  Fix: scan the full output for warning markers instead.',
-        '',
-        `    ${hit.install} 2>&1 | grep -iE "warning|error|ignored|fail"`,
-        '',
-        '  Or drop the truncation entirely and read all the output.',
-        '',
-      ].join('\n'),
-    )
-    process.exit(2)
-  } catch (e) {
-    process.stderr.write(
-      `[no-tail-install-output-guard] hook error (allowing): ${e}\n`,
-    )
-    process.exit(0)
+// withBashGuard handles the stdin drain, tool_name gate, command narrow,
+// and fail-open on any throw.
+await withBashGuard(command => {
+  const hit = findOffendingPipe(command)
+  if (!hit) {
+    return
   }
+  logger.error(
+    [
+      '[no-tail-install-output-guard] Blocked: install/check output piped to ' +
+        `\`${hit.truncator}\`.`,
+      '',
+      `  Offending shape: \`${hit.install} ... | ${hit.truncator} -N\``,
+      '',
+      '  Why this is blocked:',
+      '    pnpm prints its Socket Firewall footer last. Critical warnings',
+      '    ([ERR_PNPM_IGNORED_BUILDS], peer-dep mismatches, soak-bypass',
+      '    tripwires) print ABOVE the footer. A small `tail`/`head` window',
+      '    captures the footer and hides every warning — a known local-passes-',
+      '    CI-fails failure mode (v6.0.4 shipped with red CI this way).',
+      '',
+      '  Fix: scan the full output for warning markers instead.',
+      '',
+      `    ${hit.install} 2>&1 | grep -iE "warning|error|ignored|fail"`,
+      '',
+      '  Or drop the truncation entirely and read all the output.',
+      '',
+    ].join('\n'),
+  )
+  process.exitCode = 2
 })

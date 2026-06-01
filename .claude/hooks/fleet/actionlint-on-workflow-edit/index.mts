@@ -22,7 +22,6 @@
 // preinstalled, but downstreams may not.
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 

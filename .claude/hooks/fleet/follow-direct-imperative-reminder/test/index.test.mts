@@ -2,8 +2,69 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { flattenContent, hasHedge, looksLikeImperative } from '../index.mts'
+import { hasHedge, looksLikeImperative } from '../index.mts'
+
+const HOOK = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'index.mts',
+)
+
+function runWithTurns(
+  userText: string,
+  assistantText: string,
+): { stderr: string; exitCode: number } {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'follow-imp-'))
+  const transcriptPath = path.join(dir, 'session.jsonl')
+  writeFileSync(
+    transcriptPath,
+    [
+      JSON.stringify({ role: 'user', content: userText }),
+      JSON.stringify({ role: 'assistant', content: assistantText }),
+    ].join('\n'),
+  )
+  try {
+    const r = spawnSync('node', [HOOK], {
+      input: JSON.stringify({ transcript_path: transcriptPath }),
+    })
+    return { stderr: String(r.stderr), exitCode: r.status ?? -1 }
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+test('fires: imperative user + hedging assistant', () => {
+  const { stderr, exitCode } = runWithTurns(
+    'kill it',
+    "That won't help — let me explain what's happening first.",
+  )
+  assert.equal(exitCode, 0)
+  assert.match(stderr, /follow-direct-imperative-reminder/)
+})
+
+test('silent: imperative user + clean assistant', () => {
+  const { stderr } = runWithTurns('kill it', 'Done. Killed the process.')
+  assert.doesNotMatch(stderr, /follow-direct-imperative-reminder/)
+})
+
+test('silent: non-imperative user + hedging assistant', () => {
+  const { stderr } = runWithTurns(
+    'what do you think about the approach?',
+    "Let me explain — that won't help.",
+  )
+  assert.doesNotMatch(stderr, /follow-direct-imperative-reminder/)
+})
+
+test('fails open on malformed stdin', () => {
+  const r = spawnSync('node', [HOOK], { input: 'not-json{' })
+  assert.equal(r.status ?? -1, 0)
+})
 
 test('looksLikeImperative: "use nvm 26.2.0"', () => {
   assert.strictEqual(looksLikeImperative('use nvm 26.2.0'), true)
@@ -78,34 +139,4 @@ test('hasHedge: clean status update', () => {
 
 test('hasHedge: tool result narration', () => {
   assert.strictEqual(hasHedge('Build cancelled. No processes remain.'), false)
-})
-
-test('flattenContent: string', () => {
-  assert.strictEqual(flattenContent('hi'), 'hi')
-})
-
-test('flattenContent: text blocks', () => {
-  assert.strictEqual(
-    flattenContent([
-      { type: 'text', text: 'one' },
-      { type: 'text', text: 'two' },
-    ]),
-    'one\ntwo',
-  )
-})
-
-test('flattenContent: ignores non-text blocks', () => {
-  assert.strictEqual(
-    flattenContent([
-      { type: 'tool_use', name: 'Bash' },
-      { type: 'text', text: 'survives' },
-    ]),
-    'survives',
-  )
-})
-
-test('flattenContent: empty/garbage', () => {
-  assert.strictEqual(flattenContent(undefined), '')
-  assert.strictEqual(flattenContent(42), '')
-  assert.strictEqual(flattenContent(undefined), '')
 })

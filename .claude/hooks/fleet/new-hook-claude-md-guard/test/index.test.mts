@@ -99,6 +99,34 @@ test('ALLOWS when CLAUDE.md uses trailing-slash-omitted variant', () => {
   }
 })
 
+test('ALLOWS when only the hook-registry doc cites the hook (bullet form)', () => {
+  // CLAUDE.md has NO citation; the registry doc carries the association.
+  // This is the preferred, size-cap-friendly home.
+  const repo = makeFakeRepo('# CLAUDE.md\n\nNo hook citations here.\n')
+  try {
+    const registryPath = path.join(
+      repo.templatePath,
+      'docs',
+      'claude.md',
+      'fleet',
+      'hook-registry.md',
+    )
+    mkdirSync(path.dirname(registryPath), { recursive: true })
+    writeFileSync(
+      registryPath,
+      '# Hook registry\n\n- `my-new-hook` — does a thing\n',
+    )
+    const { exitCode } = runHook({
+      tool_name: 'Write',
+      tool_input: { file_path: repo.hookIndexPath('my-new-hook') },
+      transcript_path: makeTranscript(repo.root),
+    })
+    assert.equal(exitCode, 0)
+  } finally {
+    repo.cleanup()
+  }
+})
+
 test('ALLOWS for _shared/ helper edits', () => {
   const repo = makeFakeRepo('# nothing here')
   try {

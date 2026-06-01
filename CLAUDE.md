@@ -8,7 +8,7 @@
 
 ### Identifying users
 
-Identify users by git credentials and use their actual name. Use "you/your" when speaking directly; use names when referencing contributions (enforced by `.claude/hooks/fleet/identifying-users-reminder/`).
+Identify users by git credentials and use their actual name. Use "you/your" when speaking directly; use names when referencing contributions (enforced by `.claude/hooks/fleet/prose-tone-reminder/`).
 
 ### Parallel Claude sessions
 
@@ -65,9 +65,9 @@ Some fleet repos squash the default branch on a cadence — currently socket-add
 
 ### Tooling
 
-🚨 **Package manager: `pnpm`** — `pnpm run foo --flag`; `pnpm install` after `package.json` edits. NEVER `npx`/`pnpm dlx`/`yarn dlx` — use `pnpm exec`/`pnpm run`. NEVER `--experimental-strip-types` (enforced by `.claude/hooks/fleet/no-experimental-strip-types-guard/`). NEVER pipe install/check/test/build to `tail`/`head` — pnpm's SFW footer hides warnings; use `grep -iE "warning|error|ignored|fail"` (enforced by `.claude/hooks/fleet/no-tail-install-output-guard/`). `package.json` `allowScripts` mirrors `pnpm-workspace.yaml` `allowBuilds`. **`-stable` self-import:** `scripts/**` + `.claude/hooks/**` import via `-stable` alias. Autofix `socket/prefer-stable-self-import`.
+🚨 **Package manager: `pnpm`** — `pnpm run foo --flag`; `pnpm install` after `package.json` edits. NEVER `npx`/`pnpm dlx`/`yarn dlx` — use `pnpm exec`/`pnpm run`. NEVER `--experimental-strip-types`. NEVER pipe install/check/test/build to `tail`/`head` (SFW footer hides warnings; use `grep -iE "warning|error|ignored|fail"`). `package.json` `allowScripts` mirrors `pnpm-workspace.yaml` `allowBuilds`. **`-stable` self-import:** `scripts/**` + `.claude/hooks/**` via `-stable` alias (autofix `socket/prefer-stable-self-import`). **Python: NEVER `pip`/`pip3`** — fleet code goes through `@socketsecurity/lib/external-tools/pypa-tool` (4-tier VFS→PATH→DLX-venv→fail); dev shortcut `pipx install <pkg>==<ver>` (enforced by `.claude/hooks/fleet/{no-experimental-strip-types-guard,no-tail-install-output-guard,prefer-pipx-over-pip-guard}/`).
 
-🚨 **Supply-chain hygiene.** New deps Socket-scored at edit time; 7-day `minimumReleaseAge` soak is malware protection (bypass `Allow minimumReleaseAge bypass`); soak-bypass entries need `# published: YYYY-MM-DD | removable: YYYY-MM-DD` annotations. Dep overrides in `pnpm-workspace.yaml`, never `package.json` `pnpm.overrides`. **Never weaken a trust gate** (`trustPolicy: no-downgrade`, `--config.trustPolicy=trust-all`, `blockExoticSubdeps`) — fix stale lockfiles via the soak/exclude entry; bypass `Allow trust-downgrade bypass` is one-shot (enforced by `.claude/hooks/fleet/{check-new-deps,minimum-release-age-guard,soak-exclude-date-annotation-guard,soak-exclude-scope-guard,no-package-json-pnpm-overrides-guard,bundle-flags-guard,catch-message-guard,target-arch-env-guard,trust-downgrade-guard}/`).
+🚨 **Supply-chain hygiene.** New deps Socket-scored at edit time; 7-day `minimumReleaseAge` soak is malware protection; soak-bypass entries need `# published: YYYY-MM-DD | removable: YYYY-MM-DD` annotations. Dep overrides in `pnpm-workspace.yaml`, never `package.json` `pnpm.overrides`. **Never weaken a trust gate** (`trustPolicy: no-downgrade`, `--config.trustPolicy=trust-all`, `blockExoticSubdeps`) — fix stale lockfiles via the soak/exclude entry (enforced by `.claude/hooks/fleet/{check-new-deps,minimum-release-age-guard,soak-exclude-date-annotation-guard,soak-exclude-scope-guard,no-package-json-pnpm-overrides-guard,bundle-flags-guard,catch-message-guard,target-arch-env-guard,trust-downgrade-guard}/`).
 
 Full ruleset (docs lead with pnpm, `packageManager` field, `.config/` placement, `.mts` runners, monorepo `engines.node`, vitest/node-test runner separation, `npm-run-all2` + `node --run` opt-in) in [`docs/claude.md/fleet/tooling.md`](docs/claude.md/fleet/tooling.md).
 
@@ -209,7 +209,7 @@ Never use `Bash(run_in_background: true)` for test / build commands (`vitest`, `
 
 ### Judgment & self-evaluation
 
-🚨 **Default to perfectionist** when you have latitude — "works now" ≠ "right" (enforced by `.claude/hooks/fleet/perfectionist-reminder/`). **Direct imperatives → execute, don't litigate**: bare commands ("do it", "kill it", "cancel the build") get the tool call, not a tradeoff paragraph (enforced by `.claude/hooks/fleet/follow-direct-imperative-reminder/`). **When the user authorizes a queue** ("complete each one", "100%", "do them all"): finish every item before stopping — no "what's next?" / "session totals" mid-queue (enforced by `.claude/hooks/fleet/dont-stop-mid-queue-reminder/`); skip AskUserQuestion when explicit go-ahead is already in transcript (enforced by `.claude/hooks/fleet/ask-suppression-reminder/`). **Fix warnings on sight** — don't label "pre-existing" / "out of scope" (enforced by `.claude/hooks/fleet/excuse-detector/`). **UI/render changes**: rebuild + visually verify BEFORE committing (enforced by `.claude/hooks/fleet/verify-rendered-output-before-commit-reminder/`). Flag adjacent bugs ("I also noticed X — want me to fix it?"). Name misconceptions before executing. If a fix fails twice: stop, re-read top-down, try something fundamentally different. Detail in [`docs/claude.md/fleet/judgment-and-self-evaluation.md`](docs/claude.md/fleet/judgment-and-self-evaluation.md).
+🚨 **Default to perfectionist** when you have latitude — "works now" ≠ "right". **Direct imperatives → execute, don't litigate**: bare commands ("do it", "kill it", "cancel the build") get the tool call, not a tradeoff paragraph. **When the user authorizes a queue** ("complete each one", "100%", "do them all"): finish every item before stopping — no "what's next?" / "session totals" mid-queue; skip AskUserQuestion when explicit go-ahead is already in transcript. **Fix warnings on sight** — don't label "pre-existing" / "out of scope". **UI/render changes**: rebuild + visually verify BEFORE committing. Flag adjacent bugs ("I also noticed X — want me to fix it?"). Name misconceptions before executing. If a fix fails twice: stop, re-read top-down, try something fundamentally different. Detail + per-rule citations in [`docs/claude.md/fleet/judgment-and-self-evaluation.md`](docs/claude.md/fleet/judgment-and-self-evaluation.md) (enforced by `.claude/hooks/fleet/{ask-suppression-reminder,dont-stop-mid-queue-reminder,excuse-detector,follow-direct-imperative-reminder,prose-tone-reminder,verify-rendered-output-before-commit-reminder}/`).
 
 ### Error messages
 
@@ -243,6 +243,7 @@ Use `isError` / `isErrnoException` / `errorMessage` / `errorStack` from `@socket
 - `/scanning-security` — AgentShield + zizmor audit
 - `/scanning-quality` — quality analysis
 - Shared subskills in `.claude/skills/fleet/_shared/`
+- Skill telemetry (enforced by `.claude/hooks/fleet/skill-usage-logger/`)
 - **Handing off to another agent** — see [`docs/claude.md/fleet/agent-delegation.md`](docs/claude.md/fleet/agent-delegation.md).
 - **Skill scope tiers** (fleet / partial / unique), the `updating` umbrella + `updating-*` siblings convention, and the `scripts/run-skill-fleet.mts` cross-fleet runner in [`docs/claude.md/fleet/agents-and-skills.md`](docs/claude.md/fleet/agents-and-skills.md).
 
