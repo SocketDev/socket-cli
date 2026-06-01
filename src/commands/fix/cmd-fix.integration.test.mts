@@ -160,7 +160,7 @@ describe('socket fix', async () => {
 
           API Token Requirements
             - Quota: 101 units
-            - Permissions: full-scans:create and packages:list
+            - Permissions: fixes:list, full-scans:create, and packages:list
 
           Options
             --all               Process all discovered vulnerabilities in local mode. Cannot be used with --id.
