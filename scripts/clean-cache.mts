@@ -19,7 +19,7 @@ import { getGlobalCacheDirs } from '../packages/cli/scripts/constants/paths.mts'
 const logger = getDefaultLogger()
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
-const ROOT_DIR = join(__dirname, '..')
+const ROOT_DIR = path.join(__dirname, '..')
 
 const { values } = parseArgs({
   options: {
@@ -55,7 +55,7 @@ function analyzeCacheDir(cacheDir: string): CacheEntry[] {
     const items = readdirSync(cacheDir)
     for (let i = 0, { length } = items; i < length; i += 1) {
       const item = items[i]
-      const itemPath = join(cacheDir, item)
+      const itemPath = path.join(cacheDir, item)
       const stats = statSync(itemPath)
 
       if (stats.isDirectory()) {
@@ -83,13 +83,13 @@ function analyzeCacheDir(cacheDir: string): CacheEntry[] {
  */
 function findCacheDirs(): CacheDirInfo[] {
   const cacheDirs: CacheDirInfo[] = []
-  const packagesDir = join(ROOT_DIR, 'packages')
+  const packagesDir = path.join(ROOT_DIR, 'packages')
 
   try {
     const packages = readdirSync(packagesDir)
     for (let i = 0, { length } = packages; i < length; i += 1) {
       const pkg = packages[i]
-      const cacheDir = join(packagesDir, pkg, '.cache')
+      const cacheDir = path.join(packagesDir, pkg, '.cache')
       try {
         statSync(cacheDir)
         cacheDirs.push({ package: pkg, path: cacheDir })
@@ -130,7 +130,7 @@ function getDirSize(dir: string): number {
     const items = readdirSync(dir)
     for (let i = 0, { length } = items; i < length; i += 1) {
       const item = items[i]
-      const itemPath = join(dir, item)
+      const itemPath = path.join(dir, item)
       const stats = statSync(itemPath)
       if (stats.isDirectory()) {
         size += getDirSize(itemPath)

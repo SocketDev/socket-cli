@@ -76,6 +76,12 @@ export function getAuthHeaders() {
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
   const headers = {
     Accept: 'application/vnd.github+json',
+    // Request an uncompressed response. @socketsecurity/lib <= 6.0.6 advertises
+    // Accept-Encoding: gzip but doesn't decode the body, so JSON.parse sees raw
+    // gzip bytes and fails ("Failed to parse GitHub API response"). Asking for
+    // identity sidesteps that regardless of the installed lib version (6.0.7
+    // fixes the decode). GitHub honors identity for the JSON API.
+    'Accept-Encoding': 'identity',
     'X-GitHub-Api-Version': '2022-11-28',
   }
   if (token) {

@@ -158,14 +158,18 @@ async function main() {
     }
 
     const parallelPrep = await Promise.allSettled([
-      spawn('node', ['scripts/generate-packages.mts'], {
+      spawn('node', [path.join(__dirname, 'generate-packages.mts')], {
         shell: WIN32,
         stdio: 'inherit',
       }).then(result => ({ name: 'Generate Packages', result })),
-      spawn('node', [...NODE_MEMORY_FLAGS, 'scripts/download-assets.mts'], {
-        shell: WIN32,
-        stdio: 'inherit',
-      }).then(result => ({ name: 'Download Assets', result })),
+      spawn(
+        'node',
+        [...NODE_MEMORY_FLAGS, path.join(__dirname, 'download-assets.mts')],
+        {
+          shell: WIN32,
+          stdio: 'inherit',
+        },
+      ).then(result => ({ name: 'Download Assets', result })),
     ])
 
     for (let i = 0, { length } = parallelPrep; i < length; i += 1) {

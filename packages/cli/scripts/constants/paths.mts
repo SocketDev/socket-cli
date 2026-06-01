@@ -21,9 +21,9 @@ export const srcPath = path.join(rootPath, 'src')
 export const rootNodeModulesBinPath = path.join(rootPath, NODE_MODULES, '.bin')
 
 // Cache directory paths.
-const SOCKET_CACHE_DIR = path.join(homedir(), '.socket')
+const SOCKET_CACHE_DIR = path.join(os.homedir(), '.socket')
 export const SOCKET_CLI_SEA_BUILD_DIR = path.join(
-  tmpdir(),
+  os.tmpdir(),
   'socket-cli-sea-build',
 )
 const SOCKET_CLI_SEA_BUILD_DIR_FALLBACK = '/tmp/socket-cli-sea-build'
@@ -31,7 +31,7 @@ const SOCKET_CLI_SEA_BUILD_DIR_FALLBACK = '/tmp/socket-cli-sea-build'
 /**
  * Get all global cache directories.
  */
-function getGlobalCacheDirs() {
+export function getGlobalCacheDirs() {
   return [
     { name: '~/.socket', path: SOCKET_CACHE_DIR },
     { name: '$TMPDIR/socket-cli-sea-build', path: SOCKET_CLI_SEA_BUILD_DIR },
