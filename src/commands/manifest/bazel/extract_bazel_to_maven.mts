@@ -590,15 +590,35 @@ export async function extractBazelToMaven(
             `@${repoName}: dropped ${result.unresolvedLabels.length} unresolved dependency edge(s): ${result.unresolvedLabels.join(', ')}`,
           )
         }
-        // eslint-disable-next-line no-await-in-loop
-        const written = await writeHubManifest({
-          artifacts: result.artifacts,
-          cwd,
-          manifestDir,
-          relPath,
-          repoName,
-          verbose,
-        })
+        // A non-zero cquery exit that still yielded a usable subset
+        // (--keep_going) is reported as `partial` even with no unresolved
+        // labels — the graph is known-incomplete, so flip the hub partial.
+        if (result.status === 'partial' && !result.unresolvedLabels.length) {
+          hubPartial = true
+          logger.warn(
+            `@${repoName}: cquery partially failed (--keep_going); the dependency graph may be incomplete`,
+          )
+        }
+        let written: WriteHubManifestResult
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          written = await writeHubManifest({
+            artifacts: result.artifacts,
+            cwd,
+            manifestDir,
+            relPath,
+            repoName,
+            verbose,
+          })
+        } catch (e) {
+          // Best-effort per hub: a write failure must not abort the walk and
+          // discard the manifests other hubs already produced.
+          logger.warn(
+            `@${repoName}: failed to write manifest (${getErrorCause(e)}); skipping this hub`,
+          )
+          hubsFailed += 1
+          continue
+        }
         if (written.droppedArtifacts.length) {
           hubPartial = true
           logger.warn(

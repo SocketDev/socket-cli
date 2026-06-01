@@ -442,6 +442,54 @@ Fetched repositories:
     expect(result.manifestPaths).toHaveLength(1)
   })
 
+  it('returns status:partial when cquery itself reported partial (no unresolved labels)', async () => {
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+        status: 'partial',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('partial')
+    expect(result.manifestPaths).toHaveLength(1)
+  })
+
+  it('does not abort the walk when a hub manifest write fails', async () => {
+    // Point `out` at a regular file so the manifest dir cannot be created;
+    // the write throws and must be swallowed into a hub failure, not abort.
+    const blocker = path.join(tmp, 'blocker')
+    writeFileSync(blocker, '')
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: blocker,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    // The only hub failed to write, so zero manifests + ecosystem present.
+    expect(result.status).toBe('hardFailure')
+    expect(result.manifestPaths).toEqual([])
+  })
+
   it('threads extraMavenRepoNames into the candidate list (WORKSPACE mode)', async () => {
     vi.mocked(detectWorkspaceMode).mockReturnValue({
       bzlmod: false,
