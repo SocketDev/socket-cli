@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/SocketDev/socket-btm/main/packages/build-infra/lib/external-tools-schema.json",
-  "description": "External tools required to build + release socket-cli. Wrapped `tools` shape matches the canonical schema every fleet repo now uses. When composite actions or scripts want sha256-verified downloads of pnpm / sfw / zizmor, they read from `config.tools.<name>` in this file.",
+  "description": "External tools required to build + release socket-cli. Wrapped `tools` shape matches the canonical schema every fleet repo now uses. When composite actions or scripts want integrity-verified downloads of pnpm / sfw / zizmor, they read from `config.tools.<name>` in this file.",
   "tools": {
     "git": {
       "description": "Git CLI — checkout, submodule init, tag signing.",
@@ -76,26 +76,26 @@
         "Used by the setup-and-install composite action",
         "Blocks merges on medium+ findings"
       ],
-      "checksums": {
+      "platforms": {
         "darwin-arm64": {
           "asset": "zizmor-aarch64-apple-darwin.tar.gz",
-          "sha256": "2632561b974c69f952258c1ab4b7432d5c7f92e555704155c3ac28a2910bd717"
+          "integrity": "sha256-JjJWG5dMaflSJYwatLdDLVx/kuVVcEFVw6woopEL1xc="
         },
         "darwin-x64": {
           "asset": "zizmor-x86_64-apple-darwin.tar.gz",
-          "sha256": "89d5ed42081dd9d0433a10b7545fac42b35f1f030885c278b9712b32c66f2597"
+          "integrity": "sha256-idXtQggd2dBDOhC3VF+sQrNfHwMIhcJ4uXErMsZvJZc="
         },
         "linux-arm64": {
           "asset": "zizmor-aarch64-unknown-linux-gnu.tar.gz",
-          "sha256": "3725d7cd7102e4d70827186389f7d5930b6878232930d0a3eb058d7e5b47e658"
+          "integrity": "sha256-NyXXzXEC5NcIJxhjiffVkwtoeCMpMNCj6wWNfltH5lg="
         },
         "linux-x64": {
           "asset": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
-          "sha256": "67a8df0a14352dd81882e14876653d097b99b0f4f6b6fe798edc0320cff27aff"
+          "integrity": "sha256-Z6jfChQ1LdgYguFIdmU9CXuZsPT2tv55jtwDIM/yev8="
         },
         "win-x64": {
           "asset": "zizmor-x86_64-pc-windows-msvc.zip",
-          "sha256": "33c2293ff02834720dd7cd8b47348aafb2e95a19bdc993c0ecaca9c804ade92a"
+          "integrity": "sha256-M8IpP/AoNHIN182LRzSKr7LpWhm9yZPA7KypyASt6So="
         }
       }
     },
@@ -108,26 +108,26 @@
         "Used when SOCKET_API_KEY is not set",
         "Shims npm/yarn/pnpm so every install call passes through the firewall"
       ],
-      "checksums": {
+      "platforms": {
         "darwin-arm64": {
           "asset": "sfw-free-macos-arm64",
-          "sha256": "248fb588e1e1a27e7192f7b079f739fc29a9de61f0bad7e90928363022dc5643"
+          "integrity": "sha256-JI+1iOHhon5xkvewefc5/Cmp3mHwutfpCSg2MCLcVkM="
         },
         "darwin-x64": {
           "asset": "sfw-free-macos-x86_64",
-          "sha256": "a5427d479d440f08e3789fa191ba57599be64997196daf42e67d964fec0382b4"
+          "integrity": "sha256-pUJ9R51EDwjjeJ+hkbpXWZvmSZcZba9C5n2WT+wDgrQ="
         },
         "linux-arm64": {
           "asset": "sfw-free-linux-arm64",
-          "sha256": "84a045e4e1bb320cc5c0d3929f02e53f199398b5be0637e8846d02d9ef0027b1"
+          "integrity": "sha256-hKBF5OG7MgzFwNOSnwLlPxmTmLW+BjfohG0C2e8AJ7E="
         },
         "linux-x64": {
           "asset": "sfw-free-linux-x86_64",
-          "sha256": "93e2d9dfa244b82a74e014dc26b1c6af18b4adec20f35254378943db5fe91411"
+          "integrity": "sha256-k+LZ36JEuCp04BTcJrHGrxi0rewg81JUN4lD21/pFBE="
         },
         "win-x64": {
           "asset": "sfw-free-windows-x86_64.exe",
-          "sha256": "6d333b4cac9d7c5712e2e99677ca634ac8a3020d550c6308312c60bea97f0a28"
+          "integrity": "sha256-bTM7TKydfFcS4umWd8pjSsijAg1VDGMIMSxgvql/Cig="
         }
       }
     },
@@ -140,26 +140,26 @@
         "Used when SOCKET_API_KEY is set (e.g. via repo secrets in CI)",
         "Same shims as sfw-free, broader ecosystem support"
       ],
-      "checksums": {
+      "platforms": {
         "darwin-arm64": {
           "asset": "sfw-macos-arm64",
-          "sha256": "b1cdc3bdbd2a3161247bd5cc215eb3c44a90b87fe0b800a33889a14f61bb0d6d"
+          "integrity": "sha256-sc3Dvb0qMWEke9XMIV6zxEqQuH/guACjOImhT2G7DW0="
         },
         "darwin-x64": {
           "asset": "sfw-macos-x86_64",
-          "sha256": "da252d2a9a5d0edb271bb771e0d01b9cd6fa1635b6d765f61efd61edb6739f12"
+          "integrity": "sha256-2iUtKppdDtsnG7dx4NAbnNb6FjW212X2Hv1h7bZznxI="
         },
         "linux-arm64": {
           "asset": "sfw-linux-arm64",
-          "sha256": "c24a79c27e1a01a59b7a160c165930ae029816c72b141fcfcdb2f73e0774898a"
+          "integrity": "sha256-wkp5wn4aAaWbehYMFlkwrgKYFscrFB/PzbL3Pgd0iYo="
         },
         "linux-x64": {
           "asset": "sfw-linux-x86_64",
-          "sha256": "4482b52e6367bd4610519bfd57a104d5907ec87d5399142ed3bb3d222de1f33d"
+          "integrity": "sha256-RIK1LmNnvUYQUZv9V6EE1ZB+yH1TmRQu07s9Ii3h8z0="
         },
         "win-x64": {
           "asset": "sfw-windows-x86_64.exe",
-          "sha256": "e52ad806a1c41b440f04098eb1c7e407845f03f5740a6a79006ba6fd172056ec"
+          "integrity": "sha256-5SrYBqHEG0QPBAmOscfkB4RfA/V0Cmp5AGum/RcgVuw="
         }
       }
     }
