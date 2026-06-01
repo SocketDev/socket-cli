@@ -88,10 +88,23 @@ async function defaultMavenProbe(_: string): Promise<{
   }
 }
 
-function readManifest(out: string): unknown {
+function readManifest(out: string, ...rel: string[]): unknown {
   return JSON.parse(
     readFileSync(
-      path.join(out, '.socket-auto-manifest', 'maven_install.json'),
+      path.join(out, '.socket-auto-manifest', ...rel, 'maven_install.json'),
+      'utf8',
+    ),
+  )
+}
+
+function readNamedManifest(
+  out: string,
+  fileName: string,
+  ...rel: string[]
+): unknown {
+  return JSON.parse(
+    readFileSync(
+      path.join(out, '.socket-auto-manifest', ...rel, fileName),
       'utf8',
     ),
   )
@@ -177,8 +190,9 @@ describe('extractBazelToMaven', () => {
       outLayout: 'flat',
       verbose: false,
     })
-    expect(result.ok).toBe(true)
+    expect(result.status).toBe('complete')
     expect(result.artifactCount).toBe(2)
+    expect(result.manifestPaths).toHaveLength(1)
     const manifest = readManifest(tmp) as {
       artifacts: Record<string, { version: string }>
     }
@@ -188,7 +202,7 @@ describe('extractBazelToMaven', () => {
     ])
   })
 
-  it('returns noEcosystemFound when no workspace roots are discovered', async () => {
+  it('returns status:noEcosystem when no workspace roots are discovered', async () => {
     vi.mocked(findWorkspaceRoots).mockReturnValue([])
     const result = await extractBazelToMaven({
       bazelFlags: undefined,
@@ -200,11 +214,11 @@ describe('extractBazelToMaven', () => {
       outLayout: 'flat',
       verbose: false,
     })
-    expect(result.ok).toBe(false)
-    expect(result.noEcosystemFound).toBe(true)
+    expect(result.status).toBe('noEcosystem')
+    expect(result.manifestPaths).toEqual([])
   })
 
-  it('reports detected-but-empty when discovered repos extract zero artifacts', async () => {
+  it('returns status:hardFailure when discovered repos write zero manifests', async () => {
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({ artifacts: [], status: 'empty', repoName: 'maven' }),
     )
@@ -218,18 +232,20 @@ describe('extractBazelToMaven', () => {
       outLayout: 'flat',
       verbose: false,
     })
-    expect(result.ok).toBe(false)
-    expect(result.noEcosystemFound).toBeUndefined()
+    expect(result.status).toBe('hardFailure')
+    expect(result.manifestPaths).toEqual([])
   })
 
-  it('dedups artifacts across multiple workspaces by full Maven coordinate', async () => {
+  it('writes one manifest per workspace at mirrored paths (no cross-workspace aggregation)', async () => {
     const nested = path.join(tmp, 'examples', 'dagger')
     mkdirSync(nested, { recursive: true })
     vi.mocked(findWorkspaceRoots).mockReturnValue([tmp, nested])
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({
         artifacts: [
-          mkArt('com.google.guava:guava:33.0.0-jre', 'com_google_guava_guava'),
+          // A previously-conflicting g:a at a different version per workspace
+          // now lands in separate files without error.
+          mkArt('com.google.guava:guava:32.0.0-jre', 'com_google_guava_guava'),
         ],
         repoName: 'maven',
         workspaceRelPath: '',
@@ -238,7 +254,6 @@ describe('extractBazelToMaven', () => {
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({
         artifacts: [
-          // Same coord as the root workspace — must be deduped.
           mkArt('com.google.guava:guava:33.0.0-jre', 'com_google_guava_guava', {
             sourceRepo: 'examples/dagger:maven',
           }),
@@ -260,15 +275,77 @@ describe('extractBazelToMaven', () => {
       outLayout: 'flat',
       verbose: false,
     })
-    expect(result.artifactCount).toBe(2)
-    const manifest = readManifest(tmp) as {
+    expect(result.status).toBe('complete')
+    expect(result.manifestPaths).toHaveLength(2)
+    // Root workspace: one file at the manifest dir root.
+    const rootManifest = readManifest(tmp) as {
       artifacts: Record<string, { version: string }>
-      dependencies: Record<string, string[]>
     }
-    expect(Object.keys(manifest.artifacts).sort()).toEqual([
+    expect(rootManifest.artifacts['com.google.guava:guava']?.version).toBe(
+      '32.0.0-jre',
+    )
+    // Nested workspace: mirrored path.
+    const nestedManifest = readManifest(tmp, 'examples', 'dagger') as {
+      artifacts: Record<string, { version: string }>
+    }
+    expect(Object.keys(nestedManifest.artifacts).sort()).toEqual([
       'com.google.dagger:dagger',
       'com.google.guava:guava',
     ])
+    expect(nestedManifest.artifacts['com.google.guava:guava']?.version).toBe(
+      '33.0.0-jre',
+    )
+  })
+
+  it('writes one manifest per hub in a single workspace', async () => {
+    vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
+      code: 0,
+      stdout: `## @@rules_jvm_external+//:extensions.bzl%maven:
+
+Fetched repositories:
+  - maven (imported by <root>)
+  - maven_dev (imported by <root>)
+`,
+      stderr: '',
+    })
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:b:1.0', 'b')],
+        repoName: 'maven_dev',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('complete')
+    expect(result.manifestPaths).toHaveLength(2)
+    expect(
+      Object.keys(
+        (readManifest(tmp) as { artifacts: Record<string, unknown> }).artifacts,
+      ),
+    ).toEqual(['com.example:a'])
+    expect(
+      Object.keys(
+        (
+          readNamedManifest(tmp, 'maven_dev_maven_install.json') as {
+            artifacts: Record<string, unknown>
+          }
+        ).artifacts,
+      ),
+    ).toEqual(['com.example:b'])
   })
 
   it('unions resolved edges across deduped occurrences of a coordinate', () => {
@@ -294,9 +371,10 @@ describe('extractBazelToMaven', () => {
     expect(manifest.prunedEdges).toEqual([])
   })
 
-  it('reports ok:false on per-repo timeout but keeps going', async () => {
+  it('returns status:partial on a per-repo timeout but keeps the survivor', async () => {
     // Two candidates: first times out, second succeeds. The orchestrator
-    // re-mints --output_user_root after the timeout.
+    // re-mints --output_user_root after the timeout and still writes the
+    // survivor's manifest.
     vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
       code: 0,
       stdout: `## @@rules_jvm_external+//:extensions.bzl%maven:
@@ -327,8 +405,41 @@ Fetched repositories:
       perRepoTimeoutMs: 60_000,
       verbose: false,
     })
-    expect(result.ok).toBe(false)
+    expect(result.status).toBe('partial')
     expect(result.artifactCount).toBe(1)
+    expect(result.manifestPaths).toHaveLength(1)
+    expect(
+      Object.keys(
+        (
+          readNamedManifest(tmp, 'maven_dev_maven_install.json') as {
+            artifacts: Record<string, unknown>
+          }
+        ).artifacts,
+      ),
+    ).toEqual(['com.example:after'])
+  })
+
+  it('returns status:partial when a hub reports unresolved dependency edges', async () => {
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+        status: 'partial',
+        unresolvedLabels: ['@maven//:missing'],
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('partial')
+    expect(result.manifestPaths).toHaveLength(1)
   })
 
   it('threads extraMavenRepoNames into the candidate list (WORKSPACE mode)', async () => {
@@ -364,7 +475,7 @@ Fetched repositories:
       outLayout: 'flat',
       verbose: false,
     })
-    expect(result.ok).toBe(true)
+    expect(result.status).toBe('complete')
     expect(result.artifactCount).toBe(1)
     expect(runMetadataCqueryForRepo).toHaveBeenCalledTimes(1)
     expect(vi.mocked(runMetadataCqueryForRepo).mock.calls[0]![0]).toMatchObject(

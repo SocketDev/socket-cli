@@ -62,11 +62,29 @@ export type ExtractBazelOptions = {
   verbose: boolean
 }
 
+// Best-effort-per-hub produces four distinct run outcomes a single `ok`
+// boolean would conflate:
+//  - `complete`    — every discovered hub extracted cleanly; >=1 manifest.
+//  - `partial`     — >=1 manifest written, but at least one hub failed,
+//                    timed out, or dropped edges. Worth uploading, but the
+//                    graph is known-incomplete.
+//  - `noEcosystem` — no Bazel/Maven found. Whether that's an error is
+//                    caller-dependent (tolerated in auto mode, error in
+//                    explicit mode), so it must NOT be flattened into the
+//                    failure states.
+//  - `hardFailure` — zero manifests written and it wasn't `noEcosystem`
+//                    (discovery threw, or every discovered hub failed).
+//                    Always an error for every caller.
+export type ExtractBazelStatus =
+  | 'complete'
+  | 'hardFailure'
+  | 'noEcosystem'
+  | 'partial'
+
 export type ExtractBazelResult = {
   artifactCount: number
-  manifestPath?: string | undefined
-  noEcosystemFound?: boolean | undefined
-  ok: boolean
+  manifestPaths: string[]
+  status: ExtractBazelStatus
 }
 
 const DEFAULT_PER_REPO_TIMEOUT_MS = 60_000
@@ -224,6 +242,53 @@ export function dedupArtifactsByCoord(
     existing.deps = [...merged]
   }
   return [...byCoord.values()]
+}
+
+type WriteHubManifestResult = {
+  artifactCount: number
+  droppedArtifacts: string[]
+  manifestPath: string | undefined
+  prunedEdges: string[]
+}
+
+// Dedup, normalize, and write one hub's manifest. The path mirrors the
+// workspace tree: `<manifestDir>/<relPath>/<name>.json`, where `<name>` is
+// `maven_install.json` for a hub literally named `maven`, else
+// `<hub>_maven_install.json` (matching the server walker's
+// `**/*_maven_install.json` glob). The root workspace (`relPath===''`) writes
+// at `<manifestDir>/<name>.json`. Returns `manifestPath: undefined` (no file
+// written) when the hub yields zero valid artifacts, plus the dropped/pruned
+// accounting so the caller can flip the hub partial.
+async function writeHubManifest(args: {
+  artifacts: ExtractedArtifact[]
+  cwd: string
+  manifestDir: string
+  relPath: string
+  repoName: string
+  verbose: boolean
+}): Promise<WriteHubManifestResult> {
+  const { artifacts, manifestDir, relPath, repoName } = args
+  const deduped = dedupArtifactsByCoord(artifacts)
+  const { droppedArtifacts, json, prunedEdges } =
+    normalizeToMavenInstallJson(deduped)
+  const artifactCount = Object.keys(json.artifacts).length
+  if (!artifactCount) {
+    return {
+      artifactCount: 0,
+      droppedArtifacts,
+      manifestPath: undefined,
+      prunedEdges,
+    }
+  }
+  const fileName =
+    repoName === 'maven'
+      ? 'maven_install.json'
+      : `${repoName}_maven_install.json`
+  const hubDir = relPath ? path.join(manifestDir, relPath) : manifestDir
+  mkdirSync(hubDir, { recursive: true })
+  const manifestPath = path.join(hubDir, fileName)
+  await fs.writeFile(manifestPath, JSON.stringify(json, null, 2), 'utf8')
+  return { artifactCount, droppedArtifacts, manifestPath, prunedEdges }
 }
 
 // Build the per-workspace candidate Maven hub list.
@@ -396,7 +461,7 @@ export async function extractBazelToMaven(
       logger.log(e)
       logger.groupEnd()
     }
-    return { artifactCount: 0, ok: false }
+    return { artifactCount: 0, manifestPaths: [], status: 'hardFailure' }
   }
   logger.info(`Using bazel: ${bin}`)
 
@@ -410,9 +475,16 @@ export async function extractBazelToMaven(
     )
   }
 
-  let anyTimeout = false
+  const layout = opts.outLayout ?? 'standalone'
+  const manifestDir =
+    layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
+  // One manifest per (workspace, hub), written best-effort: a single wedged
+  // hub must not discard the manifests every other hub produced.
+  const manifestPaths: string[] = []
+  let totalArtifacts = 0
   let anyRepos = false
-  const allArtifacts: ExtractedArtifact[] = []
+  let hubsSucceeded = 0
+  let hubsFailed = 0
 
   try {
     const workspaceRoots = findWorkspaceRoots({
@@ -427,7 +499,7 @@ export async function extractBazelToMaven(
       logger.warn(
         `No Bazel workspace found at ${cwd} or beneath (looked for MODULE.bazel / WORKSPACE / WORKSPACE.bazel).`,
       )
-      return { artifactCount: 0, noEcosystemFound: true, ok: false }
+      return { artifactCount: 0, manifestPaths: [], status: 'noEcosystem' }
     }
     if (verbose) {
       logger.log(
@@ -487,23 +559,11 @@ export async function extractBazelToMaven(
           workspaceRelPath: relPath,
           workspaceRoot,
         })
-        allArtifacts.push(...result.artifacts)
-        if (result.unresolvedLabels.length) {
-          // A scan must never silently upload a graph missing edges it knows
-          // it dropped: warn unconditionally with the count and labels.
-          logger.warn(
-            `@${repoName}: dropped ${result.unresolvedLabels.length} unresolved dependency edge(s): ${result.unresolvedLabels.join(', ')}`,
-          )
-        }
-        if (result.status === 'ok' || result.status === 'partial') {
-          logger.info(
-            `@${repoName}: ${result.artifacts.length} artifact(s) (status=${result.status})`,
-          )
-        } else if (result.status === 'timeout') {
+        if (result.status === 'timeout') {
           logger.warn(
             `@${repoName}: cquery timed out after ${perRepoTimeoutMs}ms; reaping server`,
           )
-          anyTimeout = true
+          hubsFailed += 1
           // eslint-disable-next-line no-await-in-loop
           await reapBazelServer(bin, outputUserRoot, verbose)
           // eslint-disable-next-line no-await-in-loop
@@ -515,77 +575,106 @@ export async function extractBazelToMaven(
               `[VERBOSE] minted fresh --output_user_root=${outputUserRoot} after timeout`,
             )
           }
-        } else if (verbose) {
-          logger.log(
-            `[VERBOSE] @${repoName}: status=${result.status} (no artifacts)`,
+          continue
+        }
+        if (result.status === 'error') {
+          logger.warn(`@${repoName}: cquery failed; skipping this hub`)
+          hubsFailed += 1
+          continue
+        }
+        // A scan must never silently upload a graph missing edges it knows
+        // it dropped: warn unconditionally and treat the hub as partial.
+        let hubPartial = result.unresolvedLabels.length > 0
+        if (hubPartial) {
+          logger.warn(
+            `@${repoName}: dropped ${result.unresolvedLabels.length} unresolved dependency edge(s): ${result.unresolvedLabels.join(', ')}`,
           )
+        }
+        // eslint-disable-next-line no-await-in-loop
+        const written = await writeHubManifest({
+          artifacts: result.artifacts,
+          cwd,
+          manifestDir,
+          relPath,
+          repoName,
+          verbose,
+        })
+        if (written.droppedArtifacts.length) {
+          hubPartial = true
+          logger.warn(
+            `@${repoName}: dropped ${written.droppedArtifacts.length} malformed Maven coordinate(s): ${written.droppedArtifacts.join(', ')}`,
+          )
+        }
+        if (written.prunedEdges.length) {
+          hubPartial = true
+          logger.warn(
+            `@${repoName}: pruned ${written.prunedEdges.length} dependency edge(s) referencing unlisted artifacts: ${written.prunedEdges.join(', ')}`,
+          )
+        }
+        if (written.manifestPath) {
+          manifestPaths.push(written.manifestPath)
+          totalArtifacts += written.artifactCount
+          if (hubPartial) {
+            hubsFailed += 1
+          } else {
+            hubsSucceeded += 1
+          }
+          if (verbose) {
+            logger.log(
+              `[VERBOSE] @${repoName}: status=${result.status}, ${written.artifactCount} artifact(s) -> ${written.manifestPath}`,
+            )
+          }
+        } else {
+          // No artifacts to write (empty hub). Not itself a failure, but if
+          // edges were dropped the partial signal still applies.
+          if (hubPartial) {
+            hubsFailed += 1
+          }
+          if (verbose) {
+            logger.log(
+              `[VERBOSE] @${repoName}: status=${result.status} (no manifest written)`,
+            )
+          }
         }
       }
     }
 
-    const deduped = dedupArtifactsByCoord(allArtifacts)
-    const {
-      droppedArtifacts,
-      json: normalized,
-      prunedEdges,
-    } = normalizeToMavenInstallJson(deduped)
-    if (droppedArtifacts.length) {
-      logger.warn(
-        `Dropped ${droppedArtifacts.length} malformed Maven coordinate(s): ${droppedArtifacts.join(', ')}`,
-      )
-    }
-    if (prunedEdges.length) {
-      logger.warn(
-        `Pruned ${prunedEdges.length} dependency edge(s) referencing unlisted artifacts: ${prunedEdges.join(', ')}`,
-      )
-    }
-    const layout = opts.outLayout ?? 'standalone'
-    const manifestDir =
-      layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
-    mkdirSync(manifestDir, { recursive: true })
-    const manifestPath = path.join(manifestDir, 'maven_install.json')
-    await fs.writeFile(
-      manifestPath,
-      JSON.stringify(normalized, null, 2),
-      'utf8',
-    )
-
-    if (verbose) {
-      logger.log('[VERBOSE] outputs:', {
-        artifactCount: deduped.length,
-        complete: !anyTimeout,
-        layout,
-        manifestPath,
-      })
-    }
-
-    if (!deduped.length) {
+    if (!manifestPaths.length) {
       if (!anyRepos) {
         if (verbose) {
           logger.info(
             'No Maven artifacts extracted. failureCategory=no-supported-ecosystem',
           )
         }
-        return {
-          artifactCount: 0,
-          manifestPath,
-          noEcosystemFound: true,
-          ok: false,
-        }
+        return { artifactCount: 0, manifestPaths: [], status: 'noEcosystem' }
       }
       logger.fail(
-        'Discovered Maven repo(s) but extracted zero artifacts. failureCategory=ecosystem-detected-but-empty',
+        'Discovered Maven repo(s) but wrote zero manifests. failureCategory=ecosystem-detected-but-empty',
       )
-      return { artifactCount: 0, manifestPath, ok: false }
+      return { artifactCount: 0, manifestPaths: [], status: 'hardFailure' }
     }
-    logger.success(
-      `Wrote ${deduped.length} artifact(s) to ${path.relative(cwd, manifestPath)}.`,
-    )
-    return {
-      artifactCount: deduped.length,
-      manifestPath,
-      ok: !anyTimeout,
+
+    const status: ExtractBazelStatus = hubsFailed ? 'partial' : 'complete'
+    if (status === 'complete') {
+      logger.success(
+        `Wrote ${manifestPaths.length} manifest(s), ${totalArtifacts} artifact(s) total.`,
+      )
+    } else {
+      logger.warn(
+        `Wrote ${manifestPaths.length} manifest(s), ${totalArtifacts} artifact(s) total — partial run: ${hubsSucceeded} hub(s) succeeded, ${hubsFailed} failed or incomplete.`,
+      )
     }
+    if (verbose) {
+      logger.log('[VERBOSE] outputs:', {
+        artifactCount: totalArtifacts,
+        hubsFailed,
+        hubsSucceeded,
+        layout,
+        manifestPaths,
+        status,
+      })
+    }
+    return { artifactCount: totalArtifacts, manifestPaths, status }
   } catch (e) {
     logger.fail(`Unexpected error in bazel2maven: ${getErrorCause(e)}`)
     if (verbose) {
@@ -595,7 +684,7 @@ export async function extractBazelToMaven(
     } else {
       logger.info('Re-run with --verbose for the full stack.')
     }
-    return { artifactCount: 0, ok: false }
+    return { artifactCount: 0, manifestPaths: [], status: 'hardFailure' }
   } finally {
     for (const dir of mintedRoots) {
       // eslint-disable-next-line no-await-in-loop

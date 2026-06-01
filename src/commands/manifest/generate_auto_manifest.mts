@@ -134,14 +134,23 @@ export async function generateAutoManifest({
       verbose: Boolean(bazelConfig?.verbose) || verbose,
     })
 
-    if (!mavenResult.ok && !mavenResult.noEcosystemFound) {
+    // Only a hard failure (zero manifests, ecosystem present) aborts the
+    // wider scan. A partial run still produced manifests worth uploading; an
+    // absent ecosystem is tolerated here (it's only an error when EVERY
+    // ecosystem is absent, which the caller decides).
+    if (mavenResult.status === 'hardFailure') {
       throw new Error(
         'Bazel auto-manifest generation failed for ecosystem(s): maven',
       )
     }
-    if (mavenResult.ok && mavenResult.manifestPath) {
-      generatedFiles.push(mavenResult.manifestPath)
-    } else if (mavenResult.noEcosystemFound) {
+    if (mavenResult.status === 'complete' || mavenResult.status === 'partial') {
+      generatedFiles.push(...mavenResult.manifestPaths)
+      if (mavenResult.status === 'partial') {
+        logger.warn(
+          `Bazel Maven manifest generation was partial (${mavenResult.manifestPaths.length} manifest(s) written); some hubs failed or had incomplete dependency graphs. Uploading what was generated.`,
+        )
+      }
+    } else {
       logger.info('No supported Bazel Maven ecosystem detected.')
     }
   }
