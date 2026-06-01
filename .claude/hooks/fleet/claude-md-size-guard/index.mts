@@ -34,7 +34,11 @@
 import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
-import { readStdin } from '../_shared/transcript.mts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
+
+const logger = getDefaultLogger()
 
 const DEFAULT_CAP_BYTES = 40 * 1024
 
@@ -100,7 +104,7 @@ export function emitBlock(
   lines.push('')
   lines.push('  See `docs/claude.md/fleet/bypass-phrases.md` for an example')
   lines.push('  of the one-paragraph + reference shape.')
-  process.stderr.write(lines.join('\n') + '\n')
+  logger.error(lines.join('\n') + '\n')
 }
 
 export function getCap(): number {
@@ -116,18 +120,6 @@ export function getCap(): number {
   return n
 }
 
-type ToolInput = {
-  tool_input?:
-    | {
-        content?: string | undefined
-        file_path?: string | undefined
-        new_string?: string | undefined
-        old_string?: string | undefined
-      }
-    | undefined
-  tool_name?: string | undefined
-}
-
 export function isClaudeMd(filePath: string | undefined): boolean {
   if (!filePath) {
     return false
@@ -136,30 +128,24 @@ export function isClaudeMd(filePath: string | undefined): boolean {
   return base === 'CLAUDE.md'
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  if (!raw) {
-    return
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    return
-  }
-  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-    return
-  }
-  const filePath = payload.tool_input?.file_path ?? ''
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content, payload) => {
   if (!isClaudeMd(filePath)) {
     return
   }
+  const toolName = payload.tool_name!
+  // withEditGuard's `content` arg already resolves to `content` (Write) or
+  // `new_string` (Edit). computePostEditText reads newString only on the
+  // Edit branch and content only on the Write branch, so passing the same
+  // resolved value to both slots is correct for each tool.
+  const oldString = payload.tool_input?.old_string
   const postEdit = computePostEditText(
-    payload.tool_name,
+    toolName,
     filePath,
-    payload.tool_input?.new_string,
-    payload.tool_input?.old_string,
-    payload.tool_input?.content,
+    content,
+    typeof oldString === 'string' ? oldString : undefined,
+    content,
   )
   if (postEdit === undefined) {
     // Fail open — couldn't compute post-edit text reliably.
@@ -172,10 +158,4 @@ async function main(): Promise<void> {
   }
   emitBlock(filePath, size, cap)
   process.exitCode = 2
-}
-
-main().catch(e => {
-  process.stderr.write(
-    `[claude-md-size-guard] hook error (continuing): ${(e as Error).message}\n`,
-  )
 })

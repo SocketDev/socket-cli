@@ -29,19 +29,12 @@
 
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface ToolInput {
-  readonly tool_input?:
-    | {
-        readonly content?: string | undefined
-        readonly file_path?: string | undefined
-        readonly new_string?: string | undefined
-      }
-    | undefined
-  readonly tool_name?: string | undefined
-  readonly transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 interface Finding {
   readonly line: number
@@ -100,75 +93,54 @@ export function findChildProcessImports(text: string): Finding[] {
   return findings
 }
 
-async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = []
-  for await (const chunk of process.stdin) {
-    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
-  }
-  return Buffer.concat(chunks).toString('utf8')
+if (process.env['SOCKET_PREFER_ASYNC_SPAWN_GUARD_DISABLED']) {
+  process.exit(0)
 }
 
-async function main(): Promise<void> {
-  if (process.env['SOCKET_PREFER_ASYNC_SPAWN_GUARD_DISABLED']) {
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(await readStdin()) as ToolInput
-  } catch (e) {
-    process.stderr.write(
-      `prefer-async-spawn-guard: payload parse failed (${(e as Error).message})\n`,
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+//
+// Gate the top-level invocation on argv[1] so unit tests can import the
+// exported detectors without the harness blocking on stdin.
+if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+  await withEditGuard((filePath, content, payload) => {
+    if (isExemptPath(filePath)) {
+      return
+    }
+    // Only police JS/TS source.
+    if (!/\.(?:c|m)?[jt]sx?$/.test(filePath)) {
+      return
+    }
+
+    const text = content ?? ''
+    if (!text) {
+      return
+    }
+
+    const findings = findChildProcessImports(text)
+    if (findings.length === 0) {
+      return
+    }
+
+    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+      logger.error(
+        `prefer-async-spawn-guard: ${findings.length} child_process import(s) — bypassed via "${BYPASS_PHRASE}"\n`,
+      )
+      return
+    }
+
+    const lines = findings
+      .map(f => `  ${filePath}:${f.line}  ${f.text}`)
+      .join('\n')
+    logger.error(
+      `prefer-async-spawn-guard: refusing to import from 'node:child_process'.\n` +
+        `\n${lines}\n\n` +
+        `Use the fleet wrapper instead:\n` +
+        `  import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'\n` +
+        `Prefer async \`spawn\`; reach for \`spawnSync\` only when sync semantics\n` +
+        `are genuinely required (still from the lib, not the builtin).\n` +
+        `Bypass: type "${BYPASS_PHRASE}".\n`,
     )
-    process.exit(0)
-  }
-
-  const toolName = payload.tool_name
-  if (toolName !== 'Edit' && toolName !== 'Write') {
-    process.exit(0)
-  }
-
-  const filePath = payload.tool_input?.file_path ?? ''
-  if (!filePath || isExemptPath(filePath)) {
-    process.exit(0)
-  }
-  // Only police JS/TS source.
-  if (!/\.(?:c|m)?[jt]sx?$/.test(filePath)) {
-    process.exit(0)
-  }
-
-  const text =
-    payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
-  if (!text) {
-    process.exit(0)
-  }
-
-  const findings = findChildProcessImports(text)
-  if (findings.length === 0) {
-    process.exit(0)
-  }
-
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    process.stderr.write(
-      `prefer-async-spawn-guard: ${findings.length} child_process import(s) — bypassed via "${BYPASS_PHRASE}"\n`,
-    )
-    process.exit(0)
-  }
-
-  const lines = findings
-    .map(f => `  ${filePath}:${f.line}  ${f.text}`)
-    .join('\n')
-  process.stderr.write(
-    `prefer-async-spawn-guard: refusing to import from 'node:child_process'.\n` +
-      `\n${lines}\n\n` +
-      `Use the fleet wrapper instead:\n` +
-      `  import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'\n` +
-      `Prefer async \`spawn\`; reach for \`spawnSync\` only when sync semantics\n` +
-      `are genuinely required (still from the lib, not the builtin).\n` +
-      `Bypass: type "${BYPASS_PHRASE}".\n`,
-  )
-  process.exit(2)
+    process.exitCode = 2
+  })
 }
-
-main().catch(e => {
-  process.stderr.write(`prefer-async-spawn-guard: skipped: ${String(e)}\n`)
-})

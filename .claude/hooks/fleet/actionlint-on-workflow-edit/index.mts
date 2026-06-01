@@ -24,7 +24,11 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
-import { readStdin } from '../_shared/transcript.mts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
+
+const logger = getDefaultLogger()
 
 export function actionlintAvailable(): boolean {
   const r = spawnSync('command', ['-v', 'actionlint'], {
@@ -40,44 +44,22 @@ export function zizmorAvailable(): boolean {
   return r.status === 0 && String(r.stdout ?? '').trim().length > 0
 }
 
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly file_path?: string | undefined } | undefined
-}
-
 export function isWorkflowYaml(filePath: string): boolean {
   return /[\\/]\.github[\\/]workflows[\\/][^\\/]+\.ya?ml$/.test(filePath)
 }
 
-async function main(): Promise<void> {
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch {
-    process.exit(0)
-  }
-  if (!raw) {
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-    process.exit(0)
-  }
-  const filePath = payload.tool_input?.file_path
-  if (!filePath || !isWorkflowYaml(filePath)) {
-    process.exit(0)
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// and fail-open on any throw. PostToolUse — reporting only, never blocks.
+await withEditGuard(filePath => {
+  if (!isWorkflowYaml(filePath)) {
+    return
   }
 
   // actionlint — YAML / shell / SHA-pin issues.
   if (actionlintAvailable()) {
     const r = spawnSync('actionlint', [filePath], { timeout: 10_000 })
     if (r.status !== 0) {
-      process.stderr.write(
+      logger.error(
         [
           '[actionlint-on-workflow-edit] actionlint reported errors',
           '',
@@ -120,7 +102,7 @@ async function main(): Promise<void> {
     // zizmor exits non-zero when findings exist. Surface the output
     // regardless so even informational findings are visible.
     if (r.status !== 0) {
-      process.stderr.write(
+      logger.error(
         [
           '[actionlint-on-workflow-edit] zizmor reported findings',
           '',
@@ -147,14 +129,4 @@ async function main(): Promise<void> {
       )
     }
   }
-
-  // PostToolUse — emit warnings to stderr but don't block the edit
-  // (the edit already happened). Exit 0 so Claude sees the stderr.
-  process.exit(0)
-}
-
-main().catch(e => {
-  process.stderr.write(
-    `[actionlint-on-workflow-edit] hook error (allowing): ${(e as Error).message}\n`,
-  )
 })

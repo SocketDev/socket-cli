@@ -174,7 +174,7 @@ function sortAlternativesIfSimple(
  */
 const rule = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
       description:
         'Sort regex alternation groups alphanumerically per the CLAUDE.md sorting rule.',

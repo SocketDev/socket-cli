@@ -106,7 +106,7 @@ import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const rule = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
       description:
         'Prefer cached-length C-style `for (let i = 0, { length } = arr; i < length; i += 1)` over `.forEach` and `for...of`.',

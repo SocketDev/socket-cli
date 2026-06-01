@@ -33,16 +33,15 @@
 // Fails open on any internal error (exit 0 + stderr log) so the
 // hook never wedges the operator's flow.
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
 import process from 'node:process'
 
+import { withBashGuard } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface ToolInput {
-  readonly tool_input?: { readonly command?: string | undefined } | undefined
-  readonly tool_name?: string | undefined
-  readonly transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow empty-commit bypass'
 
@@ -75,62 +74,38 @@ export function isCherryPickAllowEmpty(command: string): boolean {
   )
 }
 
-let payloadRaw = ''
-process.stdin.setEncoding('utf8')
-process.stdin.on('data', chunk => {
-  payloadRaw += chunk
-})
-process.stdin.on('end', () => {
-  try {
-    let payload: ToolInput
-    try {
-      payload = JSON.parse(payloadRaw) as ToolInput
-    } catch {
-      process.exit(0)
-    }
-    if (payload.tool_name !== 'Bash') {
-      process.exit(0)
-    }
-    const command = payload.tool_input?.command ?? ''
-    if (!command) {
-      process.exit(0)
-    }
-
-    const allowEmptyCommit = isAllowEmptyCommit(command)
-    const allowEmptyCherryPick = isCherryPickAllowEmpty(command)
-    if (!allowEmptyCommit && !allowEmptyCherryPick) {
-      process.exit(0)
-    }
-
-    // Operator bypass — `Allow empty-commit bypass` in a recent turn.
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      process.exit(0)
-    }
-
-    const flag = allowEmptyCommit
-      ? '--allow-empty (or --allow-empty-message)'
-      : '--allow-empty / --keep-redundant-commits'
-    process.stderr.write(
-      [
-        `[no-empty-commit-guard] Blocked: git ${allowEmptyCommit ? 'commit' : 'cherry-pick'} ${flag}`,
-        '',
-        '  Empty commits pollute `git log`, break CHANGELOG generators',
-        '  (which expect each commit to carry a diff), and hide intent.',
-        '',
-        '  If you are anchoring a release tag forward, use:',
-        '    git tag -f vX.Y.Z <real-content-commit>',
-        '    git push origin --force-with-lease vX.Y.Z',
-        '',
-        '  If you genuinely need to record a no-content waypoint, type',
-        `  "${BYPASS_PHRASE}" in chat, then retry.`,
-        '',
-      ].join('\n'),
-    )
-    process.exit(2)
-  } catch (e) {
-    process.stderr.write(
-      `[no-empty-commit-guard] hook error (allowing): ${e}\n`,
-    )
-    process.exit(0)
+// withBashGuard handles the stdin drain, tool_name gate, command narrow,
+// and fail-open on any throw.
+await withBashGuard((command, payload) => {
+  const allowEmptyCommit = isAllowEmptyCommit(command)
+  const allowEmptyCherryPick = isCherryPickAllowEmpty(command)
+  if (!allowEmptyCommit && !allowEmptyCherryPick) {
+    return
   }
+
+  // Operator bypass — `Allow empty-commit bypass` in a recent turn.
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+    return
+  }
+
+  const flag = allowEmptyCommit
+    ? '--allow-empty (or --allow-empty-message)'
+    : '--allow-empty / --keep-redundant-commits'
+  logger.error(
+    [
+      `[no-empty-commit-guard] Blocked: git ${allowEmptyCommit ? 'commit' : 'cherry-pick'} ${flag}`,
+      '',
+      '  Empty commits pollute `git log`, break CHANGELOG generators',
+      '  (which expect each commit to carry a diff), and hide intent.',
+      '',
+      '  If you are anchoring a release tag forward, use:',
+      '    git tag -f vX.Y.Z <real-content-commit>',
+      '    git push origin --force-with-lease vX.Y.Z',
+      '',
+      '  If you genuinely need to record a no-content waypoint, type',
+      `  "${BYPASS_PHRASE}" in chat, then retry.`,
+      '',
+    ].join('\n'),
+  )
+  process.exitCode = 2
 })

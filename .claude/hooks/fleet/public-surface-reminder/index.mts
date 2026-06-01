@@ -23,6 +23,8 @@
 
 import { readFileSync } from 'node:fs'
 
+import { isPublicSurface } from '../_shared/public-surfaces.mts'
+
 type ToolInput = {
   tool_name?: string | undefined
   tool_input?:
@@ -30,22 +32,6 @@ type ToolInput = {
         command?: string | undefined
       }
     | undefined
-}
-
-// Commands that can publish content outside the local machine.
-// Keep broad — better to remind on an extra read than miss a write.
-const PUBLIC_SURFACE_PATTERNS: RegExp[] = [
-  /\bgit\s+commit\b/,
-  /\bgit\s+push\b/,
-  /\bgh\s+pr\s+(?:comment|create|edit|review)\b/,
-  /\bgh\s+issue\s+(?:comment|create|edit)\b/,
-  /\bgh\s+api\b[^|]*-X\s*(?:PATCH|POST|PUT)\b/i,
-  /\bgh\s+release\s+(?:create|edit)\b/,
-]
-
-export function isPublicSurface(command: string): boolean {
-  const normalized = command.replace(/\s+/g, ' ')
-  return PUBLIC_SURFACE_PATTERNS.some(re => re.test(normalized))
 }
 
 function main(): void {

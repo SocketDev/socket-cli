@@ -39,20 +39,12 @@
 
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface ToolInput {
-  readonly tool_input?:
-    | {
-        readonly content?: string | undefined
-        readonly file_path?: string | undefined
-        readonly new_string?: string | undefined
-        readonly old_string?: string | undefined
-      }
-    | undefined
-  readonly tool_name?: string | undefined
-  readonly transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 interface Finding {
   readonly line: number
@@ -137,84 +129,58 @@ export function findConstFnExpressions(text: string): Finding[] {
   return findings
 }
 
-export async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = []
-  for await (const chunk of process.stdin) {
-    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
-  }
-  return Buffer.concat(chunks).toString('utf8')
-}
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+//
+// Gate the top-level invocation on argv[1] so unit tests can import the
+// exported detectors without the harness blocking on stdin.
+if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
+  await withEditGuard((filePath, content, payload) => {
+    if (isExemptPath(filePath)) {
+      return
+    }
 
-async function main(): Promise<void> {
-  let payload: ToolInput
-  try {
-    const raw = await readStdin()
-    payload = JSON.parse(raw) as ToolInput
-  } catch (err) {
-    process.stderr.write(
-      `prefer-function-declaration-guard: payload parse failed (${(err as Error).message})\n`,
+    // Only police TS/JS source. Allow .cts/.mts/.cjs/.mjs/.ts/.tsx/.js/.jsx.
+    if (!/\.(?:c|m)?[jt]sx?$/.test(filePath)) {
+      return
+    }
+
+    const text = content ?? ''
+    if (!text) {
+      return
+    }
+
+    const findings = findConstFnExpressions(text)
+    if (findings.length === 0) {
+      return
+    }
+
+    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+      logger.error(
+        `prefer-function-declaration-guard: ${findings.length} const-fn-expression(s) — bypassed via "${BYPASS_PHRASE}"\n`,
+      )
+      return
+    }
+
+    const lines = findings
+      .map(f => `  ${filePath}:${f.line}  ${f.name}\n    ${f.text}`)
+      .join('\n')
+    logger.error(
+      `prefer-function-declaration-guard: refusing to introduce module-scope const-bound function expression(s).\n` +
+        `\n` +
+        `${lines}\n` +
+        `\n` +
+        `Use a function declaration instead:\n` +
+        `  export function foo() { ... }    (not  export const foo = () => ...)\n` +
+        `  function foo() { ... }            (not  const foo = function () ...)\n` +
+        `\n` +
+        `Function declarations hoist, have a stable .name in stack traces, and\n` +
+        `sort cleanly under socket/sort-source-methods. The companion oxlint\n` +
+        `rule \`socket/prefer-function-declaration\` autofixes at commit time,\n` +
+        `but at the cost of a wasted turn writing the wrong shape.\n` +
+        `\n` +
+        `Bypass: type "${BYPASS_PHRASE}" in a recent message.\n`,
     )
-    process.exit(0)
-  }
-
-  const toolName = payload.tool_name
-  if (toolName !== 'Edit' && toolName !== 'Write') {
-    process.exit(0)
-  }
-
-  const filePath = payload.tool_input?.file_path ?? ''
-  if (!filePath || isExemptPath(filePath)) {
-    process.exit(0)
-  }
-
-  // Only police TS/JS source. Allow .cts/.mts/.cjs/.mjs/.ts/.tsx/.js/.jsx.
-  if (!/\.(?:c|m)?[jt]sx?$/.test(filePath)) {
-    process.exit(0)
-  }
-
-  const text =
-    payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
-  if (!text) {
-    process.exit(0)
-  }
-
-  const findings = findConstFnExpressions(text)
-  if (findings.length === 0) {
-    process.exit(0)
-  }
-
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    process.stderr.write(
-      `prefer-function-declaration-guard: ${findings.length} const-fn-expression(s) — bypassed via "${BYPASS_PHRASE}"\n`,
-    )
-    process.exit(0)
-  }
-
-  const lines = findings
-    .map(f => `  ${filePath}:${f.line}  ${f.name}\n    ${f.text}`)
-    .join('\n')
-  process.stderr.write(
-    `prefer-function-declaration-guard: refusing to introduce module-scope const-bound function expression(s).\n` +
-      `\n` +
-      `${lines}\n` +
-      `\n` +
-      `Use a function declaration instead:\n` +
-      `  export function foo() { ... }    (not  export const foo = () => ...)\n` +
-      `  function foo() { ... }            (not  const foo = function () ...)\n` +
-      `\n` +
-      `Function declarations hoist, have a stable .name in stack traces, and\n` +
-      `sort cleanly under socket/sort-source-methods. The companion oxlint\n` +
-      `rule \`socket/prefer-function-declaration\` autofixes at commit time,\n` +
-      `but at the cost of a wasted turn writing the wrong shape.\n` +
-      `\n` +
-      `Bypass: type "${BYPASS_PHRASE}" in a recent message.\n`,
-  )
-  process.exit(2)
+    process.exitCode = 2
+  })
 }
-
-main().catch(err => {
-  process.stderr.write(
-    `prefer-function-declaration-guard: ${(err as Error).message}\n`,
-  )
-  process.exit(0)
-})

@@ -35,7 +35,7 @@ Both signals fire: stderr reminder lands in the next turn's context.
 ## Disable
 
 ```bash
-SOCKET_FOLLOW_DIRECT_IMPERATIVE_DISABLED=1
+SOCKET_FOLLOW_DIRECT_IMPERATIVE_REMINDER_DISABLED=1
 ```
 
 ## Related

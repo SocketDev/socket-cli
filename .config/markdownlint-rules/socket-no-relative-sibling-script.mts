@@ -33,11 +33,8 @@ const SIBLING_PATH_RES = [
  * @type {import('markdownlint').Rule}
  */
 const rule = {
-  names: [RULE_NAME, 'socket/no-relative-sibling-script'],
   description:
     'Commands referencing sibling fleet repos via relative paths fail for outside readers',
-  tags: ['socket', 'fleet'],
-  parser: 'none',
   function(params, onError) {
     if (isInsideWheelhouse()) {
       return
@@ -61,6 +58,9 @@ const rule = {
       }
     }
   },
+  names: [RULE_NAME, 'socket/no-relative-sibling-script'],
+  parser: 'none',
+  tags: ['socket', 'fleet'],
 }
 
 // oxlint-disable-next-line socket/no-default-export -- markdownlint-cli2 loads custom rules via dynamic import and expects the default export to be the rule object.

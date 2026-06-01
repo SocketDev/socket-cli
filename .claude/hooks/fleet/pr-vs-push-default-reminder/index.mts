@@ -15,18 +15,14 @@
 // Skipped when the branch isn't main/master (feature branches always
 // PR via the wheelhouse push-fallback policy).
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
-import { readStdin } from '../_shared/transcript.mts'
+import { withBashGuard } from '../_shared/payload.mts'
 
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: string | undefined } | undefined
-  readonly transcript_path?: string | undefined
-  readonly cwd?: string | undefined
-}
+const logger = getDefaultLogger()
 
 // Patterns that signal "I want a PR." Match against the FULL trimmed
 // text of any of the last N user turns.
@@ -119,46 +115,29 @@ export function readRecentUserTurnTexts(
   return turns.slice(-window)
 }
 
-async function main(): Promise<void> {
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch {
-    process.exit(0)
-  }
-  if (!raw) {
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = payload.tool_input?.command ?? ''
+// withBashGuard handles the stdin drain, tool_name gate, command narrow,
+// and fail-open on any throw.
+await withBashGuard((command, payload) => {
   if (!isGhPrCreate(command)) {
-    process.exit(0)
+    return
   }
 
   const cwd = payload.cwd ?? process.cwd()
   const branch = currentBranch(cwd)
   if (!branch || (branch !== 'main' && branch !== 'master')) {
-    process.exit(0)
+    return
   }
 
   // On main/master — check whether the user asked for a PR.
   if (!payload.transcript_path) {
-    process.exit(0)
+    return
   }
   const turns = readRecentUserTurnTexts(payload.transcript_path, TURN_WINDOW)
   if (hasPrDirective(turns)) {
-    process.exit(0)
+    return
   }
 
-  process.stderr.write(
+  logger.error(
     [
       '[pr-vs-push-default-reminder] About to open a PR from main',
       '',
@@ -181,11 +160,5 @@ async function main(): Promise<void> {
       '',
     ].join('\n'),
   )
-  process.exit(0)
-}
-
-main().catch(e => {
-  process.stderr.write(
-    `[pr-vs-push-default-reminder] hook error (allowing): ${(e as Error).message}\n`,
-  )
+  return
 })

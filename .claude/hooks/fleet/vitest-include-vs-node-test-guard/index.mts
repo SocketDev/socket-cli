@@ -29,20 +29,12 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?:
-    | {
-        readonly file_path?: string | undefined
-        readonly new_string?: string | undefined
-        readonly content?: string | undefined
-      }
-    | undefined
-  readonly transcript_path?: string | undefined
-  readonly cwd?: string | undefined
-}
+import { withEditGuard } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
+const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow node-test-in-vitest-include bypass'
 
@@ -178,66 +170,47 @@ export function relPathFromRepoRoot(
   return path.relative(repoRoot, filePath).split(path.sep).join('/')
 }
 
-async function main(): Promise<void> {
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch {
-    process.exit(0)
-  }
-  if (!raw) {
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.exit(0)
-  }
-
-  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-    process.exit(0)
-  }
-  const filePath = payload.tool_input?.file_path
-  if (!filePath || !/\.(cjs|cts|js|mjs|mts|ts)$/.test(filePath)) {
-    process.exit(0)
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content, payload) => {
+  if (!/\.(cjs|cts|js|mjs|mts|ts)$/.test(filePath)) {
+    return
   }
 
   // Determine the after-content.
   let afterText = ''
   if (payload.tool_name === 'Write') {
-    afterText =
-      payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
+    afterText = content ?? ''
   } else {
     // For Edit: the new_string is enough to check the import shape; if it
     // doesn't reference node:test in the diff, also check the current file
     // (in case the import was already there and the edit only touches body).
-    afterText = payload.tool_input?.new_string ?? ''
+    afterText = content ?? ''
     if (!fileImportsNodeTest(afterText) && existsSync(filePath)) {
       try {
         afterText = readFileSync(filePath, 'utf8')
       } catch {
-        process.exit(0)
+        return
       }
     }
   }
   if (!fileImportsNodeTest(afterText)) {
-    process.exit(0)
+    return
   }
 
   const configPath = findVitestConfig(payload.cwd ?? path.dirname(filePath))
   if (!configPath) {
-    process.exit(0)
+    return
   }
   let configText: string
   try {
     configText = readFileSync(configPath, 'utf8')
   } catch {
-    process.exit(0)
+    return
   }
   const globs = extractIncludeGlobs(configText)
   if (!globs || globs.length === 0) {
-    process.exit(0)
+    return
   }
 
   const relPath = relPathFromRepoRoot(filePath, configPath)
@@ -254,17 +227,17 @@ async function main(): Promise<void> {
     }
   }
   if (matched.length === 0) {
-    process.exit(0)
+    return
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    process.exit(0)
+    return
   }
 
-  process.stderr.write(
+  logger.error(
     [
       '[vitest-include-vs-node-test-guard] Blocked: node:test file under vitest include',
       '',
@@ -287,11 +260,5 @@ async function main(): Promise<void> {
       '',
     ].join('\n'),
   )
-  process.exit(2)
-}
-
-main().catch(e => {
-  process.stderr.write(
-    `[vitest-include-vs-node-test-guard] hook error (allowing): ${(e as Error).message}\n`,
-  )
+  process.exitCode = 2
 })

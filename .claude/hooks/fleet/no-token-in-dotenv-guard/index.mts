@@ -41,23 +41,16 @@
 import path from 'node:path'
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
 import {
   GENERIC_TOKEN_SUFFIX_RE,
   isTokenKey,
 } from '../_shared/token-patterns.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface ToolInput {
-  readonly tool_input?:
-    | {
-        readonly content?: string | undefined
-        readonly file_path?: string | undefined
-        readonly new_string?: string | undefined
-      }
-    | undefined
-  readonly tool_name?: string | undefined
-  readonly transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 // Dotfile shapes that carry env-style KEY=VALUE content.
 const DOTENV_BASENAME_RE = /^\.env(?:\..+)?$|^\.envrc$/
@@ -140,80 +133,53 @@ export function isPlaceholder(value: string): boolean {
   return PLACEHOLDER_RE.test(stripped)
 }
 
-let payloadRaw = ''
-process.stdin.setEncoding('utf8')
-process.stdin.on('data', chunk => {
-  payloadRaw += chunk
-})
-process.stdin.on('end', () => {
-  try {
-    let payload: ToolInput
-    try {
-      payload = JSON.parse(payloadRaw) as ToolInput
-    } catch {
-      process.exit(0)
-    }
-    if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-      process.exit(0)
-    }
-    const filePath = payload.tool_input?.file_path ?? ''
-    if (!filePath || !isDotenvPath(filePath)) {
-      process.exit(0)
-    }
-    const content =
-      payload.tool_input?.new_string ?? payload.tool_input?.content ?? ''
-    if (!content) {
-      process.exit(0)
-    }
-    const hits = findTokenLeaks(content)
-    if (hits.length === 0) {
-      process.exit(0)
-    }
-    // Bypass check.
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      process.exit(0)
-    }
-    const lines: string[] = []
-    lines.push(
-      '[no-token-in-dotenv-guard] Blocked: token-bearing key in dotenv.',
-    )
-    lines.push(`  File: ${filePath}`)
-    lines.push('')
-    for (let i = 0, { length } = hits; i < length; i += 1) {
-      const h = hits[i]!
-      lines.push(`  Line ${h.line}: ${h.snippet}`)
-      lines.push(`    Key:   ${h.key}`)
-    }
-    lines.push('')
-    lines.push(
-      '  Dotfiles leak — .env / .env.local accidentally get committed,',
-    )
-    lines.push('  read by every dev tool that walks the project dir, swept by')
-    lines.push("  log-scraper / file-indexer / backup clients. Tokens don't")
-    lines.push('  belong here.')
-    lines.push('')
-    lines.push('  Right places to store a Socket API token:')
-    lines.push(
-      '    - OS keychain (canonical): run `node .claude/hooks/' +
-        'setup-security-tools/install.mts` — it prompts securely and persists',
-    )
-    lines.push(
-      '      to macOS Keychain / Linux libsecret / Windows CredentialManager.',
-    )
-    lines.push(
-      '    - CI env: set as a secret in your CI provider, not in a file.',
-    )
-    lines.push('')
-    lines.push(
-      '  Bypass (e.g. seeding a test fixture with a known-junk value):',
-    )
-    lines.push(`    Type "${BYPASS_PHRASE}" in your next message.`)
-    process.stderr.write(lines.join('\n') + '\n')
-    process.exit(2)
-  } catch (e) {
-    process.stderr.write(
-      `[no-token-in-dotenv-guard] hook error (allowing): ${e}\n`,
-    )
-    process.exit(0)
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content, payload) => {
+  if (!isDotenvPath(filePath)) {
+    return
   }
+  const text = content ?? ''
+  if (!text) {
+    return
+  }
+  const hits = findTokenLeaks(text)
+  if (hits.length === 0) {
+    return
+  }
+  // Bypass check.
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+    return
+  }
+  const lines: string[] = []
+  lines.push('[no-token-in-dotenv-guard] Blocked: token-bearing key in dotenv.')
+  lines.push(`  File: ${filePath}`)
+  lines.push('')
+  for (let i = 0, { length } = hits; i < length; i += 1) {
+    const h = hits[i]!
+    lines.push(`  Line ${h.line}: ${h.snippet}`)
+    lines.push(`    Key:   ${h.key}`)
+  }
+  lines.push('')
+  lines.push('  Dotfiles leak — .env / .env.local accidentally get committed,')
+  lines.push('  read by every dev tool that walks the project dir, swept by')
+  lines.push("  log-scraper / file-indexer / backup clients. Tokens don't")
+  lines.push('  belong here.')
+  lines.push('')
+  lines.push('  Right places to store a Socket API token:')
+  lines.push(
+    '    - OS keychain (canonical): run `node .claude/hooks/' +
+      'setup-security-tools/install.mts` — it prompts securely and persists',
+  )
+  lines.push(
+    '      to macOS Keychain / Linux libsecret / Windows CredentialManager.',
+  )
+  lines.push(
+    '    - CI env: set as a secret in your CI provider, not in a file.',
+  )
+  lines.push('')
+  lines.push('  Bypass (e.g. seeding a test fixture with a known-junk value):')
+  lines.push(`    Type "${BYPASS_PHRASE}" in your next message.`)
+  logger.error(lines.join('\n') + '\n')
+  process.exitCode = 2
 })

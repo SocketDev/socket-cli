@@ -20,6 +20,8 @@
  *      declaration order, so we don't reshuffle around them.
  */
 
+import { stringComparator } from '../lib/comparators.mts'
+
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const SCRIPT_ENTRY_NAMES = new Set(['main'])
@@ -179,7 +181,7 @@ export function trailingCommentEnd(
  */
 const rule = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
       description:
         'Top-level functions sorted by visibility (private→export) and alphanumerically within each group.',
@@ -293,17 +295,9 @@ const rule = {
 
         // Build the fix once, applied via the first violation. ESLint
         // dedupes overlapping fixes, so attaching it once is enough.
-        const sorted = entries.slice().toSorted((a, b) => {
-          const ka = sortKey(a)
-          const kb = sortKey(b)
-          if (ka < kb) {
-            return -1
-          }
-          if (ka > kb) {
-            return 1
-          }
-          return 0
-        })
+        const sorted = entries
+          .slice()
+          .toSorted((a, b) => stringComparator(sortKey(a), sortKey(b)))
 
         const orderedByPosition = entries
           .slice()

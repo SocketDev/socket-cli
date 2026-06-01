@@ -41,18 +41,12 @@
 
 import process from 'node:process'
 
-import { splitLines, walkComments } from '../_shared/acorn/index.mts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-interface ToolInput {
-  readonly tool_input?:
-    | {
-        readonly content?: string | undefined
-        readonly file_path?: string | undefined
-        readonly new_string?: string | undefined
-      }
-    | undefined
-  readonly tool_name?: string | undefined
-}
+import { splitLines, walkComments } from '../_shared/acorn/index.mts'
+import { withEditGuard } from '../_shared/payload.mts'
+
+const logger = getDefaultLogger()
 
 interface MetaCommentFinding {
   readonly kind: 'task' | 'removed-code'
@@ -293,66 +287,43 @@ export function findMetaComments(
     : findMetaCommentsLexical(text)
 }
 
-let payloadRaw = ''
-process.stdin.setEncoding('utf8')
-process.stdin.on('data', chunk => {
-  payloadRaw += chunk
-})
-process.stdin.on('end', () => {
-  try {
-    let payload: ToolInput
-    try {
-      payload = JSON.parse(payloadRaw) as ToolInput
-    } catch {
-      process.exit(0)
-    }
-    if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-      process.exit(0)
-    }
-    const filePath = payload.tool_input?.file_path ?? ''
-    // Only check source files. Markdown / json / yaml don't have
-    // "code comments" in the relevant sense — those file types use
-    // the same prefix tokens (`#`, `//`, `*`) as legitimate body
-    // content, not as comment markers.
-    if (!/\.(?:[cm]?[jt]sx?|cc|cpp|h|hpp|rs|go|py|sh)$/.test(filePath)) {
-      process.exit(0)
-    }
-    const text =
-      payload.tool_input?.new_string ?? payload.tool_input?.content ?? ''
-    if (!text) {
-      process.exit(0)
-    }
-
-    const findings = findMetaComments(text, filePath)
-    if (findings.length === 0) {
-      process.exit(0)
-    }
-
-    const lines: string[] = []
-    lines.push('[no-meta-comments-guard] Blocked: meta-comment(s) in source.')
-    lines.push(`  File: ${filePath}`)
-    lines.push('')
-    for (let i = 0, { length } = findings; i < length; i += 1) {
-      const f = findings[i]!
-      lines.push(`  Line ${f.line} (${f.kind}):`)
-      lines.push(`    Saw:     ${f.snippet}`)
-      lines.push(`    Suggest: ${f.suggestion}`)
-      lines.push('')
-    }
-    lines.push('  Per CLAUDE.md "Code style → Comments": comments describe the')
-    lines.push('  CONSTRAINT or the hidden invariant. Development context')
-    lines.push(
-      '  (the plan, the task, the user request, removed code) lives in',
-    )
-    lines.push('  commit messages and PR descriptions, not source comments.')
-    lines.push('')
-    lines.push('  Rewrite or delete the comment, then retry the Edit/Write.')
-    process.stderr.write(lines.join('\n') + '\n')
-    process.exit(2)
-  } catch (e) {
-    process.stderr.write(
-      `[no-meta-comments-guard] hook error (allowing): ${e}\n`,
-    )
-    process.exit(0)
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content) => {
+  // Only check source files. Markdown / json / yaml don't have
+  // "code comments" in the relevant sense — those file types use
+  // the same prefix tokens (`#`, `//`, `*`) as legitimate body
+  // content, not as comment markers.
+  if (!/\.(?:[cm]?[jt]sx?|cc|cpp|h|hpp|rs|go|py|sh)$/.test(filePath)) {
+    return
   }
+  const text = content ?? ''
+  if (!text) {
+    return
+  }
+
+  const findings = findMetaComments(text, filePath)
+  if (findings.length === 0) {
+    return
+  }
+
+  const lines: string[] = []
+  lines.push('[no-meta-comments-guard] Blocked: meta-comment(s) in source.')
+  lines.push(`  File: ${filePath}`)
+  lines.push('')
+  for (let i = 0, { length } = findings; i < length; i += 1) {
+    const f = findings[i]!
+    lines.push(`  Line ${f.line} (${f.kind}):`)
+    lines.push(`    Saw:     ${f.snippet}`)
+    lines.push(`    Suggest: ${f.suggestion}`)
+    lines.push('')
+  }
+  lines.push('  Per CLAUDE.md "Code style → Comments": comments describe the')
+  lines.push('  CONSTRAINT or the hidden invariant. Development context')
+  lines.push('  (the plan, the task, the user request, removed code) lives in')
+  lines.push('  commit messages and PR descriptions, not source comments.')
+  lines.push('')
+  lines.push('  Rewrite or delete the comment, then retry the Edit/Write.')
+  logger.error(lines.join('\n') + '\n')
+  process.exitCode = 2
 })

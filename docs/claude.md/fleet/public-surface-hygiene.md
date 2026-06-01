@@ -38,6 +38,9 @@ Never `gh workflow run|dispatch` against publish/release workflows. The user run
 - `uses: <action>@<40-char-sha>` lines need a trailing `# <tag> (YYYY-MM-DD)` comment so we can age-out stale pins (enforced by `.claude/hooks/fleet/workflow-uses-comment-guard/`).
 - Workflow `run:` blocks with `gh ... --body "..."` break YAML on multi-line markdown; always `--body-file <path>` (enforced by `.claude/hooks/fleet/workflow-yaml-multiline-body-guard/`; bypass: `Allow workflow-yaml-multiline-body bypass`).
 - Edits to `.github/workflows/*.y*ml` auto-lint via local `actionlint` (enforced by `.claude/hooks/fleet/actionlint-on-workflow-edit/`).
+- A workflow that commits, pushes, or tags must NOT set `actions/checkout` `persist-credentials: false` — it strips the token a later `git push` step needs, and the push fails with an auth error that looks unrelated. **Why:** 2026-03-25 a `weekly-update.yml` push step broke after a `persist-credentials: false` was added for hardening.
+- `schedule:`-triggered runs have no `inputs`, so a job-level `if: inputs.X` (or `github.event.inputs.X`) is always falsy on a cron fire. Guard schedule-vs-dispatch branches with `github.event_name` instead. **Why:** 2026-03-25 a job gated on `inputs.dry-run` never ran on its cron schedule.
+- A workflow can't use the default `GITHUB_TOKEN` to trigger another workflow (push / PR / issue events it creates are suppressed; only `workflow_dispatch` / `repository_dispatch` fire). Full failure modes + the PAT / dispatch workarounds in [`github-token-limitations.md`](github-token-limitations.md).
 
 ## `pull_request_target` is privileged
 

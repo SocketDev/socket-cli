@@ -19,28 +19,17 @@
 //
 // Disable via SOCKET_COMMIT_PR_REMINDER_DISABLED.
 
+import { AI_ATTRIBUTION_PATTERNS } from '../_shared/ai-attribution.mts'
 import { runStopReminder } from '../_shared/stop-reminder.mts'
 
 await runStopReminder({
   name: 'commit-pr-reminder',
   disabledEnvVar: 'SOCKET_COMMIT_PR_REMINDER_DISABLED',
-  patterns: [
-    {
-      label: 'AI attribution: Generated with Claude',
-      regex: /generated with (?:anthropic|claude)/i,
-      why: 'The fleet forbids AI attribution in commit/PR text. Remove the line.',
-    },
-    {
-      label: 'AI attribution: Co-Authored-By Claude',
-      regex: /co-authored-by:?\s*claude/i,
-      why: 'Co-Authored-By Claude is forbidden in commit/PR trailers.',
-    },
-    {
-      label: 'AI attribution: robot emoji tag line',
-      regex: /^.*🤖.*generated/im,
-      why: 'Remove the robot-emoji + "Generated" attribution line.',
-    },
-  ],
+  patterns: AI_ATTRIBUTION_PATTERNS.map(p => ({
+    label: `AI attribution: ${p.label}`,
+    regex: p.regex,
+    why: p.why,
+  })),
   closingHint:
     'Commits/PRs must use Conventional Commits (`<type>(<scope>): <description>`) with no AI attribution. PR bodies need a Summary section. See CLAUDE.md "Commits & PRs".',
 })

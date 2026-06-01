@@ -1,12 +1,12 @@
 /**
  * @file Shared helper for rule fixers that need to inject an `import { Name }
  *   from 'specifier'` statement (and optionally a matching hoisted `const`)
- *   into a file. Fixers call `summarizeImportTarget(programNode, specifier,
- *   importName)` to learn the file's current shape, then
- *   `appendImportFixes(...)` inside their `fix(fixer)` callback to add the
- *   missing pieces. ESLint's autofixer dedupes overlapping inserts at the same
- *   range, so multiple violations in the same file can each emit the import
- *   insertion safely — only one survives.
+ *   into a file. Fixers call `summarizeImportTarget(programNode, importName)`
+ *   to learn the file's current shape, then `appendImportFixes(...)` inside
+ *   their `fix(fixer)` callback to add the missing pieces. ESLint's autofixer
+ *   dedupes overlapping inserts at the same range, so multiple violations in
+ *   the same file can each emit the import insertion safely — only one
+ *   survives.
  */
 
 import type { AstNode, RuleFixer } from '../lib/rule-types.mts'
@@ -30,17 +30,11 @@ export type FixerOp = unknown
  * imports the same name from `'@socketsecurity/lib-stable/logger/default'`.
  * Both resolve to the same identifier; either should count as "already
  * imported" so the autofix doesn't inject a duplicate (and broken — see issue
- * #64).
- *
- * `specifier` is retained in the signature for backward compatibility but is no
- * longer used for the match decision. Callers may pass any truthy value
- * (typically the canonical package path the rule would inject if the import
- * were missing).
+ * #64). The match is by `importName` + `localName`, so the specifier path is
+ * not a parameter.
  */
 export function summarizeImportTarget(
   program: AstNode,
-  // eslint-disable-next-line no-unused-vars
-  _specifier: string,
   importName: string,
   localName?: string,
 ): ImportSummary {

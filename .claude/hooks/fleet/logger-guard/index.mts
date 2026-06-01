@@ -192,7 +192,10 @@ async function main(): Promise<void> {
     return
   }
   emitBlock(filePath, hits)
-  process.exitCode = 2
+  // Hard-exit on the block path so no later microtask / catch handler can
+  // reset the code. The .catch below fails open (exit 0) on a genuine
+  // hook error — that path must stay distinct from a real block.
+  process.exit(2)
 }
 
 main().catch(e => {

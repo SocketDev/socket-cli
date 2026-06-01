@@ -19,11 +19,14 @@
  * @type {import('eslint').Rule.RuleModule}
  */
 
+import { isAlreadySorted, stringComparator } from '../lib/comparators.mts'
+import { hasInteriorComments } from '../lib/comment-checks.mts'
+
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const rule = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
       description:
         'Sort named imports alphanumerically within an import statement.',
@@ -55,15 +58,6 @@ const rule = {
       return spec.local && spec.local.name ? spec.local.name : ''
     }
 
-    function isAlreadySorted(names: string[]): boolean {
-      for (let i = 1; i < names.length; i++) {
-        if (names[i - 1]! > names[i]!) {
-          return false
-        }
-      }
-      return true
-    }
-
     return {
       ImportDeclaration(node: AstNode) {
         // Pull only the named-imports (skip default + namespace).
@@ -79,11 +73,9 @@ const rule = {
           return
         }
 
-        const sorted = [...named].toSorted((a, b) => {
-          const ka = specSortKey(a)
-          const kb = specSortKey(b)
-          return ka < kb ? -1 : ka > kb ? 1 : 0
-        })
+        const sorted = [...named].toSorted((a, b) =>
+          stringComparator(specSortKey(a), specSortKey(b)),
+        )
         const sortedKeys = sorted.map(specSortKey)
 
         // If any comment lives between the first and last named
@@ -91,16 +83,8 @@ const rule = {
         // breaks attribution.
         const first = named[0]
         const last = named[named.length - 1]
-        const interior = sourceCode.getCommentsInside
-          ? sourceCode
-              .getCommentsInside(node)
-              .filter(
-                (c: AstNode) =>
-                  c.range[0] >= first.range[0] && c.range[1] <= last.range[1],
-              )
-          : []
 
-        if (interior.length > 0) {
+        if (hasInteriorComments(sourceCode, node, first, last)) {
           context.report({
             node,
             messageId: 'unsorted',

@@ -26,6 +26,10 @@
  *     unexpected value lands in a known field.
  */
 
+import process from 'node:process'
+
+import { readStdin } from './transcript.mts'
+
 /**
  * The full PreToolUse payload Claude Code sends on stdin. Every hook imports
  * this and narrows the `tool_input` fields it reads.
@@ -33,6 +37,14 @@
 export interface ToolCallPayload {
   readonly tool_name?: string | undefined
   readonly tool_input?: ToolInput | undefined
+  // Present on every PreToolUse payload; hooks read it for bypass-phrase
+  // checks (bypassPhrasePresent). Optional + string so a shape surprise
+  // doesn't crash the narrow.
+  readonly transcript_path?: string | undefined
+  // The working directory Claude Code ran the tool from. Hooks that shell
+  // out to git (commit-author-guard, etc.) read it to scope the spawn.
+  // Optional + string so a shape surprise doesn't crash the narrow.
+  readonly cwd?: string | undefined
 }
 
 /**
@@ -88,4 +100,88 @@ export function readWriteContent(payload: ToolCallPayload): string | undefined {
     return newStr
   }
   return undefined
+}
+
+/**
+ * Read + parse the PreToolUse payload from stdin, failing open on any problem
+ * (empty stdin, unreadable, malformed JSON) by returning undefined. The shared
+ * preamble every guard repeats; the caller decides what "fail open" means
+ * (typically `process.exit(0)`).
+ */
+export async function readPayload(): Promise<ToolCallPayload | undefined> {
+  let raw: string
+  try {
+    raw = await readStdin()
+  } catch {
+    return undefined
+  }
+  if (!raw) {
+    return undefined
+  }
+  try {
+    return JSON.parse(raw) as ToolCallPayload
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Bash-guard harness: drain + parse stdin, gate on `tool_name === 'Bash'`,
+ * narrow `command` to a non-empty string, then run `fn(command, payload)`.
+ * Fails open on missing/unreadable/malformed payload, a non-Bash tool, an
+ * absent command, or ANY throw from `fn` — a guard must never crash the tool
+ * call it inspects. To BLOCK, `fn` sets `process.exitCode = 2` and returns; the
+ * harness leaves that code intact. It fails open by simply not setting a code
+ * (the process then exits 0), and resets the code on a thrown error so a
+ * mid-`fn` throw can't half-block.
+ */
+export async function withBashGuard(
+  fn: (command: string, payload: ToolCallPayload) => void | Promise<void>,
+): Promise<void> {
+  try {
+    const payload = await readPayload()
+    if (!payload || payload.tool_name !== 'Bash') {
+      return
+    }
+    const command = readCommand(payload)
+    if (!command) {
+      return
+    }
+    await fn(command, payload)
+  } catch {
+    // Fail open: a guard error must not block the user's command.
+    process.exitCode = 0
+  }
+}
+
+/**
+ * Edit/Write-guard harness: drain + parse stdin, gate on `tool_name` being
+ * `Edit` / `Write` / `MultiEdit`, narrow `file_path` to a non-empty string,
+ * then run `fn(filePath, content, payload)` where `content` is the
+ * about-to-land text (Write `content` or Edit `new_string`, possibly
+ * undefined). Same fail-open contract as `withBashGuard`: `fn` blocks by
+ * setting `process.exitCode = 2` and returning.
+ */
+export async function withEditGuard(
+  fn: (
+    filePath: string,
+    content: string | undefined,
+    payload: ToolCallPayload,
+  ) => void | Promise<void>,
+): Promise<void> {
+  try {
+    const payload = await readPayload()
+    const tool = payload?.tool_name
+    if (tool !== 'Edit' && tool !== 'Write' && tool !== 'MultiEdit') {
+      return
+    }
+    const filePath = readFilePath(payload!)
+    if (!filePath) {
+      return
+    }
+    await fn(filePath, readWriteContent(payload!), payload!)
+  } catch {
+    // Fail open: a guard error must not block the user's edit.
+    process.exitCode = 0
+  }
 }

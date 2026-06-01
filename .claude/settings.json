@@ -237,11 +237,19 @@
           },
           {
             "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/non-fleet-pr-issue-ask-guard/index.mts"
+          },
+          {
+            "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/no-external-issue-ref-guard/index.mts"
           },
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/no-revert-guard/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/no-tail-install-output-guard/index.mts"
           },
           {
             "type": "command",

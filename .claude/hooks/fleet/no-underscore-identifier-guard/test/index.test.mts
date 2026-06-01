@@ -6,8 +6,18 @@ import assert from 'node:assert/strict'
 // subprocess and pipes stdin/stdout/stderr; Node spawn returns the
 // ChildProcess streaming surface the lib promise wrapper does not.
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+// Write a one-user-turn JSONL transcript carrying `userText`, return its path.
+function makeTranscript(userText: string): string {
+  const dir = mkdtempSync(path.join(tmpdir(), 'underscore-guard-'))
+  const file = path.join(dir, 'session.jsonl')
+  writeFileSync(file, JSON.stringify({ role: 'user', content: userText }))
+  return file
+}
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const HOOK = path.join(here, '..', 'index.mts')
@@ -292,24 +302,14 @@ test('error message mentions _internal/ exception + bypass phrase', async () => 
 
 // ─── Bypass case ─────────────────────────────────────────────────
 
-test('bypass phrase in CLAUDE_RECENT_USER_TURNS env allows the edit', async () => {
-  const child = spawn(process.execPath, [HOOK], {
-    stdio: 'pipe',
-    env: {
-      ...process.env,
-      CLAUDE_RECENT_USER_TURNS: 'Allow underscore-identifier bypass',
-    },
+test('bypass phrase in a recent transcript user turn allows the edit', async () => {
+  const transcriptPath = makeTranscript('Allow underscore-identifier bypass')
+  const result = await runHook({
+    tool_input: { content: 'const _foo = 1', file_path: F },
+    tool_name: 'Write',
+    transcript_path: transcriptPath,
   })
-  child.stdin!.end(
-    JSON.stringify({
-      tool_input: { content: 'const _foo = 1', file_path: F },
-      tool_name: 'Write',
-    }),
-  )
-  const code = await new Promise<number>(resolve => {
-    child.process.on('exit', c => resolve(c ?? 0))
-  })
-  assert.strictEqual(code, 0)
+  assert.strictEqual(result.code, 0)
 })
 
 // ─── Edge cases ──────────────────────────────────────────────────

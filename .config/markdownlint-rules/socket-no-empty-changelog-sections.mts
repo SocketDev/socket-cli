@@ -40,11 +40,8 @@ const SECTION_NAMES = new Set([
  * @type {import('markdownlint').Rule}
  */
 const rule = {
-  names: [RULE_NAME, 'socket/no-empty-changelog-sections'],
   description:
     'CHANGELOG.md Keep-a-Changelog section headings must have at least one bullet',
-  tags: ['socket', 'fleet', 'changelog'],
-  parser: 'none',
   function(params, onError) {
     const filePath = params.name ?? ''
     const baseName = filePath.split('/').pop() ?? ''
@@ -94,6 +91,9 @@ const rule = {
       })
     }
   },
+  names: [RULE_NAME, 'socket/no-empty-changelog-sections'],
+  parser: 'none',
+  tags: ['socket', 'fleet', 'changelog'],
 }
 
 export default rule

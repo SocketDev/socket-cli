@@ -30,15 +30,14 @@
 //
 // Fails open on any internal error (exit 0 + stderr log).
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
+import { withBashGuard } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 
-interface ToolInput {
-  readonly tool_input?: { readonly command?: string | undefined } | undefined
-  readonly tool_name?: string | undefined
-}
+const logger = getDefaultLogger()
 
 /**
  * Pull the first argument that looks like a ref out of a `git revert` command.
@@ -124,72 +123,49 @@ export function isRefPushed(ref: string): boolean | undefined {
   return undefined
 }
 
-let payloadRaw = ''
-process.stdin.setEncoding('utf8')
-process.stdin.on('data', chunk => {
-  payloadRaw += chunk
-})
-process.stdin.on('end', () => {
-  try {
-    let payload: ToolInput
-    try {
-      payload = JSON.parse(payloadRaw) as ToolInput
-    } catch {
-      process.exit(0)
-    }
-    if (payload.tool_name !== 'Bash') {
-      process.exit(0)
-    }
-    const command = payload.tool_input?.command ?? ''
-    if (!command) {
-      process.exit(0)
-    }
-
-    // Only fire on real `git revert` invocations (parser sees through
-    // chains / `$(…)`; a quoted "git revert" in a message is ignored).
-    if (!isGitRevert(command)) {
-      process.exit(0)
-    }
-
-    // Skip advanced workflows. `--no-commit` / `--no-edit` mean the
-    // operator is mid-merge or scripting; the rebase suggestion
-    // doesn't apply cleanly.
-    if (/--no-(?:commit|edit)\b/.test(command)) {
-      process.exit(0)
-    }
-
-    const ref = extractRef(command)
-    if (!ref) {
-      process.exit(0)
-    }
-
-    const pushed = isRefPushed(ref)
-    if (pushed !== false) {
-      // Pushed (= revert is correct), or unknowable (= don't false-
-      // positive on a brand-new branch with no upstream).
-      process.exit(0)
-    }
-
-    process.stderr.write(
-      [
-        '[prefer-rebase-over-revert-guard] Reminder: this commit looks unpushed.',
-        '',
-        `  Target ref:  ${ref}`,
-        '',
-        '  For unpushed commits, `git reset --soft HEAD~N` (or `git rebase -i HEAD~N`)',
-        '  cleanly drops the commit — no "Revert ..." noise in history. Revert commits',
-        '  are correct for changes already on origin.',
-        '',
-        '  Proceed if intentional; this is a reminder, not a block.',
-        '',
-      ].join('\n'),
-    )
-    // Always exit 0. The hook is a nudge, not an enforcer.
-    process.exit(0)
-  } catch (e) {
-    process.stderr.write(
-      `[prefer-rebase-over-revert-guard] hook error (allowing): ${e}\n`,
-    )
-    process.exit(0)
+// withBashGuard handles the stdin drain, tool_name gate, command narrow,
+// and fail-open on any throw.
+await withBashGuard(command => {
+  // Only fire on real `git revert` invocations (parser sees through
+  // chains / `$(…)`; a quoted "git revert" in a message is ignored).
+  if (!isGitRevert(command)) {
+    return
   }
+
+  // Skip advanced workflows. `--no-commit` / `--no-edit` mean the
+  // operator is mid-merge or scripting; the rebase suggestion
+  // doesn't apply cleanly.
+  if (/--no-(?:commit|edit)\b/.test(command)) {
+    return
+  }
+
+  const ref = extractRef(command)
+  if (!ref) {
+    return
+  }
+
+  const pushed = isRefPushed(ref)
+  if (pushed !== false) {
+    // Pushed (= revert is correct), or unknowable (= don't false-
+    // positive on a brand-new branch with no upstream).
+    return
+  }
+
+  logger.error(
+    [
+      '[prefer-rebase-over-revert-guard] Reminder: this commit looks unpushed.',
+      '',
+      `  Target ref:  ${ref}`,
+      '',
+      '  For unpushed commits, `git reset --soft HEAD~N` (or `git rebase -i HEAD~N`)',
+      '  cleanly drops the commit — no "Revert ..." noise in history. Revert commits',
+      '  are correct for changes already on origin.',
+      '',
+      '  Proceed if intentional; this is a reminder, not a block.',
+      '',
+    ].join('\n'),
+  )
+  // Reminder only — exit 0 (withBashGuard returns control and the
+  // process exits 0 naturally).
+  return
 })

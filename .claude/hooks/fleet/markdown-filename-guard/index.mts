@@ -36,20 +36,12 @@
 import path from 'node:path'
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { readStdin } from '../_shared/transcript.mts'
+import { withEditGuard } from '../_shared/payload.mts'
 
-type ToolInput = {
-  tool_input?:
-    | {
-        content?: string | undefined
-        file_path?: string | undefined
-        new_string?: string | undefined
-      }
-    | undefined
-  tool_name?: string | undefined
-}
+const logger = getDefaultLogger()
 
 // SCREAMING_CASE files allowed at root / docs/ / .claude/ (top level).
 const ALLOWED_SCREAMING_CASE: ReadonlySet<string> = new Set([
@@ -191,7 +183,7 @@ export function emitBlock(filePath: string, verdict: Verdict): void {
   lines.push(
     '    - Everything else: lowercase-with-hyphens, in docs/ or .claude/.',
   )
-  process.stderr.write(lines.join('\n') + '\n')
+  logger.error(lines.join('\n') + '\n')
 }
 
 export function isAtAllowedRegularLocation(relPath: string): boolean {
@@ -262,34 +254,13 @@ export function toRepoRelative(filePath: string): string {
   return rel
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  if (!raw) {
-    return
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    return
-  }
-  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-    return
-  }
-  const filePath = payload.tool_input?.file_path ?? ''
-  if (!filePath) {
-    return
-  }
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// and fail-open on any throw.
+await withEditGuard(filePath => {
   const verdict = classifyMarkdownPath(filePath)
   if (verdict.ok) {
     return
   }
   emitBlock(filePath, verdict)
   process.exitCode = 2
-}
-
-main().catch(e => {
-  process.stderr.write(
-    `[markdown-filename-guard] hook error (continuing): ${(e as Error).message}\n`,
-  )
 })

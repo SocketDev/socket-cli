@@ -45,20 +45,12 @@
 
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface ToolInput {
-  readonly tool_input?:
-    | {
-        readonly content?: string | undefined
-        readonly file_path?: string | undefined
-        readonly new_string?: string | undefined
-        readonly old_string?: string | undefined
-      }
-    | undefined
-  readonly tool_name?: string | undefined
-  readonly transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 // Match declarations that introduce a leading-underscore identifier.
 // We don't try to AST-parse; the regex set covers the surface forms
@@ -98,8 +90,8 @@ export function findBannedIdentifiers(text: string): Finding[] {
   const lines = text.split('\n')
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i]!
-    for (let i = 0, { length } = BANNED_DECL_PATTERNS; i < length; i += 1) {
-      const pattern = BANNED_DECL_PATTERNS[i]!
+    for (let pi = 0, { length } = BANNED_DECL_PATTERNS; pi < length; pi += 1) {
+      const pattern = BANNED_DECL_PATTERNS[pi]!
       pattern.lastIndex = 0
       let match: RegExpExecArray | null
       while ((match = pattern.exec(line)) !== null) {
@@ -157,37 +149,9 @@ export function isPluginOrHookTestPath(filePath: string): boolean {
   )
 }
 
-export async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = []
-  for await (const chunk of process.stdin) {
-    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
-  }
-  return Buffer.concat(chunks).toString('utf8')
-}
-
-async function main(): Promise<void> {
-  let payload: ToolInput
-  try {
-    const raw = await readStdin()
-    payload = JSON.parse(raw) as ToolInput
-  } catch (err) {
-    // Malformed payload — fail open.
-    process.stderr.write(
-      `no-underscore-identifier-guard: payload parse failed (${(err as Error).message})\n`,
-    )
-    process.exit(0)
-  }
-
-  const toolName = payload.tool_name
-  if (toolName !== 'Edit' && toolName !== 'Write') {
-    process.exit(0)
-  }
-
-  const filePath = payload.tool_input?.file_path ?? ''
-  if (!filePath) {
-    process.exit(0)
-  }
-
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content, payload) => {
   // Allowlist: _internal/ dirs, generated output, this rule's own
   // test/lint fixtures.
   if (
@@ -195,36 +159,35 @@ async function main(): Promise<void> {
     isGeneratedPath(filePath) ||
     isPluginOrHookTestPath(filePath)
   ) {
-    process.exit(0)
+    return
   }
 
   // Only police TS/JS source.
   if (!/\.(?:c|m)?[jt]sx?$/.test(filePath)) {
-    process.exit(0)
+    return
   }
 
-  const text =
-    payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
+  const text = content ?? ''
   if (!text) {
-    process.exit(0)
+    return
   }
 
   const findings = findBannedIdentifiers(text)
   if (findings.length === 0) {
-    process.exit(0)
+    return
   }
 
   if (hasRecentBypass(payload.transcript_path)) {
-    process.stderr.write(
+    logger.error(
       `no-underscore-identifier-guard: ${findings.length} underscore identifier(s) — bypassed via "${BYPASS_PHRASE}"\n`,
     )
-    process.exit(0)
+    return
   }
 
   const lines = findings
     .map(f => `  ${filePath}:${f.line}  ${f.identifier}\n    ${f.text}`)
     .join('\n')
-  process.stderr.write(
+  logger.error(
     `no-underscore-identifier-guard: refusing to introduce underscore-prefixed identifier(s).\n` +
       `\n` +
       `${lines}\n` +
@@ -235,12 +198,5 @@ async function main(): Promise<void> {
       `\n` +
       `Bypass: type "${BYPASS_PHRASE}" in a recent message.\n`,
   )
-  process.exit(2)
-}
-
-main().catch((err: unknown) => {
-  process.stderr.write(
-    `no-underscore-identifier-guard: unexpected error (${(err as Error).message})\n`,
-  )
-  process.exit(0)
+  process.exitCode = 2
 })

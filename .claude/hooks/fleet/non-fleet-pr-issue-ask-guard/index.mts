@@ -34,11 +34,12 @@
 // dir, or the remote): better to under-block than to wedge a
 // legitimate fleet PR/issue when the shape is unfamiliar.
 
-import path from 'node:path'
 import process from 'node:process'
-import { spawnSync } from 'node:child_process'
+
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isFleetRepo, slugFromRemoteUrl } from '../_shared/fleet-repos.mts'
+import { extractGitCwd } from '../_shared/git-cwd.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
@@ -51,8 +52,6 @@ interface ToolInput {
 const BYPASS_PHRASE = 'Allow non-fleet-publish bypass'
 
 const GH_DASH_REPO_RE = /--repo[\s=]+("([^"]+)"|'([^']+)'|(\S+))/
-const GIT_DASH_C_RE = /\bgit\s+-C\s+("([^"]+)"|'([^']+)'|(\S+))/
-const LEADING_CD_RE = /(?:^|[;&|]|&&)\s*cd\s+("([^"]+)"|'([^']+)'|(\S+))/
 
 // gh subcommands that publish public-facing content. `release create`
 // is also in the harness deny list, but the hook layer here catches
@@ -70,21 +69,6 @@ export function extractGhTargetRepo(command: string): string | undefined {
     return m[2] ?? m[3] ?? m[4]
   }
   return undefined
-}
-
-export function extractGitCwd(command: string): string {
-  const dashC = GIT_DASH_C_RE.exec(command)
-  if (dashC) {
-    return dashC[2] ?? dashC[3] ?? dashC[4] ?? process.cwd()
-  }
-  const cd = LEADING_CD_RE.exec(command)
-  if (cd) {
-    const dir = cd[2] ?? cd[3] ?? cd[4]
-    if (dir) {
-      return path.resolve(process.cwd(), dir)
-    }
-  }
-  return process.cwd()
 }
 
 function originSlugFromCwd(dir: string): string | undefined {

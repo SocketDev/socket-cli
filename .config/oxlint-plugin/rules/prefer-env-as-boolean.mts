@@ -76,11 +76,7 @@ const rule = {
 
     function ensureSummary() {
       if (!summary) {
-        summary = summarizeImportTarget(
-          sourceCode.ast,
-          '@socketsecurity/lib-stable/env/boolean',
-          'envAsBoolean',
-        )
+        summary = summarizeImportTarget(sourceCode.ast, 'envAsBoolean')
       }
       return summary
     }

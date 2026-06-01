@@ -33,14 +33,13 @@
 // Exit codes:
 //   0 — always. Informational; never blocks.
 //
-// Disabled via `SOCKET_FOLLOW_DIRECT_IMPERATIVE_DISABLED=1`.
+// Disabled via `SOCKET_FOLLOW_DIRECT_IMPERATIVE_REMINDER_DISABLED=1`.
 
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
-interface StopPayload {
-  readonly transcript_path?: string | undefined
-}
+import { isHookDisabled } from '../_shared/hook-env.mts'
+import { readStdin } from '../_shared/transcript.mts'
 
 interface TranscriptEntry {
   readonly type?: string | undefined
@@ -54,22 +53,18 @@ interface TranscriptEntry {
   readonly content?: unknown | undefined
 }
 
-export async function drainStdinJson(): Promise<StopPayload> {
-  return await new Promise<StopPayload>(resolve => {
-    let raw = ''
-    process.stdin.on('data', d => {
-      raw += d.toString('utf8')
-    })
-    process.stdin.on('end', () => {
-      try {
-        resolve(raw ? (JSON.parse(raw) as StopPayload) : {})
-      } catch {
-        resolve({})
-      }
-    })
-    process.stdin.on('error', () => resolve({}))
-    setTimeout(() => resolve({}), 200)
-  })
+export async function readStopPayload(): Promise<{
+  transcript_path?: string | undefined
+}> {
+  const raw = await readStdin()
+  if (!raw) {
+    return {}
+  }
+  try {
+    return JSON.parse(raw) as { transcript_path?: string | undefined }
+  } catch {
+    return {}
+  }
 }
 
 // Read the last N entries from a JSONL transcript file. The harness
@@ -233,10 +228,10 @@ export function hasHedge(text: string): boolean {
 }
 
 async function main(): Promise<void> {
-  if (process.env['SOCKET_FOLLOW_DIRECT_IMPERATIVE_DISABLED']) {
+  if (isHookDisabled('follow-direct-imperative-reminder')) {
     return
   }
-  const payload = await drainStdinJson()
+  const payload = await readStopPayload()
   const transcriptPath = payload.transcript_path
   if (!transcriptPath) {
     return

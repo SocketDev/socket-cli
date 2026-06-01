@@ -252,18 +252,7 @@ minimumReleaseAgeExclude:
   - 'read-package-json-fast@6.0.0'
   - '@redwoodjs/agent-ci'
   - 'dtu-github-actions'
-  - 'shell-quote'
   - 'vite'
-  - 'vitest'
-  - '@vitest/coverage-v8'
-  - '@vitest/expect'
-  - '@vitest/mocker'
-  - '@vitest/pretty-format'
-  - '@vitest/runner'
-  - '@vitest/snapshot'
-  - '@vitest/spy'
-  - '@vitest/ui'
-  - '@vitest/utils'
   - 'rolldown'
   - '@rolldown/pluginutils'
   - '@rolldown/binding-android-arm64'
@@ -287,6 +276,30 @@ minimumReleaseAgeExclude:
   - 'socket-*'
   - '@redwoodjs/agent-ci@0.16.2'
   - 'dtu-github-actions@0.16.2'
+  # published: 2026-05-22 | removable: 2026-05-29
+  - 'shell-quote@1.8.4'
+  # published: 2026-05-27 | removable: 2026-06-03
+  - 'compromise@14.15.1'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - 'vitest@4.1.6'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - '@vitest/coverage-v8@4.1.6'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - '@vitest/expect@4.1.6'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - '@vitest/mocker@4.1.6'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - '@vitest/pretty-format@4.1.6'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - '@vitest/runner@4.1.6'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - '@vitest/snapshot@4.1.6'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - '@vitest/spy@4.1.6'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - '@vitest/ui@4.1.6'
+  # published: 2026-05-11 | removable: 2026-05-18
+  - '@vitest/utils@4.1.6'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we

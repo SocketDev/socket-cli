@@ -69,7 +69,7 @@ const rule = {
       if (summary) {
         return summary
       }
-      summary = summarizeImportTarget(sourceCode.ast, 'node:fs', 'existsSync')
+      summary = summarizeImportTarget(sourceCode.ast, 'existsSync')
       return summary
     }
 

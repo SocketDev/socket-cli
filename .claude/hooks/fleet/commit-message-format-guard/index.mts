@@ -35,6 +35,7 @@
 
 import process from 'node:process'
 
+import { AI_ATTRIBUTION_PATTERNS } from '../_shared/ai-attribution.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface PreToolUsePayload {
@@ -72,29 +73,6 @@ const ALLOWED_TYPE_SET: ReadonlySet<string> = new Set(ALLOWED_TYPES)
 // - non-empty description
 const HEADER_RE = /^([a-z]+)(\([^)]+\))?(!)?: (.+)$/
 
-// AI-attribution patterns. These match anywhere in the message body —
-// header or footer. Patterns mirror commit-pr-reminder.
-const AI_ATTRIBUTION_PATTERNS: ReadonlyArray<{
-  readonly label: string
-  readonly regex: RegExp
-}> = [
-  {
-    label: 'Generated with Claude/Anthropic',
-    regex: /generated with (?:anthropic|claude)/i,
-  },
-  {
-    label: 'Co-Authored-By: Claude',
-    regex: /co-authored-by:?\s*claude/i,
-  },
-  {
-    label: 'Robot emoji (🤖) tag line',
-    regex: /🤖/,
-  },
-  {
-    label: 'noreply@anthropic.com footer',
-    regex: /<noreply@anthropic\.com>/i,
-  },
-]
 
 /**
  * True when the command is a `git commit ...` invocation. Tolerates leading

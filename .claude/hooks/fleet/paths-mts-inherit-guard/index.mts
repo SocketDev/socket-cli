@@ -51,25 +51,16 @@
 //       the maintainer should paste).
 //   0 with stderr log — fail-open on hook bugs.
 
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { withEditGuard } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-type ToolInput = {
-  tool_input?:
-    | {
-        content?: string | undefined
-        file_path?: string | undefined
-        new_string?: string | undefined
-      }
-    | undefined
-  tool_name?: string | undefined
-  transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow paths-mts-inherit bypass'
 const BYPASS_LOOKBACK_USER_TURNS = 8
@@ -106,46 +97,26 @@ export function findAncestorPathsMts(filePath: string): string | undefined {
   return undefined
 }
 
-async function main(): Promise<number> {
-  const raw = await readStdin()
-  if (!raw.trim()) {
-    return 0
-  }
-
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.stderr.write(
-      'paths-mts-inherit-guard: failed to parse stdin payload — fail-open\n',
-    )
-    return 0
-  }
-
+// withEditGuard handles the stdin drain, tool_name gate (Edit / Write /
+// MultiEdit), file_path narrow, content extraction (new_string / content),
+// and fail-open on any throw.
+await withEditGuard((filePath, content, payload) => {
   const tool = payload.tool_name
-  if (tool !== 'Edit' && tool !== 'MultiEdit' && tool !== 'Write') {
-    return 0
-  }
-
-  const filePath = payload.tool_input?.file_path
-  if (!filePath) {
-    return 0
-  }
   if (!PATHS_MTS_RE.test(filePath)) {
-    return 0
+    return
   }
 
   // Only enforce on `<...>/scripts/paths.{mts,cts}` (the canonical
   // location). A `paths.mts` outside a `scripts/` dir is some other
   // file with the same name; not our concern.
   if (!/\/scripts\/paths\.(?:cts|mts)$/.test(filePath)) {
-    return 0
+    return
   }
 
   // Repo-root paths.mts has no ancestor — exempt.
   const ancestor = findAncestorPathsMts(filePath)
   if (!ancestor) {
-    return 0
+    return
   }
 
   // The new content we're about to write. Edit uses `new_string`
@@ -155,10 +126,9 @@ async function main(): Promise<number> {
   // accept; otherwise check the on-disk file. MultiEdit follows
   // the same shape as Edit at the payload level (Claude Code
   // serializes the merged result).
-  const fragment =
-    payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
+  const fragment = content ?? ''
   if (EXPORT_STAR_RE.test(fragment)) {
-    return 0
+    return
   }
 
   // For Edit-shaped writes, the existing file may already carry the
@@ -167,10 +137,9 @@ async function main(): Promise<number> {
   // OTHER line and the inheritance is already present.
   if (tool === 'Edit' || tool === 'MultiEdit') {
     try {
-      const { readFileSync } = await import('node:fs')
       const existing = readFileSync(filePath, 'utf8')
       if (EXPORT_STAR_RE.test(existing)) {
-        return 0
+        return
       }
     } catch {
       // File may not exist yet (new file via Edit, unusual but
@@ -185,11 +154,11 @@ async function main(): Promise<number> {
       BYPASS_LOOKBACK_USER_TURNS,
     )
   ) {
-    return 0
+    return
   }
 
   const relAncestor = path.relative(path.dirname(filePath), ancestor)
-  process.stderr.write(
+  logger.error(
     [
       `🚨 paths-mts-inherit-guard: blocked Edit/Write to a sub-package`,
       `paths.mts that doesn't inherit from the nearest ancestor.`,
@@ -213,15 +182,5 @@ async function main(): Promise<number> {
       ``,
     ].join('\n'),
   )
-  return 2
-}
-
-main().then(
-  code => process.exit(code),
-  e => {
-    process.stderr.write(
-      `paths-mts-inherit-guard: hook bug — fail-open. ${errorMessage(e)}\n`,
-    )
-    process.exit(0)
-  },
-)
+  process.exitCode = 2
+})

@@ -38,16 +38,11 @@
 
 import process from 'node:process'
 
-interface ToolInput {
-  readonly tool_input?:
-    | {
-        readonly content?: string | undefined
-        readonly file_path?: string | undefined
-        readonly new_string?: string | undefined
-      }
-    | undefined
-  readonly tool_name?: string | undefined
-}
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
+
+const logger = getDefaultLogger()
 
 const FILE_SCOPE_DISABLE_RE =
   /^[ \t]*(?:\/\*|\/\/)[ \t]*oxlint-disable(?!-next-line)[ \t]+/
@@ -85,53 +80,20 @@ export function isExemptPath(filePath: string): boolean {
   return false
 }
 
-export async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = []
-  for await (const chunk of process.stdin) {
-    chunks.push(chunk as Buffer)
-  }
-  return Buffer.concat(chunks).toString('utf8')
+if (process.env['SOCKET_NO_FILE_SCOPE_OXLINT_DISABLE_GUARD_DISABLED']) {
+  process.exit(0)
 }
 
-async function main(): Promise<void> {
-  if (process.env['SOCKET_NO_FILE_SCOPE_OXLINT_DISABLE_GUARD_DISABLED']) {
-    process.exit(0)
-  }
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch (e) {
-    process.stderr.write(
-      `[no-file-scope-oxlint-disable-guard] stdin read failed: ${
-        e instanceof Error ? e.message : String(e)
-      }\n`,
-    )
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch (e) {
-    process.stderr.write(
-      `[no-file-scope-oxlint-disable-guard] payload parse failed: ${
-        e instanceof Error ? e.message : String(e)
-      }\n`,
-    )
-    process.exit(0)
-  }
-  const toolName = payload.tool_name
-  if (toolName !== 'Edit' && toolName !== 'Write') {
-    process.exit(0)
-  }
-  const filePath = payload.tool_input?.file_path || ''
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content) => {
   if (isExemptPath(filePath)) {
-    process.exit(0)
+    return
   }
-  const newContent =
-    payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
+  const newContent = content ?? ''
   const findings = findFileScopeDisables(newContent)
   if (findings.length === 0) {
-    process.exit(0)
+    return
   }
   const lines: string[] = []
   lines.push(
@@ -157,15 +119,6 @@ async function main(): Promise<void> {
     "If the entire file legitimately can't comply, the file needs a refactor",
   )
   lines.push('— not a blanket exemption.')
-  process.stderr.write(lines.join('\n') + '\n')
-  process.exit(2)
-}
-
-main().catch((e: unknown) => {
-  process.stderr.write(
-    `[no-file-scope-oxlint-disable-guard] unexpected: ${
-      e instanceof Error ? e.message : String(e)
-    }\n`,
-  )
-  process.exit(0)
+  logger.error(lines.join('\n') + '\n')
+  process.exitCode = 2
 })

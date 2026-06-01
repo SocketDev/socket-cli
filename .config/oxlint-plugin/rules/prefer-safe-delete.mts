@@ -78,11 +78,7 @@ const rule = {
       if (s) {
         return s
       }
-      s = summarizeImportTarget(
-        sourceCode.ast,
-        '@socketsecurity/lib-stable/fs/safe',
-        importName,
-      )
+      s = summarizeImportTarget(sourceCode.ast, importName)
       summaryCache.set(importName, s)
       return s
     }

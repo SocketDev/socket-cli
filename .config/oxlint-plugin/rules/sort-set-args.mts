@@ -9,6 +9,8 @@
  *   behavior).
  */
 
+import { stringComparator } from '../lib/comparators.mts'
+
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const SET_NAMES = new Set(['SafeSet', 'Set'])
@@ -22,15 +24,7 @@ function isSortableElement(node: AstNode) {
 }
 
 function compareSortable(a: AstNode, b: AstNode): number {
-  const aVal = String(a.value)
-  const bVal = String(b.value)
-  if (aVal < bVal) {
-    return -1
-  }
-  if (aVal > bVal) {
-    return 1
-  }
-  return 0
+  return stringComparator(String(a.value), String(b.value))
 }
 
 /**
@@ -38,7 +32,7 @@ function compareSortable(a: AstNode, b: AstNode): number {
  */
 const rule = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
       description:
         'Sort Set/SafeSet constructor array arguments alphanumerically (CLAUDE.md sorting rule).',
@@ -74,14 +68,21 @@ const rule = {
           return
         }
 
+        // Spread elements (`...X`) have no orderable token and a Set built
+        // from spreads dedups regardless of order, so element order carries
+        // no meaning — skip rather than nag for an impossible manual sort.
+        if (
+          els.some((e: AstNode) => e !== null && e.type === 'SpreadElement')
+        ) {
+          return
+        }
+
         const allSortable = els.every(isSortableElement)
         if (!allSortable) {
-          // Check if it's already sorted by raw text — if so, no report.
-          const raws = els.map((e: AstNode) => (e ? e.raw || '' : ''))
-          const sortedRaws = [...raws].toSorted()
-          if (raws.every((r: string, i: number) => r === sortedRaws[i])) {
-            return
-          }
+          // Mixed-type or non-literal elements can't be compared reliably
+          // (raw-text order != comparison order, e.g. '10' < '2' lexically
+          // but 10 > 2 numerically), so no raw-text "already sorted"
+          // shortcut: always flag for a manual sort.
           context.report({
             node: arg,
             messageId: 'unsortedNoFix',

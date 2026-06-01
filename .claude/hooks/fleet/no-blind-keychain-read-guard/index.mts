@@ -48,19 +48,14 @@
 // Fails open on malformed payloads (exit 0 + stderr log) — the fleet's
 // hook contract.
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
 import process from 'node:process'
 
+import { withBashGuard, type ToolCallPayload } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface ToolInput {
-  readonly tool_input?:
-    | {
-        readonly command?: string | undefined
-      }
-    | undefined
-  readonly tool_name?: string | undefined
-  readonly transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 interface Hit {
   readonly tool: string
@@ -144,26 +139,15 @@ export function findKeychainReads(command: string): Hit[] {
   return hits
 }
 
-function handlePayload(payloadRaw: string): number {
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(payloadRaw) as ToolInput
-  } catch {
-    return 0
-  }
-  if (payload.tool_name !== 'Bash') {
-    return 0
-  }
-  const command = payload.tool_input?.command ?? ''
-  if (!command) {
-    return 0
-  }
+// The block logic. Exits 2 when a keychain read is found without a
+// bypass phrase; returns (→ exit 0) otherwise.
+function checkCommand(command: string, payload: ToolCallPayload): void {
   const hits = findKeychainReads(command)
   if (hits.length === 0) {
-    return 0
+    return
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-    return 0
+    return
   }
   const lines: string[] = []
   lines.push(
@@ -200,30 +184,18 @@ function handlePayload(payloadRaw: string): number {
   lines.push('  Bypass (e.g. operator-invoked diagnostics that need a fresh')
   lines.push('  keychain read):')
   lines.push(`    Type "${BYPASS_PHRASE}" in your next message.`)
-  process.stderr.write(lines.join('\n') + '\n')
-  return 2
+  logger.error(lines.join('\n') + '\n')
+  process.exitCode = 2
 }
 
-export { handlePayload }
+export { checkCommand }
 
 // CLI entrypoint — only fires when this file is the main module.
 // During tests the importer pulls `findKeychainReads` without triggering
-// the stdin reader (which would never see an `end` event in test env
-// and hang the process).
+// withBashGuard (which would drain stdin and never see an `end` event in
+// the test env, hanging the process).
 if (process.argv[1] && process.argv[1].endsWith('index.mts')) {
-  let payloadRaw = ''
-  process.stdin.setEncoding('utf8')
-  process.stdin.on('data', chunk => {
-    payloadRaw += chunk
-  })
-  process.stdin.on('end', () => {
-    try {
-      process.exit(handlePayload(payloadRaw))
-    } catch (e) {
-      process.stderr.write(
-        `[no-blind-keychain-read-guard] hook error (allowing): ${e}\n`,
-      )
-      process.exit(0)
-    }
-  })
+  // withBashGuard handles the stdin drain, tool_name gate, command
+  // narrow, and fail-open on any throw.
+  await withBashGuard(checkCommand)
 }

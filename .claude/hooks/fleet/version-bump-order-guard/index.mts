@@ -21,18 +21,15 @@
 // Bypass: "Allow version-bump-order bypass" in a recent user turn, or
 // SOCKET_VERSION_BUMP_ORDER_GUARD_DISABLED=1.
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
+import { withBashGuard } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface PreToolUsePayload {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: unknown | undefined } | undefined
-  readonly transcript_path?: string | undefined
-  readonly cwd?: string | undefined
-}
+const logger = getDefaultLogger()
 
 const BYPASS_PHRASES = [
   'Allow version-bump-order bypass',
@@ -56,29 +53,17 @@ function isVersionTagCommand(command: string): boolean {
 const BUMP_SUBJECT_RE =
   /^(?:chore(?:\([\w-]+\))?:\s+(?:bump version to|release)\s+v?\d+\.\d+\.\d+|chore(?:\([\w-]+\))?:\s+v?\d+\.\d+\.\d+\s+release)/i
 
-async function main(): Promise<void> {
+// withBashGuard handles the stdin drain, tool_name gate, command narrow,
+// and fail-open on any throw.
+await withBashGuard((command, payload) => {
   if (process.env['SOCKET_VERSION_BUMP_ORDER_GUARD_DISABLED']) {
-    process.exit(0)
-  }
-  const payloadRaw = await readStdin()
-  let payload: PreToolUsePayload
-  try {
-    payload = JSON.parse(payloadRaw) as PreToolUsePayload
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = payload.tool_input?.['command']
-  if (typeof command !== 'string') {
-    process.exit(0)
+    return
   }
   if (!isVersionTagCommand(command)) {
-    process.exit(0)
+    return
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    process.exit(0)
+    return
   }
 
   // Read the most-recent commit subject from HEAD.
@@ -86,11 +71,11 @@ async function main(): Promise<void> {
   const subjectResult = spawnSync('git', ['log', '-1', '--pretty=%s'], opts)
   if (subjectResult.status !== 0) {
     // Not a git repo or git unavailable — fail open.
-    process.exit(0)
+    return
   }
   const headSubject = String(subjectResult.stdout).trim()
   if (BUMP_SUBJECT_RE.test(headSubject)) {
-    process.exit(0)
+    return
   }
 
   // Look up whether CHANGELOG.md was touched in HEAD.
@@ -130,10 +115,6 @@ async function main(): Promise<void> {
     '  Bypass: type "Allow version-bump-order bypass" in a recent message.',
     '',
   ]
-  process.stderr.write(lines.join('\n') + '\n')
-  process.exit(2)
-}
-
-main().catch(() => {
-  process.exit(0)
+  logger.error(lines.join('\n') + '\n')
+  process.exitCode = 2
 })

@@ -18,18 +18,14 @@
 //
 // No-op when the staged set is purely non-UI source.
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
-import { readStdin } from '../_shared/transcript.mts'
+import { withBashGuard } from '../_shared/payload.mts'
 
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: string | undefined } | undefined
-  readonly transcript_path?: string | undefined
-  readonly cwd?: string | undefined
-}
+const logger = getDefaultLogger()
 
 // Files whose changes likely affect rendered output.
 const UI_FILE_RE =
@@ -89,8 +85,8 @@ export function analyzeTranscript(entries: TranscriptEntry[]): Analysis {
             'string'
         ) {
           const cmd = (input as { command: string }).command
-          for (let i = 0, { length } = BUILD_COMMAND_RES; i < length; i += 1) {
-            const re = BUILD_COMMAND_RES[i]!
+          for (let j = 0, { length } = BUILD_COMMAND_RES; j < length; j += 1) {
+            const re = BUILD_COMMAND_RES[j]!
             if (re.test(cmd)) {
               buildCommand = cmd
               buildIndex = i
@@ -116,8 +112,8 @@ export function analyzeTranscript(entries: TranscriptEntry[]): Analysis {
           )
           .join('\n')
       }
-      for (let i = 0, { length } = VERIFY_PATTERNS; i < length; i += 1) {
-        const re = VERIFY_PATTERNS[i]!
+      for (let j = 0, { length } = VERIFY_PATTERNS; j < length; j += 1) {
+        const re = VERIFY_PATTERNS[j]!
         if (re.test(text)) {
           verifyIndex = i
           break
@@ -177,49 +173,32 @@ export function stagedFiles(cwd: string): string[] {
     .filter(Boolean)
 }
 
-async function main(): Promise<void> {
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch {
-    process.exit(0)
-  }
-  if (!raw) {
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = payload.tool_input?.command ?? ''
+// withBashGuard handles the stdin drain, tool_name gate, command narrow,
+// and fail-open on any throw.
+await withBashGuard((command, payload) => {
   if (!isGitCommit(command)) {
-    process.exit(0)
+    return
   }
 
   const cwd = payload.cwd ?? process.cwd()
   const staged = stagedFiles(cwd)
   const uiStaged = staged.filter(f => UI_FILE_RE.test(f))
   if (uiStaged.length === 0) {
-    process.exit(0)
+    return
   }
 
   if (!payload.transcript_path) {
-    process.exit(0)
+    return
   }
   const entries = readTranscript(payload.transcript_path)
   const { buildCommand, buildIndex, verifyIndex } = analyzeTranscript(entries)
   if (buildIndex < 0) {
     // No build ran; can't reason about freshness.
-    process.exit(0)
+    return
   }
   if (verifyIndex > buildIndex) {
     // User explicitly verified after the build.
-    process.exit(0)
+    return
   }
 
   const lines: string[] = []
@@ -250,12 +229,6 @@ async function main(): Promise<void> {
   lines.push('')
   lines.push('  Reminder-only; not a block.')
   lines.push('')
-  process.stderr.write(lines.join('\n'))
-  process.exit(0)
-}
-
-main().catch(e => {
-  process.stderr.write(
-    `[verify-rendered-output-before-commit-reminder] hook error (allowing): ${(e as Error).message}\n`,
-  )
+  logger.error(lines.join('\n'))
+  return
 })

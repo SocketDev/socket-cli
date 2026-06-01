@@ -44,7 +44,7 @@ import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 const rule = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
       description:
         'Forbid `Promise.race(...)` — losers keep running and leak handles. Use `AbortSignal.any` + timeout, `Promise.allSettled`, or restructure the wait.',

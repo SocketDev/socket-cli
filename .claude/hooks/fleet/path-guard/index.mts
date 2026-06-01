@@ -52,8 +52,11 @@
 
 import process from 'node:process'
 
-import { findTemplateLiterals } from '../_shared/acorn/index.mts'
-import type { TemplateLiteralSite } from '../_shared/acorn/index.mts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { findTemplateLiterals, walkSimple } from '../_shared/acorn/index.mts'
+import type { AcornNode, TemplateLiteralSite } from '../_shared/acorn/index.mts'
+import { withEditGuard } from '../_shared/payload.mts'
 import {
   BUILD_ROOT_SEGMENTS,
   KNOWN_SIBLING_PACKAGES,
@@ -61,12 +64,14 @@ import {
   STAGE_SEGMENTS,
 } from './segments.mts'
 
+const logger = getDefaultLogger()
+
 const EXEMPT_FILE_PATTERNS: RegExp[] = [
   /(?:^|\/)paths\.(?:cts|mts)$/,
   /scripts\/check-paths\.mts$/,
   /scripts\/check-paths\//,
-  /\.claude\/hooks\/path-guard\/index\.(?:cts|mts)$/,
-  /\.claude\/hooks\/path-guard\/test\//,
+  /\.claude\/hooks\/(?:fleet\/)?path-guard\/index\.(?:cts|mts)$/,
+  /\.claude\/hooks\/(?:fleet\/)?path-guard\/test\//,
   /scripts\/check-consistency\.mts$/,
 ]
 
@@ -83,26 +88,6 @@ class BlockError extends Error {
   }
 }
 
-interface ToolInput {
-  tool_name?: string | undefined
-  tool_input?:
-    | {
-        file_path?: string | undefined
-        new_string?: string | undefined
-        content?: string | undefined
-      }
-    | undefined
-}
-
-export function stdin(): Promise<string> {
-  return new Promise<string>(resolve => {
-    let buf = ''
-    process.stdin.setEncoding('utf8')
-    process.stdin.on('data', chunk => (buf += chunk))
-    process.stdin.on('end', () => resolve(buf))
-  })
-}
-
 export function isInScope(filePath: string) {
   if (!filePath) {
     return false
@@ -112,23 +97,6 @@ export function isInScope(filePath: string) {
   }
   return !EXEMPT_FILE_PATTERNS.some(re => re.test(filePath))
 }
-
-/**
- * Collect string-literal arguments from each `path.join` / `path.resolve` call.
- * We deliberately only consume the `firstStringArg` + the
- * `allStringLiteralArgs` flag from the AST helper's MemberCallSite, then walk
- * the call again at the source level only as a fallback for displaying the
- * snippet — we never parse arguments by hand.
- *
- * To get ALL string-literal args (not just the first), we re-parse the
- * arguments via `findMemberCalls`'s nature: it visits one CallExpression at a
- * time. Since the public surface returns only `firstStringArg`, here we walk
- * again with a custom visitor that inspects each argument. This keeps the
- * public helper API narrow while letting path-guard get the full literal list
- * it needs.
- */
-import { walkSimple } from '../_shared/acorn/index.mts'
-import type { AcornNode } from '../_shared/acorn/index.mts'
 
 interface PathCall {
   /**
@@ -301,7 +269,7 @@ export function check(source: string) {
 }
 
 export function emitBlock(filePath: string, err: BlockError) {
-  process.stderr.write(
+  logger.error(
     `\n[path-guard] Blocked: ${err.rule}\n` +
       `  Mantra: 1 path, 1 reference\n` +
       `  File:    ${filePath}\n` +
@@ -310,26 +278,13 @@ export function emitBlock(filePath: string, err: BlockError) {
   )
 }
 
-async function main() {
-  const raw = await stdin()
-  if (!raw) {
-    return
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    return
-  }
-  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-    return
-  }
-  const filePath = payload.tool_input?.file_path ?? ''
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content) => {
   if (!isInScope(filePath)) {
     return
   }
-  const source =
-    payload.tool_input?.new_string ?? payload.tool_input?.content ?? ''
+  const source = content ?? ''
   if (!source) {
     return
   }
@@ -343,9 +298,4 @@ async function main() {
     }
     throw e
   }
-}
-
-main().catch(e => {
-  process.stderr.write(`[path-guard] hook error (allowing): ${e}\n`)
-  process.exitCode = 0
 })

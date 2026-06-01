@@ -48,20 +48,13 @@
 
 import process from 'node:process'
 
-import { splitLines, walkComments } from '../_shared/acorn/index.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-interface PreToolUsePayload {
-  readonly tool_name?: string | undefined
-  readonly tool_input?:
-    | {
-        readonly file_path?: unknown | undefined
-        readonly content?: unknown | undefined
-        readonly new_string?: unknown | undefined
-      }
-    | undefined
-  readonly transcript_path?: string | undefined
-}
+import { splitLines, walkComments } from '../_shared/acorn/index.mts'
+import { withEditGuard } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
+
+const logger = getDefaultLogger()
 
 const BYPASS_PHRASES = [
   'Allow pointer-comment bypass',
@@ -202,48 +195,30 @@ export function findPointerOnlyComments(blocks: readonly Comment[]): Hit[] {
   return hits
 }
 
-async function main(): Promise<void> {
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content, payload) => {
   if (process.env['SOCKET_POINTER_COMMENT_GUARD_DISABLED']) {
-    process.exit(0)
-  }
-  const payloadRaw = await readStdin()
-  let payload: PreToolUsePayload
-  try {
-    payload = JSON.parse(payloadRaw) as PreToolUsePayload
-  } catch {
-    process.exit(0)
-  }
-  const tool = payload.tool_name
-  if (tool !== 'Edit' && tool !== 'Write') {
-    process.exit(0)
-  }
-  const filePath = payload.tool_input?.['file_path']
-  if (typeof filePath !== 'string') {
-    process.exit(0)
+    return
   }
   if (!SOURCE_EXT_RE.test(filePath)) {
-    process.exit(0)
+    return
   }
   // Skip tests — they often have illustrative pointer-only comments.
   if (/(?:^|\/)test\//.test(filePath) || /\.test\.[jt]sx?$/.test(filePath)) {
-    process.exit(0)
+    return
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    process.exit(0)
+    return
   }
-  const content =
-    typeof payload.tool_input?.['content'] === 'string'
-      ? (payload.tool_input!['content'] as string)
-      : typeof payload.tool_input?.['new_string'] === 'string'
-        ? (payload.tool_input!['new_string'] as string)
-        : ''
-  if (!content) {
-    process.exit(0)
+  const text = content ?? ''
+  if (!text) {
+    return
   }
-  const blocks = extractCommentBlocks(content)
+  const blocks = extractCommentBlocks(text)
   const hits = findPointerOnlyComments(blocks)
   if (hits.length === 0) {
-    process.exit(0)
+    return
   }
 
   const lines = [
@@ -277,12 +252,7 @@ async function main(): Promise<void> {
   )
   lines.push('  or SOCKET_POINTER_COMMENT_GUARD_DISABLED=1.')
   lines.push('')
-  process.stderr.write(lines.join('\n') + '\n')
-  // Informational — exit 0. The hook leaves the breadcrumb in stderr
-  // for the next turn to read; it doesn't block the edit.
-  process.exit(0)
-}
-
-main().catch(() => {
-  process.exit(0)
+  logger.error(lines.join('\n') + '\n')
+  // Informational — does not block the edit. The hook leaves the
+  // breadcrumb in stderr for the next turn to read.
 })

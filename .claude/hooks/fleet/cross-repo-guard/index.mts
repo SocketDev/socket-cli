@@ -43,7 +43,7 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { FLEET_REPO_NAMES } from '../_shared/fleet-repos.mts'
-import { readStdin } from '../_shared/transcript.mts'
+import { withEditGuard } from '../_shared/payload.mts'
 
 const logger = getDefaultLogger()
 
@@ -82,17 +82,6 @@ const EXEMPT_PATH_PATTERNS: RegExp[] = [
 
 const SOCKET_HOOK_MARKER_RE =
   /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
-
-interface ToolInput {
-  tool_name?: string | undefined
-  tool_input?:
-    | {
-        file_path?: string | undefined
-        new_string?: string | undefined
-        content?: string | undefined
-      }
-    | undefined
-}
 
 export function emitBlock(filePath: string, hits: Hit[]): void {
   const lines: string[] = []
@@ -173,26 +162,13 @@ export function scan(source: string, currentRepoName?: string): Hit[] {
   return hits
 }
 
-async function main(): Promise<void> {
-  const raw = await readStdin()
-  if (!raw) {
-    return
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    return
-  }
-  if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-    return
-  }
-  const filePath = payload.tool_input?.file_path ?? ''
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content) => {
   if (!isInScope(filePath)) {
     return
   }
-  const source =
-    payload.tool_input?.new_string ?? payload.tool_input?.content ?? ''
+  const source = content ?? ''
   if (!source) {
     return
   }
@@ -202,11 +178,4 @@ async function main(): Promise<void> {
   }
   emitBlock(filePath, hits)
   process.exitCode = 2
-}
-
-main().catch(e => {
-  // Fail open on hook bugs.
-  logger.error(
-    `[cross-repo-guard] hook error (continuing): ${(e as Error).message}`,
-  )
 })

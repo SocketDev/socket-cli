@@ -33,11 +33,13 @@
  * @type {import('eslint').Rule.RuleModule}
  */
 
+import { stringComparator } from '../lib/comparators.mts'
+
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
 const rule = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
       description:
         'Sort string-equality disjunctions alphanumerically (`x === "a" || x === "b"`).',
@@ -194,15 +196,9 @@ const rule = {
       }
 
       // Compute the sorted order.
-      const sortedClauses = [...clauses].toSorted((a, b) => {
-        if (a.rightValue < b.rightValue) {
-          return -1
-        }
-        if (a.rightValue > b.rightValue) {
-          return 1
-        }
-        return 0
-      })
+      const sortedClauses = [...clauses].toSorted((a, b) =>
+        stringComparator(a.rightValue, b.rightValue),
+      )
 
       const actualOrder = clauses.map(c => c.rightValue).join(', ')
       const expectedOrder = sortedClauses.map(c => c.rightValue).join(', ')

@@ -45,19 +45,12 @@
 import path from 'node:path'
 import process from 'node:process'
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { withEditGuard } from '../_shared/payload.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface ToolInput {
-  readonly tool_input?:
-    | {
-        readonly content?: string | undefined
-        readonly file_path?: string | undefined
-        readonly new_string?: string | undefined
-      }
-    | undefined
-  readonly tool_name?: string | undefined
-  readonly transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow pr-target-execution bypass'
 
@@ -224,100 +217,75 @@ export function findUnsafeForkExecution(content: string): Finding[] {
   return findings
 }
 
-let payloadRaw = ''
-process.stdin.setEncoding('utf8')
-process.stdin.on('data', chunk => {
-  payloadRaw += chunk
-})
-process.stdin.on('end', () => {
-  try {
-    let payload: ToolInput
-    try {
-      payload = JSON.parse(payloadRaw) as ToolInput
-    } catch {
-      process.exit(0)
-    }
-    if (payload.tool_name !== 'Edit' && payload.tool_name !== 'Write') {
-      process.exit(0)
-    }
-    const filePath = payload.tool_input?.file_path ?? ''
-    if (!filePath || !isWorkflowPath(filePath)) {
-      process.exit(0)
-    }
-    const content =
-      payload.tool_input?.new_string ?? payload.tool_input?.content ?? ''
-    if (!content) {
-      process.exit(0)
-    }
-    const findings = findUnsafeForkExecution(content)
-    if (findings.length === 0) {
-      process.exit(0)
-    }
-    if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
-      process.exit(0)
-    }
-    const lines: string[] = []
-    lines.push(
-      '[pull-request-target-guard] Blocked: fork-execution in pull_request_target workflow.',
-    )
-    lines.push(`  File: ${path.basename(filePath)}`)
-    lines.push('')
-    lines.push('  Workflow combines all three high-risk patterns:')
-    lines.push(
-      '    1. on: pull_request_target  (runs in BASE repo context with secrets)',
-    )
-    lines.push(
-      '    2. actions/checkout with ref: ${{ github.event.pull_request.head.* }}',
-    )
-    lines.push('       (checks out the FORK code — attacker-controlled)')
-    lines.push('    3. Subsequent execute-fork-code step(s):')
-    for (let i = 0, { length } = findings; i < length; i += 1) {
-      const f = findings[i]!
-      lines.push(`         Line ${f.line} (${f.cmd}): ${f.snippet}`)
-    }
-    lines.push('')
-    lines.push('  Why this is dangerous:')
-    lines.push(
-      '    The fork can declare a `prepare` / `postinstall` script (or a build',
-    )
-    lines.push(
-      "    step) that exfiltrates the base repo's secrets. Even `--ignore-scripts`",
-    )
-    lines.push(
-      '    only stops install-time execution — a build still runs fork code.',
-    )
-    lines.push('')
-    lines.push('  Safer patterns:')
-    lines.push(
-      '    a. Split: run build in `on: pull_request` (no secrets), publish an',
-    )
-    lines.push(
-      '       artifact, then a separate `workflow_run` consumes it and posts the',
-    )
-    lines.push('       comment with the privileged token.')
-    lines.push(
-      '    b. Gate the pull_request_target trigger on `labeled` so only maintainers',
-    )
-    lines.push(
-      '       can run it: `on: pull_request_target: types: [labeled]`.',
-    )
-    lines.push(
-      '    c. Never check out the fork in pull_request_target context.',
-    )
-    lines.push('')
-    lines.push(
-      '  Reference: https://bsky.app/profile/43081j.com/post/3mlnme43qnc2e',
-    )
-    lines.push('')
-    lines.push(
-      `  Bypass (rare; requires a deliberate review trade-off): type "${BYPASS_PHRASE}".`,
-    )
-    process.stderr.write(lines.join('\n') + '\n')
-    process.exit(2)
-  } catch (e) {
-    process.stderr.write(
-      `[pull-request-target-guard] hook error (allowing): ${e}\n`,
-    )
-    process.exit(0)
+// withEditGuard handles the stdin drain, tool_name gate, file_path narrow,
+// content extraction (new_string / content), and fail-open on any throw.
+await withEditGuard((filePath, content, payload) => {
+  if (!isWorkflowPath(filePath)) {
+    return
   }
+  const text = content ?? ''
+  if (!text) {
+    return
+  }
+  const findings = findUnsafeForkExecution(text)
+  if (findings.length === 0) {
+    return
+  }
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
+    return
+  }
+  const lines: string[] = []
+  lines.push(
+    '[pull-request-target-guard] Blocked: fork-execution in pull_request_target workflow.',
+  )
+  lines.push(`  File: ${path.basename(filePath)}`)
+  lines.push('')
+  lines.push('  Workflow combines all three high-risk patterns:')
+  lines.push(
+    '    1. on: pull_request_target  (runs in BASE repo context with secrets)',
+  )
+  lines.push(
+    '    2. actions/checkout with ref: ${{ github.event.pull_request.head.* }}',
+  )
+  lines.push('       (checks out the FORK code — attacker-controlled)')
+  lines.push('    3. Subsequent execute-fork-code step(s):')
+  for (let i = 0, { length } = findings; i < length; i += 1) {
+    const f = findings[i]!
+    lines.push(`         Line ${f.line} (${f.cmd}): ${f.snippet}`)
+  }
+  lines.push('')
+  lines.push('  Why this is dangerous:')
+  lines.push(
+    '    The fork can declare a `prepare` / `postinstall` script (or a build',
+  )
+  lines.push(
+    "    step) that exfiltrates the base repo's secrets. Even `--ignore-scripts`",
+  )
+  lines.push(
+    '    only stops install-time execution — a build still runs fork code.',
+  )
+  lines.push('')
+  lines.push('  Safer patterns:')
+  lines.push(
+    '    a. Split: run build in `on: pull_request` (no secrets), publish an',
+  )
+  lines.push(
+    '       artifact, then a separate `workflow_run` consumes it and posts the',
+  )
+  lines.push('       comment with the privileged token.')
+  lines.push(
+    '    b. Gate the pull_request_target trigger on `labeled` so only maintainers',
+  )
+  lines.push('       can run it: `on: pull_request_target: types: [labeled]`.')
+  lines.push('    c. Never check out the fork in pull_request_target context.')
+  lines.push('')
+  lines.push(
+    '  Reference: https://bsky.app/profile/43081j.com/post/3mlnme43qnc2e',
+  )
+  lines.push('')
+  lines.push(
+    `  Bypass (rare; requires a deliberate review trade-off): type "${BYPASS_PHRASE}".`,
+  )
+  logger.error(lines.join('\n') + '\n')
+  process.exitCode = 2
 })

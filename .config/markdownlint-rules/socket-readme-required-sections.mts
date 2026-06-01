@@ -46,11 +46,8 @@ export function isRootReadme(filePath) {
  * @type {import('markdownlint').Rule}
  */
 const rule = {
-  names: [RULE_NAME, 'socket/readme-required-sections'],
   description:
     'Fleet root README must contain the canonical five sections in order',
-  tags: ['socket', 'fleet', 'readme'],
-  parser: 'none',
   function(params, onError) {
     if (isInsideWheelhouse()) {
       return
@@ -87,6 +84,9 @@ const rule = {
       cursor = found + 1
     }
   },
+  names: [RULE_NAME, 'socket/readme-required-sections'],
+  parser: 'none',
+  tags: ['socket', 'fleet', 'readme'],
 }
 
 // oxlint-disable-next-line socket/no-default-export -- markdownlint-cli2 loads custom rules via dynamic import and expects the default export to be the rule object.

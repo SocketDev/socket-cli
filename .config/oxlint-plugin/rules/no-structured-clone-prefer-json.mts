@@ -34,7 +34,7 @@ import type { AstNode, RuleContext } from '../lib/rule-types.mts'
 
 const rule = {
   meta: {
-    type: 'suggestion',
+    type: 'problem',
     docs: {
       description:
         'Forbid `structuredClone(...)` — for JSON-roundtrippable data, `JSON.parse(JSON.stringify(x))` is 3-5x faster. Disable per-line with a rationale when the value genuinely needs the spec-heavy clone (Date/Map/Set/etc).',

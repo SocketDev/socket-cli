@@ -67,7 +67,6 @@ const rule = {
       }
       summary = summarizeImportTarget(
         sourceCode.ast,
-        '@socketsecurity/lib-stable/logger/default',
         'getDefaultLogger',
         'logger',
       )

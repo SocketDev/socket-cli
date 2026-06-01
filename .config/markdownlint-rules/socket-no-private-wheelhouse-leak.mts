@@ -22,11 +22,8 @@ const FORBIDDEN_TOKEN_RE = /socket-wheelhouse/i
  * @type {import('markdownlint').Rule}
  */
 const rule = {
-  names: [RULE_NAME, 'socket/no-private-wheelhouse-leak'],
   description:
     'socket-wheelhouse is a private repo — never reference it in public markdown',
-  tags: ['socket', 'privacy'],
-  parser: 'none',
   function(params, onError) {
     if (isInsideWheelhouse()) {
       return
@@ -55,6 +52,9 @@ const rule = {
       })
     }
   },
+  names: [RULE_NAME, 'socket/no-private-wheelhouse-leak'],
+  parser: 'none',
+  tags: ['socket', 'privacy'],
 }
 
 // oxlint-disable-next-line socket/no-default-export -- markdownlint-cli2 loads custom rules via dynamic import and expects the default export to be the rule object.

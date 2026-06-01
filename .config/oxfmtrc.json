@@ -80,6 +80,8 @@
     "**/scripts/ai-lint-fix/cli.mts",
     "**/scripts/ai-lint-fix/rule-guidance.mts",
     "**/scripts/audit-transcript.mts",
+    "**/scripts/check-claude-md-informativeness.mts",
+    "**/scripts/check-fleet-soak-exclude-parity.mts",
     "**/scripts/check-lock-step-header.mts",
     "**/scripts/check-lock-step-refs.mts",
     "**/scripts/check-paths.mts",

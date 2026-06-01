@@ -29,12 +29,12 @@
 // `Allow … bypass`-free push the operator can revert; the cost of a
 // false block is a bricked workflow.
 
-import path from 'node:path'
 import process from 'node:process'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isFleetRepo, slugFromRemoteUrl } from '../_shared/fleet-repos.mts'
+import { extractGitCwd } from '../_shared/git-cwd.mts'
 import { findInvocation } from '../_shared/shell-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
@@ -45,34 +45,6 @@ interface ToolInput {
 }
 
 const BYPASS_PHRASE = 'Allow non-fleet-push bypass'
-
-// `git -C <dir> …` — capture the dir (quoted or bare). Still a regex
-// because we only need the -C VALUE, not command structure; the push
-// DETECTION (which needs structure) goes through the shell parser.
-const GIT_DASH_C_RE = /\bgit\s+-C\s+("([^"]+)"|'([^']+)'|(\S+))/
-
-// A leading `cd <dir>` before the push, e.g. `cd /x/depot && git push`.
-// Only the FIRST cd in the chain matters for where git runs.
-const LEADING_CD_RE = /(?:^|[;&|]|&&)\s*cd\s+("([^"]+)"|'([^']+)'|(\S+))/
-
-export function extractGitCwd(command: string): string {
-  // Priority 1: explicit `git -C <dir>`.
-  const dashC = GIT_DASH_C_RE.exec(command)
-  if (dashC) {
-    return dashC[2] ?? dashC[3] ?? dashC[4] ?? process.cwd()
-  }
-  // Priority 2: a leading `cd <dir>` in the chain.
-  const cd = LEADING_CD_RE.exec(command)
-  if (cd) {
-    const dir = cd[2] ?? cd[3] ?? cd[4]
-    if (dir) {
-      // Resolve against process cwd so a relative `cd ../foo` works.
-      return path.resolve(process.cwd(), dir)
-    }
-  }
-  // Priority 3: the hook's own cwd.
-  return process.cwd()
-}
 
 export function originSlug(dir: string): string | undefined {
   let out: string

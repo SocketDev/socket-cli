@@ -36,20 +36,17 @@
 // Bypass: type "Allow commit-author bypass" in a recent user message,
 // or set SOCKET_COMMIT_AUTHOR_GUARD_DISABLED=1.
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { withBashGuard } from '../_shared/payload.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface PreToolUsePayload {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: unknown | undefined } | undefined
-  readonly transcript_path?: string | undefined
-  readonly cwd?: string | undefined
-}
+const logger = getDefaultLogger()
 
 interface GitAuthor {
   readonly name?: string | undefined
@@ -177,36 +174,24 @@ export function readCheckoutAuthor(cwd: string | undefined): GitAuthor {
   return { name, email }
 }
 
-async function main(): Promise<void> {
+// withBashGuard handles the stdin drain, tool_name gate, command narrow,
+// and fail-open on any throw.
+await withBashGuard((command, payload) => {
   if (process.env[ENV_DISABLE]) {
-    process.exit(0)
-  }
-  const payloadRaw = await readStdin()
-  let payload: PreToolUsePayload
-  try {
-    payload = JSON.parse(payloadRaw) as PreToolUsePayload
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = payload.tool_input?.['command']
-  if (typeof command !== 'string') {
-    process.exit(0)
+    return
   }
   if (!isGitCommit(command)) {
-    process.exit(0)
+    return
   }
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    process.exit(0)
+    return
   }
 
   const allowed = readAllowedAuthors()
   // If we don't have a canonical email configured anywhere, fail open —
   // the hook can't enforce something it doesn't know.
   if (!allowed.canonical.email) {
-    process.exit(0)
+    return
   }
 
   // Determine the effective author for this commit.
@@ -214,7 +199,7 @@ async function main(): Promise<void> {
   const effective = override ?? readCheckoutAuthor(payload.cwd)
 
   if (isAllowedAuthor(effective, allowed)) {
-    process.exit(0)
+    return
   }
 
   const lines = [
@@ -247,10 +232,6 @@ async function main(): Promise<void> {
   lines.push('')
   lines.push('  Bypass: type "Allow commit-author bypass" in a recent message.')
   lines.push('')
-  process.stderr.write(lines.join('\n') + '\n')
-  process.exit(2)
-}
-
-main().catch(() => {
-  process.exit(0)
+  logger.error(lines.join('\n') + '\n')
+  process.exitCode = 2
 })

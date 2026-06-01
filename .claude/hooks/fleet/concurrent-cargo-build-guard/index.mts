@@ -20,17 +20,15 @@
 // Fires only on cargo / build-prod commands, so a no-op in repos that
 // don't use cargo.
 
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import process from 'node:process'
 
+import { withBashGuard } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
+import { bypassPhrasePresent } from '../_shared/transcript.mts'
 
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?: { readonly command?: string | undefined } | undefined
-  readonly transcript_path?: string | undefined
-}
+const logger = getDefaultLogger()
 
 const BYPASS_PHRASE = 'Allow concurrent-cargo-build bypass'
 
@@ -102,48 +100,27 @@ export function countInFlight(pgrepPattern: string): number {
   return String(r.stdout).split('\n').filter(Boolean).length
 }
 
-async function main(): Promise<void> {
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch {
-    process.exit(0)
-  }
-  if (!raw) {
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Bash') {
-    process.exit(0)
-  }
-  const command = payload.tool_input?.command ?? ''
-  if (!command) {
-    process.exit(0)
-  }
-
+// withBashGuard handles the stdin drain, tool_name gate, command narrow,
+// and fail-open on any throw.
+await withBashGuard((command, payload) => {
   const matched = commandMatchesBuild(command)
   if (!matched) {
-    process.exit(0)
+    return
   }
 
   const inFlight = countInFlight(matched.pgrepPattern)
   if (inFlight === 0) {
-    process.exit(0)
+    return
   }
 
   if (
     payload.transcript_path &&
     bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)
   ) {
-    process.exit(0)
+    return
   }
 
-  process.stderr.write(
+  logger.error(
     [
       '[concurrent-cargo-build-guard] Blocked: release build already in flight',
       '',
@@ -162,11 +139,5 @@ async function main(): Promise<void> {
       '',
     ].join('\n'),
   )
-  process.exit(2)
-}
-
-main().catch(e => {
-  process.stderr.write(
-    `[concurrent-cargo-build-guard] hook error (allowing): ${(e as Error).message}\n`,
-  )
+  process.exitCode = 2
 })
