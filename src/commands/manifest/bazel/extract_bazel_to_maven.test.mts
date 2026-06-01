@@ -571,15 +571,15 @@ Fetched repositories:
     )
   })
 
-  it('threads extraMavenRepoNames into the candidate list (WORKSPACE mode)', async () => {
+  it('probes conventional hub names in WORKSPACE mode', async () => {
     vi.mocked(detectWorkspaceMode).mockReturnValue({
       bzlmod: false,
       workspace: true,
     })
-    // Probe accepts only `my_jars`; conventional names all return not-defined.
+    // Probe accepts the conventional `maven` hub; others return not-defined.
     vi.mocked(buildMavenProbeFor).mockReturnValue(async (name: string) => {
-      if (name === 'my_jars') {
-        return { code: 0, stdout: '@my_jars//:foo\n', stderr: '' }
+      if (name === 'maven') {
+        return { code: 0, stdout: '@maven//:foo\n', stderr: '' }
       }
       return {
         code: 1,
@@ -590,7 +590,7 @@ Fetched repositories:
     vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
       mkResult({
         artifacts: [mkArt('com.example:custom:1.0', 'custom')],
-        repoName: 'my_jars',
+        repoName: 'maven',
       }),
     )
     const result = await extractBazelToMaven({
@@ -599,7 +599,6 @@ Fetched repositories:
       bazelRc: undefined,
       bin: undefined,
       cwd: tmp,
-      extraMavenRepoNames: ['my_jars'],
       out: tmp,
       outLayout: 'flat',
       verbose: false,
@@ -608,7 +607,7 @@ Fetched repositories:
     expect(result.artifactCount).toBe(1)
     expect(runMetadataCqueryForRepo).toHaveBeenCalledTimes(1)
     expect(vi.mocked(runMetadataCqueryForRepo).mock.calls[0]![0]).toMatchObject(
-      { repoName: 'my_jars' },
+      { repoName: 'maven' },
     )
     // show_extension must NOT be called in pure WORKSPACE mode.
     expect(runBazelModShowMavenExtension).not.toHaveBeenCalled()

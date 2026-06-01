@@ -39,11 +39,6 @@ export type ExtractBazelOptions = {
   cwd: string
   // Optional env override used for python-shim PATH augmentation.
   env?: NodeJS.ProcessEnv
-  // Customer-supplied Maven hub names augmenting the auto-discovery
-  // candidate set. Wired in by the `--bazel-maven-repo=<name>` flag for
-  // legacy WORKSPACE workspaces whose hubs use non-conventional names
-  // (or custom Bzlmod extensions `mod show_extension` doesn't enumerate).
-  extraMavenRepoNames?: string[] | undefined
   // Directory basenames the workspace walker must not descend into.
   // Caller-supplied so the orchestrator stays generic; the CLI command
   // composes the codebase-wide `IGNORED_DIRS` with Bazel-specific dirs
@@ -295,19 +290,18 @@ async function writeHubManifest(args: {
 // Build the per-workspace candidate Maven hub list.
 //
 // Bzlmod mode: trust `bazel mod show_extension` as the authoritative hub
-// list. Customer-supplied extras (via `--bazel-maven-repo=`) are still
-// probed in case `show_extension` doesn't enumerate a custom extension.
+// list, keeping only hubs imported by <root>.
 //
 // WORKSPACE mode: no equivalent of `show_extension`, so probe the
-// conventional names plus customer extras.
+// conventional hub names.
 //
-// On `show_extension` failure under Bzlmod, fall through to the probe
-// path so partial discovery is still possible.
+// On `show_extension` failure (or a parse that yields zero root hubs) under
+// Bzlmod, fall through to the conventional-name probe so partial discovery
+// is still possible.
 async function discoverCandidatesForWorkspace(
   workspaceRoot: string,
   mode: WorkspaceMode,
   queryOpts: BazelQueryOptions,
-  extras: readonly string[],
   verbose: boolean,
 ): Promise<string[]> {
   const candidates: string[] = []
@@ -349,14 +343,12 @@ async function discoverCandidatesForWorkspace(
     }
   }
   // Probe candidates the show_extension path could not authoritatively
-  // enumerate: under WORKSPACE mode that's the conventional names; under
-  // a failed Bzlmod show_extension it's the same; under a successful
-  // Bzlmod show_extension only the customer-supplied extras need probing.
+  // enumerate: when it produced root hubs, probe nothing extra; otherwise
+  // (WORKSPACE mode, a failed show_extension, or a parse with zero root
+  // hubs) probe the conventional hub names.
   const seen = new Set(candidates)
   const toProbe = (
-    showExtensionSucceeded
-      ? extras
-      : [...CONVENTIONAL_MAVEN_REPO_NAMES, ...extras]
+    showExtensionSucceeded ? [] : [...CONVENTIONAL_MAVEN_REPO_NAMES]
   ).filter(name => !seen.has(name))
   if (!toProbe.length) {
     return candidates
@@ -461,7 +453,6 @@ export async function extractBazelToMaven(
   logger.groupEnd()
 
   const perRepoTimeoutMs = opts.perRepoTimeoutMs ?? DEFAULT_PER_REPO_TIMEOUT_MS
-  const extras = opts.extraMavenRepoNames ?? []
 
   // Validate config + ensure toolchains BEFORE we mint a tempdir.
   let bin: string
@@ -561,7 +552,6 @@ export async function extractBazelToMaven(
         workspaceRoot,
         mode,
         queryOptsFor(outputUserRoot),
-        extras,
         verbose,
       )
       logger.info(

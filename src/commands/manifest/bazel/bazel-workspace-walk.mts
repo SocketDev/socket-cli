@@ -12,7 +12,7 @@
  * the "common" prunes (`.git`, `node_modules`, …) — Bazel callers compose
  * the codebase-wide `IGNORED_DIRS` list (`src/utils/glob.mts`) with the
  * Bazel-specific bits (`bazel-*` output_base symlinks,
- * `.socket-auto-manifest`, build-output `dist*`).
+ * `.socket-auto-manifest`).
  */
 
 import { readdirSync } from 'node:fs'
@@ -42,9 +42,8 @@ export type FindWorkspaceRootsOptions = {
   // the codebase-wide ignore set (`IGNORED_DIRS` in `src/utils/glob.mts`)
   // and any caller-specific additions (e.g. `.socket-auto-manifest`).
   ignoreDirNames?: ReadonlySet<string>
-  // Directory basename prefixes to skip. Bazel callers pass `['bazel-',
-  // 'dist']` so the walk never descends into Bazel's output_base symlinks
-  // or build-output directories.
+  // Directory basename prefixes to skip. Bazel callers pass `['bazel-']` so
+  // the walk never descends into Bazel's output_base symlinks.
   ignoreDirPrefixes?: readonly string[]
   verbose?: boolean
 }
