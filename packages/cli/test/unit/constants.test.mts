@@ -29,134 +29,138 @@
  * - Src/constants/env.mts - Environment variable configuration
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ENV } from "../../src/constants/env.mts";
+import { ENV } from '../../src/constants/env.mts'
 
 // Mock environment variables before importing constants.
-vi.stubEnv("SOCKET_API_BASE_URL", "");
-vi.stubEnv("SOCKET_API_TOKEN", "");
-vi.stubEnv("SOCKET_API_PROXY", "");
-vi.stubEnv("SOCKET_CDN_BASE_URL", "");
-vi.stubEnv("SOCKET_ISSUES_BASE_URL", "");
-vi.stubEnv("SOCKET_NPM_REGISTRY", "");
-vi.stubEnv("SOCKET_SEARCH_BASE_URL", "");
+vi.stubEnv('SOCKET_API_BASE_URL', '')
+vi.stubEnv('SOCKET_API_TOKEN', '')
+vi.stubEnv('SOCKET_API_PROXY', '')
+vi.stubEnv('SOCKET_CDN_BASE_URL', '')
+vi.stubEnv('SOCKET_ISSUES_BASE_URL', '')
+vi.stubEnv('SOCKET_NPM_REGISTRY', '')
+vi.stubEnv('SOCKET_SEARCH_BASE_URL', '')
 
-describe("constants", () => {
+describe('constants', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.unstubAllEnvs();
-  });
+    vi.clearAllMocks()
+    vi.unstubAllEnvs()
+  })
 
-  it("exports expected properties", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('exports expected properties', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
     // Check for basic properties.
-    expect(constants).toHaveProperty("rootPath");
-    expect(constants).toHaveProperty("distPath");
-    expect(constants).toHaveProperty("homePath");
+    expect(constants).toHaveProperty('rootPath')
+    expect(constants).toHaveProperty('distPath')
+    expect(constants).toHaveProperty('homePath')
 
     // Check for platform properties.
-    expect(constants).toHaveProperty("WIN32");
-    expect(typeof constants.WIN32).toBe("boolean");
+    expect(constants).toHaveProperty('WIN32')
+    expect(typeof constants.WIN32).toBe('boolean')
 
     // Check for URL properties.
-    expect(constants).toHaveProperty("API_V0_URL");
-    expect(constants).toHaveProperty("NPM_REGISTRY_URL");
-    expect(constants).toHaveProperty("SOCKET_PUBLIC_API_TOKEN");
+    expect(constants).toHaveProperty('API_V0_URL')
+    expect(constants).toHaveProperty('NPM_REGISTRY_URL')
+    expect(constants).toHaveProperty('SOCKET_PUBLIC_API_TOKEN')
 
     // Check for environment object.
-    expect(constants).toHaveProperty("ENV");
-    expect(typeof ENV).toBe("object");
-  });
+    expect(constants).toHaveProperty('ENV')
+    expect(typeof ENV).toBe('object')
+  })
 
-  it("has correct path properties", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('has correct path properties', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
     // rootPath should be the parent of src directory.
-    expect(constants.rootPath).toContain("socket-cli");
-    expect(constants.rootPath).not.toContain("/src");
+    expect(constants.rootPath).toContain('socket-cli')
+    expect(constants.rootPath).not.toContain('/src')
 
     // distPath should be dist directory.
-    expect(constants.distPath).toMatch(/dist$/);
+    expect(constants.distPath).toMatch(/dist$/)
 
     // homePath should exist.
-    expect(constants.homePath).toBeDefined();
-    expect(typeof constants.homePath).toBe("string");
-  });
+    expect(constants.homePath).toBeDefined()
+    expect(typeof constants.homePath).toBe('string')
+  })
 
-  it("has correct URL defaults", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('has correct URL defaults', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
-    expect(constants.API_V0_URL).toBe("https://api.socket.dev/v0/");
-    expect(constants.NPM_REGISTRY_URL).toBe("https://registry.npmjs.org");
+    expect(constants.API_V0_URL).toBe('https://api.socket.dev/v0/')
+    expect(constants.NPM_REGISTRY_URL).toBe('https://registry.npmjs.org')
     expect(constants.SOCKET_PUBLIC_API_TOKEN).toBe(
-      "sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api",
-    );
-  });
+      'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api',
+    )
+  })
 
-  it("has correct command constants", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('has correct command constants', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
     // Package managers.
-    expect(constants.NPM).toBe("npm");
-    expect(constants.NPX).toBe("npx");
-    expect(constants.PNPM).toBe("pnpm");
-    expect(constants.YARN).toBe("yarn");
+    expect(constants.NPM).toBe('npm')
+    expect(constants.NPX).toBe('npx')
+    expect(constants.PNPM).toBe('pnpm')
+    expect(constants.YARN).toBe('yarn')
 
     // Common strings.
-    expect(constants.NODE_MODULES).toBe("node_modules");
-    expect(constants.PACKAGE_JSON).toBe("package.json");
-  });
+    expect(constants.NODE_MODULES).toBe('node_modules')
+    expect(constants.PACKAGE_JSON).toBe('package.json')
+  })
 
-  it("has correct flag constants", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('has correct flag constants', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
-    expect(constants.FLAG_QUIET).toBe("--quiet");
-    expect(constants.FLAG_SILENT).toBe("--silent");
-    expect(constants.FLAG_VERSION).toBe("--version");
-    expect(constants.FLAG_HELP).toBe("--help");
-    expect(constants.FLAG_JSON).toBe("--json");
-    expect(constants.FLAG_MARKDOWN).toBe("--markdown");
-  });
+    expect(constants.FLAG_QUIET).toBe('--quiet')
+    expect(constants.FLAG_SILENT).toBe('--silent')
+    expect(constants.FLAG_VERSION).toBe('--version')
+    expect(constants.FLAG_HELP).toBe('--help')
+    expect(constants.FLAG_JSON).toBe('--json')
+    expect(constants.FLAG_MARKDOWN).toBe('--markdown')
+  })
 
-  it("has correct encoding constants", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('has correct encoding constants', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
-    expect(constants.UTF8).toBe("utf8");
-  });
+    expect(constants.UTF8).toBe('utf8')
+  })
 
-  it("has correct socket-specific constants", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('has correct socket-specific constants', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
-    expect(constants.SOCKET_CLI_ISSUES_URL).toBe("https://github.com/SocketDev/socket-cli/issues");
-    expect(constants.SOCKET_DEFAULT_BRANCH).toBe("socket-default-branch");
-    expect(constants.SOCKET_DEFAULT_REPOSITORY).toBe("socket-default-repository");
-  });
+    expect(constants.SOCKET_CLI_ISSUES_URL).toBe(
+      'https://github.com/SocketDev/socket-cli/issues',
+    )
+    expect(constants.SOCKET_DEFAULT_BRANCH).toBe('socket-default-branch')
+    expect(constants.SOCKET_DEFAULT_REPOSITORY).toBe(
+      'socket-default-repository',
+    )
+  })
 
-  it("has various constant flags", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('has various constant flags', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
     // Check for some known flags.
-    expect(constants.FLAG_CONFIG).toBe("--config");
-    expect(constants.FLAG_DRY_RUN).toBe("--dry-run");
-    expect(constants.FLAG_ORG).toBe("--org");
-    expect(constants.FLAG_PROD).toBe("--prod");
-  });
+    expect(constants.FLAG_CONFIG).toBe('--config')
+    expect(constants.FLAG_DRY_RUN).toBe('--dry-run')
+    expect(constants.FLAG_ORG).toBe('--org')
+    expect(constants.FLAG_PROD).toBe('--prod')
+  })
 
-  it("has socket file constants", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('has socket file constants', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
-    expect(constants.SOCKET_JSON).toBe("socket.json");
-    expect(constants.SOCKET_YAML).toBe("socket.yaml");
-    expect(constants.SOCKET_YML).toBe("socket.yml");
-  });
+    expect(constants.SOCKET_JSON).toBe('socket.json')
+    expect(constants.SOCKET_YAML).toBe('socket.yaml')
+    expect(constants.SOCKET_YML).toBe('socket.yml')
+  })
 
-  it("ENV object contains expected environment variables", async () => {
-    const constants = (await import("../../src/constants.mts")).constants;
+  it('ENV object contains expected environment variables', async () => {
+    const constants = (await import('../../src/constants.mts')).constants
 
-    expect(ENV).toBeDefined();
-    expect(typeof ENV).toBe("object");
-    expect(ENV).toHaveProperty("NODE_OPTIONS");
-  });
-});
+    expect(ENV).toBeDefined()
+    expect(typeof ENV).toBe('object')
+    expect(ENV).toHaveProperty('NODE_OPTIONS')
+  })
+})

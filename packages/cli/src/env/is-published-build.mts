@@ -6,10 +6,10 @@
  * for embedding build flags into the binary.
  */
 
-import process from "node:process";
+import process from 'node:process'
 
-import { envAsBoolean } from "@socketsecurity/lib-stable/env/boolean";
+import { envAsBoolean } from '@socketsecurity/lib-stable/env/boolean'
 
 export function isPublishedBuild(): boolean {
-  return envAsBoolean(process.env["INLINED_PUBLISHED_BUILD"]);
+  return envAsBoolean(process.env['INLINED_PUBLISHED_BUILD'])
 }

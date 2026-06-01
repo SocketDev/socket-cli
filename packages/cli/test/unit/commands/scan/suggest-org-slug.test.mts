@@ -9,7 +9,7 @@
  * Related Files: - src/commands/scan/suggest-org-slug.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -18,119 +18,122 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
   fail: vi.fn(),
   success: vi.fn(),
-}));
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock select prompt.
-const mockSelect = vi.hoisted(() => vi.fn());
-vi.mock(import("@socketsecurity/lib-stable/stdio/prompts"), () => ({
+const mockSelect = vi.hoisted(() => vi.fn())
+vi.mock(import('@socketsecurity/lib-stable/stdio/prompts'), () => ({
   select: mockSelect,
-}));
+}))
 
 // Mock fetchOrganization.
-const mockFetchOrganization = vi.hoisted(() => vi.fn());
-vi.mock(import("../../../../src/commands/organization/fetch-organization-list.mts"), () => ({
-  fetchOrganization: mockFetchOrganization,
-}));
+const mockFetchOrganization = vi.hoisted(() => vi.fn())
+vi.mock(
+  import('../../../../src/commands/organization/fetch-organization-list.mts'),
+  () => ({
+    fetchOrganization: mockFetchOrganization,
+  }),
+)
 
-import { suggestOrgSlug } from "../../../../src/commands/scan/suggest-org-slug.mts";
+import { suggestOrgSlug } from '../../../../src/commands/scan/suggest-org-slug.mts'
 
-describe("suggest-org-slug", () => {
+describe('suggest-org-slug', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  describe("suggestOrgSlug", () => {
-    it("returns undefined when API fails", async () => {
+  describe('suggestOrgSlug', () => {
+    it('returns undefined when API fails', async () => {
       mockFetchOrganization.mockResolvedValue({
         ok: false,
-        message: "Failed to fetch",
-      });
+        message: 'Failed to fetch',
+      })
 
-      const result = await suggestOrgSlug();
+      const result = await suggestOrgSlug()
 
-      expect(result).toBeUndefined();
+      expect(result).toBeUndefined()
       expect(mockLogger.fail).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to lookup organization"),
-      );
-    });
+        expect.stringContaining('Failed to lookup organization'),
+      )
+    })
 
-    it("returns selected organization slug", async () => {
+    it('returns selected organization slug', async () => {
       mockFetchOrganization.mockResolvedValue({
         ok: true,
         data: {
           organizations: [
-            { name: "My Org", slug: "my-org" },
-            { name: "Other Org", slug: "other-org" },
+            { name: 'My Org', slug: 'my-org' },
+            { name: 'Other Org', slug: 'other-org' },
           ],
         },
-      });
-      mockSelect.mockResolvedValue("my-org");
+      })
+      mockSelect.mockResolvedValue('my-org')
 
-      const result = await suggestOrgSlug();
+      const result = await suggestOrgSlug()
 
-      expect(result).toBe("my-org");
+      expect(result).toBe('my-org')
       expect(mockSelect).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining("Missing org name"),
+          message: expect.stringContaining('Missing org name'),
         }),
-      );
-    });
+      )
+    })
 
-    it("returns undefined when user selects No", async () => {
+    it('returns undefined when user selects No', async () => {
       mockFetchOrganization.mockResolvedValue({
         ok: true,
         data: {
-          organizations: [{ name: "My Org", slug: "my-org" }],
+          organizations: [{ name: 'My Org', slug: 'my-org' }],
         },
-      });
-      mockSelect.mockResolvedValue("");
+      })
+      mockSelect.mockResolvedValue('')
 
-      const result = await suggestOrgSlug();
+      const result = await suggestOrgSlug()
 
-      expect(result).toBeUndefined();
-    });
+      expect(result).toBeUndefined()
+    })
 
-    it("uses slug as name when name is not available", async () => {
+    it('uses slug as name when name is not available', async () => {
       mockFetchOrganization.mockResolvedValue({
         ok: true,
         data: {
-          organizations: [{ slug: "my-slug" }],
+          organizations: [{ slug: 'my-slug' }],
         },
-      });
-      mockSelect.mockResolvedValue("my-slug");
+      })
+      mockSelect.mockResolvedValue('my-slug')
 
-      const result = await suggestOrgSlug();
+      const result = await suggestOrgSlug()
 
-      expect(result).toBe("my-slug");
+      expect(result).toBe('my-slug')
       const callArg = mockSelect.mock.calls[0]![0] as {
-        choices: Array<{ name: string }>;
-      };
-      expect(callArg.choices[0]!.name).toContain("my-slug");
-    });
+        choices: Array<{ name: string }>
+      }
+      expect(callArg.choices[0]!.name).toContain('my-slug')
+    })
 
-    it("includes No option in choices", async () => {
+    it('includes No option in choices', async () => {
       mockFetchOrganization.mockResolvedValue({
         ok: true,
         data: {
-          organizations: [{ name: "My Org", slug: "my-org" }],
+          organizations: [{ name: 'My Org', slug: 'my-org' }],
         },
-      });
-      mockSelect.mockResolvedValue("");
+      })
+      mockSelect.mockResolvedValue('')
 
-      await suggestOrgSlug();
+      await suggestOrgSlug()
 
       const callArg = mockSelect.mock.calls[0]![0] as {
-        choices: Array<{ name: string; value: string }>;
-      };
-      const noChoice = callArg.choices.find((c) => c.name === "No");
-      expect(noChoice).toBeDefined();
-      expect(noChoice!.value).toBe("");
-    });
+        choices: Array<{ name: string; value: string }>
+      }
+      const noChoice = callArg.choices.find(c => c.name === 'No')
+      expect(noChoice).toBeDefined()
+      expect(noChoice!.value).toBe('')
+    })
 
-    it("returns the slug (not display name) for orgs where they differ", async () => {
+    it('returns the slug (not display name) for orgs where they differ', async () => {
       // Regression guard: passing the display name through to the API
       // produced 404s for orgs with spaces, e.g.
       // `/v0/orgs/Example%20Org%20Ltd/...` instead of
@@ -138,21 +141,21 @@ describe("suggest-org-slug", () => {
       mockFetchOrganization.mockResolvedValue({
         ok: true,
         data: {
-          organizations: [{ name: "Example Org Ltd", slug: "example-org-ltd" }],
+          organizations: [{ name: 'Example Org Ltd', slug: 'example-org-ltd' }],
         },
-      });
-      mockSelect.mockResolvedValue("example-org-ltd");
+      })
+      mockSelect.mockResolvedValue('example-org-ltd')
 
-      await suggestOrgSlug();
+      await suggestOrgSlug()
 
       const callArg = mockSelect.mock.calls[0]![0] as {
-        choices: Array<{ name: string; value: string; description: string }>;
-      };
+        choices: Array<{ name: string; value: string; description: string }>
+      }
       // The choice value must be the slug. The visible label/description
       // still use the friendlier display name.
-      expect(callArg.choices[0]!.value).toBe("example-org-ltd");
-      expect(callArg.choices[0]!.name).toContain("Example Org Ltd");
-      expect(callArg.choices[0]!.description).toContain("Example Org Ltd");
-    });
-  });
-});
+      expect(callArg.choices[0]!.value).toBe('example-org-ltd')
+      expect(callArg.choices[0]!.name).toContain('Example Org Ltd')
+      expect(callArg.choices[0]!.description).toContain('Example Org Ltd')
+    })
+  })
+})

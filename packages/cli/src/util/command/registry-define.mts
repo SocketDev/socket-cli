@@ -3,9 +3,9 @@
  *   defineCommand function that registers commands with the global registry.
  */
 
-import { registry } from "./registry.mts";
+import { registry } from './registry.mts'
 
-import type { CommandDefinition } from "./registry-types.mjs";
+import type { CommandDefinition } from './registry-types.mjs'
 
 /**
  * Define and register a command with the global registry. This is the primary
@@ -30,7 +30,9 @@ import type { CommandDefinition } from "./registry-types.mjs";
  *   })
  *   ```
  */
-export function defineCommand(definition: CommandDefinition): CommandDefinition {
-  registry.register(definition);
-  return definition;
+export function defineCommand(
+  definition: CommandDefinition,
+): CommandDefinition {
+  registry.register(definition)
+  return definition
 }

@@ -9,7 +9,7 @@
  * Related Files: - src/util/update/notifier.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -19,303 +19,312 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
-}));
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock signal-exit.
-const mockOnExit = vi.hoisted(() => vi.fn());
-vi.mock(import("@socketsecurity/lib-stable/events/exit/handler"), () => ({
+const mockOnExit = vi.hoisted(() => vi.fn())
+vi.mock(import('@socketsecurity/lib-stable/events/exit/handler'), () => ({
   onExit: mockOnExit,
-}));
+}))
 
 // Mock SEA detect.
-const mockGetSeaBinaryPath = vi.hoisted(() => vi.fn(() => ""));
-vi.mock(import("../../../../src/util/sea/detect.mts"), () => ({
+const mockGetSeaBinaryPath = vi.hoisted(() => vi.fn(() => ''))
+vi.mock(import('../../../../src/util/sea/detect.mts'), () => ({
   getSeaBinaryPath: mockGetSeaBinaryPath,
-}));
+}))
 
 // Mock terminal link utilities.
-vi.mock(import("../../../../src/util/terminal/link.mts"), () => ({
-  githubRepoLink: (org: string, repo: string, path: string, text: string): string =>
-    `https://github.com/${org}/${repo}/${path} (${text})`,
-  socketPackageLink: (ecosystem: string, name: string, path: string, text: string): string =>
+vi.mock(import('../../../../src/util/terminal/link.mts'), () => ({
+  githubRepoLink: (
+    org: string,
+    repo: string,
+    path: string,
+    text: string,
+  ): string => `https://github.com/${org}/${repo}/${path} (${text})`,
+  socketPackageLink: (
+    ecosystem: string,
+    name: string,
+    path: string,
+    text: string,
+  ): string =>
     `https://socket.dev/${ecosystem}/package/${name}/${path} (${text})`,
-}));
+}))
 
 import {
   formatUpdateMessage,
   scheduleExitNotification,
   showUpdateNotification,
-} from "../../../../src/util/update/notifier.mts";
+} from '../../../../src/util/update/notifier.mts'
 
-describe("update notifier", () => {
+describe('update notifier', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockGetSeaBinaryPath.mockReturnValue("");
-  });
+    vi.clearAllMocks()
+    mockGetSeaBinaryPath.mockReturnValue('')
+  })
 
-  describe("formatUpdateMessage", () => {
-    it("formats update message for npm installation", () => {
+  describe('formatUpdateMessage', () => {
+    it('formats update message for npm installation', () => {
       const result = formatUpdateMessage({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
 
-      expect(result.message).toContain("socket");
-      expect(result.message).toContain("1.0.0");
-      expect(result.message).toContain("2.0.0");
-      expect(result.command).toBeUndefined();
-      expect(result.changelog).toContain("socket.dev");
-    });
+      expect(result.message).toContain('socket')
+      expect(result.message).toContain('1.0.0')
+      expect(result.message).toContain('2.0.0')
+      expect(result.command).toBeUndefined()
+      expect(result.changelog).toContain('socket.dev')
+    })
 
-    it("formats update message for SEA binary", () => {
-      mockGetSeaBinaryPath.mockReturnValue("/usr/local/bin/socket");
-
-      const result = formatUpdateMessage({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
-
-      expect(result.message).toContain("socket");
-      expect(result.command).toContain("/usr/local/bin/socket");
-      expect(result.command).toContain("self-update");
-      expect(result.changelog).toContain("github.com");
-    });
-
-    it("includes changelog link for npm", () => {
-      const result = formatUpdateMessage({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
-
-      expect(result.changelog).toContain("CHANGELOG.md");
-      expect(result.changelog).toContain("2.0.0");
-    });
-
-    it("includes changelog link for SEA", () => {
-      mockGetSeaBinaryPath.mockReturnValue("/usr/local/bin/socket");
+    it('formats update message for SEA binary', () => {
+      mockGetSeaBinaryPath.mockReturnValue('/usr/local/bin/socket')
 
       const result = formatUpdateMessage({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
 
-      expect(result.changelog).toContain("CHANGELOG.md");
-      expect(result.changelog).toContain("SocketDev");
-      expect(result.changelog).toContain("socket-cli");
-    });
-  });
+      expect(result.message).toContain('socket')
+      expect(result.command).toContain('/usr/local/bin/socket')
+      expect(result.command).toContain('self-update')
+      expect(result.changelog).toContain('github.com')
+    })
 
-  describe("showUpdateNotification", () => {
-    const originalIsTTY = process.stdout?.isTTY;
+    it('includes changelog link for npm', () => {
+      const result = formatUpdateMessage({
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
+
+      expect(result.changelog).toContain('CHANGELOG.md')
+      expect(result.changelog).toContain('2.0.0')
+    })
+
+    it('includes changelog link for SEA', () => {
+      mockGetSeaBinaryPath.mockReturnValue('/usr/local/bin/socket')
+
+      const result = formatUpdateMessage({
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
+
+      expect(result.changelog).toContain('CHANGELOG.md')
+      expect(result.changelog).toContain('SocketDev')
+      expect(result.changelog).toContain('socket-cli')
+    })
+  })
+
+  describe('showUpdateNotification', () => {
+    const originalIsTTY = process.stdout?.isTTY
 
     beforeEach(() => {
       // Mock TTY.
-      Object.defineProperty(process.stdout, "isTTY", {
+      Object.defineProperty(process.stdout, 'isTTY', {
         value: true,
         writable: true,
         configurable: true,
-      });
-    });
+      })
+    })
 
     afterEach(() => {
-      Object.defineProperty(process.stdout, "isTTY", {
+      Object.defineProperty(process.stdout, 'isTTY', {
         value: originalIsTTY,
         writable: true,
         configurable: true,
-      });
-    });
+      })
+    })
 
-    it("shows notification when TTY is available", () => {
+    it('shows notification when TTY is available', () => {
       showUpdateNotification({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
 
-      expect(mockLogger.log).toHaveBeenCalled();
-      const calls = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-      expect(calls).toContain("socket");
-    });
+      expect(mockLogger.log).toHaveBeenCalled()
+      const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+      expect(calls).toContain('socket')
+    })
 
-    it("does not show notification when not TTY", () => {
-      Object.defineProperty(process.stdout, "isTTY", {
+    it('does not show notification when not TTY', () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
         value: false,
         writable: true,
         configurable: true,
-      });
+      })
 
       showUpdateNotification({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
 
-      expect(mockLogger.log).not.toHaveBeenCalled();
-    });
+      expect(mockLogger.log).not.toHaveBeenCalled()
+    })
 
-    it("shows command for SEA binary", () => {
-      mockGetSeaBinaryPath.mockReturnValue("/usr/local/bin/socket");
+    it('shows command for SEA binary', () => {
+      mockGetSeaBinaryPath.mockReturnValue('/usr/local/bin/socket')
 
       showUpdateNotification({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
 
-      const calls = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-      expect(calls).toContain("self-update");
-    });
+      const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+      expect(calls).toContain('self-update')
+    })
 
-    it("shows changelog link", () => {
+    it('shows changelog link', () => {
       showUpdateNotification({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
 
-      const calls = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-      expect(calls).toContain("CHANGELOG.md");
-    });
+      const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+      expect(calls).toContain('CHANGELOG.md')
+    })
 
-    it("handles formatting errors gracefully with npm installation", () => {
+    it('handles formatting errors gracefully with npm installation', () => {
       // First call throws, subsequent calls succeed.
-      let callCount = 0;
+      let callCount = 0
       mockLogger.log.mockImplementation(() => {
-        callCount++;
+        callCount++
         if (callCount === 1) {
-          throw new Error("Formatting error");
+          throw new Error('Formatting error')
         }
-      });
+      })
 
       // Should not throw.
       expect(() =>
         showUpdateNotification({
-          name: "socket",
-          current: "1.0.0",
-          latest: "2.0.0",
+          name: 'socket',
+          current: '1.0.0',
+          latest: '2.0.0',
         }),
-      ).not.toThrow();
+      ).not.toThrow()
 
       // Fallback message should be shown.
-      const calls = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-      expect(calls).toContain("socket");
-    });
+      const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+      expect(calls).toContain('socket')
+    })
 
-    it("handles formatting errors gracefully with SEA binary", () => {
-      mockGetSeaBinaryPath.mockReturnValue("/usr/local/bin/socket");
+    it('handles formatting errors gracefully with SEA binary', () => {
+      mockGetSeaBinaryPath.mockReturnValue('/usr/local/bin/socket')
 
       // First call throws, subsequent calls succeed.
-      let callCount = 0;
+      let callCount = 0
       mockLogger.log.mockImplementation(() => {
-        callCount++;
+        callCount++
         if (callCount === 1) {
-          throw new Error("Formatting error");
+          throw new Error('Formatting error')
         }
-      });
+      })
 
       // Should not throw.
       expect(() =>
         showUpdateNotification({
-          name: "socket",
-          current: "1.0.0",
-          latest: "2.0.0",
+          name: 'socket',
+          current: '1.0.0',
+          latest: '2.0.0',
         }),
-      ).not.toThrow();
+      ).not.toThrow()
 
       // Fallback message with self-update command should be shown.
-      const calls = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-      expect(calls).toContain("socket");
-    });
-  });
+      const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+      expect(calls).toContain('socket')
+    })
+  })
 
-  describe("scheduleExitNotification", () => {
-    const originalIsTTY = process.stdout?.isTTY;
+  describe('scheduleExitNotification', () => {
+    const originalIsTTY = process.stdout?.isTTY
 
     beforeEach(() => {
-      Object.defineProperty(process.stdout, "isTTY", {
+      Object.defineProperty(process.stdout, 'isTTY', {
         value: true,
         writable: true,
         configurable: true,
-      });
-    });
+      })
+    })
 
     afterEach(() => {
-      Object.defineProperty(process.stdout, "isTTY", {
+      Object.defineProperty(process.stdout, 'isTTY', {
         value: originalIsTTY,
         writable: true,
         configurable: true,
-      });
-    });
+      })
+    })
 
-    it("schedules exit notification when TTY", () => {
+    it('schedules exit notification when TTY', () => {
       scheduleExitNotification({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
 
-      expect(mockOnExit).toHaveBeenCalledWith(expect.any(Function));
-    });
+      expect(mockOnExit).toHaveBeenCalledWith(expect.any(Function))
+    })
 
-    it("invokes the registered notificationLogger callback", () => {
+    it('invokes the registered notificationLogger callback', () => {
       // Capture the callback registered with onExit and run it to exercise
       // the inner arrow function (line 135).
-      let registered: (() => void) | undefined;
+      let registered: (() => void) | undefined
       mockOnExit.mockImplementationOnce((cb: () => void) => {
-        registered = cb;
-      });
+        registered = cb
+      })
 
       scheduleExitNotification({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
 
-      expect(registered).toBeTypeOf("function");
-      registered!();
-      expect(mockLogger.log).toHaveBeenCalled();
-    });
+      expect(registered).toBeTypeOf('function')
+      registered!()
+      expect(mockLogger.log).toHaveBeenCalled()
+    })
 
-    it("does not schedule when not TTY", () => {
-      Object.defineProperty(process.stdout, "isTTY", {
+    it('does not schedule when not TTY', () => {
+      Object.defineProperty(process.stdout, 'isTTY', {
         value: false,
         writable: true,
         configurable: true,
-      });
+      })
 
       scheduleExitNotification({
-        name: "socket",
-        current: "1.0.0",
-        latest: "2.0.0",
-      });
+        name: 'socket',
+        current: '1.0.0',
+        latest: '2.0.0',
+      })
 
-      expect(mockOnExit).not.toHaveBeenCalled();
-    });
+      expect(mockOnExit).not.toHaveBeenCalled()
+    })
 
-    it("handles onExit errors gracefully", () => {
+    it('handles onExit errors gracefully', () => {
       mockOnExit.mockImplementation(() => {
-        throw new Error("Failed to register");
-      });
+        throw new Error('Failed to register')
+      })
 
       // Should not throw.
       expect(() =>
         scheduleExitNotification({
-          name: "socket",
-          current: "1.0.0",
-          latest: "2.0.0",
+          name: 'socket',
+          current: '1.0.0',
+          latest: '2.0.0',
         }),
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to schedule exit notification"),
-      );
-    });
-  });
-});
+        expect.stringContaining('Failed to schedule exit notification'),
+      )
+    })
+  })
+})

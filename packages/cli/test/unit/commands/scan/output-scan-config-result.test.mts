@@ -10,7 +10,7 @@
  * (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -19,75 +19,78 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
   fail: vi.fn(),
   success: vi.fn(),
-}));
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock failMsgWithBadge.
-vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) => (cause ? `${msg}: ${cause}` : msg),
-}));
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
+  failMsgWithBadge: (msg: string, cause?: string) =>
+    cause ? `${msg}: ${cause}` : msg,
+}))
 
-import { outputScanConfigResult } from "../../../../src/commands/scan/output-scan-config-result.mts";
+import { outputScanConfigResult } from '../../../../src/commands/scan/output-scan-config-result.mts'
 
-import type { CResult } from "../../../../src/types.mts";
+import type { CResult } from '../../../../src/types.mts'
 
-describe("output-scan-config-result", () => {
+describe('output-scan-config-result', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+  })
 
-  describe("outputScanConfigResult", () => {
-    it("outputs success message", async () => {
+  describe('outputScanConfigResult', () => {
+    it('outputs success message', async () => {
       const result: CResult<unknown> = {
         ok: true,
         data: {},
-      };
+      }
 
-      await outputScanConfigResult(result);
+      await outputScanConfigResult(result)
 
-      expect(mockLogger.log).toHaveBeenCalled();
-      const logs = mockLogger.log.mock.calls.map((c) => c[0]).join(" ");
-      expect(logs).toContain("Finished");
-      expect(process.exitCode).toBeUndefined();
-    });
+      expect(mockLogger.log).toHaveBeenCalled()
+      const logs = mockLogger.log.mock.calls.map(c => c[0]).join(' ')
+      expect(logs).toContain('Finished')
+      expect(process.exitCode).toBeUndefined()
+    })
 
-    it("outputs error with fail message", async () => {
+    it('outputs error with fail message', async () => {
       const result: CResult<unknown> = {
         ok: false,
-        message: "Config failed",
-        cause: "Invalid configuration",
-      };
+        message: 'Config failed',
+        cause: 'Invalid configuration',
+      }
 
-      await outputScanConfigResult(result);
+      await outputScanConfigResult(result)
 
-      expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("Config failed"));
-      expect(process.exitCode).toBe(1);
-    });
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining('Config failed'),
+      )
+      expect(process.exitCode).toBe(1)
+    })
 
-    it("uses custom exit code when provided", async () => {
+    it('uses custom exit code when provided', async () => {
       const result: CResult<unknown> = {
         ok: false,
-        message: "Error",
+        message: 'Error',
         code: 2,
-      };
+      }
 
-      await outputScanConfigResult(result);
+      await outputScanConfigResult(result)
 
-      expect(process.exitCode).toBe(2);
-    });
+      expect(process.exitCode).toBe(2)
+    })
 
-    it("handles error without cause", async () => {
+    it('handles error without cause', async () => {
       const result: CResult<unknown> = {
         ok: false,
-        message: "Something went wrong",
-      };
+        message: 'Something went wrong',
+      }
 
-      await outputScanConfigResult(result);
+      await outputScanConfigResult(result)
 
-      expect(mockLogger.fail).toHaveBeenCalled();
-    });
-  });
-});
+      expect(mockLogger.fail).toHaveBeenCalled()
+    })
+  })
+})

@@ -1,14 +1,14 @@
-import { writeFileSync } from "node:fs";
+import { writeFileSync } from 'node:fs'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { REQUIREMENTS_TXT } from "../../constants/paths.mjs";
-import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
-import { mdHeader } from "../../util/output/markdown.mts";
-import { serializeResultJson } from "../../util/output/result-json.mjs";
+import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
-import type { CResult, OutputKind } from "../../types.mts";
-const logger = getDefaultLogger();
+import type { CResult, OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
 
 export async function outputRequirements(
   result: CResult<{ content: string; pip: string }>,
@@ -16,56 +16,56 @@ export async function outputRequirements(
   out: string,
 ) {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1;
+    process.exitCode = result.code ?? 1
   }
 
   if (!result.ok) {
-    if (outputKind === "json") {
-      logger.log(serializeResultJson(result));
-      return;
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      return
     }
-    logger.fail(failMsgWithBadge(result.message, result.cause));
-    return;
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
   }
 
-  if (outputKind === "json") {
-    const json = serializeResultJson(result);
+  if (outputKind === 'json') {
+    const json = serializeResultJson(result)
 
-    if (out === "-") {
-      logger.log(json);
+    if (out === '-') {
+      logger.log(json)
     } else {
-      writeFileSync(out, json, "utf8");
+      writeFileSync(out, json, 'utf8')
     }
 
-    return;
+    return
   }
 
-  if (outputKind === "markdown") {
-    const arr = [];
-    arr.push(mdHeader("Converted Conda file"));
-    arr.push("");
+  if (outputKind === 'markdown') {
+    const arr = []
+    arr.push(mdHeader('Converted Conda file'))
+    arr.push('')
     arr.push(
       `This is the Conda \`environment.yml\` file converted to python \`${REQUIREMENTS_TXT}\`:`,
-    );
-    arr.push("");
-    arr.push(`\`\`\`file=${REQUIREMENTS_TXT}`);
-    arr.push(result.data.pip);
-    arr.push("```");
-    arr.push("");
-    const md = arr.join("\n");
+    )
+    arr.push('')
+    arr.push(`\`\`\`file=${REQUIREMENTS_TXT}`)
+    arr.push(result.data.pip)
+    arr.push('```')
+    arr.push('')
+    const md = arr.join('\n')
 
-    if (out === "-") {
-      logger.log(md);
+    if (out === '-') {
+      logger.log(md)
     } else {
-      writeFileSync(out, md, "utf8");
+      writeFileSync(out, md, 'utf8')
     }
-    return;
+    return
   }
 
-  if (out === "-") {
-    logger.log(result.data.pip);
-    logger.log("");
+  if (out === '-') {
+    logger.log(result.data.pip)
+    logger.log('')
   } else {
-    writeFileSync(out, result.data.pip, "utf8");
+    writeFileSync(out, result.data.pip, 'utf8')
   }
 }

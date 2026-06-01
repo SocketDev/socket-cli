@@ -14,28 +14,28 @@
  * --save-manifest-tar: Archive manifests for audit trail.
  */
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { defineFlags } from "../../meow.mts";
-import { commonFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mts";
-import { outputDryRunExecute } from "../../util/dry-run/output.mts";
-import { getFlagListOutput } from "../../util/output/formatting.mts";
-import { filterFlags, isHelpFlag } from "../../util/process/cmd.mts";
-import { spawnSocketPyCli } from "../../util/python/standalone.mts";
+import { defineFlags } from '../../meow.mts'
+import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mts'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { filterFlags, isHelpFlag } from '../../util/process/cmd.mts'
+import { spawnSocketPyCli } from '../../util/python/standalone.mts'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mts";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 // Flags interface for type safety.
 interface PycliFlags {
-  dryRun: boolean;
+  dryRun: boolean
 }
 
 const config = {
-  commandName: "pycli",
-  description: "Run Socket Python CLI (socketsecurity) directly",
+  commandName: 'pycli',
+  description: 'Run Socket Python CLI (socketsecurity) directly',
   flags: defineFlags({
     ...commonFlags,
   }),
@@ -74,13 +74,13 @@ const config = {
       $ ${command} --slack-webhook https://hooks.slack.com/... .
   `,
   hidden: false,
-};
+}
 
 export const cmdPyCli = {
   description: config.description,
   hidden: config.hidden,
   run,
-};
+}
 
 export async function run(
   argv: string[] | readonly string[],
@@ -90,50 +90,50 @@ export async function run(
   const { parentName } = {
     __proto__: null,
     ...context,
-  } as CliCommandContext;
+  } as CliCommandContext
 
   // Check for help flag - if present, show our help first then Python CLI help.
-  const hasHelpFlag = argv.some((a) => isHelpFlag(a));
+  const hasHelpFlag = argv.some(a => isHelpFlag(a))
 
   if (hasHelpFlag) {
     // Show Socket CLI wrapper help.
     meowOrExit({
-      argv: ["--help"],
+      argv: ['--help'],
       config,
       importMeta,
       parentName,
-    });
+    })
     // meowOrExit will exit here.
-    return;
+    return
   }
 
   const cli = meowOrExit({
-    argv: argv.filter((a) => !isHelpFlag(a)),
+    argv: argv.filter(a => !isHelpFlag(a)),
     config,
     importMeta,
     parentName,
-  });
+  })
 
-  const { dryRun } = cli.flags as unknown as PycliFlags;
+  const { dryRun } = cli.flags as unknown as PycliFlags
 
   // Filter Socket-specific flags from argv, pass rest to Python CLI.
-  const pyCliArgs = filterFlags(argv, commonFlags, []);
+  const pyCliArgs = filterFlags(argv, commonFlags, [])
 
   if (dryRun) {
-    outputDryRunExecute("socketsecurity", pyCliArgs, "Python CLI");
-    return;
+    outputDryRunExecute('socketsecurity', pyCliArgs, 'Python CLI')
+    return
   }
 
-  logger.info("Invoking Socket Python CLI…");
+  logger.info('Invoking Socket Python CLI…')
 
   const result = await spawnSocketPyCli(pyCliArgs, {
-    stdio: "inherit",
-  });
+    stdio: 'inherit',
+  })
 
   if (!result.ok) {
-    process.exitCode = 1;
+    process.exitCode = 1
     if (result.message) {
-      logger.fail(result.message);
+      logger.fail(result.message)
     }
   }
 }

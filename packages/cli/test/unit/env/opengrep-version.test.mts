@@ -10,37 +10,37 @@
  * - Src/env/opengrep-version.mts
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { getOpengrepVersion } from "../../../src/env/opengrep-version.mts";
+import { getOpengrepVersion } from '../../../src/env/opengrep-version.mts'
 
-describe("env/opengrep-version", () => {
-  let original: string | undefined;
+describe('env/opengrep-version', () => {
+  let original: string | undefined
 
   beforeEach(() => {
-    original = process.env["INLINED_OPENGREP_VERSION"];
-  });
+    original = process.env['INLINED_OPENGREP_VERSION']
+  })
 
   afterEach(() => {
     if (original !== undefined) {
-      process.env["INLINED_OPENGREP_VERSION"] = original;
+      process.env['INLINED_OPENGREP_VERSION'] = original
     } else {
-      delete process.env["INLINED_OPENGREP_VERSION"];
+      delete process.env['INLINED_OPENGREP_VERSION']
     }
-  });
+  })
 
-  it("returns the version string when the env var is set", () => {
-    process.env["INLINED_OPENGREP_VERSION"] = "1.2.3";
-    expect(getOpengrepVersion()).toBe("1.2.3");
-  });
+  it('returns the version string when the env var is set', () => {
+    process.env['INLINED_OPENGREP_VERSION'] = '1.2.3'
+    expect(getOpengrepVersion()).toBe('1.2.3')
+  })
 
-  it("throws a build-time-inlined message when the env var is missing", () => {
-    delete process.env["INLINED_OPENGREP_VERSION"];
-    expect(() => getOpengrepVersion()).toThrow(/INLINED_OPENGREP_VERSION/);
-  });
+  it('throws a build-time-inlined message when the env var is missing', () => {
+    delete process.env['INLINED_OPENGREP_VERSION']
+    expect(() => getOpengrepVersion()).toThrow(/INLINED_OPENGREP_VERSION/)
+  })
 
-  it("throws when the env var is the empty string", () => {
-    process.env["INLINED_OPENGREP_VERSION"] = "";
-    expect(() => getOpengrepVersion()).toThrow(/INLINED_OPENGREP_VERSION/);
-  });
-});
+  it('throws when the env var is the empty string', () => {
+    process.env['INLINED_OPENGREP_VERSION'] = ''
+    expect(() => getOpengrepVersion()).toThrow(/INLINED_OPENGREP_VERSION/)
+  })
+})

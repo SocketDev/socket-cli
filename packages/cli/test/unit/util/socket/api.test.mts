@@ -17,18 +17,21 @@
  * Related Files: - util/socket/api.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { mockErrorResponse, mockSuccessResponse } from "@socketsecurity/sdk-stable/testing";
+import {
+  mockErrorResponse,
+  mockSuccessResponse,
+} from '@socketsecurity/sdk-stable/testing'
 
 // Mock dependencies first.
-const mockSpinner = vi.hoisted(() => vi.fn());
-const mockStart = vi.hoisted(() => vi.fn());
-const mockStop = vi.hoisted(() => vi.fn());
-const mockSucceed = vi.hoisted(() => vi.fn());
-const mockFail = vi.hoisted(() => vi.fn());
-const mockSuccessAndStop = vi.hoisted(() => vi.fn());
-const mockFailAndStop = vi.hoisted(() => vi.fn());
+const mockSpinner = vi.hoisted(() => vi.fn())
+const mockStart = vi.hoisted(() => vi.fn())
+const mockStop = vi.hoisted(() => vi.fn())
+const mockSucceed = vi.hoisted(() => vi.fn())
+const mockFail = vi.hoisted(() => vi.fn())
+const mockSuccessAndStop = vi.hoisted(() => vi.fn())
+const mockFailAndStop = vi.hoisted(() => vi.fn())
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -39,12 +42,12 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}));
+}))
 
 const mockGetDefaultSpinner = vi.hoisted(() =>
   vi.fn(() => ({
@@ -54,54 +57,54 @@ const mockGetDefaultSpinner = vi.hoisted(() =>
     succeed: mockSucceed,
     successAndStop: mockSuccessAndStop,
   })),
-);
-vi.mock(import("@socketsecurity/lib-stable/spinner/spinner"), () => ({
+)
+vi.mock(import('@socketsecurity/lib-stable/spinner/spinner'), () => ({
   Spinner: mockSpinner,
-}));
-vi.mock(import("@socketsecurity/lib-stable/spinner/default"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
   getDefaultSpinner: mockGetDefaultSpinner,
-}));
+}))
 
 // Mock getDefaultApiToken.
-const mockGetDefaultApiToken = vi.hoisted(() => vi.fn());
-vi.mock(import("../../../../src/util/socket/sdk.mts"), () => ({
+const mockGetDefaultApiToken = vi.hoisted(() => vi.fn())
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
   getExtraCaCerts: () => undefined,
-}));
+}))
 
 // Mock getNetworkErrorDiagnostics.
-vi.mock(import("../../../../src/util/error/errors.mts"), () => ({
+vi.mock(import('../../../../src/util/error/errors.mts'), () => ({
   buildErrorCause: vi.fn(async (code: number) => `Error code: ${code}`),
-  getNetworkErrorDiagnostics: vi.fn(() => "Network error diagnostics"),
-}));
+  getNetworkErrorDiagnostics: vi.fn(() => 'Network error diagnostics'),
+}))
 
 // Mock httpRequest from socket-lib (replaces fetch).
-const mockHttpRequest = vi.hoisted(() => vi.fn());
-vi.mock(import("@socketsecurity/lib-stable/http-request/request"), () => ({
+const mockHttpRequest = vi.hoisted(() => vi.fn())
+vi.mock(import('@socketsecurity/lib-stable/http-request/request'), () => ({
   httpRequest: mockHttpRequest,
-}));
+}))
 
 // Helper to create httpRequest-style response objects (synchronous .text()/.json()).
 function createHttpResponse(opts: {
-  body?: string | undefined;
-  ok?: boolean | undefined;
-  status?: number | undefined;
-  statusText?: string | undefined;
+  body?: string | undefined
+  ok?: boolean | undefined
+  status?: number | undefined
+  statusText?: string | undefined
 }) {
-  const bodyStr = opts.body ?? "";
-  const bodyBuffer = Buffer.from(bodyStr);
+  const bodyStr = opts.body ?? ''
+  const bodyBuffer = Buffer.from(bodyStr)
   return {
     body: bodyBuffer,
     headers: {},
     json: () => JSON.parse(bodyStr),
     ok: opts.ok ?? true,
     status: opts.status ?? 200,
-    statusText: opts.statusText ?? "OK",
+    statusText: opts.statusText ?? 'OK',
     text: () => bodyStr,
-  };
+  }
 }
 
-import { overrideCachedConfig } from "../../../../src/util/config.mts";
+import { overrideCachedConfig } from '../../../../src/util/config.mts'
 import {
   getDefaultApiBaseUrl,
   getErrorMessageForHttpStatusCode,
@@ -112,426 +115,454 @@ import {
   queryApiSafeJson,
   queryApiSafeText,
   sendApiRequest,
-} from "../../../../src/util/socket/api.mts";
+} from '../../../../src/util/socket/api.mts'
 
-describe("api utilities", () => {
+describe('api utilities', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.unstubAllEnvs();
+    vi.clearAllMocks()
+    vi.unstubAllEnvs()
     // Clear cached config to avoid test interference.
-    overrideCachedConfig("{}");
-  });
+    overrideCachedConfig('{}')
+  })
 
   afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllEnvs();
-    mockHttpRequest.mockReset();
-    mockGetDefaultApiToken.mockReset();
-  });
+    vi.restoreAllMocks()
+    vi.unstubAllEnvs()
+    mockHttpRequest.mockReset()
+    mockGetDefaultApiToken.mockReset()
+  })
 
-  describe("getDefaultApiBaseUrl", () => {
-    it("returns environment variable when set", async () => {
+  describe('getDefaultApiBaseUrl', () => {
+    it('returns environment variable when set', async () => {
       // Use vi.stubEnv to properly mock environment variable.
-      vi.stubEnv("SOCKET_CLI_API_BASE_URL", "https://custom.api.url");
+      vi.stubEnv('SOCKET_CLI_API_BASE_URL', 'https://custom.api.url')
       // In VITEST mode, ENV uses process.env directly via Proxy.
-      const result = getDefaultApiBaseUrl();
-      expect(result).toBe("https://custom.api.url");
-    });
+      const result = getDefaultApiBaseUrl()
+      expect(result).toBe('https://custom.api.url')
+    })
 
-    it("falls back to config value when env not set", async () => {
+    it('falls back to config value when env not set', async () => {
       // Ensure env is not set by deleting it.
-      delete process.env["SOCKET_CLI_API_BASE_URL"];
+      delete process.env['SOCKET_CLI_API_BASE_URL']
       // Set config value using overrideCachedConfig (expects JSON string).
-      overrideCachedConfig('{"apiBaseUrl": "https://config.api.url"}');
+      overrideCachedConfig('{"apiBaseUrl": "https://config.api.url"}')
 
-      const result = getDefaultApiBaseUrl();
-      expect(result).toBe("https://config.api.url");
-    });
+      const result = getDefaultApiBaseUrl()
+      expect(result).toBe('https://config.api.url')
+    })
 
-    it("returns default API_V0_URL when neither env nor config set", async () => {
+    it('returns default API_V0_URL when neither env nor config set', async () => {
       // Ensure env is not set by deleting it.
-      delete process.env["SOCKET_CLI_API_BASE_URL"];
+      delete process.env['SOCKET_CLI_API_BASE_URL']
       // Config is already cleared in beforeEach with overrideCachedConfig({}).
 
-      const result = getDefaultApiBaseUrl();
-      expect(result).toBe("https://api.socket.dev/v0/");
-    });
-  });
+      const result = getDefaultApiBaseUrl()
+      expect(result).toBe('https://api.socket.dev/v0/')
+    })
+  })
 
-  describe("getErrorMessageForHttpStatusCode", () => {
-    it("returns message for 400 Bad Request", async () => {
-      const result = await getErrorMessageForHttpStatusCode(400);
-      expect(result).toContain("incorrect");
-    });
+  describe('getErrorMessageForHttpStatusCode', () => {
+    it('returns message for 400 Bad Request', async () => {
+      const result = await getErrorMessageForHttpStatusCode(400)
+      expect(result).toContain('incorrect')
+    })
 
-    it("returns message for 401 Unauthorized", async () => {
-      const result = await getErrorMessageForHttpStatusCode(401);
+    it('returns message for 401 Unauthorized', async () => {
+      const result = await getErrorMessageForHttpStatusCode(401)
       // 401 is now distinct from 403: it's an auth/token problem, not
       // a permissions problem. Callers get actionable "re-auth" guidance.
-      expect(result).toContain("Authentication failed");
-      expect(result).toContain("token");
-    });
+      expect(result).toContain('Authentication failed')
+      expect(result).toContain('token')
+    })
 
-    it("returns message for 403 Forbidden", async () => {
-      const result = await getErrorMessageForHttpStatusCode(403);
-      expect(result).toContain("permissions");
-    });
+    it('returns message for 403 Forbidden', async () => {
+      const result = await getErrorMessageForHttpStatusCode(403)
+      expect(result).toContain('permissions')
+    })
 
-    it("returns message for 404 Not Found", async () => {
-      const result = await getErrorMessageForHttpStatusCode(404);
-      expect(result).toContain("Not found");
-      expect(result).toContain("doesn't exist");
-    });
+    it('returns message for 404 Not Found', async () => {
+      const result = await getErrorMessageForHttpStatusCode(404)
+      expect(result).toContain('Not found')
+      expect(result).toContain("doesn't exist")
+    })
 
-    it("returns message for 429 Rate Limit", async () => {
-      const result = await getErrorMessageForHttpStatusCode(429);
-      expect(result).toContain("Rate limit exceeded");
-      expect(result).toContain("Too many API requests");
-    });
+    it('returns message for 429 Rate Limit', async () => {
+      const result = await getErrorMessageForHttpStatusCode(429)
+      expect(result).toContain('Rate limit exceeded')
+      expect(result).toContain('Too many API requests')
+    })
 
-    it("returns message for 500 Internal Server Error", async () => {
-      const result = await getErrorMessageForHttpStatusCode(500);
-      expect(result).toContain("Server error");
-      expect(result).toContain("internal problem");
-    });
+    it('returns message for 500 Internal Server Error', async () => {
+      const result = await getErrorMessageForHttpStatusCode(500)
+      expect(result).toContain('Server error')
+      expect(result).toContain('internal problem')
+    })
 
-    it("returns generic message for unknown status code", async () => {
-      const result = await getErrorMessageForHttpStatusCode(418);
-      expect(result).toContain("HTTP 418");
-      expect(result).toContain("unexpected status code");
-    });
-  });
+    it('returns generic message for unknown status code', async () => {
+      const result = await getErrorMessageForHttpStatusCode(418)
+      expect(result).toContain('HTTP 418')
+      expect(result).toContain('unexpected status code')
+    })
+  })
 
-  describe("handleApiCall", () => {
-    it("returns success result for successful API call", async () => {
+  describe('handleApiCall', () => {
+    it('returns success result for successful API call', async () => {
       const mockApiPromise = Promise.resolve({
         success: true,
-        data: { result: "test" },
-      } as unknown);
+        data: { result: 'test' },
+      } as unknown)
 
-      const result = await handleApiCall(mockApiPromise);
-      expect(result.ok).toBe(true);
+      const result = await handleApiCall(mockApiPromise)
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data).toEqual({ result: "test" });
+        expect(result.data).toEqual({ result: 'test' })
       }
-    });
+    })
 
-    it("returns error result for failed API call", async () => {
+    it('returns error result for failed API call', async () => {
       const mockApiPromise = Promise.resolve({
         success: false,
-        error: { message: "API error", statusCode: 400 },
-      } as unknown);
+        error: { message: 'API error', statusCode: 400 },
+      } as unknown)
 
-      const result = await handleApiCall(mockApiPromise);
-      expect(result.ok).toBe(false);
+      const result = await handleApiCall(mockApiPromise)
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Socket API error");
+        expect(result.message).toContain('Socket API error')
       }
-    });
+    })
 
-    it("handles API call exceptions", async () => {
-      const mockApiPromise = Promise.reject(new Error("Network error"));
+    it('handles API call exceptions', async () => {
+      const mockApiPromise = Promise.reject(new Error('Network error'))
 
-      const result = await handleApiCall(mockApiPromise);
-      expect(result.ok).toBe(false);
+      const result = await handleApiCall(mockApiPromise)
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Socket API error");
+        expect(result.message).toContain('Socket API error')
       }
-    });
+    })
 
-    it("uses spinner when provided", async () => {
+    it('uses spinner when provided', async () => {
       const mockApiPromise = Promise.resolve({
         success: true,
-        data: { result: "test" },
-      } as unknown);
+        data: { result: 'test' },
+      } as unknown)
 
       const mockSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
         fail: mockFail,
-      };
+      }
 
-      await handleApiCall(mockApiPromise, { spinner: mockSpinner as unknown });
-      expect(mockSpinner.start).toHaveBeenCalled();
-      expect(mockSpinner.stop).toHaveBeenCalled();
-    });
+      await handleApiCall(mockApiPromise, { spinner: mockSpinner as unknown })
+      expect(mockSpinner.start).toHaveBeenCalled()
+      expect(mockSpinner.stop).toHaveBeenCalled()
+    })
 
-    it("starts spinner with description when both provided (line 256)", async () => {
+    it('starts spinner with description when both provided (line 256)', async () => {
       // description + spinner → start with prefixed message + log success.
       const mockApiPromise = Promise.resolve({
         success: true,
         data: { x: 1 },
-      } as unknown);
+      } as unknown)
       const mockSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
         fail: mockFail,
-      };
+      }
       await handleApiCall(mockApiPromise, {
-        description: "test data",
+        description: 'test data',
         spinner: mockSpinner as unknown,
-      });
+      })
       expect(mockSpinner.start).toHaveBeenCalledWith(
-        expect.stringContaining("Requesting test data from API"),
-      );
-    });
+        expect.stringContaining('Requesting test data from API'),
+      )
+    })
 
-    it("logs success message when description + spinner + success (lines 266-272)", async () => {
+    it('logs success message when description + spinner + success (lines 266-272)', async () => {
       const mockApiPromise = Promise.resolve({
         success: true,
         data: { x: 1 },
-      } as unknown);
+      } as unknown)
       const mockSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
         fail: mockFail,
-      };
+      }
       await handleApiCall(mockApiPromise, {
-        description: "thing",
+        description: 'thing',
         spinner: mockSpinner as unknown,
-      });
+      })
       // logger.success was called via the description+spinner branch.
-      expect(mockLogger.success).toHaveBeenCalledWith(expect.stringContaining("thing"));
-    });
+      expect(mockLogger.success).toHaveBeenCalledWith(
+        expect.stringContaining('thing'),
+      )
+    })
 
-    it("logs info message when description + spinner + non-success result (lines 271)", async () => {
+    it('logs info message when description + spinner + non-success result (lines 271)', async () => {
       // success: false but it's the SDK-level non-success (not a thrown error).
       const mockApiPromise = Promise.resolve({
         success: false,
-        error: { message: "fail", statusCode: 500 },
-      } as unknown);
+        error: { message: 'fail', statusCode: 500 },
+      } as unknown)
       const mockSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
         fail: mockFail,
-      };
+      }
       await handleApiCall(mockApiPromise, {
-        description: "thing",
+        description: 'thing',
         spinner: mockSpinner as unknown,
-      });
+      })
       // logger.info was called via the description+spinner branch on
       // non-thrown failure.
-      expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining("thing"));
-    });
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining('thing'),
+      )
+    })
 
-    it("logs fail message when description + thrown error (lines 281-282)", async () => {
-      const mockApiPromise = Promise.reject(new Error("boom"));
-      await handleApiCall(mockApiPromise, { description: "thing" });
+    it('logs fail message when description + thrown error (lines 281-282)', async () => {
+      const mockApiPromise = Promise.reject(new Error('boom'))
+      await handleApiCall(mockApiPromise, { description: 'thing' })
       // logger.fail was called via the description-on-error branch.
-      expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("thing"));
-    });
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining('thing'),
+      )
+    })
 
-    it("logs permissions for 403 errors when commandPath provided (line 322-323)", async () => {
+    it('logs permissions for 403 errors when commandPath provided (line 322-323)', async () => {
       // sdk-level non-success with status=403 + commandPath in options →
       // calls logPermissionsFor403, which logs the API permissions group.
       const mockApiPromise = Promise.resolve({
         success: false,
         status: 403,
-        error: { message: "Forbidden", statusCode: 403 },
-      } as unknown);
+        error: { message: 'Forbidden', statusCode: 403 },
+      } as unknown)
       await handleApiCall(mockApiPromise, {
-        commandPath: "socket fix",
-      });
+        commandPath: 'socket fix',
+      })
       expect(mockLogger.group).toHaveBeenCalledWith(
-        expect.stringContaining("Required API Permissions"),
-      );
-    });
-  });
+        expect.stringContaining('Required API Permissions'),
+      )
+    })
+  })
 
-  describe("handleApiCallNoSpinner", () => {
-    it("does not use spinner even if provided", async () => {
+  describe('handleApiCallNoSpinner', () => {
+    it('does not use spinner even if provided', async () => {
       const mockApiPromise = Promise.resolve({
         success: true,
-        data: { result: "test" },
-      } as unknown);
+        data: { result: 'test' },
+      } as unknown)
 
       const mockSpinner = {
         start: mockStart,
         stop: mockStop,
         succeed: mockSucceed,
         fail: mockFail,
-      };
+      }
 
       await handleApiCallNoSpinner(mockApiPromise, {
         spinner: mockSpinner as unknown,
-      });
-      expect(mockSpinner.start).not.toHaveBeenCalled();
-    });
+      })
+      expect(mockSpinner.start).not.toHaveBeenCalled()
+    })
 
-    it("returns success result for successful API call", async () => {
+    it('returns success result for successful API call', async () => {
       const mockApiPromise = Promise.resolve({
         success: true,
-        data: { result: "test" },
-      } as unknown);
+        data: { result: 'test' },
+      } as unknown)
 
-      const result = await handleApiCallNoSpinner(mockApiPromise);
-      expect(result.ok).toBe(true);
-    });
-  });
+      const result = await handleApiCallNoSpinner(mockApiPromise)
+      expect(result.ok).toBe(true)
+    })
+  })
 
-  describe("logPermissionsFor403", () => {
-    it("logs specific permissions when command requirements are found", () => {
-      logPermissionsFor403("socket fix");
+  describe('logPermissionsFor403', () => {
+    it('logs specific permissions when command requirements are found', () => {
+      logPermissionsFor403('socket fix')
 
       // Verify logger.group was called with permissions header.
-      expect(mockLogger.group).toHaveBeenCalledWith("🔐 Required API Permissions:");
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        '🔐 Required API Permissions:',
+      )
 
       // Verify permissions were logged.
-      expect(mockLogger.error).toHaveBeenCalledWith("full-scans:create");
-      expect(mockLogger.error).toHaveBeenCalledWith("packages:list");
+      expect(mockLogger.error).toHaveBeenCalledWith('full-scans:create')
+      expect(mockLogger.error).toHaveBeenCalledWith('packages:list')
 
       // Verify groupEnd was called.
-      expect(mockLogger.groupEnd).toHaveBeenCalled();
+      expect(mockLogger.groupEnd).toHaveBeenCalled()
 
       // Verify fix instructions.
-      expect(mockLogger.group).toHaveBeenCalledWith("💡 To fix this:");
-      expect(mockLogger.error).toHaveBeenCalledWith("Visit https://socket.dev/settings/api-tokens");
+      expect(mockLogger.group).toHaveBeenCalledWith('💡 To fix this:')
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Edit your API token to grant the permissions listed above",
-      );
-      expect(mockLogger.error).toHaveBeenCalledWith("Re-run your command");
-    });
+        'Visit https://socket.dev/settings/api-tokens',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Edit your API token to grant the permissions listed above',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith('Re-run your command')
+    })
 
-    it("logs general guidance when command requirements not found", () => {
-      logPermissionsFor403("socket unknown");
+    it('logs general guidance when command requirements not found', () => {
+      logPermissionsFor403('socket unknown')
 
       // Verify general permission message.
-      expect(mockLogger.group).toHaveBeenCalledWith("🔐 Permission Requirements:");
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        '🔐 Permission Requirements:',
+      )
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Your API token lacks the required permissions for this operation.",
-      );
+        'Your API token lacks the required permissions for this operation.',
+      )
 
       // Verify general fix instructions.
-      expect(mockLogger.group).toHaveBeenCalledWith("💡 To fix this:");
-      expect(mockLogger.error).toHaveBeenCalledWith("Visit https://socket.dev/settings/api-tokens");
+      expect(mockLogger.group).toHaveBeenCalledWith('💡 To fix this:')
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Check your API token has the necessary permissions",
-      );
+        'Visit https://socket.dev/settings/api-tokens',
+      )
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Run `socket unknown --help` to see required permissions",
-      );
+        'Check your API token has the necessary permissions',
+      )
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Re-run your command after updating permissions",
-      );
-    });
+        'Run `socket unknown --help` to see required permissions',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Re-run your command after updating permissions',
+      )
+    })
 
-    it("handles undefined cmdPath gracefully", () => {
-      logPermissionsFor403(undefined);
+    it('handles undefined cmdPath gracefully', () => {
+      logPermissionsFor403(undefined)
 
       // Should show general guidance.
-      expect(mockLogger.group).toHaveBeenCalledWith("🔐 Permission Requirements:");
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        '🔐 Permission Requirements:',
+      )
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Run `socket help --help` to see required permissions",
-      );
-    });
+        'Run `socket help --help` to see required permissions',
+      )
+    })
 
-    it("logs permissions for scan:create command", () => {
-      logPermissionsFor403("socket scan:create");
+    it('logs permissions for scan:create command', () => {
+      logPermissionsFor403('socket scan:create')
 
-      expect(mockLogger.group).toHaveBeenCalledWith("🔐 Required API Permissions:");
-      expect(mockLogger.error).toHaveBeenCalledWith("full-scans:create");
-    });
-  });
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        '🔐 Required API Permissions:',
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith('full-scans:create')
+    })
+  })
 
-  describe("queryApi", () => {
-    it("makes authenticated GET request to Socket API", async () => {
-      mockHttpRequest.mockResolvedValueOnce(createHttpResponse({ body: "response text" }));
+  describe('queryApi', () => {
+    it('makes authenticated GET request to Socket API', async () => {
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'response text' }),
+      )
 
-      const result = await queryApi("test/path", "test-token");
+      const result = await queryApi('test/path', 'test-token')
 
       expect(mockHttpRequest).toHaveBeenCalledWith(
-        "https://api.socket.dev/v0/test/path",
+        'https://api.socket.dev/v0/test/path',
         expect.objectContaining({
-          method: "GET",
+          method: 'GET',
           headers: expect.objectContaining({
-            Authorization: expect.stringContaining("Basic"),
+            Authorization: expect.stringContaining('Basic'),
           }),
         }),
-      );
-      expect(result.ok).toBe(true);
-    });
+      )
+      expect(result.ok).toBe(true)
+    })
 
-    it("throws error when base URL is not configured", async () => {
+    it('throws error when base URL is not configured', async () => {
       // Mock to return undefined.
-      vi.stubEnv("SOCKET_CLI_API_BASE_URL", "");
-      overrideCachedConfig('{"apiBaseUrl": ""}');
+      vi.stubEnv('SOCKET_CLI_API_BASE_URL', '')
+      overrideCachedConfig('{"apiBaseUrl": ""}')
 
       // Since API_V0_URL is always returned as fallback, queryApi won't throw
       // unless we mock getDefaultApiBaseUrl to return undefined.
       // For now, let's test the normal path.
-      mockHttpRequest.mockResolvedValueOnce(createHttpResponse({ body: "response" }));
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'response' }),
+      )
 
-      const result = await queryApi("path", "token");
-      expect(result.ok).toBe(true);
-    });
-  });
+      const result = await queryApi('path', 'token')
+      expect(result.ok).toBe(true)
+    })
+  })
 
-  describe("queryApiSafeText", () => {
+  describe('queryApiSafeText', () => {
     beforeEach(() => {
       // Reset mock for each test.
-      mockGetDefaultApiToken.mockReturnValue("test-token");
-    });
+      mockGetDefaultApiToken.mockReturnValue('test-token')
+    })
 
-    it("returns error when not authenticated", async () => {
-      mockGetDefaultApiToken.mockReturnValue(undefined);
+    it('returns error when not authenticated', async () => {
+      mockGetDefaultApiToken.mockReturnValue(undefined)
 
-      const result = await queryApiSafeText("test/path");
+      const result = await queryApiSafeText('test/path')
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Authentication Error");
+        expect(result.message).toContain('Authentication Error')
       }
-    });
+    })
 
-    it("returns success with text data for successful request", async () => {
-      mockHttpRequest.mockResolvedValueOnce(createHttpResponse({ body: "response data" }));
+    it('returns success with text data for successful request', async () => {
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'response data' }),
+      )
 
-      const result = await queryApiSafeText("test/path", "test description");
+      const result = await queryApiSafeText('test/path', 'test description')
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data).toBe("response data");
+        expect(result.data).toBe('response data')
       }
-      expect(mockSuccessAndStop).toHaveBeenCalled();
-    });
+      expect(mockSuccessAndStop).toHaveBeenCalled()
+    })
 
-    it("returns error for failed HTTP status", async () => {
+    it('returns error for failed HTTP status', async () => {
       mockHttpRequest.mockResolvedValueOnce(
         createHttpResponse({
           ok: false,
           status: 403,
-          statusText: "Forbidden",
+          statusText: 'Forbidden',
         }),
-      );
+      )
 
-      const result = await queryApiSafeText("test/path", "test description", "socket fix");
+      const result = await queryApiSafeText(
+        'test/path',
+        'test description',
+        'socket fix',
+      )
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Socket API error");
+        expect(result.message).toContain('Socket API error')
       }
-    });
+    })
 
-    it("returns error for network failures", async () => {
-      mockHttpRequest.mockRejectedValueOnce(new Error("Network failure"));
+    it('returns error for network failures', async () => {
+      mockHttpRequest.mockRejectedValueOnce(new Error('Network failure'))
 
-      const result = await queryApiSafeText("test/path", "test description");
+      const result = await queryApiSafeText('test/path', 'test description')
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("failed");
+        expect(result.message).toContain('failed')
         // The cause must include the request path so the user can tell
         // which endpoint failed when several calls are in flight.
-        expect(result.cause).toContain("(path: test/path)");
+        expect(result.cause).toContain('(path: test/path)')
       }
-      expect(mockFailAndStop).toHaveBeenCalled();
-    });
+      expect(mockFailAndStop).toHaveBeenCalled()
+    })
 
-    it("returns error when response text cannot be read", async () => {
+    it('returns error when response text cannot be read', async () => {
       // With httpRequest, .text() is synchronous. Simulate a response
       // where text() throws by providing a malformed mock.
       mockHttpRequest.mockResolvedValueOnce({
@@ -540,233 +571,258 @@ describe("api utilities", () => {
         json: () => undefined,
         ok: true,
         status: 200,
-        statusText: "OK",
+        statusText: 'OK',
         text: () => {
-          throw new Error("Read error");
+          throw new Error('Read error')
         },
-      });
+      })
 
-      const result = await queryApiSafeText("test/path");
+      const result = await queryApiSafeText('test/path')
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.cause).toContain("response text");
-        expect(result.cause).toContain("(path: test/path)");
+        expect(result.cause).toContain('response text')
+        expect(result.cause).toContain('(path: test/path)')
       }
-    });
-  });
+    })
+  })
 
-  describe("queryApiSafeJson", () => {
+  describe('queryApiSafeJson', () => {
     beforeEach(() => {
-      mockGetDefaultApiToken.mockReturnValue("test-token");
-    });
+      mockGetDefaultApiToken.mockReturnValue('test-token')
+    })
 
-    it("parses JSON response successfully", async () => {
-      mockHttpRequest.mockResolvedValueOnce(createHttpResponse({ body: '{"key": "value"}' }));
+    it('parses JSON response successfully', async () => {
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: '{"key": "value"}' }),
+      )
 
-      const result = await queryApiSafeJson<{ key: string }>("test/path");
+      const result = await queryApiSafeJson<{ key: string }>('test/path')
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data).toEqual({ key: "value" });
+        expect(result.data).toEqual({ key: 'value' })
       }
-    });
+    })
 
-    it("returns error for invalid JSON", async () => {
-      mockHttpRequest.mockResolvedValueOnce(createHttpResponse({ body: "not valid json" }));
+    it('returns error for invalid JSON', async () => {
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'not valid json' }),
+      )
 
-      const result = await queryApiSafeJson<unknown>("test/path");
+      const result = await queryApiSafeJson<unknown>('test/path')
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("invalid JSON");
+        expect(result.message).toContain('invalid JSON')
       }
-    });
+    })
 
-    it("propagates authentication errors", async () => {
-      mockGetDefaultApiToken.mockReturnValue(undefined);
+    it('propagates authentication errors', async () => {
+      mockGetDefaultApiToken.mockReturnValue(undefined)
 
-      const result = await queryApiSafeJson<unknown>("test/path");
+      const result = await queryApiSafeJson<unknown>('test/path')
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Authentication Error");
+        expect(result.message).toContain('Authentication Error')
       }
-    });
-  });
+    })
+  })
 
-  describe("sendApiRequest", () => {
+  describe('sendApiRequest', () => {
     beforeEach(() => {
-      mockGetDefaultApiToken.mockReturnValue("test-token");
-    });
+      mockGetDefaultApiToken.mockReturnValue('test-token')
+    })
 
-    it("returns error when not authenticated", async () => {
-      mockGetDefaultApiToken.mockReturnValue(undefined);
+    it('returns error when not authenticated', async () => {
+      mockGetDefaultApiToken.mockReturnValue(undefined)
 
-      const result = await sendApiRequest<unknown>("test/path", {
-        method: "POST",
-      });
+      const result = await sendApiRequest<unknown>('test/path', {
+        method: 'POST',
+      })
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Authentication Error");
+        expect(result.message).toContain('Authentication Error')
       }
-    });
+    })
 
-    it("sends POST request with JSON body", async () => {
-      mockHttpRequest.mockResolvedValueOnce(createHttpResponse({ body: '{"result": "success"}' }));
+    it('sends POST request with JSON body', async () => {
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: '{"result": "success"}' }),
+      )
 
-      const result = await sendApiRequest<{ result: string }>("test/path", {
-        method: "POST",
-        body: { data: "test" },
-        description: "test operation",
-      });
+      const result = await sendApiRequest<{ result: string }>('test/path', {
+        method: 'POST',
+        body: { data: 'test' },
+        description: 'test operation',
+      })
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data).toEqual({ result: "success" });
+        expect(result.data).toEqual({ result: 'success' })
       }
       expect(mockHttpRequest).toHaveBeenCalledWith(
-        "https://api.socket.dev/v0/test/path",
+        'https://api.socket.dev/v0/test/path',
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
           headers: expect.objectContaining({
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           }),
-          body: JSON.stringify({ data: "test" }),
+          body: JSON.stringify({ data: 'test' }),
         }),
-      );
-    });
+      )
+    })
 
-    it("sends PUT request", async () => {
-      mockHttpRequest.mockResolvedValueOnce(createHttpResponse({ body: '{"updated": true}' }));
+    it('sends PUT request', async () => {
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: '{"updated": true}' }),
+      )
 
-      const result = await sendApiRequest<{ updated: boolean }>("test/path", {
-        method: "PUT",
-        body: { value: "updated" },
-      });
+      const result = await sendApiRequest<{ updated: boolean }>('test/path', {
+        method: 'PUT',
+        body: { value: 'updated' },
+      })
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       expect(mockHttpRequest).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ method: "PUT" }),
-      );
-    });
+        expect.objectContaining({ method: 'PUT' }),
+      )
+    })
 
-    it("returns error for failed HTTP status", async () => {
+    it('returns error for failed HTTP status', async () => {
       mockHttpRequest.mockResolvedValueOnce(
         createHttpResponse({
           ok: false,
           status: 500,
-          statusText: "Internal Server Error",
+          statusText: 'Internal Server Error',
         }),
-      );
+      )
 
-      const result = await sendApiRequest<unknown>("test/path", {
-        method: "POST",
-      });
+      const result = await sendApiRequest<unknown>('test/path', {
+        method: 'POST',
+      })
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Socket API error");
+        expect(result.message).toContain('Socket API error')
       }
-    });
+    })
 
-    it("returns error for network failures", async () => {
-      mockHttpRequest.mockRejectedValueOnce(new Error("Connection refused"));
+    it('returns error for network failures', async () => {
+      mockHttpRequest.mockRejectedValueOnce(new Error('Connection refused'))
 
-      const result = await sendApiRequest<unknown>("test/path", {
-        method: "POST",
-        description: "test operation",
-      });
+      const result = await sendApiRequest<unknown>('test/path', {
+        method: 'POST',
+        description: 'test operation',
+      })
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("failed");
+        expect(result.message).toContain('failed')
         // Request path must be surfaced in error cause for debuggability.
-        expect(result.cause).toContain("(path: test/path)");
+        expect(result.cause).toContain('(path: test/path)')
       }
-    });
+    })
 
-    it("returns error when JSON parsing fails", async () => {
+    it('returns error when JSON parsing fails', async () => {
       // With httpRequest, .json() is synchronous. Provide invalid JSON body.
-      mockHttpRequest.mockResolvedValueOnce(createHttpResponse({ body: "not-json" }));
+      mockHttpRequest.mockResolvedValueOnce(
+        createHttpResponse({ body: 'not-json' }),
+      )
 
-      const result = await sendApiRequest<unknown>("test/path", {
-        method: "POST",
-      });
+      const result = await sendApiRequest<unknown>('test/path', {
+        method: 'POST',
+      })
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.cause).toContain("parsing");
-        expect(result.cause).toContain("(path: test/path)");
+        expect(result.cause).toContain('parsing')
+        expect(result.cause).toContain('(path: test/path)')
       }
-    });
+    })
 
-    it("logs permissions for 403 errors when commandPath provided", async () => {
+    it('logs permissions for 403 errors when commandPath provided', async () => {
       mockHttpRequest.mockResolvedValueOnce(
         createHttpResponse({
           ok: false,
           status: 403,
-          statusText: "Forbidden",
+          statusText: 'Forbidden',
         }),
-      );
+      )
 
-      await sendApiRequest<unknown>("test/path", {
-        method: "POST",
-        commandPath: "socket fix",
-      });
+      await sendApiRequest<unknown>('test/path', {
+        method: 'POST',
+        commandPath: 'socket fix',
+      })
 
-      expect(mockLogger.group).toHaveBeenCalledWith("🔐 Required API Permissions:");
-    });
-  });
+      expect(mockLogger.group).toHaveBeenCalledWith(
+        '🔐 Required API Permissions:',
+      )
+    })
+  })
 
-  describe("handleApiCallNoSpinner full signature", () => {
-    it("returns success result with description", async () => {
-      const mockApiPromise = Promise.resolve(mockSuccessResponse({ result: "test" }));
+  describe('handleApiCallNoSpinner full signature', () => {
+    it('returns success result with description', async () => {
+      const mockApiPromise = Promise.resolve(
+        mockSuccessResponse({ result: 'test' }),
+      )
 
-      const result = await handleApiCallNoSpinner(mockApiPromise, "test description");
+      const result = await handleApiCallNoSpinner(
+        mockApiPromise,
+        'test description',
+      )
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data).toEqual({ result: "test" });
+        expect(result.data).toEqual({ result: 'test' })
       }
-    });
+    })
 
-    it("returns error result for failed SDK response", async () => {
-      const mockApiPromise = Promise.resolve(mockErrorResponse("API error", 400));
+    it('returns error result for failed SDK response', async () => {
+      const mockApiPromise = Promise.resolve(
+        mockErrorResponse('API error', 400),
+      )
 
-      const result = await handleApiCallNoSpinner(mockApiPromise, "test description");
+      const result = await handleApiCallNoSpinner(
+        mockApiPromise,
+        'test description',
+      )
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Socket API error");
+        expect(result.message).toContain('Socket API error')
       }
-    });
+    })
 
-    it("returns error with cause when promise rejects (lines 342-354)", async () => {
+    it('returns error with cause when promise rejects (lines 342-354)', async () => {
       // Rejected promise hits the catch block; the error string becomes cause.
-      const mockApiPromise = Promise.reject(new Error("thrown boom"));
+      const mockApiPromise = Promise.reject(new Error('thrown boom'))
 
-      const result = await handleApiCallNoSpinner(mockApiPromise, "reject test");
+      const result = await handleApiCallNoSpinner(mockApiPromise, 'reject test')
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe("Socket API error");
-        expect(result.cause).toContain("thrown boom");
+        expect(result.message).toBe('Socket API error')
+        expect(result.cause).toContain('thrown boom')
       }
-    });
+    })
 
-    it("omits cause when error stringifies to empty (line 348-349)", async () => {
+    it('omits cause when error stringifies to empty (line 348-349)', async () => {
       // String(empty error) === '' → cause is set to NO_ERROR_MESSAGE,
       // and since 'Socket API error' !== NO_ERROR_MESSAGE, cause is included.
       // To test the cause-equals-message edge case, throw a plain object that
       // stringifies to nothing. Empty-trim case → uses NO_ERROR_MESSAGE.
-      const mockApiPromise = Promise.reject("");
+      const mockApiPromise = Promise.reject('')
 
-      const result = await handleApiCallNoSpinner(mockApiPromise as unknown, "empty err");
+      const result = await handleApiCallNoSpinner(
+        mockApiPromise as unknown,
+        'empty err',
+      )
 
-      expect(result.ok).toBe(false);
-    });
-  });
-});
+      expect(result.ok).toBe(false)
+    })
+  })
+})

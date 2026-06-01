@@ -1,16 +1,16 @@
-import fs from "node:fs/promises";
+import fs from 'node:fs/promises'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { SOCKET_WEBSITE_URL } from "../../constants/socket.mts";
-import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
-import { mdTable } from "../../util/output/markdown.mts";
-import { serializeResultJson } from "../../util/output/result-json.mjs";
-import { fileLink } from "../../util/terminal/link.mts";
+import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { fileLink } from '../../util/terminal/link.mts'
 
-import type { CResult, OutputKind } from "../../types.mts";
-import type { SocketArtifact } from "../../util/alert/artifact.mts";
-const logger = getDefaultLogger();
+import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
+const logger = getDefaultLogger()
 
 export async function outputScanView(
   result: CResult<SocketArtifact[]>,
@@ -20,68 +20,71 @@ export async function outputScanView(
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1;
+    process.exitCode = result.code ?? 1
   }
 
   if (!result.ok) {
-    if (outputKind === "json") {
-      logger.log(serializeResultJson(result));
-      return;
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      return
     }
-    logger.fail(failMsgWithBadge(result.message, result.cause));
-    return;
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
   }
 
-  if (outputKind === "json" || (outputKind === "text" && filePath && filePath.endsWith(".json"))) {
-    const json = serializeResultJson(result);
+  if (
+    outputKind === 'json' ||
+    (outputKind === 'text' && filePath && filePath.endsWith('.json'))
+  ) {
+    const json = serializeResultJson(result)
 
-    if (filePath && filePath !== "-") {
-      logger.info("Writing json results to", filePath);
+    if (filePath && filePath !== '-') {
+      logger.info('Writing json results to', filePath)
       try {
-        await fs.writeFile(filePath, json, "utf8");
-        logger.info(`Data successfully written to ${fileLink(filePath)}`);
+        await fs.writeFile(filePath, json, 'utf8')
+        logger.info(`Data successfully written to ${fileLink(filePath)}`)
       } catch (e) {
-        process.exitCode = 1;
-        logger.fail("There was an error trying to write the markdown to disk");
-        logger.error(e);
+        process.exitCode = 1
+        logger.fail('There was an error trying to write the markdown to disk')
+        logger.error(e)
         logger.log(
           serializeResultJson({
             ok: false,
-            message: "File Write Failure",
-            cause: "Failed to write json to disk",
+            message: 'File Write Failure',
+            cause: 'Failed to write json to disk',
           }),
-        );
+        )
       }
-      return;
+      return
     }
 
-    logger.log(json);
-    return;
+    logger.log(json)
+    return
   }
 
-  const display = result.data.map((art) => {
+  const display = result.data.map(art => {
     const author =
       Array.isArray(art.author) && art.author.length > 0
-        ? `${art.author[0]}${art.author.length > 1 ? " et.al." : ""}`
+        ? `${art.author[0]}${art.author.length > 1 ? ' et.al.' : ''}`
         : Array.isArray(art.author)
-          ? ""
-          : art.author;
+          ? ''
+          : art.author
     return {
       type: art.type,
       name: art.name,
       version: art.version,
       author,
       score: JSON.stringify(art.score),
-    };
-  });
+    }
+  })
 
   const md = mdTable(display as Array<Record<string, string>>, [
-    "type",
-    "version",
-    "name",
-    "author",
-    "score",
-  ]);
+    'type',
+    'version',
+    'name',
+    'author',
+    'score',
+  ])
 
   const report = `${`
 # Scan Details
@@ -93,18 +96,18 @@ Scan ID: ${scanId}
 ${md}
 
 View this report at: ${SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanId}
-  `.trim()}\n`;
+  `.trim()}\n`
 
-  if (filePath && filePath !== "-") {
+  if (filePath && filePath !== '-') {
     try {
-      await fs.writeFile(filePath, report, "utf8");
-      logger.log(`Data successfully written to ${fileLink(filePath)}`);
+      await fs.writeFile(filePath, report, 'utf8')
+      logger.log(`Data successfully written to ${fileLink(filePath)}`)
     } catch (e) {
-      process.exitCode = 1;
-      logger.fail("There was an error trying to write the markdown to disk");
-      logger.error(e);
+      process.exitCode = 1
+      logger.fail('There was an error trying to write the markdown to disk')
+      logger.error(e)
     }
   } else {
-    logger.log(report);
+    logger.log(report)
   }
 }

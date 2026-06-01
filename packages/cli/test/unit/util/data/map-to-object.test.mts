@@ -12,17 +12,17 @@
  * Related Files: - util/data/map-to-object.mts (implementation)
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
-import { mapToObject } from "../../../../src/util/data/map-to-object.mts";
+import { mapToObject } from '../../../../src/util/data/map-to-object.mts'
 
-describe("map-to-object", () => {
-  it("should convert a map string string", () => {
+describe('map-to-object', () => {
+  it('should convert a map string string', () => {
     expect(
       mapToObject(
         new Map([
-          ["a", "b"],
-          ["c", "d"],
+          ['a', 'b'],
+          ['c', 'd'],
         ]),
       ),
     ).toMatchInlineSnapshot(`
@@ -30,18 +30,18 @@ describe("map-to-object", () => {
         "a": "b",
         "c": "d",
       }
-    `);
-  });
+    `)
+  })
 
-  it("should convert a map string map string string", () => {
+  it('should convert a map string map string string', () => {
     expect(
       mapToObject(
         new Map([
           [
-            "x",
+            'x',
             new Map([
-              ["a", "b"],
-              ["c", "d"],
+              ['a', 'b'],
+              ['c', 'd'],
             ]),
           ],
         ]),
@@ -53,47 +53,47 @@ describe("map-to-object", () => {
           "c": "d",
         },
       }
-    `);
-  });
+    `)
+  })
 
-  it("should convert a map string map string map string string", () => {
+  it('should convert a map string map string map string string', () => {
     expect(
       mapToObject(
         new Map([
           [
-            "a123",
+            'a123',
             new Map([
               [
-                "x",
+                'x',
                 new Map([
-                  ["a", "b"],
-                  ["c", "d"],
+                  ['a', 'b'],
+                  ['c', 'd'],
                 ]),
               ],
               [
-                "y",
+                'y',
                 new Map([
-                  ["a", "b"],
-                  ["c", "d"],
+                  ['a', 'b'],
+                  ['c', 'd'],
                 ]),
               ],
             ]),
           ],
           [
-            "b456",
+            'b456',
             new Map([
               [
-                "x",
+                'x',
                 new Map([
-                  ["a", "b"],
-                  ["c", "d"],
+                  ['a', 'b'],
+                  ['c', 'd'],
                 ]),
               ],
               [
-                "y",
+                'y',
                 new Map([
-                  ["a", "b"],
-                  ["c", "d"],
+                  ['a', 'b'],
+                  ['c', 'd'],
                 ]),
               ],
             ]),
@@ -123,6 +123,6 @@ describe("map-to-object", () => {
           },
         },
       }
-    `);
-  });
-});
+    `)
+  })
+})

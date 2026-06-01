@@ -8,15 +8,15 @@
  * Defined via `defineToolSpawn`. See util/dlx/define-tool-spawn.mts.
  */
 
-import { defineToolSpawn } from "./define-tool-spawn.mts";
-import { resolveTrufflehog } from "./resolve-binary.mjs";
+import { defineToolSpawn } from './define-tool-spawn.mts'
+import { resolveTrufflehog } from './resolve-binary.mjs'
 
 const triple = defineToolSpawn({
-  toolName: "trufflehog",
-  vfsName: "trufflehog",
+  toolName: 'trufflehog',
+  vfsName: 'trufflehog',
   resolve: resolveTrufflehog,
-});
+})
 
-export const spawnTrufflehogDlx = triple.Dlx;
-export const spawnTrufflehogVfs = triple.Vfs;
-export const spawnTrufflehog = triple.auto;
+export const spawnTrufflehogDlx = triple.Dlx
+export const spawnTrufflehogVfs = triple.Vfs
+export const spawnTrufflehog = triple.auto

@@ -6,8 +6,8 @@
  * embedding version info into the binary.
  */
 
-import process from "node:process";
+import process from 'node:process'
 
 export function getCliVersionHash(): string {
-  return process.env["INLINED_VERSION_HASH"]!;
+  return process.env['INLINED_VERSION_HASH']!
 }

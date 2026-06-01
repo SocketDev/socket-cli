@@ -4,6 +4,6 @@
  * delays caused by HTTP keep-alive connections.
  */
 
-import { env } from "node:process";
+import { env } from 'node:process'
 
-export const SOCKET_CLI_SKIP_UPDATE_CHECK = env["SOCKET_CLI_SKIP_UPDATE_CHECK"];
+export const SOCKET_CLI_SKIP_UPDATE_CHECK = env['SOCKET_CLI_SKIP_UPDATE_CHECK']

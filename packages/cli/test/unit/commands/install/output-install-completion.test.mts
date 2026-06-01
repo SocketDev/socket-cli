@@ -10,7 +10,7 @@
  * (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -20,121 +20,122 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
-}));
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock utilities.
-vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) => (cause ? `${msg}: ${cause}` : msg),
-}));
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
+  failMsgWithBadge: (msg: string, cause?: string) =>
+    cause ? `${msg}: ${cause}` : msg,
+}))
 
-import { outputInstallCompletion } from "../../../../src/commands/install/output-install-completion.mts";
+import { outputInstallCompletion } from '../../../../src/commands/install/output-install-completion.mts'
 
-import type { CResult } from "../../../../src/types.mts";
+import type { CResult } from '../../../../src/types.mts'
 
-describe("output-install-completion", () => {
+describe('output-install-completion', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+  })
 
-  describe("outputInstallCompletion", () => {
+  describe('outputInstallCompletion', () => {
     const mockSuccessData = {
-      actions: ["Created completion script", "Updated .bashrc"],
-      bashrcPath: "/home/user/.bashrc",
-      completionCommand: "complete -F _socket socket",
+      actions: ['Created completion script', 'Updated .bashrc'],
+      bashrcPath: '/home/user/.bashrc',
+      completionCommand: 'complete -F _socket socket',
       bashrcUpdated: true,
       foundBashrc: true,
-      sourcingCommand: "source ~/.socket/completion.bash",
-      targetName: "socket",
-      targetPath: "/home/user/.socket/completion.bash",
-    };
+      sourcingCommand: 'source ~/.socket/completion.bash',
+      targetName: 'socket',
+      targetPath: '/home/user/.socket/completion.bash',
+    }
 
-    describe("success output", () => {
-      it("outputs installation complete message", async () => {
+    describe('success output', () => {
+      it('outputs installation complete message', async () => {
         const result: CResult<typeof mockSuccessData> = {
           ok: true,
           data: mockSuccessData,
-        };
+        }
 
-        await outputInstallCompletion(result);
+        await outputInstallCompletion(result)
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("Installation of tab completion");
-        expect(logs).toContain("socket");
-        expect(logs).toContain("finished!");
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('Installation of tab completion')
+        expect(logs).toContain('socket')
+        expect(logs).toContain('finished!')
+      })
 
-      it("outputs all actions", async () => {
+      it('outputs all actions', async () => {
         const result: CResult<typeof mockSuccessData> = {
           ok: true,
           data: mockSuccessData,
-        };
+        }
 
-        await outputInstallCompletion(result);
+        await outputInstallCompletion(result)
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("Created completion script");
-        expect(logs).toContain("Updated .bashrc");
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('Created completion script')
+        expect(logs).toContain('Updated .bashrc')
+      })
 
-      it("outputs reload instructions", async () => {
+      it('outputs reload instructions', async () => {
         const result: CResult<typeof mockSuccessData> = {
           ok: true,
           data: mockSuccessData,
-        };
+        }
 
-        await outputInstallCompletion(result);
+        await outputInstallCompletion(result)
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("source ~/.bashrc");
-        expect(logs).toContain(mockSuccessData.targetPath);
-        expect(logs).toContain(mockSuccessData.completionCommand);
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('source ~/.bashrc')
+        expect(logs).toContain(mockSuccessData.targetPath)
+        expect(logs).toContain(mockSuccessData.completionCommand)
+      })
 
-      it("mentions automatic enablement in new terminals", async () => {
+      it('mentions automatic enablement in new terminals', async () => {
         const result: CResult<typeof mockSuccessData> = {
           ok: true,
           data: mockSuccessData,
-        };
+        }
 
-        await outputInstallCompletion(result);
+        await outputInstallCompletion(result)
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("automatically");
-        expect(logs).toContain("new terminals");
-      });
-    });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('automatically')
+        expect(logs).toContain('new terminals')
+      })
+    })
 
-    describe("error output", () => {
-      it("outputs error with fail message", async () => {
+    describe('error output', () => {
+      it('outputs error with fail message', async () => {
         const result: CResult<typeof mockSuccessData> = {
           ok: false,
-          message: "Installation failed",
-          cause: "No write permission",
-        };
+          message: 'Installation failed',
+          cause: 'No write permission',
+        }
 
-        await outputInstallCompletion(result);
+        await outputInstallCompletion(result)
 
         expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining("Installation failed"),
-        );
-        expect(process.exitCode).toBe(1);
-      });
+          expect.stringContaining('Installation failed'),
+        )
+        expect(process.exitCode).toBe(1)
+      })
 
-      it("uses custom exit code when provided", async () => {
+      it('uses custom exit code when provided', async () => {
         const result: CResult<typeof mockSuccessData> = {
           ok: false,
-          message: "Failed",
+          message: 'Failed',
           code: 127,
-        };
+        }
 
-        await outputInstallCompletion(result);
+        await outputInstallCompletion(result)
 
-        expect(process.exitCode).toBe(127);
-      });
-    });
-  });
-});
+        expect(process.exitCode).toBe(127)
+      })
+    })
+  })
+})

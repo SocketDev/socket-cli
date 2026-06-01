@@ -1,27 +1,30 @@
-import { handleLicensePolicy } from "./handle-license-policy.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags, outputFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
-import { outputDryRunFetch } from "../../util/dry-run/output.mts";
-import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
-import { getOutputKind } from "../../util/output/mode.mjs";
-import { determineOrgSlug } from "../../util/socket/org-slug.mjs";
-import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
-import { checkCommandInput } from "../../util/validation/check-input.mts";
+import { handleLicensePolicy } from './handle-license-policy.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
-export const CMD_NAME = "license";
+export const CMD_NAME = 'license'
 
-const description = "Retrieve the license policy of an organization";
+const description = 'Retrieve the license policy of an organization'
 
-const hidden = false;
+const hidden = false
 
 export const cmdOrganizationPolicyLicense = {
   description,
   hidden,
   run,
-};
+}
 
 export async function run(
   argv: string[] | readonly string[],
@@ -36,14 +39,15 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
       interactive: {
-        type: "boolean",
+        type: 'boolean',
         default: true,
         description:
-          "Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.",
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
       },
       org: {
-        type: "string",
-        description: "Force override the organization slug, overrides the default org from config",
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
       },
     }),
     help: (command: string) => `
@@ -63,52 +67,56 @@ export async function run(
       $ ${command}
       $ ${command} --json
   `,
-  };
+  }
 
   const cli = meowOrExit({
     argv,
     config,
     parentName,
     importMeta,
-  });
+  })
 
-  const { json, markdown, org: orgFlag } = cli.flags;
+  const { json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags["dryRun"];
+  const dryRun = !!cli.flags['dryRun']
 
-  const interactive = !!cli.flags["interactive"];
+  const interactive = !!cli.flags['interactive']
 
-  const hasApiToken = hasDefaultApiToken();
+  const hasApiToken = hasDefaultApiToken()
 
-  const { 0: orgSlug } = await determineOrgSlug(String(orgFlag || ""), interactive, dryRun);
+  const { 0: orgSlug } = await determineOrgSlug(
+    String(orgFlag || ''),
+    interactive,
+    dryRun,
+  )
 
-  const outputKind = getOutputKind(json, markdown);
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
       test: !json || !markdown,
-      message: "The json and markdown flags cannot be both set, pick one",
-      fail: "omit one",
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
     },
     {
       nook: true,
       test: hasApiToken,
-      message: "This command requires a Socket API token for access",
-      fail: "try `socket login`",
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
     },
-  );
+  )
   if (!wasValidInput) {
-    return;
+    return
   }
 
   if (dryRun) {
-    outputDryRunFetch("organization license policy", {
-      organization: orgSlug || "(will be determined)",
-    });
-    return;
+    outputDryRunFetch('organization license policy', {
+      organization: orgSlug || '(will be determined)',
+    })
+    return
   }
 
-  await handleLicensePolicy(orgSlug, outputKind);
+  await handleLicensePolicy(orgSlug, outputKind)
 }

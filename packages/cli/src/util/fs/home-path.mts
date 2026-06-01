@@ -13,13 +13,16 @@
  * - Common Unix convention for home directory
  */
 
-import { normalizePath } from "@socketsecurity/lib-stable/paths/normalize";
-import { escapeRegExp } from "@socketsecurity/lib-stable/regexps/escape";
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 
-import { homePath } from "../../constants/paths.mts";
+import { homePath } from '../../constants/paths.mts'
 
 export function tildify(cwd: string) {
   // Normalize to forward slashes for consistent matching across platforms.
-  const normalizedCwd = normalizePath(cwd);
-  return normalizedCwd.replace(new RegExp(`^${escapeRegExp(homePath)}(?:/|$)`, "i"), "~/");
+  const normalizedCwd = normalizePath(cwd)
+  return normalizedCwd.replace(
+    new RegExp(`^${escapeRegExp(homePath)}(?:/|$)`, 'i'),
+    '~/',
+  )
 }

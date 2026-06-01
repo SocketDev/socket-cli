@@ -3,6 +3,6 @@
  * "xterm-256color").
  */
 
-import { env } from "node:process";
+import { env } from 'node:process'
 
-export const TERM = env["TERM"];
+export const TERM = env['TERM']

@@ -3,6 +3,6 @@
  * passed from bootstrap wrappers.
  */
 
-import { getSocketCliBootstrapCacheDir } from "@socketsecurity/lib-stable/env/socket-cli";
+import { getSocketCliBootstrapCacheDir } from '@socketsecurity/lib-stable/env/socket-cli'
 
-export const SOCKET_CLI_BOOTSTRAP_CACHE_DIR = getSocketCliBootstrapCacheDir();
+export const SOCKET_CLI_BOOTSTRAP_CACHE_DIR = getSocketCliBootstrapCacheDir()

@@ -1,16 +1,21 @@
-import { UNKNOWN_VALUE } from "@socketsecurity/lib-stable/constants/sentinels";
-import { debug, debugDir } from "@socketsecurity/lib-stable/debug/output";
-import { isNonEmptyString } from "@socketsecurity/lib-stable/strings/predicates";
+import { UNKNOWN_VALUE } from '@socketsecurity/lib-stable/constants/sentinels'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
-import { cacheFetch, getOctokit, getOctokitGraphql, withGitHubRetry } from "./github.mts";
-import { gitDeleteRemoteBranch } from "./operations.mts";
+import {
+  cacheFetch,
+  getOctokit,
+  getOctokitGraphql,
+  withGitHubRetry,
+} from './github.mts'
+import { gitDeleteRemoteBranch } from './operations.mts'
 import {
   GQL_PAGE_SENTINEL,
   GQL_PR_STATE_CLOSED,
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
-} from "../../constants/github.mts";
-import { formatErrorWithDetail } from "../error/errors.mts";
+} from '../../constants/github.mts'
+import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type {
   AddCommentOptions,
@@ -20,41 +25,41 @@ import type {
   PrProvider,
   PrResponse,
   UpdatePrOptions,
-} from "./provider.mts";
+} from './provider.mts'
 
 type GqlPrNode = {
   author?:
     | {
-        login: string;
+        login: string
       }
-    | undefined;
-  baseRefName: string;
-  headRefName: string;
+    | undefined
+  baseRefName: string
+  headRefName: string
   mergeStateStatus:
-    | "BEHIND"
-    | "BLOCKED"
-    | "CLEAN"
-    | "DIRTY"
-    | "DRAFT"
-    | "HAS_HOOKS"
-    | "UNKNOWN"
-    | "UNSTABLE";
-  number: number;
-  state: "OPEN" | "CLOSED" | "MERGED";
-  title: string;
-};
+    | 'BEHIND'
+    | 'BLOCKED'
+    | 'CLEAN'
+    | 'DIRTY'
+    | 'DRAFT'
+    | 'HAS_HOOKS'
+    | 'UNKNOWN'
+    | 'UNSTABLE'
+  number: number
+  state: 'OPEN' | 'CLOSED' | 'MERGED'
+  title: string
+}
 
 type GqlPullRequestsResponse = {
   repository: {
     pullRequests: {
       pageInfo: {
-        endCursor: string | undefined;
-        hasNextPage: boolean;
-      };
-      nodes: GqlPrNode[];
-    };
-  };
-};
+        endCursor: string | undefined
+        hasNextPage: boolean
+      }
+      nodes: GqlPrNode[]
+    }
+  }
+}
 
 /**
  * GitHub provider for Pull Request operations.
@@ -64,41 +69,41 @@ type GqlPullRequestsResponse = {
  */
 export class GitHubProvider implements PrProvider {
   async createPr(options: CreatePrOptions): Promise<PrResponse> {
-    const { base, body, head, owner, repo, retries = 3, title } = options;
+    const { base, body, head, owner, repo, retries = 3, title } = options
 
-    const octokit = getOctokit();
-    const octokitPullsCreateParams = { base, body, head, owner, repo, title };
-    debugDir({ octokitPullsCreateParams });
+    const octokit = getOctokit()
+    const octokitPullsCreateParams = { base, body, head, owner, repo, title }
+    debugDir({ octokitPullsCreateParams })
 
     const result = await withGitHubRetry(
       async () => {
-        const response = await octokit.pulls.create(octokitPullsCreateParams);
-        return response;
+        const response = await octokit.pulls.create(octokitPullsCreateParams)
+        return response
       },
       `creating pull request for ${owner}/${repo}`,
       retries,
-    );
+    )
 
     if (!result.ok) {
-      throw new Error(result.cause ?? result.message);
+      throw new Error(result.cause ?? result.message)
     }
 
-    const response = result.data;
+    const response = result.data
     return {
       number: response.data.number,
       state: response.data.merged_at
-        ? "merged"
-        : response.data.state === "closed"
-          ? "closed"
-          : "open",
+        ? 'merged'
+        : response.data.state === 'closed'
+          ? 'closed'
+          : 'open',
       url: response.data.html_url,
-    };
+    }
   }
 
   async updatePr(options: UpdatePrOptions): Promise<void> {
-    const { base, head, owner, prNumber, repo } = options;
+    const { base, head, owner, prNumber, repo } = options
 
-    const octokit = getOctokit();
+    const octokit = getOctokit()
 
     // Merge the base branch into the head branch to update the PR.
     const mergeResult = await withGitHubRetry(
@@ -112,13 +117,13 @@ export class GitHubProvider implements PrProvider {
           base: head,
         }),
       `updating PR #${prNumber}`,
-    );
+    )
 
     if (!mergeResult.ok) {
-      throw new Error(mergeResult.cause || mergeResult.message);
+      throw new Error(mergeResult.cause || mergeResult.message)
     }
 
-    debug(`pr: updating stale PR #${prNumber}`);
+    debug(`pr: updating stale PR #${prNumber}`)
 
     // Check if update resulted in conflicts.
     const prDetailsResult = await withGitHubRetry(
@@ -129,55 +134,55 @@ export class GitHubProvider implements PrProvider {
           repo,
         }),
       `fetching PR #${prNumber} details`,
-    );
+    )
 
     if (!prDetailsResult.ok) {
-      throw new Error(prDetailsResult.cause || prDetailsResult.message);
+      throw new Error(prDetailsResult.cause || prDetailsResult.message)
     }
 
-    if (prDetailsResult.data.data.mergeable_state === "dirty") {
-      debug(`pr: PR #${prNumber} has conflicts after update`);
+    if (prDetailsResult.data.data.mergeable_state === 'dirty') {
+      debug(`pr: PR #${prNumber} has conflicts after update`)
 
       // Add comment explaining conflict.
       const commentResult = await withGitHubRetry(
         () =>
           octokit.issues.createComment({
             body:
-              "This PR has merge conflicts after updating from the base branch. " +
-              "Please resolve conflicts manually or close this PR and re-run `socket fix` " +
-              "to generate a new fix.",
+              'This PR has merge conflicts after updating from the base branch. ' +
+              'Please resolve conflicts manually or close this PR and re-run `socket fix` ' +
+              'to generate a new fix.',
             issue_number: prNumber,
             owner,
             repo,
           }),
         `adding conflict comment to PR #${prNumber}`,
-      );
+      )
 
       if (commentResult.ok) {
-        debug(`pr: added conflict comment to PR #${prNumber}`);
+        debug(`pr: added conflict comment to PR #${prNumber}`)
       }
     }
   }
 
   async listPrs(options: ListPrsOptions): Promise<PrMatch[]> {
-    const { author, ghsaId, owner, repo, states: statesValue = "all" } = options;
-    const checkAuthor = isNonEmptyString(author);
-    const octokitGraphql = getOctokitGraphql();
-    const matches: PrMatch[] = [];
+    const { author, ghsaId, owner, repo, states: statesValue = 'all' } = options
+    const checkAuthor = isNonEmptyString(author)
+    const octokitGraphql = getOctokitGraphql()
+    const matches: PrMatch[] = []
     const states = (
-      typeof statesValue === "string"
-        ? statesValue.toLowerCase() === "all"
+      typeof statesValue === 'string'
+        ? statesValue.toLowerCase() === 'all'
           ? [GQL_PR_STATE_OPEN, GQL_PR_STATE_CLOSED, GQL_PR_STATE_MERGED]
           : [statesValue]
         : [statesValue]
-    ).map((s) => s.toUpperCase());
+    ).map(s => s.toUpperCase())
 
     try {
-      let cursor: string | undefined = undefined;
-      let hasNextPage = true;
-      let pageIndex = 0;
+      let cursor: string | undefined = undefined
+      let hasNextPage = true
+      let pageIndex = 0
       // Include owner in cache key to avoid collisions with same repo name.
-      const gqlCacheKey = `${owner}::${repo}-pr-graphql-snapshot-${states.join("-").toLowerCase()}`;
+      const gqlCacheKey = `${owner}::${repo}-pr-graphql-snapshot-${states.join('-').toLowerCase()}`
       while (hasNextPage) {
         const gqlResp = (await cacheFetch(
           `${gqlCacheKey}-page-${pageIndex}`,
@@ -215,74 +220,74 @@ export class GitHubProvider implements PrProvider {
               },
             ),
           /* c8 ignore stop */
-        )) as GqlPullRequestsResponse;
+        )) as GqlPullRequestsResponse
 
         const { nodes, pageInfo } = gqlResp?.repository?.pullRequests ?? {
           nodes: [],
           pageInfo: { endCursor: undefined, hasNextPage: false },
-        };
+        }
 
         for (let i = 0, { length } = nodes; i < length; i += 1) {
-          const node = nodes[i]!;
-          const login = node.author?.login;
-          const matchesAuthor = checkAuthor ? login === author : true;
+          const node = nodes[i]!
+          const login = node.author?.login
+          const matchesAuthor = checkAuthor ? login === author : true
           // Note: Branch pattern matching removed - caller should filter.
           if (matchesAuthor) {
             matches.push({
               ...node,
               author: login ?? UNKNOWN_VALUE,
-            });
+            })
           }
         }
 
         // Continue to next page.
-        hasNextPage = pageInfo.hasNextPage;
-        cursor = pageInfo.endCursor;
-        pageIndex += 1;
+        hasNextPage = pageInfo.hasNextPage
+        cursor = pageInfo.endCursor
+        pageIndex += 1
 
         /* c8 ignore start - GQL_PAGE_SENTINEL safety limit; tests page through at most a few pages */
         if (pageIndex === GQL_PAGE_SENTINEL) {
           debug(
             `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
-          );
-          break;
+          )
+          break
         }
         /* c8 ignore stop */
 
         // Early exit optimization: if we found matches and only looking for specific GHSA,
         // we can stop pagination since we likely found what we need.
         if (matches.length > 0 && ghsaId) {
-          break;
+          break
         }
       }
     } catch (e) {
-      debug(`GraphQL pagination failed for ${owner}/${repo}`);
-      debugDir(e);
+      debug(`GraphQL pagination failed for ${owner}/${repo}`)
+      debugDir(e)
     }
 
-    return matches;
+    return matches
   }
 
   async deleteBranch(branch: string): Promise<boolean> {
     try {
-      const success = await gitDeleteRemoteBranch(branch);
+      const success = await gitDeleteRemoteBranch(branch)
       if (success) {
-        debug(`pr: deleted merged branch ${branch}`);
+        debug(`pr: deleted merged branch ${branch}`)
       } else {
-        debug(`pr: failed to delete branch ${branch}`);
+        debug(`pr: failed to delete branch ${branch}`)
       }
-      return success;
+      return success
     } catch (e) {
       // Don't treat this as a hard error - branch might already be deleted.
-      debug(formatErrorWithDetail(`pr: failed to delete branch ${branch}`, e));
-      debugDir(e);
-      return false;
+      debug(formatErrorWithDetail(`pr: failed to delete branch ${branch}`, e))
+      debugDir(e)
+      return false
     }
   }
 
   async addComment(options: AddCommentOptions): Promise<void> {
-    const { body, owner, prNumber, repo } = options;
-    const octokit = getOctokit();
+    const { body, owner, prNumber, repo } = options
+    const octokit = getOctokit()
 
     const result = await withGitHubRetry(
       () =>
@@ -293,20 +298,20 @@ export class GitHubProvider implements PrProvider {
           repo,
         }),
       `adding comment to PR #${prNumber}`,
-    );
+    )
 
     if (!result.ok) {
-      throw new Error(result.cause || result.message);
+      throw new Error(result.cause || result.message)
     }
 
-    debug(`pr: added comment to PR #${prNumber}`);
+    debug(`pr: added comment to PR #${prNumber}`)
   }
 
-  getProviderName(): "github" {
-    return "github";
+  getProviderName(): 'github' {
+    return 'github'
   }
 
   supportsGraphQL(): boolean {
-    return true;
+    return true
   }
 }

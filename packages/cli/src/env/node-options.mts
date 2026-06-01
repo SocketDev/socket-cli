@@ -3,6 +3,6 @@
  * runtime.
  */
 
-import { env } from "node:process";
+import { env } from 'node:process'
 
-export const NODE_OPTIONS = env["NODE_OPTIONS"];
+export const NODE_OPTIONS = env['NODE_OPTIONS']

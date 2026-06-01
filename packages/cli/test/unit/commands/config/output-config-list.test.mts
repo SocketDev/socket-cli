@@ -10,7 +10,7 @@
  * Related Files: - src/commands/config/output-config-list.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -20,170 +20,176 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
-}));
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock config utilities.
-const mockGetConfigValue = vi.hoisted(() => vi.fn(() => ({ ok: true, data: "test-value" })));
+const mockGetConfigValue = vi.hoisted(() =>
+  vi.fn(() => ({ ok: true, data: 'test-value' })),
+)
 const mockGetSupportedConfigKeys = vi.hoisted(() =>
-  vi.fn(() => ["apiToken", "defaultOrg", "enforcedOrgs"]),
-);
-const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(() => false));
-const mockIsSensitiveConfigKey = vi.hoisted(() => vi.fn((key: string) => key === "apiToken"));
+  vi.fn(() => ['apiToken', 'defaultOrg', 'enforcedOrgs']),
+)
+const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(() => false))
+const mockIsSensitiveConfigKey = vi.hoisted(() =>
+  vi.fn((key: string) => key === 'apiToken'),
+)
 
-vi.mock(import("../../../../src/util/config.mts"), () => ({
+vi.mock(import('../../../../src/util/config.mts'), () => ({
   getConfigValue: mockGetConfigValue,
   getSupportedConfigKeys: mockGetSupportedConfigKeys,
   isConfigFromFlag: mockIsConfigFromFlag,
   isSensitiveConfigKey: mockIsSensitiveConfigKey,
-}));
+}))
 
-vi.mock(import("../../../../src/util/output/markdown.mts"), () => ({
+vi.mock(import('../../../../src/util/output/markdown.mts'), () => ({
   mdHeader: (text: string) => `# ${text}`,
-}));
+}))
 
-vi.mock(import("../../../../src/util/output/result-json.mjs"), () => ({
+vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
-}));
+}))
 
-import { outputConfigList } from "../../../../src/commands/config/output-config-list.mts";
+import { outputConfigList } from '../../../../src/commands/config/output-config-list.mts'
 
-describe("output-config-list", () => {
+describe('output-config-list', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-    mockIsConfigFromFlag.mockReturnValue(false);
-    mockGetConfigValue.mockReturnValue({ ok: true, data: "test-value" });
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+    mockIsConfigFromFlag.mockReturnValue(false)
+    mockGetConfigValue.mockReturnValue({ ok: true, data: 'test-value' })
+  })
 
-  describe("outputConfigList", () => {
-    describe("JSON output", () => {
-      it("outputs all config keys as JSON", async () => {
+  describe('outputConfigList', () => {
+    describe('JSON output', () => {
+      it('outputs all config keys as JSON', async () => {
         mockGetConfigValue
-          .mockReturnValueOnce({ ok: true, data: "sk_live_xxx" })
-          .mockReturnValueOnce({ ok: true, data: "my-org" })
-          .mockReturnValueOnce({ ok: true, data: undefined });
+          .mockReturnValueOnce({ ok: true, data: 'sk_live_xxx' })
+          .mockReturnValueOnce({ ok: true, data: 'my-org' })
+          .mockReturnValueOnce({ ok: true, data: undefined })
 
-        await outputConfigList({ full: true, outputKind: "json" });
+        await outputConfigList({ full: true, outputKind: 'json' })
 
-        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok": true'));
-      });
+        expect(mockLogger.log).toHaveBeenCalledWith(
+          expect.stringContaining('"ok": true'),
+        )
+      })
 
-      it("masks sensitive keys when full is false", async () => {
+      it('masks sensitive keys when full is false', async () => {
         mockGetConfigValue
-          .mockReturnValueOnce({ ok: true, data: "sk_live_xxx" })
-          .mockReturnValueOnce({ ok: true, data: "my-org" })
-          .mockReturnValueOnce({ ok: true, data: undefined });
+          .mockReturnValueOnce({ ok: true, data: 'sk_live_xxx' })
+          .mockReturnValueOnce({ ok: true, data: 'my-org' })
+          .mockReturnValueOnce({ ok: true, data: undefined })
 
-        await outputConfigList({ full: false, outputKind: "json" });
+        await outputConfigList({ full: false, outputKind: 'json' })
 
-        const loggedJson = mockLogger.log.mock.calls[0]![0];
-        expect(loggedJson).toContain("********");
-      });
+        const loggedJson = mockLogger.log.mock.calls[0]![0]
+        expect(loggedJson).toContain('********')
+      })
 
-      it("sets exit code on config retrieval failure", async () => {
+      it('sets exit code on config retrieval failure', async () => {
         mockGetConfigValue.mockReturnValue({
           ok: false,
-          message: "Failed to read",
-        });
+          message: 'Failed to read',
+        })
 
-        await outputConfigList({ full: true, outputKind: "json" });
+        await outputConfigList({ full: true, outputKind: 'json' })
 
-        expect(process.exitCode).toBe(1);
-      });
+        expect(process.exitCode).toBe(1)
+      })
 
-      it("includes readOnly status in output", async () => {
-        mockIsConfigFromFlag.mockReturnValue(true);
-        mockGetConfigValue.mockReturnValue({ ok: true, data: "value" });
+      it('includes readOnly status in output', async () => {
+        mockIsConfigFromFlag.mockReturnValue(true)
+        mockGetConfigValue.mockReturnValue({ ok: true, data: 'value' })
 
-        await outputConfigList({ full: true, outputKind: "json" });
+        await outputConfigList({ full: true, outputKind: 'json' })
 
-        const loggedJson = mockLogger.log.mock.calls[0]![0];
-        expect(loggedJson).toContain('"readOnly": true');
-      });
-    });
+        const loggedJson = mockLogger.log.mock.calls[0]![0]
+        expect(loggedJson).toContain('"readOnly": true')
+      })
+    })
 
-    describe("Text output", () => {
-      it("outputs config header and values", async () => {
+    describe('Text output', () => {
+      it('outputs config header and values', async () => {
         mockGetConfigValue
-          .mockReturnValueOnce({ ok: true, data: "sk_live_xxx" })
-          .mockReturnValueOnce({ ok: true, data: "my-org" })
-          .mockReturnValueOnce({ ok: true, data: undefined });
+          .mockReturnValueOnce({ ok: true, data: 'sk_live_xxx' })
+          .mockReturnValueOnce({ ok: true, data: 'my-org' })
+          .mockReturnValueOnce({ ok: true, data: undefined })
 
-        await outputConfigList({ full: true, outputKind: "text" });
+        await outputConfigList({ full: true, outputKind: 'text' })
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("# Local CLI Config");
-        expect(logs).toContain("my-org");
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('# Local CLI Config')
+        expect(logs).toContain('my-org')
+      })
 
-      it("masks sensitive keys in text output when full is false", async () => {
+      it('masks sensitive keys in text output when full is false', async () => {
         mockGetConfigValue
-          .mockReturnValueOnce({ ok: true, data: "sk_live_xxx" })
-          .mockReturnValueOnce({ ok: true, data: "my-org" })
-          .mockReturnValueOnce({ ok: true, data: undefined });
+          .mockReturnValueOnce({ ok: true, data: 'sk_live_xxx' })
+          .mockReturnValueOnce({ ok: true, data: 'my-org' })
+          .mockReturnValueOnce({ ok: true, data: undefined })
 
-        await outputConfigList({ full: false, outputKind: "text" });
+        await outputConfigList({ full: false, outputKind: 'text' })
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("********");
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('********')
+      })
 
-      it("shows read-only note when config from flag", async () => {
-        mockIsConfigFromFlag.mockReturnValue(true);
-        mockGetConfigValue.mockReturnValue({ ok: true, data: "test" });
+      it('shows read-only note when config from flag', async () => {
+        mockIsConfigFromFlag.mockReturnValue(true)
+        mockGetConfigValue.mockReturnValue({ ok: true, data: 'test' })
 
-        await outputConfigList({ full: false, outputKind: "text" });
+        await outputConfigList({ full: false, outputKind: 'text' })
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("read-only");
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('read-only')
+      })
 
-      it("shows failed to read message on error", async () => {
+      it('shows failed to read message on error', async () => {
         mockGetConfigValue.mockReturnValue({
           ok: false,
-          message: "Permission denied",
-        });
+          message: 'Permission denied',
+        })
 
-        await outputConfigList({ full: true, outputKind: "text" });
+        await outputConfigList({ full: true, outputKind: 'text' })
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("failed to read");
-        expect(logs).toContain("Permission denied");
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('failed to read')
+        expect(logs).toContain('Permission denied')
+      })
 
-      it("shows <none> for undefined values in full mode", async () => {
-        mockGetConfigValue.mockReturnValue({ ok: true, data: undefined });
+      it('shows <none> for undefined values in full mode', async () => {
+        mockGetConfigValue.mockReturnValue({ ok: true, data: undefined })
 
-        await outputConfigList({ full: true, outputKind: "text" });
+        await outputConfigList({ full: true, outputKind: 'text' })
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("<none>");
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('<none>')
+      })
 
-      it("handles array values", async () => {
+      it('handles array values', async () => {
         mockGetConfigValue
-          .mockReturnValueOnce({ ok: true, data: "token" })
-          .mockReturnValueOnce({ ok: true, data: "my-org" })
-          .mockReturnValueOnce({ ok: true, data: ["org1", "org2"] });
+          .mockReturnValueOnce({ ok: true, data: 'token' })
+          .mockReturnValueOnce({ ok: true, data: 'my-org' })
+          .mockReturnValueOnce({ ok: true, data: ['org1', 'org2'] })
 
-        await outputConfigList({ full: true, outputKind: "text" });
+        await outputConfigList({ full: true, outputKind: 'text' })
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("org1, org2");
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('org1, org2')
+      })
 
-      it("shows <none> for empty array in full mode", async () => {
+      it('shows <none> for empty array in full mode', async () => {
         // value.join(', ') === '' → falls back to '<none>'.
-        mockGetConfigValue.mockReturnValue({ ok: true, data: [] });
+        mockGetConfigValue.mockReturnValue({ ok: true, data: [] })
 
-        await outputConfigList({ full: true, outputKind: "text" });
+        await outputConfigList({ full: true, outputKind: 'text' })
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("\n");
-        expect(logs).toContain("<none>");
-      });
-    });
-  });
-});
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
+        expect(logs).toContain('<none>')
+      })
+    })
+  })
+})

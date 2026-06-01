@@ -10,9 +10,9 @@
  */
 function getLiteralValue(t, node) {
   if (t.isNullLiteral(node)) {
-    return undefined;
+    return undefined
   }
-  return node.value;
+  return node.value
 }
 
 /**
@@ -24,7 +24,7 @@ function isLiteralValue(t, node) {
     t.isStringLiteral(node) ||
     t.isBooleanLiteral(node) ||
     t.isNullLiteral(node)
-  );
+  )
 }
 
 /**
@@ -32,21 +32,21 @@ function isLiteralValue(t, node) {
  */
 export function valueToLiteral(t, value) {
   if (value === null) {
-    return t.nullLiteral();
+    return t.nullLiteral()
   }
   if (value === undefined) {
-    return t.identifier("undefined");
+    return t.identifier('undefined')
   }
-  if (typeof value === "string") {
-    return t.stringLiteral(value);
+  if (typeof value === 'string') {
+    return t.stringLiteral(value)
   }
-  if (typeof value === "number") {
-    return t.numericLiteral(value);
+  if (typeof value === 'number') {
+    return t.numericLiteral(value)
   }
-  if (typeof value === "boolean") {
-    return t.booleanLiteral(value);
+  if (typeof value === 'boolean') {
+    return t.booleanLiteral(value)
   }
-  throw new Error(`Unsupported enum value type: ${typeof value}`);
+  throw new Error(`Unsupported enum value type: ${typeof value}`)
 }
 
 /**
@@ -69,38 +69,38 @@ export function valueToLiteral(t, value) {
  * @returns {object} Babel plugin object
  */
 export default function inlineConstEnum(babel, options = {}) {
-  const { types: t } = babel;
-  const { enums = {}, scanDeclarations = false } = options;
+  const { types: t } = babel
+  const { enums = {}, scanDeclarations = false } = options
 
   // Map of enum name to member values.
-  const enumMap = new Map(Object.entries(enums));
+  const enumMap = new Map(Object.entries(enums))
 
   return {
-    name: "inline-const-enum",
+    name: 'inline-const-enum',
 
     visitor: {
       // Scan for enum declarations if enabled.
       // Note: This has limited support and may not catch all cases.
       VariableDeclaration(path) {
         if (!scanDeclarations) {
-          return;
+          return
         }
 
         // Look for: const MyEnum = { Value: 0, ... }
-        const { declarations } = path.node;
+        const { declarations } = path.node
 
         for (let i = 0, { length } = declarations; i < length; i += 1) {
-          const decl = declarations[i];
+          const decl = declarations[i]
           if (
             !t.isVariableDeclarator(decl) ||
             !t.isIdentifier(decl.id) ||
             !t.isObjectExpression(decl.init)
           ) {
-            continue;
+            continue
           }
 
-          const enumName = decl.id.name;
-          const enumValues = {};
+          const enumName = decl.id.name
+          const enumValues = {}
 
           // Extract property values.
           for (const prop of decl.init.properties) {
@@ -109,42 +109,42 @@ export default function inlineConstEnum(babel, options = {}) {
               !t.isIdentifier(prop.key) ||
               !isLiteralValue(t, prop.value)
             ) {
-              continue;
+              continue
             }
 
-            enumValues[prop.key.name] = getLiteralValue(t, prop.value);
+            enumValues[prop.key.name] = getLiteralValue(t, prop.value)
           }
 
           if (Object.keys(enumValues).length > 0) {
-            enumMap.set(enumName, enumValues);
+            enumMap.set(enumName, enumValues)
           }
         }
       },
 
       // Inline enum member access: MyEnum.Value
       MemberExpression(path) {
-        const { object, property } = path.node;
+        const { object, property } = path.node
 
         // Match: EnumName.MemberName
         if (!t.isIdentifier(object) || !t.isIdentifier(property)) {
-          return;
+          return
         }
 
-        const enumName = object.name;
-        const memberName = property.name;
+        const enumName = object.name
+        const memberName = property.name
 
         // Check if we have this enum.
-        const enumDef = enumMap.get(enumName);
+        const enumDef = enumMap.get(enumName)
         if (!enumDef || !(memberName in enumDef)) {
-          return;
+          return
         }
 
-        const value = enumDef[memberName];
+        const value = enumDef[memberName]
 
         // Replace with literal value.
-        const replacement = valueToLiteral(t, value);
-        path.replaceWith(replacement);
+        const replacement = valueToLiteral(t, value)
+        path.replaceWith(replacement)
       },
     },
-  };
+  }
 }

@@ -6,57 +6,57 @@
  * Show what would be deleted.
  */
 
-import { readdirSync, statSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { parseArgs } from "node:util";
+import { readdirSync, statSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { parseArgs } from 'node:util'
 
-import { safeDelete } from "@socketsecurity/lib-stable/fs/safe";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { getGlobalCacheDirs } from "../packages/cli/scripts/constants/paths.mts";
+import { getGlobalCacheDirs } from '../packages/cli/scripts/constants/paths.mts'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const ROOT_DIR = join(__dirname, "..");
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const ROOT_DIR = join(__dirname, '..')
 
 const { values } = parseArgs({
   options: {
-    all: { type: "boolean" },
-    "dry-run": { type: "boolean" },
+    all: { type: 'boolean' },
+    'dry-run': { type: 'boolean' },
   },
   strict: false,
-});
+})
 
-const dryRun = values["dry-run"];
-const cleanAll = values.all;
+const dryRun = values['dry-run']
+const cleanAll = values.all
 
 interface CacheDirInfo {
-  package: string;
-  path: string;
+  package: string
+  path: string
 }
 
 interface CacheEntry {
-  name: string;
-  path: string;
-  size: number;
-  mtime: Date;
-  ageD: number;
+  name: string
+  path: string
+  size: number
+  mtime: Date
+  ageD: number
 }
 
 /**
  * Analyze cache directory and determine what to clean.
  */
 function analyzeCacheDir(cacheDir: string): CacheEntry[] {
-  const entries: CacheEntry[] = [];
+  const entries: CacheEntry[] = []
 
   try {
-    const items = readdirSync(cacheDir);
+    const items = readdirSync(cacheDir)
     for (let i = 0, { length } = items; i < length; i += 1) {
-      const item = items[i];
-      const itemPath = join(cacheDir, item);
-      const stats = statSync(itemPath);
+      const item = items[i]
+      const itemPath = join(cacheDir, item)
+      const stats = statSync(itemPath)
 
       if (stats.isDirectory()) {
         entries.push({
@@ -64,43 +64,45 @@ function analyzeCacheDir(cacheDir: string): CacheEntry[] {
           path: itemPath,
           size: getDirSize(itemPath),
           mtime: stats.mtime,
-          ageD: Math.floor((Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60 * 24)),
-        });
+          ageD: Math.floor(
+            (Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60 * 24),
+          ),
+        })
       }
     }
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    logger.error(`Error analyzing ${cacheDir}: ${message}`);
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Error analyzing ${cacheDir}: ${message}`)
   }
 
-  return entries.toSorted((a, b) => b.mtime.getTime() - a.mtime.getTime());
+  return entries.toSorted((a, b) => b.mtime.getTime() - a.mtime.getTime())
 }
 
 /**
  * Find all .cache directories in packages.
  */
 function findCacheDirs(): CacheDirInfo[] {
-  const cacheDirs: CacheDirInfo[] = [];
-  const packagesDir = join(ROOT_DIR, "packages");
+  const cacheDirs: CacheDirInfo[] = []
+  const packagesDir = join(ROOT_DIR, 'packages')
 
   try {
-    const packages = readdirSync(packagesDir);
+    const packages = readdirSync(packagesDir)
     for (let i = 0, { length } = packages; i < length; i += 1) {
-      const pkg = packages[i];
-      const cacheDir = join(packagesDir, pkg, ".cache");
+      const pkg = packages[i]
+      const cacheDir = join(packagesDir, pkg, '.cache')
       try {
-        statSync(cacheDir);
-        cacheDirs.push({ package: pkg, path: cacheDir });
+        statSync(cacheDir)
+        cacheDirs.push({ package: pkg, path: cacheDir })
       } catch {
         // No cache dir, skip.
       }
     }
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    logger.error(`Error scanning packages: ${message}`);
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Error scanning packages: ${message}`)
   }
 
-  return cacheDirs;
+  return cacheDirs
 }
 
 /**
@@ -108,121 +110,127 @@ function findCacheDirs(): CacheDirInfo[] {
  */
 function formatSize(bytes: number): string {
   if (bytes < 1024) {
-    return `${bytes} B`;
+    return `${bytes} B`
   }
   if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024).toFixed(1)} KB`
   }
   if (bytes < 1024 * 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
 /**
  * Get directory size recursively.
  */
 function getDirSize(dir: string): number {
-  let size = 0;
+  let size = 0
   try {
-    const items = readdirSync(dir);
+    const items = readdirSync(dir)
     for (let i = 0, { length } = items; i < length; i += 1) {
-      const item = items[i];
-      const itemPath = join(dir, item);
-      const stats = statSync(itemPath);
+      const item = items[i]
+      const itemPath = join(dir, item)
+      const stats = statSync(itemPath)
       if (stats.isDirectory()) {
-        size += getDirSize(itemPath);
+        size += getDirSize(itemPath)
       } else {
-        size += stats.size;
+        size += stats.size
       }
     }
   } catch {
     // Ignore errors.
   }
-  return size;
+  return size
 }
 
 async function main(): Promise<void> {
-  const cacheDirs = findCacheDirs();
+  const cacheDirs = findCacheDirs()
 
   if (!cacheDirs.length) {
-    logger.log("No cache directories found.");
-    return;
+    logger.log('No cache directories found.')
+    return
   }
 
-  logger.log(`Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? "y" : "ies"}:`);
-  logger.log("");
+  logger.log(
+    `Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? 'y' : 'ies'}:`,
+  )
+  logger.log('')
 
-  let totalDeleted = 0;
-  let totalSize = 0;
+  let totalDeleted = 0
+  let totalSize = 0
 
   for (const { package: pkg, path: cacheDir } of cacheDirs) {
-    const entries = analyzeCacheDir(cacheDir);
+    const entries = analyzeCacheDir(cacheDir)
 
     if (!entries.length) {
-      logger.log(`📦 ${pkg}: Empty cache`);
-      continue;
+      logger.log(`📦 ${pkg}: Empty cache`)
+      continue
     }
 
-    logger.log(`📦 ${pkg}:`);
+    logger.log(`📦 ${pkg}:`)
 
     if (cleanAll) {
       // Delete everything.
       for (let i = 0, { length } = entries; i < length; i += 1) {
-        const entry = entries[i];
+        const entry = entries[i]
         logger.log(
-          `  ${dryRun ? "[DRY RUN]" : "✗"} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
-        );
+          `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
+        )
         if (!dryRun) {
-          await safeDelete(entry.path);
+          await safeDelete(entry.path)
         }
-        totalDeleted++;
-        totalSize += entry.size;
+        totalDeleted++
+        totalSize += entry.size
       }
     } else {
       // Keep most recent, delete older ones.
-      const [latest, ...older] = entries;
+      const [latest, ...older] = entries
 
-      logger.log(`  ✓ ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`);
+      logger.log(
+        `  ✓ ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
+      )
 
       for (let i = 0, { length } = older; i < length; i += 1) {
-        const entry = older[i];
+        const entry = older[i]
         logger.log(
-          `  ${dryRun ? "[DRY RUN]" : "✗"} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
-        );
+          `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
+        )
         if (!dryRun) {
-          await safeDelete(entry.path);
+          await safeDelete(entry.path)
         }
-        totalDeleted++;
-        totalSize += entry.size;
+        totalDeleted++
+        totalSize += entry.size
       }
     }
 
-    logger.log("");
+    logger.log('')
   }
 
   if (totalDeleted > 0) {
     logger.log(
-      `${dryRun ? "Would delete" : "Deleted"} ${totalDeleted} cache entr${totalDeleted === 1 ? "y" : "ies"} (${formatSize(totalSize)})`,
-    );
+      `${dryRun ? 'Would delete' : 'Deleted'} ${totalDeleted} cache entr${totalDeleted === 1 ? 'y' : 'ies'} (${formatSize(totalSize)})`,
+    )
   } else {
-    logger.success("All caches are current - nothing to delete");
+    logger.success('All caches are current - nothing to delete')
   }
 
   // Clean global caches if --all flag is used.
   if (cleanAll) {
-    logger.log("");
-    logger.log("🌍 Cleaning global caches:");
+    logger.log('')
+    logger.log('🌍 Cleaning global caches:')
 
-    const globalCaches = getGlobalCacheDirs();
+    const globalCaches = getGlobalCacheDirs()
 
     for (const { name, path } of globalCaches) {
       try {
-        const stats = statSync(path);
-        const size = stats.isDirectory() ? getDirSize(path) : stats.size;
-        logger.log(`  ${dryRun ? "[DRY RUN]" : "✗"} ${name} (${formatSize(size)})`);
+        const stats = statSync(path)
+        const size = stats.isDirectory() ? getDirSize(path) : stats.size
+        logger.log(
+          `  ${dryRun ? '[DRY RUN]' : '✗'} ${name} (${formatSize(size)})`,
+        )
         if (!dryRun) {
-          await safeDelete(path);
+          await safeDelete(path)
         }
       } catch {
         // Cache doesn't exist, skip.
@@ -231,13 +239,13 @@ async function main(): Promise<void> {
   }
 
   if (dryRun) {
-    logger.log("");
-    logger.log("Run without --dry-run to actually delete.");
+    logger.log('')
+    logger.log('Run without --dry-run to actually delete.')
   }
 }
 
 main().catch((e: unknown) => {
-  const message = e instanceof Error ? e.message : String(e);
-  logger.error(`Error: ${message}`);
-  process.exitCode = 1;
-});
+  const message = e instanceof Error ? e.message : String(e)
+  logger.error(`Error: ${message}`)
+  process.exitCode = 1
+})

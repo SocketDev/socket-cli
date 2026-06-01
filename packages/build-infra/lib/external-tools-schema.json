@@ -21,7 +21,10 @@
             "enum": ["npm", "pip", "pnpm"]
           },
           "notes": {
-            "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
           },
           "repository": { "type": "string" },
           "release": { "type": "string", "enum": ["asset", "archive"] },

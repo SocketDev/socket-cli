@@ -7,28 +7,28 @@
  * with-subcommands.mts and with-subcommands-help.mts.
  */
 
-import { indentString } from "@socketsecurity/lib-stable/strings/format";
+import { indentString } from '@socketsecurity/lib-stable/strings/format'
 
-import type { Options } from "../../meow.mts";
+import type { Options } from '../../meow.mts'
 
 export interface CliAlias {
-  description: string;
-  argv: readonly string[];
-  hidden?: boolean | undefined;
+  description: string
+  argv: readonly string[]
+  hidden?: boolean | undefined
 }
 
-export type CliAliases = Record<string, CliAlias>;
+export type CliAliases = Record<string, CliAlias>
 
 export type CliSubcommandRun = (
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   context: { parentName: string; rawArgv?: readonly string[] | undefined },
-) => Promise<void> | void;
+) => Promise<void> | void
 
 export interface CliSubcommand {
-  description: string;
-  hidden?: boolean | undefined;
-  run: CliSubcommandRun;
+  description: string
+  hidden?: boolean | undefined
+  run: CliSubcommandRun
 }
 
 /**
@@ -42,28 +42,29 @@ export interface CliSubcommand {
  * `src/commands.mts`); the help builder reads it through `MeowOptions.buckets`
  * so this generic util doesn't need to import the concrete registry.
  */
-export type CliBucket = "main" | "api" | "tools" | "config";
+export type CliBucket = 'main' | 'api' | 'tools' | 'config'
 
-export type CliBuckets = Readonly<Record<string, CliBucket>>;
+export type CliBuckets = Readonly<Record<string, CliBucket>>
 
-export interface MeowOptions extends Omit<Options, "argv" | "importMeta"> {
-  aliases?: CliAliases | undefined;
+export interface MeowOptions extends Omit<Options, 'argv' | 'importMeta'> {
+  aliases?: CliAliases | undefined
   /**
    * Per-subcommand bucket assignments for the root-help layout. Only consumed
    * by the root-command help text; ignored for sub-commands.
    */
-  buckets?: CliBuckets | undefined;
+  buckets?: CliBuckets | undefined
   // When no sub-command is given, default to this sub-command.
-  defaultSub?: string | undefined;
+  defaultSub?: string | undefined
 }
 
-const HELP_PAD_NAME = 28;
+const HELP_PAD_NAME = 28
 
 /**
  * Format a command description for help output.
  */
 export function description(command: CliSubcommand | undefined): string {
-  const description = command?.description;
-  const str = typeof description === "string" ? description : String(description);
-  return indentString(str, { count: HELP_PAD_NAME }).trimStart();
+  const description = command?.description
+  const str =
+    typeof description === 'string' ? description : String(description)
+  return indentString(str, { count: HELP_PAD_NAME }).trimStart()
 }

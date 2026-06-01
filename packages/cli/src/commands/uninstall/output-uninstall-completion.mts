@@ -1,39 +1,45 @@
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 
-import type { CResult } from "../../types.mts";
-const logger = getDefaultLogger();
+import type { CResult } from '../../types.mts'
+const logger = getDefaultLogger()
 
 export async function outputUninstallCompletion(
   result: CResult<{ action: string; left: string[] }>,
   targetName: string,
 ) {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1;
+    process.exitCode = result.code ?? 1
 
-    logger.fail(failMsgWithBadge(result.message, result.cause));
-    return;
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
   }
 
-  logger.log(result.message);
-  logger.log("");
-  logger.log("To remove the tab completion from the current shell (instance of bash) you");
-  logger.log("can run this command (due to a bash limitation NodeJS cannot do this):");
-  logger.log("");
-  logger.log(`    complete -r ${targetName}`);
-  logger.log("");
-  logger.log("Next time you open a terminal it should no longer be there, regardless.");
-  logger.log("");
+  logger.log(result.message)
+  logger.log('')
+  logger.log(
+    'To remove the tab completion from the current shell (instance of bash) you',
+  )
+  logger.log(
+    'can run this command (due to a bash limitation NodeJS cannot do this):',
+  )
+  logger.log('')
+  logger.log(`    complete -r ${targetName}`)
+  logger.log('')
+  logger.log(
+    'Next time you open a terminal it should no longer be there, regardless.',
+  )
+  logger.log('')
   if (result.data.left.length) {
     logger.log(
-      "Detected more Socket Alias completions left in bashrc. Run `socket uninstall <cmd>` to remove them too.",
-    );
-    logger.log("");
+      'Detected more Socket Alias completions left in bashrc. Run `socket uninstall <cmd>` to remove them too.',
+    )
+    logger.log('')
     for (let i = 0, { length } = result.data.left; i < length; i += 1) {
-      const str = result.data.left[i];
-      logger.log(`  - \`${str}\``);
+      const str = result.data.left[i]
+      logger.log(`  - \`${str}\``)
     }
-    logger.log("");
+    logger.log('')
   }
 }

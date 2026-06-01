@@ -9,5 +9,5 @@
 // Node.js --import expects this export to exist.
 export function resolve(specifier, context, nextResolve) {
   // Pass through to default resolver - no custom aliasing.
-  return nextResolve(specifier, context);
+  return nextResolve(specifier, context)
 }

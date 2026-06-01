@@ -13,40 +13,40 @@
  * Related Files: - src/generateReportShape.mts (implementation)
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
 import {
   getScanWithEnvVars,
   getSimpleCleanScan,
-} from "../../../helpers/generate-report-test-helpers.mts";
-import { generateReport } from "../../../../src/commands/scan/generate-report.mts";
+} from '../../../helpers/generate-report-test-helpers.mts'
+import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 
-import type { ScanReport } from "../../../../src/commands/scan/generate-report.mts";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { ScanReport } from '../../../../src/commands/scan/generate-report.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // biome-ignore lint/correctness/noUnusedVariables: Destructuring import for test setup
-type SecurityPolicyData = SocketSdkSuccessResult<"getOrgSecurityPolicy">["data"];
+type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
 
-describe("generate-report - report shape", () => {
-  describe("report-level=warn", () => {
-    it("should return a healthy report without alerts when there are no violations", () => {
+describe('generate-report - report shape', () => {
+  describe('report-level=warn', () => {
+    it('should return a healthy report without alerts when there are no violations', () => {
       const result = generateReport(
         getSimpleCleanScan(),
         {
           securityPolicyRules: {
             gptSecurity: {
-              action: "ignore",
+              action: 'ignore',
             },
           },
-          securityPolicyDefault: "medium",
+          securityPolicyDefault: 'medium',
         },
         {
-          orgSlug: "fakeOrg",
-          scanId: "scan-ai-dee",
-          fold: "none",
-          reportLevel: "warn",
+          orgSlug: 'fakeOrg',
+          scanId: 'scan-ai-dee',
+          fold: 'none',
+          reportLevel: 'warn',
         },
-      );
+      )
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -62,132 +62,132 @@ describe("generate-report - report shape", () => {
           },
           "ok": true,
         }
-      `);
-      expect(result.ok).toBe(true);
-      expect(result.ok && result.data.healthy).toBe(true);
-      expect((result.data as ScanReport).alerts?.size).toBe(0);
-    });
+      `)
+      expect(result.ok).toBe(true)
+      expect(result.ok && result.data.healthy).toBe(true)
+      expect((result.data as ScanReport).alerts?.size).toBe(0)
+    })
 
-    it("should return a sick report with alert when an alert violates at error", () => {
+    it('should return a sick report with alert when an alert violates at error', () => {
       const result = generateReport(
         getScanWithEnvVars(),
         {
           securityPolicyRules: {
             envVars: {
-              action: "error",
+              action: 'error',
             },
           },
-          securityPolicyDefault: "medium",
+          securityPolicyDefault: 'medium',
         },
         {
-          orgSlug: "fakeOrg",
-          scanId: "scan-ai-dee",
-          fold: "none",
-          reportLevel: "warn",
+          orgSlug: 'fakeOrg',
+          scanId: 'scan-ai-dee',
+          fold: 'none',
+          reportLevel: 'warn',
         },
-      );
+      )
 
-      expect(result.ok).toBe(true);
-      expect(result.ok && result.data.healthy).toBe(false);
-      expect((result.data as ScanReport).alerts?.size).toBeGreaterThan(0);
-    });
+      expect(result.ok).toBe(true)
+      expect(result.ok && result.data.healthy).toBe(false)
+      expect((result.data as ScanReport).alerts?.size).toBeGreaterThan(0)
+    })
 
-    it("should return a healthy report without alerts when an alert violates at warn", () => {
+    it('should return a healthy report without alerts when an alert violates at warn', () => {
       const result = generateReport(
         getScanWithEnvVars(),
         {
           securityPolicyRules: {
             envVars: {
-              action: "warn",
+              action: 'warn',
             },
           },
-          securityPolicyDefault: "medium",
+          securityPolicyDefault: 'medium',
         },
         {
-          orgSlug: "fakeOrg",
-          scanId: "scan-ai-dee",
-          fold: "none",
-          reportLevel: "error", // When reportLevel is 'error', warns don't show up as alerts
+          orgSlug: 'fakeOrg',
+          scanId: 'scan-ai-dee',
+          fold: 'none',
+          reportLevel: 'error', // When reportLevel is 'error', warns don't show up as alerts
         },
-      );
+      )
 
-      expect(result.ok).toBe(true);
-      expect(result.ok && result.data.healthy).toBe(true);
-      expect((result.data as ScanReport).alerts?.size).toBe(0);
-    });
-  });
+      expect(result.ok).toBe(true)
+      expect(result.ok && result.data.healthy).toBe(true)
+      expect((result.data as ScanReport).alerts?.size).toBe(0)
+    })
+  })
 
-  describe("report-level=error", () => {
-    it("should return a healthy report without alerts when there are no violations", () => {
+  describe('report-level=error', () => {
+    it('should return a healthy report without alerts when there are no violations', () => {
       const result = generateReport(
         getSimpleCleanScan(),
         {
           securityPolicyRules: {
             gptSecurity: {
-              action: "ignore",
+              action: 'ignore',
             },
           },
-          securityPolicyDefault: "medium",
+          securityPolicyDefault: 'medium',
         },
         {
-          orgSlug: "fakeOrg",
-          scanId: "scan-ai-dee",
-          fold: "none",
-          reportLevel: "error",
+          orgSlug: 'fakeOrg',
+          scanId: 'scan-ai-dee',
+          fold: 'none',
+          reportLevel: 'error',
         },
-      );
+      )
 
-      expect(result.ok).toBe(true);
-      expect(result.ok && result.data.healthy).toBe(true);
-      expect((result.data as ScanReport).alerts?.size).toBe(0);
-    });
+      expect(result.ok).toBe(true)
+      expect(result.ok && result.data.healthy).toBe(true)
+      expect((result.data as ScanReport).alerts?.size).toBe(0)
+    })
 
-    it("should return a sick report with alert when an alert violates at error", () => {
+    it('should return a sick report with alert when an alert violates at error', () => {
       const result = generateReport(
         getScanWithEnvVars(),
         {
           securityPolicyRules: {
             envVars: {
-              action: "error",
+              action: 'error',
             },
           },
-          securityPolicyDefault: "medium",
+          securityPolicyDefault: 'medium',
         },
         {
-          orgSlug: "fakeOrg",
-          scanId: "scan-ai-dee",
-          fold: "none",
-          reportLevel: "error",
+          orgSlug: 'fakeOrg',
+          scanId: 'scan-ai-dee',
+          fold: 'none',
+          reportLevel: 'error',
         },
-      );
+      )
 
-      expect(result.ok).toBe(true);
-      expect(result.ok && result.data.healthy).toBe(false);
-      expect((result.data as ScanReport).alerts?.size).toBeGreaterThan(0);
-    });
+      expect(result.ok).toBe(true)
+      expect(result.ok && result.data.healthy).toBe(false)
+      expect((result.data as ScanReport).alerts?.size).toBeGreaterThan(0)
+    })
 
-    it("should return a healthy report without alerts when an alert violates at warn", () => {
+    it('should return a healthy report without alerts when an alert violates at warn', () => {
       const result = generateReport(
         getScanWithEnvVars(),
         {
           securityPolicyRules: {
             envVars: {
-              action: "warn",
+              action: 'warn',
             },
           },
-          securityPolicyDefault: "medium",
+          securityPolicyDefault: 'medium',
         },
         {
-          orgSlug: "fakeOrg",
-          scanId: "scan-ai-dee",
-          fold: "none",
-          reportLevel: "error",
+          orgSlug: 'fakeOrg',
+          scanId: 'scan-ai-dee',
+          fold: 'none',
+          reportLevel: 'error',
         },
-      );
+      )
 
-      expect(result.ok).toBe(true);
-      expect(result.ok && result.data.healthy).toBe(true);
-      expect((result.data as ScanReport).alerts?.size).toBe(0);
-    });
-  });
-});
+      expect(result.ok).toBe(true)
+      expect(result.ok && result.data.healthy).toBe(true)
+      expect((result.data as ScanReport).alerts?.size).toBe(0)
+    })
+  })
+})

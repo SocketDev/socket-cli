@@ -6,64 +6,91 @@
  * Usage: node scripts/generate-socketaddon-packages.mts.
  */
 
-import { existsSync, promises as fs } from "node:fs";
-import path from "node:path";
+import { existsSync, promises as fs } from 'node:fs'
+import path from 'node:path'
 
-import { PLATFORM_CONFIGS } from "build-infra/lib/platform-targets";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { PLATFORM_CONFIGS } from 'build-infra/lib/platform-targets'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
   SOCKETADDON_MAIN_TEMPLATE_DIR,
   SOCKETADDON_TEMPLATE_DIR,
   getBuildOutDir,
   getSocketaddonPackageDir,
-} from "./paths.mts";
-import { processTemplate } from "./utils.mts";
+} from './paths.mts'
+import { processTemplate } from './utils.mts'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 /**
  * Generate the main wrapper package.
  */
 async function generateMainPackage() {
-  const packagePath = path.join(getBuildOutDir(), "socketaddon-iocraft");
-  const templatePath = SOCKETADDON_MAIN_TEMPLATE_DIR;
+  const packagePath = path.join(getBuildOutDir(), 'socketaddon-iocraft')
+  const templatePath = SOCKETADDON_MAIN_TEMPLATE_DIR
 
   // Create package directory.
-  await fs.mkdir(packagePath, { recursive: true });
+  await fs.mkdir(packagePath, { recursive: true })
 
   // Copy package.json.
-  const packageJsonContent = await fs.readFile(path.join(templatePath, "package.json"), "utf-8");
-  await fs.writeFile(path.join(packagePath, "package.json"), packageJsonContent, "utf-8");
+  const packageJsonContent = await fs.readFile(
+    path.join(templatePath, 'package.json'),
+    'utf-8',
+  )
+  await fs.writeFile(
+    path.join(packagePath, 'package.json'),
+    packageJsonContent,
+    'utf-8',
+  )
 
   // Copy index.mjs.
-  const indexContent = await fs.readFile(path.join(templatePath, "index.mjs"), "utf-8");
-  await fs.writeFile(path.join(packagePath, "index.mjs"), indexContent, "utf-8");
+  const indexContent = await fs.readFile(
+    path.join(templatePath, 'index.mjs'),
+    'utf-8',
+  )
+  await fs.writeFile(path.join(packagePath, 'index.mjs'), indexContent, 'utf-8')
 
   // Copy index.d.ts.
-  const indexDtsContent = await fs.readFile(path.join(templatePath, "index.d.ts"), "utf-8");
-  await fs.writeFile(path.join(packagePath, "index.d.ts"), indexDtsContent, "utf-8");
+  const indexDtsContent = await fs.readFile(
+    path.join(templatePath, 'index.d.ts'),
+    'utf-8',
+  )
+  await fs.writeFile(
+    path.join(packagePath, 'index.d.ts'),
+    indexDtsContent,
+    'utf-8',
+  )
 
   // Copy LICENSE.
-  const licenseContent = await fs.readFile(path.join(templatePath, "LICENSE"), "utf-8");
-  await fs.writeFile(path.join(packagePath, "LICENSE"), licenseContent, "utf-8");
+  const licenseContent = await fs.readFile(
+    path.join(templatePath, 'LICENSE'),
+    'utf-8',
+  )
+  await fs.writeFile(path.join(packagePath, 'LICENSE'), licenseContent, 'utf-8')
 
   // Copy README.md.
-  const readmeContent = await fs.readFile(path.join(templatePath, "README.md"), "utf-8");
-  await fs.writeFile(path.join(packagePath, "README.md"), readmeContent, "utf-8");
+  const readmeContent = await fs.readFile(
+    path.join(templatePath, 'README.md'),
+    'utf-8',
+  )
+  await fs.writeFile(
+    path.join(packagePath, 'README.md'),
+    readmeContent,
+    'utf-8',
+  )
 
-  logger.info("Generated socketaddon-iocraft (main wrapper)");
+  logger.info('Generated socketaddon-iocraft (main wrapper)')
 }
 
 /**
  * Generate a single socketaddon package.
  */
 export async function generatePackage(config) {
-  const { arch, cpu, description, libc, os, releasePlatform } = config;
-  const muslSuffix = libc === "musl" ? "-musl" : "";
-  const packageName = `socketaddon-iocraft-${releasePlatform}-${arch}${muslSuffix}`;
-  const packagePath = getSocketaddonPackageDir(releasePlatform, arch, libc);
-  const templatePath = SOCKETADDON_TEMPLATE_DIR;
+  const { arch, cpu, description, libc, os, releasePlatform } = config
+  const muslSuffix = libc === 'musl' ? '-musl' : ''
+  const packageName = `socketaddon-iocraft-${releasePlatform}-${arch}${muslSuffix}`
+  const packagePath = getSocketaddonPackageDir(releasePlatform, arch, libc)
+  const templatePath = SOCKETADDON_TEMPLATE_DIR
 
   // Template context for Handlebars.
   // Use releasePlatform for npm package naming (win, not win32).
@@ -74,72 +101,94 @@ export async function generatePackage(config) {
     LIBC_SUFFIX: muslSuffix,
     OS: os,
     PLATFORM: releasePlatform,
-  };
+  }
 
   // Create package directory.
-  await fs.mkdir(packagePath, { recursive: true });
+  await fs.mkdir(packagePath, { recursive: true })
 
   // Generate package.json.
   const packageJsonContent = await processTemplate(
-    path.join(templatePath, "package.json.template"),
+    path.join(templatePath, 'package.json.template'),
     context,
-  );
-  await fs.writeFile(path.join(packagePath, "package.json"), `${packageJsonContent}\n`, "utf-8");
+  )
+  await fs.writeFile(
+    path.join(packagePath, 'package.json'),
+    `${packageJsonContent}\n`,
+    'utf-8',
+  )
 
   // Copy LICENSE.
-  const licenseContent = await fs.readFile(path.join(templatePath, "LICENSE"), "utf-8");
-  await fs.writeFile(path.join(packagePath, "LICENSE"), licenseContent, "utf-8");
+  const licenseContent = await fs.readFile(
+    path.join(templatePath, 'LICENSE'),
+    'utf-8',
+  )
+  await fs.writeFile(path.join(packagePath, 'LICENSE'), licenseContent, 'utf-8')
 
   // Generate README.md.
   const readmeContent = await processTemplate(
-    path.join(templatePath, "README.md.template"),
+    path.join(templatePath, 'README.md.template'),
     context,
-  );
-  await fs.writeFile(path.join(packagePath, "README.md"), readmeContent, "utf-8");
+  )
+  await fs.writeFile(
+    path.join(packagePath, 'README.md'),
+    readmeContent,
+    'utf-8',
+  )
 
   // Copy .gitignore.
-  const gitignoreContent = await fs.readFile(path.join(templatePath, ".gitignore"), "utf-8");
-  await fs.writeFile(path.join(packagePath, ".gitignore"), gitignoreContent, "utf-8");
+  const gitignoreContent = await fs.readFile(
+    path.join(templatePath, '.gitignore'),
+    'utf-8',
+  )
+  await fs.writeFile(
+    path.join(packagePath, '.gitignore'),
+    gitignoreContent,
+    'utf-8',
+  )
 
-  logger.info(`Generated ${packageName}`);
+  logger.info(`Generated ${packageName}`)
 }
 
 /**
  * Main generation logic.
  */
 async function main() {
-  logger.log("");
-  logger.log("Generating socketaddon packages from template…");
-  logger.log("=".repeat(50));
-  logger.log("");
+  logger.log('')
+  logger.log('Generating socketaddon packages from template…')
+  logger.log('='.repeat(50))
+  logger.log('')
 
   // Verify template directories exist.
   if (!existsSync(SOCKETADDON_TEMPLATE_DIR)) {
-    logger.error(`Template directory not found: ${SOCKETADDON_TEMPLATE_DIR}`);
-    process.exitCode = 1;
-    return;
+    logger.error(`Template directory not found: ${SOCKETADDON_TEMPLATE_DIR}`)
+    process.exitCode = 1
+    return
   }
   if (!existsSync(SOCKETADDON_MAIN_TEMPLATE_DIR)) {
-    logger.error(`Template directory not found: ${SOCKETADDON_MAIN_TEMPLATE_DIR}`);
-    process.exitCode = 1;
-    return;
+    logger.error(
+      `Template directory not found: ${SOCKETADDON_MAIN_TEMPLATE_DIR}`,
+    )
+    process.exitCode = 1
+    return
   }
 
   // Generate main wrapper package.
-  await generateMainPackage();
+  await generateMainPackage()
 
   // Generate all platform packages.
   for (let i = 0, { length } = PLATFORM_CONFIGS; i < length; i += 1) {
-    const config = PLATFORM_CONFIGS[i];
-    await generatePackage(config);
+    const config = PLATFORM_CONFIGS[i]
+    await generatePackage(config)
   }
 
-  logger.log("");
-  logger.success(`Generated 1 main + ${PLATFORM_CONFIGS.length} platform socketaddon packages`);
-  logger.log("");
+  logger.log('')
+  logger.success(
+    `Generated 1 main + ${PLATFORM_CONFIGS.length} platform socketaddon packages`,
+  )
+  logger.log('')
 }
 
-main().catch((e) => {
-  logger.error("Package generation failed:", e);
-  process.exitCode = 1;
-});
+main().catch(e => {
+  logger.error('Package generation failed:', e)
+  process.exitCode = 1
+})

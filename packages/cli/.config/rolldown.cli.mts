@@ -8,49 +8,58 @@
  * rolldown `resolveId` / `load` hooks below.
  */
 
-import { existsSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { IMPORT_META_URL_BANNER } from "build-infra/lib/esbuild-helpers";
+import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
 
-import { createBaseConfig, getInlinedEnvVars, runBuild } from "../scripts/rolldown-utils.mts";
+import {
+  createBaseConfig,
+  getInlinedEnvVars,
+  runBuild,
+} from '../scripts/rolldown-utils.mts'
 
-import type { Plugin, RolldownOptions } from "rolldown";
+import type { Plugin, RolldownOptions } from 'rolldown'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootPath = path.join(__dirname, "..");
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..')
 
-const inlinedEnvVars = getInlinedEnvVars();
+const inlinedEnvVars = getInlinedEnvVars()
 
 // Matches ./external/, ../external/, ../../external/, etc. (forward + back slash).
-const socketLibExternalPathRegExp = /^(?:(?:\.\.[/\\])+|\.[/\\])external[/\\]/;
+const socketLibExternalPathRegExp = /^(?:(?:\.\.[/\\])+|\.[/\\])external[/\\]/
 
 export function findSocketLibPath(importerPath: string): string | undefined {
-  const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/);
+  const match = importerPath.match(/^(.*\/@socketsecurity\/lib)\b/)
   if (match) {
-    return match[1];
+    return match[1]
   }
-  const localPath = path.join(rootPath, "..", "..", "..", "socket-lib");
+  const localPath = path.join(rootPath, '..', '..', '..', 'socket-lib')
   if (existsSync(localPath)) {
-    return localPath;
+    return localPath
   }
-  return undefined;
+  return undefined
 }
 
 export function resolveSocketLibExternal(
   socketLibPath: string,
   packageName: string,
 ): string | undefined {
-  if (packageName.startsWith("@")) {
-    const parts = packageName.split("/");
-    const scope = parts[0]!;
-    const name = parts[1]!;
-    const p = path.join(socketLibPath, "dist", "external", scope, `${name}.js`);
-    return existsSync(p) ? p : undefined;
+  if (packageName.startsWith('@')) {
+    const parts = packageName.split('/')
+    const scope = parts[0]!
+    const name = parts[1]!
+    const p = path.join(socketLibPath, 'dist', 'external', scope, `${name}.js`)
+    return existsSync(p) ? p : undefined
   }
-  const p = path.join(socketLibPath, "dist", "external", `${packageName.split("/")[0]}.js`);
-  return existsSync(p) ? p : undefined;
+  const p = path.join(
+    socketLibPath,
+    'dist',
+    'external',
+    `${packageName.split('/')[0]}.js`,
+  )
+  return existsSync(p) ? p : undefined
 }
 
 /**
@@ -66,10 +75,10 @@ export function resolveSocketLibExternal(
 function isSocketLibDistImporter(importer: string | undefined): boolean {
   return (
     !!importer &&
-    (importer.includes("@socketsecurity/lib/dist/") ||
-      importer.includes("@socketsecurity/lib-stable/dist/") ||
-      importer.includes("/socket-lib/dist/"))
-  );
+    (importer.includes('@socketsecurity/lib/dist/') ||
+      importer.includes('@socketsecurity/lib-stable/dist/') ||
+      importer.includes('/socket-lib/dist/'))
+  )
 }
 
 function resolveSocketLibInternalsPlugin(): Plugin {
@@ -79,53 +88,60 @@ function resolveSocketLibInternalsPlugin(): Plugin {
     strip: RegExp,
   ): { id: string } | undefined {
     if (!isSocketLibDistImporter(importer)) {
-      return undefined;
+      return undefined
     }
-    const socketLibPath = findSocketLibPath(importer);
+    const socketLibPath = findSocketLibPath(importer)
     if (!socketLibPath) {
-      return undefined;
+      return undefined
     }
-    const p = path.join(socketLibPath, "dist", "constants", `${source.replace(strip, "")}.js`);
-    return existsSync(p) ? { id: p } : undefined;
+    const p = path.join(
+      socketLibPath,
+      'dist',
+      'constants',
+      `${source.replace(strip, '')}.js`,
+    )
+    return existsSync(p) ? { id: p } : undefined
   }
   return {
-    name: "resolve-socket-lib-internals",
+    name: 'resolve-socket-lib-internals',
     resolveId(source, importer) {
-      if (source.startsWith("../constants/")) {
-        return resolveConstant(source, importer, /^\.\.\/constants\//);
+      if (source.startsWith('../constants/')) {
+        return resolveConstant(source, importer, /^\.\.\/constants\//)
       }
-      if (source.startsWith("../../constants/")) {
-        return resolveConstant(source, importer, /^\.\.\/\.\.\/constants\//);
+      if (source.startsWith('../../constants/')) {
+        return resolveConstant(source, importer, /^\.\.\/\.\.\/constants\//)
       }
       if (socketLibExternalPathRegExp.test(source)) {
         if (!isSocketLibDistImporter(importer)) {
-          return undefined;
+          return undefined
         }
-        const socketLibPath = findSocketLibPath(importer);
+        const socketLibPath = findSocketLibPath(importer)
         if (!socketLibPath) {
-          return undefined;
+          return undefined
         }
-        const externalPath = source.replace(socketLibExternalPathRegExp, "").replace(/\.js$/, "");
-        const p = resolveSocketLibExternal(socketLibPath, externalPath);
-        return p ? { id: p } : undefined;
+        const externalPath = source
+          .replace(socketLibExternalPathRegExp, '')
+          .replace(/\.js$/, '')
+        const p = resolveSocketLibExternal(socketLibPath, externalPath)
+        return p ? { id: p } : undefined
       }
       if (/^(?:@[^/]+\/[^/]+|[^./][^/]*)/.test(source)) {
         if (!isSocketLibDistImporter(importer)) {
-          return undefined;
+          return undefined
         }
-        const socketLibPath = findSocketLibPath(importer);
+        const socketLibPath = findSocketLibPath(importer)
         if (!socketLibPath) {
-          return undefined;
+          return undefined
         }
-        const packageName = source.startsWith("@")
-          ? source.split("/").slice(0, 2).join("/")
-          : source.split("/")[0]!;
-        const p = resolveSocketLibExternal(socketLibPath, packageName);
-        return p ? { id: p } : undefined;
+        const packageName = source.startsWith('@')
+          ? source.split('/').slice(0, 2).join('/')
+          : source.split('/')[0]!
+        const p = resolveSocketLibExternal(socketLibPath, packageName)
+        return p ? { id: p } : undefined
       }
-      return undefined;
+      return undefined
     },
-  };
+  }
 }
 
 /**
@@ -134,22 +150,22 @@ function resolveSocketLibInternalsPlugin(): Plugin {
  * (tag with a `\0stub:` id) + `load` (return empty CJS).
  */
 function stubProblematicPackagesPlugin(): Plugin {
-  const prefix = "\0stub-empty:";
+  const prefix = '\0stub-empty:'
   return {
-    name: "stub-problematic-packages",
+    name: 'stub-problematic-packages',
     resolveId(source) {
       if (/^(?:encoding|iconv-lite)(?:$|\/)/.test(source)) {
-        return { id: `${prefix}${source}` };
+        return { id: `${prefix}${source}` }
       }
-      return undefined;
+      return undefined
     },
     load(id) {
       if (id.startsWith(prefix)) {
-        return { code: "module.exports = {}", moduleSideEffects: false };
+        return { code: 'module.exports = {}', moduleSideEffects: false }
       }
-      return undefined;
+      return undefined
     },
-  };
+  }
 }
 
 /**
@@ -159,35 +175,35 @@ function stubProblematicPackagesPlugin(): Plugin {
  */
 function ignoreUnsupportedFilesPlugin(): Plugin {
   return {
-    name: "ignore-unsupported-files",
+    name: 'ignore-unsupported-files',
     resolveId(source, importer) {
       if (/@npmcli\/arborist/.test(source)) {
         // Don't externalize when it comes from socket-lib's own external bundle.
-        if (importer?.includes("/socket-lib/dist/")) {
-          return undefined;
+        if (importer?.includes('/socket-lib/dist/')) {
+          return undefined
         }
-        return { id: source, external: true };
+        return { id: source, external: true }
       }
       if (/node-gyp/.test(source)) {
-        return { id: source, external: true };
+        return { id: source, external: true }
       }
-      return undefined;
+      return undefined
     },
-  };
+  }
 }
 
-const baseConfig = createBaseConfig(inlinedEnvVars);
+const baseConfig = createBaseConfig(inlinedEnvVars)
 
 const config: RolldownOptions = {
   ...baseConfig,
-  input: path.join(rootPath, "src/cli-dispatch.mts"),
+  input: path.join(rootPath, 'src/cli-dispatch.mts'),
   // .cs files (node-gyp on Windows) resolve to empty.
-  moduleTypes: { ".cs": "empty" },
+  moduleTypes: { '.cs': 'empty' },
   transform: {
     ...baseConfig.transform,
     define: {
       ...baseConfig.transform?.define,
-      "import.meta.url": "__importMetaUrl",
+      'import.meta.url': '__importMetaUrl',
     },
   },
   plugins: [
@@ -196,8 +212,8 @@ const config: RolldownOptions = {
     ignoreUnsupportedFilesPlugin(),
   ],
   output: {
-    file: path.join(rootPath, "build/cli.js"),
-    format: "cjs",
+    file: path.join(rootPath, 'build/cli.js'),
+    format: 'cjs',
     minify: false,
     sourcemap: false,
     keepNames: true,
@@ -206,17 +222,17 @@ const config: RolldownOptions = {
     codeSplitting: false,
     banner: `#!/usr/bin/env node\n"use strict";\n${IMPORT_META_URL_BANNER.js}`,
   },
-};
+}
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   // The unicode + env-var post-write transforms run here (rolldown can't
   // express them as config), matching the esbuild onEnd plugin order.
-  runBuild(config, "CLI bundle", {
+  runBuild(config, 'CLI bundle', {
     envVars: inlinedEnvVars,
     unicodeTransform: true,
   }).catch(() => {
-    process.exitCode = 1;
-  });
+    process.exitCode = 1
+  })
 }
 
-export default config;
+export default config

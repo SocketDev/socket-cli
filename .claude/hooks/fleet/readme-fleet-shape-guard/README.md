@@ -8,7 +8,7 @@ Root READMEs across fleet repos drift in three predictable ways: (a) the canonic
 
 The fleet has matching surfaces at three layers:
 
-- **Lint-time** — `template/.config/markdownlint-rules/socket-{readme-required-sections, no-private-wheelhouse-leak, no-relative-sibling-script}.mjs`.
+- **Lint-time** — `template/.config/fleet/markdownlint-rules/socket-{readme-required-sections, no-private-wheelhouse-leak, no-relative-sibling-script}.mjs`.
 - **Sync-time** — `scripts/sync-scaffolding/checks/readme-skeleton-drift.mts` (report-only; no autofix because README content is contextual).
 - **Edit-time** — this hook. Fires at the earliest surface, before the drift can be committed or pushed.
 

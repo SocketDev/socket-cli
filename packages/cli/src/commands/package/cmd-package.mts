@@ -1,11 +1,11 @@
-import { cmdPackageScore } from "./cmd-package-score.mts";
-import { cmdPackageShallow } from "./cmd-package-shallow.mts";
-import { defineSubcommandGroup } from "../../util/cli/define-subcommand-group.mts";
+import { cmdPackageScore } from './cmd-package-score.mts'
+import { cmdPackageShallow } from './cmd-package-shallow.mts'
+import { defineSubcommandGroup } from '../../util/cli/define-subcommand-group.mts'
 
-const description = "Look up published package details";
+const description = 'Look up published package details'
 
 export const cmdPackage = defineSubcommandGroup({
-  name: "package",
+  name: 'package',
   description,
   hidden: false,
   subcommands: {
@@ -16,7 +16,7 @@ export const cmdPackage = defineSubcommandGroup({
     deep: {
       description,
       hidden: true,
-      argv: ["score"],
+      argv: ['score'],
     },
   },
-});
+})

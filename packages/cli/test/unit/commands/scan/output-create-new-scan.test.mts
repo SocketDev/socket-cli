@@ -14,12 +14,12 @@
  * Related Files: - src/commands/outputCreateNewScan.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { outputCreateNewScan } from "../../../../src/commands/scan/output-create-new-scan.mts";
+import { outputCreateNewScan } from '../../../../src/commands/scan/output-create-new-scan.mts'
 
-import type { CResult } from "../../../../src/commands/scan/types.mts";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { CResult } from '../../../../src/commands/scan/types.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -29,288 +29,305 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}));
+}))
 
 // Helper references to mockLogger methods.
-const mockLog = mockLogger.log;
-const mockFail = mockLogger.fail;
-const mockSuccess = mockLogger.success;
+const mockLog = mockLogger.log
+const mockFail = mockLogger.fail
+const mockSuccess = mockLogger.success
 
-const mockSerializeResultJson = vi.hoisted(() => vi.fn((result) => JSON.stringify(result)));
-const mockOpenDefault = vi.hoisted(() => vi.fn());
-const mockConfirmFn = vi.hoisted(() => vi.fn());
+const mockSerializeResultJson = vi.hoisted(() =>
+  vi.fn(result => JSON.stringify(result)),
+)
+const mockOpenDefault = vi.hoisted(() => vi.fn())
+const mockConfirmFn = vi.hoisted(() => vi.fn())
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}));
+}))
 
-vi.mock(import("../../../../src/util/output/result-json.mjs"), () => ({
+vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: mockSerializeResultJson,
-}));
+}))
 
-vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}));
+}))
 
-vi.mock(import("open"), () => ({
+vi.mock(import('open'), () => ({
   default: mockOpenDefault,
-}));
+}))
 
-vi.mock(import("terminal-link"), () => ({
+vi.mock(import('terminal-link'), () => ({
   default: vi.fn((text: string, url: string) => `[${text}](${url})`),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/stdio/prompts"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/stdio/prompts'), () => ({
   confirm: mockConfirmFn,
-}));
+}))
 
-describe("outputCreateNewScan", () => {
+describe('outputCreateNewScan', () => {
   const mockSpinner = {
     isSpinning: false,
     start: vi.fn(),
     stop: vi.fn(),
-  };
+  }
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-    mockSpinner.isSpinning = false;
-    mockSpinner.start.mockClear();
-    mockSpinner.stop.mockClear();
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+    mockSpinner.isSpinning = false
+    mockSpinner.start.mockClear()
+    mockSpinner.stop.mockClear()
+  })
 
-  it("outputs JSON format for successful result", async () => {
-    const mockSerialize = mockSerializeResultJson;
+  it('outputs JSON format for successful result', async () => {
+    const mockSerialize = mockSerializeResultJson
 
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: true,
-      data: {
-        html_report_url: "https://socket.dev/report/123",
-        id: "scan-123",
-      },
-    };
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/123',
+          id: 'scan-123',
+        },
+      }
 
-    await outputCreateNewScan(result, { outputKind: "json" });
+    await outputCreateNewScan(result, { outputKind: 'json' })
 
-    expect(mockSerialize).toHaveBeenCalledWith(result);
-    expect(mockLog).toHaveBeenCalledWith(JSON.stringify(result));
-    expect(process.exitCode).toBeUndefined();
-  });
+    expect(mockSerialize).toHaveBeenCalledWith(result)
+    expect(mockLog).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(process.exitCode).toBeUndefined()
+  })
 
-  it("outputs error in JSON format", async () => {
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: false,
-      code: 2,
-      message: "Unauthorized",
-      cause: "Invalid API token",
-    };
+  it('outputs error in JSON format', async () => {
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: false,
+        code: 2,
+        message: 'Unauthorized',
+        cause: 'Invalid API token',
+      }
 
-    await outputCreateNewScan(result, { outputKind: "json" });
+    await outputCreateNewScan(result, { outputKind: 'json' })
 
-    expect(mockLog).toHaveBeenCalled();
-    expect(process.exitCode).toBe(2);
-  });
+    expect(mockLog).toHaveBeenCalled()
+    expect(process.exitCode).toBe(2)
+  })
 
-  it("outputs success message with report URL in text format", async () => {
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: true,
-      data: {
-        html_report_url: "https://socket.dev/report/456",
-        id: "scan-456",
-      },
-    };
+  it('outputs success message with report URL in text format', async () => {
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/456',
+          id: 'scan-456',
+        },
+      }
 
-    await outputCreateNewScan(result, { outputKind: "text" });
+    await outputCreateNewScan(result, { outputKind: 'text' })
 
-    expect(mockSuccess).toHaveBeenCalledWith("Scan completed successfully!");
+    expect(mockSuccess).toHaveBeenCalledWith('Scan completed successfully!')
     expect(mockLog).toHaveBeenCalledWith(
-      "View report at: [https://socket.dev/report/456](https://socket.dev/report/456)",
-    );
-  });
+      'View report at: [https://socket.dev/report/456](https://socket.dev/report/456)',
+    )
+  })
 
-  it("outputs markdown format with scan ID", async () => {
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: true,
-      data: {
-        html_report_url: "https://socket.dev/report/789",
-        id: "scan-789",
-      },
-    };
+  it('outputs markdown format with scan ID', async () => {
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/789',
+          id: 'scan-789',
+        },
+      }
 
-    await outputCreateNewScan(result, { outputKind: "markdown" });
+    await outputCreateNewScan(result, { outputKind: 'markdown' })
 
-    expect(mockLog).toHaveBeenCalledWith("# Create New Scan");
-    expect(mockLog).toHaveBeenCalledWith("");
+    expect(mockLog).toHaveBeenCalledWith('# Create New Scan')
+    expect(mockLog).toHaveBeenCalledWith('')
     expect(mockLog).toHaveBeenCalledWith(
-      "A [new Scan](https://socket.dev/report/789) was created with ID: scan-789",
-    );
-    expect(mockLog).toHaveBeenCalledWith("");
-  });
+      'A [new Scan](https://socket.dev/report/789) was created with ID: scan-789',
+    )
+    expect(mockLog).toHaveBeenCalledWith('')
+  })
 
-  it("handles missing scan ID properly", async () => {
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: true,
-      data: {
-        html_report_url: "https://socket.dev/report/no-id",
-        id: undefined as unknown,
-      },
-    };
+  it('handles missing scan ID properly', async () => {
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/no-id',
+          id: undefined as unknown,
+        },
+      }
 
-    await outputCreateNewScan(result, { outputKind: "text" });
+    await outputCreateNewScan(result, { outputKind: 'text' })
 
-    expect(mockFail).toHaveBeenCalledWith("Did not receive a scan ID from the API.");
-    expect(process.exitCode).toBe(1);
-  });
+    expect(mockFail).toHaveBeenCalledWith(
+      'Did not receive a scan ID from the API.',
+    )
+    expect(process.exitCode).toBe(1)
+  })
 
-  it("outputs error in text format", async () => {
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: false,
-      code: 1,
-      message: "Failed to create scan",
-      cause: "Network error",
-    };
+  it('outputs error in text format', async () => {
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: false,
+        code: 1,
+        message: 'Failed to create scan',
+        cause: 'Network error',
+      }
 
-    await outputCreateNewScan(result, { outputKind: "text" });
+    await outputCreateNewScan(result, { outputKind: 'text' })
 
-    expect(mockFail).toHaveBeenCalled();
-    expect(process.exitCode).toBe(1);
-  });
+    expect(mockFail).toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
+  })
 
-  it("opens browser when interactive and user confirms", async () => {
-    const mockConfirm = mockConfirmFn;
-    const mockOpen = mockOpenDefault;
+  it('opens browser when interactive and user confirms', async () => {
+    const mockConfirm = mockConfirmFn
+    const mockOpen = mockOpenDefault
 
-    mockConfirm.mockResolvedValue(true);
+    mockConfirm.mockResolvedValue(true)
 
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: true,
-      data: {
-        html_report_url: "https://socket.dev/report/browser-test",
-        id: "scan-browser-test",
-      },
-    };
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/browser-test',
+          id: 'scan-browser-test',
+        },
+      }
 
     await outputCreateNewScan(result, {
       interactive: true,
-      outputKind: "text",
-    });
+      outputKind: 'text',
+    })
 
     expect(mockConfirm).toHaveBeenCalledWith({
       default: false,
-      message: "Would you like to open it in your browser?",
-    });
-    expect(mockOpen).toHaveBeenCalledWith("https://socket.dev/report/browser-test");
-  });
+      message: 'Would you like to open it in your browser?',
+    })
+    expect(mockOpen).toHaveBeenCalledWith(
+      'https://socket.dev/report/browser-test',
+    )
+  })
 
-  it("does not open browser when user declines", async () => {
-    const mockConfirm = mockConfirmFn;
-    const mockOpen = mockOpenDefault;
+  it('does not open browser when user declines', async () => {
+    const mockConfirm = mockConfirmFn
+    const mockOpen = mockOpenDefault
 
-    mockConfirm.mockResolvedValue(false);
+    mockConfirm.mockResolvedValue(false)
 
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: true,
-      data: {
-        html_report_url: "https://socket.dev/report/no-browser",
-        id: "scan-no-browser",
-      },
-    };
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/no-browser',
+          id: 'scan-no-browser',
+        },
+      }
 
     await outputCreateNewScan(result, {
       interactive: true,
-      outputKind: "text",
-    });
+      outputKind: 'text',
+    })
 
-    expect(mockConfirm).toHaveBeenCalled();
-    expect(mockOpen).not.toHaveBeenCalled();
-  });
+    expect(mockConfirm).toHaveBeenCalled()
+    expect(mockOpen).not.toHaveBeenCalled()
+  })
 
-  it("handles spinner lifecycle correctly", async () => {
-    mockSpinner.isSpinning = true;
+  it('handles spinner lifecycle correctly', async () => {
+    mockSpinner.isSpinning = true
 
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: true,
-      data: {
-        html_report_url: "https://socket.dev/report/spinner",
-        id: "scan-spinner",
-      },
-    };
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: 'https://socket.dev/report/spinner',
+          id: 'scan-spinner',
+        },
+      }
 
     await outputCreateNewScan(result, {
-      outputKind: "text",
+      outputKind: 'text',
       spinner: mockSpinner,
-    });
+    })
 
-    expect(mockSpinner.stop).toHaveBeenCalled();
-    expect(mockSpinner.start).toHaveBeenCalled();
-  });
+    expect(mockSpinner.stop).toHaveBeenCalled()
+    expect(mockSpinner.start).toHaveBeenCalled()
+  })
 
-  it("handles missing report URL", async () => {
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: true,
-      data: {
-        html_report_url: undefined as unknown,
-        id: "scan-no-url",
-      },
-    };
+  it('handles missing report URL', async () => {
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: true,
+        data: {
+          html_report_url: undefined as unknown,
+          id: 'scan-no-url',
+        },
+      }
 
-    await outputCreateNewScan(result, { outputKind: "text" });
+    await outputCreateNewScan(result, { outputKind: 'text' })
 
-    expect(mockLog).toHaveBeenCalledWith("No report available.");
-  });
+    expect(mockLog).toHaveBeenCalledWith('No report available.')
+  })
 
-  it("sets default exit code when code is undefined", async () => {
-    const result: CResult<SocketSdkSuccessResult<"CreateOrgFullScan">["data"]> = {
-      ok: false,
-      message: "Error without code",
-    };
+  it('sets default exit code when code is undefined', async () => {
+    const result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']> =
+      {
+        ok: false,
+        message: 'Error without code',
+      }
 
-    await outputCreateNewScan(result, { outputKind: "json" });
+    await outputCreateNewScan(result, { outputKind: 'json' })
 
-    expect(process.exitCode).toBe(1);
-  });
+    expect(process.exitCode).toBe(1)
+  })
 
-  it("restarts spinner after JSON output if it was spinning", async () => {
-    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() };
+  it('restarts spinner after JSON output if it was spinning', async () => {
+    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: true, data: { id: "x", html_report_url: "http://x" } as unknown },
-      { outputKind: "json", spinner: spinner as unknown },
-    );
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as unknown },
+      { outputKind: 'json', spinner: spinner as unknown },
+    )
 
-    expect(spinner.stop).toHaveBeenCalled();
-    expect(spinner.start).toHaveBeenCalled();
-  });
+    expect(spinner.stop).toHaveBeenCalled()
+    expect(spinner.start).toHaveBeenCalled()
+  })
 
-  it("restarts spinner after text-mode error if it was spinning", async () => {
-    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() };
+  it('restarts spinner after text-mode error if it was spinning', async () => {
+    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: false, message: "fail" },
-      { outputKind: "text", spinner: spinner as unknown },
-    );
+      { ok: false, message: 'fail' },
+      { outputKind: 'text', spinner: spinner as unknown },
+    )
 
-    expect(spinner.start).toHaveBeenCalled();
-  });
+    expect(spinner.start).toHaveBeenCalled()
+  })
 
-  it("restarts spinner after markdown output if it was spinning", async () => {
-    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() };
+  it('restarts spinner after markdown output if it was spinning', async () => {
+    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: true, data: { id: "x", html_report_url: "http://x" } as unknown },
-      { outputKind: "markdown", spinner: spinner as unknown },
-    );
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } as unknown },
+      { outputKind: 'markdown', spinner: spinner as unknown },
+    )
 
-    expect(spinner.start).toHaveBeenCalled();
-  });
+    expect(spinner.start).toHaveBeenCalled()
+  })
 
-  it("renders no-id markdown branch", async () => {
-    const spinner = { isSpinning: false, start: vi.fn(), stop: vi.fn() };
+  it('renders no-id markdown branch', async () => {
+    const spinner = { isSpinning: false, start: vi.fn(), stop: vi.fn() }
     await outputCreateNewScan(
-      { ok: true, data: { id: "" as unknown, html_report_url: "" as unknown } },
-      { outputKind: "markdown", spinner: spinner as unknown },
-    );
+      { ok: true, data: { id: '' as unknown, html_report_url: '' as unknown } },
+      { outputKind: 'markdown', spinner: spinner as unknown },
+    )
 
-    const calls = mockLog.mock.calls.map((c) => c[0]).join("\n");
-    expect(calls).toContain("did not return a Scan ID");
-    expect(process.exitCode).toBe(1);
-  });
-});
+    const calls = mockLog.mock.calls.map(c => c[0]).join('\n')
+    expect(calls).toContain('did not return a Scan ID')
+    expect(process.exitCode).toBe(1)
+  })
+})

@@ -2,17 +2,17 @@
  * @file Type declarations for chalk-table module.
  */
 
-declare module "chalk-table" {
+declare module 'chalk-table' {
   interface TableOptions {
     columns?: Array<{
-      field: string;
-      name?: string;
-    }>;
-    leftPad?: number;
-    intersectionCharacter?: string;
+      field: string
+      name?: string
+    }>
+    leftPad?: number
+    intersectionCharacter?: string
   }
 
-  function chalkTable(options: TableOptions | null, data: any[]): string;
+  function chalkTable(options: TableOptions | null, data: any[]): string
 
-  export = chalkTable;
+  export = chalkTable
 }

@@ -1,38 +1,41 @@
-import { handleAnalytics } from "./handle-analytics.mts";
-import { FLAG_JSON, FLAG_MARKDOWN } from "../../constants/cli.mts";
-import { outputDryRunFetch } from "../../util/dry-run/output.mts";
-import { V1_MIGRATION_GUIDE_URL } from "../../constants/socket.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags, outputFlags } from "../../flags.mts";
+import { handleAnalytics } from './handle-analytics.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
 
-import type { MeowFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
-import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
-import { getOutputKind } from "../../util/output/mode.mjs";
-import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
-import { webLink } from "../../util/terminal/link.mts";
-import { checkCommandInput } from "../../util/validation/check-input.mts";
+import type { MeowFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { webLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 // Flags interface for type safety.
 interface AnalyticsFlags {
-  file: string;
-  json: boolean;
-  markdown: boolean;
+  file: string
+  json: boolean
+  markdown: boolean
 }
 
-export const CMD_NAME = "analytics";
+export const CMD_NAME = 'analytics'
 
-const description = "Look up analytics data";
+const description = 'Look up analytics data'
 
-const hidden = false;
+const hidden = false
 
 export const cmdAnalytics = {
   description,
   hidden,
   run,
-};
+}
 
 export async function run(
   argv: string[] | readonly string[],
@@ -47,9 +50,9 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
       file: {
-        type: "string",
-        default: "",
-        description: "Path to store result, only valid with --json/--markdown",
+        type: 'string',
+        default: '',
+        description: 'Path to store result, only valid with --json/--markdown',
       },
     }),
     help: (command: string, { flags }: { flags: MeowFlags }) =>
@@ -74,14 +77,14 @@ export async function run(
       $ ${command} repo test-repo 30
       $ ${command} 90
   `,
-  };
+  }
 
   const cli = meowOrExit({
     argv,
     config,
     parentName,
     importMeta,
-  });
+  })
 
   // Supported inputs:
   // - []        (no args)
@@ -91,91 +94,98 @@ export async function run(
   // - ['repo', 'name', '30']
   // - ['30']
   // Validate final values in the next step
-  let scope = "org";
-  let time = "30";
-  let repoName = "";
+  let scope = 'org'
+  let time = '30'
+  let repoName = ''
 
-  if (cli.input[0] === "org") {
+  if (cli.input[0] === 'org') {
     if (cli.input[1]) {
-      time = cli.input[1];
+      time = cli.input[1]
     }
-  } else if (cli.input[0] === "repo") {
-    scope = "repo";
+  } else if (cli.input[0] === 'repo') {
+    scope = 'repo'
     if (cli.input[1]) {
-      repoName = cli.input[1];
+      repoName = cli.input[1]
     }
     if (cli.input[2]) {
-      time = cli.input[2];
+      time = cli.input[2]
     }
   } else if (cli.input[0]) {
-    time = cli.input[0];
+    time = cli.input[0]
   }
 
-  const { file: filepath, json, markdown } = cli.flags as unknown as AnalyticsFlags;
+  const {
+    file: filepath,
+    json,
+    markdown,
+  } = cli.flags as unknown as AnalyticsFlags
 
-  const dryRun = !!cli.flags["dryRun"];
+  const dryRun = !!cli.flags['dryRun']
 
-  const noLegacy = !cli.flags["scope"] && !cli.flags["repo"] && !cli.flags["time"];
+  const noLegacy =
+    !cli.flags['scope'] && !cli.flags['repo'] && !cli.flags['time']
 
-  const hasApiToken = hasDefaultApiToken();
+  const hasApiToken = hasDefaultApiToken()
 
-  const outputKind = getOutputKind(json, markdown);
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
       test: noLegacy,
-      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, "v1 migration guide")}.`,
-      fail: "received legacy flags",
+      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
+      fail: 'received legacy flags',
     },
     {
       nook: true,
-      test: scope === "org" || !!repoName,
-      message: "When scope=repo, repo name should be the second argument",
-      fail: "missing",
+      test: scope === 'org' || !!repoName,
+      message: 'When scope=repo, repo name should be the second argument',
+      fail: 'missing',
     },
     {
       nook: true,
-      test: scope === "org" || (repoName !== "30" && repoName !== "7" && repoName !== "90"),
-      message: "When scope is repo, the second arg should be repo, not time",
-      fail: "missing",
+      test:
+        scope === 'org' ||
+        (repoName !== '30' && repoName !== '7' && repoName !== '90'),
+      message: 'When scope is repo, the second arg should be repo, not time',
+      fail: 'missing',
     },
     {
-      test: time === "30" || time === "7" || time === "90",
-      message: "The time filter must either be 7, 30 or 90",
-      fail: "invalid range set, see --help for command arg details.",
+      test: time === '30' || time === '7' || time === '90',
+      message: 'The time filter must either be 7, 30 or 90',
+      fail: 'invalid range set, see --help for command arg details.',
     },
     {
       nook: true,
       test: !filepath || !!json || !!markdown,
       message: `The \`--file\` flag is only valid when using \`${FLAG_JSON}\` or \`${FLAG_MARKDOWN}\``,
-      fail: "bad",
+      fail: 'bad',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
-      fail: "bad",
+      fail: 'bad',
     },
     {
       nook: true,
       test: hasApiToken,
-      message: "This command requires a Socket API token for access",
-      fail: "try `socket login`",
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
     },
-  );
+  )
   if (!wasValidInput) {
-    return;
+    return
   }
 
   if (dryRun) {
-    outputDryRunFetch("analytics data", {
+    outputDryRunFetch('analytics data', {
       scope,
       repo: repoName || undefined,
       time: `${time} days`,
-    });
-    return;
+    })
+    return
   }
 
   return await handleAnalytics({
@@ -183,6 +193,6 @@ export async function run(
     outputKind,
     repo: repoName,
     scope,
-    time: time === "90" ? 90 : time === "30" ? 30 : 7,
-  });
+    time: time === '90' ? 90 : time === '30' ? 30 : 7,
+  })
 }

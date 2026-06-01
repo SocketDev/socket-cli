@@ -9,24 +9,28 @@ This test helper library provides a fluent, type-safe API for testing Socket CLI
 ## Quick Start
 
 ```typescript
-import { executeCliCommand, expectOutput, createTestWorkspace } from "../helpers/index.mts";
+import {
+  executeCliCommand,
+  expectOutput,
+  createTestWorkspace,
+} from '../helpers/index.mts'
 
-describe("socket scan", () => {
-  it("should scan workspace successfully", async () => {
+describe('socket scan', () => {
+  it('should scan workspace successfully', async () => {
     const workspace = await createTestWorkspace({
       packageJson: {
-        name: "test-app",
-        dependencies: { express: "^4.18.0" },
+        name: 'test-app',
+        dependencies: { express: '^4.18.0' },
       },
-    });
+    })
 
-    const result = await executeCliCommand(["scan"], { cwd: workspace.path });
+    const result = await executeCliCommand(['scan'], { cwd: workspace.path })
 
-    expectOutput(result).succeeded().stdoutContains("express").stderrEmpty();
+    expectOutput(result).succeeded().stdoutContains('express').stderrEmpty()
 
-    await workspace.cleanup();
-  });
-});
+    await workspace.cleanup()
+  })
+})
 ```
 
 ## Modules
@@ -48,8 +52,8 @@ Execute Socket CLI commands with enhanced result handling and automatic configur
 **Example:**
 
 ```typescript
-const { data, result } = await executeCliJson<ScanResult>(["scan", "create"]);
-expect(data.id).toBeDefined();
+const { data, result } = await executeCliJson<ScanResult>(['scan', 'create'])
+expect(data.id).toBeDefined()
 ```
 
 ### 2. Output Assertions (`output-assertions.mts`)
@@ -70,9 +74,9 @@ Fluent assertion API for validating CLI output with comprehensive matchers.
 ```typescript
 expectOutput(result)
   .succeeded()
-  .stdoutContains("Usage")
+  .stdoutContains('Usage')
   .stdoutContains(/options/i)
-  .stderrEmpty();
+  .stderrEmpty()
 ```
 
 ### 3. Result Assertions (`result-assertions.mts`)
@@ -96,10 +100,10 @@ Type-safe assertions for Socket's `CResult<T>` pattern used throughout the CLI c
 expectResult(result)
   .isSuccess()
   .hasData()
-  .dataContains({ id: "scan-123" })
-  .withData((data) => {
-    expect(data.status).toBe("completed");
-  });
+  .dataContains({ id: 'scan-123' })
+  .withData(data => {
+    expect(data.status).toBe('completed')
+  })
 ```
 
 ### 4. Workspace Helpers (`workspace-helper.mts`)
@@ -120,14 +124,14 @@ Create and manage temporary test workspaces with package manifests, lockfiles, a
 ```typescript
 await withTestWorkspace(
   {
-    packageJson: { name: "test-app" },
-    files: [{ path: "index.js", content: 'console.log("hello")' }],
+    packageJson: { name: 'test-app' },
+    files: [{ path: 'index.js', content: 'console.log("hello")' }],
   },
-  async (workspace) => {
-    const result = await executeCliCommand(["scan"], { cwd: workspace.path });
-    expect(result.status).toBe(true);
+  async workspace => {
+    const result = await executeCliCommand(['scan'], { cwd: workspace.path })
+    expect(result.status).toBe(true)
   },
-);
+)
 ```
 
 ### 5. Existing Helpers
@@ -160,19 +164,25 @@ Typical test savings:
 **Before:**
 
 ```typescript
-const binPath = path.join(__dirname, "../../bin/cli.js");
-const result = await spawn(process.execPath, [binPath, "scan", "--json", "--config", "{}"]);
-expect(result.code).toBe(0);
-const json = JSON.parse(stripAnsi(result.stdout.trim()));
-expect(json.id).toBeDefined();
+const binPath = path.join(__dirname, '../../bin/cli.js')
+const result = await spawn(process.execPath, [
+  binPath,
+  'scan',
+  '--json',
+  '--config',
+  '{}',
+])
+expect(result.code).toBe(0)
+const json = JSON.parse(stripAnsi(result.stdout.trim()))
+expect(json.id).toBeDefined()
 ```
 
 **After:**
 
 ```typescript
-const { data, result } = await executeCliJson(["scan"]);
-expectOutput(result).succeeded();
-expect(data.id).toBeDefined();
+const { data, result } = await executeCliJson(['scan'])
+expectOutput(result).succeeded()
+expect(data.id).toBeDefined()
 ```
 
 ### Type Safety
@@ -198,73 +208,73 @@ Improved error messages that show:
 ### Basic CLI Test
 
 ```typescript
-describe("socket scan", () => {
-  it("should display help", async () => {
-    const result = await expectCliSuccess(["scan", "--help"]);
+describe('socket scan', () => {
+  it('should display help', async () => {
+    const result = await expectCliSuccess(['scan', '--help'])
 
-    expectOutput(result).stdoutContains("Usage").stdoutContains("Options");
-  });
-});
+    expectOutput(result).stdoutContains('Usage').stdoutContains('Options')
+  })
+})
 ```
 
 ### JSON Output Test
 
 ```typescript
-describe("socket scan --json", () => {
-  it("should return JSON", async () => {
-    const { data } = await executeCliJson<ScanResult>(["scan", "create"]);
+describe('socket scan --json', () => {
+  it('should return JSON', async () => {
+    const { data } = await executeCliJson<ScanResult>(['scan', 'create'])
 
-    expect(data.id).toBeDefined();
-    expect(data.status).toBe("completed");
-  });
-});
+    expect(data.id).toBeDefined()
+    expect(data.status).toBe('completed')
+  })
+})
 ```
 
 ### Workspace Test
 
 ```typescript
-describe("socket scan with workspace", () => {
-  it("should scan dependencies", async () => {
+describe('socket scan with workspace', () => {
+  it('should scan dependencies', async () => {
     await withTestWorkspace(
       {
         packageJson: {
-          dependencies: { express: "^4.18.0" },
+          dependencies: { express: '^4.18.0' },
         },
       },
-      async (workspace) => {
-        const result = await executeCliCommand(["scan"], {
+      async workspace => {
+        const result = await executeCliCommand(['scan'], {
           cwd: workspace.path,
-        });
+        })
 
-        expectOutput(result).succeeded().stdoutContains("express");
+        expectOutput(result).succeeded().stdoutContains('express')
       },
-    );
-  });
-});
+    )
+  })
+})
 ```
 
 ### Result Validation Test
 
 ```typescript
-describe("SDK API calls", () => {
-  it("should validate result", async () => {
-    const result = await mockApiCall();
+describe('SDK API calls', () => {
+  it('should validate result', async () => {
+    const result = await mockApiCall()
 
-    expectResult(result).isSuccess().hasData().dataContains({ id: "scan-123" });
-  });
-});
+    expectResult(result).isSuccess().hasData().dataContains({ id: 'scan-123' })
+  })
+})
 ```
 
 ### Error Handling Test
 
 ```typescript
-describe("socket scan errors", () => {
-  it("should handle invalid arguments", async () => {
-    const result = await expectCliError(["scan"], 1);
+describe('socket scan errors', () => {
+  it('should handle invalid arguments', async () => {
+    const result = await expectCliError(['scan'], 1)
 
-    expectOutput(result).stderrContains("Missing required").exitCode(1);
-  });
-});
+    expectOutput(result).stderrContains('Missing required').exitCode(1)
+  })
+})
 ```
 
 ## Best Practices
@@ -275,16 +285,16 @@ Always use `withTestWorkspace` or explicit cleanup:
 
 ```typescript
 // Good: Auto-cleanup
-await withTestWorkspace(config, async (workspace) => {
+await withTestWorkspace(config, async workspace => {
   // test code
-});
+})
 
 // Good: Explicit cleanup
-const workspace = await createTestWorkspace(config);
+const workspace = await createTestWorkspace(config)
 try {
   // test code
 } finally {
-  await workspace.cleanup();
+  await workspace.cleanup()
 }
 ```
 
@@ -294,13 +304,13 @@ Always use `isolateConfig: true` (default) to prevent user config pollution:
 
 ```typescript
 // Good: Isolated (default)
-await executeCliCommand(["scan"]);
+await executeCliCommand(['scan'])
 
 // Good: Explicit isolation
-await executeCliCommand(["scan"], { isolateConfig: true });
+await executeCliCommand(['scan'], { isolateConfig: true })
 
 // Risky: Uses user's config
-await executeCliCommand(["scan"], { isolateConfig: false });
+await executeCliCommand(['scan'], { isolateConfig: false })
 ```
 
 ### 3. Use Fluent Assertions
@@ -309,13 +319,17 @@ Chain assertions for readability:
 
 ```typescript
 // Good: Fluent and readable
-expectOutput(result).succeeded().stdoutContains("express").stdoutContains("lodash").stderrEmpty();
+expectOutput(result)
+  .succeeded()
+  .stdoutContains('express')
+  .stdoutContains('lodash')
+  .stderrEmpty()
 
 // Bad: Verbose
-expect(result.status).toBe(true);
-expect(result.stdout).toContain("express");
-expect(result.stdout).toContain("lodash");
-expect(result.stderr).toBe("");
+expect(result.status).toBe(true)
+expect(result.stdout).toContain('express')
+expect(result.stdout).toContain('lodash')
+expect(result.stderr).toBe('')
 ```
 
 ### 4. Type Your Results
@@ -324,26 +338,26 @@ Use generics for type safety:
 
 ```typescript
 // Good: Type-safe
-const { data } = await executeCliJson<ScanResult>(["scan"]);
-expect(data.id).toBeDefined(); // TypeScript knows about 'id'
+const { data } = await executeCliJson<ScanResult>(['scan'])
+expect(data.id).toBeDefined() // TypeScript knows about 'id'
 
 // Bad: No type safety
-const { data } = await executeCliJson(["scan"]);
-expect((data as any).id).toBeDefined(); // Manual casting
+const { data } = await executeCliJson(['scan'])
+expect((data as any).id).toBeDefined() // Manual casting
 ```
 
 ### 5. Use Descriptive Test Names
 
 ```typescript
 // Good: Clear what's being tested
-it("should display usage information with --help flag", async () => {
+it('should display usage information with --help flag', async () => {
   // test
-});
+})
 
 // Bad: Vague
-it("should work", async () => {
+it('should work', async () => {
   // test
-});
+})
 ```
 
 ## Testing the Helpers

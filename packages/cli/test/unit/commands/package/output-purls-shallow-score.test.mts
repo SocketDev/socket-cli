@@ -31,26 +31,26 @@
  * - Src/commands/package/fixtures/*.json (test fixtures)
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
-import goShallow from "../../../../src/commands/package/fixtures/go_shallow.json" with { type: "json" };
-import mavenShallow from "../../../../src/commands/package/fixtures/maven_shallow.json" with { type: "json" };
-import npmShallow from "../../../../src/commands/package/fixtures/npm_shallow.json" with { type: "json" };
-import nugetShallow from "../../../../src/commands/package/fixtures/nuget_shallow.json" with { type: "json" };
-import pythonDupes from "../../../../src/commands/package/fixtures/python_dupes.json" with { type: "json" };
-import pythonShallow from "../../../../src/commands/package/fixtures/python_shallow.json" with { type: "json" };
-import rubyShallow from "../../../../src/commands/package/fixtures/ruby_shallow.json" with { type: "json" };
+import goShallow from '../../../../src/commands/package/fixtures/go_shallow.json' with { type: 'json' }
+import mavenShallow from '../../../../src/commands/package/fixtures/maven_shallow.json' with { type: 'json' }
+import npmShallow from '../../../../src/commands/package/fixtures/npm_shallow.json' with { type: 'json' }
+import nugetShallow from '../../../../src/commands/package/fixtures/nuget_shallow.json' with { type: 'json' }
+import pythonDupes from '../../../../src/commands/package/fixtures/python_dupes.json' with { type: 'json' }
+import pythonShallow from '../../../../src/commands/package/fixtures/python_shallow.json' with { type: 'json' }
+import rubyShallow from '../../../../src/commands/package/fixtures/ruby_shallow.json' with { type: 'json' }
 import {
   generateMarkdownReport,
   generateTextReport,
   preProcess,
-} from "../../../../src/commands/package/output-purls-shallow-score.mts";
+} from '../../../../src/commands/package/output-purls-shallow-score.mts'
 
-describe("package score output", async () => {
-  describe("npm", () => {
-    it("should report shallow as text", () => {
-      const { missing, rows } = preProcess(npmShallow.data, []);
-      const txt = generateTextReport(rows, missing);
+describe('package score output', async () => {
+  describe('npm', () => {
+    it('should report shallow as text', () => {
+      const { missing, rows } = preProcess(npmShallow.data, [])
+      const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
         [1mShallow Package Score[22m
@@ -68,12 +68,12 @@ describe("package score output", async () => {
         - License:           [32m100[39m
         - Alerts ([31m2[39m/[33m2[39m/4):     [31m[2m[critical] [22mdidYouMean[39m, [31m[2m[high] [22mtroll[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mdebugAccess, [2m[low] [22mdynamicRequire, [2m[low] [22mfilesystemAccess, and [2m[low] [22munmaintained
         "
-      `);
-    });
+      `)
+    })
 
-    it("should report shallow as markdown", () => {
-      const { missing, rows } = preProcess(npmShallow.data, []);
-      const txt = generateMarkdownReport(rows, missing);
+    it('should report shallow as markdown', () => {
+      const { missing, rows } = preProcess(npmShallow.data, [])
+      const txt = generateMarkdownReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "# Shallow Package Report
 
@@ -92,14 +92,14 @@ describe("package score output", async () => {
         - Vulnerabilities:   100
         - License:           100
         - Alerts (2/2/4):     [critical] didYouMean, [high] troll, [middle] networkAccess, [middle] unpopularPackage, [low] debugAccess, [low] dynamicRequire, [low] filesystemAccess, and [low] unmaintained"
-      `);
-    });
-  });
+      `)
+    })
+  })
 
-  describe("go", () => {
-    it("should report shallow as text", () => {
-      const { missing, rows } = preProcess(goShallow.data, []);
-      const txt = generateTextReport(rows, missing);
+  describe('go', () => {
+    it('should report shallow as text', () => {
+      const { missing, rows } = preProcess(goShallow.data, [])
+      const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
         [1mShallow Package Score[22m
@@ -117,12 +117,12 @@ describe("package score output", async () => {
         - License:           [32m100[39m
         - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, and [2m[low] [22mfilesystemAccess
         "
-      `);
-    });
+      `)
+    })
 
-    it("should report shallow as markdown", () => {
-      const { missing, rows } = preProcess(goShallow.data, []);
-      const txt = generateMarkdownReport(rows, missing);
+    it('should report shallow as markdown', () => {
+      const { missing, rows } = preProcess(goShallow.data, [])
+      const txt = generateMarkdownReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "# Shallow Package Report
 
@@ -141,14 +141,14 @@ describe("package score output", async () => {
         - Vulnerabilities:   100
         - License:           100
         - Alerts (1/3/2):     [critical] malware, [middle] networkAccess, [middle] shellAccess, [middle] usesEval, [low] envVars, and [low] filesystemAccess"
-      `);
-    });
-  });
+      `)
+    })
+  })
 
-  describe("ruby", () => {
-    it("should report shallow as text", () => {
-      const { missing, rows } = preProcess(rubyShallow.data, []);
-      const txt = generateTextReport(rows, missing);
+  describe('ruby', () => {
+    it('should report shallow as text', () => {
+      const { missing, rows } = preProcess(rubyShallow.data, [])
+      const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
         [1mShallow Package Score[22m
@@ -166,12 +166,12 @@ describe("package score output", async () => {
         - License:           [32m100[39m
         - Alerts ([31m2[39m/[33m3[39m/2):     [31m[2m[high] [22mgptMalware[39m, [31m[2m[high] [22mobfuscatedFile[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, and [2m[low] [22mfilesystemAccess
         "
-      `);
-    });
+      `)
+    })
 
-    it("should report shallow as markdown", () => {
-      const { missing, rows } = preProcess(rubyShallow.data, []);
-      const txt = generateMarkdownReport(rows, missing);
+    it('should report shallow as markdown', () => {
+      const { missing, rows } = preProcess(rubyShallow.data, [])
+      const txt = generateMarkdownReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "# Shallow Package Report
 
@@ -190,14 +190,14 @@ describe("package score output", async () => {
         - Vulnerabilities:   100
         - License:           100
         - Alerts (2/3/2):     [high] gptMalware, [high] obfuscatedFile, [middle] networkAccess, [middle] shellAccess, [middle] usesEval, [low] envVars, and [low] filesystemAccess"
-      `);
-    });
-  });
+      `)
+    })
+  })
 
-  describe("nuget", () => {
-    it("should report shallow as text", () => {
-      const { missing, rows } = preProcess(nugetShallow.data, []);
-      const txt = generateTextReport(rows, missing);
+  describe('nuget', () => {
+    it('should report shallow as text', () => {
+      const { missing, rows } = preProcess(nugetShallow.data, [])
+      const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
         [1mShallow Package Score[22m
@@ -215,12 +215,12 @@ describe("package score output", async () => {
         - License:           [32m100[39m
         - Alerts ([31m0[39m/[33m4[39m/2):     [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22mfilesystemAccess, and [2m[low] [22munidentifiedLicense
         "
-      `);
-    });
+      `)
+    })
 
-    it("should report shallow as markdown", () => {
-      const { missing, rows } = preProcess(nugetShallow.data, []);
-      const txt = generateMarkdownReport(rows, missing);
+    it('should report shallow as markdown', () => {
+      const { missing, rows } = preProcess(nugetShallow.data, [])
+      const txt = generateMarkdownReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "# Shallow Package Report
 
@@ -239,14 +239,14 @@ describe("package score output", async () => {
         - Vulnerabilities:   100
         - License:           100
         - Alerts (0/4/2):     [middle] networkAccess, [middle] shellAccess, [middle] unpopularPackage, [middle] usesEval, [low] filesystemAccess, and [low] unidentifiedLicense"
-      `);
-    });
-  });
+      `)
+    })
+  })
 
-  describe("maven", () => {
-    it("should report shallow as text", () => {
-      const { missing, rows } = preProcess(mavenShallow.data, []);
-      const txt = generateTextReport(rows, missing);
+  describe('maven', () => {
+    it('should report shallow as text', () => {
+      const { missing, rows } = preProcess(mavenShallow.data, [])
+      const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
         [1mShallow Package Score[22m
@@ -264,12 +264,12 @@ describe("package score output", async () => {
         - License:           [33m 60[39m
         - Alerts ([31m0[39m/[33m3[39m/0):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22mnetworkAccess[39m, and [33m[2m[middle] [22musesEval[39m
         "
-      `);
-    });
+      `)
+    })
 
-    it("should report shallow as markdown", () => {
-      const { missing, rows } = preProcess(mavenShallow.data, []);
-      const txt = generateMarkdownReport(rows, missing);
+    it('should report shallow as markdown', () => {
+      const { missing, rows } = preProcess(mavenShallow.data, [])
+      const txt = generateMarkdownReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "# Shallow Package Report
 
@@ -288,14 +288,14 @@ describe("package score output", async () => {
         - Vulnerabilities:   100
         - License:            60
         - Alerts (0/3/0):     [middle] hasNativeCode, [middle] networkAccess, and [middle] usesEval"
-      `);
-    });
-  });
+      `)
+    })
+  })
 
-  describe("python", () => {
-    it("should report shallow as text", () => {
-      const { missing, rows } = preProcess(pythonShallow.data, []);
-      const txt = generateTextReport(rows, missing);
+  describe('python', () => {
+    it('should report shallow as text', () => {
+      const { missing, rows } = preProcess(pythonShallow.data, [])
+      const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
         [1mShallow Package Score[22m
@@ -313,12 +313,12 @@ describe("package score output", async () => {
         - License:           [32m100[39m
         - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mfilesystemAccess, and [2m[low] [22munidentifiedLicense
         "
-      `);
-    });
+      `)
+    })
 
-    it("should report shallow as markdown", () => {
-      const { missing, rows } = preProcess(pythonShallow.data, []);
-      const txt = generateMarkdownReport(rows, missing);
+    it('should report shallow as markdown', () => {
+      const { missing, rows } = preProcess(pythonShallow.data, [])
+      const txt = generateMarkdownReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "# Shallow Package Report
 
@@ -337,13 +337,13 @@ describe("package score output", async () => {
         - Vulnerabilities:   100
         - License:           100
         - Alerts (1/3/2):     [critical] malware, [middle] networkAccess, [middle] shellAccess, [middle] unpopularPackage, [low] filesystemAccess, and [low] unidentifiedLicense"
-      `);
-    });
+      `)
+    })
 
-    describe("python duplication", () => {
-      it("should dedupe the python dupes and create a colored plain text report with three score blocks", () => {
-        const { missing, rows } = preProcess(pythonDupes.data, []);
-        const txt = generateTextReport(rows, missing);
+    describe('python duplication', () => {
+      it('should dedupe the python dupes and create a colored plain text report with three score blocks', () => {
+        const { missing, rows } = preProcess(pythonDupes.data, [])
+        const txt = generateTextReport(rows, missing)
         expect(txt).toMatchInlineSnapshot(`
           "
           [1mShallow Package Score[22m
@@ -361,14 +361,14 @@ describe("package score output", async () => {
           - License:           [32m100[39m
           - Alerts ([31m0[39m/[33m2[39m/1):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22musesEval[39m, and [2m[low] [22mfilesystemAccess
           "
-        `);
+        `)
 
-        expect(txt.split("Supply Chain Risk:").length).toBe(2); // Should find it once so when you split that you get 2 parts
-      });
+        expect(txt.split('Supply Chain Risk:').length).toBe(2) // Should find it once so when you split that you get 2 parts
+      })
 
-      it("should dedupe the python dupes and create a markdown report with three score blocks", () => {
-        const { missing, rows } = preProcess(pythonDupes.data, []);
-        const txt = generateMarkdownReport(rows, missing);
+      it('should dedupe the python dupes and create a markdown report with three score blocks', () => {
+        const { missing, rows } = preProcess(pythonDupes.data, [])
+        const txt = generateMarkdownReport(rows, missing)
         expect(txt).toMatchInlineSnapshot(`
           "# Shallow Package Report
 
@@ -387,64 +387,67 @@ describe("package score output", async () => {
           - Vulnerabilities:   100
           - License:           100
           - Alerts (0/2/1):     [middle] hasNativeCode, [middle] usesEval, and [low] filesystemAccess"
-        `);
+        `)
 
-        expect(txt.split("Supply Chain Risk:").length).toBe(2); // Should find it once so when you split that you get 2 parts
-        expect(txt).toContain("pkg:pypi/charset-normalizer@3.4.0");
-      });
-    });
-  });
+        expect(txt.split('Supply Chain Risk:').length).toBe(2) // Should find it once so when you split that you get 2 parts
+        expect(txt).toContain('pkg:pypi/charset-normalizer@3.4.0')
+      })
+    })
+  })
 
-  describe("missing purls", () => {
+  describe('missing purls', () => {
     it('emits "missing response" notice in text report', () => {
-      const empty = new Map();
-      const txt = generateTextReport(empty, ["pkg:npm/missing@1", "pkg:npm/gone@2"]);
-      expect(txt).toContain("At least one package had no response");
-      expect(txt).toContain("missing@1");
-      expect(txt).toContain("gone@2");
-    });
+      const empty = new Map()
+      const txt = generateTextReport(empty, [
+        'pkg:npm/missing@1',
+        'pkg:npm/gone@2',
+      ])
+      expect(txt).toContain('At least one package had no response')
+      expect(txt).toContain('missing@1')
+      expect(txt).toContain('gone@2')
+    })
 
     it('emits "missing response" notice in markdown report', () => {
-      const empty = new Map();
-      const md = generateMarkdownReport(empty, ["pkg:pypi/missing@1"]);
-      expect(md).toContain("## Missing response");
-      expect(md).toContain("missing@1");
-    });
+      const empty = new Map()
+      const md = generateMarkdownReport(empty, ['pkg:pypi/missing@1'])
+      expect(md).toContain('## Missing response')
+      expect(md).toContain('missing@1')
+    })
 
-    it("omits missing notice when array is empty", () => {
-      const empty = new Map();
-      const txt = generateTextReport(empty, []);
-      expect(txt).not.toContain("At least one package had no response");
-      const md = generateMarkdownReport(empty, []);
-      expect(md).not.toContain("## Missing response");
-    });
-  });
+    it('omits missing notice when array is empty', () => {
+      const empty = new Map()
+      const txt = generateTextReport(empty, [])
+      expect(txt).not.toContain('At least one package had no response')
+      const md = generateMarkdownReport(empty, [])
+      expect(md).not.toContain('## Missing response')
+    })
+  })
 
-  describe("deduplication of identical text-report blocks", () => {
-    it("drops duplicate blocks from generateTextReport", () => {
-      const { missing, rows } = preProcess(pythonDupes.data, []);
-      const txt = generateTextReport(rows, missing);
+  describe('deduplication of identical text-report blocks', () => {
+    it('drops duplicate blocks from generateTextReport', () => {
+      const { missing, rows } = preProcess(pythonDupes.data, [])
+      const txt = generateTextReport(rows, missing)
       // pythonDupes contains duplicated entries; the dedupe path in
       // generateTextReport (via the Set<string> tracker) drops repeats.
-      const matches = txt.match(/Supply Chain Risk:/g) || [];
-      expect(matches.length).toBeGreaterThanOrEqual(1);
-    });
+      const matches = txt.match(/Supply Chain Risk:/g) || []
+      expect(matches.length).toBeGreaterThanOrEqual(1)
+    })
 
-    it("drops duplicate blocks from generateMarkdownReport", () => {
-      const { missing, rows } = preProcess(pythonDupes.data, []);
-      const md = generateMarkdownReport(rows, missing);
-      const matches = md.match(/Supply Chain Risk:/g) || [];
-      expect(matches.length).toBeGreaterThanOrEqual(1);
-    });
+    it('drops duplicate blocks from generateMarkdownReport', () => {
+      const { missing, rows } = preProcess(pythonDupes.data, [])
+      const md = generateMarkdownReport(rows, missing)
+      const matches = md.match(/Supply Chain Risk:/g) || []
+      expect(matches.length).toBeGreaterThanOrEqual(1)
+    })
 
-    it("takes the lowest of duplicate quality/vulnerability/license scores", () => {
+    it('takes the lowest of duplicate quality/vulnerability/license scores', () => {
       // Two artifacts with the same purl but different scores — preProcess
       // dedupes them by purl and takes the LOWEST score for each metric.
       const data = [
         {
-          type: "npm",
-          name: "shared-pkg",
-          version: "1.0.0",
+          type: 'npm',
+          name: 'shared-pkg',
+          version: '1.0.0',
           score: {
             supplyChain: 100,
             maintenance: 100,
@@ -456,9 +459,9 @@ describe("package score output", async () => {
         },
         // Same purl, but lower quality/vulnerability/license.
         {
-          type: "npm",
-          name: "shared-pkg",
-          version: "1.0.0",
+          type: 'npm',
+          name: 'shared-pkg',
+          version: '1.0.0',
           score: {
             supplyChain: 100,
             maintenance: 100,
@@ -468,15 +471,15 @@ describe("package score output", async () => {
           },
           alerts: [],
         },
-      ];
-      const { rows } = preProcess(data as unknown, []);
-      const row = rows.get("pkg:npm/shared-pkg@1.0.0")!;
-      expect(row.score.quality).toBe(50);
-      expect(row.score.vulnerability).toBe(60);
-      expect(row.score.license).toBe(70);
-    });
+      ]
+      const { rows } = preProcess(data as unknown, [])
+      const row = rows.get('pkg:npm/shared-pkg@1.0.0')!
+      expect(row.score.quality).toBe(50)
+      expect(row.score.vulnerability).toBe(60)
+      expect(row.score.license).toBe(70)
+    })
 
-    it("drops duplicate text-report blocks when two purls yield identical cards", () => {
+    it('drops duplicate text-report blocks when two purls yield identical cards', () => {
       // Construct two artifacts with the same shape so formatReportCard
       // produces an identical string for both, hitting the dupes.has() path.
       const sharedScore = {
@@ -485,37 +488,37 @@ describe("package score output", async () => {
         quality: 100,
         vulnerability: 100,
         license: 100,
-      };
+      }
       const rows = new Map<string, unknown>([
         [
-          "pkg:npm/dup-pkg@1.0.0",
+          'pkg:npm/dup-pkg@1.0.0',
           {
-            ecosystem: "npm",
-            namespace: "",
-            name: "dup-pkg",
-            version: "1.0.0",
+            ecosystem: 'npm',
+            namespace: '',
+            name: 'dup-pkg',
+            version: '1.0.0',
             score: sharedScore,
             alerts: new Map(),
           },
         ],
         // Different key but same content → same formatReportCard output.
         [
-          "pkg:npm/dup-pkg@2.0.0",
+          'pkg:npm/dup-pkg@2.0.0',
           {
-            ecosystem: "npm",
-            namespace: "",
-            name: "dup-pkg",
-            version: "1.0.0",
+            ecosystem: 'npm',
+            namespace: '',
+            name: 'dup-pkg',
+            version: '1.0.0',
             score: sharedScore,
             alerts: new Map(),
           },
         ],
-      ]);
+      ])
 
-      const txt = generateTextReport(rows, []);
+      const txt = generateTextReport(rows, [])
       // The dupe block should be dropped: only one rendering of "dup-pkg" content.
-      const matches = txt.match(/dup-pkg/g) || [];
-      expect(matches.length).toBe(1);
-    });
-  });
-});
+      const matches = txt.match(/dup-pkg/g) || []
+      expect(matches.length).toBe(1)
+    })
+  })
+})

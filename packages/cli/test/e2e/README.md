@@ -98,14 +98,14 @@ Missing binaries are automatically built without prompting:
 Every command has at least this test:
 
 ```typescript
-it("should display <command> help", async () => {
-  const result = await executeCliCommand(["<command>", "--help"], {
+it('should display <command> help', async () => {
+  const result = await executeCliCommand(['<command>', '--help'], {
     binPath: binary.path,
-  });
+  })
 
-  expect(result.code).toBe(0);
-  expect(result.stdout.length).toBeGreaterThan(0);
-});
+  expect(result.code).toBe(0)
+  expect(result.stdout.length).toBeGreaterThan(0)
+})
 ```
 
 **What this validates:**
@@ -122,26 +122,26 @@ Some commands have functional tests beyond `--help`:
 
 ```typescript
 // whoami
-it("should display whoami information", async () => {
-  if (!hasAuth) return;
+it('should display whoami information', async () => {
+  if (!hasAuth) return
 
-  const result = await executeCliCommand(["whoami"], {
+  const result = await executeCliCommand(['whoami'], {
     binPath: binary.path,
-  });
+  })
 
-  expect(result.code).toBe(0);
-});
+  expect(result.code).toBe(0)
+})
 
 // config list
-it("should list config settings", async () => {
-  if (!hasAuth) return;
+it('should list config settings', async () => {
+  if (!hasAuth) return
 
-  const result = await executeCliCommand(["config", "list"], {
+  const result = await executeCliCommand(['config', 'list'], {
     binPath: binary.path,
-  });
+  })
 
-  expect(result.code).toBe(0);
-});
+  expect(result.code).toBe(0)
+})
 ```
 
 ## Test Execution Flow
@@ -197,8 +197,8 @@ Example:
 // In binary-test-suite.e2e.test.mts
 const commands = [
   // ... existing commands
-  "mycommand",
-];
+  'mycommand',
+]
 ```
 
 That's it! The test framework handles the rest automatically.

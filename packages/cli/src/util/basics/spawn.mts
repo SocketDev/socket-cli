@@ -5,51 +5,63 @@
  * tools to perform SAST, secret detection, and container scanning.
  */
 
-import { existsSync, promises as fs } from "node:fs";
-import path from "node:path";
+import { existsSync, promises as fs } from 'node:fs'
+import path from 'node:path'
 
-import { debug } from "@socketsecurity/lib-stable/debug/output";
-import { normalizePath } from "@socketsecurity/lib-stable/paths/normalize";
-import { errorMessage } from "@socketsecurity/lib-stable/errors";
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+import { debug } from '@socketsecurity/lib-stable/debug/output'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
-import { areBasicsToolsAvailable, extractBasicsTools, getBasicsToolPaths } from "./vfs-extract.mts";
-import { DOT_SOCKET_DOT_FACTS_JSON } from "../../constants.mts";
-import { getPyCliVersion } from "../../env/pycli-version.mts";
+import {
+  areBasicsToolsAvailable,
+  extractBasicsTools,
+  getBasicsToolPaths,
+} from './vfs-extract.mts'
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
+import { getPyCliVersion } from '../../env/pycli-version.mts'
 
-import type { CResult } from "../../types.mts";
+import type { CResult } from '../../types.mts'
 
-import type { SpinnerInstance } from "@socketsecurity/lib-stable/spinner/types";
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 /**
  * Check if socket_basics is installed in the Python environment.
  */
-export async function isSocketBasicsInstalled(pythonBin: string): Promise<boolean> {
+export async function isSocketBasicsInstalled(
+  pythonBin: string,
+): Promise<boolean> {
   try {
-    const result = await spawn(pythonBin, ["-c", "import socket_basics"], {
+    const result = await spawn(pythonBin, ['-c', 'import socket_basics'], {
       shell: WIN32,
-      stdio: "pipe",
-    });
-    return result.code === 0;
+      stdio: 'pipe',
+    })
+    return result.code === 0
   } catch {
-    return false;
+    return false
   }
 }
 
 /**
  * Check if socketsecurity is installed in the Python environment.
  */
-export async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean> {
+export async function isSocketPyCliInstalled(
+  pythonBin: string,
+): Promise<boolean> {
   try {
-    const result = await spawn(pythonBin, ["-c", "import socketsecurity.socketcli"], {
-      shell: WIN32,
-      stdio: "pipe",
-    });
-    return result.code === 0;
+    const result = await spawn(
+      pythonBin,
+      ['-c', 'import socketsecurity.socketcli'],
+      {
+        shell: WIN32,
+        stdio: 'pipe',
+      },
+    )
+    return result.code === 0
   } catch {
-    return false;
+    return false
   }
 }
 
@@ -61,37 +73,37 @@ export async function isSocketPyCliInstalled(pythonBin: string): Promise<boolean
  * @returns Object with finding counts by category, or error if parsing failed.
  */
 export async function parseSocketFacts(factsPath: string): Promise<{
-  containers?: number | undefined;
-  error?: string | undefined;
-  sast?: number | undefined;
-  secrets?: number | undefined;
+  containers?: number | undefined
+  error?: string | undefined
+  sast?: number | undefined
+  secrets?: number | undefined
 }> {
   try {
-    const factsContent = await fs.readFile(factsPath, "utf8");
+    const factsContent = await fs.readFile(factsPath, 'utf8')
 
-    if (!factsContent || factsContent.trim() === "") {
-      debug("error", "Socket facts file is empty");
+    if (!factsContent || factsContent.trim() === '') {
+      debug('error', 'Socket facts file is empty')
       return {
-        error: "Facts file is empty",
-      };
+        error: 'Facts file is empty',
+      }
     }
 
     let facts: {
       findings?:
         | {
-            containers?: unknown[] | undefined;
-            sast?: unknown[] | undefined;
-            secrets?: unknown[] | undefined;
+            containers?: unknown[] | undefined
+            sast?: unknown[] | undefined
+            secrets?: unknown[] | undefined
           }
-        | undefined;
-    };
+        | undefined
+    }
     try {
-      facts = JSON.parse(factsContent);
+      facts = JSON.parse(factsContent)
     } catch (parseError) {
-      debug("error", "Failed to parse socket facts JSON:", parseError);
+      debug('error', 'Failed to parse socket facts JSON:', parseError)
       return {
         error: `Invalid JSON: ${errorMessage(parseError)}`,
-      };
+      }
     }
 
     // Extract finding counts from socket-basics output format.
@@ -100,36 +112,36 @@ export async function parseSocketFacts(factsPath: string): Promise<{
       containers: facts.findings?.containers?.length || 0,
       sast: facts.findings?.sast?.length || 0,
       secrets: facts.findings?.secrets?.length || 0,
-    };
+    }
   } catch (e) {
-    debug("error", "Failed to read socket facts file:", e);
+    debug('error', 'Failed to read socket facts file:', e)
     return {
       error: `File read error: ${errorMessage(e)}`,
-    };
+    }
   }
 }
 
 type SocketBasicsOptions = {
-  cacheDir?: string | undefined;
-  cwd: string;
-  languages?: string[] | undefined;
-  orgSlug: string;
-  outputPath?: string | undefined;
-  repoName: string;
-  scanContainers?: boolean | undefined;
-  scanSecrets?: boolean | undefined;
-  spinner?: SpinnerInstance | undefined;
-  timeout?: number | undefined;
-};
+  cacheDir?: string | undefined
+  cwd: string
+  languages?: string[] | undefined
+  orgSlug: string
+  outputPath?: string | undefined
+  repoName: string
+  scanContainers?: boolean | undefined
+  scanSecrets?: boolean | undefined
+  spinner?: SpinnerInstance | undefined
+  timeout?: number | undefined
+}
 
 type SocketBasicsResult = {
-  factsPath: string | null;
+  factsPath: string | null
   findings: {
-    containers?: number | undefined;
-    sast?: number | undefined;
-    secrets?: number | undefined;
-  };
-};
+    containers?: number | undefined
+    sast?: number | undefined
+    secrets?: number | undefined
+  }
+}
 
 /**
  * Run socket-basics comprehensive security scanning.
@@ -179,255 +191,282 @@ export async function runSocketBasics(
     scanSecrets = true,
     spinner,
     timeout = 600_000, // 10 minutes default.
-  } = options;
+  } = options
 
   // Check if basics tools are available.
-  const toolsAvailable = areBasicsToolsAvailable();
+  const toolsAvailable = areBasicsToolsAvailable()
   if (!toolsAvailable) {
     return {
       ok: false,
-      message: "Basics tools not available",
+      message: 'Basics tools not available',
       cause:
-        "Socket-basics requires Python, Trivy, TruffleHog, and OpenGrep to be bundled in the SEA binary",
-    };
+        'Socket-basics requires Python, Trivy, TruffleHog, and OpenGrep to be bundled in the SEA binary',
+    }
   }
 
   // Extract basics tools from VFS.
   // Pass cacheDir to isolate parallel builds.
-  spinner?.start("Extracting basics tools…");
-  const toolsDir = await extractBasicsTools(cacheDir);
+  spinner?.start('Extracting basics tools…')
+  const toolsDir = await extractBasicsTools(cacheDir)
   if (!toolsDir) {
-    spinner?.fail("Failed to extract basics tools");
+    spinner?.fail('Failed to extract basics tools')
     return {
       ok: false,
-      message: "Failed to extract basics tools from VFS",
-      cause: "VFS extraction returned null",
-    };
+      message: 'Failed to extract basics tools from VFS',
+      cause: 'VFS extraction returned null',
+    }
   }
 
-  const toolPaths = getBasicsToolPaths(toolsDir);
+  const toolPaths = getBasicsToolPaths(toolsDir)
 
   // Verify Python is available.
   if (!existsSync(toolPaths.python)) {
-    spinner?.fail("Python not found after extraction");
+    spinner?.fail('Python not found after extraction')
     return {
       ok: false,
-      message: "Python not found",
+      message: 'Python not found',
       cause: `Expected Python at: ${toolPaths.python}`,
-    };
+    }
   }
 
   /* c8 ignore start - spinner only when caller passes one; unit tests omit it */
   if (spinner) {
-    spinner.stop();
-    spinner.success("Security tools extracted");
+    spinner.stop()
+    spinner.success('Security tools extracted')
   }
   /* c8 ignore stop */
 
   // Determine output path for .socket.facts.json.
-  const factsPath = outputPath || normalizePath(path.join(cwd, DOT_SOCKET_DOT_FACTS_JSON));
+  const factsPath =
+    outputPath || normalizePath(path.join(cwd, DOT_SOCKET_DOT_FACTS_JSON))
 
   // Check if socketsecurity is already pre-installed (SEA build-time bundling).
-  const pyCliAlreadyInstalled = await isSocketPyCliInstalled(toolPaths.python);
-  const pyCliVersion = getPyCliVersion();
+  const pyCliAlreadyInstalled = await isSocketPyCliInstalled(toolPaths.python)
+  const pyCliVersion = getPyCliVersion()
 
   if (pyCliAlreadyInstalled) {
-    debug("notice", "Socket Python CLI already installed (pre-bundled)");
+    debug('notice', 'Socket Python CLI already installed (pre-bundled)')
   } else {
     // Install socketsecurity package via pip.
-    spinner?.start("Installing Socket Python CLI…");
+    spinner?.start('Installing Socket Python CLI…')
     const pipInstallResult = await spawn(
       toolPaths.python,
-      ["-m", "pip", "install", "--quiet", `socketsecurity==${pyCliVersion}`],
-      { stdio: "pipe" },
-    );
+      ['-m', 'pip', 'install', '--quiet', `socketsecurity==${pyCliVersion}`],
+      { stdio: 'pipe' },
+    )
 
     // Check spawn result - it can be null if process failed to start.
     if (!pipInstallResult) {
       /* c8 ignore start - spinner only when caller passes one */
       if (spinner) {
-        spinner.stop();
-        spinner.fail("Failed to start pip install");
+        spinner.stop()
+        spinner.fail('Failed to start pip install')
       }
       /* c8 ignore stop */
       return {
         ok: false,
-        message: "Failed to start pip install process",
-        cause: "spawn() returned null",
-      };
+        message: 'Failed to start pip install process',
+        cause: 'spawn() returned null',
+      }
     }
 
     if (pipInstallResult.code !== 0) {
       /* c8 ignore start - spinner only when caller passes one */
       if (spinner) {
-        spinner.stop();
-        spinner.fail("Failed to install Socket Python CLI");
+        spinner.stop()
+        spinner.fail('Failed to install Socket Python CLI')
       }
       /* c8 ignore stop */
-      debug("error", "pip install failed:", pipInstallResult.stderr);
+      debug('error', 'pip install failed:', pipInstallResult.stderr)
       return {
         ok: false,
-        message: "Failed to install Socket Python CLI",
-        cause: String(pipInstallResult.stderr || "pip install exited with non-zero code"),
-      };
+        message: 'Failed to install Socket Python CLI',
+        cause: String(
+          pipInstallResult.stderr || 'pip install exited with non-zero code',
+        ),
+      }
     }
 
     /* c8 ignore start - spinner only when caller passes one */
     if (spinner) {
-      spinner.stop();
-      spinner.success("Socket Python CLI installed");
+      spinner.stop()
+      spinner.success('Socket Python CLI installed')
     }
     /* c8 ignore stop */
 
     // Verify installed version matches expected version.
-    const verifyResult = await spawn(toolPaths.python, ["-m", "pip", "show", "socketsecurity"], {
-      stdio: "pipe",
-    });
+    const verifyResult = await spawn(
+      toolPaths.python,
+      ['-m', 'pip', 'show', 'socketsecurity'],
+      {
+        stdio: 'pipe',
+      },
+    )
 
     if (!verifyResult || verifyResult.code !== 0) {
       /* c8 ignore start - spinner only when caller passes one */
       if (spinner) {
-        spinner.stop();
-        spinner.fail("Failed to verify Socket Python CLI installation");
+        spinner.stop()
+        spinner.fail('Failed to verify Socket Python CLI installation')
       }
       /* c8 ignore stop */
       return {
         ok: false,
-        message: "Failed to verify Socket Python CLI installation",
-        cause: String(verifyResult?.stderr || "pip show exited with non-zero code"),
-      };
+        message: 'Failed to verify Socket Python CLI installation',
+        cause: String(
+          verifyResult?.stderr || 'pip show exited with non-zero code',
+        ),
+      }
     }
 
-    const output = String(verifyResult.stdout || "");
-    const versionMatch = output.match(/^Version:\s*(.+)$/m);
+    const output = String(verifyResult.stdout || '')
+    const versionMatch = output.match(/^Version:\s*(.+)$/m)
     const installedVersion =
       versionMatch && versionMatch.length > 1 && versionMatch[1]
         ? versionMatch[1].trim()
-        : undefined;
+        : undefined
 
     /* c8 ignore start - version-mismatch path; tests install the expected version */
     if (installedVersion !== pyCliVersion) {
       if (spinner) {
-        spinner.stop();
+        spinner.stop()
         spinner.fail(
           `Socket Python CLI version mismatch: expected ${pyCliVersion}, got ${installedVersion}`,
-        );
+        )
       }
       return {
         ok: false,
-        message: "Socket Python CLI version mismatch",
+        message: 'Socket Python CLI version mismatch',
         cause: `Expected version ${pyCliVersion} but got ${installedVersion}. This may cause compatibility issues.`,
-      };
+      }
     }
     /* c8 ignore stop */
 
-    debug("notice", `Socket Python CLI version verified: ${installedVersion}`);
+    debug('notice', `Socket Python CLI version verified: ${installedVersion}`)
   }
 
   // Check if socket_basics is already pre-installed (SEA build-time bundling).
-  const basicsAlreadyInstalled = await isSocketBasicsInstalled(toolPaths.python);
+  const basicsAlreadyInstalled = await isSocketBasicsInstalled(toolPaths.python)
   if (!basicsAlreadyInstalled) {
     // socket_basics should be pre-installed in SEA mode.
     // For dev mode, this would need runtime installation, but socket_basics is not on PyPI.
-    debug("warn", "socket_basics not found - should be pre-installed in SEA builds");
+    debug(
+      'warn',
+      'socket_basics not found - should be pre-installed in SEA builds',
+    )
     return {
       ok: false,
-      message: "socket_basics package not installed",
-      cause: "socket_basics must be pre-bundled at SEA build time (not available on PyPI)",
-    };
+      message: 'socket_basics package not installed',
+      cause:
+        'socket_basics must be pre-bundled at SEA build time (not available on PyPI)',
+    }
   }
-  debug("notice", "socket_basics already installed (pre-bundled)");
+  debug('notice', 'socket_basics already installed (pre-bundled)')
 
   // Construct socket-basics command.
   // socket-basics is a separate PyPI package (socket_basics).
-  const args = ["-m", "socket_basics", "--org", orgSlug, "--repo", repoName, "--output", factsPath];
+  const args = [
+    '-m',
+    'socket_basics',
+    '--org',
+    orgSlug,
+    '--repo',
+    repoName,
+    '--output',
+    factsPath,
+  ]
 
   // Add language filters if specified.
   if (languages.length > 0) {
-    args.push("--languages", languages.join(","));
+    args.push('--languages', languages.join(','))
   }
 
   // Enable/disable scanning features.
   if (scanSecrets) {
-    args.push("--secrets");
+    args.push('--secrets')
   }
 
   if (scanContainers) {
-    args.push("--containers");
+    args.push('--containers')
   }
 
   // Set up environment variables.
   const env = {
     ...process.env,
     // Skip reachability analysis (handled by CLI's --reach flag).
-    SKIP_SOCKET_REACH: "1",
+    SKIP_SOCKET_REACH: '1',
     // Skip socket-basics submitting to Socket API (CLI handles unified submission).
-    SKIP_SOCKET_SUBMISSION: "1",
+    SKIP_SOCKET_SUBMISSION: '1',
     // Set PATH to only include extracted tool directories (security: don't append user's PATH).
     // The extracted tools are self-contained and don't need system PATH.
     PATH: `${path.dirname(toolPaths.python)}:${toolsDir}`,
-  };
+  }
 
   // Run socket-basics.
-  spinner?.start("Running comprehensive security scan…");
-  debug("notice", `Running socket-basics: ${toolPaths.python} ${args.join(" ")}`);
+  spinner?.start('Running comprehensive security scan…')
+  debug(
+    'notice',
+    `Running socket-basics: ${toolPaths.python} ${args.join(' ')}`,
+  )
 
-  const startTime = Date.now();
+  const startTime = Date.now()
   const basicsResult = await spawn(toolPaths.python, args, {
     cwd,
     env,
-    stdio: "pipe",
+    stdio: 'pipe',
     timeout,
-  });
+  })
 
-  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
 
   // Check spawn result - it can be null if process failed to start.
   if (!basicsResult) {
     if (spinner) {
-      spinner.stop();
-      spinner.fail("Failed to start socket-basics process");
+      spinner.stop()
+      spinner.fail('Failed to start socket-basics process')
     }
     return {
       ok: false,
-      message: "Failed to start socket-basics process",
-      cause: "spawn() returned null",
-    };
+      message: 'Failed to start socket-basics process',
+      cause: 'spawn() returned null',
+    }
   }
 
   if (basicsResult.code !== 0) {
     if (spinner) {
-      spinner.stop();
-      spinner.fail(`Socket-basics scan failed (${elapsed}s)`);
+      spinner.stop()
+      spinner.fail(`Socket-basics scan failed (${elapsed}s)`)
     }
-    debug("error", "socket-basics failed:", basicsResult.stderr);
+    debug('error', 'socket-basics failed:', basicsResult.stderr)
     return {
       ok: false,
-      message: "Socket-basics scan failed",
-      cause: String(basicsResult.stderr || "socket-basics exited with non-zero code"),
-    };
+      message: 'Socket-basics scan failed',
+      cause: String(
+        basicsResult.stderr || 'socket-basics exited with non-zero code',
+      ),
+    }
   }
 
   if (spinner) {
-    spinner.stop();
-    spinner.success(`Security scan completed (${elapsed}s)`);
+    spinner.stop()
+    spinner.success(`Security scan completed (${elapsed}s)`)
   }
 
   // Verify .socket.facts.json was created.
   if (!existsSync(factsPath)) {
     return {
       ok: false,
-      message: "Socket facts file not created",
+      message: 'Socket facts file not created',
       cause: `Expected .socket.facts.json at: ${factsPath}`,
-    };
+    }
   }
 
   // Parse findings from .socket.facts.json.
-  const findings = await parseSocketFacts(factsPath);
+  const findings = await parseSocketFacts(factsPath)
 
   // Check if parsing failed.
   if (findings.error) {
-    debug("warn", `Failed to parse facts JSON: ${findings.error}`);
+    debug('warn', `Failed to parse facts JSON: ${findings.error}`)
     // Return success but with empty findings - the file exists so scan succeeded.
     return {
       ok: true,
@@ -435,7 +474,7 @@ export async function runSocketBasics(
         factsPath,
         findings: {},
       },
-    };
+    }
   }
 
   return {
@@ -444,5 +483,5 @@ export async function runSocketBasics(
       factsPath,
       findings,
     },
-  };
+  }
 }

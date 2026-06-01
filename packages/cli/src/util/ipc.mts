@@ -5,6 +5,6 @@
 
 // IpcObject type for subprocess IPC data.
 export type IpcObject = Readonly<{
-  SOCKET_CLI_FIX?: string | undefined;
-  SOCKET_CLI_OPTIMIZE?: boolean | undefined;
-}>;
+  SOCKET_CLI_FIX?: string | undefined
+  SOCKET_CLI_OPTIMIZE?: boolean | undefined
+}>

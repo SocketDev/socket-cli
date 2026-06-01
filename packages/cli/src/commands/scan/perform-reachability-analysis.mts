@@ -1,60 +1,63 @@
-import path from "node:path";
+import path from 'node:path'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { HTTP_STATUS_UNAUTHORIZED } from "../../constants/http.mts";
-import { DOT_SOCKET_DOT_FACTS_JSON } from "../../constants/paths.mts";
-import { SOCKET_DEFAULT_BRANCH, SOCKET_DEFAULT_REPOSITORY } from "../../constants/socket.mts";
-import { extractTier1ReachabilityScanId } from "../../util/coana/extract-scan-id.mjs";
-import { spawnCoanaDlx } from "../../util/dlx/spawn.mjs";
-import { getMachineOutputMode } from "../../util/output/ambient-mode.mts";
-import { hasEnterpriseOrgPlan } from "../../util/organization.mts";
-import { handleApiCall } from "../../util/socket/api.mjs";
-import { setupSdk } from "../../util/socket/sdk.mjs";
-import { socketDevLink } from "../../util/terminal/link.mts";
-import { fetchOrganization } from "../organization/fetch-organization-list.mts";
+import { HTTP_STATUS_UNAUTHORIZED } from '../../constants/http.mts'
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
+import {
+  SOCKET_DEFAULT_BRANCH,
+  SOCKET_DEFAULT_REPOSITORY,
+} from '../../constants/socket.mts'
+import { extractTier1ReachabilityScanId } from '../../util/coana/extract-scan-id.mjs'
+import { spawnCoanaDlx } from '../../util/dlx/spawn.mjs'
+import { getMachineOutputMode } from '../../util/output/ambient-mode.mts'
+import { hasEnterpriseOrgPlan } from '../../util/organization.mts'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
+import { socketDevLink } from '../../util/terminal/link.mts'
+import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
-import type { CResult } from "../../types.mts";
-import type { PURL_Type } from "../../util/ecosystem/types.mjs";
-import type { SpinnerInstance } from "@socketsecurity/lib-stable/spinner/types";
+import type { CResult } from '../../types.mts'
+import type { PURL_Type } from '../../util/ecosystem/types.mjs'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 export type ReachabilityOptions = {
-  excludePaths: string[];
-  reachAnalysisMemoryLimit: number;
-  reachAnalysisTimeout: number;
-  reachConcurrency: number;
-  reachDebug: boolean;
-  reachDetailedAnalysisLogFile: boolean;
-  reachDisableAnalytics: boolean;
-  reachDisableExternalToolChecks: boolean;
-  reachEnableAnalysisSplitting: boolean;
-  reachEcosystems: PURL_Type[];
-  reachExcludePaths: string[];
-  reachLazyMode: boolean;
-  reachMinSeverity: string;
-  reachSkipCache: boolean;
-  reachUseOnlyPregeneratedSboms: boolean;
-  reachUseUnreachableFromPrecomputation: boolean;
-  reachVersion: string | undefined;
-};
+  excludePaths: string[]
+  reachAnalysisMemoryLimit: number
+  reachAnalysisTimeout: number
+  reachConcurrency: number
+  reachDebug: boolean
+  reachDetailedAnalysisLogFile: boolean
+  reachDisableAnalytics: boolean
+  reachDisableExternalToolChecks: boolean
+  reachEnableAnalysisSplitting: boolean
+  reachEcosystems: PURL_Type[]
+  reachExcludePaths: string[]
+  reachLazyMode: boolean
+  reachMinSeverity: string
+  reachSkipCache: boolean
+  reachUseOnlyPregeneratedSboms: boolean
+  reachUseUnreachableFromPrecomputation: boolean
+  reachVersion: string | undefined
+}
 
 type ReachabilityAnalysisOptions = {
-  branchName?: string | undefined;
-  cwd?: string | undefined;
-  orgSlug?: string | undefined;
-  outputPath?: string | undefined;
-  packagePaths?: string[] | undefined;
-  reachabilityOptions: ReachabilityOptions;
-  repoName?: string | undefined;
-  spinner?: SpinnerInstance | undefined;
-  target: string;
-  uploadManifests?: boolean | undefined;
-};
+  branchName?: string | undefined
+  cwd?: string | undefined
+  orgSlug?: string | undefined
+  outputPath?: string | undefined
+  packagePaths?: string[] | undefined
+  reachabilityOptions: ReachabilityOptions
+  repoName?: string | undefined
+  spinner?: SpinnerInstance | undefined
+  target: string
+  uploadManifests?: boolean | undefined
+}
 
 export type ReachabilityAnalysisResult = {
-  reachabilityReport: string;
-  tier1ReachabilityScanId: string | undefined;
-};
+  reachabilityReport: string
+  tier1ReachabilityScanId: string | undefined
+}
 
 export async function performReachabilityAnalysis(
   options?: ReachabilityAnalysisOptions | undefined,
@@ -70,64 +73,66 @@ export async function performReachabilityAnalysis(
     spinner,
     target,
     uploadManifests = true,
-  } = { __proto__: null, ...options } as ReachabilityAnalysisOptions;
+  } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
 
   // Determine the analysis target - make it relative to cwd if absolute.
-  let analysisTarget = target;
+  let analysisTarget = target
   if (path.isAbsolute(analysisTarget)) {
-    analysisTarget = path.relative(cwd, analysisTarget) || ".";
+    analysisTarget = path.relative(cwd, analysisTarget) || '.'
   }
 
   // Check if user has enterprise plan for reachability analysis.
-  const orgsCResult = await fetchOrganization();
+  const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
-    const httpCode = (orgsCResult as { data?: { code?: number | undefined } | undefined }).data
-      ?.code;
+    const httpCode = (
+      orgsCResult as { data?: { code?: number | undefined } | undefined }
+    ).data?.code
     if (httpCode === HTTP_STATUS_UNAUTHORIZED) {
       return {
         ok: false,
-        message: "Authentication failed",
+        message: 'Authentication failed',
         cause:
-          "Your API token appears to be invalid, expired, or revoked. Please check your token and try again.",
-      };
+          'Your API token appears to be invalid, expired, or revoked. Please check your token and try again.',
+      }
     }
     return {
       ok: false,
-      message: "Unable to verify plan permissions",
-      cause: "Failed to fetch organization information to verify enterprise plan access",
-    };
+      message: 'Unable to verify plan permissions',
+      cause:
+        'Failed to fetch organization information to verify enterprise plan access',
+    }
   }
 
-  const { organizations } = orgsCResult.data;
+  const { organizations } = orgsCResult.data
 
   if (!hasEnterpriseOrgPlan(organizations)) {
     return {
       ok: false,
-      message: "Tier 1 Reachability analysis requires an enterprise plan",
-      cause: `Please ${socketDevLink("upgrade your plan", "/pricing")}. This feature is only available for organizations with an enterprise plan.`,
-    };
+      message: 'Tier 1 Reachability analysis requires an enterprise plan',
+      cause: `Please ${socketDevLink('upgrade your plan', '/pricing')}. This feature is only available for organizations with an enterprise plan.`,
+    }
   }
 
-  const wasSpinning = !!spinner?.isSpinning;
+  const wasSpinning = !!spinner?.isSpinning
 
-  let tarHash: string | undefined;
+  let tarHash: string | undefined
 
   if (orgSlug && packagePaths && uploadManifests) {
     // Setup SDK for uploading manifests
-    const sockSdkCResult = await setupSdk();
+    const sockSdkCResult = await setupSdk()
     if (!sockSdkCResult.ok) {
-      return sockSdkCResult;
+      return sockSdkCResult
     }
 
-    const sockSdk = sockSdkCResult.data;
+    const sockSdk = sockSdkCResult.data
 
     // Exclude any .socket.facts.json files that happen to be in the scan
     // folder before the analysis was run.
     const filepathsToUpload = packagePaths.filter(
-      (p) => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
-    );
+      p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
+    )
 
-    spinner?.start("Uploading manifests for reachability analysis…");
+    spinner?.start('Uploading manifests for reachability analysis…')
 
     // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path.
     const uploadCResult = (await handleApiCall(
@@ -135,102 +140,114 @@ export async function performReachabilityAnalysis(
         pathsRelativeTo: path.resolve(cwd, analysisTarget),
       }),
       {
-        description: "upload manifests",
+        description: 'upload manifests',
         spinner,
       },
-    )) as CResult<{ tarHash?: string | undefined }>;
+    )) as CResult<{ tarHash?: string | undefined }>
 
-    spinner?.stop();
+    spinner?.stop()
 
     if (!uploadCResult.ok) {
       /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {
-        spinner?.start();
+        spinner?.start()
       }
       /* c8 ignore stop */
-      return uploadCResult;
+      return uploadCResult
     }
 
-    tarHash = (uploadCResult.data as { tarHash?: string | undefined })?.tarHash;
+    tarHash = (uploadCResult.data as { tarHash?: string | undefined })?.tarHash
     if (!tarHash) {
       /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {
-        spinner?.start();
+        spinner?.start()
       }
       /* c8 ignore stop */
       return {
         ok: false,
-        message: "Failed to get manifest tar hash",
-        cause: "Server did not return a tar hash for the uploaded manifests",
-      };
+        message: 'Failed to get manifest tar hash',
+        cause: 'Server did not return a tar hash for the uploaded manifests',
+      }
     }
 
-    spinner?.start();
-    spinner?.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`);
+    spinner?.start()
+    spinner?.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
   }
 
-  spinner?.start();
-  spinner?.infoAndStop("Running reachability analysis with Coana…");
+  spinner?.start()
+  spinner?.infoAndStop('Running reachability analysis with Coana…')
 
-  const outputFilePath = outputPath?.trim() ? outputPath : DOT_SOCKET_DOT_FACTS_JSON;
+  const outputFilePath = outputPath?.trim()
+    ? outputPath
+    : DOT_SOCKET_DOT_FACTS_JSON
   // Build Coana arguments.
   // Under machine-output mode, --silent suppresses coana's Winston
   // logger entirely; the report still lands in --socket-mode's file.
-  const machineMode = getMachineOutputMode();
+  const machineMode = getMachineOutputMode()
   const coanaArgs = [
-    ...(machineMode ? ["--silent"] : []),
-    "run",
+    ...(machineMode ? ['--silent'] : []),
+    'run',
     analysisTarget,
-    "--output-dir",
+    '--output-dir',
     path.dirname(outputFilePath),
-    "--socket-mode",
+    '--socket-mode',
     outputFilePath,
-    "--disable-report-submission",
+    '--disable-report-submission',
     ...(reachabilityOptions.reachAnalysisTimeout
-      ? ["--analysis-timeout", `${reachabilityOptions.reachAnalysisTimeout}`]
+      ? ['--analysis-timeout', `${reachabilityOptions.reachAnalysisTimeout}`]
       : []),
     ...(reachabilityOptions.reachAnalysisMemoryLimit
-      ? ["--memory-limit", `${reachabilityOptions.reachAnalysisMemoryLimit}`]
+      ? ['--memory-limit', `${reachabilityOptions.reachAnalysisMemoryLimit}`]
       : []),
     ...(reachabilityOptions.reachConcurrency
-      ? ["--concurrency", `${reachabilityOptions.reachConcurrency}`]
+      ? ['--concurrency', `${reachabilityOptions.reachConcurrency}`]
       : []),
-    ...(reachabilityOptions.reachDebug ? ["--debug"] : []),
-    ...(reachabilityOptions.reachDetailedAnalysisLogFile ? ["--detailed-analysis-log-file"] : []),
-    ...(reachabilityOptions.reachDisableAnalytics ? ["--disable-analytics-sharing"] : []),
+    ...(reachabilityOptions.reachDebug ? ['--debug'] : []),
+    ...(reachabilityOptions.reachDetailedAnalysisLogFile
+      ? ['--detailed-analysis-log-file']
+      : []),
+    ...(reachabilityOptions.reachDisableAnalytics
+      ? ['--disable-analytics-sharing']
+      : []),
     ...(reachabilityOptions.reachDisableExternalToolChecks
-      ? ["--disable-external-tool-checks"]
+      ? ['--disable-external-tool-checks']
       : []),
     // Analysis splitting is disabled by default; only skip the flag when explicitly enabled.
-    ...(reachabilityOptions.reachEnableAnalysisSplitting ? [] : ["--disable-analysis-splitting"]),
-    ...(tarHash ? ["--run-without-docker", "--manifests-tar-hash", tarHash] : []),
+    ...(reachabilityOptions.reachEnableAnalysisSplitting
+      ? []
+      : ['--disable-analysis-splitting']),
+    ...(tarHash
+      ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
+      : []),
     // Empty reachEcosystems implies scanning all ecosystems.
     ...(reachabilityOptions.reachEcosystems.length
-      ? ["--purl-types", ...reachabilityOptions.reachEcosystems]
+      ? ['--purl-types', ...reachabilityOptions.reachEcosystems]
       : []),
     ...(reachabilityOptions.reachExcludePaths.length
-      ? ["--exclude-dirs", ...reachabilityOptions.reachExcludePaths]
+      ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
-    ...(reachabilityOptions.reachLazyMode ? ["--lazy-mode"] : []),
+    ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),
     ...(reachabilityOptions.reachMinSeverity
-      ? ["--min-severity", reachabilityOptions.reachMinSeverity]
+      ? ['--min-severity', reachabilityOptions.reachMinSeverity]
       : []),
-    ...(reachabilityOptions.reachSkipCache ? ["--skip-cache-usage"] : []),
-    ...(reachabilityOptions.reachUseOnlyPregeneratedSboms ? ["--use-only-pregenerated-sboms"] : []),
+    ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
+    ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
+      ? ['--use-only-pregenerated-sboms']
+      : []),
     ...(reachabilityOptions.reachUseUnreachableFromPrecomputation
-      ? ["--use-unreachable-from-precomputation"]
+      ? ['--use-unreachable-from-precomputation']
       : []),
-  ];
+  ]
 
   // Build environment variables.
-  const coanaEnv: Record<string, string> = {};
+  const coanaEnv: Record<string, string> = {}
   // do not pass default repo and branch name to coana to avoid mixing
   // buckets (cached configuration) from projects that are likely very different.
   if (repoName && repoName !== SOCKET_DEFAULT_REPOSITORY) {
-    coanaEnv["SOCKET_REPO_NAME"] = repoName;
+    coanaEnv['SOCKET_REPO_NAME'] = repoName
   }
   if (branchName && branchName !== SOCKET_DEFAULT_BRANCH) {
-    coanaEnv["SOCKET_BRANCH_NAME"] = branchName;
+    coanaEnv['SOCKET_BRANCH_NAME'] = branchName
   }
 
   // Run Coana with the manifests tar hash. Under machine mode we drop
@@ -241,21 +258,21 @@ export async function performReachabilityAnalysis(
     cwd,
     env: coanaEnv,
     spinner,
-    stdio: machineMode ? "ignore" : "inherit",
-  });
+    stdio: machineMode ? 'ignore' : 'inherit',
+  })
 
   /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
   if (wasSpinning) {
-    spinner?.start();
+    spinner?.start()
   }
   /* c8 ignore stop */
 
   if (!coanaResult.ok) {
-    const logger = getDefaultLogger();
-    logger.error("Reachability analysis failed");
-    logger.error(`  target: ${analysisTarget}, cwd: ${cwd}`);
+    const logger = getDefaultLogger()
+    logger.error('Reachability analysis failed')
+    logger.error(`  target: ${analysisTarget}, cwd: ${cwd}`)
     if (coanaResult.message) {
-      logger.error(`  ${coanaResult.message}`);
+      logger.error(`  ${coanaResult.message}`)
     }
   }
 
@@ -265,8 +282,9 @@ export async function performReachabilityAnalysis(
         data: {
           // Use the actual output filename for the scan.
           reachabilityReport: outputFilePath,
-          tier1ReachabilityScanId: extractTier1ReachabilityScanId(outputFilePath),
+          tier1ReachabilityScanId:
+            extractTier1ReachabilityScanId(outputFilePath),
         },
       }
-    : coanaResult;
+    : coanaResult
 }

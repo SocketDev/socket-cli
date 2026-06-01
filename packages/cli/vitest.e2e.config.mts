@@ -1,6 +1,6 @@
-import os from "node:os";
+import os from 'node:os'
 
-import { defineConfig } from "vitest/config";
+import { defineConfig } from 'vitest/config'
 
 // oxlint-disable-next-line socket/no-default-export -- vitest config file requires default export
 export default defineConfig({
@@ -9,18 +9,18 @@ export default defineConfig({
   },
   test: {
     globals: false,
-    environment: "node",
-    include: ["**/*.e2e.test.{mts,ts}"],
+    environment: 'node',
+    include: ['**/*.e2e.test.{mts,ts}'],
     exclude: [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/.{idea,git,cache,output,temp}/**",
-      "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*",
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
     ],
-    reporters: ["default"],
-    setupFiles: ["./test/setup.mts"],
+    reporters: ['default'],
+    setupFiles: ['./test/setup.mts'],
     // Use threads for better performance.
-    pool: "threads",
+    pool: 'threads',
     maxWorkers: os.cpus().length,
     // E2E tests need full isolation for clean execution.
     isolate: true,
@@ -33,4 +33,4 @@ export default defineConfig({
     // Enable sharding for parallel E2E execution.
     fileParallelism: true,
   },
-});
+})

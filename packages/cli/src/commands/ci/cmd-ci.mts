@@ -1,28 +1,32 @@
-import { getDefaultOrgSlug } from "./fetch-default-org-slug.mts";
-import { handleCi } from "./handle-ci.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
-import { outputDryRunUpload } from "../../util/dry-run/output.mts";
-import { detectDefaultBranch, getRepoName, gitBranch } from "../../util/git/operations.mjs";
-import { getFlagListOutput } from "../../util/output/formatting.mts";
+import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
+import { handleCi } from './handle-ci.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunUpload } from '../../util/dry-run/output.mts'
+import {
+  detectDefaultBranch,
+  getRepoName,
+  gitBranch,
+} from '../../util/git/operations.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
-import type { MeowFlags } from "../../flags.mts";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const config = {
-  commandName: "ci",
+  commandName: 'ci',
   description:
-    "Alias for `socket scan create --report` (creates report and exits with error if unhealthy)",
+    'Alias for `socket scan create --report` (creates report and exits with error if unhealthy)',
   hidden: false,
   flags: defineFlags({
     ...commonFlags,
     autoManifest: {
-      type: "boolean",
+      type: 'boolean',
       // Dev tools in CI environments are not likely to be set up, so this is safer.
       default: false,
       description:
-        "Auto generate manifest files where detected? See autoManifest flag in `socket scan create`",
+        'Auto generate manifest files where detected? See autoManifest flag in `socket scan create`',
     },
   }),
   help: (command: string, _config: { flags: MeowFlags }) => `
@@ -46,13 +50,13 @@ const config = {
       $ ${command}
       $ ${command} --auto-manifest
   `,
-};
+}
 
 export const cmdCI = {
   description: config.description,
   hidden: config.hidden,
   run,
-};
+}
 
 export async function run(
   argv: string[] | readonly string[],
@@ -64,28 +68,31 @@ export async function run(
     config,
     parentName,
     importMeta,
-  });
+  })
 
-  const dryRun = !!cli.flags["dryRun"];
-  const autoManifest = Boolean(cli.flags["autoManifest"]);
+  const dryRun = !!cli.flags['dryRun']
+  const autoManifest = Boolean(cli.flags['autoManifest'])
 
   if (dryRun) {
-    const orgSlugCResult = await getDefaultOrgSlug();
-    const cwd = process.cwd();
-    const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd));
-    const repoName = await getRepoName(cwd);
+    const orgSlugCResult = await getDefaultOrgSlug()
+    const cwd = process.cwd()
+    const branchName =
+      (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
+    const repoName = await getRepoName(cwd)
 
-    outputDryRunUpload("CI scan", {
+    outputDryRunUpload('CI scan', {
       autoManifest,
-      branchName: branchName || "(default)",
+      branchName: branchName || '(default)',
       cwd,
-      organizationSlug: orgSlugCResult.ok ? orgSlugCResult.data : "(from API token)",
-      repoName: repoName || "(auto-detected)",
+      organizationSlug: orgSlugCResult.ok
+        ? orgSlugCResult.data
+        : '(from API token)',
+      repoName: repoName || '(auto-detected)',
       report: true,
-      targets: ["."],
-    });
-    return;
+      targets: ['.'],
+    })
+    return
   }
 
-  await handleCi(autoManifest);
+  await handleCi(autoManifest)
 }

@@ -31,28 +31,31 @@
  *   functions
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
-import FIXTURE from "../../../../src/commands/audit-log/audit-fixture.json" with { type: "json" };
+import FIXTURE from '../../../../src/commands/audit-log/audit-fixture.json' with { type: 'json' }
 import {
   outputAsJson,
   outputAsMarkdown,
-} from "../../../../src/commands/audit-log/output-audit-log.mts";
-import { createSuccessResult } from "../../../helpers/mocks.mts";
+} from '../../../../src/commands/audit-log/output-audit-log.mts'
+import { createSuccessResult } from '../../../helpers/mocks.mts'
 
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-type AuditLogs = SocketSdkSuccessResult<"getAuditLogEvents">["data"]["results"];
+type AuditLogs = SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results']
 
-describe("output-audit-log", () => {
-  describe("json", () => {
-    it("should return formatted json string", async () => {
-      const r = await outputAsJson(createSuccessResult(JSON.parse(JSON.stringify(FIXTURE))), {
-        logType: "",
-        orgSlug: "noorgslug",
-        page: 1,
-        perPage: 10,
-      });
+describe('output-audit-log', () => {
+  describe('json', () => {
+    it('should return formatted json string', async () => {
+      const r = await outputAsJson(
+        createSuccessResult(JSON.parse(JSON.stringify(FIXTURE))),
+        {
+          logType: '',
+          orgSlug: 'noorgslug',
+          page: 1,
+          perPage: 10,
+        },
+      )
       expect(r).toMatchInlineSnapshot(
         `
         "{
@@ -127,31 +130,31 @@ describe("output-audit-log", () => {
         }
         "
       `,
-      );
-    });
+      )
+    })
 
-    it("should return empty object string on error", async () => {
+    it('should return empty object string on error', async () => {
       const r = await outputAsJson({} as AuditLogs, {
-        logType: "",
-        orgSlug: "noorgslug",
+        logType: '',
+        orgSlug: 'noorgslug',
         page: 1,
         perPage: 10,
-      });
+      })
       expect(r).toMatchInlineSnapshot(`
         "{}
         "
-      `);
-    });
-  });
+      `)
+    })
+  })
 
-  describe("markdown", () => {
-    it("should return markdown report", async () => {
+  describe('markdown', () => {
+    it('should return markdown report', async () => {
       const r = await outputAsMarkdown(JSON.parse(JSON.stringify(FIXTURE)), {
-        logType: "",
-        orgSlug: "noorgslug",
+        logType: '',
+        orgSlug: 'noorgslug',
         page: 1,
         perPage: 10,
-      });
+      })
       expect(r).toMatchInlineSnapshot(`
         "
         # Socket Audit Logs
@@ -176,20 +179,22 @@ describe("output-audit-log", () => {
         | 116928   | 2025-03-10T22:53:35.734Z | updateApiTokenScopes      | person@socket.dev |                 |               |
         | -------- | ------------------------ | ------------------------- | ----------------- | --------------- | ------------- |
         "
-      `);
-    });
+      `)
+    })
 
-    it("should return error report on error", async () => {
+    it('should return error report on error', async () => {
       const r = await outputAsMarkdown(
         {}, // this will fail
         {
-          logType: "",
-          orgSlug: "noorgslug",
+          logType: '',
+          orgSlug: 'noorgslug',
           page: 1,
           perPage: 10,
         },
-      );
-      expect(r).toMatchInlineSnapshot(`"Failed to generate the markdown report"`);
-    });
-  });
-});
+      )
+      expect(r).toMatchInlineSnapshot(
+        `"Failed to generate the markdown report"`,
+      )
+    })
+  })
+})

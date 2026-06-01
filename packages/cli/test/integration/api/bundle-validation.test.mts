@@ -4,30 +4,30 @@
  *   dependencies.
  */
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const packagePath = path.resolve(__dirname, "..", "..");
-const buildPath = path.join(packagePath, "build");
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const packagePath = path.resolve(__dirname, '..', '..')
+const buildPath = path.join(packagePath, 'build')
 
 /**
  * Check if bundle contains inlined dependencies. Reads package.json
  * dependencies and ensures they are NOT bundled inline.
  */
 export async function checkBundledDependencies(content: string): Promise<{
-  bundledDeps: string[];
-  hasNoBundledDeps: boolean;
+  bundledDeps: string[]
+  hasNoBundledDeps: boolean
 }> {
   // Read package.json to get runtime dependencies.
-  const pkgJsonPath = path.join(packagePath, "package.json");
-  const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, "utf8"));
-  const dependencies = pkgJson.dependencies || {};
+  const pkgJsonPath = path.join(packagePath, 'package.json')
+  const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, 'utf8'))
+  const dependencies = pkgJson.dependencies || {}
 
-  const bundledDeps: string[] = [];
+  const bundledDeps: string[] = []
 
   // If we have NO dependencies, check that no external packages are bundled.
   if (Object.keys(dependencies).length === 0) {
@@ -39,28 +39,32 @@ export async function checkBundledDependencies(content: string): Promise<{
     const bundledPackagePatterns = [
       // Socket packages that should always be external.
       /@socketsecurity\/registry/,
-    ];
+    ]
 
     for (let i = 0, { length } = bundledPackagePatterns; i < length; i += 1) {
-      const pattern = bundledPackagePatterns[i];
+      const pattern = bundledPackagePatterns[i]
       // Check if package name appears in context that suggests bundling.
       // Look for: var import_package = require("package") without the actual require call.
       // This would indicate the package code is bundled inline.
-      const bundlePattern = new RegExp(`var\\s+\\w+\\s*=\\s*__toCommonJS\\([^)]*${pattern.source}`);
+      const bundlePattern = new RegExp(
+        `var\\s+\\w+\\s*=\\s*__toCommonJS\\([^)]*${pattern.source}`,
+      )
 
       if (bundlePattern.test(content)) {
-        bundledDeps.push(pattern.source);
+        bundledDeps.push(pattern.source)
       }
     }
   } else {
     // If we have dependencies, check that they remain external (not bundled).
     for (const dep of Object.keys(dependencies)) {
-      const escapedDep = dep.replace(/[/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const escapedDep = dep.replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&')
       // Check if dependency code is bundled by looking for __toCommonJS pattern.
-      const bundlePattern = new RegExp(`var\\s+\\w+\\s*=\\s*__toCommonJS\\([^)]*${escapedDep}`);
+      const bundlePattern = new RegExp(
+        `var\\s+\\w+\\s*=\\s*__toCommonJS\\([^)]*${escapedDep}`,
+      )
 
       if (bundlePattern.test(content)) {
-        bundledDeps.push(dep);
+        bundledDeps.push(dep)
       }
     }
   }
@@ -68,7 +72,7 @@ export async function checkBundledDependencies(content: string): Promise<{
   return {
     bundledDeps,
     hasNoBundledDeps: bundledDeps.length === 0,
-  };
+  }
 }
 
 /**
@@ -76,8 +80,8 @@ export async function checkBundledDependencies(content: string): Promise<{
  * /home/, etc.
  */
 export function hasAbsolutePaths(content: string): {
-  hasIssue: boolean;
-  matches: string[];
+  hasIssue: boolean
+  matches: string[]
 } {
   // Match absolute paths but exclude URLs and node: protocol.
   const patterns = [
@@ -85,56 +89,58 @@ export function hasAbsolutePaths(content: string): {
     /require\(["'](?:[A-Z]:\\[^"'\n]+|\/[^"'\n]+)["']\)/g,
     // Match import from '/abs/path'.
     /import\s+.*?from\s+["'](?:[A-Z]:\\[^"'\n]+|\/[^"'\n]+)["']/g,
-  ];
+  ]
 
-  const matches: string[] = [];
+  const matches: string[] = []
   for (let i = 0, { length } = patterns; i < length; i += 1) {
-    const pattern = patterns[i];
-    const found = content.match(pattern);
+    const pattern = patterns[i]
+    const found = content.match(pattern)
     if (found) {
-      matches.push(...found);
+      matches.push(...found)
     }
   }
 
   return {
     hasIssue: matches.length > 0,
     matches,
-  };
+  }
 }
 
-describe("Bundle validation", () => {
-  it("should not contain absolute paths in build/cli.js", async () => {
-    const cliPath = path.join(buildPath, "cli.js");
-    const content = await fs.readFile(cliPath, "utf8");
+describe('Bundle validation', () => {
+  it('should not contain absolute paths in build/cli.js', async () => {
+    const cliPath = path.join(buildPath, 'cli.js')
+    const content = await fs.readFile(cliPath, 'utf8')
 
-    const result = hasAbsolutePaths(content);
+    const result = hasAbsolutePaths(content)
 
     if (result.hasIssue) {
-      logger.fail("Found absolute paths in bundle:");
+      logger.fail('Found absolute paths in bundle:')
       for (const match of result.matches) {
-        logger.fail(`  - ${match}`);
+        logger.fail(`  - ${match}`)
       }
     }
 
-    expect(result.hasIssue, "Bundle should not contain absolute paths").toBe(false);
-  });
+    expect(result.hasIssue, 'Bundle should not contain absolute paths').toBe(
+      false,
+    )
+  })
 
-  it("should not bundle dependencies inline (validate against package.json dependencies)", async () => {
-    const cliPath = path.join(buildPath, "cli.js");
-    const content = await fs.readFile(cliPath, "utf8");
+  it('should not bundle dependencies inline (validate against package.json dependencies)', async () => {
+    const cliPath = path.join(buildPath, 'cli.js')
+    const content = await fs.readFile(cliPath, 'utf8')
 
-    const result = await checkBundledDependencies(content);
+    const result = await checkBundledDependencies(content)
 
     if (!result.hasNoBundledDeps) {
-      logger.fail("Found bundled dependencies (should be external):");
+      logger.fail('Found bundled dependencies (should be external):')
       for (const dep of result.bundledDeps) {
-        logger.fail(`  - ${dep}`);
+        logger.fail(`  - ${dep}`)
       }
     }
 
     expect(
       result.hasNoBundledDeps,
-      "Dependencies from package.json should be external, not bundled inline",
-    ).toBe(true);
-  });
-});
+      'Dependencies from package.json should be external, not bundled inline',
+    ).toBe(true)
+  })
+})

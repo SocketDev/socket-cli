@@ -11,24 +11,24 @@
  *   3. External Security Tools - Python, Trivy, TruffleHog, OpenGrep downloads.
  */
 
-import { existsSync, promises as fs, readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync, promises as fs, readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import AdmZip from "adm-zip";
-import { logTransientErrorHelp } from "build-infra/lib/github-error-utils";
-import { downloadReleaseAsset } from "build-infra/lib/github-releases";
+import AdmZip from 'adm-zip'
+import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
+import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
 
-import { joinAnd } from "@socketsecurity/lib-stable/arrays/join";
-import { safeDelete, safeMkdir } from "@socketsecurity/lib-stable/fs/safe";
-import { httpDownload } from "@socketsecurity/lib-stable/http-request/download";
-import { httpRequest } from "@socketsecurity/lib-stable/http-request/request";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
-import { normalizePath } from "@socketsecurity/lib-stable/paths/normalize";
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
+import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { ARCH_MAP, PLATFORM_MAP } from "../constants/platform-mappings.mts";
-import { PLATFORM_MAP_TOOLS } from "../constants/external-tools-platforms.mts";
+import { ARCH_MAP, PLATFORM_MAP } from '../constants/platform-mappings.mts'
+import { PLATFORM_MAP_TOOLS } from '../constants/external-tools-platforms.mts'
 
 // =============================================================================
 // Section 1: Constants and Utilities.
@@ -37,15 +37,15 @@ import { PLATFORM_MAP_TOOLS } from "../constants/external-tools-platforms.mts";
 /**
  * Default logger instance for SEA build operations.
  */
-export const logger = getDefaultLogger();
+export const logger = getDefaultLogger()
 
 /**
  * External tools configuration loaded from bundle-tools.json. Contains version
  * info, GitHub repos, and download metadata for security tools.
  */
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const externalToolsPath = path.join(__dirname, "../../bundle-tools.json");
-export const externalTools = JSON.parse(readFileSync(externalToolsPath, "utf8"));
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const externalToolsPath = path.join(__dirname, '../../bundle-tools.json')
+export const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8'))
 
 /**
  * Download and bundle security tools for socket-basics integration into SEA
@@ -105,28 +105,36 @@ export const externalTools = JSON.parse(readFileSync(externalToolsPath, "utf8"))
  *   if platform not supported.
  */
 export async function downloadExternalTools(platform, arch, isMusl = false) {
-  const rootPath = getRootPath();
-  const muslSuffix = isMusl ? "-musl" : "";
-  const platformArch = `${platform}-${arch}${muslSuffix}`;
+  const rootPath = getRootPath()
+  const muslSuffix = isMusl ? '-musl' : ''
+  const platformArch = `${platform}-${arch}${muslSuffix}`
 
   const toolsDir = normalizePath(
-    path.join(rootPath, `packages/build-infra/build/external-tools/${platformArch}`),
-  );
+    path.join(
+      rootPath,
+      `packages/build-infra/build/external-tools/${platformArch}`,
+    ),
+  )
   const tarGzPath = normalizePath(
-    path.join(rootPath, `packages/build-infra/build/external-tools/${platformArch}.tar.gz`),
-  );
+    path.join(
+      rootPath,
+      `packages/build-infra/build/external-tools/${platformArch}.tar.gz`,
+    ),
+  )
 
   // Check if tar.gz already exists and is valid.
   if (existsSync(tarGzPath)) {
-    const stats = await fs.stat(tarGzPath);
+    const stats = await fs.stat(tarGzPath)
 
     // Validate cached file is not empty or suspiciously small (> 1KB).
     if (stats.size < 1024) {
-      logger.warn(`Cached tar.gz is too small (${stats.size} bytes), rebuilding…`);
-      await safeDelete(tarGzPath);
+      logger.warn(
+        `Cached tar.gz is too small (${stats.size} bytes), rebuilding…`,
+      )
+      await safeDelete(tarGzPath)
     } else {
-      logger.log(`External-tools tar.gz already exists: ${tarGzPath}`);
-      return tarGzPath;
+      logger.log(`External-tools tar.gz already exists: ${tarGzPath}`)
+      return tarGzPath
     }
   }
 
@@ -135,85 +143,85 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   // Repository info is derived from the 'repository' field (format: owner/repo).
   const TOOL_REPOS = {
     __proto__: null,
-  };
+  }
 
   // Populate TOOL_REPOS from bundle-tools.json.
   // Filter by release === 'asset' to include all GitHub-released tools.
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.release === "asset") {
-      const repoPath = toolConfig.repository.replace(/^[^:]+:/, "");
-      const parts = repoPath.split("/");
+    if (toolConfig.release === 'asset') {
+      const repoPath = toolConfig.repository.replace(/^[^:]+:/, '')
+      const parts = repoPath.split('/')
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
         throw new Error(
           `Invalid repository format for ${toolName}: expected '<host>:owner/repo', got '${toolConfig.repository}'`,
-        );
+        )
       }
-      const [owner, repo] = parts;
+      const [owner, repo] = parts
       TOOL_REPOS[toolName] = {
         owner,
         repo,
         version: toolConfig.tag ?? toolConfig.version,
-      };
+      }
     }
   }
 
   // Platform-specific binary mappings imported from centralized constant.
   // See scripts/constants/external-tools-platforms.mts for the full mapping.
 
-  const toolsForPlatform = PLATFORM_MAP_TOOLS[platformArch];
+  const toolsForPlatform = PLATFORM_MAP_TOOLS[platformArch]
   if (!toolsForPlatform) {
-    logger.warn(`No external-tools available for platform: ${platformArch}`);
-    return undefined;
+    logger.warn(`No external-tools available for platform: ${platformArch}`)
+    return undefined
   }
 
-  logger.log(`Downloading external-tools for ${platformArch}...`);
-  await safeMkdir(toolsDir);
+  logger.log(`Downloading external-tools for ${platformArch}...`)
+  await safeMkdir(toolsDir)
 
   // Download and extract each tool.
-  const toolNames = [];
+  const toolNames = []
   for (const [toolName, assetName] of Object.entries(toolsForPlatform)) {
-    const config = TOOL_REPOS[toolName];
+    const config = TOOL_REPOS[toolName]
 
     // Validate tool exists in TOOL_REPOS (populated from bundle-tools.json).
     if (!config) {
       throw new Error(
         `Tool "${toolName}" is defined in platform mappings but not found in TOOL_REPOS. ` +
           `Ensure "${toolName}" exists in bundle-tools.json with release "asset".`,
-      );
+      )
     }
 
-    const isPlatWin = platform === "win32";
-    const binaryName = toolName + (isPlatWin ? ".exe" : "");
-    const binaryPath = normalizePath(path.join(toolsDir, binaryName));
+    const isPlatWin = platform === 'win32'
+    const binaryName = toolName + (isPlatWin ? '.exe' : '')
+    const binaryPath = normalizePath(path.join(toolsDir, binaryName))
 
     // Skip if already downloaded.
     if (
       existsSync(binaryPath) ||
-      (toolName === "python" && existsSync(path.join(toolsDir, "python")))
+      (toolName === 'python' && existsSync(path.join(toolsDir, 'python')))
     ) {
-      logger.log(`  ✓ ${toolName} already downloaded`);
-      toolNames.push(toolName === "python" ? "python" : binaryName);
-      continue;
+      logger.log(`  ✓ ${toolName} already downloaded`)
+      toolNames.push(toolName === 'python' ? 'python' : binaryName)
+      continue
     }
 
-    logger.log(`  Downloading ${toolName}...`);
-    const archivePath = normalizePath(path.join(toolsDir, assetName));
+    logger.log(`  Downloading ${toolName}...`)
+    const archivePath = normalizePath(path.join(toolsDir, assetName))
 
     // Download archive directly from GitHub releases.
     // Release tags can be any format (v1.6.1, 3.11.14, 20260203, etc.).
-    const tag = config.version;
-    const url = `https://github.com/${config.owner}/${config.repo}/releases/download/${tag}/${assetName}`;
+    const tag = config.version
+    const url = `https://github.com/${config.owner}/${config.repo}/releases/download/${tag}/${assetName}`
 
     // Get SHA256 checksum from bundle-tools.json.
     // SECURITY: Checksum verification is REQUIRED for all external tool downloads.
     // If checksum is missing, the build MUST fail.
-    const toolConfig = externalTools[toolName];
-    const sha256 = toolConfig?.checksums?.[assetName];
+    const toolConfig = externalTools[toolName]
+    const sha256 = toolConfig?.checksums?.[assetName]
 
     if (!sha256) {
       throw new Error(
-        `bundle-tools.json tools["${toolName}"].checksums has no entry for "${assetName}" (seen: ${joinAnd(Object.keys(toolConfig?.checksums ?? {})) || "<empty>"}); run \`pnpm run sync-checksums\` to populate — builds must verify every external download`,
-      );
+        `bundle-tools.json tools["${toolName}"].checksums has no entry for "${assetName}" (seen: ${joinAnd(Object.keys(toolConfig?.checksums ?? {})) || '<empty>'}); run \`pnpm run sync-checksums\` to populate — builds must verify every external download`,
+      )
     }
 
     await httpDownload(url, archivePath, {
@@ -222,67 +230,77 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       retries: 2,
       retryDelay: 5000,
       sha256,
-    });
+    })
 
     // Extract binary (or handle standalone binaries).
-    const isZip = assetName.endsWith(".zip");
-    const isTarGz = assetName.endsWith(".tar.gz") || assetName.endsWith(".tgz");
-    const isStandalone = !isZip && !isTarGz;
+    const isZip = assetName.endsWith('.zip')
+    const isTarGz = assetName.endsWith('.tar.gz') || assetName.endsWith('.tgz')
+    const isStandalone = !isZip && !isTarGz
 
     if (isStandalone) {
       // Standalone binary - create node_modules structure for VFS compatibility.
       // node-smol VFS requires all files to be under node_modules/ for security.
-      logger.log(`  Preparing ${toolName}...`);
+      logger.log(`  Preparing ${toolName}...`)
 
       // Create node_modules/@socketsecurity/{toolName}-bin/ structure.
       const packageDir = normalizePath(
-        path.join(toolsDir, "node_modules", "@socketsecurity", `${toolName}-bin`),
-      );
-      await safeMkdir(packageDir);
+        path.join(
+          toolsDir,
+          'node_modules',
+          '@socketsecurity',
+          `${toolName}-bin`,
+        ),
+      )
+      await safeMkdir(packageDir)
 
-      const packageBinaryPath = normalizePath(path.join(packageDir, binaryName));
+      const packageBinaryPath = normalizePath(path.join(packageDir, binaryName))
 
       // Move binary into package directory.
       if (archivePath !== packageBinaryPath) {
         try {
-          await fs.rename(archivePath, packageBinaryPath);
+          await fs.rename(archivePath, packageBinaryPath)
         } catch (e) {
           // Fallback to copy + delete for cross-device moves.
-          await fs.copyFile(archivePath, packageBinaryPath);
-          await safeDelete(archivePath);
+          await fs.copyFile(archivePath, packageBinaryPath)
+          await safeDelete(archivePath)
         }
       }
 
       // Make executable on Unix.
       if (!isPlatWin) {
-        await fs.chmod(packageBinaryPath, 0o755);
+        await fs.chmod(packageBinaryPath, 0o755)
       }
 
-      toolNames.push(`node_modules/@socketsecurity/${toolName}-bin`);
-      logger.log(`  ✓ ${toolName} ready`);
-      continue;
+      toolNames.push(`node_modules/@socketsecurity/${toolName}-bin`)
+      logger.log(`  ✓ ${toolName} ready`)
+      continue
     }
 
-    logger.log(`  Extracting ${toolName}...`);
+    logger.log(`  Extracting ${toolName}...`)
 
     if (isZip) {
       // Extract zip archive using adm-zip.
       // adm-zip provides cross-platform zip extraction with zero dependencies
       // and built-in path traversal protection (fixed in v0.4.9, CVE-2018-1002204).
-      const zip = new AdmZip(archivePath);
-      zip.extractAllTo(toolsDir, true);
+      const zip = new AdmZip(archivePath)
+      zip.extractAllTo(toolsDir, true)
     } else {
       // Use tar command.
-      const tarResult = await spawn("tar", ["-xzf", archivePath, "-C", toolsDir]);
+      const tarResult = await spawn('tar', [
+        '-xzf',
+        archivePath,
+        '-C',
+        toolsDir,
+      ])
       if (tarResult && tarResult.code !== 0) {
-        throw new Error(`Failed to extract ${assetName}`);
+        throw new Error(`Failed to extract ${assetName}`)
       }
     }
 
     // Find and move binary to final location.
-    let extractedBinaryPath;
+    let extractedBinaryPath
 
-    if (toolName === "python") {
+    if (toolName === 'python') {
       // Python extracts to different structures on Windows vs Unix.
       // Unlike other tools, Python requires its entire directory structure (stdlib, lib,
       // include directories) to function. The python-build-standalone package is a
@@ -305,61 +323,69 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
       //
       // We keep the entire python/ directory in the VFS for socket-basics to use.
       const pythonBinPath = normalizePath(
-        path.join(toolsDir, "python", isPlatWin ? "python.exe" : path.join("bin", "python")),
-      );
+        path.join(
+          toolsDir,
+          'python',
+          isPlatWin ? 'python.exe' : path.join('bin', 'python'),
+        ),
+      )
 
       // Verify Python installation is complete.
       if (!existsSync(pythonBinPath)) {
-        throw new Error(`Python binary not found after extraction: ${pythonBinPath}`);
+        throw new Error(
+          `Python binary not found after extraction: ${pythonBinPath}`,
+        )
       }
 
       // Make all binaries executable on Unix (python, python3, python3.11, etc.).
       if (!isPlatWin) {
-        const binDir = path.join(toolsDir, "python", "bin");
-        const binFiles = await fs.readdir(binDir);
+        const binDir = path.join(toolsDir, 'python', 'bin')
+        const binFiles = await fs.readdir(binDir)
         for (let i = 0, { length } = binFiles; i < length; i += 1) {
-          const file = binFiles[i];
-          const filePath = path.join(binDir, file);
-          const stats = await fs.lstat(filePath);
+          const file = binFiles[i]
+          const filePath = path.join(binDir, file)
+          const stats = await fs.lstat(filePath)
           if (stats.isFile()) {
-            await fs.chmod(filePath, 0o755);
+            await fs.chmod(filePath, 0o755)
           }
         }
       }
 
       // Install socketsecurity (pycli) into the bundled Python environment.
       // This pre-installs the package so SEA mode doesn't need network access.
-      const pyCliConfig = externalTools["socketsecurity"];
+      const pyCliConfig = externalTools['socketsecurity']
       if (pyCliConfig) {
-        const pyCliVersion = pyCliConfig.version;
-        const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`;
-        const wheelSha256 = pyCliConfig.checksums?.[wheelFilename];
+        const pyCliVersion = pyCliConfig.version
+        const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
+        const wheelSha256 = pyCliConfig.checksums?.[wheelFilename]
 
         if (!wheelSha256) {
           throw new Error(
-            `bundle-tools.json tools.socketsecurity.checksums has no entry for "${wheelFilename}" (seen: ${joinAnd(Object.keys(pyCliConfig.checksums ?? {})) || "<empty>"}); run \`pnpm run sync-checksums\` to populate from PyPI — builds must verify the wheel hash`,
-          );
+            `bundle-tools.json tools.socketsecurity.checksums has no entry for "${wheelFilename}" (seen: ${joinAnd(Object.keys(pyCliConfig.checksums ?? {})) || '<empty>'}); run \`pnpm run sync-checksums\` to populate from PyPI — builds must verify the wheel hash`,
+          )
         }
 
-        logger.log(`  Installing socketsecurity ${pyCliVersion} into Python…`);
+        logger.log(`  Installing socketsecurity ${pyCliVersion} into Python…`)
 
         // Fetch wheel URL from PyPI JSON API.
         const pypiResponse = await httpRequest(
           `https://pypi.org/pypi/socketsecurity/${pyCliVersion}/json`,
-        );
+        )
         if (!pypiResponse.ok) {
           throw new Error(
             `Failed to fetch socketsecurity ${pyCliVersion} from PyPI: ${pypiResponse.status}`,
-          );
+          )
         }
-        const pypiData = JSON.parse(pypiResponse.body.toString("utf8"));
-        const wheelInfo = pypiData.urls.find((u) => u.filename === wheelFilename);
+        const pypiData = JSON.parse(pypiResponse.body.toString('utf8'))
+        const wheelInfo = pypiData.urls.find(u => u.filename === wheelFilename)
         if (!wheelInfo) {
-          throw new Error(`Wheel ${wheelFilename} not found in PyPI release ${pyCliVersion}`);
+          throw new Error(
+            `Wheel ${wheelFilename} not found in PyPI release ${pyCliVersion}`,
+          )
         }
 
         // Download wheel from PyPI.
-        const wheelPath = normalizePath(path.join(toolsDir, wheelFilename));
+        const wheelPath = normalizePath(path.join(toolsDir, wheelFilename))
 
         await httpDownload(wheelInfo.url, wheelPath, {
           logger,
@@ -367,53 +393,55 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
           retries: 2,
           retryDelay: 5000,
           sha256: wheelSha256,
-        });
+        })
 
         // Install wheel into Python's site-packages using pip.
         const pipResult = await spawn(pythonBinPath, [
-          "-m",
-          "pip",
-          "install",
-          "--quiet",
-          "--no-deps",
+          '-m',
+          'pip',
+          'install',
+          '--quiet',
+          '--no-deps',
           wheelPath,
-        ]);
+        ])
 
         if (pipResult && pipResult.code !== 0) {
           throw new Error(
             `Failed to install socketsecurity into bundled Python: exit code ${pipResult.code}`,
-          );
+          )
         }
 
         // Clean up wheel file.
-        await safeDelete(wheelPath);
+        await safeDelete(wheelPath)
 
-        logger.log(`  ✓ socketsecurity ${pyCliVersion} installed`);
+        logger.log(`  ✓ socketsecurity ${pyCliVersion} installed`)
       }
 
       // Install socket_basics from GitHub source (not on PyPI).
       // socket_basics orchestrates the security tools (trivy, trufflehog, opengrep).
-      const socketBasicsConfig = externalTools["socket-basics"];
-      if (socketBasicsConfig && socketBasicsConfig.release === "archive") {
-        const repoPath = socketBasicsConfig.repository.replace(/^[^:]+:/, "");
-        const releaseVersion = socketBasicsConfig.version;
-        const version = releaseVersion.replace(/^v/, ""); // Remove 'v' prefix for version
+      const socketBasicsConfig = externalTools['socket-basics']
+      if (socketBasicsConfig && socketBasicsConfig.release === 'archive') {
+        const repoPath = socketBasicsConfig.repository.replace(/^[^:]+:/, '')
+        const releaseVersion = socketBasicsConfig.version
+        const version = releaseVersion.replace(/^v/, '') // Remove 'v' prefix for version
 
         // Checksum key matches the local filename convention used for
         // archive-style releases (`socket-basics-v<ver>.tar.gz`).
-        const archiveKey = `socket-basics-${releaseVersion}.tar.gz`;
-        const archiveSha256 = socketBasicsConfig.checksums?.[archiveKey];
+        const archiveKey = `socket-basics-${releaseVersion}.tar.gz`
+        const archiveSha256 = socketBasicsConfig.checksums?.[archiveKey]
         if (!archiveSha256) {
           throw new Error(
-            `bundle-tools.json tools["socket-basics"].checksums has no entry for "${archiveKey}" (seen: ${joinAnd(Object.keys(socketBasicsConfig.checksums ?? {})) || "<empty>"}); run \`pnpm run sync-checksums\` to populate from the GitHub release — builds must verify the source tarball hash`,
-          );
+            `bundle-tools.json tools["socket-basics"].checksums has no entry for "${archiveKey}" (seen: ${joinAnd(Object.keys(socketBasicsConfig.checksums ?? {})) || '<empty>'}); run \`pnpm run sync-checksums\` to populate from the GitHub release — builds must verify the source tarball hash`,
+          )
         }
 
-        logger.log(`  Installing socket_basics ${version} from GitHub…`);
+        logger.log(`  Installing socket_basics ${version} from GitHub…`)
 
         // Download source tarball from GitHub.
-        const tarballUrl = `https://github.com/${repoPath}/archive/refs/tags/${releaseVersion}.tar.gz`;
-        const tarballPath = normalizePath(path.join(toolsDir, `socket-basics-${version}.tar.gz`));
+        const tarballUrl = `https://github.com/${repoPath}/archive/refs/tags/${releaseVersion}.tar.gz`
+        const tarballPath = normalizePath(
+          path.join(toolsDir, `socket-basics-${version}.tar.gz`),
+        )
 
         await httpDownload(tarballUrl, tarballPath, {
           logger,
@@ -421,100 +449,118 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
           retries: 2,
           retryDelay: 5000,
           sha256: archiveSha256,
-        });
+        })
 
         // Install from tarball using pip (handles building and dependencies).
         const pipInstallResult = await spawn(pythonBinPath, [
-          "-m",
-          "pip",
-          "install",
-          "--quiet",
+          '-m',
+          'pip',
+          'install',
+          '--quiet',
           tarballPath,
-        ]);
+        ])
 
         if (pipInstallResult && pipInstallResult.code !== 0) {
           throw new Error(
             `Failed to install socket_basics from source: exit code ${pipInstallResult.code}`,
-          );
+          )
         }
 
         // Clean up tarball.
-        await safeDelete(tarballPath);
+        await safeDelete(tarballPath)
 
-        logger.log(`  ✓ socket_basics ${version} installed`);
+        logger.log(`  ✓ socket_basics ${version} installed`)
       }
 
       // Don't clean up - keep the whole python directory.
       // We'll include the entire directory in the tar.gz.
-      toolNames.push("python");
-    } else if (toolName === "opengrep") {
+      toolNames.push('python')
+    } else if (toolName === 'opengrep') {
       // OpenGrep binary is named opengrep-core in the archive.
       extractedBinaryPath = normalizePath(
-        path.join(toolsDir, `opengrep-core${isPlatWin ? ".exe" : ""}`),
-      );
+        path.join(toolsDir, `opengrep-core${isPlatWin ? '.exe' : ''}`),
+      )
 
-      if (extractedBinaryPath !== binaryPath && existsSync(extractedBinaryPath)) {
+      if (
+        extractedBinaryPath !== binaryPath &&
+        existsSync(extractedBinaryPath)
+      ) {
         try {
-          await fs.rename(extractedBinaryPath, binaryPath);
+          await fs.rename(extractedBinaryPath, binaryPath)
         } catch (e) {
           // Fallback to copy + delete for cross-device moves.
-          await fs.copyFile(extractedBinaryPath, binaryPath);
-          await safeDelete(extractedBinaryPath);
+          await fs.copyFile(extractedBinaryPath, binaryPath)
+          await safeDelete(extractedBinaryPath)
         }
       } else if (!existsSync(binaryPath)) {
-        throw new Error(`Binary not found after extraction: ${extractedBinaryPath}`);
+        throw new Error(
+          `Binary not found after extraction: ${extractedBinaryPath}`,
+        )
       }
 
       // Make executable on Unix.
       if (!isPlatWin) {
-        await fs.chmod(binaryPath, 0o755);
+        await fs.chmod(binaryPath, 0o755)
       }
 
-      toolNames.push(binaryName);
+      toolNames.push(binaryName)
     } else {
       // Other tools extract with their own name.
       extractedBinaryPath = normalizePath(
-        path.join(toolsDir, toolName + (isPlatWin ? ".exe" : "")),
-      );
+        path.join(toolsDir, toolName + (isPlatWin ? '.exe' : '')),
+      )
 
-      if (extractedBinaryPath !== binaryPath && existsSync(extractedBinaryPath)) {
+      if (
+        extractedBinaryPath !== binaryPath &&
+        existsSync(extractedBinaryPath)
+      ) {
         try {
-          await fs.rename(extractedBinaryPath, binaryPath);
+          await fs.rename(extractedBinaryPath, binaryPath)
         } catch (e) {
           // Fallback to copy + delete for cross-device moves.
-          await fs.copyFile(extractedBinaryPath, binaryPath);
-          await safeDelete(extractedBinaryPath);
+          await fs.copyFile(extractedBinaryPath, binaryPath)
+          await safeDelete(extractedBinaryPath)
         }
       } else if (!existsSync(binaryPath)) {
-        throw new Error(`Binary not found after extraction: ${extractedBinaryPath}`);
+        throw new Error(
+          `Binary not found after extraction: ${extractedBinaryPath}`,
+        )
       }
 
       // Make executable on Unix.
       if (!isPlatWin) {
-        await fs.chmod(binaryPath, 0o755);
+        await fs.chmod(binaryPath, 0o755)
       }
 
-      toolNames.push(binaryName);
+      toolNames.push(binaryName)
     }
 
     // Clean up archive.
-    await safeDelete(archivePath);
+    await safeDelete(archivePath)
 
-    logger.log(`  ✓ ${toolName} ready`);
+    logger.log(`  ✓ ${toolName} ready`)
   }
 
   // Package into compressed tar.gz.
-  logger.log(`Creating compressed tar.gz: ${path.basename(tarGzPath)}`);
-  const tarResult = await spawn("tar", ["-czf", tarGzPath, "-C", toolsDir, ...toolNames]);
+  logger.log(`Creating compressed tar.gz: ${path.basename(tarGzPath)}`)
+  const tarResult = await spawn('tar', [
+    '-czf',
+    tarGzPath,
+    '-C',
+    toolsDir,
+    ...toolNames,
+  ])
 
   if (tarResult && tarResult.code !== 0) {
-    throw new Error("Failed to create external-tools tar.gz");
+    throw new Error('Failed to create external-tools tar.gz')
   }
 
-  const tarStats = await fs.stat(tarGzPath);
-  logger.success(`External-tools packaged: ${(tarStats.size / 1024 / 1024).toFixed(2)} MB`);
+  const tarStats = await fs.stat(tarGzPath)
+  logger.success(
+    `External-tools packaged: ${(tarStats.size / 1024 / 1024).toFixed(2)} MB`,
+  )
 
-  return tarGzPath;
+  return tarGzPath
 }
 
 /**
@@ -524,12 +570,12 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
  * @returns Headers object for GitHub API requests.
  */
 export function getAuthHeaders() {
-  const token = process.env["GH_TOKEN"] || process.env["GITHUB_TOKEN"];
+  const token = process.env['GH_TOKEN'] || process.env['GITHUB_TOKEN']
   return {
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
     ...(token && { Authorization: `Bearer ${token}` }),
-  };
+  }
 }
 
 /**
@@ -547,62 +593,66 @@ export function getAuthHeaders() {
 export async function getLatestBinjectVersion() {
   try {
     const response = await httpRequest(
-      "https://api.github.com/repos/SocketDev/socket-btm/releases",
+      'https://api.github.com/repos/SocketDev/socket-btm/releases',
       {
         headers: getAuthHeaders(),
       },
-    );
+    )
 
     if (!response.ok) {
       // Detect specific error types.
       if (response.status === 401) {
         throw new Error(
-          "GitHub API authentication failed. Please check your GH_TOKEN or GITHUB_TOKEN environment variable.",
-        );
+          'GitHub API authentication failed. Please check your GH_TOKEN or GITHUB_TOKEN environment variable.',
+        )
       }
 
       if (response.status === 403) {
-        const rateLimitReset = response.headers["x-ratelimit-reset"];
+        const rateLimitReset = response.headers['x-ratelimit-reset']
         const resetTime = rateLimitReset
           ? new Date(Number(rateLimitReset) * 1000).toLocaleString()
-          : "unknown";
+          : 'unknown'
         throw new Error(
           `GitHub API rate limit exceeded. Resets at: ${resetTime}. ` +
-            "Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits " +
-            "(unauthenticated: 60/hour, authenticated: 5,000/hour).",
-        );
+            'Set GH_TOKEN or GITHUB_TOKEN environment variable to increase rate limits ' +
+            '(unauthenticated: 60/hour, authenticated: 5,000/hour).',
+        )
       }
 
       throw new Error(
         `Failed to fetch socket-btm releases: ${response.status} ${response.statusText}`,
-      );
+      )
     }
 
-    const releases = JSON.parse(response.body.toString("utf8"));
+    const releases = JSON.parse(response.body.toString('utf8'))
 
     // Validate API response structure.
     if (!Array.isArray(releases) || releases.length === 0) {
-      throw new Error("Invalid API response: expected non-empty array of releases");
+      throw new Error(
+        'Invalid API response: expected non-empty array of releases',
+      )
     }
 
     // Find the latest binject release.
-    const binjectRelease = releases.find((release) => release?.tag_name?.startsWith("binject-"));
+    const binjectRelease = releases.find(release =>
+      release?.tag_name?.startsWith('binject-'),
+    )
 
     if (!binjectRelease) {
-      throw new Error("No binject release found in socket-btm");
+      throw new Error('No binject release found in socket-btm')
     }
 
     if (!binjectRelease.tag_name) {
-      throw new Error("Invalid release data: missing tag_name");
+      throw new Error('Invalid release data: missing tag_name')
     }
 
     // Extract the version (e.g., "binject-1.0.0" -> "1.0.0").
-    return binjectRelease.tag_name.replace("binject-", "");
+    return binjectRelease.tag_name.replace('binject-', '')
   } catch (e) {
-    await logTransientErrorHelp(e);
-    throw new Error("Failed to fetch latest socket-btm binject release", {
+    await logTransientErrorHelp(e)
+    throw new Error('Failed to fetch latest socket-btm binject release', {
       cause: e,
-    });
+    })
   }
 }
 
@@ -613,6 +663,6 @@ export async function getLatestBinjectVersion() {
  * @returns Absolute path to monorepo root.
  */
 export function getRootPath() {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  return path.join(__dirname, "../../../..");
+  const __dirname = path.dirname(fileURLToPath(import.meta.url))
+  return path.join(__dirname, '../../../..')
 }

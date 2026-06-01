@@ -1,4 +1,4 @@
-import npmPackageArg from "npm-package-arg";
+import npmPackageArg from 'npm-package-arg'
 
 export type {
   AliasResult,
@@ -8,7 +8,7 @@ export type {
   RegistryResult,
   Result,
   URLResult,
-} from "npm-package-arg";
+} from 'npm-package-arg'
 
 /**
  * Safe wrapper for npm-package-arg that doesn't throw. Returns undefined if
@@ -18,7 +18,7 @@ export function safeNpa(
   ...args: Parameters<typeof npmPackageArg>
 ): ReturnType<typeof npmPackageArg> | undefined {
   try {
-    return Reflect.apply(npmPackageArg, undefined, args);
+    return Reflect.apply(npmPackageArg, undefined, args)
   } catch {}
-  return undefined;
+  return undefined
 }

@@ -15,81 +15,83 @@
  * See: https://github.com/package-url/purl-spec.
  */
 
-import { PackageURL } from "@socketregistry/packageurl-js-stable";
-import { isPlainObject } from "@socketsecurity/lib-stable/objects/predicates";
+import { PackageURL } from '@socketregistry/packageurl-js-stable'
+import { isPlainObject } from '@socketsecurity/lib-stable/objects/predicates'
 
-import type { SocketArtifact } from "../alert/artifact.mjs";
-import type { PURL_Type } from "../ecosystem/types.mjs";
+import type { SocketArtifact } from '../alert/artifact.mjs'
+import type { PURL_Type } from '../ecosystem/types.mjs'
 
-type PurlObject<T> = T & { type: PURL_Type };
+type PurlObject<T> = T & { type: PURL_Type }
 
-type PurlLike = string | PackageURL | SocketArtifact;
+type PurlLike = string | PackageURL | SocketArtifact
 
 type CreatePurlObjectOptions = {
-  type?: string | undefined;
-  namespace?: string | undefined;
-  name?: string | undefined;
-  version?: string | undefined;
-  qualifiers?: Record<string, string> | undefined;
-  subpath?: string | undefined;
-  throws?: boolean | undefined;
-};
+  type?: string | undefined
+  namespace?: string | undefined
+  name?: string | undefined
+  version?: string | undefined
+  qualifiers?: Record<string, string> | undefined
+  subpath?: string | undefined
+  throws?: boolean | undefined
+}
 
 type CreatePurlOptionsWithThrows = CreatePurlObjectOptions & {
-  throws?: true | undefined;
-};
+  throws?: true | undefined
+}
 
 type CreatePurlOptionsNoThrows = CreatePurlObjectOptions & {
-  throws: false;
-};
+  throws: false
+}
 
-export function createPurlObject(options: CreatePurlOptionsWithThrows): PurlObject<PackageURL>;
+export function createPurlObject(
+  options: CreatePurlOptionsWithThrows,
+): PurlObject<PackageURL>
 export function createPurlObject(
   options: CreatePurlOptionsNoThrows,
-): PurlObject<PackageURL> | undefined;
+): PurlObject<PackageURL> | undefined
 export function createPurlObject(
   type: string | CreatePurlObjectOptions,
   options?: CreatePurlOptionsWithThrows | undefined,
-): PurlObject<PackageURL>;
+): PurlObject<PackageURL>
 export function createPurlObject(
   type: string | CreatePurlObjectOptions,
   options: CreatePurlOptionsNoThrows,
-): PurlObject<PackageURL> | undefined;
+): PurlObject<PackageURL> | undefined
 export function createPurlObject(
   type: string | CreatePurlObjectOptions,
   options?: CreatePurlOptionsWithThrows | undefined,
-): PurlObject<PackageURL>;
+): PurlObject<PackageURL>
 export function createPurlObject(
   type: string,
   name: string,
   options: CreatePurlOptionsNoThrows,
-): PurlObject<PackageURL> | undefined;
+): PurlObject<PackageURL> | undefined
 export function createPurlObject(
   type: string,
   name: string,
   options?: CreatePurlOptionsWithThrows | undefined,
-): PurlObject<PackageURL>;
+): PurlObject<PackageURL>
 export function createPurlObject(
   type: string | CreatePurlObjectOptions,
   name?: string | CreatePurlObjectOptions | undefined,
   options?: CreatePurlObjectOptions | undefined,
 ): PurlObject<PackageURL> | undefined {
-  let opts: CreatePurlObjectOptions | undefined;
+  let opts: CreatePurlObjectOptions | undefined
   if (isPlainObject(type)) {
-    opts = { __proto__: null, ...type } as CreatePurlObjectOptions;
-    type = opts.type as string;
-    name = opts.name as string;
+    opts = { __proto__: null, ...type } as CreatePurlObjectOptions
+    type = opts.type as string
+    name = opts.name as string
   } else if (isPlainObject(name)) {
-    opts = { __proto__: null, ...name } as CreatePurlObjectOptions;
-    name = opts.name as string;
+    opts = { __proto__: null, ...name } as CreatePurlObjectOptions
+    name = opts.name as string
   } else {
-    opts = { __proto__: null, ...options } as CreatePurlObjectOptions;
-    if (typeof name !== "string") {
-      name = opts.name as string;
+    opts = { __proto__: null, ...options } as CreatePurlObjectOptions
+    if (typeof name !== 'string') {
+      name = opts.name as string
     }
   }
-  const { namespace, qualifiers, subpath, throws, version } = opts;
-  const shouldThrow = throws === undefined || !!throws;
+  const { namespace, qualifiers, subpath, throws, version } = opts
+  const shouldThrow = throws === undefined || !!throws
   try {
     return new PackageURL(
       type,
@@ -98,71 +100,71 @@ export function createPurlObject(
       version,
       qualifiers,
       subpath,
-    ) as PurlObject<PackageURL>;
+    ) as PurlObject<PackageURL>
   } catch (e) {
     if (shouldThrow) {
-      throw e;
+      throw e
     }
   }
-  return undefined;
+  return undefined
 }
 
 type PurlObjectOptions = {
-  throws?: boolean | undefined;
-};
+  throws?: boolean | undefined
+}
 
 type PurlOptionsWithThrows = PurlObjectOptions & {
-  throws?: true | undefined;
-};
+  throws?: true | undefined
+}
 
-type PurlOptionsNoThrows = PurlObjectOptions & { throws: false };
+type PurlOptionsNoThrows = PurlObjectOptions & { throws: false }
 
 export function getPurlObject(
   purl: string,
   options?: PurlOptionsWithThrows | undefined,
-): PurlObject<PackageURL>;
+): PurlObject<PackageURL>
 export function getPurlObject(
   purl: string,
   options: PurlOptionsNoThrows,
-): PurlObject<PackageURL> | undefined;
+): PurlObject<PackageURL> | undefined
 export function getPurlObject(
   purl: PackageURL,
   options?: PurlOptionsWithThrows | undefined,
-): PurlObject<PackageURL>;
+): PurlObject<PackageURL>
 export function getPurlObject(
   purl: PackageURL,
   options: PurlOptionsNoThrows,
-): PurlObject<PackageURL> | undefined;
+): PurlObject<PackageURL> | undefined
 export function getPurlObject(
   purl: SocketArtifact,
   options?: PurlOptionsWithThrows | undefined,
-): PurlObject<SocketArtifact>;
+): PurlObject<SocketArtifact>
 export function getPurlObject(
   purl: SocketArtifact,
   options: PurlOptionsNoThrows,
-): PurlObject<SocketArtifact> | undefined;
+): PurlObject<SocketArtifact> | undefined
 export function getPurlObject(
   purl: PurlLike,
   options?: PurlOptionsWithThrows | undefined,
-): PurlObject<PackageURL | SocketArtifact>;
+): PurlObject<PackageURL | SocketArtifact>
 export function getPurlObject(
   purl: PurlLike,
   options?: PurlObjectOptions | undefined,
 ): PurlObject<PackageURL | SocketArtifact> | undefined {
-  const { throws } = { __proto__: null, ...options } as PurlObjectOptions;
-  const shouldThrow = throws === undefined || !!throws;
+  const { throws } = { __proto__: null, ...options } as PurlObjectOptions
+  const shouldThrow = throws === undefined || !!throws
   try {
-    return typeof purl === "string"
+    return typeof purl === 'string'
       ? (PackageURL.fromString(normalizePurl(purl)) as PurlObject<PackageURL>)
-      : (purl as PurlObject<PackageURL | SocketArtifact>);
+      : (purl as PurlObject<PackageURL | SocketArtifact>)
   } catch (e) {
     if (shouldThrow) {
-      throw e;
+      throw e
     }
-    return undefined;
+    return undefined
   }
 }
 
 export function normalizePurl(rawPurl: string): string {
-  return rawPurl.startsWith("pkg:") ? rawPurl : `pkg:${rawPurl}`;
+  return rawPurl.startsWith('pkg:') ? rawPurl : `pkg:${rawPurl}`
 }

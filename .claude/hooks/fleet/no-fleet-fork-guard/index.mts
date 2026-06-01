@@ -15,7 +15,7 @@
 //      → allow (this IS the canonical home).
 //   3. Otherwise, checking if the path matches a fleet-canonical
 //      surface prefix:
-//        - .config/oxlint-plugin/
+//        - .config/fleet/oxlint-plugin/
 //        - .git-hooks/
 //        - .claude/hooks/
 //        - .claude/skills/_shared/
@@ -66,7 +66,7 @@ type ToolInput = {
 // Order matters for nested prefixes (more-specific first), but these
 // are all leaves — no nesting between them.
 const CANONICAL_PREFIXES = [
-  '.config/oxlint-plugin/',
+  '.config/fleet/oxlint-plugin/',
   '.git-hooks/',
   '.claude/hooks/',
   '.claude/skills/_shared/',

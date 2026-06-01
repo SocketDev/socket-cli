@@ -1,9 +1,9 @@
-import { cmdInstallCompletion } from "./cmd-install-completion.mts";
-import { meowWithSubcommands } from "../../util/cli/with-subcommands.mjs";
+import { cmdInstallCompletion } from './cmd-install-completion.mts'
+import { meowWithSubcommands } from '../../util/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from "../../util/cli/with-subcommands.mjs";
+import type { CliSubcommand } from '../../util/cli/with-subcommands.mjs'
 
-const description = "Install Socket CLI tab completion";
+const description = 'Install Socket CLI tab completion'
 
 export const cmdInstall: CliSubcommand = {
   description,
@@ -19,6 +19,6 @@ export const cmdInstall: CliSubcommand = {
         },
       },
       { description },
-    );
+    )
   },
-};
+}

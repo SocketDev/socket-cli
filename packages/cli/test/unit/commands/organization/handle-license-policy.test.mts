@@ -20,62 +20,74 @@
  * - Output formatter.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchLicensePolicy } from "../../../../src/commands/organization/fetch-license-policy.mts";
-import { handleLicensePolicy } from "../../../../src/commands/organization/handle-license-policy.mts";
-import { outputLicensePolicy } from "../../../../src/commands/organization/output-license-policy.mts";
-import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
+import { fetchLicensePolicy } from '../../../../src/commands/organization/fetch-license-policy.mts'
+import { handleLicensePolicy } from '../../../../src/commands/organization/handle-license-policy.mts'
+import { outputLicensePolicy } from '../../../../src/commands/organization/output-license-policy.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../helpers/mocks.mts'
 
 // Mock the dependencies.
-const mockFetchLicensePolicy = vi.hoisted(() => vi.fn());
-const mockOutputLicensePolicy = vi.hoisted(() => vi.fn());
+const mockFetchLicensePolicy = vi.hoisted(() => vi.fn())
+const mockOutputLicensePolicy = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/organization/fetch-license-policy.mts"), () => ({
-  fetchLicensePolicy: mockFetchLicensePolicy,
-}));
+vi.mock(
+  import('../../../../src/commands/organization/fetch-license-policy.mts'),
+  () => ({
+    fetchLicensePolicy: mockFetchLicensePolicy,
+  }),
+)
 
-vi.mock(import("../../../../src/commands/organization/output-license-policy.mts"), () => ({
-  outputLicensePolicy: mockOutputLicensePolicy,
-}));
+vi.mock(
+  import('../../../../src/commands/organization/output-license-policy.mts'),
+  () => ({
+    outputLicensePolicy: mockOutputLicensePolicy,
+  }),
+)
 
-describe("handleLicensePolicy", () => {
+describe('handleLicensePolicy', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("handles successful license policy fetch", async () => {
+  it('handles successful license policy fetch', async () => {
     const mockResult = createSuccessResult({
-      allowed: ["MIT", "Apache-2.0", "BSD-3-Clause"],
-      denied: ["GPL-3.0", "AGPL-3.0"],
-    });
-    mockFetchLicensePolicy.mockResolvedValue(mockResult);
+      allowed: ['MIT', 'Apache-2.0', 'BSD-3-Clause'],
+      denied: ['GPL-3.0', 'AGPL-3.0'],
+    })
+    mockFetchLicensePolicy.mockResolvedValue(mockResult)
 
-    await handleLicensePolicy("test-org", "json");
+    await handleLicensePolicy('test-org', 'json')
 
-    expect(fetchLicensePolicy).toHaveBeenCalledWith("test-org", {
-      commandPath: "socket organization policy license",
-    });
-    expect(outputLicensePolicy).toHaveBeenCalledWith(mockResult, "json");
-  });
+    expect(fetchLicensePolicy).toHaveBeenCalledWith('test-org', {
+      commandPath: 'socket organization policy license',
+    })
+    expect(outputLicensePolicy).toHaveBeenCalledWith(mockResult, 'json')
+  })
 
-  it("handles failed license policy fetch", async () => {
-    const mockResult = createErrorResult("Unauthorized");
-    mockFetchLicensePolicy.mockResolvedValue(mockResult);
+  it('handles failed license policy fetch', async () => {
+    const mockResult = createErrorResult('Unauthorized')
+    mockFetchLicensePolicy.mockResolvedValue(mockResult)
 
-    await handleLicensePolicy("test-org", "text");
+    await handleLicensePolicy('test-org', 'text')
 
-    expect(fetchLicensePolicy).toHaveBeenCalledWith("test-org", {
-      commandPath: "socket organization policy license",
-    });
-    expect(outputLicensePolicy).toHaveBeenCalledWith(mockResult, "text");
-  });
+    expect(fetchLicensePolicy).toHaveBeenCalledWith('test-org', {
+      commandPath: 'socket organization policy license',
+    })
+    expect(outputLicensePolicy).toHaveBeenCalledWith(mockResult, 'text')
+  })
 
-  it("handles markdown output format", async () => {
-    mockFetchLicensePolicy.mockResolvedValue(createSuccessResult({}));
+  it('handles markdown output format', async () => {
+    mockFetchLicensePolicy.mockResolvedValue(createSuccessResult({}))
 
-    await handleLicensePolicy("test-org", "markdown");
+    await handleLicensePolicy('test-org', 'markdown')
 
-    expect(outputLicensePolicy).toHaveBeenCalledWith(expect.any(Object), "markdown");
-  });
-});
+    expect(outputLicensePolicy).toHaveBeenCalledWith(
+      expect.any(Object),
+      'markdown',
+    )
+  })
+})

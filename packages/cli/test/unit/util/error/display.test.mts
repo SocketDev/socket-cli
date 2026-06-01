@@ -11,14 +11,14 @@
  * Related Files: - src/util/error/display.mts (implementation)
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest'
 
 // Mock debug namespace checks.
-vi.mock(import("../../../../src/util/debug.mts"), () => ({
+vi.mock(import('../../../../src/util/debug.mts'), () => ({
   debugDirNs: vi.fn(),
   debugNs: vi.fn(),
   isDebugNs: () => false,
-}));
+}))
 
 import {
   AuthError,
@@ -27,294 +27,294 @@ import {
   InputError,
   NetworkError,
   RateLimitError,
-} from "../../../../src/util/error/errors.mts";
+} from '../../../../src/util/error/errors.mts'
 import {
   formatErrorForDisplay,
   formatErrorForJson,
   formatErrorForTerminal,
-} from "../../../../src/util/error/display.mts";
+} from '../../../../src/util/error/display.mts'
 
-describe("error/display", () => {
-  describe("formatErrorForDisplay", () => {
-    it("formats RateLimitError", () => {
-      const error = new RateLimitError("Too many requests", 60);
+describe('error/display', () => {
+  describe('formatErrorForDisplay', () => {
+    it('formats RateLimitError', () => {
+      const error = new RateLimitError('Too many requests', 60)
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.title).toBe("API rate limit exceeded");
-      expect(result.message).toContain("Too many requests");
-      expect(result.message).toContain("retry after 60s");
-    });
+      expect(result.title).toBe('API rate limit exceeded')
+      expect(result.message).toContain('Too many requests')
+      expect(result.message).toContain('retry after 60s')
+    })
 
-    it("formats RateLimitError without retry time", () => {
-      const error = new RateLimitError("Too many requests");
+    it('formats RateLimitError without retry time', () => {
+      const error = new RateLimitError('Too many requests')
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.title).toBe("API rate limit exceeded");
-      expect(result.message).not.toContain("retry after");
-    });
+      expect(result.title).toBe('API rate limit exceeded')
+      expect(result.message).not.toContain('retry after')
+    })
 
-    it("formats AuthError", () => {
-      const error = new AuthError("Invalid token");
+    it('formats AuthError', () => {
+      const error = new AuthError('Invalid token')
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.title).toBe("Authentication error");
-      expect(result.message).toBe("Invalid token");
-    });
+      expect(result.title).toBe('Authentication error')
+      expect(result.message).toBe('Invalid token')
+    })
 
-    it("formats NetworkError", () => {
-      const error = new NetworkError("Connection failed", 500);
+    it('formats NetworkError', () => {
+      const error = new NetworkError('Connection failed', 500)
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.title).toBe("Network error");
-      expect(result.message).toContain("Connection failed");
-      expect(result.message).toContain("HTTP 500");
-    });
+      expect(result.title).toBe('Network error')
+      expect(result.message).toContain('Connection failed')
+      expect(result.message).toContain('HTTP 500')
+    })
 
-    it("formats NetworkError without status code", () => {
-      const error = new NetworkError("Connection failed");
+    it('formats NetworkError without status code', () => {
+      const error = new NetworkError('Connection failed')
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.message).not.toContain("HTTP");
-    });
+      expect(result.message).not.toContain('HTTP')
+    })
 
-    it("formats FileSystemError", () => {
-      const error = new FileSystemError("Permission denied", "/etc/config");
+    it('formats FileSystemError', () => {
+      const error = new FileSystemError('Permission denied', '/etc/config')
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.title).toBe("File system error");
-      expect(result.message).toContain("Permission denied");
-      expect(result.message).toContain("/etc/config");
-    });
+      expect(result.title).toBe('File system error')
+      expect(result.message).toContain('Permission denied')
+      expect(result.message).toContain('/etc/config')
+    })
 
-    it("formats FileSystemError without path", () => {
-      const error = new FileSystemError("Disk full");
+    it('formats FileSystemError without path', () => {
+      const error = new FileSystemError('Disk full')
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.message).toBe("Disk full");
-    });
+      expect(result.message).toBe('Disk full')
+    })
 
-    it("formats ConfigError", () => {
-      const error = new ConfigError("Invalid value", "apiToken");
+    it('formats ConfigError', () => {
+      const error = new ConfigError('Invalid value', 'apiToken')
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.title).toBe("Configuration error");
-      expect(result.message).toContain("Invalid value");
-      expect(result.message).toContain("key: apiToken");
-    });
+      expect(result.title).toBe('Configuration error')
+      expect(result.message).toContain('Invalid value')
+      expect(result.message).toContain('key: apiToken')
+    })
 
-    it("formats ConfigError without config key", () => {
-      const error = new ConfigError("Config file not found");
+    it('formats ConfigError without config key', () => {
+      const error = new ConfigError('Config file not found')
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.message).not.toContain("key:");
-    });
+      expect(result.message).not.toContain('key:')
+    })
 
-    it("formats InputError", () => {
-      const error = new InputError("Invalid input");
-      error.body = "Expected a number";
+    it('formats InputError', () => {
+      const error = new InputError('Invalid input')
+      error.body = 'Expected a number'
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.title).toBe("Invalid input");
-      expect(result.message).toBe("Invalid input");
-      expect(result.body).toBe("Expected a number");
-    });
+      expect(result.title).toBe('Invalid input')
+      expect(result.message).toBe('Invalid input')
+      expect(result.body).toBe('Expected a number')
+    })
 
-    it("formats generic Error", () => {
-      const error = new Error("Something went wrong");
+    it('formats generic Error', () => {
+      const error = new Error('Something went wrong')
 
-      const result = formatErrorForDisplay(error);
+      const result = formatErrorForDisplay(error)
 
-      expect(result.title).toBe("Unexpected error");
-      expect(result.message).toBe("Something went wrong");
-    });
+      expect(result.title).toBe('Unexpected error')
+      expect(result.message).toBe('Something went wrong')
+    })
 
-    it("preserves Error.cause chain in message without debug mode", () => {
-      const inner = new Error("root DNS failure");
-      const middle = new Error("network call failed", { cause: inner });
-      const outer = new Error("API request failed", { cause: middle });
+    it('preserves Error.cause chain in message without debug mode', () => {
+      const inner = new Error('root DNS failure')
+      const middle = new Error('network call failed', { cause: inner })
+      const outer = new Error('API request failed', { cause: middle })
 
-      const result = formatErrorForDisplay(outer);
+      const result = formatErrorForDisplay(outer)
 
-      expect(result.message).toContain("API request failed");
-      expect(result.message).toContain("network call failed");
-      expect(result.message).toContain("root DNS failure");
-    });
+      expect(result.message).toContain('API request failed')
+      expect(result.message).toContain('network call failed')
+      expect(result.message).toContain('root DNS failure')
+    })
 
-    it("terminates on cyclic cause chains", () => {
-      const a = new Error("a");
-      const b = new Error("b");
-      (a as Error & { cause?: unknown | undefined }).cause = b;
-      (b as Error & { cause?: unknown | undefined }).cause = a;
+    it('terminates on cyclic cause chains', () => {
+      const a = new Error('a')
+      const b = new Error('b')
+      ;(a as Error & { cause?: unknown | undefined }).cause = b
+      ;(b as Error & { cause?: unknown | undefined }).cause = a
 
-      const result = formatErrorForDisplay(a);
+      const result = formatErrorForDisplay(a)
 
-      expect(result.message).toContain("a");
-      expect(result.message).toContain("b");
-      expect(result.message).toContain("...");
-    });
+      expect(result.message).toContain('a')
+      expect(result.message).toContain('b')
+      expect(result.message).toContain('...')
+    })
 
-    it("uses custom title when provided", () => {
-      const error = new Error("Something went wrong");
+    it('uses custom title when provided', () => {
+      const error = new Error('Something went wrong')
 
-      const result = formatErrorForDisplay(error, { title: "Custom Title" });
+      const result = formatErrorForDisplay(error, { title: 'Custom Title' })
 
-      expect(result.title).toBe("Custom Title");
-    });
+      expect(result.title).toBe('Custom Title')
+    })
 
-    it("formats string error", () => {
-      const result = formatErrorForDisplay("Something went wrong");
+    it('formats string error', () => {
+      const result = formatErrorForDisplay('Something went wrong')
 
-      expect(result.title).toBe("Error");
-      expect(result.message).toBe("Something went wrong");
-    });
+      expect(result.title).toBe('Error')
+      expect(result.message).toBe('Something went wrong')
+    })
 
-    it("formats unknown error", () => {
-      const result = formatErrorForDisplay(42);
+    it('formats unknown error', () => {
+      const result = formatErrorForDisplay(42)
 
-      expect(result.title).toBe("Unexpected error");
-      expect(result.message).toBe("An unknown error occurred");
-    });
+      expect(result.title).toBe('Unexpected error')
+      expect(result.message).toBe('An unknown error occurred')
+    })
 
-    it("adds cause from options", () => {
-      const result = formatErrorForDisplay("Error", { cause: "Due to X" });
+    it('adds cause from options', () => {
+      const result = formatErrorForDisplay('Error', { cause: 'Due to X' })
 
-      expect(result.body).toBe("Due to X");
-    });
+      expect(result.body).toBe('Due to X')
+    })
 
-    it("includes stack trace when showStack is true", () => {
-      const error = new Error("Test error");
+    it('includes stack trace when showStack is true', () => {
+      const error = new Error('Test error')
 
-      const result = formatErrorForDisplay(error, { showStack: true });
+      const result = formatErrorForDisplay(error, { showStack: true })
 
-      expect(result.body).toBeDefined();
-      expect(result.body).toContain("at ");
-    });
+      expect(result.body).toBeDefined()
+      expect(result.body).toContain('at ')
+    })
 
-    it("formats error cause chain when showStack is true", () => {
-      const rootCause = new Error("Root cause");
-      const middleCause = new Error("Middle cause", { cause: rootCause });
-      const error = new Error("Top level error", { cause: middleCause });
+    it('formats error cause chain when showStack is true', () => {
+      const rootCause = new Error('Root cause')
+      const middleCause = new Error('Middle cause', { cause: rootCause })
+      const error = new Error('Top level error', { cause: middleCause })
 
-      const result = formatErrorForDisplay(error, { showStack: true });
+      const result = formatErrorForDisplay(error, { showStack: true })
 
-      expect(result.body).toBeDefined();
-      expect(result.body).toContain("Caused by");
-      expect(result.body).toContain("Middle cause");
-    });
+      expect(result.body).toBeDefined()
+      expect(result.body).toContain('Caused by')
+      expect(result.body).toContain('Middle cause')
+    })
 
-    it("handles non-Error cause", () => {
-      const error = new Error("Test error", { cause: "String cause" });
+    it('handles non-Error cause', () => {
+      const error = new Error('Test error', { cause: 'String cause' })
 
-      const result = formatErrorForDisplay(error, { showStack: true });
+      const result = formatErrorForDisplay(error, { showStack: true })
 
-      expect(result.body).toBeDefined();
-      expect(result.body).toContain("String cause");
-    });
+      expect(result.body).toBeDefined()
+      expect(result.body).toContain('String cause')
+    })
 
-    it("limits cause chain depth to 5", () => {
+    it('limits cause chain depth to 5', () => {
       // Create a chain of 7 causes.
-      let error: Error = new Error("Cause 1");
+      let error: Error = new Error('Cause 1')
       for (let i = 2; i <= 7; i++) {
-        error = new Error(`Cause ${i}`, { cause: error });
+        error = new Error(`Cause ${i}`, { cause: error })
       }
 
-      const result = formatErrorForDisplay(error, { showStack: true });
+      const result = formatErrorForDisplay(error, { showStack: true })
 
       // Should show up to 5 causes.
-      expect(result.body).toBeDefined();
-      expect(result.body).toContain("Caused by [1]");
-      expect(result.body).toContain("Caused by [5]");
+      expect(result.body).toBeDefined()
+      expect(result.body).toContain('Caused by [1]')
+      expect(result.body).toContain('Caused by [5]')
       // Cause 6 should not be shown.
-      expect(result.body).not.toContain("Caused by [6]");
-    });
+      expect(result.body).not.toContain('Caused by [6]')
+    })
 
-    it("includes verbose body for unknown error types", () => {
-      const result = formatErrorForDisplay(123, { verbose: true });
+    it('includes verbose body for unknown error types', () => {
+      const result = formatErrorForDisplay(123, { verbose: true })
 
-      expect(result.title).toBe("Unexpected error");
-      expect(result.body).toBe("123");
-    });
-  });
+      expect(result.title).toBe('Unexpected error')
+      expect(result.body).toBe('123')
+    })
+  })
 
-  describe("formatErrorForTerminal", () => {
-    it("includes title and message", () => {
-      const error = new Error("Something went wrong");
+  describe('formatErrorForTerminal', () => {
+    it('includes title and message', () => {
+      const error = new Error('Something went wrong')
 
-      const result = formatErrorForTerminal(error);
+      const result = formatErrorForTerminal(error)
 
-      expect(result).toContain("Unexpected error");
-      expect(result).toContain("Something went wrong");
-    });
+      expect(result).toContain('Unexpected error')
+      expect(result).toContain('Something went wrong')
+    })
 
-    it("includes recovery suggestions for AuthError", () => {
-      const error = new AuthError("Token expired");
+    it('includes recovery suggestions for AuthError', () => {
+      const error = new AuthError('Token expired')
 
-      const result = formatErrorForTerminal(error);
+      const result = formatErrorForTerminal(error)
 
-      expect(result).toContain("Suggested actions");
-    });
+      expect(result).toContain('Suggested actions')
+    })
 
-    it("shows stack trace hint when body exists but not verbose", () => {
-      const error = new Error("Test error");
-      error.stack = "Error: Test error\n    at test.js:1:1";
+    it('shows stack trace hint when body exists but not verbose', () => {
+      const error = new Error('Test error')
+      error.stack = 'Error: Test error\n    at test.js:1:1'
 
-      const result = formatErrorForTerminal(error, { showStack: true });
+      const result = formatErrorForTerminal(error, { showStack: true })
 
       // Should suggest running with verbose flag.
-      expect(result).toContain("DEBUG=1");
-    });
+      expect(result).toContain('DEBUG=1')
+    })
 
-    it("shows full stack trace when verbose is true", () => {
-      const error = new Error("Test error");
-      error.stack = "Error: Test error\n    at test.js:1:1";
+    it('shows full stack trace when verbose is true', () => {
+      const error = new Error('Test error')
+      error.stack = 'Error: Test error\n    at test.js:1:1'
 
       const result = formatErrorForTerminal(error, {
         showStack: true,
         verbose: true,
-      });
+      })
 
       // Should show actual stack trace.
-      expect(result).toContain("Stack trace");
-    });
-  });
+      expect(result).toContain('Stack trace')
+    })
+  })
 
-  describe("formatErrorForJson", () => {
-    it("returns CResult error format", () => {
-      const error = new Error("Something went wrong");
+  describe('formatErrorForJson', () => {
+    it('returns CResult error format', () => {
+      const error = new Error('Something went wrong')
 
-      const result = formatErrorForJson(error);
+      const result = formatErrorForJson(error)
 
-      expect(result.ok).toBe(false);
-      expect(result.message).toBeDefined();
-      expect(result.cause).toBeDefined();
-    });
+      expect(result.ok).toBe(false)
+      expect(result.message).toBeDefined()
+      expect(result.cause).toBeDefined()
+    })
 
-    it("includes recovery suggestions for RateLimitError", () => {
-      const error = new RateLimitError("Too many requests");
+    it('includes recovery suggestions for RateLimitError', () => {
+      const error = new RateLimitError('Too many requests')
 
-      const result = formatErrorForJson(error);
+      const result = formatErrorForJson(error)
 
-      expect(result.recovery).toBeDefined();
-      expect(result.recovery!.length).toBeGreaterThan(0);
-    });
+      expect(result.recovery).toBeDefined()
+      expect(result.recovery!.length).toBeGreaterThan(0)
+    })
 
-    it("strips ANSI from output", () => {
-      const error = new AuthError("Test error");
+    it('strips ANSI from output', () => {
+      const error = new AuthError('Test error')
 
-      const result = formatErrorForJson(error);
+      const result = formatErrorForJson(error)
 
       // Should not contain ANSI escape codes.
-      expect(result.message).not.toMatch(/\x1b\[/);
-    });
-  });
-});
+      expect(result.message).not.toMatch(/\x1b\[/)
+    })
+  })
+})

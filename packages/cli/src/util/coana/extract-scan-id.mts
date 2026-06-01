@@ -10,17 +10,25 @@
  * identifiers.
  */
 
-import { readJsonSync } from "@socketsecurity/lib-stable/fs/read-json";
+import { readJsonSync } from '@socketsecurity/lib-stable/fs/read-json'
 
-export function extractTier1ReachabilityScanId(socketFactsFile: string): string | undefined {
-  const json = readJsonSync(socketFactsFile, { throws: false });
-  if (!json || typeof json !== "object" || !("tier1ReachabilityScanId" in json)) {
-    return undefined;
+export function extractTier1ReachabilityScanId(
+  socketFactsFile: string,
+): string | undefined {
+  const json = readJsonSync(socketFactsFile, { throws: false })
+  if (
+    !json ||
+    typeof json !== 'object' ||
+    !('tier1ReachabilityScanId' in json)
+  ) {
+    return undefined
   }
-  const rawValue = json["tier1ReachabilityScanId"];
+  const rawValue = json['tier1ReachabilityScanId']
   if (rawValue == null) {
-    return undefined;
+    return undefined
   }
-  const tier1ReachabilityScanId = String(rawValue).trim();
-  return tier1ReachabilityScanId.length > 0 ? tier1ReachabilityScanId : undefined;
+  const tier1ReachabilityScanId = String(rawValue).trim()
+  return tier1ReachabilityScanId.length > 0
+    ? tier1ReachabilityScanId
+    : undefined
 }

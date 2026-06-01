@@ -3,7 +3,7 @@
  */
 
 // Encoding constants.
-export const UTF8 = "utf8";
+export const UTF8 = 'utf8'
 
 // Test environment.
-export const VITEST = "VITEST";
+export const VITEST = 'VITEST'

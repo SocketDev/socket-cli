@@ -8,44 +8,51 @@
  * running `command > file` (where stderr still goes to the terminal).
  */
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { DRY_RUN_LABEL } from "../../constants/cli.mts";
+import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 export function out(message: string): void {
-  logger.error(message);
+  logger.error(message)
 }
 
 /**
  * Output dry-run for delete operations.
  */
-export function outputDryRunDelete(resourceType: string, identifier: string): void {
-  out("");
-  out(`${DRY_RUN_LABEL}: Would delete ${resourceType}`);
-  out("");
-  out(`  Target: ${identifier}`);
-  out("");
-  out("  This action cannot be undone.");
-  out("  Run without --dry-run to perform this deletion.");
-  out("");
+export function outputDryRunDelete(
+  resourceType: string,
+  identifier: string,
+): void {
+  out('')
+  out(`${DRY_RUN_LABEL}: Would delete ${resourceType}`)
+  out('')
+  out(`  Target: ${identifier}`)
+  out('')
+  out('  This action cannot be undone.')
+  out('  Run without --dry-run to perform this deletion.')
+  out('')
 }
 
 /**
  * Output dry-run for commands that execute external tools.
  */
-export function outputDryRunExecute(command: string, args: string[], description?: string): void {
-  out("");
-  out(`${DRY_RUN_LABEL}: Would execute ${description || "external command"}`);
-  out("");
-  out(`  Command: ${command}`);
+export function outputDryRunExecute(
+  command: string,
+  args: string[],
+  description?: string,
+): void {
+  out('')
+  out(`${DRY_RUN_LABEL}: Would execute ${description || 'external command'}`)
+  out('')
+  out(`  Command: ${command}`)
   if (args.length > 0) {
-    out(`  Arguments: ${args.join(" ")}`);
+    out(`  Arguments: ${args.join(' ')}`)
   }
-  out("");
-  out("  Run without --dry-run to execute this command.");
-  out("");
+  out('')
+  out('  Run without --dry-run to execute this command.')
+  out('')
 }
 
 /**
@@ -57,111 +64,129 @@ export function outputDryRunFetch(
   resourceName: string,
   queryParams?: Record<string, string | number | boolean | undefined>,
 ): void {
-  out("");
-  out(`${DRY_RUN_LABEL}: Would fetch ${resourceName}`);
-  out("");
+  out('')
+  out(`${DRY_RUN_LABEL}: Would fetch ${resourceName}`)
+  out('')
 
   if (queryParams && Object.keys(queryParams).length > 0) {
-    out("  Query parameters:");
+    out('  Query parameters:')
     for (const [key, value] of Object.entries(queryParams)) {
-      if (value !== undefined && value !== "") {
-        out(`    ${key}: ${value}`);
+      if (value !== undefined && value !== '') {
+        out(`    ${key}: ${value}`)
       }
     }
-    out("");
+    out('')
   }
 
-  out("  This is a read-only operation that does not modify any data.");
-  out("  Run without --dry-run to fetch and display the data.");
-  out("");
+  out('  This is a read-only operation that does not modify any data.')
+  out('  Run without --dry-run to fetch and display the data.')
+  out('')
 }
 
 export interface DryRunAction {
-  type: "create" | "delete" | "execute" | "fetch" | "modify" | "upload" | "write";
-  description: string;
-  target?: string | undefined;
-  details?: Record<string, unknown> | undefined;
+  type:
+    | 'create'
+    | 'delete'
+    | 'execute'
+    | 'fetch'
+    | 'modify'
+    | 'upload'
+    | 'write'
+  description: string
+  target?: string | undefined
+  details?: Record<string, unknown> | undefined
 }
 
 interface DryRunPreview {
-  summary: string;
-  actions: DryRunAction[];
-  wouldSucceed?: boolean | undefined;
+  summary: string
+  actions: DryRunAction[]
+  wouldSucceed?: boolean | undefined
 }
 
 /**
  * Format and output a dry-run preview.
  */
 export function outputDryRunPreview(preview: DryRunPreview): void {
-  out("");
-  out(`${DRY_RUN_LABEL}: ${preview.summary}`);
-  out("");
+  out('')
+  out(`${DRY_RUN_LABEL}: ${preview.summary}`)
+  out('')
 
   if (!preview.actions.length) {
-    out("  No actions would be performed.");
+    out('  No actions would be performed.')
   } else {
-    out("  Actions that would be performed:");
+    out('  Actions that would be performed:')
     for (const action of preview.actions) {
-      const targetStr = action.target ? ` → ${action.target}` : "";
-      out(`    - [${action.type}] ${action.description}${targetStr}`);
+      const targetStr = action.target ? ` → ${action.target}` : ''
+      out(`    - [${action.type}] ${action.description}${targetStr}`)
       if (action.details) {
         for (const [key, value] of Object.entries(action.details)) {
-          out(`        ${key}: ${JSON.stringify(value)}`);
+          out(`        ${key}: ${JSON.stringify(value)}`)
         }
       }
     }
   }
 
-  out("");
+  out('')
   if (preview.wouldSucceed !== undefined) {
     out(
-      preview.wouldSucceed ? "  Would complete successfully." : "  Would fail (see details above).",
-    );
+      preview.wouldSucceed
+        ? '  Would complete successfully.'
+        : '  Would fail (see details above).',
+    )
   }
-  out("");
-  out("  Run without --dry-run to execute these actions.");
-  out("");
+  out('')
+  out('  Run without --dry-run to execute these actions.')
+  out('')
 }
 
 /**
  * Output dry-run for API upload operations.
  */
-export function outputDryRunUpload(resourceType: string, details: Record<string, unknown>): void {
-  out("");
-  out(`${DRY_RUN_LABEL}: Would upload ${resourceType}`);
-  out("");
-  out("  Details:");
+export function outputDryRunUpload(
+  resourceType: string,
+  details: Record<string, unknown>,
+): void {
+  out('')
+  out(`${DRY_RUN_LABEL}: Would upload ${resourceType}`)
+  out('')
+  out('  Details:')
   for (const [key, value] of Object.entries(details)) {
-    if (typeof value === "object" && value !== null) {
-      out(`    ${key}:`);
-      for (const [subKey, subValue] of Object.entries(value as Record<string, unknown>)) {
-        out(`      ${subKey}: ${JSON.stringify(subValue)}`);
+    if (typeof value === 'object' && value !== null) {
+      out(`    ${key}:`)
+      for (const [subKey, subValue] of Object.entries(
+        value as Record<string, unknown>,
+      )) {
+        out(`      ${subKey}: ${JSON.stringify(subValue)}`)
       }
     } else {
-      out(`    ${key}: ${JSON.stringify(value)}`);
+      out(`    ${key}: ${JSON.stringify(value)}`)
     }
   }
-  out("");
-  out("  Run without --dry-run to perform this upload.");
-  out("");
+  out('')
+  out('  Run without --dry-run to perform this upload.')
+  out('')
 }
 
 /**
  * Output dry-run for file write operations.
  */
-export function outputDryRunWrite(filePath: string, description: string, changes?: string[]): void {
-  out("");
-  out(`${DRY_RUN_LABEL}: Would ${description}`);
-  out("");
-  out(`  Target file: ${filePath}`);
+export function outputDryRunWrite(
+  filePath: string,
+  description: string,
+  changes?: string[],
+): void {
+  out('')
+  out(`${DRY_RUN_LABEL}: Would ${description}`)
+  out('')
+  out(`  Target file: ${filePath}`)
   if (changes && changes.length > 0) {
-    out("  Changes:");
+    out('  Changes:')
     for (let i = 0, { length } = changes; i < length; i += 1) {
-      const change = changes[i];
-      out(`    - ${change}`);
+      const change = changes[i]
+      out(`    - ${change}`)
     }
   }
-  out("");
-  out("  Run without --dry-run to apply these changes.");
-  out("");
+  out('')
+  out('  Run without --dry-run to apply these changes.')
+  out('')
 }

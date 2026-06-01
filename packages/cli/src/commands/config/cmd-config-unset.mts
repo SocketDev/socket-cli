@@ -1,17 +1,17 @@
-import { createConfigCommand } from "./config-command-factory.mts";
-import { handleConfigUnset } from "./handle-config-unset.mts";
+import { createConfigCommand } from './config-command-factory.mts'
+import { handleConfigUnset } from './handle-config-unset.mts'
 
-export const CMD_NAME = "unset";
+export const CMD_NAME = 'unset'
 
 export const cmdConfigUnset = createConfigCommand({
   commandName: CMD_NAME,
-  description: "Clear the value of a local CLI config item",
+  description: 'Clear the value of a local CLI config item',
   hidden: false,
-  helpUsage: "<KEY> <VALUE>",
+  helpUsage: '<KEY> <VALUE>',
   helpDescription: `Removes a value from a config key, allowing the default value to be used
     for it instead.
 
     Keys:`,
-  helpExamples: ["defaultOrg"],
+  helpExamples: ['defaultOrg'],
   handler: handleConfigUnset,
-});
+})

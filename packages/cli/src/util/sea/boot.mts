@@ -16,14 +16,14 @@
  * ensuring proper bootstrap delegation for SEA binaries.
  */
 
-import { SOCKET_IPC_HANDSHAKE } from "@socketsecurity/lib-stable/constants/socket";
+import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib-stable/constants/socket'
 
 /**
  * Check if the current process is running as a subprocess with IPC. Returns
  * true if we have an IPC channel (process.channel exists).
  */
 export function isSubprocess(): boolean {
-  return !!process.channel;
+  return !!process.channel
 }
 
 /**
@@ -41,7 +41,7 @@ export function sendBootstrapHandshake(
 ): void {
   childProcess.send({
     [SOCKET_IPC_HANDSHAKE]: ipcData,
-  });
+  })
 }
 
 /**
@@ -65,48 +65,56 @@ export function waitForBootstrapHandshake(
 ): Promise<Record<string, unknown> | undefined> {
   // If no IPC channel, we're not a subprocess.
   if (!isSubprocess()) {
-    return Promise.resolve(undefined);
+    return Promise.resolve(undefined)
   }
 
   return new Promise((resolve, reject) => {
-    let resolved = false;
+    let resolved = false
 
     const handler = (message: unknown) => {
       /* c8 ignore start - guard fires only on a duplicate IPC message after promise resolved */
       if (resolved) {
-        return;
+        return
       }
       /* c8 ignore stop */
 
       // Check if message has SOCKET_IPC_HANDSHAKE key.
-      if (message && typeof message === "object" && SOCKET_IPC_HANDSHAKE in message) {
-        const ipcData = (message as Record<string, unknown>)[SOCKET_IPC_HANDSHAKE] as
-          | Record<string, unknown>
-          | undefined;
+      if (
+        message &&
+        typeof message === 'object' &&
+        SOCKET_IPC_HANDSHAKE in message
+      ) {
+        const ipcData = (message as Record<string, unknown>)[
+          SOCKET_IPC_HANDSHAKE
+        ] as Record<string, unknown> | undefined
 
         // Validate bootstrap indicators are present.
         if (
           ipcData &&
-          typeof ipcData === "object" &&
-          ipcData["subprocess"] === true &&
-          typeof ipcData["parent_pid"] === "number"
+          typeof ipcData === 'object' &&
+          ipcData['subprocess'] === true &&
+          typeof ipcData['parent_pid'] === 'number'
         ) {
-          resolved = true;
-          clearTimeout(timeout);
-          process.off("message", handler);
-          resolve(ipcData);
+          resolved = true
+          clearTimeout(timeout)
+          process.off('message', handler)
+          resolve(ipcData)
         }
       }
-    };
+    }
 
     const timeout = setTimeout(() => {
       if (!resolved) {
-        resolved = true;
-        process.off("message", handler);
-        reject(new Error("IPC handshake timeout: expected SOCKET_IPC_HANDSHAKE message"));
+        resolved = true
+        process.off('message', handler)
+        reject(
+          new Error(
+            'IPC handshake timeout: expected SOCKET_IPC_HANDSHAKE message',
+          ),
+        )
       }
-    }, timeoutMs);
+    }, timeoutMs)
 
-    process.on("message", handler);
-  });
+    process.on('message', handler)
+  })
 }

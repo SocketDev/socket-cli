@@ -12,17 +12,17 @@
  * Related Files: - util/socket/json.mts (implementation)
  */
 
-import path from "node:path";
+import path from 'node:path'
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockExistsSync = vi.hoisted(() => vi.fn());
-const mockReadFileSync = vi.hoisted(() => vi.fn());
-const mockReadFile = vi.hoisted(() => vi.fn());
-const mockWriteFile = vi.hoisted(() => vi.fn());
-const mockStat = vi.hoisted(() => vi.fn());
+const mockExistsSync = vi.hoisted(() => vi.fn())
+const mockReadFileSync = vi.hoisted(() => vi.fn())
+const mockReadFile = vi.hoisted(() => vi.fn())
+const mockWriteFile = vi.hoisted(() => vi.fn())
+const mockStat = vi.hoisted(() => vi.fn())
 
-vi.mock(import("node:fs"), () => ({
+vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
   readFileSync: mockReadFileSync,
   promises: {
@@ -39,9 +39,9 @@ vi.mock(import("node:fs"), () => ({
       stat: mockStat,
     },
   },
-}));
+}))
 
-vi.mock(import("node:fs/promises"), () => ({
+vi.mock(import('node:fs/promises'), () => ({
   readFile: mockReadFile,
   writeFile: mockWriteFile,
   stat: mockStat,
@@ -50,7 +50,7 @@ vi.mock(import("node:fs/promises"), () => ({
     writeFile: mockWriteFile,
     stat: mockStat,
   },
-}));
+}))
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -59,14 +59,17 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}));
+}))
 
-import { SOCKET_JSON, SOCKET_WEBSITE_URL } from "../../../../src/constants/socket.mts";
+import {
+  SOCKET_JSON,
+  SOCKET_WEBSITE_URL,
+} from '../../../../src/constants/socket.mts'
 import {
   findSocketJsonUp,
   getDefaultSocketJson,
@@ -74,229 +77,231 @@ import {
   readOrDefaultSocketJsonUp,
   readSocketJsonSync,
   writeSocketJson,
-} from "../../../../src/util/socket/json.mts";
+} from '../../../../src/util/socket/json.mts'
 
-describe("socket-json utilities", () => {
+describe('socket-json utilities', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  describe("getDefaultSocketJson", () => {
-    it("returns default socket.json structure", () => {
-      const result = getDefaultSocketJson();
-      expect(result.version).toBe(1);
-      expect(result[" _____         _       _     "]).toContain(SOCKET_WEBSITE_URL);
-      expect(Object.keys(result)).toContain("|   __|___ ___| |_ ___| |_   ");
-      expect(Object.keys(result)).toContain("|__   | . |  _| '_| -_|  _|  ");
-      expect(Object.keys(result)).toContain("|_____|___|___|_,_|___|_|.dev");
-    });
-  });
+  describe('getDefaultSocketJson', () => {
+    it('returns default socket.json structure', () => {
+      const result = getDefaultSocketJson()
+      expect(result.version).toBe(1)
+      expect(result[' _____         _       _     ']).toContain(
+        SOCKET_WEBSITE_URL,
+      )
+      expect(Object.keys(result)).toContain('|   __|___ ___| |_ ___| |_   ')
+      expect(Object.keys(result)).toContain("|__   | . |  _| '_| -_|  _|  ")
+      expect(Object.keys(result)).toContain('|_____|___|___|_,_|___|_|.dev')
+    })
+  })
 
-  describe("readOrDefaultSocketJson", () => {
-    it("returns parsed JSON when file exists and is valid", () => {
-      const mockJson = { version: 1, custom: "data" };
-      mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockReturnValue(JSON.stringify(mockJson));
+  describe('readOrDefaultSocketJson', () => {
+    it('returns parsed JSON when file exists and is valid', () => {
+      const mockJson = { version: 1, custom: 'data' }
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockJson))
 
-      const result = readOrDefaultSocketJson("/test/dir");
-      expect(result).toEqual(mockJson);
-    });
+      const result = readOrDefaultSocketJson('/test/dir')
+      expect(result).toEqual(mockJson)
+    })
 
-    it("returns default when file does not exist", () => {
-      mockExistsSync.mockReturnValue(false);
+    it('returns default when file does not exist', () => {
+      mockExistsSync.mockReturnValue(false)
 
-      const result = readOrDefaultSocketJson("/test/dir");
-      expect(result.version).toBe(1);
-    });
+      const result = readOrDefaultSocketJson('/test/dir')
+      expect(result.version).toBe(1)
+    })
 
-    it("returns default when file read fails", () => {
-      mockExistsSync.mockReturnValue(true);
+    it('returns default when file read fails', () => {
+      mockExistsSync.mockReturnValue(true)
       mockReadFileSync.mockImplementation(() => {
-        throw new Error("Read error");
-      });
+        throw new Error('Read error')
+      })
 
-      const result = readOrDefaultSocketJson("/test/dir");
-      expect(result.version).toBe(1);
-    });
+      const result = readOrDefaultSocketJson('/test/dir')
+      expect(result.version).toBe(1)
+    })
 
-    it("returns default when JSON parse fails", () => {
-      mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockReturnValue("invalid json");
+    it('returns default when JSON parse fails', () => {
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue('invalid json')
 
-      const result = readOrDefaultSocketJson("/test/dir");
-      expect(result.version).toBe(1);
-    });
-  });
+      const result = readOrDefaultSocketJson('/test/dir')
+      expect(result.version).toBe(1)
+    })
+  })
 
-  describe("findSocketJsonUp", () => {
-    it("calls findUp with correct parameters", async () => {
+  describe('findSocketJsonUp', () => {
+    it('calls findUp with correct parameters', async () => {
       // Mock fs.stat to simulate finding socket.json in parent directory.
       mockStat.mockResolvedValue({
         isFile: () => true,
         isDirectory: () => false,
-      });
+      })
 
-      const result = await findSocketJsonUp("/test/dir");
+      const result = await findSocketJsonUp('/test/dir')
       // Should find socket.json somewhere up the tree.
-      expect(result).toBeDefined();
-      expect(result).toContain(SOCKET_JSON);
-    });
+      expect(result).toBeDefined()
+      expect(result).toContain(SOCKET_JSON)
+    })
 
-    it("returns undefined when socket.json not found", async () => {
+    it('returns undefined when socket.json not found', async () => {
       // Mock fs.stat to always throw (file not found).
-      mockStat.mockRejectedValue(new Error("ENOENT"));
+      mockStat.mockRejectedValue(new Error('ENOENT'))
 
-      const result = await findSocketJsonUp("/test/dir");
-      expect(result).toBeUndefined();
-    });
-  });
+      const result = await findSocketJsonUp('/test/dir')
+      expect(result).toBeUndefined()
+    })
+  })
 
-  describe("readOrDefaultSocketJsonUp", () => {
-    it("reads socket.json when found up the tree", async () => {
-      const mockJson = { version: 1, custom: "data" };
+  describe('readOrDefaultSocketJsonUp', () => {
+    it('reads socket.json when found up the tree', async () => {
+      const mockJson = { version: 1, custom: 'data' }
       // Mock fs.stat to find socket.json.
       mockStat.mockResolvedValue({
         isFile: () => true,
         isDirectory: () => false,
-      });
-      mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockReturnValue(JSON.stringify(mockJson));
+      })
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockJson))
 
-      const result = await readOrDefaultSocketJsonUp("/test/dir");
-      expect(result).toEqual(mockJson);
-    });
+      const result = await readOrDefaultSocketJsonUp('/test/dir')
+      expect(result).toEqual(mockJson)
+    })
 
-    it("returns default when socket.json not found up the tree", async () => {
+    it('returns default when socket.json not found up the tree', async () => {
       // Mock fs.stat to not find socket.json.
-      mockStat.mockRejectedValue(new Error("ENOENT"));
+      mockStat.mockRejectedValue(new Error('ENOENT'))
 
-      const result = await readOrDefaultSocketJsonUp("/test/dir");
-      expect(result.version).toBe(1);
-    });
-  });
+      const result = await readOrDefaultSocketJsonUp('/test/dir')
+      expect(result.version).toBe(1)
+    })
+  })
 
-  describe("readSocketJsonSync", () => {
-    it("successfully reads and parses valid JSON file", () => {
-      const mockJson = { version: 1, custom: "data" };
-      mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockReturnValue(JSON.stringify(mockJson));
+  describe('readSocketJsonSync', () => {
+    it('successfully reads and parses valid JSON file', () => {
+      const mockJson = { version: 1, custom: 'data' }
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue(JSON.stringify(mockJson))
 
-      const result = readSocketJsonSync("/test/dir");
-      expect(result.ok).toBe(true);
+      const result = readSocketJsonSync('/test/dir')
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data).toEqual(mockJson);
+        expect(result.data).toEqual(mockJson)
       }
-    });
+    })
 
-    it("returns default when file does not exist", () => {
-      mockExistsSync.mockReturnValue(false);
+    it('returns default when file does not exist', () => {
+      mockExistsSync.mockReturnValue(false)
 
-      const result = readSocketJsonSync("/test/dir");
-      expect(result.ok).toBe(true);
+      const result = readSocketJsonSync('/test/dir')
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data.version).toBe(1);
+        expect(result.data.version).toBe(1)
       }
-    });
+    })
 
-    it("returns error when file read fails and defaultOnError is false", () => {
-      mockExistsSync.mockReturnValue(true);
+    it('returns error when file read fails and defaultOnError is false', () => {
+      mockExistsSync.mockReturnValue(true)
       mockReadFileSync.mockImplementation(() => {
-        throw new Error("Read error");
-      });
+        throw new Error('Read error')
+      })
 
-      const result = readSocketJsonSync("/test/dir", false);
-      expect(result.ok).toBe(false);
+      const result = readSocketJsonSync('/test/dir', false)
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Failed to read");
+        expect(result.message).toContain('Failed to read')
       }
-    });
+    })
 
-    it("returns default when file read fails and defaultOnError is true", () => {
-      mockExistsSync.mockReturnValue(true);
+    it('returns default when file read fails and defaultOnError is true', () => {
+      mockExistsSync.mockReturnValue(true)
       mockReadFileSync.mockImplementation(() => {
-        throw new Error("Read error");
-      });
+        throw new Error('Read error')
+      })
 
-      const result = readSocketJsonSync("/test/dir", true);
-      expect(result.ok).toBe(true);
+      const result = readSocketJsonSync('/test/dir', true)
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data.version).toBe(1);
+        expect(result.data.version).toBe(1)
       }
-    });
+    })
 
-    it("returns error when JSON parse fails and defaultOnError is false", () => {
-      mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockReturnValue("invalid json");
+    it('returns error when JSON parse fails and defaultOnError is false', () => {
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue('invalid json')
 
-      const result = readSocketJsonSync("/test/dir", false);
-      expect(result.ok).toBe(false);
+      const result = readSocketJsonSync('/test/dir', false)
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Failed to parse");
+        expect(result.message).toContain('Failed to parse')
       }
-    });
+    })
 
-    it("returns default when JSON parse fails and defaultOnError is true", () => {
-      mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockReturnValue("invalid json");
+    it('returns default when JSON parse fails and defaultOnError is true', () => {
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue('invalid json')
 
-      const result = readSocketJsonSync("/test/dir", true);
-      expect(result.ok).toBe(true);
+      const result = readSocketJsonSync('/test/dir', true)
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data.version).toBe(1);
+        expect(result.data.version).toBe(1)
       }
-    });
+    })
 
-    it("returns default when file content is empty", () => {
-      mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockReturnValue("null");
+    it('returns default when file content is empty', () => {
+      mockExistsSync.mockReturnValue(true)
+      mockReadFileSync.mockReturnValue('null')
 
-      const result = readSocketJsonSync("/test/dir");
-      expect(result.ok).toBe(true);
+      const result = readSocketJsonSync('/test/dir')
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data.version).toBe(1);
+        expect(result.data.version).toBe(1)
       }
-    });
-  });
+    })
+  })
 
-  describe("writeSocketJson", () => {
-    it("successfully writes socket.json", async () => {
-      const mockJson = { version: 1, custom: "data" };
-      mockWriteFile.mockResolvedValue(undefined);
+  describe('writeSocketJson', () => {
+    it('successfully writes socket.json', async () => {
+      const mockJson = { version: 1, custom: 'data' }
+      mockWriteFile.mockResolvedValue(undefined)
 
-      const result = await writeSocketJson("/test/dir", mockJson as unknown);
-      expect(result.ok).toBe(true);
+      const result = await writeSocketJson('/test/dir', mockJson as unknown)
+      expect(result.ok).toBe(true)
       expect(mockWriteFile).toHaveBeenCalledWith(
-        path.join("/test/dir", SOCKET_JSON),
+        path.join('/test/dir', SOCKET_JSON),
         expect.stringContaining('"version": 1'),
-        "utf8",
-      );
-    });
+        'utf8',
+      )
+    })
 
-    it("returns error when JSON serialization fails", async () => {
-      const circularRef: unknown = {};
-      circularRef.self = circularRef;
+    it('returns error when JSON serialization fails', async () => {
+      const circularRef: unknown = {}
+      circularRef.self = circularRef
 
-      const result = await writeSocketJson("/test/dir", circularRef);
-      expect(result.ok).toBe(false);
+      const result = await writeSocketJson('/test/dir', circularRef)
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toContain("Failed to serialize");
+        expect(result.message).toContain('Failed to serialize')
       }
-    });
+    })
 
-    it("writes with proper formatting", async () => {
-      const mockJson = getDefaultSocketJson();
-      mockWriteFile.mockResolvedValue(undefined);
+    it('writes with proper formatting', async () => {
+      const mockJson = getDefaultSocketJson()
+      mockWriteFile.mockResolvedValue(undefined)
 
-      await writeSocketJson("/test/dir", mockJson);
+      await writeSocketJson('/test/dir', mockJson)
       expect(mockWriteFile).toHaveBeenCalledWith(
         expect.any(String),
         expect.stringMatching(/\n$/),
-        "utf8",
-      );
-    });
-  });
-});
+        'utf8',
+      )
+    })
+  })
+})

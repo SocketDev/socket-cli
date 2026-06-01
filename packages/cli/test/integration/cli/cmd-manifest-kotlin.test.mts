@@ -11,21 +11,25 @@
  * manifest logic.
  */
 
-import { describe, expect } from "vitest";
+import { describe, expect } from 'vitest'
 
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from "../../../src/constants/cli.mts";
-import { getBinCliPath } from "../../../src/constants/paths.mts";
-import { expectDryRunOutput } from "../../helpers/output-assertions.mts";
-import { cmdit, spawnSocketCli } from "../../utils.mts";
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
+import { cmdit, spawnSocketCli } from '../../utils.mts'
 
-const binCliPath = getBinCliPath();
+const binCliPath = getBinCliPath()
 
-describe("socket manifest kotlin", async () => {
+describe('socket manifest kotlin', async () => {
   cmdit(
-    ["manifest", "kotlin", FLAG_HELP, FLAG_CONFIG, "{}"],
+    ['manifest', 'kotlin', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
         "[beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
 
@@ -61,38 +65,40 @@ describe("socket manifest kotlin", async () => {
           
                 $ socket manifest kotlin .
                 $ socket manifest kotlin --bin=../gradlew ."
-      `);
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest kotlin\`, cwd: <redacted>"
-      `);
+      `)
 
-      expect(code, "explicit help should exit with code 0").toBe(0);
-      expect(stderr, "banner includes base command").toContain("`socket manifest kotlin`");
+      expect(code, 'explicit help should exit with code 0').toBe(0)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket manifest kotlin`',
+      )
     },
-  );
+  )
 
   cmdit(
-    ["manifest", "kotlin", FLAG_DRY_RUN, FLAG_CONFIG, "{}"],
-    "should require args with just dry-run",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+    ['manifest', 'kotlin', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should require args with just dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout);
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
+      expectDryRunOutput(stdout)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest kotlin\`, cwd: <redacted>"
-      `);
+      `)
 
-      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
+      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
-  );
-});
+  )
+})

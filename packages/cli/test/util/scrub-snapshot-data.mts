@@ -11,31 +11,31 @@ interface ScrubOptions {
   /**
    * Scrub absolute file paths (default: true).
    */
-  paths?: boolean | undefined;
+  paths?: boolean | undefined
   /**
    * Scrub timestamps and dates (default: true).
    */
-  timestamps?: boolean | undefined;
+  timestamps?: boolean | undefined
   /**
    * Scrub UUIDs and scan IDs (default: true).
    */
-  ids?: boolean | undefined;
+  ids?: boolean | undefined
   /**
    * Scrub version numbers (default: false - usually stable in mocks).
    */
-  versions?: boolean | undefined;
+  versions?: boolean | undefined
   /**
    * Scrub IP addresses (default: true).
    */
-  ipAddresses?: boolean | undefined;
+  ipAddresses?: boolean | undefined
   /**
    * Scrub email addresses (default: false - usually stable in mocks).
    */
-  emails?: boolean | undefined;
+  emails?: boolean | undefined
   /**
    * Additional custom scrubbing patterns.
    */
-  custom?: Array<{ pattern: RegExp; replacement: string }> | undefined;
+  custom?: Array<{ pattern: RegExp; replacement: string }> | undefined
 }
 
 /**
@@ -49,7 +49,10 @@ interface ScrubOptions {
  *
  * @returns The scrubbed string with environment-specific data replaced
  */
-export function scrubSnapshotData(output: string, options: ScrubOptions = {}): string {
+export function scrubSnapshotData(
+  output: string,
+  options: ScrubOptions = {},
+): string {
   const {
     custom = [],
     emails = false,
@@ -58,39 +61,42 @@ export function scrubSnapshotData(output: string, options: ScrubOptions = {}): s
     paths = true,
     timestamps = true,
     versions = false,
-  } = options;
+  } = options
 
-  let scrubbed = output;
+  let scrubbed = output
 
   // Phase 1: Timestamps.
   if (timestamps) {
     // ISO timestamps: 2025-04-02T01:47:26.914Z.
-    scrubbed = scrubbed.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z/g, "[TIMESTAMP]");
+    scrubbed = scrubbed.replace(
+      /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z/g,
+      '[TIMESTAMP]',
+    )
     // Date-only: 2025-04-02.
-    scrubbed = scrubbed.replace(/\d{4}-\d{2}-\d{2}/g, "[DATE]");
+    scrubbed = scrubbed.replace(/\d{4}-\d{2}-\d{2}/g, '[DATE]')
     // Relative time: "2 days ago", "5 minutes ago".
     scrubbed = scrubbed.replace(
       /\d+\s+(?:days?|hours?|minutes?|seconds?)\s+ago/g,
-      "[RELATIVE_TIME]",
-    );
+      '[RELATIVE_TIME]',
+    )
   }
 
   // Phase 2: Absolute paths.
   if (paths) {
     // Project root (use process.cwd()) - must come before user home scrubbing.
-    const cwd = process.cwd();
-    scrubbed = scrubbed.replaceAll(cwd, "[PROJECT]");
+    const cwd = process.cwd()
+    scrubbed = scrubbed.replaceAll(cwd, '[PROJECT]')
 
     // Unix home directories.
-    scrubbed = scrubbed.replace(/\/Users\/[^/\s]+/g, "/[HOME]");
-    scrubbed = scrubbed.replace(/\/home\/[^/\s]+/g, "/[HOME]");
+    scrubbed = scrubbed.replace(/\/Users\/[^/\s]+/g, '/[HOME]')
+    scrubbed = scrubbed.replace(/\/home\/[^/\s]+/g, '/[HOME]')
 
     // Windows home directories.
-    scrubbed = scrubbed.replace(/C:\\Users\\[^\\]+/gi, "C:\\[HOME]");
+    scrubbed = scrubbed.replace(/C:\\Users\\[^\\]+/gi, 'C:\\[HOME]')
 
     // Temp directories.
-    scrubbed = scrubbed.replace(/\/tmp\/[a-zA-Z0-9_-]+/g, "/[TEMP]");
-    scrubbed = scrubbed.replace(/\\Temp\\[a-zA-Z0-9_-]+/gi, "\\[TEMP]");
+    scrubbed = scrubbed.replace(/\/tmp\/[a-zA-Z0-9_-]+/g, '/[TEMP]')
+    scrubbed = scrubbed.replace(/\\Temp\\[a-zA-Z0-9_-]+/gi, '\\[TEMP]')
   }
 
   // Phase 3: IDs and UUIDs.
@@ -98,41 +104,44 @@ export function scrubSnapshotData(output: string, options: ScrubOptions = {}): s
     // UUIDs.
     scrubbed = scrubbed.replace(
       /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
-      "[UUID]",
-    );
+      '[UUID]',
+    )
     // Scan IDs: scan-123, scan-ai-dee.
-    scrubbed = scrubbed.replace(/scan-[a-zA-Z0-9-]+/g, "scan-[ID]");
+    scrubbed = scrubbed.replace(/scan-[a-zA-Z0-9-]+/g, 'scan-[ID]')
     // Event IDs in JSON: "event_id": "123112".
-    scrubbed = scrubbed.replace(/"event_id":\s*"(?:\d+)"/g, '"event_id":"[ID]"');
+    scrubbed = scrubbed.replace(/"event_id":\s*"(?:\d+)"/g, '"event_id":"[ID]"')
   }
 
   // Phase 4: Version numbers.
   if (versions) {
     // Node version: v22.11.0.
-    scrubbed = scrubbed.replace(/v\d+\.\d+\.\d+/g, "v[VERSION]");
+    scrubbed = scrubbed.replace(/v\d+\.\d+\.\d+/g, 'v[VERSION]')
     // Package versions: socket@1.1.25.
-    scrubbed = scrubbed.replace(/socket@\d+\.\d+\.\d+/g, "socket@[VERSION]");
+    scrubbed = scrubbed.replace(/socket@\d+\.\d+\.\d+/g, 'socket@[VERSION]')
   }
 
   // Phase 5: IP addresses.
   if (ipAddresses) {
     // IPv4.
-    scrubbed = scrubbed.replace(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g, "[IP]");
+    scrubbed = scrubbed.replace(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g, '[IP]')
     // IPv6.
-    scrubbed = scrubbed.replace(/(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}/gi, "[IP]");
+    scrubbed = scrubbed.replace(/(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}/gi, '[IP]')
   }
 
   // Phase 6: Email addresses.
   if (emails) {
-    scrubbed = scrubbed.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[EMAIL]");
+    scrubbed = scrubbed.replace(
+      /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+      '[EMAIL]',
+    )
   }
 
   // Phase 7: Custom patterns.
   for (const { pattern, replacement } of custom) {
-    scrubbed = scrubbed.replace(pattern, replacement);
+    scrubbed = scrubbed.replace(pattern, replacement)
   }
 
-  return scrubbed;
+  return scrubbed
 }
 
 /**
@@ -147,5 +156,5 @@ export function toSnapshotString(output: string): string {
   return scrubSnapshotData(output, {
     emails: false,
     versions: false,
-  });
+  })
 }

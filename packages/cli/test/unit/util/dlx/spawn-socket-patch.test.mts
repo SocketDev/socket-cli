@@ -6,129 +6,133 @@
  * legacy npm fallback).
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockSpawn = vi.hoisted(() => vi.fn());
-const mockSpawnDlx = vi.hoisted(() => vi.fn());
-const mockDownloadGitHubReleaseBinary = vi.hoisted(() => vi.fn());
-const mockResolveSocketPatch = vi.hoisted(() => vi.fn());
-const mockDetectExecutableType = vi.hoisted(() => vi.fn());
+const mockSpawn = vi.hoisted(() => vi.fn())
+const mockSpawnDlx = vi.hoisted(() => vi.fn())
+const mockDownloadGitHubReleaseBinary = vi.hoisted(() => vi.fn())
+const mockResolveSocketPatch = vi.hoisted(() => vi.fn())
+const mockDetectExecutableType = vi.hoisted(() => vi.fn())
 
-vi.mock(import("@socketsecurity/lib-stable/process/spawn/child"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/dlx/detect"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/dlx/detect'), () => ({
   detectExecutableType: mockDetectExecutableType,
-}));
+}))
 
-vi.mock(import("../../../../src/util/dlx/spawn.mts"), () => ({
+vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
   downloadGitHubReleaseBinary: mockDownloadGitHubReleaseBinary,
   spawnDlx: mockSpawnDlx,
-}));
+}))
 
-vi.mock(import("../../../../src/util/dlx/resolve-binary.mts"), () => ({
+vi.mock(import('../../../../src/util/dlx/resolve-binary.mts'), () => ({
   resolveSocketPatch: mockResolveSocketPatch,
-}));
+}))
 
-import { spawnSocketPatchDlx } from "../../../../src/util/dlx/spawn-socket-patch.mts";
+import { spawnSocketPatchDlx } from '../../../../src/util/dlx/spawn-socket-patch.mts'
 
-describe("spawnSocketPatchDlx", () => {
+describe('spawnSocketPatchDlx', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("runs a local socket-patch binary when SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH is set", async () => {
+  it('runs a local socket-patch binary when SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH is set', async () => {
     mockResolveSocketPatch.mockReturnValue({
-      type: "local",
-      path: "/local/socket-patch",
-    });
-    mockDetectExecutableType.mockReturnValue({ type: "binary" });
-    mockSpawn.mockReturnValue("p");
+      type: 'local',
+      path: '/local/socket-patch',
+    })
+    mockDetectExecutableType.mockReturnValue({ type: 'binary' })
+    mockSpawn.mockReturnValue('p')
 
-    const result = await spawnSocketPatchDlx(["apply"], undefined, undefined);
+    const result = await spawnSocketPatchDlx(['apply'], undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      "/local/socket-patch",
-      ["apply"],
-      expect.objectContaining({ stdio: "inherit" }),
-    );
-    expect(result).toEqual({ spawnPromise: "p" });
-  });
+      '/local/socket-patch',
+      ['apply'],
+      expect.objectContaining({ stdio: 'inherit' }),
+    )
+    expect(result).toEqual({ spawnPromise: 'p' })
+  })
 
-  it("runs the local script via node when not a binary", async () => {
+  it('runs the local script via node when not a binary', async () => {
     mockResolveSocketPatch.mockReturnValue({
-      type: "local",
-      path: "/local/socket-patch.js",
-    });
-    mockDetectExecutableType.mockReturnValue({ type: "script" });
-    mockSpawn.mockReturnValue("p");
+      type: 'local',
+      path: '/local/socket-patch.js',
+    })
+    mockDetectExecutableType.mockReturnValue({ type: 'script' })
+    mockSpawn.mockReturnValue('p')
 
-    await spawnSocketPatchDlx([], undefined, undefined);
+    await spawnSocketPatchDlx([], undefined, undefined)
 
-    expect(mockSpawn).toHaveBeenCalledWith("node", ["/local/socket-patch.js"], expect.any(Object));
-  });
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'node',
+      ['/local/socket-patch.js'],
+      expect.any(Object),
+    )
+  })
 
   it('downloads from GitHub releases when resolution.type is "github-release"', async () => {
     mockResolveSocketPatch.mockReturnValue({
-      type: "github-release",
-      details: { name: "socket-patch", version: "2.0.0" },
-    });
-    mockDownloadGitHubReleaseBinary.mockResolvedValue("/cache/socket-patch");
-    mockSpawn.mockReturnValue("p");
+      type: 'github-release',
+      details: { name: 'socket-patch', version: '2.0.0' },
+    })
+    mockDownloadGitHubReleaseBinary.mockResolvedValue('/cache/socket-patch')
+    mockSpawn.mockReturnValue('p')
 
-    const result = await spawnSocketPatchDlx(["apply"], undefined, undefined);
+    const result = await spawnSocketPatchDlx(['apply'], undefined, undefined)
 
-    expect(mockDownloadGitHubReleaseBinary).toHaveBeenCalled();
+    expect(mockDownloadGitHubReleaseBinary).toHaveBeenCalled()
     expect(mockSpawn).toHaveBeenCalledWith(
-      "/cache/socket-patch",
-      ["apply"],
-      expect.objectContaining({ stdio: "inherit" }),
-    );
-    expect(result).toEqual({ spawnPromise: "p" });
-  });
+      '/cache/socket-patch',
+      ['apply'],
+      expect.objectContaining({ stdio: 'inherit' }),
+    )
+    expect(result).toEqual({ spawnPromise: 'p' })
+  })
 
-  it("falls back to spawnDlx for legacy npm-package resolutions", async () => {
+  it('falls back to spawnDlx for legacy npm-package resolutions', async () => {
     mockResolveSocketPatch.mockReturnValue({
-      type: "dlx",
-      details: { name: "socket-patch", version: "1.0.0" },
-    });
-    mockSpawnDlx.mockResolvedValue({ spawnPromise: "p" });
+      type: 'dlx',
+      details: { name: 'socket-patch', version: '1.0.0' },
+    })
+    mockSpawnDlx.mockResolvedValue({ spawnPromise: 'p' })
 
-    const result = await spawnSocketPatchDlx([], undefined, undefined);
+    const result = await spawnSocketPatchDlx([], undefined, undefined)
 
-    expect(mockSpawnDlx).toHaveBeenCalled();
-    expect(result).toEqual({ spawnPromise: "p" });
-  });
+    expect(mockSpawnDlx).toHaveBeenCalled()
+    expect(result).toEqual({ spawnPromise: 'p' })
+  })
 
-  it("honors a custom stdio passed via spawnExtra", async () => {
+  it('honors a custom stdio passed via spawnExtra', async () => {
     mockResolveSocketPatch.mockReturnValue({
-      type: "github-release",
-      details: { name: "socket-patch", version: "2.0.0" },
-    });
-    mockDownloadGitHubReleaseBinary.mockResolvedValue("/cache/socket-patch");
-    mockSpawn.mockReturnValue("p");
+      type: 'github-release',
+      details: { name: 'socket-patch', version: '2.0.0' },
+    })
+    mockDownloadGitHubReleaseBinary.mockResolvedValue('/cache/socket-patch')
+    mockSpawn.mockReturnValue('p')
 
-    await spawnSocketPatchDlx([], undefined, { stdio: "pipe" } as unknown);
+    await spawnSocketPatchDlx([], undefined, { stdio: 'pipe' } as unknown)
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      "/cache/socket-patch",
+      '/cache/socket-patch',
       [],
-      expect.objectContaining({ stdio: "pipe" }),
-    );
-  });
+      expect.objectContaining({ stdio: 'pipe' }),
+    )
+  })
 
-  it("merges options.env into the child env (local path)", async () => {
+  it('merges options.env into the child env (local path)', async () => {
     mockResolveSocketPatch.mockReturnValue({
-      type: "local",
-      path: "/local/socket-patch",
-    });
-    mockDetectExecutableType.mockReturnValue({ type: "binary" });
-    mockSpawn.mockReturnValue("p");
+      type: 'local',
+      path: '/local/socket-patch',
+    })
+    mockDetectExecutableType.mockReturnValue({ type: 'binary' })
+    mockSpawn.mockReturnValue('p')
 
-    await spawnSocketPatchDlx([], { env: { FOO: "bar" } } as unknown, undefined);
+    await spawnSocketPatchDlx([], { env: { FOO: 'bar' } } as unknown, undefined)
 
-    const callEnv = mockSpawn.mock.calls[0][2].env;
-    expect(callEnv.FOO).toBe("bar");
-  });
-});
+    const callEnv = mockSpawn.mock.calls[0][2].env
+    expect(callEnv.FOO).toBe('bar')
+  })
+})

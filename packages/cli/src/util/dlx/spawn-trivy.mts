@@ -8,15 +8,15 @@
  * Defined via `defineToolSpawn`. See util/dlx/define-tool-spawn.mts.
  */
 
-import { defineToolSpawn } from "./define-tool-spawn.mts";
-import { resolveTrivy } from "./resolve-binary.mjs";
+import { defineToolSpawn } from './define-tool-spawn.mts'
+import { resolveTrivy } from './resolve-binary.mjs'
 
 const triple = defineToolSpawn({
-  toolName: "trivy",
-  vfsName: "trivy",
+  toolName: 'trivy',
+  vfsName: 'trivy',
   resolve: resolveTrivy,
-});
+})
 
-export const spawnTrivyDlx = triple.Dlx;
-export const spawnTrivyVfs = triple.Vfs;
-export const spawnTrivy = triple.auto;
+export const spawnTrivyDlx = triple.Dlx
+export const spawnTrivyVfs = triple.Vfs
+export const spawnTrivy = triple.auto

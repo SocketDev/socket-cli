@@ -13,16 +13,16 @@
  * Related Files: - src/addSocketWrapper.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { addSocketWrapper } from "../../../../src/commands/wrapper/add-socket-wrapper.mts";
+import { addSocketWrapper } from '../../../../src/commands/wrapper/add-socket-wrapper.mts'
 
 // Mock the dependencies.
-vi.mock(import("node:fs"), () => ({
+vi.mock(import('node:fs'), () => ({
   promises: {
     appendFile: vi.fn(),
   },
-}));
+}))
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -31,114 +31,118 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}));
+}))
 
-describe("addSocketWrapper", () => {
+describe('addSocketWrapper', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("successfully adds wrapper aliases to file", async () => {
-    await import("@socketsecurity/lib-stable/logger");
-    const fs = await import("node:fs");
-    const mockAppendFile = vi.mocked(fs.promises.appendFile);
+  it('successfully adds wrapper aliases to file', async () => {
+    await import('@socketsecurity/lib-stable/logger')
+    const fs = await import('node:fs')
+    const mockAppendFile = vi.mocked(fs.promises.appendFile)
 
-    mockAppendFile.mockResolvedValue(undefined);
+    mockAppendFile.mockResolvedValue(undefined)
 
-    await addSocketWrapper("/home/user/.bashrc");
+    await addSocketWrapper('/home/user/.bashrc')
 
     expect(fs.promises.appendFile).toHaveBeenCalledWith(
-      "/home/user/.bashrc",
+      '/home/user/.bashrc',
       'alias npm="socket npm"\nalias npx="socket npx"\n',
-    );
+    )
     expect(mockLogger.success).toHaveBeenCalledWith(
-      expect.stringContaining("The alias was added to /home/user/.bashrc"),
-    );
+      expect.stringContaining('The alias was added to /home/user/.bashrc'),
+    )
     expect(mockLogger.info).toHaveBeenCalledWith(
-      "This will only be active in new terminal sessions going forward.",
-    );
-    expect(mockLogger.log).toHaveBeenCalledWith("    source /home/user/.bashrc");
-  });
+      'This will only be active in new terminal sessions going forward.',
+    )
+    expect(mockLogger.log).toHaveBeenCalledWith('    source /home/user/.bashrc')
+  })
 
-  it("handles file write error", async () => {
-    const fs = await import("node:fs");
-    const mockAppendFile = vi.mocked(fs.promises.appendFile);
-    const error = new Error("Permission denied");
+  it('handles file write error', async () => {
+    const fs = await import('node:fs')
+    const mockAppendFile = vi.mocked(fs.promises.appendFile)
+    const error = new Error('Permission denied')
 
-    mockAppendFile.mockRejectedValue(error);
+    mockAppendFile.mockRejectedValue(error)
 
     // The FileSystemError wraps the cause in the message; the path is
     // stored on the `.path` property (not embedded in the message) to
     // avoid display.formatErrorForDisplay double-printing it. Assert on
     // the message shape + the path property separately.
-    await expect(addSocketWrapper("/etc/protected-file")).rejects.toThrow(
+    await expect(addSocketWrapper('/etc/protected-file')).rejects.toThrow(
       /failed to append socket aliases \(Permission denied\)/,
-    );
-    await expect(addSocketWrapper("/etc/protected-file")).rejects.toMatchObject({
-      name: "FileSystemError",
-      path: "/etc/protected-file",
-    });
+    )
+    await expect(addSocketWrapper('/etc/protected-file')).rejects.toMatchObject(
+      {
+        name: 'FileSystemError',
+        path: '/etc/protected-file',
+      },
+    )
 
     expect(fs.promises.appendFile).toHaveBeenCalledWith(
-      "/etc/protected-file",
+      '/etc/protected-file',
       'alias npm="socket npm"\nalias npx="socket npx"\n',
-    );
-  });
+    )
+  })
 
-  it("adds correct aliases content", async () => {
-    const fs = await import("node:fs");
-    const mockAppendFile = vi.mocked(fs.promises.appendFile);
-    let capturedContent = "";
+  it('adds correct aliases content', async () => {
+    const fs = await import('node:fs')
+    const mockAppendFile = vi.mocked(fs.promises.appendFile)
+    let capturedContent = ''
 
     mockAppendFile.mockImplementation(async (_file, content) => {
-      capturedContent = content as string;
-    });
+      capturedContent = content as string
+    })
 
-    await addSocketWrapper("/home/user/.zshrc");
+    await addSocketWrapper('/home/user/.zshrc')
 
-    expect(capturedContent).toBe('alias npm="socket npm"\nalias npx="socket npx"\n');
-  });
+    expect(capturedContent).toBe(
+      'alias npm="socket npm"\nalias npx="socket npx"\n',
+    )
+  })
 
-  it("logs disable instructions", async () => {
-    await import("@socketsecurity/lib-stable/logger");
-    const fs = await import("node:fs");
-    const mockAppendFile = vi.mocked(fs.promises.appendFile);
+  it('logs disable instructions', async () => {
+    await import('@socketsecurity/lib-stable/logger')
+    const fs = await import('node:fs')
+    const mockAppendFile = vi.mocked(fs.promises.appendFile)
 
-    mockAppendFile.mockResolvedValue(undefined);
+    mockAppendFile.mockResolvedValue(undefined)
 
-    await addSocketWrapper("/home/user/.bashrc");
+    await addSocketWrapper('/home/user/.bashrc')
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      "  If you want to disable it at any time, run `socket wrapper --disable`",
-    );
-  });
+      '  If you want to disable it at any time, run `socket wrapper --disable`',
+    )
+  })
 
-  it("handles different shell config files", async () => {
-    const fs = await import("node:fs");
-    const mockAppendFile = vi.mocked(fs.promises.appendFile);
+  it('handles different shell config files', async () => {
+    const fs = await import('node:fs')
+    const mockAppendFile = vi.mocked(fs.promises.appendFile)
     const shells = [
-      "/home/user/.bashrc",
-      "/home/user/.zshrc",
-      "/home/user/.bash_profile",
-      "/home/user/.profile",
-    ];
+      '/home/user/.bashrc',
+      '/home/user/.zshrc',
+      '/home/user/.bash_profile',
+      '/home/user/.profile',
+    ]
 
     for (let i = 0, { length } = shells; i < length; i += 1) {
-      const shellFile = shells[i];
-      vi.clearAllMocks();
-      mockAppendFile.mockResolvedValue(undefined);
+      const shellFile = shells[i]
+      vi.clearAllMocks()
+      mockAppendFile.mockResolvedValue(undefined)
 
-      await addSocketWrapper(shellFile);
+      await addSocketWrapper(shellFile)
 
       expect(fs.promises.appendFile).toHaveBeenCalledWith(
         shellFile,
         'alias npm="socket npm"\nalias npx="socket npx"\n',
-      );
+      )
     }
-  });
-});
+  })
+})

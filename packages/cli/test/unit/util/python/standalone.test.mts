@@ -10,14 +10,14 @@
  * util/dlx/spawn.mts (source module)
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
 import {
   ensurePython,
   ensurePythonDlx,
   ensureSocketPyCli,
   spawnSocketPyCli,
-} from "../../../../src/util/python/standalone.mts";
+} from '../../../../src/util/python/standalone.mts'
 
 // Also import directly from dlx/spawn to verify the re-exports match.
 import {
@@ -25,61 +25,61 @@ import {
   ensurePythonDlx as dlxEnsurePythonDlx,
   ensureSocketPyCli as dlxEnsureSocketPyCli,
   spawnSocketPyCli as dlxSpawnSocketPyCli,
-} from "../../../../src/util/dlx/spawn.mts";
+} from '../../../../src/util/dlx/spawn.mts'
 
-describe("python/standalone exports", () => {
-  describe("re-exported functions", () => {
-    it("exports ensurePython function", () => {
-      expect(typeof ensurePython).toBe("function");
-    });
+describe('python/standalone exports', () => {
+  describe('re-exported functions', () => {
+    it('exports ensurePython function', () => {
+      expect(typeof ensurePython).toBe('function')
+    })
 
-    it("exports ensurePythonDlx function", () => {
-      expect(typeof ensurePythonDlx).toBe("function");
-    });
+    it('exports ensurePythonDlx function', () => {
+      expect(typeof ensurePythonDlx).toBe('function')
+    })
 
-    it("exports ensureSocketPyCli function", () => {
-      expect(typeof ensureSocketPyCli).toBe("function");
-    });
+    it('exports ensureSocketPyCli function', () => {
+      expect(typeof ensureSocketPyCli).toBe('function')
+    })
 
-    it("exports spawnSocketPyCli function", () => {
-      expect(typeof spawnSocketPyCli).toBe("function");
-    });
-  });
+    it('exports spawnSocketPyCli function', () => {
+      expect(typeof spawnSocketPyCli).toBe('function')
+    })
+  })
 
-  describe("re-export identity", () => {
-    it("ensurePython is the same function from dlx/spawn", () => {
-      expect(ensurePython).toBe(dlxEnsurePython);
-    });
+  describe('re-export identity', () => {
+    it('ensurePython is the same function from dlx/spawn', () => {
+      expect(ensurePython).toBe(dlxEnsurePython)
+    })
 
-    it("ensurePythonDlx is the same function from dlx/spawn", () => {
-      expect(ensurePythonDlx).toBe(dlxEnsurePythonDlx);
-    });
+    it('ensurePythonDlx is the same function from dlx/spawn', () => {
+      expect(ensurePythonDlx).toBe(dlxEnsurePythonDlx)
+    })
 
-    it("ensureSocketPyCli is the same function from dlx/spawn", () => {
-      expect(ensureSocketPyCli).toBe(dlxEnsureSocketPyCli);
-    });
+    it('ensureSocketPyCli is the same function from dlx/spawn', () => {
+      expect(ensureSocketPyCli).toBe(dlxEnsureSocketPyCli)
+    })
 
-    it("spawnSocketPyCli is the same function from dlx/spawn", () => {
-      expect(spawnSocketPyCli).toBe(dlxSpawnSocketPyCli);
-    });
-  });
+    it('spawnSocketPyCli is the same function from dlx/spawn', () => {
+      expect(spawnSocketPyCli).toBe(dlxSpawnSocketPyCli)
+    })
+  })
 
-  describe("function signatures", () => {
-    it("ensurePython is an async function", () => {
+  describe('function signatures', () => {
+    it('ensurePython is an async function', () => {
       // Async functions have a constructor named AsyncFunction.
-      expect(ensurePython.constructor.name).toBe("AsyncFunction");
-    });
+      expect(ensurePython.constructor.name).toBe('AsyncFunction')
+    })
 
-    it("ensurePythonDlx is an async function", () => {
-      expect(ensurePythonDlx.constructor.name).toBe("AsyncFunction");
-    });
+    it('ensurePythonDlx is an async function', () => {
+      expect(ensurePythonDlx.constructor.name).toBe('AsyncFunction')
+    })
 
-    it("ensureSocketPyCli is an async function", () => {
-      expect(ensureSocketPyCli.constructor.name).toBe("AsyncFunction");
-    });
+    it('ensureSocketPyCli is an async function', () => {
+      expect(ensureSocketPyCli.constructor.name).toBe('AsyncFunction')
+    })
 
-    it("spawnSocketPyCli is an async function", () => {
-      expect(spawnSocketPyCli.constructor.name).toBe("AsyncFunction");
-    });
-  });
-});
+    it('spawnSocketPyCli is an async function', () => {
+      expect(spawnSocketPyCli.constructor.name).toBe('AsyncFunction')
+    })
+  })
+})

@@ -12,21 +12,26 @@
  * src/commands/scan/output-scan-view.mts - Formatting.
  */
 
-import { describe, expect } from "vitest";
+import { describe, expect } from 'vitest'
 
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP, FLAG_ORG } from "../../../src/constants/cli.mts";
-import { getBinCliPath } from "../../../src/constants/paths.mts";
-import { expectDryRunOutput } from "../../helpers/output-assertions.mts";
-import { cmdit, spawnSocketCli } from "../../utils.mts";
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_ORG,
+} from '../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
+import { cmdit, spawnSocketCli } from '../../utils.mts'
 
-const binCliPath = getBinCliPath();
+const binCliPath = getBinCliPath()
 
-describe("socket scan view", async () => {
+describe('socket scan view', async () => {
   cmdit(
-    ["scan", "view", FLAG_HELP, FLAG_CONFIG, "{}"],
+    ['scan', 'view', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
         "View the raw results of a scan
 
@@ -49,26 +54,28 @@ describe("socket scan view", async () => {
               Examples
                 $ socket scan view [UUID]
                 $ socket scan view [UUID] ./stream.txt"
-      `);
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan view\`, cwd: <redacted>"
-      `);
+      `)
 
-      expect(code, "explicit help should exit with code 0").toBe(0);
-      expect(stderr, "banner includes base command").toContain("`socket scan view`");
+      expect(code, 'explicit help should exit with code 0').toBe(0)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket scan view`',
+      )
     },
-  );
+  )
 
   cmdit(
-    ["scan", "view", FLAG_DRY_RUN, FLAG_CONFIG, "{}"],
-    "should require args with just dry-run",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(stdout).toMatchInlineSnapshot(`""`);
+    ['scan', 'view', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should require args with just dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -86,39 +93,39 @@ describe("socket scan view", async () => {
           \\xd7 Org name by default setting, --org, or auto-discovered (dot is an invalid org, most likely you forgot the org name here?)
           \\xd7 Scan ID to view (missing)
         "
-      `);
+      `)
 
-      expect(code, "dry-run should exit with code 2 if missing input").toBe(2);
+      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "view",
+      'scan',
+      'view',
       FLAG_ORG,
-      "fakeOrg",
-      "scanidee",
+      'fakeOrg',
+      'scanidee',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    "should require args with just dry-run",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+    'should require args with just dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout);
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
+      expectDryRunOutput(stdout)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan view\`, cwd: <redacted>"
-      `);
+      `)
 
-      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
+      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
-  );
-});
+  )
+})

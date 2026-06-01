@@ -14,113 +14,119 @@
  * Related Files: - src/commands/handleDeleteScan.mts (implementation)
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest'
 
-import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
-import { handleDeleteScan } from "../../../../src/commands/scan/handle-delete-scan.mts";
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../helpers/mocks.mts'
+import { handleDeleteScan } from '../../../../src/commands/scan/handle-delete-scan.mts'
 
 // Mock the dependencies.
-const mockFetchDeleteOrgFullScan = vi.hoisted(() => vi.fn());
-const mockOutputDeleteScan = vi.hoisted(() => vi.fn());
+const mockFetchDeleteOrgFullScan = vi.hoisted(() => vi.fn())
+const mockOutputDeleteScan = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/scan/fetch-delete-org-full-scan.mts"), () => ({
-  fetchDeleteOrgFullScan: mockFetchDeleteOrgFullScan,
-}));
+vi.mock(
+  import('../../../../src/commands/scan/fetch-delete-org-full-scan.mts'),
+  () => ({
+    fetchDeleteOrgFullScan: mockFetchDeleteOrgFullScan,
+  }),
+)
 
-vi.mock(import("../../../../src/commands/scan/output-delete-scan.mts"), () => ({
+vi.mock(import('../../../../src/commands/scan/output-delete-scan.mts'), () => ({
   outputDeleteScan: mockOutputDeleteScan,
-}));
+}))
 
-describe("handleDeleteScan", () => {
-  it("deletes scan and outputs result successfully", async () => {
-    await import("../../../../src/commands/scan/output-delete-scan.mts");
-    const mockFetch = mockFetchDeleteOrgFullScan;
-    const mockOutput = mockOutputDeleteScan;
+describe('handleDeleteScan', () => {
+  it('deletes scan and outputs result successfully', async () => {
+    await import('../../../../src/commands/scan/output-delete-scan.mts')
+    const mockFetch = mockFetchDeleteOrgFullScan
+    const mockOutput = mockOutputDeleteScan
 
     const mockResult = createSuccessResult({
       deleted: true,
-      scanId: "scan-123",
-      deletedAt: "2025-01-01T00:00:00Z",
-    });
-    mockFetch.mockResolvedValue(mockResult);
+      scanId: 'scan-123',
+      deletedAt: '2025-01-01T00:00:00Z',
+    })
+    mockFetch.mockResolvedValue(mockResult)
 
-    await handleDeleteScan("test-org", "scan-123", "json");
+    await handleDeleteScan('test-org', 'scan-123', 'json')
 
-    expect(mockFetch).toHaveBeenCalledWith("test-org", "scan-123", {
-      commandPath: "socket scan del",
-    });
-    expect(mockOutput).toHaveBeenCalledWith(mockResult, "json");
-  });
+    expect(mockFetch).toHaveBeenCalledWith('test-org', 'scan-123', {
+      commandPath: 'socket scan del',
+    })
+    expect(mockOutput).toHaveBeenCalledWith(mockResult, 'json')
+  })
 
-  it("handles deletion failure", async () => {
-    await import("../../../../src/commands/scan/output-delete-scan.mts");
-    const mockFetch = mockFetchDeleteOrgFullScan;
-    const mockOutput = mockOutputDeleteScan;
+  it('handles deletion failure', async () => {
+    await import('../../../../src/commands/scan/output-delete-scan.mts')
+    const mockFetch = mockFetchDeleteOrgFullScan
+    const mockOutput = mockOutputDeleteScan
 
-    const mockError = createErrorResult("Scan not found");
-    mockFetch.mockResolvedValue(mockError);
+    const mockError = createErrorResult('Scan not found')
+    mockFetch.mockResolvedValue(mockError)
 
-    await handleDeleteScan("test-org", "nonexistent-scan", "text");
+    await handleDeleteScan('test-org', 'nonexistent-scan', 'text')
 
-    expect(mockFetch).toHaveBeenCalledWith("test-org", "nonexistent-scan", {
-      commandPath: "socket scan del",
-    });
-    expect(mockOutput).toHaveBeenCalledWith(mockError, "text");
-  });
+    expect(mockFetch).toHaveBeenCalledWith('test-org', 'nonexistent-scan', {
+      commandPath: 'socket scan del',
+    })
+    expect(mockOutput).toHaveBeenCalledWith(mockError, 'text')
+  })
 
-  it("handles markdown output format", async () => {
-    await import("../../../../src/commands/scan/output-delete-scan.mts");
-    const mockFetch = mockFetchDeleteOrgFullScan;
-    const mockOutput = mockOutputDeleteScan;
+  it('handles markdown output format', async () => {
+    await import('../../../../src/commands/scan/output-delete-scan.mts')
+    const mockFetch = mockFetchDeleteOrgFullScan
+    const mockOutput = mockOutputDeleteScan
 
-    mockFetch.mockResolvedValue(createSuccessResult({}));
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
-    await handleDeleteScan("my-org", "scan-456", "markdown");
+    await handleDeleteScan('my-org', 'scan-456', 'markdown')
 
-    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), "markdown");
-  });
+    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
+  })
 
-  it("handles different scan IDs", async () => {
-    const mockFetch = mockFetchDeleteOrgFullScan;
+  it('handles different scan IDs', async () => {
+    const mockFetch = mockFetchDeleteOrgFullScan
 
-    mockFetch.mockResolvedValue(createSuccessResult({}));
+    mockFetch.mockResolvedValue(createSuccessResult({}))
 
     const scanIds = [
-      "scan-123",
-      "scan-abc-def",
-      "uuid-1234-5678-9012-3456",
-      "scan_with_underscore",
-    ];
+      'scan-123',
+      'scan-abc-def',
+      'uuid-1234-5678-9012-3456',
+      'scan_with_underscore',
+    ]
 
     for (let i = 0, { length } = scanIds; i < length; i += 1) {
-      const scanId = scanIds[i];
-      await handleDeleteScan("test-org", scanId, "json");
-      expect(mockFetch).toHaveBeenCalledWith("test-org", scanId, {
-        commandPath: "socket scan del",
-      });
+      const scanId = scanIds[i]
+      await handleDeleteScan('test-org', scanId, 'json')
+      expect(mockFetch).toHaveBeenCalledWith('test-org', scanId, {
+        commandPath: 'socket scan del',
+      })
     }
-  });
+  })
 
-  it("handles text output format", async () => {
-    await import("../../../../src/commands/scan/output-delete-scan.mts");
-    const mockFetch = mockFetchDeleteOrgFullScan;
-    const mockOutput = mockOutputDeleteScan;
+  it('handles text output format', async () => {
+    await import('../../../../src/commands/scan/output-delete-scan.mts')
+    const mockFetch = mockFetchDeleteOrgFullScan
+    const mockOutput = mockOutputDeleteScan
 
     mockFetch.mockResolvedValue(
       createSuccessResult({
         deleted: true,
-        message: "Scan successfully deleted",
+        message: 'Scan successfully deleted',
       }),
-    );
+    )
 
-    await handleDeleteScan("production-org", "scan-to-delete", "text");
+    await handleDeleteScan('production-org', 'scan-to-delete', 'text')
 
     expect(mockOutput).toHaveBeenCalledWith(
       expect.objectContaining({
         ok: true,
         data: expect.objectContaining({ deleted: true }),
       }),
-      "text",
-    );
-  });
-});
+      'text',
+    )
+  })
+})

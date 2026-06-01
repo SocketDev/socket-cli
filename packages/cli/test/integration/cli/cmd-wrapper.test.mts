@@ -15,19 +15,26 @@
  * src/commands/wrapper/handle-wrapper.mts - Wrapper management logic.
  */
 
-import { describe, expect } from "vitest";
+import { describe, expect } from 'vitest'
 
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from "../../../src/constants/cli.mts";
-import { getBinCliPath } from "../../../src/constants/paths.mts";
-import { expectDryRunOutput } from "../../helpers/output-assertions.mts";
-import { cmdit, spawnSocketCli } from "../../utils.mts";
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
+import { cmdit, spawnSocketCli } from '../../utils.mts'
 
-const binCliPath = getBinCliPath();
+const binCliPath = getBinCliPath()
 
-describe("socket wrapper", async () => {
-  cmdit(["wrapper", FLAG_HELP, FLAG_CONFIG, "{}"], `should support ${FLAG_HELP}`, async (cmd) => {
-    const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-    expect(stdout).toMatchInlineSnapshot(`
+describe('socket wrapper', async () => {
+  cmdit(
+    ['wrapper', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`
         "Enable or disable the Socket npm/pnpm exec wrapper
 
           Usage
@@ -43,25 +50,28 @@ describe("socket wrapper", async () => {
               Examples
                 $ socket wrapper on
                 $ socket wrapper off"
-      `);
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      `)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket wrapper\`, cwd: <redacted>"
-      `);
+      `)
 
-    expect(code, "explicit help should exit with code 0").toBe(0);
-    expect(stderr, "banner includes base command").toContain("`socket wrapper`");
-  });
+      expect(code, 'explicit help should exit with code 0').toBe(0)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket wrapper`',
+      )
+    },
+  )
 
   cmdit(
-    ["wrapper", FLAG_DRY_RUN, FLAG_CONFIG, "{}"],
-    "should require args with just dry-run",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(stdout).toMatchInlineSnapshot(`""`);
+    ['wrapper', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should require args with just dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -72,30 +82,30 @@ describe("socket wrapper", async () => {
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 Must specify "on" or "off" argument (missing)"
-      `);
+      `)
 
-      expect(code, "dry-run should exit with code 2 if missing input").toBe(2);
+      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
     },
-  );
+  )
 
   cmdit(
-    ["wrapper", FLAG_DRY_RUN, "on", FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
-    "should require args with just dry-run",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+    ['wrapper', FLAG_DRY_RUN, 'on', FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    'should require args with just dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout);
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
+      expectDryRunOutput(stdout)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket wrapper\`, cwd: <redacted>"
-      `);
+      `)
 
-      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
+      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
-  );
-});
+  )
+})

@@ -16,149 +16,169 @@
  * fetcher) - src/commands/repository/output-update-repo.mts (formatter)
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest'
 
-import { handleUpdateRepo } from "../../../../src/commands/repository/handle-update-repo.mts";
-import { createSuccessResult } from "../../../helpers/mocks.mts";
+import { handleUpdateRepo } from '../../../../src/commands/repository/handle-update-repo.mts'
+import { createSuccessResult } from '../../../helpers/mocks.mts'
 
 // Mock the dependencies.
-const mockFetchUpdateRepo = vi.hoisted(() => vi.fn());
-const mockOutputUpdateRepo = vi.hoisted(() => vi.fn());
+const mockFetchUpdateRepo = vi.hoisted(() => vi.fn())
+const mockOutputUpdateRepo = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/repository/fetch-update-repo.mts"), () => ({
-  fetchUpdateRepo: mockFetchUpdateRepo,
-}));
+vi.mock(
+  import('../../../../src/commands/repository/fetch-update-repo.mts'),
+  () => ({
+    fetchUpdateRepo: mockFetchUpdateRepo,
+  }),
+)
 
-vi.mock(import("../../../../src/commands/repository/output-update-repo.mts"), () => ({
-  outputUpdateRepo: mockOutputUpdateRepo,
-}));
+vi.mock(
+  import('../../../../src/commands/repository/output-update-repo.mts'),
+  () => ({
+    outputUpdateRepo: mockOutputUpdateRepo,
+  }),
+)
 
-describe("handleUpdateRepo", () => {
-  it("updates repository and outputs result successfully", async () => {
+describe('handleUpdateRepo', () => {
+  it('updates repository and outputs result successfully', async () => {
     const mockResult = createSuccessResult({
-      id: "repo-123",
-      name: "test-repo",
-      description: "Updated description",
-      homepage: "https://example.com",
-      defaultBranch: "main",
-      visibility: "public",
-      updatedAt: "2025-01-01T00:00:00Z",
-    });
-    mockFetchUpdateRepo.mockResolvedValue(mockResult);
+      id: 'repo-123',
+      name: 'test-repo',
+      description: 'Updated description',
+      homepage: 'https://example.com',
+      defaultBranch: 'main',
+      visibility: 'public',
+      updatedAt: '2025-01-01T00:00:00Z',
+    })
+    mockFetchUpdateRepo.mockResolvedValue(mockResult)
 
     const params = {
-      orgSlug: "test-org",
-      repoName: "test-repo",
-      description: "Updated description",
-      homepage: "https://example.com",
-      defaultBranch: "main",
-      visibility: "public",
-    };
+      orgSlug: 'test-org',
+      repoName: 'test-repo',
+      description: 'Updated description',
+      homepage: 'https://example.com',
+      defaultBranch: 'main',
+      visibility: 'public',
+    }
 
-    await handleUpdateRepo(params, "json");
+    await handleUpdateRepo(params, 'json')
 
     expect(mockFetchUpdateRepo).toHaveBeenCalledWith(params, {
-      commandPath: "socket repository update",
-    });
-    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(mockResult, "test-repo", "json");
-  });
+      commandPath: 'socket repository update',
+    })
+    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(
+      mockResult,
+      'test-repo',
+      'json',
+    )
+  })
 
-  it("handles update failure", async () => {
+  it('handles update failure', async () => {
     const mockError = {
       ok: false,
-      error: "Repository not found",
-    };
-    mockFetchUpdateRepo.mockResolvedValue(mockError);
+      error: 'Repository not found',
+    }
+    mockFetchUpdateRepo.mockResolvedValue(mockError)
 
     const params = {
-      orgSlug: "test-org",
-      repoName: "nonexistent",
-      description: "",
-      homepage: "",
-      defaultBranch: "main",
-      visibility: "private",
-    };
+      orgSlug: 'test-org',
+      repoName: 'nonexistent',
+      description: '',
+      homepage: '',
+      defaultBranch: 'main',
+      visibility: 'private',
+    }
 
-    await handleUpdateRepo(params, "text");
+    await handleUpdateRepo(params, 'text')
 
     expect(mockFetchUpdateRepo).toHaveBeenCalledWith(params, {
-      commandPath: "socket repository update",
-    });
-    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(mockError, "nonexistent", "text");
-  });
+      commandPath: 'socket repository update',
+    })
+    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(
+      mockError,
+      'nonexistent',
+      'text',
+    )
+  })
 
-  it("handles markdown output format", async () => {
-    mockFetchUpdateRepo.mockResolvedValue(createSuccessResult({}));
+  it('handles markdown output format', async () => {
+    mockFetchUpdateRepo.mockResolvedValue(createSuccessResult({}))
 
     await handleUpdateRepo(
       {
-        orgSlug: "my-org",
-        repoName: "my-repo",
-        description: "A cool project",
-        homepage: "https://myproject.com",
-        defaultBranch: "develop",
-        visibility: "public",
+        orgSlug: 'my-org',
+        repoName: 'my-repo',
+        description: 'A cool project',
+        homepage: 'https://myproject.com',
+        defaultBranch: 'develop',
+        visibility: 'public',
       },
-      "markdown",
-    );
+      'markdown',
+    )
 
-    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(expect.any(Object), "my-repo", "markdown");
-  });
+    expect(mockOutputUpdateRepo).toHaveBeenCalledWith(
+      expect.any(Object),
+      'my-repo',
+      'markdown',
+    )
+  })
 
-  it("handles different visibility settings", async () => {
-    mockFetchUpdateRepo.mockResolvedValue(createSuccessResult({}));
+  it('handles different visibility settings', async () => {
+    mockFetchUpdateRepo.mockResolvedValue(createSuccessResult({}))
 
-    const visibilities = ["public", "private", "internal"];
+    const visibilities = ['public', 'private', 'internal']
 
     for (let i = 0, { length } = visibilities; i < length; i += 1) {
-      const visibility = visibilities[i];
+      const visibility = visibilities[i]
       await handleUpdateRepo(
         {
-          orgSlug: "test-org",
-          repoName: "test-repo",
-          description: "Test",
-          homepage: "",
-          defaultBranch: "main",
+          orgSlug: 'test-org',
+          repoName: 'test-repo',
+          description: 'Test',
+          homepage: '',
+          defaultBranch: 'main',
           visibility,
         },
-        "json",
-      );
+        'json',
+      )
 
       expect(mockFetchUpdateRepo).toHaveBeenCalledWith(
         expect.objectContaining({ visibility }),
-        expect.objectContaining({ commandPath: "socket repository update" }),
-      );
+        expect.objectContaining({ commandPath: 'socket repository update' }),
+      )
     }
-  });
+  })
 
-  it("handles different default branches", async () => {
-    mockFetchUpdateRepo.mockResolvedValue(createSuccessResult({ defaultBranch: "develop" }));
+  it('handles different default branches', async () => {
+    mockFetchUpdateRepo.mockResolvedValue(
+      createSuccessResult({ defaultBranch: 'develop' }),
+    )
 
     await handleUpdateRepo(
       {
-        orgSlug: "production-org",
-        repoName: "production-repo",
-        description: "Production application",
-        homepage: "https://production.app",
-        defaultBranch: "develop",
-        visibility: "private",
+        orgSlug: 'production-org',
+        repoName: 'production-repo',
+        description: 'Production application',
+        homepage: 'https://production.app',
+        defaultBranch: 'develop',
+        visibility: 'private',
       },
-      "text",
-    );
+      'text',
+    )
 
     expect(mockFetchUpdateRepo).toHaveBeenCalledWith(
       expect.objectContaining({
-        defaultBranch: "develop",
+        defaultBranch: 'develop',
       }),
-      expect.objectContaining({ commandPath: "socket repository update" }),
-    );
+      expect.objectContaining({ commandPath: 'socket repository update' }),
+    )
     expect(mockOutputUpdateRepo).toHaveBeenCalledWith(
       expect.objectContaining({
         ok: true,
-        data: expect.objectContaining({ defaultBranch: "develop" }),
+        data: expect.objectContaining({ defaultBranch: 'develop' }),
       }),
-      "production-repo",
-      "text",
-    );
-  });
-});
+      'production-repo',
+      'text',
+    )
+  })
+})

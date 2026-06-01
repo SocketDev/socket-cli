@@ -10,21 +10,21 @@
  * asynchronously and never blocks the main CLI execution.
  */
 
-import { setTimeout as sleep } from "node:timers/promises";
+import { setTimeout as sleep } from 'node:timers/promises'
 
-import { downloadPackage } from "@socketsecurity/lib-stable/dlx/package";
+import { downloadPackage } from '@socketsecurity/lib-stable/dlx/package'
 
-import { getCI } from "@socketsecurity/lib-stable/env/ci";
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
 
-import { getCoanaVersion } from "../../env/coana-version.mts";
-import { getCdxgenVersion } from "../../env/cdxgen-version.mts";
-import { VITEST } from "../../env/vitest.mts";
-import { ensurePythonDlx, ensureSocketPyCli } from "../python/standalone.mts";
+import { getCoanaVersion } from '../../env/coana-version.mts'
+import { getCdxgenVersion } from '../../env/cdxgen-version.mts'
+import { VITEST } from '../../env/vitest.mts'
+import { ensurePythonDlx, ensureSocketPyCli } from '../python/standalone.mts'
 
 /**
  * Track if preflight downloads have already been initiated.
  */
-let preflightRunning = false;
+let preflightRunning = false
 
 /**
  * Run preflight downloads in the background. This never blocks or throws
@@ -33,13 +33,13 @@ let preflightRunning = false;
 export function runPreflightDownloads(): void {
   // Only run once.
   if (preflightRunning) {
-    return;
+    return
   }
-  preflightRunning = true;
+  preflightRunning = true
 
   // Don't run in test/CI environments.
   if (getCI() || VITEST) {
-    return;
+    return
   }
 
   // Run asynchronously in the background.
@@ -49,32 +49,32 @@ export function runPreflightDownloads(): void {
       // Order: coana → delay → cdxgen → delay → Python → socketsecurity.
 
       // 1. @coana-tech/cli preflight.
-      const coanaVersion = getCoanaVersion();
-      const coanaSpec = `@coana-tech/cli@${coanaVersion}`;
+      const coanaVersion = getCoanaVersion()
+      const coanaSpec = `@coana-tech/cli@${coanaVersion}`
       await downloadPackage({
         package: coanaSpec,
-        binaryName: "coana",
+        binaryName: 'coana',
         force: false,
-      });
+      })
 
       // Delay before next download to avoid resource contention.
-      await sleep(2000);
+      await sleep(2000)
 
       // 2. @cyclonedx/cdxgen preflight.
-      const cdxgenVersion = getCdxgenVersion();
-      const cdxgenSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`;
+      const cdxgenVersion = getCdxgenVersion()
+      const cdxgenSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`
       await downloadPackage({
         package: cdxgenSpec,
-        binaryName: "cdxgen",
+        binaryName: 'cdxgen',
         force: false,
-      });
+      })
 
       // Delay before next download to avoid resource contention.
-      await sleep(2000);
+      await sleep(2000)
 
       // 3. Python + socketsecurity (socket-python-cli) preflight.
-      const pythonBin = await ensurePythonDlx();
-      await ensureSocketPyCli(pythonBin);
+      const pythonBin = await ensurePythonDlx()
+      await ensureSocketPyCli(pythonBin)
     } catch {}
-  })();
+  })()
 }

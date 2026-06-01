@@ -3,18 +3,18 @@
  *   API, logger, and output functions consistently across test files.
  */
 
-import { vi } from "vitest";
+import { vi } from 'vitest'
 
-import type { CResult } from "../../src/types.mts";
-import type { SocketSdk } from "@socketsecurity/sdk-stable";
+import type { CResult } from '../../src/types.mts'
+import type { SocketSdk } from '@socketsecurity/sdk-stable'
 
 /**
  * Error options for creating error results.
  */
 type ErrorOptions = {
-  code?: number | undefined;
-  cause?: string | undefined;
-};
+  code?: number | undefined
+  cause?: string | undefined
+}
 
 /**
  * Creates a failed CResult.
@@ -23,13 +23,13 @@ export function createErrorResult(
   message: string,
   options?: ErrorOptions | undefined,
 ): CResult<never> {
-  const opts = { __proto__: null, ...options } as ErrorOptions;
+  const opts = { __proto__: null, ...options } as ErrorOptions
   return {
     ok: false,
     message,
     code: opts.code ?? 1,
     cause: opts.cause,
-  };
+  }
 }
 
 /**
@@ -57,7 +57,7 @@ export function createMockSdk(overrides: Partial<SocketSdk> = {}): SocketSdk {
     getRepoAnalytics: vi.fn(),
     batchPackageFetch: vi.fn(),
     ...overrides,
-  } as unknown as SocketSdk;
+  } as unknown as SocketSdk
 }
 
 /**
@@ -67,7 +67,7 @@ export function createSuccessResult<T>(data: T): CResult<T> {
   return {
     ok: true,
     data,
-  };
+  }
 }
 
 /**
@@ -77,7 +77,7 @@ export async function setupSdkSetupFailure(
   message: string,
   cause?: string | undefined,
 ): Promise<void> {
-  const { setupSdk } = await import("../../src/util/socket/sdk.mts");
-  const options: ErrorOptions = cause !== undefined ? { cause } : {};
-  vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options));
+  const { setupSdk } = await import('../../src/util/socket/sdk.mts')
+  const options: ErrorOptions = cause !== undefined ? { cause } : {}
+  vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options))
 }

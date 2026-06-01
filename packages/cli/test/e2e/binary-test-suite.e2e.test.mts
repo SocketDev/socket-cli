@@ -32,24 +32,27 @@
  *   - Performance validation: Help commands execute within 5 seconds
  */
 
-import { existsSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from 'vitest'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { ENV } from "../../src/constants/env.mts";
-import { getDefaultApiToken } from "../../src/util/socket/sdk.mts";
-import { executeCliCommand, executeCliInScratch } from "../helpers/cli-execution.mts";
+import { ENV } from '../../src/constants/env.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
+import {
+  executeCliCommand,
+  executeCliInScratch,
+} from '../helpers/cli-execution.mts'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "../..");
-const MONOREPO_ROOT = path.resolve(ROOT_DIR, "../..");
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ROOT_DIR = path.resolve(__dirname, '../..')
+const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
 
 /**
  * Binary types and their paths.
@@ -57,60 +60,87 @@ const MONOREPO_ROOT = path.resolve(ROOT_DIR, "../..");
 const BINARIES = {
   __proto__: null,
   js: {
-    buildCommand: ["pnpm", "--filter", "@socketsecurity/cli", "run", "build:js"],
+    buildCommand: [
+      'pnpm',
+      '--filter',
+      '@socketsecurity/cli',
+      'run',
+      'build:js',
+    ],
     enabled: true,
-    name: "JS Binary (dist/cli.js)",
-    path: path.join(ROOT_DIR, "dist/cli.js"),
+    name: 'JS Binary (dist/cli.js)',
+    path: path.join(ROOT_DIR, 'dist/cli.js'),
   },
   sea: {
-    buildCommand: ["pnpm", "--filter", "@socketsecurity/cli", "run", "build:sea"],
+    buildCommand: [
+      'pnpm',
+      '--filter',
+      '@socketsecurity/cli',
+      'run',
+      'build:sea',
+    ],
     enabled: !!process.env.TEST_SEA_BINARY,
-    name: "SEA Binary (Single Executable Application)",
-    path: path.join(ROOT_DIR, "dist/sea/socket-sea"),
+    name: 'SEA Binary (Single Executable Application)',
+    path: path.join(ROOT_DIR, 'dist/sea/socket-sea'),
   },
   smol: {
-    buildCommand: ["pnpm", "--filter", "@socketbin/node-smol-builder", "run", "build"],
+    buildCommand: [
+      'pnpm',
+      '--filter',
+      '@socketbin/node-smol-builder',
+      'run',
+      'build',
+    ],
     enabled: !!process.env.TEST_SMOL_BINARY,
-    name: "Smol Binary",
-    path: path.join(MONOREPO_ROOT, "packages/node-smol-builder/dist/socket-smol"),
+    name: 'Smol Binary',
+    path: path.join(
+      MONOREPO_ROOT,
+      'packages/node-smol-builder/dist/socket-smol',
+    ),
   },
-};
+}
 
 /**
  * Build a binary if needed.
  */
-export async function buildBinary(binaryType: keyof typeof BINARIES): Promise<boolean> {
-  const binary = BINARIES[binaryType];
+export async function buildBinary(
+  binaryType: keyof typeof BINARIES,
+): Promise<boolean> {
+  const binary = BINARIES[binaryType]
 
   if (!binary.buildCommand) {
-    return false;
+    return false
   }
 
-  logger.log(`Building ${binary.name}...`);
-  logger.log(`Running: ${binary.buildCommand.join(" ")}`);
+  logger.log(`Building ${binary.name}...`)
+  logger.log(`Running: ${binary.buildCommand.join(' ')}`)
 
-  if (binaryType === "smol") {
-    logger.log("Note: smol build may take 30-60 minutes on first build");
-    logger.log("      (subsequent builds are faster with caching)");
+  if (binaryType === 'smol') {
+    logger.log('Note: smol build may take 30-60 minutes on first build')
+    logger.log('      (subsequent builds are faster with caching)')
   }
-  logger.log("");
+  logger.log('')
 
   try {
-    const result = await spawn(binary.buildCommand[0], binary.buildCommand.slice(1), {
-      cwd: MONOREPO_ROOT,
-      stdio: "inherit",
-    });
+    const result = await spawn(
+      binary.buildCommand[0],
+      binary.buildCommand.slice(1),
+      {
+        cwd: MONOREPO_ROOT,
+        stdio: 'inherit',
+      },
+    )
 
     if (result.code !== 0) {
-      logger.error(`Failed to build ${binary.name}`);
-      return false;
+      logger.error(`Failed to build ${binary.name}`)
+      return false
     }
 
-    logger.log(`Successfully built ${binary.name}`);
-    return true;
+    logger.log(`Successfully built ${binary.name}`)
+    return true
   } catch (e) {
-    logger.error(`Error building ${binary.name}:`, e);
-    return false;
+    logger.error(`Error building ${binary.name}:`, e)
+    return false
   }
 }
 
@@ -118,429 +148,459 @@ export async function buildBinary(binaryType: keyof typeof BINARIES): Promise<bo
  * Run the test suite for a specific binary type.
  */
 function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
-  const binary = BINARIES[binaryType];
+  const binary = BINARIES[binaryType]
 
   if (!binary.enabled) {
-    return;
+    return
   }
 
   describe(`${binary.name}`, () => {
-    let hasAuth = false;
-    let binaryExists = false;
+    let hasAuth = false
+    let binaryExists = false
 
     beforeAll(async () => {
       // Check if binary exists.
-      binaryExists = existsSync(binary.path);
+      binaryExists = existsSync(binary.path)
 
       if (!binaryExists) {
-        logger.log("");
-        logger.warn(`Binary not found: ${binary.path}`);
+        logger.log('')
+        logger.warn(`Binary not found: ${binary.path}`)
 
         // All builds are fast (use prebuilt binaries from socket-btm + binject).
-        logger.log(`Auto-building ${binary.name}...`);
+        logger.log(`Auto-building ${binary.name}...`)
 
-        const buildSuccess = await buildBinary(binaryType);
+        const buildSuccess = await buildBinary(binaryType)
 
         if (buildSuccess) {
-          binaryExists = existsSync(binary.path);
+          binaryExists = existsSync(binary.path)
         }
 
         if (!binaryExists) {
-          logger.log("");
-          logger.error(`Failed to build ${binary.name}. Tests will be skipped.`);
-          logger.log("To build this binary manually, run:");
-          logger.log(`  ${binary.buildCommand.join(" ")}`);
-          logger.log("");
-          return;
+          logger.log('')
+          logger.error(`Failed to build ${binary.name}. Tests will be skipped.`)
+          logger.log('To build this binary manually, run:')
+          logger.log(`  ${binary.buildCommand.join(' ')}`)
+          logger.log('')
+          return
         }
 
-        logger.log(`Binary built successfully: ${binary.path}`);
-        logger.log("");
+        logger.log(`Binary built successfully: ${binary.path}`)
+        logger.log('')
       }
 
       // Check authentication.
       if (ENV.RUN_E2E_TESTS) {
-        const apiToken = await getDefaultApiToken();
-        hasAuth = !!apiToken;
+        const apiToken = await getDefaultApiToken()
+        hasAuth = !!apiToken
         if (!apiToken) {
-          logger.log("");
-          logger.warn("E2E tests require Socket authentication.");
-          logger.log("Please run one of the following:");
-          logger.log("  1. socket login (to authenticate with Socket)");
-          logger.log("  2. Set SOCKET_SECURITY_API_KEY environment variable");
-          logger.log("  3. Skip E2E tests by not setting RUN_E2E_TESTS");
-          logger.log("");
-          logger.log("E2E tests will be skipped due to missing authentication.");
-          logger.log("");
+          logger.log('')
+          logger.warn('E2E tests require Socket authentication.')
+          logger.log('Please run one of the following:')
+          logger.log('  1. socket login (to authenticate with Socket)')
+          logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
+          logger.log('  3. Skip E2E tests by not setting RUN_E2E_TESTS')
+          logger.log('')
+          logger.log('E2E tests will be skipped due to missing authentication.')
+          logger.log('')
         }
       }
-    });
+    })
 
-    describe("Basic commands (no auth required)", () => {
-      it.skipIf(!ENV.RUN_E2E_TESTS)("should display version", async () => {
+    describe('Basic commands (no auth required)', () => {
+      it.skipIf(!ENV.RUN_E2E_TESTS)('should display version', async () => {
         if (!binaryExists) {
-          return;
+          return
         }
 
-        const result = await executeCliCommand(["--version"], {
+        const result = await executeCliCommand(['--version'], {
           binPath: binary.path,
           isolateConfig: false,
-        });
+        })
 
         // Note: --version currently shows help and exits with code 2 (known issue).
         // This test validates the CLI executes without crashing.
-        expect(result.code).toBeGreaterThanOrEqual(0);
-        expect(result.stdout.length).toBeGreaterThan(0);
-      });
+        expect(result.code).toBeGreaterThanOrEqual(0)
+        expect(result.stdout.length).toBeGreaterThan(0)
+      })
 
-      it.skipIf(!ENV.RUN_E2E_TESTS)("should display help", async () => {
+      it.skipIf(!ENV.RUN_E2E_TESTS)('should display help', async () => {
         if (!binaryExists) {
-          return;
+          return
         }
 
-        const result = await executeCliCommand(["--help"], {
+        const result = await executeCliCommand(['--help'], {
           binPath: binary.path,
           isolateConfig: false,
-        });
+        })
 
-        expect(result.code).toBe(0);
-        expect(result.stdout).toContain("socket");
-        expect(result.stdout).toContain("Main commands");
-      });
-    });
+        expect(result.code).toBe(0)
+        expect(result.stdout).toContain('socket')
+        expect(result.stdout).toContain('Main commands')
+      })
+    })
 
-    describe("Core command help (no auth required)", () => {
+    describe('Core command help (no auth required)', () => {
       const commands = [
-        "analytics",
-        "ask",
-        "audit-log",
-        "ci",
-        "console",
-        "fix",
-        "json",
-        "login",
-        "logout",
-        "oops",
-        "optimize",
-        "patch",
-        "threat-feed",
-        "whoami",
-        "wrapper",
-      ];
+        'analytics',
+        'ask',
+        'audit-log',
+        'ci',
+        'console',
+        'fix',
+        'json',
+        'login',
+        'logout',
+        'oops',
+        'optimize',
+        'patch',
+        'threat-feed',
+        'whoami',
+        'wrapper',
+      ]
 
       for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i];
-        it.skipIf(!ENV.RUN_E2E_TESTS)(`should display ${cmd} command help`, async () => {
-          if (!binaryExists) {
-            return;
-          }
+        const cmd = commands[i]
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd} command help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          const result = await executeCliCommand([cmd, "--help"], {
-            binPath: binary.path,
-            isolateConfig: false,
-          });
+            const result = await executeCliCommand([cmd, '--help'], {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-          expect(result.code).toBe(0);
-          expect(result.stdout.length).toBeGreaterThan(0);
-        });
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
       }
-    });
+    })
 
-    describe("Config command help (no auth required)", () => {
+    describe('Config command help (no auth required)', () => {
       const commands = [
-        ["config", "--help"],
-        ["config", "auto", "--help"],
-        ["config", "get", "--help"],
-        ["config", "list", "--help"],
-        ["config", "set", "--help"],
-        ["config", "unset", "--help"],
-      ];
+        ['config', '--help'],
+        ['config', 'auto', '--help'],
+        ['config', 'get', '--help'],
+        ['config', 'list', '--help'],
+        ['config', 'set', '--help'],
+        ['config', 'unset', '--help'],
+      ]
 
       for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i];
-        it.skipIf(!ENV.RUN_E2E_TESTS)(`should display ${cmd.join(" ")} help`, async () => {
-          if (!binaryExists) {
-            return;
-          }
+        const cmd = commands[i]
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          const result = await executeCliCommand(cmd, {
-            binPath: binary.path,
-            isolateConfig: false,
-          });
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-          expect(result.code).toBe(0);
-          expect(result.stdout.length).toBeGreaterThan(0);
-        });
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
       }
-    });
+    })
 
-    describe("Install/Uninstall command help (no auth required)", () => {
+    describe('Install/Uninstall command help (no auth required)', () => {
       const commands = [
-        ["install", "--help"],
-        ["install", "completion", "--help"],
-        ["uninstall", "--help"],
-        ["uninstall", "completion", "--help"],
-      ];
+        ['install', '--help'],
+        ['install', 'completion', '--help'],
+        ['uninstall', '--help'],
+        ['uninstall', 'completion', '--help'],
+      ]
 
       for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i];
-        it.skipIf(!ENV.RUN_E2E_TESTS)(`should display ${cmd.join(" ")} help`, async () => {
-          if (!binaryExists) {
-            return;
-          }
+        const cmd = commands[i]
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          const result = await executeCliCommand(cmd, {
-            binPath: binary.path,
-            isolateConfig: false,
-          });
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-          expect(result.code).toBe(0);
-          expect(result.stdout.length).toBeGreaterThan(0);
-        });
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
       }
-    });
+    })
 
-    describe("Manifest command help (no auth required)", () => {
+    describe('Manifest command help (no auth required)', () => {
       const commands = [
-        ["manifest", "--help"],
-        ["manifest", "auto", "--help"],
-        ["manifest", "cdxgen", "--help"],
-        ["manifest", "conda", "--help"],
-        ["manifest", "gradle", "--help"],
-        ["manifest", "kotlin", "--help"],
-        ["manifest", "scala", "--help"],
-        ["manifest", "setup", "--help"],
-      ];
+        ['manifest', '--help'],
+        ['manifest', 'auto', '--help'],
+        ['manifest', 'cdxgen', '--help'],
+        ['manifest', 'conda', '--help'],
+        ['manifest', 'gradle', '--help'],
+        ['manifest', 'kotlin', '--help'],
+        ['manifest', 'scala', '--help'],
+        ['manifest', 'setup', '--help'],
+      ]
 
       for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i];
-        it.skipIf(!ENV.RUN_E2E_TESTS)(`should display ${cmd.join(" ")} help`, async () => {
-          if (!binaryExists) {
-            return;
-          }
+        const cmd = commands[i]
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          const result = await executeCliCommand(cmd, {
-            binPath: binary.path,
-            isolateConfig: false,
-          });
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-          expect(result.code).toBe(0);
-          expect(result.stdout.length).toBeGreaterThan(0);
-        });
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
       }
-    });
+    })
 
-    describe("Organization command help (no auth required)", () => {
+    describe('Organization command help (no auth required)', () => {
       const commands = [
-        ["organization", "--help"],
-        ["organization", "dependencies", "--help"],
-        ["organization", "list", "--help"],
-        ["organization", "policy", "--help"],
-        ["organization", "policy", "license", "--help"],
-        ["organization", "policy", "security", "--help"],
-        ["organization", "quota", "--help"],
-      ];
+        ['organization', '--help'],
+        ['organization', 'dependencies', '--help'],
+        ['organization', 'list', '--help'],
+        ['organization', 'policy', '--help'],
+        ['organization', 'policy', 'license', '--help'],
+        ['organization', 'policy', 'security', '--help'],
+        ['organization', 'quota', '--help'],
+      ]
 
       for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i];
-        it.skipIf(!ENV.RUN_E2E_TESTS)(`should display ${cmd.join(" ")} help`, async () => {
-          if (!binaryExists) {
-            return;
-          }
+        const cmd = commands[i]
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          const result = await executeCliCommand(cmd, {
-            binPath: binary.path,
-            isolateConfig: false,
-          });
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-          expect(result.code).toBe(0);
-          expect(result.stdout.length).toBeGreaterThan(0);
-        });
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
       }
-    });
+    })
 
-    describe("Package command help (no auth required)", () => {
+    describe('Package command help (no auth required)', () => {
       const commands = [
-        ["package", "--help"],
-        ["package", "score", "--help"],
-        ["package", "shallow", "--help"],
-      ];
+        ['package', '--help'],
+        ['package', 'score', '--help'],
+        ['package', 'shallow', '--help'],
+      ]
 
       for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i];
-        it.skipIf(!ENV.RUN_E2E_TESTS)(`should display ${cmd.join(" ")} help`, async () => {
-          if (!binaryExists) {
-            return;
-          }
+        const cmd = commands[i]
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          const result = await executeCliCommand(cmd, {
-            binPath: binary.path,
-            isolateConfig: false,
-          });
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-          expect(result.code).toBe(0);
-          expect(result.stdout.length).toBeGreaterThan(0);
-        });
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
       }
-    });
+    })
 
-    describe("Package manager wrapper command help (no auth required)", () => {
+    describe('Package manager wrapper command help (no auth required)', () => {
       const commands = [
-        "bundler",
-        "cargo",
-        "gem",
-        "go",
-        "npm",
-        "npx",
-        "nuget",
-        "pip",
-        "pnpm",
-        "raw-npm",
-        "raw-npx",
-        "uv",
-        "yarn",
-      ];
+        'bundler',
+        'cargo',
+        'gem',
+        'go',
+        'npm',
+        'npx',
+        'nuget',
+        'pip',
+        'pnpm',
+        'raw-npm',
+        'raw-npx',
+        'uv',
+        'yarn',
+      ]
 
       for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i];
-        it.skipIf(!ENV.RUN_E2E_TESTS)(`should display ${cmd} command help`, async () => {
-          if (!binaryExists) {
-            return;
-          }
+        const cmd = commands[i]
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd} command help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          const result = await executeCliCommand([cmd, "--help"], {
-            binPath: binary.path,
-            isolateConfig: false,
-          });
+            const result = await executeCliCommand([cmd, '--help'], {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-          expect(result.code).toBe(0);
-          expect(result.stdout.length).toBeGreaterThan(0);
-        });
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
       }
-    });
+    })
 
-    describe("Repository command help (no auth required)", () => {
+    describe('Repository command help (no auth required)', () => {
       const commands = [
-        ["repository", "--help"],
-        ["repository", "create", "--help"],
-        ["repository", "del", "--help"],
-        ["repository", "list", "--help"],
-        ["repository", "update", "--help"],
-        ["repository", "view", "--help"],
-      ];
+        ['repository', '--help'],
+        ['repository', 'create', '--help'],
+        ['repository', 'del', '--help'],
+        ['repository', 'list', '--help'],
+        ['repository', 'update', '--help'],
+        ['repository', 'view', '--help'],
+      ]
 
       for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i];
-        it.skipIf(!ENV.RUN_E2E_TESTS)(`should display ${cmd.join(" ")} help`, async () => {
-          if (!binaryExists) {
-            return;
-          }
+        const cmd = commands[i]
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          const result = await executeCliCommand(cmd, {
-            binPath: binary.path,
-            isolateConfig: false,
-          });
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-          expect(result.code).toBe(0);
-          expect(result.stdout.length).toBeGreaterThan(0);
-        });
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
       }
-    });
+    })
 
-    describe("Scan command help (no auth required)", () => {
+    describe('Scan command help (no auth required)', () => {
       const commands = [
-        ["scan", "--help"],
-        ["scan", "create", "--help"],
-        ["scan", "del", "--help"],
-        ["scan", "diff", "--help"],
-        ["scan", "github", "--help"],
-        ["scan", "list", "--help"],
-        ["scan", "metadata", "--help"],
-        ["scan", "reach", "--help"],
-        ["scan", "report", "--help"],
-        ["scan", "setup", "--help"],
-        ["scan", "view", "--help"],
-      ];
+        ['scan', '--help'],
+        ['scan', 'create', '--help'],
+        ['scan', 'del', '--help'],
+        ['scan', 'diff', '--help'],
+        ['scan', 'github', '--help'],
+        ['scan', 'list', '--help'],
+        ['scan', 'metadata', '--help'],
+        ['scan', 'reach', '--help'],
+        ['scan', 'report', '--help'],
+        ['scan', 'setup', '--help'],
+        ['scan', 'view', '--help'],
+      ]
 
       for (let i = 0, { length } = commands; i < length; i += 1) {
-        const cmd = commands[i];
-        it.skipIf(!ENV.RUN_E2E_TESTS)(`should display ${cmd.join(" ")} help`, async () => {
-          if (!binaryExists) {
-            return;
-          }
+        const cmd = commands[i]
+        it.skipIf(!ENV.RUN_E2E_TESTS)(
+          `should display ${cmd.join(' ')} help`,
+          async () => {
+            if (!binaryExists) {
+              return
+            }
 
-          const result = await executeCliCommand(cmd, {
-            binPath: binary.path,
-            isolateConfig: false,
-          });
+            const result = await executeCliCommand(cmd, {
+              binPath: binary.path,
+              isolateConfig: false,
+            })
 
-          expect(result.code).toBe(0);
-          expect(result.stdout.length).toBeGreaterThan(0);
-        });
+            expect(result.code).toBe(0)
+            expect(result.stdout.length).toBeGreaterThan(0)
+          },
+        )
       }
-    });
+    })
 
-    describe("Auth-required commands", () => {
-      it.skipIf(!ENV.RUN_E2E_TESTS)("should list config settings", async () => {
+    describe('Auth-required commands', () => {
+      it.skipIf(!ENV.RUN_E2E_TESTS)('should list config settings', async () => {
         if (!binaryExists || !hasAuth) {
-          return;
+          return
         }
 
         // Scratch HOME so the test can't read the dev's real Socket config.
-        const result = await executeCliInScratch(["config", "list"], {
+        const result = await executeCliInScratch(['config', 'list'], {
           binPath: binary.path,
-        });
+        })
 
-        expect(result.code).toBe(0);
-      });
+        expect(result.code).toBe(0)
+      })
 
-      it.skipIf(!ENV.RUN_E2E_TESTS)("should display whoami information", async () => {
-        if (!binaryExists || !hasAuth) {
-          return;
-        }
-
-        // Scratch HOME so the API call uses the env-supplied token but
-        // can't persist anything back into the dev's config / keychain.
-        const result = await executeCliInScratch(["whoami"], {
-          binPath: binary.path,
-        });
-
-        expect(result.code).toBe(0);
-      });
-    });
-
-    describe("Performance validation", () => {
       it.skipIf(!ENV.RUN_E2E_TESTS)(
-        "should execute help command within reasonable time",
+        'should display whoami information',
         async () => {
-          if (!binaryExists) {
-            return;
+          if (!binaryExists || !hasAuth) {
+            return
           }
 
-          const startTime = Date.now();
-          const result = await executeCliCommand(["--help"], {
+          // Scratch HOME so the API call uses the env-supplied token but
+          // can't persist anything back into the dev's config / keychain.
+          const result = await executeCliInScratch(['whoami'], {
+            binPath: binary.path,
+          })
+
+          expect(result.code).toBe(0)
+        },
+      )
+    })
+
+    describe('Performance validation', () => {
+      it.skipIf(!ENV.RUN_E2E_TESTS)(
+        'should execute help command within reasonable time',
+        async () => {
+          if (!binaryExists) {
+            return
+          }
+
+          const startTime = Date.now()
+          const result = await executeCliCommand(['--help'], {
             binPath: binary.path,
             isolateConfig: false,
-          });
-          const duration = Date.now() - startTime;
+          })
+          const duration = Date.now() - startTime
 
-          expect(result.code).toBe(0);
+          expect(result.code).toBe(0)
           // Help should execute in under 5 seconds even for bundled binaries.
-          expect(duration).toBeLessThan(5000);
+          expect(duration).toBeLessThan(5000)
         },
-      );
-    });
-  });
+      )
+    })
+  })
 }
 
 // Run test suite for each binary type.
-describe("Socket CLI Binary Test Suite", () => {
+describe('Socket CLI Binary Test Suite', () => {
   // Always run JS binary test suite.
-  runBinaryTestSuite("js");
+  runBinaryTestSuite('js')
 
   // Run smol test suite (will prompt locally, skip in CI if not cached).
-  runBinaryTestSuite("smol");
+  runBinaryTestSuite('smol')
 
   // Run SEA test suite (will prompt locally, skip in CI if not cached).
-  runBinaryTestSuite("sea");
-});
+  runBinaryTestSuite('sea')
+})

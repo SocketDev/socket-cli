@@ -8,8 +8,8 @@
  * value.
  */
 
-import process from "node:process";
+import process from 'node:process'
 
 export function getSocketOauthRequiredScopes(): string {
-  return process.env["SOCKET_OAUTH_REQUIRED_SCOPES"] ?? "";
+  return process.env['SOCKET_OAUTH_REQUIRED_SCOPES'] ?? ''
 }

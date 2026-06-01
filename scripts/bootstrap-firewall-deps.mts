@@ -29,18 +29,18 @@
  *     must use the helpers as normal.
  */
 
-import { spawnSync } from "@socketsecurity/lib-stable/process/spawn/child";
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 
-import os from "node:os";
+import os from 'node:os'
 
-import path from "node:path";
-import process from "node:process";
+import path from 'node:path'
+import process from 'node:process'
 
-import { fileURLToPath } from "node:url";
+import { fileURLToPath } from 'node:url'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(__dirname, "..");
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const REPO_ROOT = path.resolve(__dirname, '..')
 
 // Packages to bootstrap. Each entry must:
 //   1. Be zero-dependency (or only depend on already-bootstrapped
@@ -48,10 +48,10 @@ const REPO_ROOT = path.resolve(__dirname, "..");
 //   2. Be imported by setup.mts or another script that runs BEFORE
 //      pnpm install completes — otherwise normal install handles it.
 const BOOTSTRAP_PACKAGES = [
-  "@sinclair/typebox",
-  "@socketregistry/packageurl-js-stable",
-  "@socketsecurity/lib-stable",
-];
+  '@sinclair/typebox',
+  '@socketregistry/packageurl-js-stable',
+  '@socketsecurity/lib-stable',
+]
 
 // Socket Firewall API — verifies a package isn't malware before we
 // fetch its tarball directly from the npm registry. Mirrors the
@@ -59,67 +59,74 @@ const BOOTSTRAP_PACKAGES = [
 // malware (the API doesn't return informational alerts), so block
 // unconditionally on a populated `alerts` array. Network failures
 // are non-fatal so a network blip doesn't break a fresh clone.
-const FIREWALL_API_URL = "https://firewall-api.socket.dev/purl";
-const FIREWALL_TIMEOUT_MS = 10_000;
+const FIREWALL_API_URL = 'https://firewall-api.socket.dev/purl'
+const FIREWALL_TIMEOUT_MS = 10_000
 
 interface FirewallAlert {
-  severity?: string | undefined;
-  type?: string | undefined;
-  key?: string | undefined;
+  severity?: string | undefined
+  type?: string | undefined
+  key?: string | undefined
 }
 
-const checkFirewall = async (pkgName: string, version: string): Promise<boolean> => {
-  const purl = `pkg:npm/${pkgName}@${version}`;
-  const url = `${FIREWALL_API_URL}/${encodeURIComponent(purl)}`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FIREWALL_TIMEOUT_MS);
-  timer.unref?.();
+const checkFirewall = async (
+  pkgName: string,
+  version: string,
+): Promise<boolean> => {
+  const purl = `pkg:npm/${pkgName}@${version}`
+  const url = `${FIREWALL_API_URL}/${encodeURIComponent(purl)}`
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), FIREWALL_TIMEOUT_MS)
+  timer.unref?.()
   try {
     // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- bootstrap script runs before deps installed; uses AbortController.signal for hard timeout and reads res.ok + res.status for non-fatal proceed-anyway behavior.
     const res = await fetch(url, {
       headers: {
-        "User-Agent": "socket-bootstrap-firewall-deps/1.0",
-        Accept: "application/json",
+        'User-Agent': 'socket-bootstrap-firewall-deps/1.0',
+        Accept: 'application/json',
       },
       signal: controller.signal,
-    });
-    clearTimeout(timer);
+    })
+    clearTimeout(timer)
     if (!res.ok) {
-      err(`firewall-api: HTTP ${res.status} for ${purl} — proceeding anyway (non-fatal)`);
-      return true;
+      err(
+        `firewall-api: HTTP ${res.status} for ${purl} — proceeding anyway (non-fatal)`,
+      )
+      return true
     }
-    const data = (await res.json()) as { alerts?: FirewallAlert[] | undefined };
-    const alerts = data.alerts ?? [];
+    const data = (await res.json()) as { alerts?: FirewallAlert[] | undefined }
+    const alerts = data.alerts ?? []
     if (alerts.length > 0) {
       err(
         `\n✗ Socket Firewall flagged ${pkgName}@${version} as malware (${alerts.length} alert(s)):`,
-      );
+      )
       for (const a of alerts.slice(0, 10)) {
-        err(`    ${a.type ?? a.key ?? "malware"}${a.severity ? ` (${a.severity})` : ""}`);
+        err(
+          `    ${a.type ?? a.key ?? 'malware'}${a.severity ? ` (${a.severity})` : ''}`,
+        )
       }
       err(
-        "\nFix: bump the pinned version in pnpm-workspace.yaml or package.json to a known-good release.",
-      );
-      return false;
+        '\nFix: bump the pinned version in pnpm-workspace.yaml or package.json to a known-good release.',
+      )
+      return false
     }
-    log(`✓ ${pkgName}@${version} cleared by Socket Firewall`);
-    return true;
+    log(`✓ ${pkgName}@${version} cleared by Socket Firewall`)
+    return true
   } catch (e) {
-    clearTimeout(timer);
+    clearTimeout(timer)
     err(
       `firewall-api: ${e instanceof Error ? e.message : String(e)} — proceeding anyway (non-fatal)`,
-    );
-    return true;
+    )
+    return true
   }
-};
+}
 
 const log = (msg: string): void => {
-  process.stdout.write(`[bootstrap] ${msg}\n`);
-};
+  process.stdout.write(`[bootstrap] ${msg}\n`)
+}
 
 const err = (msg: string): void => {
-  process.stderr.write(`[bootstrap] ${msg}\n`);
-};
+  process.stderr.write(`[bootstrap] ${msg}\n`)
+}
 
 /**
  * Read the pinned version of a package, checking (in order):
@@ -136,47 +143,54 @@ const err = (msg: string): void => {
 // Strip range prefixes (^, ~, >=, <=, etc.) so the registry tarball
 // URL gets an exact semver. Applied to BOTH the catalog and the
 // package.json paths so they can never disagree.
-const stripRange = (v: string): string => v.replace(/^[\^~>=<]+/, "").trim();
+const stripRange = (v: string): string => v.replace(/^[\^~>=<]+/, '').trim()
 
 const readPinnedVersion = (pkgName: string): string => {
   // (1) pnpm-workspace.yaml catalog
-  const wsPath = path.join(REPO_ROOT, "pnpm-workspace.yaml");
+  const wsPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
   if (existsSync(wsPath)) {
-    const content = readFileSync(wsPath, "utf8");
-    const lines = content.split("\n");
-    let inCatalog = false;
+    const content = readFileSync(wsPath, 'utf8')
+    const lines = content.split('\n')
+    let inCatalog = false
     for (let i = 0, { length } = lines; i < length; i += 1) {
-      const rawLine = lines[i];
-      const line = rawLine.replace(/\r$/, "");
+      const rawLine = lines[i]
+      const line = rawLine.replace(/\r$/, '')
       if (/^catalog:\s*$/.test(line)) {
-        inCatalog = true;
-        continue;
+        inCatalog = true
+        continue
       }
       if (inCatalog) {
         // Leave the catalog block on the next top-level key (no
         // leading whitespace, ends with ':').
         if (/^\S.*:\s*$/.test(line)) {
-          inCatalog = false;
-          continue;
+          inCatalog = false
+          continue
         }
-        const m = line.match(/^\s+['"]?([@A-Za-z0-9_/-]+)['"]?\s*:\s*['"]?([^'"\s]+)['"]?\s*$/);
+        const m = line.match(
+          /^\s+['"]?([@A-Za-z0-9_/-]+)['"]?\s*:\s*['"]?([^'"\s]+)['"]?\s*$/,
+        )
         if (m && m[1] === pkgName) {
-          return stripRange(m[2]!);
+          return stripRange(m[2]!)
         }
       }
     }
   }
 
   // (2) Root package.json dependencies / devDependencies
-  const pkgJsonPath = path.join(REPO_ROOT, "package.json");
+  const pkgJsonPath = path.join(REPO_ROOT, 'package.json')
   if (existsSync(pkgJsonPath)) {
-    const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf8"));
-    for (const field of ["dependencies", "devDependencies"] as const) {
-      const deps = pkg[field];
-      if (deps && typeof deps[pkgName] === "string") {
-        const v: string = deps[pkgName];
-        if (v !== "" && v !== "*" && !v.startsWith("catalog:") && !v.startsWith("workspace:")) {
-          return stripRange(v);
+    const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8'))
+    for (const field of ['dependencies', 'devDependencies'] as const) {
+      const deps = pkg[field]
+      if (deps && typeof deps[pkgName] === 'string') {
+        const v: string = deps[pkgName]
+        if (
+          v !== '' &&
+          v !== '*' &&
+          !v.startsWith('catalog:') &&
+          !v.startsWith('workspace:')
+        ) {
+          return stripRange(v)
         }
       }
     }
@@ -184,8 +198,8 @@ const readPinnedVersion = (pkgName: string): string => {
 
   throw new Error(
     `Pinned version not found for ${pkgName}. Add it to pnpm-workspace.yaml \`catalog:\` or root package.json dependencies.`,
-  );
-};
+  )
+}
 
 /**
  * Download a npm registry tarball for `<pkg>@<version>` and extract it into
@@ -195,18 +209,20 @@ const readPinnedVersion = (pkgName: string): string => {
  * firewall returned any alerts.
  */
 const bootstrapPackage = async (pkgName: string): Promise<void> => {
-  const version = readPinnedVersion(pkgName);
-  const dest = path.join(REPO_ROOT, "node_modules", pkgName);
-  const destPkgJson = path.join(dest, "package.json");
+  const version = readPinnedVersion(pkgName)
+  const dest = path.join(REPO_ROOT, 'node_modules', pkgName)
+  const destPkgJson = path.join(dest, 'package.json')
 
   if (existsSync(destPkgJson)) {
     try {
-      const installed = JSON.parse(readFileSync(destPkgJson, "utf8"));
+      const installed = JSON.parse(readFileSync(destPkgJson, 'utf8'))
       if (installed.version === version) {
-        log(`${pkgName}@${version} already present, skipping`);
-        return;
+        log(`${pkgName}@${version} already present, skipping`)
+        return
       }
-      log(`${pkgName} present at ${installed.version}, replacing with ${version}`);
+      log(
+        `${pkgName} present at ${installed.version}, replacing with ${version}`,
+      )
     } catch {
       // Malformed package.json — overwrite.
     }
@@ -215,62 +231,75 @@ const bootstrapPackage = async (pkgName: string): Promise<void> => {
   // Firewall check — refuses install if the package is flagged as
   // malware. Network errors are non-fatal so a network blip doesn't
   // block a fresh clone.
-  const cleared = await checkFirewall(pkgName, version);
+  const cleared = await checkFirewall(pkgName, version)
   if (!cleared) {
-    throw new Error(`Socket Firewall blocked ${pkgName}@${version}; refusing to install.`);
+    throw new Error(
+      `Socket Firewall blocked ${pkgName}@${version}; refusing to install.`,
+    )
   }
 
   // Build the registry tarball URL. The npm registry redirects
   // /<pkg>/-/<basename>-<version>.tgz, but for scoped packages the
   // basename is the unscoped portion.
-  const unscoped = pkgName.startsWith("@") ? pkgName.split("/")[1]! : pkgName;
-  const tarballUrl = `https://registry.npmjs.org/${pkgName}/-/${unscoped}-${version}.tgz`;
+  const unscoped = pkgName.startsWith('@') ? pkgName.split('/')[1]! : pkgName
+  const tarballUrl = `https://registry.npmjs.org/${pkgName}/-/${unscoped}-${version}.tgz`
 
-  log(`Fetching ${tarballUrl}`);
-  const tarballPath = path.join(tmpdir(), `socket-bootstrap-${unscoped}-${version}.tgz`);
+  log(`Fetching ${tarballUrl}`)
+  const tarballPath = path.join(
+    tmpdir(),
+    `socket-bootstrap-${unscoped}-${version}.tgz`,
+  )
 
   // Use curl — it's universally available and avoids a dep on a
   // node http client. Follow redirects with -L, fail loudly with -f.
-  const curl = spawnSync("curl", ["-fsSL", tarballUrl, "-o", tarballPath], {
-    stdio: "inherit",
-  });
+  const curl = spawnSync('curl', ['-fsSL', tarballUrl, '-o', tarballPath], {
+    stdio: 'inherit',
+  })
   if (curl.status !== 0) {
     throw new Error(
       `Failed to download ${pkgName}@${version} from ${tarballUrl}.\nVerify the version exists on the npm registry, or check network access.`,
-    );
+    )
   }
 
   // Ensure dest exists and is empty for clean extraction.
   if (existsSync(dest)) {
-    rmSync(dest, { recursive: true, force: true });
+    rmSync(dest, { recursive: true, force: true })
   }
-  mkdirSync(dest, { recursive: true });
+  mkdirSync(dest, { recursive: true })
 
   // Extract: tarball top-level dir is `package/`, strip it.
-  const tar = spawnSync("tar", ["-xzf", tarballPath, "--strip-components=1", "-C", dest], {
-    stdio: "inherit",
-  });
+  const tar = spawnSync(
+    'tar',
+    ['-xzf', tarballPath, '--strip-components=1', '-C', dest],
+    {
+      stdio: 'inherit',
+    },
+  )
   if (tar.status !== 0) {
-    throw new Error(`Failed to extract ${tarballPath} into ${dest}.`);
+    throw new Error(`Failed to extract ${tarballPath} into ${dest}.`)
   }
 
-  rmSync(tarballPath, { force: true });
-  log(`${pkgName}@${version} → node_modules/${pkgName}`);
-};
+  rmSync(tarballPath, { force: true })
+  log(`${pkgName}@${version} → node_modules/${pkgName}`)
+}
 
 const main = async (): Promise<number> => {
-  log(`Bootstrapping ${BOOTSTRAP_PACKAGES.length} package(s) from npm registry…`);
+  log(
+    `Bootstrapping ${BOOTSTRAP_PACKAGES.length} package(s) from npm registry…`,
+  )
   for (let i = 0, { length } = BOOTSTRAP_PACKAGES; i < length; i += 1) {
-    const pkg = BOOTSTRAP_PACKAGES[i];
+    const pkg = BOOTSTRAP_PACKAGES[i]
     try {
-      await bootstrapPackage(pkg);
+      await bootstrapPackage(pkg)
     } catch (e) {
-      err(`Failed to bootstrap ${pkg}: ${e instanceof Error ? e.message : String(e)}`);
-      return 1;
+      err(
+        `Failed to bootstrap ${pkg}: ${e instanceof Error ? e.message : String(e)}`,
+      )
+      return 1
     }
   }
-  log("Bootstrap complete.");
-  return 0;
-};
+  log('Bootstrap complete.')
+  return 0
+}
 
-main().then((code) => process.exit(code));
+main().then(code => process.exit(code))

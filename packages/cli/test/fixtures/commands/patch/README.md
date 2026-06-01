@@ -107,12 +107,12 @@ Use `no-vulns/` fixture:
 ## Usage in Tests
 
 ```typescript
-import path from "node:path";
+import path from 'node:path'
 
-const fixtureBaseDir = path.join(testPath, "fixtures/commands/patch");
-const completeFixture = path.join(fixtureBaseDir, "complete");
-const noVulnsFixture = path.join(fixtureBaseDir, "no-vulns");
-const pnpmFixture = path.join(fixtureBaseDir, "pnpm");
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
+const completeFixture = path.join(fixtureBaseDir, 'complete')
+const noVulnsFixture = path.join(fixtureBaseDir, 'no-vulns')
+const pnpmFixture = path.join(fixtureBaseDir, 'pnpm')
 ```
 
 ## Expected Output Behavior

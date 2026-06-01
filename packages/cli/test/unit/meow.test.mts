@@ -11,430 +11,432 @@
  * Related Files: - src/meow.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
-}));
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock readPackageJsonSync.
-const mockReadPackageJsonSync = vi.hoisted(() => vi.fn());
-vi.mock(import("@socketsecurity/lib-stable/packages/operations"), () => ({
+const mockReadPackageJsonSync = vi.hoisted(() => vi.fn())
+vi.mock(import('@socketsecurity/lib-stable/packages/operations'), () => ({
   readPackageJsonSync: mockReadPackageJsonSync,
-}));
+}))
 
-import { meow } from "../../src/meow.mts";
+import { meow } from '../../src/meow.mts'
 
-describe("meow", () => {
+describe('meow', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks()
     mockReadPackageJsonSync.mockReturnValue({
-      name: "test-cli",
-      version: "1.0.0",
-    });
-  });
+      name: 'test-cli',
+      version: '1.0.0',
+    })
+  })
 
-  describe("basic parsing", () => {
-    it("parses positional arguments", () => {
+  describe('basic parsing', () => {
+    it('parses positional arguments', () => {
       const result = meow({
-        argv: ["arg1", "arg2"],
-      });
+        argv: ['arg1', 'arg2'],
+      })
 
-      expect(result.input).toEqual(["arg1", "arg2"]);
-    });
+      expect(result.input).toEqual(['arg1', 'arg2'])
+    })
 
-    it("returns empty input for no arguments", () => {
+    it('returns empty input for no arguments', () => {
       const result = meow({
         argv: [],
-      });
+      })
 
-      expect(result.input).toEqual([]);
-    });
+      expect(result.input).toEqual([])
+    })
 
-    it("uses process.argv.slice(2) by default", () => {
-      const originalArgv = process.argv;
-      process.argv = ["node", "script.js", "test-arg"];
+    it('uses process.argv.slice(2) by default', () => {
+      const originalArgv = process.argv
+      process.argv = ['node', 'script.js', 'test-arg']
 
-      const result = meow({});
+      const result = meow({})
 
-      process.argv = originalArgv;
-      expect(result.input).toContain("test-arg");
-    });
-  });
+      process.argv = originalArgv
+      expect(result.input).toContain('test-arg')
+    })
+  })
 
-  describe("flag parsing", () => {
-    it("parses boolean flags", () => {
+  describe('flag parsing', () => {
+    it('parses boolean flags', () => {
       const result = meow({
-        argv: ["--verbose"],
+        argv: ['--verbose'],
         flags: {
           verbose: {
-            type: "boolean",
+            type: 'boolean',
           },
         },
-      });
+      })
 
-      expect(result.flags["verbose"]).toBe(true);
-    });
+      expect(result.flags['verbose']).toBe(true)
+    })
 
-    it("parses string flags", () => {
+    it('parses string flags', () => {
       const result = meow({
-        argv: ["--name", "test"],
+        argv: ['--name', 'test'],
         flags: {
           name: {
-            type: "string",
+            type: 'string',
           },
         },
-      });
+      })
 
-      expect(result.flags["name"]).toBe("test");
-    });
+      expect(result.flags['name']).toBe('test')
+    })
 
-    it("parses number flags", () => {
+    it('parses number flags', () => {
       const result = meow({
-        argv: ["--count", "42"],
+        argv: ['--count', '42'],
         flags: {
           count: {
-            type: "number",
+            type: 'number',
           },
         },
-      });
+      })
 
-      expect(result.flags["count"]).toBe(42);
-    });
+      expect(result.flags['count']).toBe(42)
+    })
 
-    it("handles short flags", () => {
+    it('handles short flags', () => {
       const result = meow({
-        argv: ["-v"],
+        argv: ['-v'],
         flags: {
           verbose: {
-            type: "boolean",
-            shortFlag: "v",
+            type: 'boolean',
+            shortFlag: 'v',
           },
         },
-      });
+      })
 
-      expect(result.flags["verbose"]).toBe(true);
-    });
+      expect(result.flags['verbose']).toBe(true)
+    })
 
-    it("handles flag aliases as string", () => {
+    it('handles flag aliases as string', () => {
       const result = meow({
-        argv: ["--quiet"],
+        argv: ['--quiet'],
         flags: {
           verbose: {
-            type: "boolean",
-            alias: "quiet",
+            type: 'boolean',
+            alias: 'quiet',
           },
         },
-      });
+      })
 
-      expect(result.flags["quiet"]).toBe(true);
-    });
+      expect(result.flags['quiet']).toBe(true)
+    })
 
-    it("handles flag aliases as array", () => {
+    it('handles flag aliases as array', () => {
       const result = meow({
-        argv: ["--q"],
+        argv: ['--q'],
         flags: {
           verbose: {
-            type: "boolean",
-            aliases: ["q", "quiet"],
+            type: 'boolean',
+            aliases: ['q', 'quiet'],
           },
         },
-      });
+      })
 
-      expect(result.flags["q"]).toBe(true);
-    });
+      expect(result.flags['q']).toBe(true)
+    })
 
-    it("uses default values when flag not provided", () => {
+    it('uses default values when flag not provided', () => {
       const result = meow({
         argv: [],
         flags: {
           port: {
-            type: "number",
+            type: 'number',
             default: 3000,
           },
         },
-      });
+      })
 
-      expect(result.flags["port"]).toBe(3000);
-    });
-  });
+      expect(result.flags['port']).toBe(3000)
+    })
+  })
 
-  describe("boolean defaults", () => {
-    it("applies booleanDefault to undefined boolean flags", () => {
+  describe('boolean defaults', () => {
+    it('applies booleanDefault to undefined boolean flags', () => {
       const result = meow({
         argv: [],
         flags: {
           verbose: {
-            type: "boolean",
+            type: 'boolean',
           },
         },
         booleanDefault: false,
-      });
+      })
 
-      expect(result.flags["verbose"]).toBe(false);
-    });
+      expect(result.flags['verbose']).toBe(false)
+    })
 
-    it("does not override explicit boolean flags with booleanDefault", () => {
+    it('does not override explicit boolean flags with booleanDefault', () => {
       const result = meow({
-        argv: ["--verbose"],
+        argv: ['--verbose'],
         flags: {
           verbose: {
-            type: "boolean",
+            type: 'boolean',
           },
         },
         booleanDefault: false,
-      });
+      })
 
-      expect(result.flags["verbose"]).toBe(true);
-    });
-  });
+      expect(result.flags['verbose']).toBe(true)
+    })
+  })
 
-  describe("unknown flags", () => {
-    it("collects unknown flags when enabled", () => {
+  describe('unknown flags', () => {
+    it('collects unknown flags when enabled', () => {
       const result = meow({
-        argv: ["--unknown", "--another-flag"],
+        argv: ['--unknown', '--another-flag'],
         flags: {},
         collectUnknownFlags: true,
-      });
+      })
 
-      expect(result.unknownFlags).toContain("--unknown");
-      expect(result.unknownFlags).toContain("--another-flag");
-    });
+      expect(result.unknownFlags).toContain('--unknown')
+      expect(result.unknownFlags).toContain('--another-flag')
+    })
 
-    it("returns empty unknownFlags when not collecting", () => {
+    it('returns empty unknownFlags when not collecting', () => {
       const result = meow({
         argv: [],
         flags: {},
         collectUnknownFlags: false,
-      });
+      })
 
-      expect(result.unknownFlags).toEqual([]);
-    });
-  });
+      expect(result.unknownFlags).toEqual([])
+    })
+  })
 
-  describe("help text", () => {
-    it("includes description in help text", () => {
+  describe('help text', () => {
+    it('includes description in help text', () => {
       const result = meow({
         argv: [],
-        description: "A test CLI tool",
-      });
+        description: 'A test CLI tool',
+      })
 
-      expect(result.help).toContain("A test CLI tool");
-    });
+      expect(result.help).toContain('A test CLI tool')
+    })
 
-    it("includes custom help text", () => {
+    it('includes custom help text', () => {
       const result = meow({
         argv: [],
-        help: "Usage: test [options]",
-      });
+        help: 'Usage: test [options]',
+      })
 
-      expect(result.help).toContain("Usage: test [options]");
-    });
+      expect(result.help).toContain('Usage: test [options]')
+    })
 
-    it("applies help indent to multiline help text", () => {
+    it('applies help indent to multiline help text', () => {
       const result = meow({
         argv: [],
-        help: "Line 1\nLine 2",
+        help: 'Line 1\nLine 2',
         helpIndent: 4,
-      });
+      })
 
-      expect(result.help).toContain("    Line 1");
-      expect(result.help).toContain("    Line 2");
-    });
+      expect(result.help).toContain('    Line 1')
+      expect(result.help).toContain('    Line 2')
+    })
 
-    it("omits description when set to false", () => {
+    it('omits description when set to false', () => {
       const result = meow({
         argv: [],
         description: false,
-        help: "Usage: test",
-      });
+        help: 'Usage: test',
+      })
 
-      expect(result.help).not.toContain("undefined");
-    });
-  });
+      expect(result.help).not.toContain('undefined')
+    })
+  })
 
-  describe("package.json reading", () => {
-    it("reads package.json from importMeta url", () => {
+  describe('package.json reading', () => {
+    it('reads package.json from importMeta url', () => {
       const result = meow({
         argv: [],
-        importMeta: { url: "file:///path/to/script.js" } as ImportMeta,
-      });
+        importMeta: { url: 'file:///path/to/script.js' } as ImportMeta,
+      })
 
-      expect(result.pkg).toEqual({ name: "test-cli", version: "1.0.0" });
-    });
+      expect(result.pkg).toEqual({ name: 'test-cli', version: '1.0.0' })
+    })
 
-    it("returns empty object when importMeta is not provided", () => {
+    it('returns empty object when importMeta is not provided', () => {
       const result = meow({
         argv: [],
-      });
+      })
 
-      expect(result.pkg).toEqual({});
-    });
+      expect(result.pkg).toEqual({})
+    })
 
-    it("handles package.json read failure gracefully", () => {
+    it('handles package.json read failure gracefully', () => {
       mockReadPackageJsonSync.mockImplementation(() => {
-        throw new Error("File not found");
-      });
+        throw new Error('File not found')
+      })
 
       const result = meow({
         argv: [],
-        importMeta: { url: "file:///path/to/script.js" } as ImportMeta,
-      });
+        importMeta: { url: 'file:///path/to/script.js' } as ImportMeta,
+      })
 
-      expect(result.pkg).toEqual({});
-    });
+      expect(result.pkg).toEqual({})
+    })
 
-    it("handles readPackageJsonSync returning null with empty fallback", () => {
-      mockReadPackageJsonSync.mockReturnValueOnce(undefined);
-
-      const result = meow({
-        argv: [],
-        importMeta: { url: "file:///path/to/script.js" } as ImportMeta,
-      });
-
-      expect(result.pkg).toEqual({});
-    });
-  });
-
-  describe("showHelp and showVersion", () => {
-    it("showHelp logs help text", () => {
-      const mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
-        throw new Error("exit");
-      });
+    it('handles readPackageJsonSync returning null with empty fallback', () => {
+      mockReadPackageJsonSync.mockReturnValueOnce(undefined)
 
       const result = meow({
         argv: [],
-        help: "Test help",
-      });
+        importMeta: { url: 'file:///path/to/script.js' } as ImportMeta,
+      })
 
-      expect(() => result.showHelp()).toThrow("exit");
-      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining("Test help"));
-      expect(mockExit).toHaveBeenCalledWith(2);
+      expect(result.pkg).toEqual({})
+    })
+  })
 
-      mockExit.mockRestore();
-    });
-
-    it("showVersion logs version from package.json", () => {
-      const mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
-        throw new Error("exit");
-      });
+  describe('showHelp and showVersion', () => {
+    it('showHelp logs help text', () => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('exit')
+      })
 
       const result = meow({
         argv: [],
-        importMeta: { url: "file:///path/to/script.js" } as ImportMeta,
-      });
+        help: 'Test help',
+      })
 
-      expect(() => result.showVersion()).toThrow("exit");
-      expect(mockLogger.log).toHaveBeenCalledWith("1.0.0");
-      expect(mockExit).toHaveBeenCalledWith(0);
+      expect(() => result.showHelp()).toThrow('exit')
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('Test help'),
+      )
+      expect(mockExit).toHaveBeenCalledWith(2)
 
-      mockExit.mockRestore();
-    });
+      mockExit.mockRestore()
+    })
 
-    it("showVersion logs 0.0.0 when no version in package.json", () => {
-      mockReadPackageJsonSync.mockReturnValue({});
-      const mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
-        throw new Error("exit");
-      });
+    it('showVersion logs version from package.json', () => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('exit')
+      })
 
       const result = meow({
         argv: [],
-        importMeta: { url: "file:///path/to/script.js" } as ImportMeta,
-      });
+        importMeta: { url: 'file:///path/to/script.js' } as ImportMeta,
+      })
 
-      expect(() => result.showVersion()).toThrow("exit");
-      expect(mockLogger.log).toHaveBeenCalledWith("0.0.0");
+      expect(() => result.showVersion()).toThrow('exit')
+      expect(mockLogger.log).toHaveBeenCalledWith('1.0.0')
+      expect(mockExit).toHaveBeenCalledWith(0)
 
-      mockExit.mockRestore();
-    });
-  });
+      mockExit.mockRestore()
+    })
 
-  describe("auto help/version", () => {
-    it("auto-shows version when only --version is in argv and autoVersion is on", () => {
-      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {
-        throw new Error("exit");
-      }) as never);
+    it('showVersion logs 0.0.0 when no version in package.json', () => {
+      mockReadPackageJsonSync.mockReturnValue({})
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('exit')
+      })
+
+      const result = meow({
+        argv: [],
+        importMeta: { url: 'file:///path/to/script.js' } as ImportMeta,
+      })
+
+      expect(() => result.showVersion()).toThrow('exit')
+      expect(mockLogger.log).toHaveBeenCalledWith('0.0.0')
+
+      mockExit.mockRestore()
+    })
+  })
+
+  describe('auto help/version', () => {
+    it('auto-shows version when only --version is in argv and autoVersion is on', () => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+        throw new Error('exit')
+      }) as never)
 
       try {
         expect(() =>
           meow({
-            argv: ["--version"],
-            flags: { version: { type: "boolean" } },
-            importMeta: { url: "file:///x.js" } as ImportMeta,
+            argv: ['--version'],
+            flags: { version: { type: 'boolean' } },
+            importMeta: { url: 'file:///x.js' } as ImportMeta,
             autoVersion: true,
           }),
-        ).toThrow("exit");
+        ).toThrow('exit')
       } finally {
-        mockExit.mockRestore();
+        mockExit.mockRestore()
       }
-    });
+    })
 
-    it("auto-shows help when only --help is in argv and autoHelp is on", () => {
-      const mockExit = vi.spyOn(process, "exit").mockImplementation((() => {
-        throw new Error("exit");
-      }) as never);
+    it('auto-shows help when only --help is in argv and autoHelp is on', () => {
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {
+        throw new Error('exit')
+      }) as never)
 
       try {
         expect(() =>
           meow({
-            argv: ["--help"],
-            flags: { help: { type: "boolean" } },
-            importMeta: { url: "file:///x.js" } as ImportMeta,
+            argv: ['--help'],
+            flags: { help: { type: 'boolean' } },
+            importMeta: { url: 'file:///x.js' } as ImportMeta,
             autoHelp: true,
           }),
-        ).toThrow("exit");
+        ).toThrow('exit')
       } finally {
-        mockExit.mockRestore();
+        mockExit.mockRestore()
       }
-    });
+    })
 
-    it("does not auto-show when autoVersion / autoHelp are off", () => {
+    it('does not auto-show when autoVersion / autoHelp are off', () => {
       const result = meow({
-        argv: ["--version"],
-        flags: { version: { type: "boolean" } },
-        importMeta: { url: "file:///x.js" } as ImportMeta,
+        argv: ['--version'],
+        flags: { version: { type: 'boolean' } },
+        importMeta: { url: 'file:///x.js' } as ImportMeta,
         autoVersion: false,
         autoHelp: false,
-      });
-      expect((result.flags as unknown).version).toBe(true);
-    });
-  });
+      })
+      expect((result.flags as unknown).version).toBe(true)
+    })
+  })
 
-  describe("multiple flags", () => {
-    it("handles isMultiple flag option", () => {
+  describe('multiple flags', () => {
+    it('handles isMultiple flag option', () => {
       const result = meow({
-        argv: ["--include", "a", "--include", "b"],
+        argv: ['--include', 'a', '--include', 'b'],
         flags: {
           include: {
-            type: "string",
+            type: 'string',
             isMultiple: true,
           },
         },
-      });
+      })
 
-      expect(result.flags["include"]).toEqual(["a", "b"]);
-    });
-  });
+      expect(result.flags['include']).toEqual(['a', 'b'])
+    })
+  })
 
-  describe("number conversion", () => {
-    it("handles invalid number values gracefully", () => {
+  describe('number conversion', () => {
+    it('handles invalid number values gracefully', () => {
       const result = meow({
-        argv: ["--count", "not-a-number"],
+        argv: ['--count', 'not-a-number'],
         flags: {
           count: {
-            type: "number",
+            type: 'number',
           },
         },
-      });
+      })
 
       // Value stays as string when NaN.
-      expect(result.flags["count"]).toBe("not-a-number");
-    });
-  });
-});
+      expect(result.flags['count']).toBe('not-a-number')
+    })
+  })
+})

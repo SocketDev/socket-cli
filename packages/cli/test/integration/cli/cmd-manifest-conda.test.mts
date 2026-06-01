@@ -11,22 +11,26 @@
  * logic.
  */
 
-import { describe, expect } from "vitest";
+import { describe, expect } from 'vitest'
 
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from "../../../src/constants/cli.mts";
-import { getBinCliPath } from "../../../src/constants/paths.mts";
-import { cleanOutput, cmdit, spawnSocketCli, testPath } from "../../utils.mts";
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { cleanOutput, cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 
-const binCliPath = getBinCliPath();
+const binCliPath = getBinCliPath()
 
-describe("socket manifest conda", async () => {
+describe('socket manifest conda', async () => {
   cmdit(
-    ["manifest", "conda", FLAG_HELP, FLAG_CONFIG, "{}"],
+    ['manifest', 'conda', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
-    async (cmd) => {
+    async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
-      });
+      })
       expect(stdout).toMatchInlineSnapshot(`
         "[beta] Convert a Conda environment.yml file to a python requirements.txt
 
@@ -55,28 +59,30 @@ describe("socket manifest conda", async () => {
           
                 $ socket manifest conda
                 $ socket manifest conda ./project/foo --file environment.yaml"
-      `);
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest conda\`, cwd: <redacted>"
-      `);
+      `)
 
-      expect(code, "explicit help should exit with code 0").toBe(0);
-      expect(stderr, "banner includes base command").toContain("`socket manifest conda`");
+      expect(code, 'explicit help should exit with code 0').toBe(0)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket manifest conda`',
+      )
     },
-  );
+  )
 
   cmdit(
-    ["manifest", "conda", FLAG_DRY_RUN, FLAG_CONFIG, "{}"],
-    "should require args with just dry-run",
-    async (cmd) => {
+    ['manifest', 'conda', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should require args with just dry-run',
+    async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
-      });
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
+      })
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -85,30 +91,37 @@ describe("socket manifest conda", async () => {
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest conda\`, cwd: <redacted>
 
         \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
-      `);
+      `)
 
-      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
+      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
-  );
+  )
 
-  describe("output flags", () => {
+  describe('output flags', () => {
     cmdit(
-      ["manifest", "conda", "fixtures/commands/manifest/conda", "--stdout", FLAG_CONFIG, "{}"],
-      "should print raw text without flags",
-      async (cmd) => {
+      [
+        'manifest',
+        'conda',
+        'fixtures/commands/manifest/conda',
+        '--stdout',
+        FLAG_CONFIG,
+        '{}',
+      ],
+      'should print raw text without flags',
+      async cmd => {
         const {
           code: _code,
           stderr,
           stdout,
         } = await spawnSocketCli(binCliPath, cmd, {
           cwd: testPath,
-        });
+        })
         expect(stdout).toMatchInlineSnapshot(`
           "qgrid==1.3.0
           mplstereonet
           pyqt5
           gempy==2.1.0"
-        `);
+        `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              _____         _       _          /---------------
@@ -117,25 +130,25 @@ describe("socket manifest conda", async () => {
               |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest conda\`, cwd: <redacted>
 
           \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
-        `);
+        `)
       },
-    );
+    )
 
     cmdit(
       [
-        "manifest",
-        "conda",
-        "fixtures/commands/manifest/conda",
-        "--json",
-        "--stdout",
+        'manifest',
+        'conda',
+        'fixtures/commands/manifest/conda',
+        '--json',
+        '--stdout',
         FLAG_CONFIG,
-        "{}",
+        '{}',
       ],
-      "should print a json blurb with --json flag",
-      async (cmd) => {
+      'should print a json blurb with --json flag',
+      async cmd => {
         const { stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
           cwd: testPath,
-        });
+        })
         expect(cleanOutput(stdout)).toMatchInlineSnapshot(`
           "{
             "ok": true,
@@ -144,33 +157,33 @@ describe("socket manifest conda", async () => {
               "pip": "qgrid==1.3.0\\nmplstereonet\\npyqt5\\ngempy==2.1.0"
             }
           }"
-        `);
+        `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
-        `);
+        `)
       },
-    );
+    )
 
     cmdit(
       [
-        "manifest",
-        "conda",
-        "fixtures/commands/manifest/conda",
-        "--markdown",
-        "--stdout",
+        'manifest',
+        'conda',
+        'fixtures/commands/manifest/conda',
+        '--markdown',
+        '--stdout',
         FLAG_CONFIG,
-        "{}",
+        '{}',
       ],
-      "should print a markdown blurb with --markdown flag",
-      async (cmd) => {
+      'should print a markdown blurb with --markdown flag',
+      async cmd => {
         const {
           code: _code,
           stderr,
           stdout,
         } = await spawnSocketCli(binCliPath, cmd, {
           cwd: testPath,
-        });
+        })
         expect(cleanOutput(stdout)).toMatchInlineSnapshot(`
           "# Converted Conda file
 
@@ -182,12 +195,12 @@ describe("socket manifest conda", async () => {
           pyqt5
           gempy==2.1.0
           \`\`\`"
-        `);
+        `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
-        `);
+        `)
       },
-    );
-  });
-});
+    )
+  })
+})

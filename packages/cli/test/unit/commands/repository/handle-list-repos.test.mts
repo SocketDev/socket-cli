@@ -16,240 +16,265 @@
  * - src/commands/repository/output-list-repos.mts (formatter)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleListRepos } from "../../../../src/commands/repository/handle-list-repos.mts";
+import { handleListRepos } from '../../../../src/commands/repository/handle-list-repos.mts'
 
 // Mock the dependencies.
-const mockFetchListAllRepos = vi.hoisted(() => vi.fn());
-const mockFetchListRepos = vi.hoisted(() => vi.fn());
-const mockOutputListRepos = vi.hoisted(() => vi.fn());
+const mockFetchListAllRepos = vi.hoisted(() => vi.fn())
+const mockFetchListRepos = vi.hoisted(() => vi.fn())
+const mockOutputListRepos = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/repository/fetch-list-all-repos.mts"), () => ({
-  fetchListAllRepos: mockFetchListAllRepos,
-}));
-vi.mock(import("../../../../src/commands/repository/fetch-list-repos.mts"), () => ({
-  fetchListRepos: mockFetchListRepos,
-}));
-vi.mock(import("../../../../src/commands/repository/output-list-repos.mts"), () => ({
-  outputListRepos: mockOutputListRepos,
-}));
+vi.mock(
+  import('../../../../src/commands/repository/fetch-list-all-repos.mts'),
+  () => ({
+    fetchListAllRepos: mockFetchListAllRepos,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/repository/fetch-list-repos.mts'),
+  () => ({
+    fetchListRepos: mockFetchListRepos,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/repository/output-list-repos.mts'),
+  () => ({
+    outputListRepos: mockOutputListRepos,
+  }),
+)
 
-describe("handleListRepos", () => {
+describe('handleListRepos', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("fetches all repositories when all flag is true", async () => {
+  it('fetches all repositories when all flag is true', async () => {
     const mockData = {
       ok: true,
       data: [
-        { id: "1", name: "repo1" },
-        { id: "2", name: "repo2" },
-        { id: "3", name: "repo3" },
+        { id: '1', name: 'repo1' },
+        { id: '2', name: 'repo2' },
+        { id: '3', name: 'repo3' },
       ],
-    };
-    mockFetchListAllRepos.mockResolvedValue(mockData);
+    }
+    mockFetchListAllRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: true,
-      direction: "asc",
-      orgSlug: "test-org",
-      outputKind: "json",
+      direction: 'asc',
+      orgSlug: 'test-org',
+      outputKind: 'json',
       page: 1,
       perPage: 10,
-      sort: "name",
-    });
+      sort: 'name',
+    })
 
-    expect(mockFetchListAllRepos).toHaveBeenCalledWith("test-org", {
-      commandPath: "socket repository list",
-      direction: "asc",
-      sort: "name",
-    });
+    expect(mockFetchListAllRepos).toHaveBeenCalledWith('test-org', {
+      commandPath: 'socket repository list',
+      direction: 'asc',
+      sort: 'name',
+    })
     expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
-      "json",
+      'json',
       0,
       0,
-      "name",
+      'name',
       Number.POSITIVE_INFINITY,
-      "asc",
-    );
-  });
+      'asc',
+    )
+  })
 
-  it("fetches paginated repositories when all is false", async () => {
+  it('fetches paginated repositories when all is false', async () => {
     const mockData = {
       ok: true,
       data: {
         repos: [
-          { id: "1", name: "repo1" },
-          { id: "2", name: "repo2" },
+          { id: '1', name: 'repo1' },
+          { id: '2', name: 'repo2' },
         ],
         nextPage: 2,
       },
-    };
-    mockFetchListRepos.mockResolvedValue(mockData);
+    }
+    mockFetchListRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: false,
-      direction: "desc",
-      orgSlug: "test-org",
-      outputKind: "text",
+      direction: 'desc',
+      orgSlug: 'test-org',
+      outputKind: 'text',
       page: 1,
       perPage: 10,
-      sort: "updated",
-    });
+      sort: 'updated',
+    })
 
     expect(mockFetchListRepos).toHaveBeenCalledWith(
       {
-        direction: "desc",
-        orgSlug: "test-org",
+        direction: 'desc',
+        orgSlug: 'test-org',
         page: 1,
         perPage: 10,
-        sort: "updated",
+        sort: 'updated',
       },
       {
-        commandPath: "socket repository list",
+        commandPath: 'socket repository list',
       },
-    );
-    expect(mockOutputListRepos).toHaveBeenCalledWith(mockData, "text", 1, 2, "updated", 10, "desc");
-  });
+    )
+    expect(mockOutputListRepos).toHaveBeenCalledWith(
+      mockData,
+      'text',
+      1,
+      2,
+      'updated',
+      10,
+      'desc',
+    )
+  })
 
-  it("handles error response for paginated fetch", async () => {
+  it('handles error response for paginated fetch', async () => {
     const mockError = {
       ok: false,
-      error: new Error("Failed to fetch repositories"),
-    };
-    mockFetchListRepos.mockResolvedValue(mockError);
+      error: new Error('Failed to fetch repositories'),
+    }
+    mockFetchListRepos.mockResolvedValue(mockError)
 
     await handleListRepos({
       all: false,
-      direction: "asc",
-      orgSlug: "test-org",
-      outputKind: "json",
+      direction: 'asc',
+      orgSlug: 'test-org',
+      outputKind: 'json',
       page: 1,
       perPage: 20,
-      sort: "name",
-    });
+      sort: 'name',
+    })
 
-    expect(mockOutputListRepos).toHaveBeenCalledWith(mockError, "json", 0, 0, "", 0, "asc");
-  });
+    expect(mockOutputListRepos).toHaveBeenCalledWith(
+      mockError,
+      'json',
+      0,
+      0,
+      '',
+      0,
+      'asc',
+    )
+  })
 
-  it("handles null nextPage for last page", async () => {
+  it('handles null nextPage for last page', async () => {
     const mockData = {
       ok: true,
       data: {
-        repos: [{ id: "1", name: "repo1" }],
+        repos: [{ id: '1', name: 'repo1' }],
         nextPage: undefined,
       },
-    };
-    mockFetchListRepos.mockResolvedValue(mockData);
+    }
+    mockFetchListRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: false,
-      direction: "asc",
-      orgSlug: "test-org",
-      outputKind: "json",
+      direction: 'asc',
+      orgSlug: 'test-org',
+      outputKind: 'json',
       page: 3,
       perPage: 10,
-      sort: "name",
-    });
+      sort: 'name',
+    })
 
     expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
-      "json",
+      'json',
       3,
       undefined,
-      "name",
+      'name',
       10,
-      "asc",
-    );
-  });
+      'asc',
+    )
+  })
 
-  it("handles markdown output", async () => {
+  it('handles markdown output', async () => {
     const mockData = {
       ok: true,
-      data: [{ id: "1", name: "repo1" }],
-    };
-    mockFetchListAllRepos.mockResolvedValue(mockData);
+      data: [{ id: '1', name: 'repo1' }],
+    }
+    mockFetchListAllRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: true,
-      direction: "desc",
-      orgSlug: "test-org",
-      outputKind: "markdown",
+      direction: 'desc',
+      orgSlug: 'test-org',
+      outputKind: 'markdown',
       page: 1,
       perPage: 10,
-      sort: "created",
-    });
+      sort: 'created',
+    })
 
     expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
-      "markdown",
+      'markdown',
       0,
       0,
-      "created",
+      'created',
       Number.POSITIVE_INFINITY,
-      "desc",
-    );
-  });
+      'desc',
+    )
+  })
 
-  it("handles different sort options", async () => {
-    const sortOptions = ["name", "created", "updated", "pushed"];
+  it('handles different sort options', async () => {
+    const sortOptions = ['name', 'created', 'updated', 'pushed']
 
     for (let i = 0, { length } = sortOptions; i < length; i += 1) {
-      const sort = sortOptions[i];
+      const sort = sortOptions[i]
       mockFetchListRepos.mockResolvedValue({
         ok: true,
         data: { repos: [], nextPage: undefined },
-      });
+      })
 
       await handleListRepos({
         all: false,
-        direction: "asc",
-        orgSlug: "test-org",
-        outputKind: "json",
+        direction: 'asc',
+        orgSlug: 'test-org',
+        outputKind: 'json',
         page: 1,
         perPage: 10,
         sort,
-      });
+      })
 
       expect(mockFetchListRepos).toHaveBeenCalledWith(
         expect.objectContaining({ sort }),
-        expect.objectContaining({ commandPath: "socket repository list" }),
-      );
+        expect.objectContaining({ commandPath: 'socket repository list' }),
+      )
     }
-  });
+  })
 
-  it("handles different page sizes", async () => {
+  it('handles different page sizes', async () => {
     const mockData = {
       ok: true,
       data: { repos: [], nextPage: undefined },
-    };
-    mockFetchListRepos.mockResolvedValue(mockData);
+    }
+    mockFetchListRepos.mockResolvedValue(mockData)
 
     await handleListRepos({
       all: false,
-      direction: "asc",
-      orgSlug: "test-org",
-      outputKind: "json",
+      direction: 'asc',
+      orgSlug: 'test-org',
+      outputKind: 'json',
       page: 1,
       perPage: 100,
-      sort: "name",
-    });
+      sort: 'name',
+    })
 
     expect(mockFetchListRepos).toHaveBeenCalledWith(
       expect.objectContaining({ perPage: 100 }),
-      expect.objectContaining({ commandPath: "socket repository list" }),
-    );
+      expect.objectContaining({ commandPath: 'socket repository list' }),
+    )
     expect(mockOutputListRepos).toHaveBeenCalledWith(
       mockData,
-      "json",
+      'json',
       1,
       undefined,
-      "name",
+      'name',
       100,
-      "asc",
-    );
-  });
-});
+      'asc',
+    )
+  })
+})

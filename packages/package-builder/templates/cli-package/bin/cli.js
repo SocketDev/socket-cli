@@ -5,4 +5,4 @@
  */
 
 // Load the bundled CLI.
-require("../dist/cli.js");
+require('../dist/cli.js')

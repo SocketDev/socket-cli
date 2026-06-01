@@ -5,49 +5,50 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from "@socketsecurity/lib-stable/constants/agents";
-import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+} from '@socketsecurity/lib-stable/constants/agents'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { FLAG_PROD } from "../../constants/cli.mts";
+import { FLAG_PROD } from '../../constants/cli.mts'
 
-import type { EnvDetails } from "../../util/ecosystem/environment.mjs";
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
 export function cleanupQueryStdout(stdout: string): string {
-  if (stdout === "") {
-    return "";
+  if (stdout === '') {
+    return ''
   }
-  let pkgs: unknown;
+  let pkgs: unknown
   try {
-    pkgs = JSON.parse(stdout);
+    pkgs = JSON.parse(stdout)
   } catch {
     // Malformed JSON from package manager, return empty.
-    return "";
+    return ''
   }
   if (!Array.isArray(pkgs) || !pkgs.length) {
-    return "";
+    return ''
   }
-  const names = new Set<string>();
+  const names = new Set<string>()
   for (const { _id, name, pkgid } of pkgs) {
     // `npm query` results may not have a "name" property, in which case we
     // fallback to "_id" and then "pkgid".
     // `vlt ls --view json` results always have a "name" property.
-    const fallback = _id ?? pkgid ?? "";
-    const atIndex = fallback.indexOf("@", 1);
-    const resolvedName = name ?? (atIndex === -1 ? fallback : fallback.slice(0, atIndex));
+    const fallback = _id ?? pkgid ?? ''
+    const atIndex = fallback.indexOf('@', 1)
+    const resolvedName =
+      name ?? (atIndex === -1 ? fallback : fallback.slice(0, atIndex))
     // Add package names, except for those under the `@types` scope as those
     // are known to only be dev dependencies.
-    if (resolvedName && !resolvedName.startsWith("@types/")) {
-      names.add(resolvedName);
+    if (resolvedName && !resolvedName.startsWith('@types/')) {
+      names.add(resolvedName)
     }
   }
-  return JSON.stringify(Array.from(names), null, 2);
+  return JSON.stringify(Array.from(names), null, 2)
 }
 
 type AgentListDepsOptions = {
-  cwd?: string | undefined;
-  npmExecPath?: string | undefined;
-};
+  cwd?: string | undefined
+  npmExecPath?: string | undefined
+}
 
 export async function listPackages(
   pkgEnvDetails: EnvDetails,
@@ -55,17 +56,17 @@ export async function listPackages(
 ): Promise<string> {
   switch (pkgEnvDetails.agent) {
     case BUN:
-      return await lsBun(pkgEnvDetails, options);
+      return await lsBun(pkgEnvDetails, options)
     case PNPM:
-      return await lsPnpm(pkgEnvDetails, options);
+      return await lsPnpm(pkgEnvDetails, options)
     case VLT:
-      return await lsVlt(pkgEnvDetails, options);
+      return await lsVlt(pkgEnvDetails, options)
     case YARN_BERRY:
-      return await lsYarnBerry(pkgEnvDetails, options);
+      return await lsYarnBerry(pkgEnvDetails, options)
     case YARN_CLASSIC:
-      return await lsYarnClassic(pkgEnvDetails, options);
+      return await lsYarnClassic(pkgEnvDetails, options)
     default:
-      return await lsNpm(pkgEnvDetails, options);
+      return await lsNpm(pkgEnvDetails, options)
   }
 }
 
@@ -76,20 +77,24 @@ export async function lsBun(
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options,
-  } as AgentListDepsOptions;
+  } as AgentListDepsOptions
   try {
     // Bun does not support filtering by production packages yet.
     // https://github.com/oven-sh/bun/issues/8283
-    const result = await spawn(pkgEnvDetails.agentExecPath, ["pm", "ls", "--all"], {
-      cwd,
-      // On Windows, bun is often a .cmd file that requires shell execution.
-      // The spawn function from @socketsecurity/registry will handle this properly
-      // when shell is true.
-      shell: WIN32,
-    });
-    return result.stdout;
+    const result = await spawn(
+      pkgEnvDetails.agentExecPath,
+      ['pm', 'ls', '--all'],
+      {
+        cwd,
+        // On Windows, bun is often a .cmd file that requires shell execution.
+        // The spawn function from @socketsecurity/registry will handle this properly
+        // when shell is true.
+        shell: WIN32,
+      },
+    )
+    return result.stdout
   } catch {}
-  return "";
+  return ''
 }
 
 export async function lsNpm(
@@ -99,8 +104,8 @@ export async function lsNpm(
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options,
-  } as AgentListDepsOptions;
-  return await npmQuery(pkgEnvDetails.agentExecPath, cwd);
+  } as AgentListDepsOptions
+  return await npmQuery(pkgEnvDetails.agentExecPath, cwd)
 }
 
 export async function lsPnpm(
@@ -110,20 +115,20 @@ export async function lsPnpm(
   const { cwd = process.cwd(), npmExecPath } = {
     __proto__: null,
     ...options,
-  } as AgentListDepsOptions;
+  } as AgentListDepsOptions
   if (npmExecPath && npmExecPath !== NPM) {
-    const result = await npmQuery(npmExecPath, cwd);
+    const result = await npmQuery(npmExecPath, cwd)
     if (result) {
-      return result;
+      return result
     }
   }
-  let stdout = "";
+  let stdout = ''
   try {
     const result = await spawn(
       pkgEnvDetails.agentExecPath,
       // Pnpm uses the alternative spelling of parsable.
       // https://en.wiktionary.org/wiki/parsable
-      ["ls", "--parseable", FLAG_PROD, "--depth", "Infinity"],
+      ['ls', '--parseable', FLAG_PROD, '--depth', 'Infinity'],
       {
         cwd,
         // On Windows, pnpm is often a .cmd file that requires shell execution.
@@ -131,10 +136,10 @@ export async function lsPnpm(
         // when shell is true.
         shell: WIN32,
       },
-    );
-    stdout = result.stdout;
+    )
+    stdout = result.stdout
   } catch {}
-  return parsableToQueryStdout(stdout);
+  return parsableToQueryStdout(stdout)
 }
 
 export async function lsVlt(
@@ -144,13 +149,13 @@ export async function lsVlt(
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options,
-  } as AgentListDepsOptions;
-  let stdout = "";
+  } as AgentListDepsOptions
+  let stdout = ''
   try {
     // See https://docs.vlt.sh/cli/commands/list#options.
     const result = await spawn(
       pkgEnvDetails.agentExecPath,
-      ["ls", "--view", "human", ":not(.dev)"],
+      ['ls', '--view', 'human', ':not(.dev)'],
       {
         cwd,
         // On Windows, pnpm is often a .cmd file that requires shell execution.
@@ -158,10 +163,10 @@ export async function lsVlt(
         // when shell is true.
         shell: WIN32,
       },
-    );
-    stdout = result.stdout;
+    )
+    stdout = result.stdout
   } catch {}
-  return cleanupQueryStdout(stdout);
+  return cleanupQueryStdout(stdout)
 }
 
 export async function lsYarnBerry(
@@ -171,13 +176,13 @@ export async function lsYarnBerry(
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options,
-  } as AgentListDepsOptions;
+  } as AgentListDepsOptions
   try {
     // Yarn Berry does not support filtering by production packages yet.
     // https://github.com/yarnpkg/berry/issues/5117
     const result = await spawn(
       pkgEnvDetails.agentExecPath,
-      ["info", "--recursive", "--name-only"],
+      ['info', '--recursive', '--name-only'],
       {
         cwd,
         // On Windows, yarn is often a .cmd file that requires shell execution.
@@ -185,10 +190,10 @@ export async function lsYarnBerry(
         // when shell is true.
         shell: WIN32,
       },
-    );
-    return result.stdout;
+    )
+    return result.stdout
   } catch {}
-  return "";
+  return ''
 }
 
 export async function lsYarnClassic(
@@ -198,46 +203,53 @@ export async function lsYarnClassic(
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options,
-  } as AgentListDepsOptions;
+  } as AgentListDepsOptions
   try {
     // However, Yarn Classic does support it.
     // https://github.com/yarnpkg/yarn/releases/tag/v1.0.0
     // > Fix: Excludes dev dependencies from the yarn list output when the
     //   environment is production
-    const result = await spawn(pkgEnvDetails.agentExecPath, ["list", FLAG_PROD], {
-      cwd,
-      // On Windows, yarn is often a .cmd file that requires shell execution.
-      // The spawn function from @socketsecurity/registry will handle this properly
-      // when shell is true.
-      shell: WIN32,
-    });
-    return result.stdout;
+    const result = await spawn(
+      pkgEnvDetails.agentExecPath,
+      ['list', FLAG_PROD],
+      {
+        cwd,
+        // On Windows, yarn is often a .cmd file that requires shell execution.
+        // The spawn function from @socketsecurity/registry will handle this properly
+        // when shell is true.
+        shell: WIN32,
+      },
+    )
+    return result.stdout
   } catch {}
-  return "";
+  return ''
 }
 
-export async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
-  let stdout = "";
+export async function npmQuery(
+  npmExecPath: string,
+  cwd: string,
+): Promise<string> {
+  let stdout = ''
   try {
-    const result = await spawn(npmExecPath, ["query", ":not(.dev)"], {
+    const result = await spawn(npmExecPath, ['query', ':not(.dev)'], {
       cwd,
       // On Windows, npm is often a .cmd file that requires shell execution.
       // The spawn function from @socketsecurity/registry will handle this properly
       // when shell is true.
       shell: WIN32,
-    });
-    stdout = result.stdout;
+    })
+    stdout = result.stdout
   } catch {}
-  return cleanupQueryStdout(stdout);
+  return cleanupQueryStdout(stdout)
 }
 
 export function parsableToQueryStdout(stdout: string) {
-  if (stdout === "") {
-    return "";
+  if (stdout === '') {
+    return ''
   }
   // Convert the parsable stdout into a json array of unique names.
   // The matchAll regexp looks for a forward (posix) or backward (win32) slash
   // and matches one or more non-slashes until the newline.
-  const names = new Set(stdout.matchAll(/(?<=[/\\])[^/\\]+(?=\n)/g));
-  return JSON.stringify(Array.from(names), null, 2);
+  const names = new Set(stdout.matchAll(/(?<=[/\\])[^/\\]+(?=\n)/g))
+  return JSON.stringify(Array.from(names), null, 2)
 }

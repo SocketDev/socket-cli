@@ -1,51 +1,51 @@
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { outputDryRunDelete } from "../../util/dry-run/output.mts";
+import { outputDryRunDelete } from '../../util/dry-run/output.mts'
 import {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
   CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_ENFORCED_ORGS,
-} from "../../constants/config.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
-import { isConfigFromFlag, updateConfigValue } from "../../util/config.mts";
-import { invalidateDefaultApiToken } from "../../util/socket/sdk.mts";
+} from '../../constants/config.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { isConfigFromFlag, updateConfigValue } from '../../util/config.mts'
+import { invalidateDefaultApiToken } from '../../util/socket/sdk.mts'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
-import type { MeowFlags } from "../../flags.mts";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
-export const CMD_NAME = "logout";
+export const CMD_NAME = 'logout'
 
-const description = "Socket API logout";
+const description = 'Socket API logout'
 
-const hidden = false;
+const hidden = false
 
 // Helper functions.
 
 export function applyLogout(): void {
-  updateConfigValue(CONFIG_KEY_API_TOKEN, undefined);
-  updateConfigValue(CONFIG_KEY_API_BASE_URL, undefined);
-  updateConfigValue(CONFIG_KEY_API_PROXY, undefined);
-  updateConfigValue(CONFIG_KEY_ENFORCED_ORGS, undefined);
-  invalidateDefaultApiToken();
+  updateConfigValue(CONFIG_KEY_API_TOKEN, undefined)
+  updateConfigValue(CONFIG_KEY_API_BASE_URL, undefined)
+  updateConfigValue(CONFIG_KEY_API_PROXY, undefined)
+  updateConfigValue(CONFIG_KEY_ENFORCED_ORGS, undefined)
+  invalidateDefaultApiToken()
 }
 
 export function attemptLogout(): void {
   try {
-    applyLogout();
-    logger.success("Successfully logged out");
+    applyLogout()
+    logger.success('Successfully logged out')
     if (isConfigFromFlag()) {
-      logger.log("");
+      logger.log('')
       logger.warn(
-        "Note: config is in read-only mode, at least one key was overridden through flag/env, so the logout was not persisted!",
-      );
+        'Note: config is in read-only mode, at least one key was overridden through flag/env, so the logout was not persisted!',
+      )
     }
   } catch {
-    logger.fail("Failed to complete logout steps");
+    logger.fail('Failed to complete logout steps')
   }
 }
 
@@ -72,25 +72,25 @@ export async function run(
     Examples
       $ ${command}
   `,
-  };
+  }
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  });
+  })
 
-  const dryRun = !!cli.flags["dryRun"];
+  const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
     // Runtime read so tests that mutate process.env['HOME'] pick up changes.
-    const configPath = `${process.env["HOME"]}/.config/socket/config.json`;
-    outputDryRunDelete("Socket API credentials", configPath);
-    return;
+    const configPath = `${process.env['HOME']}/.config/socket/config.json`
+    outputDryRunDelete('Socket API credentials', configPath)
+    return
   }
 
-  attemptLogout();
+  attemptLogout()
 }
 
 // Exported command.
@@ -99,4 +99,4 @@ export const cmdLogout = {
   description,
   hidden,
   run,
-};
+}

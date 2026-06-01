@@ -3,26 +3,26 @@
  * index loader that executes the CLI.
  */
 
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import {
   createIndexConfig,
   getInlinedEnvVars,
   runBuild,
-} from "../../cli/scripts/rolldown-utils.mts";
+} from '../../cli/scripts/rolldown-utils.mts'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootPath = path.resolve(__dirname, "..");
-const cliPath = path.resolve(__dirname, "../../cli");
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.resolve(__dirname, '..')
+const cliPath = path.resolve(__dirname, '../../cli')
 
 const config = createIndexConfig({
-  entryPoint: path.join(cliPath, "src", "index.mts"),
-  outfile: path.join(rootPath, "dist", "index.js"),
-});
+  entryPoint: path.join(cliPath, 'src', 'index.mts'),
+  outfile: path.join(rootPath, 'dist', 'index.js'),
+})
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  runBuild(config, "Entry point", { envVars: getInlinedEnvVars() });
+  runBuild(config, 'Entry point', { envVars: getInlinedEnvVars() })
 }
 
-export default config;
+export default config

@@ -6,8 +6,8 @@
  * embedding build metadata into the binary.
  */
 
-import process from "node:process";
+import process from 'node:process'
 
 export function getPythonBuildTag(): string {
-  return process.env["INLINED_PYTHON_BUILD_TAG"]!;
+  return process.env['INLINED_PYTHON_BUILD_TAG']!
 }

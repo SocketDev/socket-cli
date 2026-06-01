@@ -3,6 +3,6 @@
  * directory.
  */
 
-import { env } from "node:process";
+import { env } from 'node:process'
 
-export const npm_config_cache = env["npm_config_cache"];
+export const npm_config_cache = env['npm_config_cache']

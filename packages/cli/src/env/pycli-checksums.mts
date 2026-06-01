@@ -5,13 +5,13 @@
  * references.
  */
 
-import process from "node:process";
+import process from 'node:process'
 
-import type { PyCliChecksums } from "../types.mjs";
+import type { PyCliChecksums } from '../types.mjs'
 
-import { parseChecksums } from "./checksum-utils.mjs";
+import { parseChecksums } from './checksum-utils.mjs'
 
-const TOOL_NAME = "PyCLI";
+const TOOL_NAME = 'PyCLI'
 
 /**
  * Get PyCLI checksums from inlined environment variable. Returns a map of asset
@@ -19,5 +19,5 @@ const TOOL_NAME = "PyCLI";
  */
 export function getPyCliChecksums(): PyCliChecksums {
   // MUST use direct process.env access for esbuild inlining.
-  return parseChecksums(process.env["INLINED_PYCLI_CHECKSUMS"], TOOL_NAME);
+  return parseChecksums(process.env['INLINED_PYCLI_CHECKSUMS'], TOOL_NAME)
 }

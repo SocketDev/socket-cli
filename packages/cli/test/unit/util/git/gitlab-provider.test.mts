@@ -11,506 +11,524 @@
  * Related Files: - util/git/gitlab-provider.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock @gitbeaker/rest.
-const mockCreate = vi.hoisted(() => vi.fn());
-const mockRebase = vi.hoisted(() => vi.fn());
-const mockShow = vi.hoisted(() => vi.fn());
-const mockAll = vi.hoisted(() => vi.fn());
-const mockNotesCreate = vi.hoisted(() => vi.fn());
+const mockCreate = vi.hoisted(() => vi.fn())
+const mockRebase = vi.hoisted(() => vi.fn())
+const mockShow = vi.hoisted(() => vi.fn())
+const mockAll = vi.hoisted(() => vi.fn())
+const mockNotesCreate = vi.hoisted(() => vi.fn())
 
-vi.mock(import("@gitbeaker/rest"), () => {
+vi.mock(import('@gitbeaker/rest'), () => {
   return {
     Gitlab: class MockGitlab {
       MergeRequestNotes = {
         create: mockNotesCreate,
-      };
+      }
       MergeRequests = {
         all: mockAll,
         create: mockCreate,
         rebase: mockRebase,
         show: mockShow,
-      };
+      }
     },
-  };
-});
+  }
+})
 
 // Mock debug.
-vi.mock(import("@socketsecurity/lib-stable/debug/output"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
-}));
+}))
 
 // Set GITLAB_TOKEN env var before importing.
-process.env["GITLAB_TOKEN"] = "test-token";
+process.env['GITLAB_TOKEN'] = 'test-token'
 
-import { GitLabProvider } from "../../../../src/util/git/gitlab-provider.mts";
+import { GitLabProvider } from '../../../../src/util/git/gitlab-provider.mts'
 
-describe("git/gitlab-provider", () => {
-  let provider: GitLabProvider;
+describe('git/gitlab-provider', () => {
+  let provider: GitLabProvider
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.env["GITLAB_TOKEN"] = "test-token";
-    provider = new GitLabProvider();
-  });
+    vi.clearAllMocks()
+    process.env['GITLAB_TOKEN'] = 'test-token'
+    provider = new GitLabProvider()
+  })
 
-  describe("constructor", () => {
-    it("creates provider with default host", () => {
-      expect(provider).toBeInstanceOf(GitLabProvider);
-    });
+  describe('constructor', () => {
+    it('creates provider with default host', () => {
+      expect(provider).toBeInstanceOf(GitLabProvider)
+    })
 
-    it("throws error when no token available", () => {
-      delete process.env["GITLAB_TOKEN"];
+    it('throws error when no token available', () => {
+      delete process.env['GITLAB_TOKEN']
       expect(() => new GitLabProvider()).toThrow(
         /GitLab access requires a token but process\.env\.GITLAB_TOKEN is not set/,
-      );
-    });
-  });
+      )
+    })
+  })
 
-  describe("getProviderName", () => {
-    it("returns gitlab", () => {
-      expect(provider.getProviderName()).toBe("gitlab");
-    });
-  });
+  describe('getProviderName', () => {
+    it('returns gitlab', () => {
+      expect(provider.getProviderName()).toBe('gitlab')
+    })
+  })
 
-  describe("supportsGraphQL", () => {
-    it("returns false", () => {
-      expect(provider.supportsGraphQL()).toBe(false);
-    });
-  });
+  describe('supportsGraphQL', () => {
+    it('returns false', () => {
+      expect(provider.supportsGraphQL()).toBe(false)
+    })
+  })
 
-  describe("createPr", () => {
-    it("creates merge request successfully", async () => {
+  describe('createPr', () => {
+    it('creates merge request successfully', async () => {
       mockCreate.mockResolvedValueOnce({
         iid: 123,
-        state: "opened",
-        web_url: "https://gitlab.com/owner/repo/-/merge_requests/123",
-      });
+        state: 'opened',
+        web_url: 'https://gitlab.com/owner/repo/-/merge_requests/123',
+      })
 
       const result = await provider.createPr({
-        base: "main",
-        body: "Test MR body",
-        head: "feature-branch",
-        owner: "owner",
-        repo: "repo",
-        title: "Test MR",
-      });
+        base: 'main',
+        body: 'Test MR body',
+        head: 'feature-branch',
+        owner: 'owner',
+        repo: 'repo',
+        title: 'Test MR',
+      })
 
       expect(result).toEqual({
         number: 123,
-        state: "open",
-        url: "https://gitlab.com/owner/repo/-/merge_requests/123",
-      });
-      expect(mockCreate).toHaveBeenCalledWith("owner/repo", "feature-branch", "main", "Test MR", {
-        description: "Test MR body",
-      });
-    });
+        state: 'open',
+        url: 'https://gitlab.com/owner/repo/-/merge_requests/123',
+      })
+      expect(mockCreate).toHaveBeenCalledWith(
+        'owner/repo',
+        'feature-branch',
+        'main',
+        'Test MR',
+        {
+          description: 'Test MR body',
+        },
+      )
+    })
 
-    it("maps merged state correctly", async () => {
+    it('maps merged state correctly', async () => {
       mockCreate.mockResolvedValueOnce({
         iid: 123,
-        state: "merged",
-        web_url: "https://gitlab.com/owner/repo/-/merge_requests/123",
-      });
+        state: 'merged',
+        web_url: 'https://gitlab.com/owner/repo/-/merge_requests/123',
+      })
 
       const result = await provider.createPr({
-        base: "main",
-        body: "Test",
-        head: "feature",
-        owner: "owner",
-        repo: "repo",
-        title: "Test",
-      });
+        base: 'main',
+        body: 'Test',
+        head: 'feature',
+        owner: 'owner',
+        repo: 'repo',
+        title: 'Test',
+      })
 
-      expect(result.state).toBe("merged");
-    });
+      expect(result.state).toBe('merged')
+    })
 
-    it("maps closed state correctly", async () => {
+    it('maps closed state correctly', async () => {
       mockCreate.mockResolvedValueOnce({
         iid: 123,
-        state: "closed",
-        web_url: "https://gitlab.com/owner/repo/-/merge_requests/123",
-      });
+        state: 'closed',
+        web_url: 'https://gitlab.com/owner/repo/-/merge_requests/123',
+      })
 
       const result = await provider.createPr({
-        base: "main",
-        body: "Test",
-        head: "feature",
-        owner: "owner",
-        repo: "repo",
-        title: "Test",
-      });
+        base: 'main',
+        body: 'Test',
+        head: 'feature',
+        owner: 'owner',
+        repo: 'repo',
+        title: 'Test',
+      })
 
-      expect(result.state).toBe("closed");
-    });
+      expect(result.state).toBe('closed')
+    })
 
-    it("retries on failure", async () => {
-      mockCreate.mockRejectedValueOnce(new Error("Network error"));
+    it('retries on failure', async () => {
+      mockCreate.mockRejectedValueOnce(new Error('Network error'))
       mockCreate.mockResolvedValueOnce({
         iid: 123,
-        state: "opened",
-        web_url: "https://gitlab.com/owner/repo/-/merge_requests/123",
-      });
+        state: 'opened',
+        web_url: 'https://gitlab.com/owner/repo/-/merge_requests/123',
+      })
 
       const result = await provider.createPr({
-        base: "main",
-        body: "Test",
-        head: "feature",
-        owner: "owner",
-        repo: "repo",
+        base: 'main',
+        body: 'Test',
+        head: 'feature',
+        owner: 'owner',
+        repo: 'repo',
         retries: 3,
-        title: "Test",
-      });
+        title: 'Test',
+      })
 
-      expect(result.number).toBe(123);
-      expect(mockCreate).toHaveBeenCalledTimes(2);
-    });
+      expect(result.number).toBe(123)
+      expect(mockCreate).toHaveBeenCalledTimes(2)
+    })
 
-    it("throws after max retries", async () => {
-      mockCreate.mockRejectedValue(new Error("Network error"));
+    it('throws after max retries', async () => {
+      mockCreate.mockRejectedValue(new Error('Network error'))
 
       await expect(
         provider.createPr({
-          base: "main",
-          body: "Test",
-          head: "feature",
-          owner: "owner",
-          repo: "repo",
+          base: 'main',
+          body: 'Test',
+          head: 'feature',
+          owner: 'owner',
+          repo: 'repo',
           retries: 2,
-          title: "Test",
+          title: 'Test',
         }),
       ).rejects.toThrow(
         /GitLab API rejected createMergeRequest for owner\/repo .*after 2 attempts/,
-      );
-    });
+      )
+    })
 
-    it("does not retry on 400 errors", async () => {
+    it('does not retry on 400 errors', async () => {
       mockCreate.mockRejectedValue({
         cause: { response: { status: 400 } },
-        message: "Validation error",
-      });
+        message: 'Validation error',
+      })
 
       await expect(
         provider.createPr({
-          base: "main",
-          body: "Test",
-          head: "feature",
-          owner: "owner",
-          repo: "repo",
+          base: 'main',
+          body: 'Test',
+          head: 'feature',
+          owner: 'owner',
+          repo: 'repo',
           retries: 3,
-          title: "Test",
+          title: 'Test',
         }),
       ).rejects.toThrow(
         /GitLab API rejected createMergeRequest for owner\/repo .*after 3 attempts/,
-      );
+      )
 
-      expect(mockCreate).toHaveBeenCalledTimes(1);
-    });
-  });
+      expect(mockCreate).toHaveBeenCalledTimes(1)
+    })
+  })
 
-  describe("updatePr", () => {
-    it("rebases merge request successfully", async () => {
-      mockRebase.mockResolvedValueOnce({});
-      mockShow.mockResolvedValueOnce({ merge_status: "can_be_merged" });
-
-      await provider.updatePr({
-        owner: "owner",
-        prNumber: 123,
-        repo: "repo",
-      });
-
-      expect(mockRebase).toHaveBeenCalledWith("owner/repo", 123);
-    });
-
-    it("adds conflict comment when rebase results in conflicts", async () => {
-      mockRebase.mockResolvedValueOnce({});
-      mockShow.mockResolvedValueOnce({ merge_status: "cannot_be_merged" });
-      mockNotesCreate.mockResolvedValueOnce({});
+  describe('updatePr', () => {
+    it('rebases merge request successfully', async () => {
+      mockRebase.mockResolvedValueOnce({})
+      mockShow.mockResolvedValueOnce({ merge_status: 'can_be_merged' })
 
       await provider.updatePr({
-        owner: "owner",
+        owner: 'owner',
         prNumber: 123,
-        repo: "repo",
-      });
+        repo: 'repo',
+      })
+
+      expect(mockRebase).toHaveBeenCalledWith('owner/repo', 123)
+    })
+
+    it('adds conflict comment when rebase results in conflicts', async () => {
+      mockRebase.mockResolvedValueOnce({})
+      mockShow.mockResolvedValueOnce({ merge_status: 'cannot_be_merged' })
+      mockNotesCreate.mockResolvedValueOnce({})
+
+      await provider.updatePr({
+        owner: 'owner',
+        prNumber: 123,
+        repo: 'repo',
+      })
 
       expect(mockNotesCreate).toHaveBeenCalledWith(
-        "owner/repo",
+        'owner/repo',
         123,
-        expect.stringContaining("merge conflicts"),
-      );
-    });
+        expect.stringContaining('merge conflicts'),
+      )
+    })
 
-    it("throws on rebase failure", async () => {
-      mockRebase.mockRejectedValueOnce(new Error("Rebase failed"));
+    it('throws on rebase failure', async () => {
+      mockRebase.mockRejectedValueOnce(new Error('Rebase failed'))
 
       await expect(
         provider.updatePr({
-          owner: "owner",
+          owner: 'owner',
           prNumber: 123,
-          repo: "repo",
+          repo: 'repo',
         }),
-      ).rejects.toThrow("Failed to update MR !123");
-    });
-  });
+      ).rejects.toThrow('Failed to update MR !123')
+    })
+  })
 
-  describe("listPrs", () => {
-    it("lists merge requests successfully", async () => {
+  describe('listPrs', () => {
+    it('lists merge requests successfully', async () => {
       mockAll.mockResolvedValueOnce([
         {
-          author: { username: "testuser" },
+          author: { username: 'testuser' },
           iid: 1,
-          merge_status: "can_be_merged",
-          source_branch: "feature-1",
-          state: "opened",
-          target_branch: "main",
-          title: "MR 1",
+          merge_status: 'can_be_merged',
+          source_branch: 'feature-1',
+          state: 'opened',
+          target_branch: 'main',
+          title: 'MR 1',
         },
         {
-          author: { username: "testuser2" },
+          author: { username: 'testuser2' },
           iid: 2,
-          merge_status: "cannot_be_merged",
-          source_branch: "feature-2",
-          state: "merged",
-          target_branch: "main",
-          title: "MR 2",
+          merge_status: 'cannot_be_merged',
+          source_branch: 'feature-2',
+          state: 'merged',
+          target_branch: 'main',
+          title: 'MR 2',
         },
-      ]);
+      ])
 
       const result = await provider.listPrs({
-        owner: "owner",
-        repo: "repo",
-      });
+        owner: 'owner',
+        repo: 'repo',
+      })
 
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(2)
       expect(result[0]).toEqual({
-        author: "testuser",
-        baseRefName: "main",
-        headRefName: "feature-1",
-        mergeStateStatus: "CLEAN",
+        author: 'testuser',
+        baseRefName: 'main',
+        headRefName: 'feature-1',
+        mergeStateStatus: 'CLEAN',
         number: 1,
-        state: "OPEN",
-        title: "MR 1",
-      });
+        state: 'OPEN',
+        title: 'MR 1',
+      })
       expect(result[1]).toEqual({
-        author: "testuser2",
-        baseRefName: "main",
-        headRefName: "feature-2",
-        mergeStateStatus: "DIRTY",
+        author: 'testuser2',
+        baseRefName: 'main',
+        headRefName: 'feature-2',
+        mergeStateStatus: 'DIRTY',
         number: 2,
-        state: "MERGED",
-        title: "MR 2",
-      });
-    });
+        state: 'MERGED',
+        title: 'MR 2',
+      })
+    })
 
-    it("filters by state", async () => {
-      mockAll.mockResolvedValueOnce([]);
-
-      await provider.listPrs({
-        owner: "owner",
-        repo: "repo",
-        states: "open",
-      });
-
-      expect(mockAll).toHaveBeenCalledWith(expect.objectContaining({ state: "opened" }));
-    });
-
-    it("filters by author", async () => {
-      mockAll.mockResolvedValueOnce([]);
+    it('filters by state', async () => {
+      mockAll.mockResolvedValueOnce([])
 
       await provider.listPrs({
-        author: "testuser",
-        owner: "owner",
-        repo: "repo",
-      });
+        owner: 'owner',
+        repo: 'repo',
+        states: 'open',
+      })
 
-      expect(mockAll).toHaveBeenCalledWith(expect.objectContaining({ authorUsername: "testuser" }));
-    });
+      expect(mockAll).toHaveBeenCalledWith(
+        expect.objectContaining({ state: 'opened' }),
+      )
+    })
 
-    it("paginates through results", async () => {
+    it('filters by author', async () => {
+      mockAll.mockResolvedValueOnce([])
+
+      await provider.listPrs({
+        author: 'testuser',
+        owner: 'owner',
+        repo: 'repo',
+      })
+
+      expect(mockAll).toHaveBeenCalledWith(
+        expect.objectContaining({ authorUsername: 'testuser' }),
+      )
+    })
+
+    it('paginates through results', async () => {
       // First page full, second page empty.
       const fullPage = Array(100)
         .fill(undefined)
         .map((_, i) => ({
-          author: { username: "user" },
+          author: { username: 'user' },
           iid: i,
-          merge_status: "can_be_merged",
+          merge_status: 'can_be_merged',
           source_branch: `feature-${i}`,
-          state: "opened",
-          target_branch: "main",
+          state: 'opened',
+          target_branch: 'main',
           title: `MR ${i}`,
-        }));
+        }))
 
-      mockAll.mockResolvedValueOnce(fullPage);
-      mockAll.mockResolvedValueOnce([]);
+      mockAll.mockResolvedValueOnce(fullPage)
+      mockAll.mockResolvedValueOnce([])
 
       const result = await provider.listPrs({
-        owner: "owner",
-        repo: "repo",
-      });
+        owner: 'owner',
+        repo: 'repo',
+      })
 
-      expect(result).toHaveLength(100);
-      expect(mockAll).toHaveBeenCalledTimes(2);
-    });
+      expect(result).toHaveLength(100)
+      expect(mockAll).toHaveBeenCalledTimes(2)
+    })
 
-    it("stops pagination early when ghsaId match found", async () => {
+    it('stops pagination early when ghsaId match found', async () => {
       mockAll.mockResolvedValueOnce([
         {
-          author: { username: "user" },
+          author: { username: 'user' },
           iid: 1,
-          merge_status: "can_be_merged",
-          source_branch: "feature",
-          state: "opened",
-          target_branch: "main",
-          title: "Fix GHSA-xxx",
+          merge_status: 'can_be_merged',
+          source_branch: 'feature',
+          state: 'opened',
+          target_branch: 'main',
+          title: 'Fix GHSA-xxx',
         },
-      ]);
+      ])
 
       const result = await provider.listPrs({
-        ghsaId: "GHSA-xxx",
-        owner: "owner",
-        repo: "repo",
-      });
+        ghsaId: 'GHSA-xxx',
+        owner: 'owner',
+        repo: 'repo',
+      })
 
-      expect(result).toHaveLength(1);
-      expect(mockAll).toHaveBeenCalledTimes(1);
-    });
+      expect(result).toHaveLength(1)
+      expect(mockAll).toHaveBeenCalledTimes(1)
+    })
 
-    it("handles API errors gracefully", async () => {
-      mockAll.mockRejectedValueOnce(new Error("API error"));
+    it('handles API errors gracefully', async () => {
+      mockAll.mockRejectedValueOnce(new Error('API error'))
 
       const result = await provider.listPrs({
-        owner: "owner",
-        repo: "repo",
-      });
+        owner: 'owner',
+        repo: 'repo',
+      })
 
-      expect(result).toEqual([]);
-    });
+      expect(result).toEqual([])
+    })
 
-    it("maps merge status unknown correctly", async () => {
+    it('maps merge status unknown correctly', async () => {
       mockAll.mockResolvedValueOnce([
         {
-          author: { username: "user" },
+          author: { username: 'user' },
           iid: 1,
-          merge_status: "checking",
-          source_branch: "feature",
-          state: "opened",
-          target_branch: "main",
-          title: "MR 1",
+          merge_status: 'checking',
+          source_branch: 'feature',
+          state: 'opened',
+          target_branch: 'main',
+          title: 'MR 1',
         },
-      ]);
+      ])
 
       const result = await provider.listPrs({
-        owner: "owner",
-        repo: "repo",
-      });
+        owner: 'owner',
+        repo: 'repo',
+      })
 
-      expect(result[0]?.mergeStateStatus).toBe("UNKNOWN");
-    });
+      expect(result[0]?.mergeStateStatus).toBe('UNKNOWN')
+    })
 
-    it("maps unknown MR state to CLOSED upstream (line 269)", async () => {
+    it('maps unknown MR state to CLOSED upstream (line 269)', async () => {
       mockAll.mockResolvedValueOnce([
         {
-          author: { username: "user" },
+          author: { username: 'user' },
           iid: 1,
-          merge_status: "can_be_merged",
-          source_branch: "feature",
+          merge_status: 'can_be_merged',
+          source_branch: 'feature',
           // Synthetic state value not in {opened, merged} → falls to default.
-          state: "locked",
-          target_branch: "main",
-          title: "MR 1",
+          state: 'locked',
+          target_branch: 'main',
+          title: 'MR 1',
         },
-      ]);
+      ])
 
       const result = await provider.listPrs({
-        owner: "owner",
-        repo: "repo",
-      });
+        owner: 'owner',
+        repo: 'repo',
+      })
 
-      expect(result[0]?.state).toBe("CLOSED");
-    });
+      expect(result[0]?.state).toBe('CLOSED')
+    })
 
-    it("maps merge_status default → UNKNOWN (line 306)", async () => {
+    it('maps merge_status default → UNKNOWN (line 306)', async () => {
       mockAll.mockResolvedValueOnce([
         {
-          author: { username: "user" },
+          author: { username: 'user' },
           iid: 1,
           // Synthetic merge_status value not in any known case.
-          merge_status: "totally-unknown-status",
-          source_branch: "feature",
-          state: "opened",
-          target_branch: "main",
-          title: "MR 1",
+          merge_status: 'totally-unknown-status',
+          source_branch: 'feature',
+          state: 'opened',
+          target_branch: 'main',
+          title: 'MR 1',
         },
-      ]);
+      ])
 
       const result = await provider.listPrs({
-        owner: "owner",
-        repo: "repo",
-      });
+        owner: 'owner',
+        repo: 'repo',
+      })
 
-      expect(result[0]?.mergeStateStatus).toBe("UNKNOWN");
-    });
+      expect(result[0]?.mergeStateStatus).toBe('UNKNOWN')
+    })
 
-    it("filters by merged state (lines 280-281 mapStateToGitLab merged path)", async () => {
-      mockAll.mockResolvedValueOnce([]);
-
-      await provider.listPrs({
-        owner: "owner",
-        repo: "repo",
-        states: "merged",
-      });
-
-      expect(mockAll).toHaveBeenCalledWith(expect.objectContaining({ state: "merged" }));
-    });
-
-    it("filters by closed state (line 283 mapStateToGitLab closed default)", async () => {
-      mockAll.mockResolvedValueOnce([]);
+    it('filters by merged state (lines 280-281 mapStateToGitLab merged path)', async () => {
+      mockAll.mockResolvedValueOnce([])
 
       await provider.listPrs({
-        owner: "owner",
-        repo: "repo",
-        states: "closed",
-      });
+        owner: 'owner',
+        repo: 'repo',
+        states: 'merged',
+      })
 
-      expect(mockAll).toHaveBeenCalledWith(expect.objectContaining({ state: "closed" }));
-    });
-  });
+      expect(mockAll).toHaveBeenCalledWith(
+        expect.objectContaining({ state: 'merged' }),
+      )
+    })
 
-  describe("deleteBranch", () => {
-    it("returns false due to interface limitation", async () => {
-      const result = await provider.deleteBranch("feature-branch");
+    it('filters by closed state (line 283 mapStateToGitLab closed default)', async () => {
+      mockAll.mockResolvedValueOnce([])
 
-      expect(result).toBe(false);
-    });
-  });
+      await provider.listPrs({
+        owner: 'owner',
+        repo: 'repo',
+        states: 'closed',
+      })
 
-  describe("addComment", () => {
-    it("adds comment successfully", async () => {
-      mockNotesCreate.mockResolvedValueOnce({});
+      expect(mockAll).toHaveBeenCalledWith(
+        expect.objectContaining({ state: 'closed' }),
+      )
+    })
+  })
+
+  describe('deleteBranch', () => {
+    it('returns false due to interface limitation', async () => {
+      const result = await provider.deleteBranch('feature-branch')
+
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('addComment', () => {
+    it('adds comment successfully', async () => {
+      mockNotesCreate.mockResolvedValueOnce({})
 
       await provider.addComment({
-        body: "Test comment",
-        owner: "owner",
+        body: 'Test comment',
+        owner: 'owner',
         prNumber: 123,
-        repo: "repo",
-      });
+        repo: 'repo',
+      })
 
-      expect(mockNotesCreate).toHaveBeenCalledWith("owner/repo", 123, "Test comment");
-    });
+      expect(mockNotesCreate).toHaveBeenCalledWith(
+        'owner/repo',
+        123,
+        'Test comment',
+      )
+    })
 
-    it("throws on failure", async () => {
-      mockNotesCreate.mockRejectedValueOnce(new Error("API error"));
+    it('throws on failure', async () => {
+      mockNotesCreate.mockRejectedValueOnce(new Error('API error'))
 
       await expect(
         provider.addComment({
-          body: "Test",
-          owner: "owner",
+          body: 'Test',
+          owner: 'owner',
           prNumber: 123,
-          repo: "repo",
+          repo: 'repo',
         }),
-      ).rejects.toThrow("Failed to add comment to MR !123");
-    });
-  });
-});
+      ).rejects.toThrow('Failed to add comment to MR !123')
+    })
+  })
+})

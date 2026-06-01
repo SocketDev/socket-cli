@@ -1,10 +1,10 @@
-import { Gitlab } from "@gitbeaker/rest";
+import { Gitlab } from '@gitbeaker/rest'
 
-import { debug, debugDir } from "@socketsecurity/lib-stable/debug/output";
-import { isError } from "@socketsecurity/lib-stable/errors/predicates";
-import { isNonEmptyString } from "@socketsecurity/lib-stable/strings/predicates";
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { isError } from '@socketsecurity/lib-stable/errors/predicates'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
-import { formatErrorWithDetail } from "../error/errors.mts";
+import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type {
   AddCommentOptions,
@@ -15,8 +15,8 @@ import type {
   PrProvider,
   PrResponse,
   UpdatePrOptions,
-} from "./provider.mts";
-import type { MergeRequestSchema } from "@gitbeaker/rest";
+} from './provider.mts'
+import type { MergeRequestSchema } from '@gitbeaker/rest'
 
 /**
  * GitLab provider for Merge Request operations.
@@ -26,129 +26,140 @@ import type { MergeRequestSchema } from "@gitbeaker/rest";
  * @gitbeaker/rest.
  */
 export class GitLabProvider implements PrProvider {
-  private gitlab: InstanceType<typeof Gitlab>;
+  private gitlab: InstanceType<typeof Gitlab>
 
   constructor() {
-    const token = getGitLabToken();
-    const host = process.env["GITLAB_HOST"] || "https://gitlab.com";
+    const token = getGitLabToken()
+    const host = process.env['GITLAB_HOST'] || 'https://gitlab.com'
 
     this.gitlab = new Gitlab({
       host,
       token,
-    });
+    })
   }
 
   async createPr(options: CreatePrOptions): Promise<PrResponse> {
-    const { base, body, head, owner, repo, retries = 3, title } = options;
+    const { base, body, head, owner, repo, retries = 3, title } = options
 
     // Get project ID from owner/repo.
-    const projectId = `${owner}/${repo}`;
+    const projectId = `${owner}/${repo}`
 
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        debugDir({ attempt, base, head, projectId, title });
-        const mr = (await this.gitlab.MergeRequests.create(projectId, head, base, title, {
-          description: body,
-        })) as MergeRequestSchema;
+        debugDir({ attempt, base, head, projectId, title })
+        const mr = (await this.gitlab.MergeRequests.create(
+          projectId,
+          head,
+          base,
+          title,
+          {
+            description: body,
+          },
+        )) as MergeRequestSchema
 
         return {
           number: mr.iid,
           state: mapGitLabState(mr.state),
           url: mr.web_url,
-        };
+        }
       } catch (e) {
-        let message = `Failed to create merge request (attempt ${attempt}/${retries})`;
+        let message = `Failed to create merge request (attempt ${attempt}/${retries})`
         if (isError(e)) {
-          message += `: ${e.message}`;
+          message += `: ${e.message}`
         }
 
-        debug(message);
-        debugDir(e);
+        debug(message)
+        debugDir(e)
 
         // Don't retry on validation errors (400).
         if (
           e &&
-          typeof e === "object" &&
-          "cause" in e &&
+          typeof e === 'object' &&
+          'cause' in e &&
           e.cause &&
-          typeof e.cause === "object" &&
-          "response" in e.cause
+          typeof e.cause === 'object' &&
+          'response' in e.cause
         ) {
           const response = (
             e.cause as {
-              response?: { status?: number | undefined } | undefined;
+              response?: { status?: number | undefined } | undefined
             }
-          ).response;
+          ).response
           if (response?.status === 400) {
-            break;
+            break
           }
         }
 
         // Retry on 5xx errors or network failures with exponential backoff.
         if (attempt < retries) {
           // Cap attempt to prevent overflow before Math.min.
-          const safeAttempt = Math.min(attempt, 14);
-          const delay = Math.min(1000 * 2 ** (safeAttempt - 1), 10_000);
-          debug(`mr: retrying in ${delay}ms…`);
-          await sleep(delay);
+          const safeAttempt = Math.min(attempt, 14)
+          const delay = Math.min(1000 * 2 ** (safeAttempt - 1), 10_000)
+          debug(`mr: retrying in ${delay}ms…`)
+          await sleep(delay)
         }
       }
     }
 
     throw new Error(
       `GitLab API rejected createMergeRequest for ${owner}/${repo} (head="${head}") after ${retries} attempts with exponential backoff; check GITLAB_TOKEN permissions (needs api scope), that the target branch exists, and that GitLab is reachable`,
-    );
+    )
   }
 
   async updatePr(options: UpdatePrOptions): Promise<void> {
-    const { owner, prNumber, repo } = options;
+    const { owner, prNumber, repo } = options
 
-    const projectId = `${owner}/${repo}`;
+    const projectId = `${owner}/${repo}`
 
     try {
       // GitLab doesn't have a direct "rebase" endpoint like GitHub's merge.
       // The closest equivalent is to use the rebase API.
-      await this.gitlab.MergeRequests.rebase(projectId, prNumber);
-      debug(`mr: updating stale MR !${prNumber}`);
+      await this.gitlab.MergeRequests.rebase(projectId, prNumber)
+      debug(`mr: updating stale MR !${prNumber}`)
 
       // Check if rebase resulted in conflicts.
-      const mr = (await this.gitlab.MergeRequests.show(projectId, prNumber)) as MergeRequestSchema;
+      const mr = (await this.gitlab.MergeRequests.show(
+        projectId,
+        prNumber,
+      )) as MergeRequestSchema
 
-      if (mr.merge_status === "cannot_be_merged") {
-        debug(`mr: MR !${prNumber} has conflicts after rebase`);
+      if (mr.merge_status === 'cannot_be_merged') {
+        debug(`mr: MR !${prNumber} has conflicts after rebase`)
 
         // Add comment explaining conflict.
         await this.gitlab.MergeRequestNotes.create(
           projectId,
           prNumber,
-          "This MR has merge conflicts after rebasing from the base branch. " +
-            "Please resolve conflicts manually or close this MR and re-run `socket fix` " +
-            "to generate a new fix.",
-        );
+          'This MR has merge conflicts after rebasing from the base branch. ' +
+            'Please resolve conflicts manually or close this MR and re-run `socket fix` ' +
+            'to generate a new fix.',
+        )
 
-        debug(`mr: added conflict comment to MR !${prNumber}`);
+        debug(`mr: added conflict comment to MR !${prNumber}`)
       }
     } catch (e) {
-      throw new Error(formatErrorWithDetail(`Failed to update MR !${prNumber}`, e));
+      throw new Error(
+        formatErrorWithDetail(`Failed to update MR !${prNumber}`, e),
+      )
     }
   }
 
   async listPrs(options: ListPrsOptions): Promise<PrMatch[]> {
-    const { author, ghsaId, owner, repo, states: statesValue = "all" } = options;
-    const checkAuthor = isNonEmptyString(author);
-    const matches: PrMatch[] = [];
-    const projectId = `${owner}/${repo}`;
+    const { author, ghsaId, owner, repo, states: statesValue = 'all' } = options
+    const checkAuthor = isNonEmptyString(author)
+    const matches: PrMatch[] = []
+    const projectId = `${owner}/${repo}`
 
     // Map states to GitLab merge request states.
     const state =
-      typeof statesValue === "string" && statesValue.toLowerCase() !== "all"
+      typeof statesValue === 'string' && statesValue.toLowerCase() !== 'all'
         ? mapStateToGitLab(statesValue)
-        : undefined;
+        : undefined
 
     try {
-      let page = 1;
-      const perPage = 100;
-      let hasMore = true;
+      let page = 1
+      const perPage = 100
+      let hasMore = true
 
       while (hasMore) {
         const mrs = (await this.gitlab.MergeRequests.all({
@@ -158,10 +169,10 @@ export class GitLabProvider implements PrProvider {
           projectId,
           ...(state ? { state } : {}),
           ...(checkAuthor ? { authorUsername: author } : {}),
-        })) as MergeRequestSchema[];
+        })) as MergeRequestSchema[]
 
         for (let i = 0, { length } = mrs; i < length; i += 1) {
-          const mr = mrs[i]!;
+          const mr = mrs[i]!
           matches.push({
             author: mr.author.username,
             baseRefName: mr.target_branch,
@@ -170,33 +181,35 @@ export class GitLabProvider implements PrProvider {
             number: mr.iid,
             state: mapGitLabStateToUpper(mr.state),
             title: mr.title,
-          });
+          })
         }
 
         // Continue to next page if we got a full page.
-        hasMore = mrs.length === perPage;
-        page += 1;
+        hasMore = mrs.length === perPage
+        page += 1
 
         // Safety limit to prevent infinite loops.
         /* c8 ignore start - 100-page safety limit; tests page through at most a few pages */
         if (page > 100) {
-          debug(`REST pagination reached safety limit (100 pages) for ${owner}/${repo}`);
-          break;
+          debug(
+            `REST pagination reached safety limit (100 pages) for ${owner}/${repo}`,
+          )
+          break
         }
         /* c8 ignore stop */
 
         // Early exit optimization: if we found matches and only looking for specific GHSA,
         // we can stop pagination since we likely found what we need.
         if (matches.length > 0 && ghsaId) {
-          break;
+          break
         }
       }
     } catch (e) {
-      debug(`REST pagination failed for ${owner}/${repo}`);
-      debugDir(e);
+      debug(`REST pagination failed for ${owner}/${repo}`)
+      debugDir(e)
     }
 
-    return matches;
+    return matches
   }
 
   async deleteBranch(branch: string): Promise<boolean> {
@@ -204,35 +217,37 @@ export class GitLabProvider implements PrProvider {
       // GitLab requires project ID to delete a branch.
       // Since we don't have it in this method, we can't delete.
       // This is a limitation of the current interface design.
-      debug(`mr: cannot delete branch ${branch} - need project ID in interface`);
-      return false;
+      debug(`mr: cannot delete branch ${branch} - need project ID in interface`)
+      return false
       /* c8 ignore start - try-body has no async/throwing ops, so this catch is unreachable */
     } catch (e) {
-      debug(formatErrorWithDetail(`mr: failed to delete branch ${branch}`, e));
-      debugDir(e);
-      return false;
+      debug(formatErrorWithDetail(`mr: failed to delete branch ${branch}`, e))
+      debugDir(e)
+      return false
     }
     /* c8 ignore stop */
   }
 
   async addComment(options: AddCommentOptions): Promise<void> {
-    const { body, owner, prNumber, repo } = options;
-    const projectId = `${owner}/${repo}`;
+    const { body, owner, prNumber, repo } = options
+    const projectId = `${owner}/${repo}`
 
     try {
-      await this.gitlab.MergeRequestNotes.create(projectId, prNumber, body);
-      debug(`mr: added comment to MR !${prNumber}`);
+      await this.gitlab.MergeRequestNotes.create(projectId, prNumber, body)
+      debug(`mr: added comment to MR !${prNumber}`)
     } catch (e) {
-      throw new Error(formatErrorWithDetail(`Failed to add comment to MR !${prNumber}`, e));
+      throw new Error(
+        formatErrorWithDetail(`Failed to add comment to MR !${prNumber}`, e),
+      )
     }
   }
 
-  getProviderName(): "gitlab" {
-    return "gitlab";
+  getProviderName(): 'gitlab' {
+    return 'gitlab'
   }
 
   supportsGraphQL(): boolean {
-    return false;
+    return false
   }
 }
 
@@ -247,14 +262,14 @@ export class GitLabProvider implements PrProvider {
  */
 export function getGitLabToken(): string {
   // Check environment variable.
-  const envToken = process.env["GITLAB_TOKEN"];
+  const envToken = process.env['GITLAB_TOKEN']
   if (envToken) {
-    return envToken;
+    return envToken
   }
 
   throw new Error(
     `GitLab access requires a token but process.env.GITLAB_TOKEN is not set; create a personal access token with the \`api\` scope at https://gitlab.com/-/user_settings/personal_access_tokens and export GITLAB_TOKEN=<token>`,
-  );
+  )
 }
 
 /**
@@ -268,59 +283,63 @@ export function mapGitLabMergeStatus(status: string): MergeStateStatus {
   // - checking: currently checking
   // - cannot_be_merged_recheck: needs recheck
   switch (status) {
-    case "can_be_merged":
-      return "CLEAN";
-    case "cannot_be_merged":
-    case "cannot_be_merged_recheck":
-      return "DIRTY";
-    case "checking":
-    case "unchecked":
-      return "UNKNOWN";
+    case 'can_be_merged':
+      return 'CLEAN'
+    case 'cannot_be_merged':
+    case 'cannot_be_merged_recheck':
+      return 'DIRTY'
+    case 'checking':
+    case 'unchecked':
+      return 'UNKNOWN'
     default:
-      return "UNKNOWN";
+      return 'UNKNOWN'
   }
 }
 
 /**
  * Maps GitLab merge request state to common state.
  */
-export function mapGitLabState(state: string): "open" | "closed" | "merged" {
-  if (state === "opened") {
-    return "open";
+export function mapGitLabState(state: string): 'open' | 'closed' | 'merged' {
+  if (state === 'opened') {
+    return 'open'
   }
-  if (state === "merged") {
-    return "merged";
+  if (state === 'merged') {
+    return 'merged'
   }
-  return "closed";
+  return 'closed'
 }
 
 /**
  * Maps GitLab merge request state to uppercase common state.
  */
-export function mapGitLabStateToUpper(state: string): "OPEN" | "CLOSED" | "MERGED" {
-  if (state === "opened") {
-    return "OPEN";
+export function mapGitLabStateToUpper(
+  state: string,
+): 'OPEN' | 'CLOSED' | 'MERGED' {
+  if (state === 'opened') {
+    return 'OPEN'
   }
-  if (state === "merged") {
-    return "MERGED";
+  if (state === 'merged') {
+    return 'MERGED'
   }
-  return "CLOSED";
+  return 'CLOSED'
 }
 
 /**
  * Maps common state to GitLab state.
  */
-export function mapStateToGitLab(state: string): "opened" | "closed" | "merged" {
-  const lower = state.toLowerCase();
-  if (lower === "open") {
-    return "opened";
+export function mapStateToGitLab(
+  state: string,
+): 'opened' | 'closed' | 'merged' {
+  const lower = state.toLowerCase()
+  if (lower === 'open') {
+    return 'opened'
   }
-  if (lower === "merged") {
-    return "merged";
+  if (lower === 'merged') {
+    return 'merged'
   }
-  return "closed";
+  return 'closed'
 }
 
 export async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms))
 }

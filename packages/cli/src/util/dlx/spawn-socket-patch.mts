@@ -10,16 +10,16 @@
  * npm fallback). Vfs + auto-dispatch use the shared helpers.
  */
 
-import { detectExecutableType } from "@socketsecurity/lib-stable/dlx/detect";
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { defineAutoDispatch, defineVfsSpawn } from "./define-tool-spawn.mts";
-import { downloadGitHubReleaseBinary, spawnDlx } from "./spawn.mts";
-import { resolveSocketPatch } from "./resolve-binary.mjs";
+import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
+import { downloadGitHubReleaseBinary, spawnDlx } from './spawn.mts'
+import { resolveSocketPatch } from './resolve-binary.mjs'
 
-import type { DlxOptions, DlxSpawnResult } from "./spawn.mts";
-import type { StdioOptions } from "node:child_process";
-import type { SpawnExtra } from "@socketsecurity/lib-stable/process/spawn/types";
+import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
+import type { StdioOptions } from 'node:child_process'
+import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
 
 /**
  * Spawn socket-patch via dlx (npm CLI mode).
@@ -36,18 +36,19 @@ export async function spawnSocketPatchDlx(
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<DlxSpawnResult> {
-  const resolution = resolveSocketPatch();
+  const resolution = resolveSocketPatch()
   const { env: spawnEnv, ...dlxOptions } = {
     __proto__: null,
     ...options,
-  } as DlxOptions;
+  } as DlxOptions
 
   // Use local socket-patch if available.
-  if (resolution.type === "local") {
-    const detection = detectExecutableType(resolution.path);
+  if (resolution.type === 'local') {
+    const detection = detectExecutableType(resolution.path)
 
-    const spawnArgs = detection.type === "binary" ? args : [resolution.path, ...args];
-    const spawnCommand = detection.type === "binary" ? resolution.path : "node";
+    const spawnArgs =
+      detection.type === 'binary' ? args : [resolution.path, ...args]
+    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
 
     const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
@@ -55,17 +56,17 @@ export async function spawnSocketPatchDlx(
         ...process.env,
         ...spawnEnv,
       },
-      stdio: (spawnExtra?.["stdio"] as StdioOptions | undefined) ?? "inherit",
-    });
+      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
+    })
 
     return {
       spawnPromise,
-    };
+    }
   }
 
   // Download from GitHub releases (socket-patch v2.0.0+).
-  if (resolution.type === "github-release") {
-    const binaryPath = await downloadGitHubReleaseBinary(resolution.details);
+  if (resolution.type === 'github-release') {
+    const binaryPath = await downloadGitHubReleaseBinary(resolution.details)
 
     const spawnPromise = spawn(binaryPath, args, {
       ...dlxOptions,
@@ -73,21 +74,26 @@ export async function spawnSocketPatchDlx(
         ...process.env,
         ...spawnEnv,
       },
-      stdio: (spawnExtra?.["stdio"] as StdioOptions | undefined) ?? "inherit",
-    });
+      stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
+    })
 
     return {
       spawnPromise,
-    };
+    }
   }
 
   // Fallback to dlx for npm packages (not used for socket-patch v2.0.0+).
-  return await spawnDlx(resolution.details, args, { force: false, ...options }, spawnExtra);
+  return await spawnDlx(
+    resolution.details,
+    args,
+    { force: false, ...options },
+    spawnExtra,
+  )
 }
 
-export const spawnSocketPatchVfs = defineVfsSpawn("socket-patch");
+export const spawnSocketPatchVfs = defineVfsSpawn('socket-patch')
 
 export const spawnSocketPatch = defineAutoDispatch({
   vfs: spawnSocketPatchVfs,
   dlx: spawnSocketPatchDlx,
-});
+})

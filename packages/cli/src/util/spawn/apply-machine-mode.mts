@@ -4,23 +4,25 @@
  * machine-output mode is off, returns the inputs unchanged.
  */
 
-import { getMachineOutputMode } from "../output/ambient-mode.mts";
-import { applyMachineMode as rawApply } from "./machine-mode.mts";
+import { getMachineOutputMode } from '../output/ambient-mode.mts'
+import { applyMachineMode as rawApply } from './machine-mode.mts'
 
-import type { MachineModeInput, MachineModeOutput } from "./machine-mode.mts";
+import type { MachineModeInput, MachineModeOutput } from './machine-mode.mts'
 
 /**
  * Apply machine-mode flag forwarding + env injection when ambient mode is
  * engaged. Otherwise pass through unchanged.
  */
-export function applyMachineModeIfActive(input: MachineModeInput): MachineModeOutput {
+export function applyMachineModeIfActive(
+  input: MachineModeInput,
+): MachineModeOutput {
   if (!getMachineOutputMode()) {
     return {
       args: [...input.args],
       env: { ...input.env },
-    };
+    }
   }
-  return rawApply(input);
+  return rawApply(input)
 }
 
 /**
@@ -30,10 +32,10 @@ export function applyMachineModeIfActive(input: MachineModeInput): MachineModeOu
  */
 export function inferSubcommand(args: readonly string[]): string | undefined {
   for (let i = 0, { length } = args; i < length; i += 1) {
-    const arg = args[i]!;
-    if (!arg.startsWith("-")) {
-      return arg;
+    const arg = args[i]!
+    if (!arg.startsWith('-')) {
+      return arg
     }
   }
-  return undefined;
+  return undefined
 }

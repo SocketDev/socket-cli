@@ -1,29 +1,33 @@
-import { handleDependencies } from "./handle-dependencies.mts";
-import { FLAG_JSON, FLAG_MARKDOWN } from "../../constants/cli.mts";
-import { outputDryRunFetch } from "../../util/dry-run/output.mts";
-import { InputError } from "../../util/error/errors.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags, outputFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
-import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
-import { getOutputKind } from "../../util/output/mode.mjs";
-import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
-import { checkCommandInput } from "../../util/validation/check-input.mts";
+import { handleDependencies } from './handle-dependencies.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { InputError } from '../../util/error/errors.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
-import type { MeowFlags } from "../../flags.mts";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-export const CMD_NAME = "dependencies";
+export const CMD_NAME = 'dependencies'
 
-const description = "Search for any dependency that is being used in your organization";
+const description =
+  'Search for any dependency that is being used in your organization'
 
-const hidden = false;
+const hidden = false
 
 export const cmdOrganizationDependencies = {
   description,
   hidden,
   run,
-};
+}
 
 export async function run(
   argv: string[] | readonly string[],
@@ -37,14 +41,14 @@ export async function run(
     flags: defineFlags({
       ...commonFlags,
       limit: {
-        type: "number",
+        type: 'number',
         default: 50,
-        description: "Maximum number of dependencies returned",
+        description: 'Maximum number of dependencies returned',
       },
       offset: {
-        type: "number",
+        type: 'number',
         default: 0,
-        description: "Page number",
+        description: 'Page number',
       },
       ...outputFlags,
     }),
@@ -62,22 +66,22 @@ export async function run(
       ${command}
       ${command} --limit 20 --offset 10
   `,
-  };
+  }
 
   const cli = meowOrExit({
     argv,
     config,
     parentName,
     importMeta,
-  });
+  })
 
-  const { json, limit, markdown, offset } = cli.flags;
+  const { json, limit, markdown, offset } = cli.flags
 
-  const dryRun = !!cli.flags["dryRun"];
+  const dryRun = !!cli.flags['dryRun']
 
-  const hasApiToken = hasDefaultApiToken();
+  const hasApiToken = hasDefaultApiToken()
 
-  const outputKind = getOutputKind(json, markdown);
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -85,45 +89,45 @@ export async function run(
       nook: true,
       test: !json || !markdown,
       message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
-      fail: "bad",
+      fail: 'bad',
     },
     {
       nook: true,
       test: hasApiToken,
-      message: "This command requires a Socket API token for access",
-      fail: "try `socket login`",
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
     },
-  );
+  )
   if (!wasValidInput) {
-    return;
+    return
   }
 
   // Validate numeric pagination parameters.
-  const validatedLimit = Number(limit || 0);
-  const validatedOffset = Number(offset || 0);
+  const validatedLimit = Number(limit || 0)
+  const validatedOffset = Number(offset || 0)
 
   if (dryRun) {
-    outputDryRunFetch("organization dependencies", {
+    outputDryRunFetch('organization dependencies', {
       limit: validatedLimit || 50,
       offset: validatedOffset,
-    });
-    return;
+    })
+    return
   }
 
   if (Number.isNaN(validatedLimit) || validatedLimit < 0) {
     throw new InputError(
       `--limit must be a non-negative integer (saw: "${limit}"); pass a number like --limit=50`,
-    );
+    )
   }
   if (Number.isNaN(validatedOffset) || validatedOffset < 0) {
     throw new InputError(
       `--offset must be a non-negative integer (saw: "${offset}"); pass a number like --offset=0`,
-    );
+    )
   }
 
   await handleDependencies({
     limit: validatedLimit,
     offset: validatedOffset,
     outputKind,
-  });
+  })
 }

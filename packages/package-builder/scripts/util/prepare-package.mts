@@ -2,12 +2,12 @@
  * Shared utilities for preparing packages for publishing.
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
+import { readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 /**
  * Prepares a package.json for publishing. - Removes private field - Sets
@@ -24,40 +24,40 @@ const logger = getDefaultLogger();
  * @returns {{ name: string; version: string }} Package info
  */
 function preparePackageForPublish(packageDir, options = {}) {
-  const { buildMethod, quiet, version } = options;
-  const pkgPath = join(packageDir, "package.json");
+  const { buildMethod, quiet, version } = options
+  const pkgPath = join(packageDir, 'package.json')
 
-  const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-  const originalVersion = pkg.version;
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+  const originalVersion = pkg.version
 
   // Remove private field.
-  delete pkg.private;
+  delete pkg.private
 
   // Set version if provided.
   if (version) {
-    pkg.version = version;
+    pkg.version = version
 
     // Update optionalDependencies to use the same version (lockstep).
     if (pkg.optionalDependencies) {
       for (const dep of Object.keys(pkg.optionalDependencies)) {
-        pkg.optionalDependencies[dep] = version;
+        pkg.optionalDependencies[dep] = version
       }
     }
   }
 
   // Set buildMethod if provided (for socketbin packages).
   if (buildMethod) {
-    pkg.buildMethod = buildMethod;
+    pkg.buildMethod = buildMethod
   }
 
-  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
 
   if (!quiet) {
     if (version && version !== originalVersion) {
-      logger.log(`Set ${pkg.name} version to ${version}`);
+      logger.log(`Set ${pkg.name} version to ${version}`)
     }
-    logger.success(`Prepared ${pkg.name} for publishing`);
+    logger.success(`Prepared ${pkg.name} for publishing`)
   }
 
-  return { name: pkg.name, version: pkg.version };
+  return { name: pkg.name, version: pkg.version }
 }

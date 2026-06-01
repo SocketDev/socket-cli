@@ -3,6 +3,6 @@
  * integration environment.
  */
 
-import { getCI } from "@socketsecurity/lib-stable/env/ci";
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
 
-export const CI = getCI();
+export const CI = getCI()

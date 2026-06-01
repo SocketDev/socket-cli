@@ -1,41 +1,47 @@
-import { handleScanReport } from "./handle-scan-report.mts";
-import { FOLD_SETTING_NONE } from "../../constants/cli.mts";
-import { outputDryRunFetch } from "../../util/dry-run/output.mts";
-import { REPORT_LEVEL_WARN } from "../../constants/reporting.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags, outputFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
-import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
-import { getOutputKind } from "../../util/output/mode.mjs";
-import { determineOrgSlug } from "../../util/socket/org-slug.mjs";
-import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
-import { checkCommandInput } from "../../util/validation/check-input.mts";
+import { handleScanReport } from './handle-scan-report.mts'
+import { FOLD_SETTING_NONE } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { REPORT_LEVEL_WARN } from '../../constants/reporting.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { FOLD_SETTING, REPORT_LEVEL } from "./types.mts";
-import type { CliCommandContext, CliSubcommand } from "../../util/cli/with-subcommands.mjs";
-import type { MeowFlags } from "../../flags.mts";
+import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
+import type {
+  CliCommandContext,
+  CliSubcommand,
+} from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
 interface ScanReportFlags {
-  fold: FOLD_SETTING;
-  json: boolean;
-  markdown: boolean;
-  org: string;
-  reportLevel: REPORT_LEVEL;
+  fold: FOLD_SETTING
+  json: boolean
+  markdown: boolean
+  org: string
+  reportLevel: REPORT_LEVEL
 }
 
-export const CMD_NAME = "report";
+export const CMD_NAME = 'report'
 
 const description =
-  "Check whether a scan result passes the organizational policies (security, license)";
+  'Check whether a scan result passes the organizational policies (security, license)'
 
-const hidden = false;
+const hidden = false
 
 export const cmdScanReport: CliSubcommand = {
   description,
   hidden,
   run,
-};
+}
 
 export async function run(
   argv: string[] | readonly string[],
@@ -50,34 +56,35 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
       fold: {
-        type: "string",
+        type: 'string',
         default: FOLD_SETTING_NONE,
         description: `Fold reported alerts to some degree (default '${FOLD_SETTING_NONE}')`,
       },
       interactive: {
-        type: "boolean",
+        type: 'boolean',
         default: true,
         description:
-          "Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.",
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
       },
       org: {
-        type: "string",
-        description: "Force override the organization slug, overrides the default org from config",
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
       },
       reportLevel: {
-        type: "string",
+        type: 'string',
         default: REPORT_LEVEL_WARN,
         description: `Which policy level alerts should be reported (default '${REPORT_LEVEL_WARN}')`,
       },
       short: {
-        type: "boolean",
+        type: 'boolean',
         default: false,
-        description: "Report only the healthy status",
+        description: 'Report only the healthy status',
       },
       license: {
-        type: "boolean",
+        type: 'boolean',
         default: false,
-        description: "Also report the license policy status. Default: false",
+        description: 'Also report the license policy status. Default: false',
       },
     }),
     help: (command: string, config: { flags: MeowFlags }) => `
@@ -119,14 +126,14 @@ export async function run(
       $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
       $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short
   `,
-  };
+  }
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  });
+  })
 
   const {
     fold,
@@ -134,64 +141,68 @@ export async function run(
     markdown,
     org: orgFlag,
     reportLevel,
-  } = cli.flags as unknown as ScanReportFlags;
+  } = cli.flags as unknown as ScanReportFlags
 
-  const dryRun = !!cli.flags["dryRun"];
+  const dryRun = !!cli.flags['dryRun']
 
-  const interactive = !!cli.flags["interactive"];
+  const interactive = !!cli.flags['interactive']
 
-  const includeLicensePolicy = !!cli.flags["license"];
+  const includeLicensePolicy = !!cli.flags['license']
 
-  const short = !!cli.flags["short"];
+  const short = !!cli.flags['short']
 
-  const [scanId = "", filepath = ""] = cli.input;
+  const [scanId = '', filepath = ''] = cli.input
 
-  const hasApiToken = hasDefaultApiToken();
+  const hasApiToken = hasDefaultApiToken()
 
-  const { 0: orgSlug } = await determineOrgSlug(String(orgFlag || ""), interactive, dryRun);
+  const { 0: orgSlug } = await determineOrgSlug(
+    String(orgFlag || ''),
+    interactive,
+    dryRun,
+  )
 
-  const outputKind = getOutputKind(json, markdown);
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
       test: !!orgSlug,
-      message: "Org name by default setting, --org, or auto-discovered",
-      fail: "dot is an invalid org, most likely you forgot the org name here?",
+      message: 'Org name by default setting, --org, or auto-discovered',
+      fail: 'dot is an invalid org, most likely you forgot the org name here?',
     },
     {
       test: !!scanId,
-      message: "Scan ID to report on",
-      fail: "missing",
+      message: 'Scan ID to report on',
+      fail: 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
-      message: "The json and markdown flags cannot be both set, pick one",
-      fail: "omit one",
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
     },
     {
       nook: true,
       test: hasApiToken,
-      message: "This command requires a Socket API token for access",
-      fail: "try `socket login`",
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
     },
-  );
+  )
   if (!wasValidInput) {
-    return;
+    return
   }
 
   if (dryRun) {
-    outputDryRunFetch("scan report", {
+    outputDryRunFetch('scan report', {
       organization: orgSlug,
       scanId,
       fold,
       reportLevel,
       includeLicense: includeLicensePolicy,
       short,
-    });
-    return;
+    })
+    return
   }
 
   await handleScanReport({
@@ -203,5 +214,5 @@ export async function run(
     fold,
     short,
     reportLevel,
-  });
+  })
 }

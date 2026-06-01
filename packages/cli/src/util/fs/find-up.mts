@@ -13,59 +13,59 @@
  * directories.
  */
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
 
-import { getAbortSignal } from "@socketsecurity/lib-stable/process/abort";
+import { getAbortSignal } from '@socketsecurity/lib-stable/process/abort'
 
 type FindUpOptions = {
-  cwd?: string | undefined;
-  onlyDirectories?: boolean | undefined;
-  onlyFiles?: boolean | undefined;
-  signal?: AbortSignal | undefined;
-};
+  cwd?: string | undefined
+  onlyDirectories?: boolean | undefined
+  onlyFiles?: boolean | undefined
+  signal?: AbortSignal | undefined
+}
 
 export async function findUp(
   name: string | string[],
   options?: FindUpOptions | undefined,
 ): Promise<string | undefined> {
-  const opts = { __proto__: null, ...options };
-  const abortSignal = getAbortSignal();
-  const { cwd = process.cwd(), signal = abortSignal } = opts;
-  let { onlyDirectories = false, onlyFiles = true } = opts;
+  const opts = { __proto__: null, ...options }
+  const abortSignal = getAbortSignal()
+  const { cwd = process.cwd(), signal = abortSignal } = opts
+  let { onlyDirectories = false, onlyFiles = true } = opts
   if (onlyDirectories) {
-    onlyFiles = false;
+    onlyFiles = false
   }
   if (onlyFiles) {
-    onlyDirectories = false;
+    onlyDirectories = false
   }
-  let dir = path.resolve(cwd);
-  const { root } = path.parse(dir);
-  const names = [name].flat();
+  let dir = path.resolve(cwd)
+  const { root } = path.parse(dir)
+  const names = [name].flat()
   // Use do-while to check current directory before continuing up the tree.
   // This ensures root directory is checked when cwd is root.
   do {
     for (let i = 0, { length } = names; i < length; i += 1) {
-      const name = names[i]!;
+      const name = names[i]!
       if (signal?.aborted) {
-        return undefined;
+        return undefined
       }
-      const thePath = path.join(dir, name);
+      const thePath = path.join(dir, name)
       try {
         // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isFile() / .isDirectory() metadata to distinguish file vs dir matches.
-        const stats = await fs.stat(thePath);
+        const stats = await fs.stat(thePath)
         if (!onlyDirectories && stats.isFile()) {
-          return thePath;
+          return thePath
         }
         if (!onlyFiles && stats.isDirectory()) {
-          return thePath;
+          return thePath
         }
       } catch {}
     }
     if (dir === root) {
-      break;
+      break
     }
-    dir = path.dirname(dir);
-  } while (dir);
-  return undefined;
+    dir = path.dirname(dir)
+  } while (dir)
+  return undefined
 }

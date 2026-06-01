@@ -13,69 +13,69 @@
  * src/util/output/ambient-mode.mts - Mode getter/setter.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {
   resetMachineOutputMode,
   setMachineOutputMode,
-} from "../../../../src/util/output/ambient-mode.mts";
+} from '../../../../src/util/output/ambient-mode.mts'
 import {
   applyMachineModeIfActive,
   inferSubcommand,
-} from "../../../../src/util/spawn/apply-machine-mode.mts";
+} from '../../../../src/util/spawn/apply-machine-mode.mts'
 
-describe("applyMachineModeIfActive", () => {
+describe('applyMachineModeIfActive', () => {
   beforeEach(() => {
-    resetMachineOutputMode();
-  });
+    resetMachineOutputMode()
+  })
   afterEach(() => {
-    resetMachineOutputMode();
-  });
+    resetMachineOutputMode()
+  })
 
-  it("returns the inputs unchanged when ambient mode is off", () => {
+  it('returns the inputs unchanged when ambient mode is off', () => {
     const input = {
-      args: ["install", "lodash"],
-      env: { FOO: "bar" },
-    };
-    const out = applyMachineModeIfActive(input);
-    expect(out.args).toEqual(["install", "lodash"]);
-    expect(out.env).toEqual({ FOO: "bar" });
+      args: ['install', 'lodash'],
+      env: { FOO: 'bar' },
+    }
+    const out = applyMachineModeIfActive(input)
+    expect(out.args).toEqual(['install', 'lodash'])
+    expect(out.env).toEqual({ FOO: 'bar' })
     // Returned objects are fresh copies — caller can mutate without
     // affecting input.
-    expect(out.args).not.toBe(input.args);
-    expect(out.env).not.toBe(input.env);
-  });
+    expect(out.args).not.toBe(input.args)
+    expect(out.env).not.toBe(input.env)
+  })
 
-  it("forwards to the raw applier when --json is in flight", () => {
-    setMachineOutputMode({ json: true });
+  it('forwards to the raw applier when --json is in flight', () => {
+    setMachineOutputMode({ json: true })
     const out = applyMachineModeIfActive({
-      args: ["npm", "install"],
+      args: ['npm', 'install'],
       env: {},
-    });
+    })
     // The raw applier injects machine-mode signals (env vars / flags)
     // for the package manager. We don't pin the exact shape here —
     // just that it differed from the no-op return.
-    const noOp = { args: ["npm", "install"], env: {} };
-    expect(out).not.toEqual(noOp);
-  });
-});
+    const noOp = { args: ['npm', 'install'], env: {} }
+    expect(out).not.toEqual(noOp)
+  })
+})
 
-describe("inferSubcommand", () => {
-  it("returns the first non-flag argument", () => {
-    expect(inferSubcommand(["install", "--save"])).toBe("install");
-    expect(inferSubcommand(["--save", "install"])).toBe("install");
-    expect(inferSubcommand(["-D", "--no-frozen", "add", "pkg"])).toBe("add");
-  });
+describe('inferSubcommand', () => {
+  it('returns the first non-flag argument', () => {
+    expect(inferSubcommand(['install', '--save'])).toBe('install')
+    expect(inferSubcommand(['--save', 'install'])).toBe('install')
+    expect(inferSubcommand(['-D', '--no-frozen', 'add', 'pkg'])).toBe('add')
+  })
 
-  it("returns the first arg even when it has no flag-like sibling", () => {
-    expect(inferSubcommand(["ls"])).toBe("ls");
-  });
+  it('returns the first arg even when it has no flag-like sibling', () => {
+    expect(inferSubcommand(['ls'])).toBe('ls')
+  })
 
-  it("returns undefined for an empty argv", () => {
-    expect(inferSubcommand([])).toBeUndefined();
-  });
+  it('returns undefined for an empty argv', () => {
+    expect(inferSubcommand([])).toBeUndefined()
+  })
 
-  it("returns undefined when every argument is a flag", () => {
-    expect(inferSubcommand(["--help", "-v"])).toBeUndefined();
-  });
-});
+  it('returns undefined when every argument is a flag', () => {
+    expect(inferSubcommand(['--help', '-v'])).toBeUndefined()
+  })
+})

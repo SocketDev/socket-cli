@@ -1,46 +1,49 @@
-import { getDefaultOrgSlug } from "../ci/fetch-default-org-slug.mjs";
-import { handleApiCall } from "../../util/socket/api.mjs";
-import { setupSdk } from "../../util/socket/sdk.mjs";
+import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
-import type { CResult } from "../../types.mts";
-import type { SetupSdkOptions } from "../../util/socket/sdk.mjs";
-import type { SpinnerInstance } from "@socketsecurity/lib-stable/spinner/types";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { CResult } from '../../types.mts'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type FetchSupportedScanFileNamesOptions = {
-  orgSlug?: string | undefined;
-  sdkOpts?: SetupSdkOptions | undefined;
-  spinner?: SpinnerInstance | undefined;
-};
+  orgSlug?: string | undefined
+  sdkOpts?: SetupSdkOptions | undefined
+  spinner?: SpinnerInstance | undefined
+}
 
 export async function fetchSupportedScanFileNames(
   options?: FetchSupportedScanFileNamesOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<"getSupportedFiles">["data"]>> {
+): Promise<CResult<SocketSdkSuccessResult<'getSupportedFiles'>['data']>> {
   const { orgSlug, sdkOpts, spinner } = {
     __proto__: null,
     ...options,
-  } as FetchSupportedScanFileNamesOptions;
+  } as FetchSupportedScanFileNamesOptions
 
-  const sockSdkCResult = await setupSdk(sdkOpts);
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
-    return sockSdkCResult;
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkCResult.data;
+  const sockSdk = sockSdkCResult.data
 
   // Use provided orgSlug or discover it.
-  let resolvedOrgSlug = orgSlug;
+  let resolvedOrgSlug = orgSlug
   /* c8 ignore start -- defensive: getDefaultOrgSlug discovery path; all unit-test callers pass orgSlug explicitly, and the .mjs/.mts boundary makes mocking getDefaultOrgSlug unreliable in this test file */
   if (!resolvedOrgSlug) {
-    const orgSlugCResult = await getDefaultOrgSlug();
+    const orgSlugCResult = await getDefaultOrgSlug()
     if (!orgSlugCResult.ok) {
-      return orgSlugCResult;
+      return orgSlugCResult
     }
-    resolvedOrgSlug = orgSlugCResult.data;
+    resolvedOrgSlug = orgSlugCResult.data
   }
   /* c8 ignore stop */
 
-  return await handleApiCall<"getSupportedFiles">(sockSdk.getSupportedFiles(resolvedOrgSlug), {
-    description: "supported scan file types",
-    spinner,
-  });
+  return await handleApiCall<'getSupportedFiles'>(
+    sockSdk.getSupportedFiles(resolvedOrgSlug),
+    {
+      description: 'supported scan file types',
+      spinner,
+    },
+  )
 }

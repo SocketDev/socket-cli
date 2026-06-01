@@ -3,6 +3,6 @@
  * testing with custom Python installations.
  */
 
-import { env } from "node:process";
+import { env } from 'node:process'
 
-export const SOCKET_CLI_PYTHON_PATH = env["SOCKET_CLI_PYTHON_PATH"];
+export const SOCKET_CLI_PYTHON_PATH = env['SOCKET_CLI_PYTHON_PATH']

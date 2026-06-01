@@ -13,26 +13,26 @@
  * directory structures - Supports both read and write operations.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
-import path from "node:path";
+import { existsSync, readFileSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
+import path from 'node:path'
 
-import { debugDirNs, debugNs } from "@socketsecurity/lib-stable/debug/output";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { SOCKET_JSON, SOCKET_WEBSITE_URL } from "../../constants/socket.mts";
-import { formatErrorWithDetail } from "../error/errors.mts";
-import { findUp } from "../fs/find-up.mts";
+import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
+import { formatErrorWithDetail } from '../error/errors.mts'
+import { findUp } from '../fs/find-up.mts'
 
-import type { CResult } from "../../types.mjs";
-const logger = getDefaultLogger();
+import type { CResult } from '../../types.mjs'
+const logger = getDefaultLogger()
 
 export interface SocketJson {
-  " _____         _       _     ": string;
-  "|   __|___ ___| |_ ___| |_   ": string;
-  "|__   | . |  _| '_| -_|  _|  ": string;
-  "|_____|___|___|_,_|___|_|.dev": string;
-  version: number;
+  ' _____         _       _     ': string
+  '|   __|___ ___| |_ ___| |_   ': string
+  "|__   | . |  _| '_| -_|  _|  ": string
+  '|_____|___|___|_,_|___|_|.dev': string
+  version: number
 
   defaults?:
     | {
@@ -40,170 +40,180 @@ export interface SocketJson {
           | {
               conda?:
                 | {
-                    disabled?: boolean | undefined;
-                    infile?: string | undefined;
-                    outfile?: string | undefined;
-                    stdin?: boolean | undefined;
-                    stdout?: boolean | undefined;
-                    target?: string | undefined;
-                    verbose?: boolean | undefined;
+                    disabled?: boolean | undefined
+                    infile?: string | undefined
+                    outfile?: string | undefined
+                    stdin?: boolean | undefined
+                    stdout?: boolean | undefined
+                    target?: string | undefined
+                    verbose?: boolean | undefined
                   }
-                | undefined;
+                | undefined
               gradle?:
                 | {
-                    disabled?: boolean | undefined;
-                    bin?: string | undefined;
-                    gradleOpts?: string | undefined;
-                    verbose?: boolean | undefined;
+                    disabled?: boolean | undefined
+                    bin?: string | undefined
+                    gradleOpts?: string | undefined
+                    verbose?: boolean | undefined
                   }
-                | undefined;
+                | undefined
               sbt?:
                 | {
-                    disabled?: boolean | undefined;
-                    infile?: string | undefined;
-                    stdin?: boolean | undefined;
-                    bin?: string | undefined;
-                    outfile?: string | undefined;
-                    sbtOpts?: string | undefined;
-                    stdout?: boolean | undefined;
-                    verbose?: boolean | undefined;
+                    disabled?: boolean | undefined
+                    infile?: string | undefined
+                    stdin?: boolean | undefined
+                    bin?: string | undefined
+                    outfile?: string | undefined
+                    sbtOpts?: string | undefined
+                    stdout?: boolean | undefined
+                    verbose?: boolean | undefined
                   }
-                | undefined;
+                | undefined
             }
-          | undefined;
+          | undefined
         scan?:
           | {
               create?:
                 | {
-                    autoManifest?: boolean | undefined;
-                    branch?: string | undefined;
-                    repo?: string | undefined;
-                    report?: boolean | undefined;
-                    workspace?: string | undefined;
+                    autoManifest?: boolean | undefined
+                    branch?: string | undefined
+                    repo?: string | undefined
+                    report?: boolean | undefined
+                    workspace?: string | undefined
                   }
-                | undefined;
+                | undefined
               github?:
                 | {
-                    all?: boolean | undefined;
-                    githubApiUrl?: string | undefined;
-                    orgGithub?: string | undefined;
-                    repos?: string | undefined;
+                    all?: boolean | undefined
+                    githubApiUrl?: string | undefined
+                    orgGithub?: string | undefined
+                    repos?: string | undefined
                   }
-                | undefined;
+                | undefined
             }
-          | undefined;
+          | undefined
       }
-    | undefined;
+    | undefined
 }
 
-export async function findSocketJsonUp(cwd: string): Promise<string | undefined> {
-  return await findUp(SOCKET_JSON, { onlyFiles: true, cwd });
+export async function findSocketJsonUp(
+  cwd: string,
+): Promise<string | undefined> {
+  return await findUp(SOCKET_JSON, { onlyFiles: true, cwd })
 }
 
 export function getDefaultSocketJson(): SocketJson {
   return {
-    " _____         _       _     ": `Local config file for Socket CLI tool ( ${SOCKET_WEBSITE_URL}/npm/package/${SOCKET_JSON.replace(".json", "")} ), to work with ${SOCKET_WEBSITE_URL}`,
-    "|   __|___ ___| |_ ___| |_   ":
-      "     The config in this file is used to set as defaults for flags or command args when using the CLI",
+    ' _____         _       _     ': `Local config file for Socket CLI tool ( ${SOCKET_WEBSITE_URL}/npm/package/${SOCKET_JSON.replace('.json', '')} ), to work with ${SOCKET_WEBSITE_URL}`,
+    '|   __|___ ___| |_ ___| |_   ':
+      '     The config in this file is used to set as defaults for flags or command args when using the CLI',
     "|__   | . |  _| '_| -_|  _|  ":
-      "     in this dir, often a repo root. You can choose commit or .ignore this file, both works.",
-    "|_____|___|___|_,_|___|_|.dev": `Warning: This file may be overwritten without warning by \`${SOCKET_JSON.replace(".json", "")} manifest setup\` or other commands`,
+      '     in this dir, often a repo root. You can choose commit or .ignore this file, both works.',
+    '|_____|___|___|_,_|___|_|.dev': `Warning: This file may be overwritten without warning by \`${SOCKET_JSON.replace('.json', '')} manifest setup\` or other commands`,
     version: 1,
-  };
+  }
 }
 
 export function readOrDefaultSocketJson(cwd: string): SocketJson {
-  const jsonCResult = readSocketJsonSync(cwd, true);
+  const jsonCResult = readSocketJsonSync(cwd, true)
   return jsonCResult.ok
     ? jsonCResult.data
     : // This should be unreachable but it makes TS happy.
-      getDefaultSocketJson();
+      getDefaultSocketJson()
 }
 
-export async function readOrDefaultSocketJsonUp(cwd: string): Promise<SocketJson> {
-  const socketJsonPath = await findSocketJsonUp(cwd);
+export async function readOrDefaultSocketJsonUp(
+  cwd: string,
+): Promise<SocketJson> {
+  const socketJsonPath = await findSocketJsonUp(cwd)
   if (socketJsonPath) {
-    const socketJsonDir = path.dirname(socketJsonPath);
-    const jsonCResult = readSocketJsonSync(socketJsonDir, true);
-    return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson();
+    const socketJsonDir = path.dirname(socketJsonPath)
+    const jsonCResult = readSocketJsonSync(socketJsonDir, true)
+    return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson()
   }
-  return getDefaultSocketJson();
+  return getDefaultSocketJson()
 }
 
-export function readSocketJsonSync(cwd: string, defaultOnError = false): CResult<SocketJson> {
-  const sockJsonPath = path.join(cwd, SOCKET_JSON);
+export function readSocketJsonSync(
+  cwd: string,
+  defaultOnError = false,
+): CResult<SocketJson> {
+  const sockJsonPath = path.join(cwd, SOCKET_JSON)
   if (!existsSync(sockJsonPath)) {
-    debugNs("notice", `miss: ${SOCKET_JSON} not found at ${cwd}`);
-    return { ok: true, data: getDefaultSocketJson() };
+    debugNs('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
+    return { ok: true, data: getDefaultSocketJson() }
   }
-  let jsonContent = undefined;
+  let jsonContent = undefined
   try {
-    jsonContent = readFileSync(sockJsonPath, "utf8");
+    jsonContent = readFileSync(sockJsonPath, 'utf8')
   } catch (e) {
     if (defaultOnError) {
-      logger.warn(`Failed to read ${SOCKET_JSON}, using default`);
-      debugNs("warn", `Failed to read ${SOCKET_JSON} sync`);
-      debugDirNs("warn", e);
-      return { ok: true, data: getDefaultSocketJson() };
+      logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
+      debugNs('warn', `Failed to read ${SOCKET_JSON} sync`)
+      debugDirNs('warn', e)
+      return { ok: true, data: getDefaultSocketJson() }
     }
-    const cause = formatErrorWithDetail(`An error occurred while trying to read ${SOCKET_JSON}`, e);
-    debugNs("error", `Failed to read ${SOCKET_JSON} sync`);
-    debugDirNs("error", e);
+    const cause = formatErrorWithDetail(
+      `An error occurred while trying to read ${SOCKET_JSON}`,
+      e,
+    )
+    debugNs('error', `Failed to read ${SOCKET_JSON} sync`)
+    debugDirNs('error', e)
     return {
       ok: false,
       message: `Failed to read ${SOCKET_JSON}`,
       cause,
-    };
+    }
   }
 
-  let jsonObj: SocketJson | undefined;
+  let jsonObj: SocketJson | undefined
   try {
-    jsonObj = JSON.parse(jsonContent) as SocketJson | undefined;
+    jsonObj = JSON.parse(jsonContent) as SocketJson | undefined
   } catch (e) {
-    debugNs("error", `Failed to parse ${SOCKET_JSON} as JSON (sync)`);
-    debugDirNs("inspect", { jsonContent });
-    debugDirNs("error", e);
+    debugNs('error', `Failed to parse ${SOCKET_JSON} as JSON (sync)`)
+    debugDirNs('inspect', { jsonContent })
+    debugDirNs('error', e)
     if (defaultOnError) {
-      logger.warn(`Failed to parse ${SOCKET_JSON}, using default`);
-      return { ok: true, data: getDefaultSocketJson() };
+      logger.warn(`Failed to parse ${SOCKET_JSON}, using default`)
+      return { ok: true, data: getDefaultSocketJson() }
     }
     return {
       ok: false,
       message: `Failed to parse ${SOCKET_JSON}`,
       cause: `${SOCKET_JSON} does not contain valid JSON, please verify`,
-    };
+    }
   }
 
   if (!jsonObj) {
-    logger.warn("Warning: file contents was empty, using default");
-    return { ok: true, data: getDefaultSocketJson() };
+    logger.warn('Warning: file contents was empty, using default')
+    return { ok: true, data: getDefaultSocketJson() }
   }
 
   // No validation needed: all SocketJson properties are optional and consumers
   // must defensively check properties regardless.
-  return { ok: true, data: jsonObj };
+  return { ok: true, data: jsonObj }
 }
 
 export async function writeSocketJson(
   cwd: string,
   sockJson: SocketJson,
 ): Promise<CResult<undefined>> {
-  let jsonContent = "";
+  let jsonContent = ''
   try {
-    jsonContent = JSON.stringify(sockJson, null, 2);
+    jsonContent = JSON.stringify(sockJson, null, 2)
   } catch (e) {
-    debugNs("error", `Failed to serialize ${SOCKET_JSON} to JSON`);
-    debugDirNs("inspect", { sockJson });
-    debugDirNs("error", e);
+    debugNs('error', `Failed to serialize ${SOCKET_JSON} to JSON`)
+    debugDirNs('inspect', { sockJson })
+    debugDirNs('error', e)
     return {
       ok: false,
-      message: "Failed to serialize to JSON",
+      message: 'Failed to serialize to JSON',
       cause: `There was an unexpected problem converting the ${SOCKET_JSON} object to a JSON string. Unable to store it.`,
-    };
+    }
   }
 
-  const filepath = path.join(cwd, SOCKET_JSON);
-  await writeFile(filepath, `${jsonContent}\n`, "utf8");
+  const filepath = path.join(cwd, SOCKET_JSON)
+  await writeFile(filepath, `${jsonContent}\n`, 'utf8')
 
-  return { ok: true, data: undefined };
+  return { ok: true, data: undefined }
 }

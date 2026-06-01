@@ -1,13 +1,13 @@
-import { cmdConfigAuto } from "./cmd-config-auto.mts";
-import { cmdConfigGet } from "./cmd-config-get.mts";
-import { cmdConfigList } from "./cmd-config-list.mts";
-import { cmdConfigSet } from "./cmd-config-set.mts";
-import { cmdConfigUnset } from "./cmd-config-unset.mts";
-import { meowWithSubcommands } from "../../util/cli/with-subcommands.mjs";
+import { cmdConfigAuto } from './cmd-config-auto.mts'
+import { cmdConfigGet } from './cmd-config-get.mts'
+import { cmdConfigList } from './cmd-config-list.mts'
+import { cmdConfigSet } from './cmd-config-set.mts'
+import { cmdConfigUnset } from './cmd-config-unset.mts'
+import { meowWithSubcommands } from '../../util/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from "../../util/cli/with-subcommands.mjs";
+import type { CliSubcommand } from '../../util/cli/with-subcommands.mjs'
 
-const description = "Manage Socket CLI configuration";
+const description = 'Manage Socket CLI configuration'
 
 export const cmdConfig: CliSubcommand = {
   description,
@@ -27,6 +27,6 @@ export const cmdConfig: CliSubcommand = {
         },
       },
       { description },
-    );
+    )
   },
-};
+}

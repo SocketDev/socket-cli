@@ -12,34 +12,34 @@
  * Related Files: - util/data/strings.mts (implementation)
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
-import { camelToKebab } from "../../../../src/util/data/strings.mts";
+import { camelToKebab } from '../../../../src/util/data/strings.mts'
 
-describe("strings utilities", () => {
-  describe("camelToKebab", () => {
-    it("converts camelCase to kebab-case", () => {
-      expect(camelToKebab("camelCase")).toBe("camel-case");
-      expect(camelToKebab("myVariableName")).toBe("my-variable-name");
-      expect(camelToKebab("APIToken")).toBe("apitoken");
-    });
+describe('strings utilities', () => {
+  describe('camelToKebab', () => {
+    it('converts camelCase to kebab-case', () => {
+      expect(camelToKebab('camelCase')).toBe('camel-case')
+      expect(camelToKebab('myVariableName')).toBe('my-variable-name')
+      expect(camelToKebab('APIToken')).toBe('apitoken')
+    })
 
-    it("handles single words", () => {
-      expect(camelToKebab("word")).toBe("word");
-      expect(camelToKebab("WORD")).toBe("word");
-    });
+    it('handles single words', () => {
+      expect(camelToKebab('word')).toBe('word')
+      expect(camelToKebab('WORD')).toBe('word')
+    })
 
-    it("handles empty string", () => {
-      expect(camelToKebab("")).toBe("");
-    });
+    it('handles empty string', () => {
+      expect(camelToKebab('')).toBe('')
+    })
 
-    it("handles already kebab-case", () => {
-      expect(camelToKebab("already-kebab")).toBe("already-kebab");
-    });
+    it('handles already kebab-case', () => {
+      expect(camelToKebab('already-kebab')).toBe('already-kebab')
+    })
 
-    it("handles numbers", () => {
-      expect(camelToKebab("version2")).toBe("version2");
-      expect(camelToKebab("v2Update")).toBe("v2update");
-    });
-  });
-});
+    it('handles numbers', () => {
+      expect(camelToKebab('version2')).toBe('version2')
+      expect(camelToKebab('v2Update')).toBe('v2update')
+    })
+  })
+})

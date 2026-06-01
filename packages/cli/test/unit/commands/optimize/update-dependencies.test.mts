@@ -10,7 +10,7 @@
  * Related Files: - commands/optimize/update-dependencies.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -20,198 +20,210 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}));
+}))
 
 const mockSpinner = vi.hoisted(() => ({
   start: vi.fn(),
   stop: vi.fn(),
   text: vi.fn(),
   isSpinning: false,
-}));
+}))
 
 const mockDefaultSpinner = vi.hoisted(() => ({
   start: vi.fn(),
   stop: vi.fn(),
-}));
+}))
 
-const mockRunAgentInstall = vi.hoisted(() => vi.fn());
+const mockRunAgentInstall = vi.hoisted(() => vi.fn())
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/spinner/default"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
   getDefaultSpinner: () => mockDefaultSpinner,
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/debug/output"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
-}));
+}))
 
-vi.mock(import("../../../../src/commands/optimize/agent-installer.mts"), () => ({
-  runAgentInstall: mockRunAgentInstall,
-}));
+vi.mock(
+  import('../../../../src/commands/optimize/agent-installer.mts'),
+  () => ({
+    runAgentInstall: mockRunAgentInstall,
+  }),
+)
 
-vi.mock(import("../../../../src/constants/packages.mts"), () => ({
-  NPM_BUGGY_OVERRIDES_PATCHED_VERSION: "10.9.0",
-}));
+vi.mock(import('../../../../src/constants/packages.mts'), () => ({
+  NPM_BUGGY_OVERRIDES_PATCHED_VERSION: '10.9.0',
+}))
 
-vi.mock(import("../../../../src/util/process/cmd.mts"), () => ({
-  cmdPrefixMessage: (cmd: string, msg: string) => (cmd ? `${cmd}: ${msg}` : msg),
-}));
+vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
+  cmdPrefixMessage: (cmd: string, msg: string) =>
+    cmd ? `${cmd}: ${msg}` : msg,
+}))
 
-import { updateDependencies } from "../../../../src/commands/optimize/update-dependencies.mts";
+import { updateDependencies } from '../../../../src/commands/optimize/update-dependencies.mts'
 
-import type { EnvDetails } from "../../../../src/util/ecosystem/environment.mjs";
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
-describe("update-dependencies", () => {
+describe('update-dependencies', () => {
   const mockEnvDetails = {
-    agent: "npm",
-    agentVersion: "10.0.0",
-    lockName: "package-lock.json",
-    pkgPath: "/test/project",
+    agent: 'npm',
+    agentVersion: '10.0.0',
+    lockName: 'package-lock.json',
+    pkgPath: '/test/project',
     features: {
       npmBuggyOverrides: false,
     },
-  } as unknown as EnvDetails;
+  } as unknown as EnvDetails
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockRunAgentInstall.mockResolvedValue(undefined);
-    mockSpinner.isSpinning = false;
-  });
+    vi.clearAllMocks()
+    mockRunAgentInstall.mockResolvedValue(undefined)
+    mockSpinner.isSpinning = false
+  })
 
-  describe("updateDependencies", () => {
-    it("returns success on successful install", async () => {
+  describe('updateDependencies', () => {
+    it('returns success on successful install', async () => {
       const result = await updateDependencies(mockEnvDetails, {
-        cmdName: "optimize",
+        cmdName: 'optimize',
         logger: mockLogger,
         spinner: mockSpinner,
-      });
+      })
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       expect(mockRunAgentInstall).toHaveBeenCalledWith(mockEnvDetails, {
         spinner: mockSpinner,
-      });
-      expect(mockSpinner.start).toHaveBeenCalledWith("Updating package-lock.json…");
-      expect(mockSpinner.stop).toHaveBeenCalled();
-    });
+      })
+      expect(mockSpinner.start).toHaveBeenCalledWith(
+        'Updating package-lock.json…',
+      )
+      expect(mockSpinner.stop).toHaveBeenCalled()
+    })
 
-    it("returns error on install failure", async () => {
-      mockRunAgentInstall.mockRejectedValue(new Error("Install failed"));
+    it('returns error on install failure', async () => {
+      mockRunAgentInstall.mockRejectedValue(new Error('Install failed'))
 
       const result = await updateDependencies(mockEnvDetails, {
-        cmdName: "optimize",
+        cmdName: 'optimize',
         logger: mockLogger,
         spinner: mockSpinner,
-      });
+      })
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe("Dependencies update failed");
-        expect(result.cause).toContain("npm install failed");
+        expect(result.message).toBe('Dependencies update failed')
+        expect(result.cause).toContain('npm install failed')
       }
-      expect(mockSpinner.stop).toHaveBeenCalled();
-    });
+      expect(mockSpinner.stop).toHaveBeenCalled()
+    })
 
-    it("logs message when npmBuggyOverrides is true", async () => {
+    it('logs message when npmBuggyOverrides is true', async () => {
       const envWithBuggyOverrides = {
         ...mockEnvDetails,
         features: {
           npmBuggyOverrides: true,
         },
-      } as unknown as EnvDetails;
+      } as unknown as EnvDetails
 
       await updateDependencies(envWithBuggyOverrides, {
-        cmdName: "optimize",
+        cmdName: 'optimize',
         logger: mockLogger,
         spinner: mockSpinner,
-      });
+      })
 
-      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining("Re-run optimize"));
-      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining("10.9.0"));
-    });
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('Re-run optimize'),
+      )
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('10.9.0'),
+      )
+    })
 
-    it("works without spinner", async () => {
+    it('works without spinner', async () => {
       const result = await updateDependencies(mockEnvDetails, {
-        cmdName: "test",
+        cmdName: 'test',
         logger: mockLogger,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      expect(mockRunAgentInstall).toHaveBeenCalled();
-    });
+      expect(result.ok).toBe(true)
+      expect(mockRunAgentInstall).toHaveBeenCalled()
+    })
 
-    it("restarts spinner if it was spinning before error", async () => {
-      mockSpinner.isSpinning = true;
-      mockRunAgentInstall.mockRejectedValue(new Error("Install failed"));
+    it('restarts spinner if it was spinning before error', async () => {
+      mockSpinner.isSpinning = true
+      mockRunAgentInstall.mockRejectedValue(new Error('Install failed'))
 
       await updateDependencies(mockEnvDetails, {
-        cmdName: "optimize",
+        cmdName: 'optimize',
         logger: mockLogger,
         spinner: mockSpinner,
-      });
+      })
 
-      expect(mockDefaultSpinner.start).toHaveBeenCalled();
-    });
+      expect(mockDefaultSpinner.start).toHaveBeenCalled()
+    })
 
-    it("restarts spinner if it was spinning after success", async () => {
-      mockSpinner.isSpinning = true;
+    it('restarts spinner if it was spinning after success', async () => {
+      mockSpinner.isSpinning = true
 
       await updateDependencies(mockEnvDetails, {
-        cmdName: "optimize",
+        cmdName: 'optimize',
         logger: mockLogger,
         spinner: mockSpinner,
-      });
+      })
 
-      expect(mockDefaultSpinner.start).toHaveBeenCalled();
-    });
+      expect(mockDefaultSpinner.start).toHaveBeenCalled()
+    })
 
-    it("does not restart spinner if it was not spinning", async () => {
-      mockSpinner.isSpinning = false;
+    it('does not restart spinner if it was not spinning', async () => {
+      mockSpinner.isSpinning = false
 
       await updateDependencies(mockEnvDetails, {
-        cmdName: "optimize",
+        cmdName: 'optimize',
         logger: mockLogger,
         spinner: mockSpinner,
-      });
+      })
 
-      expect(mockDefaultSpinner.start).not.toHaveBeenCalled();
-    });
+      expect(mockDefaultSpinner.start).not.toHaveBeenCalled()
+    })
 
-    it("handles different package managers", async () => {
+    it('handles different package managers', async () => {
       const pnpmEnvDetails = {
         ...mockEnvDetails,
-        agent: "pnpm",
-        lockName: "pnpm-lock.yaml",
-      } as unknown as EnvDetails;
+        agent: 'pnpm',
+        lockName: 'pnpm-lock.yaml',
+      } as unknown as EnvDetails
 
       const result = await updateDependencies(pnpmEnvDetails, {
-        cmdName: "optimize",
+        cmdName: 'optimize',
         logger: mockLogger,
         spinner: mockSpinner,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      expect(mockSpinner.start).toHaveBeenCalledWith("Updating pnpm-lock.yaml…");
-    });
+      expect(result.ok).toBe(true)
+      expect(mockSpinner.start).toHaveBeenCalledWith('Updating pnpm-lock.yaml…')
+    })
 
-    it("works with empty cmdName", async () => {
+    it('works with empty cmdName', async () => {
       const envWithBuggyOverrides = {
         ...mockEnvDetails,
         features: {
           npmBuggyOverrides: true,
         },
-      } as unknown as EnvDetails;
+      } as unknown as EnvDetails
 
       await updateDependencies(envWithBuggyOverrides, {
-        cmdName: "",
+        cmdName: '',
         logger: mockLogger,
         spinner: mockSpinner,
-      });
+      })
 
-      expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining("Re-run "));
-    });
-  });
-});
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('Re-run '),
+      )
+    })
+  })
+})

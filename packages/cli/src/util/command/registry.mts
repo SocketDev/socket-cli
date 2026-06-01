@@ -3,9 +3,13 @@
  *   definitions, middleware, and plugin support.
  */
 
-export { CommandRegistry, registry } from "./registry-core.mjs";
-export { defineCommand } from "./registry-define.mjs";
-export { generateCommandHelp, generateGlobalHelp, isHelpRequested } from "./registry-help.mjs";
+export { CommandRegistry, registry } from './registry-core.mjs'
+export { defineCommand } from './registry-define.mjs'
+export {
+  generateCommandHelp,
+  generateGlobalHelp,
+  isHelpRequested,
+} from './registry-help.mjs'
 
 export type {
   CommandContext,
@@ -18,4 +22,4 @@ export type {
   HookFn,
   MiddlewareFn,
   ValidationResult,
-} from "./registry-types.mjs";
+} from './registry-types.mjs'

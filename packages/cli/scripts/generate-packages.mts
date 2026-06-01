@@ -3,31 +3,36 @@
  * generation scripts from package-builder.
  */
 
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const packageBuilderScripts = path.resolve(__dirname, "../../package-builder/scripts");
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const packageBuilderScripts = path.resolve(
+  __dirname,
+  '../../package-builder/scripts',
+)
 
 const scripts = [
-  path.join(packageBuilderScripts, "generate-cli-packages.mts"),
-  path.join(packageBuilderScripts, "generate-socketbin-packages.mts"),
-];
+  path.join(packageBuilderScripts, 'generate-cli-packages.mts'),
+  path.join(packageBuilderScripts, 'generate-socketbin-packages.mts'),
+]
 
 for (let i = 0, { length } = scripts; i < length; i += 1) {
-  const script = scripts[i];
-  const result = await spawn("node", [script], { stdio: "inherit" });
+  const script = scripts[i]
+  const result = await spawn('node', [script], { stdio: 'inherit' })
 
   if (!result) {
-    process.exitCode = 1;
-    throw new Error(`Failed to start script: ${script}`);
+    process.exitCode = 1
+    throw new Error(`Failed to start script: ${script}`)
   }
 
   if (result.code !== 0) {
     // Use nullish coalescing to handle signal-killed processes (code is null).
-    process.exitCode = result.code ?? 1;
-    throw new Error(`Package generation failed for ${script} with exit code ${result.code}`);
+    process.exitCode = result.code ?? 1
+    throw new Error(
+      `Package generation failed for ${script} with exit code ${result.code}`,
+    )
   }
 }

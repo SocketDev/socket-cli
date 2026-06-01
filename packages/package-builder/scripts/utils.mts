@@ -2,9 +2,9 @@
  * Shared utilities for package generator scripts.
  */
 
-import { promises as fs } from "node:fs";
+import { promises as fs } from 'node:fs'
 
-import Handlebars from "handlebars";
+import Handlebars from 'handlebars'
 
 /**
  * Copy directory recursively.
@@ -13,7 +13,7 @@ import Handlebars from "handlebars";
  * @param {string} dest - Destination directory path.
  */
 export async function copyDirectory(src, dest) {
-  await fs.cp(src, dest, { recursive: true });
+  await fs.cp(src, dest, { recursive: true })
 }
 
 /**
@@ -34,9 +34,9 @@ export async function copyDirectory(src, dest) {
  * @returns {Promise<string>} Rendered template content.
  */
 export async function processTemplate(templatePath, context) {
-  const content = await fs.readFile(templatePath, "utf-8");
+  const content = await fs.readFile(templatePath, 'utf-8')
 
   // Compile and render template with Handlebars.
-  const template = Handlebars.compile(content);
-  return template(context);
+  const template = Handlebars.compile(content)
+  return template(context)
 }

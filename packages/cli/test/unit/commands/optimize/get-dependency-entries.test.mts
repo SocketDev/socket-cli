@@ -11,81 +11,84 @@
  * (implementation)
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
-import { getDependencyEntries } from "../../../../src/commands/optimize/get-dependency-entries.mts";
+import { getDependencyEntries } from '../../../../src/commands/optimize/get-dependency-entries.mts'
 
-import type { EnvDetails } from "../../../../src/util/ecosystem/environment.mjs";
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
-describe("get-dependency-entries", () => {
-  describe("getDependencyEntries", () => {
-    it("returns all dependency types when present", () => {
+describe('get-dependency-entries', () => {
+  describe('getDependencyEntries', () => {
+    it('returns all dependency types when present', () => {
       const envDetails = {
         editablePkgJson: {
           content: {
-            dependencies: { lodash: "^4.17.21" },
-            devDependencies: { vitest: "^2.0.0" },
-            peerDependencies: { react: ">=18.0.0" },
-            optionalDependencies: { fsevents: "^2.3.0" },
+            dependencies: { lodash: '^4.17.21' },
+            devDependencies: { vitest: '^2.0.0' },
+            peerDependencies: { react: '>=18.0.0' },
+            optionalDependencies: { fsevents: '^2.3.0' },
           },
         },
-      } as EnvDetails;
+      } as EnvDetails
 
-      const result = getDependencyEntries(envDetails);
+      const result = getDependencyEntries(envDetails)
 
-      expect(result).toHaveLength(4);
-      expect(result[0]).toEqual(["dependencies", { lodash: "^4.17.21" }]);
-      expect(result[1]).toEqual(["devDependencies", { vitest: "^2.0.0" }]);
-      expect(result[2]).toEqual(["peerDependencies", { react: ">=18.0.0" }]);
-      expect(result[3]).toEqual(["optionalDependencies", { fsevents: "^2.3.0" }]);
-    });
+      expect(result).toHaveLength(4)
+      expect(result[0]).toEqual(['dependencies', { lodash: '^4.17.21' }])
+      expect(result[1]).toEqual(['devDependencies', { vitest: '^2.0.0' }])
+      expect(result[2]).toEqual(['peerDependencies', { react: '>=18.0.0' }])
+      expect(result[3]).toEqual([
+        'optionalDependencies',
+        { fsevents: '^2.3.0' },
+      ])
+    })
 
-    it("filters out undefined dependency types", () => {
+    it('filters out undefined dependency types', () => {
       const envDetails = {
         editablePkgJson: {
           content: {
-            dependencies: { lodash: "^4.17.21" },
+            dependencies: { lodash: '^4.17.21' },
             devDependencies: undefined,
             peerDependencies: undefined,
             optionalDependencies: undefined,
           },
         },
-      } as EnvDetails;
+      } as EnvDetails
 
-      const result = getDependencyEntries(envDetails);
+      const result = getDependencyEntries(envDetails)
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual(["dependencies", { lodash: "^4.17.21" }]);
-    });
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual(['dependencies', { lodash: '^4.17.21' }])
+    })
 
-    it("returns empty array when no dependencies present", () => {
+    it('returns empty array when no dependencies present', () => {
       const envDetails = {
         editablePkgJson: {
           content: {},
         },
-      } as EnvDetails;
+      } as EnvDetails
 
-      const result = getDependencyEntries(envDetails);
+      const result = getDependencyEntries(envDetails)
 
-      expect(result).toHaveLength(0);
-    });
+      expect(result).toHaveLength(0)
+    })
 
-    it("handles only devDependencies", () => {
+    it('handles only devDependencies', () => {
       const envDetails = {
         editablePkgJson: {
           content: {
-            devDependencies: { typescript: "^5.0.0" },
+            devDependencies: { typescript: '^5.0.0' },
           },
         },
-      } as EnvDetails;
+      } as EnvDetails
 
-      const result = getDependencyEntries(envDetails);
+      const result = getDependencyEntries(envDetails)
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual(["devDependencies", { typescript: "^5.0.0" }]);
-    });
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual(['devDependencies', { typescript: '^5.0.0' }])
+    })
 
-    it("handles empty dependency objects", () => {
+    it('handles empty dependency objects', () => {
       const envDetails = {
         editablePkgJson: {
           content: {
@@ -93,27 +96,27 @@ describe("get-dependency-entries", () => {
             devDependencies: {},
           },
         },
-      } as EnvDetails;
+      } as EnvDetails
 
-      const result = getDependencyEntries(envDetails);
+      const result = getDependencyEntries(envDetails)
 
       // Empty objects are truthy, so they are included.
-      expect(result).toHaveLength(2);
-    });
+      expect(result).toHaveLength(2)
+    })
 
-    it("returns dependencies with null prototype", () => {
+    it('returns dependencies with null prototype', () => {
       const envDetails = {
         editablePkgJson: {
           content: {
-            dependencies: { lodash: "^4.17.21" },
+            dependencies: { lodash: '^4.17.21' },
           },
         },
-      } as EnvDetails;
+      } as EnvDetails
 
-      const result = getDependencyEntries(envDetails);
+      const result = getDependencyEntries(envDetails)
 
-      const deps = result[0]![1];
-      expect(Object.getPrototypeOf(deps)).toBeNull();
-    });
-  });
-});
+      const deps = result[0]![1]
+      expect(Object.getPrototypeOf(deps)).toBeNull()
+    })
+  })
+})

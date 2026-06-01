@@ -5,225 +5,235 @@
  * the per-tool spawn-* files used to assemble by hand.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockSpawn = vi.hoisted(() => vi.fn());
-const mockDownloadGitHubReleaseBinary = vi.hoisted(() => vi.fn());
-const mockSpawnToolVfs = vi.hoisted(() => vi.fn());
-const mockAreExternalToolsAvailable = vi.hoisted(() => vi.fn());
-const mockIsSeaBinary = vi.hoisted(() => vi.fn());
+const mockSpawn = vi.hoisted(() => vi.fn())
+const mockDownloadGitHubReleaseBinary = vi.hoisted(() => vi.fn())
+const mockSpawnToolVfs = vi.hoisted(() => vi.fn())
+const mockAreExternalToolsAvailable = vi.hoisted(() => vi.fn())
+const mockIsSeaBinary = vi.hoisted(() => vi.fn())
 
-vi.mock(import("@socketsecurity/lib-stable/process/spawn/child"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
-}));
+}))
 
-vi.mock(import("../../../../src/util/dlx/spawn.mts"), () => ({
+vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
   downloadGitHubReleaseBinary: mockDownloadGitHubReleaseBinary,
   spawnToolVfs: mockSpawnToolVfs,
-}));
+}))
 
-vi.mock(import("../../../../src/util/dlx/vfs-extract.mts"), () => ({
+vi.mock(import('../../../../src/util/dlx/vfs-extract.mts'), () => ({
   areExternalToolsAvailable: mockAreExternalToolsAvailable,
-}));
+}))
 
-vi.mock(import("../../../../src/util/sea/detect.mts"), () => ({
+vi.mock(import('../../../../src/util/sea/detect.mts'), () => ({
   isSeaBinary: mockIsSeaBinary,
-}));
+}))
 
 import {
   defineAutoDispatch,
   defineGitHubReleaseSpawn,
   defineToolSpawn,
   defineVfsSpawn,
-} from "../../../../src/util/dlx/define-tool-spawn.mts";
+} from '../../../../src/util/dlx/define-tool-spawn.mts'
 
-describe("defineToolSpawn helpers", () => {
+describe('defineToolSpawn helpers', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  describe("defineVfsSpawn", () => {
-    it("forwards to spawnToolVfs with the configured tool name", async () => {
-      mockSpawnToolVfs.mockResolvedValue({ spawnPromise: Promise.resolve() });
-      const fn = defineVfsSpawn("trufflehog" as unknown);
-      await fn(["scan", "/path"], undefined, undefined);
+  describe('defineVfsSpawn', () => {
+    it('forwards to spawnToolVfs with the configured tool name', async () => {
+      mockSpawnToolVfs.mockResolvedValue({ spawnPromise: Promise.resolve() })
+      const fn = defineVfsSpawn('trufflehog' as unknown)
+      await fn(['scan', '/path'], undefined, undefined)
       expect(mockSpawnToolVfs).toHaveBeenCalledWith(
-        "trufflehog",
-        ["scan", "/path"],
+        'trufflehog',
+        ['scan', '/path'],
         undefined,
         undefined,
-      );
-    });
+      )
+    })
 
-    it("passes options + spawnExtra through unchanged", async () => {
-      mockSpawnToolVfs.mockResolvedValue({ spawnPromise: Promise.resolve() });
-      const fn = defineVfsSpawn("trivy" as unknown);
-      const opts = { env: { FOO: "bar" } } as unknown;
-      const extra = { stdio: "pipe" as unknown };
-      await fn(["fs"], opts, extra);
-      expect(mockSpawnToolVfs).toHaveBeenCalledWith("trivy", ["fs"], opts, extra);
-    });
-  });
+    it('passes options + spawnExtra through unchanged', async () => {
+      mockSpawnToolVfs.mockResolvedValue({ spawnPromise: Promise.resolve() })
+      const fn = defineVfsSpawn('trivy' as unknown)
+      const opts = { env: { FOO: 'bar' } } as unknown
+      const extra = { stdio: 'pipe' as unknown }
+      await fn(['fs'], opts, extra)
+      expect(mockSpawnToolVfs).toHaveBeenCalledWith(
+        'trivy',
+        ['fs'],
+        opts,
+        extra,
+      )
+    })
+  })
 
-  describe("defineGitHubReleaseSpawn", () => {
-    it("downloads + spawns a GitHub-release tool", async () => {
-      mockDownloadGitHubReleaseBinary.mockResolvedValue("/cache/trufflehog");
-      mockSpawn.mockReturnValue("mock-spawn-promise");
+  describe('defineGitHubReleaseSpawn', () => {
+    it('downloads + spawns a GitHub-release tool', async () => {
+      mockDownloadGitHubReleaseBinary.mockResolvedValue('/cache/trufflehog')
+      mockSpawn.mockReturnValue('mock-spawn-promise')
       const fn = defineGitHubReleaseSpawn({
-        toolName: "trufflehog",
+        toolName: 'trufflehog',
         resolve: () => ({
-          type: "github-release",
-          details: { name: "trufflehog", version: "3.0.0" } as unknown,
+          type: 'github-release',
+          details: { name: 'trufflehog', version: '3.0.0' } as unknown,
         }),
-      });
-      const result = await fn(["scan"], undefined, undefined);
-      expect(mockDownloadGitHubReleaseBinary).toHaveBeenCalled();
+      })
+      const result = await fn(['scan'], undefined, undefined)
+      expect(mockDownloadGitHubReleaseBinary).toHaveBeenCalled()
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/cache/trufflehog",
-        ["scan"],
+        '/cache/trufflehog',
+        ['scan'],
         expect.objectContaining({
-          stdio: "inherit",
+          stdio: 'inherit',
           env: expect.any(Object),
         }),
-      );
-      expect(result).toEqual({ spawnPromise: "mock-spawn-promise" });
-    });
+      )
+      expect(result).toEqual({ spawnPromise: 'mock-spawn-promise' })
+    })
 
-    it("honors a custom stdio passed via spawnExtra", async () => {
-      mockDownloadGitHubReleaseBinary.mockResolvedValue("/cache/trivy");
-      mockSpawn.mockReturnValue("p");
+    it('honors a custom stdio passed via spawnExtra', async () => {
+      mockDownloadGitHubReleaseBinary.mockResolvedValue('/cache/trivy')
+      mockSpawn.mockReturnValue('p')
       const fn = defineGitHubReleaseSpawn({
-        toolName: "trivy",
+        toolName: 'trivy',
         resolve: () => ({
-          type: "github-release",
-          details: { name: "trivy", version: "1.0.0" } as unknown,
+          type: 'github-release',
+          details: { name: 'trivy', version: '1.0.0' } as unknown,
         }),
-      });
-      await fn(["fs", "/"], undefined, { stdio: "pipe" } as unknown);
+      })
+      await fn(['fs', '/'], undefined, { stdio: 'pipe' } as unknown)
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/cache/trivy",
-        ["fs", "/"],
-        expect.objectContaining({ stdio: "pipe" }),
-      );
-    });
+        '/cache/trivy',
+        ['fs', '/'],
+        expect.objectContaining({ stdio: 'pipe' }),
+      )
+    })
 
-    it("merges options.env into the child env", async () => {
-      mockDownloadGitHubReleaseBinary.mockResolvedValue("/cache/opengrep");
-      mockSpawn.mockReturnValue("p");
+    it('merges options.env into the child env', async () => {
+      mockDownloadGitHubReleaseBinary.mockResolvedValue('/cache/opengrep')
+      mockSpawn.mockReturnValue('p')
       const fn = defineGitHubReleaseSpawn({
-        toolName: "opengrep",
+        toolName: 'opengrep',
         resolve: () => ({
-          type: "github-release",
-          details: { name: "opengrep", version: "1.0.0" } as unknown,
+          type: 'github-release',
+          details: { name: 'opengrep', version: '1.0.0' } as unknown,
         }),
-      });
-      await fn([], { env: { FOO: "bar" } } as unknown, undefined);
-      const callEnv = mockSpawn.mock.calls[0][2].env;
-      expect(callEnv.FOO).toBe("bar");
-    });
+      })
+      await fn([], { env: { FOO: 'bar' } } as unknown, undefined)
+      const callEnv = mockSpawn.mock.calls[0][2].env
+      expect(callEnv.FOO).toBe('bar')
+    })
 
-    it("throws an internal error when the resolver returns the wrong type", async () => {
+    it('throws an internal error when the resolver returns the wrong type', async () => {
       const fn = defineGitHubReleaseSpawn({
-        toolName: "trufflehog",
+        toolName: 'trufflehog',
         // Resolver contract bug: type='dlx' instead of 'github-release'.
         resolve: () =>
           ({
-            type: "dlx",
-            details: { name: "trufflehog", version: "3.0.0" },
+            type: 'dlx',
+            details: { name: 'trufflehog', version: '3.0.0' },
           }) as unknown,
-      });
+      })
       await expect(fn([], undefined, undefined)).rejects.toThrow(
         /resolveTrufflehog returned resolution\.type="dlx"/,
-      );
-    });
-  });
+      )
+    })
+  })
 
-  describe("defineAutoDispatch", () => {
-    it("uses Vfs in SEA mode with external tools available", async () => {
-      mockIsSeaBinary.mockReturnValue(true);
-      mockAreExternalToolsAvailable.mockReturnValue(true);
-      const vfs = vi.fn().mockResolvedValue({ spawnPromise: "vfs-result" });
-      const dlx = vi.fn().mockResolvedValue({ spawnPromise: "dlx-result" });
-      const auto = defineAutoDispatch({ vfs, dlx });
-      const result = await auto([], undefined, undefined);
-      expect(vfs).toHaveBeenCalled();
-      expect(dlx).not.toHaveBeenCalled();
-      expect(result).toEqual({ spawnPromise: "vfs-result" });
-    });
+  describe('defineAutoDispatch', () => {
+    it('uses Vfs in SEA mode with external tools available', async () => {
+      mockIsSeaBinary.mockReturnValue(true)
+      mockAreExternalToolsAvailable.mockReturnValue(true)
+      const vfs = vi.fn().mockResolvedValue({ spawnPromise: 'vfs-result' })
+      const dlx = vi.fn().mockResolvedValue({ spawnPromise: 'dlx-result' })
+      const auto = defineAutoDispatch({ vfs, dlx })
+      const result = await auto([], undefined, undefined)
+      expect(vfs).toHaveBeenCalled()
+      expect(dlx).not.toHaveBeenCalled()
+      expect(result).toEqual({ spawnPromise: 'vfs-result' })
+    })
 
-    it("uses Dlx when not in SEA mode", async () => {
-      mockIsSeaBinary.mockReturnValue(false);
-      mockAreExternalToolsAvailable.mockReturnValue(true);
-      const vfs = vi.fn().mockResolvedValue({ spawnPromise: "vfs" });
-      const dlx = vi.fn().mockResolvedValue({ spawnPromise: "dlx" });
-      const auto = defineAutoDispatch({ vfs, dlx });
-      const result = await auto([], undefined, undefined);
-      expect(dlx).toHaveBeenCalled();
-      expect(vfs).not.toHaveBeenCalled();
-      expect(result).toEqual({ spawnPromise: "dlx" });
-    });
+    it('uses Dlx when not in SEA mode', async () => {
+      mockIsSeaBinary.mockReturnValue(false)
+      mockAreExternalToolsAvailable.mockReturnValue(true)
+      const vfs = vi.fn().mockResolvedValue({ spawnPromise: 'vfs' })
+      const dlx = vi.fn().mockResolvedValue({ spawnPromise: 'dlx' })
+      const auto = defineAutoDispatch({ vfs, dlx })
+      const result = await auto([], undefined, undefined)
+      expect(dlx).toHaveBeenCalled()
+      expect(vfs).not.toHaveBeenCalled()
+      expect(result).toEqual({ spawnPromise: 'dlx' })
+    })
 
-    it("uses Dlx when in SEA but external tools missing", async () => {
-      mockIsSeaBinary.mockReturnValue(true);
-      mockAreExternalToolsAvailable.mockReturnValue(false);
-      const vfs = vi.fn();
-      const dlx = vi.fn().mockResolvedValue({ spawnPromise: "dlx" });
-      const auto = defineAutoDispatch({ vfs, dlx });
-      await auto([], undefined, undefined);
-      expect(dlx).toHaveBeenCalled();
-      expect(vfs).not.toHaveBeenCalled();
-    });
-  });
+    it('uses Dlx when in SEA but external tools missing', async () => {
+      mockIsSeaBinary.mockReturnValue(true)
+      mockAreExternalToolsAvailable.mockReturnValue(false)
+      const vfs = vi.fn()
+      const dlx = vi.fn().mockResolvedValue({ spawnPromise: 'dlx' })
+      const auto = defineAutoDispatch({ vfs, dlx })
+      await auto([], undefined, undefined)
+      expect(dlx).toHaveBeenCalled()
+      expect(vfs).not.toHaveBeenCalled()
+    })
+  })
 
-  describe("defineToolSpawn (full triple)", () => {
-    it("returns Dlx + Vfs + auto together", () => {
+  describe('defineToolSpawn (full triple)', () => {
+    it('returns Dlx + Vfs + auto together', () => {
       const triple = defineToolSpawn({
-        toolName: "trufflehog",
-        vfsName: "trufflehog" as unknown,
+        toolName: 'trufflehog',
+        vfsName: 'trufflehog' as unknown,
         resolve: () =>
           ({
-            type: "github-release",
-            details: { name: "trufflehog", version: "3.0.0" },
+            type: 'github-release',
+            details: { name: 'trufflehog', version: '3.0.0' },
           }) as unknown,
-      });
-      expect(typeof triple.Dlx).toBe("function");
-      expect(typeof triple.Vfs).toBe("function");
-      expect(typeof triple.auto).toBe("function");
-    });
+      })
+      expect(typeof triple.Dlx).toBe('function')
+      expect(typeof triple.Vfs).toBe('function')
+      expect(typeof triple.auto).toBe('function')
+    })
 
-    it("auto routes to Vfs in SEA mode", async () => {
-      mockIsSeaBinary.mockReturnValue(true);
-      mockAreExternalToolsAvailable.mockReturnValue(true);
-      mockSpawnToolVfs.mockResolvedValue({ spawnPromise: "vfs" });
+    it('auto routes to Vfs in SEA mode', async () => {
+      mockIsSeaBinary.mockReturnValue(true)
+      mockAreExternalToolsAvailable.mockReturnValue(true)
+      mockSpawnToolVfs.mockResolvedValue({ spawnPromise: 'vfs' })
       const triple = defineToolSpawn({
-        toolName: "trivy",
-        vfsName: "trivy" as unknown,
+        toolName: 'trivy',
+        vfsName: 'trivy' as unknown,
         resolve: () =>
           ({
-            type: "github-release",
-            details: { name: "trivy", version: "1.0.0" },
+            type: 'github-release',
+            details: { name: 'trivy', version: '1.0.0' },
           }) as unknown,
-      });
-      await triple.auto([], undefined, undefined);
-      expect(mockSpawnToolVfs).toHaveBeenCalledWith("trivy", [], undefined, undefined);
-    });
+      })
+      await triple.auto([], undefined, undefined)
+      expect(mockSpawnToolVfs).toHaveBeenCalledWith(
+        'trivy',
+        [],
+        undefined,
+        undefined,
+      )
+    })
 
-    it("auto routes to Dlx outside SEA mode", async () => {
-      mockIsSeaBinary.mockReturnValue(false);
-      mockDownloadGitHubReleaseBinary.mockResolvedValue("/cache/opengrep");
-      mockSpawn.mockReturnValue("p");
+    it('auto routes to Dlx outside SEA mode', async () => {
+      mockIsSeaBinary.mockReturnValue(false)
+      mockDownloadGitHubReleaseBinary.mockResolvedValue('/cache/opengrep')
+      mockSpawn.mockReturnValue('p')
       const triple = defineToolSpawn({
-        toolName: "opengrep",
-        vfsName: "opengrep" as unknown,
+        toolName: 'opengrep',
+        vfsName: 'opengrep' as unknown,
         resolve: () =>
           ({
-            type: "github-release",
-            details: { name: "opengrep", version: "1.0.0" },
+            type: 'github-release',
+            details: { name: 'opengrep', version: '1.0.0' },
           }) as unknown,
-      });
-      await triple.auto([], undefined, undefined);
-      expect(mockDownloadGitHubReleaseBinary).toHaveBeenCalled();
-      expect(mockSpawnToolVfs).not.toHaveBeenCalled();
-    });
-  });
-});
+      })
+      await triple.auto([], undefined, undefined)
+      expect(mockDownloadGitHubReleaseBinary).toHaveBeenCalled()
+      expect(mockSpawnToolVfs).not.toHaveBeenCalled()
+    })
+  })
+})

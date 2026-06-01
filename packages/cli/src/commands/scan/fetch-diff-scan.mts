@@ -1,26 +1,28 @@
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { queryApiSafeJson } from "../../util/socket/api.mjs";
+import { queryApiSafeJson } from '../../util/socket/api.mjs'
 
-import type { CResult } from "../../types.mts";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
-const logger = getDefaultLogger();
+import type { CResult } from '../../types.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+const logger = getDefaultLogger()
 
 export async function fetchDiffScan({
   id1,
   id2,
   orgSlug,
 }: {
-  id1: string;
-  id2: string;
-  orgSlug: string;
-}): Promise<CResult<SocketSdkSuccessResult<"GetOrgDiffScan">["data"]>> {
-  logger.info("Scan ID 1:", id1);
-  logger.info("Scan ID 2:", id2);
-  logger.info("Note: this request may take some time if the scans are big");
+  id1: string
+  id2: string
+  orgSlug: string
+}): Promise<CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>> {
+  logger.info('Scan ID 1:', id1)
+  logger.info('Scan ID 2:', id2)
+  logger.info('Note: this request may take some time if the scans are big')
 
-  return await queryApiSafeJson<SocketSdkSuccessResult<"GetOrgDiffScan">["data"]>(
+  return await queryApiSafeJson<
+    SocketSdkSuccessResult<'GetOrgDiffScan'>['data']
+  >(
     `orgs/${orgSlug}/full-scans/diff?before=${encodeURIComponent(id1)}&after=${encodeURIComponent(id2)}`,
-    "a scan diff",
-  );
+    'a scan diff',
+  )
 }

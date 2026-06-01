@@ -108,7 +108,7 @@ import {
   errorStack,
   isError,
   isErrnoException,
-} from "@socketsecurity/lib-stable/errors";
+} from '@socketsecurity/lib-stable/errors'
 ```
 
 ### `isError(value)` — replaces `value instanceof Error`
@@ -140,9 +140,9 @@ When you want to preserve the cause chain upstream (recommended), pair it with `
 
 ```ts
 try {
-  await readConfig(path);
+  await readConfig(path)
 } catch (e) {
-  throw new Error(`Failed to read ${path}: ${errorMessage(e)}`, { cause: e });
+  throw new Error(`Failed to read ${path}: ${errorMessage(e)}`, { cause: e })
 }
 ```
 
@@ -151,7 +151,7 @@ try {
 Returns the cause-walking stack for Errors; returns `undefined` for non-Errors so logger calls stay safe:
 
 ```ts
-logger.error(`rebuild failed: ${errorMessage(e)}`, { stack: errorStack(e) });
+logger.error(`rebuild failed: ${errorMessage(e)}`, { stack: errorStack(e) })
 ```
 
 ## Voice & tone

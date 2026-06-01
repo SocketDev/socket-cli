@@ -4,13 +4,13 @@
  * only replace direct process.env['KEY'] references.
  */
 
-import process from "node:process";
+import process from 'node:process'
 
-import type { TrufflehogChecksums } from "../types.mjs";
+import type { TrufflehogChecksums } from '../types.mjs'
 
-import { parseChecksums, requireChecksum } from "./checksum-utils.mjs";
+import { parseChecksums, requireChecksum } from './checksum-utils.mjs'
 
-const TOOL_NAME = "TruffleHog";
+const TOOL_NAME = 'TruffleHog'
 
 /**
  * Get TruffleHog checksums from inlined environment variable. Returns a map of
@@ -18,13 +18,15 @@ const TOOL_NAME = "TruffleHog";
  */
 export function getTrufflehogChecksums(): TrufflehogChecksums {
   // MUST use direct process.env access for esbuild inlining.
-  return parseChecksums(process.env["INLINED_TRUFFLEHOG_CHECKSUMS"], TOOL_NAME);
+  return parseChecksums(process.env['INLINED_TRUFFLEHOG_CHECKSUMS'], TOOL_NAME)
 }
 
 /**
  * Lookup a TruffleHog checksum by asset name. In production builds, throws if
  * asset is missing. In dev mode, returns undefined to allow development.
  */
-export function requireTrufflehogChecksum(assetName: string): string | undefined {
-  return requireChecksum(getTrufflehogChecksums(), assetName, TOOL_NAME);
+export function requireTrufflehogChecksum(
+  assetName: string,
+): string | undefined {
+  return requireChecksum(getTrufflehogChecksums(), assetName, TOOL_NAME)
 }

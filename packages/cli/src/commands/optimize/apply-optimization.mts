@@ -1,60 +1,60 @@
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
-import { getDefaultSpinner } from "@socketsecurity/lib-stable/spinner/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
-import { addOverrides } from "./add-overrides.mts";
-import { CMD_NAME } from "./shared.mts";
-import { updateDependencies } from "./update-dependencies.mts";
+import { addOverrides } from './add-overrides.mts'
+import { CMD_NAME } from './shared.mts'
+import { updateDependencies } from './update-dependencies.mts'
 
-import type { CResult } from "../../types.mts";
-import type { EnvDetails } from "../../util/ecosystem/environment.mjs";
+import type { CResult } from '../../types.mts'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
 type OptimizeConfig = {
-  pin: boolean;
-  prod: boolean;
-};
+  pin: boolean
+  prod: boolean
+}
 
 export async function applyOptimization(
   pkgEnvDetails: EnvDetails,
   { pin, prod }: OptimizeConfig,
 ): Promise<
   CResult<{
-    addedCount: number;
-    updatedCount: number;
-    pkgJsonChanged: boolean;
-    updatedInWorkspaces: number;
-    addedInWorkspaces: number;
+    addedCount: number
+    updatedCount: number
+    pkgJsonChanged: boolean
+    updatedInWorkspaces: number
+    addedInWorkspaces: number
   }>
 > {
-  const logger = getDefaultLogger();
-  const spinner = getDefaultSpinner();
+  const logger = getDefaultLogger()
+  const spinner = getDefaultSpinner()
 
-  spinner?.start();
+  spinner?.start()
 
   const state = await addOverrides(pkgEnvDetails, pkgEnvDetails.pkgPath, {
     logger,
     pin,
     prod,
     spinner: spinner ?? undefined,
-  });
+  })
 
-  const addedCount = state.added.size;
-  const updatedCount = state.updated.size;
-  const pkgJsonChanged = addedCount > 0 || updatedCount > 0;
+  const addedCount = state.added.size
+  const updatedCount = state.updated.size
+  const pkgJsonChanged = addedCount > 0 || updatedCount > 0
 
   if (pkgJsonChanged || pkgEnvDetails.features.npmBuggyOverrides) {
     const result = await updateDependencies(pkgEnvDetails, {
       cmdName: CMD_NAME,
       logger,
       spinner: spinner ?? undefined,
-    });
+    })
 
     if (!result.ok) {
-      spinner?.stop();
-      return result;
+      spinner?.stop()
+      return result
     }
   }
 
-  spinner?.stop();
+  spinner?.stop()
   return {
     ok: true,
     data: {
@@ -64,5 +64,5 @@ export async function applyOptimization(
       updatedCount,
       updatedInWorkspaces: state.updatedInWorkspaces.size,
     },
-  };
+  }
 }

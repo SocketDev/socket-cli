@@ -20,151 +20,175 @@
  * fetcher) - src/commands/package/output-purls-deep-score.mts (formatter)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handlePurlDeepScore } from "../../../../src/commands/package/handle-purl-deep-score.mts";
+import { handlePurlDeepScore } from '../../../../src/commands/package/handle-purl-deep-score.mts'
 
 // Mock the dependencies.
-const mockFetchPurlDeepScore = vi.hoisted(() => vi.fn());
-const mockOutputPurlsDeepScore = vi.hoisted(() => vi.fn());
-const mockDebug = vi.hoisted(() => vi.fn());
-const mockDebugDir = vi.hoisted(() => vi.fn());
-const mockIsDebug = vi.hoisted(() => vi.fn());
+const mockFetchPurlDeepScore = vi.hoisted(() => vi.fn())
+const mockOutputPurlsDeepScore = vi.hoisted(() => vi.fn())
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockDebugDir = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/package/fetch-purl-deep-score.mts"), () => ({
-  fetchPurlDeepScore: mockFetchPurlDeepScore,
-}));
-vi.mock(import("../../../../src/commands/package/output-purls-deep-score.mts"), () => ({
-  outputPurlsDeepScore: mockOutputPurlsDeepScore,
-}));
-vi.mock(import("@socketsecurity/lib-stable/debug/output"), () => ({
+vi.mock(
+  import('../../../../src/commands/package/fetch-purl-deep-score.mts'),
+  () => ({
+    fetchPurlDeepScore: mockFetchPurlDeepScore,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/package/output-purls-deep-score.mts'),
+  () => ({
+    outputPurlsDeepScore: mockOutputPurlsDeepScore,
+  }),
+)
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
-}));
-vi.mock(import("@socketsecurity/lib-stable/debug/namespace"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/debug/namespace'), () => ({
   isDebug: mockIsDebug,
-}));
+}))
 
-describe("handlePurlDeepScore", () => {
+describe('handlePurlDeepScore', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("fetches and outputs deep score successfully", async () => {
+  it('fetches and outputs deep score successfully', async () => {
     const mockData = {
       ok: true,
       data: {
-        name: "package1",
-        version: "1.0.0",
+        name: 'package1',
+        version: '1.0.0',
         score: 95,
-        dependencies: ["dep1", "dep2"],
+        dependencies: ['dep1', 'dep2'],
       },
-    };
-    mockFetchPurlDeepScore.mockResolvedValue(mockData);
+    }
+    mockFetchPurlDeepScore.mockResolvedValue(mockData)
 
-    const purl = "pkg:npm/package1@1.0.0";
-    await handlePurlDeepScore(purl, "json");
+    const purl = 'pkg:npm/package1@1.0.0'
+    await handlePurlDeepScore(purl, 'json')
 
-    expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl);
-    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(purl, mockData, "json");
-  });
+    expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl)
+    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(
+      purl,
+      mockData,
+      'json',
+    )
+  })
 
-  it("handles fetch failure", async () => {
+  it('handles fetch failure', async () => {
     const mockError = {
       ok: false,
-      error: new Error("Failed to fetch deep score"),
-    };
-    mockFetchPurlDeepScore.mockResolvedValue(mockError);
+      error: new Error('Failed to fetch deep score'),
+    }
+    mockFetchPurlDeepScore.mockResolvedValue(mockError)
 
-    const purl = "pkg:npm/package1@1.0.0";
-    await handlePurlDeepScore(purl, "text");
+    const purl = 'pkg:npm/package1@1.0.0'
+    await handlePurlDeepScore(purl, 'text')
 
-    expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl);
-    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(purl, mockError, "text");
-  });
+    expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl)
+    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(
+      purl,
+      mockError,
+      'text',
+    )
+  })
 
-  it("handles markdown output", async () => {
+  it('handles markdown output', async () => {
     const mockData = {
       ok: true,
       data: {
-        name: "package1",
-        version: "1.0.0",
+        name: 'package1',
+        version: '1.0.0',
         score: 88,
       },
-    };
-    mockFetchPurlDeepScore.mockResolvedValue(mockData);
+    }
+    mockFetchPurlDeepScore.mockResolvedValue(mockData)
 
-    const purl = "pkg:npm/package1@1.0.0";
-    await handlePurlDeepScore(purl, "markdown");
+    const purl = 'pkg:npm/package1@1.0.0'
+    await handlePurlDeepScore(purl, 'markdown')
 
-    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(purl, mockData, "markdown");
-  });
+    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(
+      purl,
+      mockData,
+      'markdown',
+    )
+  })
 
-  it("logs debug information", async () => {
+  it('logs debug information', async () => {
     const mockData = {
       ok: true,
-      data: { name: "package1", version: "1.0.0", score: 91 },
-    };
-    mockFetchPurlDeepScore.mockResolvedValue(mockData);
+      data: { name: 'package1', version: '1.0.0', score: 91 },
+    }
+    mockFetchPurlDeepScore.mockResolvedValue(mockData)
 
-    const purl = "pkg:npm/package1@1.0.0";
-    await handlePurlDeepScore(purl, "json");
+    const purl = 'pkg:npm/package1@1.0.0'
+    await handlePurlDeepScore(purl, 'json')
 
-    expect(mockDebug).toHaveBeenCalledWith("Fetching deep score for pkg:npm/package1@1.0.0");
+    expect(mockDebug).toHaveBeenCalledWith(
+      'Fetching deep score for pkg:npm/package1@1.0.0',
+    )
     expect(mockDebugDir).toHaveBeenCalledWith({
       purl,
-      outputKind: "json",
-    });
-    expect(mockDebug).toHaveBeenCalledWith("Deep score fetched successfully");
-    expect(mockDebugDir).toHaveBeenCalledWith({ result: mockData });
-  });
+      outputKind: 'json',
+    })
+    expect(mockDebug).toHaveBeenCalledWith('Deep score fetched successfully')
+    expect(mockDebugDir).toHaveBeenCalledWith({ result: mockData })
+  })
 
-  it("logs debug information on failure", async () => {
+  it('logs debug information on failure', async () => {
     const mockError = {
       ok: false,
-      error: new Error("API error"),
-    };
-    mockFetchPurlDeepScore.mockResolvedValue(mockError);
+      error: new Error('API error'),
+    }
+    mockFetchPurlDeepScore.mockResolvedValue(mockError)
 
-    await handlePurlDeepScore("pkg:npm/package1@1.0.0", "json");
+    await handlePurlDeepScore('pkg:npm/package1@1.0.0', 'json')
 
-    expect(mockDebug).toHaveBeenCalledWith("Deep score fetch failed");
-  });
+    expect(mockDebug).toHaveBeenCalledWith('Deep score fetch failed')
+  })
 
-  it("handles different purl formats", async () => {
+  it('handles different purl formats', async () => {
     const purls = [
-      "pkg:npm/package1@1.0.0",
-      "pkg:npm/@scope/package@2.0.0",
-      "pkg:npm/package@latest",
-    ];
+      'pkg:npm/package1@1.0.0',
+      'pkg:npm/@scope/package@2.0.0',
+      'pkg:npm/package@latest',
+    ]
 
     for (let i = 0, { length } = purls; i < length; i += 1) {
-      const purl = purls[i];
+      const purl = purls[i]
       mockFetchPurlDeepScore.mockResolvedValue({
         ok: true,
-        data: { name: "test", version: "1.0.0", score: 85 },
-      });
+        data: { name: 'test', version: '1.0.0', score: 85 },
+      })
 
-      await handlePurlDeepScore(purl, "json");
+      await handlePurlDeepScore(purl, 'json')
 
-      expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl);
+      expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl)
     }
-  });
+  })
 
-  it("handles text output", async () => {
+  it('handles text output', async () => {
     const mockData = {
       ok: true,
       data: {
-        name: "package1",
-        version: "1.0.0",
+        name: 'package1',
+        version: '1.0.0',
         score: 93,
       },
-    };
-    mockFetchPurlDeepScore.mockResolvedValue(mockData);
+    }
+    mockFetchPurlDeepScore.mockResolvedValue(mockData)
 
-    const purl = "pkg:npm/package1@1.0.0";
-    await handlePurlDeepScore(purl, "text");
+    const purl = 'pkg:npm/package1@1.0.0'
+    await handlePurlDeepScore(purl, 'text')
 
-    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(purl, mockData, "text");
-  });
-});
+    expect(mockOutputPurlsDeepScore).toHaveBeenCalledWith(
+      purl,
+      mockData,
+      'text',
+    )
+  })
+})

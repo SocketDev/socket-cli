@@ -1,7 +1,7 @@
-import { fetchUpdateRepo } from "./fetch-update-repo.mts";
-import { outputUpdateRepo } from "./output-update-repo.mts";
+import { fetchUpdateRepo } from './fetch-update-repo.mts'
+import { outputUpdateRepo } from './output-update-repo.mts'
 
-import type { OutputKind } from "../../types.mts";
+import type { OutputKind } from '../../types.mts'
 
 export async function handleUpdateRepo(
   {
@@ -12,12 +12,12 @@ export async function handleUpdateRepo(
     repoName,
     visibility,
   }: {
-    orgSlug: string;
-    repoName: string;
-    description: string;
-    homepage: string;
-    defaultBranch: string;
-    visibility: string;
+    orgSlug: string
+    repoName: string
+    description: string
+    homepage: string
+    defaultBranch: string
+    visibility: string
   },
   outputKind: OutputKind,
 ): Promise<void> {
@@ -31,9 +31,9 @@ export async function handleUpdateRepo(
       visibility,
     },
     {
-      commandPath: "socket repository update",
+      commandPath: 'socket repository update',
     },
-  );
+  )
 
-  await outputUpdateRepo(data, repoName, outputKind);
+  await outputUpdateRepo(data, repoName, outputKind)
 }

@@ -10,16 +10,16 @@
  * - Src/commands/manifest/convert-gradle-to-maven.mts
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockExistsSync = vi.hoisted(() => vi.fn(() => true));
+const mockExistsSync = vi.hoisted(() => vi.fn(() => true))
 
-vi.mock(import("node:fs"), () => ({
+vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
   default: {
     existsSync: mockExistsSync,
   },
-}));
+}))
 
 const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
@@ -30,216 +30,218 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   group: vi.fn(),
   groupEnd: vi.fn(),
-}));
-const mockSpawn = vi.hoisted(() => vi.fn());
+}))
+const mockSpawn = vi.hoisted(() => vi.fn())
 const mockSpinner = vi.hoisted(() => ({
   start: vi.fn(),
   successAndStop: vi.fn(),
   failAndStop: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
-vi.mock(import("@socketsecurity/lib-stable/process/spawn/child"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
-}));
-vi.mock(import("@socketsecurity/lib-stable/spinner/default"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
   getDefaultSpinner: () => mockSpinner,
-}));
+}))
 
-vi.mock(import("../../../../src/constants/paths.mts"), () => ({
-  distPath: "/dist",
-}));
+vi.mock(import('../../../../src/constants/paths.mts'), () => ({
+  distPath: '/dist',
+}))
 
-import { convertGradleToMaven } from "../../../../src/commands/manifest/convert-gradle-to-maven.mts";
+import { convertGradleToMaven } from '../../../../src/commands/manifest/convert-gradle-to-maven.mts'
 
 const baseOpts = {
-  bin: "gradlew",
-  cwd: "/proj",
+  bin: 'gradlew',
+  cwd: '/proj',
   gradleOpts: [],
-  outputKind: "text" as const,
+  outputKind: 'text' as const,
   verbose: false,
-};
+}
 
-describe("convertGradleToMaven", () => {
+describe('convertGradleToMaven', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-    mockExistsSync.mockReturnValue(true);
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+    mockExistsSync.mockReturnValue(true)
+  })
 
-  it("warns when bin does not exist", async () => {
-    mockExistsSync.mockImplementation((p: string) => !p.includes("gradlew"));
+  it('warns when bin does not exist', async () => {
+    mockExistsSync.mockImplementation((p: string) => !p.includes('gradlew'))
     mockSpawn.mockResolvedValueOnce({
       code: 0,
-      stdout: "POM file copied to: /proj/foo.pom\n",
-      stderr: "",
-    });
+      stdout: 'POM file copied to: /proj/foo.pom\n',
+      stderr: '',
+    })
 
-    await convertGradleToMaven(baseOpts);
+    await convertGradleToMaven(baseOpts)
 
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining("executable could not be found"),
-    );
-  });
+      expect.stringContaining('executable could not be found'),
+    )
+  })
 
-  it("warns when cwd does not exist", async () => {
-    mockExistsSync.mockImplementation((p: string) => p.includes("gradlew"));
+  it('warns when cwd does not exist', async () => {
+    mockExistsSync.mockImplementation((p: string) => p.includes('gradlew'))
     mockSpawn.mockResolvedValueOnce({
       code: 0,
-      stdout: "POM file copied to: /proj/foo.pom\n",
-      stderr: "",
-    });
+      stdout: 'POM file copied to: /proj/foo.pom\n',
+      stderr: '',
+    })
 
-    await convertGradleToMaven(baseOpts);
+    await convertGradleToMaven(baseOpts)
 
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      expect.stringContaining("src dir could not be found"),
-    );
-  });
+      expect.stringContaining('src dir could not be found'),
+    )
+  })
 
-  it("returns failure when gradle exits non-zero", async () => {
+  it('returns failure when gradle exits non-zero', async () => {
     mockSpawn.mockResolvedValueOnce({
       code: 1,
-      stdout: "",
-      stderr: "compile error",
-    });
+      stdout: '',
+      stderr: 'compile error',
+    })
 
-    const result = await convertGradleToMaven(baseOpts);
+    const result = await convertGradleToMaven(baseOpts)
 
-    expect(result.ok).toBe(false);
-    expect(process.exitCode).toBe(1);
+    expect(result.ok).toBe(false)
+    expect(process.exitCode).toBe(1)
     if (!result.ok) {
-      expect(result.message).toContain("exited with exit code 1");
-      expect(result.cause).toBe("compile error");
+      expect(result.message).toContain('exited with exit code 1')
+      expect(result.cause).toBe('compile error')
     }
-  });
+  })
 
-  it("parses POM file copied to: lines from stdout", async () => {
+  it('parses POM file copied to: lines from stdout', async () => {
     mockSpawn.mockResolvedValueOnce({
       code: 0,
       stdout:
-        "noise line\nPOM file copied to: /proj/a.pom\nPOM file copied to: /proj/b.pom\nmore noise\n",
-      stderr: "",
-    });
+        'noise line\nPOM file copied to: /proj/a.pom\nPOM file copied to: /proj/b.pom\nmore noise\n',
+      stderr: '',
+    })
 
-    const result = await convertGradleToMaven(baseOpts);
+    const result = await convertGradleToMaven(baseOpts)
 
-    expect(result.ok).toBe(true);
+    expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.data.files).toEqual(["/proj/a.pom", "/proj/b.pom"]);
-      expect(result.data.type).toBe("gradle");
+      expect(result.data.files).toEqual(['/proj/a.pom', '/proj/b.pom'])
+      expect(result.data.type).toBe('gradle')
     }
-  });
+  })
 
-  it("logs verbose stdout when --verbose is set", async () => {
+  it('logs verbose stdout when --verbose is set', async () => {
     mockSpawn.mockResolvedValueOnce({
       code: 0,
-      stdout: "POM file copied to: /proj/foo.pom\n",
-      stderr: "",
-    });
+      stdout: 'POM file copied to: /proj/foo.pom\n',
+      stderr: '',
+    })
 
-    await convertGradleToMaven({ ...baseOpts, verbose: true });
+    await convertGradleToMaven({ ...baseOpts, verbose: true })
 
-    expect(mockLogger.group).toHaveBeenCalledWith("[VERBOSE] gradle stdout:");
-  });
+    expect(mockLogger.group).toHaveBeenCalledWith('[VERBOSE] gradle stdout:')
+  })
 
-  it("logs verbose pre-execution args when --verbose", async () => {
+  it('logs verbose pre-execution args when --verbose', async () => {
     mockSpawn.mockResolvedValueOnce({
       code: 0,
-      stdout: "POM file copied to: /proj/foo.pom\n",
-      stderr: "",
-    });
+      stdout: 'POM file copied to: /proj/foo.pom\n',
+      stderr: '',
+    })
 
-    await convertGradleToMaven({ ...baseOpts, verbose: true });
+    await convertGradleToMaven({ ...baseOpts, verbose: true })
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      "[VERBOSE] Executing:",
-      ["gradlew"],
-      ", args:",
+      '[VERBOSE] Executing:',
+      ['gradlew'],
+      ', args:',
       expect.any(Array),
-    );
-  });
+    )
+  })
 
-  it("skips text-mode logging in json mode", async () => {
+  it('skips text-mode logging in json mode', async () => {
     mockSpawn.mockResolvedValueOnce({
       code: 0,
-      stdout: "POM file copied to: /proj/foo.pom\n",
-      stderr: "",
-    });
+      stdout: 'POM file copied to: /proj/foo.pom\n',
+      stderr: '',
+    })
 
-    await convertGradleToMaven({ ...baseOpts, outputKind: "json" });
+    await convertGradleToMaven({ ...baseOpts, outputKind: 'json' })
 
-    expect(mockLogger.success).not.toHaveBeenCalled();
-  });
+    expect(mockLogger.success).not.toHaveBeenCalled()
+  })
 
-  it("returns failure when spawn throws", async () => {
-    mockSpawn.mockRejectedValueOnce(new Error("command failed"));
+  it('returns failure when spawn throws', async () => {
+    mockSpawn.mockRejectedValueOnce(new Error('command failed'))
 
-    const result = await convertGradleToMaven(baseOpts);
+    const result = await convertGradleToMaven(baseOpts)
 
-    expect(result.ok).toBe(false);
-    expect(process.exitCode).toBe(1);
-  });
+    expect(result.ok).toBe(false)
+    expect(process.exitCode).toBe(1)
+  })
 
-  it("logs verbose error when --verbose and spawn throws", async () => {
-    mockSpawn.mockRejectedValueOnce(new Error("command failed"));
+  it('logs verbose error when --verbose and spawn throws', async () => {
+    mockSpawn.mockRejectedValueOnce(new Error('command failed'))
 
-    await convertGradleToMaven({ ...baseOpts, verbose: true });
+    await convertGradleToMaven({ ...baseOpts, verbose: true })
 
-    expect(mockLogger.group).toHaveBeenCalledWith("[VERBOSE] error:");
-  });
+    expect(mockLogger.group).toHaveBeenCalledWith('[VERBOSE] error:')
+  })
 
-  it("errors with helpful message when spawn returns null", async () => {
-    mockSpawn.mockResolvedValueOnce(undefined);
+  it('errors with helpful message when spawn returns null', async () => {
+    mockSpawn.mockResolvedValueOnce(undefined)
 
-    const result = await convertGradleToMaven(baseOpts);
+    const result = await convertGradleToMaven(baseOpts)
 
-    expect(result.ok).toBe(false);
+    expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.cause).toContain("spawn returned no output");
+      expect(result.cause).toContain('spawn returned no output')
     }
-  });
+  })
 
-  it("forwards gradleOpts into the args array", async () => {
+  it('forwards gradleOpts into the args array', async () => {
     mockSpawn.mockResolvedValueOnce({
       code: 0,
-      stdout: "POM file copied to: /proj/foo.pom\n",
-      stderr: "",
-    });
+      stdout: 'POM file copied to: /proj/foo.pom\n',
+      stderr: '',
+    })
 
     await convertGradleToMaven({
       ...baseOpts,
-      gradleOpts: ["--info", "--stacktrace"],
-    });
+      gradleOpts: ['--info', '--stacktrace'],
+    })
 
-    const args = mockSpawn.mock.calls[0]?.[1];
-    expect(args).toEqual(expect.arrayContaining(["--info", "--stacktrace", "pom"]));
-  });
+    const args = mockSpawn.mock.calls[0]?.[1]
+    expect(args).toEqual(
+      expect.arrayContaining(['--info', '--stacktrace', 'pom']),
+    )
+  })
 
-  it("does not log stderr group on non-zero exit when --verbose", async () => {
+  it('does not log stderr group on non-zero exit when --verbose', async () => {
     mockSpawn.mockResolvedValueOnce({
       code: 1,
-      stdout: "",
-      stderr: "gradle err",
-    });
+      stdout: '',
+      stderr: 'gradle err',
+    })
 
-    await convertGradleToMaven({ ...baseOpts, verbose: true });
+    await convertGradleToMaven({ ...baseOpts, verbose: true })
 
     // verbose mode prints the error in the stdout group, not a separate stderr group.
-    expect(mockLogger.group).not.toHaveBeenCalledWith("stderr:");
-  });
+    expect(mockLogger.group).not.toHaveBeenCalledWith('stderr:')
+  })
 
-  it("logs separate stderr group when not verbose and exit non-zero", async () => {
+  it('logs separate stderr group when not verbose and exit non-zero', async () => {
     mockSpawn.mockResolvedValueOnce({
       code: 1,
-      stdout: "",
-      stderr: "gradle err",
-    });
+      stdout: '',
+      stderr: 'gradle err',
+    })
 
-    await convertGradleToMaven(baseOpts);
+    await convertGradleToMaven(baseOpts)
 
-    expect(mockLogger.group).toHaveBeenCalledWith("stderr:");
-  });
-});
+    expect(mockLogger.group).toHaveBeenCalledWith('stderr:')
+  })
+})

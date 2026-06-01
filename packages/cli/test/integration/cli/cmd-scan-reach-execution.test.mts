@@ -15,255 +15,255 @@
  * test/integration/cli/cmd-scan-reach-validation.test.mts - Validation tests.
  */
 
-import path from "node:path";
+import path from 'node:path'
 
-import { describe, expect } from "vitest";
+import { describe, expect } from 'vitest'
 
-import { FLAG_CONFIG } from "../../../src/constants/cli.mts";
-import { getBinCliPath } from "../../../src/constants/paths.mts";
-import { cmdit, spawnSocketCli, testPath } from "../../utils.mts";
+import { FLAG_CONFIG } from '../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 
-const binCliPath = getBinCliPath();
+const binCliPath = getBinCliPath()
 
-const fixtureBaseDir = path.join(testPath, "fixtures/commands/scan/reach");
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
 
-describe("socket scan reach - execution tests", () => {
+describe('socket scan reach - execution tests', () => {
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle reach analysis on test fixture",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+    'should handle reach analysis on test fixture',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       // Should fail due to fake token/org, but validates command parsing.
-      expect(code).toBeGreaterThan(0);
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--reach-ecosystems",
-      "npm",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--reach-ecosystems',
+      'npm',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle npm ecosystem specification",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(code).toBeGreaterThan(0);
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+    'should handle npm ecosystem specification',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--reach-analysis-memory-limit",
-      "2048",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--reach-analysis-memory-limit',
+      '2048',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle custom memory limit",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(code).toBeGreaterThan(0);
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+    'should handle custom memory limit',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--reach-analysis-timeout",
-      "1800",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--reach-analysis-timeout',
+      '1800',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle custom timeout",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(code).toBeGreaterThan(0);
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+    'should handle custom timeout',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--reach-exclude-paths",
-      "node_modules,dist",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--reach-exclude-paths',
+      'node_modules,dist',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle path exclusions",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(code).toBeGreaterThan(0);
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+    'should handle path exclusions',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--reach-disable-analytics",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--reach-disable-analytics',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle analytics disabled",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(code).toBeGreaterThan(0);
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+    'should handle analytics disabled',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--reach-skip-cache",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--reach-skip-cache',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle cache skipping",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(code).toBeGreaterThan(0);
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+    'should handle cache skipping',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--json",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--json',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle JSON output format",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(code).toBeGreaterThan(0);
+    'should handle JSON output format',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBeGreaterThan(0)
       // JSON output typically suppresses banner in stderr.
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--markdown",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--markdown',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle markdown output format",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(code).toBeGreaterThan(0);
+    'should handle markdown output format',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBeGreaterThan(0)
       // Markdown output typically suppresses banner in stderr.
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--reach-ecosystems",
-      "npm",
-      "--reach-analysis-memory-limit",
-      "2048",
-      "--reach-exclude-paths",
-      "node_modules",
-      "--reach-disable-analytics",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--reach-ecosystems',
+      'npm',
+      '--reach-analysis-memory-limit',
+      '2048',
+      '--reach-exclude-paths',
+      'node_modules',
+      '--reach-disable-analytics',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should handle comprehensive flag combination",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(code).toBeGreaterThan(0);
-      const output = stdout + stderr;
-      expect(output.length).toBeGreaterThan(0);
+    'should handle comprehensive flag combination',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "reach",
-      "test/fixtures/commands/scan/reach",
-      "--org",
-      "fakeOrg",
+      'scan',
+      'reach',
+      'test/fixtures/commands/scan/reach',
+      '--org',
+      'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    "should work with bundled ANSI utilities (regression test for stripAnsi compatibility)",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+    'should work with bundled ANSI utilities (regression test for stripAnsi compatibility)',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       // Regression test for bundling issues where strip-ansi@6.0.1 was incompatible
       // with ansi-regex@6.2.2, causing "stripAnsi22 is not a function" errors.
       // Should fail due to fake token/org, but validates that ANSI utilities work.
-      expect(code).toBeGreaterThan(0);
-      const output = stdout + stderr;
+      expect(code).toBeGreaterThan(0)
+      const output = stdout + stderr
       // Verify output exists and contains ANSI escape sequences.
-      expect(output.length).toBeGreaterThan(0);
+      expect(output.length).toBeGreaterThan(0)
       // Should not contain "is not a function" errors from bundled code.
-      expect(output).not.toContain("is not a function");
-      expect(output).not.toContain("stripAnsi");
-      expect(output).not.toContain("ansiRegex");
+      expect(output).not.toContain('is not a function')
+      expect(output).not.toContain('stripAnsi')
+      expect(output).not.toContain('ansiRegex')
     },
-  );
-});
+  )
+})

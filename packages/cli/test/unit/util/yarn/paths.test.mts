@@ -12,9 +12,9 @@
  * Related Files: - util/yarn/paths.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as PathsModule from "../../../../src/util/yarn/paths.mts";
+import type * as PathsModule from '../../../../src/util/yarn/paths.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -24,163 +24,163 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}));
+}))
 
-const mockFindBinPathDetailsSync = vi.hoisted(() => vi.fn());
+const mockFindBinPathDetailsSync = vi.hoisted(() => vi.fn())
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}));
+}))
 
-vi.mock(import("../../../../src/util/fs/path-resolve.mts"), () => ({
+vi.mock(import('../../../../src/util/fs/path-resolve.mts'), () => ({
   findBinPathDetailsSync: mockFindBinPathDetailsSync,
-}));
+}))
 
-describe("yarn-paths utilities", () => {
-  let originalExit: typeof process.exit;
-  let getYarnBinPath: (typeof PathsModule)["getYarnBinPath"];
-  let getYarnBinPathDetails: (typeof PathsModule)["getYarnBinPathDetails"];
+describe('yarn-paths utilities', () => {
+  let originalExit: typeof process.exit
+  let getYarnBinPath: (typeof PathsModule)['getYarnBinPath']
+  let getYarnBinPathDetails: (typeof PathsModule)['getYarnBinPathDetails']
 
   beforeEach(async () => {
-    vi.clearAllMocks();
-    vi.resetModules();
+    vi.clearAllMocks()
+    vi.resetModules()
 
     // Store original process.exit.
-    originalExit = process.exit;
+    originalExit = process.exit
     // Mock process.exit to prevent actual exits.
     process.exit = vi.fn((code?: number) => {
-      throw new Error(`process.exit(${code})`);
-    }) as unknown;
+      throw new Error(`process.exit(${code})`)
+    }) as unknown
 
     // Re-import functions after module reset to clear caches.
-    const yarnPaths = await import("../../../../src/util/yarn/paths.mts");
-    getYarnBinPath = yarnPaths.getYarnBinPath;
-    getYarnBinPathDetails = yarnPaths.getYarnBinPathDetails;
-  });
+    const yarnPaths = await import('../../../../src/util/yarn/paths.mts')
+    getYarnBinPath = yarnPaths.getYarnBinPath
+    getYarnBinPathDetails = yarnPaths.getYarnBinPathDetails
+  })
 
   afterEach(() => {
     // Restore original process.exit.
-    process.exit = originalExit;
-    vi.resetModules();
-  });
+    process.exit = originalExit
+    vi.resetModules()
+  })
 
-  describe("getYarnBinPath", () => {
-    it("returns yarn bin path when found", () => {
+  describe('getYarnBinPath', () => {
+    it('returns yarn bin path when found', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
-        path: "/usr/local/bin/yarn",
-      });
+        path: '/usr/local/bin/yarn',
+      })
 
-      const result = getYarnBinPath();
+      const result = getYarnBinPath()
 
-      expect(result).toBe("/usr/local/bin/yarn");
-      expect(mockFindBinPathDetailsSync).toHaveBeenCalledWith("yarn/classic");
-    });
+      expect(result).toBe('/usr/local/bin/yarn')
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledWith('yarn/classic')
+    })
 
-    it("exits with error when yarn not found", () => {
+    it('exits with error when yarn not found', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
         path: undefined,
-      });
+      })
 
-      expect(() => getYarnBinPath()).toThrow("process.exit(127)");
+      expect(() => getYarnBinPath()).toThrow('process.exit(127)')
       expect(mockLogger.fail).toHaveBeenCalledWith(
-        expect.stringContaining("Socket unable to locate yarn"),
-      );
-    });
+        expect.stringContaining('Socket unable to locate yarn'),
+      )
+    })
 
-    it("caches the result", () => {
+    it('caches the result', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
-        path: "/usr/local/bin/yarn",
-      });
+        path: '/usr/local/bin/yarn',
+      })
 
-      const result1 = getYarnBinPath();
-      const result2 = getYarnBinPath();
+      const result1 = getYarnBinPath()
+      const result2 = getYarnBinPath()
 
-      expect(result1).toBe(result2);
-      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1);
-    });
+      expect(result1).toBe(result2)
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
+    })
 
-    it("handles Windows yarn.cmd path", () => {
+    it('handles Windows yarn.cmd path', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
-        path: "C:\\Program Files\\Yarn\\bin\\yarn.cmd",
-      });
+        path: 'C:\\Program Files\\Yarn\\bin\\yarn.cmd',
+      })
 
-      const result = getYarnBinPath();
+      const result = getYarnBinPath()
 
-      expect(result).toBe("C:\\Program Files\\Yarn\\bin\\yarn.cmd");
-    });
+      expect(result).toBe('C:\\Program Files\\Yarn\\bin\\yarn.cmd')
+    })
 
-    it("handles yarn installed via npm", () => {
+    it('handles yarn installed via npm', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
-        path: "/usr/local/lib/node_modules/.bin/yarn",
-      });
+        path: '/usr/local/lib/node_modules/.bin/yarn',
+      })
 
-      const result = getYarnBinPath();
+      const result = getYarnBinPath()
 
-      expect(result).toBe("/usr/local/lib/node_modules/.bin/yarn");
-    });
+      expect(result).toBe('/usr/local/lib/node_modules/.bin/yarn')
+    })
 
-    it("handles yarn installed via corepack", () => {
+    it('handles yarn installed via corepack', () => {
       mockFindBinPathDetailsSync.mockReturnValue({
         // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- test fixture: corepack's own canonical install location.
-        path: "/home/user/.cache/corepack/yarn/1.22.0/bin/yarn",
-      });
+        path: '/home/user/.cache/corepack/yarn/1.22.0/bin/yarn',
+      })
 
-      const result = getYarnBinPath();
+      const result = getYarnBinPath()
 
       // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- test fixture: corepack's own canonical install location.
-      expect(result).toBe("/home/user/.cache/corepack/yarn/1.22.0/bin/yarn");
-    });
-  });
+      expect(result).toBe('/home/user/.cache/corepack/yarn/1.22.0/bin/yarn')
+    })
+  })
 
-  describe("getYarnBinPathDetails", () => {
-    it("returns full details including path", () => {
+  describe('getYarnBinPathDetails', () => {
+    it('returns full details including path', () => {
       const mockDetails = {
-        path: "/usr/local/bin/yarn",
-      };
-      mockFindBinPathDetailsSync.mockReturnValue(mockDetails);
+        path: '/usr/local/bin/yarn',
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
-      const result = getYarnBinPathDetails();
+      const result = getYarnBinPathDetails()
 
-      expect(result).toEqual(mockDetails);
-      expect(mockFindBinPathDetailsSync).toHaveBeenCalledWith("yarn/classic");
-    });
+      expect(result).toEqual(mockDetails)
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledWith('yarn/classic')
+    })
 
-    it("caches the result", () => {
+    it('caches the result', () => {
       const mockDetails = {
-        path: "/usr/local/bin/yarn",
-      };
-      mockFindBinPathDetailsSync.mockReturnValue(mockDetails);
+        path: '/usr/local/bin/yarn',
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
-      const result1 = getYarnBinPathDetails();
-      const result2 = getYarnBinPathDetails();
+      const result1 = getYarnBinPathDetails()
+      const result2 = getYarnBinPathDetails()
 
-      expect(result1).toBe(result2);
-      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1);
-    });
+      expect(result1).toBe(result2)
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
+    })
 
-    it("returns details even when path is undefined", () => {
+    it('returns details even when path is undefined', () => {
       const mockDetails = {
         path: undefined,
-      };
-      mockFindBinPathDetailsSync.mockReturnValue(mockDetails);
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
-      const result = getYarnBinPathDetails();
+      const result = getYarnBinPathDetails()
 
-      expect(result).toEqual(mockDetails);
-    });
+      expect(result).toEqual(mockDetails)
+    })
 
-    it("returns same object reference when cached", () => {
+    it('returns same object reference when cached', () => {
       const mockDetails = {
-        path: "/usr/local/bin/yarn",
-      };
-      mockFindBinPathDetailsSync.mockReturnValue(mockDetails);
+        path: '/usr/local/bin/yarn',
+      }
+      mockFindBinPathDetailsSync.mockReturnValue(mockDetails)
 
-      const result1 = getYarnBinPathDetails();
-      const result2 = getYarnBinPathDetails();
+      const result1 = getYarnBinPathDetails()
+      const result2 = getYarnBinPathDetails()
 
-      expect(result1).toBe(result2); // Same reference.
-      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1);
-    });
-  });
-});
+      expect(result1).toBe(result2) // Same reference.
+      expect(mockFindBinPathDetailsSync).toHaveBeenCalledTimes(1)
+    })
+  })
+})

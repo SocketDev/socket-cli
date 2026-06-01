@@ -1,17 +1,17 @@
-import { outputConfigUnset } from "./output-config-unset.mts";
-import { updateConfigValue } from "../../util/config.mts";
+import { outputConfigUnset } from './output-config-unset.mts'
+import { updateConfigValue } from '../../util/config.mts'
 
-import type { OutputKind } from "../../types.mts";
-import type { LocalConfig } from "../../util/config.mts";
+import type { OutputKind } from '../../types.mts'
+import type { LocalConfig } from '../../util/config.mts'
 
 export async function handleConfigUnset({
   key,
   outputKind,
 }: {
-  key: keyof LocalConfig;
-  outputKind: OutputKind;
+  key: keyof LocalConfig
+  outputKind: OutputKind
 }) {
-  const updateResult = updateConfigValue(key, undefined);
+  const updateResult = updateConfigValue(key, undefined)
 
-  await outputConfigUnset(updateResult, outputKind);
+  await outputConfigUnset(updateResult, outputKind)
 }

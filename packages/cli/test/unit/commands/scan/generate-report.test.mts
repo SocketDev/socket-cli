@@ -11,464 +11,488 @@
  * Related Files: - src/commands/scan/generate-report.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock socket URL utility.
-vi.mock(import("../../../../src/util/socket/url.mts"), () => ({
+vi.mock(import('../../../../src/util/socket/url.mts'), () => ({
   getSocketDevPackageOverviewUrlFromPurl: (art: { name: string }) =>
     `https://socket.dev/pkg/${art.name}`,
-}));
+}))
 
-import { generateReport } from "../../../../src/commands/scan/generate-report.mts";
+import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 import {
   FOLD_SETTING_FILE,
   FOLD_SETTING_NONE,
   FOLD_SETTING_PKG,
   FOLD_SETTING_VERSION,
-} from "../../../../src/constants/cli.mts";
+} from '../../../../src/constants/cli.mts'
 import {
   REPORT_LEVEL_DEFER,
   REPORT_LEVEL_ERROR,
   REPORT_LEVEL_IGNORE,
   REPORT_LEVEL_MONITOR,
   REPORT_LEVEL_WARN,
-} from "../../../../src/constants/reporting.mts";
+} from '../../../../src/constants/reporting.mts'
 
-import type { SocketArtifact } from "../../../../src/util/alert/artifact.mts";
+import type { SocketArtifact } from '../../../../src/util/alert/artifact.mts'
 
-describe("generate-report", () => {
+describe('generate-report', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  describe("generateReport", () => {
+  describe('generateReport', () => {
     const createArtifact = (overrides: Partial<SocketArtifact> = {}) =>
       ({
-        type: "npm",
-        name: "test-pkg",
-        version: "1.0.0",
+        type: 'npm',
+        name: 'test-pkg',
+        version: '1.0.0',
         alerts: [],
-        manifestFiles: [{ file: "package.json" }],
+        manifestFiles: [{ file: 'package.json' }],
         ...overrides,
-      }) as SocketArtifact;
+      }) as SocketArtifact
 
-    const createSecurityPolicy = (rules: Record<string, { action: string }> = {}) => ({
+    const createSecurityPolicy = (
+      rules: Record<string, { action: string }> = {},
+    ) => ({
       securityPolicyRules: rules,
-    });
+    })
 
     const defaultOptions = {
       fold: FOLD_SETTING_NONE,
-      orgSlug: "my-org",
+      orgSlug: 'my-org',
       reportLevel: REPORT_LEVEL_ERROR,
-      scanId: "scan-123",
-    };
+      scanId: 'scan-123',
+    }
 
-    it("returns healthy report when no alerts", () => {
-      const scan = [createArtifact()];
-      const policy = createSecurityPolicy();
+    it('returns healthy report when no alerts', () => {
+      const scan = [createArtifact()]
+      const policy = createSecurityPolicy()
 
-      const result = generateReport(scan, policy as unknown, defaultOptions);
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       expect(result.data).toEqual(
         expect.objectContaining({
           healthy: true,
-          orgSlug: "my-org",
-          scanId: "scan-123",
+          orgSlug: 'my-org',
+          scanId: 'scan-123',
         }),
-      );
-    });
+      )
+    })
 
-    it("returns short report when short option is true", () => {
-      const scan = [createArtifact()];
-      const policy = createSecurityPolicy();
+    it('returns short report when short option is true', () => {
+      const scan = [createArtifact()]
+      const policy = createSecurityPolicy()
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         short: true,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      expect(result.data).toEqual({ healthy: true });
-    });
+      expect(result.ok).toBe(true)
+      expect(result.data).toEqual({ healthy: true })
+    })
 
-    it("marks unhealthy when error policy alerts exist", () => {
+    it('marks unhealthy when error policy alerts exist', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: "badAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        badAlert: { action: "error" },
-      });
+        badAlert: { action: 'error' },
+      })
 
-      const result = generateReport(scan, policy as unknown, defaultOptions);
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       expect(result.data).toEqual(
         expect.objectContaining({
           healthy: false,
         }),
-      );
-      expect(result.message).toContain("violates the policies");
-    });
+      )
+      expect(result.message).toContain('violates the policies')
+    })
 
-    it("stays healthy with warn policy alerts", () => {
+    it('stays healthy with warn policy alerts', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: "warnAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [{ type: 'warnAlert', file: 'index.js', start: 0, end: 10 }],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        warnAlert: { action: "warn" },
-      });
+        warnAlert: { action: 'warn' },
+      })
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_WARN,
-      });
+      })
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       expect(result.data).toEqual(
         expect.objectContaining({
           healthy: true,
         }),
-      );
-    });
+      )
+    })
 
-    it("includes warn alerts when reportLevel is warn", () => {
+    it('includes warn alerts when reportLevel is warn', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: "warnAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [{ type: 'warnAlert', file: 'index.js', start: 0, end: 10 }],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        warnAlert: { action: "warn" },
-      });
+        warnAlert: { action: 'warn' },
+      })
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_WARN,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      const data = result.data as { alerts: Map<string, unknown> };
-      expect(data.alerts.size).toBeGreaterThan(0);
-    });
+      expect(result.ok).toBe(true)
+      const data = result.data as { alerts: Map<string, unknown> }
+      expect(data.alerts.size).toBeGreaterThan(0)
+    })
 
-    it("excludes warn alerts when reportLevel is error", () => {
+    it('excludes warn alerts when reportLevel is error', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: "warnAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [{ type: 'warnAlert', file: 'index.js', start: 0, end: 10 }],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        warnAlert: { action: "warn" },
-      });
+        warnAlert: { action: 'warn' },
+      })
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_ERROR,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      const data = result.data as { alerts: Map<string, unknown> };
-      expect(data.alerts.size).toBe(0);
-    });
+      expect(result.ok).toBe(true)
+      const data = result.data as { alerts: Map<string, unknown> }
+      expect(data.alerts.size).toBe(0)
+    })
 
-    it("includes monitor alerts when reportLevel is monitor", () => {
+    it('includes monitor alerts when reportLevel is monitor', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: "monitorAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [
+            { type: 'monitorAlert', file: 'index.js', start: 0, end: 10 },
+          ],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        monitorAlert: { action: "monitor" },
-      });
+        monitorAlert: { action: 'monitor' },
+      })
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_MONITOR,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      const data = result.data as { alerts: Map<string, unknown> };
-      expect(data.alerts.size).toBeGreaterThan(0);
-    });
+      expect(result.ok).toBe(true)
+      const data = result.data as { alerts: Map<string, unknown> }
+      expect(data.alerts.size).toBeGreaterThan(0)
+    })
 
-    it("includes ignore alerts when reportLevel is ignore", () => {
+    it('includes ignore alerts when reportLevel is ignore', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: "ignoreAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [
+            { type: 'ignoreAlert', file: 'index.js', start: 0, end: 10 },
+          ],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        ignoreAlert: { action: "ignore" },
-      });
+        ignoreAlert: { action: 'ignore' },
+      })
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_IGNORE,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      const data = result.data as { alerts: Map<string, unknown> };
-      expect(data.alerts.size).toBeGreaterThan(0);
-    });
+      expect(result.ok).toBe(true)
+      const data = result.data as { alerts: Map<string, unknown> }
+      expect(data.alerts.size).toBeGreaterThan(0)
+    })
 
-    it("includes defer alerts when reportLevel is defer", () => {
+    it('includes defer alerts when reportLevel is defer', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: "deferAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [{ type: 'deferAlert', file: 'index.js', start: 0, end: 10 }],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        deferAlert: { action: "defer" },
-      });
+        deferAlert: { action: 'defer' },
+      })
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_DEFER,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      const data = result.data as { alerts: Map<string, unknown> };
-      expect(data.alerts.size).toBeGreaterThan(0);
-    });
+      expect(result.ok).toBe(true)
+      const data = result.data as { alerts: Map<string, unknown> }
+      expect(data.alerts.size).toBeGreaterThan(0)
+    })
 
-    describe("fold settings", () => {
+    describe('fold settings', () => {
       const alertedArtifact = createArtifact({
-        alerts: [{ type: "badAlert", file: "index.js", start: 0, end: 10 }],
-      });
+        alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
+      })
       const errorPolicy = createSecurityPolicy({
-        badAlert: { action: "error" },
-      });
+        badAlert: { action: 'error' },
+      })
 
-      it("folds by package when fold is pkg", () => {
-        const result = generateReport([alertedArtifact], errorPolicy as unknown, {
-          ...defaultOptions,
-          fold: FOLD_SETTING_PKG,
-        });
+      it('folds by package when fold is pkg', () => {
+        const result = generateReport(
+          [alertedArtifact],
+          errorPolicy as unknown,
+          {
+            ...defaultOptions,
+            fold: FOLD_SETTING_PKG,
+          },
+        )
 
-        expect(result.ok).toBe(true);
-        const data = result.data as { alerts: Map<string, unknown> };
-        const npmMap = data.alerts.get("npm");
-        expect(npmMap).toBeDefined();
+        expect(result.ok).toBe(true)
+        const data = result.data as { alerts: Map<string, unknown> }
+        const npmMap = data.alerts.get('npm')
+        expect(npmMap).toBeDefined()
         // Should have leaf node directly under package name.
-        const leaf = npmMap.get("test-pkg");
-        expect(leaf).toHaveProperty("type", "badAlert");
-      });
+        const leaf = npmMap.get('test-pkg')
+        expect(leaf).toHaveProperty('type', 'badAlert')
+      })
 
-      it("folds by version when fold is version", () => {
-        const result = generateReport([alertedArtifact], errorPolicy as unknown, {
-          ...defaultOptions,
-          fold: FOLD_SETTING_VERSION,
-        });
+      it('folds by version when fold is version', () => {
+        const result = generateReport(
+          [alertedArtifact],
+          errorPolicy as unknown,
+          {
+            ...defaultOptions,
+            fold: FOLD_SETTING_VERSION,
+          },
+        )
 
-        expect(result.ok).toBe(true);
-        const data = result.data as { alerts: Map<string, unknown> };
-        const npmMap = data.alerts.get("npm");
-        const pkgMap = npmMap.get("test-pkg");
-        expect(pkgMap).toBeDefined();
+        expect(result.ok).toBe(true)
+        const data = result.data as { alerts: Map<string, unknown> }
+        const npmMap = data.alerts.get('npm')
+        const pkgMap = npmMap.get('test-pkg')
+        expect(pkgMap).toBeDefined()
         // Should have leaf node directly under version.
-        const leaf = pkgMap.get("1.0.0");
-        expect(leaf).toHaveProperty("type", "badAlert");
-      });
+        const leaf = pkgMap.get('1.0.0')
+        expect(leaf).toHaveProperty('type', 'badAlert')
+      })
 
-      it("folds by file when fold is file", () => {
-        const result = generateReport([alertedArtifact], errorPolicy as unknown, {
-          ...defaultOptions,
-          fold: FOLD_SETTING_FILE,
-        });
+      it('folds by file when fold is file', () => {
+        const result = generateReport(
+          [alertedArtifact],
+          errorPolicy as unknown,
+          {
+            ...defaultOptions,
+            fold: FOLD_SETTING_FILE,
+          },
+        )
 
-        expect(result.ok).toBe(true);
-        const data = result.data as { alerts: Map<string, unknown> };
-        const npmMap = data.alerts.get("npm");
-        const pkgMap = npmMap.get("test-pkg");
-        const verMap = pkgMap.get("1.0.0");
-        expect(verMap).toBeDefined();
+        expect(result.ok).toBe(true)
+        const data = result.data as { alerts: Map<string, unknown> }
+        const npmMap = data.alerts.get('npm')
+        const pkgMap = npmMap.get('test-pkg')
+        const verMap = pkgMap.get('1.0.0')
+        expect(verMap).toBeDefined()
         // Should have leaf node directly under file.
-        const leaf = verMap.get("index.js");
-        expect(leaf).toHaveProperty("type", "badAlert");
-      });
+        const leaf = verMap.get('index.js')
+        expect(leaf).toHaveProperty('type', 'badAlert')
+      })
 
-      it("does not fold when fold is none", () => {
-        const result = generateReport([alertedArtifact], errorPolicy as unknown, {
-          ...defaultOptions,
-          fold: FOLD_SETTING_NONE,
-        });
+      it('does not fold when fold is none', () => {
+        const result = generateReport(
+          [alertedArtifact],
+          errorPolicy as unknown,
+          {
+            ...defaultOptions,
+            fold: FOLD_SETTING_NONE,
+          },
+        )
 
-        expect(result.ok).toBe(true);
-        const data = result.data as { alerts: Map<string, unknown> };
-        const npmMap = data.alerts.get("npm");
-        const pkgMap = npmMap.get("test-pkg");
-        const verMap = pkgMap.get("1.0.0");
-        const fileMap = verMap.get("index.js");
-        expect(fileMap).toBeDefined();
+        expect(result.ok).toBe(true)
+        const data = result.data as { alerts: Map<string, unknown> }
+        const npmMap = data.alerts.get('npm')
+        const pkgMap = npmMap.get('test-pkg')
+        const verMap = pkgMap.get('1.0.0')
+        const fileMap = verMap.get('index.js')
+        expect(fileMap).toBeDefined()
         // Should have leaf node under alert key.
-        const keys = Array.from(fileMap.keys());
-        expect(keys.length).toBe(1);
-        expect(keys[0]).toContain("badAlert");
-      });
-    });
+        const keys = Array.from(fileMap.keys())
+        expect(keys.length).toBe(1)
+        expect(keys[0]).toContain('badAlert')
+      })
+    })
 
-    it("handles artifacts with missing name/version", () => {
+    it('handles artifacts with missing name/version', () => {
       const scan = [
         createArtifact({
           name: undefined as unknown,
           version: undefined as unknown,
-          alerts: [{ type: "badAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        badAlert: { action: "error" },
-      });
+        badAlert: { action: 'error' },
+      })
 
-      const result = generateReport(scan, policy as unknown, defaultOptions);
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       expect(result.data).toEqual(
         expect.objectContaining({
           healthy: false,
         }),
-      );
-    });
+      )
+    })
 
-    it("handles artifacts with no manifestFiles", () => {
+    it('handles artifacts with no manifestFiles', () => {
       const scan = [
         createArtifact({
           manifestFiles: undefined as unknown,
-          alerts: [{ type: "badAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        badAlert: { action: "error" },
-      });
+        badAlert: { action: 'error' },
+      })
 
-      const result = generateReport(scan, policy as unknown, defaultOptions);
+      const result = generateReport(scan, policy as unknown, defaultOptions)
 
-      expect(result.ok).toBe(true);
-    });
+      expect(result.ok).toBe(true)
+    })
 
-    it("handles alerts with no file", () => {
+    it('handles alerts with no file', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: "badAlert", start: 0, end: 10 }],
+          alerts: [{ type: 'badAlert', start: 0, end: 10 }],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        badAlert: { action: "error" },
-      });
+        badAlert: { action: 'error' },
+      })
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         fold: FOLD_SETTING_NONE,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-    });
+      expect(result.ok).toBe(true)
+    })
 
-    it("handles unknown policy actions", () => {
-      const scan = [
-        createArtifact({
-          alerts: [{ type: "unknownAlert", file: "index.js", start: 0, end: 10 }],
-        }),
-      ];
-      const policy = createSecurityPolicy({
-        unknownAlert: { action: "unknown-action" },
-      });
-
-      const result = generateReport(scan, policy as unknown, defaultOptions);
-
-      expect(result.ok).toBe(true);
-      expect(result.data).toEqual(
-        expect.objectContaining({
-          healthy: true,
-        }),
-      );
-    });
-
-    it("handles missing security policy rules", () => {
-      const scan = [
-        createArtifact({
-          alerts: [{ type: "badAlert", file: "index.js", start: 0, end: 10 }],
-        }),
-      ];
-      const policy = {}; // No securityPolicyRules.
-
-      const result = generateReport(scan, policy as unknown, defaultOptions);
-
-      expect(result.ok).toBe(true);
-      expect(result.data).toEqual(
-        expect.objectContaining({
-          healthy: true,
-        }),
-      );
-    });
-
-    it("prefers stricter policy when multiple alerts on same target", () => {
+    it('handles unknown policy actions', () => {
       const scan = [
         createArtifact({
           alerts: [
-            { type: "warnAlert", file: "index.js", start: 0, end: 10 },
-            { type: "errorAlert", file: "index.js", start: 0, end: 10 },
+            { type: 'unknownAlert', file: 'index.js', start: 0, end: 10 },
           ],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        warnAlert: { action: "warn" },
-        errorAlert: { action: "error" },
-      });
+        unknownAlert: { action: 'unknown-action' },
+      })
+
+      const result = generateReport(scan, policy as unknown, defaultOptions)
+
+      expect(result.ok).toBe(true)
+      expect(result.data).toEqual(
+        expect.objectContaining({
+          healthy: true,
+        }),
+      )
+    })
+
+    it('handles missing security policy rules', () => {
+      const scan = [
+        createArtifact({
+          alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
+        }),
+      ]
+      const policy = {} // No securityPolicyRules.
+
+      const result = generateReport(scan, policy as unknown, defaultOptions)
+
+      expect(result.ok).toBe(true)
+      expect(result.data).toEqual(
+        expect.objectContaining({
+          healthy: true,
+        }),
+      )
+    })
+
+    it('prefers stricter policy when multiple alerts on same target', () => {
+      const scan = [
+        createArtifact({
+          alerts: [
+            { type: 'warnAlert', file: 'index.js', start: 0, end: 10 },
+            { type: 'errorAlert', file: 'index.js', start: 0, end: 10 },
+          ],
+        }),
+      ]
+      const policy = createSecurityPolicy({
+        warnAlert: { action: 'warn' },
+        errorAlert: { action: 'error' },
+      })
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         fold: FOLD_SETTING_PKG,
         reportLevel: REPORT_LEVEL_WARN,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      const data = result.data as { alerts: Map<string, unknown> };
-      const npmMap = data.alerts.get("npm");
-      const leaf = npmMap.get("test-pkg");
-      expect(leaf.policy).toBe("error");
-    });
+      expect(result.ok).toBe(true)
+      const data = result.data as { alerts: Map<string, unknown> }
+      const npmMap = data.alerts.get('npm')
+      const leaf = npmMap.get('test-pkg')
+      expect(leaf.policy).toBe('error')
+    })
 
-    it("calls spinner methods when provided", () => {
+    it('calls spinner methods when provided', () => {
       const mockSpinner = {
         start: vi.fn(),
         successAndStop: vi.fn(),
-      };
-      const scan = [createArtifact()];
-      const policy = createSecurityPolicy();
+      }
+      const scan = [createArtifact()]
+      const policy = createSecurityPolicy()
 
       generateReport(scan, policy as unknown, {
         ...defaultOptions,
         spinner: mockSpinner as unknown,
-      });
+      })
 
-      expect(mockSpinner.start).toHaveBeenCalledWith("Generating report…");
+      expect(mockSpinner.start).toHaveBeenCalledWith('Generating report…')
       expect(mockSpinner.successAndStop).toHaveBeenCalledWith(
-        expect.stringContaining("Generated reported in"),
-      );
-    });
+        expect.stringContaining('Generated reported in'),
+      )
+    })
 
-    it("returns short unhealthy report for error alerts", () => {
+    it('returns short unhealthy report for error alerts', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: "badAlert", file: "index.js", start: 0, end: 10 }],
+          alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
         }),
-      ];
+      ]
       const policy = createSecurityPolicy({
-        badAlert: { action: "error" },
-      });
+        badAlert: { action: 'error' },
+      })
 
       const result = generateReport(scan, policy as unknown, {
         ...defaultOptions,
         short: true,
-      });
+      })
 
-      expect(result.ok).toBe(true);
-      expect(result.data).toEqual({ healthy: false });
-    });
-  });
-});
+      expect(result.ok).toBe(true)
+      expect(result.data).toEqual({ healthy: false })
+    })
+  })
+})

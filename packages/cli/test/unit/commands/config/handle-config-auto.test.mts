@@ -18,10 +18,13 @@
  * src/commands/config/output-config-auto.mts - Output formatter.
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest'
 
-import { handleConfigAuto } from "../../../../src/commands/config/handle-config-auto.mts";
-import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
+import { handleConfigAuto } from '../../../../src/commands/config/handle-config-auto.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../helpers/mocks.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -29,96 +32,114 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}));
+}))
 
 // Mock the dependencies.
-const mockDiscoverConfigValue = vi.hoisted(() => vi.fn());
-const mockOutputConfigAuto = vi.hoisted(() => vi.fn());
+const mockDiscoverConfigValue = vi.hoisted(() => vi.fn())
+const mockOutputConfigAuto = vi.hoisted(() => vi.fn())
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}));
+}))
 
-vi.mock(import("../../../../src/commands/config/discover-config-value.mts"), () => ({
-  discoverConfigValue: mockDiscoverConfigValue,
-}));
+vi.mock(
+  import('../../../../src/commands/config/discover-config-value.mts'),
+  () => ({
+    discoverConfigValue: mockDiscoverConfigValue,
+  }),
+)
 
-vi.mock(import("../../../../src/commands/config/output-config-auto.mts"), () => ({
-  outputConfigAuto: mockOutputConfigAuto,
-}));
+vi.mock(
+  import('../../../../src/commands/config/output-config-auto.mts'),
+  () => ({
+    outputConfigAuto: mockOutputConfigAuto,
+  }),
+)
 
-describe("handleConfigAuto", () => {
-  it("discovers and outputs config value successfully", async () => {
+describe('handleConfigAuto', () => {
+  it('discovers and outputs config value successfully', async () => {
     const { discoverConfigValue } =
-      await import("../../../../src/commands/config/discover-config-value.mts");
+      await import('../../../../src/commands/config/discover-config-value.mts')
     const { outputConfigAuto } =
-      await import("../../../../src/commands/config/output-config-auto.mts");
+      await import('../../../../src/commands/config/output-config-auto.mts')
 
-    const mockResult = createSuccessResult("discovered-api-token");
-    mockDiscoverConfigValue.mockResolvedValue(mockResult);
+    const mockResult = createSuccessResult('discovered-api-token')
+    mockDiscoverConfigValue.mockResolvedValue(mockResult)
 
-    await handleConfigAuto({ key: "apiToken", outputKind: "json" });
+    await handleConfigAuto({ key: 'apiToken', outputKind: 'json' })
 
-    expect(discoverConfigValue).toHaveBeenCalledWith("apiToken");
-    expect(outputConfigAuto).toHaveBeenCalledWith("apiToken", mockResult, "json");
-  });
+    expect(discoverConfigValue).toHaveBeenCalledWith('apiToken')
+    expect(outputConfigAuto).toHaveBeenCalledWith(
+      'apiToken',
+      mockResult,
+      'json',
+    )
+  })
 
-  it("handles discovery failure", async () => {
+  it('handles discovery failure', async () => {
     const { discoverConfigValue } =
-      await import("../../../../src/commands/config/discover-config-value.mts");
+      await import('../../../../src/commands/config/discover-config-value.mts')
     const { outputConfigAuto } =
-      await import("../../../../src/commands/config/output-config-auto.mts");
+      await import('../../../../src/commands/config/output-config-auto.mts')
 
-    const mockResult = createErrorResult("Config not found");
-    mockDiscoverConfigValue.mockResolvedValue(mockResult);
+    const mockResult = createErrorResult('Config not found')
+    mockDiscoverConfigValue.mockResolvedValue(mockResult)
 
-    await handleConfigAuto({ key: "orgSlug", outputKind: "text" });
+    await handleConfigAuto({ key: 'orgSlug', outputKind: 'text' })
 
-    expect(discoverConfigValue).toHaveBeenCalledWith("orgSlug");
-    expect(outputConfigAuto).toHaveBeenCalledWith("orgSlug", mockResult, "text");
-  });
+    expect(discoverConfigValue).toHaveBeenCalledWith('orgSlug')
+    expect(outputConfigAuto).toHaveBeenCalledWith('orgSlug', mockResult, 'text')
+  })
 
-  it("handles markdown output format", async () => {
+  it('handles markdown output format', async () => {
     const { outputConfigAuto } =
-      await import("../../../../src/commands/config/output-config-auto.mts");
+      await import('../../../../src/commands/config/output-config-auto.mts')
 
-    mockDiscoverConfigValue.mockResolvedValue(createSuccessResult("test-value"));
+    mockDiscoverConfigValue.mockResolvedValue(createSuccessResult('test-value'))
 
-    await handleConfigAuto({ key: "orgId", outputKind: "markdown" });
-
-    expect(outputConfigAuto).toHaveBeenCalledWith("orgId", expect.any(Object), "markdown");
-  });
-
-  it("handles different config keys", async () => {
-    const { discoverConfigValue } =
-      await import("../../../../src/commands/config/discover-config-value.mts");
-
-    const keys = ["apiToken", "apiUrl", "orgId", "orgSlug"] as const;
-
-    for (let i = 0, { length } = keys; i < length; i += 1) {
-      const key = keys[i];
-      mockDiscoverConfigValue.mockResolvedValue(createSuccessResult(`${key}-value`));
-      await handleConfigAuto({ key, outputKind: "json" });
-      expect(discoverConfigValue).toHaveBeenCalledWith(key);
-    }
-  });
-
-  it("handles text output format", async () => {
-    const { outputConfigAuto } =
-      await import("../../../../src/commands/config/output-config-auto.mts");
-
-    mockDiscoverConfigValue.mockResolvedValue(createSuccessResult("https://api.socket.dev"));
-
-    await handleConfigAuto({ key: "apiUrl", outputKind: "text" });
+    await handleConfigAuto({ key: 'orgId', outputKind: 'markdown' })
 
     expect(outputConfigAuto).toHaveBeenCalledWith(
-      "apiUrl",
+      'orgId',
+      expect.any(Object),
+      'markdown',
+    )
+  })
+
+  it('handles different config keys', async () => {
+    const { discoverConfigValue } =
+      await import('../../../../src/commands/config/discover-config-value.mts')
+
+    const keys = ['apiToken', 'apiUrl', 'orgId', 'orgSlug'] as const
+
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]
+      mockDiscoverConfigValue.mockResolvedValue(
+        createSuccessResult(`${key}-value`),
+      )
+      await handleConfigAuto({ key, outputKind: 'json' })
+      expect(discoverConfigValue).toHaveBeenCalledWith(key)
+    }
+  })
+
+  it('handles text output format', async () => {
+    const { outputConfigAuto } =
+      await import('../../../../src/commands/config/output-config-auto.mts')
+
+    mockDiscoverConfigValue.mockResolvedValue(
+      createSuccessResult('https://api.socket.dev'),
+    )
+
+    await handleConfigAuto({ key: 'apiUrl', outputKind: 'text' })
+
+    expect(outputConfigAuto).toHaveBeenCalledWith(
+      'apiUrl',
       expect.objectContaining({
         ok: true,
-        data: "https://api.socket.dev",
+        data: 'https://api.socket.dev',
       }),
-      "text",
-    );
-  });
-});
+      'text',
+    )
+  })
+})

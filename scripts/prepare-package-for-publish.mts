@@ -3,27 +3,29 @@
  *   private field and optionally setting version.
  */
 
-import path from "node:path";
+import path from 'node:path'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { preparePackageForPublish } from "package-builder/scripts/util/prepare-package.mts";
+import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-package.mts'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
-const args = process.argv.slice(2);
-const packagePath: string | undefined = args[0];
-const version: string | undefined = args[1];
+const args = process.argv.slice(2)
+const packagePath: string | undefined = args[0]
+const version: string | undefined = args[1]
 
 if (!packagePath) {
-  logger.error("Usage: prepare-package-for-publish.mts <package-path> [version]");
-  process.exitCode = 1;
+  logger.error(
+    'Usage: prepare-package-for-publish.mts <package-path> [version]',
+  )
+  process.exitCode = 1
 } else {
   try {
-    preparePackageForPublish(resolve(packagePath), { version });
+    preparePackageForPublish(resolve(packagePath), { version })
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    logger.error(`Error preparing package: ${message}`);
-    process.exitCode = 1;
+    const message = e instanceof Error ? e.message : String(e)
+    logger.error(`Error preparing package: ${message}`)
+    process.exitCode = 1
   }
 }

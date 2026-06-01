@@ -8,7 +8,12 @@
     "rewriteRelativeImportExtensions": true,
     "sourceMap": false
   },
-  "include": ["src/**/*.mts", "src/**/*.d.ts", "src/**/*.tsx", "test/helpers/**/*.mts"],
+  "include": [
+    "src/**/*.mts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "test/helpers/**/*.mts"
+  ],
   "exclude": [
     ".cache/**",
     ".claude/**",

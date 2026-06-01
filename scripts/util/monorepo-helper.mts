@@ -4,110 +4,110 @@
  *   multi-package operations.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 
-import colors from "yoctocolors-cjs";
+import colors from 'yoctocolors-cjs'
 
-import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 export interface PackageInfo {
-  name: string;
-  path: string;
-  displayName: string;
+  name: string
+  path: string
+  displayName: string
 }
 
 /**
  * Determine which packages are affected by changed files.
  */
 export function getAffectedPackages(changedFiles: string[]): PackageInfo[] {
-  const affectedPkgs = new Set<PackageInfo>();
-  const packages = getPackagesWithScript("lint");
+  const affectedPkgs = new Set<PackageInfo>()
+  const packages = getPackagesWithScript('lint')
 
   for (let i = 0, { length } = changedFiles; i < length; i += 1) {
-    const file = changedFiles[i];
+    const file = changedFiles[i]
     // Root level files affect all packages.
     if (
-      !file.startsWith("packages/") &&
-      (file.includes("pnpm-lock.yaml") ||
-        file.includes("tsconfig") ||
-        file.includes(".oxfmtrc.json") ||
-        file.includes(".oxlintrc.json"))
+      !file.startsWith('packages/') &&
+      (file.includes('pnpm-lock.yaml') ||
+        file.includes('tsconfig') ||
+        file.includes('.oxfmtrc.json') ||
+        file.includes('.oxlintrc.json'))
     ) {
-      return packages;
+      return packages
     }
 
     // Map packages/* files to specific packages.
-    if (file.startsWith("packages/")) {
-      const parts = file.split("/");
+    if (file.startsWith('packages/')) {
+      const parts = file.split('/')
       if (parts.length > 1) {
-        const pkgDir = parts[1];
-        const pkg = packages.find((p) => p.displayName === pkgDir);
+        const pkgDir = parts[1]
+        const pkg = packages.find(p => p.displayName === pkgDir)
         if (pkg) {
-          affectedPkgs.add(pkg);
+          affectedPkgs.add(pkg)
         }
       }
     }
 
     // Scripts changes affect all packages.
-    if (file.startsWith("scripts/")) {
-      return packages;
+    if (file.startsWith('scripts/')) {
+      return packages
     }
   }
 
-  return Array.from(affectedPkgs);
+  return Array.from(affectedPkgs)
 }
 
 /**
  * Get all packages in the monorepo with specific scripts.
  */
 export function getPackagesWithScript(scriptName: string): PackageInfo[] {
-  const packages: PackageInfo[] = [];
+  const packages: PackageInfo[] = []
   // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- script runs under pnpm workspace; pnpm sets cwd to the package root.
-  const packagesDir = path.join(process.cwd(), "packages");
+  const packagesDir = path.join(process.cwd(), 'packages')
 
   // Main CLI package always has all scripts.
-  const cliPackagePath = path.join(packagesDir, "cli", "package.json");
+  const cliPackagePath = path.join(packagesDir, 'cli', 'package.json')
   if (existsSync(cliPackagePath)) {
-    const pkgJson = JSON.parse(readFileSync(cliPackagePath, "utf8"));
+    const pkgJson = JSON.parse(readFileSync(cliPackagePath, 'utf8'))
     if (pkgJson.scripts?.[scriptName]) {
       packages.push({
-        displayName: "cli",
+        displayName: 'cli',
         name: pkgJson.name,
-        path: path.join(packagesDir, "cli"),
-      });
+        path: path.join(packagesDir, 'cli'),
+      })
     }
   }
 
   // Check other packages that might have the script.
   const otherPackages = [
-    "cli-with-sentry",
-    "socket",
-    "sbom-generator",
-    "node-sea-builder",
-    "node-smol-builder",
-  ];
+    'cli-with-sentry',
+    'socket',
+    'sbom-generator',
+    'node-sea-builder',
+    'node-smol-builder',
+  ]
 
   for (let i = 0, { length } = otherPackages; i < length; i += 1) {
-    const pkgDir = otherPackages[i];
-    const pkgPath = path.join(packagesDir, pkgDir, "package.json");
+    const pkgDir = otherPackages[i]
+    const pkgPath = path.join(packagesDir, pkgDir, 'package.json')
     if (existsSync(pkgPath)) {
-      const pkgJson = JSON.parse(readFileSync(pkgPath, "utf8"));
+      const pkgJson = JSON.parse(readFileSync(pkgPath, 'utf8'))
       if (pkgJson.scripts?.[scriptName]) {
         packages.push({
           displayName: pkgDir,
           name: pkgJson.name,
           path: path.join(packagesDir, pkgDir),
-        });
+        })
       }
     }
   }
 
-  return packages;
+  return packages
 }
 
 /**
@@ -118,25 +118,32 @@ export async function runAcrossPackages(
   scriptName: string,
   args: string[] = [],
   quiet: boolean = false,
-  sectionTitle: string = "",
+  sectionTitle: string = '',
 ): Promise<number> {
   if (!packages.length) {
     if (!quiet) {
-      logger.substep("No packages to process");
+      logger.substep('No packages to process')
     }
-    return 0;
+    return 0
   }
 
   for (let i = 0, { length } = packages; i < length; i += 1) {
-    const pkg = packages[i];
-    const progressMessage = sectionTitle || `${pkg.displayName || pkg.name}: running ${scriptName}`;
-    const exitCode = await runPackageScript(pkg, scriptName, args, quiet, progressMessage);
+    const pkg = packages[i]
+    const progressMessage =
+      sectionTitle || `${pkg.displayName || pkg.name}: running ${scriptName}`
+    const exitCode = await runPackageScript(
+      pkg,
+      scriptName,
+      args,
+      quiet,
+      progressMessage,
+    )
     if (exitCode !== 0) {
-      return exitCode;
+      return exitCode
     }
   }
 
-  return 0;
+  return 0
 }
 
 /**
@@ -147,41 +154,45 @@ export async function runPackageScript(
   scriptName: string,
   args: string[] = [],
   quiet: boolean = false,
-  progressMessage: string = "",
+  progressMessage: string = '',
 ): Promise<number> {
-  const displayName = pkg.displayName || pkg.name;
+  const displayName = pkg.displayName || pkg.name
 
   if (!quiet) {
-    const message = progressMessage || `${displayName}: running ${scriptName}`;
-    logger.progress(message);
+    const message = progressMessage || `${displayName}: running ${scriptName}`
+    logger.progress(message)
   }
 
-  const result = await spawn("pnpm", ["--filter", pkg.name, "run", scriptName, ...args], {
-    // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- script runs under pnpm workspace; pnpm sets cwd to the package root so process.cwd() resolves correctly.
-    cwd: process.cwd(),
-    shell: WIN32,
-    stdio: "pipe",
-    stdioString: true,
-  });
+  const result = await spawn(
+    'pnpm',
+    ['--filter', pkg.name, 'run', scriptName, ...args],
+    {
+      // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- script runs under pnpm workspace; pnpm sets cwd to the package root so process.cwd() resolves correctly.
+      cwd: process.cwd(),
+      shell: WIN32,
+      stdio: 'pipe',
+      stdioString: true,
+    },
+  )
 
   if (result.code !== 0) {
     if (!quiet) {
-      logger.clearLine();
-      logger.log(`${colors.red("✗")} ${displayName}`);
+      logger.clearLine()
+      logger.log(`${colors.red('✗')} ${displayName}`)
     }
     if (result.stdout) {
-      logger.log(result.stdout);
+      logger.log(result.stdout)
     }
     if (result.stderr) {
-      logger.error(result.stderr);
+      logger.error(result.stderr)
     }
-    return result.code;
+    return result.code
   }
 
   if (!quiet) {
-    logger.clearLine();
-    logger.success(`${displayName}: ${scriptName} passed`);
+    logger.clearLine()
+    logger.success(`${displayName}: ${scriptName} passed`)
   }
 
-  return 0;
+  return 0
 }

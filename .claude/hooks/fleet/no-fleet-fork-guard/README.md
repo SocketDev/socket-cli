@@ -8,7 +8,7 @@ The fleet rule "Never fork fleet-canonical files locally" (CLAUDE.md fleet block
 
 Fleet-canonical surfaces (anything tracked by `socket-wheelhouse/scripts/sync-scaffolding/manifest.mts`):
 
-- `.config/oxlint-plugin/` — oxlint plugin index + rules
+- `.config/fleet/oxlint-plugin/` — oxlint plugin index + rules
 - `.git-hooks/` — commit-msg / pre-commit / pre-push entry shims + .mts helpers (git invokes the shims when `core.hooksPath` is set to this directory)
 - `.claude/hooks/` — PreToolUse / PostToolUse hooks
 - `.claude/skills/_shared/` — shared skill helpers

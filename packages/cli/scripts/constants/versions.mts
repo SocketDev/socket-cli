@@ -3,8 +3,8 @@
  */
 
 // Version string constant.
-export const LATEST = "latest";
+export const LATEST = 'latest'
 
 // Maintained Node.js versions for testing and compatibility.
 // Re-export from registry if needed, or define here.
-export const maintainedNodeVersions = [18, 20, 22];
+export const maintainedNodeVersions = [18, 20, 22]

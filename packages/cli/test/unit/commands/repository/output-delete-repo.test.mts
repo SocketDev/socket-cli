@@ -15,12 +15,12 @@
  * (implementation) - src/commands/repository/handle-delete-repo.mts (handler)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { outputDeleteRepo } from "../../../../src/commands/repository/output-delete-repo.mts";
+import { outputDeleteRepo } from '../../../../src/commands/repository/output-delete-repo.mts'
 
-import type { CResult } from "../../../../src/commands/repository/types.mts";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { CResult } from '../../../../src/commands/repository/types.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -30,148 +30,161 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}));
+}))
 
-vi.mock(import("../../../../src/util/output/result-json.mjs"), () => ({
-  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
-}));
+vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+}))
 
-vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-}));
+}))
 
-describe("outputDeleteRepo", () => {
+describe('outputDeleteRepo', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+  })
 
-  it("outputs JSON format for successful result", async () => {
+  it('outputs JSON format for successful result', async () => {
     const { serializeResultJson } = await vi.importMock(
-      "../../../../src/util/output/result-json.mjs",
-    );
-    const mockSerialize = vi.mocked(serializeResultJson);
+      '../../../../src/util/output/result-json.mjs',
+    )
+    const mockSerialize = vi.mocked(serializeResultJson)
 
-    const result: CResult<SocketSdkSuccessResult<"deleteRepository">["data"]> = {
-      ok: true,
-      data: {
-        success: true,
-      },
-    };
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      {
+        ok: true,
+        data: {
+          success: true,
+        },
+      }
 
-    outputDeleteRepo(result, "test-repo", "json");
+    outputDeleteRepo(result, 'test-repo', 'json')
 
-    expect(mockSerialize).toHaveBeenCalledWith(result);
-    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result));
-    expect(process.exitCode).toBeUndefined();
-  });
+    expect(mockSerialize).toHaveBeenCalledWith(result)
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(process.exitCode).toBeUndefined()
+  })
 
-  it("outputs error in JSON format", async () => {
-    const result: CResult<SocketSdkSuccessResult<"deleteRepository">["data"]> = {
-      ok: false,
-      code: 2,
-      message: "Unauthorized",
-      cause: "Invalid API token",
-    };
+  it('outputs error in JSON format', async () => {
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      {
+        ok: false,
+        code: 2,
+        message: 'Unauthorized',
+        cause: 'Invalid API token',
+      }
 
-    outputDeleteRepo(result, "test-repo", "json");
+    outputDeleteRepo(result, 'test-repo', 'json')
 
-    expect(mockLogger.log).toHaveBeenCalled();
-    expect(process.exitCode).toBe(2);
-  });
+    expect(mockLogger.log).toHaveBeenCalled()
+    expect(process.exitCode).toBe(2)
+  })
 
-  it("outputs success message for successful deletion", async () => {
-    const result: CResult<SocketSdkSuccessResult<"deleteRepository">["data"]> = {
-      ok: true,
-      data: {
-        success: true,
-      },
-    };
+  it('outputs success message for successful deletion', async () => {
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      {
+        ok: true,
+        data: {
+          success: true,
+        },
+      }
 
-    outputDeleteRepo(result, "my-repository", "text");
+    outputDeleteRepo(result, 'my-repository', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
-      "OK. Repository `my-repository` deleted successfully",
-    );
-    expect(process.exitCode).toBeUndefined();
-  });
+      'OK. Repository `my-repository` deleted successfully',
+    )
+    expect(process.exitCode).toBeUndefined()
+  })
 
-  it("outputs error in text format", async () => {
+  it('outputs error in text format', async () => {
     const { failMsgWithBadge } = await vi.importMock(
-      "../../../../src/util/error/fail-msg-with-badge.mts",
-    );
-    const mockFailMsg = vi.mocked(failMsgWithBadge);
+      '../../../../src/util/error/fail-msg-with-badge.mts',
+    )
+    const mockFailMsg = vi.mocked(failMsgWithBadge)
 
-    const result: CResult<SocketSdkSuccessResult<"deleteRepository">["data"]> = {
-      ok: false,
-      code: 1,
-      message: "Repository not found",
-      cause: "Not found error",
-    };
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      {
+        ok: false,
+        code: 1,
+        message: 'Repository not found',
+        cause: 'Not found error',
+      }
 
-    outputDeleteRepo(result, "nonexistent-repo", "text");
+    outputDeleteRepo(result, 'nonexistent-repo', 'text')
 
-    expect(mockFailMsg).toHaveBeenCalledWith("Repository not found", "Not found error");
-    expect(mockLogger.fail).toHaveBeenCalled();
-    expect(process.exitCode).toBe(1);
-  });
+    expect(mockFailMsg).toHaveBeenCalledWith(
+      'Repository not found',
+      'Not found error',
+    )
+    expect(mockLogger.fail).toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
+  })
 
-  it("handles markdown output format", async () => {
-    const result: CResult<SocketSdkSuccessResult<"deleteRepository">["data"]> = {
-      ok: true,
-      data: {
-        success: true,
-      },
-    };
+  it('handles markdown output format', async () => {
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      {
+        ok: true,
+        data: {
+          success: true,
+        },
+      }
 
-    outputDeleteRepo(result, "markdown-repo", "markdown");
-
-    expect(mockLogger.success).toHaveBeenCalledWith(
-      "OK. Repository `markdown-repo` deleted successfully",
-    );
-  });
-
-  it("handles repository name with special characters", async () => {
-    const result: CResult<SocketSdkSuccessResult<"deleteRepository">["data"]> = {
-      ok: true,
-      data: {
-        success: true,
-      },
-    };
-
-    outputDeleteRepo(result, "repo-with-dashes_and_underscores", "text");
+    outputDeleteRepo(result, 'markdown-repo', 'markdown')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
-      "OK. Repository `repo-with-dashes_and_underscores` deleted successfully",
-    );
-  });
+      'OK. Repository `markdown-repo` deleted successfully',
+    )
+  })
 
-  it("handles empty repository name", async () => {
-    const result: CResult<SocketSdkSuccessResult<"deleteRepository">["data"]> = {
-      ok: true,
-      data: {
-        success: true,
-      },
-    };
+  it('handles repository name with special characters', async () => {
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      {
+        ok: true,
+        data: {
+          success: true,
+        },
+      }
 
-    outputDeleteRepo(result, "", "text");
+    outputDeleteRepo(result, 'repo-with-dashes_and_underscores', 'text')
 
-    expect(mockLogger.success).toHaveBeenCalledWith("OK. Repository `` deleted successfully");
-  });
+    expect(mockLogger.success).toHaveBeenCalledWith(
+      'OK. Repository `repo-with-dashes_and_underscores` deleted successfully',
+    )
+  })
 
-  it("sets default exit code when code is undefined", async () => {
-    const result: CResult<SocketSdkSuccessResult<"deleteRepository">["data"]> = {
-      ok: false,
-      message: "Error without code",
-    };
+  it('handles empty repository name', async () => {
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      {
+        ok: true,
+        data: {
+          success: true,
+        },
+      }
 
-    outputDeleteRepo(result, "test-repo", "json");
+    outputDeleteRepo(result, '', 'text')
 
-    expect(process.exitCode).toBe(1);
-  });
-});
+    expect(mockLogger.success).toHaveBeenCalledWith(
+      'OK. Repository `` deleted successfully',
+    )
+  })
+
+  it('sets default exit code when code is undefined', async () => {
+    const result: CResult<SocketSdkSuccessResult<'deleteRepository'>['data']> =
+      {
+        ok: false,
+        message: 'Error without code',
+      }
+
+    outputDeleteRepo(result, 'test-repo', 'json')
+
+    expect(process.exitCode).toBe(1)
+  })
+})

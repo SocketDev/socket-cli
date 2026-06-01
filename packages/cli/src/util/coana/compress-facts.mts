@@ -12,19 +12,19 @@
  * multipart entry name stays inside cwd (depscan strips .. traversal entries).
  */
 
-import { createReadStream, createWriteStream, existsSync } from "node:fs";
-import path from "node:path";
-import { pipeline } from "node:stream/promises";
-import { createBrotliCompress } from "node:zlib";
+import { createReadStream, createWriteStream, existsSync } from 'node:fs'
+import path from 'node:path'
+import { pipeline } from 'node:stream/promises'
+import { createBrotliCompress } from 'node:zlib'
 
-import { safeDelete } from "@socketsecurity/lib-stable/fs/safe";
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
-import { DOT_SOCKET_DOT_FACTS_JSON } from "../../constants.mts";
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants.mts'
 
 type CompressedScanPaths = {
-  cleanup: () => Promise<void>;
-  paths: string[];
-};
+  cleanup: () => Promise<void>
+  paths: string[]
+}
 
 /**
  * For each `.socket.facts.json` in `scanPaths`, stream-brotli-compress a
@@ -58,27 +58,31 @@ type CompressedScanPaths = {
 export async function compressSocketFactsForUpload(
   scanPaths: string[],
 ): Promise<CompressedScanPaths> {
-  const brPaths: string[] = [];
+  const brPaths: string[] = []
   const paths = await Promise.all(
-    scanPaths.map(async (p) => {
+    scanPaths.map(async p => {
       if (path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON) {
-        return p;
+        return p
       }
       if (!existsSync(p)) {
-        return p;
+        return p
       }
-      const brPath = `${p}.br`;
-      await pipeline(createReadStream(p), createBrotliCompress(), createWriteStream(brPath));
-      brPaths.push(brPath);
-      return brPath;
+      const brPath = `${p}.br`
+      await pipeline(
+        createReadStream(p),
+        createBrotliCompress(),
+        createWriteStream(brPath),
+      )
+      brPaths.push(brPath)
+      return brPath
     }),
-  );
+  )
   const cleanup = async () => {
-    const targets = brPaths.splice(0);
+    const targets = brPaths.splice(0)
     if (targets.length === 0) {
-      return;
+      return
     }
-    await safeDelete(targets, { force: true });
-  };
-  return { __proto__: null, cleanup, paths } as CompressedScanPaths;
+    await safeDelete(targets, { force: true })
+  }
+  return { __proto__: null, cleanup, paths } as CompressedScanPaths
 }

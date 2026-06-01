@@ -10,20 +10,24 @@
  * src/commands/scan/handle-scan-github.mts - GitHub integration logic.
  */
 
-import { describe, expect } from "vitest";
+import { describe, expect } from 'vitest'
 
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_HELP } from "../../../src/constants/cli.mts";
-import { getBinCliPath } from "../../../src/constants/paths.mts";
-import { cmdit, spawnSocketCli } from "../../utils.mts";
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { cmdit, spawnSocketCli } from '../../utils.mts'
 
-const binCliPath = getBinCliPath();
+const binCliPath = getBinCliPath()
 
-describe("socket scan github", async () => {
+describe('socket scan github', async () => {
   cmdit(
-    ["scan", "github", FLAG_HELP, FLAG_CONFIG, "{}"],
+    ['scan', 'github', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
         "Create a scan for given GitHub repo
 
@@ -61,26 +65,28 @@ describe("socket scan github", async () => {
               Examples
                 $ socket scan github
                 $ socket scan github ./proj"
-      `);
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan github\`, cwd: <redacted>"
-      `);
+      `)
 
-      expect(code, "explicit help should exit with code 0").toBe(0);
-      expect(stderr, "banner includes base command").toContain("`socket scan github`");
+      expect(code, 'explicit help should exit with code 0').toBe(0)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket scan github`',
+      )
     },
-  );
+  )
 
   cmdit(
-    ["scan", "github", FLAG_DRY_RUN, FLAG_CONFIG, "{}"],
-    "should require args with just dry-run",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(stdout).toMatchInlineSnapshot(`""`);
+    ['scan', 'github', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should require args with just dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -96,29 +102,29 @@ describe("socket scan github", async () => {
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 This command requires a GitHub API token for access (missing)"
-      `);
+      `)
 
-      expect(code, "dry-run should exit with code 2 if missing input").toBe(2);
+      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
     },
-  );
+  )
 
   cmdit(
     [
-      "scan",
-      "github",
-      "fakeOrg",
+      'scan',
+      'github',
+      'fakeOrg',
       FLAG_DRY_RUN,
-      "--github-token",
-      "fake",
+      '--github-token',
+      'fake',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
-      "x",
-      "y",
+      'x',
+      'y',
     ],
-    "should require args with just dry-run",
-    async (cmd) => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd);
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`);
+    'should require args with just dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -131,9 +137,9 @@ describe("socket scan github", async () => {
               Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode"
-      `);
+      `)
 
-      expect(code, "dry-run should exit with code 0 if input ok").toBe(0);
+      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
-  );
-});
+  )
+})

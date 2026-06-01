@@ -1,52 +1,56 @@
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 
-import type { CResult } from "../../types.mts";
-const logger = getDefaultLogger();
+import type { CResult } from '../../types.mts'
+const logger = getDefaultLogger()
 
 export async function outputInstallCompletion(
   result: CResult<{
-    actions: string[];
-    bashrcPath: string;
-    completionCommand: string;
-    bashrcUpdated: boolean;
-    foundBashrc: boolean;
-    sourcingCommand: string;
-    targetName: string;
-    targetPath: string;
+    actions: string[]
+    bashrcPath: string
+    completionCommand: string
+    bashrcUpdated: boolean
+    foundBashrc: boolean
+    sourcingCommand: string
+    targetName: string
+    targetPath: string
   }>,
 ) {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1;
+    process.exitCode = result.code ?? 1
 
-    logger.fail(failMsgWithBadge(result.message, result.cause));
-    return;
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
   }
 
-  logger.log("");
-  logger.log(`Installation of tab completion for "${result.data.targetName}" finished!`);
-  logger.log("");
+  logger.log('')
+  logger.log(
+    `Installation of tab completion for "${result.data.targetName}" finished!`,
+  )
+  logger.log('')
 
   for (let i = 0, { length } = result.data.actions; i < length; i += 1) {
-    const action = result.data.actions[i];
-    logger.log(`  - ${action}`);
+    const action = result.data.actions[i]
+    logger.log(`  - ${action}`)
   }
-  logger.log("");
-  logger.log("Socket tab completion works automatically in new terminals.");
-  logger.log("");
-  logger.log("Due to a bash limitation, tab completion cannot be enabled in the");
-  logger.log("current shell (bash instance) through NodeJS. You must either:");
-  logger.log("");
-  logger.log("1. Reload your .bashrc script (best):");
-  logger.log("");
-  logger.log("   source ~/.bashrc");
-  logger.log("");
-  logger.log("2. Run these commands to load the completion script:");
-  logger.log("");
-  logger.log(`   source ${result.data.targetPath}`);
-  logger.log(`   ${result.data.completionCommand}`);
-  logger.log("");
-  logger.log("3. Or restart bash somehow (restart terminal or run `bash`)");
-  logger.log("");
+  logger.log('')
+  logger.log('Socket tab completion works automatically in new terminals.')
+  logger.log('')
+  logger.log(
+    'Due to a bash limitation, tab completion cannot be enabled in the',
+  )
+  logger.log('current shell (bash instance) through NodeJS. You must either:')
+  logger.log('')
+  logger.log('1. Reload your .bashrc script (best):')
+  logger.log('')
+  logger.log('   source ~/.bashrc')
+  logger.log('')
+  logger.log('2. Run these commands to load the completion script:')
+  logger.log('')
+  logger.log(`   source ${result.data.targetPath}`)
+  logger.log(`   ${result.data.completionCommand}`)
+  logger.log('')
+  logger.log('3. Or restart bash somehow (restart terminal or run `bash`)')
+  logger.log('')
 }

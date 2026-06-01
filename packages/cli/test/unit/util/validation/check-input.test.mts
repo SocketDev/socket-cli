@@ -12,20 +12,24 @@
  * Related Files: - util/validation/check-input.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from "../../../../src/constants/cli.mts";
-import { checkCommandInput } from "../../../../src/util/validation/check-input.mts";
+import {
+  OUTPUT_JSON,
+  OUTPUT_MARKDOWN,
+  OUTPUT_TEXT,
+} from '../../../../src/constants/cli.mts'
+import { checkCommandInput } from '../../../../src/util/validation/check-input.mts'
 
 // Mock dependencies.
-vi.mock(import("yoctocolors-cjs"), () => ({
+vi.mock(import('yoctocolors-cjs'), () => ({
   default: {
-    bgRedBright: vi.fn((str) => `bgRedBright(${str})`),
-    bold: vi.fn((str) => `bold(${str})`),
-    green: vi.fn((str) => `green(${str})`),
-    red: vi.fn((str) => `red(${str})`),
+    bgRedBright: vi.fn(str => `bgRedBright(${str})`),
+    bold: vi.fn(str => `bold(${str})`),
+    green: vi.fn(str => `green(${str})`),
+    red: vi.fn(str => `red(${str})`),
   },
-}));
+}))
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -34,354 +38,358 @@ const mockLogger = vi.hoisted(() => ({
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger/symbols"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/symbols'), () => ({
   LOG_SYMBOLS: {
-    success: "✓",
-    fail: "✗",
+    success: '✓',
+    fail: '✗',
   },
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/ansi/strip"), () => ({
-  stripAnsi: vi.fn((str) => str),
-}));
+vi.mock(import('@socketsecurity/lib-stable/ansi/strip'), () => ({
+  stripAnsi: vi.fn(str => str),
+}))
 
-vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
   failMsgWithBadge: vi.fn((title, msg) => `${title}: ${msg}`),
-}));
+}))
 
-vi.mock(import("../../../../src/util/output/result-json.mts"), () => ({
-  serializeResultJson: vi.fn((result) => JSON.stringify(result)),
-}));
+vi.mock(import('../../../../src/util/output/result-json.mts'), () => ({
+  serializeResultJson: vi.fn(result => JSON.stringify(result)),
+}))
 
-describe("checkCommandInput", () => {
-  let originalExitCode: number | undefined;
+describe('checkCommandInput', () => {
+  let originalExitCode: number | undefined
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks()
     // Save original exit code.
-    originalExitCode = process.exitCode;
-    process.exitCode = undefined;
-  });
+    originalExitCode = process.exitCode
+    process.exitCode = undefined
+  })
 
   afterEach(() => {
     // Restore original exit code.
-    process.exitCode = originalExitCode;
-  });
+    process.exitCode = originalExitCode
+  })
 
-  describe("when all checks pass", () => {
-    it("returns true and does not set exit code", () => {
+  describe('when all checks pass', () => {
+    it('returns true and does not set exit code', () => {
       const result = checkCommandInput(
         OUTPUT_TEXT,
         {
           test: true,
-          fail: "Failed",
-          message: "Check 1",
+          fail: 'Failed',
+          message: 'Check 1',
         },
         {
           test: true,
-          fail: "Failed",
-          message: "Check 2",
+          fail: 'Failed',
+          message: 'Check 2',
         },
-      );
+      )
 
-      expect(result).toBe(true);
-      expect(process.exitCode).toBeUndefined();
-    });
+      expect(result).toBe(true)
+      expect(process.exitCode).toBeUndefined()
+    })
 
-    it("returns true for json output kind", () => {
+    it('returns true for json output kind', () => {
       const result = checkCommandInput(OUTPUT_JSON, {
         test: true,
-        fail: "Failed",
-        message: "Check 1",
-      });
+        fail: 'Failed',
+        message: 'Check 1',
+      })
 
-      expect(result).toBe(true);
-      expect(process.exitCode).toBeUndefined();
-    });
+      expect(result).toBe(true)
+      expect(process.exitCode).toBeUndefined()
+    })
 
-    it("returns true for markdown output kind", () => {
+    it('returns true for markdown output kind', () => {
       const result = checkCommandInput(OUTPUT_MARKDOWN, {
         test: true,
-        fail: "Failed",
-        message: "Check 1",
-      });
+        fail: 'Failed',
+        message: 'Check 1',
+      })
 
-      expect(result).toBe(true);
-      expect(process.exitCode).toBeUndefined();
-    });
-  });
+      expect(result).toBe(true)
+      expect(process.exitCode).toBeUndefined()
+    })
+  })
 
-  describe("when some checks fail", () => {
-    it("returns false and sets exit code to 2", async () => {
-      vi.mocked(await import("@socketsecurity/lib-stable/logger"));
+  describe('when some checks fail', () => {
+    it('returns false and sets exit code to 2', async () => {
+      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
       const { failMsgWithBadge } = vi.mocked(
-        await import("../../../../src/util/error/fail-msg-with-badge.mts"),
-      );
+        await import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      )
 
       const result = checkCommandInput(
         OUTPUT_TEXT,
         {
           test: false,
-          fail: "Missing file",
-          message: "File must exist",
+          fail: 'Missing file',
+          message: 'File must exist',
         },
         {
           test: true,
-          fail: "Failed",
-          message: "Check 2",
-          pass: "Passed",
+          fail: 'Failed',
+          message: 'Check 2',
+          pass: 'Passed',
         },
-      );
+      )
 
-      expect(result).toBe(false);
-      expect(process.exitCode).toBe(2);
+      expect(result).toBe(false)
+      expect(process.exitCode).toBe(2)
       expect(failMsgWithBadge).toHaveBeenCalledWith(
-        "Input error",
-        expect.stringContaining("✗ File must exist (red(Missing file))"),
-      );
+        'Input error',
+        expect.stringContaining('✗ File must exist (red(Missing file))'),
+      )
       expect(failMsgWithBadge).toHaveBeenCalledWith(
-        "Input error",
-        expect.stringContaining("✓ Check 2 (green(Passed))"),
-      );
-      expect(mockLogger.fail).toHaveBeenCalled();
-    });
+        'Input error',
+        expect.stringContaining('✓ Check 2 (green(Passed))'),
+      )
+      expect(mockLogger.fail).toHaveBeenCalled()
+    })
 
-    it("handles json output kind", async () => {
-      vi.mocked(await import("@socketsecurity/lib-stable/logger"));
+    it('handles json output kind', async () => {
+      vi.mocked(await import('@socketsecurity/lib-stable/logger'))
       const { serializeResultJson } = vi.mocked(
-        await import("../../../../src/util/output/result-json.mts"),
-      );
+        await import('../../../../src/util/output/result-json.mts'),
+      )
 
       const result = checkCommandInput(OUTPUT_JSON, {
         test: false,
-        fail: "Invalid input",
-        message: "Input validation failed",
-      });
+        fail: 'Invalid input',
+        message: 'Input validation failed',
+      })
 
-      expect(result).toBe(false);
-      expect(process.exitCode).toBe(2);
+      expect(result).toBe(false)
+      expect(process.exitCode).toBe(2)
       expect(serializeResultJson).toHaveBeenCalledWith({
         ok: false,
-        message: "Input error",
-        data: expect.stringContaining("✗ Input validation failed"),
-      });
-      expect(mockLogger.log).toHaveBeenCalled();
-    });
-  });
+        message: 'Input error',
+        data: expect.stringContaining('✗ Input validation failed'),
+      })
+      expect(mockLogger.log).toHaveBeenCalled()
+    })
+  })
 
-  describe("message formatting", () => {
-    it("handles multi-line messages", async () => {
+  describe('message formatting', () => {
+    it('handles multi-line messages', async () => {
       const { failMsgWithBadge } = vi.mocked(
-        await import("../../../../src/util/error/fail-msg-with-badge.mts"),
-      );
+        await import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      )
 
       checkCommandInput(OUTPUT_TEXT, {
         test: false,
-        fail: "Error",
-        message: "First line\nSecond line\nThird line",
-      });
+        fail: 'Error',
+        message: 'First line\nSecond line\nThird line',
+      })
 
       expect(failMsgWithBadge).toHaveBeenCalledWith(
-        "Input error",
-        expect.stringContaining("✗ First line (red(Error))\n    Second line\n    Third line"),
-      );
-    });
+        'Input error',
+        expect.stringContaining(
+          '✗ First line (red(Error))\n    Second line\n    Third line',
+        ),
+      )
+    })
 
-    it("handles empty messages", async () => {
+    it('handles empty messages', async () => {
       const { failMsgWithBadge } = vi.mocked(
-        await import("../../../../src/util/error/fail-msg-with-badge.mts"),
-      );
+        await import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      )
 
       checkCommandInput(
         OUTPUT_TEXT,
         {
           test: false,
-          fail: "Error",
-          message: "",
+          fail: 'Error',
+          message: '',
         },
         {
           test: false,
-          fail: "Another error",
-          message: "Valid message",
+          fail: 'Another error',
+          message: 'Valid message',
         },
-      );
+      )
 
-      const callArg = failMsgWithBadge.mock.calls[0][1];
-      expect(callArg).not.toContain("✗  ");
-      expect(callArg).toContain("✗ Valid message");
-    });
+      const callArg = failMsgWithBadge.mock.calls[0][1]
+      expect(callArg).not.toContain('✗  ')
+      expect(callArg).toContain('✗ Valid message')
+    })
 
-    it("handles messages without fail/pass reasons", async () => {
+    it('handles messages without fail/pass reasons', async () => {
       const { failMsgWithBadge } = vi.mocked(
-        await import("../../../../src/util/error/fail-msg-with-badge.mts"),
-      );
+        await import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      )
 
       checkCommandInput(
         OUTPUT_TEXT,
         {
           test: false,
-          fail: "",
-          message: "Check failed",
+          fail: '',
+          message: 'Check failed',
         },
         {
           test: true,
-          pass: "",
-          fail: "",
-          message: "Check passed",
+          pass: '',
+          fail: '',
+          message: 'Check passed',
         },
-      );
+      )
 
-      const callArg = failMsgWithBadge.mock.calls[0][1];
-      expect(callArg).toContain("✗ Check failed");
-      expect(callArg).toContain("✓ Check passed");
-      expect(callArg).not.toContain("()");
-    });
-  });
+      const callArg = failMsgWithBadge.mock.calls[0][1]
+      expect(callArg).toContain('✗ Check failed')
+      expect(callArg).toContain('✓ Check passed')
+      expect(callArg).not.toContain('()')
+    })
+  })
 
-  describe("nook behavior", () => {
-    it("skips checks where nook is true and test passes", async () => {
+  describe('nook behavior', () => {
+    it('skips checks where nook is true and test passes', async () => {
       const { failMsgWithBadge } = vi.mocked(
-        await import("../../../../src/util/error/fail-msg-with-badge.mts"),
-      );
+        await import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      )
 
       checkCommandInput(
         OUTPUT_TEXT,
         {
           test: true,
-          fail: "Should not appear",
-          message: "This check is skipped",
+          fail: 'Should not appear',
+          message: 'This check is skipped',
           nook: true,
         },
         {
           test: false,
-          fail: "This appears",
-          message: "This check is included",
+          fail: 'This appears',
+          message: 'This check is included',
         },
-      );
+      )
 
-      const callArg = failMsgWithBadge.mock.calls[0][1];
-      expect(callArg).not.toContain("This check is skipped");
-      expect(callArg).toContain("This check is included");
-    });
+      const callArg = failMsgWithBadge.mock.calls[0][1]
+      expect(callArg).not.toContain('This check is skipped')
+      expect(callArg).toContain('This check is included')
+    })
 
-    it("includes checks where nook is true but test fails", async () => {
+    it('includes checks where nook is true but test fails', async () => {
       const { failMsgWithBadge } = vi.mocked(
-        await import("../../../../src/util/error/fail-msg-with-badge.mts"),
-      );
+        await import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      )
 
       checkCommandInput(OUTPUT_TEXT, {
         test: false,
-        fail: "Should appear",
-        message: "This check failed",
+        fail: 'Should appear',
+        message: 'This check failed',
         nook: true,
-      });
+      })
 
-      const callArg = failMsgWithBadge.mock.calls[0][1];
-      expect(callArg).toContain("This check failed");
-      expect(callArg).toContain("Should appear");
-    });
+      const callArg = failMsgWithBadge.mock.calls[0][1]
+      expect(callArg).toContain('This check failed')
+      expect(callArg).toContain('Should appear')
+    })
 
-    it("handles nook as undefined", async () => {
+    it('handles nook as undefined', async () => {
       const { failMsgWithBadge } = vi.mocked(
-        await import("../../../../src/util/error/fail-msg-with-badge.mts"),
-      );
+        await import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      )
 
       checkCommandInput(
         OUTPUT_TEXT,
         {
           test: true,
-          fail: "Failed",
-          message: "Normal check",
-          pass: "Passed",
+          fail: 'Failed',
+          message: 'Normal check',
+          pass: 'Passed',
           nook: undefined,
         },
         {
           test: false,
-          fail: "Failed",
-          message: "Failed check",
+          fail: 'Failed',
+          message: 'Failed check',
         },
-      );
+      )
 
-      const callArg = failMsgWithBadge.mock.calls[0][1];
-      expect(callArg).toContain("✓ Normal check (green(Passed))");
-      expect(callArg).toContain("✗ Failed check (red(Failed))");
-    });
-  });
+      const callArg = failMsgWithBadge.mock.calls[0][1]
+      expect(callArg).toContain('✓ Normal check (green(Passed))')
+      expect(callArg).toContain('✗ Failed check (red(Failed))')
+    })
+  })
 
-  describe("edge cases", () => {
-    it("handles empty array of checks", () => {
-      const result = checkCommandInput(OUTPUT_TEXT);
+  describe('edge cases', () => {
+    it('handles empty array of checks', () => {
+      const result = checkCommandInput(OUTPUT_TEXT)
 
-      expect(result).toBe(true);
-      expect(process.exitCode).toBeUndefined();
-    });
+      expect(result).toBe(true)
+      expect(process.exitCode).toBeUndefined()
+    })
 
-    it("handles all passing checks with various output kinds", () => {
+    it('handles all passing checks with various output kinds', () => {
       const checks = [
         {
           test: true,
-          fail: "Failed",
-          message: "Check 1",
+          fail: 'Failed',
+          message: 'Check 1',
         },
-      ];
+      ]
 
-      expect(checkCommandInput(OUTPUT_TEXT, ...checks)).toBe(true);
-      expect(checkCommandInput(OUTPUT_JSON, ...checks)).toBe(true);
-      expect(checkCommandInput(OUTPUT_MARKDOWN, ...checks)).toBe(true);
-    });
+      expect(checkCommandInput(OUTPUT_TEXT, ...checks)).toBe(true)
+      expect(checkCommandInput(OUTPUT_JSON, ...checks)).toBe(true)
+      expect(checkCommandInput(OUTPUT_MARKDOWN, ...checks)).toBe(true)
+    })
 
-    it("strips ANSI codes for JSON output", async () => {
-      const { stripAnsi } = vi.mocked(await import("@socketsecurity/lib-stable/ansi/strip"));
+    it('strips ANSI codes for JSON output', async () => {
+      const { stripAnsi } = vi.mocked(
+        await import('@socketsecurity/lib-stable/ansi/strip'),
+      )
       const { serializeResultJson } = vi.mocked(
-        await import("../../../../src/util/output/result-json.mts"),
-      );
+        await import('../../../../src/util/output/result-json.mts'),
+      )
 
-      stripAnsi.mockReturnValue("Stripped message");
+      stripAnsi.mockReturnValue('Stripped message')
 
       checkCommandInput(OUTPUT_JSON, {
         test: false,
-        fail: "Failed",
-        message: "Message with ANSI",
-      });
+        fail: 'Failed',
+        message: 'Message with ANSI',
+      })
 
-      expect(stripAnsi).toHaveBeenCalled();
+      expect(stripAnsi).toHaveBeenCalled()
       expect(serializeResultJson).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: "Stripped message",
+          data: 'Stripped message',
         }),
-      );
-    });
-  });
+      )
+    })
+  })
 
-  describe("mixed pass and fail checks", () => {
-    it("handles mixed results correctly", async () => {
+  describe('mixed pass and fail checks', () => {
+    it('handles mixed results correctly', async () => {
       const { failMsgWithBadge } = vi.mocked(
-        await import("../../../../src/util/error/fail-msg-with-badge.mts"),
-      );
+        await import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      )
 
       checkCommandInput(
         OUTPUT_TEXT,
-        { test: true, fail: "Failed", message: "Check 1 passes" },
-        { test: false, fail: "Failed", message: "Check 2 fails" },
+        { test: true, fail: 'Failed', message: 'Check 1 passes' },
+        { test: false, fail: 'Failed', message: 'Check 2 fails' },
         {
           test: true,
-          fail: "Failed",
-          message: "Check 3 passes",
-          pass: "Success",
+          fail: 'Failed',
+          message: 'Check 3 passes',
+          pass: 'Success',
         },
-      );
+      )
 
-      const callArg = failMsgWithBadge.mock.calls[0][1];
-      expect(callArg).toContain("✓ Check 1 passes");
-      expect(callArg).toContain("✗ Check 2 fails");
-      expect(callArg).toContain("✓ Check 3 passes (green(Success))");
-    });
-  });
-});
+      const callArg = failMsgWithBadge.mock.calls[0][1]
+      expect(callArg).toContain('✓ Check 1 passes')
+      expect(callArg).toContain('✗ Check 2 fails')
+      expect(callArg).toContain('✓ Check 3 passes (green(Success))')
+    })
+  })
+})

@@ -3,278 +3,292 @@
  *   rendering, theme handling, and environment detection.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
 import {
   renderLogoWithFallback,
   renderShimmerFrame,
   supportsFullColor,
-} from "../../../../src/util/terminal/ascii-header.mts";
-import type { HeaderTheme } from "../../../../src/util/terminal/ascii-header.mts";
+} from '../../../../src/util/terminal/ascii-header.mts'
+import type { HeaderTheme } from '../../../../src/util/terminal/ascii-header.mts'
 
 /**
  * Strip ANSI color codes from string for shimmer testing.
  */
 export function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, "");
+  return str.replace(/\x1b\[[0-9;]*m/g, '')
 }
 
-describe("ascii-header", () => {
-  describe("supportsFullColor", () => {
-    it("should detect COLORTERM=truecolor", () => {
-      const originalColorterm = process.env["COLORTERM"];
+describe('ascii-header', () => {
+  describe('supportsFullColor', () => {
+    it('should detect COLORTERM=truecolor', () => {
+      const originalColorterm = process.env['COLORTERM']
       try {
-        process.env["COLORTERM"] = "truecolor";
-        expect(supportsFullColor()).toBe(true);
+        process.env['COLORTERM'] = 'truecolor'
+        expect(supportsFullColor()).toBe(true)
       } finally {
         if (originalColorterm === undefined) {
-          delete process.env["COLORTERM"];
+          delete process.env['COLORTERM']
         } else {
-          process.env["COLORTERM"] = originalColorterm;
+          process.env['COLORTERM'] = originalColorterm
         }
       }
-    });
+    })
 
-    it("should detect COLORTERM=24bit", () => {
-      const originalColorterm = process.env["COLORTERM"];
+    it('should detect COLORTERM=24bit', () => {
+      const originalColorterm = process.env['COLORTERM']
       try {
-        process.env["COLORTERM"] = "24bit";
-        expect(supportsFullColor()).toBe(true);
+        process.env['COLORTERM'] = '24bit'
+        expect(supportsFullColor()).toBe(true)
       } finally {
         if (originalColorterm === undefined) {
-          delete process.env["COLORTERM"];
+          delete process.env['COLORTERM']
         } else {
-          process.env["COLORTERM"] = originalColorterm;
+          process.env['COLORTERM'] = originalColorterm
         }
       }
-    });
+    })
 
-    it("should detect TERM_PROGRAM=iTerm.app", () => {
-      const originalTermProgram = process.env["TERM_PROGRAM"];
-      const originalColorterm = process.env["COLORTERM"];
+    it('should detect TERM_PROGRAM=iTerm.app', () => {
+      const originalTermProgram = process.env['TERM_PROGRAM']
+      const originalColorterm = process.env['COLORTERM']
       try {
-        delete process.env["COLORTERM"];
-        process.env["TERM_PROGRAM"] = "iTerm.app";
-        expect(supportsFullColor()).toBe(true);
+        delete process.env['COLORTERM']
+        process.env['TERM_PROGRAM'] = 'iTerm.app'
+        expect(supportsFullColor()).toBe(true)
       } finally {
         if (originalTermProgram === undefined) {
-          delete process.env["TERM_PROGRAM"];
+          delete process.env['TERM_PROGRAM']
         } else {
-          process.env["TERM_PROGRAM"] = originalTermProgram;
+          process.env['TERM_PROGRAM'] = originalTermProgram
         }
         if (originalColorterm !== undefined) {
-          process.env["COLORTERM"] = originalColorterm;
+          process.env['COLORTERM'] = originalColorterm
         }
       }
-    });
+    })
 
-    it("should return false for basic terminals", () => {
-      const originalColorterm = process.env["COLORTERM"];
-      const originalTerm = process.env["TERM"];
-      const originalTermProgram = process.env["TERM_PROGRAM"];
+    it('should return false for basic terminals', () => {
+      const originalColorterm = process.env['COLORTERM']
+      const originalTerm = process.env['TERM']
+      const originalTermProgram = process.env['TERM_PROGRAM']
       try {
-        delete process.env["COLORTERM"];
-        delete process.env["TERM_PROGRAM"];
-        process.env["TERM"] = "xterm";
-        expect(supportsFullColor()).toBe(false);
+        delete process.env['COLORTERM']
+        delete process.env['TERM_PROGRAM']
+        process.env['TERM'] = 'xterm'
+        expect(supportsFullColor()).toBe(false)
       } finally {
         if (originalColorterm !== undefined) {
-          process.env["COLORTERM"] = originalColorterm;
+          process.env['COLORTERM'] = originalColorterm
         }
         if (originalTerm !== undefined) {
-          process.env["TERM"] = originalTerm;
+          process.env['TERM'] = originalTerm
         }
         if (originalTermProgram !== undefined) {
-          process.env["TERM_PROGRAM"] = originalTermProgram;
+          process.env['TERM_PROGRAM'] = originalTermProgram
         }
       }
-    });
-  });
+    })
+  })
 
-  describe("renderShimmerFrame", () => {
-    it("should render shimmer frame with default theme", () => {
-      const logo = renderShimmerFrame(0);
-      const stripped = stripAnsi(logo);
-      expect(stripped).toContain("|");
-      expect(stripped).toContain("dev");
-    });
+  describe('renderShimmerFrame', () => {
+    it('should render shimmer frame with default theme', () => {
+      const logo = renderShimmerFrame(0)
+      const stripped = stripAnsi(logo)
+      expect(stripped).toContain('|')
+      expect(stripped).toContain('dev')
+    })
 
-    it("should render different frames differently", () => {
-      const frame0 = renderShimmerFrame(0);
-      const frame10 = renderShimmerFrame(10);
+    it('should render different frames differently', () => {
+      const frame0 = renderShimmerFrame(0)
+      const frame10 = renderShimmerFrame(10)
       // The shimmer engine (`@socketsecurity/lib/effects/shimmer`) is
       // pure: a different frame counter advances the wave's position
       // and changes per-character truecolor codes. There's no CI
       // special-case in the engine, so frames must always differ.
-      expect(frame0).not.toBe(frame10);
-    });
+      expect(frame0).not.toBe(frame10)
+    })
 
-    it("should render shimmer with all themes", () => {
-      const themes: HeaderTheme[] = ["default", "cyberpunk", "forest", "ocean", "sunset"];
+    it('should render shimmer with all themes', () => {
+      const themes: HeaderTheme[] = [
+        'default',
+        'cyberpunk',
+        'forest',
+        'ocean',
+        'sunset',
+      ]
       for (let i = 0, { length } = themes; i < length; i += 1) {
-        const theme = themes[i];
-        const logo = renderShimmerFrame(0, theme);
-        const stripped = stripAnsi(logo);
-        expect(stripped).toContain("|");
-        expect(stripped).toContain("dev");
+        const theme = themes[i]
+        const logo = renderShimmerFrame(0, theme)
+        const stripped = stripAnsi(logo)
+        expect(stripped).toContain('|')
+        expect(stripped).toContain('dev')
       }
-    });
+    })
 
-    it("should produce 4 lines of output", () => {
-      const logo = renderShimmerFrame(0);
-      const lines = logo.split("\n");
-      expect(lines).toHaveLength(4);
-    });
+    it('should produce 4 lines of output', () => {
+      const logo = renderShimmerFrame(0)
+      const lines = logo.split('\n')
+      expect(lines).toHaveLength(4)
+    })
 
-    it("should contain ANSI bold codes", () => {
-      const logo = renderShimmerFrame(0);
-      expect(logo).toContain("\x1b[1m");
-    });
+    it('should contain ANSI bold codes', () => {
+      const logo = renderShimmerFrame(0)
+      expect(logo).toContain('\x1b[1m')
+    })
 
-    it("should apply slanted shimmer effect across lines", () => {
+    it('should apply slanted shimmer effect across lines', () => {
       // Each line should have different shimmer offset creating diagonal effect
-      const logo = renderShimmerFrame(0);
-      expect(logo).toBeTruthy();
+      const logo = renderShimmerFrame(0)
+      expect(logo).toBeTruthy()
       // Slant is implemented via frame offset, not directly testable via output comparison
-    });
-  });
+    })
+  })
 
-  describe("renderLogoWithFallback", () => {
-    it("should render static logo when frame is null", () => {
-      const logo = renderLogoWithFallback(undefined);
-      expect(logo).toContain("|   __|___"); // ASCII art content
-      expect(logo).toContain(".dev");
-    });
+  describe('renderLogoWithFallback', () => {
+    it('should render static logo when frame is null', () => {
+      const logo = renderLogoWithFallback(undefined)
+      expect(logo).toContain('|   __|___') // ASCII art content
+      expect(logo).toContain('.dev')
+    })
 
-    it("should render shimmer when frame provided and full color supported", () => {
-      const originalColorterm = process.env["COLORTERM"];
+    it('should render shimmer when frame provided and full color supported', () => {
+      const originalColorterm = process.env['COLORTERM']
       try {
-        process.env["COLORTERM"] = "truecolor";
-        const logo = renderLogoWithFallback(0);
-        const stripped = stripAnsi(logo);
-        expect(stripped).toContain("|");
-        expect(stripped).toContain("dev");
+        process.env['COLORTERM'] = 'truecolor'
+        const logo = renderLogoWithFallback(0)
+        const stripped = stripAnsi(logo)
+        expect(stripped).toContain('|')
+        expect(stripped).toContain('dev')
         // With full color support, should use shimmer (contains bold)
         if (supportsFullColor()) {
-          expect(logo).toContain("\x1b[1m");
+          expect(logo).toContain('\x1b[1m')
         }
       } finally {
         if (originalColorterm === undefined) {
-          delete process.env["COLORTERM"];
+          delete process.env['COLORTERM']
         } else {
-          process.env["COLORTERM"] = originalColorterm;
+          process.env['COLORTERM'] = originalColorterm
         }
       }
-    });
+    })
 
-    it("should render simple color logo without full color support", () => {
-      const originalColorterm = process.env["COLORTERM"];
-      const originalTerm = process.env["TERM"];
-      const originalTermProgram = process.env["TERM_PROGRAM"];
+    it('should render simple color logo without full color support', () => {
+      const originalColorterm = process.env['COLORTERM']
+      const originalTerm = process.env['TERM']
+      const originalTermProgram = process.env['TERM_PROGRAM']
       try {
-        delete process.env["COLORTERM"];
-        delete process.env["TERM_PROGRAM"];
-        process.env["TERM"] = "xterm";
-        const logo = renderLogoWithFallback(0);
-        expect(logo).toContain("|   __|___"); // ASCII art content
+        delete process.env['COLORTERM']
+        delete process.env['TERM_PROGRAM']
+        process.env['TERM'] = 'xterm'
+        const logo = renderLogoWithFallback(0)
+        expect(logo).toContain('|   __|___') // ASCII art content
         // Without full color support, should use simple colors (no RGB codes)
         if (!supportsFullColor()) {
-          expect(logo).not.toContain("\x1b[38;2;");
+          expect(logo).not.toContain('\x1b[38;2;')
         }
       } finally {
         if (originalColorterm !== undefined) {
-          process.env["COLORTERM"] = originalColorterm;
+          process.env['COLORTERM'] = originalColorterm
         }
         if (originalTerm !== undefined) {
-          process.env["TERM"] = originalTerm;
+          process.env['TERM'] = originalTerm
         }
         if (originalTermProgram !== undefined) {
-          process.env["TERM_PROGRAM"] = originalTermProgram;
+          process.env['TERM_PROGRAM'] = originalTermProgram
         }
       }
-    });
+    })
 
-    it("should support all themes with fallback", () => {
-      const themes: HeaderTheme[] = ["default", "cyberpunk", "forest", "ocean", "sunset"];
+    it('should support all themes with fallback', () => {
+      const themes: HeaderTheme[] = [
+        'default',
+        'cyberpunk',
+        'forest',
+        'ocean',
+        'sunset',
+      ]
       for (let i = 0, { length } = themes; i < length; i += 1) {
-        const theme = themes[i];
-        const logo = renderLogoWithFallback(undefined, theme);
-        expect(logo).toContain("|   __|___"); // ASCII art content
+        const theme = themes[i]
+        const logo = renderLogoWithFallback(undefined, theme)
+        expect(logo).toContain('|   __|___') // ASCII art content
       }
-    });
-  });
+    })
+  })
 
-  describe("CI and VITEST mode detection", () => {
-    it("should not show animations in VITEST mode", () => {
+  describe('CI and VITEST mode detection', () => {
+    it('should not show animations in VITEST mode', () => {
       // In VITEST mode, we should use static rendering
-      const isVitest = process.env["VITEST"] === "true";
+      const isVitest = process.env['VITEST'] === 'true'
       if (isVitest) {
         // When running under vitest, prefer static logo
-        const logo = renderLogoWithFallback(undefined);
-        expect(logo).toContain("|   __|___"); // ASCII art content
+        const logo = renderLogoWithFallback(undefined)
+        expect(logo).toContain('|   __|___') // ASCII art content
       }
-    });
+    })
 
-    it("should handle missing environment variables gracefully", () => {
-      const originalColorterm = process.env["COLORTERM"];
-      const originalTerm = process.env["TERM"];
-      const originalTermProgram = process.env["TERM_PROGRAM"];
+    it('should handle missing environment variables gracefully', () => {
+      const originalColorterm = process.env['COLORTERM']
+      const originalTerm = process.env['TERM']
+      const originalTermProgram = process.env['TERM_PROGRAM']
       try {
-        delete process.env["COLORTERM"];
-        delete process.env["TERM"];
-        delete process.env["TERM_PROGRAM"];
-        expect(() => supportsFullColor()).not.toThrow();
-        expect(() => renderLogoWithFallback(undefined)).not.toThrow();
+        delete process.env['COLORTERM']
+        delete process.env['TERM']
+        delete process.env['TERM_PROGRAM']
+        expect(() => supportsFullColor()).not.toThrow()
+        expect(() => renderLogoWithFallback(undefined)).not.toThrow()
       } finally {
         if (originalColorterm !== undefined) {
-          process.env["COLORTERM"] = originalColorterm;
+          process.env['COLORTERM'] = originalColorterm
         }
         if (originalTerm !== undefined) {
-          process.env["TERM"] = originalTerm;
+          process.env['TERM'] = originalTerm
         }
         if (originalTermProgram !== undefined) {
-          process.env["TERM_PROGRAM"] = originalTermProgram;
+          process.env['TERM_PROGRAM'] = originalTermProgram
         }
       }
-    });
-  });
+    })
+  })
 
-  describe("edge cases", () => {
-    it("should handle very large frame numbers", () => {
-      const logo = renderShimmerFrame(1_000_000);
-      const stripped = stripAnsi(logo);
-      expect(stripped).toContain("|");
-      expect(stripped).toContain("dev");
-    });
+  describe('edge cases', () => {
+    it('should handle very large frame numbers', () => {
+      const logo = renderShimmerFrame(1_000_000)
+      const stripped = stripAnsi(logo)
+      expect(stripped).toContain('|')
+      expect(stripped).toContain('dev')
+    })
 
-    it("should handle negative frame numbers", () => {
-      const logo = renderShimmerFrame(-10);
-      const stripped = stripAnsi(logo);
-      expect(stripped).toContain("|");
-      expect(stripped).toContain("dev");
-    });
+    it('should handle negative frame numbers', () => {
+      const logo = renderShimmerFrame(-10)
+      const stripped = stripAnsi(logo)
+      expect(stripped).toContain('|')
+      expect(stripped).toContain('dev')
+    })
 
-    it("should handle frame 0 consistently", () => {
-      const logo1 = renderShimmerFrame(0);
-      const logo2 = renderShimmerFrame(0);
-      expect(logo1).toBe(logo2);
-    });
-  });
+    it('should handle frame 0 consistently', () => {
+      const logo1 = renderShimmerFrame(0)
+      const logo2 = renderShimmerFrame(0)
+      expect(logo1).toBe(logo2)
+    })
+  })
 
-  describe("brighterRgb", () => {
-    it("returns the brighter of two RGB tuples by channel sum", async () => {
-      const { brighterRgb } = await import("../../../../src/util/terminal/ascii-header.mts");
-      const dark: [number, number, number] = [10, 10, 10];
-      const bright: [number, number, number] = [200, 200, 200];
-      expect(brighterRgb(dark, bright)).toBe(bright);
-      expect(brighterRgb(bright, dark)).toBe(bright);
-    });
+  describe('brighterRgb', () => {
+    it('returns the brighter of two RGB tuples by channel sum', async () => {
+      const { brighterRgb } =
+        await import('../../../../src/util/terminal/ascii-header.mts')
+      const dark: [number, number, number] = [10, 10, 10]
+      const bright: [number, number, number] = [200, 200, 200]
+      expect(brighterRgb(dark, bright)).toBe(bright)
+      expect(brighterRgb(bright, dark)).toBe(bright)
+    })
 
-    it("returns the first arg on ties (a >= b)", async () => {
-      const { brighterRgb } = await import("../../../../src/util/terminal/ascii-header.mts");
-      const a: [number, number, number] = [50, 50, 50];
-      const b: [number, number, number] = [50, 50, 50];
-      expect(brighterRgb(a, b)).toBe(a);
-    });
-  });
-});
+    it('returns the first arg on ties (a >= b)', async () => {
+      const { brighterRgb } =
+        await import('../../../../src/util/terminal/ascii-header.mts')
+      const a: [number, number, number] = [50, 50, 50]
+      const b: [number, number, number] = [50, 50, 50]
+      expect(brighterRgb(a, b)).toBe(a)
+    })
+  })
+})

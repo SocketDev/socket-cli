@@ -28,53 +28,53 @@
  * @returns {object} Babel plugin object
  */
 export default function inlineProcessEnv(babel, options = {}) {
-  const { types: t } = babel;
-  const { env = process.env, exclude = [], include = [] } = options;
+  const { types: t } = babel
+  const { env = process.env, exclude = [], include = [] } = options
 
-  const excludeSet = new Set(exclude);
-  const includeSet = new Set(include);
+  const excludeSet = new Set(exclude)
+  const includeSet = new Set(include)
 
   return {
-    name: "inline-process-env",
+    name: 'inline-process-env',
 
     visitor: {
       MemberExpression(path) {
-        const { object, property } = path.node;
+        const { object, property } = path.node
 
         // Match: process.env.VAR_NAME
         if (
           !t.isMemberExpression(object) ||
-          !t.isIdentifier(object.object, { name: "process" }) ||
-          !t.isIdentifier(object.property, { name: "env" }) ||
+          !t.isIdentifier(object.object, { name: 'process' }) ||
+          !t.isIdentifier(object.property, { name: 'env' }) ||
           !t.isIdentifier(property)
         ) {
-          return;
+          return
         }
 
-        const envKey = property.name;
+        const envKey = property.name
 
         // Check allowlist/denylist.
         if (includeSet.size > 0 && !includeSet.has(envKey)) {
-          return;
+          return
         }
         if (excludeSet.has(envKey)) {
-          return;
+          return
         }
 
         // Get the value from env.
-        const value = env[envKey];
+        const value = env[envKey]
 
         // Only inline if value exists.
         if (value === undefined) {
-          return;
+          return
         }
 
         // Replace with literal value.
-        const replacement = valueToLiteral(t, value);
-        path.replaceWith(replacement);
+        const replacement = valueToLiteral(t, value)
+        path.replaceWith(replacement)
       },
     },
-  };
+  }
 }
 
 /**
@@ -83,24 +83,24 @@ export default function inlineProcessEnv(babel, options = {}) {
 export function valueToLiteral(t, value) {
   // Handle common types.
   if (value === null) {
-    return t.nullLiteral();
+    return t.nullLiteral()
   }
   if (value === undefined) {
-    return t.identifier("undefined");
+    return t.identifier('undefined')
   }
-  if (value === "true") {
-    return t.booleanLiteral(true);
+  if (value === 'true') {
+    return t.booleanLiteral(true)
   }
-  if (value === "false") {
-    return t.booleanLiteral(false);
+  if (value === 'false') {
+    return t.booleanLiteral(false)
   }
 
   // Check if it's a number.
-  const num = Number(value);
+  const num = Number(value)
   if (!Number.isNaN(num) && String(num) === value) {
-    return t.numericLiteral(num);
+    return t.numericLiteral(num)
   }
 
   // Default to string.
-  return t.stringLiteral(value);
+  return t.stringLiteral(value)
 }

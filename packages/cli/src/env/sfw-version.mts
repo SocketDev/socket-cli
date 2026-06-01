@@ -10,30 +10,30 @@
  * dlx, version like "2.0.4"
  */
 
-import process from "node:process";
+import process from 'node:process'
 
 /**
  * Get the npm package version for sfw (used in CLI dlx).
  */
 export function getSfwNpmVersion(): string {
-  const version = process.env["INLINED_SFW_NPM_VERSION"];
+  const version = process.env['INLINED_SFW_NPM_VERSION']
   if (!version) {
     throw new Error(
       `process.env.INLINED_SFW_NPM_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools.sfw.npm.version (npm package semver) — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
-    );
+    )
   }
-  return version;
+  return version
 }
 
 /**
  * Get the GitHub release version for sfw (used in SEA builds).
  */
 export function getSwfVersion(): string {
-  const version = process.env["INLINED_SFW_VERSION"];
+  const version = process.env['INLINED_SFW_VERSION']
   if (!version) {
     throw new Error(
       `process.env.INLINED_SFW_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools.sfw.version (GitHub release tag) — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
-    );
+    )
   }
-  return version;
+  return version
 }

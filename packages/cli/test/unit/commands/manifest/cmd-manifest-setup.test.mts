@@ -15,7 +15,7 @@
  * logic.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -25,197 +25,229 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock handleManifestSetup.
-const mockHandleManifestSetup = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const mockHandleManifestSetup = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
 
-vi.mock(import("../../../../src/commands/manifest/handle-manifest-setup.mts"), () => ({
-  handleManifestSetup: mockHandleManifestSetup,
-}));
+vi.mock(
+  import('../../../../src/commands/manifest/handle-manifest-setup.mts'),
+  () => ({
+    handleManifestSetup: mockHandleManifestSetup,
+  }),
+)
 
 // Mock outputDryRunWrite to verify dry-run output.
-const mockOutputDryRunWrite = vi.hoisted(() => vi.fn());
+const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/util/dry-run/output.mts"), () => ({
+vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
   outputDryRunWrite: mockOutputDryRunWrite,
-}));
+}))
 
 // Import after mocks.
 const { cmdManifestSetup } =
-  await import("../../../../src/commands/manifest/cmd-manifest-setup.mts");
+  await import('../../../../src/commands/manifest/cmd-manifest-setup.mts')
 
-describe("cmd-manifest-setup", () => {
+describe('cmd-manifest-setup', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+  })
 
-  describe("command metadata", () => {
-    it("should have correct description", () => {
+  describe('command metadata', () => {
+    it('should have correct description', () => {
       expect(cmdManifestSetup.description).toBe(
-        "Start interactive configurator to customize default flag values for `socket manifest` in this dir",
-      );
-    });
+        'Start interactive configurator to customize default flag values for `socket manifest` in this dir',
+      )
+    })
 
-    it("should not be hidden", () => {
-      expect(cmdManifestSetup.hidden).toBe(false);
-    });
-  });
+    it('should not be hidden', () => {
+      expect(cmdManifestSetup.hidden).toBe(false)
+    })
+  })
 
-  describe("run", () => {
-    const importMeta = { url: "file:///test/cmd-manifest-setup.mts" };
-    const context = { parentName: "socket manifest" };
+  describe('run', () => {
+    const importMeta = { url: 'file:///test/cmd-manifest-setup.mts' }
+    const context = { parentName: 'socket manifest' }
 
-    describe("dry-run behavior", () => {
-      it("should show dry-run output without executing setup", async () => {
-        await cmdManifestSetup.run(["--dry-run"], importMeta, context);
+    describe('dry-run behavior', () => {
+      it('should show dry-run output without executing setup', async () => {
+        await cmdManifestSetup.run(['--dry-run'], importMeta, context)
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          expect.stringContaining("socket.json"),
-          "create or update manifest configuration",
+          expect.stringContaining('socket.json'),
+          'create or update manifest configuration',
           [
-            "Detect supported ecosystems",
-            "Configure manifest generation defaults",
-            "Enable/disable specific ecosystems",
+            'Detect supported ecosystems',
+            'Configure manifest generation defaults',
+            'Enable/disable specific ecosystems',
           ],
-        );
-        expect(mockHandleManifestSetup).not.toHaveBeenCalled();
-      });
+        )
+        expect(mockHandleManifestSetup).not.toHaveBeenCalled()
+      })
 
-      it("should use provided path in dry-run output", async () => {
-        await cmdManifestSetup.run(["--dry-run", "./custom/path"], importMeta, context);
+      it('should use provided path in dry-run output', async () => {
+        await cmdManifestSetup.run(
+          ['--dry-run', './custom/path'],
+          importMeta,
+          context,
+        )
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
           expect.stringMatching(/custom\/path\/socket\.json$/),
           expect.any(String),
           expect.any(Array),
-        );
-      });
+        )
+      })
 
-      it("should use current directory in dry-run when no path provided", async () => {
-        await cmdManifestSetup.run(["--dry-run"], importMeta, context);
+      it('should use current directory in dry-run when no path provided', async () => {
+        await cmdManifestSetup.run(['--dry-run'], importMeta, context)
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
           expect.stringMatching(/socket\.json$/),
           expect.any(String),
           expect.any(Array),
-        );
-      });
-    });
+        )
+      })
+    })
 
-    describe("path resolution", () => {
-      it("should resolve relative path to absolute", async () => {
-        await cmdManifestSetup.run(["./relative/path"], importMeta, context);
+    describe('path resolution', () => {
+      it('should resolve relative path to absolute', async () => {
+        await cmdManifestSetup.run(['./relative/path'], importMeta, context)
 
         expect(mockHandleManifestSetup).toHaveBeenCalledWith(
           expect.stringMatching(/^\/.*relative\/path$/),
           false,
-        );
-      });
+        )
+      })
 
-      it("should use current directory when no path provided", async () => {
-        const originalCwd = process.cwd();
+      it('should use current directory when no path provided', async () => {
+        const originalCwd = process.cwd()
 
-        await cmdManifestSetup.run([], importMeta, context);
+        await cmdManifestSetup.run([], importMeta, context)
 
-        expect(mockHandleManifestSetup).toHaveBeenCalledWith(originalCwd, false);
-      });
+        expect(mockHandleManifestSetup).toHaveBeenCalledWith(originalCwd, false)
+      })
 
-      it("should not modify absolute paths", async () => {
-        await cmdManifestSetup.run(["/absolute/path"], importMeta, context);
+      it('should not modify absolute paths', async () => {
+        await cmdManifestSetup.run(['/absolute/path'], importMeta, context)
 
-        expect(mockHandleManifestSetup).toHaveBeenCalledWith("/absolute/path", false);
-      });
+        expect(mockHandleManifestSetup).toHaveBeenCalledWith(
+          '/absolute/path',
+          false,
+        )
+      })
 
-      it("should handle dot notation for current directory", async () => {
-        const originalCwd = process.cwd();
+      it('should handle dot notation for current directory', async () => {
+        const originalCwd = process.cwd()
 
-        await cmdManifestSetup.run(["."], importMeta, context);
+        await cmdManifestSetup.run(['.'], importMeta, context)
 
-        expect(mockHandleManifestSetup).toHaveBeenCalledWith(originalCwd, false);
-      });
-    });
+        expect(mockHandleManifestSetup).toHaveBeenCalledWith(originalCwd, false)
+      })
+    })
 
-    describe("flag handling", () => {
-      it("should pass defaultOnReadError flag as true when set", async () => {
-        await cmdManifestSetup.run(["--defaultOnReadError"], importMeta, context);
+    describe('flag handling', () => {
+      it('should pass defaultOnReadError flag as true when set', async () => {
+        await cmdManifestSetup.run(
+          ['--defaultOnReadError'],
+          importMeta,
+          context,
+        )
 
-        expect(mockHandleManifestSetup).toHaveBeenCalledWith(expect.any(String), true);
-      });
+        expect(mockHandleManifestSetup).toHaveBeenCalledWith(
+          expect.any(String),
+          true,
+        )
+      })
 
-      it("should pass defaultOnReadError as false by default", async () => {
-        await cmdManifestSetup.run([], importMeta, context);
+      it('should pass defaultOnReadError as false by default', async () => {
+        await cmdManifestSetup.run([], importMeta, context)
 
-        expect(mockHandleManifestSetup).toHaveBeenCalledWith(expect.any(String), false);
-      });
+        expect(mockHandleManifestSetup).toHaveBeenCalledWith(
+          expect.any(String),
+          false,
+        )
+      })
 
-      it("should handle both path and defaultOnReadError flag", async () => {
-        await cmdManifestSetup.run(["./custom", "--defaultOnReadError"], importMeta, context);
+      it('should handle both path and defaultOnReadError flag', async () => {
+        await cmdManifestSetup.run(
+          ['./custom', '--defaultOnReadError'],
+          importMeta,
+          context,
+        )
 
         expect(mockHandleManifestSetup).toHaveBeenCalledWith(
           expect.stringMatching(/custom$/),
           true,
-        );
-      });
-    });
+        )
+      })
+    })
 
-    describe("handler invocation", () => {
-      it("should call handleManifestSetup with correct parameters", async () => {
-        await cmdManifestSetup.run(["./test-dir"], importMeta, context);
+    describe('handler invocation', () => {
+      it('should call handleManifestSetup with correct parameters', async () => {
+        await cmdManifestSetup.run(['./test-dir'], importMeta, context)
 
-        expect(mockHandleManifestSetup).toHaveBeenCalledOnce();
+        expect(mockHandleManifestSetup).toHaveBeenCalledOnce()
         expect(mockHandleManifestSetup).toHaveBeenCalledWith(
           expect.stringMatching(/test-dir$/),
           false,
-        );
-      });
+        )
+      })
 
-      it("should not call handler in dry-run mode", async () => {
-        await cmdManifestSetup.run(["--dry-run", "./test-dir"], importMeta, context);
+      it('should not call handler in dry-run mode', async () => {
+        await cmdManifestSetup.run(
+          ['--dry-run', './test-dir'],
+          importMeta,
+          context,
+        )
 
-        expect(mockHandleManifestSetup).not.toHaveBeenCalled();
-      });
+        expect(mockHandleManifestSetup).not.toHaveBeenCalled()
+      })
 
-      it("should handle handler errors gracefully", async () => {
-        const testError = new Error("Setup failed");
-        mockHandleManifestSetup.mockRejectedValueOnce(testError);
+      it('should handle handler errors gracefully', async () => {
+        const testError = new Error('Setup failed')
+        mockHandleManifestSetup.mockRejectedValueOnce(testError)
 
-        await expect(cmdManifestSetup.run([], importMeta, context)).rejects.toThrow("Setup failed");
-      });
-    });
+        await expect(
+          cmdManifestSetup.run([], importMeta, context),
+        ).rejects.toThrow('Setup failed')
+      })
+    })
 
-    describe("edge cases", () => {
-      it("should handle multiple path arguments by using first one", async () => {
-        await cmdManifestSetup.run(["./first", "./second"], importMeta, context);
+    describe('edge cases', () => {
+      it('should handle multiple path arguments by using first one', async () => {
+        await cmdManifestSetup.run(['./first', './second'], importMeta, context)
 
         expect(mockHandleManifestSetup).toHaveBeenCalledWith(
           expect.stringMatching(/first$/),
           false,
-        );
-      });
+        )
+      })
 
-      it("should handle paths with spaces", async () => {
-        await cmdManifestSetup.run(["./path with spaces"], importMeta, context);
+      it('should handle paths with spaces', async () => {
+        await cmdManifestSetup.run(['./path with spaces'], importMeta, context)
 
         expect(mockHandleManifestSetup).toHaveBeenCalledWith(
           expect.stringMatching(/path with spaces$/),
           false,
-        );
-      });
+        )
+      })
 
-      it("should handle nested relative paths", async () => {
-        await cmdManifestSetup.run(["./a/b/c/d/e"], importMeta, context);
+      it('should handle nested relative paths', async () => {
+        await cmdManifestSetup.run(['./a/b/c/d/e'], importMeta, context)
 
         expect(mockHandleManifestSetup).toHaveBeenCalledWith(
           expect.stringMatching(/a\/b\/c\/d\/e$/),
           false,
-        );
-      });
-    });
-  });
-});
+        )
+      })
+    })
+  })
+})

@@ -1,34 +1,37 @@
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
 /* max-file-lines: legitimate — tracks one cohesive module domain; splitting would scatter tightly coupled helpers. */
-import { getCI } from "@socketsecurity/lib-stable/env/ci";
-import { getSocketApiToken } from "@socketsecurity/lib-stable/env/socket";
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
 import {
   getSocketCliConfig,
   getSocketCliNoApiToken,
-} from "@socketsecurity/lib-stable/env/socket-cli";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
-import { getOwn } from "@socketsecurity/lib-stable/objects/inspect";
-import { hasOwn } from "@socketsecurity/lib-stable/objects/predicates";
-import { indentString } from "@socketsecurity/lib-stable/strings/format";
-import { trimNewlines } from "@socketsecurity/lib-stable/strings/transform";
+} from '@socketsecurity/lib-stable/env/socket-cli'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
+import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
+import { indentString } from '@socketsecurity/lib-stable/strings/format'
+import { trimNewlines } from '@socketsecurity/lib-stable/strings/transform'
 
-import { DRY_RUN_LABEL } from "../../constants/cli.mts";
-import { VITEST } from "../../env/vitest.mts";
-import { commonFlags } from "../../flags.mts";
-import { meow } from "../../meow.mts";
-import { overrideCachedConfig, overrideConfigApiToken } from "../config.mts";
-import { isDebug } from "../debug.mts";
-import { resetMachineOutputMode, setMachineOutputMode } from "../output/ambient-mode.mts";
+import { DRY_RUN_LABEL } from '../../constants/cli.mts'
+import { VITEST } from '../../env/vitest.mts'
+import { commonFlags } from '../../flags.mts'
+import { meow } from '../../meow.mts'
+import { overrideCachedConfig, overrideConfigApiToken } from '../config.mts'
+import { isDebug } from '../debug.mts'
+import {
+  resetMachineOutputMode,
+  setMachineOutputMode,
+} from '../output/ambient-mode.mts'
 
-import { buildHelpLines } from "./with-subcommands-help.mts";
+import { buildHelpLines } from './with-subcommands-help.mts'
 
-import type { MeowFlag, MeowFlags } from "../../flags.mts";
-import type { Result } from "../../meow.mts";
+import type { MeowFlag, MeowFlags } from '../../flags.mts'
+import type { Result } from '../../meow.mts'
 
-const HELP_INDENT = 2;
+const HELP_INDENT = 2
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 // Shared types + the `description` helper extracted to keep this
 // file under the 1000-line File-size cap.
@@ -39,32 +42,32 @@ export {
   type CliSubcommand,
   type CliSubcommandRun,
   type MeowOptions,
-} from "./with-subcommands-shared.mts";
+} from './with-subcommands-shared.mts'
 
-import type { CliSubcommand, MeowOptions } from "./with-subcommands-shared.mts";
+import type { CliSubcommand, MeowOptions } from './with-subcommands-shared.mts'
 
 // Property names are picked such that the name is at the top when the props
 // get ordered by alphabet while flags is near the bottom and the help text
 // at the bottom, because they tend ot occupy the most lines of code.
 export interface CliCommandConfig<F extends MeowFlags = MeowFlags> {
-  commandName: string;
-  description: string;
-  hidden: boolean;
-  flags: F;
-  help: (command: string, config: CliCommandConfig<F>) => string;
+  commandName: string
+  description: string
+  hidden: boolean
+  flags: F
+  help: (command: string, config: CliCommandConfig<F>) => string
 }
 
 export interface CliCommandContext {
-  parentName: string;
-  rawArgv?: string[] | readonly string[] | undefined;
-  invokedAs?: string | undefined;
+  parentName: string
+  rawArgv?: string[] | readonly string[] | undefined
+  invokedAs?: string | undefined
 }
 
 interface MeowConfig {
-  name: string;
-  argv: string[] | readonly string[];
-  importMeta: ImportMeta;
-  subcommands: Record<string, CliSubcommand>;
+  name: string
+  argv: string[] | readonly string[]
+  importMeta: ImportMeta
+  subcommands: Record<string, CliSubcommand>
 }
 
 // Banner / ASCII-header rendering helpers extracted to keep this file
@@ -77,7 +80,7 @@ import {
   shouldAnimateHeader,
   shouldSuppressBanner,
   stripAnsi,
-} from "./with-subcommands-banner.mts";
+} from './with-subcommands-banner.mts'
 
 export {
   emitBanner,
@@ -87,7 +90,7 @@ export {
   shouldAnimateHeader,
   shouldSuppressBanner,
   stripAnsi,
-};
+}
 
 /**
  * Find the best matching command name for a typo.
@@ -97,36 +100,41 @@ export function findBestCommandMatch(
   subcommands: Record<string, unknown>,
   aliases: Record<string, unknown>,
 ): string | undefined {
-  let bestMatch = undefined;
-  let bestScore = Number.POSITIVE_INFINITY;
-  const allCommands = [...Object.keys(subcommands), ...Object.keys(aliases)];
+  let bestMatch = undefined
+  let bestScore = Number.POSITIVE_INFINITY
+  const allCommands = [...Object.keys(subcommands), ...Object.keys(aliases)]
   for (let i = 0, { length } = allCommands; i < length; i += 1) {
-    const command = allCommands[i]!;
-    const distance = levenshteinDistance(input.toLowerCase(), command.toLowerCase());
-    const maxLength = Math.max(input.length, command.length);
+    const command = allCommands[i]!
+    const distance = levenshteinDistance(
+      input.toLowerCase(),
+      command.toLowerCase(),
+    )
+    const maxLength = Math.max(input.length, command.length)
     // Only suggest if the similarity is reasonable (more than 50% similar).
     if (distance < maxLength * 0.5 && distance < bestScore) {
-      bestScore = distance;
-      bestMatch = command;
+      bestScore = distance
+      bestMatch = command
     }
   }
-  return bestMatch;
+  return bestMatch
 }
 
 /**
  * Calculate Levenshtein distance between two strings for fuzzy matching.
  */
 export function levenshteinDistance(a: string, b: string): number {
-  const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+  const matrix = Array.from({ length: a.length + 1 }, () =>
+    Array(b.length + 1).fill(0),
+  )
   for (let i = 0; i <= a.length; i++) {
-    matrix[i]![0] = i;
+    matrix[i]![0] = i
   }
   for (let j = 0; j <= b.length; j++) {
-    matrix[0]![j] = j;
+    matrix[0]![j] = j
   }
   for (let i = 1; i <= a.length; i++) {
     for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
       matrix[i]![j] = Math.min(
         // Deletion.
         matrix[i - 1]?.[j]! + 1,
@@ -134,22 +142,22 @@ export function levenshteinDistance(a: string, b: string): number {
         matrix[i]?.[j - 1]! + 1,
         // Substitution.
         matrix[i - 1]?.[j - 1]! + cost,
-      );
+      )
     }
   }
-  return matrix[a.length]?.[b.length]!;
+  return matrix[a.length]?.[b.length]!
 }
 
 interface MeowOrExitConfig<F extends MeowFlags = MeowFlags> {
-  argv: string[] | readonly string[];
-  config: CliCommandConfig<F>;
-  parentName: string;
-  importMeta: ImportMeta;
+  argv: string[] | readonly string[]
+  config: CliCommandConfig<F>
+  parentName: string
+  importMeta: ImportMeta
 }
 
 type MeowOrExitOptions = {
-  allowUnknownFlags?: boolean | undefined;
-};
+  allowUnknownFlags?: boolean | undefined
+}
 
 /**
  * Create meow CLI instance or exit with help/error (meow will exit immediately
@@ -174,12 +182,12 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     config: cliConfig,
     importMeta,
     parentName,
-  } = { __proto__: null, ...config } as MeowOrExitConfig<F>;
+  } = { __proto__: null, ...config } as MeowOrExitConfig<F>
   const { allowUnknownFlags = true } = {
     __proto__: null,
     ...options,
-  } as MeowOrExitOptions;
-  const command = `${parentName} ${cliConfig.commandName}`;
+  } as MeowOrExitOptions
+  const command = `${parentName} ${cliConfig.commandName}`
 
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({
@@ -193,7 +201,7 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     flags: cliConfig.flags,
     help: trimNewlines(cliConfig.help(command, cliConfig)),
     importMeta,
-  });
+  })
 
   const {
     compactHeader: compactHeaderFlag,
@@ -205,27 +213,27 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     spinner: spinnerFlag,
     version: versionFlag,
   } = cli.flags as {
-    compactHeader: boolean;
-    help: boolean;
-    json: boolean | undefined;
-    markdown: boolean | undefined;
-    org: string;
-    quiet: boolean | undefined;
-    spinner: boolean;
-    version: boolean | undefined;
-  };
+    compactHeader: boolean
+    help: boolean
+    json: boolean | undefined
+    markdown: boolean | undefined
+    org: string
+    quiet: boolean | undefined
+    spinner: boolean
+    version: boolean | undefined
+  }
 
   // Apply machine-output mode from this command's flags. Reset first
   // so prior in-worker state doesn't leak across sequential invocations.
-  resetMachineOutputMode();
+  resetMachineOutputMode()
   setMachineOutputMode({
     json: jsonFlag,
     markdown: markdownFlag,
     quiet: quietFlag,
-  });
+  })
 
-  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST);
-  const noSpinner = spinnerFlag === false || isDebug();
+  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
+  const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.
   // This prevents the spinner from interfering with debug output.
@@ -236,10 +244,10 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
   }
 
   if (!shouldSuppressBanner(cli.flags)) {
-    emitBanner(command, orgFlag, compactMode, cli.flags);
+    emitBanner(command, orgFlag, compactMode, cli.flags)
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.
-    logger.error("");
+    logger.error('')
   }
 
   // As per https://github.com/sindresorhus/meow/issues/178
@@ -261,21 +269,21 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
   // }
 
   if (helpFlag) {
-    cli.showHelp(0);
+    cli.showHelp(0)
   }
 
   // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
-  if (versionFlag && !hasOwn(cliConfig.flags, "version")) {
-    logger.error("Unknown flag\n--version");
-    process.exit(2);
+  if (versionFlag && !hasOwn(cliConfig.flags, 'version')) {
+    logger.error('Unknown flag\n--version')
+    process.exit(2)
     // This line is never reached in production, but helps tests.
-    throw new Error("process.exit called");
+    throw new Error('process.exit called')
   }
 
   // Now test for help state. Run Meow again. If it exits now, it must be due
   // to wanting to print the help screen. But it would exit(0) and we want a
   // consistent exit(2) for that case (missing input).
-  process.exitCode = 2;
+  process.exitCode = 2
   meow({
     argv,
     // As per https://github.com/sindresorhus/meow/issues/178
@@ -288,11 +296,11 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     help: trimNewlines(cliConfig.help(command, cliConfig)),
     importMeta,
     flags: cliConfig.flags,
-  });
+  })
   // Ok, no help, reset to default.
-  process.exitCode = 0;
+  process.exitCode = 0
 
-  return cli as unknown as Result<F>;
+  return cli as unknown as Result<F>
 }
 
 /**
@@ -315,108 +323,114 @@ export async function meowWithSubcommands(
   const { argv, importMeta, name, subcommands } = {
     __proto__: null,
     ...config,
-  } as MeowConfig;
+  } as MeowConfig
   const {
     aliases = {},
     buckets,
     defaultSub,
     ...additionalOptions
-  } = { __proto__: null, ...options } as MeowOptions;
+  } = { __proto__: null, ...options } as MeowOptions
   const flags: MeowFlags = {
     ...commonFlags,
     version: {
-      type: "boolean",
+      type: 'boolean',
       hidden: true,
-      description: "Print the app version",
+      description: 'Print the app version',
     },
     // @ts-expect-error - getOwn may return undefined, but spread handles it
-    ...getOwn(additionalOptions, "flags"),
-  };
+    ...getOwn(additionalOptions, 'flags'),
+  }
 
-  const [commandOrAliasName_, ...rawCommandArgv] = argv;
-  let commandOrAliasName = commandOrAliasName_;
+  const [commandOrAliasName_, ...rawCommandArgv] = argv
+  let commandOrAliasName = commandOrAliasName_
   if (!commandOrAliasName && defaultSub) {
-    commandOrAliasName = defaultSub;
+    commandOrAliasName = defaultSub
   }
 
   // No further args or first arg is a flag (shrug).
   const isRootCommand =
-    name === "socket" && (!commandOrAliasName || commandOrAliasName?.startsWith("-"));
+    name === 'socket' &&
+    (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
 
   // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`.
   if (!isRootCommand) {
-    if (commandOrAliasName?.startsWith("pkg:")) {
-      logger.info("Invoking `socket package score`.");
+    if (commandOrAliasName?.startsWith('pkg:')) {
+      logger.info('Invoking `socket package score`.')
       return await meowWithSubcommands(
-        { name, argv: ["package", "deep", ...argv], importMeta, subcommands },
+        { name, argv: ['package', 'deep', ...argv], importMeta, subcommands },
         options,
-      );
+      )
     }
     // Support `socket npm/lodash` or whatever as a shorthand, too.
     // Accept any ecosystem and let the remote sort it out.
-    if (/^[a-z]+\//.test(commandOrAliasName || "")) {
-      logger.info("Invoking `socket package score`.");
+    if (/^[a-z]+\//.test(commandOrAliasName || '')) {
+      logger.info('Invoking `socket package score`.')
       return await meowWithSubcommands(
         {
           name,
-          argv: ["package", "deep", `pkg:${commandOrAliasName}`, ...rawCommandArgv],
+          argv: [
+            'package',
+            'deep',
+            `pkg:${commandOrAliasName}`,
+            ...rawCommandArgv,
+          ],
           importMeta,
           subcommands,
         },
         options,
-      );
+      )
     }
   }
 
   if (isRootCommand) {
-    const hiddenDebugFlag = !isDebug();
+    const hiddenDebugFlag = !isDebug()
 
-    flags["compactHeader"] = {
-      ...flags["compactHeader"],
+    flags['compactHeader'] = {
+      ...flags['compactHeader'],
       hidden: false,
-    } as MeowFlag;
+    } as MeowFlag
 
-    flags["config"] = {
-      ...flags["config"],
+    flags['config'] = {
+      ...flags['config'],
       hidden: false,
-    } as MeowFlag;
+    } as MeowFlag
 
-    flags["dryRun"] = {
-      ...flags["dryRun"],
+    flags['dryRun'] = {
+      ...flags['dryRun'],
       hidden: false,
-    } as MeowFlag;
+    } as MeowFlag
 
-    flags["help"] = {
-      ...flags["help"],
+    flags['help'] = {
+      ...flags['help'],
       hidden: false,
-    } as MeowFlag;
+    } as MeowFlag
 
-    flags["helpFull"] = {
-      ...flags["helpFull"],
+    flags['helpFull'] = {
+      ...flags['helpFull'],
       hidden: false,
-    } as MeowFlag;
+    } as MeowFlag
 
-    flags["maxOldSpaceSize"] = {
-      ...flags["maxOldSpaceSize"],
+    flags['maxOldSpaceSize'] = {
+      ...flags['maxOldSpaceSize'],
       hidden: hiddenDebugFlag,
-    } as MeowFlag;
+    } as MeowFlag
 
-    flags["maxSemiSpaceSize"] = {
-      ...flags["maxSemiSpaceSize"],
+    flags['maxSemiSpaceSize'] = {
+      ...flags['maxSemiSpaceSize'],
       hidden: hiddenDebugFlag,
-    } as MeowFlag;
+    } as MeowFlag
 
-    flags["version"] = {
-      ...flags["version"],
+    flags['version'] = {
+      ...flags['version'],
       hidden: false,
-    } as MeowFlag;
+    } as MeowFlag
 
-    delete flags["json"];
-    delete flags["markdown"];
+    delete flags['json']
+    delete flags['markdown']
   } else {
-    delete flags["help"];
-    delete flags["helpFull"];
-    delete flags["version"];
+    delete flags['help']
+    delete flags['helpFull']
+    delete flags['version']
   }
 
   // This is basically a dry-run parse of cli args and flags. We use this to
@@ -433,7 +447,7 @@ export async function meowWithSubcommands(
     autoVersion: false,
     // We want to detect whether a bool flag is given at all.
     booleanDefault: undefined,
-  });
+  })
 
   const {
     compactHeader: compactHeaderFlag,
@@ -444,26 +458,26 @@ export async function meowWithSubcommands(
     quiet: quietFlag,
     spinner: spinnerFlag,
   } = cli1.flags as {
-    compactHeader: boolean;
-    config: string;
-    json: boolean | undefined;
-    markdown: boolean | undefined;
-    org: string;
-    quiet: boolean | undefined;
-    spinner: boolean;
-  };
+    compactHeader: boolean
+    config: string
+    json: boolean | undefined
+    markdown: boolean | undefined
+    org: string
+    quiet: boolean | undefined
+    spinner: boolean
+  }
 
   // Re-derive from the current argv so ambient mode doesn't leak across
   // sequential invocations (e.g. multiple vitest cases in one worker).
-  resetMachineOutputMode();
+  resetMachineOutputMode()
   setMachineOutputMode({
     json: jsonFlag,
     markdown: markdownFlag,
     quiet: quietFlag,
-  });
+  })
 
-  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST);
-  const noSpinner = spinnerFlag === false || isDebug();
+  const compactMode = !!compactHeaderFlag || !!(getCI() && !VITEST)
+  const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
   // This prevents the spinner from interfering with debug output.
@@ -475,57 +489,57 @@ export async function meowWithSubcommands(
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
-  let configOverrideResult: ReturnType<typeof overrideCachedConfig> | undefined;
-  const socketCliConfig = getSocketCliConfig();
+  let configOverrideResult: ReturnType<typeof overrideCachedConfig> | undefined
+  const socketCliConfig = getSocketCliConfig()
   if (socketCliConfig) {
-    configOverrideResult = overrideCachedConfig(socketCliConfig);
+    configOverrideResult = overrideCachedConfig(socketCliConfig)
   } else if (configFlag) {
-    configOverrideResult = overrideCachedConfig(configFlag);
+    configOverrideResult = overrideCachedConfig(configFlag)
   }
 
   if (getSocketCliNoApiToken()) {
     // This overrides the config override and even the explicit token env var.
     // The config will be marked as readOnly to prevent persisting it.
-    overrideConfigApiToken(undefined);
+    overrideConfigApiToken(undefined)
   } else {
-    const tokenOverride = getSocketApiToken();
+    const tokenOverride = getSocketApiToken()
     if (tokenOverride) {
       // This will set the token (even if there was a config override) and
       // set it to readOnly, making sure the temp token won't be persisted.
-      overrideConfigApiToken(tokenOverride);
+      overrideConfigApiToken(tokenOverride)
     }
   }
 
   if (configOverrideResult?.ok === false) {
     if (!shouldSuppressBanner(cli1.flags)) {
-      emitBanner(name, orgFlag, compactMode, cli1.flags);
+      emitBanner(name, orgFlag, compactMode, cli1.flags)
       // Add newline in stderr.
-      logger.error("");
+      logger.error('')
     }
-    logger.fail(configOverrideResult.message);
-    process.exitCode = 2;
-    return;
+    logger.fail(configOverrideResult.message)
+    process.exitCode = 2
+    return
   }
 
   // If we have got some args, then lets find out if we can find a command.
   // Skip command lookup if first arg is a flag (starts with -)
-  if (commandOrAliasName && !commandOrAliasName.startsWith("-")) {
-    const alias = aliases[commandOrAliasName];
+  if (commandOrAliasName && !commandOrAliasName.startsWith('-')) {
+    const alias = aliases[commandOrAliasName]
     // First: Resolve argv data from alias if its an alias that's been given.
     const [commandName, ...commandArgv] = alias
       ? [...alias.argv, ...rawCommandArgv]
-      : [commandOrAliasName, ...rawCommandArgv];
+      : [commandOrAliasName, ...rawCommandArgv]
     // Second: Find a command definition using that data.
-    const commandDefinition = commandName ? subcommands[commandName] : undefined;
+    const commandDefinition = commandName ? subcommands[commandName] : undefined
     // Third: If a valid command has been found, then we run it...
     if (commandDefinition) {
       // Extract the original command arguments from the full argv
       // by skipping the command name
-      const context: CliCommandContext = { parentName: name };
+      const context: CliCommandContext = { parentName: name }
       if (alias) {
-        context.invokedAs = commandOrAliasName;
+        context.invokedAs = commandOrAliasName
       }
-      return await commandDefinition.run(commandArgv, importMeta, context);
+      return await commandDefinition.run(commandArgv, importMeta, context)
     }
 
     // If no command found but defaultSub exists, use it as the command.
@@ -537,23 +551,25 @@ export async function meowWithSubcommands(
         {
           parentName: name,
         },
-      );
+      )
     }
 
     // Suggest similar commands for typos.
     if (commandName && !commandDefinition) {
-      const suggestion = findBestCommandMatch(commandName, subcommands, aliases);
+      const suggestion = findBestCommandMatch(commandName, subcommands, aliases)
       if (suggestion) {
-        process.exitCode = 2;
-        logger.fail(`Unknown command "${commandName}". Did you mean "${suggestion}"?`);
-        return;
+        process.exitCode = 2
+        logger.fail(
+          `Unknown command "${commandName}". Did you mean "${suggestion}"?`,
+        )
+        return
       }
 
       // Unknown command with no suggestion - show error and fall through to help.
-      process.exitCode = 2;
-      logger.fail(`Unknown command "${commandName}".`);
-      logger.info("Tip: Use `socket pycli` to invoke the Python CLI directly.");
-      return;
+      process.exitCode = 2
+      logger.fail(`Unknown command "${commandName}".`)
+      logger.info('Tip: Use `socket pycli` to invoke the Python CLI directly.')
+      return
     }
   }
 
@@ -565,7 +581,7 @@ export async function meowWithSubcommands(
     isRootCommand,
     name,
     subcommands,
-  });
+  })
 
   // Parse it again. Config overrides should now be applied (may affect help).
   // Note: this is displayed as help screen if the command does not override it
@@ -583,40 +599,40 @@ export async function meowWithSubcommands(
     autoVersion: false,
     // We want to detect whether a bool flag is given at all.
     booleanDefault: undefined,
-    help: lines.map((l) => indentString(l, { count: HELP_INDENT })).join("\n"),
-  });
+    help: lines.map(l => indentString(l, { count: HELP_INDENT })).join('\n'),
+  })
 
   const {
     dryRun,
     help: helpFlag,
     version: versionFlag,
   } = cli2.flags as {
-    dryRun: boolean;
-    help: boolean;
-    version: boolean;
-  };
+    dryRun: boolean
+    help: boolean
+    version: boolean
+  }
 
   // Handle --version flag at root level.
   /* c8 ignore start - --version causes meow to print and exit; tests avoid invoking this path to prevent process.exit */
   if (versionFlag) {
-    cli2.showVersion();
+    cli2.showVersion()
   }
   /* c8 ignore stop */
 
   // ...else we provide basic instructions and help.
   if (!shouldSuppressBanner(cli2.flags)) {
-    emitBanner(name, orgFlag, compactMode, cli2.flags);
+    emitBanner(name, orgFlag, compactMode, cli2.flags)
     // Meow will add newline so don't add stderr spacing here.
   }
   /* c8 ignore start - dry-run process.exit branch; tests avoid invoking this to prevent process termination */
   if (!helpFlag && dryRun) {
-    logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`);
+    logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     // Exit immediately to prevent tests from hanging waiting for stdin.
-    process.exit(0);
+    process.exit(0)
     /* c8 ignore stop */
   } else {
     // When you explicitly request --help, the command should be successful
     // so we exit(0). If we do it because we need more input, we exit(2).
-    cli2.showHelp(helpFlag ? 0 : 2);
+    cli2.showHelp(helpFlag ? 0 : 2)
   }
 }

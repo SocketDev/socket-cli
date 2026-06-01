@@ -1,7 +1,8 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from 'vitest/config'
 
 const isCoverageEnabled =
-  process.env.npm_lifecycle_event === "cover" || process.argv.includes("--coverage");
+  process.env.npm_lifecycle_event === 'cover' ||
+  process.argv.includes('--coverage')
 
 // oxlint-disable-next-line socket/no-default-export -- vitest config files must use export default per vitest's contract.
 export default defineConfig({
@@ -10,26 +11,26 @@ export default defineConfig({
   },
   test: {
     globals: false,
-    environment: "node",
+    environment: 'node',
     include: [
       // NOTE: No root-level tests exist. All tests are in individual packages.
       // Each package (e.g., packages/cli/) has its own vitest.config.mts.
       // This root config serves as a fallback default configuration only.
     ],
     exclude: [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/.{idea,git,cache,output,temp}/**",
-      "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*",
-      "**/*.test.{js,ts,mjs,cjs,mts}",
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
+      '**/*.test.{js,ts,mjs,cjs,mts}',
       // Exclude E2E tests from regular test runs.
-      "**/*.e2e.test.mts",
+      '**/*.e2e.test.mts',
     ],
     passWithNoTests: true,
-    reporters: ["default"],
-    setupFiles: ["./test/setup.mts"],
+    reporters: ['default'],
+    setupFiles: ['./test/setup.mts'],
     // Use threads for better performance
-    pool: "threads",
+    pool: 'threads',
     poolOptions: {
       threads: {
         singleThread: false,
@@ -54,33 +55,33 @@ export default defineConfig({
       concurrent: true, // Run tests concurrently within suites for better parallelism.
     },
     coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html", "lcov", "clover"],
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov', 'clover'],
       exclude: [
-        "**/*.config.*",
-        "**/node_modules/**",
-        "**/[.]**",
-        "**/*.d.mts",
-        "**/*.d.ts",
-        "**/virtual:*",
-        "bin/**",
-        "coverage/**",
-        "dist/**",
-        "external/**",
-        "pnpmfile.*",
-        "scripts/**",
-        "src/**/types.mts",
-        "test/**",
-        "perf/**",
+        '**/*.config.*',
+        '**/node_modules/**',
+        '**/[.]**',
+        '**/*.d.mts',
+        '**/*.d.ts',
+        '**/virtual:*',
+        'bin/**',
+        'coverage/**',
+        'dist/**',
+        'external/**',
+        'pnpmfile.*',
+        'scripts/**',
+        'src/**/types.mts',
+        'test/**',
+        'perf/**',
         // Explicit root-level exclusions
-        "/scripts/**",
-        "/test/**",
+        '/scripts/**',
+        '/test/**',
       ],
-      include: ["src/**/*.mts", "src/**/*.ts"],
+      include: ['src/**/*.mts', 'src/**/*.ts'],
       all: true,
       clean: true,
       skipFull: false,
-      ignoreClassMethods: ["constructor"],
+      ignoreClassMethods: ['constructor'],
       thresholds: {
         lines: 0,
         functions: 0,
@@ -89,4 +90,4 @@ export default defineConfig({
       },
     },
   },
-});
+})

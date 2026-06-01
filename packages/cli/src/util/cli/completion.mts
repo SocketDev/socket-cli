@@ -1,45 +1,45 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 
-import { getSocketAppDataPath, rootPath } from "../../constants/paths.mts";
+import { getSocketAppDataPath, rootPath } from '../../constants/paths.mts'
 
-import type { CResult } from "../../types.mjs";
+import type { CResult } from '../../types.mjs'
 
-export const COMPLETION_CMD_PREFIX = "complete -F _socket_completion";
+export const COMPLETION_CMD_PREFIX = 'complete -F _socket_completion'
 
 export function getBashrcDetails(targetCommandName: string): CResult<{
-  completionCommand: string;
-  sourcingCommand: string;
-  toAddToBashrc: string;
-  targetName: string;
-  targetPath: string;
+  completionCommand: string
+  sourcingCommand: string
+  toAddToBashrc: string
+  targetName: string
+  targetPath: string
 }> {
-  const sourcingCommand = getCompletionSourcingCommand();
+  const sourcingCommand = getCompletionSourcingCommand()
   if (!sourcingCommand.ok) {
-    return sourcingCommand;
+    return sourcingCommand
   }
 
-  const socketAppDataPath = getSocketAppDataPath();
+  const socketAppDataPath = getSocketAppDataPath()
   if (!socketAppDataPath) {
     return {
       ok: false,
-      message: "Could not determine config directory",
-      cause: "Failed to get config path",
-    };
+      message: 'Could not determine config directory',
+      cause: 'Failed to get config path',
+    }
   }
 
   // _socket_completion is the function defined in our completion bash script
-  const completionCommand = `${COMPLETION_CMD_PREFIX} ${targetCommandName}`;
+  const completionCommand = `${COMPLETION_CMD_PREFIX} ${targetCommandName}`
 
   // Location of completion script in config after installing
   const completionScriptPath = path.join(
     path.dirname(socketAppDataPath),
-    "completion",
-    "socket-completion.bash",
-  );
+    'completion',
+    'socket-completion.bash',
+  )
 
   // Bash scripts always use forward slashes, even on Windows.
-  const bashCompletionPath = completionScriptPath.replace(/\\/g, "/");
+  const bashCompletionPath = completionScriptPath.replace(/\\/g, '/')
 
   const bashrcContent = `# Socket CLI completion for "${targetCommandName}"
 if [ -f "${bashCompletionPath}" ]; then
@@ -48,7 +48,7 @@ if [ -f "${bashCompletionPath}" ]; then
     # Tell bash to use this function for tab completion of this function
     ${completionCommand}
 fi
-`;
+`
 
   return {
     ok: true,
@@ -59,24 +59,28 @@ fi
       targetName: targetCommandName,
       targetPath: bashCompletionPath,
     },
-  };
+  }
 }
 
 export function getCompletionSourcingCommand(): CResult<string> {
   // Bash completion script lives in data directory.
-  const completionScriptPath = path.join(rootPath, "data", "socket-completion.bash");
+  const completionScriptPath = path.join(
+    rootPath,
+    'data',
+    'socket-completion.bash',
+  )
 
   if (!existsSync(completionScriptPath)) {
     return {
       ok: false,
-      message: "Tab Completion script not found",
-      cause: `Expected to find completion script at \`${completionScriptPath.replace(/\\/g, "/")}\` but it was not there`,
-    };
+      message: 'Tab Completion script not found',
+      cause: `Expected to find completion script at \`${completionScriptPath.replace(/\\/g, '/')}\` but it was not there`,
+    }
   }
 
   // Bash scripts always use forward slashes, even on Windows.
   return {
     ok: true,
-    data: `source ${completionScriptPath.replace(/\\/g, "/")}`,
-  };
+    data: `source ${completionScriptPath.replace(/\\/g, '/')}`,
+  }
 }

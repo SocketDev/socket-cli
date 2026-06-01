@@ -21,173 +21,181 @@
  * src/commands/uninstall/output-uninstall-completion.mts - Output formatting.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { handleUninstallCompletion } from "../../../../src/commands/uninstall/handle-uninstall-completion.mts";
+import { handleUninstallCompletion } from '../../../../src/commands/uninstall/handle-uninstall-completion.mts'
 
 // Mock the dependencies.
-vi.mock(import("../../../../src/commands/uninstall/output-uninstall-completion.mts"), () => ({
-  outputUninstallCompletion: vi.fn(),
-}));
-vi.mock(import("../../../../src/commands/uninstall/teardown-tab-completion.mts"), () => ({
-  teardownTabCompletion: vi.fn(),
-}));
+vi.mock(
+  import('../../../../src/commands/uninstall/output-uninstall-completion.mts'),
+  () => ({
+    outputUninstallCompletion: vi.fn(),
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/uninstall/teardown-tab-completion.mts'),
+  () => ({
+    teardownTabCompletion: vi.fn(),
+  }),
+)
 
-describe("handleUninstallCompletion", () => {
+describe('handleUninstallCompletion', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("uninstalls completion successfully", async () => {
+  it('uninstalls completion successfully', async () => {
     const { teardownTabCompletion } =
-      await import("../../../../src/commands/uninstall/teardown-tab-completion.mts");
+      await import('../../../../src/commands/uninstall/teardown-tab-completion.mts')
     const { outputUninstallCompletion } =
-      await import("../../../../src/commands/uninstall/output-uninstall-completion.mts");
+      await import('../../../../src/commands/uninstall/output-uninstall-completion.mts')
 
     vi.mocked(teardownTabCompletion).mockResolvedValue({
       ok: true,
-      value: "Completion uninstalled successfully",
-    });
+      value: 'Completion uninstalled successfully',
+    })
 
-    await handleUninstallCompletion("bash");
+    await handleUninstallCompletion('bash')
 
-    expect(teardownTabCompletion).toHaveBeenCalledWith("bash");
+    expect(teardownTabCompletion).toHaveBeenCalledWith('bash')
     expect(outputUninstallCompletion).toHaveBeenCalledWith(
       {
         ok: true,
-        value: "Completion uninstalled successfully",
+        value: 'Completion uninstalled successfully',
       },
-      "bash",
-    );
-  });
+      'bash',
+    )
+  })
 
-  it("handles uninstallation failure", async () => {
+  it('handles uninstallation failure', async () => {
     const { teardownTabCompletion } =
-      await import("../../../../src/commands/uninstall/teardown-tab-completion.mts");
+      await import('../../../../src/commands/uninstall/teardown-tab-completion.mts')
     const { outputUninstallCompletion } =
-      await import("../../../../src/commands/uninstall/output-uninstall-completion.mts");
+      await import('../../../../src/commands/uninstall/output-uninstall-completion.mts')
 
-    const error = new Error("Failed to uninstall completion");
+    const error = new Error('Failed to uninstall completion')
     vi.mocked(teardownTabCompletion).mockResolvedValue({
       ok: false,
       error,
-    });
+    })
 
-    await handleUninstallCompletion("zsh");
+    await handleUninstallCompletion('zsh')
 
-    expect(teardownTabCompletion).toHaveBeenCalledWith("zsh");
+    expect(teardownTabCompletion).toHaveBeenCalledWith('zsh')
     expect(outputUninstallCompletion).toHaveBeenCalledWith(
       {
         ok: false,
         error,
       },
-      "zsh",
-    );
-  });
+      'zsh',
+    )
+  })
 
-  it("handles different shell targets", async () => {
+  it('handles different shell targets', async () => {
     const { teardownTabCompletion } =
-      await import("../../../../src/commands/uninstall/teardown-tab-completion.mts");
+      await import('../../../../src/commands/uninstall/teardown-tab-completion.mts')
     const { outputUninstallCompletion } =
-      await import("../../../../src/commands/uninstall/output-uninstall-completion.mts");
+      await import('../../../../src/commands/uninstall/output-uninstall-completion.mts')
 
-    const shells = ["bash", "zsh", "fish", "powershell"];
+    const shells = ['bash', 'zsh', 'fish', 'powershell']
 
     for (let i = 0, { length } = shells; i < length; i += 1) {
-      const shell = shells[i];
+      const shell = shells[i]
       vi.mocked(teardownTabCompletion).mockResolvedValue({
         ok: true,
         value: `Completion for ${shell} uninstalled`,
-      });
+      })
 
-      await handleUninstallCompletion(shell);
+      await handleUninstallCompletion(shell)
 
-      expect(teardownTabCompletion).toHaveBeenCalledWith(shell);
+      expect(teardownTabCompletion).toHaveBeenCalledWith(shell)
       expect(outputUninstallCompletion).toHaveBeenCalledWith(
         {
           ok: true,
           value: `Completion for ${shell} uninstalled`,
         },
         shell,
-      );
+      )
     }
-  });
+  })
 
-  it("handles empty target name", async () => {
+  it('handles empty target name', async () => {
     const { teardownTabCompletion } =
-      await import("../../../../src/commands/uninstall/teardown-tab-completion.mts");
+      await import('../../../../src/commands/uninstall/teardown-tab-completion.mts')
     const { outputUninstallCompletion } =
-      await import("../../../../src/commands/uninstall/output-uninstall-completion.mts");
+      await import('../../../../src/commands/uninstall/output-uninstall-completion.mts')
 
     vi.mocked(teardownTabCompletion).mockResolvedValue({
       ok: false,
-      error: new Error("Invalid shell target"),
-    });
+      error: new Error('Invalid shell target'),
+    })
 
-    await handleUninstallCompletion("");
+    await handleUninstallCompletion('')
 
-    expect(teardownTabCompletion).toHaveBeenCalledWith("");
+    expect(teardownTabCompletion).toHaveBeenCalledWith('')
     expect(outputUninstallCompletion).toHaveBeenCalledWith(
       {
         ok: false,
-        error: new Error("Invalid shell target"),
+        error: new Error('Invalid shell target'),
       },
-      "",
-    );
-  });
+      '',
+    )
+  })
 
-  it("handles unsupported shell", async () => {
+  it('handles unsupported shell', async () => {
     const { teardownTabCompletion } =
-      await import("../../../../src/commands/uninstall/teardown-tab-completion.mts");
+      await import('../../../../src/commands/uninstall/teardown-tab-completion.mts')
     const { outputUninstallCompletion } =
-      await import("../../../../src/commands/uninstall/output-uninstall-completion.mts");
+      await import('../../../../src/commands/uninstall/output-uninstall-completion.mts')
 
     vi.mocked(teardownTabCompletion).mockResolvedValue({
       ok: false,
-      error: new Error("Unsupported shell: tcsh"),
-    });
+      error: new Error('Unsupported shell: tcsh'),
+    })
 
-    await handleUninstallCompletion("tcsh");
+    await handleUninstallCompletion('tcsh')
 
-    expect(teardownTabCompletion).toHaveBeenCalledWith("tcsh");
+    expect(teardownTabCompletion).toHaveBeenCalledWith('tcsh')
     expect(outputUninstallCompletion).toHaveBeenCalledWith(
       {
         ok: false,
-        error: new Error("Unsupported shell: tcsh"),
+        error: new Error('Unsupported shell: tcsh'),
       },
-      "tcsh",
-    );
-  });
+      'tcsh',
+    )
+  })
 
-  it("handles completion not found", async () => {
+  it('handles completion not found', async () => {
     const { teardownTabCompletion } =
-      await import("../../../../src/commands/uninstall/teardown-tab-completion.mts");
+      await import('../../../../src/commands/uninstall/teardown-tab-completion.mts')
     const { outputUninstallCompletion } =
-      await import("../../../../src/commands/uninstall/output-uninstall-completion.mts");
+      await import('../../../../src/commands/uninstall/output-uninstall-completion.mts')
 
     vi.mocked(teardownTabCompletion).mockResolvedValue({
       ok: false,
-      error: new Error("Completion not found"),
-    });
+      error: new Error('Completion not found'),
+    })
 
-    await handleUninstallCompletion("bash");
+    await handleUninstallCompletion('bash')
 
-    expect(teardownTabCompletion).toHaveBeenCalledWith("bash");
+    expect(teardownTabCompletion).toHaveBeenCalledWith('bash')
     expect(outputUninstallCompletion).toHaveBeenCalledWith(
       {
         ok: false,
-        error: new Error("Completion not found"),
+        error: new Error('Completion not found'),
       },
-      "bash",
-    );
-  });
+      'bash',
+    )
+  })
 
-  it("handles async errors", async () => {
+  it('handles async errors', async () => {
     const { teardownTabCompletion } =
-      await import("../../../../src/commands/uninstall/teardown-tab-completion.mts");
+      await import('../../../../src/commands/uninstall/teardown-tab-completion.mts')
 
-    vi.mocked(teardownTabCompletion).mockRejectedValue(new Error("Async error"));
+    vi.mocked(teardownTabCompletion).mockRejectedValue(new Error('Async error'))
 
-    await expect(handleUninstallCompletion("bash")).rejects.toThrow("Async error");
-  });
-});
+    await expect(handleUninstallCompletion('bash')).rejects.toThrow(
+      'Async error',
+    )
+  })
+})

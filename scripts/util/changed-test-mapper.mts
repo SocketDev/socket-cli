@@ -3,196 +3,199 @@
  *   git utilities from socket-registry to detect changes.
  */
 
-import { existsSync } from "node:fs";
-import path from "node:path";
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 
-import { getChangedFilesSync } from "@socketsecurity/lib-stable/git/changed";
-import { getStagedFilesSync } from "@socketsecurity/lib-stable/git/staged";
-import { normalizePath } from "@socketsecurity/lib-stable/paths/normalize";
+import { getChangedFilesSync } from '@socketsecurity/lib-stable/git/changed'
+import { getStagedFilesSync } from '@socketsecurity/lib-stable/git/staged'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- module-level constant: script runs under pnpm test which always invokes from the package root.
-const rootPath = path.resolve(process.cwd());
+const rootPath = path.resolve(process.cwd())
 
 /**
  * Core files that require running all tests when changed.
  */
 const CORE_FILES: string[] = [
-  "packages/cli/src/constants/",
-  "packages/cli/src/bootstrap/",
-  "packages/cli/src/polyfills/",
-  "vitest.config.mts",
-  ".config/vitest.config.mts",
-  "tsconfig.json",
-  ".config/tsconfig",
-];
+  'packages/cli/src/constants/',
+  'packages/cli/src/bootstrap/',
+  'packages/cli/src/polyfills/',
+  'vitest.config.mts',
+  '.config/vitest.config.mts',
+  'tsconfig.json',
+  '.config/tsconfig',
+]
 
 interface GetTestsOptions {
-  staged?: boolean | undefined;
-  all?: boolean | undefined;
+  staged?: boolean | undefined
+  all?: boolean | undefined
 }
 
 interface GetTestsResult {
-  tests: string[] | "all" | null;
-  reason?: string | undefined;
-  mode?: string | undefined;
+  tests: string[] | 'all' | null
+  reason?: string | undefined
+  mode?: string | undefined
 }
 
 /**
  * Get affected test files to run based on changed files.
  */
 export function getTestsToRun(options: GetTestsOptions = {}): GetTestsResult {
-  const { all = false, staged = false } = options;
+  const { all = false, staged = false } = options
 
   // All mode runs all tests
-  if (all || process.env["FORCE_TEST"] === "1") {
-    return { tests: "all", reason: "explicit --all flag", mode: "all" };
+  if (all || process.env['FORCE_TEST'] === '1') {
+    return { tests: 'all', reason: 'explicit --all flag', mode: 'all' }
   }
 
   // CI always runs all tests
-  if (process.env["CI"] === "true") {
-    return { tests: "all", reason: "CI environment", mode: "all" };
+  if (process.env['CI'] === 'true') {
+    return { tests: 'all', reason: 'CI environment', mode: 'all' }
   }
 
   // Get changed files
-  const changedFiles = staged ? getStagedFilesSync() : getChangedFilesSync();
-  const mode = staged ? "staged" : "changed";
+  const changedFiles = staged ? getStagedFilesSync() : getChangedFilesSync()
+  const mode = staged ? 'staged' : 'changed'
 
   if (changedFiles.length === 0) {
     // No changes, skip tests
-    return { tests: undefined, mode };
+    return { tests: undefined, mode }
   }
 
-  const testFiles = new Set<string>();
-  let runAllTests = false;
-  let runAllReason = "";
+  const testFiles = new Set<string>()
+  let runAllTests = false
+  let runAllReason = ''
 
   for (let i = 0, { length } = changedFiles; i < length; i += 1) {
-    const file = changedFiles[i];
-    const normalized = normalizePath(file);
+    const file = changedFiles[i]
+    const normalized = normalizePath(file)
 
     // Test files always run themselves
-    if (normalized.includes(".test.")) {
+    if (normalized.includes('.test.')) {
       // Skip deleted files.
       if (existsSync(path.join(rootPath, file))) {
-        testFiles.add(file);
+        testFiles.add(file)
       }
-      continue;
+      continue
     }
 
     // Source files map to test files
-    const tests = mapSourceToTests(normalized);
-    if (tests.includes("all")) {
-      runAllTests = true;
-      runAllReason = "core file changes";
-      break;
+    const tests = mapSourceToTests(normalized)
+    if (tests.includes('all')) {
+      runAllTests = true
+      runAllReason = 'core file changes'
+      break
     }
 
     for (let i = 0, { length } = tests; i < length; i += 1) {
-      const test = tests[i];
+      const test = tests[i]
       // Handle directory patterns
-      if (test.endsWith("/")) {
-        runAllTests = true;
-        runAllReason = "integration test directory";
-        break;
+      if (test.endsWith('/')) {
+        runAllTests = true
+        runAllReason = 'integration test directory'
+        break
       }
 
       // Skip deleted files.
       if (existsSync(path.join(rootPath, test))) {
-        testFiles.add(test);
+        testFiles.add(test)
       }
     }
 
     if (runAllTests) {
-      break;
+      break
     }
   }
 
   if (runAllTests) {
-    return { tests: "all", reason: runAllReason, mode: "all" };
+    return { tests: 'all', reason: runAllReason, mode: 'all' }
   }
 
   if (testFiles.size === 0) {
-    return { tests: undefined, mode };
+    return { tests: undefined, mode }
   }
 
-  return { tests: Array.from(testFiles), mode };
+  return { tests: Array.from(testFiles), mode }
 }
 
 /**
  * Map source files to their corresponding test files.
  */
 export function mapSourceToTests(filepath: string): string[] {
-  const normalized = normalizePath(filepath);
+  const normalized = normalizePath(filepath)
 
   // Skip non-code files
-  const ext = path.extname(normalized);
-  const codeExtensions = [".js", ".mjs", ".cjs", ".ts", ".cts", ".mts", ".json"];
+  const ext = path.extname(normalized)
+  const codeExtensions = ['.js', '.mjs', '.cjs', '.ts', '.cts', '.mts', '.json']
   if (!codeExtensions.includes(ext)) {
-    return [];
+    return []
   }
 
   // Core utilities affect all tests
-  if (CORE_FILES.some((f) => normalized.includes(f))) {
-    return ["all"];
+  if (CORE_FILES.some(f => normalized.includes(f))) {
+    return ['all']
   }
 
   // Test files that live alongside source
-  if (normalized.includes(".test.")) {
-    return [normalized];
+  if (normalized.includes('.test.')) {
+    return [normalized]
   }
 
   // Map packages/cli/src files to their test counterparts
-  if (normalized.startsWith("packages/cli/src/")) {
+  if (normalized.startsWith('packages/cli/src/')) {
     // For files in packages/cli/src root, check for co-located test
-    const basename = path.basename(normalized, path.extname(normalized));
-    const dirname = path.dirname(normalized);
+    const basename = path.basename(normalized, path.extname(normalized))
+    const dirname = path.dirname(normalized)
 
     // Check for test file in same directory
-    const colocatedTest = path.join(dirname, `${basename}.test.mts`);
+    const colocatedTest = path.join(dirname, `${basename}.test.mts`)
     if (existsSync(path.join(rootPath, colocatedTest))) {
-      return [colocatedTest];
+      return [colocatedTest]
     }
 
     // Check for test file in packages/cli/test
-    const testInTestDir = `packages/cli/test/${basename}.test.mts`;
+    const testInTestDir = `packages/cli/test/${basename}.test.mts`
     if (existsSync(path.join(rootPath, testInTestDir))) {
-      return [testInTestDir];
+      return [testInTestDir]
     }
 
     // Special mappings for subdirectories
-    if (normalized.includes("packages/cli/src/commands/")) {
+    if (normalized.includes('packages/cli/src/commands/')) {
       // Commands might have integration tests
-      return ["packages/cli/test/integration/"];
+      return ['packages/cli/test/integration/']
     }
 
     // Check helpers and utils
-    if (normalized.includes("packages/cli/src/helpers/")) {
-      const helperName = basename;
-      const helperTest = `packages/cli/test/helpers/${helperName}.test.mts`;
+    if (normalized.includes('packages/cli/src/helpers/')) {
+      const helperName = basename
+      const helperTest = `packages/cli/test/helpers/${helperName}.test.mts`
       if (existsSync(path.join(rootPath, helperTest))) {
-        return [helperTest];
+        return [helperTest]
       }
     }
 
-    if (normalized.includes("packages/cli/src/util/")) {
-      const utilName = basename;
-      const utilTest = `packages/cli/test/util/${utilName}.test.mts`;
+    if (normalized.includes('packages/cli/src/util/')) {
+      const utilName = basename
+      const utilTest = `packages/cli/test/util/${utilName}.test.mts`
       if (existsSync(path.join(rootPath, utilTest))) {
-        return [utilTest];
+        return [utilTest]
       }
     }
   }
 
   // Scripts changes run all tests
-  if (normalized.startsWith("scripts/")) {
-    return ["all"];
+  if (normalized.startsWith('scripts/')) {
+    return ['all']
   }
 
   // External or fixtures changes
-  if (normalized.startsWith("external/") || normalized.startsWith("fixtures/")) {
-    return ["packages/cli/test/integration/"];
+  if (
+    normalized.startsWith('external/') ||
+    normalized.startsWith('fixtures/')
+  ) {
+    return ['packages/cli/test/integration/']
   }
 
   // If no specific mapping, run all tests to be safe
-  return ["all"];
+  return ['all']
 }

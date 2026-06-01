@@ -22,41 +22,46 @@
  * monitoring (npm installs only)
  */
 
-import { dlxManifest } from "@socketsecurity/lib-stable/dlx/manifest";
-import { errorMessage } from "@socketsecurity/lib-stable/errors";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
-import { isNonEmptyString } from "@socketsecurity/lib-stable/strings/predicates";
+import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
-import { checkForUpdates as performUpdateCheck } from "./checker.mts";
-import { scheduleExitNotification, showUpdateNotification } from "./notifier.mts";
-import { UPDATE_CHECK_TTL } from "../../constants/cache.mts";
-import { isSeaBinary } from "../sea/detect.mts";
+import { checkForUpdates as performUpdateCheck } from './checker.mts'
+import {
+  scheduleExitNotification,
+  showUpdateNotification,
+} from './notifier.mts'
+import { UPDATE_CHECK_TTL } from '../../constants/cache.mts'
+import { isSeaBinary } from '../sea/detect.mts'
 
-import type { AuthInfo, UpdateCheckResult } from "./checker.mts";
-import type { StoreRecord } from "@socketsecurity/lib-stable/dlx/manifest";
+import type { AuthInfo, UpdateCheckResult } from './checker.mts'
+import type { StoreRecord } from '@socketsecurity/lib-stable/dlx/manifest'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 // Notification TTL: Show notification at most once per 7 days (604800000 ms).
-const NOTIFICATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const NOTIFICATION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 interface UpdateManagerOptions {
-  authInfo?: AuthInfo | undefined;
-  name: string;
-  version: string;
+  authInfo?: AuthInfo | undefined
+  name: string
+  version: string
   /**
    * Whether to show notification immediately or on exit.
    */
-  immediate?: boolean | undefined;
-  registryUrl?: string | undefined;
-  ttl?: number | undefined;
+  immediate?: boolean | undefined
+  registryUrl?: string | undefined
+  ttl?: number | undefined
 }
 
 /**
  * Perform complete update check flow with caching and notifications. This is
  * the main function that orchestrates the entire update process.
  */
-export async function checkForUpdates(options: UpdateManagerOptions): Promise<boolean> {
+export async function checkForUpdates(
+  options: UpdateManagerOptions,
+): Promise<boolean> {
   const {
     authInfo,
     immediate = false,
@@ -64,63 +69,65 @@ export async function checkForUpdates(options: UpdateManagerOptions): Promise<bo
     registryUrl,
     ttl = UPDATE_CHECK_TTL,
     version,
-  } = { __proto__: null, ...options } as UpdateManagerOptions;
+  } = { __proto__: null, ...options } as UpdateManagerOptions
 
-  const loggerLocal = getDefaultLogger();
+  const loggerLocal = getDefaultLogger()
 
   // Capture timestamp immediately for accurate TTL calculations.
-  const timestamp = Date.now();
+  const timestamp = Date.now()
 
   // Validate required parameters.
   if (!isNonEmptyString(name)) {
     loggerLocal.warn(
-      `checkForUpdates options.name requires a non-empty string (got: ${typeof name === "string" ? '""' : typeof name}); skipping update check`,
-    );
-    return false;
+      `checkForUpdates options.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); skipping update check`,
+    )
+    return false
   }
 
   if (!isNonEmptyString(version)) {
     loggerLocal.warn(
-      `checkForUpdates options.version requires a non-empty string (got: ${typeof version === "string" ? '""' : typeof version}); skipping update check`,
-    );
-    return false;
+      `checkForUpdates options.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); skipping update check`,
+    )
+    return false
   }
 
   if (ttl < 0) {
     loggerLocal.warn(
       `checkForUpdates options.ttl must be >= 0 (saw: ${ttl}); pass a positive number of milliseconds, e.g. 86_400_000 for 24h`,
-    );
-    return false;
+    )
+    return false
   }
 
   // Validate auth info if provided.
   if (authInfo) {
     if (!isNonEmptyString(authInfo.token) || !isNonEmptyString(authInfo.type)) {
-      loggerLocal.warn("Invalid auth info provided, proceeding without authentication");
+      loggerLocal.warn(
+        'Invalid auth info provided, proceeding without authentication',
+      )
     }
   }
 
   /* c8 ignore start - registry URL validation is defensive; isNonEmptyString already truth-checked by the && above */
   if (registryUrl && !isNonEmptyString(registryUrl)) {
-    loggerLocal.warn("Invalid registry URL provided, using default");
+    loggerLocal.warn('Invalid registry URL provided, using default')
   }
   /* c8 ignore stop */
 
-  let record: StoreRecord | undefined;
+  let record: StoreRecord | undefined
 
   // Include current version and registry in cache key to prevent stale cache.
   // Different registries may have different latest versions.
   // Normalize registry URL to prevent duplicate cache entries for equivalent URLs.
-  let normalizedRegistry = "";
+  let normalizedRegistry = ''
   if (registryUrl) {
     try {
-      normalizedRegistry = new URL(registryUrl).href;
+      normalizedRegistry = new URL(registryUrl).href
     } catch {
-      normalizedRegistry = registryUrl;
+      normalizedRegistry = registryUrl
     }
   }
-  const registrySuffix = normalizedRegistry ? `:${normalizedRegistry}` : "";
-  const cacheKey = `${name}@${version}${registrySuffix}`;
+  const registrySuffix = normalizedRegistry ? `:${normalizedRegistry}` : ''
+  const cacheKey = `${name}@${version}${registrySuffix}`
 
   try {
     // Note: dlxManifest.get() is not lock-protected, which can cause a race condition
@@ -128,43 +135,52 @@ export async function checkForUpdates(options: UpdateManagerOptions): Promise<bo
     // fresh data. This only wastes network resources during TTL expiration; no data
     // corruption occurs since both writes contain the same fresh data. Acceptable tradeoff
     // for simplicity vs. adding in-memory deduplication layer.
-    record = dlxManifest.get(cacheKey);
+    record = dlxManifest.get(cacheKey)
 
     if (timestamp <= 0) {
-      loggerLocal.warn("Invalid system time, using cached data only");
+      loggerLocal.warn('Invalid system time, using cached data only')
       if (record) {
         // Validate cached record has a valid timestamp before using.
-        if (!record.timestampFetch || record.timestampFetch <= 0 || !record.version) {
-          loggerLocal.warn("Cached data has invalid timestamp or version, skipping update check");
-          return false;
+        if (
+          !record.timestampFetch ||
+          record.timestampFetch <= 0 ||
+          !record.version
+        ) {
+          loggerLocal.warn(
+            'Cached data has invalid timestamp or version, skipping update check',
+          )
+          return false
         }
         // Use cached data for notification.
-        const updateAvailable = version !== record.version;
+        const updateAvailable = version !== record.version
         if (updateAvailable) {
           const notificationOptions = {
             name,
             current: version,
             latest: record.version,
-          };
+          }
 
           if (immediate) {
-            showUpdateNotification(notificationOptions);
+            showUpdateNotification(notificationOptions)
           } else {
-            scheduleExitNotification(notificationOptions);
+            scheduleExitNotification(notificationOptions)
           }
         }
-        return updateAvailable;
+        return updateAvailable
       }
-      return false;
+      return false
     }
   } catch (e) {
-    loggerLocal.warn(`Failed to access cache: ${errorMessage(e)}`);
-    record = undefined;
+    loggerLocal.warn(`Failed to access cache: ${errorMessage(e)}`)
+    record = undefined
   }
 
   // Check freshness inline to avoid potential double-read.
-  const isFresh = record && record.timestampFetch ? timestamp - record.timestampFetch < ttl : false;
-  let updateResult: UpdateCheckResult;
+  const isFresh =
+    record && record.timestampFetch
+      ? timestamp - record.timestampFetch < ttl
+      : false
+  let updateResult: UpdateCheckResult
 
   if (!isFresh) {
     // Need to fetch fresh data from registry.
@@ -174,7 +190,7 @@ export async function checkForUpdates(options: UpdateManagerOptions): Promise<bo
         name,
         registryUrl,
         version,
-      });
+      })
 
       // Update cache with fresh data.
       // Intentional: Capture timestamp after fetch completes, not before it starts.
@@ -185,13 +201,13 @@ export async function checkForUpdates(options: UpdateManagerOptions): Promise<bo
           timestampFetch: Date.now(),
           timestampNotification: record?.timestampNotification ?? 0,
           version: updateResult.latest,
-        });
+        })
       } catch (e) {
-        loggerLocal.warn(`Failed to update cache: ${errorMessage(e)}`);
+        loggerLocal.warn(`Failed to update cache: ${errorMessage(e)}`)
         // Continue anyway - cache update failure is not critical.
       }
     } catch (e) {
-      loggerLocal.log(`Failed to fetch latest version: ${errorMessage(e)}`);
+      loggerLocal.log(`Failed to fetch latest version: ${errorMessage(e)}`)
 
       // Use cached version if available.
       if (record) {
@@ -199,10 +215,10 @@ export async function checkForUpdates(options: UpdateManagerOptions): Promise<bo
           current: version,
           latest: record.version,
           updateAvailable: version !== record.version,
-        };
+        }
       } else {
-        loggerLocal.log("No version information available");
-        return false;
+        loggerLocal.log('No version information available')
+        return false
       }
     }
   } else {
@@ -211,14 +227,14 @@ export async function checkForUpdates(options: UpdateManagerOptions): Promise<bo
       current: version,
       latest: record?.version ?? version,
       updateAvailable: version !== (record?.version ?? version),
-    };
+    }
   }
 
   // Show notification if update is available and not shown recently.
   if (updateResult.updateAvailable && !isFresh) {
-    const now = Date.now();
-    const lastNotification = record?.timestampNotification ?? 0;
-    const timeSinceLastNotification = now - lastNotification;
+    const now = Date.now()
+    const lastNotification = record?.timestampNotification ?? 0
+    const timeSinceLastNotification = now - lastNotification
 
     // Only show notification if it's been more than NOTIFICATION_TTL_MS since last notification.
     if (timeSinceLastNotification >= NOTIFICATION_TTL_MS) {
@@ -227,12 +243,12 @@ export async function checkForUpdates(options: UpdateManagerOptions): Promise<bo
           name,
           current: updateResult.current,
           latest: updateResult.latest,
-        };
+        }
 
         if (immediate) {
-          showUpdateNotification(notificationOptions);
+          showUpdateNotification(notificationOptions)
         } else {
-          scheduleExitNotification(notificationOptions);
+          scheduleExitNotification(notificationOptions)
         }
 
         // Update timestampNotification in cache to prevent spam.
@@ -241,18 +257,20 @@ export async function checkForUpdates(options: UpdateManagerOptions): Promise<bo
             timestampFetch: record?.timestampFetch ?? now,
             timestampNotification: now,
             version: updateResult.latest,
-          });
+          })
         } catch (e) {
-          loggerLocal.warn(`Failed to update notification timestamp: ${errorMessage(e)}`);
+          loggerLocal.warn(
+            `Failed to update notification timestamp: ${errorMessage(e)}`,
+          )
         }
       } catch (e) {
-        loggerLocal.warn(`Failed to set up notification: ${errorMessage(e)}`);
+        loggerLocal.warn(`Failed to set up notification: ${errorMessage(e)}`)
         // Notification failure is not critical - update is still available.
       }
     }
   }
 
-  return updateResult.updateAvailable;
+  return updateResult.updateAvailable
 }
 
 /**
@@ -262,20 +280,22 @@ export async function checkForUpdates(options: UpdateManagerOptions): Promise<bo
  * Note: Only runs for npm/pnpm/yarn installations. SEA binaries use node-smol's
  * built-in update checker (embedded via --update-config).
  */
-export async function scheduleUpdateCheck(options: UpdateManagerOptions): Promise<void> {
+export async function scheduleUpdateCheck(
+  options: UpdateManagerOptions,
+): Promise<void> {
   // Skip update checks for SEA binaries - node-smol handles it via embedded update-config.
   if (isSeaBinary()) {
-    return;
+    return
   }
 
   // Set immediate to false to show notification on exit.
-  const updateOptions = { ...options, immediate: false };
+  const updateOptions = { ...options, immediate: false }
 
   try {
-    await checkForUpdates(updateOptions);
+    await checkForUpdates(updateOptions)
     /* c8 ignore start - update-check failures are silent and can't be triggered without mocking the entire update pipeline */
   } catch (e) {
-    logger.log(`Update check failed: ${errorMessage(e)}`);
+    logger.log(`Update check failed: ${errorMessage(e)}`)
   }
   /* c8 ignore stop */
 }

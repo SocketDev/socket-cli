@@ -12,7 +12,7 @@
  * Related Files: - commands/optimize/ls-by-agent.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   BUN,
@@ -21,13 +21,13 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from "@socketsecurity/lib-stable/constants/agents";
+} from '@socketsecurity/lib-stable/constants/agents'
 
 // Mock spawn.
-const mockSpawn = vi.hoisted(() => vi.fn());
-vi.mock(import("@socketsecurity/lib-stable/process/spawn/child"), () => ({
+const mockSpawn = vi.hoisted(() => vi.fn())
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
-}));
+}))
 
 import {
   listPackages,
@@ -37,506 +37,567 @@ import {
   lsVlt,
   lsYarnBerry,
   lsYarnClassic,
-} from "../../../../src/commands/optimize/ls-by-agent.mts";
+} from '../../../../src/commands/optimize/ls-by-agent.mts'
 
-import type { EnvDetails } from "../../../../src/util/ecosystem/environment.mjs";
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
-function createMockEnvDetails(agent: string, agentExecPath = "/usr/local/bin/npm"): EnvDetails {
+function createMockEnvDetails(
+  agent: string,
+  agentExecPath = '/usr/local/bin/npm',
+): EnvDetails {
   return {
     agent,
     agentExecPath,
-    agentVersion: "10.0.0",
-  } as EnvDetails;
+    agentVersion: '10.0.0',
+  } as EnvDetails
 }
 
-describe("commands/optimize/ls-by-agent", () => {
+describe('commands/optimize/ls-by-agent', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  describe("lsBun", () => {
-    it("returns stdout from bun pm ls", async () => {
+  describe('lsBun', () => {
+    it('returns stdout from bun pm ls', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: "package1@1.0.0\npackage2@2.0.0",
-      });
+        stdout: 'package1@1.0.0\npackage2@2.0.0',
+      })
 
-      const result = await lsBun(createMockEnvDetails(BUN, "/usr/local/bin/bun"));
+      const result = await lsBun(
+        createMockEnvDetails(BUN, '/usr/local/bin/bun'),
+      )
 
-      expect(result).toBe("package1@1.0.0\npackage2@2.0.0");
+      expect(result).toBe('package1@1.0.0\npackage2@2.0.0')
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/usr/local/bin/bun",
-        ["pm", "ls", "--all"],
+        '/usr/local/bin/bun',
+        ['pm', 'ls', '--all'],
         expect.objectContaining({ cwd: expect.any(String) }),
-      );
-    });
+      )
+    })
 
-    it("returns empty string when spawn throws", async () => {
-      mockSpawn.mockRejectedValueOnce(new Error("spawn failed"));
+    it('returns empty string when spawn throws', async () => {
+      mockSpawn.mockRejectedValueOnce(new Error('spawn failed'))
 
-      const result = await lsBun(createMockEnvDetails(BUN, "/usr/local/bin/bun"));
+      const result = await lsBun(
+        createMockEnvDetails(BUN, '/usr/local/bin/bun'),
+      )
 
-      expect(result).toBe("");
-    });
-  });
+      expect(result).toBe('')
+    })
+  })
 
-  describe("lsNpm", () => {
-    it("returns cleaned up query output", async () => {
+  describe('lsNpm', () => {
+    it('returns cleaned up query output', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ name: "lodash" }, { name: "express" }]),
-      });
+        stdout: JSON.stringify([{ name: 'lodash' }, { name: 'express' }]),
+      })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(JSON.parse(result)).toEqual(["lodash", "express"]);
-    });
+      expect(JSON.parse(result)).toEqual(['lodash', 'express'])
+    })
 
-    it("filters out @types packages", async () => {
+    it('filters out @types packages', async () => {
       mockSpawn.mockResolvedValueOnce({
         stdout: JSON.stringify([
-          { name: "lodash" },
-          { name: "@types/node" },
-          { name: "@types/express" },
+          { name: 'lodash' },
+          { name: '@types/node' },
+          { name: '@types/express' },
         ]),
-      });
+      })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(JSON.parse(result)).toEqual(["lodash"]);
-    });
+      expect(JSON.parse(result)).toEqual(['lodash'])
+    })
 
-    it("falls back to _id when name is not present", async () => {
+    it('falls back to _id when name is not present', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ _id: "lodash@4.0.0" }, { _id: "express@5.0.0" }]),
-      });
+        stdout: JSON.stringify([
+          { _id: 'lodash@4.0.0' },
+          { _id: 'express@5.0.0' },
+        ]),
+      })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(JSON.parse(result)).toEqual(["lodash", "express"]);
-    });
+      expect(JSON.parse(result)).toEqual(['lodash', 'express'])
+    })
 
-    it("falls back to pkgid when name and _id are not present", async () => {
+    it('falls back to pkgid when name and _id are not present', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ pkgid: "lodash@4.0.0" }]),
-      });
+        stdout: JSON.stringify([{ pkgid: 'lodash@4.0.0' }]),
+      })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(JSON.parse(result)).toEqual(["lodash"]);
-    });
+      expect(JSON.parse(result)).toEqual(['lodash'])
+    })
 
-    it("returns empty string for empty stdout", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "" });
+    it('returns empty string for empty stdout', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: '' })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(result).toBe("");
-    });
+      expect(result).toBe('')
+    })
 
-    it("returns empty string for malformed JSON", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "not json" });
+    it('returns empty string for malformed JSON', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: 'not json' })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(result).toBe("");
-    });
+      expect(result).toBe('')
+    })
 
-    it("returns empty string for empty array", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "[]" });
+    it('returns empty string for empty array', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: '[]' })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(result).toBe("");
-    });
+      expect(result).toBe('')
+    })
 
-    it("returns empty string when spawn throws", async () => {
-      mockSpawn.mockRejectedValueOnce(new Error("npm query failed"));
+    it('returns empty string when spawn throws', async () => {
+      mockSpawn.mockRejectedValueOnce(new Error('npm query failed'))
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(result).toBe("");
-    });
-  });
+      expect(result).toBe('')
+    })
+  })
 
-  describe("lsPnpm", () => {
-    it("falls back to pnpm ls when npm query fails", async () => {
+  describe('lsPnpm', () => {
+    it('falls back to pnpm ls when npm query fails', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: "/path/to/lodash\n/path/to/express\n",
-      });
+        stdout: '/path/to/lodash\n/path/to/express\n',
+      })
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, "/usr/local/bin/pnpm"));
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
 
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/usr/local/bin/pnpm",
-        ["ls", "--parseable", "--prod", "--depth", "Infinity"],
+        '/usr/local/bin/pnpm',
+        ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
         expect.objectContaining({ cwd: expect.any(String) }),
-      );
+      )
       // parsableToQueryStdout extracts package names from paths.
-      expect(result).toBeTruthy();
-    });
+      expect(result).toBeTruthy()
+    })
 
-    it("uses npm query when npmExecPath is provided and succeeds", async () => {
+    it('uses npm query when npmExecPath is provided and succeeds', async () => {
       // First call for npm query succeeds.
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ name: "lodash" }]),
-      });
+        stdout: JSON.stringify([{ name: 'lodash' }]),
+      })
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, "/usr/local/bin/pnpm"), {
-        npmExecPath: "/usr/local/bin/npm",
-      });
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+        {
+          npmExecPath: '/usr/local/bin/npm',
+        },
+      )
 
-      expect(JSON.parse(result)).toEqual(["lodash"]);
-    });
+      expect(JSON.parse(result)).toEqual(['lodash'])
+    })
 
-    it("falls back to pnpm when npm query returns empty", async () => {
+    it('falls back to pnpm when npm query returns empty', async () => {
       // npm query returns empty.
-      mockSpawn.mockResolvedValueOnce({ stdout: "" });
+      mockSpawn.mockResolvedValueOnce({ stdout: '' })
       // pnpm ls.
       mockSpawn.mockResolvedValueOnce({
-        stdout: "/node_modules/lodash\n",
-      });
+        stdout: '/node_modules/lodash\n',
+      })
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, "/usr/local/bin/pnpm"), {
-        npmExecPath: "/usr/local/bin/npm",
-      });
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+        {
+          npmExecPath: '/usr/local/bin/npm',
+        },
+      )
 
-      expect(mockSpawn).toHaveBeenCalledTimes(2);
-    });
+      expect(mockSpawn).toHaveBeenCalledTimes(2)
+    })
 
-    it("returns empty string when spawn throws", async () => {
-      mockSpawn.mockRejectedValueOnce(new Error("pnpm ls failed"));
+    it('returns empty string when spawn throws', async () => {
+      mockSpawn.mockRejectedValueOnce(new Error('pnpm ls failed'))
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, "/usr/local/bin/pnpm"));
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
 
-      expect(result).toBe("");
-    });
-  });
+      expect(result).toBe('')
+    })
+  })
 
-  describe("lsVlt", () => {
-    it("returns cleaned up vlt ls output", async () => {
+  describe('lsVlt', () => {
+    it('returns cleaned up vlt ls output', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ name: "lodash" }, { name: "express" }]),
-      });
+        stdout: JSON.stringify([{ name: 'lodash' }, { name: 'express' }]),
+      })
 
-      const result = await lsVlt(createMockEnvDetails(VLT, "/usr/local/bin/vlt"));
+      const result = await lsVlt(
+        createMockEnvDetails(VLT, '/usr/local/bin/vlt'),
+      )
 
-      expect(JSON.parse(result)).toEqual(["lodash", "express"]);
+      expect(JSON.parse(result)).toEqual(['lodash', 'express'])
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/usr/local/bin/vlt",
-        ["ls", "--view", "human", ":not(.dev)"],
+        '/usr/local/bin/vlt',
+        ['ls', '--view', 'human', ':not(.dev)'],
         expect.objectContaining({ cwd: expect.any(String) }),
-      );
-    });
+      )
+    })
 
-    it("returns empty string when spawn throws", async () => {
-      mockSpawn.mockRejectedValueOnce(new Error("vlt ls failed"));
+    it('returns empty string when spawn throws', async () => {
+      mockSpawn.mockRejectedValueOnce(new Error('vlt ls failed'))
 
-      const result = await lsVlt(createMockEnvDetails(VLT, "/usr/local/bin/vlt"));
+      const result = await lsVlt(
+        createMockEnvDetails(VLT, '/usr/local/bin/vlt'),
+      )
 
-      expect(result).toBe("");
-    });
-  });
+      expect(result).toBe('')
+    })
+  })
 
-  describe("lsYarnBerry", () => {
-    it("returns stdout from yarn info", async () => {
+  describe('lsYarnBerry', () => {
+    it('returns stdout from yarn info', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: "lodash@4.0.0\nexpress@5.0.0",
-      });
+        stdout: 'lodash@4.0.0\nexpress@5.0.0',
+      })
 
-      const result = await lsYarnBerry(createMockEnvDetails(YARN_BERRY, "/usr/local/bin/yarn"));
+      const result = await lsYarnBerry(
+        createMockEnvDetails(YARN_BERRY, '/usr/local/bin/yarn'),
+      )
 
-      expect(result).toBe("lodash@4.0.0\nexpress@5.0.0");
+      expect(result).toBe('lodash@4.0.0\nexpress@5.0.0')
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/usr/local/bin/yarn",
-        ["info", "--recursive", "--name-only"],
+        '/usr/local/bin/yarn',
+        ['info', '--recursive', '--name-only'],
         expect.objectContaining({ cwd: expect.any(String) }),
-      );
-    });
+      )
+    })
 
-    it("returns empty string when spawn throws", async () => {
-      mockSpawn.mockRejectedValueOnce(new Error("yarn info failed"));
+    it('returns empty string when spawn throws', async () => {
+      mockSpawn.mockRejectedValueOnce(new Error('yarn info failed'))
 
-      const result = await lsYarnBerry(createMockEnvDetails(YARN_BERRY, "/usr/local/bin/yarn"));
+      const result = await lsYarnBerry(
+        createMockEnvDetails(YARN_BERRY, '/usr/local/bin/yarn'),
+      )
 
-      expect(result).toBe("");
-    });
-  });
+      expect(result).toBe('')
+    })
+  })
 
-  describe("lsYarnClassic", () => {
-    it("returns stdout from yarn list", async () => {
+  describe('lsYarnClassic', () => {
+    it('returns stdout from yarn list', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: "lodash@4.0.0\nexpress@5.0.0",
-      });
+        stdout: 'lodash@4.0.0\nexpress@5.0.0',
+      })
 
-      const result = await lsYarnClassic(createMockEnvDetails(YARN_CLASSIC, "/usr/local/bin/yarn"));
+      const result = await lsYarnClassic(
+        createMockEnvDetails(YARN_CLASSIC, '/usr/local/bin/yarn'),
+      )
 
-      expect(result).toBe("lodash@4.0.0\nexpress@5.0.0");
+      expect(result).toBe('lodash@4.0.0\nexpress@5.0.0')
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/usr/local/bin/yarn",
-        ["list", "--prod"],
+        '/usr/local/bin/yarn',
+        ['list', '--prod'],
         expect.objectContaining({ cwd: expect.any(String) }),
-      );
-    });
+      )
+    })
 
-    it("returns empty string when spawn throws", async () => {
-      mockSpawn.mockRejectedValueOnce(new Error("yarn list failed"));
+    it('returns empty string when spawn throws', async () => {
+      mockSpawn.mockRejectedValueOnce(new Error('yarn list failed'))
 
-      const result = await lsYarnClassic(createMockEnvDetails(YARN_CLASSIC, "/usr/local/bin/yarn"));
+      const result = await lsYarnClassic(
+        createMockEnvDetails(YARN_CLASSIC, '/usr/local/bin/yarn'),
+      )
 
-      expect(result).toBe("");
-    });
-  });
+      expect(result).toBe('')
+    })
+  })
 
-  describe("listPackages", () => {
-    it("delegates to lsBun for bun agent", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "bun-output" });
+  describe('listPackages', () => {
+    it('delegates to lsBun for bun agent', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: 'bun-output' })
 
-      const result = await listPackages(createMockEnvDetails(BUN, "/usr/local/bin/bun"));
+      const result = await listPackages(
+        createMockEnvDetails(BUN, '/usr/local/bin/bun'),
+      )
 
-      expect(result).toBe("bun-output");
-    });
+      expect(result).toBe('bun-output')
+    })
 
-    it("delegates to lsPnpm for pnpm agent", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "/path/to/pkg\n" });
+    it('delegates to lsPnpm for pnpm agent', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: '/path/to/pkg\n' })
 
-      const result = await listPackages(createMockEnvDetails(PNPM, "/usr/local/bin/pnpm"));
-
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "/usr/local/bin/pnpm",
-        expect.arrayContaining(["ls", "--parseable"]),
-        expect.any(Object),
-      );
-    });
-
-    it("delegates to lsVlt for vlt agent", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "[]" });
-
-      const result = await listPackages(createMockEnvDetails(VLT, "/usr/local/bin/vlt"));
+      const result = await listPackages(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
 
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/usr/local/bin/vlt",
-        expect.arrayContaining(["ls", "--view", "human"]),
+        '/usr/local/bin/pnpm',
+        expect.arrayContaining(['ls', '--parseable']),
         expect.any(Object),
-      );
-    });
+      )
+    })
 
-    it("delegates to lsYarnBerry for yarn berry agent", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "berry-output" });
+    it('delegates to lsVlt for vlt agent', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: '[]' })
 
-      const result = await listPackages(createMockEnvDetails(YARN_BERRY, "/usr/local/bin/yarn"));
-
-      expect(result).toBe("berry-output");
-    });
-
-    it("delegates to lsYarnClassic for yarn classic agent", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "classic-output" });
-
-      const result = await listPackages(createMockEnvDetails(YARN_CLASSIC, "/usr/local/bin/yarn"));
-
-      expect(result).toBe("classic-output");
-    });
-
-    it("defaults to lsNpm for npm agent", async () => {
-      mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ name: "lodash" }]),
-      });
-
-      const result = await listPackages(createMockEnvDetails(NPM, "/usr/local/bin/npm"));
+      const result = await listPackages(
+        createMockEnvDetails(VLT, '/usr/local/bin/vlt'),
+      )
 
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/usr/local/bin/npm",
-        ["query", ":not(.dev)"],
+        '/usr/local/bin/vlt',
+        expect.arrayContaining(['ls', '--view', 'human']),
         expect.any(Object),
-      );
-    });
+      )
+    })
 
-    it("defaults to lsNpm for unknown agent", async () => {
+    it('delegates to lsYarnBerry for yarn berry agent', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: 'berry-output' })
+
+      const result = await listPackages(
+        createMockEnvDetails(YARN_BERRY, '/usr/local/bin/yarn'),
+      )
+
+      expect(result).toBe('berry-output')
+    })
+
+    it('delegates to lsYarnClassic for yarn classic agent', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: 'classic-output' })
+
+      const result = await listPackages(
+        createMockEnvDetails(YARN_CLASSIC, '/usr/local/bin/yarn'),
+      )
+
+      expect(result).toBe('classic-output')
+    })
+
+    it('defaults to lsNpm for npm agent', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ name: "lodash" }]),
-      });
+        stdout: JSON.stringify([{ name: 'lodash' }]),
+      })
 
-      const result = await listPackages(createMockEnvDetails("unknown", "/usr/local/bin/npm"));
+      const result = await listPackages(
+        createMockEnvDetails(NPM, '/usr/local/bin/npm'),
+      )
 
       expect(mockSpawn).toHaveBeenCalledWith(
-        "/usr/local/bin/npm",
-        ["query", ":not(.dev)"],
+        '/usr/local/bin/npm',
+        ['query', ':not(.dev)'],
         expect.any(Object),
-      );
-    });
-  });
+      )
+    })
 
-  describe("cleanupQueryStdout edge cases", () => {
-    it("handles packages with scoped names correctly", async () => {
+    it('defaults to lsNpm for unknown agent', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ name: "@scope/package" }, { _id: "@scope/other@1.0.0" }]),
-      });
+        stdout: JSON.stringify([{ name: 'lodash' }]),
+      })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await listPackages(
+        createMockEnvDetails('unknown', '/usr/local/bin/npm'),
+      )
 
-      expect(JSON.parse(result)).toEqual(["@scope/package", "@scope/other"]);
-    });
+      expect(mockSpawn).toHaveBeenCalledWith(
+        '/usr/local/bin/npm',
+        ['query', ':not(.dev)'],
+        expect.any(Object),
+      )
+    })
+  })
 
-    it("handles packages without @ in _id", async () => {
+  describe('cleanupQueryStdout edge cases', () => {
+    it('handles packages with scoped names correctly', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ _id: "simple-package" }]),
-      });
+        stdout: JSON.stringify([
+          { name: '@scope/package' },
+          { _id: '@scope/other@1.0.0' },
+        ]),
+      })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(JSON.parse(result)).toEqual(["simple-package"]);
-    });
+      expect(JSON.parse(result)).toEqual(['@scope/package', '@scope/other'])
+    })
 
-    it("deduplicates package names", async () => {
+    it('handles packages without @ in _id', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify([{ name: "lodash" }, { name: "lodash" }, { name: "lodash" }]),
-      });
+        stdout: JSON.stringify([{ _id: 'simple-package' }]),
+      })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(JSON.parse(result)).toEqual(["lodash"]);
-    });
+      expect(JSON.parse(result)).toEqual(['simple-package'])
+    })
 
-    it("handles non-array JSON", async () => {
+    it('deduplicates package names', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: JSON.stringify({ name: "not-array" }),
-      });
+        stdout: JSON.stringify([
+          { name: 'lodash' },
+          { name: 'lodash' },
+          { name: 'lodash' },
+        ]),
+      })
 
-      const result = await lsNpm(createMockEnvDetails(NPM));
+      const result = await lsNpm(createMockEnvDetails(NPM))
 
-      expect(result).toBe("");
-    });
-  });
+      expect(JSON.parse(result)).toEqual(['lodash'])
+    })
 
-  describe("parsableToQueryStdout edge cases", () => {
-    it("handles empty parsable output", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "" });
-
-      const result = await lsPnpm(createMockEnvDetails(PNPM, "/usr/local/bin/pnpm"));
-
-      expect(result).toBe("");
-    });
-
-    it("handles Windows-style paths", async () => {
+    it('handles non-array JSON', async () => {
       mockSpawn.mockResolvedValueOnce({
-        stdout: "C:\\Users\\test\\node_modules\\lodash\n",
-      });
+        stdout: JSON.stringify({ name: 'not-array' }),
+      })
 
-      const result = await lsPnpm(createMockEnvDetails(PNPM, "/usr/local/bin/pnpm"));
+      const result = await lsNpm(createMockEnvDetails(NPM))
+
+      expect(result).toBe('')
+    })
+  })
+
+  describe('parsableToQueryStdout edge cases', () => {
+    it('handles empty parsable output', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: '' })
+
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
+
+      expect(result).toBe('')
+    })
+
+    it('handles Windows-style paths', async () => {
+      mockSpawn.mockResolvedValueOnce({
+        stdout: 'C:\\Users\\test\\node_modules\\lodash\n',
+      })
+
+      const result = await lsPnpm(
+        createMockEnvDetails(PNPM, '/usr/local/bin/pnpm'),
+      )
 
       // Should extract 'lodash' from the path.
-      expect(result).toBeTruthy();
-    });
-  });
+      expect(result).toBeTruthy()
+    })
+  })
 
-  describe("cwd option", () => {
-    it("uses provided cwd option", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "" });
+  describe('cwd option', () => {
+    it('uses provided cwd option', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: '' })
 
-      await lsNpm(createMockEnvDetails(NPM), { cwd: "/custom/path" });
+      await lsNpm(createMockEnvDetails(NPM), { cwd: '/custom/path' })
 
       expect(mockSpawn).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
-        expect.objectContaining({ cwd: "/custom/path" }),
-      );
-    });
+        expect.objectContaining({ cwd: '/custom/path' }),
+      )
+    })
 
-    it("defaults to process.cwd when cwd not provided", async () => {
-      mockSpawn.mockResolvedValueOnce({ stdout: "" });
+    it('defaults to process.cwd when cwd not provided', async () => {
+      mockSpawn.mockResolvedValueOnce({ stdout: '' })
 
-      await lsNpm(createMockEnvDetails(NPM));
+      await lsNpm(createMockEnvDetails(NPM))
 
       expect(mockSpawn).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
         expect.objectContaining({ cwd: process.cwd() }),
-      );
-    });
-  });
+      )
+    })
+  })
 
-  describe("cleanupQueryStdout", () => {
-    it("returns empty string for empty input", async () => {
+  describe('cleanupQueryStdout', () => {
+    it('returns empty string for empty input', async () => {
       const { cleanupQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
-      expect(cleanupQueryStdout("")).toBe("");
-    });
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
+      expect(cleanupQueryStdout('')).toBe('')
+    })
 
-    it("returns empty string for malformed JSON", async () => {
+    it('returns empty string for malformed JSON', async () => {
       const { cleanupQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
-      expect(cleanupQueryStdout("{not json")).toBe("");
-    });
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
+      expect(cleanupQueryStdout('{not json')).toBe('')
+    })
 
-    it("returns empty string for non-array result", async () => {
+    it('returns empty string for non-array result', async () => {
       const { cleanupQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
-      expect(cleanupQueryStdout("{}")).toBe("");
-    });
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
+      expect(cleanupQueryStdout('{}')).toBe('')
+    })
 
-    it("returns empty string for empty array", async () => {
+    it('returns empty string for empty array', async () => {
       const { cleanupQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
-      expect(cleanupQueryStdout("[]")).toBe("");
-    });
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
+      expect(cleanupQueryStdout('[]')).toBe('')
+    })
 
-    it("extracts unique names and skips @types/* packages", async () => {
+    it('extracts unique names and skips @types/* packages', async () => {
       const { cleanupQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = cleanupQueryStdout(
         JSON.stringify([
-          { name: "lodash", _id: "lodash@4.17.21" },
-          { name: "react", _id: "react@18.0.0" },
-          { name: "lodash", _id: "lodash@4.17.21" },
-          { name: "@types/node", _id: "@types/node@20.0.0" },
+          { name: 'lodash', _id: 'lodash@4.17.21' },
+          { name: 'react', _id: 'react@18.0.0' },
+          { name: 'lodash', _id: 'lodash@4.17.21' },
+          { name: '@types/node', _id: '@types/node@20.0.0' },
         ]),
-      );
-      expect(JSON.parse(result)).toEqual(["lodash", "react"]);
-    });
+      )
+      expect(JSON.parse(result)).toEqual(['lodash', 'react'])
+    })
 
-    it("falls back to _id when name is missing", async () => {
+    it('falls back to _id when name is missing', async () => {
       const { cleanupQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
-      const result = cleanupQueryStdout(JSON.stringify([{ _id: "fallback-pkg@1.0.0" }]));
-      expect(JSON.parse(result)).toEqual(["fallback-pkg"]);
-    });
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
+      const result = cleanupQueryStdout(
+        JSON.stringify([{ _id: 'fallback-pkg@1.0.0' }]),
+      )
+      expect(JSON.parse(result)).toEqual(['fallback-pkg'])
+    })
 
-    it("falls back to pkgid when both name + _id are missing", async () => {
+    it('falls back to pkgid when both name + _id are missing', async () => {
       const { cleanupQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
-      const result = cleanupQueryStdout(JSON.stringify([{ pkgid: "pkgid-pkg@2.0.0" }]));
-      expect(JSON.parse(result)).toEqual(["pkgid-pkg"]);
-    });
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
+      const result = cleanupQueryStdout(
+        JSON.stringify([{ pkgid: 'pkgid-pkg@2.0.0' }]),
+      )
+      expect(JSON.parse(result)).toEqual(['pkgid-pkg'])
+    })
 
-    it("skips entries with no resolvable name", async () => {
+    it('skips entries with no resolvable name', async () => {
       const { cleanupQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
-      const result = cleanupQueryStdout(JSON.stringify([{}, {}]));
-      expect(JSON.parse(result)).toEqual([]);
-    });
-  });
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
+      const result = cleanupQueryStdout(JSON.stringify([{}, {}]))
+      expect(JSON.parse(result)).toEqual([])
+    })
+  })
 
-  describe("parsableToQueryStdout", () => {
-    it("returns empty string for empty input", async () => {
+  describe('parsableToQueryStdout', () => {
+    it('returns empty string for empty input', async () => {
       const { parsableToQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
-      expect(parsableToQueryStdout("")).toBe("");
-    });
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
+      expect(parsableToQueryStdout('')).toBe('')
+    })
 
-    it("extracts trailing path segments before newlines", async () => {
+    it('extracts trailing path segments before newlines', async () => {
       const { parsableToQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = parsableToQueryStdout(
-        "/Users/x/proj/node_modules/lodash\n/Users/x/proj/node_modules/react\n",
-      );
-      expect(typeof result).toBe("string");
-    });
+        '/Users/x/proj/node_modules/lodash\n/Users/x/proj/node_modules/react\n',
+      )
+      expect(typeof result).toBe('string')
+    })
 
-    it("handles backslash paths (Windows-style)", async () => {
+    it('handles backslash paths (Windows-style)', async () => {
       const { parsableToQueryStdout } =
-        await import("../../../../src/commands/optimize/ls-by-agent.mts");
+        await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = parsableToQueryStdout(
-        "C:\\proj\\node_modules\\lodash\nC:\\proj\\node_modules\\react\n",
-      );
-      expect(typeof result).toBe("string");
-    });
-  });
-});
+        'C:\\proj\\node_modules\\lodash\nC:\\proj\\node_modules\\react\n',
+      )
+      expect(typeof result).toBe('string')
+    })
+  })
+})

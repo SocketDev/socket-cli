@@ -7,9 +7,9 @@
  * code expects.
  */
 
-import { confirm, select } from "@socketsecurity/lib-stable/stdio/prompts";
+import { confirm, select } from '@socketsecurity/lib-stable/stdio/prompts'
 
-import type { CResult } from "../../types.mts";
+import type { CResult } from '../../types.mts'
 
 /**
  * Confirm a bulk action ("are you sure you want to run this for N repos?").
@@ -23,11 +23,11 @@ export async function makeSure(count: number): Promise<CResult<undefined>> {
   ) {
     return {
       ok: false,
-      message: "User canceled",
-      cause: "Action canceled by user",
-    };
+      message: 'User canceled',
+      cause: 'Action canceled by user',
+    }
   }
-  return { ok: true, data: undefined };
+  return { ok: true, data: undefined }
 }
 
 /**
@@ -37,25 +37,25 @@ export async function makeSure(count: number): Promise<CResult<undefined>> {
  */
 export async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
   const proceed = await select({
-    message: "Please select the repo to process:",
+    message: 'Please select the repo to process:',
     choices: repos
-      .map((slug) => ({
+      .map(slug => ({
         name: slug,
         value: slug,
         description: `Create scan for the ${slug} repo through GitHub`,
       }))
       .concat({
-        name: "(Exit)",
-        value: "",
-        description: "Cancel this action and exit",
+        name: '(Exit)',
+        value: '',
+        description: 'Cancel this action and exit',
       }),
-  });
+  })
   if (!proceed) {
     return {
       ok: false,
-      message: "Canceled by user",
-      cause: "User chose to cancel the action",
-    };
+      message: 'Canceled by user',
+      cause: 'User chose to cancel the action',
+    }
   }
-  return { ok: true, data: [proceed] };
+  return { ok: true, data: [proceed] }
 }

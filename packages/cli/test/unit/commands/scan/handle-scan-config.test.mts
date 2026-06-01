@@ -14,95 +14,101 @@
  * Related Files: - src/commands/handleScanConfig.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
-import { handleScanConfig } from "../../../../src/commands/scan/handle-scan-config.mts";
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../helpers/mocks.mts'
+import { handleScanConfig } from '../../../../src/commands/scan/handle-scan-config.mts'
 
 // Mock the dependencies.
-const mockOutputScanConfigResult = vi.hoisted(() => vi.fn());
-const mockSetupScanConfig = vi.hoisted(() => vi.fn());
+const mockOutputScanConfigResult = vi.hoisted(() => vi.fn())
+const mockSetupScanConfig = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/scan/output-scan-config-result.mts"), () => ({
-  outputScanConfigResult: mockOutputScanConfigResult,
-}));
+vi.mock(
+  import('../../../../src/commands/scan/output-scan-config-result.mts'),
+  () => ({
+    outputScanConfigResult: mockOutputScanConfigResult,
+  }),
+)
 
-vi.mock(import("../../../../src/commands/scan/setup-scan-config.mts"), () => ({
+vi.mock(import('../../../../src/commands/scan/setup-scan-config.mts'), () => ({
   setupScanConfig: mockSetupScanConfig,
-}));
+}))
 
-describe("handleScanConfig", () => {
+describe('handleScanConfig', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("sets up scan config and outputs result", async () => {
-    "./output-scan-config-result.mts";
-    const mockSetup = mockSetupScanConfig;
-    const mockOutput = mockOutputScanConfigResult;
+  it('sets up scan config and outputs result', async () => {
+    './output-scan-config-result.mts'
+    const mockSetup = mockSetupScanConfig
+    const mockOutput = mockOutputScanConfigResult
 
     const mockResult = createSuccessResult({
       config: {
-        excludePatterns: ["node_modules/**", "dist/**"],
-        includePatterns: ["src/**"],
-        scanLevel: "high",
+        excludePatterns: ['node_modules/**', 'dist/**'],
+        includePatterns: ['src/**'],
+        scanLevel: 'high',
       },
-    });
-    mockSetup.mockResolvedValue(mockResult);
+    })
+    mockSetup.mockResolvedValue(mockResult)
 
-    await handleScanConfig("/project", false);
+    await handleScanConfig('/project', false)
 
-    expect(mockSetup).toHaveBeenCalledWith("/project", false);
-    expect(mockOutput).toHaveBeenCalledWith(mockResult);
-  });
+    expect(mockSetup).toHaveBeenCalledWith('/project', false)
+    expect(mockOutput).toHaveBeenCalledWith(mockResult)
+  })
 
-  it("uses defaultOnReadError when true", async () => {
-    "./output-scan-config-result.mts";
-    const mockSetup = mockSetupScanConfig;
-    const mockOutput = mockOutputScanConfigResult;
+  it('uses defaultOnReadError when true', async () => {
+    './output-scan-config-result.mts'
+    const mockSetup = mockSetupScanConfig
+    const mockOutput = mockOutputScanConfigResult
 
-    mockSetup.mockResolvedValue(createSuccessResult({}));
+    mockSetup.mockResolvedValue(createSuccessResult({}))
 
-    await handleScanConfig("/another/path", true);
+    await handleScanConfig('/another/path', true)
 
-    expect(mockSetup).toHaveBeenCalledWith("/another/path", true);
-    expect(mockOutput).toHaveBeenCalled();
-  });
+    expect(mockSetup).toHaveBeenCalledWith('/another/path', true)
+    expect(mockOutput).toHaveBeenCalled()
+  })
 
-  it("handles setup failure", async () => {
-    "./output-scan-config-result.mts";
-    const mockSetup = mockSetupScanConfig;
-    const mockOutput = mockOutputScanConfigResult;
+  it('handles setup failure', async () => {
+    './output-scan-config-result.mts'
+    const mockSetup = mockSetupScanConfig
+    const mockOutput = mockOutputScanConfigResult
 
-    const mockError = createErrorResult("Configuration file not found");
-    mockSetup.mockResolvedValue(mockError);
+    const mockError = createErrorResult('Configuration file not found')
+    mockSetup.mockResolvedValue(mockError)
 
-    await handleScanConfig("/nonexistent", false);
+    await handleScanConfig('/nonexistent', false)
 
-    expect(mockOutput).toHaveBeenCalledWith(mockError);
-  });
+    expect(mockOutput).toHaveBeenCalledWith(mockError)
+  })
 
-  it("uses default value for defaultOnReadError when not provided", async () => {
-    const mockSetup = mockSetupScanConfig;
+  it('uses default value for defaultOnReadError when not provided', async () => {
+    const mockSetup = mockSetupScanConfig
 
-    mockSetup.mockResolvedValue(createSuccessResult({}));
+    mockSetup.mockResolvedValue(createSuccessResult({}))
 
-    await handleScanConfig("/project");
+    await handleScanConfig('/project')
 
     // When not provided, function uses default value of false.
-    expect(mockSetup).toHaveBeenCalledWith("/project", false);
-  });
+    expect(mockSetup).toHaveBeenCalledWith('/project', false)
+  })
 
-  it("handles different working directories", async () => {
-    const mockSetup = mockSetupScanConfig;
+  it('handles different working directories', async () => {
+    const mockSetup = mockSetupScanConfig
 
-    const cwds = ["/root", "/home/user/project", "./relative/path", "."];
+    const cwds = ['/root', '/home/user/project', './relative/path', '.']
 
     for (let i = 0, { length } = cwds; i < length; i += 1) {
-      const cwd = cwds[i];
-      mockSetup.mockResolvedValue(createSuccessResult({}));
-      await handleScanConfig(cwd, false);
-      expect(mockSetup).toHaveBeenCalledWith(cwd, false);
+      const cwd = cwds[i]
+      mockSetup.mockResolvedValue(createSuccessResult({}))
+      await handleScanConfig(cwd, false)
+      expect(mockSetup).toHaveBeenCalledWith(cwd, false)
     }
-  });
-});
+  })
+})

@@ -1,44 +1,48 @@
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
-import { mdHeader, mdTableOfPairs } from "../../util/output/markdown.mts";
-import { serializeResultJson } from "../../util/output/result-json.mjs";
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader, mdTableOfPairs } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
-import type { CResult, OutputKind } from "../../types.mts";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
-const logger = getDefaultLogger();
+import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+const logger = getDefaultLogger()
 
 export async function outputSecurityPolicy(
-  result: CResult<SocketSdkSuccessResult<"getOrgSecurityPolicy">["data"]>,
+  result: CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>,
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1;
+    process.exitCode = result.code ?? 1
   }
 
-  if (outputKind === "json") {
-    logger.log(serializeResultJson(result));
-    return;
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
+    return
   }
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause));
-    return;
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
   }
 
-  logger.log(mdHeader("Security policy"));
-  logger.log("");
-  logger.log(`The default security policy setting is: "${result.data.securityPolicyDefault}"`);
-  logger.log("");
-  logger.log("These are the security policies per setting for your organization:");
-  logger.log("");
-  const rules = result.data.securityPolicyRules;
-  const entries: Array<[string, { action: "defer" | "error" | "warn" | "monitor" | "ignore" }]> =
-    rules ? Object.entries(rules) : [];
-  const mapped: Array<[string, string]> = entries.map(({ 0: key, 1: value }) => [
-    key,
-    value.action,
-  ]);
-  mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-  logger.log(mdTableOfPairs(mapped, ["name", "action"]));
-  logger.log("");
+  logger.log(mdHeader('Security policy'))
+  logger.log('')
+  logger.log(
+    `The default security policy setting is: "${result.data.securityPolicyDefault}"`,
+  )
+  logger.log('')
+  logger.log(
+    'These are the security policies per setting for your organization:',
+  )
+  logger.log('')
+  const rules = result.data.securityPolicyRules
+  const entries: Array<
+    [string, { action: 'defer' | 'error' | 'warn' | 'monitor' | 'ignore' }]
+  > = rules ? Object.entries(rules) : []
+  const mapped: Array<[string, string]> = entries.map(
+    ({ 0: key, 1: value }) => [key, value.action],
+  )
+  mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  logger.log(mdTableOfPairs(mapped, ['name', 'action']))
+  logger.log('')
 }

@@ -9,110 +9,115 @@
  * Related Files: - util/coana/extract-scan-id.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock dependencies.
-const mockReadJsonSync = vi.hoisted(() => vi.fn());
+const mockReadJsonSync = vi.hoisted(() => vi.fn())
 
-vi.mock(import("@socketsecurity/lib-stable/fs/read-json"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJsonSync: mockReadJsonSync,
-}));
+}))
 
-import { extractTier1ReachabilityScanId } from "../../../../src/util/coana/extract-scan-id.mts";
+import { extractTier1ReachabilityScanId } from '../../../../src/util/coana/extract-scan-id.mts'
 
-describe("extract-scan-id", () => {
+describe('extract-scan-id', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  describe("extractTier1ReachabilityScanId", () => {
-    it("extracts scan ID from valid JSON file", () => {
+  describe('extractTier1ReachabilityScanId', () => {
+    it('extracts scan ID from valid JSON file', () => {
       mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: "scan-123",
-      });
+        tier1ReachabilityScanId: 'scan-123',
+      })
 
-      const result = extractTier1ReachabilityScanId("/path/to/socket-facts.json");
+      const result = extractTier1ReachabilityScanId(
+        '/path/to/socket-facts.json',
+      )
 
-      expect(result).toBe("scan-123");
-      expect(mockReadJsonSync).toHaveBeenCalledWith("/path/to/socket-facts.json", {
-        throws: false,
-      });
-    });
+      expect(result).toBe('scan-123')
+      expect(mockReadJsonSync).toHaveBeenCalledWith(
+        '/path/to/socket-facts.json',
+        {
+          throws: false,
+        },
+      )
+    })
 
-    it("returns undefined for missing file", () => {
-      mockReadJsonSync.mockReturnValue(undefined);
+    it('returns undefined for missing file', () => {
+      mockReadJsonSync.mockReturnValue(undefined)
 
-      const result = extractTier1ReachabilityScanId("/path/to/missing.json");
+      const result = extractTier1ReachabilityScanId('/path/to/missing.json')
 
-      expect(result).toBeUndefined();
-    });
+      expect(result).toBeUndefined()
+    })
 
-    it("returns undefined for non-object JSON", () => {
-      mockReadJsonSync.mockReturnValue("not an object");
+    it('returns undefined for non-object JSON', () => {
+      mockReadJsonSync.mockReturnValue('not an object')
 
-      const result = extractTier1ReachabilityScanId("/path/to/file.json");
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
-      expect(result).toBeUndefined();
-    });
+      expect(result).toBeUndefined()
+    })
 
-    it("returns undefined when tier1ReachabilityScanId is missing", () => {
+    it('returns undefined when tier1ReachabilityScanId is missing', () => {
       mockReadJsonSync.mockReturnValue({
-        otherField: "value",
-      });
+        otherField: 'value',
+      })
 
-      const result = extractTier1ReachabilityScanId("/path/to/file.json");
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
-      expect(result).toBeUndefined();
-    });
+      expect(result).toBeUndefined()
+    })
 
-    it("returns undefined for null scan ID", () => {
+    it('returns undefined for null scan ID', () => {
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: undefined,
-      });
+      })
 
-      const result = extractTier1ReachabilityScanId("/path/to/file.json");
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
-      expect(result).toBeUndefined();
-    });
+      expect(result).toBeUndefined()
+    })
 
-    it("returns undefined for empty string scan ID", () => {
+    it('returns undefined for empty string scan ID', () => {
       mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: "",
-      });
+        tier1ReachabilityScanId: '',
+      })
 
-      const result = extractTier1ReachabilityScanId("/path/to/file.json");
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
-      expect(result).toBeUndefined();
-    });
+      expect(result).toBeUndefined()
+    })
 
-    it("returns undefined for whitespace-only scan ID", () => {
+    it('returns undefined for whitespace-only scan ID', () => {
       mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: "   ",
-      });
+        tier1ReachabilityScanId: '   ',
+      })
 
-      const result = extractTier1ReachabilityScanId("/path/to/file.json");
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
-      expect(result).toBeUndefined();
-    });
+      expect(result).toBeUndefined()
+    })
 
-    it("trims whitespace from scan ID", () => {
+    it('trims whitespace from scan ID', () => {
       mockReadJsonSync.mockReturnValue({
-        tier1ReachabilityScanId: "  scan-456  ",
-      });
+        tier1ReachabilityScanId: '  scan-456  ',
+      })
 
-      const result = extractTier1ReachabilityScanId("/path/to/file.json");
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
-      expect(result).toBe("scan-456");
-    });
+      expect(result).toBe('scan-456')
+    })
 
-    it("converts numeric scan ID to string", () => {
+    it('converts numeric scan ID to string', () => {
       mockReadJsonSync.mockReturnValue({
         tier1ReachabilityScanId: 12_345,
-      });
+      })
 
-      const result = extractTier1ReachabilityScanId("/path/to/file.json");
+      const result = extractTier1ReachabilityScanId('/path/to/file.json')
 
-      expect(result).toBe("12345");
-    });
-  });
-});
+      expect(result).toBe('12345')
+    })
+  })
+})

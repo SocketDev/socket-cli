@@ -352,7 +352,7 @@ All generated packages depend on:
 Templates reference base configurations from main CLI:
 
 ```javascript
-import baseConfig from "../../cli/.config/esbuild.cli.build.mjs";
+import baseConfig from '../../cli/.config/esbuild.cli.build.mjs'
 ```
 
 This ensures consistency across all distribution channels.

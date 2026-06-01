@@ -3,6 +3,6 @@
  * XDG Base Directory specification (Unix systems).
  */
 
-import { getXdgCacheHome } from "@socketsecurity/lib-stable/env/xdg";
+import { getXdgCacheHome } from '@socketsecurity/lib-stable/env/xdg'
 
-export const XDG_CACHE_HOME = getXdgCacheHome();
+export const XDG_CACHE_HOME = getXdgCacheHome()

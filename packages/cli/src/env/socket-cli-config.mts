@@ -2,6 +2,6 @@
  * @file SOCKET_CLI_CONFIG environment variable.
  */
 
-import { getSocketCliConfig } from "@socketsecurity/lib-stable/env/socket-cli";
+import { getSocketCliConfig } from '@socketsecurity/lib-stable/env/socket-cli'
 
-export const SOCKET_CLI_CONFIG = getSocketCliConfig();
+export const SOCKET_CLI_CONFIG = getSocketCliConfig()

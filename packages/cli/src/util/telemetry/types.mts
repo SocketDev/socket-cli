@@ -10,15 +10,15 @@ interface TelemetryEventError {
   /**
    * Error class/type name.
    */
-  type: string;
+  type: string
   /**
    * Error message.
    */
-  message: string | undefined;
+  message: string | undefined
   /**
    * Stack trace (sanitized).
    */
-  stack?: string | undefined;
+  stack?: string | undefined
 }
 
 /**
@@ -27,21 +27,21 @@ interface TelemetryEventError {
  * This represent how the cli was invoked and met.
  */
 export interface TelemetryContext {
-  version: string;
-  platform: string;
-  node_version: string;
-  arch: string;
-  argv: string[];
+  version: string
+  platform: string
+  node_version: string
+  arch: string
+  argv: string[]
 }
 
 /**
  * Telemetry event structure. All telemetry events must follow this schema.
  */
 export interface TelemetryEvent {
-  event_sender_created_at: string;
-  event_type: string;
-  context: TelemetryContext;
-  session_id?: string | undefined;
-  metadata?: Record<string, unknown> | undefined;
-  error?: TelemetryEventError | undefined;
+  event_sender_created_at: string
+  event_type: string
+  context: TelemetryContext
+  session_id?: string | undefined
+  metadata?: Record<string, unknown> | undefined
+  error?: TelemetryEventError | undefined
 }

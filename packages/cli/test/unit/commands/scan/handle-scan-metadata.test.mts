@@ -14,121 +14,139 @@
  * Related Files: - src/commands/handleScanMetadata.mts (implementation)
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest'
 
-import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
-import { handleOrgScanMetadata } from "../../../../src/commands/scan/handle-scan-metadata.mts";
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../helpers/mocks.mts'
+import { handleOrgScanMetadata } from '../../../../src/commands/scan/handle-scan-metadata.mts'
 
 // Mock the dependencies.
-const mockFetchScanMetadata = vi.hoisted(() => vi.fn());
-const mockOutputScanMetadata = vi.hoisted(() => vi.fn());
+const mockFetchScanMetadata = vi.hoisted(() => vi.fn())
+const mockOutputScanMetadata = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/scan/fetch-scan-metadata.mts"), () => ({
-  fetchScanMetadata: mockFetchScanMetadata,
-}));
+vi.mock(
+  import('../../../../src/commands/scan/fetch-scan-metadata.mts'),
+  () => ({
+    fetchScanMetadata: mockFetchScanMetadata,
+  }),
+)
 
-vi.mock(import("../../../../src/commands/scan/output-scan-metadata.mts"), () => ({
-  outputScanMetadata: mockOutputScanMetadata,
-}));
+vi.mock(
+  import('../../../../src/commands/scan/output-scan-metadata.mts'),
+  () => ({
+    outputScanMetadata: mockOutputScanMetadata,
+  }),
+)
 
-describe("handleOrgScanMetadata", () => {
-  it("fetches and outputs scan metadata successfully", async () => {
-    await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
-    await import("../../../../src/commands/scan/output-scan-metadata.mts");
-    const mockFetch = mockFetchScanMetadata;
-    const mockOutput = mockOutputScanMetadata;
+describe('handleOrgScanMetadata', () => {
+  it('fetches and outputs scan metadata successfully', async () => {
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
+    const mockFetch = mockFetchScanMetadata
+    const mockOutput = mockOutputScanMetadata
 
     const mockMetadata = createSuccessResult({
-      scanId: "scan-123",
-      createdAt: "2025-01-01T00:00:00Z",
-      updatedAt: "2025-01-01T01:00:00Z",
-      status: "completed",
-      packageManager: "npm",
-      repository: "test-repo",
-      branch: "main",
-      commit: "abc123def456",
-    });
-    mockFetch.mockResolvedValue(mockMetadata);
+      scanId: 'scan-123',
+      createdAt: '2025-01-01T00:00:00Z',
+      updatedAt: '2025-01-01T01:00:00Z',
+      status: 'completed',
+      packageManager: 'npm',
+      repository: 'test-repo',
+      branch: 'main',
+      commit: 'abc123def456',
+    })
+    mockFetch.mockResolvedValue(mockMetadata)
 
-    await handleOrgScanMetadata("test-org", "scan-123", "json");
+    await handleOrgScanMetadata('test-org', 'scan-123', 'json')
 
-    expect(mockFetch).toHaveBeenCalledWith("test-org", "scan-123", {
-      commandPath: "socket scan metadata",
-    });
-    expect(mockOutput).toHaveBeenCalledWith(mockMetadata, "scan-123", "json");
-  });
+    expect(mockFetch).toHaveBeenCalledWith('test-org', 'scan-123', {
+      commandPath: 'socket scan metadata',
+    })
+    expect(mockOutput).toHaveBeenCalledWith(mockMetadata, 'scan-123', 'json')
+  })
 
-  it("handles fetch failure", async () => {
-    await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
-    await import("../../../../src/commands/scan/output-scan-metadata.mts");
-    const mockFetch = mockFetchScanMetadata;
-    const mockOutput = mockOutputScanMetadata;
+  it('handles fetch failure', async () => {
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
+    const mockFetch = mockFetchScanMetadata
+    const mockOutput = mockOutputScanMetadata
 
-    const mockError = createErrorResult("Scan not found");
-    mockFetch.mockResolvedValue(mockError);
+    const mockError = createErrorResult('Scan not found')
+    mockFetch.mockResolvedValue(mockError)
 
-    await handleOrgScanMetadata("test-org", "invalid-scan", "text");
+    await handleOrgScanMetadata('test-org', 'invalid-scan', 'text')
 
-    expect(mockFetch).toHaveBeenCalledWith("test-org", "invalid-scan", {
-      commandPath: "socket scan metadata",
-    });
-    expect(mockOutput).toHaveBeenCalledWith(mockError, "invalid-scan", "text");
-  });
+    expect(mockFetch).toHaveBeenCalledWith('test-org', 'invalid-scan', {
+      commandPath: 'socket scan metadata',
+    })
+    expect(mockOutput).toHaveBeenCalledWith(mockError, 'invalid-scan', 'text')
+  })
 
-  it("handles markdown output format", async () => {
-    await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
-    await import("../../../../src/commands/scan/output-scan-metadata.mts");
-    const mockFetch = mockFetchScanMetadata;
-    const mockOutput = mockOutputScanMetadata;
+  it('handles markdown output format', async () => {
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
+    const mockFetch = mockFetchScanMetadata
+    const mockOutput = mockOutputScanMetadata
 
     mockFetch.mockResolvedValue(
       createSuccessResult({
-        scanId: "scan-456",
-        status: "in_progress",
+        scanId: 'scan-456',
+        status: 'in_progress',
       }),
-    );
+    )
 
-    await handleOrgScanMetadata("my-org", "scan-456", "markdown");
+    await handleOrgScanMetadata('my-org', 'scan-456', 'markdown')
 
-    expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), "scan-456", "markdown");
-  });
+    expect(mockOutput).toHaveBeenCalledWith(
+      expect.any(Object),
+      'scan-456',
+      'markdown',
+    )
+  })
 
-  it("handles different scan IDs", async () => {
-    await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
-    await import("../../../../src/commands/scan/output-scan-metadata.mts");
-    const mockFetch = mockFetchScanMetadata;
-    const mockOutput = mockOutputScanMetadata;
+  it('handles different scan IDs', async () => {
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
+    const mockFetch = mockFetchScanMetadata
+    const mockOutput = mockOutputScanMetadata
 
-    const scanIds = ["scan-abc123", "scan-def456", "scan-ghi789", "uuid-1234-5678-9012-3456"];
+    const scanIds = [
+      'scan-abc123',
+      'scan-def456',
+      'scan-ghi789',
+      'uuid-1234-5678-9012-3456',
+    ]
 
     for (let i = 0, { length } = scanIds; i < length; i += 1) {
-      const scanId = scanIds[i];
-      mockFetch.mockResolvedValue(createSuccessResult({}));
-      await handleOrgScanMetadata("test-org", scanId, "json");
-      expect(mockFetch).toHaveBeenCalledWith("test-org", scanId, {
-        commandPath: "socket scan metadata",
-      });
+      const scanId = scanIds[i]
+      mockFetch.mockResolvedValue(createSuccessResult({}))
+      await handleOrgScanMetadata('test-org', scanId, 'json')
+      expect(mockFetch).toHaveBeenCalledWith('test-org', scanId, {
+        commandPath: 'socket scan metadata',
+      })
     }
-  });
+  })
 
-  it("handles text output with detailed metadata", async () => {
-    await import("../../../../src/commands/scan/fetch-scan-metadata.mts");
-    await import("../../../../src/commands/scan/output-scan-metadata.mts");
-    const mockFetch = mockFetchScanMetadata;
-    const mockOutput = mockOutputScanMetadata;
+  it('handles text output with detailed metadata', async () => {
+    await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
+    await import('../../../../src/commands/scan/output-scan-metadata.mts')
+    const mockFetch = mockFetchScanMetadata
+    const mockOutput = mockOutputScanMetadata
 
     mockFetch.mockResolvedValue(
       createSuccessResult({
-        scanId: "scan-xyz",
-        createdAt: "2025-01-01T10:00:00Z",
-        status: "completed",
+        scanId: 'scan-xyz',
+        createdAt: '2025-01-01T10:00:00Z',
+        status: 'completed',
         packagesScanned: 150,
         vulnerabilitiesFound: 3,
-        duration: "45s",
+        duration: '45s',
       }),
-    );
+    )
 
-    await handleOrgScanMetadata("production-org", "scan-xyz", "text");
+    await handleOrgScanMetadata('production-org', 'scan-xyz', 'text')
 
     expect(mockOutput).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -137,8 +155,8 @@ describe("handleOrgScanMetadata", () => {
           packagesScanned: 150,
         }),
       }),
-      "scan-xyz",
-      "text",
-    );
-  });
-});
+      'scan-xyz',
+      'text',
+    )
+  })
+})

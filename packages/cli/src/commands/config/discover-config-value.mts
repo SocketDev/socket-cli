@@ -1,149 +1,160 @@
-import { isSupportedConfigKey } from "../../util/config.mts";
-import { getOrgSlugs } from "../../util/organization.mts";
-import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
-import { fetchOrganization } from "../organization/fetch-organization-list.mts";
+import { isSupportedConfigKey } from '../../util/config.mts'
+import { getOrgSlugs } from '../../util/organization.mts'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
-import type { CResult } from "../../types.mts";
+import type { CResult } from '../../types.mts'
 
-export async function discoverConfigValue(key: string): Promise<CResult<unknown>> {
+export async function discoverConfigValue(
+  key: string,
+): Promise<CResult<unknown>> {
   // This will have to be a specific implementation per key because certain
   // keys should request information from particular API endpoints while
   // others should simply return their default value, like endpoint URL.
 
-  if (key !== "test" && !isSupportedConfigKey(key)) {
+  if (key !== 'test' && !isSupportedConfigKey(key)) {
     return {
       ok: false,
-      message: "Auto discover failed",
-      cause: "Requested key is not a valid config key.",
-    };
+      message: 'Auto discover failed',
+      cause: 'Requested key is not a valid config key.',
+    }
   }
 
-  if (key === "apiBaseUrl") {
+  if (key === 'apiBaseUrl') {
     // Return the default value
     return {
       ok: false,
-      message: "Auto discover failed",
-      cause: "If you're unsure about the base endpoint URL then simply unset it.",
-    };
+      message: 'Auto discover failed',
+      cause:
+        "If you're unsure about the base endpoint URL then simply unset it.",
+    }
   }
 
-  if (key === "apiProxy") {
+  if (key === 'apiProxy') {
     // I don't think we can auto-discover this with any order of reliability..?
     return {
       ok: false,
-      message: "Auto discover failed",
-      cause: "When uncertain, unset this key. Otherwise ask your network administrator",
-    };
+      message: 'Auto discover failed',
+      cause:
+        'When uncertain, unset this key. Otherwise ask your network administrator',
+    }
   }
 
-  if (key === "apiToken") {
+  if (key === 'apiToken') {
     return {
       ok: false,
-      message: "Auto discover failed",
+      message: 'Auto discover failed',
       cause:
-        "You can find/create your API token in your Socket dashboard > settings > API tokens.\nYou should then use `socket login` to login instead of this command.",
-    };
+        'You can find/create your API token in your Socket dashboard > settings > API tokens.\nYou should then use `socket login` to login instead of this command.',
+    }
   }
 
-  if (key === "defaultOrg") {
-    const hasApiToken = hasDefaultApiToken();
+  if (key === 'defaultOrg') {
+    const hasApiToken = hasDefaultApiToken()
     if (!hasApiToken) {
       return {
         ok: false,
-        message: "Auto discover failed",
-        cause: "No API token set, must have a token to resolve its default org.",
-      };
+        message: 'Auto discover failed',
+        cause:
+          'No API token set, must have a token to resolve its default org.',
+      }
     }
 
-    const org = await getDefaultOrgFromToken();
+    const org = await getDefaultOrgFromToken()
     if (!org?.length) {
       return {
         ok: false,
-        message: "Auto discover failed",
-        cause: "Was unable to determine default org for the current API token.",
-      };
+        message: 'Auto discover failed',
+        cause: 'Was unable to determine default org for the current API token.',
+      }
     }
 
     if (Array.isArray(org)) {
       return {
         ok: true,
         data: org,
-        message: "These are the orgs that the current API token can access.",
-      };
+        message: 'These are the orgs that the current API token can access.',
+      }
     }
 
     return {
       ok: true,
       data: org,
-      message: "This is the org that belongs to the current API token.",
-    };
+      message: 'This is the org that belongs to the current API token.',
+    }
   }
 
-  if (key === "enforcedOrgs") {
-    const hasApiToken = hasDefaultApiToken();
+  if (key === 'enforcedOrgs') {
+    const hasApiToken = hasDefaultApiToken()
     if (!hasApiToken) {
       return {
         ok: false,
-        message: "Auto discover failed",
-        cause: "No API token set, must have a token to resolve orgs to enforce.",
-      };
+        message: 'Auto discover failed',
+        cause:
+          'No API token set, must have a token to resolve orgs to enforce.',
+      }
     }
 
-    const orgs = await getEnforceableOrgsFromToken();
+    const orgs = await getEnforceableOrgsFromToken()
     if (!orgs?.length) {
       return {
         ok: false,
-        message: "Auto discover failed",
-        cause: "Was unable to determine any orgs to enforce for the current API token.",
-      };
+        message: 'Auto discover failed',
+        cause:
+          'Was unable to determine any orgs to enforce for the current API token.',
+      }
     }
 
     return {
       ok: true,
       data: orgs,
-      message: "These are the orgs whose security policy you can enforce.",
-    };
+      message: 'These are the orgs whose security policy you can enforce.',
+    }
   }
 
-  if (key === "test") {
+  if (key === 'test') {
     return {
       ok: false,
-      message: "Auto discover failed",
-      cause: "congrats, you found the test key",
-    };
+      message: 'Auto discover failed',
+      cause: 'congrats, you found the test key',
+    }
   }
 
   // Mostly to please TS, because we're not telling it `key` is keyof LocalConfig
   return {
     ok: false,
-    message: "Auto discover failed",
-    cause: "unreachable?",
-  };
+    message: 'Auto discover failed',
+    cause: 'unreachable?',
+  }
 }
 
-export async function getDefaultOrgFromToken(): Promise<string[] | string | undefined> {
-  const orgsCResult = await fetchOrganization();
+export async function getDefaultOrgFromToken(): Promise<
+  string[] | string | undefined
+> {
+  const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
-    return undefined;
+    return undefined
   }
 
-  const { organizations } = orgsCResult.data;
+  const { organizations } = orgsCResult.data
   if (!organizations.length) {
-    return undefined;
+    return undefined
   }
-  const slugs = getOrgSlugs(organizations);
+  const slugs = getOrgSlugs(organizations)
   if (slugs.length === 1) {
-    return slugs[0];
+    return slugs[0]
   }
-  return slugs;
+  return slugs
 }
 
-export async function getEnforceableOrgsFromToken(): Promise<string[] | undefined> {
-  const orgsCResult = await fetchOrganization();
+export async function getEnforceableOrgsFromToken(): Promise<
+  string[] | undefined
+> {
+  const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
-    return undefined;
+    return undefined
   }
 
-  const { organizations } = orgsCResult.data;
-  return organizations.length ? getOrgSlugs(organizations) : undefined;
+  const { organizations } = orgsCResult.data
+  return organizations.length ? getOrgSlugs(organizations) : undefined
 }

@@ -14,10 +14,10 @@
  */
 export const ARCH_MAP = {
   __proto__: null,
-  arm64: "arm64",
-  ia32: "x86",
-  x64: "x64",
-};
+  arm64: 'arm64',
+  ia32: 'x86',
+  x64: 'x64',
+}
 
 /**
  * Platform mapping from Node.js identifiers to platform-specific names. Maps
@@ -25,7 +25,7 @@ export const ARCH_MAP = {
  */
 export const PLATFORM_MAP = {
   __proto__: null,
-  darwin: "darwin",
-  linux: "linux",
-  win32: "win",
-};
+  darwin: 'darwin',
+  linux: 'linux',
+  win32: 'win',
+}

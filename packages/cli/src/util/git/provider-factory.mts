@@ -1,9 +1,9 @@
-import { spawnSync } from "@socketsecurity/lib-stable/process/spawn/child";
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { GitHubProvider } from "./github-provider.mts";
-import { GitLabProvider } from "./gitlab-provider.mts";
+import { GitHubProvider } from './github-provider.mts'
+import { GitLabProvider } from './gitlab-provider.mts'
 
-import type { PrProvider } from "./provider.mts";
+import type { PrProvider } from './provider.mts'
 
 /**
  * Creates a PR provider instance based on the git remote URL.
@@ -12,19 +12,19 @@ import type { PrProvider } from "./provider.mts";
  * GitHub for backward compatibility.
  */
 export function createPrProvider(): PrProvider {
-  const remoteUrl = getGitRemoteUrlSync();
+  const remoteUrl = getGitRemoteUrlSync()
 
   // Check for GitLab.
   if (
-    remoteUrl.includes("gitlab.com") ||
-    process.env["GITLAB_HOST"] ||
-    remoteUrl.includes("gitlab")
+    remoteUrl.includes('gitlab.com') ||
+    process.env['GITLAB_HOST'] ||
+    remoteUrl.includes('gitlab')
   ) {
-    return new GitLabProvider();
+    return new GitLabProvider()
   }
 
   // Default to GitHub (backward compatibility).
-  return new GitHubProvider();
+  return new GitHubProvider()
 }
 
 /**
@@ -35,17 +35,17 @@ export function createPrProvider(): PrProvider {
  */
 export function getGitRemoteUrlSync(): string {
   try {
-    const result = spawnSync("git", ["config", "--get", "remote.origin.url"], {
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+    const result = spawnSync('git', ['config', '--get', 'remote.origin.url'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
 
     if (result.status === 0 && result.stdout) {
-      const remoteUrl = result.stdout;
-      return remoteUrl.trim().toLowerCase();
+      const remoteUrl = result.stdout
+      return remoteUrl.trim().toLowerCase()
     }
   } catch {
     // Ignore errors - will fall back to GitHub.
   }
 
-  return "";
+  return ''
 }

@@ -1,7 +1,7 @@
-import { fetchScanMetadata } from "./fetch-scan-metadata.mts";
-import { outputScanMetadata } from "./output-scan-metadata.mts";
+import { fetchScanMetadata } from './fetch-scan-metadata.mts'
+import { outputScanMetadata } from './output-scan-metadata.mts'
 
-import type { OutputKind } from "../../types.mts";
+import type { OutputKind } from '../../types.mts'
 
 export async function handleOrgScanMetadata(
   orgSlug: string,
@@ -9,8 +9,8 @@ export async function handleOrgScanMetadata(
   outputKind: OutputKind,
 ): Promise<void> {
   const data = await fetchScanMetadata(orgSlug, scanId, {
-    commandPath: "socket scan metadata",
-  });
+    commandPath: 'socket scan metadata',
+  })
 
-  await outputScanMetadata(data, scanId, outputKind);
+  await outputScanMetadata(data, scanId, outputKind)
 }

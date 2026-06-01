@@ -6,105 +6,109 @@
  * JS via node) and the `spawnDlx` fallback for the npm dlx route.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockSpawn = vi.hoisted(() => vi.fn());
-const mockSpawnDlx = vi.hoisted(() => vi.fn());
-const mockResolveCdxgen = vi.hoisted(() => vi.fn());
-const mockDetectExecutableType = vi.hoisted(() => vi.fn());
+const mockSpawn = vi.hoisted(() => vi.fn())
+const mockSpawnDlx = vi.hoisted(() => vi.fn())
+const mockResolveCdxgen = vi.hoisted(() => vi.fn())
+const mockDetectExecutableType = vi.hoisted(() => vi.fn())
 
-vi.mock(import("@socketsecurity/lib-stable/process/spawn/child"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/dlx/detect"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/dlx/detect'), () => ({
   detectExecutableType: mockDetectExecutableType,
-}));
+}))
 
-vi.mock(import("../../../../src/util/dlx/spawn.mts"), () => ({
+vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
   spawnDlx: mockSpawnDlx,
-}));
+}))
 
-vi.mock(import("../../../../src/util/dlx/resolve-binary.mts"), () => ({
+vi.mock(import('../../../../src/util/dlx/resolve-binary.mts'), () => ({
   resolveCdxgen: mockResolveCdxgen,
-}));
+}))
 
-import { spawnCdxgenDlx } from "../../../../src/util/dlx/spawn-cdxgen.mts";
+import { spawnCdxgenDlx } from '../../../../src/util/dlx/spawn-cdxgen.mts'
 
-describe("spawnCdxgenDlx", () => {
+describe('spawnCdxgenDlx', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("runs a local cdxgen binary when SOCKET_CLI_CDXGEN_LOCAL_PATH is set", async () => {
+  it('runs a local cdxgen binary when SOCKET_CLI_CDXGEN_LOCAL_PATH is set', async () => {
     mockResolveCdxgen.mockReturnValue({
-      type: "local",
-      path: "/local/cdxgen",
-    });
-    mockDetectExecutableType.mockReturnValue({ type: "binary" });
-    mockSpawn.mockReturnValue("p");
+      type: 'local',
+      path: '/local/cdxgen',
+    })
+    mockDetectExecutableType.mockReturnValue({ type: 'binary' })
+    mockSpawn.mockReturnValue('p')
 
-    const result = await spawnCdxgenDlx(["-r", "."], undefined, undefined);
+    const result = await spawnCdxgenDlx(['-r', '.'], undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      "/local/cdxgen",
-      ["-r", "."],
-      expect.objectContaining({ stdio: "inherit" }),
-    );
-    expect(result).toEqual({ spawnPromise: "p" });
-  });
+      '/local/cdxgen',
+      ['-r', '.'],
+      expect.objectContaining({ stdio: 'inherit' }),
+    )
+    expect(result).toEqual({ spawnPromise: 'p' })
+  })
 
-  it("runs the local cdxgen.js via node when not a binary", async () => {
+  it('runs the local cdxgen.js via node when not a binary', async () => {
     mockResolveCdxgen.mockReturnValue({
-      type: "local",
-      path: "/local/cdxgen.js",
-    });
-    mockDetectExecutableType.mockReturnValue({ type: "script" });
-    mockSpawn.mockReturnValue("p");
+      type: 'local',
+      path: '/local/cdxgen.js',
+    })
+    mockDetectExecutableType.mockReturnValue({ type: 'script' })
+    mockSpawn.mockReturnValue('p')
 
-    await spawnCdxgenDlx([], undefined, undefined);
+    await spawnCdxgenDlx([], undefined, undefined)
 
-    expect(mockSpawn).toHaveBeenCalledWith("node", ["/local/cdxgen.js"], expect.any(Object));
-  });
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'node',
+      ['/local/cdxgen.js'],
+      expect.any(Object),
+    )
+  })
 
   it('falls back to spawnDlx when resolution.type is "dlx"', async () => {
     mockResolveCdxgen.mockReturnValue({
-      type: "dlx",
-      details: { name: "@cyclonedx/cdxgen", version: "11.0.0" },
-    });
-    mockSpawnDlx.mockResolvedValue({ spawnPromise: "p" });
+      type: 'dlx',
+      details: { name: '@cyclonedx/cdxgen', version: '11.0.0' },
+    })
+    mockSpawnDlx.mockResolvedValue({ spawnPromise: 'p' })
 
-    const result = await spawnCdxgenDlx([], undefined, undefined);
+    const result = await spawnCdxgenDlx([], undefined, undefined)
 
-    expect(mockSpawnDlx).toHaveBeenCalled();
-    expect(result).toEqual({ spawnPromise: "p" });
-  });
+    expect(mockSpawnDlx).toHaveBeenCalled()
+    expect(result).toEqual({ spawnPromise: 'p' })
+  })
 
-  it("throws when resolveCdxgen returns an unexpected type", async () => {
+  it('throws when resolveCdxgen returns an unexpected type', async () => {
     mockResolveCdxgen.mockReturnValue({
-      type: "github-release",
+      type: 'github-release',
       details: {} as unknown,
-    });
+    })
 
     await expect(spawnCdxgenDlx([], undefined, undefined)).rejects.toThrow(
       /resolveCdxgen returned resolution\.type="github-release"/,
-    );
-  });
+    )
+  })
 
-  it("honors a custom stdio passed via spawnExtra", async () => {
+  it('honors a custom stdio passed via spawnExtra', async () => {
     mockResolveCdxgen.mockReturnValue({
-      type: "local",
-      path: "/local/cdxgen",
-    });
-    mockDetectExecutableType.mockReturnValue({ type: "binary" });
-    mockSpawn.mockReturnValue("p");
+      type: 'local',
+      path: '/local/cdxgen',
+    })
+    mockDetectExecutableType.mockReturnValue({ type: 'binary' })
+    mockSpawn.mockReturnValue('p')
 
-    await spawnCdxgenDlx([], undefined, { stdio: "pipe" } as unknown);
+    await spawnCdxgenDlx([], undefined, { stdio: 'pipe' } as unknown)
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      "/local/cdxgen",
+      '/local/cdxgen',
       [],
-      expect.objectContaining({ stdio: "pipe" }),
-    );
-  });
-});
+      expect.objectContaining({ stdio: 'pipe' }),
+    )
+  })
+})

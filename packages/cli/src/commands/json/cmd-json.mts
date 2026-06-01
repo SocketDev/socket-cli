@@ -1,15 +1,15 @@
-import path from "node:path";
+import path from 'node:path'
 
-import { handleCmdJson } from "./handle-cmd-json.mts";
-import { SOCKET_JSON } from "../../constants/socket.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
+import { handleCmdJson } from './handle-cmd-json.mts'
+import { SOCKET_JSON } from '../../constants/socket.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 const config = {
-  commandName: "json",
+  commandName: 'json',
   description: `Display the \`${SOCKET_JSON}\` that would be applied for target folder`,
   flags: defineFlags({
     ...commonFlags,
@@ -25,13 +25,13 @@ const config = {
       $ ${command}
   `,
   hidden: true,
-};
+}
 
 export const cmdJson = {
   description: config.description,
   hidden: config.hidden,
   run,
-};
+}
 
 export async function run(
   argv: string[] | readonly string[],
@@ -43,12 +43,12 @@ export async function run(
     config,
     parentName,
     importMeta,
-  });
+  })
 
-  let [cwd = "."] = cli.input;
+  let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd);
+  cwd = path.resolve(process.cwd(), cwd)
 
-  await handleCmdJson(cwd);
+  await handleCmdJson(cwd)
 }

@@ -3,64 +3,64 @@
  *   generation scripts in sequence. Usage: node scripts/generate-all.mts.
  */
 
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const logger = getDefaultLogger();
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const logger = getDefaultLogger()
 
 /**
  * Run a script and report results.
  */
 async function runScript(scriptName, description) {
-  logger.log("");
-  logger.log(`▶ ${description}...`);
-  logger.log("─".repeat(50));
+  logger.log('')
+  logger.log(`▶ ${description}...`)
+  logger.log('─'.repeat(50))
 
-  const result = await spawn("node", [path.join(__dirname, scriptName)], {
+  const result = await spawn('node', [path.join(__dirname, scriptName)], {
     cwd: path.dirname(__dirname),
-    stdio: "inherit",
-  });
+    stdio: 'inherit',
+  })
 
   if (result.code !== 0) {
     const error = new Error(
       `${scriptName} failed with exit code ${result.code}. Check output above for details.`,
-    );
+    )
     if (result.stderr) {
-      error.message += `\nStderr: ${result.stderr}`;
+      error.message += `\nStderr: ${result.stderr}`
     }
-    throw error;
+    throw error
   }
 
-  logger.success(`✓ ${description} complete`);
+  logger.success(`✓ ${description} complete`)
 }
 
 /**
  * Main generation logic.
  */
 async function main() {
-  logger.log("");
-  logger.log("═".repeat(50));
-  logger.log("Generating all packages from templates");
-  logger.log("═".repeat(50));
+  logger.log('')
+  logger.log('═'.repeat(50))
+  logger.log('Generating all packages from templates')
+  logger.log('═'.repeat(50))
 
   // Run all generation scripts in sequence.
-  await runScript("generate-cli-packages.mts", "CLI packages");
-  await runScript("generate-socketaddon-packages.mts", "Socketaddon packages");
-  await runScript("generate-socketbin-packages.mts", "Socketbin packages");
+  await runScript('generate-cli-packages.mts', 'CLI packages')
+  await runScript('generate-socketaddon-packages.mts', 'Socketaddon packages')
+  await runScript('generate-socketbin-packages.mts', 'Socketbin packages')
 
-  logger.log("");
-  logger.log("═".repeat(50));
-  logger.success("All packages generated successfully!");
-  logger.log("═".repeat(50));
-  logger.log("");
+  logger.log('')
+  logger.log('═'.repeat(50))
+  logger.success('All packages generated successfully!')
+  logger.log('═'.repeat(50))
+  logger.log('')
 }
 
-main().catch((e) => {
-  logger.log("");
-  logger.error("Package generation failed:", e.message);
-  process.exitCode = 1;
-});
+main().catch(e => {
+  logger.log('')
+  logger.error('Package generation failed:', e.message)
+  process.exitCode = 1
+})

@@ -14,151 +14,155 @@
  * - Util/cli/completion.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockExistsSync = vi.hoisted(() => vi.fn());
+const mockExistsSync = vi.hoisted(() => vi.fn())
 
-vi.mock(import("node:fs"), () => ({
+vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
   default: {
     existsSync: mockExistsSync,
   },
-}));
+}))
 
 // Mock getSocketAppDataPath.
-const mockGetSocketAppDataPath = vi.hoisted(() => vi.fn());
-vi.mock(import("../../../../src/constants/paths.mts"), async (importOriginal) => {
-  const actual = (await importOriginal()) as typeof PathsModule;
+const mockGetSocketAppDataPath = vi.hoisted(() => vi.fn())
+vi.mock(import('../../../../src/constants/paths.mts'), async importOriginal => {
+  const actual = (await importOriginal()) as typeof PathsModule
   return {
     ...actual,
     getSocketAppDataPath: mockGetSocketAppDataPath,
-  };
-});
+  }
+})
 
 import {
   COMPLETION_CMD_PREFIX,
   getBashrcDetails,
   getCompletionSourcingCommand,
-} from "../../../../src/util/cli/completion.mts";
+} from '../../../../src/util/cli/completion.mts'
 
-import type * as PathsModule from "../../../../src/constants/paths.mts";
+import type * as PathsModule from '../../../../src/constants/paths.mts'
 
-describe("cli/completion", () => {
+describe('cli/completion', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
   afterEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  describe("COMPLETION_CMD_PREFIX", () => {
-    it("has the correct prefix", () => {
-      expect(COMPLETION_CMD_PREFIX).toBe("complete -F _socket_completion");
-    });
-  });
+  describe('COMPLETION_CMD_PREFIX', () => {
+    it('has the correct prefix', () => {
+      expect(COMPLETION_CMD_PREFIX).toBe('complete -F _socket_completion')
+    })
+  })
 
-  describe("getCompletionSourcingCommand", () => {
-    it("returns error when completion script does not exist", () => {
-      mockExistsSync.mockReturnValue(false);
+  describe('getCompletionSourcingCommand', () => {
+    it('returns error when completion script does not exist', () => {
+      mockExistsSync.mockReturnValue(false)
 
-      const result = getCompletionSourcingCommand();
+      const result = getCompletionSourcingCommand()
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe("Tab Completion script not found");
-        expect(result.cause).toContain("Expected to find completion script");
+        expect(result.message).toBe('Tab Completion script not found')
+        expect(result.cause).toContain('Expected to find completion script')
       }
-    });
+    })
 
-    it("returns sourcing command when completion script exists", () => {
-      mockExistsSync.mockReturnValue(true);
+    it('returns sourcing command when completion script exists', () => {
+      mockExistsSync.mockReturnValue(true)
 
-      const result = getCompletionSourcingCommand();
+      const result = getCompletionSourcingCommand()
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data).toContain("source");
-        expect(result.data).toContain("socket-completion.bash");
+        expect(result.data).toContain('source')
+        expect(result.data).toContain('socket-completion.bash')
       }
-    });
+    })
 
-    it("uses forward slashes in sourcing command", () => {
-      mockExistsSync.mockReturnValue(true);
+    it('uses forward slashes in sourcing command', () => {
+      mockExistsSync.mockReturnValue(true)
 
-      const result = getCompletionSourcingCommand();
+      const result = getCompletionSourcingCommand()
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data).not.toContain("\\");
+        expect(result.data).not.toContain('\\')
       }
-    });
-  });
+    })
+  })
 
-  describe("getBashrcDetails", () => {
-    it("returns error when completion script does not exist", () => {
-      mockExistsSync.mockReturnValue(false);
+  describe('getBashrcDetails', () => {
+    it('returns error when completion script does not exist', () => {
+      mockExistsSync.mockReturnValue(false)
 
-      const result = getBashrcDetails("socket");
+      const result = getBashrcDetails('socket')
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe("Tab Completion script not found");
+        expect(result.message).toBe('Tab Completion script not found')
       }
-    });
+    })
 
-    it("returns error when config directory cannot be determined", () => {
-      mockExistsSync.mockReturnValue(true);
-      mockGetSocketAppDataPath.mockReturnValue(undefined);
+    it('returns error when config directory cannot be determined', () => {
+      mockExistsSync.mockReturnValue(true)
+      mockGetSocketAppDataPath.mockReturnValue(undefined)
 
-      const result = getBashrcDetails("socket");
+      const result = getBashrcDetails('socket')
 
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe("Could not determine config directory");
+        expect(result.message).toBe('Could not determine config directory')
       }
-    });
+    })
 
-    it("returns bashrc details when everything is available", () => {
-      mockExistsSync.mockReturnValue(true);
-      mockGetSocketAppDataPath.mockReturnValue("/home/user/.socket/config.json");
+    it('returns bashrc details when everything is available', () => {
+      mockExistsSync.mockReturnValue(true)
+      mockGetSocketAppDataPath.mockReturnValue('/home/user/.socket/config.json')
 
-      const result = getBashrcDetails("socket");
+      const result = getBashrcDetails('socket')
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data.targetName).toBe("socket");
-        expect(result.data.completionCommand).toBe(`${COMPLETION_CMD_PREFIX} socket`);
-        expect(result.data.toAddToBashrc).toContain("Socket CLI completion");
-        expect(result.data.toAddToBashrc).toContain("socket");
-        expect(result.data.sourcingCommand).toContain("source");
+        expect(result.data.targetName).toBe('socket')
+        expect(result.data.completionCommand).toBe(
+          `${COMPLETION_CMD_PREFIX} socket`,
+        )
+        expect(result.data.toAddToBashrc).toContain('Socket CLI completion')
+        expect(result.data.toAddToBashrc).toContain('socket')
+        expect(result.data.sourcingCommand).toContain('source')
       }
-    });
+    })
 
-    it("uses forward slashes in target path", () => {
-      mockExistsSync.mockReturnValue(true);
-      mockGetSocketAppDataPath.mockReturnValue("/home/user/.socket/config.json");
+    it('uses forward slashes in target path', () => {
+      mockExistsSync.mockReturnValue(true)
+      mockGetSocketAppDataPath.mockReturnValue('/home/user/.socket/config.json')
 
-      const result = getBashrcDetails("socket");
+      const result = getBashrcDetails('socket')
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data.targetPath).not.toContain("\\");
+        expect(result.data.targetPath).not.toContain('\\')
       }
-    });
+    })
 
-    it("handles custom command names", () => {
-      mockExistsSync.mockReturnValue(true);
-      mockGetSocketAppDataPath.mockReturnValue("/home/user/.socket/config.json");
+    it('handles custom command names', () => {
+      mockExistsSync.mockReturnValue(true)
+      mockGetSocketAppDataPath.mockReturnValue('/home/user/.socket/config.json')
 
-      const result = getBashrcDetails("socket-npm");
+      const result = getBashrcDetails('socket-npm')
 
-      expect(result.ok).toBe(true);
+      expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data.targetName).toBe("socket-npm");
-        expect(result.data.completionCommand).toBe(`${COMPLETION_CMD_PREFIX} socket-npm`);
-        expect(result.data.toAddToBashrc).toContain("socket-npm");
+        expect(result.data.targetName).toBe('socket-npm')
+        expect(result.data.completionCommand).toBe(
+          `${COMPLETION_CMD_PREFIX} socket-npm`,
+        )
+        expect(result.data.toAddToBashrc).toContain('socket-npm')
       }
-    });
-  });
-});
+    })
+  })
+})

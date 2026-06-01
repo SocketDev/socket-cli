@@ -1,61 +1,61 @@
-import { joinAnd } from "@socketsecurity/lib-stable/arrays/join";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { handleApiCall } from "../../util/socket/api.mjs";
-import { setupSdk } from "../../util/socket/sdk.mjs";
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
-import type { CResult } from "../../types.mts";
-import type { SetupSdkOptions } from "../../util/socket/sdk.mjs";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { CResult } from '../../types.mts'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type FetchPurlsShallowScoreOptions = {
-  commandPath?: string | undefined;
-  sdkOpts?: SetupSdkOptions | undefined;
-};
+  commandPath?: string | undefined
+  sdkOpts?: SetupSdkOptions | undefined
+}
 
 export async function fetchPurlsShallowScore(
   purls: string[],
   options?: FetchPurlsShallowScoreOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<"batchPackageFetch">>> {
+): Promise<CResult<SocketSdkSuccessResult<'batchPackageFetch'>>> {
   const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
-  } as FetchPurlsShallowScoreOptions;
+  } as FetchPurlsShallowScoreOptions
 
-  const sockSdkCResult = await setupSdk(sdkOpts);
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
-    return sockSdkCResult;
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkCResult.data;
+  const sockSdk = sockSdkCResult.data
 
   const displayPurls =
     purls.length > 3
-      ? `${purls.slice(0, 3).join(", ")} … and ${purls.length - 3} more`
-      : joinAnd(purls);
-  const logger = getDefaultLogger();
+      ? `${purls.slice(0, 3).join(', ')} … and ${purls.length - 3} more`
+      : joinAnd(purls)
+  const logger = getDefaultLogger()
   logger.info(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${displayPurls}`,
-  );
+  )
 
-  const batchPackageCResult = await handleApiCall<"batchPackageFetch">(
+  const batchPackageCResult = await handleApiCall<'batchPackageFetch'>(
     sockSdk.batchPackageFetch(
-      { components: purls.map((purl) => ({ purl })) },
+      { components: purls.map(purl => ({ purl })) },
       {
-        alerts: "true",
+        alerts: 'true',
       },
     ),
     {
       commandPath,
-      description: "looking up package",
+      description: 'looking up package',
     },
-  );
+  )
   if (!batchPackageCResult.ok) {
-    return batchPackageCResult;
+    return batchPackageCResult
   }
 
   // Type assertion needed due to SDK result type mismatch.
   return {
     ok: true,
-    data: batchPackageCResult.data as SocketSdkSuccessResult<"batchPackageFetch">,
-  };
+    data: batchPackageCResult.data as SocketSdkSuccessResult<'batchPackageFetch'>,
+  }
 }

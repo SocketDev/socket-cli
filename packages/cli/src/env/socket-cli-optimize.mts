@@ -3,6 +3,6 @@
  * optimization mode in Socket CLI.
  */
 
-import { getSocketCliOptimize } from "@socketsecurity/lib-stable/env/socket-cli";
+import { getSocketCliOptimize } from '@socketsecurity/lib-stable/env/socket-cli'
 
-export const SOCKET_CLI_OPTIMIZE = getSocketCliOptimize();
+export const SOCKET_CLI_OPTIMIZE = getSocketCliOptimize()

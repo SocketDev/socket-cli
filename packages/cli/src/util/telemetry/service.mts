@@ -38,40 +38,43 @@
  *   ```
  */
 
-import crypto from "node:crypto";
+import crypto from 'node:crypto'
 
-import { LRUCache } from "lru-cache";
+import { LRUCache } from 'lru-cache'
 
-import { debugDirNs, debugNs } from "@socketsecurity/lib-stable/debug/output";
+import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
 
-import { setupSdk } from "../socket/sdk.mts";
+import { setupSdk } from '../socket/sdk.mts'
 
-import type { TelemetryEvent } from "./types.mts";
-import type { InspectOptions } from "@socketsecurity/lib-stable/debug/types";
-import { errorMessage } from "@socketsecurity/lib-stable/errors";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { TelemetryEvent } from './types.mts'
+import type { InspectOptions } from '@socketsecurity/lib-stable/debug/types'
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
-type TelemetryConfig = SocketSdkSuccessResult<"getOrgTelemetryConfig">["data"];
+type TelemetryConfig = SocketSdkSuccessResult<'getOrgTelemetryConfig'>['data']
 
 /**
  * Debug wrapper for telemetry service. Wraps debugNs to provide a simpler API.
  */
 export function debug(message: string): void {
-  debugNs("socket:telemetry:service", message);
+  debugNs('socket:telemetry:service', message)
 }
 
 /**
  * DebugDir wrapper for telemetry service.
  */
-export function debugDirWrapper(obj: unknown, inspectOpts?: InspectOptions): void {
-  debugDirNs("socket:telemetry:service", obj, inspectOpts);
+export function debugDirWrapper(
+  obj: unknown,
+  inspectOpts?: InspectOptions,
+): void {
+  debugDirNs('socket:telemetry:service', obj, inspectOpts)
 }
 
 /**
  * Process-wide session ID. Generated once per CLI invocation and shared across
  * all telemetry instances.
  */
-const SESSION_ID = crypto.randomUUID();
+const SESSION_ID = crypto.randomUUID()
 
 /**
  * Default telemetry configuration. Used as fallback if API config fetch fails.
@@ -80,7 +83,7 @@ const DEFAULT_TELEMETRY_CONFIG = {
   telemetry: {
     enabled: false,
   },
-} as TelemetryConfig;
+} as TelemetryConfig
 
 /**
  * Static configuration for telemetry service behavior.
@@ -88,13 +91,13 @@ const DEFAULT_TELEMETRY_CONFIG = {
 const TELEMETRY_SERVICE_CONFIG = {
   batch_size: 10, // Auto-flush when queue reaches this size.
   flush_timeout: 2000, // 2 second maximum for flush operations.
-} as const;
+} as const
 
 /**
  * Singleton instance holder.
  */
 interface TelemetryServiceInstance {
-  current: TelemetryService | undefined;
+  current: TelemetryService | undefined
 }
 
 /**
@@ -103,7 +106,7 @@ interface TelemetryServiceInstance {
  */
 const telemetryServiceInstance: TelemetryServiceInstance = {
   current: undefined,
-};
+}
 
 /**
  * Inflight initialization tracker. Prevents duplicate initialization when
@@ -112,7 +115,7 @@ const telemetryServiceInstance: TelemetryServiceInstance = {
  */
 const inflightInit = new LRUCache<string, Promise<TelemetryService>>({
   max: 10,
-});
+})
 
 /**
  * Wrap a promise with a timeout. Rejects if promise doesn't resolve within
@@ -129,29 +132,29 @@ export function withTimeout<T>(
   timeoutMs: number,
   errorMessage: string,
 ): Promise<T> {
-  let timeoutId: NodeJS.Timeout | undefined;
+  let timeoutId: NodeJS.Timeout | undefined
   // oxlint-disable-next-line socket/no-promise-race -- finalizer race: the .finally() arm clears the timeout the moment the promise settles, so the losing Promise resolves to undefined and is GC'd. No handler-list leak.
   return Promise.race([
     promise.finally(() => {
       if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = undefined;
+        clearTimeout(timeoutId)
+        timeoutId = undefined
       }
     }),
     new Promise<T>((_, reject) => {
       timeoutId = setTimeout(() => {
         /* c8 ignore start - timeout branch; tests resolve promises before the timeout fires */
-        const id = timeoutId;
-        timeoutId = undefined;
+        const id = timeoutId
+        timeoutId = undefined
         // Explicitly clear the timeout even though it just fired.
         if (id) {
-          clearTimeout(id);
+          clearTimeout(id)
         }
-        reject(new Error(errorMessage));
+        reject(new Error(errorMessage))
         /* c8 ignore stop */
-      }, timeoutMs);
+      }, timeoutMs)
     }),
-  ]);
+  ])
 }
 
 /**
@@ -168,10 +171,10 @@ export function withTimeout<T>(
  * This is intended, since we can't switch an org during command execution.
  */
 export class TelemetryService {
-  private readonly orgSlug: string;
-  private config: TelemetryConfig | undefined = undefined;
-  private eventQueue: TelemetryEvent[] = [];
-  private isDestroyed = false;
+  private readonly orgSlug: string
+  private config: TelemetryConfig | undefined = undefined
+  private eventQueue: TelemetryEvent[] = []
+  private isDestroyed = false
 
   /**
    * Private constructor. Requires organization slug.
@@ -179,8 +182,10 @@ export class TelemetryService {
    * @param orgSlug - Organization identifier.
    */
   private constructor(orgSlug: string) {
-    this.orgSlug = orgSlug;
-    debug(`Telemetry service created for org '${orgSlug}' with session ID: ${SESSION_ID}`);
+    this.orgSlug = orgSlug
+    debug(
+      `Telemetry service created for org '${orgSlug}' with session ID: ${SESSION_ID}`,
+    )
   }
 
   /**
@@ -190,7 +195,7 @@ export class TelemetryService {
    * @returns Current telemetry instance or null if none exists.
    */
   static getCurrentInstance(): TelemetryService | undefined {
-    return telemetryServiceInstance.current;
+    return telemetryServiceInstance.current
   }
 
   /**
@@ -204,62 +209,66 @@ export class TelemetryService {
   static async getTelemetryClient(orgSlug: string): Promise<TelemetryService> {
     // Return existing instance if already initialized.
     if (telemetryServiceInstance.current) {
-      debug(`Telemetry already initialized for org: ${telemetryServiceInstance.current.orgSlug}`);
-      return telemetryServiceInstance.current;
+      debug(
+        `Telemetry already initialized for org: ${telemetryServiceInstance.current.orgSlug}`,
+      )
+      return telemetryServiceInstance.current
     }
 
     // Check if initialization is already in progress.
-    const inflight = inflightInit.get(orgSlug);
+    const inflight = inflightInit.get(orgSlug)
     if (inflight) {
-      debug(`Telemetry initialization already in progress for org: ${orgSlug}, waiting…`);
-      return inflight;
+      debug(
+        `Telemetry initialization already in progress for org: ${orgSlug}, waiting…`,
+      )
+      return inflight
     }
 
     // Start initialization and track it.
     const initPromise = (async () => {
       try {
-        const instance = new TelemetryService(orgSlug);
+        const instance = new TelemetryService(orgSlug)
 
         try {
-          const sdkResult = await setupSdk();
+          const sdkResult = await setupSdk()
           if (!sdkResult.ok) {
-            debug("Failed to setup SDK for telemetry, using default config");
-            instance.config = DEFAULT_TELEMETRY_CONFIG;
-            telemetryServiceInstance.current = instance;
-            return instance;
+            debug('Failed to setup SDK for telemetry, using default config')
+            instance.config = DEFAULT_TELEMETRY_CONFIG
+            telemetryServiceInstance.current = instance
+            return instance
           }
 
-          const sdk = sdkResult.data;
-          const configResult = await sdk.getOrgTelemetryConfig(orgSlug);
+          const sdk = sdkResult.data
+          const configResult = await sdk.getOrgTelemetryConfig(orgSlug)
 
           if (configResult.success) {
-            instance.config = configResult.data;
+            instance.config = configResult.data
             debug(
               `Telemetry configuration fetched successfully: enabled=${instance.config.telemetry.enabled}`,
-            );
-            debugDirWrapper({ config: instance.config });
+            )
+            debugDirWrapper({ config: instance.config })
 
             // Periodic flush will start automatically when first event is tracked.
           } else {
-            debug(`Failed to fetch telemetry config: ${configResult.error}`);
-            instance.config = DEFAULT_TELEMETRY_CONFIG;
+            debug(`Failed to fetch telemetry config: ${configResult.error}`)
+            instance.config = DEFAULT_TELEMETRY_CONFIG
           }
         } catch (e) {
-          debug(`Error initializing telemetry: ${e}`);
-          instance.config = DEFAULT_TELEMETRY_CONFIG;
+          debug(`Error initializing telemetry: ${e}`)
+          instance.config = DEFAULT_TELEMETRY_CONFIG
         }
 
         // Only set singleton instance after full initialization.
-        telemetryServiceInstance.current = instance;
-        return instance;
+        telemetryServiceInstance.current = instance
+        return instance
       } finally {
         // Clean up inflight tracking.
-        inflightInit.delete(orgSlug);
+        inflightInit.delete(orgSlug)
       }
-    })();
+    })()
 
-    inflightInit.set(orgSlug, initPromise);
-    return initPromise;
+    inflightInit.set(orgSlug, initPromise)
+    return initPromise
   }
 
   /**
@@ -269,35 +278,35 @@ export class TelemetryService {
    * @param event - Telemetry event to track (session_id is optional and will be
    *   auto-set).
    */
-  track(event: Omit<TelemetryEvent, "session_id">): void {
-    debug("Incoming track event request");
+  track(event: Omit<TelemetryEvent, 'session_id'>): void {
+    debug('Incoming track event request')
 
     if (this.isDestroyed) {
-      debug("Telemetry service destroyed, ignoring event");
-      return;
+      debug('Telemetry service destroyed, ignoring event')
+      return
     }
 
     if (!this.config?.telemetry.enabled) {
-      debug(`Telemetry disabled, skipping event: ${event.event_type}`);
-      return;
+      debug(`Telemetry disabled, skipping event: ${event.event_type}`)
+      return
     }
 
     // Create complete event with session_id and org_slug.
     const completeEvent: TelemetryEvent = {
       ...event,
       session_id: SESSION_ID,
-    };
+    }
 
-    debug(`Tracking telemetry event: ${completeEvent.event_type}`);
-    debugDirWrapper(completeEvent);
+    debug(`Tracking telemetry event: ${completeEvent.event_type}`)
+    debugDirWrapper(completeEvent)
 
-    this.eventQueue.push(completeEvent);
+    this.eventQueue.push(completeEvent)
 
     // Auto-flush if batch size reached.
-    const batchSize = TELEMETRY_SERVICE_CONFIG.batch_size;
+    const batchSize = TELEMETRY_SERVICE_CONFIG.batch_size
     if (this.eventQueue.length >= batchSize) {
-      debug(`Batch size reached (${batchSize}), flushing events`);
-      void this.flush();
+      debug(`Batch size reached (${batchSize}), flushing events`)
+      void this.flush()
     }
   }
 
@@ -308,49 +317,54 @@ export class TelemetryService {
    */
   async flush(): Promise<void> {
     if (this.isDestroyed) {
-      debug("Telemetry service destroyed, cannot flush");
-      return;
+      debug('Telemetry service destroyed, cannot flush')
+      return
     }
 
     if (!this.eventQueue.length) {
-      return;
+      return
     }
 
     if (!this.config?.telemetry.enabled) {
-      debug("Telemetry disabled, clearing queue without sending");
-      this.eventQueue = [];
-      return;
+      debug('Telemetry disabled, clearing queue without sending')
+      this.eventQueue = []
+      return
     }
 
-    const eventsToSend = [...this.eventQueue];
-    this.eventQueue = [];
+    const eventsToSend = [...this.eventQueue]
+    this.eventQueue = []
 
-    debug(`Flushing ${eventsToSend.length} telemetry events`);
+    debug(`Flushing ${eventsToSend.length} telemetry events`)
 
-    const flushStartTime = Date.now();
+    const flushStartTime = Date.now()
 
     try {
       await withTimeout(
         this.sendEvents(eventsToSend),
         TELEMETRY_SERVICE_CONFIG.flush_timeout,
         `Telemetry flush timed out after ${TELEMETRY_SERVICE_CONFIG.flush_timeout}ms`,
-      );
+      )
 
-      const flushDuration = Date.now() - flushStartTime;
+      const flushDuration = Date.now() - flushStartTime
       debug(
         `Telemetry events sent successfully (${eventsToSend.length} events in ${flushDuration}ms)`,
-      );
+      )
     } catch (e) {
-      const flushDuration = Date.now() - flushStartTime;
-      const errMsg = errorMessage(e);
+      const flushDuration = Date.now() - flushStartTime
+      const errMsg = errorMessage(e)
 
       // Check if this is a timeout error.
-      if (errMsg.includes("timed out") || flushDuration >= TELEMETRY_SERVICE_CONFIG.flush_timeout) {
-        debug(`Telemetry flush timed out after ${TELEMETRY_SERVICE_CONFIG.flush_timeout}ms`);
-        debug(`Failed to send ${eventsToSend.length} events due to timeout`);
+      if (
+        errMsg.includes('timed out') ||
+        flushDuration >= TELEMETRY_SERVICE_CONFIG.flush_timeout
+      ) {
+        debug(
+          `Telemetry flush timed out after ${TELEMETRY_SERVICE_CONFIG.flush_timeout}ms`,
+        )
+        debug(`Failed to send ${eventsToSend.length} events due to timeout`)
       } else {
-        debug(`Error flushing telemetry: ${errMsg}`);
-        debug(`Failed to send ${eventsToSend.length} events due to error`);
+        debug(`Error flushing telemetry: ${errMsg}`)
+        debug(`Failed to send ${eventsToSend.length} events due to error`)
       }
       // Events are discarded on error to prevent infinite growth.
     }
@@ -362,53 +376,53 @@ export class TelemetryService {
    * @param events Events to send.
    */
   private async sendEvents(events: TelemetryEvent[]): Promise<void> {
-    const sdkResult = await setupSdk();
+    const sdkResult = await setupSdk()
     if (!sdkResult.ok) {
-      debug("Failed to setup SDK for flush, events discarded");
-      return;
+      debug('Failed to setup SDK for flush, events discarded')
+      return
     }
 
-    const sdk = sdkResult.data;
+    const sdk = sdkResult.data
 
     // Track flush statistics.
-    let successCount = 0;
-    let failureCount = 0;
+    let successCount = 0
+    let failureCount = 0
 
     // Send events in parallel for faster flush.
     // Use allSettled to ensure all sends are attempted even if some fail.
     const results = await Promise.allSettled(
-      events.map(async (event) => {
+      events.map(async event => {
         const result = await sdk.postOrgTelemetry(
           this.orgSlug,
           event as unknown as Record<string, unknown>,
-        );
-        return { event, result };
+        )
+        return { event, result }
       }),
-    );
+    )
 
     // Log results and collect statistics.
     for (let i = 0, { length } = results; i < length; i += 1) {
-      const settledResult = results[i]!;
-      if (settledResult.status === "fulfilled") {
-        const { event, result } = settledResult.value;
+      const settledResult = results[i]!
+      if (settledResult.status === 'fulfilled') {
+        const { event, result } = settledResult.value
         if (result.success) {
-          successCount++;
-          debug("Telemetry sent to telemetry:");
-          debugDirWrapper(event);
+          successCount++
+          debug('Telemetry sent to telemetry:')
+          debugDirWrapper(event)
         } else {
-          failureCount++;
-          debug(`Failed to send telemetry event: ${result.error}`);
+          failureCount++
+          debug(`Failed to send telemetry event: ${result.error}`)
         }
       } else {
-        failureCount++;
-        debug(`Telemetry request failed: ${settledResult.reason}`);
+        failureCount++
+        debug(`Telemetry request failed: ${settledResult.reason}`)
       }
     }
 
     // Log flush statistics.
     debug(
       `Flush stats: ${successCount} succeeded, ${failureCount} failed out of ${events.length} total`,
-    );
+    )
   }
 
   /**
@@ -417,56 +431,60 @@ export class TelemetryService {
    */
   async destroy(): Promise<void> {
     if (this.isDestroyed) {
-      debug("Telemetry service already destroyed, skipping");
-      return;
+      debug('Telemetry service already destroyed, skipping')
+      return
     }
 
-    debug(`Destroying telemetry service for org: ${this.orgSlug}`);
+    debug(`Destroying telemetry service for org: ${this.orgSlug}`)
 
     // Mark as destroyed immediately to prevent concurrent destroy() calls.
-    this.isDestroyed = true;
+    this.isDestroyed = true
 
     // Flush remaining events with timeout.
-    const eventsToFlush = [...this.eventQueue];
-    this.eventQueue = [];
+    const eventsToFlush = [...this.eventQueue]
+    this.eventQueue = []
 
     if (eventsToFlush.length > 0 && this.config?.telemetry.enabled) {
-      debug(`Flushing ${eventsToFlush.length} events before destroy`);
-      const flushStartTime = Date.now();
+      debug(`Flushing ${eventsToFlush.length} events before destroy`)
+      const flushStartTime = Date.now()
 
       try {
         await withTimeout(
           this.sendEvents(eventsToFlush),
           TELEMETRY_SERVICE_CONFIG.flush_timeout,
           `Telemetry flush during destroy timed out after ${TELEMETRY_SERVICE_CONFIG.flush_timeout}ms`,
-        );
-        const flushDuration = Date.now() - flushStartTime;
-        debug(`Events flushed successfully during destroy (${flushDuration}ms)`);
+        )
+        const flushDuration = Date.now() - flushStartTime
+        debug(`Events flushed successfully during destroy (${flushDuration}ms)`)
       } catch (e) {
-        const flushDuration = Date.now() - flushStartTime;
-        const errMsg = errorMessage(e);
+        const flushDuration = Date.now() - flushStartTime
+        const errMsg = errorMessage(e)
 
         // Check if this is a timeout error.
         if (
-          errMsg.includes("timed out") ||
+          errMsg.includes('timed out') ||
           flushDuration >= TELEMETRY_SERVICE_CONFIG.flush_timeout
         ) {
           debug(
             `Telemetry flush during destroy timed out after ${TELEMETRY_SERVICE_CONFIG.flush_timeout}ms`,
-          );
-          debug(`Failed to send ${eventsToFlush.length} events during destroy due to timeout`);
+          )
+          debug(
+            `Failed to send ${eventsToFlush.length} events during destroy due to timeout`,
+          )
         } else {
-          debug(`Error flushing telemetry during destroy: ${errMsg}`);
-          debug(`Failed to send ${eventsToFlush.length} events during destroy due to error`);
+          debug(`Error flushing telemetry during destroy: ${errMsg}`)
+          debug(
+            `Failed to send ${eventsToFlush.length} events during destroy due to error`,
+          )
         }
       }
     }
 
-    this.config = undefined;
+    this.config = undefined
 
     // Clear singleton instance.
-    telemetryServiceInstance.current = undefined;
+    telemetryServiceInstance.current = undefined
 
-    debug(`Telemetry service destroyed for org: ${this.orgSlug}`);
+    debug(`Telemetry service destroyed for org: ${this.orgSlug}`)
   }
 }

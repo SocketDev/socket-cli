@@ -23,9 +23,9 @@
  * src/commands/fix/pull-request.mts - PR creation using tracker data.
  */
 
-import path from "node:path";
+import path from 'node:path'
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   isGhsaFixed,
@@ -33,24 +33,24 @@ import {
   loadGhsaTracker,
   markGhsaFixed,
   saveGhsaTracker,
-} from "../../../../src/commands/fix/ghsa-tracker.mts";
+} from '../../../../src/commands/fix/ghsa-tracker.mts'
 
-import type { GhsaTracker } from "../../../../src/commands/fix/ghsa-tracker.mts";
+import type { GhsaTracker } from '../../../../src/commands/fix/ghsa-tracker.mts'
 
-import type * as FsModule from "node:fs";
+import type * as FsModule from 'node:fs'
 
 // Mock file system operations.
-const mockReadJson = vi.hoisted(() => vi.fn());
-const mockSafeDelete = vi.hoisted(() => vi.fn());
-const mockSafeMkdir = vi.hoisted(() => vi.fn());
-const mockWriteJson = vi.hoisted(() => vi.fn());
+const mockReadJson = vi.hoisted(() => vi.fn())
+const mockSafeDelete = vi.hoisted(() => vi.fn())
+const mockSafeMkdir = vi.hoisted(() => vi.fn())
+const mockWriteJson = vi.hoisted(() => vi.fn())
 
 // Mock fs promises.
-const mockFsWriteFile = vi.hoisted(() => vi.fn());
-const mockFsReadFile = vi.hoisted(() => vi.fn());
+const mockFsWriteFile = vi.hoisted(() => vi.fn())
+const mockFsReadFile = vi.hoisted(() => vi.fn())
 
-vi.mock(import("node:fs"), async () => {
-  const actual = await vi.importActual<typeof FsModule>("node:fs");
+vi.mock(import('node:fs'), async () => {
+  const actual = await vi.importActual<typeof FsModule>('node:fs')
   return {
     ...actual,
     promises: {
@@ -59,156 +59,159 @@ vi.mock(import("node:fs"), async () => {
       readFile: mockFsReadFile,
       writeFile: mockFsWriteFile,
     },
-  };
-});
+  }
+})
 
-vi.mock(import("@socketsecurity/lib-stable/fs/read-json"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJson: mockReadJson,
-}));
-vi.mock(import("@socketsecurity/lib-stable/fs/safe"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeDelete: mockSafeDelete,
   safeMkdir: mockSafeMkdir,
-}));
-vi.mock(import("@socketsecurity/lib-stable/fs/write-json"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/fs/write-json'), () => ({
   writeJson: mockWriteJson,
-}));
+}))
 
-describe("ghsa-tracker", () => {
-  describe("isPidAlive", () => {
-    it("returns true for the current process", () => {
+describe('ghsa-tracker', () => {
+  describe('isPidAlive', () => {
+    it('returns true for the current process', () => {
       // process.kill(self, 0) is a no-op that succeeds when the process exists.
-      expect(isPidAlive(process.pid)).toBe(true);
-    });
+      expect(isPidAlive(process.pid)).toBe(true)
+    })
 
-    it("returns false for a PID that does not exist", () => {
+    it('returns false for a PID that does not exist', () => {
       // PID 0 / very large PID throws ESRCH (no such process).
-      expect(isPidAlive(2 ** 22)).toBe(false);
-    });
+      expect(isPidAlive(2 ** 22)).toBe(false)
+    })
 
-    it("returns true when process.kill throws EPERM (alive but no permission)", () => {
-      const original = process.kill;
-      (process as unknown).kill = () => {
-        const e = new Error("Operation not permitted") as NodeJS.ErrnoException;
-        e.code = "EPERM";
-        throw e;
-      };
-      try {
-        expect(isPidAlive(1)).toBe(true);
-      } finally {
-        (process as unknown).kill = original;
+    it('returns true when process.kill throws EPERM (alive but no permission)', () => {
+      const original = process.kill
+      ;(process as unknown).kill = () => {
+        const e = new Error('Operation not permitted') as NodeJS.ErrnoException
+        e.code = 'EPERM'
+        throw e
       }
-    });
-
-    it("returns false when process.kill throws non-EPERM (e.g. EINVAL)", () => {
-      const original = process.kill;
-      (process as unknown).kill = () => {
-        const e = new Error("Invalid") as NodeJS.ErrnoException;
-        e.code = "EINVAL";
-        throw e;
-      };
       try {
-        expect(isPidAlive(1)).toBe(false);
+        expect(isPidAlive(1)).toBe(true)
       } finally {
-        (process as unknown).kill = original;
+        ;(process as unknown).kill = original
       }
-    });
-  });
+    })
 
-  const mockCwd = "/test/repo";
-  const trackerPath = path.join(mockCwd, ".socket/fixed-ghsas.json");
+    it('returns false when process.kill throws non-EPERM (e.g. EINVAL)', () => {
+      const original = process.kill
+      ;(process as unknown).kill = () => {
+        const e = new Error('Invalid') as NodeJS.ErrnoException
+        e.code = 'EINVAL'
+        throw e
+      }
+      try {
+        expect(isPidAlive(1)).toBe(false)
+      } finally {
+        ;(process as unknown).kill = original
+      }
+    })
+  })
+
+  const mockCwd = '/test/repo'
+  const trackerPath = path.join(mockCwd, '.socket/fixed-ghsas.json')
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks()
     // Default: lock file creation succeeds.
-    mockFsWriteFile.mockResolvedValue(undefined);
-    mockFsReadFile.mockResolvedValue("12345");
-    mockSafeDelete.mockResolvedValue(undefined);
-  });
+    mockFsWriteFile.mockResolvedValue(undefined)
+    mockFsReadFile.mockResolvedValue('12345')
+    mockSafeDelete.mockResolvedValue(undefined)
+  })
 
-  describe("loadGhsaTracker", () => {
-    it("loads existing tracker file", async () => {
-      const { readJson } = await import("@socketsecurity/lib-stable/fs/read-json");
+  describe('loadGhsaTracker', () => {
+    it('loads existing tracker file', async () => {
+      const { readJson } =
+        await import('@socketsecurity/lib-stable/fs/read-json')
       const mockTracker: GhsaTracker = {
         version: 1,
         fixed: [
           {
-            ghsaId: "GHSA-1234-5678-90ab",
-            fixedAt: "2025-01-01T00:00:00Z",
+            ghsaId: 'GHSA-1234-5678-90ab',
+            fixedAt: '2025-01-01T00:00:00Z',
             prNumber: 123,
-            branch: "socket/fix/GHSA-1234-5678-90ab",
+            branch: 'socket/fix/GHSA-1234-5678-90ab',
           },
         ],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(mockTracker);
+      mockReadJson.mockResolvedValue(mockTracker)
 
-      const result = await loadGhsaTracker(mockCwd);
+      const result = await loadGhsaTracker(mockCwd)
 
-      expect(result).toEqual(mockTracker);
-      expect(readJson).toHaveBeenCalledWith(trackerPath);
-    });
+      expect(result).toEqual(mockTracker)
+      expect(readJson).toHaveBeenCalledWith(trackerPath)
+    })
 
-    it("creates new tracker when file does not exist", async () => {
-      mockReadJson.mockRejectedValue(new Error("ENOENT"));
+    it('creates new tracker when file does not exist', async () => {
+      mockReadJson.mockRejectedValue(new Error('ENOENT'))
 
-      const result = await loadGhsaTracker(mockCwd);
-
-      expect(result).toEqual({
-        version: 1,
-        fixed: [],
-      });
-    });
-
-    it("handles null tracker data", async () => {
-      mockReadJson.mockResolvedValue(undefined);
-
-      const result = await loadGhsaTracker(mockCwd);
+      const result = await loadGhsaTracker(mockCwd)
 
       expect(result).toEqual({
         version: 1,
         fixed: [],
-      });
-    });
-  });
+      })
+    })
 
-  describe("saveGhsaTracker", () => {
-    it("saves tracker to file", async () => {
-      const { safeMkdir } = await import("@socketsecurity/lib-stable/fs/safe");
-      const { writeJson } = await import("@socketsecurity/lib-stable/fs/write-json");
+    it('handles null tracker data', async () => {
+      mockReadJson.mockResolvedValue(undefined)
+
+      const result = await loadGhsaTracker(mockCwd)
+
+      expect(result).toEqual({
+        version: 1,
+        fixed: [],
+      })
+    })
+  })
+
+  describe('saveGhsaTracker', () => {
+    it('saves tracker to file', async () => {
+      const { safeMkdir } = await import('@socketsecurity/lib-stable/fs/safe')
+      const { writeJson } =
+        await import('@socketsecurity/lib-stable/fs/write-json')
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [
           {
-            ghsaId: "GHSA-1234-5678-90ab",
-            fixedAt: "2025-01-01T00:00:00Z",
+            ghsaId: 'GHSA-1234-5678-90ab',
+            fixedAt: '2025-01-01T00:00:00Z',
             prNumber: 123,
-            branch: "socket/fix/GHSA-1234-5678-90ab",
+            branch: 'socket/fix/GHSA-1234-5678-90ab',
           },
         ],
-      };
+      }
 
-      await saveGhsaTracker(mockCwd, tracker);
+      await saveGhsaTracker(mockCwd, tracker)
 
       expect(safeMkdir).toHaveBeenCalledWith(path.dirname(trackerPath), {
         recursive: true,
-      });
+      })
       expect(writeJson).toHaveBeenCalledWith(trackerPath, tracker, {
         spaces: 2,
-      });
-    });
-  });
+      })
+    })
+  })
 
-  describe("markGhsaFixed", () => {
-    it("adds new GHSA fix record", async () => {
-      const { writeJson } = await import("@socketsecurity/lib-stable/fs/write-json");
+  describe('markGhsaFixed', () => {
+    it('adds new GHSA fix record', async () => {
+      const { writeJson } =
+        await import('@socketsecurity/lib-stable/fs/write-json')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
-      await markGhsaFixed(mockCwd, "GHSA-1234-5678-90ab", 123);
+      await markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 123)
 
       expect(writeJson).toHaveBeenCalledWith(
         trackerPath,
@@ -216,33 +219,34 @@ describe("ghsa-tracker", () => {
           version: 1,
           fixed: expect.arrayContaining([
             expect.objectContaining({
-              ghsaId: "GHSA-1234-5678-90ab",
+              ghsaId: 'GHSA-1234-5678-90ab',
               prNumber: 123,
-              branch: "socket/fix/GHSA-1234-5678-90ab",
+              branch: 'socket/fix/GHSA-1234-5678-90ab',
             }),
           ]),
         }),
         { spaces: 2 },
-      );
-    });
+      )
+    })
 
-    it("replaces existing GHSA fix record", async () => {
-      const { writeJson } = await import("@socketsecurity/lib-stable/fs/write-json");
+    it('replaces existing GHSA fix record', async () => {
+      const { writeJson } =
+        await import('@socketsecurity/lib-stable/fs/write-json')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [
           {
-            ghsaId: "GHSA-1234-5678-90ab",
-            fixedAt: "2025-01-01T00:00:00Z",
+            ghsaId: 'GHSA-1234-5678-90ab',
+            fixedAt: '2025-01-01T00:00:00Z',
             prNumber: 100,
-            branch: "socket/fix/GHSA-1234-5678-90ab",
+            branch: 'socket/fix/GHSA-1234-5678-90ab',
           },
         ],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
-      await markGhsaFixed(mockCwd, "GHSA-1234-5678-90ab", 200);
+      await markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 200)
 
       expect(writeJson).toHaveBeenCalledWith(
         trackerPath,
@@ -250,255 +254,260 @@ describe("ghsa-tracker", () => {
           version: 1,
           fixed: [
             expect.objectContaining({
-              ghsaId: "GHSA-1234-5678-90ab",
+              ghsaId: 'GHSA-1234-5678-90ab',
               prNumber: 200,
             }),
           ],
         }),
         { spaces: 2 },
-      );
+      )
 
       // Verify only one record exists (old one was removed).
-      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker;
-      expect(savedTracker.fixed).toHaveLength(1);
-    });
+      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
+      expect(savedTracker.fixed).toHaveLength(1)
+    })
 
-    it("sorts records by fixedAt descending", async () => {
+    it('sorts records by fixedAt descending', async () => {
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [
           {
-            ghsaId: "GHSA-old",
-            fixedAt: "2025-01-01T00:00:00Z",
+            ghsaId: 'GHSA-old',
+            fixedAt: '2025-01-01T00:00:00Z',
             prNumber: 100,
-            branch: "socket/fix/GHSA-old",
+            branch: 'socket/fix/GHSA-old',
           },
         ],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
       // Add a new record with a later timestamp.
-      await markGhsaFixed(mockCwd, "GHSA-new", 200);
+      await markGhsaFixed(mockCwd, 'GHSA-new', 200)
 
-      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker;
-      expect(savedTracker.fixed[0]!.ghsaId).toBe("GHSA-new");
-      expect(savedTracker.fixed[1]!.ghsaId).toBe("GHSA-old");
-    });
+      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
+      expect(savedTracker.fixed[0]!.ghsaId).toBe('GHSA-new')
+      expect(savedTracker.fixed[1]!.ghsaId).toBe('GHSA-old')
+    })
 
-    it("handles errors gracefully", async () => {
-      mockReadJson.mockRejectedValue(new Error("Permission denied"));
+    it('handles errors gracefully', async () => {
+      mockReadJson.mockRejectedValue(new Error('Permission denied'))
 
       // Should not throw.
-      await expect(markGhsaFixed(mockCwd, "GHSA-1234-5678-90ab", 123)).resolves.toBeUndefined();
-    });
-  });
+      await expect(
+        markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 123),
+      ).resolves.toBeUndefined()
+    })
+  })
 
-  describe("isGhsaFixed", () => {
-    it("returns true for fixed GHSA", async () => {
+  describe('isGhsaFixed', () => {
+    it('returns true for fixed GHSA', async () => {
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [
           {
-            ghsaId: "GHSA-1234-5678-90ab",
-            fixedAt: "2025-01-01T00:00:00Z",
+            ghsaId: 'GHSA-1234-5678-90ab',
+            fixedAt: '2025-01-01T00:00:00Z',
             prNumber: 123,
-            branch: "socket/fix/GHSA-1234-5678-90ab",
+            branch: 'socket/fix/GHSA-1234-5678-90ab',
           },
         ],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(tracker);
+      mockReadJson.mockResolvedValue(tracker)
 
-      const result = await isGhsaFixed(mockCwd, "GHSA-1234-5678-90ab");
+      const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
 
-      expect(result).toBe(true);
-    });
+      expect(result).toBe(true)
+    })
 
-    it("returns false for unfixed GHSA", async () => {
+    it('returns false for unfixed GHSA', async () => {
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(tracker);
+      mockReadJson.mockResolvedValue(tracker)
 
-      const result = await isGhsaFixed(mockCwd, "GHSA-9999-9999-9999");
+      const result = await isGhsaFixed(mockCwd, 'GHSA-9999-9999-9999')
 
-      expect(result).toBe(false);
-    });
+      expect(result).toBe(false)
+    })
 
-    it("returns false on error", async () => {
-      mockReadJson.mockRejectedValue(new Error("Read error"));
+    it('returns false on error', async () => {
+      mockReadJson.mockRejectedValue(new Error('Read error'))
 
-      const result = await isGhsaFixed(mockCwd, "GHSA-1234-5678-90ab");
+      const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
 
-      expect(result).toBe(false);
-    });
+      expect(result).toBe(false)
+    })
 
-    it("returns false when tracker shape is invalid (fixed.some throws)", async () => {
+    it('returns false when tracker shape is invalid (fixed.some throws)', async () => {
       // Resolve to a malformed tracker so .fixed.some() throws.
-      mockReadJson.mockResolvedValue({ version: 1 } as unknown);
+      mockReadJson.mockResolvedValue({ version: 1 } as unknown)
 
-      const result = await isGhsaFixed(mockCwd, "GHSA-1234-5678-90ab");
+      const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
 
-      expect(result).toBe(false);
-    });
-  });
+      expect(result).toBe(false)
+    })
+  })
 
-  describe("markGhsaFixed with locking", () => {
-    it("uses custom branch name when provided", async () => {
-      const { writeJson } = await import("@socketsecurity/lib-stable/fs/write-json");
+  describe('markGhsaFixed with locking', () => {
+    it('uses custom branch name when provided', async () => {
+      const { writeJson } =
+        await import('@socketsecurity/lib-stable/fs/write-json')
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
-      await markGhsaFixed(mockCwd, "GHSA-1234-5678-90ab", 123, "custom-branch");
+      await markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 123, 'custom-branch')
 
       expect(writeJson).toHaveBeenCalledWith(
         trackerPath,
         expect.objectContaining({
           fixed: expect.arrayContaining([
             expect.objectContaining({
-              ghsaId: "GHSA-1234-5678-90ab",
-              branch: "custom-branch",
+              ghsaId: 'GHSA-1234-5678-90ab',
+              branch: 'custom-branch',
             }),
           ]),
         }),
         { spaces: 2 },
-      );
-    });
+      )
+    })
 
-    it("omits prNumber when not provided", async () => {
+    it('omits prNumber when not provided', async () => {
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
-      await markGhsaFixed(mockCwd, "GHSA-no-pr", undefined);
+      await markGhsaFixed(mockCwd, 'GHSA-no-pr', undefined)
 
-      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker;
-      const record = savedTracker.fixed.find((r) => r.ghsaId === "GHSA-no-pr");
-      expect(record).toBeDefined();
-      expect(record!.prNumber).toBeUndefined();
-    });
+      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
+      const record = savedTracker.fixed.find(r => r.ghsaId === 'GHSA-no-pr')
+      expect(record).toBeDefined()
+      expect(record!.prNumber).toBeUndefined()
+    })
 
-    it("handles lock file already exists (EEXIST)", async () => {
+    it('handles lock file already exists (EEXIST)', async () => {
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
       // First call to writeFile fails with EEXIST, subsequent succeeds.
-      const eexistError = new Error("Lock exists") as NodeJS.ErrnoException;
-      eexistError.code = "EEXIST";
-      mockFsWriteFile.mockRejectedValueOnce(eexistError);
-      mockFsWriteFile.mockResolvedValueOnce(undefined);
+      const eexistError = new Error('Lock exists') as NodeJS.ErrnoException
+      eexistError.code = 'EEXIST'
+      mockFsWriteFile.mockRejectedValueOnce(eexistError)
+      mockFsWriteFile.mockResolvedValueOnce(undefined)
 
       // Mock reading lock file to show stale lock (dead process).
-      mockFsReadFile.mockResolvedValueOnce("99999999");
+      mockFsReadFile.mockResolvedValueOnce('99999999')
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
-      await markGhsaFixed(mockCwd, "GHSA-lock-test", 123);
+      await markGhsaFixed(mockCwd, 'GHSA-lock-test', 123)
 
       // Should still save the tracker.
-      expect(mockWriteJson).toHaveBeenCalled();
-    });
+      expect(mockWriteJson).toHaveBeenCalled()
+    })
 
-    it("handles lock file read error", async () => {
+    it('handles lock file read error', async () => {
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
       // First call to writeFile fails with EEXIST.
-      const eexistError = new Error("Lock exists") as NodeJS.ErrnoException;
-      eexistError.code = "EEXIST";
-      mockFsWriteFile.mockRejectedValueOnce(eexistError);
-      mockFsWriteFile.mockResolvedValueOnce(undefined);
+      const eexistError = new Error('Lock exists') as NodeJS.ErrnoException
+      eexistError.code = 'EEXIST'
+      mockFsWriteFile.mockRejectedValueOnce(eexistError)
+      mockFsWriteFile.mockResolvedValueOnce(undefined)
 
       // Mock reading lock file fails.
-      mockFsReadFile.mockRejectedValueOnce(new Error("Read error"));
+      mockFsReadFile.mockRejectedValueOnce(new Error('Read error'))
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
-      await markGhsaFixed(mockCwd, "GHSA-lock-read-error", 123);
+      await markGhsaFixed(mockCwd, 'GHSA-lock-read-error', 123)
 
       // Should still save the tracker (proceeds without lock).
-      expect(mockWriteJson).toHaveBeenCalled();
-    });
+      expect(mockWriteJson).toHaveBeenCalled()
+    })
 
-    it("handles lock file with invalid PID", async () => {
+    it('handles lock file with invalid PID', async () => {
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
       // First call to writeFile fails with EEXIST.
-      const eexistError = new Error("Lock exists") as NodeJS.ErrnoException;
-      eexistError.code = "EEXIST";
-      mockFsWriteFile.mockRejectedValueOnce(eexistError);
-      mockFsWriteFile.mockResolvedValueOnce(undefined);
+      const eexistError = new Error('Lock exists') as NodeJS.ErrnoException
+      eexistError.code = 'EEXIST'
+      mockFsWriteFile.mockRejectedValueOnce(eexistError)
+      mockFsWriteFile.mockResolvedValueOnce(undefined)
 
       // Mock reading lock file with invalid PID.
-      mockFsReadFile.mockResolvedValueOnce("not-a-number");
+      mockFsReadFile.mockResolvedValueOnce('not-a-number')
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
-      await markGhsaFixed(mockCwd, "GHSA-invalid-pid", 123);
+      await markGhsaFixed(mockCwd, 'GHSA-invalid-pid', 123)
 
       // Should proceed anyway.
-      expect(mockWriteJson).toHaveBeenCalled();
-    });
+      expect(mockWriteJson).toHaveBeenCalled()
+    })
 
-    it("releases lock after successful operation", async () => {
+    it('releases lock after successful operation', async () => {
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
-      await markGhsaFixed(mockCwd, "GHSA-release-lock", 123);
+      await markGhsaFixed(mockCwd, 'GHSA-release-lock', 123)
 
       // Should attempt to delete the lock file.
-      expect(mockSafeDelete).toHaveBeenCalled();
-    });
+      expect(mockSafeDelete).toHaveBeenCalled()
+    })
 
-    it("proceeds without lock when all attempts fail", async () => {
+    it('proceeds without lock when all attempts fail', async () => {
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
       // All lock attempts fail with non-EEXIST error.
-      mockFsWriteFile.mockRejectedValue(new Error("Permission denied"));
+      mockFsWriteFile.mockRejectedValue(new Error('Permission denied'))
 
-      mockReadJson.mockResolvedValue(existingTracker);
+      mockReadJson.mockResolvedValue(existingTracker)
 
-      await markGhsaFixed(mockCwd, "GHSA-no-lock", 123);
+      await markGhsaFixed(mockCwd, 'GHSA-no-lock', 123)
 
       // Should still save the tracker.
-      expect(mockWriteJson).toHaveBeenCalled();
-    });
+      expect(mockWriteJson).toHaveBeenCalled()
+    })
 
-    it("swallows write failure inside the inner catch arm", async () => {
+    it('swallows write failure inside the inner catch arm', async () => {
       const existingTracker: GhsaTracker = {
         version: 1,
         fixed: [],
-      };
+      }
 
-      mockReadJson.mockResolvedValue(existingTracker);
-      mockWriteJson.mockRejectedValueOnce(new Error("write failed"));
+      mockReadJson.mockResolvedValue(existingTracker)
+      mockWriteJson.mockRejectedValueOnce(new Error('write failed'))
 
       // Should not throw — the inner catch logs + swallows.
-      await expect(markGhsaFixed(mockCwd, "GHSA-write-fail", 123)).resolves.toBeUndefined();
-    });
-  });
-});
+      await expect(
+        markGhsaFixed(mockCwd, 'GHSA-write-fail', 123),
+      ).resolves.toBeUndefined()
+    })
+  })
+})

@@ -4,7 +4,7 @@
  * Tests the parent command that routes to repository management subcommands.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -13,65 +13,66 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
-const mockMeowWithSubcommands = vi.hoisted(() => vi.fn());
+const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/util/cli/with-subcommands.mts"), () => ({
+vi.mock(import('../../../../src/util/cli/with-subcommands.mts'), () => ({
   meowWithSubcommands: mockMeowWithSubcommands,
-}));
+}))
 
 // Import after mocks.
-const { cmdRepository } = await import("../../../../src/commands/repository/cmd-repository.mts");
+const { cmdRepository } =
+  await import('../../../../src/commands/repository/cmd-repository.mts')
 const { cmdRepositoryCreate } =
-  await import("../../../../src/commands/repository/cmd-repository-create.mts");
+  await import('../../../../src/commands/repository/cmd-repository-create.mts')
 const { cmdRepositoryDel } =
-  await import("../../../../src/commands/repository/cmd-repository-del.mts");
+  await import('../../../../src/commands/repository/cmd-repository-del.mts')
 const { cmdRepositoryList } =
-  await import("../../../../src/commands/repository/cmd-repository-list.mts");
+  await import('../../../../src/commands/repository/cmd-repository-list.mts')
 const { cmdRepositoryUpdate } =
-  await import("../../../../src/commands/repository/cmd-repository-update.mts");
+  await import('../../../../src/commands/repository/cmd-repository-update.mts')
 const { cmdRepositoryView } =
-  await import("../../../../src/commands/repository/cmd-repository-view.mts");
+  await import('../../../../src/commands/repository/cmd-repository-view.mts')
 
-describe("cmd-repository", () => {
+describe('cmd-repository', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  describe("command metadata", () => {
-    it("should have correct description", () => {
-      expect(cmdRepository.description).toBe("Manage registered repositories");
-    });
+  describe('command metadata', () => {
+    it('should have correct description', () => {
+      expect(cmdRepository.description).toBe('Manage registered repositories')
+    })
 
-    it("should not have hidden property set to true", () => {
-      expect(cmdRepository.hidden).toBeUndefined();
-    });
+    it('should not have hidden property set to true', () => {
+      expect(cmdRepository.hidden).toBeUndefined()
+    })
 
-    it("should have a run method", () => {
-      expect(typeof cmdRepository.run).toBe("function");
-    });
-  });
+    it('should have a run method', () => {
+      expect(typeof cmdRepository.run).toBe('function')
+    })
+  })
 
-  describe("subcommand routing", () => {
-    const importMeta = { url: "file:///test/cmd-repository.mts" };
-    const context = { parentName: "socket" };
+  describe('subcommand routing', () => {
+    const importMeta = { url: 'file:///test/cmd-repository.mts' }
+    const context = { parentName: 'socket' }
 
-    it("should call meowWithSubcommands with correct configuration", async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined);
+    it('should call meowWithSubcommands with correct configuration', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-      await cmdRepository.run(["list"], importMeta, context);
+      await cmdRepository.run(['list'], importMeta, context)
 
-      expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1);
+      expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         {
-          argv: ["list"],
+          argv: ['list'],
           importMeta,
-          name: "socket repository",
+          name: 'socket repository',
           subcommands: {
             create: cmdRepositoryCreate,
             del: cmdRepositoryDel,
@@ -81,128 +82,160 @@ describe("cmd-repository", () => {
           },
         },
         {
-          description: "Manage registered repositories",
+          description: 'Manage registered repositories',
         },
-      );
-    });
+      )
+    })
 
-    it("should construct correct command name from parent", async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined);
+    it('should construct correct command name from parent', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-      await cmdRepository.run(["view"], importMeta, {
-        parentName: "custom-parent",
-      });
-
-      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: "custom-parent repository",
-        }),
-        expect.anything(),
-      );
-    });
-
-    it("should include all subcommands", async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined);
-
-      await cmdRepository.run([], importMeta, context);
-
-      const call = mockMeowWithSubcommands.mock.calls[0];
-      const subcommands = call[0].subcommands;
-
-      expect(Object.keys(subcommands)).toEqual(["create", "view", "list", "del", "update"]);
-    });
-
-    it("should pass through argv unchanged", async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined);
-      const argv = ["create", "owner/repo", "--json"];
-
-      await cmdRepository.run(argv, importMeta, context);
+      await cmdRepository.run(['view'], importMeta, {
+        parentName: 'custom-parent',
+      })
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         expect.objectContaining({
-          argv,
+          name: 'custom-parent repository',
         }),
         expect.anything(),
-      );
-    });
+      )
+    })
 
-    it("should handle readonly argv", async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined);
-      const argv = Object.freeze(["list"]) as readonly string[];
+    it('should include all subcommands', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-      await cmdRepository.run(argv, importMeta, context);
+      await cmdRepository.run([], importMeta, context)
+
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const subcommands = call[0].subcommands
+
+      expect(Object.keys(subcommands)).toEqual([
+        'create',
+        'view',
+        'list',
+        'del',
+        'update',
+      ])
+    })
+
+    it('should pass through argv unchanged', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+      const argv = ['create', 'owner/repo', '--json']
+
+      await cmdRepository.run(argv, importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
         expect.objectContaining({
           argv,
         }),
         expect.anything(),
-      );
-    });
-  });
+      )
+    })
 
-  describe("subcommand validation", () => {
-    it("should reference correct subcommand objects", async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined);
+    it('should handle readonly argv', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+      const argv = Object.freeze(['list']) as readonly string[]
 
-      await cmdRepository.run([], { url: "file:///test" }, { parentName: "socket" });
+      await cmdRepository.run(argv, importMeta, context)
 
-      const call = mockMeowWithSubcommands.mock.calls[0];
-      const subcommands = call[0].subcommands;
+      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
+        expect.objectContaining({
+          argv,
+        }),
+        expect.anything(),
+      )
+    })
+  })
 
-      expect(subcommands.create).toBe(cmdRepositoryCreate);
-      expect(subcommands.view).toBe(cmdRepositoryView);
-      expect(subcommands.list).toBe(cmdRepositoryList);
-      expect(subcommands.del).toBe(cmdRepositoryDel);
-      expect(subcommands.update).toBe(cmdRepositoryUpdate);
-    });
-  });
+  describe('subcommand validation', () => {
+    it('should reference correct subcommand objects', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-  describe("subcommand ordering", () => {
-    it("should maintain consistent subcommand order", async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined);
+      await cmdRepository.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
 
-      await cmdRepository.run([], { url: "file:///test" }, { parentName: "socket" });
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const subcommands = call[0].subcommands
 
-      const call = mockMeowWithSubcommands.mock.calls[0];
-      const subcommandKeys = Object.keys(call[0].subcommands);
+      expect(subcommands.create).toBe(cmdRepositoryCreate)
+      expect(subcommands.view).toBe(cmdRepositoryView)
+      expect(subcommands.list).toBe(cmdRepositoryList)
+      expect(subcommands.del).toBe(cmdRepositoryDel)
+      expect(subcommands.update).toBe(cmdRepositoryUpdate)
+    })
+  })
 
-      expect(subcommandKeys).toEqual(["create", "view", "list", "del", "update"]);
-    });
-  });
+  describe('subcommand ordering', () => {
+    it('should maintain consistent subcommand order', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-  describe("error handling", () => {
-    it("should propagate errors from meowWithSubcommands", async () => {
-      const testError = new Error("Subcommand error");
-      mockMeowWithSubcommands.mockRejectedValue(testError);
+      await cmdRepository.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
+
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const subcommandKeys = Object.keys(call[0].subcommands)
+
+      expect(subcommandKeys).toEqual([
+        'create',
+        'view',
+        'list',
+        'del',
+        'update',
+      ])
+    })
+  })
+
+  describe('error handling', () => {
+    it('should propagate errors from meowWithSubcommands', async () => {
+      const testError = new Error('Subcommand error')
+      mockMeowWithSubcommands.mockRejectedValue(testError)
 
       await expect(
-        cmdRepository.run([], { url: "file:///test" }, { parentName: "socket" }),
-      ).rejects.toThrow("Subcommand error");
-    });
-  });
+        cmdRepository.run(
+          [],
+          { url: 'file:///test' },
+          { parentName: 'socket' },
+        ),
+      ).rejects.toThrow('Subcommand error')
+    })
+  })
 
-  describe("options configuration", () => {
-    it("should pass description in options", async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined);
+  describe('options configuration', () => {
+    it('should pass description in options', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-      await cmdRepository.run([], { url: "file:///test" }, { parentName: "socket" });
+      await cmdRepository.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
 
-      const call = mockMeowWithSubcommands.mock.calls[0];
-      const options = call[1];
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const options = call[1]
 
-      expect(options.description).toBe("Manage registered repositories");
-    });
+      expect(options.description).toBe('Manage registered repositories')
+    })
 
-    it("should not include aliases", async () => {
-      mockMeowWithSubcommands.mockResolvedValue(undefined);
+    it('should not include aliases', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
 
-      await cmdRepository.run([], { url: "file:///test" }, { parentName: "socket" });
+      await cmdRepository.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
 
-      const call = mockMeowWithSubcommands.mock.calls[0];
-      const options = call[1];
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const options = call[1]
 
-      expect(options.aliases).toBeUndefined();
-    });
-  });
-});
+      expect(options.aliases).toBeUndefined()
+    })
+  })
+})

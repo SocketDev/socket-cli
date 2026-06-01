@@ -1,19 +1,19 @@
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 
-import type { CResult } from "../../types.mts";
-const logger = getDefaultLogger();
+import type { CResult } from '../../types.mts'
+const logger = getDefaultLogger()
 
 export async function outputManifestSetup(result: CResult<unknown>) {
   if (!result.ok) {
-    process.exitCode = result.code ?? 1;
+    process.exitCode = result.code ?? 1
   }
 
   if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause));
-    return;
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
   }
 
-  logger.success("Setup complete");
+  logger.success('Setup complete')
 }

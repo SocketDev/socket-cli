@@ -9,15 +9,15 @@
  * Related Files: - src/commands/scan/output-scan-view.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock fs.
-const mockWriteFile = vi.hoisted(() => vi.fn());
-vi.mock(import("node:fs/promises"), () => ({
+const mockWriteFile = vi.hoisted(() => vi.fn())
+vi.mock(import('node:fs/promises'), () => ({
   default: {
     writeFile: mockWriteFile,
   },
-}));
+}))
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -27,215 +27,239 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
-}));
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock utilities.
-vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) => (cause ? `${msg}: ${cause}` : msg),
-}));
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
+  failMsgWithBadge: (msg: string, cause?: string) =>
+    cause ? `${msg}: ${cause}` : msg,
+}))
 
-vi.mock(import("../../../../src/util/output/markdown.mts"), () => ({
-  mdTable: <T,>(data: T[], _columns: string[]) => `| Table with ${(data as T[]).length} rows |`,
-}));
+vi.mock(import('../../../../src/util/output/markdown.mts'), () => ({
+  mdTable: <T,>(data: T[], _columns: string[]) =>
+    `| Table with ${(data as T[]).length} rows |`,
+}))
 
-vi.mock(import("../../../../src/util/output/result-json.mjs"), () => ({
+vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
-}));
+}))
 
-vi.mock(import("../../../../src/util/terminal/link.mts"), () => ({
+vi.mock(import('../../../../src/util/terminal/link.mts'), () => ({
   fileLink: (path: string) => path,
-}));
+}))
 
-import { outputScanView } from "../../../../src/commands/scan/output-scan-view.mts";
+import { outputScanView } from '../../../../src/commands/scan/output-scan-view.mts'
 
-import type { CResult } from "../../../../src/types.mts";
-import type { SocketArtifact } from "../../../../src/util/alert/artifact.mts";
+import type { CResult } from '../../../../src/types.mts'
+import type { SocketArtifact } from '../../../../src/util/alert/artifact.mts'
 
-describe("output-scan-view", () => {
+describe('output-scan-view', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+  })
 
-  describe("outputScanView", () => {
+  describe('outputScanView', () => {
     const mockArtifacts: SocketArtifact[] = [
       {
-        type: "npm",
-        name: "lodash",
-        version: "4.17.21",
-        author: ["John Dalton"],
+        type: 'npm',
+        name: 'lodash',
+        version: '4.17.21',
+        author: ['John Dalton'],
         score: { overall: 0.8 } as unknown,
       } as SocketArtifact,
-    ];
+    ]
 
-    describe("JSON output", () => {
-      it("outputs success result as JSON", async () => {
+    describe('JSON output', () => {
+      it('outputs success result as JSON', async () => {
         const result: CResult<SocketArtifact[]> = {
           ok: true,
           data: mockArtifacts,
-        };
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "", "json");
+        await outputScanView(result, 'my-org', 'scan-123', '', 'json')
 
-        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok": true'));
-      });
+        expect(mockLogger.log).toHaveBeenCalledWith(
+          expect.stringContaining('"ok": true'),
+        )
+      })
 
-      it("outputs error result as JSON", async () => {
+      it('outputs error result as JSON', async () => {
         const result: CResult<SocketArtifact[]> = {
           ok: false,
-          message: "Scan not found",
-        };
+          message: 'Scan not found',
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "", "json");
+        await outputScanView(result, 'my-org', 'scan-123', '', 'json')
 
-        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok": false'));
-      });
+        expect(mockLogger.log).toHaveBeenCalledWith(
+          expect.stringContaining('"ok": false'),
+        )
+      })
 
-      it("writes JSON to file when path provided", async () => {
-        mockWriteFile.mockResolvedValue(undefined);
+      it('writes JSON to file when path provided', async () => {
+        mockWriteFile.mockResolvedValue(undefined)
         const result: CResult<SocketArtifact[]> = {
           ok: true,
           data: mockArtifacts,
-        };
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "/output.json", "json");
+        await outputScanView(
+          result,
+          'my-org',
+          'scan-123',
+          '/output.json',
+          'json',
+        )
 
-        expect(mockWriteFile).toHaveBeenCalled();
-        expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining("/output.json"));
-      });
+        expect(mockWriteFile).toHaveBeenCalled()
+        expect(mockLogger.info).toHaveBeenCalledWith(
+          expect.stringContaining('/output.json'),
+        )
+      })
 
-      it("handles file write errors", async () => {
-        mockWriteFile.mockRejectedValue(new Error("Permission denied"));
+      it('handles file write errors', async () => {
+        mockWriteFile.mockRejectedValue(new Error('Permission denied'))
         const result: CResult<SocketArtifact[]> = {
           ok: true,
           data: mockArtifacts,
-        };
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "/output.json", "json");
+        await outputScanView(
+          result,
+          'my-org',
+          'scan-123',
+          '/output.json',
+          'json',
+        )
 
-        expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("error"));
-        expect(process.exitCode).toBe(1);
-      });
-    });
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('error'),
+        )
+        expect(process.exitCode).toBe(1)
+      })
+    })
 
-    describe("Text output", () => {
-      it("outputs scan details", async () => {
+    describe('Text output', () => {
+      it('outputs scan details', async () => {
         const result: CResult<SocketArtifact[]> = {
           ok: true,
           data: mockArtifacts,
-        };
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "", "text");
+        await outputScanView(result, 'my-org', 'scan-123', '', 'text')
 
-        const logs = mockLogger.log.mock.calls.map((c) => c[0]).join("");
-        expect(logs).toContain("Scan Details");
-        expect(logs).toContain("scan-123");
-      });
+        const logs = mockLogger.log.mock.calls.map(c => c[0]).join('')
+        expect(logs).toContain('Scan Details')
+        expect(logs).toContain('scan-123')
+      })
 
-      it("handles artifacts with array authors", async () => {
+      it('handles artifacts with array authors', async () => {
         const result: CResult<SocketArtifact[]> = {
           ok: true,
           data: [
             {
-              type: "npm",
-              name: "test-pkg",
-              version: "1.0.0",
-              author: ["Author 1", "Author 2"],
+              type: 'npm',
+              name: 'test-pkg',
+              version: '1.0.0',
+              author: ['Author 1', 'Author 2'],
               score: { overall: 0.9 } as unknown,
             } as SocketArtifact,
           ],
-        };
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "", "text");
+        await outputScanView(result, 'my-org', 'scan-123', '', 'text')
 
         // Should show "et.al." for multiple authors.
-        expect(mockLogger.log).toHaveBeenCalled();
-      });
+        expect(mockLogger.log).toHaveBeenCalled()
+      })
 
-      it("handles artifacts with empty author array", async () => {
+      it('handles artifacts with empty author array', async () => {
         const result: CResult<SocketArtifact[]> = {
           ok: true,
           data: [
             {
-              type: "npm",
-              name: "test-pkg",
-              version: "1.0.0",
+              type: 'npm',
+              name: 'test-pkg',
+              version: '1.0.0',
               author: [],
               score: { overall: 0.9 } as unknown,
             } as SocketArtifact,
           ],
-        };
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "", "text");
+        await outputScanView(result, 'my-org', 'scan-123', '', 'text')
 
-        expect(mockLogger.log).toHaveBeenCalled();
-      });
+        expect(mockLogger.log).toHaveBeenCalled()
+      })
 
-      it("writes to file when path provided", async () => {
-        mockWriteFile.mockResolvedValue(undefined);
+      it('writes to file when path provided', async () => {
+        mockWriteFile.mockResolvedValue(undefined)
         const result: CResult<SocketArtifact[]> = {
           ok: true,
           data: mockArtifacts,
-        };
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "/output.md", "text");
+        await outputScanView(result, 'my-org', 'scan-123', '/output.md', 'text')
 
-        expect(mockWriteFile).toHaveBeenCalled();
-      });
+        expect(mockWriteFile).toHaveBeenCalled()
+      })
 
-      it("handles markdown file write errors", async () => {
-        mockWriteFile.mockRejectedValueOnce(new Error("disk full"));
+      it('handles markdown file write errors', async () => {
+        mockWriteFile.mockRejectedValueOnce(new Error('disk full'))
         const result: CResult<SocketArtifact[]> = {
           ok: true,
           data: mockArtifacts,
-        };
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "/output.md", "text");
+        await outputScanView(result, 'my-org', 'scan-123', '/output.md', 'text')
 
-        expect(process.exitCode).toBe(1);
+        expect(process.exitCode).toBe(1)
         expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining("error trying to write the markdown"),
-        );
-      });
+          expect.stringContaining('error trying to write the markdown'),
+        )
+      })
 
-      it("outputs error with fail message", async () => {
+      it('outputs error with fail message', async () => {
         const result: CResult<SocketArtifact[]> = {
           ok: false,
-          message: "Scan failed",
-        };
+          message: 'Scan failed',
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "", "text");
+        await outputScanView(result, 'my-org', 'scan-123', '', 'text')
 
-        expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("Scan failed"));
-      });
-    });
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('Scan failed'),
+        )
+      })
+    })
 
-    describe("Exit code handling", () => {
-      it("sets exit code on error", async () => {
+    describe('Exit code handling', () => {
+      it('sets exit code on error', async () => {
         const result: CResult<SocketArtifact[]> = {
           ok: false,
-          message: "Failed",
-        };
+          message: 'Failed',
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "", "text");
+        await outputScanView(result, 'my-org', 'scan-123', '', 'text')
 
-        expect(process.exitCode).toBe(1);
-      });
+        expect(process.exitCode).toBe(1)
+      })
 
-      it("uses custom exit code when provided", async () => {
+      it('uses custom exit code when provided', async () => {
         const result: CResult<SocketArtifact[]> = {
           ok: false,
-          message: "Failed",
+          message: 'Failed',
           code: 2,
-        };
+        }
 
-        await outputScanView(result, "my-org", "scan-123", "", "text");
+        await outputScanView(result, 'my-org', 'scan-123', '', 'text')
 
-        expect(process.exitCode).toBe(2);
-      });
-    });
-  });
-});
+        expect(process.exitCode).toBe(2)
+      })
+    })
+  })
+})

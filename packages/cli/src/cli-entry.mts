@@ -1,113 +1,120 @@
 #!/usr/bin/env node
 
 // Set global Socket theme for consistent CLI branding.
-import { isError } from "@socketsecurity/lib-stable/errors/predicates";
-import { setTheme } from "@socketsecurity/lib-stable/themes/context";
-setTheme("socket");
+import { isError } from '@socketsecurity/lib-stable/errors/predicates'
+import { setTheme } from '@socketsecurity/lib-stable/themes/context'
+setTheme('socket')
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import process from "node:process";
-import url, { fileURLToPath } from "node:url";
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+import url, { fileURLToPath } from 'node:url'
 
 // Suppress MaxListenersExceeded warning for AbortSignal.
 // The Socket SDK properly manages listeners but may exceed the default limit of 30
 // during high-concurrency batch operations.
-const originalEmitWarning = process.emitWarning;
+const originalEmitWarning = process.emitWarning
 process.emitWarning = function (warning, ...args) {
   if (
-    (typeof warning === "string" &&
-      warning.includes("MaxListenersExceededWarning") &&
-      warning.includes("AbortSignal")) ||
-    (args[0] === "MaxListenersExceededWarning" &&
-      typeof warning === "string" &&
-      warning.includes("AbortSignal"))
+    (typeof warning === 'string' &&
+      warning.includes('MaxListenersExceededWarning') &&
+      warning.includes('AbortSignal')) ||
+    (args[0] === 'MaxListenersExceededWarning' &&
+      typeof warning === 'string' &&
+      warning.includes('AbortSignal'))
   ) {
     // Suppress the specific MaxListenersExceeded warning for AbortSignal.
-    return;
+    return
   }
-  return Reflect.apply(originalEmitWarning, this, [warning, ...args]);
-};
+  return Reflect.apply(originalEmitWarning, this, [warning, ...args])
+}
 
-import lookupRegistryAuthToken from "registry-auth-token";
-import lookupRegistryUrl from "registry-url";
+import lookupRegistryAuthToken from 'registry-auth-token'
+import lookupRegistryUrl from 'registry-url'
 
-import { debug as debugNs, debugDir, debugDirNs } from "@socketsecurity/lib-stable/debug/output";
-import { getCI } from "@socketsecurity/lib-stable/env/ci";
+import {
+  debug as debugNs,
+  debugDir,
+  debugDirNs,
+} from '@socketsecurity/lib-stable/debug/output'
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
 import {
   getSocketCliBootstrapCacheDir,
   getSocketCliBootstrapSpec,
-} from "@socketsecurity/lib-stable/env/socket-cli";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
-import { getDefaultSpinner } from "@socketsecurity/lib-stable/spinner/default";
+} from '@socketsecurity/lib-stable/env/socket-cli'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
-import { rootAliases, rootCommandBuckets, rootCommands } from "./commands.mts";
-import { SOCKET_CLI_BIN_NAME } from "./constants/packages.mts";
-import { getCliName } from "./env/cli-name.mts";
-import { getCliVersion } from "./env/cli-version.mts";
-import { SOCKET_CLI_SKIP_UPDATE_CHECK } from "./env/socket-cli-skip-update-check.mts";
-import { VITEST } from "./env/vitest.mts";
-import { meow } from "./meow.mts";
-import { meowWithSubcommands } from "./util/cli/with-subcommands.mts";
-import { formatErrorForJson, formatErrorForTerminal } from "./util/error/display.mts";
-import { captureException } from "./util/error/errors.mts";
-import { serializeResultJson } from "./util/output/result-json.mts";
-import { runPreflightDownloads } from "./util/preflight/downloads.mts";
-import { isSeaBinary } from "./util/sea/detect.mts";
+import { rootAliases, rootCommandBuckets, rootCommands } from './commands.mts'
+import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'
+import { getCliName } from './env/cli-name.mts'
+import { getCliVersion } from './env/cli-version.mts'
+import { SOCKET_CLI_SKIP_UPDATE_CHECK } from './env/socket-cli-skip-update-check.mts'
+import { VITEST } from './env/vitest.mts'
+import { meow } from './meow.mts'
+import { meowWithSubcommands } from './util/cli/with-subcommands.mts'
+import {
+  formatErrorForJson,
+  formatErrorForTerminal,
+} from './util/error/display.mts'
+import { captureException } from './util/error/errors.mts'
+import { serializeResultJson } from './util/output/result-json.mts'
+import { runPreflightDownloads } from './util/preflight/downloads.mts'
+import { isSeaBinary } from './util/sea/detect.mts'
 import {
   finalizeTelemetry,
   setupTelemetryExitHandlers,
   trackCliComplete,
   trackCliError,
   trackCliStart,
-} from "./util/telemetry/integration.mts";
-import { scheduleUpdateCheck } from "./util/update/manager.mts";
+} from './util/telemetry/integration.mts'
+import { scheduleUpdateCheck } from './util/update/manager.mts'
 
-import { dlxManifest } from "@socketsecurity/lib-stable/dlx/manifest";
+import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 // Debug logger for manifest operations.
-const debug = debugNs;
+const debug = debugNs
 
-const __filename = fileURLToPath(import.meta.url);
+const __filename = fileURLToPath(import.meta.url)
 
 // Capture CLI start time at module level for global error handlers.
-const cliStartTime = Date.now();
+const cliStartTime = Date.now()
 
 // Set up telemetry exit handlers early to catch all exit scenarios.
-setupTelemetryExitHandlers();
+setupTelemetryExitHandlers()
 
 /**
  * Write manifest entry for CLI installed via bootstrap. Bootstrap passes spec
  * and cache dir via environment variables.
  */
 export async function writeBootstrapManifestEntry(): Promise<void> {
-  const spec = getSocketCliBootstrapSpec();
-  const cacheDir = getSocketCliBootstrapCacheDir();
+  const spec = getSocketCliBootstrapSpec()
+  const cacheDir = getSocketCliBootstrapCacheDir()
 
   if (!spec || !cacheDir) {
     // Not launched via bootstrap, skip.
-    return;
+    return
   }
 
   try {
     // Extract cache key from path (last segment)
-    const cacheKey = path.basename(cacheDir);
+    const cacheKey = path.basename(cacheDir)
 
     // Read package.json to get installed version
     const pkgJsonPath = path.join(
       cacheDir,
-      "node_modules",
-      "@socketsecurity",
-      "cli",
-      "package.json",
-    );
+      'node_modules',
+      '@socketsecurity',
+      'cli',
+      'package.json',
+    )
 
-    let installedVersion = "0.0.0";
+    let installedVersion = '0.0.0'
     try {
-      const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, "utf8"));
-      installedVersion = pkgJson.version || "0.0.0";
+      const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, 'utf8'))
+      installedVersion = pkgJson.version || '0.0.0'
     } catch {
       // Failed to read version, use default
     }
@@ -115,40 +122,42 @@ export async function writeBootstrapManifestEntry(): Promise<void> {
     // Write manifest entry.
     await dlxManifest.setPackageEntry(spec, cacheKey, {
       installed_version: installedVersion,
-    });
+    })
   } catch (e) {
     // Silently ignore manifest write errors - not critical
-    debug(`Failed to write bootstrap manifest entry: ${e}`);
+    debug(`Failed to write bootstrap manifest entry: ${e}`)
   }
 }
 
 void (async () => {
   // Track CLI start for telemetry.
-  await trackCliStart(process.argv);
+  await trackCliStart(process.argv)
 
   // Skip update checks in test environments or when explicitly disabled.
   // Note: Update checks create HTTP connections that may delay process exit by up to 30s
   // due to keep-alive timeouts. Set SOCKET_CLI_SKIP_UPDATE_CHECK=1 to disable.
   if (!VITEST && !getCI() && !SOCKET_CLI_SKIP_UPDATE_CHECK) {
-    const registryUrl = lookupRegistryUrl();
+    const registryUrl = lookupRegistryUrl()
     // Unified update notifier handles both SEA and npm automatically.
     // Fire-and-forget: Don't await to avoid blocking on HTTP keep-alive timeouts.
     scheduleUpdateCheck({
       authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
-      name: isSeaBinary() ? SOCKET_CLI_BIN_NAME : getCliName() || SOCKET_CLI_BIN_NAME,
+      name: isSeaBinary()
+        ? SOCKET_CLI_BIN_NAME
+        : getCliName() || SOCKET_CLI_BIN_NAME,
       registryUrl,
-      version: getCliVersion() || "0.0.0",
-    });
+      version: getCliVersion() || '0.0.0',
+    })
 
     // Write manifest entry if launched via bootstrap (SEA/smol).
     // Bootstrap passes spec and cache dir via env vars.
     // Fire-and-forget: Don't await to avoid blocking.
-    writeBootstrapManifestEntry();
+    writeBootstrapManifestEntry()
 
     // Background preflight downloads for optional dependencies.
     // This silently downloads @coana-tech/cli and @socketbin/cli-ai in the
     // background to ensure they're cached for future use.
-    runPreflightDownloads();
+    runPreflightDownloads()
   }
 
   try {
@@ -160,23 +169,23 @@ void (async () => {
         subcommands: rootCommands,
       },
       { aliases: rootAliases, buckets: rootCommandBuckets },
-    );
+    )
 
     // Track successful CLI completion.
-    await trackCliComplete(process.argv, cliStartTime, process.exitCode);
+    await trackCliComplete(process.argv, cliStartTime, process.exitCode)
   } catch (e) {
-    process.exitCode = 1;
+    process.exitCode = 1
 
     // Stop any active spinner before emitting error output, otherwise
     // its animation clashes with the error text on the same line.
     // Spinner-wrapped command paths stop their own on catch, but any
     // exception that bypasses those handlers reaches us here.
-    getDefaultSpinner()?.stop();
+    getDefaultSpinner()?.stop()
 
     // Track CLI error for telemetry.
-    await trackCliError(process.argv, cliStartTime, e, process.exitCode);
-    debug("CLI uncaught error");
-    debugDir(e);
+    await trackCliError(process.argv, cliStartTime, e, process.exitCode)
+    debug('CLI uncaught error')
+    debugDir(e)
 
     // Try to parse the flags, find out if --json is set.
     const isJson = (() => {
@@ -187,94 +196,94 @@ void (async () => {
         autoVersion: false,
         allowUnknownFlags: true,
         flags: {
-          json: { type: "boolean" },
+          json: { type: 'boolean' },
         },
         importMeta: { url: `${url.pathToFileURL(__filename)}` } as ImportMeta,
-      });
-      return !!cli.flags.json;
-    })();
+      })
+      return !!cli.flags.json
+    })()
 
     if (isJson) {
-      logger.log(serializeResultJson(formatErrorForJson(e)));
+      logger.log(serializeResultJson(formatErrorForJson(e)))
     } else {
-      logger.error(formatErrorForTerminal(e));
-      debugDirNs("inspect", { error: e });
+      logger.error(formatErrorForTerminal(e))
+      debugDirNs('inspect', { error: e })
     }
 
-    await captureException(e);
+    await captureException(e)
   }
-})().catch(async (err) => {
+})().catch(async err => {
   // Fatal error in main async function.
   try {
-    logger.error("Fatal error:", err);
+    logger.error('Fatal error:', err)
   } catch {
     // Last-ditch fallback when logger itself throws — the catch
     // ensures we still report the original error before exit.
-    logger.fail("Fatal error:", err); // # socket-hook: allow logger
+    logger.fail('Fatal error:', err) // # socket-hook: allow logger
   }
 
   // Track CLI error for fatal exceptions.
-  await trackCliError(process.argv, cliStartTime, err, 1);
+  await trackCliError(process.argv, cliStartTime, err, 1)
 
   // Finalize telemetry before fatal exit.
-  await finalizeTelemetry();
+  await finalizeTelemetry()
 
-  process.exit(1);
-});
+  process.exit(1)
+})
 
 // Handle uncaught exceptions.
-process.on("uncaughtException", async (err) => {
+process.on('uncaughtException', async err => {
   try {
     try {
-      logger.error("Uncaught exception:", err);
+      logger.error('Uncaught exception:', err)
     } catch {
       // Last-ditch fallback when logger itself throws.
-      logger.fail("Uncaught exception:", err); // # socket-hook: allow logger
+      logger.fail('Uncaught exception:', err) // # socket-hook: allow logger
     }
 
     // Track CLI error for uncaught exception.
-    await trackCliError(process.argv, cliStartTime, err, 1);
+    await trackCliError(process.argv, cliStartTime, err, 1)
 
     // Finalize telemetry before exit.
-    await finalizeTelemetry();
+    await finalizeTelemetry()
   } catch (e) {
     // Prevent double unhandled rejection in error handler.
     try {
-      logger.error("Error in uncaughtException handler:", e);
+      logger.error('Error in uncaughtException handler:', e)
     } catch {
       // Last-ditch fallback when logger itself throws.
-      logger.fail("Error in uncaughtException handler:", e); // # socket-hook: allow logger
+      logger.fail('Error in uncaughtException handler:', e) // # socket-hook: allow logger
     }
   } finally {
-    process.exit(1);
+    process.exit(1)
   }
-});
+})
 
 // Handle unhandled promise rejections.
-process.on("unhandledRejection", async (reason, promise) => {
+process.on('unhandledRejection', async (reason, promise) => {
   try {
     try {
-      logger.error("Unhandled rejection at:", promise, "reason:", reason);
+      logger.error('Unhandled rejection at:', promise, 'reason:', reason)
     } catch {
       // Last-ditch fallback when logger itself throws.
-      logger.fail("Unhandled rejection at:", promise, "reason:", reason); // # socket-hook: allow logger
+      logger.fail('Unhandled rejection at:', promise, 'reason:', reason) // # socket-hook: allow logger
     }
 
     // Track CLI error for unhandled rejection.
-    const error = isError(reason) ? reason : new Error(String(reason));
-    await trackCliError(process.argv, cliStartTime, error, 1);
+    const error = isError(reason) ? reason : new Error(String(reason))
+    await trackCliError(process.argv, cliStartTime, error, 1)
 
     // Finalize telemetry before exit.
-    await finalizeTelemetry();
+    await finalizeTelemetry()
   } catch (e) {
     // Prevent double unhandled rejection in error handler.
     try {
-      logger.error("Error in unhandledRejection handler:", e);
+      logger.error('Error in unhandledRejection handler:', e)
     } catch {
       // Last-ditch fallback when logger itself throws.
-      logger.fail("Error in unhandledRejection handler:", e); // # socket-hook: allow logger
+      logger.fail('Error in unhandledRejection handler:', e) // # socket-hook: allow logger
     }
   } finally {
-    process.exit(1);
+    process.exit(1)
   }
-});
+})

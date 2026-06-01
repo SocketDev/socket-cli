@@ -4,9 +4,9 @@
  * Tests the command that displays all local CLI configuration items and values.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -16,118 +16,126 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
-  const actual = await importOriginal<typeof LoggerModule>();
+vi.mock(import('@socketsecurity/lib-stable/logger'), async importOriginal => {
+  const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  };
-});
+  }
+})
 
 // Mock outputConfigList.
-const mockOutputConfigList = vi.hoisted(() => vi.fn());
+const mockOutputConfigList = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/config/output-config-list.mts"), () => ({
-  outputConfigList: mockOutputConfigList,
-}));
+vi.mock(
+  import('../../../../src/commands/config/output-config-list.mts'),
+  () => ({
+    outputConfigList: mockOutputConfigList,
+  }),
+)
 
 // Import after mocks.
-const { cmdConfigList } = await import("../../../../src/commands/config/cmd-config-list.mts");
+const { cmdConfigList } =
+  await import('../../../../src/commands/config/cmd-config-list.mts')
 
-describe("cmd-config-list", () => {
+describe('cmd-config-list', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+  })
 
-  describe("command metadata", () => {
-    it("should have correct description", () => {
-      expect(cmdConfigList.description).toBe("Show all local CLI config items and their values");
-    });
+  describe('command metadata', () => {
+    it('should have correct description', () => {
+      expect(cmdConfigList.description).toBe(
+        'Show all local CLI config items and their values',
+      )
+    })
 
-    it("should not be hidden", () => {
-      expect(cmdConfigList.hidden).toBe(false);
-    });
-  });
+    it('should not be hidden', () => {
+      expect(cmdConfigList.hidden).toBe(false)
+    })
+  })
 
-  describe("run", () => {
-    const importMeta = { url: "file:///test/cmd-config-list.mts" };
-    const context = { parentName: "socket config" };
+  describe('run', () => {
+    const importMeta = { url: 'file:///test/cmd-config-list.mts' }
+    const context = { parentName: 'socket config' }
 
-    it("should support --dry-run flag", async () => {
-      await cmdConfigList.run(["--dry-run"], importMeta, context);
+    it('should support --dry-run flag', async () => {
+      await cmdConfigList.run(['--dry-run'], importMeta, context)
 
-      expect(mockOutputConfigList).not.toHaveBeenCalled();
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("DryRun"));
-    });
+      expect(mockOutputConfigList).not.toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('DryRun'),
+      )
+    })
 
     it('shows "yes" for showFullTokens in dry-run when --full is set', async () => {
-      await cmdConfigList.run(["--dry-run", "--full"], importMeta, context);
+      await cmdConfigList.run(['--dry-run', '--full'], importMeta, context)
 
-      expect(mockOutputConfigList).not.toHaveBeenCalled();
-      const errors = mockLogger.error.mock.calls.flat().join(" ");
-      expect(errors).toContain("yes");
-    });
+      expect(mockOutputConfigList).not.toHaveBeenCalled()
+      const errors = mockLogger.error.mock.calls.flat().join(' ')
+      expect(errors).toContain('yes')
+    })
 
-    it("should call outputConfigList with default options", async () => {
-      await cmdConfigList.run([], importMeta, context);
+    it('should call outputConfigList with default options', async () => {
+      await cmdConfigList.run([], importMeta, context)
 
       expect(mockOutputConfigList).toHaveBeenCalledWith({
         full: false,
-        outputKind: "text",
-      });
-    });
+        outputKind: 'text',
+      })
+    })
 
-    it("should pass full flag to outputConfigList", async () => {
-      await cmdConfigList.run(["--full"], importMeta, context);
+    it('should pass full flag to outputConfigList', async () => {
+      await cmdConfigList.run(['--full'], importMeta, context)
 
       expect(mockOutputConfigList).toHaveBeenCalledWith({
         full: true,
-        outputKind: "text",
-      });
-    });
+        outputKind: 'text',
+      })
+    })
 
-    it("should support --json flag", async () => {
-      await cmdConfigList.run(["--json"], importMeta, context);
-
-      expect(mockOutputConfigList).toHaveBeenCalledWith({
-        full: false,
-        outputKind: "json",
-      });
-    });
-
-    it("should support --markdown flag", async () => {
-      await cmdConfigList.run(["--markdown"], importMeta, context);
+    it('should support --json flag', async () => {
+      await cmdConfigList.run(['--json'], importMeta, context)
 
       expect(mockOutputConfigList).toHaveBeenCalledWith({
         full: false,
-        outputKind: "markdown",
-      });
-    });
+        outputKind: 'json',
+      })
+    })
 
-    it("should support combined --full and --json flags", async () => {
-      await cmdConfigList.run(["--full", "--json"], importMeta, context);
+    it('should support --markdown flag', async () => {
+      await cmdConfigList.run(['--markdown'], importMeta, context)
+
+      expect(mockOutputConfigList).toHaveBeenCalledWith({
+        full: false,
+        outputKind: 'markdown',
+      })
+    })
+
+    it('should support combined --full and --json flags', async () => {
+      await cmdConfigList.run(['--full', '--json'], importMeta, context)
 
       expect(mockOutputConfigList).toHaveBeenCalledWith({
         full: true,
-        outputKind: "json",
-      });
-    });
+        outputKind: 'json',
+      })
+    })
 
-    it("should reject conflicting --json and --markdown flags", async () => {
-      await cmdConfigList.run(["--json", "--markdown"], importMeta, context);
+    it('should reject conflicting --json and --markdown flags', async () => {
+      await cmdConfigList.run(['--json', '--markdown'], importMeta, context)
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2);
-      expect(mockOutputConfigList).not.toHaveBeenCalled();
-    });
+      expect(process.exitCode).toBe(2)
+      expect(mockOutputConfigList).not.toHaveBeenCalled()
+    })
 
-    it("should call outputConfigList exactly once per run", async () => {
-      await cmdConfigList.run([], importMeta, context);
+    it('should call outputConfigList exactly once per run', async () => {
+      await cmdConfigList.run([], importMeta, context)
 
-      expect(mockOutputConfigList).toHaveBeenCalledTimes(1);
-    });
-  });
-});
+      expect(mockOutputConfigList).toHaveBeenCalledTimes(1)
+    })
+  })
+})

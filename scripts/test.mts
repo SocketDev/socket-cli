@@ -25,25 +25,25 @@
 
 // prefer-async-spawn: sync-required — top-level CLI runner; entire
 // flow is sync (test runner invocation + exit-code aggregation).
-import { spawnSync } from "@socketsecurity/lib-stable/process/spawn/child";
-import type { SpawnSyncOptions } from "node:child_process";
-import process from "node:process";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import type { SpawnSyncOptions } from 'node:child_process'
+import process from 'node:process'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
-const args = process.argv.slice(2);
-const mode: "staged" | "all" | "modified" = args.includes("--all")
-  ? "all"
-  : args.includes("--staged")
-    ? "staged"
-    : "modified";
-const quiet = args.includes("--quiet") || args.includes("--silent");
-const stdio: SpawnSyncOptions["stdio"] = quiet ? "pipe" : "inherit";
+const args = process.argv.slice(2)
+const mode: 'staged' | 'all' | 'modified' = args.includes('--all')
+  ? 'all'
+  : args.includes('--staged')
+    ? 'staged'
+    : 'modified'
+const quiet = args.includes('--quiet') || args.includes('--silent')
+const stdio: SpawnSyncOptions['stdio'] = quiet ? 'pipe' : 'inherit'
 // On Windows, `pnpm` is a .cmd shim that Node refuses to exec directly via
 // spawnSync (CVE-2024-27980 hardening). Wrap through the shell on Windows
 // only; POSIX keeps direct invocation.
-const useShell = process.platform === "win32";
+const useShell = process.platform === 'win32'
 
 // Paths that, when changed, force the full suite to run.
 const ESCALATION_PATTERNS = [
@@ -56,69 +56,69 @@ const ESCALATION_PATTERNS = [
   /^vitest\.config\.(?:js|mjs|mts|ts)$/,
   /^package\.json$/,
   /^lockstep\.schema\.json$/,
-];
+]
 
 function log(msg: string): void {
   if (!quiet) {
-    logger.log(msg);
+    logger.log(msg)
   }
 }
 
 function gitFiles(args: string[]): string[] {
   // spawnSync with array args — no shell interpolation. Matches the
   // socket/prefer-spawn-over-execsync rule contract.
-  const r = spawnSync("git", args, {
-    stdio: ["ignore", "pipe", "pipe"],
+  const r = spawnSync('git', args, {
+    stdio: ['ignore', 'pipe', 'pipe'],
     stdioString: true,
-  });
-  if (r.status !== 0 || typeof r.stdout !== "string") {
-    return [];
+  })
+  if (r.status !== 0 || typeof r.stdout !== 'string') {
+    return []
   }
   return r.stdout
-    .split("\n")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+    .split('\n')
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
 }
 
 function getStagedFiles(): string[] {
-  return gitFiles(["diff", "--cached", "--name-only", "--diff-filter=ACMR"]);
+  return gitFiles(['diff', '--cached', '--name-only', '--diff-filter=ACMR'])
 }
 
 function getModifiedFiles(): string[] {
-  return gitFiles(["diff", "--name-only", "--diff-filter=ACMR", "HEAD"]);
+  return gitFiles(['diff', '--name-only', '--diff-filter=ACMR', 'HEAD'])
 }
 
 function shouldEscalate(files: string[]): boolean {
   for (let i = 0, { length } = files; i < length; i += 1) {
-    const f = files[i]!;
+    const f = files[i]!
     for (let i = 0, { length } = ESCALATION_PATTERNS; i < length; i += 1) {
-      const pattern = ESCALATION_PATTERNS[i]!;
+      const pattern = ESCALATION_PATTERNS[i]!
       if (pattern.test(f)) {
-        return true;
+        return true
       }
     }
   }
-  return false;
+  return false
 }
 
 function runVitest(vitestArgs: string[], label: string): number {
-  log(`Test scope: ${label}`);
+  log(`Test scope: ${label}`)
   const r = spawnSync(
-    "pnpm",
-    ["exec", "vitest", ...vitestArgs, "--config", ".config/vitest.config.mts"],
+    'pnpm',
+    ['exec', 'vitest', ...vitestArgs, '--config', '.config/vitest.config.mts'],
     // Windows shell-shim rationale: see useShell at file top.
     { shell: useShell, stdio },
-  );
+  )
   if (r.status !== 0) {
-    log("Tests failed");
-    return 1;
+    log('Tests failed')
+    return 1
   }
-  log("All tests passed");
-  return 0;
+  log('All tests passed')
+  return 0
 }
 
 function runAll(): number {
-  return runVitest(["run"], "all");
+  return runVitest(['run'], 'all')
 }
 
 // --passWithNoTests: a scoped run where the changed files don't resolve
@@ -126,7 +126,7 @@ function runAll(): number {
 // found". Keeps pre-commit hooks passing when an edit touches only
 // non-testable code.
 function runChanged(): number {
-  return runVitest(["run", "--changed", "--passWithNoTests"], "changed");
+  return runVitest(['run', '--changed', '--passWithNoTests'], 'changed')
 }
 
 function runRelated(files: string[]): number {
@@ -134,38 +134,38 @@ function runRelated(files: string[]): number {
   // single non-watch execution. Pass the staged file list as positionals;
   // vitest walks the module graph from each.
   return runVitest(
-    ["related", ...files, "--run", "--passWithNoTests"],
+    ['related', ...files, '--run', '--passWithNoTests'],
     `staged (${files.length} file(s))`,
-  );
+  )
 }
 
 function main(): void {
-  if (mode === "all") {
-    process.exitCode = runAll();
-    return;
+  if (mode === 'all') {
+    process.exitCode = runAll()
+    return
   }
 
-  const files = mode === "staged" ? getStagedFiles() : getModifiedFiles();
+  const files = mode === 'staged' ? getStagedFiles() : getModifiedFiles()
 
   if (files.length === 0) {
-    log(`No ${mode} files; skipping tests.`);
-    return;
+    log(`No ${mode} files; skipping tests.`)
+    return
   }
 
   if (shouldEscalate(files)) {
-    log("Config files changed; escalating to full test suite.");
-    process.exitCode = runAll();
-    return;
+    log('Config files changed; escalating to full test suite.')
+    process.exitCode = runAll()
+    return
   }
 
-  if (mode === "staged") {
-    process.exitCode = runRelated(files);
-    return;
+  if (mode === 'staged') {
+    process.exitCode = runRelated(files)
+    return
   }
 
   // Working-tree changed → vitest's native --changed (it re-detects the
   // file list via git itself, including uncommitted edits).
-  process.exitCode = runChanged();
+  process.exitCode = runChanged()
 }
 
-main();
+main()

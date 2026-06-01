@@ -8,8 +8,8 @@
  * value.
  */
 
-import process from "node:process";
+import process from 'node:process'
 
 export function getSocketOauthIssuer(): string {
-  return process.env["SOCKET_OAUTH_ISSUER"] ?? "";
+  return process.env['SOCKET_OAUTH_ISSUER'] ?? ''
 }

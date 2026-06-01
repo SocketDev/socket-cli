@@ -3,6 +3,6 @@
  * Socket CLI JavaScript entry path.
  */
 
-import { env } from "node:process";
+import { env } from 'node:process'
 
-export const SOCKET_CLI_JS_PATH = env["SOCKET_CLI_JS_PATH"];
+export const SOCKET_CLI_JS_PATH = env['SOCKET_CLI_JS_PATH']

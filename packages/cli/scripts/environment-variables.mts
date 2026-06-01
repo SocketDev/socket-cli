@@ -12,16 +12,16 @@
  *     EnvironmentVariables.getTestVariables(vars)
  */
 
-import { spawnSync } from "@socketsecurity/lib-stable/process/spawn/child";
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import crypto from "node:crypto";
-import { fileURLToPath } from "node:url";
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import crypto from 'node:crypto'
+import { fileURLToPath } from 'node:url'
 
-import { getPackageOutDir } from "package-builder/scripts/paths.mts";
+import { getPackageOutDir } from 'package-builder/scripts/paths.mts'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootPath = path.join(__dirname, "..");
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..')
 
 /**
  * Environment variables manager for Socket CLI. Provides unified loading of
@@ -37,92 +37,94 @@ export class EnvironmentVariables {
    */
   static load() {
     // Read package.json for metadata.
-    const packageJson = JSON.parse(readFileSync(path.join(rootPath, "package.json"), "utf-8"));
+    const packageJson = JSON.parse(
+      readFileSync(path.join(rootPath, 'package.json'), 'utf-8'),
+    )
 
     // Read version from socket package (the published package).
     // Uses centralized paths from package-builder.
     const socketPackageJson = JSON.parse(
-      readFileSync(path.join(getPackageOutDir("cli"), "package.json"), "utf-8"),
-    );
+      readFileSync(path.join(getPackageOutDir('cli'), 'package.json'), 'utf-8'),
+    )
 
     // Get current git commit hash.
-    let gitHash = "";
+    let gitHash = ''
     try {
-      const r = spawnSync("git", ["rev-parse", "--short", "HEAD"], {
+      const r = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
         cwd: rootPath,
-        stdio: "pipe",
+        stdio: 'pipe',
         stdioString: true,
-      });
-      if (r.status === 0 && typeof r.stdout === "string") {
-        gitHash = r.stdout.trim();
+      })
+      if (r.status === 0 && typeof r.stdout === 'string') {
+        gitHash = r.stdout.trim()
       }
     } catch {}
 
     // Get external tool versions from bundle-tools.json.
     const externalTools = JSON.parse(
-      readFileSync(path.join(rootPath, "bundle-tools.json"), "utf-8"),
-    );
+      readFileSync(path.join(rootPath, 'bundle-tools.json'), 'utf-8'),
+    )
 
     /**
      * Helper to get external tool version with validation.
      */
-    function getExternalToolVersion(key: string, field = "version") {
-      const tool = externalTools[key];
+    function getExternalToolVersion(key: string, field = 'version') {
+      const tool = externalTools[key]
       if (!tool) {
         throw new Error(
           `External tool "${key}" not found in bundle-tools.json. Please add it to the configuration.`,
-        );
+        )
       }
-      const value = tool[field];
+      const value = tool[field]
       if (!value) {
         throw new Error(
           `External tool "${key}" is missing required field "${field}" in bundle-tools.json.`,
-        );
+        )
       }
-      return value;
+      return value
     }
 
     // npm packages use 'version' field.
-    const cdxgenVersion = getExternalToolVersion("@cyclonedx/cdxgen");
-    const coanaVersion = getExternalToolVersion("@coana-tech/cli");
-    const synpVersion = getExternalToolVersion("synp");
+    const cdxgenVersion = getExternalToolVersion('@cyclonedx/cdxgen')
+    const coanaVersion = getExternalToolVersion('@coana-tech/cli')
+    const synpVersion = getExternalToolVersion('synp')
     // pypi packages use 'version' field.
-    const pyCliVersion = getExternalToolVersion("socketsecurity");
+    const pyCliVersion = getExternalToolVersion('socketsecurity')
     // GitHub-released tools use 'version' field (release tag, any format).
-    const opengrepVersion = getExternalToolVersion("opengrep");
-    const pythonBuildTag = getExternalToolVersion("python", "tag");
-    const pythonVersion = getExternalToolVersion("python");
-    const socketPatchVersion = getExternalToolVersion("socket-patch");
-    const trivyVersion = getExternalToolVersion("trivy");
-    const trufflehogVersion = getExternalToolVersion("trufflehog");
+    const opengrepVersion = getExternalToolVersion('opengrep')
+    const pythonBuildTag = getExternalToolVersion('python', 'tag')
+    const pythonVersion = getExternalToolVersion('python')
+    const socketPatchVersion = getExternalToolVersion('socket-patch')
+    const trivyVersion = getExternalToolVersion('trivy')
+    const trufflehogVersion = getExternalToolVersion('trufflehog')
     // sfw uses both: GitHub binary for SEA, npm package for CLI.
-    const sfwVersion = getExternalToolVersion("sfw");
-    const sfwNpmVersion = externalTools["sfw"]?.npm?.version;
+    const sfwVersion = getExternalToolVersion('sfw')
+    const sfwNpmVersion = externalTools['sfw']?.npm?.version
     if (!sfwNpmVersion) {
       throw new Error(
         'External tool "sfw" is missing required field "npm.version" in bundle-tools.json.',
-      );
+      )
     }
 
     // Build-time constants that can be overridden by environment variables.
-    const publishedBuild = process.env["INLINED_PUBLISHED_BUILD"] === "1";
-    const sentryBuild = process.env["INLINED_SENTRY_BUILD"] === "1";
+    const publishedBuild = process.env['INLINED_PUBLISHED_BUILD'] === '1'
+    const sentryBuild = process.env['INLINED_SENTRY_BUILD'] === '1'
 
     // Compute version hash (matches Rollup implementation).
-    const randUuidSegment = crypto.randomUUID().split("-")[0];
+    const randUuidSegment = crypto.randomUUID().split('-')[0]
     const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
-      publishedBuild ? "" : ":dev"
-    }`;
+      publishedBuild ? '' : ':dev'
+    }`
 
     // Get checksums for all external tools that have them.
     // GitHub-released tools and PyPI packages have checksums for integrity verification.
-    const opengrepChecksums = externalTools.opengrep?.checksums || {};
-    const pythonChecksums = externalTools.python?.checksums || {};
-    const sfwChecksums = externalTools.sfw?.checksums || {};
-    const socketPatchChecksums = externalTools["socket-patch"]?.checksums || {};
-    const pyCliChecksums = externalTools.socketsecurity?.checksums || {};
-    const trivyChecksums = externalTools.trivy?.checksums || {};
-    const trufflehogChecksums = externalTools.trufflehog?.checksums || {};
+    const opengrepChecksums = externalTools.opengrep?.checksums || {}
+    const pythonChecksums = externalTools.python?.checksums || {}
+    const sfwChecksums = externalTools.sfw?.checksums || {}
+    const socketPatchChecksums = externalTools['socket-patch']?.checksums || {}
+    const pyCliChecksums = externalTools.socketsecurity?.checksums || {}
+    const trivyChecksums = externalTools.trivy?.checksums || {}
+    const trufflehogChecksums = externalTools.trufflehog?.checksums || {}
 
     // Return all environment variables with raw values.
     return {
@@ -133,12 +135,12 @@ export class EnvironmentVariables {
       INLINED_NAME: packageJson.name,
       INLINED_OPENGREP_CHECKSUMS: JSON.stringify(opengrepChecksums),
       INLINED_OPENGREP_VERSION: opengrepVersion,
-      INLINED_PUBLISHED_BUILD: publishedBuild ? "1" : "",
+      INLINED_PUBLISHED_BUILD: publishedBuild ? '1' : '',
       INLINED_PYCLI_VERSION: pyCliVersion,
       INLINED_PYTHON_BUILD_TAG: pythonBuildTag,
       INLINED_PYTHON_CHECKSUMS: JSON.stringify(pythonChecksums),
       INLINED_PYTHON_VERSION: pythonVersion,
-      INLINED_SENTRY_BUILD: sentryBuild ? "1" : "",
+      INLINED_SENTRY_BUILD: sentryBuild ? '1' : '',
       INLINED_SFW_CHECKSUMS: JSON.stringify(sfwChecksums),
       INLINED_SFW_NPM_VERSION: sfwNpmVersion,
       INLINED_SFW_VERSION: sfwVersion,
@@ -152,7 +154,7 @@ export class EnvironmentVariables {
       INLINED_TRUFFLEHOG_VERSION: trufflehogVersion,
       INLINED_VERSION: socketPackageJson.version,
       INLINED_VERSION_HASH: versionHash,
-    };
+    }
   }
 
   /**
@@ -165,17 +167,18 @@ export class EnvironmentVariables {
   static loadSafe() {
     try {
       const externalTools = JSON.parse(
-        readFileSync(path.join(rootPath, "bundle-tools.json"), "utf-8"),
-      );
+        readFileSync(path.join(rootPath, 'bundle-tools.json'), 'utf-8'),
+      )
       return {
-        INLINED_COANA_VERSION: externalTools["@coana-tech/cli"]?.version || "",
-        INLINED_PYCLI_VERSION: externalTools.socketsecurity?.version || "",
-        INLINED_SFW_NPM_VERSION: externalTools.sfw?.npm?.version || "",
-        INLINED_SFW_VERSION: externalTools.sfw?.version || "",
-        INLINED_SOCKET_PATCH_VERSION: externalTools["socket-patch"]?.version || "",
-      };
+        INLINED_COANA_VERSION: externalTools['@coana-tech/cli']?.version || '',
+        INLINED_PYCLI_VERSION: externalTools.socketsecurity?.version || '',
+        INLINED_SFW_NPM_VERSION: externalTools.sfw?.npm?.version || '',
+        INLINED_SFW_VERSION: externalTools.sfw?.version || '',
+        INLINED_SOCKET_PATCH_VERSION:
+          externalTools['socket-patch']?.version || '',
+      }
     } catch {
-      return {};
+      return {}
     }
   }
 
@@ -190,14 +193,14 @@ export class EnvironmentVariables {
    *   JSON-stringified values.
    */
   static getDefineEntries(vars?: Record<string, string>) {
-    const envVars = vars || EnvironmentVariables.load();
+    const envVars = vars || EnvironmentVariables.load()
 
     // Convert all values to JSON-stringified format for esbuild.
-    const defines: Record<string, string> = {};
+    const defines: Record<string, string> = {}
     for (const [key, value] of Object.entries(envVars)) {
-      defines[key] = JSON.stringify(value);
+      defines[key] = JSON.stringify(value)
     }
-    return defines;
+    return defines
   }
 
   /**
@@ -207,6 +210,6 @@ export class EnvironmentVariables {
    * @returns {Object} Object with test environment variables
    */
   static getTestVariables() {
-    return EnvironmentVariables.loadSafe();
+    return EnvironmentVariables.loadSafe()
   }
 }

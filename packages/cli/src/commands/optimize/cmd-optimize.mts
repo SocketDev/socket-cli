@@ -1,30 +1,33 @@
-import path from "node:path";
+import path from 'node:path'
 
-import { handleOptimize } from "./handle-optimize.mts";
-import { CMD_NAME as CMD_NAME_FULL } from "./shared.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
-import { outputDryRunPreview } from "../../util/dry-run/output.mts";
-import { detectAndValidatePackageEnvironment } from "../../util/ecosystem/environment.mjs";
-import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
-import { getOutputKind } from "../../util/output/mode.mjs";
+import { handleOptimize } from './handle-optimize.mts'
+import { CMD_NAME as CMD_NAME_FULL } from './shared.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunPreview } from '../../util/dry-run/output.mts'
+import { detectAndValidatePackageEnvironment } from '../../util/ecosystem/environment.mjs'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
-import type { DryRunAction } from "../../util/dry-run/output.mts";
-import type { MeowFlags } from "../../flags.mts";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { DryRunAction } from '../../util/dry-run/output.mts'
+import type { MeowFlags } from '../../flags.mts'
 
-export const CMD_NAME = "optimize";
+export const CMD_NAME = 'optimize'
 
-const description = "Optimize dependencies with @socketregistry overrides";
+const description = 'Optimize dependencies with @socketregistry overrides'
 
-const hidden = false;
+const hidden = false
 
 export const cmdOptimize = {
   description,
   hidden,
   run,
-};
+}
 
 export async function run(
   argv: string[] | readonly string[],
@@ -38,14 +41,14 @@ export async function run(
     flags: defineFlags({
       ...commonFlags,
       pin: {
-        type: "boolean",
+        type: 'boolean',
         default: false,
-        description: "Pin overrides to latest version",
+        description: 'Pin overrides to latest version',
       },
       prod: {
-        type: "boolean",
+        type: 'boolean',
         default: false,
-        description: "Add overrides for production dependencies only",
+        description: 'Add overrides for production dependencies only',
       },
     }),
     help: (command: string, config: { flags: MeowFlags }) => `
@@ -62,83 +65,87 @@ export async function run(
       $ ${command}
       $ ${command} ./path/to/project --pin
   `,
-  };
+  }
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  });
+  })
 
-  const dryRun = !!cli.flags["dryRun"];
+  const dryRun = !!cli.flags['dryRun']
 
-  const { json, markdown, pin, prod } = cli.flags;
+  const { json, markdown, pin, prod } = cli.flags
 
-  let [cwd = "."] = cli.input;
+  let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd);
+  cwd = path.resolve(process.cwd(), cwd)
 
-  const outputKind = getOutputKind(json, markdown);
+  const outputKind = getOutputKind(json, markdown)
 
   if (dryRun) {
     // Detect package environment to show meaningful dry-run output.
     const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
       cmdName: CMD_NAME_FULL,
       prod: Boolean(prod),
-    });
+    })
 
     if (!pkgEnvCResult.ok) {
       outputDryRunPreview({
-        summary: "Optimize dependencies with @socketregistry overrides",
+        summary: 'Optimize dependencies with @socketregistry overrides',
         actions: [
           {
-            type: "fetch",
-            description: "Detect package environment",
+            type: 'fetch',
+            description: 'Detect package environment',
             target: cwd,
           },
         ],
         wouldSucceed: false,
-      });
-      return;
+      })
+      return
     }
 
-    const pkgEnvDetails = pkgEnvCResult.data;
-    const { agent, agentVersion, pkgPath } = pkgEnvDetails;
+    const pkgEnvDetails = pkgEnvCResult.data
+    const { agent, agentVersion, pkgPath } = pkgEnvDetails
 
     const actions: DryRunAction[] = [
       {
-        type: "fetch",
+        type: 'fetch',
         description: `Detected ${agent} v${agentVersion}`,
         target: pkgPath,
       },
       {
-        type: "fetch",
-        description: "Analyze dependencies against @socketregistry overrides",
-        target: "package.json and lockfile",
+        type: 'fetch',
+        description: 'Analyze dependencies against @socketregistry overrides',
+        target: 'package.json and lockfile',
       },
       {
-        type: "modify",
-        description: "Add or update overrides section in package.json",
-        target: path.join(pkgPath, "package.json"),
+        type: 'modify',
+        description: 'Add or update overrides section in package.json',
+        target: path.join(pkgPath, 'package.json'),
         details: {
-          pin: pin ? "Yes - pin to specific versions" : "No - use version ranges",
-          prod: prod ? "Yes - production dependencies only" : "No - all dependencies",
+          pin: pin
+            ? 'Yes - pin to specific versions'
+            : 'No - use version ranges',
+          prod: prod
+            ? 'Yes - production dependencies only'
+            : 'No - all dependencies',
         },
       },
       {
-        type: "execute",
+        type: 'execute',
         description: `Run ${agent} to install optimized dependencies`,
       },
-    ];
+    ]
 
     outputDryRunPreview({
       summary: `Optimize dependencies with @socketregistry overrides (${agent} v${agentVersion})`,
       actions,
       wouldSucceed: true,
-    });
-    return;
+    })
+    return
   }
 
   await handleOptimize({
@@ -146,5 +153,5 @@ export async function run(
     pin: Boolean(pin),
     outputKind,
     prod: Boolean(prod),
-  });
+  })
 }

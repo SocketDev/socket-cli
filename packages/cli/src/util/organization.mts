@@ -1,16 +1,20 @@
 import type {
   EnterpriseOrganizations,
   Organizations,
-} from "../commands/organization/fetch-organization-list.mts";
+} from '../commands/organization/fetch-organization-list.mts'
 
-export function getEnterpriseOrgs(orgs: Organizations): EnterpriseOrganizations {
-  return orgs.filter((o) => o.plan.includes("enterprise")) as EnterpriseOrganizations;
+export function getEnterpriseOrgs(
+  orgs: Organizations,
+): EnterpriseOrganizations {
+  return orgs.filter(o =>
+    o.plan.includes('enterprise'),
+  ) as EnterpriseOrganizations
 }
 
 export function getOrgSlugs(orgs: Organizations): string[] {
-  return orgs.map((o) => o.slug);
+  return orgs.map(o => o.slug)
 }
 
 export function hasEnterpriseOrgPlan(orgs: Organizations): boolean {
-  return orgs.some((o) => o.plan.includes("enterprise"));
+  return orgs.some(o => o.plan.includes('enterprise'))
 }

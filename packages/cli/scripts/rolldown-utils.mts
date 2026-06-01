@@ -6,18 +6,18 @@
  * rolldown).
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { transformUnicodePropertyEscapes } from "build-infra/lib/unicode-property-escape-transform";
+import { transformUnicodePropertyEscapes } from 'build-infra/lib/unicode-property-escape-transform'
 
-import { EnvironmentVariables } from "./environment-variables.mts";
+import { EnvironmentVariables } from './environment-variables.mts'
 
-import type { RolldownOptions } from "rolldown";
+import type { RolldownOptions } from 'rolldown'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 /**
  * Settings every Socket CLI rolldown config shares. Kept in one place so the
@@ -29,16 +29,18 @@ const logger = getDefaultLogger();
  * env-var pass in `runBuild` catches the mangled `<id>.env["X"]` forms the
  * static define misses (same two-layer approach esbuild used).
  */
-export function createBaseConfig(inlinedEnvVars: Record<string, string>): RolldownOptions {
+export function createBaseConfig(
+  inlinedEnvVars: Record<string, string>,
+): RolldownOptions {
   return {
-    platform: "node",
+    platform: 'node',
     transform: {
       define: {
-        "process.env.NODE_ENV": '"production"',
+        'process.env.NODE_ENV': '"production"',
         ...createDefineEntries(inlinedEnvVars),
       },
     },
-  };
+  }
 }
 
 /**
@@ -50,11 +52,11 @@ export function createBaseConfig(inlinedEnvVars: Record<string, string>): Rolldo
  * post-write `applyEnvVarReplacement` pass.
  */
 function createDefineEntries(envVars: Record<string, string>) {
-  const entries: Record<string, string> = {};
+  const entries: Record<string, string> = {}
   for (const { 0: key, 1: value } of Object.entries(envVars)) {
-    entries[`process.env.${key}`] = value;
+    entries[`process.env.${key}`] = value
   }
-  return entries;
+  return entries
 }
 
 /**
@@ -64,22 +66,22 @@ export function createIndexConfig({
   entryPoint,
   outfile,
 }: {
-  entryPoint: string;
-  outfile: string;
+  entryPoint: string
+  outfile: string
 }): RolldownOptions {
-  const inlinedEnvVars = getInlinedEnvVars();
-  const base = createBaseConfig(inlinedEnvVars);
+  const inlinedEnvVars = getInlinedEnvVars()
+  const base = createBaseConfig(inlinedEnvVars)
   return {
     ...base,
     input: entryPoint,
     output: {
       file: outfile,
-      format: "cjs",
+      format: 'cjs',
       minify: false,
       sourcemap: false,
-      banner: "#!/usr/bin/env node",
+      banner: '#!/usr/bin/env node',
     },
-  };
+  }
 }
 
 /**
@@ -88,29 +90,32 @@ export function createIndexConfig({
  * Operates on the written file text — the post-bundle counterpart of esbuild's
  * onEnd buffer mutation.
  */
-export function applyEnvVarReplacement(content: string, envVars: Record<string, string>): string {
-  let next = content;
+export function applyEnvVarReplacement(
+  content: string,
+  envVars: Record<string, string>,
+): string {
+  let next = content
   for (const { 0: key, 1: value } of Object.entries(envVars)) {
-    const dq = new RegExp(`(\\w+\\.)+env\\["${key}"\\]`, "g");
-    const sq = new RegExp(`(\\w+\\.)+env\\['${key}'\\]`, "g");
-    next = next.replace(dq, value).replace(sq, value);
+    const dq = new RegExp(`(\\w+\\.)+env\\["${key}"\\]`, 'g')
+    const sq = new RegExp(`(\\w+\\.)+env\\['${key}'\\]`, 'g')
+    next = next.replace(dq, value).replace(sq, value)
   }
-  return next;
+  return next
 }
 
 /**
  * Get all inlined environment variables with their JSON-stringified values.
  */
 export function getInlinedEnvVars() {
-  return EnvironmentVariables.getDefineEntries();
+  return EnvironmentVariables.getDefineEntries()
 }
 
 interface RunBuildOptions {
   // Post-write transforms applied to the emitted output text, in order. The
   // unicode-property-escape transform + env-var replacement run here because
   // rolldown (like esbuild) can't express them as a pure config option.
-  envVars?: Record<string, string> | undefined;
-  unicodeTransform?: boolean | undefined;
+  envVars?: Record<string, string> | undefined
+  unicodeTransform?: boolean | undefined
 }
 
 /**
@@ -120,48 +125,48 @@ interface RunBuildOptions {
  */
 export async function runBuild(
   config: RolldownOptions,
-  description = "Build",
+  description = 'Build',
   options: RunBuildOptions = {},
 ): Promise<void> {
-  const { rolldown } = await import("rolldown");
-  const { envVars, unicodeTransform = false } = options;
+  const { rolldown } = await import('rolldown')
+  const { envVars, unicodeTransform = false } = options
   try {
     if (description) {
-      logger.info(`Building: ${description}`);
+      logger.info(`Building: ${description}`)
     }
-    const { output, ...inputOptions } = config;
+    const { output, ...inputOptions } = config
     if (!output || Array.isArray(output)) {
-      throw new Error("Expected a single output config");
+      throw new Error('Expected a single output config')
     }
-    const bundle = await rolldown(inputOptions);
+    const bundle = await rolldown(inputOptions)
     try {
-      await bundle.write(output);
+      await bundle.write(output)
     } finally {
-      await bundle.close();
+      await bundle.close()
     }
 
     // Post-write transforms over the emitted file (unicode escapes first, then
     // env-var replacement — order matches the esbuild plugin chain).
-    const outFile = (output as { file?: string | undefined }).file;
+    const outFile = (output as { file?: string | undefined }).file
     if (outFile && (unicodeTransform || envVars)) {
-      let content = readFileSync(outFile, "utf8");
+      let content = readFileSync(outFile, 'utf8')
       if (unicodeTransform) {
-        content = transformUnicodePropertyEscapes(content);
+        content = transformUnicodePropertyEscapes(content)
       }
       if (envVars) {
-        content = applyEnvVarReplacement(content, envVars);
+        content = applyEnvVarReplacement(content, envVars)
       }
-      mkdirSync(path.dirname(outFile), { recursive: true });
-      writeFileSync(outFile, content);
+      mkdirSync(path.dirname(outFile), { recursive: true })
+      writeFileSync(outFile, content)
     }
 
     if (description) {
-      logger.success(`${description} complete`);
+      logger.success(`${description} complete`)
     }
   } catch (e) {
-    logger.error(`Build failed: ${description || "Unknown"}`);
-    logger.error(e);
-    process.exitCode = 1;
-    throw e;
+    logger.error(`Build failed: ${description || 'Unknown'}`)
+    logger.error(e)
+    process.exitCode = 1
+    throw e
   }
 }

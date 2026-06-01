@@ -9,7 +9,7 @@
  * Related Files: - src/commands/scan/output-scan-reach.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -19,145 +19,154 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   success: vi.fn(),
   info: vi.fn(),
-}));
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock utilities.
-vi.mock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
-  failMsgWithBadge: (msg: string, cause?: string) => (cause ? `${msg}: ${cause}` : msg),
-}));
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
+  failMsgWithBadge: (msg: string, cause?: string) =>
+    cause ? `${msg}: ${cause}` : msg,
+}))
 
-vi.mock(import("../../../../src/util/output/result-json.mjs"), () => ({
+vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
-}));
+}))
 
-import { outputScanReach } from "../../../../src/commands/scan/output-scan-reach.mts";
+import { outputScanReach } from '../../../../src/commands/scan/output-scan-reach.mts'
 
-import type { CResult } from "../../../../src/types.mts";
+import type { CResult } from '../../../../src/types.mts'
 
-describe("output-scan-reach", () => {
+describe('output-scan-reach', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+  })
 
-  describe("outputScanReach", () => {
-    describe("JSON output", () => {
-      it("outputs success result as JSON", async () => {
+  describe('outputScanReach', () => {
+    describe('JSON output', () => {
+      it('outputs success result as JSON', async () => {
         const result: CResult<{ reachable: number }> = {
           ok: true,
           data: { reachable: 5 },
-        };
+        }
 
         await outputScanReach(result, {
-          cwd: "/test",
-          outputKind: "json",
-          outputPath: "",
-        });
+          cwd: '/test',
+          outputKind: 'json',
+          outputPath: '',
+        })
 
-        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok": true'));
-      });
+        expect(mockLogger.log).toHaveBeenCalledWith(
+          expect.stringContaining('"ok": true'),
+        )
+      })
 
-      it("outputs error result as JSON", async () => {
+      it('outputs error result as JSON', async () => {
         const result: CResult<unknown> = {
           ok: false,
-          message: "Analysis failed",
-        };
+          message: 'Analysis failed',
+        }
 
         await outputScanReach(result, {
-          cwd: "/test",
-          outputKind: "json",
-          outputPath: "",
-        });
+          cwd: '/test',
+          outputKind: 'json',
+          outputPath: '',
+        })
 
-        expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('"ok": false'));
-      });
-    });
+        expect(mockLogger.log).toHaveBeenCalledWith(
+          expect.stringContaining('"ok": false'),
+        )
+      })
+    })
 
-    describe("Text output", () => {
-      it("outputs success message with default path", async () => {
+    describe('Text output', () => {
+      it('outputs success message with default path', async () => {
         const result: CResult<{ reachable: number }> = {
           ok: true,
           data: { reachable: 5 },
-        };
+        }
 
         await outputScanReach(result, {
-          cwd: "/test",
-          outputKind: "text",
-          outputPath: "",
-        });
+          cwd: '/test',
+          outputKind: 'text',
+          outputPath: '',
+        })
 
         expect(mockLogger.success).toHaveBeenCalledWith(
-          "Reachability analysis completed successfully!",
-        );
-        expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining(".socket.facts.json"));
-      });
+          'Reachability analysis completed successfully!',
+        )
+        expect(mockLogger.info).toHaveBeenCalledWith(
+          expect.stringContaining('.socket.facts.json'),
+        )
+      })
 
-      it("outputs success message with custom path", async () => {
+      it('outputs success message with custom path', async () => {
         const result: CResult<{ reachable: number }> = {
           ok: true,
           data: { reachable: 5 },
-        };
+        }
 
         await outputScanReach(result, {
-          cwd: "/test",
-          outputKind: "text",
-          outputPath: "/custom/output.json",
-        });
+          cwd: '/test',
+          outputKind: 'text',
+          outputPath: '/custom/output.json',
+        })
 
         expect(mockLogger.info).toHaveBeenCalledWith(
-          expect.stringContaining("/custom/output.json"),
-        );
-      });
+          expect.stringContaining('/custom/output.json'),
+        )
+      })
 
-      it("outputs error with fail message", async () => {
+      it('outputs error with fail message', async () => {
         const result: CResult<unknown> = {
           ok: false,
-          message: "Analysis failed",
-          cause: "No dependencies found",
-        };
+          message: 'Analysis failed',
+          cause: 'No dependencies found',
+        }
 
         await outputScanReach(result, {
-          cwd: "/test",
-          outputKind: "text",
-          outputPath: "",
-        });
+          cwd: '/test',
+          outputKind: 'text',
+          outputPath: '',
+        })
 
-        expect(mockLogger.fail).toHaveBeenCalledWith(expect.stringContaining("Analysis failed"));
-      });
+        expect(mockLogger.fail).toHaveBeenCalledWith(
+          expect.stringContaining('Analysis failed'),
+        )
+      })
 
-      it("sets exit code on error", async () => {
+      it('sets exit code on error', async () => {
         const result: CResult<unknown> = {
           ok: false,
-          message: "Failed",
-        };
+          message: 'Failed',
+        }
 
         await outputScanReach(result, {
-          cwd: "/test",
-          outputKind: "text",
-          outputPath: "",
-        });
+          cwd: '/test',
+          outputKind: 'text',
+          outputPath: '',
+        })
 
-        expect(process.exitCode).toBe(1);
-      });
+        expect(process.exitCode).toBe(1)
+      })
 
-      it("uses custom exit code when provided", async () => {
+      it('uses custom exit code when provided', async () => {
         const result: CResult<unknown> = {
           ok: false,
-          message: "Failed",
+          message: 'Failed',
           code: 2,
-        };
+        }
 
         await outputScanReach(result, {
-          cwd: "/test",
-          outputKind: "text",
-          outputPath: "",
-        });
+          cwd: '/test',
+          outputKind: 'text',
+          outputPath: '',
+        })
 
-        expect(process.exitCode).toBe(2);
-      });
-    });
-  });
-});
+        expect(process.exitCode).toBe(2)
+      })
+    })
+  })
+})

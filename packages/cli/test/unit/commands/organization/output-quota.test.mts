@@ -22,16 +22,19 @@
  * src/commands/organization/fetch-quota.mts - Quota fetcher.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createErrorResult, createSuccessResult } from "../../../../test/helpers/index.mts";
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../../test/helpers/index.mts'
 
-describe("outputQuota", () => {
+describe('outputQuota', () => {
   beforeEach(async () => {
-    vi.resetModules();
-  });
+    vi.resetModules()
+  })
 
-  it("outputs JSON format for successful result", async () => {
+  it('outputs JSON format for successful result', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -40,34 +43,35 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
-    const mockSerializeResultJson = vi.fn((result) => JSON.stringify(result));
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
-    vi.doMock(import("../../../../src/util/output/result-json.mjs"), () => ({
+    }))
+    vi.doMock(import('../../../../src/util/output/result-json.mjs'), () => ({
       serializeResultJson: mockSerializeResultJson,
-    }));
+    }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 1000,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "json");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'json')
 
-    expect(mockSerializeResultJson).toHaveBeenCalledWith(result);
-    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result));
-    expect(process.exitCode).toBeUndefined();
-  });
+    expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
+    expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
+    expect(process.exitCode).toBeUndefined()
+  })
 
-  it("outputs error in JSON format", async () => {
+  it('outputs error in JSON format', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -76,34 +80,35 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
-    const mockSerializeResultJson = vi.fn((result) => JSON.stringify(result));
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
-    vi.doMock(import("../../../../src/util/output/result-json.mjs"), () => ({
+    }))
+    vi.doMock(import('../../../../src/util/output/result-json.mjs'), () => ({
       serializeResultJson: mockSerializeResultJson,
-    }));
+    }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
-    const result = createErrorResult("Unauthorized", {
+    const result = createErrorResult('Unauthorized', {
       code: 2,
-      cause: "Invalid API token",
-    });
+      cause: 'Invalid API token',
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result, "json");
+    process.exitCode = undefined
+    await outputQuota(result, 'json')
 
-    expect(mockLogger.log).toHaveBeenCalled();
-    expect(process.exitCode).toBe(2);
-  });
+    expect(mockLogger.log).toHaveBeenCalled()
+    expect(process.exitCode).toBe(2)
+  })
 
-  it("outputs text format with quota information", async () => {
+  it('outputs text format with quota information', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -112,33 +117,36 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+    }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 500,
       maxQuota: 1000,
       nextWindowRefresh: undefined,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
-    expect(mockLogger.log).toHaveBeenCalledWith("Quota remaining: 500 / 1000 (50% used)");
-    expect(mockLogger.log).toHaveBeenCalledWith("Next refresh: unknown");
-    expect(mockLogger.log).toHaveBeenCalledWith("");
-    expect(process.exitCode).toBeUndefined();
-  });
+    expect(mockLogger.log).toHaveBeenCalledWith(
+      'Quota remaining: 500 / 1000 (50% used)',
+    )
+    expect(mockLogger.log).toHaveBeenCalledWith('Next refresh: unknown')
+    expect(mockLogger.log).toHaveBeenCalledWith('')
+    expect(process.exitCode).toBeUndefined()
+  })
 
-  it("falls back to remaining-only when maxQuota is missing", async () => {
+  it('falls back to remaining-only when maxQuota is missing', async () => {
     const mockLogger = {
       fail: vi.fn(),
       info: vi.fn(),
@@ -146,28 +154,29 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+    }
 
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 250,
       maxQuota: 0,
       nextWindowRefresh: undefined,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
-    expect(mockLogger.log).toHaveBeenCalledWith("Quota remaining: 250");
-  });
+    expect(mockLogger.log).toHaveBeenCalledWith('Quota remaining: 250')
+  })
 
-  it("formats nextWindowRefresh when provided", async () => {
+  it('formats nextWindowRefresh when provided', async () => {
     const mockLogger = {
       fail: vi.fn(),
       info: vi.fn(),
@@ -175,32 +184,36 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+    }
 
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 100,
       maxQuota: 1000,
-      nextWindowRefresh: "2099-01-01T00:00:00.000Z",
-    });
+      nextWindowRefresh: '2099-01-01T00:00:00.000Z',
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
     // Exact "in X d" count is time-sensitive; just confirm it rendered the ISO date.
-    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0]);
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
     expect(
-      calls.some((c: unknown) => typeof c === "string" && c.includes("2099-01-01T00:00:00.000Z")),
-    ).toBe(true);
-  });
+      calls.some(
+        (c: unknown) =>
+          typeof c === 'string' && c.includes('2099-01-01T00:00:00.000Z'),
+      ),
+    ).toBe(true)
+  })
 
-  it("shows <1 min when refresh is within 60 seconds", async () => {
+  it('shows <1 min when refresh is within 60 seconds', async () => {
     // Regression: Math.round(diffMs / 60_000) used to produce "in 0 min"
     // for 1–29,999 ms.
     const mockLogger = {
@@ -210,29 +223,34 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+    }
 
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
-    const soon = new Date(Date.now() + 5000).toISOString();
+    const soon = new Date(Date.now() + 5000).toISOString()
     const result = createSuccessResult({
       quota: 10,
       maxQuota: 1000,
       nextWindowRefresh: soon,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0]);
-    expect(calls.some((c: unknown) => typeof c === "string" && c.includes("<1 min"))).toBe(true);
-    expect(calls.some((c: unknown) => typeof c === "string" && c.includes("0 min"))).toBe(false);
-  });
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && c.includes('<1 min')),
+    ).toBe(true)
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && c.includes('0 min')),
+    ).toBe(false)
+  })
 
   it('promotes to hours before producing "in 60 min" at the boundary', async () => {
     // Regression: at diffMs ~= 59.5 min, Math.round rounded up to 60,
@@ -244,31 +262,36 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+    }
 
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
-    const near = new Date(Date.now() + 59.8 * 60_000).toISOString();
+    const near = new Date(Date.now() + 59.8 * 60_000).toISOString()
     const result = createSuccessResult({
       quota: 10,
       maxQuota: 1000,
       nextWindowRefresh: near,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0]);
-    expect(calls.some((c: unknown) => typeof c === "string" && c.includes("60 min"))).toBe(false);
-    expect(calls.some((c: unknown) => typeof c === "string" && c.includes("1 h"))).toBe(true);
-  });
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && c.includes('60 min')),
+    ).toBe(false)
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && c.includes('1 h')),
+    ).toBe(true)
+  })
 
-  it("returns the raw refresh string when Date.parse yields NaN", async () => {
+  it('returns the raw refresh string when Date.parse yields NaN', async () => {
     const mockLogger = {
       fail: vi.fn(),
       info: vi.fn(),
@@ -276,28 +299,31 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    }
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 10,
       maxQuota: 100,
-      nextWindowRefresh: "not-a-date",
-    });
+      nextWindowRefresh: 'not-a-date',
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0]);
-    expect(calls.some((c: unknown) => typeof c === "string" && c.includes("not-a-date"))).toBe(
-      true,
-    );
-  });
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
+    expect(
+      calls.some(
+        (c: unknown) => typeof c === 'string' && c.includes('not-a-date'),
+      ),
+    ).toBe(true)
+  })
 
   it('emits "due now" when refresh timestamp has passed', async () => {
     const mockLogger = {
@@ -307,27 +333,32 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    }
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
-    const past = new Date(Date.now() - 60_000).toISOString();
+    const past = new Date(Date.now() - 60_000).toISOString()
     const result = createSuccessResult({
       quota: 10,
       maxQuota: 100,
       nextWindowRefresh: past,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0]);
-    expect(calls.some((c: unknown) => typeof c === "string" && c.includes("due now"))).toBe(true);
-  });
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
+    expect(
+      calls.some(
+        (c: unknown) => typeof c === 'string' && c.includes('due now'),
+      ),
+    ).toBe(true)
+  })
 
   it('emits "in N min" for refresh windows under an hour', async () => {
     const mockLogger = {
@@ -337,27 +368,30 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    }
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
-    const tenMin = new Date(Date.now() + 10 * 60_000).toISOString();
+    const tenMin = new Date(Date.now() + 10 * 60_000).toISOString()
     const result = createSuccessResult({
       quota: 10,
       maxQuota: 100,
       nextWindowRefresh: tenMin,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0]);
-    expect(calls.some((c: unknown) => typeof c === "string" && /in \d+ min/.test(c))).toBe(true);
-  });
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && /in \d+ min/.test(c)),
+    ).toBe(true)
+  })
 
   it('emits "in N d" for refresh windows over 1.97 days', async () => {
     const mockLogger = {
@@ -367,29 +401,32 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    }
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
-    const days = new Date(Date.now() + 5 * 86_400_000).toISOString();
+    const days = new Date(Date.now() + 5 * 86_400_000).toISOString()
     const result = createSuccessResult({
       quota: 10,
       maxQuota: 100,
       nextWindowRefresh: days,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
-    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0]);
-    expect(calls.some((c: unknown) => typeof c === "string" && /in \d+ d/.test(c))).toBe(true);
-  });
+    const calls = mockLogger.log.mock.calls.map((c: unknown[]) => c[0])
+    expect(
+      calls.some((c: unknown) => typeof c === 'string' && /in \d+ d/.test(c)),
+    ).toBe(true)
+  })
 
-  it("outputs error in text format", async () => {
+  it('outputs error in text format', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -398,35 +435,42 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
-    const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`);
+    }
+    const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
-    vi.doMock(import("../../../../src/util/error/fail-msg-with-badge.mts"), () => ({
-      failMsgWithBadge: mockFailMsgWithBadge,
-    }));
+    }))
+    vi.doMock(
+      import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      () => ({
+        failMsgWithBadge: mockFailMsgWithBadge,
+      }),
+    )
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
-    const result = createErrorResult("Failed to fetch quota", {
+    const result = createErrorResult('Failed to fetch quota', {
       code: 1,
-      cause: "Network error",
-    });
+      cause: 'Network error',
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result, "text");
+    process.exitCode = undefined
+    await outputQuota(result, 'text')
 
-    expect(mockFailMsgWithBadge).toHaveBeenCalledWith("Failed to fetch quota", "Network error");
-    expect(mockLogger.fail).toHaveBeenCalled();
-    expect(process.exitCode).toBe(1);
-  });
+    expect(mockFailMsgWithBadge).toHaveBeenCalledWith(
+      'Failed to fetch quota',
+      'Network error',
+    )
+    expect(mockLogger.fail).toHaveBeenCalled()
+    expect(process.exitCode).toBe(1)
+  })
 
-  it("handles markdown output format", async () => {
+  it('handles markdown output format', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -435,40 +479,43 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+    }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
-    vi.doMock(import("../../../../src/util/output/markdown.mts"), () => ({
-      mdHeader: vi.fn((title) => `# ${title}`),
-    }));
+    }))
+    vi.doMock(import('../../../../src/util/output/markdown.mts'), () => ({
+      mdHeader: vi.fn(title => `# ${title}`),
+    }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 750,
       maxQuota: 1000,
       nextWindowRefresh: undefined,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "markdown");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'markdown')
 
     // Markdown output routes through emitPayload — the whole markdown
     // body is logged as one string (sentinel-wrapped so downstream
     // spawns can't contaminate stdout). Match with stringContaining on
     // the concatenated call args.
-    const loggedPayload = mockLogger.log.mock.calls.map((call) => String(call[0])).join("\n");
-    expect(loggedPayload).toContain("# Quota");
-    expect(loggedPayload).toContain("- Quota remaining: 750 / 1000 (25% used)");
-    expect(loggedPayload).toContain("- Next refresh: unknown");
-  });
+    const loggedPayload = mockLogger.log.mock.calls
+      .map(call => String(call[0]))
+      .join('\n')
+    expect(loggedPayload).toContain('# Quota')
+    expect(loggedPayload).toContain('- Quota remaining: 750 / 1000 (25% used)')
+    expect(loggedPayload).toContain('- Next refresh: unknown')
+  })
 
-  it("handles zero quota correctly", async () => {
+  it('handles zero quota correctly', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -477,30 +524,33 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+    }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 0,
       maxQuota: 1000,
       nextWindowRefresh: undefined,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "text");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
 
-    expect(mockLogger.log).toHaveBeenCalledWith("Quota remaining: 0 / 1000 (100% used)");
-  });
+    expect(mockLogger.log).toHaveBeenCalledWith(
+      'Quota remaining: 0 / 1000 (100% used)',
+    )
+  })
 
-  it("uses default text output when no format specified", async () => {
+  it('uses default text output when no format specified', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -509,31 +559,34 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+    }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
+    }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 100,
       maxQuota: 1000,
       nextWindowRefresh: undefined,
-    });
+    })
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown);
+    process.exitCode = undefined
+    await outputQuota(result as unknown)
 
-    expect(mockLogger.log).toHaveBeenCalledWith("Quota remaining: 100 / 1000 (90% used)");
-    expect(mockLogger.log).toHaveBeenCalledWith("");
-  });
+    expect(mockLogger.log).toHaveBeenCalledWith(
+      'Quota remaining: 100 / 1000 (90% used)',
+    )
+    expect(mockLogger.log).toHaveBeenCalledWith('')
+  })
 
-  it("sets default exit code when code is undefined", async () => {
+  it('sets default exit code when code is undefined', async () => {
     // Create mocks INSIDE each test.
     const mockLogger = {
       fail: vi.fn(),
@@ -542,30 +595,31 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
-    const mockSerializeResultJson = vi.fn((result) => JSON.stringify(result));
+    }
+    const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
-    vi.doMock(import("../../../../src/util/output/result-json.mjs"), () => ({
+    }))
+    vi.doMock(import('../../../../src/util/output/result-json.mjs'), () => ({
       serializeResultJson: mockSerializeResultJson,
-    }));
+    }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
-    const result = createErrorResult("Error");
+    const result = createErrorResult('Error')
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "json");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'json')
 
-    expect(process.exitCode).toBe(1);
-  });
+    expect(process.exitCode).toBe(1)
+  })
 
-  it("falls back to exitCode 1 when result has no code field", async () => {
+  it('falls back to exitCode 1 when result has no code field', async () => {
     const mockLogger = {
       fail: vi.fn(),
       info: vi.fn(),
@@ -573,27 +627,28 @@ describe("outputQuota", () => {
       success: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    };
+    }
 
-    vi.doMock(import("@socketsecurity/lib-stable/logger"), () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
-    }));
-    vi.doMock(import("../../../../src/util/output/emit-payload.mts"), () => ({
+    }))
+    vi.doMock(import('../../../../src/util/output/emit-payload.mts'), () => ({
       emitPayload: vi.fn(),
-    }));
+    }))
 
-    const { outputQuota } = await import("../../../../src/commands/organization/output-quota.mts");
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = {
       ok: false as const,
-      message: "No code",
-      cause: "no code",
-    };
+      message: 'No code',
+      cause: 'no code',
+    }
 
-    process.exitCode = undefined;
-    await outputQuota(result as unknown, "json");
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'json')
 
-    expect(process.exitCode).toBe(1);
-  });
-});
+    expect(process.exitCode).toBe(1)
+  })
+})

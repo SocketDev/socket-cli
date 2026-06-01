@@ -13,176 +13,192 @@
  * 'socket-btm')
  */
 
-import { existsSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { parsePlatformArgs } from "build-infra/lib/platform-targets";
-import { getSocketbinBinaryPath } from "package-builder/scripts/paths.mts";
+import { parsePlatformArgs } from 'build-infra/lib/platform-targets'
+import { getSocketbinBinaryPath } from 'package-builder/scripts/paths.mts'
 
-import { buildTarget } from "./sea-build-util/orchestration.mts";
-import { getBuildTargets, getDefaultNodeVersion } from "./sea-build-util/targets.mts";
+import { buildTarget } from './sea-build-util/orchestration.mts'
+import {
+  getBuildTargets,
+  getDefaultNodeVersion,
+} from './sea-build-util/targets.mts'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootPath = path.join(__dirname, "..");
-const logger = getDefaultLogger();
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..')
+const logger = getDefaultLogger()
 
 /**
  * Filter targets based on CLI arguments.
  */
 function filterTargets(targets, options) {
   if (options.all) {
-    return targets;
+    return targets
   }
 
-  return targets.filter((target) => {
+  return targets.filter(target => {
     if (options.platform && target.platform !== options.platform) {
-      return false;
+      return false
     }
     if (options.arch && target.arch !== options.arch) {
-      return false;
+      return false
     }
     if (options.libc) {
       // Normalize: undefined/null → 'glibc' (default for Linux)
-      const targetLibc = target.platform === "linux" && !target.libc ? "glibc" : target.libc;
+      const targetLibc =
+        target.platform === 'linux' && !target.libc ? 'glibc' : target.libc
       if (targetLibc !== options.libc) {
-        return false;
+        return false
       }
     }
-    return true;
-  });
+    return true
+  })
 }
 
 /**
  * Parse CLI arguments.
  */
 export function parseArgs() {
-  const args = process.argv.slice(2);
-  const platformArgs = parsePlatformArgs(args);
+  const args = process.argv.slice(2)
+  const platformArgs = parsePlatformArgs(args)
 
   const options = {
-    all: args.includes("--all"),
+    all: args.includes('--all'),
     arch: platformArgs.arch,
     libc: platformArgs.libc,
     platform: platformArgs.platform,
-  };
+  }
 
   // Default to --all if no specific platform/arch/libc specified.
   if (!options.platform && !options.arch && !options.libc) {
-    options.all = true;
+    options.all = true
   }
 
-  return options;
+  return options
 }
 
 /**
  * Main build logic.
  */
 async function main() {
-  const options = parseArgs();
+  const options = parseArgs()
 
   // Validate libc is Linux-only
-  if (options.libc && options.platform && options.platform !== "linux") {
-    logger.fail("Error: --libc parameter is only valid for Linux builds");
-    logger.fail(`Specified: --platform=${options.platform} --libc=${options.libc}`);
-    logger.log("");
-    process.exitCode = 1;
-    return;
+  if (options.libc && options.platform && options.platform !== 'linux') {
+    logger.fail('Error: --libc parameter is only valid for Linux builds')
+    logger.fail(
+      `Specified: --platform=${options.platform} --libc=${options.libc}`,
+    )
+    logger.log('')
+    process.exitCode = 1
+    return
   }
 
-  logger.log("");
-  logger.log("Socket SEA Builder");
-  logger.log("=".repeat(50));
-  logger.log("");
+  logger.log('')
+  logger.log('Socket SEA Builder')
+  logger.log('='.repeat(50))
+  logger.log('')
 
   // Verify CLI bundle exists.
-  const entryPoint = path.join(rootPath, "build/cli.js");
+  const entryPoint = path.join(rootPath, 'build/cli.js')
   if (!existsSync(entryPoint)) {
-    logger.fail("CLI bundle not found: build/cli.js");
-    logger.log("");
-    logger.log("Run build first:");
-    logger.log("  pnpm --filter @socketsecurity/cli run build");
-    logger.log("");
-    process.exitCode = 1;
-    return;
+    logger.fail('CLI bundle not found: build/cli.js')
+    logger.log('')
+    logger.log('Run build first:')
+    logger.log('  pnpm --filter @socketsecurity/cli run build')
+    logger.log('')
+    process.exitCode = 1
+    return
   }
 
   // Get Node.js version.
-  const nodeVersion = await getDefaultNodeVersion();
-  logger.log(`Node.js version: ${nodeVersion}`);
-  logger.log("");
+  const nodeVersion = await getDefaultNodeVersion()
+  logger.log(`Node.js version: ${nodeVersion}`)
+  logger.log('')
 
   // Get and filter build targets.
-  const allTargets = await getBuildTargets();
-  const targets = filterTargets(allTargets, options);
+  const allTargets = await getBuildTargets()
+  const targets = filterTargets(allTargets, options)
 
   if (targets.length === 0) {
-    logger.fail("No targets match the specified criteria");
-    logger.log("");
-    process.exitCode = 1;
-    return;
+    logger.fail('No targets match the specified criteria')
+    logger.log('')
+    process.exitCode = 1
+    return
   }
 
-  logger.log(`Building ${targets.length} target${targets.length > 1 ? "s" : ""}:`);
+  logger.log(
+    `Building ${targets.length} target${targets.length > 1 ? 's' : ''}:`,
+  )
   for (let i = 0, { length } = targets; i < length; i += 1) {
-    const target = targets[i];
-    logger.log(`  - ${target.platform}-${target.arch}`);
+    const target = targets[i]
+    logger.log(`  - ${target.platform}-${target.arch}`)
   }
-  logger.log("");
+  logger.log('')
 
   // Build all targets in parallel.
   // Output goes directly to socketbin package directories.
   const settled = await Promise.allSettled(
-    targets.map(async (target) => {
-      const targetName = `${target.platform}-${target.arch}${target.libc ? `-${target.libc}` : ""}`;
-      logger.log(`Building ${targetName}...`);
+    targets.map(async target => {
+      const targetName = `${target.platform}-${target.arch}${target.libc ? `-${target.libc}` : ''}`
+      logger.log(`Building ${targetName}...`)
 
       // Get output path from socketbin package directory.
-      const outputPath = getSocketbinBinaryPath(target.platform, target.arch, target.libc);
+      const outputPath = getSocketbinBinaryPath(
+        target.platform,
+        target.arch,
+        target.libc,
+      )
 
-      await buildTarget(target, entryPoint, { outputPath });
-      logger.success(`✓ ${targetName} -> ${path.relative(rootPath, outputPath)}`);
-      return { outputPath, success: true, target };
+      await buildTarget(target, entryPoint, { outputPath })
+      logger.success(
+        `✓ ${targetName} -> ${path.relative(rootPath, outputPath)}`,
+      )
+      return { outputPath, success: true, target }
     }),
-  );
+  )
 
   // Process results from Promise.allSettled.
-  const results = settled.map((result) => {
-    if (result.status === "fulfilled") {
-      return result.value;
+  const results = settled.map(result => {
+    if (result.status === 'fulfilled') {
+      return result.value
     }
-    const target = result.reason?.target || {};
-    const targetName = `${target.platform || "unknown"}-${target.arch || "unknown"}`;
-    logger.fail(`${targetName} failed: ${result.reason?.message || result.reason}`);
+    const target = result.reason?.target || {}
+    const targetName = `${target.platform || 'unknown'}-${target.arch || 'unknown'}`
+    logger.fail(
+      `${targetName} failed: ${result.reason?.message || result.reason}`,
+    )
     return {
       error: result.reason?.message || String(result.reason),
       success: false,
       target,
-    };
-  });
+    }
+  })
 
-  logger.log("");
+  logger.log('')
 
   // Summary.
-  logger.log("=".repeat(50));
-  logger.log("");
+  logger.log('='.repeat(50))
+  logger.log('')
 
-  const successful = results.filter((r) => r.success).length;
-  const failed = results.filter((r) => !r.success).length;
+  const successful = results.filter(r => r.success).length
+  const failed = results.filter(r => !r.success).length
 
   if (failed === 0) {
-    logger.success(`All ${successful} builds completed successfully`);
+    logger.success(`All ${successful} builds completed successfully`)
   } else {
-    logger.fail(`${failed} build${failed > 1 ? "s" : ""} failed`);
-    process.exitCode = 1;
+    logger.fail(`${failed} build${failed > 1 ? 's' : ''} failed`)
+    process.exitCode = 1
   }
 
-  logger.log("");
+  logger.log('')
 }
 
-main().catch((e) => {
-  logger.error("SEA build failed:", e);
-  process.exitCode = 1;
-});
+main().catch(e => {
+  logger.error('SEA build failed:', e)
+  process.exitCode = 1
+})

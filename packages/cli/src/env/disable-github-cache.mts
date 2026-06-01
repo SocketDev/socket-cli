@@ -3,8 +3,8 @@
  * caching in Socket CLI.
  */
 
-import { env } from "node:process";
+import { env } from 'node:process'
 
-import { envAsBoolean } from "@socketsecurity/lib-stable/env/boolean";
+import { envAsBoolean } from '@socketsecurity/lib-stable/env/boolean'
 
-export const DISABLE_GITHUB_CACHE = envAsBoolean(env["DISABLE_GITHUB_CACHE"]);
+export const DISABLE_GITHUB_CACHE = envAsBoolean(env['DISABLE_GITHUB_CACHE'])

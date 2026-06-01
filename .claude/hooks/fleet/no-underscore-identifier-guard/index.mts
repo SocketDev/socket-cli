@@ -143,9 +143,9 @@ export function isPluginOrHookTestPath(filePath: string): boolean {
   return (
     filePath.includes('/.claude/hooks/fleet/no-underscore-identifier-guard/') ||
     filePath.includes(
-      '/.config/oxlint-plugin/rules/no-underscore-identifier.',
+      '/.config/fleet/oxlint-plugin/rules/no-underscore-identifier.',
     ) ||
-    filePath.includes('/.config/oxlint-plugin/test/no-underscore-identifier')
+    filePath.includes('/.config/fleet/oxlint-plugin/test/no-underscore-identifier')
   )
 }
 

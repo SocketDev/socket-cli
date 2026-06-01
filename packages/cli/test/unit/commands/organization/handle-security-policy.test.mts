@@ -20,113 +20,132 @@
  * src/commands/organization/output-security-policy.mts - Output formatter.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchSecurityPolicy } from "../../../../src/commands/organization/fetch-security-policy.mts";
-import { handleSecurityPolicy } from "../../../../src/commands/organization/handle-security-policy.mts";
-import { outputSecurityPolicy } from "../../../../src/commands/organization/output-security-policy.mts";
-import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
+import { fetchSecurityPolicy } from '../../../../src/commands/organization/fetch-security-policy.mts'
+import { handleSecurityPolicy } from '../../../../src/commands/organization/handle-security-policy.mts'
+import { outputSecurityPolicy } from '../../../../src/commands/organization/output-security-policy.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../helpers/mocks.mts'
 
 // Mock the dependencies.
-const mockFetchSecurityPolicy = vi.hoisted(() => vi.fn());
-const mockOutputSecurityPolicy = vi.hoisted(() => vi.fn());
+const mockFetchSecurityPolicy = vi.hoisted(() => vi.fn())
+const mockOutputSecurityPolicy = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/organization/fetch-security-policy.mts"), () => ({
-  fetchSecurityPolicy: mockFetchSecurityPolicy,
-}));
+vi.mock(
+  import('../../../../src/commands/organization/fetch-security-policy.mts'),
+  () => ({
+    fetchSecurityPolicy: mockFetchSecurityPolicy,
+  }),
+)
 
-vi.mock(import("../../../../src/commands/organization/output-security-policy.mts"), () => ({
-  outputSecurityPolicy: mockOutputSecurityPolicy,
-}));
+vi.mock(
+  import('../../../../src/commands/organization/output-security-policy.mts'),
+  () => ({
+    outputSecurityPolicy: mockOutputSecurityPolicy,
+  }),
+)
 
-describe("handleSecurityPolicy", () => {
+describe('handleSecurityPolicy', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.clearAllMocks()
+  })
 
-  it("fetches and outputs security policy successfully", async () => {
+  it('fetches and outputs security policy successfully', async () => {
     const mockPolicy = createSuccessResult({
       rules: [
         {
-          id: "rule-1",
-          name: "No critical vulnerabilities",
-          severity: "critical",
-          action: "block",
+          id: 'rule-1',
+          name: 'No critical vulnerabilities',
+          severity: 'critical',
+          action: 'block',
         },
         {
-          id: "rule-2",
-          name: "License check",
-          type: "license",
-          allowed: ["MIT", "Apache-2.0"],
+          id: 'rule-2',
+          name: 'License check',
+          type: 'license',
+          allowed: ['MIT', 'Apache-2.0'],
         },
       ],
-      enforcementLevel: "strict",
-    });
-    mockFetchSecurityPolicy.mockResolvedValue(mockPolicy);
+      enforcementLevel: 'strict',
+    })
+    mockFetchSecurityPolicy.mockResolvedValue(mockPolicy)
 
-    await handleSecurityPolicy("test-org", "json");
+    await handleSecurityPolicy('test-org', 'json')
 
-    expect(fetchSecurityPolicy).toHaveBeenCalledWith("test-org", {
-      commandPath: "socket organization policy security",
-    });
-    expect(outputSecurityPolicy).toHaveBeenCalledWith(mockPolicy, "json");
-  });
+    expect(fetchSecurityPolicy).toHaveBeenCalledWith('test-org', {
+      commandPath: 'socket organization policy security',
+    })
+    expect(outputSecurityPolicy).toHaveBeenCalledWith(mockPolicy, 'json')
+  })
 
-  it("handles fetch failure", async () => {
-    const mockError = createErrorResult("Organization not found");
-    mockFetchSecurityPolicy.mockResolvedValue(mockError);
+  it('handles fetch failure', async () => {
+    const mockError = createErrorResult('Organization not found')
+    mockFetchSecurityPolicy.mockResolvedValue(mockError)
 
-    await handleSecurityPolicy("invalid-org", "text");
+    await handleSecurityPolicy('invalid-org', 'text')
 
-    expect(fetchSecurityPolicy).toHaveBeenCalledWith("invalid-org", {
-      commandPath: "socket organization policy security",
-    });
-    expect(outputSecurityPolicy).toHaveBeenCalledWith(mockError, "text");
-  });
+    expect(fetchSecurityPolicy).toHaveBeenCalledWith('invalid-org', {
+      commandPath: 'socket organization policy security',
+    })
+    expect(outputSecurityPolicy).toHaveBeenCalledWith(mockError, 'text')
+  })
 
-  it("handles markdown output format", async () => {
-    mockFetchSecurityPolicy.mockResolvedValue(createSuccessResult({}));
+  it('handles markdown output format', async () => {
+    mockFetchSecurityPolicy.mockResolvedValue(createSuccessResult({}))
 
-    await handleSecurityPolicy("my-org", "markdown");
+    await handleSecurityPolicy('my-org', 'markdown')
 
-    expect(outputSecurityPolicy).toHaveBeenCalledWith(expect.any(Object), "markdown");
-  });
+    expect(outputSecurityPolicy).toHaveBeenCalledWith(
+      expect.any(Object),
+      'markdown',
+    )
+  })
 
-  it("handles different organization slugs", async () => {
-    const orgSlugs = ["org-with-dashes", "simple", "company_underscore", "org123"];
+  it('handles different organization slugs', async () => {
+    const orgSlugs = [
+      'org-with-dashes',
+      'simple',
+      'company_underscore',
+      'org123',
+    ]
 
     for (let i = 0, { length } = orgSlugs; i < length; i += 1) {
-      const orgSlug = orgSlugs[i];
-      mockFetchSecurityPolicy.mockResolvedValue(createSuccessResult({}));
-      await handleSecurityPolicy(orgSlug, "json");
+      const orgSlug = orgSlugs[i]
+      mockFetchSecurityPolicy.mockResolvedValue(createSuccessResult({}))
+      await handleSecurityPolicy(orgSlug, 'json')
       expect(fetchSecurityPolicy).toHaveBeenCalledWith(orgSlug, {
-        commandPath: "socket organization policy security",
-      });
+        commandPath: 'socket organization policy security',
+      })
     }
-  });
+  })
 
-  it("handles text output with detailed policy", async () => {
+  it('handles text output with detailed policy', async () => {
     mockFetchSecurityPolicy.mockResolvedValue(
       createSuccessResult({
         rules: [
-          { id: "rule-1", name: "CVE check", enabled: true },
-          { id: "rule-2", name: "Malware scan", enabled: true },
-          { id: "rule-3", name: "License compliance", enabled: false },
+          { id: 'rule-1', name: 'CVE check', enabled: true },
+          { id: 'rule-2', name: 'Malware scan', enabled: true },
+          { id: 'rule-3', name: 'License compliance', enabled: false },
         ],
-        lastUpdated: "2025-01-01T00:00:00Z",
+        lastUpdated: '2025-01-01T00:00:00Z',
       }),
-    );
+    )
 
-    await handleSecurityPolicy("production-org", "text");
+    await handleSecurityPolicy('production-org', 'text')
 
     expect(outputSecurityPolicy).toHaveBeenCalledWith(
       expect.objectContaining({
         ok: true,
         data: expect.objectContaining({
-          rules: expect.arrayContaining([expect.objectContaining({ id: "rule-1" })]),
+          rules: expect.arrayContaining([
+            expect.objectContaining({ id: 'rule-1' }),
+          ]),
         }),
       }),
-      "text",
-    );
-  });
-});
+      'text',
+    )
+  })
+})

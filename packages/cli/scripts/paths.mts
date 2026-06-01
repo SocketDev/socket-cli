@@ -1,23 +1,25 @@
-export * from "../../../scripts/paths.mts";
+export * from '../../../scripts/paths.mts'
 
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { existsSync } from 'node:fs'
 
 function resolvePackageRoot(): string {
-  let cur = path.dirname(fileURLToPath(import.meta.url));
-  const root = path.parse(cur).root;
+  let cur = path.dirname(fileURLToPath(import.meta.url))
+  const root = path.parse(cur).root
   while (cur && cur !== root) {
-    if (existsSync(path.join(cur, "package.json"))) {
-      return cur;
+    if (existsSync(path.join(cur, 'package.json'))) {
+      return cur
     }
-    const parent = path.dirname(cur);
+    const parent = path.dirname(cur)
     if (parent === cur) {
-      break;
+      break
     }
-    cur = parent;
+    cur = parent
   }
-  throw new Error(`Could not resolve package root from ${fileURLToPath(import.meta.url)}.`);
+  throw new Error(
+    `Could not resolve package root from ${fileURLToPath(import.meta.url)}.`,
+  )
 }
 
-export const PACKAGE_ROOT = resolvePackageRoot();
+export const PACKAGE_ROOT = resolvePackageRoot()

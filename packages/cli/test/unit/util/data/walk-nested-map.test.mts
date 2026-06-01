@@ -12,19 +12,19 @@
  * Related Files: - util/data/walk-nested-map.mts (implementation)
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
-import { walkNestedMap } from "../../../../src/util/data/walk-nested-map.mts";
+import { walkNestedMap } from '../../../../src/util/data/walk-nested-map.mts'
 
-describe("walkNestedMap", () => {
-  it("should walk a flat map", () => {
+describe('walkNestedMap', () => {
+  it('should walk a flat map', () => {
     expect(
       Array.from(
         walkNestedMap(
           new Map([
-            ["x", 1],
-            ["y", 2],
-            ["z", 3],
+            ['x', 1],
+            ['y', 2],
+            ['z', 3],
           ]),
         ),
       ),
@@ -49,28 +49,28 @@ describe("walkNestedMap", () => {
           "value": 3,
         },
       ]
-    `);
-  });
+    `)
+  })
 
-  it("should walk a 2d map", () => {
+  it('should walk a 2d map', () => {
     expect(
       Array.from(
         walkNestedMap(
           new Map([
             [
-              "x",
+              'x',
               new Map([
-                ["x2", 1],
-                ["y2", 2],
-                ["z2", 3],
+                ['x2', 1],
+                ['y2', 2],
+                ['z2', 3],
               ]),
             ],
             [
-              "y",
+              'y',
               new Map([
-                ["x3", 1],
-                ["y3", 2],
-                ["z3", 3],
+                ['x3', 1],
+                ['y3', 2],
+                ['z3', 3],
               ]),
             ],
           ]),
@@ -121,52 +121,52 @@ describe("walkNestedMap", () => {
           "value": 3,
         },
       ]
-    `);
-  });
+    `)
+  })
 
-  it("should walk a 3d map", () => {
+  it('should walk a 3d map', () => {
     expect(
       Array.from(
         walkNestedMap(
           new Map([
             [
-              "a",
+              'a',
               new Map([
                 [
-                  "x",
+                  'x',
                   new Map([
-                    ["x2", 1],
-                    ["y2", 2],
-                    ["z2", 3],
+                    ['x2', 1],
+                    ['y2', 2],
+                    ['z2', 3],
                   ]),
                 ],
                 [
-                  "y",
+                  'y',
                   new Map([
-                    ["x3", 1],
-                    ["y3", 2],
-                    ["z3", 3],
+                    ['x3', 1],
+                    ['y3', 2],
+                    ['z3', 3],
                   ]),
                 ],
               ]),
             ],
             [
-              "b",
+              'b',
               new Map([
                 [
-                  "x",
+                  'x',
                   new Map([
-                    ["x2", 1],
-                    ["y2", 2],
-                    ["z2", 3],
+                    ['x2', 1],
+                    ['y2', 2],
+                    ['z2', 3],
                   ]),
                 ],
                 [
-                  "y",
+                  'y',
                   new Map([
-                    ["x3", 1],
-                    ["y3", 2],
-                    ["z3", 3],
+                    ['x3', 1],
+                    ['y3', 2],
+                    ['z3', 3],
                   ]),
                 ],
               ]),
@@ -175,7 +175,7 @@ describe("walkNestedMap", () => {
         ),
       )
         // Makes test easier to read...
-        .map((obj) => JSON.stringify(obj)),
+        .map(obj => JSON.stringify(obj)),
     ).toMatchInlineSnapshot(`
       [
         "{"keys":["a","x","x2"],"value":1}",
@@ -191,6 +191,6 @@ describe("walkNestedMap", () => {
         "{"keys":["b","y","y3"],"value":2}",
         "{"keys":["b","y","z3"],"value":3}",
       ]
-    `);
-  });
-});
+    `)
+  })
+})

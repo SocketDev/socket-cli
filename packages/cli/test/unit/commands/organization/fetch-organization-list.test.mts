@@ -20,116 +20,122 @@
  * src/commands/organization/handle-organization-list.mts - Command handler.
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from "../../../helpers/sdk-test-helpers.mts";
-import { fetchOrganization } from "../../../../src/commands/organization/fetch-organization-list.mts";
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchOrganization } from '../../../../src/commands/organization/fetch-organization-list.mts'
 
 // Mock the dependencies.
-vi.mock(import("../../../../src/util/socket/api.mts"), () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: vi.fn(),
-}));
+}))
 
-vi.mock(import("../../../../src/util/socket/sdk.mts"), () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: vi.fn(),
-}));
+}))
 
-describe("fetchOrganizationList", () => {
-  it("fetches organization list successfully", async () => {
+describe('fetchOrganizationList', () => {
+  it('fetches organization list successfully', async () => {
     const mockData = {
       organizations: {
-        "org-1": {
-          id: "org-1",
-          name: "Test Org 1",
-          slug: "test-org-1",
-          plan: "pro",
+        'org-1': {
+          id: 'org-1',
+          name: 'Test Org 1',
+          slug: 'test-org-1',
+          plan: 'pro',
         },
-        "org-2": {
-          id: "org-2",
-          name: "Test Org 2",
-          slug: "test-org-2",
-          plan: "enterprise",
+        'org-2': {
+          id: 'org-2',
+          name: 'Test Org 2',
+          slug: 'test-org-2',
+          plan: 'enterprise',
         },
       },
-    };
-
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess("listOrganizations", mockData);
-
-    const result = await fetchOrganization();
-
-    expect(mockSdk.listOrganizations).toHaveBeenCalledWith();
-    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: "organization list",
-    });
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.organizations).toHaveLength(2);
     }
-  });
 
-  it("handles SDK setup failure", async () => {
-    await setupSdkSetupFailure("Failed to setup SDK", {
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'listOrganizations',
+      mockData,
+    )
+
+    const result = await fetchOrganization()
+
+    expect(mockSdk.listOrganizations).toHaveBeenCalledWith()
+    expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
+      description: 'organization list',
+    })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.organizations).toHaveLength(2)
+    }
+  })
+
+  it('handles SDK setup failure', async () => {
+    await setupSdkSetupFailure('Failed to setup SDK', {
       code: 1,
-      cause: "Configuration error",
-    });
+      cause: 'Configuration error',
+    })
 
-    const result = await fetchOrganization();
+    const result = await fetchOrganization()
 
-    expect(result.ok).toBe(false);
-  });
+    expect(result.ok).toBe(false)
+  })
 
-  it("handles API call failure", async () => {
-    await setupSdkMockError("listOrganizations", "Network error", 500);
+  it('handles API call failure', async () => {
+    await setupSdkMockError('listOrganizations', 'Network error', 500)
 
-    const result = await fetchOrganization();
+    const result = await fetchOrganization()
 
-    expect(result.ok).toBe(false);
-    expect(result.code).toBe(500);
-  });
+    expect(result.ok).toBe(false)
+    expect(result.code).toBe(500)
+  })
 
-  it("passes custom SDK options", async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess("listOrganizations", {
+  it('passes custom SDK options', async () => {
+    const { mockSetupSdk } = await setupSdkMockSuccess('listOrganizations', {
       organizations: {},
-    });
+    })
 
     const sdkOpts = {
-      apiToken: "org-token",
-      baseUrl: "https://org.api.com",
-    };
+      apiToken: 'org-token',
+      baseUrl: 'https://org.api.com',
+    }
 
-    await fetchOrganization({ sdkOpts });
+    await fetchOrganization({ sdkOpts })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts);
-  });
+    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+  })
 
-  it("uses provided SDK instance", async () => {
-    const { handleApiCall } = await import("../../../../src/util/socket/api.mts");
-    const { createSuccessResult } = await import("../../../helpers/mocks.mts");
+  it('uses provided SDK instance', async () => {
+    const { handleApiCall } =
+      await import('../../../../src/util/socket/api.mts')
+    const { createSuccessResult } = await import('../../../helpers/mocks.mts')
 
     const mockSdk = {
       listOrganizations: vi.fn().mockResolvedValue({}),
-    } as unknown;
+    } as unknown
 
-    vi.mocked(handleApiCall).mockResolvedValue(createSuccessResult({ organizations: {} }));
+    vi.mocked(handleApiCall).mockResolvedValue(
+      createSuccessResult({ organizations: {} }),
+    )
 
-    await fetchOrganization({ sdk: mockSdk });
+    await fetchOrganization({ sdk: mockSdk })
 
-    expect(mockSdk.listOrganizations).toHaveBeenCalled();
-  });
+    expect(mockSdk.listOrganizations).toHaveBeenCalled()
+  })
 
-  it("uses null prototype for options", async () => {
-    const { mockSdk } = await setupSdkMockSuccess("listOrganizations", {
+  it('uses null prototype for options', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('listOrganizations', {
       organizations: {},
-    });
+    })
 
     // This tests that the function properly uses __proto__: null.
-    await fetchOrganization();
+    await fetchOrganization()
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.listOrganizations).toHaveBeenCalled();
-  });
-});
+    expect(mockSdk.listOrganizations).toHaveBeenCalled()
+  })
+})

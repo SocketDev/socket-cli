@@ -1,53 +1,56 @@
-import { joinAnd } from "@socketsecurity/lib-stable/arrays/join";
-import { NPM } from "@socketsecurity/lib-stable/constants/agents";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { handleThreatFeed } from "./handle-threat-feed.mts";
-import { outputDryRunFetch } from "../../util/dry-run/output.mts";
-import { InputError } from "../../util/error/errors.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags, outputFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
-import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
-import { getOutputKind } from "../../util/output/mode.mjs";
-import { determineOrgSlug } from "../../util/socket/org-slug.mjs";
-import { hasDefaultApiToken } from "../../util/socket/sdk.mjs";
-import { mailtoLink } from "../../util/terminal/link.mts";
-import { checkCommandInput } from "../../util/validation/check-input.mts";
+import { handleThreatFeed } from './handle-threat-feed.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { InputError } from '../../util/error/errors.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { mailtoLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
-import type { MeowFlags } from "../../flags.mts";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
-export const CMD_NAME = "threat-feed";
+export const CMD_NAME = 'threat-feed'
 
 // oxlint-disable-next-line socket/sort-set-args -- alphabetical by ecosystem name; NPM constant sits between 'maven' and 'nuget' which would be its sort position if inlined.
-const ECOSYSTEMS = new Set(["gem", "golang", "maven", NPM, "nuget", "pypi"]);
+const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', NPM, 'nuget', 'pypi'])
 
 const TYPE_FILTERS = new Set([
-  "anom",
-  "c",
-  "fp",
-  "joke",
-  "mal",
-  "secret",
-  "spy",
-  "tp",
-  "typo",
-  "u",
-  "vuln",
-]);
+  'anom',
+  'c',
+  'fp',
+  'joke',
+  'mal',
+  'secret',
+  'spy',
+  'tp',
+  'typo',
+  'u',
+  'vuln',
+])
 
-const description = "[Beta] View the threat-feed";
+const description = '[Beta] View the threat-feed'
 
-const hidden = false;
+const hidden = false
 
 export const cmdThreatFeed = {
   description,
   hidden,
   run,
-};
+}
 
 export async function run(
   argv: readonly string[],
@@ -62,50 +65,51 @@ export async function run(
       ...commonFlags,
       ...outputFlags,
       direction: {
-        type: "string",
-        default: "desc",
-        description: "Order asc or desc by the createdAt attribute",
+        type: 'string',
+        default: 'desc',
+        description: 'Order asc or desc by the createdAt attribute',
       },
       eco: {
-        type: "string",
-        default: "",
-        description: "Only show threats for a particular ecosystem",
+        type: 'string',
+        default: '',
+        description: 'Only show threats for a particular ecosystem',
       },
       filter: {
-        type: "string",
-        default: "mal",
-        description: "Filter what type of threats to return",
+        type: 'string',
+        default: 'mal',
+        description: 'Filter what type of threats to return',
       },
       interactive: {
-        type: "boolean",
+        type: 'boolean',
         default: true,
         description:
-          "Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.",
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
       },
       org: {
-        type: "string",
-        description: "Force override the organization slug, overrides the default org from config",
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
       },
       page: {
-        type: "string",
-        default: "1",
-        description: "Page token",
+        type: 'string',
+        default: '1',
+        description: 'Page token',
       },
       perPage: {
-        type: "number",
-        shortFlag: "pp",
+        type: 'number',
+        shortFlag: 'pp',
         default: 30,
-        description: "Number of items per page",
+        description: 'Number of items per page',
       },
       pkg: {
-        type: "string",
-        default: "",
-        description: "Filter by this package name",
+        type: 'string',
+        default: '',
+        description: 'Filter by this package name',
       },
       version: {
-        type: "string",
-        default: "",
-        description: "Filter by this package version",
+        type: 'string',
+        default: '',
+        description: 'Filter by this package version',
       },
     }),
     help: (command: string, config: { flags: MeowFlags }) => `
@@ -117,7 +121,7 @@ export async function run(
       - Special access
 
     This feature requires a Threat Feed license. Please contact
-    ${mailtoLink("sales@socket.dev")} if you are interested in purchasing this access.
+    ${mailtoLink('sales@socket.dev')} if you are interested in purchasing this access.
 
     Options
       ${getFlagListOutput(config.flags)}
@@ -165,126 +169,140 @@ export async function run(
       $ ${command} typo
       $ ${command} npm joke 1.0.0 --per-page=5 --page=2 --direction=asc
   `,
-  };
+  }
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  });
+  })
 
-  const { eco, json, markdown, org: orgFlag, pkg, type: typef, version } = cli.flags;
+  const {
+    eco,
+    json,
+    markdown,
+    org: orgFlag,
+    pkg,
+    type: typef,
+    version,
+  } = cli.flags
 
-  const dryRun = !!cli.flags["dryRun"];
+  const dryRun = !!cli.flags['dryRun']
 
-  const interactive = !!cli.flags["interactive"];
+  const interactive = !!cli.flags['interactive']
 
-  let ecoFilter = String(eco || "");
-  let versionFilter = String(version || "");
-  let typeFilter = String(typef || "");
-  let nameFilter = String(pkg || "");
+  let ecoFilter = String(eco || '')
+  let versionFilter = String(version || '')
+  let typeFilter = String(typef || '')
+  let nameFilter = String(pkg || '')
 
-  const argSet = new Set(cli.input);
-  cli.input.some((str) => {
+  const argSet = new Set(cli.input)
+  cli.input.some(str => {
     if (ECOSYSTEMS.has(str)) {
-      ecoFilter = str;
-      argSet.delete(str);
-      return true;
+      ecoFilter = str
+      argSet.delete(str)
+      return true
     }
-  });
+  })
 
-  cli.input.some((str) => {
+  cli.input.some(str => {
     if (/^v?\d+\.\d+\.\d+$/.test(str)) {
-      versionFilter = str;
-      argSet.delete(str);
-      return true;
+      versionFilter = str
+      argSet.delete(str)
+      return true
     }
-  });
+  })
 
-  cli.input.some((str) => {
+  cli.input.some(str => {
     if (TYPE_FILTERS.has(str)) {
-      typeFilter = str;
-      argSet.delete(str);
-      return true;
+      typeFilter = str
+      argSet.delete(str)
+      return true
     }
-  });
+  })
 
-  const haves = new Set([ecoFilter, versionFilter, typeFilter]);
-  cli.input.some((str) => {
+  const haves = new Set([ecoFilter, versionFilter, typeFilter])
+  cli.input.some(str => {
     if (!haves.has(str)) {
-      nameFilter = str;
-      argSet.delete(str);
-      return true;
+      nameFilter = str
+      argSet.delete(str)
+      return true
     }
-  });
+  })
 
   if (argSet.size) {
-    logger.info(`Warning: ignoring these excessive args: ${joinAnd(Array.from(argSet))}`);
+    logger.info(
+      `Warning: ignoring these excessive args: ${joinAnd(Array.from(argSet))}`,
+    )
   }
 
-  const hasApiToken = hasDefaultApiToken();
+  const hasApiToken = hasDefaultApiToken()
 
-  const { 0: orgSlug } = await determineOrgSlug(String(orgFlag || ""), interactive, dryRun);
+  const { 0: orgSlug } = await determineOrgSlug(
+    String(orgFlag || ''),
+    interactive,
+    dryRun,
+  )
 
-  const outputKind = getOutputKind(json, markdown);
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
       test: !!orgSlug,
-      message: "Org name by default setting, --org, or auto-discovered",
-      fail: "missing",
+      message: 'Org name by default setting, --org, or auto-discovered',
+      fail: 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
-      message: "The json and markdown flags cannot be both set, pick one",
-      fail: "omit one",
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
     },
     {
       nook: true,
       test: hasApiToken,
-      message: "This command requires a Socket API token for access",
-      fail: "try `socket login`",
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
     },
-  );
+  )
   if (!wasValidInput) {
-    return;
+    return
   }
 
   // Validate numeric pagination parameter.
-  const validatedPerPage = Number(cli.flags["perPage"]) || 30;
+  const validatedPerPage = Number(cli.flags['perPage']) || 30
 
   if (dryRun) {
-    outputDryRunFetch("threat feed data", {
+    outputDryRunFetch('threat feed data', {
       organization: orgSlug,
-      ecosystem: ecoFilter || "all",
-      type: typeFilter || "mal (default)",
+      ecosystem: ecoFilter || 'all',
+      type: typeFilter || 'mal (default)',
       package: nameFilter || undefined,
       version: versionFilter || undefined,
       perPage: validatedPerPage,
-      page: String(cli.flags["page"] || "1"),
-      direction: String(cli.flags["direction"] || "desc"),
-    });
-    return;
+      page: String(cli.flags['page'] || '1'),
+      direction: String(cli.flags['direction'] || 'desc'),
+    })
+    return
   }
   if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
     throw new InputError(
-      `--per-page must be a positive integer (saw: "${cli.flags["perPage"]}"); pass a number like --per-page=30`,
-    );
+      `--per-page must be a positive integer (saw: "${cli.flags['perPage']}"); pass a number like --per-page=30`,
+    )
   }
 
   await handleThreatFeed({
-    direction: String(cli.flags["direction"] || "desc"),
+    direction: String(cli.flags['direction'] || 'desc'),
     ecosystem: ecoFilter,
     filter: typeFilter,
     outputKind,
     orgSlug,
-    page: String(cli.flags["page"] || "1"),
+    page: String(cli.flags['page'] || '1'),
     perPage: validatedPerPage,
     pkg: nameFilter,
     version: versionFilter,
-  });
+  })
 }

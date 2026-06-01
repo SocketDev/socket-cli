@@ -23,26 +23,26 @@
  * src/commands/organization/output-security-policy.mts - Output formatter.
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from "../../../helpers/sdk-test-helpers.mts";
-import { fetchSecurityPolicy } from "../../../../src/commands/organization/fetch-security-policy.mts";
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchSecurityPolicy } from '../../../../src/commands/organization/fetch-security-policy.mts'
 
 // Mock the dependencies.
-vi.mock(import("../../../../src/util/socket/api.mts"), () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: vi.fn(),
-}));
+}))
 
-vi.mock(import("../../../../src/util/socket/sdk.mts"), () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: vi.fn(),
-}));
+}))
 
-describe("fetchSecurityPolicy", () => {
-  it("fetches security policy successfully", async () => {
+describe('fetchSecurityPolicy', () => {
+  it('fetches security policy successfully', async () => {
     const mockData = {
       policy: {
         block_high_severity: true,
@@ -53,89 +53,100 @@ describe("fetchSecurityPolicy", () => {
         scan_on_push: true,
         require_approval: true,
       },
-      updated_at: "2025-01-15T10:00:00Z",
-    };
+      updated_at: '2025-01-15T10:00:00Z',
+    }
 
-    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess("getOrgSecurityPolicy", mockData);
+    const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
+      'getOrgSecurityPolicy',
+      mockData,
+    )
 
-    const result = await fetchSecurityPolicy("test-org");
+    const result = await fetchSecurityPolicy('test-org')
 
-    expect(mockSdk.getOrgSecurityPolicy).toHaveBeenCalledWith("test-org");
+    expect(mockSdk.getOrgSecurityPolicy).toHaveBeenCalledWith('test-org')
     expect(mockHandleApi).toHaveBeenCalledWith(expect.any(Promise), {
-      description: "organization security policy",
-    });
-    expect(result.ok).toBe(true);
-  });
+      description: 'organization security policy',
+    })
+    expect(result.ok).toBe(true)
+  })
 
-  it("handles SDK setup failure", async () => {
-    await setupSdkSetupFailure("Failed to setup SDK", {
+  it('handles SDK setup failure', async () => {
+    await setupSdkSetupFailure('Failed to setup SDK', {
       code: 1,
-      cause: "Authentication failed",
-    });
+      cause: 'Authentication failed',
+    })
 
-    const result = await fetchSecurityPolicy("my-org");
+    const result = await fetchSecurityPolicy('my-org')
 
-    expect(result.ok).toBe(false);
-  });
+    expect(result.ok).toBe(false)
+  })
 
-  it("handles API call failure", async () => {
-    await setupSdkMockError("getOrgSecurityPolicy", "Forbidden", 403);
+  it('handles API call failure', async () => {
+    await setupSdkMockError('getOrgSecurityPolicy', 'Forbidden', 403)
 
-    const result = await fetchSecurityPolicy("restricted-org");
+    const result = await fetchSecurityPolicy('restricted-org')
 
-    expect(result.ok).toBe(false);
-    expect(result.code).toBe(403);
-  });
+    expect(result.ok).toBe(false)
+    expect(result.code).toBe(403)
+  })
 
-  it("passes custom SDK options", async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess("getOrgSecurityPolicy", {});
+  it('passes custom SDK options', async () => {
+    const { mockSetupSdk } = await setupSdkMockSuccess(
+      'getOrgSecurityPolicy',
+      {},
+    )
 
     const sdkOpts = {
-      apiToken: "security-token",
-      baseUrl: "https://security.api.com",
-    };
+      apiToken: 'security-token',
+      baseUrl: 'https://security.api.com',
+    }
 
-    await fetchSecurityPolicy("my-org", { sdkOpts });
+    await fetchSecurityPolicy('my-org', { sdkOpts })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts);
-  });
+    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+  })
 
-  it("handles default security policy", async () => {
+  it('handles default security policy', async () => {
     const mockData = {
       policy: {
         block_high_severity: false,
         block_critical_severity: false,
         auto_scan: false,
       },
-    };
+    }
 
-    await setupSdkMockSuccess("getOrgSecurityPolicy", mockData);
+    await setupSdkMockSuccess('getOrgSecurityPolicy', mockData)
 
-    const result = await fetchSecurityPolicy("new-org");
+    const result = await fetchSecurityPolicy('new-org')
 
-    expect(result.ok).toBe(true);
-    expect(result.data.policy.auto_scan).toBe(false);
-  });
+    expect(result.ok).toBe(true)
+    expect(result.data.policy.auto_scan).toBe(false)
+  })
 
-  it("handles various org slugs", async () => {
-    const { mockSdk } = await setupSdkMockSuccess("getOrgSecurityPolicy", {});
+  it('handles various org slugs', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('getOrgSecurityPolicy', {})
 
-    const orgSlugs = ["simple-org", "org_with_underscore", "org-123-numbers", "MyOrganization"];
+    const orgSlugs = [
+      'simple-org',
+      'org_with_underscore',
+      'org-123-numbers',
+      'MyOrganization',
+    ]
 
     for (let i = 0, { length } = orgSlugs; i < length; i += 1) {
-      const orgSlug = orgSlugs[i];
-      await fetchSecurityPolicy(orgSlug);
-      expect(mockSdk.getOrgSecurityPolicy).toHaveBeenCalledWith(orgSlug);
+      const orgSlug = orgSlugs[i]
+      await fetchSecurityPolicy(orgSlug)
+      expect(mockSdk.getOrgSecurityPolicy).toHaveBeenCalledWith(orgSlug)
     }
-  });
+  })
 
-  it("uses null prototype for options", async () => {
-    const { mockSdk } = await setupSdkMockSuccess("getOrgSecurityPolicy", {});
+  it('uses null prototype for options', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('getOrgSecurityPolicy', {})
 
     // This tests that the function properly uses __proto__: null.
-    await fetchSecurityPolicy("test-org");
+    await fetchSecurityPolicy('test-org')
 
     // The function should work without prototype pollution issues.
-    expect(mockSdk.getOrgSecurityPolicy).toHaveBeenCalled();
-  });
-});
+    expect(mockSdk.getOrgSecurityPolicy).toHaveBeenCalled()
+  })
+})

@@ -1,10 +1,10 @@
 /**
  * Unit tests for repository create command (creates a repo in an organization).
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as LoggerModule from "@socketsecurity/lib-stable/logger";
-import type * as SdkModule from "../../../../src/util/socket/sdk.mjs";
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger'
+import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -14,435 +14,485 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), async (importOriginal) => {
-  const actual = await importOriginal<typeof LoggerModule>();
+vi.mock(import('@socketsecurity/lib-stable/logger'), async importOriginal => {
+  const actual = await importOriginal<typeof LoggerModule>()
   return {
     ...actual,
     getDefaultLogger: () => mockLogger,
-  };
-});
+  }
+})
 
 // Mock dependencies.
-const mockHandleCreateRepo = vi.hoisted(() => vi.fn());
-const mockDetermineOrgSlug = vi.hoisted(() => vi.fn().mockResolvedValue(["test-org", "test-org"]));
-const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false));
+const mockHandleCreateRepo = vi.hoisted(() => vi.fn())
+const mockDetermineOrgSlug = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(['test-org', 'test-org']),
+)
+const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
 
-vi.mock(import("../../../../src/commands/repository/handle-create-repo.mts"), () => ({
-  handleCreateRepo: mockHandleCreateRepo,
-}));
+vi.mock(
+  import('../../../../src/commands/repository/handle-create-repo.mts'),
+  () => ({
+    handleCreateRepo: mockHandleCreateRepo,
+  }),
+)
 
-vi.mock(import("../../../../src/util/socket/org-slug.mjs"), () => ({
+vi.mock(import('../../../../src/util/socket/org-slug.mjs'), () => ({
   determineOrgSlug: mockDetermineOrgSlug,
-}));
+}))
 
-vi.mock(import("../../../../src/util/socket/sdk.mjs"), async (importOriginal) => {
-  const actual = await importOriginal<typeof SdkModule>();
+vi.mock(import('../../../../src/util/socket/sdk.mjs'), async importOriginal => {
+  const actual = await importOriginal<typeof SdkModule>()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
-  };
-});
+  }
+})
 
 // Import after mocks.
 const { cmdRepositoryCreate } =
-  await import("../../../../src/commands/repository/cmd-repository-create.mts");
+  await import('../../../../src/commands/repository/cmd-repository-create.mts')
 
-describe("cmd-repository-create", () => {
+describe('cmd-repository-create', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+  })
 
-  describe("command metadata", () => {
-    it("should have correct description", () => {
-      expect(cmdRepositoryCreate.description).toBe("Create a repository in an organization");
-    });
+  describe('command metadata', () => {
+    it('should have correct description', () => {
+      expect(cmdRepositoryCreate.description).toBe(
+        'Create a repository in an organization',
+      )
+    })
 
-    it("should not be hidden", () => {
-      expect(cmdRepositoryCreate.hidden).toBe(false);
-    });
-  });
+    it('should not be hidden', () => {
+      expect(cmdRepositoryCreate.hidden).toBe(false)
+    })
+  })
 
-  describe("run", () => {
-    const importMeta = { url: "file:///test/cmd-repository-create.mts" };
-    const context = { parentName: "socket repository" };
+  describe('run', () => {
+    const importMeta = { url: 'file:///test/cmd-repository-create.mts' }
+    const context = { parentName: 'socket repository' }
 
-    it("should support --dry-run flag", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should support --dry-run flag', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryCreate.run(["test-repo", "--dry-run"], importMeta, context);
+      await cmdRepositoryCreate.run(
+        ['test-repo', '--dry-run'],
+        importMeta,
+        context,
+      )
 
-      expect(mockHandleCreateRepo).not.toHaveBeenCalled();
-      expect(mockLogger.error).toHaveBeenCalledWith(expect.stringContaining("DryRun"));
+      expect(mockHandleCreateRepo).not.toHaveBeenCalled()
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining("Would upload repository"),
-      );
-    });
+        expect.stringContaining('DryRun'),
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Would upload repository'),
+      )
+    })
 
-    it("should fail without Socket API token", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(false);
+    it('should fail without Socket API token', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(false)
 
-      await cmdRepositoryCreate.run(["test-repo", "--no-interactive"], importMeta, context);
-
-      // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2);
-      expect(mockHandleCreateRepo).not.toHaveBeenCalled();
-    });
-
-    it("should fail without org slug", async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(["", ""]);
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
-
-      await cmdRepositoryCreate.run(["test-repo", "--no-interactive"], importMeta, context);
+      await cmdRepositoryCreate.run(
+        ['test-repo', '--no-interactive'],
+        importMeta,
+        context,
+      )
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2);
-      expect(mockHandleCreateRepo).not.toHaveBeenCalled();
-    });
+      expect(process.exitCode).toBe(2)
+      expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+    })
 
-    it("should fail without repository name", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should fail without org slug', async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(['', ''])
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryCreate.run(["--no-interactive"], importMeta, context);
+      await cmdRepositoryCreate.run(
+        ['test-repo', '--no-interactive'],
+        importMeta,
+        context,
+      )
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2);
-      expect(mockHandleCreateRepo).not.toHaveBeenCalled();
-    });
+      expect(process.exitCode).toBe(2)
+      expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+    })
 
-    it("should call handleCreateRepo with default parameters", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should fail without repository name', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryCreate.run(["test-repo", "--no-interactive"], importMeta, context);
+      await cmdRepositoryCreate.run(['--no-interactive'], importMeta, context)
+
+      // Exit code 2 = invalid usage/validation failure.
+      expect(process.exitCode).toBe(2)
+      expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+    })
+
+    it('should call handleCreateRepo with default parameters', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdRepositoryCreate.run(
+        ['test-repo', '--no-interactive'],
+        importMeta,
+        context,
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         {
-          defaultBranch: "main",
-          description: "",
-          homepage: "",
-          orgSlug: "test-org",
-          repoName: "test-repo",
-          visibility: "private",
+          defaultBranch: 'main',
+          description: '',
+          homepage: '',
+          orgSlug: 'test-org',
+          repoName: 'test-repo',
+          visibility: 'private',
         },
-        "text",
-      );
-    });
+        'text',
+      )
+    })
 
-    it("should pass --default-branch flag to handleCreateRepo", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should pass --default-branch flag to handleCreateRepo', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ["test-repo", "--default-branch", "trunk", "--no-interactive"],
+        ['test-repo', '--default-branch', 'trunk', '--no-interactive'],
         importMeta,
         context,
-      );
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
-          defaultBranch: "trunk",
+          defaultBranch: 'trunk',
         }),
-        "text",
-      );
-    });
+        'text',
+      )
+    })
 
-    it("should pass --homepage flag to handleCreateRepo", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should pass --homepage flag to handleCreateRepo', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ["test-repo", "--homepage", "https://example.com", "--no-interactive"],
+        ['test-repo', '--homepage', 'https://example.com', '--no-interactive'],
         importMeta,
         context,
-      );
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
-          homepage: "https://example.com",
+          homepage: 'https://example.com',
         }),
-        "text",
-      );
-    });
+        'text',
+      )
+    })
 
-    it("should pass --repo-description flag to handleCreateRepo", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should pass --repo-description flag to handleCreateRepo', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ["test-repo", "--repo-description", "Test description", "--no-interactive"],
+        [
+          'test-repo',
+          '--repo-description',
+          'Test description',
+          '--no-interactive',
+        ],
         importMeta,
         context,
-      );
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
-          description: "Test description",
+          description: 'Test description',
         }),
-        "text",
-      );
-    });
+        'text',
+      )
+    })
 
-    it("should pass --visibility=public flag to handleCreateRepo", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should pass --visibility=public flag to handleCreateRepo', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ["test-repo", "--visibility", "public", "--no-interactive"],
+        ['test-repo', '--visibility', 'public', '--no-interactive'],
         importMeta,
         context,
-      );
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
-          visibility: "public",
+          visibility: 'public',
         }),
-        "text",
-      );
-    });
+        'text',
+      )
+    })
 
-    it("should default to private visibility for invalid visibility values", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should default to private visibility for invalid visibility values', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ["test-repo", "--visibility", "invalid", "--no-interactive"],
+        ['test-repo', '--visibility', 'invalid', '--no-interactive'],
         importMeta,
         context,
-      );
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
-          visibility: "private",
+          visibility: 'private',
         }),
-        "text",
-      );
-    });
+        'text',
+      )
+    })
 
-    it("should default to private when --visibility is empty string", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should default to private when --visibility is empty string', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ["test-repo", "--visibility=", "--no-interactive"],
+        ['test-repo', '--visibility=', '--no-interactive'],
         importMeta,
         context,
-      );
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
-          visibility: "private",
+          visibility: 'private',
         }),
-        "text",
-      );
-    });
+        'text',
+      )
+    })
 
-    it("should pass --org flag to determineOrgSlug", async () => {
-      mockDetermineOrgSlug.mockResolvedValueOnce(["custom-org", "custom-org"]);
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should pass --org flag to determineOrgSlug', async () => {
+      mockDetermineOrgSlug.mockResolvedValueOnce(['custom-org', 'custom-org'])
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ["test-repo", "--org", "custom-org", "--no-interactive"],
+        ['test-repo', '--org', 'custom-org', '--no-interactive'],
         importMeta,
         context,
-      );
+      )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("custom-org", false, false);
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
-          orgSlug: "custom-org",
+          orgSlug: 'custom-org',
         }),
-        "text",
-      );
-    });
+        'text',
+      )
+    })
 
-    it("should pass --json flag to handleCreateRepo", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should pass --json flag to handleCreateRepo', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ["test-repo", "--json", "--no-interactive"],
+        ['test-repo', '--json', '--no-interactive'],
         importMeta,
         context,
-      );
-
-      expect(mockHandleCreateRepo).toHaveBeenCalledWith(
-        expect.objectContaining({
-          repoName: "test-repo",
-        }),
-        "json",
-      );
-    });
-
-    it("should pass --markdown flag to handleCreateRepo", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
-
-      await cmdRepositoryCreate.run(
-        ["test-repo", "--markdown", "--no-interactive"],
-        importMeta,
-        context,
-      );
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
-          repoName: "test-repo",
+          repoName: 'test-repo',
         }),
-        "markdown",
-      );
-    });
+        'json',
+      )
+    })
 
-    it("should fail when both --json and --markdown flags are set", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should pass --markdown flag to handleCreateRepo', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
-        ["test-repo", "--json", "--markdown", "--no-interactive"],
+        ['test-repo', '--markdown', '--no-interactive'],
         importMeta,
         context,
-      );
+      )
+
+      expect(mockHandleCreateRepo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          repoName: 'test-repo',
+        }),
+        'markdown',
+      )
+    })
+
+    it('should fail when both --json and --markdown flags are set', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await cmdRepositoryCreate.run(
+        ['test-repo', '--json', '--markdown', '--no-interactive'],
+        importMeta,
+        context,
+      )
 
       // Exit code 2 = invalid usage/validation failure.
-      expect(process.exitCode).toBe(2);
-      expect(mockHandleCreateRepo).not.toHaveBeenCalled();
-    });
+      expect(process.exitCode).toBe(2)
+      expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+    })
 
-    it("should show repository details in dry-run mode", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should show repository details in dry-run mode', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryCreate.run(["my-repo", "--dry-run"], importMeta, context);
+      await cmdRepositoryCreate.run(
+        ['my-repo', '--dry-run'],
+        importMeta,
+        context,
+      )
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('organization: "test-org"'),
-      );
+      )
       expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('repository: "my-repo"'),
-      );
-    });
+      )
+    })
 
-    it("should pass interactive flag to determineOrgSlug", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should pass interactive flag to determineOrgSlug', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryCreate.run(["test-repo", "--interactive"], importMeta, context);
+      await cmdRepositoryCreate.run(
+        ['test-repo', '--interactive'],
+        importMeta,
+        context,
+      )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("", true, false);
-    });
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', true, false)
+    })
 
-    it("should pass dry-run flag to determineOrgSlug", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should pass dry-run flag to determineOrgSlug', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
-      await cmdRepositoryCreate.run(["test-repo", "--dry-run"], importMeta, context);
+      await cmdRepositoryCreate.run(
+        ['test-repo', '--dry-run'],
+        importMeta,
+        context,
+      )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith("", true, true);
-    });
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('', true, true)
+    })
 
-    it("should handle all flags together", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+    it('should handle all flags together', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
         [
-          "my-new-repo",
-          "--default-branch",
-          "develop",
-          "--homepage",
-          "https://socket.dev",
-          "--repo-description",
-          "A test repository",
-          "--visibility",
-          "public",
-          "--no-interactive",
+          'my-new-repo',
+          '--default-branch',
+          'develop',
+          '--homepage',
+          'https://socket.dev',
+          '--repo-description',
+          'A test repository',
+          '--visibility',
+          'public',
+          '--no-interactive',
         ],
         importMeta,
         context,
-      );
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         {
-          defaultBranch: "develop",
-          description: "A test repository",
-          homepage: "https://socket.dev",
-          orgSlug: "test-org",
-          repoName: "my-new-repo",
-          visibility: "public",
+          defaultBranch: 'develop',
+          description: 'A test repository',
+          homepage: 'https://socket.dev',
+          orgSlug: 'test-org',
+          repoName: 'my-new-repo',
+          visibility: 'public',
         },
-        "text",
-      );
-    });
+        'text',
+      )
+    })
 
-    describe("--default-branch empty-value detection", () => {
-      it("fails when --default-branch= is passed with no value", async () => {
-        mockHasDefaultApiToken.mockReturnValueOnce(true);
+    describe('--default-branch empty-value detection', () => {
+      it('fails when --default-branch= is passed with no value', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
 
         await cmdRepositoryCreate.run(
-          ["test-repo", "--default-branch=", "--no-interactive"],
+          ['test-repo', '--default-branch=', '--no-interactive'],
           importMeta,
           context,
-        );
+        )
 
-        expect(process.exitCode).toBe(2);
-        expect(mockHandleCreateRepo).not.toHaveBeenCalled();
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateRepo).not.toHaveBeenCalled()
         expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining("--default-branch requires a value"),
-        );
-      });
+          expect.stringContaining('--default-branch requires a value'),
+        )
+      })
 
-      it("fails when --default-branch is followed by another flag (bare form)", async () => {
-        mockHasDefaultApiToken.mockReturnValueOnce(true);
+      it('fails when --default-branch is followed by another flag (bare form)', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
 
         await cmdRepositoryCreate.run(
-          ["test-repo", "--default-branch", "--no-interactive"],
+          ['test-repo', '--default-branch', '--no-interactive'],
           importMeta,
           context,
-        );
+        )
 
-        expect(process.exitCode).toBe(2);
-        expect(mockHandleCreateRepo).not.toHaveBeenCalled();
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateRepo).not.toHaveBeenCalled()
         expect(mockLogger.fail).toHaveBeenCalledWith(
-          expect.stringContaining("--default-branch requires a value"),
-        );
-      });
+          expect.stringContaining('--default-branch requires a value'),
+        )
+      })
 
-      it("fails when --default-branch is the last argv token (bare form)", async () => {
-        mockHasDefaultApiToken.mockReturnValueOnce(true);
-
-        await cmdRepositoryCreate.run(["test-repo", "--default-branch"], importMeta, context);
-
-        expect(process.exitCode).toBe(2);
-        expect(mockHandleCreateRepo).not.toHaveBeenCalled();
-      });
-
-      it("also catches the camelCase --defaultBranch variant", async () => {
-        mockHasDefaultApiToken.mockReturnValueOnce(true);
+      it('fails when --default-branch is the last argv token (bare form)', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
 
         await cmdRepositoryCreate.run(
-          ["test-repo", "--defaultBranch=", "--no-interactive"],
+          ['test-repo', '--default-branch'],
           importMeta,
           context,
-        );
+        )
 
-        expect(process.exitCode).toBe(2);
-        expect(mockHandleCreateRepo).not.toHaveBeenCalled();
-      });
-    });
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+      })
 
-    it("should handle empty string values for optional flags", async () => {
-      mockHasDefaultApiToken.mockReturnValueOnce(true);
+      it('also catches the camelCase --defaultBranch variant', async () => {
+        mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+        await cmdRepositoryCreate.run(
+          ['test-repo', '--defaultBranch=', '--no-interactive'],
+          importMeta,
+          context,
+        )
+
+        expect(process.exitCode).toBe(2)
+        expect(mockHandleCreateRepo).not.toHaveBeenCalled()
+      })
+    })
+
+    it('should handle empty string values for optional flags', async () => {
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdRepositoryCreate.run(
         [
-          "test-repo",
-          "--default-branch",
-          "",
-          "--homepage",
-          "",
-          "--repo-description",
-          "",
-          "--no-interactive",
+          'test-repo',
+          '--default-branch',
+          '',
+          '--homepage',
+          '',
+          '--repo-description',
+          '',
+          '--no-interactive',
         ],
         importMeta,
         context,
-      );
+      )
 
       expect(mockHandleCreateRepo).toHaveBeenCalledWith(
         expect.objectContaining({
-          defaultBranch: "",
-          description: "",
-          homepage: "",
+          defaultBranch: '',
+          description: '',
+          homepage: '',
         }),
-        "text",
-      );
-    });
-  });
-});
+        'text',
+      )
+    })
+  })
+})

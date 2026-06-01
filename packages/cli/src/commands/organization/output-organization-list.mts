@@ -1,80 +1,80 @@
-import colors from "yoctocolors-cjs";
+import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from "../../util/error/fail-msg-with-badge.mts";
-import { mdHeader } from "../../util/output/markdown.mts";
-import { serializeResultJson } from "../../util/output/result-json.mjs";
-import { getVisibleTokenPrefix } from "../../util/socket/sdk.mjs";
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { getVisibleTokenPrefix } from '../../util/socket/sdk.mjs'
 
-import type { OrganizationsCResult } from "./fetch-organization-list.mts";
-import type { OutputKind } from "../../types.mts";
-const logger = getDefaultLogger();
+import type { OrganizationsCResult } from './fetch-organization-list.mts'
+import type { OutputKind } from '../../types.mts'
+const logger = getDefaultLogger()
 
 export async function outputOrganizationList(
   orgsCResult: OrganizationsCResult,
-  outputKind: OutputKind = "text",
+  outputKind: OutputKind = 'text',
 ): Promise<void> {
   if (!orgsCResult.ok) {
-    process.exitCode = orgsCResult.code ?? 1;
+    process.exitCode = orgsCResult.code ?? 1
   }
 
-  if (outputKind === "json") {
-    logger.log(serializeResultJson(orgsCResult));
-    return;
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(orgsCResult))
+    return
   }
 
   if (!orgsCResult.ok) {
-    logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause));
-    return;
+    logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))
+    return
   }
 
-  const { organizations } = orgsCResult.data;
-  const visibleTokenPrefix = getVisibleTokenPrefix();
+  const { organizations } = orgsCResult.data
+  const visibleTokenPrefix = getVisibleTokenPrefix()
 
-  if (outputKind !== "markdown") {
+  if (outputKind !== 'markdown') {
     logger.log(
       `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}`,
-    );
-    logger.log("");
+    )
+    logger.log('')
     // Just dump.
     for (let i = 0, { length } = organizations; i < length; i += 1) {
-      const o = organizations[i]!;
+      const o = organizations[i]!
       logger.log(
-        `- Name: ${colors.bold(o.name ?? "undefined")}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`,
-      );
+        `- Name: ${colors.bold(o.name ?? 'undefined')}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`,
+      )
     }
-    return;
+    return
   }
 
   // | Syntax      | Description |
   // | ----------- | ----------- |
   // | Header      | Title       |
   // | Paragraph   | Text        |
-  let mw1 = 4;
-  let mw2 = 2;
-  let mw3 = 4;
+  let mw1 = 4
+  let mw2 = 2
+  let mw3 = 4
   for (let i = 0, { length } = organizations; i < length; i += 1) {
-    const o = organizations[i]!;
-    mw1 = Math.max(mw1, o.name?.length ?? 0);
-    mw2 = Math.max(mw2, o.id.length);
-    mw3 = Math.max(mw3, o.plan.length);
+    const o = organizations[i]!
+    mw1 = Math.max(mw1, o.name?.length ?? 0)
+    mw2 = Math.max(mw2, o.id.length)
+    mw3 = Math.max(mw3, o.plan.length)
   }
-  logger.log(`${mdHeader("Organizations")}`);
-  logger.log("");
+  logger.log(`${mdHeader('Organizations')}`)
+  logger.log('')
   logger.log(
     `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}`,
-  );
-  logger.log("");
+  )
+  logger.log('')
   logger.log(
-    `| Name${" ".repeat(mw1 - 4)} | ID${" ".repeat(mw2 - 2)} | Plan${" ".repeat(mw3 - 4)} |`,
-  );
-  logger.log(`| ${"-".repeat(mw1)} | ${"-".repeat(mw2)} | ${"-".repeat(mw3)} |`);
+    `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`,
+  )
+  logger.log(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`)
   for (let i = 0, { length } = organizations; i < length; i += 1) {
-    const o = organizations[i]!;
+    const o = organizations[i]!
     logger.log(
-      `| ${(o.name || "").padEnd(mw1, " ")} | ${(o.id || "").padEnd(mw2, " ")} | ${(o.plan || "").padEnd(mw3, " ")} |`,
-    );
+      `| ${(o.name || '').padEnd(mw1, ' ')} | ${(o.id || '').padEnd(mw2, ' ')} | ${(o.plan || '').padEnd(mw3, ' ')} |`,
+    )
   }
-  logger.log(`| ${"-".repeat(mw1)} | ${"-".repeat(mw2)} | ${"-".repeat(mw3)} |`);
+  logger.log(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`)
 }

@@ -4,7 +4,9 @@
 # Cascaded from socket-wheelhouse/template/. Don't edit locally —
 # edit upstream and re-cascade via sync-scaffolding. Marked
 # linguist-generated so GitHub PR diffs collapse them by default.
+.claude/agents/fleet linguist-generated=true
 .claude/agents/fleet/security-reviewer.md linguist-generated=true
+.claude/commands/fleet linguist-generated=true
 .claude/commands/fleet/audit-gha-settings.md linguist-generated=true
 .claude/commands/fleet/green-ci.md linguist-generated=true
 .claude/commands/fleet/quality-loop.md linguist-generated=true
@@ -15,6 +17,7 @@
 .claude/commands/fleet/update-security.md linguist-generated=true
 .claude/hooks/fleet linguist-generated=true
 .claude/settings.json linguist-generated=true
+.claude/skills/fleet linguist-generated=true
 .claude/skills/fleet/_shared/compound-lessons.md linguist-generated=true
 .claude/skills/fleet/_shared/env-check.md linguist-generated=true
 .claude/skills/fleet/_shared/multi-agent-backends.md linguist-generated=true
@@ -27,14 +30,8 @@
 .claude/skills/fleet/_shared/skill-authoring.md linguist-generated=true
 .claude/skills/fleet/_shared/variant-analysis.md linguist-generated=true
 .claude/skills/fleet/_shared/verify-build.md linguist-generated=true
-.claude/skills/fleet/agent-ci/SKILL.md linguist-generated=true
-.claude/skills/fleet/agent-ci/reference.md linguist-generated=true
 .claude/skills/fleet/auditing-gha-settings/SKILL.md linguist-generated=true
 .claude/skills/fleet/auditing-gha-settings/run.mts linguist-generated=true
-.claude/skills/fleet/cascading-fleet/SKILL.md linguist-generated=true
-.claude/skills/fleet/cascading-fleet/lib/cascade-template.mts linguist-generated=true
-.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json linguist-generated=true
-.claude/skills/fleet/cascading-fleet/lib/fleet-repos.txt linguist-generated=true
 .claude/skills/fleet/cleaning-redundant-ci/SKILL.md linguist-generated=true
 .claude/skills/fleet/driving-cursor-bugbot/SKILL.md linguist-generated=true
 .claude/skills/fleet/driving-cursor-bugbot/reference.md linguist-generated=true
@@ -56,7 +53,6 @@
 .claude/skills/fleet/regenerating-plugin-patches/SKILL.md linguist-generated=true
 .claude/skills/fleet/reviewing-code/SKILL.md linguist-generated=true
 .claude/skills/fleet/reviewing-code/run.mts linguist-generated=true
-.claude/skills/fleet/running-test262/SKILL.md linguist-generated=true
 .claude/skills/fleet/scanning-quality/SKILL.md linguist-generated=true
 .claude/skills/fleet/scanning-quality/scans/bundle-trim.md linguist-generated=true
 .claude/skills/fleet/scanning-quality/scans/deadcode-removal.md linguist-generated=true
@@ -77,13 +73,9 @@
 .claude/skills/fleet/worktree-management/SKILL.md linguist-generated=true
 .config/.markdownlint-cli2.jsonc linguist-generated=true
 .config/.prettierignore linguist-generated=true
+.config/fleet/markdownlint-rules linguist-generated=true
+.config/fleet/oxlint-plugin linguist-generated=true
 .config/lockstep.schema.json linguist-generated=true
-.config/markdownlint-rules/_shared/wheelhouse-self-skip.mts linguist-generated=true
-.config/markdownlint-rules/socket-no-empty-changelog-sections.mts linguist-generated=true
-.config/markdownlint-rules/socket-no-private-wheelhouse-leak.mts linguist-generated=true
-.config/markdownlint-rules/socket-no-relative-sibling-script.mts linguist-generated=true
-.config/markdownlint-rules/socket-readme-required-sections.mts linguist-generated=true
-.config/oxlint-plugin linguist-generated=true
 .config/rolldown/define-guarded.mts linguist-generated=true
 .config/rolldown/lib-stub.mts linguist-generated=true
 .config/sfw-bypass-list.txt linguist-generated=true
@@ -92,18 +84,7 @@
 .config/taze.config.mts linguist-generated=true
 .config/tsconfig.base.json linguist-generated=true
 .config/vitest.coverage.fleet.config.mts linguist-generated=true
-.git-hooks/_helpers.mts linguist-generated=true
-.git-hooks/_resolve-node.sh linguist-generated=true
-.git-hooks/commit-msg linguist-generated=true
-.git-hooks/commit-msg.mts linguist-generated=true
-.git-hooks/pre-commit linguist-generated=true
-.git-hooks/pre-commit.mts linguist-generated=true
-.git-hooks/pre-push linguist-generated=true
-.git-hooks/pre-push.mts linguist-generated=true
-.git-hooks/test/_helpers.test.mts linguist-generated=true
-.git-hooks/test/commit-msg.test.mts linguist-generated=true
-.git-hooks/test/pre-commit.test.mts linguist-generated=true
-.git-hooks/test/pre-push.test.mts linguist-generated=true
+.git-hooks linguist-generated=true
 .github/dependabot.yml linguist-generated=true
 assets/README.md linguist-generated=true
 assets/socket-icon-brand-128.png linguist-generated=true
@@ -170,6 +151,7 @@ scripts/check-claude-segmentation.mts linguist-generated=true
 scripts/check-fleet-soak-exclude-parity.mts linguist-generated=true
 scripts/check-lock-step-header.mts linguist-generated=true
 scripts/check-lock-step-refs.mts linguist-generated=true
+scripts/check-package-files-allowlist.mts linguist-generated=true
 scripts/check-paths.mts linguist-generated=true
 scripts/check-paths/allowlist.mts linguist-generated=true
 scripts/check-paths/cli.mts linguist-generated=true
@@ -216,6 +198,7 @@ scripts/socket-wheelhouse-emit-schema.mts linguist-generated=true
 scripts/socket-wheelhouse-schema.mts linguist-generated=true
 scripts/test/check-lock-step-header.test.mts linguist-generated=true
 scripts/test/check-lock-step-refs.test.mts linguist-generated=true
+scripts/test/check-package-files-allowlist.test.mts linguist-generated=true
 scripts/test/check-soak-exclude-dates.test.mts linguist-generated=true
 scripts/test/install-claude-plugins.test.mts linguist-generated=true
 scripts/test/install-git-hooks.test.mts linguist-generated=true

@@ -21,131 +21,156 @@
  * formatting.
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest'
 
-import { handleManifestConda } from "../../../../src/commands/manifest/handle-manifest-conda.mts";
-import { createErrorResult, createSuccessResult } from "../../../helpers/mocks.mts";
+import { handleManifestConda } from '../../../../src/commands/manifest/handle-manifest-conda.mts'
+import {
+  createErrorResult,
+  createSuccessResult,
+} from '../../../helpers/mocks.mts'
 
 // Mock the dependencies.
-const mockConvertCondaToRequirements = vi.hoisted(() => vi.fn());
-const mockOutputRequirements = vi.hoisted(() => vi.fn());
+const mockConvertCondaToRequirements = vi.hoisted(() => vi.fn())
+const mockOutputRequirements = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/manifest/convert-conda-to-requirements.mts"), () => ({
-  convertCondaToRequirements: mockConvertCondaToRequirements,
-}));
+vi.mock(
+  import('../../../../src/commands/manifest/convert-conda-to-requirements.mts'),
+  () => ({
+    convertCondaToRequirements: mockConvertCondaToRequirements,
+  }),
+)
 
-vi.mock(import("../../../../src/commands/manifest/output-requirements.mts"), () => ({
-  outputRequirements: mockOutputRequirements,
-}));
+vi.mock(
+  import('../../../../src/commands/manifest/output-requirements.mts'),
+  () => ({
+    outputRequirements: mockOutputRequirements,
+  }),
+)
 
-describe("handleManifestConda", () => {
-  it("converts conda file and outputs requirements successfully", async () => {
-    await import("../../../../src/commands/manifest/convert-conda-to-requirements.mts");
-    await import("../../../../src/commands/manifest/output-requirements.mts");
-    const mockConvert = mockConvertCondaToRequirements;
-    const mockOutput = mockOutputRequirements;
+describe('handleManifestConda', () => {
+  it('converts conda file and outputs requirements successfully', async () => {
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
+    await import('../../../../src/commands/manifest/output-requirements.mts')
+    const mockConvert = mockConvertCondaToRequirements
+    const mockOutput = mockOutputRequirements
 
     const mockRequirements = createSuccessResult([
-      "numpy==1.23.0",
-      "pandas>=2.0.0",
-      "scikit-learn~=1.3.0",
-      "matplotlib",
-    ]);
-    mockConvert.mockResolvedValue(mockRequirements);
+      'numpy==1.23.0',
+      'pandas>=2.0.0',
+      'scikit-learn~=1.3.0',
+      'matplotlib',
+    ])
+    mockConvert.mockResolvedValue(mockRequirements)
 
     await handleManifestConda({
-      cwd: "/project",
-      filename: "environment.yml",
-      out: "requirements.txt",
-      outputKind: "text",
+      cwd: '/project',
+      filename: 'environment.yml',
+      out: 'requirements.txt',
+      outputKind: 'text',
       verbose: true,
-    });
+    })
 
-    expect(mockConvert).toHaveBeenCalledWith("environment.yml", "/project", true);
-    expect(mockOutput).toHaveBeenCalledWith(mockRequirements, "text", "requirements.txt");
-  });
+    expect(mockConvert).toHaveBeenCalledWith(
+      'environment.yml',
+      '/project',
+      true,
+    )
+    expect(mockOutput).toHaveBeenCalledWith(
+      mockRequirements,
+      'text',
+      'requirements.txt',
+    )
+  })
 
-  it("handles conversion failure", async () => {
-    await import("../../../../src/commands/manifest/convert-conda-to-requirements.mts");
-    await import("../../../../src/commands/manifest/output-requirements.mts");
-    const mockConvert = mockConvertCondaToRequirements;
-    const mockOutput = mockOutputRequirements;
+  it('handles conversion failure', async () => {
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
+    await import('../../../../src/commands/manifest/output-requirements.mts')
+    const mockConvert = mockConvertCondaToRequirements
+    const mockOutput = mockOutputRequirements
 
-    const mockError = createErrorResult("Invalid conda file format");
-    mockConvert.mockResolvedValue(mockError);
+    const mockError = createErrorResult('Invalid conda file format')
+    mockConvert.mockResolvedValue(mockError)
 
     await handleManifestConda({
-      cwd: "/project",
-      filename: "invalid.yml",
-      out: "",
-      outputKind: "json",
+      cwd: '/project',
+      filename: 'invalid.yml',
+      out: '',
+      outputKind: 'json',
       verbose: false,
-    });
+    })
 
-    expect(mockConvert).toHaveBeenCalledWith("invalid.yml", "/project", false);
-    expect(mockOutput).toHaveBeenCalledWith(mockError, "json", "");
-  });
+    expect(mockConvert).toHaveBeenCalledWith('invalid.yml', '/project', false)
+    expect(mockOutput).toHaveBeenCalledWith(mockError, 'json', '')
+  })
 
-  it("handles different output formats", async () => {
-    await import("../../../../src/commands/manifest/convert-conda-to-requirements.mts");
-    await import("../../../../src/commands/manifest/output-requirements.mts");
-    const mockConvert = mockConvertCondaToRequirements;
-    const mockOutput = mockOutputRequirements;
+  it('handles different output formats', async () => {
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
+    await import('../../../../src/commands/manifest/output-requirements.mts')
+    const mockConvert = mockConvertCondaToRequirements
+    const mockOutput = mockOutputRequirements
 
-    mockConvert.mockResolvedValue(createSuccessResult([]));
+    mockConvert.mockResolvedValue(createSuccessResult([]))
 
-    const formats = ["text", "json", "markdown"] as const;
+    const formats = ['text', 'json', 'markdown'] as const
 
     for (let i = 0, { length } = formats; i < length; i += 1) {
-      const format = formats[i];
+      const format = formats[i]
       await handleManifestConda({
-        cwd: ".",
-        filename: "conda.yml",
+        cwd: '.',
+        filename: 'conda.yml',
         out: `output.${format}`,
         outputKind: format,
         verbose: false,
-      });
+      })
 
-      expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), format, `output.${format}`);
+      expect(mockOutput).toHaveBeenCalledWith(
+        expect.any(Object),
+        format,
+        `output.${format}`,
+      )
     }
-  });
+  })
 
-  it("handles verbose mode", async () => {
-    await import("../../../../src/commands/manifest/convert-conda-to-requirements.mts");
-    const mockConvert = mockConvertCondaToRequirements;
+  it('handles verbose mode', async () => {
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
+    const mockConvert = mockConvertCondaToRequirements
 
-    mockConvert.mockResolvedValue(createSuccessResult([]));
+    mockConvert.mockResolvedValue(createSuccessResult([]))
 
     await handleManifestConda({
-      cwd: "/verbose",
-      filename: "environment.yaml",
-      out: "reqs.txt",
-      outputKind: "text",
+      cwd: '/verbose',
+      filename: 'environment.yaml',
+      out: 'reqs.txt',
+      outputKind: 'text',
       verbose: true,
-    });
+    })
 
-    expect(mockConvert).toHaveBeenCalledWith("environment.yaml", "/verbose", true);
-  });
+    expect(mockConvert).toHaveBeenCalledWith(
+      'environment.yaml',
+      '/verbose',
+      true,
+    )
+  })
 
-  it("handles different working directories", async () => {
-    await import("../../../../src/commands/manifest/convert-conda-to-requirements.mts");
-    const mockConvert = mockConvertCondaToRequirements;
+  it('handles different working directories', async () => {
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
+    const mockConvert = mockConvertCondaToRequirements
 
-    mockConvert.mockResolvedValue(createSuccessResult([]));
+    mockConvert.mockResolvedValue(createSuccessResult([]))
 
-    const cwds = ["/root", "/home/user/project", "./relative", "."];
+    const cwds = ['/root', '/home/user/project', './relative', '.']
 
     for (let i = 0, { length } = cwds; i < length; i += 1) {
-      const cwd = cwds[i];
+      const cwd = cwds[i]
       await handleManifestConda({
         cwd,
-        filename: "conda.yml",
-        out: "requirements.txt",
-        outputKind: "text",
+        filename: 'conda.yml',
+        out: 'requirements.txt',
+        outputKind: 'text',
         verbose: false,
-      });
+      })
 
-      expect(mockConvert).toHaveBeenCalledWith("conda.yml", cwd, false);
+      expect(mockConvert).toHaveBeenCalledWith('conda.yml', cwd, false)
     }
-  });
-});
+  })
+})

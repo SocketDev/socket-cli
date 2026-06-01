@@ -26,259 +26,279 @@
  * src/commands/mcp/depscore.mts - Tool worker (mocked here)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js'
 
-import type * as DepscoreModule from "../../../../src/commands/mcp/depscore.mts";
+import type * as DepscoreModule from '../../../../src/commands/mcp/depscore.mts'
 
 const { mockRunDepscore } = vi.hoisted(() => ({
   mockRunDepscore: vi.fn(),
-}));
+}))
 
-vi.mock(import("../../../../src/commands/mcp/depscore.mts"), async (importOriginal) => {
-  const actual = await importOriginal<typeof DepscoreModule>();
-  return {
-    ...actual,
-    runDepscore: mockRunDepscore,
-  };
-});
+vi.mock(
+  import('../../../../src/commands/mcp/depscore.mts'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof DepscoreModule>()
+    return {
+      ...actual,
+      runDepscore: mockRunDepscore,
+    }
+  },
+)
 
-const { createConfiguredServer } = await import("../../../../src/commands/mcp/server.mts");
+const { createConfiguredServer } =
+  await import('../../../../src/commands/mcp/server.mts')
 
 // Helper: invoke a handler from the underlying SDK Server. The SDK
 // exposes `.setRequestHandler` but not a public `.handle(...)`, so we
 // pull the registered handler off the internal `_requestHandlers` map.
 type AnyServer = {
-  _requestHandlers: Map<string, (req: unknown, extra: unknown) => Promise<unknown>>;
-};
+  _requestHandlers: Map<
+    string,
+    (req: unknown, extra: unknown) => Promise<unknown>
+  >
+}
 
 function getHandler(
   server: ReturnType<typeof createConfiguredServer>,
   schema: typeof ListToolsRequestSchema | typeof CallToolRequestSchema,
 ) {
-  const internal = server as unknown as AnyServer;
-  const method = (schema as unknown as { shape: { method: { value: string } } }).shape.method.value;
-  const handler = internal._requestHandlers.get(method);
+  const internal = server as unknown as AnyServer
+  const method = (schema as unknown as { shape: { method: { value: string } } })
+    .shape.method.value
+  const handler = internal._requestHandlers.get(method)
   if (!handler) {
-    throw new Error(`No handler registered for ${method}`);
+    throw new Error(`No handler registered for ${method}`)
   }
-  return handler;
+  return handler
 }
 
 const baseConfig = {
-  getApiToken: () => "test_default_token",
-  serverName: "socket",
-  version: "9.9.9",
-};
+  getApiToken: () => 'test_default_token',
+  serverName: 'socket',
+  version: '9.9.9',
+}
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.clearAllMocks()
   mockRunDepscore.mockResolvedValue({
-    content: [{ text: "ok", type: "text" as const }],
-  });
-});
+    content: [{ text: 'ok', type: 'text' as const }],
+  })
+})
 
-describe("createConfiguredServer — construction", () => {
-  it("creates a Server with the configured name and version", () => {
-    const server = createConfiguredServer(baseConfig);
+describe('createConfiguredServer — construction', () => {
+  it('creates a Server with the configured name and version', () => {
+    const server = createConfiguredServer(baseConfig)
     // The SDK Server stores serverInfo internally; round-trip via the
     // protocol's getter for the server's implementation info.
-    const info = (server as unknown as { _serverInfo: { name: string; version: string } })
-      ._serverInfo;
-    expect(info.name).toBe("socket");
-    expect(info.version).toBe("9.9.9");
-  });
+    const info = (
+      server as unknown as { _serverInfo: { name: string; version: string } }
+    )._serverInfo
+    expect(info.name).toBe('socket')
+    expect(info.version).toBe('9.9.9')
+  })
 
-  it("declares the tools capability", () => {
-    const server = createConfiguredServer(baseConfig);
-    const caps = (server as unknown as { _capabilities: Record<string, unknown> })._capabilities;
-    expect(caps["tools"]).toBeDefined();
-  });
-});
+  it('declares the tools capability', () => {
+    const server = createConfiguredServer(baseConfig)
+    const caps = (
+      server as unknown as { _capabilities: Record<string, unknown> }
+    )._capabilities
+    expect(caps['tools']).toBeDefined()
+  })
+})
 
-describe("createConfiguredServer — tools/list handler", () => {
-  it("returns the single depscore tool", async () => {
-    const server = createConfiguredServer(baseConfig);
-    const handler = getHandler(server, ListToolsRequestSchema);
-    const result = (await handler({ method: "tools/list", params: {} }, {})) as {
+describe('createConfiguredServer — tools/list handler', () => {
+  it('returns the single depscore tool', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, ListToolsRequestSchema)
+    const result = (await handler(
+      { method: 'tools/list', params: {} },
+      {},
+    )) as {
       tools: Array<{
-        name: string;
-        description: string;
-        title?: string | undefined;
-        annotations?: { readOnlyHint?: boolean | undefined } | undefined;
-        inputSchema: Record<string, unknown>;
-      }>;
-    };
-    expect(result.tools).toHaveLength(1);
-    expect(result.tools[0]!.name).toBe("depscore");
-    expect(result.tools[0]!.title).toBe("Dependency Score Tool");
-    expect(result.tools[0]!.annotations?.readOnlyHint).toBe(true);
-    expect(result.tools[0]!.description).toContain("depscore");
-  });
+        name: string
+        description: string
+        title?: string | undefined
+        annotations?: { readOnlyHint?: boolean | undefined } | undefined
+        inputSchema: Record<string, unknown>
+      }>
+    }
+    expect(result.tools).toHaveLength(1)
+    expect(result.tools[0]!.name).toBe('depscore')
+    expect(result.tools[0]!.title).toBe('Dependency Score Tool')
+    expect(result.tools[0]!.annotations?.readOnlyHint).toBe(true)
+    expect(result.tools[0]!.description).toContain('depscore')
+  })
 
-  it("emits a plain JSON Schema (no TypeBox symbols/keys)", async () => {
-    const server = createConfiguredServer(baseConfig);
-    const handler = getHandler(server, ListToolsRequestSchema);
-    const result = (await handler({ method: "tools/list", params: {} }, {})) as {
-      tools: Array<{ inputSchema: Record<string, unknown> }>;
-    };
-    const schema = result.tools[0]!.inputSchema;
+  it('emits a plain JSON Schema (no TypeBox symbols/keys)', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, ListToolsRequestSchema)
+    const result = (await handler(
+      { method: 'tools/list', params: {} },
+      {},
+    )) as {
+      tools: Array<{ inputSchema: Record<string, unknown> }>
+    }
+    const schema = result.tools[0]!.inputSchema
     // Round-trippable through JSON.
-    expect(() => JSON.parse(JSON.stringify(schema))).not.toThrow();
+    expect(() => JSON.parse(JSON.stringify(schema))).not.toThrow()
     // Has the expected shape.
-    expect(schema["type"]).toBe("object");
-    expect(schema["properties"]).toBeDefined();
-    const props = schema["properties"] as Record<string, unknown>;
-    expect(props["packages"]).toBeDefined();
-    expect(props["platform"]).toBeDefined();
+    expect(schema['type']).toBe('object')
+    expect(schema['properties']).toBeDefined()
+    const props = schema['properties'] as Record<string, unknown>
+    expect(props['packages']).toBeDefined()
+    expect(props['platform']).toBeDefined()
     // No symbol-keyed TypeBox metadata.
-    const ownKeys = Reflect.ownKeys(schema);
-    const symbolKeys = ownKeys.filter((k) => typeof k === "symbol");
-    expect(symbolKeys).toHaveLength(0);
-  });
-});
+    const ownKeys = Reflect.ownKeys(schema)
+    const symbolKeys = ownKeys.filter(k => typeof k === 'symbol')
+    expect(symbolKeys).toHaveLength(0)
+  })
+})
 
-describe("createConfiguredServer — tools/call handler", () => {
-  it("dispatches to runDepscore for the depscore tool", async () => {
-    const server = createConfiguredServer(baseConfig);
-    const handler = getHandler(server, CallToolRequestSchema);
+describe('createConfiguredServer — tools/call handler', () => {
+  it('dispatches to runDepscore for the depscore tool', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, CallToolRequestSchema)
     const result = (await handler(
       {
-        method: "tools/call",
+        method: 'tools/call',
         params: {
-          name: "depscore",
-          arguments: { packages: [{ depname: "lodash" }] },
+          name: 'depscore',
+          arguments: { packages: [{ depname: 'lodash' }] },
         },
       },
       {},
     )) as {
-      content: Array<{ text: string; type: string }>;
-      isError?: boolean | undefined;
-    };
-    expect(mockRunDepscore).toHaveBeenCalledTimes(1);
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
+    expect(mockRunDepscore).toHaveBeenCalledTimes(1)
     expect(mockRunDepscore.mock.calls[0]![0]).toEqual({
-      packages: [{ depname: "lodash" }],
-    });
-    expect(result.content[0]!.text).toBe("ok");
-    expect(result.isError).toBeUndefined();
-  });
+      packages: [{ depname: 'lodash' }],
+    })
+    expect(result.content[0]!.text).toBe('ok')
+    expect(result.isError).toBeUndefined()
+  })
 
-  it("returns isError when called with an unknown tool name", async () => {
-    const server = createConfiguredServer(baseConfig);
-    const handler = getHandler(server, CallToolRequestSchema);
+  it('returns isError when called with an unknown tool name', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, CallToolRequestSchema)
     const result = (await handler(
       {
-        method: "tools/call",
+        method: 'tools/call',
         params: {
-          name: "unknown-tool",
+          name: 'unknown-tool',
           arguments: {},
         },
       },
       {},
     )) as {
-      content: Array<{ text: string; type: string }>;
-      isError?: boolean | undefined;
-    };
-    expect(mockRunDepscore).not.toHaveBeenCalled();
-    expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain("Unknown tool: unknown-tool");
-  });
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
+    expect(mockRunDepscore).not.toHaveBeenCalled()
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Unknown tool: unknown-tool')
+  })
 
-  it("returns isError + validation message when arguments are missing the packages field", async () => {
-    const server = createConfiguredServer(baseConfig);
-    const handler = getHandler(server, CallToolRequestSchema);
+  it('returns isError + validation message when arguments are missing the packages field', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, CallToolRequestSchema)
     const result = (await handler(
       {
-        method: "tools/call",
-        params: { name: "depscore", arguments: {} },
+        method: 'tools/call',
+        params: { name: 'depscore', arguments: {} },
       },
       {},
     )) as {
-      content: Array<{ text: string; type: string }>;
-      isError?: boolean | undefined;
-    };
-    expect(mockRunDepscore).not.toHaveBeenCalled();
-    expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain("Invalid arguments for depscore");
-  });
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
+    expect(mockRunDepscore).not.toHaveBeenCalled()
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
+  })
 
-  it("returns isError when packages is the wrong shape (string instead of array)", async () => {
-    const server = createConfiguredServer(baseConfig);
-    const handler = getHandler(server, CallToolRequestSchema);
+  it('returns isError when packages is the wrong shape (string instead of array)', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, CallToolRequestSchema)
     const result = (await handler(
       {
-        method: "tools/call",
-        params: { name: "depscore", arguments: { packages: "not-an-array" } },
+        method: 'tools/call',
+        params: { name: 'depscore', arguments: { packages: 'not-an-array' } },
       },
       {},
     )) as {
-      content: Array<{ text: string; type: string }>;
-      isError?: boolean | undefined;
-    };
-    expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain("Invalid arguments for depscore");
-  });
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
+  })
 
-  it("uses the OAuth token from extra.authInfo when present", async () => {
-    const server = createConfiguredServer(baseConfig);
-    const handler = getHandler(server, CallToolRequestSchema);
+  it('uses the OAuth token from extra.authInfo when present', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, CallToolRequestSchema)
     await handler(
       {
-        method: "tools/call",
+        method: 'tools/call',
         params: {
-          name: "depscore",
-          arguments: { packages: [{ depname: "foo" }] },
+          name: 'depscore',
+          arguments: { packages: [{ depname: 'foo' }] },
         },
       },
-      { authInfo: { token: "oauth_user_token_xyz" } },
-    );
+      { authInfo: { token: 'oauth_user_token_xyz' } },
+    )
     expect(mockRunDepscore).toHaveBeenCalledWith(
       expect.objectContaining({ packages: expect.any(Array) }),
-      { apiToken: "oauth_user_token_xyz" },
-    );
-  });
+      { apiToken: 'oauth_user_token_xyz' },
+    )
+  })
 
-  it("falls back to config.getApiToken() when authInfo is absent", async () => {
-    const server = createConfiguredServer(baseConfig);
-    const handler = getHandler(server, CallToolRequestSchema);
+  it('falls back to config.getApiToken() when authInfo is absent', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, CallToolRequestSchema)
     await handler(
       {
-        method: "tools/call",
+        method: 'tools/call',
         params: {
-          name: "depscore",
-          arguments: { packages: [{ depname: "foo" }] },
+          name: 'depscore',
+          arguments: { packages: [{ depname: 'foo' }] },
         },
       },
       {},
-    );
+    )
     expect(mockRunDepscore).toHaveBeenCalledWith(
       expect.objectContaining({ packages: expect.any(Array) }),
-      { apiToken: "test_default_token" },
-    );
-  });
+      { apiToken: 'test_default_token' },
+    )
+  })
 
-  it("surfaces the auth-required message when no token is available from either source", async () => {
+  it('surfaces the auth-required message when no token is available from either source', async () => {
     const server = createConfiguredServer({
       ...baseConfig,
       getApiToken: () => undefined,
-    });
-    const handler = getHandler(server, CallToolRequestSchema);
+    })
+    const handler = getHandler(server, CallToolRequestSchema)
     const result = (await handler(
       {
-        method: "tools/call",
+        method: 'tools/call',
         params: {
-          name: "depscore",
-          arguments: { packages: [{ depname: "foo" }] },
+          name: 'depscore',
+          arguments: { packages: [{ depname: 'foo' }] },
         },
       },
       {},
     )) as {
-      content: Array<{ text: string; type: string }>;
-      isError?: boolean | undefined;
-    };
-    expect(mockRunDepscore).not.toHaveBeenCalled();
-    expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toContain("Authentication is required");
-  });
-});
+      content: Array<{ text: string; type: string }>
+      isError?: boolean | undefined
+    }
+    expect(mockRunDepscore).not.toHaveBeenCalled()
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Authentication is required')
+  })
+})

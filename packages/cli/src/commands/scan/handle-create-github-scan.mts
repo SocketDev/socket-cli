@@ -1,7 +1,7 @@
-import { createScanFromGithub } from "./create-scan-from-github.mts";
-import { outputScanGithub } from "./output-scan-github.mts";
+import { createScanFromGithub } from './create-scan-from-github.mts'
+import { outputScanGithub } from './output-scan-github.mts'
 
-import type { OutputKind } from "../../types.mts";
+import type { OutputKind } from '../../types.mts'
 
 export async function handleCreateGithubScan({
   all,
@@ -13,14 +13,14 @@ export async function handleCreateGithubScan({
   outputKind,
   repos,
 }: {
-  all: boolean;
-  githubApiUrl: string;
-  githubToken: string;
-  interactive: boolean;
-  orgSlug: string;
-  orgGithub: string;
-  outputKind: OutputKind;
-  repos: string;
+  all: boolean
+  githubApiUrl: string
+  githubToken: string
+  interactive: boolean
+  orgSlug: string
+  orgGithub: string
+  outputKind: OutputKind
+  repos: string
 }) {
   const ghScanCResult = await createScanFromGithub({
     all: Boolean(all),
@@ -30,8 +30,8 @@ export async function handleCreateGithubScan({
     orgSlug,
     orgGithub,
     outputKind,
-    repos: String(repos || ""),
-  });
+    repos: String(repos || ''),
+  })
 
-  await outputScanGithub(ghScanCResult, outputKind);
+  await outputScanGithub(ghScanCResult, outputKind)
 }

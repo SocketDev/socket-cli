@@ -1,22 +1,30 @@
-import { BUN, YARN_BERRY, YARN_CLASSIC } from "@socketsecurity/lib-stable/constants/agents";
+import {
+  BUN,
+  YARN_BERRY,
+  YARN_CLASSIC,
+} from '@socketsecurity/lib-stable/constants/agents'
 
-import type { EnvDetails } from "../../util/ecosystem/environment.mjs";
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
-export function lsStdoutIncludes(pkgEnvDetails: EnvDetails, stdout: string, name: string): boolean {
+export function lsStdoutIncludes(
+  pkgEnvDetails: EnvDetails,
+  stdout: string,
+  name: string,
+): boolean {
   switch (pkgEnvDetails.agent) {
     case BUN:
     case YARN_BERRY:
     case YARN_CLASSIC:
-      return matchLsCmdViewHumanStdout(stdout, name);
+      return matchLsCmdViewHumanStdout(stdout, name)
     default:
-      return matchQueryCmdStdout(stdout, name);
+      return matchQueryCmdStdout(stdout, name)
   }
 }
 
 export function matchLsCmdViewHumanStdout(stdout: string, name: string) {
-  return stdout.includes(` ${name}@`);
+  return stdout.includes(` ${name}@`)
 }
 
 export function matchQueryCmdStdout(stdout: string, name: string) {
-  return stdout.includes(`"${name}"`);
+  return stdout.includes(`"${name}"`)
 }

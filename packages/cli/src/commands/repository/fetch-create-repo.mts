@@ -1,42 +1,49 @@
-import { handleApiCall } from "../../util/socket/api.mjs";
-import { setupSdk } from "../../util/socket/sdk.mjs";
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
-import type { CResult } from "../../types.mts";
-import type { SetupSdkOptions } from "../../util/socket/sdk.mjs";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { CResult } from '../../types.mts'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type FetchCreateRepoConfig = {
-  defaultBranch: string;
-  description: string;
-  homepage: string;
-  orgSlug: string;
-  repoName: string;
-  visibility: "private" | "public";
-};
+  defaultBranch: string
+  description: string
+  homepage: string
+  orgSlug: string
+  repoName: string
+  visibility: 'private' | 'public'
+}
 
 type FetchCreateRepoOptions = {
-  commandPath?: string | undefined;
-  sdkOpts?: SetupSdkOptions | undefined;
-};
+  commandPath?: string | undefined
+  sdkOpts?: SetupSdkOptions | undefined
+}
 
 export async function fetchCreateRepo(
   config: FetchCreateRepoConfig,
   options?: FetchCreateRepoOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<"createRepository">["data"]>> {
-  const { defaultBranch, description, homepage, orgSlug, repoName, visibility } = config;
+): Promise<CResult<SocketSdkSuccessResult<'createRepository'>['data']>> {
+  const {
+    defaultBranch,
+    description,
+    homepage,
+    orgSlug,
+    repoName,
+    visibility,
+  } = config
 
   const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
-  } as FetchCreateRepoOptions;
+  } as FetchCreateRepoOptions
 
-  const sockSdkCResult = await setupSdk(sdkOpts);
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
-    return sockSdkCResult;
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkCResult.data;
+  const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall<"createRepository">(
+  return await handleApiCall<'createRepository'>(
     sockSdk.createRepository(orgSlug, repoName, {
       default_branch: defaultBranch,
       description,
@@ -45,7 +52,7 @@ export async function fetchCreateRepo(
     }),
     {
       commandPath,
-      description: "to create a repository",
+      description: 'to create a repository',
     },
-  );
+  )
 }

@@ -14,30 +14,34 @@
  * Related Files: - util/debug.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the registry debug functions.
-const mockDebug = vi.hoisted(() => vi.fn());
-const mockDebugCache = vi.hoisted(() => vi.fn());
-const mockDebugDir = vi.hoisted(() => vi.fn());
-const mockDebugDirNs = vi.hoisted(() => vi.fn());
-const mockDebugNs = vi.hoisted(() => vi.fn());
-const mockIsDebug = vi.hoisted(() => vi.fn(() => false));
-const mockIsDebugNs = vi.hoisted(() => vi.fn(() => false));
+const mockDebug = vi.hoisted(() => vi.fn())
+const mockDebugCache = vi.hoisted(() => vi.fn())
+const mockDebugDir = vi.hoisted(() => vi.fn())
+const mockDebugDirNs = vi.hoisted(() => vi.fn())
+const mockDebugNs = vi.hoisted(() => vi.fn())
+const mockIsDebug = vi.hoisted(() => vi.fn(() => false))
+const mockIsDebugNs = vi.hoisted(() => vi.fn(() => false))
 
-vi.mock(import("@socketsecurity/lib-stable/debug/output"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: mockDebug,
   debugCache: mockDebugCache,
   debugDir: mockDebugDir,
   debugDirNs: mockDebugDirNs,
   debugNs: mockDebugNs,
-}));
-vi.mock(import("@socketsecurity/lib-stable/debug/namespace"), () => ({
+}))
+vi.mock(import('@socketsecurity/lib-stable/debug/namespace'), () => ({
   isDebug: mockIsDebug,
   isDebugNs: mockIsDebugNs,
-}));
+}))
 
-import { debug, debugDir, debugNs } from "@socketsecurity/lib-stable/debug/output";
+import {
+  debug,
+  debugDir,
+  debugNs,
+} from '@socketsecurity/lib-stable/debug/output'
 
 import {
   debugApiRequest,
@@ -45,433 +49,444 @@ import {
   debugConfig,
   debugFileOp,
   debugGit,
-} from "../../../src/util/debug.mts";
+} from '../../../src/util/debug.mts'
 
-describe("debug utilities", () => {
+describe('debug utilities', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockIsDebug.mockReturnValue(false);
-    mockIsDebugNs.mockReturnValue(false);
-  });
+    vi.clearAllMocks()
+    mockIsDebug.mockReturnValue(false)
+    mockIsDebugNs.mockReturnValue(false)
+  })
 
-  describe("debugApiRequest", () => {
-    it("logs request when silly debug is enabled", () => {
-      mockIsDebugNs.mockReturnValue(true);
+  describe('debugApiRequest', () => {
+    it('logs request when silly debug is enabled', () => {
+      mockIsDebugNs.mockReturnValue(true)
 
-      debugApiRequest("GET", "/api/test", 5000);
+      debugApiRequest('GET', '/api/test', 5000)
 
-      expect(debugNs).toHaveBeenCalled();
-      const call = mockDebugNs.mock.calls[0];
-      expect(call?.[0]).toBe("silly");
-      expect(call?.[1]).toContain("GET");
-      expect(call?.[1]).toContain("/api/test");
-      expect(call?.[1]).toContain("5000ms");
-    });
+      expect(debugNs).toHaveBeenCalled()
+      const call = mockDebugNs.mock.calls[0]
+      expect(call?.[0]).toBe('silly')
+      expect(call?.[1]).toContain('GET')
+      expect(call?.[1]).toContain('/api/test')
+      expect(call?.[1]).toContain('5000ms')
+    })
 
-    it("does not log when silly debug is disabled", () => {
-      mockIsDebugNs.mockReturnValue(false);
+    it('does not log when silly debug is disabled', () => {
+      mockIsDebugNs.mockReturnValue(false)
 
-      debugApiRequest("POST", "/api/scan", 10_000);
+      debugApiRequest('POST', '/api/scan', 10_000)
 
-      expect(debugNs).not.toHaveBeenCalled();
-    });
+      expect(debugNs).not.toHaveBeenCalled()
+    })
 
-    it("handles request without timeout", () => {
-      mockIsDebugNs.mockReturnValue(true);
+    it('handles request without timeout', () => {
+      mockIsDebugNs.mockReturnValue(true)
 
-      debugApiRequest("DELETE", "/api/resource");
+      debugApiRequest('DELETE', '/api/resource')
 
-      expect(debugNs).toHaveBeenCalled();
-      const call = mockDebugNs.mock.calls[0];
-      expect(call?.[1]).toContain("DELETE");
-      expect(call?.[1]).not.toContain("timeout");
-    });
-  });
+      expect(debugNs).toHaveBeenCalled()
+      const call = mockDebugNs.mock.calls[0]
+      expect(call?.[1]).toContain('DELETE')
+      expect(call?.[1]).not.toContain('timeout')
+    })
+  })
 
-  describe("debugApiResponse", () => {
-    it("logs error when error is provided", () => {
-      const error = new Error("API failed");
+  describe('debugApiResponse', () => {
+    it('logs error when error is provided', () => {
+      const error = new Error('API failed')
 
-      debugApiResponse("/api/test", undefined, error);
+      debugApiResponse('/api/test', undefined, error)
 
-      expect(mockDebugDirNs).toHaveBeenCalledWith("error", {
-        endpoint: "/api/test",
-        error: "API failed",
-      });
-    });
+      expect(mockDebugDirNs).toHaveBeenCalledWith('error', {
+        endpoint: '/api/test',
+        error: 'API failed',
+      })
+    })
 
-    it("logs under error namespace for HTTP error status codes", () => {
-      debugApiResponse("/api/test", 404);
+    it('logs under error namespace for HTTP error status codes', () => {
+      debugApiResponse('/api/test', 404)
 
-      expect(debugNs).toHaveBeenCalledWith("error", "API /api/test: HTTP 404");
-    });
+      expect(debugNs).toHaveBeenCalledWith('error', 'API /api/test: HTTP 404')
+    })
 
-    it("logs notice for successful responses when debug is enabled", () => {
-      mockIsDebugNs.mockReturnValue(true);
+    it('logs notice for successful responses when debug is enabled', () => {
+      mockIsDebugNs.mockReturnValue(true)
 
-      debugApiResponse("/api/test", 200);
+      debugApiResponse('/api/test', 200)
 
-      expect(debugNs).toHaveBeenCalledWith("notice", "API /api/test: 200");
-    });
+      expect(debugNs).toHaveBeenCalledWith('notice', 'API /api/test: 200')
+    })
 
-    it("does not log for successful responses when debug is disabled", () => {
-      mockIsDebugNs.mockReturnValue(false);
+    it('does not log for successful responses when debug is disabled', () => {
+      mockIsDebugNs.mockReturnValue(false)
 
-      debugApiResponse("/api/test", 200);
+      debugApiResponse('/api/test', 200)
 
-      expect(debugNs).not.toHaveBeenCalled();
-    });
+      expect(debugNs).not.toHaveBeenCalled()
+    })
 
-    it("handles non-Error objects in error parameter", () => {
-      debugApiResponse("/api/test", undefined, "String error");
+    it('handles non-Error objects in error parameter', () => {
+      debugApiResponse('/api/test', undefined, 'String error')
 
-      expect(mockDebugDirNs).toHaveBeenCalledWith("error", {
-        endpoint: "/api/test",
+      expect(mockDebugDirNs).toHaveBeenCalledWith('error', {
+        endpoint: '/api/test',
         // @socketsecurity/lib/errors preserves non-empty primitives as-is;
         // only empty strings / null / undefined / plain objects coerce to
         // the Unknown error sentinel. A real string message passes through.
-        error: "String error",
-      });
-    });
+        error: 'String error',
+      })
+    })
 
-    it("includes request info in error logging", () => {
-      const error = new Error("Request failed");
+    it('includes request info in error logging', () => {
+      const error = new Error('Request failed')
       const requestInfo = {
-        method: "POST",
-        url: "https://api.socket.dev/test",
+        method: 'POST',
+        url: 'https://api.socket.dev/test',
         durationMs: 1500,
         headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer secret-token",
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer secret-token',
         },
-      };
+      }
 
-      debugApiResponse("/api/test", undefined, error, requestInfo);
+      debugApiResponse('/api/test', undefined, error, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown;
-      expect(calledWith.method).toBe("POST");
-      expect(calledWith.url).toBe("https://api.socket.dev/test");
-      expect(calledWith.durationMs).toBe(1500);
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
+      expect(calledWith.method).toBe('POST')
+      expect(calledWith.url).toBe('https://api.socket.dev/test')
+      expect(calledWith.durationMs).toBe(1500)
       // Authorization should be redacted.
-      expect(calledWith.headers?.Authorization).toBe("[REDACTED]");
-      expect(calledWith.headers?.["Content-Type"]).toBe("application/json");
-    });
+      expect(calledWith.headers?.Authorization).toBe('[REDACTED]')
+      expect(calledWith.headers?.['Content-Type']).toBe('application/json')
+    })
 
-    it("includes request info in HTTP error logging", () => {
+    it('includes request info in HTTP error logging', () => {
       const requestInfo = {
-        method: "GET",
-        url: "https://api.socket.dev/resource",
+        method: 'GET',
+        url: 'https://api.socket.dev/resource',
         durationMs: 500,
         headers: {
-          "x-api-key": "my-api-key",
+          'x-api-key': 'my-api-key',
         },
-      };
+      }
 
-      debugApiResponse("/api/resource", 500, undefined, requestInfo);
+      debugApiResponse('/api/resource', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown;
-      expect(calledWith.status).toBe(500);
-      expect(calledWith.method).toBe("GET");
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
+      expect(calledWith.status).toBe(500)
+      expect(calledWith.method).toBe('GET')
       // API key should be redacted.
-      expect(calledWith.headers?.["x-api-key"]).toBe("[REDACTED]");
-    });
+      expect(calledWith.headers?.['x-api-key']).toBe('[REDACTED]')
+    })
 
-    it("handles partial request info", () => {
+    it('handles partial request info', () => {
       const requestInfo = {
-        method: "PUT",
-      };
+        method: 'PUT',
+      }
 
-      debugApiResponse("/api/update", 400, undefined, requestInfo);
+      debugApiResponse('/api/update', 400, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown;
-      expect(calledWith.method).toBe("PUT");
-      expect(calledWith.url).toBeUndefined();
-      expect(calledWith.headers).toBeUndefined();
-    });
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
+      expect(calledWith.method).toBe('PUT')
+      expect(calledWith.url).toBeUndefined()
+      expect(calledWith.headers).toBeUndefined()
+    })
 
-    it("includes requestedAt timestamp when provided", () => {
+    it('includes requestedAt timestamp when provided', () => {
       const requestInfo = {
-        method: "POST",
-        url: "https://api.socket.dev/x",
-        requestedAt: "2026-04-18T00:00:00.000Z",
-      };
+        method: 'POST',
+        url: 'https://api.socket.dev/x',
+        requestedAt: '2026-04-18T00:00:00.000Z',
+      }
 
-      debugApiResponse("/api/x", 500, undefined, requestInfo);
+      debugApiResponse('/api/x', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown;
-      expect(calledWith.requestedAt).toBe("2026-04-18T00:00:00.000Z");
-    });
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
+      expect(calledWith.requestedAt).toBe('2026-04-18T00:00:00.000Z')
+    })
 
-    it("extracts cf-ray as a top-level field and keeps responseHeaders", () => {
+    it('extracts cf-ray as a top-level field and keeps responseHeaders', () => {
       const requestInfo = {
-        method: "GET",
-        url: "https://api.socket.dev/y",
+        method: 'GET',
+        url: 'https://api.socket.dev/y',
         responseHeaders: {
-          "cf-ray": "abc123-IAD",
-          "content-type": "application/json",
+          'cf-ray': 'abc123-IAD',
+          'content-type': 'application/json',
         },
-      };
+      }
 
-      debugApiResponse("/api/y", 500, undefined, requestInfo);
+      debugApiResponse('/api/y', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown;
-      expect(calledWith.cfRay).toBe("abc123-IAD");
-      expect(calledWith.responseHeaders?.["cf-ray"]).toBe("abc123-IAD");
-    });
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
+      expect(calledWith.cfRay).toBe('abc123-IAD')
+      expect(calledWith.responseHeaders?.['cf-ray']).toBe('abc123-IAD')
+    })
 
-    it("tolerates CF-Ray header casing", () => {
+    it('tolerates CF-Ray header casing', () => {
       const requestInfo = {
-        method: "GET",
-        url: "https://api.socket.dev/z",
+        method: 'GET',
+        url: 'https://api.socket.dev/z',
         responseHeaders: {
-          "CF-Ray": "xyz789-SJC",
+          'CF-Ray': 'xyz789-SJC',
         },
-      };
+      }
 
-      debugApiResponse("/api/z", 500, undefined, requestInfo);
+      debugApiResponse('/api/z', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown;
-      expect(calledWith.cfRay).toBe("xyz789-SJC");
-    });
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
+      expect(calledWith.cfRay).toBe('xyz789-SJC')
+    })
 
-    it("includes response body on error", () => {
+    it('includes response body on error', () => {
       const requestInfo = {
-        method: "GET",
-        url: "https://api.socket.dev/body",
+        method: 'GET',
+        url: 'https://api.socket.dev/body',
         responseBody: '{"error":"bad"}',
-      };
+      }
 
-      debugApiResponse("/api/body", 400, undefined, requestInfo);
+      debugApiResponse('/api/body', 400, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown;
-      expect(calledWith.responseBody).toBe('{"error":"bad"}');
-    });
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
+      expect(calledWith.responseBody).toBe('{"error":"bad"}')
+    })
 
-    it("truncates oversized response bodies", () => {
-      const bigBody = "x".repeat(5000);
+    it('truncates oversized response bodies', () => {
+      const bigBody = 'x'.repeat(5000)
       const requestInfo = {
-        method: "GET",
-        url: "https://api.socket.dev/big",
+        method: 'GET',
+        url: 'https://api.socket.dev/big',
         responseBody: bigBody,
-      };
+      }
 
-      debugApiResponse("/api/big", 500, undefined, requestInfo);
+      debugApiResponse('/api/big', 500, undefined, requestInfo)
 
-      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown;
-      expect(calledWith.responseBody).toMatch(/… \(truncated, 5000 chars\)$/);
-      expect((calledWith.responseBody as string).length).toBeLessThan(bigBody.length);
-    });
-  });
+      const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
+      expect(calledWith.responseBody).toMatch(/… \(truncated, 5000 chars\)$/)
+      expect((calledWith.responseBody as string).length).toBeLessThan(
+        bigBody.length,
+      )
+    })
+  })
 
-  describe("debugFileOp", () => {
-    it("logs warning when error occurs", () => {
-      const error = new Error("File not found");
+  describe('debugFileOp', () => {
+    it('logs warning when error occurs', () => {
+      const error = new Error('File not found')
 
-      debugFileOp("read", "/path/to/file", error);
+      debugFileOp('read', '/path/to/file', error)
 
       expect(debugDir).toHaveBeenCalledWith({
-        operation: "read",
-        filepath: "/path/to/file",
-        error: "File not found",
-      });
-    });
+        operation: 'read',
+        filepath: '/path/to/file',
+        error: 'File not found',
+      })
+    })
 
-    it("logs silly level for successful operations when enabled", () => {
-      mockIsDebugNs.mockReturnValue(true);
+    it('logs silly level for successful operations when enabled', () => {
+      mockIsDebugNs.mockReturnValue(true)
 
-      debugFileOp("write", "/path/to/file");
+      debugFileOp('write', '/path/to/file')
 
-      expect(debugNs).toHaveBeenCalledWith("silly", "File write: /path/to/file");
-    });
+      expect(debugNs).toHaveBeenCalledWith('silly', 'File write: /path/to/file')
+    })
 
-    it("does not log for successful operations when silly is disabled", () => {
-      mockIsDebugNs.mockReturnValue(false);
+    it('does not log for successful operations when silly is disabled', () => {
+      mockIsDebugNs.mockReturnValue(false)
 
-      debugFileOp("create", "/path/to/file");
+      debugFileOp('create', '/path/to/file')
 
-      expect(debugNs).not.toHaveBeenCalled();
-    });
+      expect(debugNs).not.toHaveBeenCalled()
+    })
 
-    it("handles all operation types", () => {
-      const operations: Array<"read" | "write" | "delete" | "create"> = [
-        "read",
-        "write",
-        "delete",
-        "create",
-      ];
+    it('handles all operation types', () => {
+      const operations: Array<'read' | 'write' | 'delete' | 'create'> = [
+        'read',
+        'write',
+        'delete',
+        'create',
+      ]
 
       for (let i = 0, { length } = operations; i < length; i += 1) {
-        const op = operations[i];
-        debugFileOp(op, `/path/${op}`);
+        const op = operations[i]
+        debugFileOp(op, `/path/${op}`)
         // No errors expected.
       }
-    });
-  });
+    })
+  })
 
-  describe("debugConfig", () => {
-    it("logs error when provided", () => {
-      const error = new Error("Config invalid");
+  describe('debugConfig', () => {
+    it('logs error when provided', () => {
+      const error = new Error('Config invalid')
 
-      debugConfig(".socketrc", false, error);
-
-      expect(debugDir).toHaveBeenCalledWith({
-        source: ".socketrc",
-        error: "Config invalid",
-      });
-    });
-
-    it("logs notice when config is found", () => {
-      debugConfig(".socketrc", true);
-
-      expect(debug).toHaveBeenCalledWith("Config loaded: .socketrc");
-    });
-
-    it("logs silly when config not found and debug enabled", () => {
-      mockIsDebugNs.mockReturnValue(true);
-
-      debugConfig(".socketrc", false);
-
-      expect(debugNs).toHaveBeenCalledWith("silly", "Config not found: .socketrc");
-    });
-
-    it("does not log when config not found and debug disabled", () => {
-      mockIsDebugNs.mockReturnValue(false);
-
-      debugConfig(".socketrc", false);
-
-      expect(debugNs).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("debugGit", () => {
-    it("logs warning for failed operations", () => {
-      debugGit("push", false, { branch: "main" });
+      debugConfig('.socketrc', false, error)
 
       expect(debugDir).toHaveBeenCalledWith({
-        git_op: "push",
-        branch: "main",
-      });
-    });
+        source: '.socketrc',
+        error: 'Config invalid',
+      })
+    })
 
-    it("logs notice for important successful operations", () => {
-      mockIsDebugNs.mockImplementation((level) => level === "notice");
+    it('logs notice when config is found', () => {
+      debugConfig('.socketrc', true)
 
-      debugGit("push", true);
+      expect(debug).toHaveBeenCalledWith('Config loaded: .socketrc')
+    })
 
-      expect(debugNs).toHaveBeenCalledWith("notice", "Git push succeeded");
-    });
+    it('logs silly when config not found and debug enabled', () => {
+      mockIsDebugNs.mockReturnValue(true)
 
-    it("logs commit operations", () => {
-      mockIsDebugNs.mockReturnValue(true);
+      debugConfig('.socketrc', false)
 
-      debugGit("commit", true);
+      expect(debugNs).toHaveBeenCalledWith(
+        'silly',
+        'Config not found: .socketrc',
+      )
+    })
 
-      expect(debugNs).toHaveBeenCalledWith("notice", "Git commit succeeded");
-    });
+    it('does not log when config not found and debug disabled', () => {
+      mockIsDebugNs.mockReturnValue(false)
 
-    it("logs other operations only with silly debug", () => {
-      mockIsDebugNs.mockImplementation((level) => level === "silly");
+      debugConfig('.socketrc', false)
 
-      debugGit("status", true);
+      expect(debugNs).not.toHaveBeenCalled()
+    })
+  })
 
-      expect(debugNs).toHaveBeenCalledWith("silly", "Git status");
-    });
+  describe('debugGit', () => {
+    it('logs warning for failed operations', () => {
+      debugGit('push', false, { branch: 'main' })
 
-    it("does not log non-important operations without silly debug", () => {
-      mockIsDebugNs.mockReturnValue(false);
+      expect(debugDir).toHaveBeenCalledWith({
+        git_op: 'push',
+        branch: 'main',
+      })
+    })
 
-      debugGit("status", true);
+    it('logs notice for important successful operations', () => {
+      mockIsDebugNs.mockImplementation(level => level === 'notice')
 
-      expect(debugNs).not.toHaveBeenCalled();
-    });
-  });
+      debugGit('push', true)
 
-  describe("sanitizeHeaders", () => {
-    it("redacts Authorization header", async () => {
-      const { sanitizeHeaders } = await import("../../../src/util/debug.mts");
+      expect(debugNs).toHaveBeenCalledWith('notice', 'Git push succeeded')
+    })
+
+    it('logs commit operations', () => {
+      mockIsDebugNs.mockReturnValue(true)
+
+      debugGit('commit', true)
+
+      expect(debugNs).toHaveBeenCalledWith('notice', 'Git commit succeeded')
+    })
+
+    it('logs other operations only with silly debug', () => {
+      mockIsDebugNs.mockImplementation(level => level === 'silly')
+
+      debugGit('status', true)
+
+      expect(debugNs).toHaveBeenCalledWith('silly', 'Git status')
+    })
+
+    it('does not log non-important operations without silly debug', () => {
+      mockIsDebugNs.mockReturnValue(false)
+
+      debugGit('status', true)
+
+      expect(debugNs).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('sanitizeHeaders', () => {
+    it('redacts Authorization header', async () => {
+      const { sanitizeHeaders } = await import('../../../src/util/debug.mts')
       const result = sanitizeHeaders({
-        Authorization: "Bearer secret-token",
-        "Content-Type": "application/json",
-      });
-      expect(result["Authorization"]).toBe("[REDACTED]");
-      expect(result["Content-Type"]).toBe("application/json");
-    });
+        Authorization: 'Bearer secret-token',
+        'Content-Type': 'application/json',
+      })
+      expect(result['Authorization']).toBe('[REDACTED]')
+      expect(result['Content-Type']).toBe('application/json')
+    })
 
-    it("redacts api-key headers (case-insensitive)", async () => {
-      const { sanitizeHeaders } = await import("../../../src/util/debug.mts");
+    it('redacts api-key headers (case-insensitive)', async () => {
+      const { sanitizeHeaders } = await import('../../../src/util/debug.mts')
       const result = sanitizeHeaders({
-        "X-Api-Key": "secret",
-        "x-custom-api-key": "also-secret",
-        "Content-Length": "100",
-      });
-      expect(result["X-Api-Key"]).toBe("[REDACTED]");
-      expect(result["x-custom-api-key"]).toBe("[REDACTED]");
-      expect(result["Content-Length"]).toBe("100");
-    });
+        'X-Api-Key': 'secret',
+        'x-custom-api-key': 'also-secret',
+        'Content-Length': '100',
+      })
+      expect(result['X-Api-Key']).toBe('[REDACTED]')
+      expect(result['x-custom-api-key']).toBe('[REDACTED]')
+      expect(result['Content-Length']).toBe('100')
+    })
 
-    it("preserves regular headers", async () => {
-      const { sanitizeHeaders } = await import("../../../src/util/debug.mts");
+    it('preserves regular headers', async () => {
+      const { sanitizeHeaders } = await import('../../../src/util/debug.mts')
       const result = sanitizeHeaders({
-        Accept: "application/json",
-        "User-Agent": "socket-cli/1.0.0",
-      });
-      expect(result["Accept"]).toBe("application/json");
-      expect(result["User-Agent"]).toBe("socket-cli/1.0.0");
-    });
-  });
+        Accept: 'application/json',
+        'User-Agent': 'socket-cli/1.0.0',
+      })
+      expect(result['Accept']).toBe('application/json')
+      expect(result['User-Agent']).toBe('socket-cli/1.0.0')
+    })
+  })
 
-  describe("buildApiDebugDetails", () => {
-    it("returns base details only when requestInfo is missing", async () => {
-      const { buildApiDebugDetails } = await import("../../../src/util/debug.mts");
-      const result = buildApiDebugDetails({ endpoint: "/x", status: 500 });
-      expect(result["endpoint"]).toBe("/x");
-      expect(result["status"]).toBe(500);
-    });
+  describe('buildApiDebugDetails', () => {
+    it('returns base details only when requestInfo is missing', async () => {
+      const { buildApiDebugDetails } =
+        await import('../../../src/util/debug.mts')
+      const result = buildApiDebugDetails({ endpoint: '/x', status: 500 })
+      expect(result['endpoint']).toBe('/x')
+      expect(result['status']).toBe(500)
+    })
 
-    it("threads requestInfo fields into details", async () => {
-      const { buildApiDebugDetails } = await import("../../../src/util/debug.mts");
+    it('threads requestInfo fields into details', async () => {
+      const { buildApiDebugDetails } =
+        await import('../../../src/util/debug.mts')
       const result = buildApiDebugDetails(
-        { endpoint: "/x" },
+        { endpoint: '/x' },
         {
-          method: "GET",
-          url: "https://api.x.com/x",
+          method: 'GET',
+          url: 'https://api.x.com/x',
           durationMs: 250,
-          requestedAt: "2026-04-18T00:00:00.000Z",
-          headers: { Authorization: "Bearer secret" },
-          responseHeaders: { "cf-ray": "ray-123" },
+          requestedAt: '2026-04-18T00:00:00.000Z',
+          headers: { Authorization: 'Bearer secret' },
+          responseHeaders: { 'cf-ray': 'ray-123' },
           responseBody: '{"ok":true}',
         },
-      );
-      expect(result["method"]).toBe("GET");
-      expect(result["url"]).toBe("https://api.x.com/x");
-      expect(result["durationMs"]).toBe(250);
-      expect(result["requestedAt"]).toBe("2026-04-18T00:00:00.000Z");
-      expect((result["headers"] as unknown)?.Authorization).toBe("[REDACTED]");
-      expect(result["cfRay"]).toBe("ray-123");
-      expect(result["responseBody"]).toBe('{"ok":true}');
-    });
+      )
+      expect(result['method']).toBe('GET')
+      expect(result['url']).toBe('https://api.x.com/x')
+      expect(result['durationMs']).toBe(250)
+      expect(result['requestedAt']).toBe('2026-04-18T00:00:00.000Z')
+      expect((result['headers'] as unknown)?.Authorization).toBe('[REDACTED]')
+      expect(result['cfRay']).toBe('ray-123')
+      expect(result['responseBody']).toBe('{"ok":true}')
+    })
 
-    it("truncates oversize response bodies", async () => {
-      const { buildApiDebugDetails } = await import("../../../src/util/debug.mts");
-      const big = "x".repeat(5000);
+    it('truncates oversize response bodies', async () => {
+      const { buildApiDebugDetails } =
+        await import('../../../src/util/debug.mts')
+      const big = 'x'.repeat(5000)
       const result = buildApiDebugDetails(
-        { endpoint: "/big" },
-        { method: "GET", url: "/big", responseBody: big },
-      );
-      expect(result["responseBody"] as string).toMatch(/…\s\(truncated, 5000 chars\)$/);
-    });
+        { endpoint: '/big' },
+        { method: 'GET', url: '/big', responseBody: big },
+      )
+      expect(result['responseBody'] as string).toMatch(
+        /…\s\(truncated, 5000 chars\)$/,
+      )
+    })
 
-    it("handles CF-Ray header casing variations", async () => {
-      const { buildApiDebugDetails } = await import("../../../src/util/debug.mts");
+    it('handles CF-Ray header casing variations', async () => {
+      const { buildApiDebugDetails } =
+        await import('../../../src/util/debug.mts')
       const result = buildApiDebugDetails(
-        { endpoint: "/x" },
+        { endpoint: '/x' },
         {
-          method: "GET",
-          url: "/x",
-          responseHeaders: { "CF-Ray": "upper-case" },
+          method: 'GET',
+          url: '/x',
+          responseHeaders: { 'CF-Ray': 'upper-case' },
         },
-      );
-      expect(result["cfRay"]).toBe("upper-case");
-    });
-  });
-});
+      )
+      expect(result['cfRay']).toBe('upper-case')
+    })
+  })
+})

@@ -113,7 +113,7 @@ test('Edit on a canonical path outside a fleet repo passes', async () => {
   // Tmp dir without CLAUDE.md → the walk-up never finds a fleet root.
   const dir = mkdtempSync(path.join(os.tmpdir(), 'non-fleet-'))
   try {
-    const file = path.join(dir, '.config/oxlint-plugin/rules/foo.mts')
+    const file = path.join(dir, '.config/fleet/oxlint-plugin/rules/foo.mts')
     mkdirSync(path.dirname(file), { recursive: true })
     writeFileSync(file, '// content\n')
     const result = await runHook({
@@ -126,12 +126,12 @@ test('Edit on a canonical path outside a fleet repo passes', async () => {
   }
 })
 
-test('Edit on .config/oxlint-plugin/rules/* in a fleet repo is BLOCKED', async () => {
+test('Edit on .config/fleet/oxlint-plugin/rules/* in a fleet repo is BLOCKED', async () => {
   const repo = makeFakeFleetRepo()
   try {
     const file = makeCanonicalFile(
       repo,
-      '.config/oxlint-plugin/rules/example.mts',
+      '.config/fleet/oxlint-plugin/rules/example.mts',
     )
     const result = await runHook({
       tool_input: { file_path: file, new_string: 'x' },
@@ -211,7 +211,7 @@ test('Write tool also blocked, not just Edit', async () => {
   try {
     const file = makeCanonicalFile(
       repo,
-      '.config/oxlint-plugin/rules/new-rule.mts',
+      '.config/fleet/oxlint-plugin/rules/new-rule.mts',
     )
     const result = await runHook({
       tool_input: { file_path: file, content: 'export default {}' },
@@ -226,7 +226,7 @@ test('Write tool also blocked, not just Edit', async () => {
 test('MultiEdit tool also blocked', async () => {
   const repo = makeFakeFleetRepo()
   try {
-    const file = makeCanonicalFile(repo, '.config/oxlint-plugin/rules/foo.mts')
+    const file = makeCanonicalFile(repo, '.config/fleet/oxlint-plugin/rules/foo.mts')
     const result = await runHook({
       tool_input: { file_path: file, edits: [] },
       tool_name: 'MultiEdit',
@@ -242,7 +242,7 @@ test('repo without FLEET-CANONICAL marker passes through', async () => {
   // sees CLAUDE.md but no marker, so the path doesn't qualify.
   const repo = makeFakeFleetRepo({ hasFleetCanonical: false })
   try {
-    const file = makeCanonicalFile(repo, '.config/oxlint-plugin/rules/x.mts')
+    const file = makeCanonicalFile(repo, '.config/fleet/oxlint-plugin/rules/x.mts')
     const result = await runHook({
       tool_input: { file_path: file, new_string: 'x' },
       tool_name: 'Edit',

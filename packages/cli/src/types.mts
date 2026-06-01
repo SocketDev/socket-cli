@@ -1,15 +1,15 @@
-export type StringKeyValueObject = { [key: string]: string };
+export type StringKeyValueObject = { [key: string]: string }
 
-export type OutputKind = "json" | "markdown" | "text";
+export type OutputKind = 'json' | 'markdown' | 'text'
 
 // Checksum types for external tool integrity verification.
 // Maps asset filename to SHA-256 hex checksum.
-export type OpengrepChecksums = Record<string, string>;
-export type PyCliChecksums = Record<string, string>;
-export type PythonChecksums = Record<string, string>;
-export type SocketPatchChecksums = Record<string, string>;
-export type TrivyChecksums = Record<string, string>;
-export type TrufflehogChecksums = Record<string, string>;
+export type OpengrepChecksums = Record<string, string>
+export type PyCliChecksums = Record<string, string>
+export type PythonChecksums = Record<string, string>
+export type SocketPatchChecksums = Record<string, string>
+export type TrivyChecksums = Record<string, string>
+export type TrufflehogChecksums = Record<string, string>
 
 // CResult is akin to the "Result" or "Outcome" or "Either" pattern.
 // Main difference might be that it's less strict about the error side of
@@ -17,23 +17,23 @@ export type TrufflehogChecksums = Record<string, string>;
 // "CResult" is easier to grep for than "result". Short for CliJsonResult.
 export type CResult<T> =
   | {
-      ok: true;
-      data: T;
+      ok: true
+      data: T
       // The message prop may contain warnings that we want to convey.
-      message?: string | undefined;
+      message?: string | undefined
     }
   | {
-      ok: false;
+      ok: false
       // This should be set to process.exitCode if this
       // payload is actually displayed to the user.
       // Defaults to 1 if not set.
-      code?: number | undefined;
+      code?: number | undefined
       // Short message, for non-json this would show in
       // the red banner part of an error message.
-      message: string;
+      message: string
       // Full explanation. Shown after the red banner of
       // a non-json error message. Optional.
-      cause?: string | undefined;
+      cause?: string | undefined
       // If set, this may conform to the actual payload.
-      data?: unknown | undefined;
-    };
+      data?: unknown | undefined
+    }

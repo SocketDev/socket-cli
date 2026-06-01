@@ -4,18 +4,18 @@
  * Defined via `defineHandoffCommand`. See util/cli/define-handoff.mts.
  */
 
-import { YARN } from "@socketsecurity/lib-stable/constants/agents";
+import { YARN } from '@socketsecurity/lib-stable/constants/agents'
 
-import { defineHandoffCommand } from "../../util/cli/define-handoff.mts";
+import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 
-export const CMD_NAME = YARN;
+export const CMD_NAME = YARN
 
 export const cmdYarn = defineHandoffCommand({
   name: YARN,
-  description: "Run yarn with Socket Firewall security",
-  spawnMode: "dlx",
+  description: 'Run yarn with Socket Firewall security',
+  spawnMode: 'dlx',
   hidden: true,
-  examples: ["", "install", "add package-name"],
+  examples: ['', 'install', 'add package-name'],
   showApiRequirements: true,
   wrapperHint: true,
-});
+})

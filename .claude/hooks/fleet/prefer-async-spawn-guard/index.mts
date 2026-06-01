@@ -64,16 +64,16 @@ export function isExemptPath(filePath: string): boolean {
     filePath.includes('/build/') ||
     filePath.includes('/node_modules/') ||
     filePath.includes('/.claude/hooks/fleet/prefer-async-spawn-guard/') ||
-    filePath.includes('/.config/oxlint-plugin/rules/prefer-async-spawn.') ||
+    filePath.includes('/.config/fleet/oxlint-plugin/rules/prefer-async-spawn.') ||
     filePath.includes(
-      '/.config/oxlint-plugin/rules/prefer-spawn-over-execsync.',
+      '/.config/fleet/oxlint-plugin/rules/prefer-spawn-over-execsync.',
     ) ||
-    filePath.includes('/.config/oxlint-plugin/test/prefer-async-spawn') ||
+    filePath.includes('/.config/fleet/oxlint-plugin/test/prefer-async-spawn') ||
     filePath.includes(
-      '/.config/oxlint-plugin/test/prefer-spawn-over-execsync',
+      '/.config/fleet/oxlint-plugin/test/prefer-spawn-over-execsync',
     ) ||
     filePath.includes(
-      '/.config/markdownlint-rules/_shared/wheelhouse-self-skip.',
+      '/.config/fleet/markdownlint-rules/_shared/wheelhouse-self-skip.',
     )
   )
 }

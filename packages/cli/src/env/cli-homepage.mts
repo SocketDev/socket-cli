@@ -6,8 +6,8 @@
  * embedding build metadata into the binary.
  */
 
-import process from "node:process";
+import process from 'node:process'
 
 export function getCliHomepage(): string {
-  return process.env["INLINED_HOMEPAGE"]!;
+  return process.env['INLINED_HOMEPAGE']!
 }

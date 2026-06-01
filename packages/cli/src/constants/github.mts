@@ -3,12 +3,12 @@
  */
 
 // GraphQL Pagination
-export const GQL_PAGE_SENTINEL = 100;
+export const GQL_PAGE_SENTINEL = 100
 
 // GraphQL PR States
-export const GQL_PR_STATE_CLOSED = "CLOSED";
-export const GQL_PR_STATE_MERGED = "MERGED";
-export const GQL_PR_STATE_OPEN = "OPEN";
+export const GQL_PR_STATE_CLOSED = 'CLOSED'
+export const GQL_PR_STATE_MERGED = 'MERGED'
+export const GQL_PR_STATE_OPEN = 'OPEN'
 
 // Socket CLI GitHub Repository
-export const SOCKET_CLI_GITHUB_REPO = "socket-cli";
+export const SOCKET_CLI_GITHUB_REPO = 'socket-cli'

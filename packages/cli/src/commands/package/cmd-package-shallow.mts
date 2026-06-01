@@ -1,21 +1,25 @@
-import { handlePurlsShallowScore } from "./handle-purls-shallow-score.mts";
-import { parsePackageSpecifiers } from "./parse-package-specifiers.mts";
-import { outputDryRunFetch } from "../../util/dry-run/output.mts";
-import { defineFlags } from "../../meow.mts";
-import { commonFlags, outputFlags } from "../../flags.mts";
-import { meowOrExit } from "../../util/cli/with-subcommands.mjs";
-import { getFlagApiRequirementsOutput, getFlagListOutput } from "../../util/output/formatting.mts";
-import { getOutputKind } from "../../util/output/mode.mjs";
-import { checkCommandInput } from "../../util/validation/check-input.mts";
+import { handlePurlsShallowScore } from './handle-purls-shallow-score.mts'
+import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { CliCommandContext } from "../../util/cli/with-subcommands.mjs";
-import type { MeowFlags } from "../../flags.mts";
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-export const CMD_NAME = "shallow";
+export const CMD_NAME = 'shallow'
 
-const description = "Look up info regarding one or more packages but not their transitives";
+const description =
+  'Look up info regarding one or more packages but not their transitives'
 
-const hidden = false;
+const hidden = false
 
 export const cmdPackageShallow = {
   alias: {
@@ -28,7 +32,7 @@ export const cmdPackageShallow = {
   description,
   hidden,
   run,
-};
+}
 
 export async function run(
   argv: string[] | readonly string[],
@@ -77,58 +81,59 @@ export async function run(
       $ ${command} npm/webtorrent golang/babel
       $ ${command} npm npm/webtorrent@1.0.1 babel
   `,
-  };
+  }
 
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
-  });
+  })
 
-  const { json, markdown } = cli.flags;
+  const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags["dryRun"];
+  const dryRun = !!cli.flags['dryRun']
 
-  const [ecosystem = "", ...pkgs] = cli.input;
+  const [ecosystem = '', ...pkgs] = cli.input
 
-  const outputKind = getOutputKind(json, markdown);
+  const outputKind = getOutputKind(json, markdown)
 
-  const { purls, valid } = parsePackageSpecifiers(ecosystem, pkgs);
+  const { purls, valid } = parsePackageSpecifiers(ecosystem, pkgs)
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       test: valid,
-      message: "First parameter should be an ecosystem or all args must be purls",
-      fail: "bad",
+      message:
+        'First parameter should be an ecosystem or all args must be purls',
+      fail: 'bad',
     },
     {
       test: purls.length > 0,
-      message: "Expecting at least one package",
-      fail: "missing",
+      message: 'Expecting at least one package',
+      fail: 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
-      message: "The json and markdown flags cannot be both set, pick one",
-      fail: "omit one",
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
     },
-  );
+  )
   if (!wasValidInput) {
-    return;
+    return
   }
 
   if (dryRun) {
-    outputDryRunFetch("package information", {
-      packages: purls.length ? purls.join(", ") : "(none)",
+    outputDryRunFetch('package information', {
+      packages: purls.length ? purls.join(', ') : '(none)',
       count: purls.length,
-    });
-    return;
+    })
+    return
   }
 
   await handlePurlsShallowScore({
     outputKind,
     purls,
-  });
+  })
 }

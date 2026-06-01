@@ -9,13 +9,16 @@
  * bun.lockb` as a last resort.
  */
 
-import path from "node:path";
+import path from 'node:path'
 
-import { parse as parseBunLockb } from "@socketregistry/hyrious__bun.lockb/index.cjs";
+import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 
-import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
-import { readFileBinary, readFileUtf8 } from "@socketsecurity/lib-stable/fs/read-file";
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import {
+  readFileBinary,
+  readFileUtf8,
+} from '@socketsecurity/lib-stable/fs/read-file'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import {
   BUN,
@@ -31,23 +34,26 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
   YARN_LOCK,
-} from "@socketsecurity/lib-stable/constants/agents";
-import { EXT_LOCK, EXT_LOCKB, NODE_MODULES } from "../../constants/packages.mts";
+} from '@socketsecurity/lib-stable/constants/agents'
+import { EXT_LOCK, EXT_LOCKB, NODE_MODULES } from '../../constants/packages.mts'
 
 // `.package-lock.json` is the npm "hidden lockfile" name. Defined locally
 // because @socketsecurity/lib doesn't export this constant.
-const DOT_PACKAGE_LOCK_JSON = ".package-lock.json";
+const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'
 
-import type { Agent } from "./environment.mts";
+import type { Agent } from './environment.mts'
 
 export type ReadLockFile =
   | ((lockPath: string) => Promise<string | Buffer | undefined>)
-  | ((lockPath: string, agentExecPath: string) => Promise<string | Buffer | undefined>)
+  | ((
+      lockPath: string,
+      agentExecPath: string,
+    ) => Promise<string | Buffer | undefined>)
   | ((
       lockPath: string,
       agentExecPath: string,
       cwd: string,
-    ) => Promise<string | Buffer | undefined>);
+    ) => Promise<string | Buffer | undefined>)
 
 /**
  * Per-agent reader Map. Wraps each reader so any thrown error becomes
@@ -60,53 +66,61 @@ export const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>> | undefined> {
     return async (...args: Parameters<T>) => {
       try {
-        return (await reader(...args)) as Awaited<ReturnType<T>>;
+        return (await reader(...args)) as Awaited<ReturnType<T>>
       } catch {}
-      return undefined;
-    };
+      return undefined
+    }
   }
 
-  const binaryReader = wrapReader(readFileBinary);
+  const binaryReader = wrapReader(readFileBinary)
 
-  const defaultReader = wrapReader(async (lockPath: string) => await readFileUtf8(lockPath));
+  const defaultReader = wrapReader(
+    async (lockPath: string) => await readFileUtf8(lockPath),
+  )
 
   return new Map([
     [
       BUN,
-      wrapReader(async (lockPath: string, agentExecPath: string, cwd = process.cwd()) => {
-        const ext = path.extname(lockPath);
-        if (ext === EXT_LOCK) {
-          return await defaultReader(lockPath);
-        }
-        if (ext === EXT_LOCKB) {
-          const lockBuffer = await binaryReader(lockPath);
-          if (lockBuffer) {
-            try {
-              return parseBunLockb(lockBuffer);
-            } catch {}
+      wrapReader(
+        async (
+          lockPath: string,
+          agentExecPath: string,
+          cwd = process.cwd(),
+        ) => {
+          const ext = path.extname(lockPath)
+          if (ext === EXT_LOCK) {
+            return await defaultReader(lockPath)
           }
-          // To print a Yarn lockfile to your console without writing it to
-          // disk use `bun bun.lockb`.
-          // https://bun.sh/guides/install/yarnlock
-          return (
-            await spawn(agentExecPath, [lockPath], {
-              cwd,
-              // On Windows, bun is often a .cmd file that requires shell
-              // execution. The spawn helper handles that when shell is true.
-              shell: WIN32,
-            })
-          ).stdout;
-        }
-        return undefined;
-      }),
+          if (ext === EXT_LOCKB) {
+            const lockBuffer = await binaryReader(lockPath)
+            if (lockBuffer) {
+              try {
+                return parseBunLockb(lockBuffer)
+              } catch {}
+            }
+            // To print a Yarn lockfile to your console without writing it to
+            // disk use `bun bun.lockb`.
+            // https://bun.sh/guides/install/yarnlock
+            return (
+              await spawn(agentExecPath, [lockPath], {
+                cwd,
+                // On Windows, bun is often a .cmd file that requires shell
+                // execution. The spawn helper handles that when shell is true.
+                shell: WIN32,
+              })
+            ).stdout
+          }
+          return undefined
+        },
+      ),
     ],
     [NPM, defaultReader],
     [PNPM, defaultReader],
     [VLT, defaultReader],
     [YARN_BERRY, defaultReader],
     [YARN_CLASSIC, defaultReader],
-  ]);
-})();
+  ])
+})()
 
 /**
  * Lockfile filename → owning Agent. Iteration order is significant — keys
@@ -133,4 +147,4 @@ export const LOCKS: Record<string, Agent> = {
   // Unlike the other LOCKS keys this key contains a directory AND filename
   // so it must be matched differently.
   [`${NODE_MODULES}/${DOT_PACKAGE_LOCK_JSON}`]: NPM,
-};
+}

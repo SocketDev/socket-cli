@@ -29,12 +29,12 @@
  *   converter
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest'
 
-import { convertCondaToRequirementsFromInput } from "../../../../src/commands/manifest/convert-conda-to-requirements.mts";
+import { convertCondaToRequirementsFromInput } from '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
 
-describe("convert-conda-to-requirements", () => {
-  it("should convert a simple example", () => {
+describe('convert-conda-to-requirements', () => {
+  it('should convert a simple example', () => {
     const output = convertCondaToRequirementsFromInput(`
 name: myenv
 channels:
@@ -46,16 +46,16 @@ dependencies:
     - pandas
     - numpy==1.21.0
     - requests>=2.26.0
-`);
+`)
 
     expect(output).toMatchInlineSnapshot(`
       "pandas
       numpy==1.21.0
       requests>=2.26.0"
-    `);
-  });
+    `)
+  })
 
-  it("should support arbitrary indent block", () => {
+  it('should support arbitrary indent block', () => {
     const output = convertCondaToRequirementsFromInput(`
 name: myenv
 channels:
@@ -67,16 +67,16 @@ dependencies:
             - pandas
             - numpy==1.21.0
             - requests>=2.26.0
-`);
+`)
 
     expect(output).toMatchInlineSnapshot(`
       "pandas
       numpy==1.21.0
       requests>=2.26.0"
-    `);
-  });
+    `)
+  })
 
-  it("should support single space indented block", () => {
+  it('should support single space indented block', () => {
     const output = convertCondaToRequirementsFromInput(`
 name: myenv
 channels:
@@ -88,16 +88,16 @@ dependencies:
    - pandas
    - numpy==1.21.0
    - requests>=2.26.0
-`);
+`)
 
     expect(output).toMatchInlineSnapshot(`
       "pandas
       numpy==1.21.0
       requests>=2.26.0"
-    `);
-  });
+    `)
+  })
 
-  it("should support comment and empty lines inside pip block", () => {
+  it('should support comment and empty lines inside pip block', () => {
     const output = convertCondaToRequirementsFromInput(`
 name: myenv
 channels:
@@ -109,16 +109,16 @@ dependencies:
             - pandas
             - numpy==1.21.0
             - requests>=2.26.0
-`);
+`)
 
     expect(output).toMatchInlineSnapshot(`
       "pandas
       numpy==1.21.0
       requests>=2.26.0"
-    `);
-  });
+    `)
+  })
 
-  it("skips # comment lines inside the pip block (line 129-131)", () => {
+  it('skips # comment lines inside the pip block (line 129-131)', () => {
     // A flush-left `#` comment line inside the pip block must be ignored
     // by the `if (line.startsWith('#')) { continue }` branch.
     const output = convertCondaToRequirementsFromInput(`
@@ -129,15 +129,15 @@ dependencies:
             - pandas
 # flush-left comment
             - numpy==1.21.0
-`);
+`)
 
     expect(output).toMatchInlineSnapshot(`
       "pandas
       numpy==1.21.0"
-    `);
-  });
+    `)
+  })
 
-  it("should support block closing on further indent than start", () => {
+  it('should support block closing on further indent than start', () => {
     const output = convertCondaToRequirementsFromInput(`
 name: myenv
 channels:
@@ -150,16 +150,16 @@ dependencies:
             - numpy==1.21.0
             - requests>=2.26.0
         - the end
-`);
+`)
 
     expect(output).toMatchInlineSnapshot(`
       "pandas
       numpy==1.21.0
       requests>=2.26.0"
-    `);
-  });
+    `)
+  })
 
-  it("should support block closing on closer indent than start", () => {
+  it('should support block closing on closer indent than start', () => {
     const output = convertCondaToRequirementsFromInput(`
 name: myenv
 channels:
@@ -172,16 +172,16 @@ dependencies:
             - numpy==1.21.0
             - requests>=2.26.0
 - the end
-`);
+`)
 
     expect(output).toMatchInlineSnapshot(`
       "pandas
       numpy==1.21.0
       requests>=2.26.0"
-    `);
-  });
+    `)
+  })
 
-  it("should convert an example with stuff after the pip block", () => {
+  it('should convert an example with stuff after the pip block', () => {
     const output = convertCondaToRequirementsFromInput(`
 channels:
 - defaults
@@ -216,7 +216,7 @@ dependencies:
   - memray==1.14.0
   - optuna>=4.1.0
 name: py-optim
-    `);
+    `)
 
     expect(output).toMatchInlineSnapshot(`
       "aiohttp==3.8.4
@@ -231,10 +231,10 @@ name: py-optim
       psutil==5.9.0
       memray==1.14.0
       optuna>=4.1.0"
-    `);
-  });
+    `)
+  })
 
-  it("should convert an more complex example", () => {
+  it('should convert an more complex example', () => {
     const output = convertCondaToRequirementsFromInput(`
 name: myenv                     # Environment name (optional but recommended)
 
@@ -264,7 +264,7 @@ dependencies:                   # List of packages to install
 
   # Platform-specific dependencies
   - cudatoolkit=11.0            # Only for systems with NVIDIA GPU
-`);
+`)
 
     expect(output).toMatchInlineSnapshot(`
       "tensorflow>=2.0.0
@@ -272,10 +272,10 @@ dependencies:                   # List of packages to install
       transformers
       -r requirements.txt       # Can include requirements.txt file
       git+https://github.com/user/repo.git    # Install from git"
-    `);
-  });
+    `)
+  })
 
-  it("bails when an in-block line does not start with the recorded indent", () => {
+  it('bails when an in-block line does not start with the recorded indent', () => {
     // First "- foo" sets indent to "    -"; the "weird" line has no
     // leading whitespace, so the indent prefix check at L154 fails and
     // the function bails. Exercises the "Unexpected input" break.
@@ -284,18 +284,18 @@ dependencies:                   # List of packages to install
     - foo
 weird
     - bar
-`);
-    expect(result).toBe("foo");
-  });
+`)
+    expect(result).toBe('foo')
+  })
 
-  it("bails when first line in pip block does not indent further than the delim", () => {
+  it('bails when first line in pip block does not indent further than the delim', () => {
     // delim becomes "-" (the "- pip:" line); the next line is "- foo"
     // with the same single-char prefix, so indent.length (1) <=
     // delim.length (1) and the function exits with no captured packages.
     const result = convertCondaToRequirementsFromInput(`
 - pip:
 - foo
-`);
-    expect(result).toBe("");
-  });
-});
+`)
+    expect(result).toBe('')
+  })
+})

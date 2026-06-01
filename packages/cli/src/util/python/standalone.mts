@@ -19,6 +19,6 @@ export {
   ensurePythonDlx,
   ensureSocketPyCli,
   spawnSocketPyCli,
-} from "../dlx/spawn.mts";
+} from '../dlx/spawn.mts'
 
-export type { SocketPyCliDlxOptions } from "../dlx/spawn.mts";
+export type { SocketPyCliDlxOptions } from '../dlx/spawn.mts'

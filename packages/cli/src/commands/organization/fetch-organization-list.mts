@@ -1,60 +1,66 @@
-import { handleApiCall } from "../../util/socket/api.mjs";
-import { setupSdk } from "../../util/socket/sdk.mjs";
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
-import type { CResult } from "../../types.mts";
-import type { SetupSdkOptions } from "../../util/socket/sdk.mjs";
-import type { SocketSdk, SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { CResult } from '../../types.mts'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type {
+  SocketSdk,
+  SocketSdkSuccessResult,
+} from '@socketsecurity/sdk-stable'
 
 type FetchOrganizationOptions = {
-  commandPath?: string | undefined;
-  description?: string | undefined;
-  sdk?: SocketSdk | undefined;
-  sdkOpts?: SetupSdkOptions | undefined;
-};
+  commandPath?: string | undefined
+  description?: string | undefined
+  sdk?: SocketSdk | undefined
+  sdkOpts?: SetupSdkOptions | undefined
+}
 
-type EnterpriseOrganization = Omit<Organization, "plan"> & {
-  plan: `enterprise${string}`;
-};
+type EnterpriseOrganization = Omit<Organization, 'plan'> & {
+  plan: `enterprise${string}`
+}
 
-export type EnterpriseOrganizations = EnterpriseOrganization[];
+export type EnterpriseOrganizations = EnterpriseOrganization[]
 
 export type Organization =
-  SocketSdkSuccessResult<"listOrganizations">["data"]["organizations"][string];
+  SocketSdkSuccessResult<'listOrganizations'>['data']['organizations'][string]
 
-export type Organizations = Organization[];
+export type Organizations = Organization[]
 
-type OrganizationsData = { organizations: Organizations };
+type OrganizationsData = { organizations: Organizations }
 
-export type OrganizationsCResult = CResult<OrganizationsData>;
+export type OrganizationsCResult = CResult<OrganizationsData>
 
 export async function fetchOrganization(
   options?: FetchOrganizationOptions | undefined,
 ): Promise<OrganizationsCResult> {
   const {
     commandPath,
-    description = "organization list",
+    description = 'organization list',
     sdk,
     sdkOpts,
   } = {
     __proto__: null,
     ...options,
-  } as FetchOrganizationOptions;
+  } as FetchOrganizationOptions
 
-  let sockSdk = sdk;
+  let sockSdk = sdk
   if (!sockSdk) {
-    const sockSdkCResult = await setupSdk(sdkOpts);
+    const sockSdkCResult = await setupSdk(sdkOpts)
     if (!sockSdkCResult.ok) {
-      return sockSdkCResult;
+      return sockSdkCResult
     }
-    sockSdk = sockSdkCResult.data;
+    sockSdk = sockSdkCResult.data
   }
 
-  const orgsCResult = await handleApiCall<"listOrganizations">(sockSdk.listOrganizations(), {
-    commandPath,
-    description,
-  });
+  const orgsCResult = await handleApiCall<'listOrganizations'>(
+    sockSdk.listOrganizations(),
+    {
+      commandPath,
+      description,
+    },
+  )
   if (!orgsCResult.ok) {
-    return orgsCResult;
+    return orgsCResult
   }
 
   return {
@@ -62,5 +68,5 @@ export async function fetchOrganization(
     data: {
       organizations: Object.values(orgsCResult.data.organizations),
     },
-  };
+  }
 }

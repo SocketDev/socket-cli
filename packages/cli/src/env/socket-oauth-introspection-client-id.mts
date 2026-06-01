@@ -8,8 +8,8 @@
  * value.
  */
 
-import process from "node:process";
+import process from 'node:process'
 
 export function getSocketOauthIntrospectionClientId(): string {
-  return process.env["SOCKET_OAUTH_INTROSPECTION_CLIENT_ID"] ?? "";
+  return process.env['SOCKET_OAUTH_INTROSPECTION_CLIENT_ID'] ?? ''
 }

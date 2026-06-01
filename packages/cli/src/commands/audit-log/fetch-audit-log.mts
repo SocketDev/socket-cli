@@ -1,49 +1,49 @@
-import { handleApiCall } from "../../util/socket/api.mjs";
-import { setupSdk } from "../../util/socket/sdk.mjs";
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
-import type { CResult, OutputKind } from "../../types.mts";
-import type { SetupSdkOptions } from "../../util/socket/sdk.mjs";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
+import type { CResult, OutputKind } from '../../types.mts'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type FetchAuditLogsConfig = {
-  logType: string;
-  orgSlug: string;
-  outputKind: OutputKind;
-  page: number;
-  perPage: number;
-};
+  logType: string
+  orgSlug: string
+  outputKind: OutputKind
+  page: number
+  perPage: number
+}
 
 type FetchAuditLogOptions = {
-  commandPath?: string | undefined;
-  sdkOpts?: SetupSdkOptions | undefined;
-};
+  commandPath?: string | undefined
+  sdkOpts?: SetupSdkOptions | undefined
+}
 
 export async function fetchAuditLog(
   config: FetchAuditLogsConfig,
   options?: FetchAuditLogOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<"getAuditLogEvents">["data"]>> {
+): Promise<CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>> {
   const { commandPath, sdkOpts } = {
     __proto__: null,
     ...options,
-  } as FetchAuditLogOptions;
+  } as FetchAuditLogOptions
 
-  const sockSdkCResult = await setupSdk(sdkOpts);
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
-    return sockSdkCResult;
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkCResult.data;
+  const sockSdk = sockSdkCResult.data
 
   const { logType, orgSlug, outputKind, page, perPage } = {
     __proto__: null,
     ...config,
-  } as FetchAuditLogsConfig;
+  } as FetchAuditLogsConfig
 
-  return await handleApiCall<"getAuditLogEvents">(
+  return await handleApiCall<'getAuditLogEvents'>(
     sockSdk.getAuditLogEvents(orgSlug, {
       // I'm not sure this is used at all.
-      outputJson: outputKind === "json",
+      outputJson: outputKind === 'json',
       // I'm not sure this is used at all.
-      outputMarkdown: outputKind === "markdown",
+      outputMarkdown: outputKind === 'markdown',
       orgSlug,
       type: logType,
       page,
@@ -53,5 +53,5 @@ export async function fetchAuditLog(
       commandPath,
       description: `audit log for ${orgSlug}`,
     },
-  );
+  )
 }

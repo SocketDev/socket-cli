@@ -1,20 +1,24 @@
-import { debug, debugDir } from "@socketsecurity/lib-stable/debug/output";
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 
-import { fetchOrganization } from "./fetch-organization-list.mts";
-import { outputOrganizationList } from "./output-organization-list.mts";
+import { fetchOrganization } from './fetch-organization-list.mts'
+import { outputOrganizationList } from './output-organization-list.mts'
 
-import type { OutputKind } from "../../types.mts";
+import type { OutputKind } from '../../types.mts'
 
-export async function handleOrganizationList(outputKind: OutputKind = "text"): Promise<void> {
-  debug("Fetching organization list");
-  debugDir({ outputKind });
+export async function handleOrganizationList(
+  outputKind: OutputKind = 'text',
+): Promise<void> {
+  debug('Fetching organization list')
+  debugDir({ outputKind })
 
   const data = await fetchOrganization({
-    commandPath: "socket organization list",
-  });
+    commandPath: 'socket organization list',
+  })
 
-  debug(`Organization list ${data.ok ? "fetched successfully" : "fetch failed"}`);
-  debugDir({ data });
+  debug(
+    `Organization list ${data.ok ? 'fetched successfully' : 'fetch failed'}`,
+  )
+  debugDir({ data })
 
-  await outputOrganizationList(data, outputKind);
+  await outputOrganizationList(data, outputKind)
 }

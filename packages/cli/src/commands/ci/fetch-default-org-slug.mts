@@ -1,56 +1,58 @@
-import { debug } from "@socketsecurity/lib-stable/debug/output";
+import { debug } from '@socketsecurity/lib-stable/debug/output'
 
-import { SOCKET_CLI_ORG_SLUG } from "../../env/socket-cli-org-slug.mts";
-import { getConfigValueOrUndef } from "../../util/config.mts";
-import { fetchOrganization } from "../organization/fetch-organization-list.mts";
+import { SOCKET_CLI_ORG_SLUG } from '../../env/socket-cli-org-slug.mts'
+import { getConfigValueOrUndef } from '../../util/config.mts'
+import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
-import type { CResult } from "../../types.mts";
+import type { CResult } from '../../types.mts'
 
 // Use the config defaultOrg when set, otherwise discover from remote.
 export async function getDefaultOrgSlug(): Promise<CResult<string>> {
-  const defaultOrgResult = getConfigValueOrUndef("defaultOrg");
+  const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
   if (defaultOrgResult) {
     debug(
       `use: org from "defaultOrg" value of socket/settings local app data: ${defaultOrgResult}`,
-    );
-    return { ok: true, data: defaultOrgResult };
+    )
+    return { ok: true, data: defaultOrgResult }
   }
 
   if (SOCKET_CLI_ORG_SLUG) {
-    debug(`use: org from SOCKET_CLI_ORG_SLUG environment variable: ${SOCKET_CLI_ORG_SLUG}`);
-    return { ok: true, data: SOCKET_CLI_ORG_SLUG };
+    debug(
+      `use: org from SOCKET_CLI_ORG_SLUG environment variable: ${SOCKET_CLI_ORG_SLUG}`,
+    )
+    return { ok: true, data: SOCKET_CLI_ORG_SLUG }
   }
 
-  const orgsCResult = await fetchOrganization();
+  const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
-    return orgsCResult;
+    return orgsCResult
   }
 
-  const { organizations } = orgsCResult.data;
+  const { organizations } = orgsCResult.data
   if (!organizations.length) {
     return {
       ok: false,
-      message: "Failed to establish identity",
-      data: "No organization associated with the Socket API token. Unable to continue.",
-    };
+      message: 'Failed to establish identity',
+      data: 'No organization associated with the Socket API token. Unable to continue.',
+    }
   }
 
   // Use `.slug` (URL-safe) — `.name` is the display label and may
   // contain spaces ("Example Org Ltd") that break API URLs.
-  const slug = organizations[0]?.slug;
+  const slug = organizations[0]?.slug
   if (!slug) {
     return {
       ok: false,
-      message: "Failed to establish identity",
-      data: "Cannot determine the default organization for the API token. Unable to continue.",
-    };
+      message: 'Failed to establish identity',
+      data: 'Cannot determine the default organization for the API token. Unable to continue.',
+    }
   }
 
-  debug(`resolve: org from Socket API: ${slug}`);
+  debug(`resolve: org from Socket API: ${slug}`)
 
   return {
     ok: true,
-    message: "Retrieved default org from server",
+    message: 'Retrieved default org from server',
     data: slug,
-  };
+  }
 }

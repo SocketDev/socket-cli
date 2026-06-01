@@ -29,9 +29,9 @@
  *   `socket/no-process-cwd-in-scripts-hooks` oxlint rule.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 // ---------------------------------------------------------------------------
 // REPO-ROOT resolver — used to anchor every other path.
@@ -45,28 +45,28 @@ import { fileURLToPath } from "node:url";
  * @throws If no package.json ancestor exists (= we're not in a repo).
  */
 export function resolveRepoRoot(): string {
-  let cur = path.dirname(fileURLToPath(import.meta.url));
-  const root = path.parse(cur).root;
+  let cur = path.dirname(fileURLToPath(import.meta.url))
+  const root = path.parse(cur).root
   while (cur && cur !== root) {
-    if (existsSync(path.join(cur, "package.json"))) {
-      return cur;
+    if (existsSync(path.join(cur, 'package.json'))) {
+      return cur
     }
-    const parent = path.dirname(cur);
+    const parent = path.dirname(cur)
     if (parent === cur) {
-      break;
+      break
     }
-    cur = parent;
+    cur = parent
   }
   throw new Error(
     `Could not resolve repo root from ${fileURLToPath(import.meta.url)} ` +
-      "(no ancestor has package.json).",
-  );
+      '(no ancestor has package.json).',
+  )
 }
 
 /**
  * Absolute path to the repo root (nearest `package.json` ancestor).
  */
-export const REPO_ROOT = resolveRepoRoot();
+export const REPO_ROOT = resolveRepoRoot()
 
 // ---------------------------------------------------------------------------
 // Static directory + file constants.
@@ -75,12 +75,12 @@ export const REPO_ROOT = resolveRepoRoot();
 /**
  * Absolute path to the repo's `.config/` directory.
  */
-export const CONFIG_DIR = path.join(REPO_ROOT, ".config");
+export const CONFIG_DIR = path.join(REPO_ROOT, '.config')
 
 /**
  * Absolute path to the repo's `node_modules/` directory.
  */
-export const NODE_MODULES_DIR = path.join(REPO_ROOT, "node_modules");
+export const NODE_MODULES_DIR = path.join(REPO_ROOT, 'node_modules')
 
 /**
  * Absolute path to the repo's tool-cache directory. Fleet convention: every
@@ -89,22 +89,22 @@ export const NODE_MODULES_DIR = path.join(REPO_ROOT, "node_modules");
  * here (oxlint, etc.).
  */
 // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- NODE_MODULES_DIR is the canonical node_modules root; the rule's per-arg check can't see through identifiers.
-export const NODE_MODULES_CACHE_DIR = path.join(NODE_MODULES_DIR, ".cache");
+export const NODE_MODULES_CACHE_DIR = path.join(NODE_MODULES_DIR, '.cache')
 
 /**
  * Absolute path to the repo's `pnpm-workspace.yaml`.
  */
-export const PNPM_WORKSPACE_YAML = path.join(REPO_ROOT, "pnpm-workspace.yaml");
+export const PNPM_WORKSPACE_YAML = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
 
 /**
  * Absolute path to the repo's `package.json`.
  */
-export const PACKAGE_JSON = path.join(REPO_ROOT, "package.json");
+export const PACKAGE_JSON = path.join(REPO_ROOT, 'package.json')
 
 /**
  * Absolute path to the repo's `pnpm-lock.yaml`.
  */
-export const PNPM_LOCK = path.join(REPO_ROOT, "pnpm-lock.yaml");
+export const PNPM_LOCK = path.join(REPO_ROOT, 'pnpm-lock.yaml')
 
 // ---------------------------------------------------------------------------
 // socket-wheelhouse.json resolver.
@@ -129,26 +129,26 @@ export const PNPM_LOCK = path.join(REPO_ROOT, "pnpm-lock.yaml");
 // full TypeBox validate-pass on every audit.
 // ---------------------------------------------------------------------------
 
-const SOCKET_WHEELHOUSE_CONFIG_PRIMARY_REL = ".config/socket-wheelhouse.json";
-const SOCKET_WHEELHOUSE_CONFIG_LEGACY_REL = ".socket-wheelhouse.json";
+const SOCKET_WHEELHOUSE_CONFIG_PRIMARY_REL = '.config/socket-wheelhouse.json'
+const SOCKET_WHEELHOUSE_CONFIG_LEGACY_REL = '.socket-wheelhouse.json'
 
 export interface SocketWheelhouseConfigLocation {
   /**
    * Absolute path to the file that was actually read.
    */
-  readonly path: string;
+  readonly path: string
   /**
    * Which of the two accepted locations was used.
    */
-  readonly kind: "primary" | "legacy";
+  readonly kind: 'primary' | 'legacy'
 }
 
 export interface LoadedSocketWheelhouseConfig {
-  readonly location: SocketWheelhouseConfigLocation;
+  readonly location: SocketWheelhouseConfigLocation
   /**
    * Parsed JSON root. Always an object; non-object payloads cause `undefined`.
    */
-  readonly value: Record<string, unknown>;
+  readonly value: Record<string, unknown>
 }
 
 /**
@@ -160,25 +160,25 @@ export interface LoadedSocketWheelhouseConfig {
 export function findSocketWheelhouseConfig(
   repoRoot: string = REPO_ROOT,
 ): SocketWheelhouseConfigLocation | undefined {
-  const primary = path.join(repoRoot, SOCKET_WHEELHOUSE_CONFIG_PRIMARY_REL);
-  const legacy = path.join(repoRoot, SOCKET_WHEELHOUSE_CONFIG_LEGACY_REL);
-  const primaryExists = existsSync(primary);
-  const legacyExists = existsSync(legacy);
+  const primary = path.join(repoRoot, SOCKET_WHEELHOUSE_CONFIG_PRIMARY_REL)
+  const legacy = path.join(repoRoot, SOCKET_WHEELHOUSE_CONFIG_LEGACY_REL)
+  const primaryExists = existsSync(primary)
+  const legacyExists = existsSync(legacy)
   if (primaryExists && legacyExists) {
     process.stderr.write(
       `[socket-wheelhouse] both ${SOCKET_WHEELHOUSE_CONFIG_PRIMARY_REL} ` +
         `and ${SOCKET_WHEELHOUSE_CONFIG_LEGACY_REL} exist in ${repoRoot}; ` +
         `using ${SOCKET_WHEELHOUSE_CONFIG_PRIMARY_REL}. Delete one to ` +
         `silence this note.\n`,
-    );
+    )
   }
   if (primaryExists) {
-    return { path: primary, kind: "primary" };
+    return { path: primary, kind: 'primary' }
   }
   if (legacyExists) {
-    return { path: legacy, kind: "legacy" };
+    return { path: legacy, kind: 'legacy' }
   }
-  return undefined;
+  return undefined
 }
 
 /**
@@ -190,27 +190,27 @@ export function findSocketWheelhouseConfig(
 export function loadSocketWheelhouseConfig(
   repoRoot: string = REPO_ROOT,
 ): LoadedSocketWheelhouseConfig | undefined {
-  const location = findSocketWheelhouseConfig(repoRoot);
+  const location = findSocketWheelhouseConfig(repoRoot)
   if (!location) {
-    return undefined;
+    return undefined
   }
-  let raw: string;
+  let raw: string
   try {
-    raw = readFileSync(location.path, "utf8");
+    raw = readFileSync(location.path, 'utf8')
   } catch {
-    return undefined;
+    return undefined
   }
-  let parsed: unknown;
+  let parsed: unknown
   try {
-    parsed = JSON.parse(raw);
+    parsed = JSON.parse(raw)
   } catch {
-    return undefined;
+    return undefined
   }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return undefined;
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return undefined
   }
   return {
     location,
     value: parsed as Record<string, unknown>,
-  };
+  }
 }

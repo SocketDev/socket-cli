@@ -9,10 +9,10 @@ export function getLatestRelease(
   owner: string,
   repo: string,
   options?: {
-    prefix?: string | undefined;
-    quiet?: boolean | undefined;
+    prefix?: string | undefined
+    quiet?: boolean | undefined
   },
-): Promise<string | null>;
+): Promise<string | null>
 
 /**
  * Get download URL for a specific release asset.
@@ -23,7 +23,7 @@ export function getReleaseAssetUrl(
   tag: string,
   assetName: string,
   options?: { quiet?: boolean | undefined },
-): Promise<string | null>;
+): Promise<string | null>
 
 /**
  * Download a specific release asset.
@@ -35,4 +35,4 @@ export function downloadReleaseAsset(
   assetName: string,
   outputPath: string,
   options?: { quiet?: boolean | undefined },
-): Promise<void>;
+): Promise<void>

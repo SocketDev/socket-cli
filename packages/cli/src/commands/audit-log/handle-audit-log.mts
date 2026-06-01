@@ -1,7 +1,7 @@
-import { fetchAuditLog } from "./fetch-audit-log.mts";
-import { outputAuditLog } from "./output-audit-log.mts";
+import { fetchAuditLog } from './fetch-audit-log.mts'
+import { outputAuditLog } from './output-audit-log.mts'
 
-import type { OutputKind } from "../../types.mts";
+import type { OutputKind } from '../../types.mts'
 
 export async function handleAuditLog({
   logType,
@@ -10,11 +10,11 @@ export async function handleAuditLog({
   page,
   perPage,
 }: {
-  logType: string;
-  outputKind: OutputKind;
-  orgSlug: string;
-  page: number;
-  perPage: number;
+  logType: string
+  outputKind: OutputKind
+  orgSlug: string
+  page: number
+  perPage: number
 }): Promise<void> {
   const auditLogs = await fetchAuditLog(
     {
@@ -25,9 +25,9 @@ export async function handleAuditLog({
       perPage,
     },
     {
-      commandPath: "socket audit-log",
+      commandPath: 'socket audit-log',
     },
-  );
+  )
 
   await outputAuditLog(auditLogs, {
     logType,
@@ -35,5 +35,5 @@ export async function handleAuditLog({
     outputKind,
     page,
     perPage,
-  });
+  })
 }

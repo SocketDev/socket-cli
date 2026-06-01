@@ -9,21 +9,21 @@
  * direct process.env access for bootstrap-specific env vars.
  */
 
-import os from "node:os";
-import path from "node:path";
+import os from 'node:os'
+import path from 'node:path'
 
 /**
  * Get the CLI entry point path.
  */
 export function getCliEntryPoint(): string {
-  return path.join(getCliPackageDir(), "dist", "cli.js");
+  return path.join(getCliPackageDir(), 'dist', 'cli.js')
 }
 
 /**
  * Get the CLI package directory within DLX cache.
  */
 export function getCliPackageDir(): string {
-  return path.join(getDlxDir(), "cli");
+  return path.join(getDlxDir(), 'cli')
 }
 
 /**
@@ -31,7 +31,7 @@ export function getCliPackageDir(): string {
  * runs before ENV module loads.
  */
 export function getCliPackageName(): string {
-  return process.env["SOCKET_CLI_PACKAGE"] || "@socketsecurity/cli";
+  return process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
 }
 
 /**
@@ -40,7 +40,7 @@ export function getCliPackageName(): string {
  * @socketsecurity/cli and other packages are installed.
  */
 export function getDlxDir(): string {
-  return path.join(getSocketHome(), "_dlx");
+  return path.join(getSocketHome(), '_dlx')
 }
 
 /**
@@ -49,5 +49,5 @@ export function getDlxDir(): string {
  * module loads.
  */
 export function getSocketHome(): string {
-  return process.env["SOCKET_HOME"] || path.join(os.homedir(), ".socket");
+  return process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket')
 }

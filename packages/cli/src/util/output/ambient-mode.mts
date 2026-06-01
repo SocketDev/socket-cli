@@ -11,20 +11,20 @@
  * sequence should call resetMachineOutputMode() in their setup.
  */
 
-import { isMachineOutputMode } from "./mode.mts";
+import { isMachineOutputMode } from './mode.mts'
 
-import type { MachineModeFlags } from "./mode.mts";
+import type { MachineModeFlags } from './mode.mts'
 
-let ambientMode = false;
+let ambientMode = false
 
 export function getMachineOutputMode(): boolean {
-  return ambientMode;
+  return ambientMode
 }
 
 export function resetMachineOutputMode(): void {
-  ambientMode = false;
+  ambientMode = false
 }
 
 export function setMachineOutputMode(flags: MachineModeFlags): void {
-  ambientMode = isMachineOutputMode(flags);
+  ambientMode = isMachineOutputMode(flags)
 }

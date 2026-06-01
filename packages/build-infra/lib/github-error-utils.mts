@@ -5,10 +5,10 @@
  *   temporary.
  */
 
-import { httpRequest } from "@socketsecurity/lib-stable/http-request/request";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
+import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-const logger = getDefaultLogger();
+const logger = getDefaultLogger()
 
 /**
  * Error patterns that indicate transient network/infrastructure issues. These
@@ -23,7 +23,7 @@ const TRANSIENT_ERROR_PATTERNS = [
   /ECONNRESET/i,
   /ECONNREFUSED/i,
   /socket hang up/i,
-];
+]
 
 /**
  * Fetch GitHub status and return a human-readable summary.
@@ -34,21 +34,24 @@ const TRANSIENT_ERROR_PATTERNS = [
  */
 export async function checkGitHubStatus() {
   try {
-    const response = await httpRequest("https://www.githubstatus.com/api/v2/status.json", {
-      timeout: 5000,
-    });
+    const response = await httpRequest(
+      'https://www.githubstatus.com/api/v2/status.json',
+      {
+        timeout: 5000,
+      },
+    )
     if (response.ok) {
-      const data = await response.json();
+      const data = await response.json()
       return {
-        status: data.status?.indicator || "unknown",
-        description: data.status?.description || "Unknown status",
-        url: "https://www.githubstatus.com",
-      };
+        status: data.status?.indicator || 'unknown',
+        description: data.status?.description || 'Unknown status',
+        url: 'https://www.githubstatus.com',
+      }
     }
   } catch {
     // GitHub status check failed - don't let this block error reporting.
   }
-  return undefined;
+  return undefined
 }
 
 /**
@@ -59,13 +62,13 @@ export async function checkGitHubStatus() {
  * @returns {string} The error message.
  */
 export function getErrorMessage(error) {
-  if (typeof error === "string") {
-    return error;
+  if (typeof error === 'string') {
+    return error
   }
   if (error instanceof Error) {
-    return error.message;
+    return error.message
   }
-  return error?.message || "Unknown error";
+  return error?.message || 'Unknown error'
 }
 
 /**
@@ -76,8 +79,8 @@ export function getErrorMessage(error) {
  * @returns {boolean} True if the error appears to be transient.
  */
 export function isTransientError(error) {
-  const message = getErrorMessage(error);
-  return TRANSIENT_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+  const message = getErrorMessage(error)
+  return TRANSIENT_ERROR_PATTERNS.some(pattern => pattern.test(message))
 }
 
 /**
@@ -90,30 +93,37 @@ export function isTransientError(error) {
  *
  * @returns {Promise<void>}
  */
-export async function logTransientErrorHelp(error, { checkStatus = true } = {}) {
+export async function logTransientErrorHelp(
+  error,
+  { checkStatus = true } = {},
+) {
   if (!isTransientError(error)) {
-    return;
+    return
   }
 
-  logger.warn("");
-  logger.warn("This appears to be a transient GitHub infrastructure issue.");
-  logger.warn("GitHub Releases CDN occasionally returns 502/503 errors during high load.");
+  logger.warn('')
+  logger.warn('This appears to be a transient GitHub infrastructure issue.')
+  logger.warn(
+    'GitHub Releases CDN occasionally returns 502/503 errors during high load.',
+  )
 
   if (checkStatus) {
-    const ghStatus = await checkGitHubStatus();
+    const ghStatus = await checkGitHubStatus()
     if (ghStatus) {
       const statusLabel =
-        ghStatus.status === "none"
-          ? "operational"
-          : ghStatus.status === "minor"
-            ? "degraded"
-            : "major issue";
-      logger.warn(`GitHub Status: ${statusLabel} - ${ghStatus.description}`);
-      logger.warn(`Check: ${ghStatus.url}`);
+        ghStatus.status === 'none'
+          ? 'operational'
+          : ghStatus.status === 'minor'
+            ? 'degraded'
+            : 'major issue'
+      logger.warn(`GitHub Status: ${statusLabel} - ${ghStatus.description}`)
+      logger.warn(`Check: ${ghStatus.url}`)
     }
   }
 
-  logger.warn("");
-  logger.warn("Recommended action: Re-run the CI job.");
-  logger.warn("If the issue persists, check https://www.githubstatus.com for outages.");
+  logger.warn('')
+  logger.warn('Recommended action: Re-run the CI job.')
+  logger.warn(
+    'If the issue persists, check https://www.githubstatus.com for outages.',
+  )
 }

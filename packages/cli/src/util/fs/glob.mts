@@ -1,92 +1,100 @@
-import path from "node:path";
+import path from 'node:path'
 
-import fastGlob from "fast-glob";
-import ignore from "ignore";
-import micromatch from "micromatch";
-import { parse as yamlParse } from "yaml";
+import fastGlob from 'fast-glob'
+import ignore from 'ignore'
+import micromatch from 'micromatch'
+import { parse as yamlParse } from 'yaml'
 
-import { isDirSync } from "@socketsecurity/lib-stable/fs/inspect";
-import { safeReadFile } from "@socketsecurity/lib-stable/fs/read-file";
-import { defaultIgnore } from "@socketsecurity/lib-stable/globs/defaults";
-import { readPackageJson } from "@socketsecurity/lib-stable/packages/operations";
-import { transform } from "@socketsecurity/lib-stable/streams/transform";
-import { isNonEmptyString } from "@socketsecurity/lib-stable/strings/predicates";
+import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
+import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
+import { defaultIgnore } from '@socketsecurity/lib-stable/globs/defaults'
+import { readPackageJson } from '@socketsecurity/lib-stable/packages/operations'
+import { transform } from '@socketsecurity/lib-stable/streams/transform'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
-import { homePath } from "../../constants/paths.mts";
-import { NODE_MODULES, PNPM } from "../../constants.mts";
+import { homePath } from '../../constants/paths.mts'
+import { NODE_MODULES, PNPM } from '../../constants.mts'
 
-import type { Agent } from "../ecosystem/environment.mts";
-import type { SocketYml } from "../socket-yaml.mts";
-import type { SocketSdkSuccessResult } from "@socketsecurity/sdk-stable";
-import type { Options as GlobOptions } from "fast-glob";
+import type { Agent } from '../ecosystem/environment.mts'
+import type { SocketYml } from '../socket-yaml.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import type { Options as GlobOptions } from 'fast-glob'
 
 const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(
-  (p: string) => !p.endsWith(".gitignore"),
-);
+  (p: string) => !p.endsWith('.gitignore'),
+)
 
 const IGNORED_DIRS = [
   // Taken from ignore-by-default:
   // https://github.com/novemberborn/ignore-by-default/blob/v2.1.0/index.js
-  ".git", // Git repository files, see <https://git-scm.com/>
-  ".log", // Log files emitted by tools such as `tsserver`, see <https://github.com/Microsoft/TypeScript/wiki/Standalone-Server-%28tsserver%29>
-  ".nyc_output", // Temporary directory where nyc stores coverage data, see <https://github.com/bcoe/nyc>
-  ".sass-cache", // Cache folder for node-sass, see <https://github.com/sass/node-sass>
-  ".yarn", // Where node modules are installed when using Yarn, see <https://yarnpkg.com/>
-  "bower_components", // Where Bower packages are installed, see <http://bower.io/>
-  "coverage", // Standard output directory for code coverage reports, see <https://github.com/gotwarlost/istanbul>
+  '.git', // Git repository files, see <https://git-scm.com/>
+  '.log', // Log files emitted by tools such as `tsserver`, see <https://github.com/Microsoft/TypeScript/wiki/Standalone-Server-%28tsserver%29>
+  '.nyc_output', // Temporary directory where nyc stores coverage data, see <https://github.com/bcoe/nyc>
+  '.sass-cache', // Cache folder for node-sass, see <https://github.com/sass/node-sass>
+  '.yarn', // Where node modules are installed when using Yarn, see <https://yarnpkg.com/>
+  'bower_components', // Where Bower packages are installed, see <http://bower.io/>
+  'coverage', // Standard output directory for code coverage reports, see <https://github.com/gotwarlost/istanbul>
   NODE_MODULES, // Where Node modules are installed, see <https://nodejs.org/>
   // Taken from globby:
   // https://github.com/sindresorhus/globby/blob/v14.0.2/ignore.js#L11-L16
-  "flow-typed",
-] as const;
+  'flow-typed',
+] as const
 
-const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map((i) => `**/${i}`);
+const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map(i => `**/${i}`)
 
 export function createSupportedFilesFilter(
-  supportedFiles: SocketSdkSuccessResult<"getSupportedFiles">["data"],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): (filepath: string) => boolean {
-  const patterns = getSupportedFilePatterns(supportedFiles);
-  return (filepath: string) => micromatch.some(filepath, patterns, { dot: true });
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return (filepath: string) =>
+    micromatch.some(filepath, patterns, { dot: true })
 }
 
 export function getSupportedFilePatterns(
-  supportedFiles: SocketSdkSuccessResult<"getSupportedFiles">["data"],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): string[] {
-  const patterns: string[] = [];
+  const patterns: string[] = []
   for (const key of Object.keys(supportedFiles)) {
-    const supported = supportedFiles[key];
+    const supported = supportedFiles[key]
     if (supported) {
-      patterns.push(...Object.values(supported).map((p) => `**/${p.pattern}`));
+      patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
     }
   }
-  return patterns;
+  return patterns
 }
 
-export async function getWorkspaceGlobs(agent: Agent, cwd = process.cwd()): Promise<string[]> {
-  let workspacePatterns: unknown;
+export async function getWorkspaceGlobs(
+  agent: Agent,
+  cwd = process.cwd(),
+): Promise<string[]> {
+  let workspacePatterns: unknown
   if (agent === PNPM) {
-    const workspacePath = path.join(cwd, "pnpm-workspace.yaml");
-    const yml = await safeReadFile(workspacePath, { encoding: "utf8" });
+    const workspacePath = path.join(cwd, 'pnpm-workspace.yaml')
+    const yml = await safeReadFile(workspacePath, { encoding: 'utf8' })
     if (yml) {
       try {
-        workspacePatterns = yamlParse(yml)?.packages;
+        workspacePatterns = yamlParse(yml)?.packages
       } catch {}
     }
   } else {
-    workspacePatterns = (await readPackageJson(cwd, { throws: false }))?.["workspaces"];
+    workspacePatterns = (await readPackageJson(cwd, { throws: false }))?.[
+      'workspaces'
+    ]
   }
   return Array.isArray(workspacePatterns)
-    ? workspacePatterns.filter(isNonEmptyString).map(workspacePatternToGlobPattern)
-    : [];
+    ? workspacePatterns
+        .filter(isNonEmptyString)
+        .map(workspacePatternToGlobPattern)
+    : []
 }
 
 type GlobWithGitIgnoreOptions = GlobOptions & {
   // Optional filter function to apply during streaming.
   // When provided, only files passing this filter are accumulated.
   // This is critical for memory efficiency when scanning large monorepos.
-  filter?: ((filepath: string) => boolean) | undefined;
-  socketConfig?: SocketYml | undefined;
-};
+  filter?: ((filepath: string) => boolean) | undefined
+  socketConfig?: SocketYml | undefined
+}
 
 export async function globWithGitIgnore(
   patterns: string[] | readonly string[],
@@ -97,50 +105,50 @@ export async function globWithGitIgnore(
     filter,
     socketConfig,
     ...additionalOptions
-  } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions;
+  } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
 
-  const ignores = new Set<string>(IGNORED_DIR_PATTERNS);
+  const ignores = new Set<string>(IGNORED_DIR_PATTERNS)
 
-  const projectIgnorePaths = socketConfig?.projectIgnorePaths;
+  const projectIgnorePaths = socketConfig?.projectIgnorePaths
   if (Array.isArray(projectIgnorePaths)) {
     const ignorePatterns = ignoreFileLinesToGlobPatterns(
       projectIgnorePaths,
-      path.join(cwd, ".gitignore"),
+      path.join(cwd, '.gitignore'),
       cwd,
-    );
+    )
     for (let i = 0, { length } = ignorePatterns; i < length; i += 1) {
-      const pattern = ignorePatterns[i]!;
-      ignores.add(pattern);
+      const pattern = ignorePatterns[i]!
+      ignores.add(pattern)
     }
   }
 
-  const gitIgnoreStream = fastGlob.globStream(["**/.gitignore"], {
+  const gitIgnoreStream = fastGlob.globStream(['**/.gitignore'], {
     absolute: true,
     cwd,
     dot: true,
     ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
-  }) as AsyncIterable<string>;
+  }) as AsyncIterable<string>
   for await (const ignorePatterns of transform(
     gitIgnoreStream,
     async (filepath: string) =>
       ignoreFileToGlobPatterns(
-        (await safeReadFile(filepath, { encoding: "utf8" })) ?? "",
+        (await safeReadFile(filepath, { encoding: 'utf8' })) ?? '',
         filepath,
         cwd,
       ),
     { concurrency: 8 },
   )) {
     for (let i = 0, { length } = ignorePatterns; i < length; i += 1) {
-      const p = ignorePatterns[i]!;
-      ignores.add(p);
+      const p = ignorePatterns[i]!
+      ignores.add(p)
     }
   }
 
-  let hasNegatedPattern = false;
+  let hasNegatedPattern = false
   for (const p of ignores) {
     if (p.charCodeAt(0) === 33 /*'!'*/) {
-      hasNegatedPattern = true;
-      break;
+      hasNegatedPattern = true
+      break
     }
   }
 
@@ -151,42 +159,48 @@ export async function globWithGitIgnore(
     dot: true,
     ignore: hasNegatedPattern ? [...defaultIgnore] : [...ignores],
     ...additionalOptions,
-  } as GlobOptions;
+  } as GlobOptions
 
   // When no filter is provided and no negated patterns exist, use the fast path.
   if (!hasNegatedPattern && !filter) {
-    return await fastGlob.glob(patterns as string[], globOptions);
+    return await fastGlob.glob(patterns as string[], globOptions)
   }
   // Add support for negated "ignore" patterns which many globbing libraries,
   // including 'fast-glob', 'globby', and 'tinyglobby', lack support for.
   // Use streaming to avoid unbounded memory accumulation.
   // This is critical for large monorepos with 100k+ files.
-  const results: string[] = [];
-  const ig = hasNegatedPattern ? ignore().add([...ignores]) : undefined;
-  const stream = fastGlob.globStream(patterns as string[], globOptions) as AsyncIterable<string>;
+  const results: string[] = []
+  const ig = hasNegatedPattern ? ignore().add([...ignores]) : undefined
+  const stream = fastGlob.globStream(
+    patterns as string[],
+    globOptions,
+  ) as AsyncIterable<string>
   for await (const p of stream) {
     // Check gitignore patterns with negation support.
     if (ig) {
       // Note: the input files must be INSIDE the cwd. If you get strange looking
       // relative path errors here, most likely your path is outside the given cwd.
-      const relPath = globOptions.absolute ? path.relative(cwd, p) : p;
+      const relPath = globOptions.absolute ? path.relative(cwd, p) : p
       if (ig.ignores(relPath)) {
-        continue;
+        continue
       }
     }
     // Apply the optional filter to reduce memory usage.
     // When scanning large monorepos, this filters early (e.g., to manifest files only)
     // instead of accumulating all 100k+ files and filtering later.
     if (filter && !filter(p)) {
-      continue;
+      continue
     }
-    results.push(p);
+    results.push(p)
   }
-  return results;
+  return results
 }
 
-export async function globWorkspace(agent: Agent, cwd = process.cwd()): Promise<string[]> {
-  const workspaceGlobs = await getWorkspaceGlobs(agent, cwd);
+export async function globWorkspace(
+  agent: Agent,
+  cwd = process.cwd(),
+): Promise<string[]> {
+  const workspaceGlobs = await getWorkspaceGlobs(agent, cwd)
   return workspaceGlobs.length
     ? await fastGlob.glob(workspaceGlobs, {
         absolute: true,
@@ -194,7 +208,7 @@ export async function globWorkspace(agent: Agent, cwd = process.cwd()): Promise<
         dot: true,
         ignore: [...defaultIgnore],
       })
-    : [];
+    : []
 }
 
 export function ignoreFileLinesToGlobPatterns(
@@ -202,10 +216,10 @@ export function ignoreFileLinesToGlobPatterns(
   filepath: string,
   cwd: string,
 ): string[] {
-  const base = path.relative(cwd, path.dirname(filepath)).replace(/\\/g, "/");
-  const patterns = [];
+  const base = path.relative(cwd, path.dirname(filepath)).replace(/\\/g, '/')
+  const patterns = []
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    const pattern = lines[i]!.trim();
+    const pattern = lines[i]!.trim()
     if (pattern.length > 0 && pattern.charCodeAt(0) !== 35 /*'#'*/) {
       patterns.push(
         ignorePatternToMinimatch(
@@ -213,14 +227,18 @@ export function ignoreFileLinesToGlobPatterns(
             ? `!${path.posix.join(base, pattern.slice(1))}`
             : path.posix.join(base, pattern),
         ),
-      );
+      )
     }
   }
-  return patterns;
+  return patterns
 }
 
-export function ignoreFileToGlobPatterns(content: string, filepath: string, cwd: string): string[] {
-  return ignoreFileLinesToGlobPatterns(content.split(/\r?\n/), filepath, cwd);
+export function ignoreFileToGlobPatterns(
+  content: string,
+  filepath: string,
+  cwd: string,
+): string[] {
+  return ignoreFileLinesToGlobPatterns(content.split(/\r?\n/), filepath, cwd)
 }
 
 // Based on `@eslint/compat` convertIgnorePatternToMinimatch.
@@ -228,23 +246,25 @@ export function ignoreFileToGlobPatterns(content: string, filepath: string, cwd:
 // Copyright Nicholas C. Zakas
 // https://github.com/eslint/rewrite/blob/compat-v1.2.1/packages/compat/src/ignore-file.js#L28
 export function ignorePatternToMinimatch(pattern: string): string {
-  const isNegated = pattern.startsWith("!");
-  const negatedPrefix = isNegated ? "!" : "";
-  const patternToTest = (isNegated ? pattern.slice(1) : pattern).trimEnd();
+  const isNegated = pattern.startsWith('!')
+  const negatedPrefix = isNegated ? '!' : ''
+  const patternToTest = (isNegated ? pattern.slice(1) : pattern).trimEnd()
   // Special cases.
   if (
-    patternToTest === "" ||
-    patternToTest === "**" ||
-    patternToTest === "**" ||
-    patternToTest === "/**"
+    patternToTest === '' ||
+    patternToTest === '**' ||
+    patternToTest === '**' ||
+    patternToTest === '/**'
   ) {
-    return `${negatedPrefix}${patternToTest}`;
+    return `${negatedPrefix}${patternToTest}`
   }
-  const firstIndexOfSlash = patternToTest.indexOf("/");
+  const firstIndexOfSlash = patternToTest.indexOf('/')
   const matchEverywherePrefix =
-    firstIndexOfSlash === -1 || firstIndexOfSlash === patternToTest.length - 1 ? "**/" : "";
+    firstIndexOfSlash === -1 || firstIndexOfSlash === patternToTest.length - 1
+      ? '**/'
+      : ''
   const patternWithoutLeadingSlash =
-    firstIndexOfSlash === 0 ? patternToTest.slice(1) : patternToTest;
+    firstIndexOfSlash === 0 ? patternToTest.slice(1) : patternToTest
   // Escape `{` and `(` because in gitignore patterns they are just
   // literal characters without any specific syntactic meaning,
   // while in minimatch patterns they can form brace expansion or extglob syntax.
@@ -252,57 +272,58 @@ export function ignorePatternToMinimatch(pattern: string): string {
   // For example, gitignore pattern `src/{a,b}.js` ignores file `src/{a,b}.js`.
   // But, the same minimatch pattern `src/{a,b}.js` ignores files `src/a.js` and `src/b.js`.
   // Minimatch pattern `src/\{a,b}.js` is equivalent to gitignore pattern `src/{a,b}.js`.
-  const escapedPatternWithoutLeadingSlash = patternWithoutLeadingSlash.replaceAll(
-    /(?=((?:\\.|[^{(])*))\1([{(])/guy, // socket-hook: allow regex-alternation-order -- `\\.` must come first so escape pairs are consumed atomically.
-    "$1\\$2",
-  );
-  const matchInsideSuffix = patternToTest.endsWith("/**") ? "/*" : "";
-  return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`;
+  const escapedPatternWithoutLeadingSlash =
+    patternWithoutLeadingSlash.replaceAll(
+      /(?=((?:\\.|[^{(])*))\1([{(])/guy, // socket-hook: allow regex-alternation-order -- `\\.` must come first so escape pairs are consumed atomically.
+      '$1\\$2',
+    )
+  const matchInsideSuffix = patternToTest.endsWith('/**') ? '/*' : ''
+  return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
 }
 
 export function isReportSupportedFile(
   filepath: string,
-  supportedFiles: SocketSdkSuccessResult<"getSupportedFiles">["data"],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ) {
-  const patterns = getSupportedFilePatterns(supportedFiles);
-  return micromatch.some(filepath, patterns, { dot: true });
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return micromatch.some(filepath, patterns, { dot: true })
 }
 
 export function pathsToGlobPatterns(
   paths: string[] | readonly string[],
   cwd?: string | undefined,
 ): string[] {
-  return paths.map((p) => {
+  return paths.map(p => {
     // Convert current directory references to glob patterns.
-    if (p === "." || p === "./") {
-      return "**/*";
+    if (p === '.' || p === './') {
+      return '**/*'
     }
     // Expand tilde to home directory.
-    let resolvedPath = p;
-    if (p.startsWith("~/")) {
-      resolvedPath = path.join(homePath, p.slice(2));
-    } else if (p === "~") {
-      resolvedPath = homePath;
+    let resolvedPath = p
+    if (p.startsWith('~/')) {
+      resolvedPath = path.join(homePath, p.slice(2))
+    } else if (p === '~') {
+      resolvedPath = homePath
     }
     const absolutePath = path.isAbsolute(resolvedPath)
       ? resolvedPath
-      : path.resolve(cwd ?? process.cwd(), resolvedPath);
+      : path.resolve(cwd ?? process.cwd(), resolvedPath)
     // If the path is a directory, scan it recursively for all files.
     if (isDirSync(absolutePath)) {
-      return `${resolvedPath}/**/*`;
+      return `${resolvedPath}/**/*`
     }
-    return resolvedPath;
-  });
+    return resolvedPath
+  })
 }
 
 export function workspacePatternToGlobPattern(workspace: string): string {
-  const { length } = workspace;
+  const { length } = workspace
   if (!length) {
-    return "";
+    return ''
   }
   // If the workspace ends with "/"
   if (workspace.charCodeAt(length - 1) === 47 /*'/'*/) {
-    return `${workspace}/*/package.json`;
+    return `${workspace}/*/package.json`
   }
   // If the workspace ends with "/**"
   if (
@@ -310,8 +331,8 @@ export function workspacePatternToGlobPattern(workspace: string): string {
     workspace.charCodeAt(length - 2) === 42 /*'*'*/ &&
     workspace.charCodeAt(length - 3) === 47 /*'/'*/
   ) {
-    return `${workspace}/*/**/package.json`;
+    return `${workspace}/*/**/package.json`
   }
   // Things like "packages/a" or "packages/*"
-  return `${workspace}/package.json`;
+  return `${workspace}/package.json`
 }

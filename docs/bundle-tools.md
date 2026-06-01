@@ -83,7 +83,7 @@ Tools are extracted on first use to `~/.socket/_vfs/`:
 // Detection
 if (isSeaBinary() && areExternalToolsAvailable()) {
   // Use VFS-extracted tool
-  return spawnToolVfs(args, options);
+  return spawnToolVfs(args, options)
 }
 ```
 

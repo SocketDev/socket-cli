@@ -6,7 +6,7 @@
  * Tests the command that installs bash tab completion for Socket CLI.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -16,192 +16,211 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock dependencies.
-const mockHandleInstallCompletion = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
-const mockOutputDryRunWrite = vi.hoisted(() => vi.fn());
+const mockHandleInstallCompletion = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
+const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/commands/install/handle-install-completion.mts"), () => ({
-  handleInstallCompletion: mockHandleInstallCompletion,
-}));
+vi.mock(
+  import('../../../../src/commands/install/handle-install-completion.mts'),
+  () => ({
+    handleInstallCompletion: mockHandleInstallCompletion,
+  }),
+)
 
-vi.mock(import("../../../../src/util/dry-run/output.mts"), () => ({
+vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
   outputDryRunWrite: mockOutputDryRunWrite,
-}));
+}))
 
 // Import after mocks.
 const { cmdInstallCompletion } =
-  await import("../../../../src/commands/install/cmd-install-completion.mts");
+  await import('../../../../src/commands/install/cmd-install-completion.mts')
 
-describe("cmd-install-completion", () => {
-  const originalEnv = process.env;
-  const originalExitCode = process.exitCode;
+describe('cmd-install-completion', () => {
+  const originalEnv = process.env
+  const originalExitCode = process.exitCode
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.env = { ...originalEnv, HOME: "/home/testuser" };
-    process.exitCode = originalExitCode;
-  });
+    vi.clearAllMocks()
+    process.env = { ...originalEnv, HOME: '/home/testuser' }
+    process.exitCode = originalExitCode
+  })
 
   afterEach(() => {
-    process.env = originalEnv;
-    process.exitCode = originalExitCode;
-  });
+    process.env = originalEnv
+    process.exitCode = originalExitCode
+  })
 
-  describe("command metadata", () => {
-    it("should have correct description", () => {
-      expect(cmdInstallCompletion.description).toBe("Install bash completion for Socket CLI");
-    });
+  describe('command metadata', () => {
+    it('should have correct description', () => {
+      expect(cmdInstallCompletion.description).toBe(
+        'Install bash completion for Socket CLI',
+      )
+    })
 
-    it("should not be hidden", () => {
-      expect(cmdInstallCompletion.hidden).toBe(false);
-    });
-  });
+    it('should not be hidden', () => {
+      expect(cmdInstallCompletion.hidden).toBe(false)
+    })
+  })
 
-  describe("run", () => {
-    const importMeta = { url: "file:///test/cmd-install-completion.mts" };
-    const context = { parentName: "socket install" };
+  describe('run', () => {
+    const importMeta = { url: 'file:///test/cmd-install-completion.mts' }
+    const context = { parentName: 'socket install' }
 
     it('should use default target name "socket" when no name provided', async () => {
-      await cmdInstallCompletion.run([], importMeta, context);
+      await cmdInstallCompletion.run([], importMeta, context)
 
-      expect(mockHandleInstallCompletion).toHaveBeenCalledWith("socket");
-    });
+      expect(mockHandleInstallCompletion).toHaveBeenCalledWith('socket')
+    })
 
-    it("should use custom target name when provided", async () => {
-      await cmdInstallCompletion.run(["sd"], importMeta, context);
+    it('should use custom target name when provided', async () => {
+      await cmdInstallCompletion.run(['sd'], importMeta, context)
 
-      expect(mockHandleInstallCompletion).toHaveBeenCalledWith("sd");
-    });
+      expect(mockHandleInstallCompletion).toHaveBeenCalledWith('sd')
+    })
 
-    it("should use relative path as target name", async () => {
-      await cmdInstallCompletion.run(["./sd"], importMeta, context);
+    it('should use relative path as target name', async () => {
+      await cmdInstallCompletion.run(['./sd'], importMeta, context)
 
-      expect(mockHandleInstallCompletion).toHaveBeenCalledWith("./sd");
-    });
+      expect(mockHandleInstallCompletion).toHaveBeenCalledWith('./sd')
+    })
 
-    it("should handle absolute path as target name", async () => {
-      await cmdInstallCompletion.run(["/usr/local/bin/socket"], importMeta, context);
+    it('should handle absolute path as target name', async () => {
+      await cmdInstallCompletion.run(
+        ['/usr/local/bin/socket'],
+        importMeta,
+        context,
+      )
 
-      expect(mockHandleInstallCompletion).toHaveBeenCalledWith("/usr/local/bin/socket");
-    });
+      expect(mockHandleInstallCompletion).toHaveBeenCalledWith(
+        '/usr/local/bin/socket',
+      )
+    })
 
-    describe("dry-run mode", () => {
-      it("should output dry-run message for default target", async () => {
-        await cmdInstallCompletion.run(["--dry-run"], importMeta, context);
+    describe('dry-run mode', () => {
+      it('should output dry-run message for default target', async () => {
+        await cmdInstallCompletion.run(['--dry-run'], importMeta, context)
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          "/home/testuser/.bashrc",
+          '/home/testuser/.bashrc',
           'install bash completion for "socket"',
           [
-            "Add completion script source command to ~/.bashrc",
-            "Enable tab completion in current shell",
+            'Add completion script source command to ~/.bashrc',
+            'Enable tab completion in current shell',
           ],
-        );
-        expect(mockHandleInstallCompletion).not.toHaveBeenCalled();
-      });
+        )
+        expect(mockHandleInstallCompletion).not.toHaveBeenCalled()
+      })
 
-      it("should output dry-run message for custom target", async () => {
-        await cmdInstallCompletion.run(["sd", "--dry-run"], importMeta, context);
+      it('should output dry-run message for custom target', async () => {
+        await cmdInstallCompletion.run(['sd', '--dry-run'], importMeta, context)
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          "/home/testuser/.bashrc",
+          '/home/testuser/.bashrc',
           'install bash completion for "sd"',
           [
-            "Add completion script source command to ~/.bashrc",
-            "Enable tab completion in current shell",
+            'Add completion script source command to ~/.bashrc',
+            'Enable tab completion in current shell',
           ],
-        );
-        expect(mockHandleInstallCompletion).not.toHaveBeenCalled();
-      });
+        )
+        expect(mockHandleInstallCompletion).not.toHaveBeenCalled()
+      })
 
-      it("should use HOME environment variable for bashrc path", async () => {
-        process.env["HOME"] = "/custom/home";
+      it('should use HOME environment variable for bashrc path', async () => {
+        process.env['HOME'] = '/custom/home'
 
-        await cmdInstallCompletion.run(["--dry-run"], importMeta, context);
+        await cmdInstallCompletion.run(['--dry-run'], importMeta, context)
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          "/custom/home/.bashrc",
+          '/custom/home/.bashrc',
           expect.any(String),
           expect.any(Array),
-        );
-      });
+        )
+      })
 
-      it("should return early and not call handler in dry-run mode", async () => {
-        await cmdInstallCompletion.run(["--dry-run"], importMeta, context);
+      it('should return early and not call handler in dry-run mode', async () => {
+        await cmdInstallCompletion.run(['--dry-run'], importMeta, context)
 
-        expect(mockHandleInstallCompletion).not.toHaveBeenCalled();
-      });
-    });
+        expect(mockHandleInstallCompletion).not.toHaveBeenCalled()
+      })
+    })
 
-    describe("actual execution", () => {
-      it("should call handleInstallCompletion without dry-run", async () => {
-        await cmdInstallCompletion.run([], importMeta, context);
+    describe('actual execution', () => {
+      it('should call handleInstallCompletion without dry-run', async () => {
+        await cmdInstallCompletion.run([], importMeta, context)
 
-        expect(mockHandleInstallCompletion).toHaveBeenCalledTimes(1);
-        expect(mockHandleInstallCompletion).toHaveBeenCalledWith("socket");
-      });
+        expect(mockHandleInstallCompletion).toHaveBeenCalledTimes(1)
+        expect(mockHandleInstallCompletion).toHaveBeenCalledWith('socket')
+      })
 
-      it("should not output dry-run message during actual execution", async () => {
-        await cmdInstallCompletion.run([], importMeta, context);
+      it('should not output dry-run message during actual execution', async () => {
+        await cmdInstallCompletion.run([], importMeta, context)
 
-        expect(mockOutputDryRunWrite).not.toHaveBeenCalled();
-      });
+        expect(mockOutputDryRunWrite).not.toHaveBeenCalled()
+      })
 
-      it("should convert target name to string", async () => {
-        await cmdInstallCompletion.run(["test-cmd"], importMeta, context);
+      it('should convert target name to string', async () => {
+        await cmdInstallCompletion.run(['test-cmd'], importMeta, context)
 
-        expect(mockHandleInstallCompletion).toHaveBeenCalledWith("test-cmd");
-        expect(typeof mockHandleInstallCompletion.mock.calls[0][0]).toBe("string");
-      });
-    });
+        expect(mockHandleInstallCompletion).toHaveBeenCalledWith('test-cmd')
+        expect(typeof mockHandleInstallCompletion.mock.calls[0][0]).toBe(
+          'string',
+        )
+      })
+    })
 
-    describe("flag parsing", () => {
-      it("should handle --dry-run flag correctly", async () => {
-        await cmdInstallCompletion.run(["--dry-run"], importMeta, context);
+    describe('flag parsing', () => {
+      it('should handle --dry-run flag correctly', async () => {
+        await cmdInstallCompletion.run(['--dry-run'], importMeta, context)
 
-        expect(mockOutputDryRunWrite).toHaveBeenCalled();
-        expect(mockHandleInstallCompletion).not.toHaveBeenCalled();
-      });
+        expect(mockOutputDryRunWrite).toHaveBeenCalled()
+        expect(mockHandleInstallCompletion).not.toHaveBeenCalled()
+      })
 
-      it("should handle --dryRun flag correctly", async () => {
-        await cmdInstallCompletion.run(["--dryRun"], importMeta, context);
+      it('should handle --dryRun flag correctly', async () => {
+        await cmdInstallCompletion.run(['--dryRun'], importMeta, context)
 
-        expect(mockOutputDryRunWrite).toHaveBeenCalled();
-        expect(mockHandleInstallCompletion).not.toHaveBeenCalled();
-      });
+        expect(mockOutputDryRunWrite).toHaveBeenCalled()
+        expect(mockHandleInstallCompletion).not.toHaveBeenCalled()
+      })
 
-      it("should prioritize first input argument as target name", async () => {
-        await cmdInstallCompletion.run(["custom", "ignored"], importMeta, context);
+      it('should prioritize first input argument as target name', async () => {
+        await cmdInstallCompletion.run(
+          ['custom', 'ignored'],
+          importMeta,
+          context,
+        )
 
-        expect(mockHandleInstallCompletion).toHaveBeenCalledWith("custom");
-      });
-    });
+        expect(mockHandleInstallCompletion).toHaveBeenCalledWith('custom')
+      })
+    })
 
-    describe("edge cases", () => {
-      it("should handle empty string as target name", async () => {
-        await cmdInstallCompletion.run([""], importMeta, context);
+    describe('edge cases', () => {
+      it('should handle empty string as target name', async () => {
+        await cmdInstallCompletion.run([''], importMeta, context)
 
         // Empty string should be converted to string "socket" as default.
-        expect(mockHandleInstallCompletion).toHaveBeenCalledWith("socket");
-      });
+        expect(mockHandleInstallCompletion).toHaveBeenCalledWith('socket')
+      })
 
-      it("should handle whitespace-only target name", async () => {
-        await cmdInstallCompletion.run(["   "], importMeta, context);
+      it('should handle whitespace-only target name', async () => {
+        await cmdInstallCompletion.run(['   '], importMeta, context)
 
-        expect(mockHandleInstallCompletion).toHaveBeenCalledWith("   ");
-      });
+        expect(mockHandleInstallCompletion).toHaveBeenCalledWith('   ')
+      })
 
-      it("should handle target name with special characters", async () => {
-        await cmdInstallCompletion.run(["socket-@dev"], importMeta, context);
+      it('should handle target name with special characters', async () => {
+        await cmdInstallCompletion.run(['socket-@dev'], importMeta, context)
 
-        expect(mockHandleInstallCompletion).toHaveBeenCalledWith("socket-@dev");
-      });
-    });
-  });
-});
+        expect(mockHandleInstallCompletion).toHaveBeenCalledWith('socket-@dev')
+      })
+    })
+  })
+})

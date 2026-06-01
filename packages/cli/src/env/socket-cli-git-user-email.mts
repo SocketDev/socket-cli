@@ -4,7 +4,8 @@
  * 'github-actions[bot]@users.noreply.github.com' if not set.
  */
 
-import { env } from "node:process";
+import { env } from 'node:process'
 
 export const SOCKET_CLI_GIT_USER_EMAIL =
-  env["SOCKET_CLI_GIT_USER_EMAIL"] || "github-actions[bot]@users.noreply.github.com";
+  env['SOCKET_CLI_GIT_USER_EMAIL'] ||
+  'github-actions[bot]@users.noreply.github.com'

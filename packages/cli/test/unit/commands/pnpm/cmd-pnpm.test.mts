@@ -11,9 +11,9 @@
  * Subprocess spawning and exit handling - Telemetry tracking - Error handling.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { EventEmitter } from "node:events";
+import type { EventEmitter } from 'node:events'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -23,450 +23,523 @@ const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
-}));
+}))
 
-vi.mock(import("@socketsecurity/lib-stable/logger"), () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger'), () => ({
   getDefaultLogger: () => mockLogger,
-}));
+}))
 
 // Mock spawnSfwDlx.
-const mockSpawnSfwDlx = vi.hoisted(() => vi.fn());
+const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/util/dlx/spawn.mts"), () => ({
+vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
   spawnSfwDlx: mockSpawnSfwDlx,
-}));
+}))
 
 // Mock telemetry functions.
-const mockTrackSubprocessExit = vi.hoisted(() => vi.fn());
-const mockTrackSubprocessStart = vi.hoisted(() => vi.fn());
+const mockTrackSubprocessExit = vi.hoisted(() => vi.fn())
+const mockTrackSubprocessStart = vi.hoisted(() => vi.fn())
 
-vi.mock(import("../../../../src/util/telemetry/integration.mts"), () => ({
+vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
   trackSubprocessExit: mockTrackSubprocessExit,
   trackSubprocessStart: mockTrackSubprocessStart,
-}));
+}))
 
 // Import after mocks.
-const { cmdPnpm } = await import("../../../../src/commands/pnpm/cmd-pnpm.mts");
-const { PNPM } = await import("@socketsecurity/lib-stable/constants/agents");
+const { cmdPnpm } = await import('../../../../src/commands/pnpm/cmd-pnpm.mts')
+const { PNPM } = await import('@socketsecurity/lib-stable/constants/agents')
 
-describe("cmd-pnpm", () => {
+describe('cmd-pnpm', () => {
   interface MockChildProcess extends Partial<EventEmitter> {
-    pid: number;
+    pid: number
   }
 
   const mockChildProcess: MockChildProcess = {
     on: vi.fn(),
     pid: 12_345,
-  };
+  }
 
   const createMockSpawnResult = (exitCode = 0, signal?: string) => {
     const result = {
       code: signal ? undefined : exitCode,
       signal,
       success: exitCode === 0 && !signal,
-    };
-    const spawnPromise = Promise.resolve(result);
-    Object.assign(spawnPromise, { process: mockChildProcess });
-    return { spawnPromise };
-  };
+    }
+    const spawnPromise = Promise.resolve(result)
+    Object.assign(spawnPromise, { process: mockChildProcess })
+    return { spawnPromise }
+  }
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    process.exitCode = undefined;
-    mockTrackSubprocessStart.mockResolvedValue(Date.now());
-    mockTrackSubprocessExit.mockResolvedValue(undefined);
-  });
+    vi.clearAllMocks()
+    process.exitCode = undefined
+    mockTrackSubprocessStart.mockResolvedValue(Date.now())
+    mockTrackSubprocessExit.mockResolvedValue(undefined)
+  })
 
-  describe("command metadata", () => {
-    it("should have correct description", () => {
-      expect(cmdPnpm.description).toBe("Run pnpm with Socket Firewall security");
-    });
+  describe('command metadata', () => {
+    it('should have correct description', () => {
+      expect(cmdPnpm.description).toBe('Run pnpm with Socket Firewall security')
+    })
 
-    it("should be hidden", () => {
-      expect(cmdPnpm.hidden).toBe(true);
-    });
-  });
+    it('should be hidden', () => {
+      expect(cmdPnpm.hidden).toBe(true)
+    })
+  })
 
-  describe("run", () => {
-    const importMeta = { url: "file:///test/cmd-pnpm.mts" };
-    const context = { parentName: "socket" };
+  describe('run', () => {
+    const importMeta = { url: 'file:///test/cmd-pnpm.mts' }
+    const context = { parentName: 'socket' }
 
-    describe("help flag", () => {
-      it("should display help text with --help flag", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+    describe('help flag', () => {
+      it('should display help text with --help flag', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
-        await expect(cmdPnpm.run(["--help"], importMeta, context)).rejects.toThrow();
+        await expect(
+          cmdPnpm.run(['--help'], importMeta, context),
+        ).rejects.toThrow()
 
         // Help should exit before spawning.
-        expect(mockSpawnSfwDlx).not.toHaveBeenCalled();
-      });
-    });
+        expect(mockSpawnSfwDlx).not.toHaveBeenCalled()
+      })
+    })
 
-    describe("dry-run behavior", () => {
-      it("should show dry-run output without executing", async () => {
-        await cmdPnpm.run(["--dry-run"], importMeta, context);
+    describe('dry-run behavior', () => {
+      it('should show dry-run output without executing', async () => {
+        await cmdPnpm.run(['--dry-run'], importMeta, context)
 
-        expect(mockLogger.error).toHaveBeenCalled();
-        expect(mockSpawnSfwDlx).not.toHaveBeenCalled();
+        expect(mockLogger.error).toHaveBeenCalled()
+        expect(mockSpawnSfwDlx).not.toHaveBeenCalled()
 
         // Verify dry-run message.
-        const logCalls = mockLogger.error.mock.calls.flat();
+        const logCalls = mockLogger.error.mock.calls.flat()
         const hasDryRunMessage = logCalls.some(
-          (call) => typeof call === "string" && call.includes("Would execute"),
-        );
-        expect(hasDryRunMessage).toBe(true);
-      });
+          call => typeof call === 'string' && call.includes('Would execute'),
+        )
+        expect(hasDryRunMessage).toBe(true)
+      })
 
-      it("should show dry-run output with pnpm install command", async () => {
-        await cmdPnpm.run(["--dry-run", "install", "lodash"], importMeta, context);
+      it('should show dry-run output with pnpm install command', async () => {
+        await cmdPnpm.run(
+          ['--dry-run', 'install', 'lodash'],
+          importMeta,
+          context,
+        )
 
-        expect(mockLogger.error).toHaveBeenCalled();
-        expect(mockSpawnSfwDlx).not.toHaveBeenCalled();
+        expect(mockLogger.error).toHaveBeenCalled()
+        expect(mockSpawnSfwDlx).not.toHaveBeenCalled()
 
         // Verify dry-run includes arguments.
-        const logCalls = mockLogger.error.mock.calls.flat();
+        const logCalls = mockLogger.error.mock.calls.flat()
         const hasArgs = logCalls.some(
-          (call) =>
-            typeof call === "string" && (call.includes("install") || call.includes("lodash")),
-        );
-        expect(hasArgs).toBe(true);
-      });
+          call =>
+            typeof call === 'string' &&
+            (call.includes('install') || call.includes('lodash')),
+        )
+        expect(hasArgs).toBe(true)
+      })
 
-      it("should filter Socket flags in dry-run output", async () => {
+      it('should filter Socket flags in dry-run output', async () => {
         await cmdPnpm.run(
-          ["--dry-run", "--config", "{}", "install", "lodash"],
+          ['--dry-run', '--config', '{}', 'install', 'lodash'],
           importMeta,
           context,
-        );
+        )
 
         // Should not spawn.
-        expect(mockSpawnSfwDlx).not.toHaveBeenCalled();
-      });
-    });
+        expect(mockSpawnSfwDlx).not.toHaveBeenCalled()
+      })
+    })
 
-    describe("flag filtering", () => {
-      it("should filter out --dry-run flag when forwarding to sfw", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+    describe('flag filtering', () => {
+      it('should filter out --dry-run flag when forwarding to sfw', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
         // Verify sfw was called with filtered flags.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "install", "lodash"], {
-          stdio: "inherit",
-        });
-      });
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
 
-      it("should filter out --config flag when forwarding to sfw", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+      it('should filter out --config flag when forwarding to sfw', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
-        await cmdPnpm.run(["--config", "{}", "install", "lodash"], importMeta, context);
+        await cmdPnpm.run(
+          ['--config', '{}', 'install', 'lodash'],
+          importMeta,
+          context,
+        )
 
         // --config should be filtered out.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "install", "lodash"], {
-          stdio: "inherit",
-        });
-      });
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
 
-      it("should filter out multiple Socket CLI flags", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+      it('should filter out multiple Socket CLI flags', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
         await cmdPnpm.run(
-          ["--config", "{}", "--no-banner", "install", "lodash"],
+          ['--config', '{}', '--no-banner', 'install', 'lodash'],
           importMeta,
           context,
-        );
+        )
 
         // Both --config and --no-banner should be filtered.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "install", "lodash"], {
-          stdio: "inherit",
-        });
-      });
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
 
-      it("should preserve pnpm flags while filtering Socket flags", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+      it('should preserve pnpm flags while filtering Socket flags', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
         await cmdPnpm.run(
-          ["--config", "{}", "install", "--save-dev", "lodash"],
+          ['--config', '{}', 'install', '--save-dev', 'lodash'],
           importMeta,
           context,
-        );
+        )
 
         // pnpm's --save-dev should be preserved.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "install", "--save-dev", "lodash"], {
-          stdio: "inherit",
-        });
-      });
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', '--save-dev', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
 
-      it("should handle --no-banner flag", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+      it('should handle --no-banner flag', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
-        await cmdPnpm.run(["--no-banner", "install", "lodash"], importMeta, context);
+        await cmdPnpm.run(
+          ['--no-banner', 'install', 'lodash'],
+          importMeta,
+          context,
+        )
 
         // --no-banner should be filtered.
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "install", "lodash"], {
-          stdio: "inherit",
-        });
-      });
-    });
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
+    })
 
-    describe("command structure", () => {
-      it("should forward pnpm install command to sfw", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+    describe('command structure', () => {
+      it('should forward pnpm install command to sfw', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
-
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "install", "lodash"], {
-          stdio: "inherit",
-        });
-      });
-
-      it("should forward pnpm add command", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-
-        await cmdPnpm.run(["add", "lodash"], importMeta, context);
-
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "add", "lodash"], {
-          stdio: "inherit",
-        });
-      });
-
-      it("should forward pnpm install with version specifier", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-
-        await cmdPnpm.run(["install", "lodash@4.17.21"], importMeta, context);
-
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "install", "lodash@4.17.21"], {
-          stdio: "inherit",
-        });
-      });
-
-      it("should forward pnpm install with global flag", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-
-        await cmdPnpm.run(["install", "-g", "cowsay"], importMeta, context);
-
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "install", "-g", "cowsay"], {
-          stdio: "inherit",
-        });
-      });
-
-      it("should forward pnpm exec command", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-
-        await cmdPnpm.run(["dlx", "cowsay", "hello"], importMeta, context);
-
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "dlx", "cowsay", "hello"], {
-          stdio: "inherit",
-        });
-      });
-
-      it("should forward pnpm update command", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-
-        await cmdPnpm.run(["update", "lodash"], importMeta, context);
-
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "update", "lodash"], {
-          stdio: "inherit",
-        });
-      });
-
-      it("should forward pnpm with no arguments", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-
-        await cmdPnpm.run([], importMeta, context);
-
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm"], {
-          stdio: "inherit",
-        });
-      });
-
-      it("should forward pnpm install with multiple packages", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-
-        await cmdPnpm.run(["install", "lodash", "express", "react"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
         expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-          ["pnpm", "install", "lodash", "express", "react"],
+          ['pnpm', 'install', 'lodash'],
           {
-            stdio: "inherit",
+            stdio: 'inherit',
           },
-        );
-      });
-    });
+        )
+      })
 
-    describe("exit handling", () => {
-      it("should set initial exitCode to 1", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+      it('should forward pnpm add command', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['add', 'lodash'], importMeta, context)
+
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'add', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
+
+      it('should forward pnpm install with version specifier', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+
+        await cmdPnpm.run(['install', 'lodash@4.17.21'], importMeta, context)
+
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash@4.17.21'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
+
+      it('should forward pnpm install with global flag', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+
+        await cmdPnpm.run(['install', '-g', 'cowsay'], importMeta, context)
+
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', '-g', 'cowsay'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
+
+      it('should forward pnpm exec command', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+
+        await cmdPnpm.run(['dlx', 'cowsay', 'hello'], importMeta, context)
+
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'dlx', 'cowsay', 'hello'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
+
+      it('should forward pnpm update command', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+
+        await cmdPnpm.run(['update', 'lodash'], importMeta, context)
+
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'update', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
+
+      it('should forward pnpm with no arguments', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+
+        await cmdPnpm.run([], importMeta, context)
+
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['pnpm'], {
+          stdio: 'inherit',
+        })
+      })
+
+      it('should forward pnpm install with multiple packages', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+
+        await cmdPnpm.run(
+          ['install', 'lodash', 'express', 'react'],
+          importMeta,
+          context,
+        )
+
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash', 'express', 'react'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
+    })
+
+    describe('exit handling', () => {
+      it('should set initial exitCode to 1', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
         // Should set exitCode to 1 initially (before subprocess completes).
-        expect(process.exitCode).toBe(1);
-      });
+        expect(process.exitCode).toBe(1)
+      })
 
-      it("should register exit event handler on child process", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+      it('should register exit event handler on child process', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
         // Should register 'exit' event handler.
-        expect(mockChildProcess.on).toHaveBeenCalledWith("exit", expect.any(Function));
-      });
+        expect(mockChildProcess.on).toHaveBeenCalledWith(
+          'exit',
+          expect.any(Function),
+        )
+      })
 
-      it("should use stdio inherit for process spawning", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+      it('should use stdio inherit for process spawning', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(["pnpm", "install", "lodash"], {
-          stdio: "inherit",
-        });
-      });
-    });
+        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
+          ['pnpm', 'install', 'lodash'],
+          {
+            stdio: 'inherit',
+          },
+        )
+      })
+    })
 
-    describe("telemetry tracking", () => {
-      it("should track subprocess start", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
+    describe('telemetry tracking', () => {
+      it('should track subprocess start', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
-        expect(mockTrackSubprocessStart).toHaveBeenCalledWith(PNPM);
-      });
+        expect(mockTrackSubprocessStart).toHaveBeenCalledWith(PNPM)
+      })
 
-      it("should track subprocess start before spawning", async () => {
-        let trackCalled = false;
+      it('should track subprocess start before spawning', async () => {
+        let trackCalled = false
         mockTrackSubprocessStart.mockImplementation(async () => {
-          trackCalled = true;
-          return Date.now();
-        });
+          trackCalled = true
+          return Date.now()
+        })
 
         mockSpawnSfwDlx.mockImplementation(async () => {
-          expect(trackCalled).toBe(true);
-          return createMockSpawnResult(0);
-        });
+          expect(trackCalled).toBe(true)
+          return createMockSpawnResult(0)
+        })
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
-        expect(mockTrackSubprocessStart).toHaveBeenCalled();
-      });
-    });
+        expect(mockTrackSubprocessStart).toHaveBeenCalled()
+      })
+    })
 
-    describe("exit handler callback", () => {
-      let exitHandler: (code: number | null, signal: NodeJS.Signals | null) => void;
-      let mockProcessKill: ReturnType<typeof vi.fn>;
-      let mockProcessExit: ReturnType<typeof vi.fn>;
+    describe('exit handler callback', () => {
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      let mockProcessKill: ReturnType<typeof vi.fn>
+      let mockProcessExit: ReturnType<typeof vi.fn>
 
       beforeEach(() => {
         // Capture the exit handler when it's registered.
-        (mockChildProcess.on as ReturnType<typeof vi.fn>).mockImplementation(
+        ;(mockChildProcess.on as ReturnType<typeof vi.fn>).mockImplementation(
           (
             event: string,
-            handler: (code: number | null, signal: NodeJS.Signals | null) => void,
+            handler: (
+              code: number | null,
+              signal: NodeJS.Signals | null,
+            ) => void,
           ) => {
-            if (event === "exit") {
-              exitHandler = handler;
+            if (event === 'exit') {
+              exitHandler = handler
             }
           },
-        );
+        )
         // Mock process.kill and process.exit.
-        mockProcessKill = vi.fn();
-        mockProcessExit = vi.fn();
-        vi.stubGlobal("process", {
+        mockProcessKill = vi.fn()
+        mockProcessExit = vi.fn()
+        vi.stubGlobal('process', {
           ...process,
           kill: mockProcessKill,
           exit: mockProcessExit,
           pid: process.pid,
           exitCode: undefined,
-        });
-      });
+        })
+      })
 
       afterEach(() => {
-        vi.unstubAllGlobals();
-      });
+        vi.unstubAllGlobals()
+      })
 
-      it("should call process.exit with numeric exit code", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-        mockTrackSubprocessExit.mockResolvedValue(undefined);
+      it('should call process.exit with numeric exit code', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+        mockTrackSubprocessExit.mockResolvedValue(undefined)
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
         // Invoke the exit handler with a numeric code.
-        exitHandler(42, undefined);
+        exitHandler(42, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise(resolve => setTimeout(resolve, 10))
 
-        expect(mockTrackSubprocessExit).toHaveBeenCalledWith(PNPM, expect.any(Number), 42);
-        expect(mockProcessExit).toHaveBeenCalledWith(42);
-      });
+        expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
+          PNPM,
+          expect.any(Number),
+          42,
+        )
+        expect(mockProcessExit).toHaveBeenCalledWith(42)
+      })
 
-      it("should call process.kill with signal", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-        mockTrackSubprocessExit.mockResolvedValue(undefined);
+      it('should call process.kill with signal', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+        mockTrackSubprocessExit.mockResolvedValue(undefined)
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
         // Invoke the exit handler with a signal.
-        exitHandler(undefined, "SIGTERM");
+        exitHandler(undefined, 'SIGTERM')
 
         // Wait for telemetry promise to resolve.
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise(resolve => setTimeout(resolve, 10))
 
-        expect(mockTrackSubprocessExit).toHaveBeenCalledWith(PNPM, expect.any(Number), undefined);
-        expect(mockProcessKill).toHaveBeenCalledWith(process.pid, "SIGTERM");
-      });
+        expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
+          PNPM,
+          expect.any(Number),
+          undefined,
+        )
+        expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+      })
 
-      it("should exit even if telemetry fails", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-        mockTrackSubprocessExit.mockRejectedValue(new Error("Telemetry failed"));
+      it('should exit even if telemetry fails', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+        mockTrackSubprocessExit.mockRejectedValue(new Error('Telemetry failed'))
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
         // Invoke the exit handler with a numeric code.
-        exitHandler(1, undefined);
+        exitHandler(1, undefined)
 
         // Wait for telemetry promise to reject and catch handler to run.
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise(resolve => setTimeout(resolve, 10))
 
         // Should still exit even though telemetry failed.
-        expect(mockProcessExit).toHaveBeenCalledWith(1);
-      });
+        expect(mockProcessExit).toHaveBeenCalledWith(1)
+      })
 
-      it("skips exit/kill when both code and signal are null", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-        mockTrackSubprocessExit.mockResolvedValue(undefined);
+      it('skips exit/kill when both code and signal are null', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+        mockTrackSubprocessExit.mockResolvedValue(undefined)
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
-        exitHandler(undefined, undefined);
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        expect(mockProcessExit).not.toHaveBeenCalled();
-        expect(mockProcessKill).not.toHaveBeenCalled();
-      });
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
+        exitHandler(undefined, undefined)
+        await new Promise(resolve => setTimeout(resolve, 10))
+        expect(mockProcessExit).not.toHaveBeenCalled()
+        expect(mockProcessKill).not.toHaveBeenCalled()
+      })
 
-      it("should track subprocess exit with code", async () => {
-        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0));
-        const startTime = 12_345;
-        mockTrackSubprocessStart.mockResolvedValue(startTime);
-        mockTrackSubprocessExit.mockResolvedValue(undefined);
+      it('should track subprocess exit with code', async () => {
+        mockSpawnSfwDlx.mockResolvedValue(createMockSpawnResult(0))
+        const startTime = 12_345
+        mockTrackSubprocessStart.mockResolvedValue(startTime)
+        mockTrackSubprocessExit.mockResolvedValue(undefined)
 
-        await cmdPnpm.run(["install", "lodash"], importMeta, context);
+        await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
         // Invoke the exit handler.
-        exitHandler(0, undefined);
+        exitHandler(0, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise(resolve => setTimeout(resolve, 10))
 
-        expect(mockTrackSubprocessExit).toHaveBeenCalledWith(PNPM, startTime, 0);
-      });
-    });
+        expect(mockTrackSubprocessExit).toHaveBeenCalledWith(PNPM, startTime, 0)
+      })
+    })
 
-    describe("command name constant", () => {
-      it("should use PNPM constant as command name", async () => {
-        const { CMD_NAME } = await import("../../../../src/commands/pnpm/cmd-pnpm.mts");
-        expect(CMD_NAME).toBe(PNPM);
-        expect(CMD_NAME).toBe("pnpm");
-      });
-    });
-  });
-});
+    describe('command name constant', () => {
+      it('should use PNPM constant as command name', async () => {
+        const { CMD_NAME } =
+          await import('../../../../src/commands/pnpm/cmd-pnpm.mts')
+        expect(CMD_NAME).toBe(PNPM)
+        expect(CMD_NAME).toBe('pnpm')
+      })
+    })
+  })
+})

@@ -2,133 +2,142 @@
  * Integration test runner. Options: --js, --sea, --all.
  */
 
-import { existsSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-import colors from "yoctocolors-cjs";
+import colors from 'yoctocolors-cjs'
 
-import { WIN32 } from "@socketsecurity/lib-stable/constants/platform";
-import { getDefaultLogger } from "@socketsecurity/lib-stable/logger/default";
-import { spawn } from "@socketsecurity/lib-stable/process/spawn/child";
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { EnvironmentVariables } from "./environment-variables.mts";
-import { loadEnvFile } from "./util/load-env.mts";
+import { EnvironmentVariables } from './environment-variables.mts'
+import { loadEnvFile } from './util/load-env.mts'
 
-const logger = getDefaultLogger();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
-const MONOREPO_ROOT = path.resolve(ROOT_DIR, "../..");
-const NODE_MODULES_BIN_PATH = path.join(MONOREPO_ROOT, "node_modules/.bin");
+const logger = getDefaultLogger()
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ROOT_DIR = path.resolve(__dirname, '..')
+const MONOREPO_ROOT = path.resolve(ROOT_DIR, '../..')
+const NODE_MODULES_BIN_PATH = path.join(MONOREPO_ROOT, 'node_modules/.bin')
 
 const BINARY_PATHS = {
   __proto__: null,
-  js: path.join(ROOT_DIR, "dist/index.js"),
-  sea: path.join(ROOT_DIR, "dist/sea/socket-sea"),
-};
+  js: path.join(ROOT_DIR, 'dist/index.js'),
+  sea: path.join(ROOT_DIR, 'dist/sea/socket-sea'),
+}
 
 const BINARY_FLAGS = {
   __proto__: null,
   all: {
-    TEST_JS_BINARY: "1",
-    TEST_SEA_BINARY: "1",
+    TEST_JS_BINARY: '1',
+    TEST_SEA_BINARY: '1',
   },
   js: {
-    TEST_JS_BINARY: "1",
+    TEST_JS_BINARY: '1',
   },
   sea: {
-    TEST_SEA_BINARY: "1",
+    TEST_SEA_BINARY: '1',
   },
-};
+}
 
 export async function checkBinaryExists(binaryType) {
   // For explicit binary requests (js, sea), require binary to exist.
-  if (binaryType === "js" || binaryType === "sea") {
-    const binaryPath = BINARY_PATHS[binaryType];
+  if (binaryType === 'js' || binaryType === 'sea') {
+    const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
-      logger.error(`${colors.red("✗")} Binary not found: ${binaryPath}`);
-      logger.log("");
-      logger.log("The binary must be built before running integration tests.");
-      logger.log("Build commands:");
-      if (binaryType === "js") {
-        logger.log("  pnpm run build");
-      } else if (binaryType === "sea") {
-        logger.log("  pnpm --filter @socketsecurity/cli run build:sea");
+      logger.error(`${colors.red('✗')} Binary not found: ${binaryPath}`)
+      logger.log('')
+      logger.log('The binary must be built before running integration tests.')
+      logger.log('Build commands:')
+      if (binaryType === 'js') {
+        logger.log('  pnpm run build')
+      } else if (binaryType === 'sea') {
+        logger.log('  pnpm --filter @socketsecurity/cli run build:sea')
       }
-      logger.log("");
-      return false;
+      logger.log('')
+      return false
     }
-    logger.log(`${colors.green("✓")} Binary found: ${binaryPath}`);
-    logger.log("");
+    logger.log(`${colors.green('✓')} Binary found: ${binaryPath}`)
+    logger.log('')
   }
 
   // For 'all', we'll skip missing binaries (handled by test suite).
-  return true;
+  return true
 }
 
 export async function runVitest(binaryType) {
-  const envVars = BINARY_FLAGS[binaryType];
-  logger.log(`${colors.blue("ℹ")} Running distribution integration tests for ${binaryType}...`);
-  logger.log("");
+  const envVars = BINARY_FLAGS[binaryType]
+  logger.log(
+    `${colors.blue('ℹ')} Running distribution integration tests for ${binaryType}...`,
+  )
+  logger.log('')
 
   // Check if binary exists when explicitly requested.
-  const binaryExists = await checkBinaryExists(binaryType);
+  const binaryExists = await checkBinaryExists(binaryType)
   if (!binaryExists) {
-    process.exitCode = 1;
-    return;
+    process.exitCode = 1
+    return
   }
 
   // Load .env.test configuration.
-  const testEnv = loadEnvFile(path.join(ROOT_DIR, ".env.test"));
+  const testEnv = loadEnvFile(path.join(ROOT_DIR, '.env.test'))
 
   // Resolve vitest path.
-  const vitestCmd = WIN32 ? "vitest.cmd" : "vitest";
-  const vitestPath = path.join(NODE_MODULES_BIN_PATH, vitestCmd);
+  const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
+  const vitestPath = path.join(NODE_MODULES_BIN_PATH, vitestCmd)
 
   // Load external tool versions for INLINED_* env vars.
-  const externalToolVersions = EnvironmentVariables.getTestVariables();
+  const externalToolVersions = EnvironmentVariables.getTestVariables()
 
   const result = await spawn(
     vitestPath,
-    ["run", "test/integration/binary/", "--config", "vitest.integration.config.mts"],
+    [
+      'run',
+      'test/integration/binary/',
+      '--config',
+      'vitest.integration.config.mts',
+    ],
     {
       cwd: ROOT_DIR,
       env: {
         ...testEnv,
         ...process.env,
         // Automatically enable tests when explicitly running integration.mts.
-        RUN_INTEGRATION_TESTS: "1",
+        RUN_INTEGRATION_TESTS: '1',
         // Inject external tool versions (normally inlined at build time).
         ...externalToolVersions,
         ...envVars,
       },
-      stdio: "inherit",
+      stdio: 'inherit',
     },
-  );
+  )
 
-  process.exitCode = result.code ?? 0;
+  process.exitCode = result.code ?? 0
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  const flag = args.find((arg) => arg.startsWith("--"))?.slice(2);
+  const args = process.argv.slice(2)
+  const flag = args.find(arg => arg.startsWith('--'))?.slice(2)
 
   if (!flag || !BINARY_FLAGS[flag]) {
-    logger.error("Invalid or missing flag");
-    logger.log("");
-    logger.log("Usage:");
-    logger.log("  node scripts/integration.mts --js     # Test JS distribution");
-    logger.log("  node scripts/integration.mts --sea    # Test SEA binary");
-    logger.log("  node scripts/integration.mts --all    # Test all distributions");
-    logger.log("");
-    process.exitCode = 1;
-    return;
+    logger.error('Invalid or missing flag')
+    logger.log('')
+    logger.log('Usage:')
+    logger.log('  node scripts/integration.mts --js     # Test JS distribution')
+    logger.log('  node scripts/integration.mts --sea    # Test SEA binary')
+    logger.log(
+      '  node scripts/integration.mts --all    # Test all distributions',
+    )
+    logger.log('')
+    process.exitCode = 1
+    return
   }
 
-  await runVitest(flag);
+  await runVitest(flag)
 }
 
-main().catch((e) => {
-  logger.error("Integration test runner failed:", e);
-  process.exitCode = 1;
-});
+main().catch(e => {
+  logger.error('Integration test runner failed:', e)
+  process.exitCode = 1
+})
