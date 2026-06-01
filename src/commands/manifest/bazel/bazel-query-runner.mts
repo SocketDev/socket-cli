@@ -85,6 +85,11 @@ function buildBazelModShowMavenExtensionArgv(
     'mod',
     'show_extension',
     '@rules_jvm_external//:extensions.bzl%maven',
+    // Belt-and-suspenders output reducer mirroring the PyPI path: bias the
+    // report toward the root module's usages. The authoritative pruning is
+    // the importers-filter applied to the parsed output, so this is not
+    // relied on for correctness.
+    '--extension_usages=<root>',
     ...userFlags,
   ]
 }

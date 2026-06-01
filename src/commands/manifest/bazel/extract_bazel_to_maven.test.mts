@@ -490,6 +490,87 @@ Fetched repositories:
     expect(result.manifestPaths).toEqual([])
   })
 
+  it('keeps only root-imported hubs, dropping transitive ruleset hubs (B)', async () => {
+    vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
+      code: 0,
+      stdout: `## @@rules_jvm_external+//:extensions.bzl%maven:
+
+Fetched repositories:
+  - maven (imported by <root>)
+  - rules_jvm_external_deps (imported by rules_jvm_external@6.7)
+  - stardoc_maven (imported by stardoc@0.7.2)
+`,
+      stderr: '',
+    })
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('complete')
+    // Only @maven is queried; the ruleset hubs are filtered out.
+    expect(runMetadataCqueryForRepo).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(runMetadataCqueryForRepo).mock.calls[0]![0]).toMatchObject(
+      { repoName: 'maven' },
+    )
+  })
+
+  it('falls back to conventional probing when show_extension lists only non-root hubs (E)', async () => {
+    vi.mocked(runBazelModShowMavenExtension).mockResolvedValue({
+      code: 0,
+      stdout: `## @@rules_jvm_external+//:extensions.bzl%maven:
+
+Fetched repositories:
+  - stardoc_maven (imported by stardoc@0.7.2)
+`,
+      stderr: '',
+    })
+    // All entries are non-root, so the filter yields zero kept hubs and the
+    // probe fallback must still run. The probe accepts conventional @maven.
+    vi.mocked(buildMavenProbeFor).mockReturnValue(async (name: string) => {
+      if (name === 'maven') {
+        return { code: 0, stdout: '@maven//:x\n', stderr: '' }
+      }
+      return {
+        code: 1,
+        stdout: '',
+        stderr: "ERROR: No repository visible as '@x' from main repository\n",
+      }
+    })
+    vi.mocked(runMetadataCqueryForRepo).mockResolvedValueOnce(
+      mkResult({
+        artifacts: [mkArt('com.example:a:1.0', 'a')],
+        repoName: 'maven',
+      }),
+    )
+    const result = await extractBazelToMaven({
+      bazelFlags: undefined,
+      bazelOutputBase: undefined,
+      bazelRc: undefined,
+      bin: undefined,
+      cwd: tmp,
+      out: tmp,
+      outLayout: 'flat',
+      verbose: false,
+    })
+    expect(result.status).toBe('complete')
+    expect(runMetadataCqueryForRepo).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(runMetadataCqueryForRepo).mock.calls[0]![0]).toMatchObject(
+      { repoName: 'maven' },
+    )
+  })
+
   it('threads extraMavenRepoNames into the candidate list (WORKSPACE mode)', async () => {
     vi.mocked(detectWorkspaceMode).mockReturnValue({
       bzlmod: false,

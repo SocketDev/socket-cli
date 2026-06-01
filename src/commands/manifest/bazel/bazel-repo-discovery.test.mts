@@ -62,16 +62,28 @@ const probeThrows: RepoProbe = async () => {
 
 describe('bazel-repo-discovery', () => {
   describe('parseShowExtensionOutput', () => {
-    it('extracts hub repos with (imported by ...) annotations only', () => {
+    it('extracts hub repos with (imported by ...) annotations and their importers', () => {
       // The 6 hub repos in the fixture are the ones with annotations;
       // generated per-artifact repos (no annotation) are skipped.
       expect(parseShowExtensionOutput(TINK_SHOW_EXTENSION_FIXTURE)).toEqual([
-        'android_ide_common_30_1_3',
-        'maven',
-        'rules_android_maven',
-        'rules_jvm_external_deps',
-        'stardoc_maven',
-        'unpinned_rules_jvm_external_deps',
+        {
+          importers: ['rules_android@0.6.6'],
+          name: 'android_ide_common_30_1_3',
+        },
+        {
+          importers: ['<root>', 'bazel_worker_java@0.0.4', 'protobuf@32.1'],
+          name: 'maven',
+        },
+        { importers: ['rules_android@0.6.6'], name: 'rules_android_maven' },
+        {
+          importers: ['rules_jvm_external@6.7'],
+          name: 'rules_jvm_external_deps',
+        },
+        { importers: ['stardoc@0.7.2'], name: 'stardoc_maven' },
+        {
+          importers: ['rules_jvm_external@6.7'],
+          name: 'unpinned_rules_jvm_external_deps',
+        },
       ])
     })
 
@@ -94,20 +106,35 @@ describe('bazel-repo-discovery', () => {
     it('stops at the next section header (multiple extensions in one report)', () => {
       const input =
         '## @@rules_jvm_external+//:extensions.bzl%maven:\n\nFetched repositories:\n  - maven (imported by <root>)\n  - other (imported by foo)\n\n## @@rules_python+//:extensions.bzl%pip:\n\nFetched repositories:\n  - pypi (imported by <root>)\n'
-      expect(parseShowExtensionOutput(input)).toEqual(['maven', 'other'])
+      expect(parseShowExtensionOutput(input)).toEqual([
+        { importers: ['<root>'], name: 'maven' },
+        { importers: ['foo'], name: 'other' },
+      ])
     })
 
     it('tolerates canonical-name separator variants (~ and +)', () => {
       for (const sep of ['+', '~']) {
         const input = `## @@rules_jvm_external${sep}//:extensions.bzl%maven:\n\nFetched repositories:\n  - maven (imported by <root>)\n`
-        expect(parseShowExtensionOutput(input)).toEqual(['maven'])
+        expect(parseShowExtensionOutput(input)).toEqual([
+          { importers: ['<root>'], name: 'maven' },
+        ])
       }
     })
 
-    it('deduplicates if the same hub appears twice (defensive)', () => {
+    it('merges importers when the same hub appears twice with different importers', () => {
       const input =
         '## @@rules_jvm_external+//:extensions.bzl%maven:\n\nFetched repositories:\n  - maven (imported by <root>)\n  - maven (imported by foo)\n'
-      expect(parseShowExtensionOutput(input)).toEqual(['maven'])
+      expect(parseShowExtensionOutput(input)).toEqual([
+        { importers: ['<root>', 'foo'], name: 'maven' },
+      ])
+    })
+
+    it('records a non-root-only importer (orchestrator drops it, importer retained for diagnostics)', () => {
+      const input =
+        '## @@rules_jvm_external+//:extensions.bzl%maven:\n\nFetched repositories:\n  - stardoc_maven (imported by stardoc@0.7.2)\n'
+      expect(parseShowExtensionOutput(input)).toEqual([
+        { importers: ['stardoc@0.7.2'], name: 'stardoc_maven' },
+      ])
     })
   })
 

@@ -15,6 +15,20 @@
  */
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+// The importer token Bazel prints for a hub generated for the root module
+// itself (`(imported by <root>, …)`). Hubs imported only by rulesets
+// (`rules_jvm_external@6.7`, `stardoc@0.7.2`, …) are build-tooling, not the
+// user's SBOM, and are filtered out by the orchestrator.
+export const ROOT_MODULE_IMPORTER = '<root>'
+
+// One hub repo from a `bazel mod show_extension` report: its name plus the
+// modules that imported it (the `(imported by …)` annotation), merged across
+// every line the repo appears on.
+export type ShowExtensionRepo = {
+  name: string
+  importers: string[]
+}
+
 export type ProbeResult = {
   code: number
   stdout: string
@@ -64,12 +78,16 @@ const FETCHED_HUB_BULLET_RE =
   /^ {2}- (?<name>\S+) \(imported by (?<importers>[^)]+)\)\s*$/
 
 // Pure parser for `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`
-// stdout. Returns the names of hub repos listed under `Fetched repositories:`
-// — i.e. items annotated with `(imported by ...)`. Generated per-artifact
-// repos (no annotation) are skipped. Output is deduplicated and sorted.
-// Tolerant of `DEBUG:` / `WARNING:` lines from Bazel; the section header
-// `## @@<canonical>//:extensions.bzl%maven:` is the anchor.
-export function parseShowExtensionOutput(stdout: string): string[] {
+// stdout. Returns the hub repos listed under `Fetched repositories:` — i.e.
+// items annotated with `(imported by ...)` — each carrying the set of modules
+// that imported it. Generated per-artifact repos (no annotation) are skipped.
+// A repo can legitimately appear on multiple lines with different importers,
+// so importers are merged per repo (name-only dedupe would lose that, and the
+// importers data is what lets the orchestrator keep only root-imported hubs).
+// Output is sorted by name. Tolerant of `DEBUG:` / `WARNING:` lines from
+// Bazel; the section header `## @@<canonical>//:extensions.bzl%maven:` is the
+// anchor.
+export function parseShowExtensionOutput(stdout: string): ShowExtensionRepo[] {
   const headerMatch = SHOW_EXT_SECTION_HEADER_RE.exec(stdout)
   if (!headerMatch) {
     return []
@@ -81,7 +99,7 @@ export function parseShowExtensionOutput(stdout: string): string[] {
     return []
   }
   const afterFetched = tail.slice(fetchedIdx + '\nFetched repositories:'.length)
-  const seen = new Set<string>()
+  const importersByName = new Map<string, Set<string>>()
   for (const line of afterFetched.split(/\r?\n/)) {
     // Stop at the next `## ` section header (some Bazel versions print
     // multiple extensions in one report).
@@ -95,11 +113,22 @@ export function parseShowExtensionOutput(stdout: string): string[] {
       continue
     }
     const name = match.groups['name']
-    if (name && !seen.has(name)) {
-      seen.add(name)
+    if (!name) {
+      continue
     }
+    const importers = importersByName.get(name) ?? new Set<string>()
+    for (const importer of (match.groups['importers'] ?? '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)) {
+      importers.add(importer)
+    }
+    importersByName.set(name, importers)
   }
-  return [...seen].sort()
+  return [...importersByName.keys()].sort().map(name => ({
+    importers: [...importersByName.get(name)!].sort(),
+    name,
+  }))
 }
 
 // Classify a raw probe result into one of three states. The probe contract

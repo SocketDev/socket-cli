@@ -16,6 +16,7 @@ import {
 } from './bazel-query-runner.mts'
 import {
   CONVENTIONAL_MAVEN_REPO_NAMES,
+  ROOT_MODULE_IMPORTER,
   parseShowExtensionOutput,
   probeCandidate,
 } from './bazel-repo-discovery.mts'
@@ -314,13 +315,32 @@ async function discoverCandidatesForWorkspace(
   if (mode.bzlmod) {
     const extResult = await runBazelModShowMavenExtension(queryOpts)
     if (extResult.code === 0) {
-      candidates.push(...parseShowExtensionOutput(extResult.stdout))
-      showExtensionSucceeded = true
+      // The maven extension generates a hub for EVERY module that uses it —
+      // the root's own `maven.install` hub(s) plus the rulesets' internal
+      // hubs (rules_jvm_external_deps, stardoc_maven, …). Keep only hubs
+      // imported by <root>; the rest are build-tooling, not the user's SBOM.
+      const entries = parseShowExtensionOutput(extResult.stdout)
+      const kept = entries.filter(e =>
+        e.importers.includes(ROOT_MODULE_IMPORTER),
+      )
+      candidates.push(...kept.map(e => e.name))
+      // Gate the probe fallback on the KEPT count, not the raw parse: a
+      // report listing only transitive ruleset hubs (all filtered out) must
+      // still fall through to conventional probing so a root @maven isn't
+      // missed.
+      showExtensionSucceeded = kept.length > 0
       if (verbose) {
         logger.log(
-          `[VERBOSE] workspace ${workspaceRoot}: show_extension yielded`,
-          candidates,
+          `[VERBOSE] workspace ${workspaceRoot}: show_extension kept root hub(s)`,
+          kept.map(e => e.name),
         )
+        for (const dropped of entries) {
+          if (!dropped.importers.includes(ROOT_MODULE_IMPORTER)) {
+            logger.log(
+              `[VERBOSE] workspace ${workspaceRoot}: dropped ${dropped.name} — imported by ${dropped.importers.join(', ')}, not ${ROOT_MODULE_IMPORTER}`,
+            )
+          }
+        }
       }
     } else if (verbose) {
       logger.log(

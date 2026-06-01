@@ -256,6 +256,7 @@ describe('runBazelModShowMavenExtension', () => {
       'mod',
       'show_extension',
       '@rules_jvm_external//:extensions.bzl%maven',
+      '--extension_usages=<root>',
     ])
   })
 
@@ -272,6 +273,7 @@ describe('runBazelModShowMavenExtension', () => {
       'mod',
       'show_extension',
       '@rules_jvm_external//:extensions.bzl%maven',
+      '--extension_usages=<root>',
     ])
   })
 })
