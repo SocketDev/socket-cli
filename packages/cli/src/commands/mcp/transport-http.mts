@@ -32,6 +32,9 @@ const logger = getDefaultLogger()
 
 const SESSION_TTL_MS = 30 * 60 * 1000
 const SESSION_REAP_INTERVAL_MS = 60_000
+// Cap a single buffered POST body. MCP JSON-RPC requests are small; this
+// bounds memory against an unbounded/streaming body (DoS).
+const MAX_MCP_REQUEST_BODY_BYTES = 4 * 1024 * 1024
 
 // Our internal type accepts `auth: undefined` explicitly so callers can
 // pass an undefined-stamped request without ceremony (spread, conditional
@@ -249,11 +252,28 @@ export async function runHttpTransport(
 
     if (req.method === 'POST') {
       let body = ''
+      let aborted = false
       req.on('data', (chunk: string | Buffer) => {
+        if (aborted) {
+          return
+        }
         body += chunk.toString()
+        // Cap the buffered request body so an unbounded stream can't exhaust
+        // memory (DoS). MCP JSON-RPC payloads are small; 4 MiB is generous.
+        if (body.length > MAX_MCP_REQUEST_BODY_BYTES) {
+          aborted = true
+          body = ''
+          writeJson(res, 413, {
+            error: `Request body exceeds ${MAX_MCP_REQUEST_BODY_BYTES}-byte limit.`,
+          })
+          req.destroy()
+        }
       })
-      req.on('end', () =>
-        handleRequestSafely('POST', res, logger, async () => {
+      req.on('end', () => {
+        if (aborted) {
+          return
+        }
+        return handleRequestSafely('POST', res, logger, async () => {
           const jsonData = JSON.parse(body)
           const sessionId =
             getRequestHeaderValue(req.headers['mcp-session-id']) || undefined
@@ -314,8 +334,8 @@ export async function runHttpTransport(
             res,
             jsonData,
           )
-        }),
-      )
+        })
+      })
       return
     }
 
@@ -371,13 +391,24 @@ export async function runHttpTransport(
     res.end('Method not allowed')
   })
 
+  // Without OAuth introspection there is no per-client authentication, so
+  // bind to loopback only — an unauthenticated server must not be reachable
+  // from the network (the Host-header origin check is spoofable by non-browser
+  // clients and is not an auth boundary). When OAuth is enabled, clients are
+  // authenticated, so binding to all interfaces is intentional.
+  const listenHost = introspector ? undefined : '127.0.0.1'
   await new Promise<void>(resolve => {
-    httpServer.listen(config.port, () => {
+    const onListening = () => {
       logger.info(
-        `Socket MCP HTTP server version ${config.version} started successfully on port ${config.port}`,
+        `Socket MCP HTTP server version ${config.version} started successfully on port ${config.port}${listenHost ? ` (bound to ${listenHost})` : ''}`,
       )
       logger.info(`Connect to: http://localhost:${config.port}/`)
       resolve()
-    })
+    }
+    if (listenHost) {
+      httpServer.listen(config.port, listenHost, onListening)
+    } else {
+      httpServer.listen(config.port, onListening)
+    }
   })
 }

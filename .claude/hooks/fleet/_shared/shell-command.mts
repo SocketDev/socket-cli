@@ -27,17 +27,15 @@
  *     out of scope for any static parser.
  */
 
-// shell-quote ships no types and we don't want a second dep (@types/
-// shell-quote) + its own soak entry just for a 2-shape union. The
-// runtime contract is stable and narrow: parse() returns an array whose
-// entries are bare strings, `{ op }` operator objects, or `{ comment }`
-// objects. Type it locally.
-// oxlint-disable-next-line no-explicit-any -- shell-quote has no types; parse is the documented entry point.
-import { parse as shellQuoteParse } from 'shell-quote'
+// Use the fleet-canonical shell parser from @socketsecurity/lib-stable
+// (built on shell-quote) instead of depending on the raw `shell-quote`
+// package directly. lib-stable is already a declared dep of every hook,
+// so this avoids a separate per-hook `shell-quote` dependency that
+// package.json regeneration tends to drop, and `parseShell` is already
+// typed as `ParseEntry[]` (no `as unknown` cast needed).
+import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
 
-type ParseEntry = string | { op: string } | { comment: string }
-
-const parse = shellQuoteParse as unknown as (cmd: string) => ParseEntry[]
+import type { ParseEntry } from '@socketsecurity/lib-stable/shell/parse'
 
 // shell-quote emits operator objects ({ op }), comment objects ({ comment }),
 // and bare strings. These ops separate one command from the next.
@@ -94,7 +92,7 @@ const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/
 export function parseCommands(command: string): Command[] {
   let entries: ParseEntry[]
   try {
-    entries = parse(command)
+    entries = parseShell(command)
   } catch {
     return []
   }
