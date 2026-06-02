@@ -143,6 +143,42 @@ test('--no-verify is allowed with its phrase', async () => {
   assert.strictEqual(result.code, 0)
 })
 
+test('git rebase --no-verify is allowed without bypass phrase', async () => {
+  // Rebase replays existing commits; their pre-commit hooks already ran
+  // when the commits were first authored. Re-running them during replay
+  // would either no-op or mutate content (autofix → diverged commit).
+  // Both waste work and break intent — the policy is exempt for rebase.
+  const result = await runHook({
+    tool_input: { command: 'git rebase --no-verify origin/main' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('git rebase -i --no-verify is allowed without bypass phrase', async () => {
+  // Same exemption applies to interactive rebases (the common case
+  // for reordering / squashing).
+  const result = await runHook({
+    tool_input: { command: 'git rebase -i HEAD~3 --no-verify' },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
+test('git push --no-verify is still blocked even alongside rebase', async () => {
+  // A chained command with `git rebase --no-verify && git push --no-verify`
+  // must still block on the push — the rebase exemption is per-invocation,
+  // not a free pass for the whole shell line.
+  const result = await runHook({
+    tool_input: {
+      command: 'git rebase --no-verify HEAD~2 && git push --no-verify',
+    },
+    tool_name: 'Bash',
+  })
+  assert.strictEqual(result.code, 2)
+  assert.match(result.stderr, /Allow no-verify bypass/)
+})
+
 test('DISABLE_PRECOMMIT_LINT=1 is blocked without phrase', async () => {
   const result = await runHook({
     tool_input: { command: 'DISABLE_PRECOMMIT_LINT=1 git commit -m "foo"' },
@@ -345,7 +381,10 @@ test('paraphrase does not count', async () => {
   assert.strictEqual(result.code, 2)
 })
 
-test('case mismatch does not count', async () => {
+test('bypass phrase is case-insensitive', async () => {
+  // normalizeBypassText() lowercases both sides before comparing — typing
+  // the phrase is already a deliberate act, casing carries no extra
+  // signal, and requiring exact case just trips up a hurried user.
   const result = await runHook(
     {
       tool_input: { command: 'git checkout -- src/foo.ts' },
@@ -353,7 +392,18 @@ test('case mismatch does not count', async () => {
     },
     userTurn('allow revert bypass'),
   )
-  assert.strictEqual(result.code, 2)
+  assert.strictEqual(result.code, 0)
+})
+
+test('bypass phrase tolerates SHOUTING', async () => {
+  const result = await runHook(
+    {
+      tool_input: { command: 'git checkout -- src/foo.ts' },
+      tool_name: 'Bash',
+    },
+    userTurn('ALLOW REVERT BYPASS'),
+  )
+  assert.strictEqual(result.code, 0)
 })
 
 test('multi-line user turn with phrase embedded works', async () => {

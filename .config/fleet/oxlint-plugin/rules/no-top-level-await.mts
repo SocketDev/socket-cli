@@ -1,15 +1,15 @@
 /**
  * @file Block top-level `await` (TLA) expressions at module scope. Fleet
- *   bundles publish to CJS (rolldown CJS output); CJS doesn't support TLA,
- *   so a module-scope `await` either fails the bundle outright or silently
- *   compiles to a Promise the consumer never awaits, leaving uninitialized
- *   exports. Allowed: `await` inside async functions / async arrows /
- *   async methods (the rule walks the parent chain to find an enclosing
- *   FunctionDeclaration / FunctionExpression / ArrowFunctionExpression).
- *   Allowed: `for await` and `await using` at non-module-scope (already
- *   inside a function). Reporting + autofix-free: rewriting TLA to an IIFE
- *   or to top-level Promise chains requires reading the surrounding
- *   intent; we report so the author makes the call.
+ *   bundles publish to CJS (rolldown CJS output); CJS doesn't support TLA, so a
+ *   module-scope `await` either fails the bundle outright or silently compiles
+ *   to a Promise the consumer never awaits, leaving uninitialized exports.
+ *   Allowed: `await` inside async functions / async arrows / async methods (the
+ *   rule walks the parent chain to find an enclosing FunctionDeclaration /
+ *   FunctionExpression / ArrowFunctionExpression). Allowed: `for await` and
+ *   `await using` at non-module-scope (already inside a function). Reporting +
+ *   autofix-free: rewriting TLA to an IIFE or to top-level Promise chains
+ *   requires reading the surrounding intent; we report so the author makes the
+ *   call.
  */
 
 import { makeBypassChecker } from '../lib/comment-markers.mts'

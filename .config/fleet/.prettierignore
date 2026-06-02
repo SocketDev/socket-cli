@@ -10,6 +10,17 @@
 **/.claude/**
 .claude/**
 
+# Everything under a `fleet/` segment is fleet-canonical: the wheelhouse
+# authors it under `template/`, every other repo gets a cascaded copy
+# (`.config/fleet/`, `scripts/fleet/`, `docs/claude.md/fleet/`, …). A
+# downstream repo must NOT format-gate its cascaded copy — it can't fix it
+# without forking; the fix lands in the wheelhouse's `template/` and
+# cascades. So ignore every `fleet/` segment, then re-include the
+# `template/` source the wheelhouse owns and formats. `.claude/` (above) is
+# excluded outright — its cascaded copy is never formatted on either side.
+**/fleet/**
+!template/**/fleet/**
+
 # Vendored acorn.wasm binary blob + the wasm-bindgen CJS glue. The
 # glue (`acorn-bindgen.cjs`) is wasm-bindgen output we ship verbatim
 # (after a single string rewrite of the wasm filename). It must NOT

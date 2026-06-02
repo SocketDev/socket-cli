@@ -1,0 +1,23 @@
+#!/bin/sh
+# Git post-commit hook — repo-specific post-commit logic.
+#
+# Delegates to .git-hooks/repo/post-commit.mts when present.
+# Fleet repos that don't ship that file skip silently.
+#
+# Non-blocking: hook failure warns but never prevents the commit from landing.
+
+. "$(dirname "$0")/_resolve-node.sh"
+
+# Skip during rebase — commits are being replayed, HEAD~1 diffs are
+# unreliable, and cascading every picked commit would be noisy/wrong.
+# Signing still happens: git signs each commit as it lands; this hook
+# only controls the post-commit cascade, not commit signing.
+GIT_DIR="$(git rev-parse --git-dir 2>/dev/null)"
+if [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
+  exit 0
+fi
+
+HOOK="$(dirname "$0")/repo/post-commit.mts"
+if [ -f "$HOOK" ]; then
+  node "$HOOK"
+fi

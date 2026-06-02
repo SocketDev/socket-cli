@@ -4,9 +4,9 @@
  *   `find-generic-password` (Keychain Access). Linux → `secret-tool store` /
  *   `secret-tool lookup` (libsecret). Windows → `cmdkey /add` plus PowerShell
  *   readback via `Get-StoredCredential` (CredentialManager module). Falls back
- *   to `DPAPI`-encrypted file under `%APPDATA%\\socket-cli\\token.enc` when
+ *   to `DPAPI`-encrypted file under `%APPDATA%\\socketsecurity\\token.enc` when
  *   neither CredentialManager module nor cmdkey-readback is available. The
- *   token is stored under service name `socket-cli` with account
+ *   token is stored under service name `socketsecurity` with account
  *   `SOCKET_API_KEY` so it co-exists with other Socket credentials (e.g.
  *   CLI-managed publish tokens) without collision. **Never read from or write
  *   to a plain file.** The point of this module is to keep the token off the
@@ -28,31 +28,32 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 
-const SERVICE = 'socket-cli'
+const SERVICE = 'socketsecurity'
+const SERVICE_LEGACY = 'socket-cli'
 
-// Keychain account names. SOCKET_API_KEY is the primary slot we read + write
-// (universally supported across Socket tools — CLI, SDK, sfw, fleet scripts).
-// SOCKET_API_TOKEN appears in DELETE_SLOTS only, to purge stale entries from
-// older hook versions that mirrored the value to both slots. Each
-// `security add-generic-password` call on macOS triggers a Keychain auth
-// prompt, so we write one slot to keep rotation to a single prompt.
-const WRITE_SLOTS = ['SOCKET_API_KEY'] as const
-const READ_SLOTS = ['SOCKET_API_KEY'] as const
-const DELETE_SLOTS = ['SOCKET_API_KEY', 'SOCKET_API_TOKEN'] as const
+// Keychain account names. SOCKET_API_TOKEN is the canonical slot; SOCKET_API_KEY
+// is the legacy alias. Both are written so that the native messaging host
+// (which checks SOCKET_API_TOKEN first) and legacy consumers (which look for
+// SOCKET_API_KEY) both find the token without a second prompt. macOS triggers
+// one Keychain auth prompt per `add-generic-password` call, so writing two
+// slots means two prompts on first install — acceptable for a one-time setup.
+const WRITE_SLOTS = ['SOCKET_API_TOKEN', 'SOCKET_API_KEY'] as const
+const READ_SLOTS = ['SOCKET_API_TOKEN', 'SOCKET_API_KEY'] as const
+const DELETE_SLOTS = ['SOCKET_API_TOKEN', 'SOCKET_API_KEY'] as const
 
-export function deleteLinux(account: string): void {
-  spawnSync('secret-tool', ['clear', 'service', SERVICE, 'user', account], {
+export function deleteLinux(account: string, service = SERVICE): void {
+  spawnSync('secret-tool', ['clear', 'service', service, 'user', account], {
     stdio: 'ignore',
   })
 }
 
-export function deleteMacOS(account: string): void {
+export function deleteMacOS(account: string, service = SERVICE): void {
   // Exit code 44 = entry not found, which is fine. Any other non-
   // zero is an error worth surfacing — but since delete is best-
   // effort we swallow it (a stale entry is annoying but not blocking).
   spawnSync(
     'security',
-    ['delete-generic-password', '-s', SERVICE, '-a', account],
+    ['delete-generic-password', '-s', service, '-a', account],
     { stdio: 'ignore' },
   )
 }
@@ -62,36 +63,39 @@ export function deleteMacOS(account: string): void {
  * whether the entry exists or not. Clears both the primary account
  * (`SOCKET_API_KEY`) and the forward-canonical mirror (`SOCKET_API_TOKEN`), so
  * a rotate/wipe purges stale entries left by older versions of this hook that
- * mirrored to both slots.
+ * mirrored to both slots. Deletes from both `socketsecurity` and legacy
+ * `socket-cli` so rotation fully purges either service name.
  */
 export function deleteTokenFromKeychain(): void {
   const platform_ = detectPlatform()
-  for (let i = 0, { length } = DELETE_SLOTS; i < length; i += 1) {
-    const slot = DELETE_SLOTS[i]!
-    switch (platform_) {
-      case 'darwin':
-        deleteMacOS(slot)
-        break
-      case 'linux':
-        deleteLinux(slot)
-        break
-      case 'win32':
-        deleteWindows(slot)
-        break
-      default:
-        return
+  for (const svc of [SERVICE, SERVICE_LEGACY]) {
+    for (let i = 0, { length } = DELETE_SLOTS; i < length; i += 1) {
+      const slot = DELETE_SLOTS[i]!
+      switch (platform_) {
+        case 'darwin':
+          deleteMacOS(slot, svc)
+          break
+        case 'linux':
+          deleteLinux(slot, svc)
+          break
+        case 'win32':
+          deleteWindows(slot, svc)
+          break
+        default:
+          return
+      }
     }
   }
 }
 
-export function deleteWindows(account: string): void {
+export function deleteWindows(account: string, service = SERVICE): void {
   // Try the PowerShell removal first, ignore failures.
   spawnSync(
     'powershell',
     [
       '-NoProfile',
       '-Command',
-      `try { Remove-StoredCredential -Target '${SERVICE}:${account}' } catch {}`,
+      `try { Remove-StoredCredential -Target '${service}:${account}' } catch {}`,
     ],
     { stdio: 'ignore' },
   )
@@ -119,7 +123,7 @@ export function detectPlatform(): Platform {
 export function getWindowsDpapiFilePath(): string {
   const appData =
     process.env['APPDATA'] ?? path.join(os.homedir(), 'AppData', 'Roaming')
-  return path.join(appData, 'socket-cli', 'token.enc')
+  return path.join(appData, 'socketsecurity', 'token.enc')
 }
 
 /**
@@ -171,10 +175,13 @@ export function keychainAvailable(): {
   }
 }
 
-export function readLinux(account: string): string | undefined {
+export function readLinux(
+  account: string,
+  service = SERVICE,
+): string | undefined {
   const r = spawnSync(
     'secret-tool',
-    ['lookup', 'service', SERVICE, 'user', account],
+    ['lookup', 'service', service, 'user', account],
     { stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (r.status !== 0) {
@@ -187,12 +194,15 @@ export function readLinux(account: string): string | undefined {
   return out || undefined
 }
 
-export function readMacOS(account: string): string | undefined {
+export function readMacOS(
+  account: string,
+  service = SERVICE,
+): string | undefined {
   // `-s service -a account -w` prints the password to stdout.
   // Non-zero exit when the entry doesn't exist.
   const r = spawnSync(
     'security',
-    ['find-generic-password', '-s', SERVICE, '-a', account, '-w'],
+    ['find-generic-password', '-s', service, '-a', account, '-w'],
     { stdio: ['ignore', 'pipe', 'pipe'] },
   )
   if (r.status !== 0) {
@@ -208,35 +218,41 @@ export function readMacOS(account: string): string | undefined {
  * never throw, so callers can fall through to the next source (env, .env,
  * prompt) cleanly.
  *
- * Reads the primary `SOCKET_API_KEY` slot only. One stored slot, one read, one
- * macOS Keychain ACL check.
+ * Tries `socketsecurity` first across all account slots, then retries with the
+ * legacy `socket-cli` service so existing stored tokens continue to work
+ * transparently after a service-name migration.
  */
 export function readTokenFromKeychain(): string | undefined {
   const platform_ = detectPlatform()
-  for (let i = 0, { length } = READ_SLOTS; i < length; i += 1) {
-    const slot = READ_SLOTS[i]!
-    let value: string | undefined
-    switch (platform_) {
-      case 'darwin':
-        value = readMacOS(slot)
-        break
-      case 'linux':
-        value = readLinux(slot)
-        break
-      case 'win32':
-        value = readWindows(slot)
-        break
-      default:
-        return undefined
-    }
-    if (value) {
-      return value
+  for (const svc of [SERVICE, SERVICE_LEGACY]) {
+    for (let i = 0, { length } = READ_SLOTS; i < length; i += 1) {
+      const slot = READ_SLOTS[i]!
+      let value: string | undefined
+      switch (platform_) {
+        case 'darwin':
+          value = readMacOS(slot, svc)
+          break
+        case 'linux':
+          value = readLinux(slot, svc)
+          break
+        case 'win32':
+          value = readWindows(slot, svc)
+          break
+        default:
+          return undefined
+      }
+      if (value) {
+        return value
+      }
     }
   }
   return undefined
 }
 
-export function readWindows(account: string): string | undefined {
+export function readWindows(
+  account: string,
+  service = SERVICE,
+): string | undefined {
   // Try the CredentialManager PowerShell module first (clean
   // structured read). Falls back to the DPAPI file if the module
   // isn't installed.
@@ -245,7 +261,7 @@ export function readWindows(account: string): string | undefined {
     [
       '-NoProfile',
       '-Command',
-      `try { (Get-StoredCredential -Target '${SERVICE}:${account}').Password | ConvertFrom-SecureString -AsPlainText } catch { exit 1 }`,
+      `try { (Get-StoredCredential -Target '${service}:${account}').Password | ConvertFrom-SecureString -AsPlainText } catch { exit 1 }`,
     ],
     { stdio: ['ignore', 'pipe', 'pipe'] },
   )

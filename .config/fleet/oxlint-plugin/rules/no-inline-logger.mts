@@ -17,7 +17,10 @@
  *      a single insertion.
  */
 
-import { appendImportFixes, summarizeImportTarget } from './_inject-import.mts'
+import {
+  appendImportFixes,
+  summarizeImportTarget,
+} from '../_shared/inject-import.mts'
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 

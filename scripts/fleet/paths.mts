@@ -107,6 +107,45 @@ export const PACKAGE_JSON = path.join(REPO_ROOT, 'package.json')
  */
 export const PNPM_LOCK = path.join(REPO_ROOT, 'pnpm-lock.yaml')
 
+/**
+ * Wheelhouse-side vendored acorn-wasm directory. `refresh-vendored-acorn.mts`
+ * copies the ultrathink build's output here; the cascade then ships it to every
+ * fleet repo's `.claude/hooks/_shared/acorn/`.
+ */
+export const VENDORED_ACORN_DIR = path.join(
+  REPO_ROOT,
+  'template/.claude/hooks/_shared/acorn',
+)
+
+/**
+ * Files copied from the ultrathink acorn build into VENDORED_ACORN_DIR.
+ * README.md is generated/stamped by the refresh script, not copied, so it's not
+ * listed.
+ */
+export const VENDORED_ACORN_FILES: readonly string[] = [
+  'acorn-bindgen.cjs',
+  'acorn-wasm-sync.mts',
+  'acorn.wasm',
+  'index.mts',
+]
+
+/**
+ * Suffix from `$ULTRATHINK_ROOT` to the Rust → WASM prod build's Final output
+ * dir (the source `refresh-vendored-acorn.mts` copies from).
+ */
+export const ULTRATHINK_ACORN_FINAL_SUFFIX = path.join(
+  'packages',
+  'acorn',
+  'lang',
+  'rust',
+  'build',
+  'prod',
+  'darwin-arm64',
+  'wasm',
+  'out',
+  'Final',
+)
+
 // ---------------------------------------------------------------------------
 // socket-wheelhouse.json resolver.
 //

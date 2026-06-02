@@ -38,9 +38,9 @@ const logger = getDefaultLogger()
 
 // ── Tool config loaded from external-tools.json (self-contained) ──
 
-const checksumEntrySchema = Type.Object({
+const platformEntrySchema = Type.Object({
   asset: Type.String(),
-  sha256: Type.String(),
+  integrity: Type.String(),
 })
 
 const toolSchema = Type.Object({
@@ -52,7 +52,7 @@ const toolSchema = Type.Object({
   repository: Type.Optional(Type.String()),
   release: Type.Optional(Type.String()),
   installDir: Type.Optional(Type.String()),
-  checksums: Type.Optional(Type.Record(Type.String(), checksumEntrySchema)),
+  platforms: Type.Optional(Type.Record(Type.String(), platformEntrySchema)),
   ecosystems: Type.Optional(Type.Array(Type.String())),
 })
 
@@ -182,12 +182,12 @@ export async function installGitHubReleaseTool(
   }
 
   const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = tool.checksums?.[platformKey]
+  const platformEntry = tool.platforms?.[platformKey]
   if (!platformEntry) {
     logger.warn(`${displayName}: unsupported platform ${platformKey}`)
     return false
   }
-  const { asset, sha256: expectedSha } = platformEntry
+  const { asset, integrity: expectedIntegrity } = platformEntry
   const repo = tool.repository?.replace(/^[^:]+:/, '') ?? ''
   // Most GitHub release URLs use a `v` prefix on the tag (`v1.2.3`); a
   // few projects don't (`uv` uses `0.10.11`). The tool config's
@@ -202,7 +202,7 @@ export async function installGitHubReleaseTool(
   const { binaryPath: downloadPath, downloaded } = await downloadBinary({
     url,
     name: `${name}-${tool.version}-${asset}`,
-    sha256: expectedSha,
+    integrity: expectedIntegrity,
   })
   logger.log(
     downloaded
@@ -297,12 +297,12 @@ export async function installGitHubReleaseToolWithTag(
   }
 
   const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = tool.checksums?.[platformKey]
+  const platformEntry = tool.platforms?.[platformKey]
   if (!platformEntry) {
     logger.warn(`${displayName}: unsupported platform ${platformKey}`)
     return false
   }
-  const { asset, sha256: expectedSha } = platformEntry
+  const { asset, integrity: expectedIntegrity } = platformEntry
   const repo = tool.repository?.replace(/^[^:]+:/, '') ?? ''
   const url = `https://github.com/${repo}/releases/download/${tag}/${asset}`
 
@@ -310,7 +310,7 @@ export async function installGitHubReleaseToolWithTag(
   const { binaryPath: downloadPath, downloaded } = await downloadBinary({
     url,
     name: `${name}-${tag}-${asset}`,
-    sha256: expectedSha,
+    integrity: expectedIntegrity,
   })
   logger.log(
     downloaded
@@ -463,7 +463,7 @@ export async function setupJanus(): Promise<boolean> {
   // ~/.socket/_wheelhouse/janus/<version>/ dir so every fleet member's
   // hook reuses the same binary.
   const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  if (!JANUS.checksums?.[platformKey]) {
+  if (!JANUS.platforms?.[platformKey]) {
     logger.log('=== janus ===')
     logger.log(`Skipped: no janus build for ${platformKey} (mac-arm64 only)`)
     return true
@@ -566,22 +566,22 @@ export async function setupSfw(apiToken: string | undefined): Promise<boolean> {
 
   // Platform.
   const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = sfwConfig.checksums?.[platformKey]
+  const platformEntry = sfwConfig.platforms?.[platformKey]
   if (!platformEntry) {
     throw new Error(`Unsupported platform: ${platformKey}`)
   }
 
-  // Checksum + asset.
-  const { asset, sha256 } = platformEntry
+  // Integrity + asset.
+  const { asset, integrity } = platformEntry
   const repo = sfwConfig.repository?.replace(/^[^:]+:/, '') ?? ''
   const url = `https://github.com/${repo}/releases/download/${sfwConfig.version}/${asset}`
   const binaryName = isEnterprise ? 'sfw' : 'sfw-free'
 
-  // Download (with cache + checksum).
+  // Download (with cache + integrity check).
   const { binaryPath, downloaded } = await downloadBinary({
     url,
     name: binaryName,
-    sha256,
+    integrity,
   })
   logger.log(
     downloaded ? `Downloaded to ${binaryPath}` : `Cached at ${binaryPath}`,
@@ -727,7 +727,7 @@ export async function setupUv(): Promise<boolean> {
   // `uv-x86_64-apple-darwin/uv`. Pin the tag literally and tell the
   // helper which subdirectory holds the binary.
   const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = UV.checksums?.[platformKey]
+  const platformEntry = UV.platforms?.[platformKey]
   const pathInArchive = platformEntry?.asset.replace(/\.(tar\.gz|zip)$/, '')
   return installGitHubReleaseToolWithTag({
     name: 'uv',
@@ -755,11 +755,11 @@ export async function setupZizmor(): Promise<boolean> {
 
   // Download archive via dlx (handles caching + checksum).
   const platformKey = `${process.platform === 'win32' ? 'win' : process.platform}-${process.arch}`
-  const platformEntry = ZIZMOR.checksums?.[platformKey]
+  const platformEntry = ZIZMOR.platforms?.[platformKey]
   if (!platformEntry) {
     throw new Error(`Unsupported platform: ${platformKey}`)
   }
-  const { asset, sha256: expectedSha } = platformEntry
+  const { asset, integrity: expectedIntegrity } = platformEntry
   const repo = ZIZMOR.repository?.replace(/^[^:]+:/, '') ?? ''
   const url = `https://github.com/${repo}/releases/download/v${ZIZMOR.version}/${asset}`
 
@@ -767,7 +767,7 @@ export async function setupZizmor(): Promise<boolean> {
   const { binaryPath: archivePath, downloaded } = await downloadBinary({
     url,
     name: `zizmor-${ZIZMOR.version}-${asset}`,
-    sha256: expectedSha,
+    integrity: expectedIntegrity,
   })
   logger.log(
     downloaded

@@ -13,22 +13,29 @@
 //      next commit. Per CLAUDE.md: "surgical `git add <specific-file>`.
 //      Never `-A` / `.`."
 //
-//   2. WARN on `git commit` when the index contains files the agent
-//      has NOT touched this session (via Edit / Write / `git add
-//      <path>` / `git rm <path>`). Exits 0 — informational, not a
-//      block — but emits a stderr summary listing every unfamiliar
-//      staged file so the agent has a chance to spot parallel-session
-//      work before the commit goes through.
+//   2. BLOCK a bare `git commit` (no pathspec) when the index holds files
+//      the agent has NOT touched this session (via Edit / Write / `git add
+//      <path>` / `git rm <path>`). A bare commit commits the ENTIRE index,
+//      so a parallel session's staged work rides in under your authorship.
+//      The parallel-safe form is `git commit -o <your-files>` (or
+//      `-- <paths>`), which commits ONLY the named paths regardless of the
+//      index — those are allowed through. The block message lists the
+//      unfamiliar files and suggests the exact `git commit -o` for your
+//      session-touched staged files.
+//
+//      Default posture: commit the SMALLEST explicit set; never let the
+//      index sweep up another agent's work.
 //
 //      Detection heuristic: list staged files, compare against tool-
 //      use history in the transcript. Files staged but never touched
-//      this session surface as suspicious entries.
+//      this session are the unfamiliar set.
 //
-// Both layers fail open on hook bugs (exit 0 + stderr log).
+// Layer 1 blocks (exit 2); Layer 2 blocks a bare sweep (exit 2). Both
+// fail open on hook bugs (exit 0 + stderr log).
 //
 // Bypass:
-//   - `Allow add-all bypass` in a recent user turn (case-sensitive,
-//     exact match) — disables layer 1 for the next add.
+//   - `Allow add-all bypass` in a recent user turn — disables layer 1.
+//   - `Allow index-sweep bypass` — lets a bare commit take the whole index.
 //   - `SOCKET_OVEREAGER_STAGING_GUARD_DISABLED=1` — disables both.
 //
 // Reads a Claude Code PreToolUse JSON payload from stdin:
@@ -41,7 +48,11 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { readTouchedPaths } from '../_shared/foreign-paths.mts'
-import { detectBroadGitAdd, findInvocation } from '../_shared/shell-command.mts'
+import {
+  commandsFor,
+  detectBroadGitAdd,
+  findInvocation,
+} from '../_shared/shell-command.mts'
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
 interface ToolInput {
@@ -52,6 +63,9 @@ interface ToolInput {
 
 const ENV_DISABLE = 'SOCKET_OVEREAGER_STAGING_GUARD_DISABLED'
 const BYPASS_PHRASES = ['Allow add-all bypass'] as const
+// Separate phrase for the index-sweep block: it's a different decision from the
+// `git add -A` block, so it gets its own bypass.
+const COMMIT_SWEEP_BYPASS = ['Allow index-sweep bypass'] as const
 
 export function getRepoDir(): string {
   return process.env['CLAUDE_PROJECT_DIR'] || process.cwd()
@@ -59,6 +73,31 @@ export function getRepoDir(): string {
 
 export function isGitCommit(command: string): boolean {
   return findInvocation(command, { binary: 'git', subcommand: 'commit' })
+}
+
+// True when a `git commit` carries an explicit pathspec — the parallel-safe
+// form, because `git commit <paths>` / `-o`/`--only <paths>` commits ONLY those
+// paths regardless of what else is in the index. Detect: any positional arg
+// after `commit` (a path), or `-o`/`--only`, or a `--` separator. Flags that
+// take a value (`-m msg`, `-F file`, `--author=…`, etc.) must not be mistaken
+// for a pathspec, so positionals are only counted after a `--`, or via the
+// explicit `-o`/`--only` flag (the unambiguous signals).
+export function commitHasPathspec(command: string): boolean {
+  for (const c of commandsFor(command, 'git')) {
+    const { args } = c
+    const ci = args.findIndex(a => a === 'commit')
+    if (ci === -1) {
+      continue
+    }
+    const rest = args.slice(ci + 1)
+    if (rest.includes('--')) {
+      return true
+    }
+    if (rest.some(a => a === '-o' || a === '--only')) {
+      return true
+    }
+  }
+  return false
 }
 
 export function listStagedFiles(repoDir: string): string[] {
@@ -133,8 +172,27 @@ async function main(): Promise<void> {
     process.exit(2)
   }
 
-  // ── Layer 2: warn on `git commit` if index has unfamiliar files ──
+  // ── Layer 2: BLOCK a plain `git commit` that would sweep the whole index
+  //    when it holds files this session didn't touch ────────────────────────
+  //
+  // Parallel-session-cautious by default: a bare `git commit` (no pathspec)
+  // commits the ENTIRE index, so another agent's staged work rides in under
+  // your authorship. The safe form is `git commit -o <your-files>` (or
+  // `-- <paths>`), which commits ONLY the named paths regardless of the index.
+  // So: a commit that already names a pathspec is allowed; a bare commit with
+  // unfamiliar staged files is blocked, steering to the pathspec form.
   if (isGitCommit(command)) {
+    // Wheelhouse cascade legitimately commits the whole index (broad-stage in
+    // a fresh worktree off origin/main). The `FLEET_SYNC=1` sentinel — which
+    // no-revert-guard already recognizes for cascade `--no-verify` commits —
+    // opts out of the sweep block too.
+    if (/(?:^|\s)FLEET_SYNC\s*=\s*1\b/.test(command)) {
+      process.exit(0)
+    }
+    // Pathspec-bearing commit is the safe form — never blocked.
+    if (commitHasPathspec(command)) {
+      process.exit(0)
+    }
     const staged = listStagedFiles(repoDir)
     if (staged.length === 0) {
       process.exit(0)
@@ -151,29 +209,38 @@ async function main(): Promise<void> {
     if (unfamiliar.length === 0) {
       process.exit(0)
     }
-    // Don't block — commits with pre-staged content can be legitimate.
-    // Just print a loud stderr warning so the agent inspects before
-    // proceeding (and humans reviewing the session can spot the slip).
+    if (
+      transcriptPath &&
+      bypassPhrasePresent(transcriptPath, COMMIT_SWEEP_BYPASS, 3)
+    ) {
+      process.exit(0)
+    }
+    const touchedStaged = staged.filter(
+      f => !unfamiliar.includes(f),
+    )
     process.stderr.write(
       [
-        '[overeager-staging-guard] ⚠ git commit about to sweep in files this session has not touched:',
+        '[overeager-staging-guard] Blocked: bare `git commit` would sweep in files this session did not touch:',
         '',
         ...unfamiliar.slice(0, 20).map(f => `    ${f}`),
         ...(unfamiliar.length > 20
           ? [`    ... and ${unfamiliar.length - 20} more`]
           : []),
         '',
-        '  Likely cause: a parallel Claude session staged these. The',
-        '  commit will include them under your authorship.',
+        '  Likely a parallel Claude session staged these — a bare commit',
+        '  would include them under your authorship.',
         '',
-        '  If unintended, abort and run:',
-        '    git restore --staged <file>     # to drop one file',
-        '    git reset HEAD                  # to drop everything',
+        '  Fix: commit ONLY your files by pathspec (ignores the rest of',
+        '  the index, parallel-session-safe):',
+        touchedStaged.length
+          ? `    git commit -o ${touchedStaged.slice(0, 8).join(' ')}${touchedStaged.length > 8 ? ' …' : ''}`
+          : '    git commit -o path/to/your-file.ts',
         '',
-        '  If intended, proceed — this is informational, not a block.',
+        '  Bypass (only if you genuinely mean to commit the whole index):',
+        '    user types "Allow index-sweep bypass" in chat, then retry.',
       ].join('\n') + '\n',
     )
-    process.exit(0)
+    process.exit(2)
   }
 
   process.exit(0)

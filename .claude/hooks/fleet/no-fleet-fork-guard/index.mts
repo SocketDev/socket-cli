@@ -13,14 +13,10 @@
 //   1. Resolving the absolute file path of the Edit/Write target.
 //   2. Checking if the path is INSIDE socket-wheelhouse/template/
 //      → allow (this IS the canonical home).
-//   3. Otherwise, checking if the path matches a fleet-canonical
-//      surface prefix:
-//        - .config/fleet/oxlint-plugin/
-//        - .git-hooks/
-//        - .claude/hooks/
-//        - .claude/skills/_shared/
-//        - docs/claude.md/
-//      → block.
+//   3. Otherwise, checking if the relative path contains /repo/ as a
+//      path segment → allow (per-repo, not cascaded).
+//   4. Otherwise, probing whether template/<rel> exists in the wheelhouse
+//      → block if it does (the template is the single source of truth).
 //
 // The bypass phrase: `Allow fleet-fork bypass`. Reading the recent
 // user turns from the transcript follows the same pattern as the
@@ -53,6 +49,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
 
 import { bypassPhrasePresent, readStdin } from '../_shared/transcript.mts'
 
@@ -62,41 +59,6 @@ type ToolInput = {
   transcript_path?: string | undefined
 }
 
-// Fleet-canonical directory prefixes. Matches relative-to-repo-root.
-// Order matters for nested prefixes (more-specific first), but these
-// are all leaves — no nesting between them.
-const CANONICAL_PREFIXES = [
-  '.config/fleet/oxlint-plugin/',
-  '.git-hooks/',
-  '.claude/hooks/',
-  '.claude/skills/_shared/',
-  'docs/claude.md/',
-]
-
-// Carve-out: paths under a CANONICAL_PREFIXES dir that are explicitly
-// per-repo (not cascaded). Mirrors the docs convention:
-//   docs/claude.md/fleet/  — cascaded, edited in template
-//   docs/claude.md/repo/   — local, edited in the host repo
-// And extends it to hooks + scripts:
-//   .claude/hooks/<name>/      — fleet (default; cascaded)
-//   .claude/hooks/repo/<name>/ — per-repo, local-only
-//   scripts/<name>             — fleet (default; cascaded)
-//   scripts/repo/<name>        — per-repo, local-only
-// Repo-local hooks/scripts let a host repo address one-off concerns
-// (e.g. socket-btm's gypi source-path quirk) without forcing the
-// whole fleet to carry the rule.
-const PER_REPO_PREFIXES = [
-  'docs/claude.md/repo/',
-  '.claude/hooks/repo/',
-  'scripts/repo/',
-]
-
-// Fleet-canonical individual files (not under one of the prefix
-// dirs). Matches relative-to-repo-root.
-const CANONICAL_FILES: string[] = [
-  // Add specific files here when needed. Most canonical content lives
-  // under the prefix dirs above.
-]
 
 const BYPASS_PHRASE = 'Allow fleet-fork bypass'
 
@@ -153,35 +115,14 @@ export function isCanonicalRelativePath(
   repoRoot?: string | undefined,
 ): boolean {
   const normalized = rel.replace(/\\/g, '/')
-  // Per-repo carve-outs take precedence over the canonical prefixes
-  // (they're more specific). Edits under these paths are intentionally
-  // per-repo and don't go through the fleet cascade.
-  for (let i = 0, { length } = PER_REPO_PREFIXES; i < length; i += 1) {
-    const prefix = PER_REPO_PREFIXES[i]!
-    if (normalized.startsWith(prefix)) {
-      return false
-    }
+  // A file is fleet-canonical iff its parent directory exists under
+  // template/ in the wheelhouse. Directory-level check: if the dir is
+  // in the template, every file in that dir is canonical.
+  if (repoRoot) {
+    const dir = path.posix.dirname(normalized)
+    return isDirSync(path.join(repoRoot, 'template', dir))
   }
-  for (let i = 0, { length } = CANONICAL_PREFIXES; i < length; i += 1) {
-    const prefix = CANONICAL_PREFIXES[i]!
-    if (normalized.startsWith(prefix)) {
-      return true
-    }
-  }
-  // `scripts/<x>` is fleet-canonical when it has a cascaded twin under
-  // `template/scripts/<x>` (the wheelhouse mirrors root scripts/ from the
-  // template; sync-scaffolding/ + validate-template.mts etc. are
-  // wheelhouse-only tooling with no template twin and are NOT canonical).
-  // A bare `scripts/` prefix would wrongly guard that wheelhouse-only set,
-  // so probe for the twin instead. `scripts/repo/` is already excluded above.
-  if (
-    repoRoot &&
-    normalized.startsWith('scripts/') &&
-    existsSync(path.join(repoRoot, 'template', normalized))
-  ) {
-    return true
-  }
-  return CANONICAL_FILES.includes(normalized)
+  return false
 }
 
 export function isInsideTemplate(filePath: string): boolean {

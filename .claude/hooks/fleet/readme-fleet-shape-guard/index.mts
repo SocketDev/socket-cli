@@ -109,6 +109,7 @@ export function isRootReadme(filePath: string): boolean {
     'crates',
     'docs',
     'examples',
+    'hooks',
     'packages',
     'pkg-node',
     'scripts',

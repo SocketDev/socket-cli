@@ -137,6 +137,13 @@ interface VerifyOptions {
   assetName: string
   tool: string
   quiet?: boolean | undefined
+  // When a tool has no checksums in release-assets.json at all, verification
+  // fails closed (`valid: false`) by default — an unverified download must
+  // not silently pass an integrity gate. Set `allowUnlisted: true` to opt a
+  // not-yet-tracked tool back into the old skip behavior (`valid: true,
+  // skipped: true`); use it only where downloading an untracked tool is
+  // intentional, and prefer adding the tool to release-assets.json instead.
+  allowUnlisted?: boolean | undefined
 }
 
 /**
@@ -152,10 +159,11 @@ interface VerifyOptions {
  * 3. Tool is in `release-assets.json` but `assetName` isn't listed → return `{
  *    valid: false }`. The likely cause is a stale embedded manifest; bump `tag`
  *    + `checksums` in `release-assets.json` and re-run.
- * 4. Tool isn't in `release-assets.json` at all → return `{ valid: true, skipped:
- *    true }` with a warning. This is the "release-assets.json doesn't track
- *    this tool yet" path; callers that need strict verification should treat
- *    `skipped` as a failure.
+ * 4. Tool isn't in `release-assets.json` at all → fail CLOSED: return `{ valid:
+ *    false }` with a warning. An untracked tool is an unverified download, so
+ *    it must not pass the integrity gate by default. Add the tool to
+ *    `release-assets.json`, or pass `allowUnlisted: true` to opt a
+ *    deliberately-untracked tool back into `{ valid: true, skipped: true }`.
  */
 export async function verifyReleaseChecksum(
   options: VerifyOptions,
@@ -193,8 +201,21 @@ export async function verifyReleaseChecksum(
     return { source: 'embedded', valid: false }
   }
 
-  if (!quiet) {
-    logger.warn(`No checksums found for ${tool}, skipping verification`)
+  if (options.allowUnlisted) {
+    if (!quiet) {
+      logger.warn(
+        `No checksums found for ${tool}; allowUnlisted set, skipping verification`,
+      )
+    }
+    return { skipped: true, valid: true }
   }
-  return { skipped: true, valid: true }
+  // Fail closed: an untracked tool is unverified, so it must not pass.
+  if (!quiet) {
+    logger.fail(
+      `No checksums found for ${tool} in release-assets.json — refusing to ` +
+        `treat the download as verified. Add ${tool} to release-assets.json, ` +
+        `or pass allowUnlisted to skip intentionally.`,
+    )
+  }
+  return { skipped: true, valid: false }
 }

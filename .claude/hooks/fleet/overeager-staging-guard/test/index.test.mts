@@ -186,7 +186,7 @@ test('env disable short-circuits', () => {
   assert.equal(r.code, 0)
 })
 
-// ─── Layer 2: warn on git commit with unfamiliar staged files ─────
+// ─── Layer 2: BLOCK a bare git commit that sweeps unfamiliar files ─
 
 test('git commit with empty index passes silently', () => {
   const r = runHook('git commit -m "x"', { cwd: tmpRepo })
@@ -194,7 +194,7 @@ test('git commit with empty index passes silently', () => {
   assert.equal(r.stderr, '')
 })
 
-test('git commit warns when index has files not touched this session', () => {
+test('bare git commit BLOCKS when index has files not touched this session', () => {
   writeFileSync(path.join(tmpRepo, 'parallel.ts'), '// other agent')
   gitAdd(tmpRepo, ['parallel.ts'])
   // Empty transcript — agent touched nothing.
@@ -203,10 +203,67 @@ test('git commit warns when index has files not touched this session', () => {
     cwd: tmpRepo,
     transcriptPath,
   })
-  // Layer 2 is informational — exit 0 with stderr warning.
-  assert.equal(r.code, 0)
+  // Parallel-cautious by default: a bare commit that would sweep the
+  // index is blocked (exit 2), steering to `git commit -o`.
+  assert.equal(r.code, 2)
   assert.match(r.stderr, /parallel\.ts/)
-  assert.match(r.stderr, /not touched/)
+  assert.match(r.stderr, /git commit -o/)
+})
+
+test('git commit -o <path> ALLOWS even with unfamiliar staged files', () => {
+  writeFileSync(path.join(tmpRepo, 'parallel.ts'), '// other agent')
+  gitAdd(tmpRepo, ['parallel.ts'])
+  const transcriptPath = writeTranscript([])
+  // Pathspec form commits ONLY the named path regardless of the index.
+  const r = runHook('git commit -o mine.ts -m "mine"', {
+    cwd: tmpRepo,
+    transcriptPath,
+  })
+  assert.equal(r.code, 0)
+  assert.equal(r.stderr, '')
+})
+
+test('git commit -- <path> ALLOWS even with unfamiliar staged files', () => {
+  writeFileSync(path.join(tmpRepo, 'parallel.ts'), '// other agent')
+  gitAdd(tmpRepo, ['parallel.ts'])
+  const transcriptPath = writeTranscript([])
+  const r = runHook('git commit -m "mine" -- mine.ts', {
+    cwd: tmpRepo,
+    transcriptPath,
+  })
+  assert.equal(r.code, 0)
+  assert.equal(r.stderr, '')
+})
+
+test('FLEET_SYNC=1 cascade commit ALLOWS a whole-index sweep', () => {
+  writeFileSync(path.join(tmpRepo, 'parallel.ts'), '// other agent')
+  gitAdd(tmpRepo, ['parallel.ts'])
+  const transcriptPath = writeTranscript([])
+  const r = runHook(
+    'FLEET_SYNC=1 git commit --no-verify -m "chore(wheelhouse): cascade template@abc123"',
+    { cwd: tmpRepo, transcriptPath },
+  )
+  assert.equal(r.code, 0)
+  assert.equal(r.stderr, '')
+})
+
+test('`Allow index-sweep bypass` lets a bare commit take the whole index', () => {
+  writeFileSync(path.join(tmpRepo, 'parallel.ts'), '// other agent')
+  gitAdd(tmpRepo, ['parallel.ts'])
+  const transcriptPath = writeTranscript([
+    {
+      type: 'user',
+      message: {
+        role: 'user',
+        content: [{ type: 'text', text: 'Allow index-sweep bypass' }],
+      },
+    },
+  ])
+  const r = runHook('git commit -m "mine"', {
+    cwd: tmpRepo,
+    transcriptPath,
+  })
+  assert.equal(r.code, 0)
 })
 
 test('git commit silent when index files match transcript Edit history', () => {

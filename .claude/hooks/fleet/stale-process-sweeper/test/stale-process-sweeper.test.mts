@@ -7,8 +7,16 @@ import path from 'node:path'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
+import { classify, classifyAgent, isSessionCriticalDaemon } from '../index.mts'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const HOOK = path.resolve(__dirname, '..', 'index.mts')
+
+// Build a minimal ProcRow for classify() — only `command` is read by
+// the pattern matcher; the rest satisfy the type.
+function row(command: string) {
+  return { command, elapsedSec: 0, pcpu: 0, pid: 1234, ppid: 1, rss: 0 }
+}
 
 // Run the hook with an empty stdin payload (Stop hook delivers JSON,
 // but the body is unused). Captures stderr + exit code.
@@ -35,6 +43,89 @@ function runHook(): Promise<{ code: number; stderr: string }> {
     child.stdin!.end('{}\n')
   })
 }
+
+test('stale-process-sweeper: classifies every sfw wrapper layout', () => {
+  // Regression: 2026-06-02 the sfw regex only matched `sfw/bin`, so the
+  // package-manager shims' real exec target
+  // (~/.socket/_wheelhouse/sfw-stable/sfw) went unmatched and leaked 44
+  // orphaned probe processes over ~7h. All known layouts must classify
+  // as 'sfw-wrapper'.
+  const layouts = [
+    '/Users/u/.socket/_wheelhouse/sfw-stable/sfw /lib/pnpm run test',
+    '/Users/u/.socket/_wheelhouse/bin/sfw-1.7.2 /lib/pnpm install',
+    '/Users/u/.socket/sfw/bin/sfw /lib/pnpm list',
+    '/Users/u/.socket/sfw/bin/sfw-1.7.2 /lib/pnpm --version',
+    '/home/u/.socket/_dlx/a1b2c3d4/sfw /lib/npm ci',
+    '/tmp/runner/sfw-bin/sfw.exe /lib/pnpm i',
+  ]
+  for (const cmd of layouts) {
+    assert.equal(classify(row(cmd)), 'sfw-wrapper', `should match: ${cmd}`)
+  }
+  // Windows-style backslash path: listProcesses() swaps `\` → `/` in the
+  // command before classify() sees it, so a `\`-separated sfw path matches
+  // once the separators are normalized. Mirror that swap here. A path with
+  // embedded spaces ("Program Files") and a `..` in an argument must
+  // survive the swap intact — only separators change, not path structure.
+  const winCmd = 'C:\\Users\\u\\.socket\\sfw\\bin\\sfw.exe pnpm i ..\\pkg'
+  assert.equal(classify(row(winCmd.replaceAll('\\', '/'))), 'sfw-wrapper')
+  // Plain pnpm (no sfw wrapper) must NOT classify as an sfw wrapper.
+  assert.notEqual(
+    classify(row('/Users/u/Library/pnpm/pnpm run test')),
+    'sfw-wrapper',
+  )
+})
+
+test('stale-process-sweeper: classifyAgent matches orphaned agent shapes', () => {
+  // Real PPID-1 leaks observed (12–19 days old) that motivated the
+  // agent-orphan sweep. classifyAgent only runs under --all + orphan gate.
+  const codexBroker =
+    '/Users/u/.nvm/versions/node/v26.1.0/bin/node /Users/u/projects/codex-plugin-cc/plugins/codex/scripts/app-server-broker.mjs serve --endpoint unix:/tmp/cxc-x/broker.sock'
+  const codexAppServer = 'node /tmp/codex-plugin-test-0oHwcO/codex app-server'
+  const claudeDoctor = 'claude doctor'
+  const taskPoller =
+    'bash -c until [ -f /tmp/claude-501/-Users-u-projects-x/abc/tasks/b2mpybdxn.output.exitcode ]; do sleep 2; done'
+  for (const cmd of [codexBroker, codexAppServer, claudeDoctor, taskPoller]) {
+    assert.notEqual(classifyAgent(row(cmd)), undefined, `should match: ${cmd}`)
+  }
+})
+
+test('stale-process-sweeper: classifyAgent does not match innocuous commands', () => {
+  // A project path containing "claude", a live editor, a plain node REPL,
+  // and the sweeper itself must NEVER classify as a reapable agent.
+  const safe = [
+    'node /Users/u/projects/claude-something/build.mjs',
+    '/Applications/Cursor.app/Contents/MacOS/Cursor',
+    'node --test ./src/foo.test.ts',
+    'vim app-server-notes.md',
+  ]
+  for (const cmd of safe) {
+    assert.equal(classifyAgent(row(cmd)), undefined, `must NOT match: ${cmd}`)
+  }
+  // And these are NOT build/test workers either.
+  for (const cmd of safe) {
+    assert.equal(classify(row(cmd)), undefined, `must NOT match worker: ${cmd}`)
+  }
+})
+
+test('stale-process-sweeper: never sweeps the token-minifier proxy', () => {
+  // The proxy is the live ANTHROPIC_BASE_URL backend; it runs detached
+  // (PPID 1) on purpose, so without this guard --all would reap it and
+  // break the session running the sweep. isSessionCriticalDaemon wins over every
+  // classifier.
+  const proxy =
+    'node /Users/u/.socket/_wheelhouse/socket-token-minifier/bin/socket-token-minifier.mts'
+  assert.equal(isSessionCriticalDaemon(proxy), true)
+  // A built .js entry under the same package path is still protected.
+  assert.equal(
+    isSessionCriticalDaemon('node /opt/socket-token-minifier/dist/proxy.js'),
+    true,
+  )
+  // Unrelated processes are not protected.
+  assert.equal(
+    isSessionCriticalDaemon('node /Users/u/projects/app/server.mjs'),
+    false,
+  )
+})
 
 test('stale-process-sweeper: exits 0 when nothing to sweep', async () => {
   const { code, stderr } = await runHook()

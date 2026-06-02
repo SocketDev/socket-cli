@@ -174,12 +174,31 @@ async function main(): Promise<void> {
       installers.setupCdxgen(),
       installers.setupSynp(),
     ])
+  // Native messaging host — optional step (only runs when the lib exports it).
+  // Allows the Chrome Trusted Publisher extension to call the OS keychain
+  // without the user having to set SOCKET_API_TOKEN in their browser environment.
+  let nativeHostOk = true
+  try {
+    const { installNativeHost, HOST_NAME } = await import(
+      '@socketsecurity/lib-stable/native-messaging/install'
+    )
+    const result = installNativeHost({ allowedOrigins: ['*'] })
+    logger.log(
+      `Native host:  installed → ${result.manifestPaths.join(', ')}`,
+    )
+    logger.log(`              name: ${HOST_NAME}`)
+  } catch {
+    // Not yet built or not available — skip silently. The extension falls
+    // back to SOCKET_API_TOKEN env var or the review-service token path.
+    logger.log('Native host:  skipped (not available in this build)')
+  }
   logger.log('')
 
   logger.log('=== Summary ===')
   logger.log(`AgentShield: ${agentshieldOk ? 'ready' : 'NOT AVAILABLE'}`)
   logger.log(`cdxgen:      ${cdxgenOk ? 'ready' : 'FAILED'}`)
   logger.log(`janus:       ${janusOk ? 'ready' : 'FAILED'}`)
+  logger.log(`Native host: ${nativeHostOk ? 'ready' : 'FAILED'}`)
   logger.log(`OpenGrep:    ${opengrepOk ? 'ready' : 'FAILED'}`)
   logger.log(`SFW:         ${sfwOk ? 'ready' : 'FAILED'}`)
   logger.log(`synp:        ${synpOk ? 'ready' : 'FAILED'}`)
@@ -192,6 +211,7 @@ async function main(): Promise<void> {
     agentshieldOk &&
     cdxgenOk &&
     janusOk &&
+    nativeHostOk &&
     opengrepOk &&
     sfwOk &&
     synpOk &&

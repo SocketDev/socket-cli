@@ -81,6 +81,19 @@ test('nested README is ignored', async () => {
   assert.strictEqual(result.code, 0)
 })
 
+test('nested hooks/<name>/README.md is ignored', async () => {
+  // A shipped product hook documents itself with a free-form README under
+  // hooks/<name>/; that directory is a scoped doc, not the repo root.
+  const result = await runHook({
+    tool_input: {
+      file_path: '/Users/x/projects/foo/hooks/socket-gate/README.md',
+      content: '# socket-gate\n\nNo canonical sections at all.\n',
+    },
+    tool_name: 'Write',
+  })
+  assert.strictEqual(result.code, 0)
+})
+
 test('canonical root README passes', async () => {
   const result = await runHook({
     tool_input: {

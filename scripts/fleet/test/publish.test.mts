@@ -138,14 +138,13 @@ describe('publish / main-guard', () => {
     )
   })
 
-  test('process.argv[1] doesn\'t match import.meta.url under test runner', () => {
+  test("process.argv[1] doesn't match import.meta.url under test runner", () => {
     // Sanity check the test environment: the runner's argv[1] is the
     // test entry, not publish.mts itself. If this assumption changes
     // (e.g. a different test runner), the main-guard test above could
     // give a false-positive pass.
-    const fileURLToPath = (
-      url: string,
-    ): string => new URL(url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+    const fileURLToPath = (url: string): string =>
+      new URL(url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
     const publishUrl = new URL('../publish.mts', import.meta.url).href
     assert.notEqual(process.argv[1], fileURLToPath(publishUrl))
   })

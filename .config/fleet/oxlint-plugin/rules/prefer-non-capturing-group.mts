@@ -65,6 +65,21 @@ const CAPTURE_USAGE_RES: readonly RegExp[] = [
   // string literal we matched above, the call signature suggests
   // capture-aware usage.
   /\.replace\([^)]*\$\d/,
+  // `.replace(re, (_, foo, ...) => ...)` — arrow callback with 2+ args
+  // means the second/third/... positional args are the regex's capture
+  // groups. Same for `StringPrototypeReplace(str, re, (_, foo) => ...)`.
+  // Without this marker the rule would happily strip the captures,
+  // leaving `foo` undefined and breaking the callback at runtime.
+  // The `_` first arg is the full match; we only key off the SECOND
+  // arg being present, because a single-arg callback (`c => ...`) is
+  // fine to fix. The `\/[^,]*,` segment skips the regex literal +
+  // its flags + the comma separating it from the callback so we don't
+  // get tripped up by `)` chars inside the regex itself (e.g.
+  // `.replace(/^([A-Z]):/i, (_, letter) => ...)`).
+  /\.replace\s*\([^)]*\/[^,]*,\s*(?:\(|function\s*\()[^)]*,\s*[\w$]/,
+  // `StringPrototypeReplace(str, re, callback)` variant — same shape,
+  // callback in arg position 3, regex in position 2.
+  /\bStringPrototypeReplace(?:All)?\s*\([^)]*,\s*[^,]*\/[^,]*,\s*(?:\(|function\s*\()[^)]*,\s*[\w$]/,
 ]
 
 function isLineMarkered(line: string): boolean {

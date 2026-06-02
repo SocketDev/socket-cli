@@ -79,7 +79,13 @@ const CHECKS: readonly GuardCheck[] = [
   {
     bypassPhrase: 'Allow no-verify bypass',
     label: 'git --no-verify (skips .git-hooks/ chain)',
-    pattern: /(?:^|\s)--no-verify\b/,
+    // `git rebase --no-verify` is exempt: rebase replays existing commits
+    // (already-passed hooks) and the pre-commit chain would re-run hooks
+    // on every replay, which both wastes work and can mutate content
+    // mid-rewrite (autofix → diverged commit). The block stays for
+    // `git commit --no-verify` and `git push --no-verify`, which is
+    // where the policy's actual risk lives.
+    matches: command => matchNoVerify(command),
   },
   {
     bypassPhrase: 'Allow gpg bypass',
@@ -222,6 +228,55 @@ const CHECKS: readonly GuardCheck[] = [
 //   stash clear|drop|pop
 //   clean -f / -xf / -df …
 //   rm -f / -rf
+// Match `--no-verify` anywhere in the command EXCEPT under `git rebase`.
+// Returns the offending substring for the block message, or `undefined`
+// when the flag is either absent or attached to an allowed subcommand.
+//
+// Allowed: `git rebase --no-verify ...` (replays existing commits; the
+// commit-hook chain ran when they were first authored — re-running it
+// during replay either no-ops or mutates content via autofix, both of
+// which diverge the rebase from intent).
+// Blocked: `git commit --no-verify`, `git push --no-verify`, env-var
+// inline (`--no-verify` as a value), any other subcommand. The bypass
+// phrase is still the way through for those.
+export function matchNoVerify(command: string): string | undefined {
+  if (!/(?:^|\s)--no-verify\b/.test(command)) {
+    return undefined
+  }
+  // Walk every `git ...` invocation in the command (handles pipes,
+  // `&&` chains, subshells via shell-quote tokenization). Track
+  // whether we ever owned a `--no-verify` so we can tell apart
+  // "all owners allowed" (return undefined) from "no git owner
+  // found at all" (fall through to defensive block).
+  let sawOwnedNoVerify = false
+  for (const c of commandsFor(command, 'git')) {
+    const [sub, ...rest] = c.args
+    const hasNoVerify = rest.some(a => a === '--no-verify')
+    if (!hasNoVerify) {
+      continue
+    }
+    sawOwnedNoVerify = true
+    if (sub === 'rebase') {
+      // Allowed shape — keep scanning. A chain like
+      // `git rebase --no-verify && git commit --no-verify` still
+      // has a forbidden second invocation we need to catch.
+      continue
+    }
+    return `git ${sub} --no-verify`
+  }
+  if (sawOwnedNoVerify) {
+    // Every `--no-verify` we saw was attached to an allowed
+    // subcommand (rebase). Let the command through.
+    return undefined
+  }
+  // The regex saw `--no-verify` but no `git` invocation owns it
+  // (e.g. it appears inside a quoted commit-message body, or under
+  // a different command entirely). Block defensively — false-positive
+  // on quoted text is the safer side here, since the bypass phrase
+  // is still a documented way through.
+  return '--no-verify'
+}
+
 export function matchDestructiveGit(command: string): string | undefined {
   for (const c of commandsFor(command, 'git')) {
     const [sub, ...rest] = c.args

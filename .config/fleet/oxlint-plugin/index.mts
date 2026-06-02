@@ -24,6 +24,7 @@ import noInlineDeferAsync from './rules/no-inline-defer-async.mts'
 import noInlineLogger from './rules/no-inline-logger.mts'
 import noLoggerNewlineLiteral from './rules/no-logger-newline-literal.mts'
 import noNpxDlx from './rules/no-npx-dlx.mts'
+import noPlatformSpecificHttpImport from './rules/no-platform-specific-import.mts'
 import noPlaceholders from './rules/no-placeholders.mts'
 import noProcessCwdInScriptsHooks from './rules/no-process-cwd-in-scripts-hooks.mts'
 import noPromiseRace from './rules/no-promise-race.mts'
@@ -51,11 +52,13 @@ import preferNonCapturingGroup from './rules/prefer-non-capturing-group.mts'
 import preferPureCallForm from './rules/prefer-pure-call-form.mts'
 import preferSafeDelete from './rules/prefer-safe-delete.mts'
 import preferSeparateTypeImport from './rules/prefer-separate-type-import.mts'
+import preferShellWin32 from './rules/prefer-shell-win32.mts'
 import preferSpawnOverExecsync from './rules/prefer-spawn-over-execsync.mts'
 import preferStableExternalSemver from './rules/prefer-stable-external-semver.mts'
 import preferStableSelfImport from './rules/prefer-stable-self-import.mts'
 import preferStaticTypeImport from './rules/prefer-static-type-import.mts'
 import preferUndefinedOverNull from './rules/prefer-undefined-over-null.mts'
+import preferWindowsTestHelpers from './rules/prefer-windows-test-helpers.mts'
 import socketApiTokenEnv from './rules/socket-api-token-env.mts'
 import sortBooleanChains from './rules/sort-boolean-chains.mts'
 import sortEqualityDisjunctions from './rules/sort-equality-disjunctions.mts'
@@ -90,6 +93,7 @@ const plugin = {
     'no-inline-logger': noInlineLogger,
     'no-logger-newline-literal': noLoggerNewlineLiteral,
     'no-npx-dlx': noNpxDlx,
+    'no-platform-specific-import': noPlatformSpecificHttpImport,
     'no-placeholders': noPlaceholders,
     'no-process-cwd-in-scripts-hooks': noProcessCwdInScriptsHooks,
     'no-promise-race': noPromiseRace,
@@ -117,11 +121,13 @@ const plugin = {
     'prefer-pure-call-form': preferPureCallForm,
     'prefer-safe-delete': preferSafeDelete,
     'prefer-separate-type-import': preferSeparateTypeImport,
+    'prefer-shell-win32': preferShellWin32,
     'prefer-spawn-over-execsync': preferSpawnOverExecsync,
     'prefer-stable-external-semver': preferStableExternalSemver,
     'prefer-stable-self-import': preferStableSelfImport,
     'prefer-static-type-import': preferStaticTypeImport,
     'prefer-undefined-over-null': preferUndefinedOverNull,
+    'prefer-windows-test-helpers': preferWindowsTestHelpers,
     'socket-api-token-env': socketApiTokenEnv,
     'sort-boolean-chains': sortBooleanChains,
     'sort-equality-disjunctions': sortEqualityDisjunctions,

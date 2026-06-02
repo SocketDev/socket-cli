@@ -1,15 +1,13 @@
 /**
  * @file Unit tests for the prefer-stable-external-semver oxlint rule. Spawns
- *   the real oxlint binary against fixture files in a tmp dir
- *   (see lib/rule-tester.mts). Skips silently when `oxlint` isn't on PATH so
- *   a fresh-laptop checkout doesn't false-fail before `pnpm install`
- *   materializes the bin link.
- *
- *   Why the rule exists: bare `semver` from npm carries weeks of fresh-tarball
- *   risk during the soak window. The wheelhouse vendors a pinned, vetted
- *   semver under `@socketsecurity/lib-stable/external/semver`. The rule
- *   rewrites bare `import ... from "semver"` to the vetted path; rewriting
- *   the path is deterministic so the autofix is safe.
+ *   the real oxlint binary against fixture files in a tmp dir (see
+ *   lib/rule-tester.mts). Skips silently when `oxlint` isn't on PATH so a
+ *   fresh-laptop checkout doesn't false-fail before `pnpm install` materializes
+ *   the bin link. Why the rule exists: bare `semver` from npm carries weeks of
+ *   fresh-tarball risk during the soak window. The wheelhouse vendors a pinned,
+ *   vetted semver under `@socketsecurity/lib-stable/external/semver`. The rule
+ *   rewrites bare `import ... from "semver"` to the vetted path; rewriting the
+ *   path is deterministic so the autofix is safe.
  */
 
 import { describe, test } from 'node:test'

@@ -19,6 +19,7 @@
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { appendFileSync, existsSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import http from 'node:http'
 import path from 'node:path'
 import process from 'node:process'
@@ -108,6 +109,65 @@ export function spawnDetached(): void {
 }
 
 /**
+ * Find PIDs listening on PROXY_PORT whose command line identifies them as OUR
+ * proxy (the socket-token-minifier binary), and SIGKILL them.
+ *
+ * Used when the port is held but /health is failing — a wedged or hung proxy
+ * instance from an earlier session. TWO independent safety gates so a HEALTHY
+ * shared proxy (one another session is using) is never killed:
+ *
+ * 1. Re-probe /health first and bail immediately if it's healthy — closes the
+ *    TOCTOU window between the caller's probe and this kill.
+ * 2. Only kill a PID whose command matches `socket-token-minifier`, so an
+ *    unrelated service holding the port is never touched. Best-effort; any
+ *    error is swallowed so the hook never blocks session start.
+ *
+ * Returns the number of stale instances killed.
+ */
+export async function reapWedgedProxy(): Promise<number> {
+  // Gate 1: never kill a healthy proxy. If it answers /health now, it's
+  // a live shared instance — leave it alone.
+  const probe = await probeHealth()
+  if (probe.healthy) {
+    return 0
+  }
+  let killed = 0
+  try {
+    // lsof -ti gives just the PIDs listening on the TCP port.
+    const lsof = spawnSync('lsof', ['-ti', `tcp:${PROXY_PORT}`], {
+      encoding: 'utf8',
+    })
+    const pids = String(lsof.stdout ?? '')
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean)
+    for (const pid of pids) {
+      const pidNum = Number(pid)
+      if (!Number.isInteger(pidNum) || pidNum <= 1) {
+        continue
+      }
+      // Gate 2: confirm this PID is actually our proxy before killing it.
+      const ps = spawnSync('ps', ['-o', 'command=', '-p', pid], {
+        encoding: 'utf8',
+      })
+      const command = String(ps.stdout ?? '')
+      if (!command.includes('socket-token-minifier')) {
+        continue
+      }
+      try {
+        process.kill(pidNum, 'SIGKILL')
+        killed += 1
+      } catch {
+        // Already gone, or no permission — skip.
+      }
+    }
+  } catch {
+    // lsof missing / unexpected failure — fail-closed, reap nothing.
+  }
+  return killed
+}
+
+/**
  * Append `export ANTHROPIC_BASE_URL=...` to CLAUDE_ENV_FILE so the session env
  * picks it up. Claude Code reads the file when assembling its child-process env
  * (per claude-code/src/utils/sessionEnvironment.ts).
@@ -145,13 +205,23 @@ async function main(): Promise<void> {
     return
   }
 
-  // (2) Port taken by something we don't recognize? If so, fail-closed —
-  // we don't want to clobber whatever is listening.
+  // (2) Port responded, but not healthy. Either OUR proxy is wedged
+  // (hung, not answering /health) or something unrelated holds the port.
+  // reapWedgedProxy() only kills a process whose command identifies it
+  // as the socket-token-minifier binary, so it's safe to attempt: if it
+  // reaps our stale instance we fall through to spawn a fresh one; if it
+  // reaps nothing, the port belongs to something else — fail-closed.
   if (initial.status !== undefined) {
+    const reaped = await reapWedgedProxy()
+    if (reaped === 0) {
+      emitSessionStartContext(
+        `port ${PROXY_PORT} responded with status ${initial.status} (not our proxy); skipping.`,
+      )
+      return
+    }
     emitSessionStartContext(
-      `port ${PROXY_PORT} responded with status ${initial.status} (not our proxy); skipping.`,
+      `reaped ${reaped} wedged proxy instance(s) on :${PROXY_PORT}; restarting.`,
     )
-    return
   }
 
   // (3) Binary installed?

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Claude Code Stop hook — compound-lessons-reminder.
 //
-// Flags assistant text that shows a repeat-finding pattern without
-// evidence of promoting it to a rule. CLAUDE.md "Compound lessons
-// into rules":
+// Flags assistant text OR behavior that shows a repeat-finding pattern
+// without evidence of promoting it to a rule. CLAUDE.md "Compound
+// lessons into rules":
 //
 //   When the same kind of finding fires twice — across two runs,
 //   two PRs, or two fleet repos — promote it to a rule instead of
@@ -11,19 +11,27 @@
 //   block, or a skill prompt — pick the lowest-friction surface.
 //   Always cite the original incident in a `**Why:**` line.
 //
-// Detection:
+// Detection (any signal fires the warning, missing rule-promotion
+// evidence keeps it firing):
 //
-//   1. Scan the assistant's prose for repeat-finding language: "again",
-//      "second time", "same X as before", "we've seen this before",
-//      "this is the third time", etc.
+//   1. **Prose signal** — assistant's text contains repeat-finding
+//      language: "again", "second time", "same X as before", "we've
+//      seen this before", etc.
 //
-//   2. Inspect the same turn's tool-use events for evidence of
-//      rule promotion: Edit/Write to CLAUDE.md, hooks/, or skills/.
-//      Or for a `**Why:**` line in any written content (the canonical
-//      shape for citing the original incident).
+//   2. **Behavioral signal** — the current turn edits a fleet-canonical
+//      file (hook / skill / lint rule / CLAUDE.md surface) that a
+//      previous turn within the session also edited. Repeated edits to
+//      the same surface, without a `**Why:**` line in the new content,
+//      is the actual repeat-finding pattern — prose may or may not
+//      mention it. Lookback: 5 prior assistant turns (cheap on long
+//      transcripts, broad enough to catch "fix it again 4 turns later").
 //
-//   3. If a repeat-finding mention exists but no rule promotion
-//      followed, warn.
+// Rule-promotion evidence (any one suppresses):
+//
+//   1. Edit/Write to a documented rule surface (CLAUDE.md, hooks/,
+//      skills/, fleet lint rules) in the current turn.
+//   2. A `**Why:**` line in the current turn's written content — the
+//      canonical shape for citing the original incident.
 //
 // Disable via SOCKET_COMPOUND_LESSONS_REMINDER_DISABLED.
 
@@ -34,6 +42,7 @@ import process from 'node:process'
 import {
   readLastAssistantText,
   readLastAssistantToolUses,
+  readPriorAssistantToolUses,
   readStdin,
   stripCodeFences,
 } from '../_shared/transcript.mts'
@@ -105,11 +114,91 @@ const RULE_SURFACE_PATTERNS: readonly RegExp[] = [
   /\/\.claude\/hooks\//,
   /\/\.claude\/skills\//,
   /\/template\/CLAUDE\.md\b/,
+  /\/\.config\/fleet\/oxlint-plugin\/rules\//,
+  /\/\.config\/fleet\/markdownlint-rules\//,
 ]
+
+// Fleet-canonical file surfaces — when edited in the current turn AND a
+// prior turn, that's a behavioral repeat-finding signal (the assistant is
+// patching the same canonical surface twice, instead of promoting the
+// underlying lesson to a rule). Broader than RULE_SURFACE_PATTERNS — also
+// catches per-hook scripts, per-skill mts files, fleet scripts.
+const FLEET_CANONICAL_FILE_PATTERNS: readonly RegExp[] = [
+  /\bCLAUDE\.md\b/,
+  /\/\.claude\/hooks\/fleet\//,
+  /\/\.claude\/skills\/fleet\//,
+  /\/\.claude\/agents\/fleet\//,
+  /\/\.claude\/commands\/fleet\//,
+  /\/\.config\/fleet\//,
+  /\/scripts\/fleet\//,
+  /\/docs\/claude\.md\/fleet\//,
+]
+
+function isFleetCanonicalPath(filePath: string): boolean {
+  for (let i = 0, { length } = FLEET_CANONICAL_FILE_PATTERNS; i < length; i += 1) {
+    if (FLEET_CANONICAL_FILE_PATTERNS[i]!.test(filePath)) {
+      return true
+    }
+  }
+  return false
+}
 
 interface RepeatFindingHit {
   readonly label: string
   readonly snippet: string
+}
+
+interface RepeatEditHit {
+  readonly path: string
+}
+
+/**
+ * Behavioral signal: compare the current turn's Edit/Write paths against
+ * prior turns' Edit/Write paths in the same session. Any path edited by both
+ * AND that lives under a fleet-canonical surface is a repeat-edit hit. The
+ * assistant patching the same hook / skill / CLAUDE.md surface twice is the
+ * actual compound-lessons-into-rules trigger — prose may not mention it.
+ *
+ * Lookback (default 5) caps how far back to walk in prior assistant turns,
+ * keeping the scan cheap on long transcripts.
+ */
+export function detectRepeatEdits(
+  currentToolUses: ReturnType<typeof readLastAssistantToolUses>,
+  priorToolUses: ReturnType<typeof readPriorAssistantToolUses>,
+): RepeatEditHit[] {
+  const currentPaths = new Set<string>()
+  for (let i = 0, { length } = currentToolUses; i < length; i += 1) {
+    const event = currentToolUses[i]!
+    if (event.name !== 'Edit' && event.name !== 'Write') {
+      continue
+    }
+    const filePath = event.input['file_path']
+    if (typeof filePath !== 'string' || !isFleetCanonicalPath(filePath)) {
+      continue
+    }
+    currentPaths.add(filePath)
+  }
+  if (currentPaths.size === 0) {
+    return []
+  }
+  const hits: RepeatEditHit[] = []
+  const seen = new Set<string>()
+  for (let i = 0, { length } = priorToolUses; i < length; i += 1) {
+    const event = priorToolUses[i]!
+    if (event.name !== 'Edit' && event.name !== 'Write') {
+      continue
+    }
+    const filePath = event.input['file_path']
+    if (typeof filePath !== 'string' || !currentPaths.has(filePath)) {
+      continue
+    }
+    if (seen.has(filePath)) {
+      continue
+    }
+    seen.add(filePath)
+    hits.push({ path: filePath })
+  }
+  return hits
 }
 
 export function detectRepeatFindings(text: string): RepeatFindingHit[] {
@@ -176,12 +265,32 @@ async function main(): Promise<void> {
   if (!text) {
     process.exit(0)
   }
-  const repeats = detectRepeatFindings(text)
-  if (repeats.length === 0) {
+  // Prose signal: assistant text mentions repeat-finding language.
+  const proseHits = detectRepeatFindings(text)
+  // Behavioral signal: current turn edits a fleet-canonical surface
+  // that a prior turn also edited (within the lookback window).
+  const currentToolUses = readLastAssistantToolUses(payload.transcript_path)
+  const priorToolUses = readPriorAssistantToolUses(payload.transcript_path, 5)
+  const editHits = detectRepeatEdits(currentToolUses, priorToolUses)
+
+  if (proseHits.length === 0 && editHits.length === 0) {
     process.exit(0)
   }
-  const toolUses = readLastAssistantToolUses(payload.transcript_path)
-  if (hasRulePromotionEvidence(toolUses, text)) {
+  // Rule-promotion check: suppress when there's evidence the assistant
+  // is already promoting the lesson to a rule.
+  //
+  // For the *prose-only* signal, accept either the file-path heuristic
+  // (Edit to CLAUDE.md / hooks/ / skills/) OR a `**Why:**` line.
+  //
+  // For the *behavioral* (repeat-edit) signal, the file-path heuristic
+  // is incompatible — by definition the current turn is editing a rule-
+  // surface file. So only a `**Why:**` line counts as suppression.
+  // Otherwise editing the same hook twice in a row would self-suppress.
+  const hasWhy = /\*\*Why:\*\*/.test(text)
+  if (hasWhy) {
+    process.exit(0)
+  }
+  if (editHits.length === 0 && hasRulePromotionEvidence(currentToolUses, text)) {
     process.exit(0)
   }
 
@@ -189,9 +298,13 @@ async function main(): Promise<void> {
     '[compound-lessons-reminder] Repeat finding detected without rule promotion:',
     '',
   ]
-  for (let i = 0, { length } = repeats; i < length; i += 1) {
-    const hit = repeats[i]!
-    lines.push(`  • "${hit.label}" — …${hit.snippet}…`)
+  for (let i = 0, { length } = proseHits; i < length; i += 1) {
+    const hit = proseHits[i]!
+    lines.push(`  • prose: "${hit.label}" — …${hit.snippet}…`)
+  }
+  for (let i = 0, { length } = editHits; i < length; i += 1) {
+    const hit = editHits[i]!
+    lines.push(`  • repeat-edit: ${hit.path}`)
   }
   lines.push('')
   lines.push('  CLAUDE.md "Compound lessons into rules": when the same kind of')

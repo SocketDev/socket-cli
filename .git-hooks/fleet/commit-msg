@@ -1,0 +1,21 @@
+#!/bin/sh
+# Git commit-msg hook entry point. Invoked by git when core.hooksPath
+# points at this directory (set by `node scripts/install-git-hooks.mts`
+# at `pnpm install` time). Defers to the .mts implementation.
+
+# Put the repo-pinned Node (.node-version) on PATH — git runs hooks with
+# the login shell's PATH, which may be an older system Node than the
+# hooks' floor (.mts type-stripping needs Node >= 25). See
+# _shared/resolve-node.sh.
+. "$(dirname "$0")/../_shared/resolve-node.sh"
+
+# Sanitize placeholder Socket API credentials so the .mts step's
+# subprocesses (which may invoke pnpm via the sfw shim) don't 401.
+for var in SOCKET_API_TOKEN SOCKET_API_KEY; do
+  eval "val=\${$var}"
+  if [ -n "$val" ] && ! printf '%s' "$val" | grep -q '^sktsec_'; then
+    unset "$var"
+  fi
+done
+
+exec node "$(dirname "$0")/commit-msg.mts" "$@"

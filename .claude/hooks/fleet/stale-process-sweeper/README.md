@@ -35,6 +35,29 @@ a _real_ in-progress run), and sends them `SIGTERM`.
 | `\btsgo\b`                             | TypeScript Go-based type checker |
 | `type-coverage/bin/type-coverage`      | Type coverage tool               |
 | `esbuild/(bin\|lib)/.*\bservice\b`     | esbuild's daemon service         |
+| `…/sfw` (several install layouts)      | Socket Firewall command wrappers |
+
+## Kill-everything mode (`--all`)
+
+The default Stop-hook sweep is conservative — only orphans + wedged
+workers, never healthy live-parent work. Run the hook directly with
+`--all` (or `--force`) for an explicit "stop all background processing
+and reap orphans now":
+
+```bash
+node .claude/hooks/fleet/stale-process-sweeper/index.mts --all
+```
+
+`--all` SIGKILLs every matched build/test worker regardless of parent
+liveness, **and** additionally reaps a set of orphaned AI-agent
+processes that only this mode considers (and only when orphaned —
+PPID 1 or dead parent — so a live sibling session is never touched):
+
+| Pattern              | What it matches                                                   |
+| -------------------- | ----------------------------------------------------------------- |
+| `codex-app-server`   | Codex app-server + its `app-server-broker` brokers                |
+| `claude-cli`         | Detached `claude doctor` / `update` / `mcp` / `migrate-installer` |
+| `claude-task-poller` | Orphaned `bash` loops waiting on a task `.output.exitcode`        |
 
 ## What's not swept
 
@@ -42,6 +65,12 @@ a _real_ in-progress run), and sends them `SIGTERM`.
   Those are part of an in-progress run; killing them would break
   legitimate work.
 - The Claude Code process itself or its parent terminal.
+- **Session-critical daemons** (`isSessionCriticalDaemon`) — the
+  token-minifier proxy that backs `ANTHROPIC_BASE_URL` runs detached
+  (PPID 1) on purpose; it is never swept, even under `--all`, because
+  killing it would break the live session running the sweep.
+- AI-agent processes with a **live** parent (a real running session) —
+  even under `--all`, only orphaned agents are reaped.
 - Anything outside the pattern list. The sweeper is conservative —
   if a stuck process isn't pattern-matched, it survives.
 

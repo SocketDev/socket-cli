@@ -2,14 +2,13 @@
  * @file Unit tests for the no-top-level-await oxlint rule. Spawns the real
  *   oxlint binary against fixture files in a tmp dir (see lib/rule-tester.mts).
  *   Skips silently when `oxlint` isn't on PATH so a fresh-laptop checkout
- *   doesn't false-fail before `pnpm install` materializes the bin link.
- *
- *   Why the rule exists: fleet bundles publish to CJS (rolldown CJS output)
- *   and CJS does not support module-scope `await`. A regression there either
- *   fails the bundle outright or silently emits an uninitialized export.
- *   The valid cases pin the supported escape hatches (await inside an async
- *   function, an async IIFE, the `socket-hook: allow top-level-await`
- *   comment) so a future refactor can't quietly drop them.
+ *   doesn't false-fail before `pnpm install` materializes the bin link. Why the
+ *   rule exists: fleet bundles publish to CJS (rolldown CJS output) and CJS
+ *   does not support module-scope `await`. A regression there either fails the
+ *   bundle outright or silently emits an uninitialized export. The valid cases
+ *   pin the supported escape hatches (await inside an async function, an async
+ *   IIFE, the `socket-hook: allow top-level-await` comment) so a future
+ *   refactor can't quietly drop them.
  */
 
 import { describe, test } from 'node:test'

@@ -1,31 +1,36 @@
 ---
-description: Install Socket Firewall (SFW) + AgentShield (AI scanner) + Zizmor (GH Actions scanner) for local security scanning
+description: Install all Socket security tools — SFW, AgentShield, Zizmor, TruffleHog, Trivy, OpenGrep, and more. Also prompts for the API token and persists it to the OS keychain. Run /setup-repo for the full onboarding wizard.
 ---
 
-Set up all Socket security tools for local development.
+Install all Socket security tools for local development.
 
 ## What this sets up
 
-1. **AgentShield** — scans Claude config for prompt injection and secrets
-2. **Zizmor** — static analysis for GitHub Actions workflows
-3. **SFW (Socket Firewall)** — intercepts package manager commands to scan for malware
+| Tool | Purpose |
+|---|---|
+| **AgentShield** | Scans Claude config for prompt injection and secrets |
+| **Zizmor** | Static analysis for GitHub Actions workflows |
+| **SFW** | Socket Firewall — intercepts package installs to scan for malware |
+| **TruffleHog** | Secret scanning |
+| **Trivy** | Container and filesystem vulnerability scanning |
+| **OpenGrep** | Semantic code analysis |
+| **uv** | Python package manager (for tools with Python deps) |
 
-## Setup
+Also: API token prompt → OS keychain, native messaging host, shell rc bridge.
 
-First, ask the user if they have a Socket API token for SFW enterprise features.
+## Sub-commands (run individually if needed)
 
-If they do:
+- `/setup-token` — token + keychain only
+- `/setup-native-host` — Chrome native host manifest
+- `/setup-trusted-publisher-extension` — Trusted Publisher extension
+- `/setup-sfw` — SFW only
+- `/setup-agentshield` — AgentShield only
+- `/setup-zizmor` — Zizmor only
 
-1. Ask them to provide it
-2. Write it to `.env.local` as `SOCKET_API_TOKEN=<their-token>` (create if needed). The deprecated `SOCKET_API_KEY` name is also accepted as an alias for one cycle, but new files should use `SOCKET_API_TOKEN`.
-3. Verify `.env.local` is in `.gitignore` — if not, add it and warn
-
-If they don't, proceed with SFW free mode.
-
-Then run:
+## Run everything
 
 ```bash
-node .claude/hooks/fleet/setup-security-tools/index.mts
+node .claude/hooks/fleet/setup-security-tools/install.mts
 ```
 
 After the script completes, add the SFW shim directory to PATH:
@@ -36,10 +41,6 @@ export PATH="$HOME/.socket/_wheelhouse/shims:$PATH"
 
 ## Notes
 
-- Safe to re-run (idempotent)
-- AgentShield needs `pnpm install` (it's a devDep)
-- Zizmor is cached at `~/.socket/zizmor/bin/`
-- SFW binary is cached via dlx at `~/.socket/_dlx/`
-- SFW shims are shared across repos at `~/.socket/_wheelhouse/shims/`
-- `.env.local` must NEVER be committed
-- `/update` will check for new versions of these tools via `node .claude/hooks/fleet/setup-security-tools/update.mts`
+- Safe to re-run (idempotent — skips tools already at current version)
+- Token is stored in the OS keychain, NOT in `.env.local`
+- `/update-security` will check for new versions of these tools

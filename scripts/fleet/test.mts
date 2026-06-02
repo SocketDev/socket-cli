@@ -27,10 +27,19 @@
 // flow is sync (test runner invocation + exit-code aggregation).
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import type { SpawnSyncOptions } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
+
+// The fleet-canonical vitest config lives at .config/repo/vitest.config.mts in
+// single-package repos. A monorepo may have no root config — its configs live
+// per package (packages/<pkg>/vitest.config.mts). Only pass `--config` when the
+// root config actually exists; otherwise let vitest discover (per-package
+// configs in a monorepo, or its own default). Hard-coding the flag broke
+// `pnpm test` in monorepos with no root config (UNRESOLVED_ENTRY).
+const ROOT_VITEST_CONFIG = '.config/repo/vitest.config.mts'
 
 const args = process.argv.slice(2)
 const mode: 'staged' | 'all' | 'modified' = args.includes('--all')
@@ -103,15 +112,12 @@ function shouldEscalate(files: string[]): boolean {
 
 function runVitest(vitestArgs: string[], label: string): number {
   log(`Test scope: ${label}`)
+  const configArgs = existsSync(ROOT_VITEST_CONFIG)
+    ? ['--config', ROOT_VITEST_CONFIG]
+    : []
   const r = spawnSync(
     'pnpm',
-    [
-      'exec',
-      'vitest',
-      ...vitestArgs,
-      '--config',
-      '.config/repo/vitest.config.mts',
-    ],
+    ['exec', 'vitest', ...vitestArgs, ...configArgs],
     // Windows shell-shim rationale: see useShell at file top.
     { shell: useShell, stdio },
   )

@@ -1,0 +1,107 @@
+#!/bin/sh
+# Git pre-commit hook entry point. Invoked by git when core.hooksPath
+# points at this directory (set by `node scripts/install-git-hooks.mts`
+# at `pnpm install` time).
+#
+# Optional checks — can be bypassed with --no-verify for fast local
+# commits. Mandatory security checks ALSO run in pre-push hook.
+#
+# Use --no-verify for:
+# - History operations (squash, rebase, amend)
+# - Emergency hotfixes
+# - When tests require binaries that haven't been built yet
+#
+# Use environment variables to selectively disable:
+# - DISABLE_PRECOMMIT_LINT=1 to skip linting
+# - DISABLE_PRECOMMIT_TEST=1 to skip testing
+
+# Skip guards during rebase — commits are being replayed; lint/test on
+# each pick is noisy and slow. Signing is unaffected: git signs via
+# commit.gpgsign config, not this hook.
+GIT_DIR="$(git rev-parse --git-dir 2>/dev/null)"
+if [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
+  exit 0
+fi
+
+# Put the repo-pinned Node (.node-version) on PATH — git runs hooks with
+# the login shell's PATH, which may be an older system Node than the
+# hooks' floor (.mts type-stripping needs Node >= 25). See
+# _shared/resolve-node.sh.
+. "$(dirname "$0")/../_shared/resolve-node.sh"
+
+# Sanitize placeholder Socket API credentials. Some shell setups
+# export `SOCKET_API_TOKEN=literal-value` (or similar placeholders
+# used in onboarding docs) which causes Socket Firewall's sfw
+# pnpm-shim to return 401 on every invocation and block the
+# pre-commit chain before any check runs. A real Socket API key
+# is a `sktsec_…` token; anything that doesn't start with `sktsec_`
+# is treated as a placeholder and unset for this hook's subprocess.
+for var in SOCKET_API_TOKEN SOCKET_API_KEY; do
+  eval "val=\${$var}"
+  if [ -n "$val" ] && ! printf '%s' "$val" | grep -q '^sktsec_'; then
+    echo "[pre-commit] unsetting placeholder $var (was: '$val') so pnpm/sfw doesn't 401."
+    unset "$var"
+  fi
+done
+
+# Run Socket security pre-commit checks (API keys, .DS_Store, etc.).
+node "$(dirname "$0")/pre-commit.mts"
+
+# Check if pnpm is available.
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "Error: pnpm not found. Install pnpm to run git hooks."
+  echo "Visit: https://pnpm.io/installation"
+  exit 1
+fi
+
+# Error-visibility helper. When lint/test fails, harness output often
+# shows only a final "Failed with non-blocking status code" line — the
+# actual error is buried thousands of lines up the log and gets clipped
+# by the agent's stdout limits. Tee each step's output to a tempfile,
+# tail it on failure with a clear marker so the operator (or agent)
+# can see what broke without scrolling.
+run_step() {
+  step_name=$1
+  shift
+  step_log=$(mktemp -t "pre-commit-${step_name}.XXXXXX") || step_log=/tmp/pre-commit-step.log
+  if "$@" 2>&1 | tee "$step_log"; then
+    status=0
+  else
+    status=$?
+  fi
+  if [ "$status" -ne 0 ]; then
+    printf '\n========== pre-commit: %s FAILED (exit %s) ==========\n' "$step_name" "$status"
+    printf 'Last 60 lines of output:\n\n'
+    tail -60 "$step_log"
+    printf '\n========== full log: %s ==========\n' "$step_log"
+  else
+    rm -f "$step_log"
+  fi
+  return "$status"
+}
+
+if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
+  run_step lint pnpm lint --staged || exit $?
+else
+  echo "Skipping lint due to DISABLE_PRECOMMIT_LINT env var"
+fi
+
+if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
+  # Each repo's `pnpm test` script wraps a runner that understands
+  # `--staged` (e.g. scripts/test.mts forwards staged-filtering to
+  # vitest, or filters the staged set in a pre-pass). When
+  # DISABLE_PRECOMMIT_LINT is set, also pass --fast so the test
+  # runner skips its embedded format/lint check (otherwise lint
+  # bypass leaks through this path and re-blocks the commit).
+  #
+  # Repos whose `pnpm test` is bare vitest without a wrapper need a
+  # local override that pre-filters with `git diff --cached --name-only`
+  # then runs `pnpm test`.
+  if [ -n "${DISABLE_PRECOMMIT_LINT}" ]; then
+    run_step test pnpm test --staged --fast || exit $?
+  else
+    run_step test pnpm test --staged || exit $?
+  fi
+else
+  echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"
+fi

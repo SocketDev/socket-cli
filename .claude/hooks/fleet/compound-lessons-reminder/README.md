@@ -1,6 +1,6 @@
 # compound-lessons-reminder
 
-Stop hook that flags repeat-finding language in the assistant's most-recent turn that isn't accompanied by rule promotion.
+Stop hook that flags repeat-finding patterns in the assistant's most-recent turn that aren't accompanied by rule promotion.
 
 ## Why
 
@@ -11,6 +11,10 @@ CLAUDE.md "Compound lessons into rules":
 This hook catches the failure mode where the assistant notices a recurring bug class but fixes it again instead of writing the rule that would prevent the next occurrence.
 
 ## What it catches
+
+Two independent signals fire the warning:
+
+### Prose signal
 
 Repeat-finding language in the assistant's prose:
 
@@ -24,14 +28,35 @@ Repeat-finding language in the assistant's prose:
 
 Code fences are stripped first so quoted phrases don't false-positive.
 
-If a repeat-finding mention is found, the hook then checks the same turn's tool-use events for evidence of rule promotion:
+### Behavioral signal
 
-- Edit/Write to `CLAUDE.md`
-- Edit/Write to `.claude/hooks/*`
-- Edit/Write to `.claude/skills/*`
-- A `**Why:**` line anywhere in the written content (canonical citation shape)
+The current turn edits a fleet-canonical file (hook / skill / agent / lint rule / CLAUDE.md / fleet script / fleet doc) that a prior turn within the same session also edited. Repeated edits to the same canonical surface without a rule-promotion `**Why:**` citation is the actual compound-lessons-into-rules pattern — prose may or may not mention it.
 
-If any of those is present, the hook is satisfied — the rule got written.
+Lookback: 5 prior assistant turns (cheap on long transcripts, broad enough to catch "fix it again 4 turns later").
+
+Surfaces that count:
+
+- `CLAUDE.md` (root, template/, any path)
+- `.claude/hooks/fleet/**`
+- `.claude/skills/fleet/**`
+- `.claude/agents/fleet/**`
+- `.claude/commands/fleet/**`
+- `.config/fleet/**`
+- `scripts/fleet/**`
+- `docs/claude.md/fleet/**`
+
+Edits to non-fleet-canonical paths (`src/`, `test/`, repo-local `.claude/hooks/repo/`) don't fire — those aren't fleet-shared surfaces, so the compound-lessons-into-rules pattern doesn't apply.
+
+## Suppression
+
+The warning is suppressed when either signal of rule promotion is present:
+
+| Suppressor                         | Applies to              |
+| ---------------------------------- | ----------------------- |
+| `**Why:**` line in current turn    | both signals            |
+| Edit to CLAUDE.md / hooks/ / skills/ in current turn | prose-only signal       |
+
+The file-path heuristic only suppresses the **prose** signal. The behavioral signal is *itself* an edit to a rule surface, so the file-path heuristic would self-suppress every repeat-edit hit. Only a `**Why:**` citation counts as suppression for the behavioral signal.
 
 ## Why it doesn't block
 

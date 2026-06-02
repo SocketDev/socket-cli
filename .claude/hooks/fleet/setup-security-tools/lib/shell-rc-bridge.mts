@@ -34,8 +34,8 @@ import process from 'node:process'
 // Sentinels are intentionally simple — no env-var names in the
 // BEGIN/END lines so user search-replace on a token name can't
 // accidentally orphan the block.
-const BLOCK_BEGIN = '# BEGIN socket-cli env (managed)'
-const BLOCK_END = '# END socket-cli env'
+const BLOCK_BEGIN = '# BEGIN socketsecurity env (managed)'
+const BLOCK_END = '# END socketsecurity env'
 
 /**
  * Build the managed block body. Takes the literal token value so the shell
@@ -49,7 +49,7 @@ export function buildBlockBody(token: string): string {
   const quoted = shellSingleQuote(token)
   return `# Token persisted by setup-security-tools install.mts.
 # Rotate via: node .claude/hooks/fleet/setup-security-tools/install.mts --rotate
-# Keychain copy still lives at: security find-generic-password -s socket-cli -a SOCKET_API_KEY
+# Keychain copy still lives at: security find-generic-password -s socketsecurity -a SOCKET_API_KEY
 # SOCKET_API_KEY is universally supported across Socket tools (CLI, SDK, sfw,
 # fleet scripts) — one env var covers the whole surface with no fallback chain.
 export SOCKET_API_KEY=${quoted}`
@@ -124,7 +124,7 @@ export function installShellRcBridge(
   // block before writing the new one closes that loop without
   // double-appending.
   const legacyRe =
-    /\n*# BEGIN socket-cli keychain bridge \(managed\)[\s\S]*?# END socket-cli keychain bridge\n?/g
+    /\n*# BEGIN socket-cli (?:keychain bridge \(managed\)|env \(managed\))[\s\S]*?# END socket-cli (?:keychain bridge|env)\n?/g
   existing = existing.replace(legacyRe, '\n')
 
   // Look for an existing canonical block. Capture the BEGIN line,

@@ -76,6 +76,10 @@ Canonical module set:
 
 **The classifier is the highest-value module to extract.** Get the result-bucketing logic wrong and the runner silently masks regressions. Keep it pure (no I/O, no globals).
 
+**Run tests via `<binary> -e <composed script>`, not by loading an `.mjs` entry file.** The runner CLI + its `<corpus>/` modules run on the host's modern Node, so they're `.mts`. To run a test _inside the built binary_ (e.g. a custom Node built `--without-amaro`, which strips out TypeScript support), compose one self-contained script in the `.mts` executor — harness text + the test's META scripts + the test source + a run epilogue, joined with newlines — and pass it via `<binary> -e <script>`. The executor reads each piece with `readFileSync`, so the harness lives as plain `.js`/`.cjs` _text_ that's concatenated, never resolved as a module. Nothing the binary loads is `.mts`, so its no-type-stripping limit never bites, and everything author-side stays `.mts` with lint + highlighting. test262 (`composeScript` → `binary -e`) and socket-btm's WPT streams runner both use this shape.
+
+Avoid spawning a persisted `.mjs` _entry file_ inside the binary. If you ever must (a test genuinely needs to be the module entry point, not concatenated text), that file **must** stay `.mjs` — the `--without-amaro` runtime can't parse `.mts` — with a top-of-file comment saying why, so a future "convert .mjs → .mts" sweep doesn't break it. socket-btm's `smol-manifest-*-live.mjs` drivers are the remaining example. Prefer the `-e` shape; it's strictly friendlier.
+
 ### 3. Integration vitest wrapper (auto-gate)
 
 A ~20-line `.test.mts` under `test/integration/` that:

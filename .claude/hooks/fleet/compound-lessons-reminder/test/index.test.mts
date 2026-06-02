@@ -44,6 +44,43 @@ function makeTranscript(
   }
 }
 
+interface AssistantTurn {
+  text: string
+  toolUses?: readonly ToolUse[]
+}
+
+function makeMultiTurnTranscript(
+  turns: readonly AssistantTurn[],
+): { path: string; cleanup: () => void } {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'compound-multi-'))
+  const transcriptPath = path.join(dir, 'session.jsonl')
+  const lines: string[] = []
+  for (let i = 0, { length } = turns; i < length; i += 1) {
+    const turn = turns[i]!
+    lines.push(JSON.stringify({ role: 'user', content: 'continue' }))
+    const content: object[] = [{ type: 'text', text: turn.text }]
+    const uses = turn.toolUses ?? []
+    for (let j = 0, ul = uses.length; j < ul; j += 1) {
+      content.push({
+        type: 'tool_use',
+        name: uses[j]!.name,
+        input: uses[j]!.input,
+      })
+    }
+    lines.push(
+      JSON.stringify({
+        type: 'assistant',
+        message: { role: 'assistant', content },
+      }),
+    )
+  }
+  writeFileSync(transcriptPath, lines.join('\n'))
+  return {
+    path: transcriptPath,
+    cleanup: () => rmSync(dir, { recursive: true, force: true }),
+  }
+}
+
 function runHook(transcriptPath: string): { stderr: string; exitCode: number } {
   const result = spawnSync('node', [HOOK_PATH], {
     input: JSON.stringify({ transcript_path: transcriptPath }),
@@ -186,6 +223,162 @@ test('disabled env var short-circuits', () => {
     })
     assert.equal(result.status, 0)
     assert.equal(result.stderr, '')
+  } finally {
+    cleanup()
+  }
+})
+
+// Behavioral signal — repeated edits to fleet-canonical surfaces.
+
+test('flags repeat edit to same hook file across turns', () => {
+  const { path: p, cleanup } = makeMultiTurnTranscript([
+    {
+      text: 'First fix.',
+      toolUses: [
+        {
+          name: 'Edit',
+          input: {
+            file_path: '/repo/template/.claude/hooks/fleet/my-hook/index.mts',
+            old_string: 'a',
+            new_string: 'b',
+          },
+        },
+      ],
+    },
+    {
+      text: 'Patching it again.',
+      toolUses: [
+        {
+          name: 'Edit',
+          input: {
+            file_path: '/repo/template/.claude/hooks/fleet/my-hook/index.mts',
+            old_string: 'b',
+            new_string: 'c',
+          },
+        },
+      ],
+    },
+  ])
+  try {
+    const { stderr, exitCode } = runHook(p)
+    assert.equal(exitCode, 0)
+    assert.match(stderr, /compound-lessons-reminder/)
+    assert.match(stderr, /repeat-edit/)
+    assert.match(stderr, /my-hook/)
+  } finally {
+    cleanup()
+  }
+})
+
+test('does NOT flag repeat edit when current turn has **Why:** citation', () => {
+  const { path: p, cleanup } = makeMultiTurnTranscript([
+    {
+      text: 'First fix.',
+      toolUses: [
+        {
+          name: 'Edit',
+          input: {
+            file_path: '/repo/template/CLAUDE.md',
+            old_string: 'a',
+            new_string: 'b',
+          },
+        },
+      ],
+    },
+    {
+      text: 'Adding the rule.\n\n**Why:** the regex bug already cost us two PRs.',
+      toolUses: [
+        {
+          name: 'Edit',
+          input: {
+            file_path: '/repo/template/CLAUDE.md',
+            old_string: 'b',
+            new_string: 'c',
+          },
+        },
+      ],
+    },
+  ])
+  try {
+    const { stderr } = runHook(p)
+    assert.equal(stderr, '')
+  } finally {
+    cleanup()
+  }
+})
+
+test('does NOT flag edits to non-fleet-canonical paths', () => {
+  const { path: p, cleanup } = makeMultiTurnTranscript([
+    {
+      text: 'First edit.',
+      toolUses: [
+        {
+          name: 'Edit',
+          input: {
+            file_path: '/repo/src/app.ts',
+            old_string: 'a',
+            new_string: 'b',
+          },
+        },
+      ],
+    },
+    {
+      text: 'Another edit to the same file.',
+      toolUses: [
+        {
+          name: 'Edit',
+          input: {
+            file_path: '/repo/src/app.ts',
+            old_string: 'b',
+            new_string: 'c',
+          },
+        },
+      ],
+    },
+  ])
+  try {
+    const { stderr } = runHook(p)
+    assert.equal(stderr, '')
+  } finally {
+    cleanup()
+  }
+})
+
+test('detects repeat edit beyond immediate prior turn (lookback)', () => {
+  const { path: p, cleanup } = makeMultiTurnTranscript([
+    {
+      text: 'Turn A: patch hook.',
+      toolUses: [
+        {
+          name: 'Edit',
+          input: {
+            file_path: '/repo/template/.claude/hooks/fleet/my-hook/index.mts',
+            old_string: 'a',
+            new_string: 'b',
+          },
+        },
+      ],
+    },
+    { text: 'Turn B: unrelated work.' },
+    { text: 'Turn C: more unrelated work.' },
+    {
+      text: 'Turn D: patching the hook again.',
+      toolUses: [
+        {
+          name: 'Edit',
+          input: {
+            file_path: '/repo/template/.claude/hooks/fleet/my-hook/index.mts',
+            old_string: 'b',
+            new_string: 'c',
+          },
+        },
+      ],
+    },
+  ])
+  try {
+    const { stderr } = runHook(p)
+    assert.match(stderr, /repeat-edit/)
+    assert.match(stderr, /my-hook/)
   } finally {
     cleanup()
   }

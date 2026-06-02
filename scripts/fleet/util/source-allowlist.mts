@@ -125,10 +125,10 @@ export interface SourceAllowlistEntry {
 
   /**
    * Base file name of the binary (no extension, no platform suffix). Combined
-   * with `kind` + the triplet to derive the in-tail path. Example:
-   * `binaryName: 'acorn'` + `kind: 'cli'` + triplet `win32-x64` →
-   * `bin/acorn.exe`; `binaryName: 'iocraft'` + `kind: 'napi'` + triplet
-   * `darwin-arm64` → `iocraft.node`.
+   * with `kind` + the triplet to derive the in-tail path. Example: `binaryName:
+   * 'acorn'` + `kind: 'cli'` + triplet `win32-x64` → `bin/acorn.exe`;
+   * `binaryName: 'iocraft'` + `kind: 'napi'` + triplet `darwin-arm64` →
+   * `iocraft.node`.
    */
   readonly binaryName: string
 
@@ -218,17 +218,17 @@ export function buildTailPackageName(
 }
 
 /**
- * Compute the in-tail path for the staged binary. Centralized so every
- * consumer derives the same shape:
+ * Compute the in-tail path for the staged binary. Centralized so every consumer
+ * derives the same shape:
  *
- *   - `napi` → `<binaryName>.node` (next to package.json).
- *   - `cli` + win32-* triplet → `bin/<binaryName>.exe`.
- *   - `cli` + non-win32 triplet → `bin/<binaryName>`.
+ * - `napi` → `<binaryName>.node` (next to package.json).
+ * - `cli` + win32-* triplet → `bin/<binaryName>.exe`.
+ * - `cli` + non-win32 triplet → `bin/<binaryName>`.
  *
  * Consumers pass this as the `binaryPathInTail` callback to
- * `stageMultiPackagePublish()`. Centralizing prevents per-consumer ternary drift
- * (today's NAPI consumers all do the same thing; tomorrow they'd all need to
- * remember the win32 suffix when they grow to CLI families too).
+ * `stageMultiPackagePublish()`. Centralizing prevents per-consumer ternary
+ * drift (today's NAPI consumers all do the same thing; tomorrow they'd all need
+ * to remember the win32 suffix when they grow to CLI families too).
  */
 export function buildBinaryPathInTail(
   entry: SourceAllowlistEntry,

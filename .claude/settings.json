@@ -18,6 +18,10 @@
           },
           {
             "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/claude-md-prefer-external-detail-reminder/index.mts"
+          },
+          {
+            "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/claude-md-section-size-guard/index.mts"
           },
           {
@@ -35,6 +39,10 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/no-disable-lint-rule-guard/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/git-config-write-guard/index.mts"
           },
           {
             "type": "command",
@@ -238,6 +246,10 @@
           },
           {
             "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/git-config-write-guard/index.mts"
+          },
+          {
+            "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/no-blind-keychain-read-guard/index.mts"
           },
           {
@@ -331,6 +343,11 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/broken-hook-detector/index.mts",
             "timeout": 8
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/git-config-write-guard/index.mts",
+            "timeout": 4
           }
         ]
       }

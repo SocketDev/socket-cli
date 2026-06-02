@@ -65,6 +65,71 @@ describe('socket/prefer-non-capturing-group', () => {
             '',
           ].join('\n'),
         },
+        {
+          name: '.replace with arrow callback destructuring captures',
+          code: [
+            'export function f(s: string) {',
+            '  return s.replace(/^([A-Z]):/i, (_, letter) => letter.toLowerCase())',
+            '}',
+            '',
+          ].join('\n'),
+        },
+        {
+          name: '.replace with arrow callback, multi-line',
+          code: [
+            'export function f(s: string) {',
+            '  return s.replace(',
+            '    /^\\/([a-zA-Z])($|\\/)/,',
+            '    (_, letter, sep) => `${letter.toUpperCase()}:${sep || "/"}`,',
+            '  )',
+            '}',
+            '',
+          ].join('\n'),
+        },
+        {
+          name: '.replace with function-expression callback destructuring captures',
+          code: [
+            'export function f(s: string) {',
+            '  return s.replace(/(\\w+)/, function (_match, word) { return word.toUpperCase() })',
+            '}',
+            '',
+          ].join('\n'),
+        },
+        {
+          name: 'StringPrototypeReplace with callback destructuring captures',
+          code: [
+            'import { StringPrototypeReplace } from "./primordials"',
+            'export function f(s: string) {',
+            '  return StringPrototypeReplace(s, /^([A-Z]):/, (_, letter) => letter.toLowerCase())',
+            '}',
+            '',
+          ].join('\n'),
+        },
+        {
+          name: 'StringPrototypeReplaceAll with callback destructuring captures',
+          code: [
+            'import { StringPrototypeReplaceAll } from "./primordials"',
+            'export function f(s: string) {',
+            '  return StringPrototypeReplaceAll(s, /(\\w+)/g, (_, word) => word.toUpperCase())',
+            '}',
+            '',
+          ].join('\n'),
+        },
+        {
+          name: '.replace with SINGLE-arg callback (full match only) is still fixable',
+          // Note: even though there IS a `.replace()` call, the callback
+          // is `c => ...` (1 arg = full match, no capture access). The
+          // rule SHOULD still flag the captures as unused... but the
+          // file-wide marker matcher stays conservative here too. Add as
+          // a "valid" case (rule stays silent) — see invalid section
+          // for the analogous flagged case without a .replace() call.
+          code: [
+            'export function f(s: string) {',
+            '  return s.replace(/[a-zA-Z]/g, c => `[${c.toLowerCase()}]`)',
+            '}',
+            '',
+          ].join('\n'),
+        },
       ],
       invalid: [
         {

@@ -73,21 +73,108 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     name: 'esbuild-service',
     rx: /esbuild\/(bin|lib)\/.*\bservice\b/,
   },
-  // Socket Firewall command wrappers. Three deployment layouts:
-  //   - ~/.socket/_wheelhouse/bin/sfw[-<version>]            (current dev install)
-  //   - ~/.socket/_dlx/<hash>/sfw                    (planned: dlxBinary cache)
-  //   - ${RUNNER_TEMP}/sfw-bin/sfw[.exe]             (CI runner install)
+  // Socket Firewall command wrappers. Deployment layouts seen in the wild:
+  //   - ~/.socket/sfw/bin/sfw[-<version>]              (versioned dev install)
+  //   - ~/.socket/_wheelhouse/sfw-stable/sfw           (shim exec target — the
+  //                                                     one the package-manager
+  //                                                     shims actually run)
+  //   - ~/.socket/_wheelhouse/bin/sfw[-<version>]      (older dev install)
+  //   - ~/.socket/_dlx/<hash>/sfw                      (dlxBinary cache)
+  //   - ${RUNNER_TEMP}/sfw-bin/sfw[.exe]               (CI runner install)
   // Path component is invariant across home prefixes (/Users/<user>/ vs
   // /home/<user>/). The CI path uses RUNNER_TEMP which varies per OS but
   // the trailing `/sfw-bin/sfw` is stable.
   //
   // Orphan-only (the parent-alive branch in sweep()) — a live-parent
-  // sfw is likely a mid-flight pnpm/yarn install.
+  // sfw is likely a mid-flight pnpm/yarn install. **Why:** 2026-06-02 the
+  // regex only matched `sfw/bin`, so the shims' real exec target
+  // (`_wheelhouse/sfw-stable/sfw`) leaked 44 orphaned probe processes
+  // over ~7h before a manual reap. Keep this in sync with the shim
+  // exec paths under ~/.socket/sfw/shims/.
   {
     name: 'sfw-wrapper',
-    rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|sfw\/bin)|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
+    // Breakdown of the pattern below:
+    //   (?:                          ── start: alternation of parent dirs
+    //     \.socket\/                  literal ".socket/" (the install root)
+    //     (?:                         ── one of these subtrees under .socket/
+    //       _dlx\/[0-9a-f]+           "_dlx/<hex-hash>"  — dlxBinary cache
+    //       | sfw\/bin                "sfw/bin"          — versioned dev install
+    //       | _wheelhouse\/           "_wheelhouse/" then…
+    //         (?: bin | sfw-stable )    "bin" or "sfw-stable" (shim exec target)
+    //     )
+    //     | sfw-bin                   OR bare "sfw-bin"  — CI ${RUNNER_TEMP}/sfw-bin
+    //   )
+    //   \/sfw                         literal "/sfw" (the binary name)
+    //   (?:-[\w.]+)?                  optional "-<version>" suffix (e.g. -1.12.0)
+    //   (?:\.exe)?                    optional ".exe" (Windows)
+    //   \b                            word boundary — don't match "sfwfoo"
+    // Home prefix (/Users/<u>/ vs /home/<u>/) is intentionally NOT anchored;
+    // the .socket/… path segment is the invariant. listProcesses() swaps
+    // `\` → `/` in the command first, so this `/`-only pattern (incl. the
+    // `.exe` branch) matches a future Windows process source too. Negative
+    // cases: a plain "/Library/pnpm/pnpm" (no sfw wrapper) and editors/IDEs
+    // never match.
+    rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|sfw\/bin|_wheelhouse\/(?:bin|sfw-stable))|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
   },
 ]
+
+// Orphaned AI-agent processes — only swept in --all (explicit "kill
+// everything") mode, AND only when orphaned (the sweep loop still
+// requires reason 'forced' which --all only assigns; live-parented
+// agents are never matched here because these patterns are consulted
+// solely under --all and even then the orphan check is what makes them
+// safe to kill). These are NEVER consulted by the Stop-hook default —
+// reaping a sibling Claude/Codex session mid-turn would be catastrophic.
+// Observed real leaks (12–19 days old, PPID 1) that motivated this:
+//   - `claude doctor` invocations that detached and never exited
+//   - codex-plugin app-server brokers + `codex app-server` children from
+//     codex-plugin-test temp dirs that outlived their test run
+//   - `bash -c … until [ -f …/tasks/<id>.output.exitcode ]; do sleep`
+//     background-task pollers waiting on an exitcode file that never lands
+const AGENT_PATTERNS: Array<{ name: string; rx: RegExp }> = [
+  // Codex app-server + its broker (the noisiest leaker observed).
+  {
+    name: 'codex-app-server',
+    rx: /\bcodex\b.*\bapp-server\b|app-server-broker\.[mc]?js\b/,
+  },
+  // `claude doctor` / other detached claude CLI invocations. Anchored on
+  // a `claude` arg followed by a subcommand so it can't match an
+  // arbitrary path containing "claude" (e.g. a project dir).
+  {
+    name: 'claude-cli',
+    rx: /(?:^|\/|\s)claude\s+(?:doctor|update|mcp|migrate-installer)\b/,
+  },
+  // Orphaned Claude background-task pollers: a bash loop waiting on a
+  // task .output.exitcode sentinel that will never appear once the
+  // session that spawned it is gone.
+  {
+    name: 'claude-task-poller',
+    rx: /tasks\/[A-Za-z0-9]+\.output\.exitcode\b/,
+  },
+]
+
+// Processes the sweep must NEVER kill, in ANY mode (not even --all),
+// checked before classify(). The token-minifier proxy is the live
+// ANTHROPIC_BASE_URL backend the current session routes through; it runs
+// detached (PPID 1) ON PURPOSE as a persistent daemon, so the orphan
+// heuristic would otherwise make it a prime --all target. Killing it
+// breaks the session that's running the sweep. Add any other
+// session-critical daemon here.
+const SESSION_CRITICAL_PATTERNS: RegExp[] = [
+  // socket-token-minifier proxy: `node …/socket-token-minifier/bin/socket-token-minifier.mts`
+  // (or a built .js). Match the package path so a rename of the entry
+  // file still protects it.
+  /socket-token-minifier\//,
+]
+
+export function isSessionCriticalDaemon(command: string): boolean {
+  for (const rx of SESSION_CRITICAL_PATTERNS) {
+    if (rx.test(command)) {
+      return true
+    }
+  }
+  return false
+}
 
 interface ProcRow {
   command: string
@@ -157,7 +244,17 @@ export function listProcesses(): ProcRow[] {
     if (!Number.isFinite(pid) || !Number.isFinite(ppid)) {
       continue
     }
-    const command = parts.slice(5).join(' ')
+    // Swap `\` → `/` so the STALE_PATTERNS regexes (written against `/`
+    // only) match on every platform — see the fleet "cross-platform path
+    // matching" rule. This is a SEPARATOR swap, not normalizePath(): the
+    // string is a full command line (binary + args), and normalizePath
+    // would apply path semantics to it — collapsing `..` inside an
+    // argument (`node ../foo.mjs` → `node /foo.mjs`) and stripping
+    // trailing slashes. A plain replace only touches separators, which is
+    // all the substring regexes need. Today `ps -A` is unix-only so the
+    // input already uses `/`; this keeps the regexes correct if a Windows
+    // `tasklist`/`wmic` branch is ever added to listProcesses.
+    const command = parts.slice(5).join(' ').replaceAll('\\', '/')
     rows.push({
       pid,
       ppid,
@@ -193,6 +290,19 @@ export function classify(row: ProcRow): string | undefined {
   return undefined
 }
 
+// Match orphaned AI-agent processes (AGENT_PATTERNS). Kept separate from
+// classify() so the Stop-hook default never even considers these — only
+// the explicit --all sweep calls it, and only kills the matches that are
+// also orphaned. Returns the pattern name or undefined.
+export function classifyAgent(row: ProcRow): string | undefined {
+  for (const { name, rx } of AGENT_PATTERNS) {
+    if (rx.test(row.command)) {
+      return name
+    }
+  }
+  return undefined
+}
+
 // Two reasons a matched worker should be reaped:
 //  1. ORPHAN — parent is gone or is init (PID 1). Classic case: vitest
 //     SIGINT'd, parent exited, workers re-parented to init.
@@ -212,22 +322,34 @@ const STUCK_MIN_ELAPSED_SEC = 300
 const STUCK_MIN_PCPU = 50
 const STUCK_MIN_RSS_KB = 500 * 1024
 
-export function sweep(): {
+export interface SweepOptions {
+  // When true, kill EVERY classified process regardless of parent
+  // liveness or the stuck-worker thresholds, with SIGKILL. This is the
+  // explicit "stop all background processing" mode (the `kill` run
+  // target / `--all` flag), NOT the conservative Stop-hook default which
+  // spares healthy live-parent work.
+  all?: boolean | undefined
+}
+
+export type SweepReason = 'orphan' | 'stuck' | 'forced'
+
+export function sweep(options?: SweepOptions): {
   killed: Array<{
     name: string
     pid: number
-    reason: 'orphan' | 'stuck'
+    reason: SweepReason
     rssMb: number
   }>
   skipped: number
 } {
+  const all = options?.all === true
   const rows = listProcesses()
   const myPid = process.pid
   const myPpid = process.ppid
   const killed: Array<{
     name: string
     pid: number
-    reason: 'orphan' | 'stuck'
+    reason: SweepReason
     rssMb: number
   }> = []
   let skipped = 0
@@ -238,12 +360,32 @@ export function sweep(): {
     if (row.pid === myPid || row.pid === myPpid) {
       continue
     }
-    const name = classify(row)
+    // Never touch a session-critical daemon (e.g. the token-minifier
+    // proxy), even in --all — see SESSION_CRITICAL_PATTERNS.
+    if (isSessionCriticalDaemon(row.command)) {
+      continue
+    }
+    const isOrphan = row.ppid === 1 || !isAlive(row.ppid)
+    // Build/test workers (STALE_PATTERNS) — the always-on set.
+    const workerName = classify(row)
+    // AI-agent processes (AGENT_PATTERNS) — only in --all, and only the
+    // orphaned ones. A live-parented agent is a real session; never kill
+    // it, even in --all.
+    const agentName = all && isOrphan ? classifyAgent(row) : undefined
+    const name = workerName ?? agentName
     if (!name) {
       continue
     }
-    let reason: 'orphan' | 'stuck' | undefined
-    if (row.ppid === 1 || !isAlive(row.ppid)) {
+    let reason: SweepReason | undefined
+    if (agentName !== undefined && workerName === undefined) {
+      // Orphaned agent matched only by AGENT_PATTERNS (already
+      // orphan-gated above). Always 'forced' — we only got here under --all.
+      reason = 'forced'
+    } else if (all) {
+      // Explicit kill-everything: any build/test worker qualifies,
+      // including healthy live-parent work the Stop hook would spare.
+      reason = 'forced'
+    } else if (isOrphan) {
       reason = 'orphan'
     } else if (
       row.elapsedSec >= STUCK_MIN_ELAPSED_SEC &&
@@ -261,11 +403,11 @@ export function sweep(): {
       continue
     }
     try {
-      // SIGTERM first — give the worker a chance to flush. We don't
-      // wait for it; the next sweep (next turn) will SIGKILL anything
-      // that ignored SIGTERM. Keeping the hook fast matters more than
-      // squeezing every last byte.
-      process.kill(row.pid, 'SIGTERM')
+      // Stop-hook default sends SIGTERM (graceful — let the worker flush;
+      // next turn's sweep SIGKILLs any straggler). --all sends SIGKILL
+      // outright: it's an explicit "kill everything now" and shouldn't
+      // depend on a follow-up sweep to finish the job.
+      process.kill(row.pid, all ? 'SIGKILL' : 'SIGTERM')
       killed.push({
         name,
         pid: row.pid,
@@ -280,12 +422,20 @@ export function sweep(): {
 }
 
 function main() {
-  // Drain stdin (Stop hook delivers a JSON payload). We don't need
-  // the body, but Node will keep the event loop alive if we don't
-  // consume it.
+  // `--all` / `--force`: explicit "kill all background processing + reap
+  // orphans" mode. Invoked directly (the `kill` run target), not as a
+  // Stop hook, so there's no stdin payload to drain — run immediately.
+  const all = process.argv.includes('--all') || process.argv.includes('--force')
+  if (all) {
+    runSweep({ all: true })
+    return
+  }
+  // Stop-hook path: drain stdin (the hook delivers a JSON payload). We
+  // don't need the body, but Node will keep the event loop alive if we
+  // don't consume it.
   process.stdin.resume()
   process.stdin.on('data', () => {})
-  process.stdin.on('end', runSweep)
+  process.stdin.on('end', () => runSweep())
   // If stdin is already closed (some hook runners don't pipe input),
   // run immediately.
   if (process.stdin.readable === false) {
@@ -293,10 +443,10 @@ function main() {
   }
 }
 
-export function runSweep() {
+export function runSweep(options?: SweepOptions) {
   let result: ReturnType<typeof sweep>
   try {
-    result = sweep()
+    result = sweep(options)
   } catch (e) {
     // Hooks must never crash a Claude turn. Log and exit clean.
     process.stderr.write(
@@ -313,6 +463,10 @@ export function runSweep() {
       `[stale-process-sweeper] reaped ${result.killed.length} stale ` +
         `worker(s), ~${totalMb}MB freed: ${breakdown}\n`,
     )
+  } else if (options?.all) {
+    // In explicit kill mode, confirm the no-op so the user isn't left
+    // wondering whether anything ran.
+    process.stderr.write('[stale-process-sweeper] nothing to reap\n')
   }
   process.exit(0)
 }

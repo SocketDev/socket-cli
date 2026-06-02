@@ -78,15 +78,13 @@ interface ToolEntry {
   version: string
   repository?: string | undefined
   release?: string | undefined
-  platforms?:
-    | Record<string, { asset: string; integrity: string }>
-    | undefined
+  platforms?: Record<string, { asset: string; integrity: string }> | undefined
 }
 
 /**
- * Decode the Subresource Integrity form (`sha256-<base64>`) the canonical
- * fleet external-tools.json uses into the bare hex digest the
- * downloadBinary helper expects. Single-source-of-truth schema:
+ * Decode the Subresource Integrity form (`sha256-<base64>`) the canonical fleet
+ * external-tools.json uses into the bare hex digest the downloadBinary helper
+ * expects. Single-source-of-truth schema:
  * socket-btm/packages/build-infra/lib/external-tools-schema.json.
  */
 function sriToHex(integrity: string): string {

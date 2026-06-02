@@ -17,12 +17,23 @@ direct to api.anthropic.com" — never a 502.
 
 1. **Probe** `localhost:7779/health` (250ms timeout).
 2. If **healthy**: write env var, exit 0.
-3. If **port returned a non-2xx status**: something else is listening; skip
-   (don't clobber an unrelated process on this port).
+3. If **port returned a non-2xx status**: the port is held but not healthy.
+   Try to **reap a wedged instance** — `reapWedgedProxy()` re-probes /health
+   (bails if healthy, so a live shared proxy is never killed) and SIGKILLs
+   only PIDs whose command identifies them as the `socket-token-minifier`
+   binary. If it reaps one, fall through to (5) and start fresh. If it reaps
+   nothing, the port belongs to something unrelated — skip (don't clobber it).
 4. If **binary not installed**: emit context, exit 0 without env-var write.
 5. If **connection refused**: spawn the proxy detached, poll /health every
    100ms up to 2.5s total. If healthy in time, write env var. Else
    fail-closed (no env var).
+
+The wedged-instance reap is the auto-recovery path: a hung proxy from an
+earlier session (holding the port but not answering /health) is cleared and
+replaced instead of forcing every later session onto the direct API. The two
+gates — re-probe-healthy and command-match — mean it can only ever kill a
+confirmed-unhealthy `socket-token-minifier` process, never a healthy shared
+one and never an unrelated listener.
 
 Total time budget: ~3s worst case, ~0ms when proxy already healthy.
 

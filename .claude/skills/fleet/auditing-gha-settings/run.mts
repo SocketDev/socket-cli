@@ -32,7 +32,7 @@ const logger = getDefaultLogger()
 // pins through those shared workflows. Add a new entry only when a new
 // shared workflow references it, and cascade to every consumer org.
 //
-// Third-party patterns (dtolnay/, hendrikmuhs/, HaaLeo/, mlugg/,
+// Third-party patterns (dtolnay/, hendrikmuhs/, HaaLeo/,
 // pnpm/action-setup, softprops/, Swatinem/) were removed in favor of
 // hand-rolled composites under SocketDev/socket-registry/.github/actions/.
 // Anything new third-party should be ported to a composite there rather
