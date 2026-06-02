@@ -21,7 +21,7 @@ import type {
 const config: CliCommandConfig = {
   commandName: 'gradle',
   description:
-    '[beta] Use Gradle to generate a manifest file (`pom.xml`) for a Gradle/Java/Kotlin/etc project',
+    '[beta] Generate a Socket facts file (or `pom.xml` with --pom) for a Gradle/Java/Kotlin/etc project',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -32,7 +32,12 @@ const config: CliCommandConfig = {
     facts: {
       type: 'boolean',
       description:
-        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph instead of generating `pom.xml` files',
+        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph. This is the default; pass `--pom` to generate `pom.xml` files instead',
+    },
+    pom: {
+      type: 'boolean',
+      description:
+        'Generate `pom.xml` manifest file(s) instead of the default Socket facts file (`.socket.facts.json`)',
     },
     configs: {
       type: 'string',
@@ -61,38 +66,31 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags)}
 
-    Uses gradle, preferably through your local project \`gradlew\`, to generate a
-    \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the
-    global \`gradle\` binary but that may not work (hard to predict).
+    By default, emits a single \`.socket.facts.json\` describing the resolved
+    dependency graph of the whole build, using gradle (preferably your local
+    \`gradlew\`). An unresolved dependency is a fatal error. You can pass
+    --configs=<comma-separated glob patterns> to restrict resolution to matching
+    configurations (e.g. \`*CompileClasspath,*RuntimeClasspath\`), and
+    --ignore-unresolved to warn on unresolved dependencies instead of failing.
 
-    The \`pom.xml\` is a manifest file similar to \`package.json\` for npm or
-    or ${REQUIREMENTS_TXT} for PyPi), but specifically for Maven, which is Java's
-    dependency repository. Languages like Kotlin and Scala piggy back on it too.
+    Pass --pom to instead generate \`pom.xml\` manifest files via gradle (one per
+    task). The \`pom.xml\` is a manifest file similar to \`package.json\` for npm
+    (or ${REQUIREMENTS_TXT} for PyPi), but specifically for Maven, which is
+    Java's dependency repository. Caveats of the \`pom.xml\` conversion:
 
-    There are some caveats with the gradle to \`pom.xml\` conversion:
+    - each task generates its own xml file (one per task by default)
 
-    - each task will generate its own xml file and by default it generates one xml
-      for every task. (This may be a good thing!)
-
-    - it's possible certain features don't translate well into the xml. If you
-      think something is missing that could be supported please reach out.
+    - certain features may not translate well into the xml; reach out if
+      something you need is missing
 
     - it works with your \`gradlew\` from your repo and local settings and config
-
-    Pass --facts to instead emit a single \`.socket.facts.json\` describing the
-    resolved dependency graph of the whole build (no \`pom.xml\` files). An
-    unresolved dependency is a fatal error. With --facts you can pass
-    --configs=<comma-separated glob patterns> to restrict resolution to
-    matching configurations (e.g. \`*CompileClasspath,*RuntimeClasspath\`),
-    and --ignore-unresolved to warn on unresolved dependencies instead of
-    failing the run.
 
     Support is beta. Please report issues or give us feedback on what's missing.
 
     Examples
 
       $ ${command} .
-      $ ${command} --facts .
+      $ ${command} --pom .
       $ ${command} --bin=../gradlew .
   `,
 }
@@ -169,6 +167,18 @@ async function run(
     if (sockJson.defaults?.manifest?.gradle?.facts !== undefined) {
       facts = sockJson.defaults?.manifest?.gradle?.facts
       logger.info(`Using default --facts from ${SOCKET_JSON}:`, facts)
+    } else {
+      // Socket facts generation is the default; pass --pom to generate poms.
+      facts = true
+    }
+  }
+  // --pom opts into legacy pom.xml generation. It overrides the facts default
+  // (and the socket.json default) but conflicts with an explicit --facts.
+  if (cli.flags['pom']) {
+    if (cli.flags['facts'] !== undefined) {
+      logger.warn(
+        'The `--facts` and `--pom` options are mutually exclusive; generating Socket facts.',
+      )
     } else {
       facts = false
     }

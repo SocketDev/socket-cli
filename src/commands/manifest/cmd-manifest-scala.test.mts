@@ -17,7 +17,7 @@ describe('socket manifest scala', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "[beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
+        "[beta] Generate a Socket facts file (or \`pom.xml\` with --pom) from a Scala \`build.sbt\` project
 
           Usage
             $ socket manifest scala [options] [CWD=.]
@@ -25,18 +25,26 @@ describe('socket manifest scala', async () => {
           Options
             --bin               Location of sbt binary to use
             --configs           With --facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive, \`*\` and \`?\` wildcards). Bare names (no wildcards) act as exact-name filters. Default: compile,optional,provided,runtime,test
-            --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph instead of generating \`pom.xml\` files
+            --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph. This is the default; pass \`--pom\` to generate \`pom.xml\` files instead
             --ignore-unresolved  With --facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)
             --out               Path of output file; where to store the resulting manifest, see also --stdout
+            --pom               Generate \`pom.xml\` manifest file(s) instead of the default Socket facts file (\`.socket.facts.json\`)
             --sbt-opts          Additional options to pass on to sbt, as per \`sbt --help\`
             --stdout            Print resulting pom.xml to stdout (supersedes --out)
             --verbose           Print debug messages
 
-          Uses \`sbt makePom\` to generate a \`pom.xml\` from your \`build.sbt\` file.
-          This xml file is the dependency manifest (like a package.json
-          for Node.js or requirements.txt for PyPi), but specifically for Scala.
+          By default, emits a single \`.socket.facts.json\` describing the resolved
+          dependency graph of the whole build. It reads dependency metadata only and
+          never downloads artifacts; an unresolved dependency is a fatal error. You
+          can pass --configs=<comma-separated glob patterns> to choose which sbt
+          configurations to resolve (e.g. \`compile,test\` for exact names or
+          \`*Test*\` for variants), and --ignore-unresolved to warn on unresolved
+          dependencies instead of failing the run.
 
-          There are some caveats with \`build.sbt\` to \`pom.xml\` conversion:
+          Pass --pom to instead generate a \`pom.xml\` via \`sbt makePom\` from your
+          \`build.sbt\`. The xml is the dependency manifest (like a package.json for
+          Node.js or requirements.txt for PyPi), but specifically for Scala.
+          Caveats of the \`build.sbt\` to \`pom.xml\` conversion:
 
           - the xml is exported as pom.xml at the project root so Socket scan picks
             it up; sbt itself first writes it inside your /target/sbt<version> folder
@@ -54,15 +62,6 @@ describe('socket manifest scala', async () => {
 
           You can specify --bin to override the path to the \`sbt\` binary to invoke.
 
-          Pass --facts to instead emit a single \`.socket.facts.json\` describing the
-          resolved dependency graph of the whole build (no \`pom.xml\` files). It reads
-          dependency metadata only and never downloads artifacts; an unresolved
-          dependency is a fatal error. With --facts you can pass
-          --configs=<comma-separated glob patterns> to choose which sbt configurations
-          to resolve (e.g. \`compile,test\` for exact names or \`*Test*\` for variants),
-          and --ignore-unresolved to warn on unresolved dependencies instead of
-          failing the run.
-
           Support is beta. Please report issues or give us feedback on what's missing.
 
           This is only for SBT. If your Scala setup uses gradle, please see the help
@@ -71,7 +70,7 @@ describe('socket manifest scala', async () => {
           Examples
 
             $ socket manifest scala
-            $ socket manifest scala --facts .
+            $ socket manifest scala --pom .
             $ socket manifest scala ./proj --bin=/usr/bin/sbt --file=boot.sbt"
       `,
       )

@@ -21,7 +21,7 @@ import type {
 const config: CliCommandConfig = {
   commandName: 'scala',
   description:
-    "[beta] Generate a manifest file (`pom.xml`) from Scala's `build.sbt` file",
+    '[beta] Generate a Socket facts file (or `pom.xml` with --pom) from a Scala `build.sbt` project',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -32,7 +32,12 @@ const config: CliCommandConfig = {
     facts: {
       type: 'boolean',
       description:
-        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph instead of generating `pom.xml` files',
+        'Emit a Socket facts JSON file (`.socket.facts.json`) describing the resolved dependency graph. This is the default; pass `--pom` to generate `pom.xml` files instead',
+    },
+    pom: {
+      type: 'boolean',
+      description:
+        'Generate `pom.xml` manifest file(s) instead of the default Socket facts file (`.socket.facts.json`)',
     },
     configs: {
       type: 'string',
@@ -69,11 +74,18 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags)}
 
-    Uses \`sbt makePom\` to generate a \`pom.xml\` from your \`build.sbt\` file.
-    This xml file is the dependency manifest (like a package.json
-    for Node.js or ${REQUIREMENTS_TXT} for PyPi), but specifically for Scala.
+    By default, emits a single \`.socket.facts.json\` describing the resolved
+    dependency graph of the whole build. It reads dependency metadata only and
+    never downloads artifacts; an unresolved dependency is a fatal error. You
+    can pass --configs=<comma-separated glob patterns> to choose which sbt
+    configurations to resolve (e.g. \`compile,test\` for exact names or
+    \`*Test*\` for variants), and --ignore-unresolved to warn on unresolved
+    dependencies instead of failing the run.
 
-    There are some caveats with \`build.sbt\` to \`pom.xml\` conversion:
+    Pass --pom to instead generate a \`pom.xml\` via \`sbt makePom\` from your
+    \`build.sbt\`. The xml is the dependency manifest (like a package.json for
+    Node.js or ${REQUIREMENTS_TXT} for PyPi), but specifically for Scala.
+    Caveats of the \`build.sbt\` to \`pom.xml\` conversion:
 
     - the xml is exported as pom.xml at the project root so Socket scan picks
       it up; sbt itself first writes it inside your /target/sbt<version> folder
@@ -91,15 +103,6 @@ const config: CliCommandConfig = {
 
     You can specify --bin to override the path to the \`sbt\` binary to invoke.
 
-    Pass --facts to instead emit a single \`.socket.facts.json\` describing the
-    resolved dependency graph of the whole build (no \`pom.xml\` files). It reads
-    dependency metadata only and never downloads artifacts; an unresolved
-    dependency is a fatal error. With --facts you can pass
-    --configs=<comma-separated glob patterns> to choose which sbt configurations
-    to resolve (e.g. \`compile,test\` for exact names or \`*Test*\` for variants),
-    and --ignore-unresolved to warn on unresolved dependencies instead of
-    failing the run.
-
     Support is beta. Please report issues or give us feedback on what's missing.
 
     This is only for SBT. If your Scala setup uses gradle, please see the help
@@ -108,7 +111,7 @@ const config: CliCommandConfig = {
     Examples
 
       $ ${command}
-      $ ${command} --facts .
+      $ ${command} --pom .
       $ ${command} ./proj --bin=/usr/bin/sbt --file=boot.sbt
   `,
 }
@@ -167,6 +170,18 @@ async function run(
     if (sockJson.defaults?.manifest?.sbt?.facts !== undefined) {
       facts = sockJson.defaults?.manifest?.sbt?.facts
       logger.info(`Using default --facts from ${SOCKET_JSON}:`, facts)
+    } else {
+      // Socket facts generation is the default; pass --pom to generate poms.
+      facts = true
+    }
+  }
+  // --pom opts into legacy pom.xml generation. It overrides the facts default
+  // (and the socket.json default) but conflicts with an explicit --facts.
+  if (cli.flags['pom']) {
+    if (cli.flags['facts'] !== undefined) {
+      logger.warn(
+        'The `--facts` and `--pom` options are mutually exclusive; generating Socket facts.',
+      )
     } else {
       facts = false
     }

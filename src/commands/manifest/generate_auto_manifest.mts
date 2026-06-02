@@ -51,7 +51,9 @@ export async function generateAutoManifest({
           .filter(Boolean) ?? [],
       verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
     }
-    if (sockJson.defaults?.manifest?.sbt?.facts) {
+    // Socket facts is the default; opt into pom generation with
+    // `defaults.manifest.sbt.facts: false` in socket.json.
+    if (sockJson.defaults?.manifest?.sbt?.facts !== false) {
       logger.log('Detected a Scala sbt build, generating Socket facts...')
       await convertSbtToFacts({
         ...sbtArgs,
@@ -85,7 +87,9 @@ export async function generateAutoManifest({
           .map(s => s.trim())
           .filter(Boolean) ?? [],
     }
-    if (sockJson.defaults?.manifest?.gradle?.facts) {
+    // Socket facts is the default; opt into pom generation with
+    // `defaults.manifest.gradle.facts: false` in socket.json.
+    if (sockJson.defaults?.manifest?.gradle?.facts !== false) {
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts...',
       )

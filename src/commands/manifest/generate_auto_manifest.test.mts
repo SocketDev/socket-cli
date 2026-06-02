@@ -14,6 +14,12 @@ vi.mock('./convert_gradle_to_maven.mts', () => ({
 vi.mock('./convert_sbt_to_maven.mts', () => ({
   convertSbtToMaven: vi.fn(async () => undefined),
 }))
+vi.mock('./convert-gradle-to-facts.mts', () => ({
+  convertGradleToFacts: vi.fn(async () => undefined),
+}))
+vi.mock('./convert-sbt-to-facts.mts', () => ({
+  convertSbtToFacts: vi.fn(async () => undefined),
+}))
 vi.mock('./handle-manifest-conda.mts', () => ({
   handleManifestConda: vi.fn(async () => undefined),
 }))
@@ -22,6 +28,7 @@ vi.mock('../../utils/socket-json.mts', () => ({
 }))
 
 import { extractBazelToMaven } from './bazel/extract_bazel_to_maven.mts'
+import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
@@ -40,6 +47,7 @@ const baseDetected = {
 describe('generateAutoManifest — bazel branch', () => {
   beforeEach(() => {
     vi.mocked(extractBazelToMaven).mockClear()
+    vi.mocked(convertGradleToFacts).mockClear()
     vi.mocked(convertGradleToMaven).mockClear()
     vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
     vi.mocked(extractBazelToMaven).mockResolvedValue({
@@ -202,7 +210,23 @@ describe('generateAutoManifest — bazel branch', () => {
       verbose: false,
     })
     expect(extractBazelToMaven).toHaveBeenCalledTimes(1)
+    // Socket facts is the default for the gradle branch.
+    expect(convertGradleToFacts).toHaveBeenCalledTimes(1)
+    expect(convertGradleToMaven).not.toHaveBeenCalled()
+  })
+
+  it('uses the gradle pom generator when defaults.manifest.gradle.facts is false', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: { manifest: { gradle: { facts: false } } },
+    } as SocketJson)
+    await generateAutoManifest({
+      cwd: '/tmp/repo',
+      detected: { ...baseDetected, gradle: true, count: 1 },
+      outputKind: 'text',
+      verbose: false,
+    })
     expect(convertGradleToMaven).toHaveBeenCalledTimes(1)
+    expect(convertGradleToFacts).not.toHaveBeenCalled()
   })
 
   it('honors socket.json out override (user-supplied .socket-auto-manifest dir)', async () => {
