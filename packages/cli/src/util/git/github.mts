@@ -576,7 +576,10 @@ export async function setGitRemoteGithubRepoUrl(
     cwd,
     stdio: isDebugNs('stdio') ? 'inherit' : 'ignore',
   }
-  const quotedCmd = `\`git remote set-url origin ${url}\``
+  // Redact the access token from the debug line — the real URL is still
+  // passed to spawn, but the token must never reach logs.
+  const redactedUrl = `https://x-access-token:***@${host}/${owner}/${repo}`
+  const quotedCmd = `\`git remote set-url origin ${redactedUrl}\``
   debugNs('stdio', `spawn: ${quotedCmd}`)
   try {
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)

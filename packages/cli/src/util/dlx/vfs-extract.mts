@@ -63,7 +63,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { debug } from '@socketsecurity/lib-stable/debug/output'
+import { debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -197,7 +197,7 @@ export async function extractExternalTools(
   }
 
   if (!isSeaBinary() || !processWithSmol.smol?.mount) {
-    debug('notice', 'Not running in SEA mode - cannot extract VFS tools')
+    debugNs('notice', 'Not running in SEA mode - cannot extract VFS tools')
     return undefined
   }
 
@@ -231,7 +231,10 @@ export async function extractExternalTools(
           } catch {
             // Process doesn't exist, lock is stale.
             isStale = true
-            debug('notice', `Stale lock file detected (PID ${pid} not running)`)
+            debugNs(
+              'notice',
+              `Stale lock file detected (PID ${pid} not running)`,
+            )
           }
         } else {
           // Invalid PID in lock file, treat as stale.
@@ -257,7 +260,7 @@ export async function extractExternalTools(
           setTimeout(resolve, 1000)
         })
         if (existsSync(cacheMarker)) {
-          debug('notice', 'External tools extracted by another process')
+          debugNs('notice', 'External tools extracted by another process')
           // Build and validate toolPaths from cache.
           const toolPaths: Partial<Record<ExternalTool, string>> = {}
           let allValid = true
@@ -268,7 +271,7 @@ export async function extractExternalTools(
             // Validate tool exists and is executable.
             if (!existsSync(toolPathWithExt)) {
               allValid = false
-              debug(
+              debugNs(
                 'notice',
                 `Tool ${tool} missing after extraction by other process`,
               )
@@ -285,11 +288,11 @@ export async function extractExternalTools(
             if (stillValid) {
               return toolPaths as Record<ExternalTool, string>
             }
-            debug('notice', 'Tool(s) disappeared during validation')
+            debugNs('notice', 'Tool(s) disappeared during validation')
             allValid = false
           }
           // Extraction incomplete, clean up and retry.
-          debug('notice', 'Incomplete extraction detected, cleaning up…')
+          debugNs('notice', 'Incomplete extraction detected, cleaning up…')
           await safeDelete([cacheMarker, lockFile], { force: true })
           return await extractExternalTools(depth + 1)
         }
@@ -298,7 +301,7 @@ export async function extractExternalTools(
         if (i % 5 === 4) {
           // Check if extraction completed first before PID validation.
           if (existsSync(cacheMarker)) {
-            debug('notice', 'Extraction completed during wait')
+            debugNs('notice', 'Extraction completed during wait')
             return await extractExternalTools(depth + 1)
           }
           // Then check if lock holder is still alive.
@@ -310,7 +313,7 @@ export async function extractExternalTools(
                 process.kill(pid, 0)
               } catch {
                 // Process died, lock is stale.
-                debug('notice', `Lock holder (PID ${pid}) died during wait`)
+                debugNs('notice', `Lock holder (PID ${pid}) died during wait`)
                 await safeDelete(lockFile, { force: true })
                 return await extractExternalTools(depth + 1)
               }
@@ -323,7 +326,7 @@ export async function extractExternalTools(
       }
       // Final check before throwing timeout - extraction may have completed just now.
       if (existsSync(cacheMarker)) {
-        debug('notice', 'External tools extracted just before timeout')
+        debugNs('notice', 'External tools extracted just before timeout')
         const toolPaths: Partial<Record<ExternalTool, string>> = {}
         let allValid = true
         for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
@@ -357,7 +360,7 @@ export async function extractExternalTools(
   try {
     // Check if already extracted (cache marker exists).
     if (existsSync(cacheMarker)) {
-      debug('notice', 'External tools already extracted (cache marker found)')
+      debugNs('notice', 'External tools already extracted (cache marker found)')
       const toolPaths: Partial<Record<ExternalTool, string>> = {}
       let allValid = true
       for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
@@ -366,7 +369,7 @@ export async function extractExternalTools(
         const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
         // Validate tool exists before adding to paths.
         if (!existsSync(toolPathWithExt)) {
-          debug('notice', `Cached tool ${tool} missing at ${toolPathWithExt}`)
+          debugNs('notice', `Cached tool ${tool} missing at ${toolPathWithExt}`)
           allValid = false
           break
         }
@@ -383,12 +386,15 @@ export async function extractExternalTools(
           return toolPaths as Record<ExternalTool, string>
         }
         // Tools disappeared during validation - cleanup and retry extraction.
-        debug('notice', 'Tool(s) disappeared during validation, re-extracting…')
+        debugNs(
+          'notice',
+          'Tool(s) disappeared during validation, re-extracting…',
+        )
         await safeDelete(cacheMarker, { force: true })
         return await extractExternalTools(depth + 1)
       }
       // Cache marker exists but tools missing, remove marker and re-extract.
-      debug('notice', 'Cache validation failed, re-extracting…')
+      debugNs('notice', 'Cache validation failed, re-extracting…')
       await safeDelete(cacheMarker, { force: true })
     }
 
@@ -405,7 +411,7 @@ export async function extractExternalTools(
           // Quick validation - check if executable.
           // oxlint-disable-next-line socket/prefer-exists-sync -- fs.access(X_OK) checks executable permission, not existence.
           await fs.access(toolPathWithExt, fs.constants.X_OK)
-          debug(
+          debugNs(
             'notice',
             `Tool ${tool} already extracted at ${toolPathWithExt}`,
           )
@@ -413,7 +419,7 @@ export async function extractExternalTools(
           continue
         } catch {
           // File exists but not executable or accessible, re-extract.
-          debug(
+          debugNs(
             'notice',
             `Tool ${tool} exists but not executable, re-extracting…`,
           )
@@ -500,7 +506,7 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
       const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
 
       if (existsSync(toolPathWithExt)) {
-        debug(
+        debugNs(
           'notice',
           `Tool ${tool} already extracted with dependencies at ${packageDir}`,
         )
@@ -677,7 +683,7 @@ export async function isNpmPackageExtracted(
   // node_modules/ directory should exist for packages with dependencies.
   const nodeModulesPath = path.join(packagePath, 'node_modules')
   if (!existsSync(nodeModulesPath)) {
-    debug('notice', `Package ${packagePath} exists but missing node_modules/`)
+    debugNs('notice', `Package ${packagePath} exists but missing node_modules/`)
     return false
   }
 

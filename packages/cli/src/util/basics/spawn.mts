@@ -8,7 +8,7 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { debug } from '@socketsecurity/lib-stable/debug/output'
+import { debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { errorMessage } from '@socketsecurity/lib-stable/errors'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -82,7 +82,7 @@ export async function parseSocketFacts(factsPath: string): Promise<{
     const factsContent = await fs.readFile(factsPath, 'utf8')
 
     if (!factsContent || factsContent.trim() === '') {
-      debug('error', 'Socket facts file is empty')
+      debugNs('error', 'Socket facts file is empty')
       return {
         error: 'Facts file is empty',
       }
@@ -100,7 +100,7 @@ export async function parseSocketFacts(factsPath: string): Promise<{
     try {
       facts = JSON.parse(factsContent)
     } catch (parseError) {
-      debug('error', 'Failed to parse socket facts JSON:', parseError)
+      debugNs('error', 'Failed to parse socket facts JSON:', parseError)
       return {
         error: `Invalid JSON: ${errorMessage(parseError)}`,
       }
@@ -114,7 +114,7 @@ export async function parseSocketFacts(factsPath: string): Promise<{
       secrets: facts.findings?.secrets?.length || 0,
     }
   } catch (e) {
-    debug('error', 'Failed to read socket facts file:', e)
+    debugNs('error', 'Failed to read socket facts file:', e)
     return {
       error: `File read error: ${errorMessage(e)}`,
     }
@@ -245,7 +245,7 @@ export async function runSocketBasics(
   const pyCliVersion = getPyCliVersion()
 
   if (pyCliAlreadyInstalled) {
-    debug('notice', 'Socket Python CLI already installed (pre-bundled)')
+    debugNs('notice', 'Socket Python CLI already installed (pre-bundled)')
   } else {
     // Install socketsecurity package via pip.
     spinner?.start('Installing Socket Python CLI…')
@@ -277,7 +277,7 @@ export async function runSocketBasics(
         spinner.fail('Failed to install Socket Python CLI')
       }
       /* c8 ignore stop */
-      debug('error', 'pip install failed:', pipInstallResult.stderr)
+      debugNs('error', 'pip install failed:', pipInstallResult.stderr)
       return {
         ok: false,
         message: 'Failed to install Socket Python CLI',
@@ -342,7 +342,7 @@ export async function runSocketBasics(
     }
     /* c8 ignore stop */
 
-    debug('notice', `Socket Python CLI version verified: ${installedVersion}`)
+    debugNs('notice', `Socket Python CLI version verified: ${installedVersion}`)
   }
 
   // Check if socket_basics is already pre-installed (SEA build-time bundling).
@@ -350,7 +350,7 @@ export async function runSocketBasics(
   if (!basicsAlreadyInstalled) {
     // socket_basics should be pre-installed in SEA mode.
     // For dev mode, this would need runtime installation, but socket_basics is not on PyPI.
-    debug(
+    debugNs(
       'warn',
       'socket_basics not found - should be pre-installed in SEA builds',
     )
@@ -361,7 +361,7 @@ export async function runSocketBasics(
         'socket_basics must be pre-bundled at SEA build time (not available on PyPI)',
     }
   }
-  debug('notice', 'socket_basics already installed (pre-bundled)')
+  debugNs('notice', 'socket_basics already installed (pre-bundled)')
 
   // Construct socket-basics command.
   // socket-basics is a separate PyPI package (socket_basics).
@@ -404,7 +404,7 @@ export async function runSocketBasics(
 
   // Run socket-basics.
   spinner?.start('Running comprehensive security scan…')
-  debug(
+  debugNs(
     'notice',
     `Running socket-basics: ${toolPaths.python} ${args.join(' ')}`,
   )
@@ -437,7 +437,7 @@ export async function runSocketBasics(
       spinner.stop()
       spinner.fail(`Socket-basics scan failed (${elapsed}s)`)
     }
-    debug('error', 'socket-basics failed:', basicsResult.stderr)
+    debugNs('error', 'socket-basics failed:', basicsResult.stderr)
     return {
       ok: false,
       message: 'Socket-basics scan failed',
@@ -466,7 +466,7 @@ export async function runSocketBasics(
 
   // Check if parsing failed.
   if (findings.error) {
-    debug('warn', `Failed to parse facts JSON: ${findings.error}`)
+    debugNs('warn', `Failed to parse facts JSON: ${findings.error}`)
     // Return success but with empty findings - the file exists so scan succeeded.
     return {
       ok: true,

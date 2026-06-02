@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { debugDir, debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
@@ -98,7 +98,7 @@ export async function handleCreateNewScan({
   tmp,
   workspace,
 }: HandleCreateNewScanConfig): Promise<void> {
-  debug(
+  debugNs(
     'notice',
     `Creating new scan for ${orgSlug}/${workspace ? `${workspace}/` : ''}${repoName}`,
   )
@@ -120,7 +120,7 @@ export async function handleCreateNewScan({
 
   if (autoManifest) {
     logger.info('Auto-generating manifest files ...')
-    debug('notice', 'Auto-manifest mode enabled')
+    debugNs('notice', 'Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
     debugDir('inspect', { detected })
@@ -140,7 +140,7 @@ export async function handleCreateNewScan({
     spinner,
   })
   if (!supportedFilesCResult.ok) {
-    debug('warn', 'Failed to fetch supported scan file names')
+    debugNs('warn', 'Failed to fetch supported scan file names')
     debugDir('inspect', { supportedFilesCResult })
     await outputCreateNewScan(supportedFilesCResult, {
       interactive,
@@ -148,7 +148,7 @@ export async function handleCreateNewScan({
     })
     return
   }
-  debug(
+  debugNs(
     'notice',
     `Fetched ${supportedFilesCResult.data['size']} supported file types`,
   )
@@ -188,7 +188,7 @@ export async function handleCreateNewScan({
       'TARGET (file/dir) must contain matching / supported file types for a scan',
   })
   if (!wasValidInput) {
-    debug('warn', 'No eligible files found to scan')
+    debugNs('warn', 'No eligible files found to scan')
     return
   }
 
@@ -200,7 +200,7 @@ export async function handleCreateNewScan({
 
   if (readOnly) {
     logger.log('[ReadOnly] Bailing now')
-    debug('notice', 'Read-only mode, exiting early')
+    debugNs('notice', 'Read-only mode, exiting early')
     return
   }
 
@@ -224,7 +224,7 @@ export async function handleCreateNewScan({
 
     logger.error('')
     logger.info('Starting reachability analysis…')
-    debug('notice', 'Reachability analysis enabled')
+    debugNs('notice', 'Reachability analysis enabled')
     debugDir('inspect', { reachabilityOptions: mergedReachabilityOptions })
 
     spinner.start()
@@ -263,7 +263,7 @@ export async function handleCreateNewScan({
   if (basics) {
     logger.error('')
     logger.info('Starting comprehensive security scan (socket-basics)...')
-    debug('notice', 'Socket-basics enabled')
+    debugNs('notice', 'Socket-basics enabled')
 
     spinner.start()
 
@@ -280,7 +280,7 @@ export async function handleCreateNewScan({
       logger.warn(
         'Socket-basics scan failed, continuing without SAST/secrets findings',
       )
-      debug('error', 'socket-basics error:', basicsResult.message)
+      debugNs('error', 'socket-basics error:', basicsResult.message)
     } else {
       logger.success('Comprehensive security scan completed successfully')
 
