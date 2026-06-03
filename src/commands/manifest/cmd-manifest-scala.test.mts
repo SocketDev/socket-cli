@@ -27,7 +27,7 @@ describe('socket manifest scala', async () => {
             --exclude-configs   When generating facts: comma-separated glob patterns; sbt configurations matching any pattern are skipped (applied after --include-configs)
             --facts             Emit a Socket facts JSON file (\`.socket.facts.json\`) describing the resolved dependency graph. This is the default; pass \`--pom\` to generate \`pom.xml\` files instead
             --ignore-unresolved  With --facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)
-            --include-configs   When generating facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive, \`*\` and \`?\` wildcards). Bare names act as exact-name filters. Only configurations matching at least one pattern are resolved. Default: compile,optional,provided,runtime,test
+            --include-configs   When generating facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive, \`*\` and \`?\` wildcards). Only configurations matching at least one pattern are resolved. e.g. \`compile,test\`. Default: compile,optional,provided,runtime,test
             --out               Path of output file; where to store the resulting manifest, see also --stdout
             --pom               Generate \`pom.xml\` manifest file(s) instead of the default Socket facts file (\`.socket.facts.json\`)
             --sbt-opts          Additional options to pass on to sbt, as per \`sbt --help\`
@@ -38,10 +38,9 @@ describe('socket manifest scala', async () => {
           dependency graph of the whole build. It reads dependency metadata only and
           never downloads artifacts; an unresolved dependency is a fatal error. You
           can pass --include-configs / --exclude-configs (comma-separated glob
-          patterns) to choose which sbt configurations to resolve (e.g.
-          --include-configs=\`compile,test\` for exact names or \`*Test*\` for
-          variants), and --ignore-unresolved to warn on unresolved dependencies
-          instead of failing the run.
+          patterns) to control which sbt configurations are resolved (e.g.
+          --include-configs=\`compile,test\`), and --ignore-unresolved to warn on
+          unresolved dependencies instead of failing the run.
 
           Pass --pom to instead generate a \`pom.xml\` via \`sbt makePom\` from your
           \`build.sbt\`. The xml is the dependency manifest (like a package.json for

@@ -42,7 +42,7 @@ const config: CliCommandConfig = {
     includeConfigs: {
       type: 'string',
       description:
-        'When generating facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive, `*` and `?` wildcards). Bare names act as exact-name filters. Only configurations matching at least one pattern are resolved. Default: compile,optional,provided,runtime,test',
+        'When generating facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive, `*` and `?` wildcards). Only configurations matching at least one pattern are resolved. e.g. `compile,test`. Default: compile,optional,provided,runtime,test',
     },
     excludeConfigs: {
       type: 'string',
@@ -83,10 +83,9 @@ const config: CliCommandConfig = {
     dependency graph of the whole build. It reads dependency metadata only and
     never downloads artifacts; an unresolved dependency is a fatal error. You
     can pass --include-configs / --exclude-configs (comma-separated glob
-    patterns) to choose which sbt configurations to resolve (e.g.
-    --include-configs=\`compile,test\` for exact names or \`*Test*\` for
-    variants), and --ignore-unresolved to warn on unresolved dependencies
-    instead of failing the run.
+    patterns) to control which sbt configurations are resolved (e.g.
+    --include-configs=\`compile,test\`), and --ignore-unresolved to warn on
+    unresolved dependencies instead of failing the run.
 
     Pass --pom to instead generate a \`pom.xml\` via \`sbt makePom\` from your
     \`build.sbt\`. The xml is the dependency manifest (like a package.json for
