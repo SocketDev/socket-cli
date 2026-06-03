@@ -1,345 +1,193 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
-import path from 'node:path'
-
+/**
+ * Maven hub repo discovery for `socket manifest bazel`.
+ *
+ * - Bzlmod path: `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`
+ *   emits a text-format report listing every repo the maven extension generated;
+ *   `parseShowExtensionOutput` extracts the names of hub repos (items annotated
+ *   with `(imported by ...)`) and skips generated per-artifact repos.
+ * - Legacy WORKSPACE path: probe a fixed list of conventional Maven hub names.
+ *   Each probe is classified into `populated` / `empty` / `not-defined`; the
+ *   orchestrator keeps only the `populated` candidates.
+ *
+ * No Starlark source is read by this module. All semantic interpretation
+ * comes from Bazel itself (`mod show_extension`, `cquery`).
+ */
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getErrorCause } from '../../../utils/errors.mts'
+// The importer token Bazel prints for a hub generated for the root module
+// itself (`(imported by <root>, …)`). Hubs imported only by rulesets
+// (`rules_jvm_external@6.7`, `stardoc@0.7.2`, …) are build-tooling, not the
+// user's SBOM, and are filtered out by the orchestrator.
+export const ROOT_MODULE_IMPORTER = '<root>'
 
-// Maximum size (bytes) we will read for any single Bazel workspace file.
-// Prevents DoS via maliciously large MODULE.bazel / WORKSPACE / .bzl files.
-const MAX_WORKSPACE_FILE_BYTES = 5 * 1024 * 1024
-
-// Maximum candidate count we will return (deduped) before truncating.
-// Real repos have <20; this is a hard ceiling against pathological inputs.
-const MAX_CANDIDATES = 256
-
-// Regex strategy: anchored, bounded character classes, no nested quantifiers.
-// Match `use_repo(maven, "X", "Y", ...)` with a bounded arg-list window to
-// avoid catastrophic backtracking on hostile input.
-
-// Bzlmod use_repo(maven, "name1", "name2"...).
-// Bounded: matches up to ~4KB of arg list to avoid catastrophic backtracking.
-const USE_REPO_RE = /use_repo\s*\(\s*maven\s*,([^)]{0,4096})\)/g
-const BAZEL_REPO_NAME_PATTERN = '[A-Za-z0-9._+-]{1,129}'
-const BAZEL_REPO_NAME_RE = new RegExp(`^${BAZEL_REPO_NAME_PATTERN}$`)
-// Quoted-name extractor inside the captured argument blob.
-const QUOTED_NAME_RE = new RegExp(`"(${BAZEL_REPO_NAME_PATTERN})"`, 'g')
-
-// Legacy maven_install(name = "X", ...) on a single statement.
-// Match the name= keyword arg specifically; bounded.
-const MAVEN_INSTALL_NAME_RE = new RegExp(
-  `maven_install\\s*\\([^)]{0,8192}?\\bname\\s*=\\s*"(${BAZEL_REPO_NAME_PATTERN})"`,
-  'g',
-)
-const MAVEN_COORDINATES_MARKER_RE = /\bmaven_coordinates\s*=/
-
-// Reads file contents, refusing files that exceed MAX_WORKSPACE_FILE_BYTES.
-// Returns null when the file is missing, oversized, or unreadable.
-function safeReadFile(file: string): string | null {
-  if (!existsSync(file)) {
-    return null
-  }
-  try {
-    const stat = statSync(file)
-    if (stat.size > MAX_WORKSPACE_FILE_BYTES) {
-      return null
-    }
-    return readFileSync(file, 'utf8')
-  } catch {
-    return null
-  }
+// One hub repo from a `bazel mod show_extension` report: its name plus the
+// modules that imported it (the `(imported by …)` annotation), merged across
+// every line the repo appears on.
+export type ShowExtensionRepo = {
+  name: string
+  importers: string[]
 }
 
-// Walks workspace root for legacy Starlark sources we can scan: WORKSPACE
-// (and WORKSPACE.bazel) plus top-level .bzl files. Non-recursive by design;
-// Phase 1 explicitly avoids static Starlark parsing at depth.
-function listLegacyStarlarkFiles(cwd: string): string[] {
-  const files: string[] = []
-  const candidates = ['WORKSPACE', 'WORKSPACE.bazel']
-  for (const c of candidates) {
-    const p = path.join(cwd, c)
-    if (existsSync(p)) {
-      files.push(p)
-    }
-  }
-  // Top-level .bzl files only.
-  try {
-    for (const entry of readdirSync(cwd)) {
-      if (entry.endsWith('.bzl')) {
-        files.push(path.join(cwd, entry))
-      }
-    }
-  } catch {
-    // Ignore unreadable cwd.
-  }
-  return files
+export type ProbeResult = {
+  code: number
+  stdout: string
+  stderr: string
 }
 
-// Returns deduplicated, sorted list of items, capped at MAX_CANDIDATES.
-function uniqueSorted(items: string[]): string[] {
-  const seen = new Set<string>()
-  const out: string[] = []
-  for (const item of items) {
-    if (!seen.has(item)) {
-      seen.add(item)
-      out.push(item)
-      if (out.length >= MAX_CANDIDATES) {
-        break
-      }
-    }
-  }
-  return out.sort()
-}
+export type RepoProbe = (repoName: string) => Promise<ProbeResult>
 
-function apparentNameFromJsonValue(value: unknown): string | undefined {
-  if (!value || typeof value !== 'object') {
-    return undefined
-  }
-  const obj = value as Record<string, unknown>
-  const direct = obj['apparentName'] ?? obj['apparent_name']
-  if (typeof direct === 'string') {
-    return direct
-  }
-  for (const nested of Object.values(obj)) {
-    const found = apparentNameFromJsonValue(nested)
-    if (found) {
-      return found
-    }
-  }
-  return undefined
-}
+export type ProbeStatus = 'populated' | 'empty' | 'not-defined'
 
-function apparentNamesFromRepoMapping(value: unknown): string[] {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+// Conventional Maven hub names rules_jvm_external sets up under
+// WORKSPACE-mode invocations. Probing each one is cheap (a failed visibility
+// lookup never triggers a `repository_rule` fetch) so the orchestrator can
+// try them all without paying the cost of a real cquery on undefined repos.
+export const CONVENTIONAL_MAVEN_REPO_NAMES: readonly string[] = [
+  'maven',
+  'maven_install',
+  'maven_dev',
+  'unpinned_maven',
+  'maven_unpinned',
+]
+
+// Pattern Bazel emits when a probed repo name isn't visible to the main
+// module. Used to distinguish `not-defined` (skip silently) from `empty`
+// (the repo exists but has no targets). Tolerant of either single- or
+// double-quote styles Bazel has used across versions.
+const NOT_VISIBLE_STDERR_RE =
+  /No repository visible as ['"]?@?[A-Za-z0-9._+-]+['"]? from/
+// Other "repo isn't analyzable" patterns Bazel emits, especially under
+// WORKSPACE mode and on Bazel 6.x. They all map to `not-defined`.
+const NO_SUCH_PACKAGE_STDERR_RE = /no such package ['"`]?@/
+// Pattern emitted when a repo IS visible / defined but yields no targets.
+// `--keep_going` plus `'no targets found beneath'` is the empty-but-defined
+// signature. The orchestrator treats `empty` and `not-defined` uniformly
+// as skips.
+const NO_TARGETS_STDERR_RE = /no targets found beneath/i
+// Anchor for the maven extension's section header in
+// `bazel mod show_extension` output. Tolerant of the canonical-name form
+// Bazel uses across versions (`@@rules_jvm_external+`, `@@rules_jvm_external~`,
+// or any future separator) and of trailing trailing whitespace.
+const SHOW_EXT_SECTION_HEADER_RE =
+  /^## @@?[A-Za-z0-9._+~-]+\/\/:extensions\.bzl%maven:\s*$/m
+// Bullet within `Fetched repositories:` that names a hub repo (one with an
+// `(imported by ...)` annotation). Bullets without that annotation are
+// generated per-artifact repos and are skipped.
+const FETCHED_HUB_BULLET_RE =
+  /^ {2}- (?<name>\S+) \(imported by (?<importers>[^)]+)\)\s*$/
+
+// Pure parser for `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`
+// stdout. Returns the hub repos listed under `Fetched repositories:` — i.e.
+// items annotated with `(imported by ...)` — each carrying the set of modules
+// that imported it. Generated per-artifact repos (no annotation) are skipped.
+// A repo can legitimately appear on multiple lines with different importers,
+// so importers are merged per repo (name-only dedupe would lose that, and the
+// importers data is what lets the orchestrator keep only root-imported hubs).
+// Output is sorted by name. Tolerant of `DEBUG:` / `WARNING:` lines from
+// Bazel; the section header `## @@<canonical>//:extensions.bzl%maven:` is the
+// anchor.
+export function parseShowExtensionOutput(stdout: string): ShowExtensionRepo[] {
+  const headerMatch = SHOW_EXT_SECTION_HEADER_RE.exec(stdout)
+  if (!headerMatch) {
     return []
   }
-  const candidates: string[] = []
-  for (const [name, canonicalName] of Object.entries(value)) {
-    if (name.startsWith('@') || typeof canonicalName !== 'string') {
+  const tail = stdout.slice(headerMatch.index + headerMatch[0].length)
+  // Find the `Fetched repositories:` line within the section.
+  const fetchedIdx = tail.indexOf('\nFetched repositories:')
+  if (fetchedIdx === -1) {
+    return []
+  }
+  const afterFetched = tail.slice(fetchedIdx + '\nFetched repositories:'.length)
+  const importersByName = new Map<string, Set<string>>()
+  for (const line of afterFetched.split(/\r?\n/)) {
+    // Stop at the next `## ` section header (some Bazel versions print
+    // multiple extensions in one report).
+    if (line.startsWith('## ')) {
+      break
+    }
+    // Empty line is fine; bullet that doesn't match is fine (it's an
+    // un-imported generated artifact repo) — skip it.
+    const match = FETCHED_HUB_BULLET_RE.exec(line)
+    if (!match || !match.groups) {
       continue
     }
-    if (BAZEL_REPO_NAME_RE.test(name)) {
-      candidates.push(name)
-    }
-  }
-  return candidates
-}
-
-function normalizeRepoName(name: string): string | undefined {
-  const repo = name.startsWith('@') ? name.slice(1) : name
-  return BAZEL_REPO_NAME_RE.test(repo) ? repo : undefined
-}
-
-// Parse `bazel mod dump_repo_mapping "" --output=json` output. Also accept the
-// older streamed jsonproto shape in case older Bazel versions or fixtures still
-// return repository records with apparentName fields.
-export function parseVisibleRepoCandidates(output: string): string[] {
-  const candidates: string[] = []
-  for (const line of output.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (!trimmed) {
+    const name = match.groups['name']
+    if (!name) {
       continue
     }
-    try {
-      const parsed = JSON.parse(trimmed) as unknown
-      candidates.push(...apparentNamesFromRepoMapping(parsed))
-      const apparentName = apparentNameFromJsonValue(parsed)
-      if (apparentName) {
-        const repo = normalizeRepoName(apparentName)
-        if (repo) {
-          candidates.push(repo)
-        }
-      }
-    } catch {
-      // Ignore malformed lines; caller will fall back to static discovery when
-      // no usable visible repo names are found.
+    const importers = importersByName.get(name) ?? new Set<string>()
+    for (const importer of (match.groups['importers'] ?? '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)) {
+      importers.add(importer)
     }
+    importersByName.set(name, importers)
   }
-  return uniqueSorted(candidates)
+  return [...importersByName.keys()].sort().map(name => ({
+    importers: [...importersByName.get(name)!].sort(),
+    name,
+  }))
 }
 
-// Step 1: parse candidate Maven repo names from Bzlmod and legacy entry points.
-export function parseMavenRepoCandidates(
-  cwd: string,
-  verbose?: boolean,
-): string[] {
-  const candidates: string[] = []
-
-  // Bzlmod path: parse MODULE.bazel for use_repo(maven, ...).
-  const moduleBazel = path.join(cwd, 'MODULE.bazel')
-  const moduleContent = safeReadFile(moduleBazel)
-  if (moduleContent) {
-    const bzlmodHits: string[] = []
-    for (const m of moduleContent.matchAll(USE_REPO_RE)) {
-      const argBlob = m[1] ?? ''
-      for (const n of argBlob.matchAll(QUOTED_NAME_RE)) {
-        bzlmodHits.push(n[1] as string)
-      }
-    }
-    candidates.push(...bzlmodHits)
-    if (verbose) {
-      logger.log(
-        '[VERBOSE] discovery: scanned',
-        moduleBazel,
-        `(${bzlmodHits.length} use_repo match(es))`,
-      )
-    }
-  } else if (verbose) {
-    logger.log(
-      '[VERBOSE] discovery:',
-      moduleBazel,
-      'not present (skipping bzlmod scan)',
-    )
+// Classify a raw probe result into one of three states. The probe contract
+// is whatever the runner emits — typically a lightweight
+// `cquery '@<name>//...' --keep_going --output=label`. The orchestrator
+// treats `empty` and `not-defined` uniformly as no-ops; the distinction
+// is preserved for verbose-mode diagnostics.
+export function classifyProbeResult(result: ProbeResult): ProbeStatus {
+  // A successful probe with any stdout means the repo exists AND has at
+  // least one target — populated.
+  if (result.code === 0 && result.stdout.trim().length > 0) {
+    return 'populated'
   }
-
-  // Legacy path: scan WORKSPACE + top-level .bzl files for maven_install(name=...).
-  const legacyFiles = listLegacyStarlarkFiles(cwd)
-  if (verbose) {
-    logger.log(
-      '[VERBOSE] discovery: legacy files considered:',
-      legacyFiles.length ? legacyFiles : '(none)',
-    )
+  // Code 1 with the "no repository visible" message → undefined.
+  if (
+    result.code !== 0 &&
+    (NOT_VISIBLE_STDERR_RE.test(result.stderr) ||
+      NO_SUCH_PACKAGE_STDERR_RE.test(result.stderr))
+  ) {
+    return 'not-defined'
   }
-  for (const file of legacyFiles) {
-    const content = safeReadFile(file)
-    if (!content) {
-      continue
-    }
-    const fileHits: string[] = []
-    for (const m of content.matchAll(MAVEN_INSTALL_NAME_RE)) {
-      fileHits.push(m[1] as string)
-    }
-    candidates.push(...fileHits)
-    if (verbose) {
-      logger.log(
-        '[VERBOSE] discovery: scanned',
-        file,
-        `(${fileHits.length} maven_install name match(es))`,
-      )
-    }
+  // Code 1 with the "no targets" message → defined but empty.
+  if (result.code !== 0 && NO_TARGETS_STDERR_RE.test(result.stderr)) {
+    return 'empty'
   }
-
-  const deduped = uniqueSorted(candidates)
-  if (verbose) {
-    logger.log('[VERBOSE] discovery: candidate set (pre-seed):', deduped)
+  // Code 0 with empty stdout: WORKSPACE-mode probes do this when the repo
+  // name isn't declared (Exp 5c). Treat as not-defined.
+  if (result.code === 0) {
+    return 'not-defined'
   }
-  return deduped
+  // Code 1 with no recognizable message: be conservative and call it
+  // not-defined so the orchestrator skips it without erroring the workspace.
+  return 'not-defined'
 }
 
-export type RepoProbe = (
-  repoName: string,
-) => Promise<{ stdout: string; code: number }>
-
-export type ValidationResult = {
-  valid: boolean
-  // Probe stdout — populated whenever the probe was reachable, even when
-  // validation rejects the repo. Empty string when the probe itself threw.
-  stdout: string
-}
-
-// Step 2: validate a candidate by running the probe and confirming
-// `maven_coordinates=` appears in stdout (the marker emitted by jvm_import /
-// aar_import rules generated by rules_jvm_external). Returns the probe
-// stdout alongside the verdict so the caller can cache it and reuse it
-// instead of running an identical extraction query.
-export async function validateMavenRepo(
+// Convenience: probe a single candidate and return its classified status,
+// with optional verbose logging. Pure orchestration around `probe` +
+// `classifyProbeResult`; isolated so the test suite can exercise the
+// logging contract independently of the runner implementation.
+export async function probeCandidate(
   repoName: string,
   probe: RepoProbe,
   verbose?: boolean,
-): Promise<ValidationResult> {
+): Promise<ProbeStatus> {
+  let result: ProbeResult
   try {
-    const result = await probe(repoName)
-    if (result.code !== 0) {
-      if (verbose) {
-        logger.log(
-          `[VERBOSE] discovery: probe @${repoName}: REJECT (code=${result.code})`,
-        )
-      }
-      return { valid: false, stdout: result.stdout }
-    }
-    const valid = MAVEN_COORDINATES_MARKER_RE.test(result.stdout)
-    if (verbose) {
-      logger.log(
-        `[VERBOSE] discovery: probe @${repoName}:`,
-        valid
-          ? 'ACCEPT (maven_coordinates marker found)'
-          : 'REJECT (no maven_coordinates marker in probe stdout)',
-      )
-    }
-    return { valid, stdout: result.stdout }
+    result = await probe(repoName)
   } catch (e) {
     if (verbose) {
       logger.log(
-        `[VERBOSE] discovery: probe @${repoName}: REJECT (probe threw):`,
-        getErrorCause(e),
+        `[VERBOSE] discovery: probe @${repoName}: not-defined (probe threw: ${
+          e instanceof Error ? e.message : String(e)
+        })`,
       )
     }
-    return { valid: false, stdout: '' }
+    return 'not-defined'
   }
-}
-
-// The default maven_install repo name when no explicit `name=` is given.
-// Included as a seed so repos that define maven_install in a subdirectory
-// .bzl file (not scanned by parseMavenRepoCandidates) are still discovered.
-const DEFAULT_MAVEN_REPO_SEED = 'maven'
-
-// Composition: parse, then validate each candidate; return validated subset
-// as a Map keyed by repo name with the validated probe stdout as value.
-// Map iteration order matches insertion order, so callers that just want
-// the list of repo names can call `Array.from(repos.keys())`. Callers that
-// want to skip re-running the same `bazel query` during extraction can read
-// the cached stdout off the Map and parse it directly.
-//
-// Always seeds with the default `@maven` repo name so repos whose
-// maven_install is defined in a sub-directory .bzl file (not reachable by
-// the top-level static scan) can still be discovered via probe validation.
-export async function discoverMavenRepos(
-  cwd: string,
-  probe: RepoProbe,
-  nativeCandidates?: string[],
-  verbose?: boolean,
-): Promise<Map<string, string>> {
-  const parsed =
-    nativeCandidates && nativeCandidates.length
-      ? nativeCandidates
-      : parseMavenRepoCandidates(cwd, verbose)
+  const status = classifyProbeResult(result)
   if (verbose) {
-    logger.log(
-      '[VERBOSE] discovery: candidate source:',
-      nativeCandidates && nativeCandidates.length
-        ? `bzlmod visible-repos (${nativeCandidates.length})`
-        : `static parse (${parsed.length})`,
-    )
+    logger.log(`[VERBOSE] discovery: probe @${repoName}: ${status}`)
   }
-  // Seed with the default repo name first (so it appears first in output if
-  // validated). Dedup via Set before validation.
-  const seen = new Set<string>([DEFAULT_MAVEN_REPO_SEED])
-  const candidates: string[] = [DEFAULT_MAVEN_REPO_SEED]
-  for (const c of parsed) {
-    if (!seen.has(c)) {
-      seen.add(c)
-      candidates.push(c)
-    }
-  }
-  if (verbose) {
-    logger.log(
-      '[VERBOSE] discovery: candidate set to probe (seed-first, deduped):',
-      candidates,
-    )
-  }
-  const validated = new Map<string, string>()
-  for (const c of candidates) {
-    // eslint-disable-next-line no-await-in-loop
-    const result = await validateMavenRepo(c, probe, verbose)
-    if (result.valid) {
-      validated.set(c, result.stdout)
-    }
-  }
-  if (verbose) {
-    logger.log(
-      '[VERBOSE] discovery: validated repos:',
-      Array.from(validated.keys()),
-    )
-  }
-  return validated
+  return status
 }

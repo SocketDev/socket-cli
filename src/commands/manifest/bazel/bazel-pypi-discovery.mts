@@ -5,7 +5,95 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getErrorCause } from '../../../utils/errors.mts'
 
-import type { RepoProbe, ValidationResult } from './bazel-repo-discovery.mts'
+import type { RepoProbe } from './bazel-repo-discovery.mts'
+
+// Result shape returned by `validatePypiHub`. Kept local to the PyPI module
+// since validation here is hub-alias-marker based (different from the
+// Maven-side tri-state classifier).
+export type ValidationResult = {
+  valid: boolean
+  // Probe stdout — populated whenever the probe was reachable, even when
+  // validation rejects the hub. Empty string when the probe itself threw.
+  stdout: string
+}
+
+// PyPI-only repo-name predicate (Bazel apparent-name grammar).
+const PYPI_REPO_NAME_PATTERN = '[A-Za-z0-9._+-]{1,129}'
+const PYPI_REPO_NAME_RE = new RegExp(`^${PYPI_REPO_NAME_PATTERN}$`)
+
+function pypiApparentNameFromJsonValue(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+  const obj = value as Record<string, unknown>
+  const direct = obj['apparentName'] ?? obj['apparent_name']
+  if (typeof direct === 'string') {
+    return direct
+  }
+  for (const nested of Object.values(obj)) {
+    const found = pypiApparentNameFromJsonValue(nested)
+    if (found) {
+      return found
+    }
+  }
+  return undefined
+}
+
+function pypiApparentNamesFromRepoMapping(value: unknown): string[] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return []
+  }
+  const candidates: string[] = []
+  for (const [name, canonicalName] of Object.entries(value)) {
+    if (name.startsWith('@') || typeof canonicalName !== 'string') {
+      continue
+    }
+    if (PYPI_REPO_NAME_RE.test(name)) {
+      candidates.push(name)
+    }
+  }
+  return candidates
+}
+
+function pypiNormalizeRepoName(name: string): string | undefined {
+  const repo = name.startsWith('@') ? name.slice(1) : name
+  return PYPI_REPO_NAME_RE.test(repo) ? repo : undefined
+}
+
+// Parse `bazel mod dump_repo_mapping "" --output=json` output. Also accepts
+// the older streamed jsonproto shape (apparentName / apparent_name records).
+// PyPI-only; the Maven path consumes `bazel mod show_extension` instead.
+export function parseVisibleRepoCandidates(output: string): string[] {
+  const seen = new Set<string>()
+  const candidates: string[] = []
+  for (const line of output.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed) {
+      continue
+    }
+    try {
+      const parsed = JSON.parse(trimmed) as unknown
+      for (const c of pypiApparentNamesFromRepoMapping(parsed)) {
+        if (!seen.has(c)) {
+          seen.add(c)
+          candidates.push(c)
+        }
+      }
+      const apparentName = pypiApparentNameFromJsonValue(parsed)
+      if (apparentName) {
+        const repo = pypiNormalizeRepoName(apparentName)
+        if (repo && !seen.has(repo)) {
+          seen.add(repo)
+          candidates.push(repo)
+        }
+      }
+    } catch {
+      // Skip malformed lines; caller falls back to static discovery when no
+      // usable visible repo names are found.
+    }
+  }
+  return candidates.sort()
+}
 
 // Maximum size (bytes) we will read for any single Bazel workspace file.
 // Prevents DoS via maliciously large MODULE.bazel / WORKSPACE / .bzl files.

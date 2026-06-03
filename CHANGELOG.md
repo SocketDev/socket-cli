@@ -13,6 +13,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
 - Updated the Coana CLI to v `15.3.20`.
 
+## [1.1.112](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.112) - 2026-05-29
+
+### Fixed
+- `socket fix` and `socket scan create` no longer abort with `EACCES: permission denied, scandir` when the project contains a directory the running user cannot read (for example a postgres `pgdata` data directory owned by another uid, or a Docker volume mount). Manifest discovery walks a project for `.gitignore` files before applying any path exclusions; that walk now honors `--exclude-paths` and `socket.yml` `projectIgnorePaths`, and skips unreadable directories rather than crashing. This makes `--exclude-paths` effective for unreadable directories — previously the crash happened before the exclusion was ever applied.
+
+## [1.1.111](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.111) - 2026-05-29
+
+### Changed
+- Updated the Coana CLI to v `15.3.15`.
+
+## [1.1.110](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.110) - 2026-05-29
+
+### Fixed
+- Resolved intermittent ~5-second timeouts affecting manifest uploads for reachability analysis and `socket fix`, along with other long-running API requests. Socket CLI now uses an explicit HTTP agent for all API traffic, so slow uploads and large streaming responses are no longer dropped prematurely.
+
+## [1.1.109](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.109) - 2026-05-28
+
+### Added
+- **`socket fix --exclude-paths`** — Skip matching paths from the scan entirely: manifests under these paths are not uploaded, and fixes are not applied to workspaces under them. Use this to skip directories the current user cannot read (e.g. a postgres `pgdata` directory inside the repo) so they do not abort manifest collection. The pre-existing `--exclude` flag keeps its previous fix-application-only semantic but is now hidden in `--help` in favor of `--exclude-paths`.
+
 ## [1.1.108](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.108) - 2026-05-28
 
 ### Changed

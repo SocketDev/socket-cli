@@ -29,13 +29,13 @@ vi.mock('./bazel-pypi-discovery.mts', () => ({
       workspaceMode: 'bzlmod',
     },
   ]),
+  parseVisibleRepoCandidates: vi.fn(() => []),
 }))
 const { probe } = vi.hoisted(() => ({
-  probe: async () => ({ code: 0, stdout: '@pypi//requests:pkg\n' }),
+  probe: async () => ({ code: 0, stdout: '@pypi//requests:pkg\n', stderr: '' }),
 }))
 vi.mock('./bazel-query-runner.mts', () => ({
   buildPypiProbeFor: vi.fn(() => probe),
-  buildProbeFor: vi.fn(() => probe),
   runBazelModShowVisibleRepos: vi.fn(async () => ({
     code: 0,
     stderr: '',

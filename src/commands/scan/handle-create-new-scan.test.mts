@@ -1,5 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
+import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 
 import type { HandleCreateNewScanConfig } from './handle-create-new-scan.mts'
@@ -477,6 +480,68 @@ describe('handleCreateNewScan excludePaths', () => {
         config: undefined,
         cwd: '/repo',
       },
+    )
+  })
+})
+
+describe('handleCreateNewScan tier1 finalize', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      data: { size: 1 },
+      ok: true,
+    })
+    mockFindSocketYmlSync.mockReturnValue({ ok: false })
+    mockGetPackageFilesForScan.mockResolvedValue(['package.json'])
+    mockFetchCreateOrgFullScan.mockResolvedValue({
+      data: { id: 'scan-id' },
+      ok: true,
+    })
+  })
+
+  afterEach(() => {
+    warnSpy.mockRestore()
+  })
+
+  it('finalizes the tier 1 scan when a scan id and tier 1 id are present', async () => {
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-id',
+      },
+      ok: true,
+    })
+
+    const config = createConfig()
+    config.reach.runReachabilityAnalysis = true
+
+    await handleCreateNewScan(config)
+
+    expect(finalizeTier1Scan).toHaveBeenCalledWith('tier1-id', 'scan-id')
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('warns instead of silently skipping finalize when no tier 1 id was extracted', async () => {
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: undefined,
+      },
+      ok: true,
+    })
+
+    const config = createConfig()
+    config.reach.runReachabilityAnalysis = true
+
+    await handleCreateNewScan(config)
+
+    expect(finalizeTier1Scan).not.toHaveBeenCalled()
+    expect(warnSpy).toHaveBeenCalledTimes(1)
+    expect(String(warnSpy.mock.calls[0]![0])).toMatch(
+      /tier 1 finalize|reachability report was not linked/i,
     )
   })
 })
