@@ -18,7 +18,10 @@ function makeTranscript(userText: string): string {
   return file
 }
 
-function runHook(command: string, transcriptPath?: string): {
+function runHook(
+  command: string,
+  transcriptPath?: string,
+): {
   code: number
   stderr: string
 } {

@@ -38,14 +38,14 @@ The `FLEET_SYNC=1` sentinel is recognized by the wheelhouse `no-revert-guard` + 
 
 ### Mode 2: `registry-pins`
 
-Propagates a `socket-registry` pin chain through the fleet. Different shape: uses `scripts/cascade-registry-pins.mts --sha <M'>` to walk the per-repo workflow pins. Documented here for completeness; the cascade script in `lib/cascade-template.mts` covers Mode 1, and a future `lib/cascade-registry-pins.mts` will cover Mode 2.
+Propagates a `socket-registry` pin chain through the fleet. Different shape: uses `scripts/repo/sync-registry-workflow-shas.mts --sha <M'>` to rewrite the registry `uses:` SHAs in `template/.github/workflows/*.yml`; the regular sync-scaffolding cascade then repins every fleet consumer's workflows to match. Documented here for completeness; the cascade script in `lib/cascade-template.mts` covers Mode 1, and a future `lib/sync-registry-workflow-shas.mts` will cover Mode 2.
 
 For now, the registry-pin cascade is two steps documented inline:
 
 ```
 Step 1 (intra-registry): node socket-registry/scripts/cascade-internal.mts
 Step 2 (intra-registry): git push to registry main; record new tip M'.
-Step 3 (fleet-wide): node socket-wheelhouse/scripts/cascade-registry-pins.mts --sha M'
+Step 3 (template): node socket-wheelhouse/scripts/repo/sync-registry-workflow-shas.mts --sha M' (cascade propagates to fleet)
 ```
 
 Skipping Step 1 means Step 3 propagates a SHA whose dependency graph still pins the pre-fix revision. Always run Step 1 first.
@@ -84,11 +84,11 @@ The cascade script (`lib/cascade-template.mts`) is deterministic — it `--no-ve
 
 2. **Stranded local commits** (local `main` diverged with un-pushed `chore(wheelhouse): cascade …` commits that origin already superseded). Confirm with `git branch -r --contains <sha>` (empty = local-only) and `git log --oneline HEAD..origin/main` (origin has newer cascades). If origin already has the work in canonical form, `git reset --hard origin/main` (needs `Allow reset bypass`) — nothing real is lost. Otherwise rebase the genuine local-unique commits on top.
 
-3. **Soak-bypassing a tool bump** (pnpm/zizmor/sfw newer than the 7-day `minimumReleaseAge`). The auto-updater (`scripts/update-external-tools.mts`) skips fresh releases. To bump anyway: hand-pin `external-tools.json` (version + every platform asset + recomputed sha256 integrity from the upstream GitHub release; npm-tarball platforms use npm `dist.integrity`), needs `Allow soak-time bypass` (alias: `Allow minimumReleaseAge bypass`). Then run `socket-registry/scripts/cascade-internal.mts` to bump-until-stable the internal action pins, push, and `scripts/fleet/cascade-registry-pins.mts --sha <M'>` to propagate the new pin fleet-wide. **Why:** 2026-06-01 a stale pnpm pin (11.4.0 vs runner 11.3.0) red-lined fleet CI; the bump to 11.5.0 also surfaced an `allowBuilds: esbuild` placeholder that `ERR_PNPM_IGNORED_BUILDS` then blocked on.
+3. **Soak-bypassing a tool bump** (pnpm/zizmor/sfw newer than the 7-day `minimumReleaseAge`). The auto-updater (`scripts/update-external-tools.mts`) skips fresh releases. To bump anyway: hand-pin `external-tools.json` (version + every platform asset + recomputed sha256 integrity from the upstream GitHub release; npm-tarball platforms use npm `dist.integrity`), needs `Allow soak-time bypass` (alias: `Allow minimumReleaseAge bypass`). Then run `socket-registry/scripts/cascade-internal.mts` to bump-until-stable the internal action pins, push, and `scripts/repo/sync-registry-workflow-shas.mts --sha <M'>` to rewrite the template workflow pins (the cascade propagates them fleet-wide). **Why:** 2026-06-01 a stale pnpm pin (11.4.0 vs runner 11.3.0) red-lined fleet CI; the bump to 11.5.0 also surfaced an `allowBuilds: esbuild` placeholder that `ERR_PNPM_IGNORED_BUILDS` then blocked on.
 
 ## Reference
 
 - FLEET_SYNC sentinel: `template/.claude/hooks/fleet/no-revert-guard/` + `template/.claude/hooks/fleet/overeager-staging-guard/`.
 - Wheelhouse sync-scaffolding: `socket-wheelhouse/scripts/repo/sync-scaffolding/cli.mts`.
 - Fleet-repo manifest: `lib/fleet-repos.txt`.
-- Registry-pin cascade (Mode 2): `socket-registry/scripts/cascade-internal.mts` (intra-registry bump-until-stable) → `scripts/fleet/cascade-registry-pins.mts --sha <M'>` (fleet-wide).
+- Registry-pin cascade (Mode 2): `socket-registry/scripts/cascade-internal.mts` (intra-registry bump-until-stable) → `scripts/repo/sync-registry-workflow-shas.mts --sha <M'>` (rewrites template workflows; cascade propagates fleet-wide).

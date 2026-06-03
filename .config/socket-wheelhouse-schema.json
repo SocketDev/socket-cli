@@ -244,7 +244,7 @@
       }
     },
     "pathsAllowlist": {
-      "description": "Exemptions for the path-hygiene gate (scripts/fleet/check-paths.mts). Migrated from `.github/paths-allowlist.yml`. Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.",
+      "description": "Exemptions for the path-hygiene gate (scripts/fleet/check-paths.mts). Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.",
       "type": "array",
       "items": {
         "description": "One exemption for the path-hygiene gate.",

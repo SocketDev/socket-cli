@@ -38,6 +38,12 @@ const FLAG = '--experimental-strip-types'
 // assignment value is quoted). The parser scopes the flag to an actual
 // invocation, so a quoted mention inside an `echo`/`-m` body is ignored.
 function passesStripTypesFlag(command: string): boolean {
+  // Cheap substring gate before the full tokenize: the flag (or its
+  // NODE_OPTIONS form) must appear verbatim for any match. Skips parseShell on
+  // the common path where the flag is absent.
+  if (!command.includes(FLAG)) {
+    return false
+  }
   for (const c of parseCommands(command)) {
     if (c.args.some(a => a === FLAG || a.startsWith(`${FLAG}=`))) {
       return true

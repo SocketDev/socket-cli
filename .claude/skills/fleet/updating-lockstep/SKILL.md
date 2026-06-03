@@ -29,13 +29,13 @@ Full policy table, scripts per phase, and advisory format in [`reference.md`](re
 
 Phases 1–2 (pre-flight + collect drift) run inline — one `pnpm run lockstep --json` call builds the work-list. Phase 3 (auto-bump) is independent per-row fan-out — each `version-pin` row resolves and validates on its own timeline — so it runs as a **`Workflow`** `pipeline()`. Phases 4–5 (advisory compose + report) run inline after, since the report needs the full per-row result set.
 
-| #   | Phase                 | Outcome                                                                                                                                                                                                                |
-| --- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Pre-flight (inline)   | Bail if no `lockstep.json`. Verify scaffolding (`lockstep.schema.json`, `scripts/fleet/lockstep.mts`). Clean tree. Detect CI mode.                                                                                           |
-| 2   | Collect drift (inline)| `pnpm run lockstep --json` → split rows into **auto** (mechanical version-pin bumps) and **advisory** (everything else with drift). The auto rows are the pipeline work-list.                                          |
-| 3   | Auto-bump (pipeline)  | Per row: resolve submodule, fetch tags, identify target tag, checkout, update `lockstep.json` + `.gitmodules`, validate, commit (`chore(deps): bump <upstream> to <tag>`). Test before committing in interactive mode. |
-| 4   | Advisory (inline)     | Compose per-row markdown lines for the PR body.                                                                                                                                                                        |
-| 5   | Report (inline)       | Human-readable summary; in CI mode, emit advisory block to `$GITHUB_OUTPUT` (base64); HANDOFF block per `_shared/report-format.md`.                                                                                    |
+| #   | Phase                  | Outcome                                                                                                                                                                                                                |
+| --- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Pre-flight (inline)    | Bail if no `lockstep.json`. Verify scaffolding (`lockstep.schema.json`, `scripts/fleet/lockstep.mts`). Clean tree. Detect CI mode.                                                                                     |
+| 2   | Collect drift (inline) | `pnpm run lockstep --json` → split rows into **auto** (mechanical version-pin bumps) and **advisory** (everything else with drift). The auto rows are the pipeline work-list.                                          |
+| 3   | Auto-bump (pipeline)   | Per row: resolve submodule, fetch tags, identify target tag, checkout, update `lockstep.json` + `.gitmodules`, validate, commit (`chore(deps): bump <upstream> to <tag>`). Test before committing in interactive mode. |
+| 4   | Advisory (inline)      | Compose per-row markdown lines for the PR body.                                                                                                                                                                        |
+| 5   | Report (inline)        | Human-readable summary; in CI mode, emit advisory block to `$GITHUB_OUTPUT` (base64); HANDOFF block per `_shared/report-format.md`.                                                                                    |
 
 ### The per-row pipeline: author a `Workflow`
 

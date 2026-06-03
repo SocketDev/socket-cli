@@ -63,7 +63,10 @@ test('ALLOWS `c8 ignore next - reason`', () => {
 test('ALLOWS `c8 ignore next 3 - reason`', () => {
   const { code } = runHook({
     tool_name: 'Write',
-    tool_input: { file_path: F, content: '/* c8 ignore next 3 - third-party */' },
+    tool_input: {
+      file_path: F,
+      content: '/* c8 ignore next 3 - third-party */',
+    },
   })
   assert.equal(code, 0)
 })
@@ -90,7 +93,10 @@ test('ALLOWS in a test file (exempt path)', () => {
 test('ALLOWS a non-source file', () => {
   const { code } = runHook({
     tool_name: 'Write',
-    tool_input: { file_path: '/Users/x/foo/README.md', content: '/* c8 ignore next */' },
+    tool_input: {
+      file_path: '/Users/x/foo/README.md',
+      content: '/* c8 ignore next */',
+    },
   })
   assert.equal(code, 0)
 })

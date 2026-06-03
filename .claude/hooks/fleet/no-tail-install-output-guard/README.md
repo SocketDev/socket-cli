@@ -14,12 +14,12 @@ This was a real shipping bug: v6.0.4 of `@socketsecurity/lib` shipped with `[ERR
 
 Pipes where the LHS is one of these install-shaped commands and the RHS starts with `tail` / `head`:
 
-| LHS                                                                                                | RHS                  |
-| -------------------------------------------------------------------------------------------------- | -------------------- |
-| `pnpm i` / `pnpm install` / `pnpm add` / `pnpm update` / `pnpm up`                                 | `tail …` / `head …`  |
-| `pnpm exec …`                                                                                      | `tail …` / `head …`  |
-| `pnpm run check` / `run fix` / `run update` / `run install` / `run test` / `run cover` / `run build` / `run release` | `tail …` / `head …`  |
-| Same set under `npm` and `yarn`                                                                    | same                 |
+| LHS                                                                                                                  | RHS                 |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `pnpm i` / `pnpm install` / `pnpm add` / `pnpm update` / `pnpm up`                                                   | `tail …` / `head …` |
+| `pnpm exec …`                                                                                                        | `tail …` / `head …` |
+| `pnpm run check` / `run fix` / `run update` / `run install` / `run test` / `run cover` / `run build` / `run release` | `tail …` / `head …` |
+| Same set under `npm` and `yarn`                                                                                      | same                |
 
 Leading `NAME=value` env assignments (`CI=true pnpm i`) don't disguise the match.
 

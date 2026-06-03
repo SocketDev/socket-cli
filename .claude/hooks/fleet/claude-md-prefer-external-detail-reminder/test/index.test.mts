@@ -114,7 +114,9 @@ test('does NOT flag short added section (< 3 lines)', () => {
 
 test('does NOT flag growth of existing section', () => {
   const pre = fleetDoc('### Existing\nshort')
-  const post = fleetDoc('### Existing\nshort\nadded line 1\nadded line 2\nadded line 3')
+  const post = fleetDoc(
+    '### Existing\nshort\nadded line 1\nadded line 2\nadded line 3',
+  )
   const added = findAddedSectionsLackingLink(pre, post)
   assert.equal(added.length, 0)
 })
@@ -207,7 +209,11 @@ test('CLI: Edit CLAUDE.md adding a linked section is silent', () => {
       '### Old\nshort\n\n### Big New Rule\nLine 1\nLine 2\nLine 3 docs/claude.md/fleet/big-new-rule.md'
     const { stderr, exitCode } = runHook({
       tool_name: 'Edit',
-      tool_input: { file_path: filePath, old_string: oldString, new_string: newString },
+      tool_input: {
+        file_path: filePath,
+        old_string: oldString,
+        new_string: newString,
+      },
     })
     assert.equal(exitCode, 0)
     assert.equal(stderr, '')

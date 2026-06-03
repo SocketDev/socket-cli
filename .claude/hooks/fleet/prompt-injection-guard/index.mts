@@ -69,8 +69,7 @@ const MAX_SCAN_BYTES = 512 * 1024
 // and cursor moves, backspace overwrites, and runs of carriage returns
 // overwriting a line. Matched on the RAW text (before invisible-char
 // stripping) so the hiding mechanism itself is observable.
-const ANSI_HIDE_RE =
-  /[[\]P^_]|\[[\d;]*[A-Za-z]|{2,}|(?:\r(?!\n)){2,}/
+const ANSI_HIDE_RE = /[[\]P^_]|\[[\d;]*[A-Za-z]|{2,}|(?:\r(?!\n)){2,}/
 
 // SGR "conceal" (code 8) — `ESC[8m` or `ESC[...;8;...m` — hides text in
 // most terminals. Named separately so the report can call it out.
@@ -145,13 +144,21 @@ export function isSelfFile(filePath: string): boolean {
 // source we author: soft hyphen, zero-width space/non-joiner/joiner,
 // word joiner, the various bidi controls and isolates, the invisible
 // math operators, and the BOM / zero-width no-break space.
-const INVISIBLE_RE =
-  /[­​-‏‪-‮⁠-⁤⁦-⁯﻿]/g
+const INVISIBLE_RE = /[­​-‏‪-‮⁠-⁤⁦-⁯﻿]/g
 
 const HOMOGLYPHS: ReadonlyMap<string, string> = new Map([
-  ['а', 'a'], ['е', 'e'], ['о', 'o'], ['с', 'c'],
-  ['р', 'p'], ['х', 'x'], ['у', 'y'], ['ѕ', 's'],
-  ['і', 'i'], ['ј', 'j'], ['ο', 'o'], ['ι', 'i'],
+  ['а', 'a'],
+  ['е', 'e'],
+  ['о', 'o'],
+  ['с', 'c'],
+  ['р', 'p'],
+  ['х', 'x'],
+  ['у', 'y'],
+  ['ѕ', 's'],
+  ['і', 'i'],
+  ['ј', 'j'],
+  ['ο', 'o'],
+  ['ι', 'i'],
 ])
 
 // Strip invisible chars + Unicode Tag-block codepoints, fold homoglyphs.

@@ -130,7 +130,7 @@ Related fleet skills:
 
 - `cascading-fleet` — propagate one wheelhouse SHA to every fleet repo (this skill's parent pattern).
 - `refactor-cleaner` (agent) — for non-mechanical refactors that need per-call-site human judgment.
-- `quality-loop` — for in-repo cleanup waves; rule-pack migrations are the cross-repo / cross-file generalization.
+- `looping-quality` — for in-repo cleanup waves; rule-pack migrations are the cross-repo / cross-file generalization.
 
 ## What NOT to do
 

@@ -30,10 +30,10 @@ const BYPASS_PHRASE = 'Allow changelog-empty-section bypass'
 const BYPASS_LOOKBACK_USER_TURNS = 8
 
 /**
- * Keep-a-Changelog headings the rule recognizes. Custom subsection
- * names (e.g. `### Internal`) outside this set are left alone — the
- * rule's job is to keep the consumer-facing schema clean, not to
- * police every heading shape downstream chooses.
+ * Keep-a-Changelog headings the rule recognizes. Custom subsection names (e.g.
+ * `### Internal`) outside this set are left alone — the rule's job is to keep
+ * the consumer-facing schema clean, not to police every heading shape
+ * downstream chooses.
  */
 const SECTION_NAMES = new Set([
   'Added',
@@ -48,10 +48,10 @@ const SECTION_NAMES = new Set([
 ])
 
 /**
- * Find empty Keep-a-Changelog sections in CHANGELOG.md content.
- * Returns an array of { line, name } for each empty `### Section`
- * heading. A section is empty when the next non-blank line is either
- * another `### ` heading, another `## [` version heading, or EOF.
+ * Find empty Keep-a-Changelog sections in CHANGELOG.md content. Returns an
+ * array of { line, name } for each empty `### Section` heading. A section is
+ * empty when the next non-blank line is either another `### ` heading, another
+ * `## [` version heading, or EOF.
  */
 export function findEmptySections(
   content: string,
@@ -142,13 +142,13 @@ export function emitBlock(
     lines.push(`  Line ${line}: \`### ${name}\` has no bullets.`)
   }
   lines.push('')
-  lines.push(
-    "  Per docs/claude.md/fleet/version-bumps.md §2, the CHANGELOG",
-  )
+  lines.push('  Per docs/claude.md/fleet/version-bumps.md §2, the CHANGELOG')
   lines.push('  is public/customer-facing only. When the filter leaves a')
   lines.push('  Keep-a-Changelog section empty, delete the heading too — a')
   lines.push('  reader scanning the release should not have to disambiguate')
-  lines.push('  "section intentionally empty" from "section forgot its content."')
+  lines.push(
+    '  "section intentionally empty" from "section forgot its content."',
+  )
   lines.push('')
   lines.push(`  Bypass: type \`${BYPASS_PHRASE}\` in a recent message.`)
   process.stderr.write(lines.join('\n') + '\n')

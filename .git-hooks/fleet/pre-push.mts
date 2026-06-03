@@ -152,7 +152,8 @@ const computeRange = (
   }
 
   const isAncestor = (ancestor: string, descendant: string): boolean =>
-    spawnSync('git', ['merge-base', '--is-ancestor', ancestor, descendant]).status === 0
+    spawnSync('git', ['merge-base', '--is-ancestor', ancestor, descendant])
+      .status === 0
 
   // Existing branch.
   if (!remoteShaExists(remoteSha) || !isAncestor(remoteSha, localSha)) {
@@ -176,26 +177,12 @@ const computeRange = (
 // `E` (missing-key but otherwise valid), `X` (good signature on
 // expired key), `Y`/`R` (revoked/expired key with good signature).
 //
-// Bypass (exceptional only): prefix the push command with the
-// SOCKET_PRE_PUSH_ALLOW_UNSIGNED env var:
-//   SOCKET_PRE_PUSH_ALLOW_UNSIGNED=1 git push origin main
-// One-shot — do not persist in shell rc.
-//
 // Why pre-push and not just rely on GitHub branch protection? The
 // fleet enforces branch protection too (lint-github-settings.mts
 // audits `required_signatures: true`), but a local pre-push fail
 // gives faster feedback (no round-trip to GitHub) and catches the
 // case where branch protection is being set up but not yet active
 // on a freshly-created fleet repo.
-const SIGNED_PUSH_BYPASS_ENV = 'SOCKET_PRE_PUSH_ALLOW_UNSIGNED'
-
-const readSignedPushBypassActive = (): boolean => {
-  // Pre-push runs in git's own context — no Claude Code transcript
-  // path is available. The bypass is an explicit env var the user
-  // sets on the failing push: `SOCKET_PRE_PUSH_ALLOW_UNSIGNED=1 git
-  // push origin main`. One-shot semantics: env var is not persisted.
-  return Boolean(process.env[SIGNED_PUSH_BYPASS_ENV])
-}
 
 // Parse the SSH allowed_signers file referenced by
 // `git config --get gpg.ssh.allowedSignersFile`. Returns the set of
@@ -249,11 +236,7 @@ const readAllowedSignerKeys = (): Set<string> => {
   return out
 }
 
-const scanSignedCommits = (
-  range: string,
-  remoteRef: string,
-  bypassActive: boolean,
-): number => {
+const scanSignedCommits = (range: string, remoteRef: string): number => {
   // Only enforce on default-branch refs (main / master). Feature
   // branches and topic branches can stay unsigned during development;
   // signing is required at the point of landing on the protected ref.
@@ -315,12 +298,6 @@ const scanSignedCommits = (
   if (errors === 0) {
     return 0
   }
-  if (bypassActive) {
-    logger.warn(
-      `${errors} unsigned commit(s) being pushed to ${refBase} — allowed by bypass phrase.`,
-    )
-    return 0
-  }
   logger.fail(`${errors} unsigned commit(s) being pushed to ${refBase}.`)
   for (const sha of unsigned.slice(0, 5)) {
     const oneline = git('log', '-1', '--oneline', sha)
@@ -332,11 +309,6 @@ const scanSignedCommits = (
   logger.info('')
   logger.info('Fix: rebase + re-sign the commits.')
   logger.info(`  git rebase --exec 'git commit --amend --no-edit -S' <base>`)
-  logger.info('')
-  logger.info(
-    'Bypass (exceptional only): prefix the push with ' +
-      `\`${SIGNED_PUSH_BYPASS_ENV}=1\`. One-shot; do not persist in shell rc.`,
-  )
   return errors
 }
 
@@ -596,10 +568,6 @@ const main = async (): Promise<number> => {
   let totalErrors = 0
   const refLines = splitLines(stdin.trim()).filter(Boolean)
 
-  // Bypass for the signed-commits scan is evaluated once per push:
-  // a single phrase authorizes one push regardless of ref count.
-  const signedBypassActive = readSignedPushBypassActive()
-
   for (const refLine of refLines) {
     const [localRef, localSha, remoteRef, remoteSha] = refLine.split(/\s+/)
     if (!localRef || !localSha || !remoteRef || !remoteSha) {
@@ -621,7 +589,7 @@ const main = async (): Promise<number> => {
     }
 
     totalErrors += scanCommitMessages(range)
-    totalErrors += scanSignedCommits(range, remoteRef, signedBypassActive)
+    totalErrors += scanSignedCommits(range, remoteRef)
     totalErrors += scanFilesInRange(range)
   }
 

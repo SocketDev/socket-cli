@@ -9,13 +9,15 @@
  *   minify env var explicitly cleared. Config discovery (first match wins, in
  *   order):
  *
- *   1. `.config/rolldown-validate.json` — an optional `{ "configs": [...] }` array
- *      of repo-root-relative config paths. Repos whose configs are nested
- *      (monorepo packages) or non-standard-named list them here. Each listed
- *      path is validated.
- *   2. `.config/repo/rolldown.config.mts`, then root `rolldown.config.mts` — the
- *      single-config fallback for simple single-package repos. If neither
- *      resolves the repo has no rolldown build and the check is a no-op pass.
+ *   1. The rolldown-validate manifest — `.config/repo/rolldown-validate.json`,
+ *      then legacy top-level `.config/rolldown-validate.json` — an optional
+ *      `{ "configs": [...] }` array of repo-root-relative config paths. Repos
+ *      whose configs are nested (monorepo packages) or non-standard-named list
+ *      them here. Each listed path is validated.
+ *   2. `.config/repo/rolldown.config.mts`, then legacy `.config/rolldown.config.mts`,
+ *      then root `rolldown.config.mts` — the single-config fallback for simple
+ *      single-package repos. If none resolves the repo has no rolldown build and
+ *      the check is a no-op pass.
  *      Export shapes tolerated per config: a `default` export (single options
  *      object or array), named `buildConfig` / `configs` exports (object or
  *      array), and a named `getRolldownConfig(entry, out)` factory (probed with
@@ -82,7 +84,8 @@ export function collectMinifyFlags(
 }
 
 // All rolldown config paths to validate, absolute. The manifest list wins;
-// otherwise the single canonical `.config/` path, then a root config.
+// otherwise the single repo-owned config under `.config/repo/`, then the
+// legacy top-level `.config/` location, then a root config.
 export function findRolldownConfigs(): string[] {
   const manifest = readConfigManifest()
   if (manifest) {
@@ -91,6 +94,7 @@ export function findRolldownConfigs(): string[] {
       .filter(p => existsSync(p))
   }
   const candidates = [
+    path.join(rootPath, '.config', 'repo', 'rolldown.config.mts'),
     path.join(rootPath, '.config', 'rolldown.config.mts'),
     path.join(rootPath, 'rolldown.config.mts'),
   ]
@@ -103,12 +107,16 @@ export function findRolldownConfigs(): string[] {
   return []
 }
 
-// Repo-root-relative config paths declared in `.config/rolldown-validate.json`,
+// Repo-root-relative config paths declared in the rolldown-validate manifest,
 // or undefined when the file is absent / malformed (caller falls back to the
-// single-config auto-discovery below).
+// single-config auto-discovery below). The manifest is repo-owned: prefer the
+// `.config/repo/` location, fall back to the legacy top-level `.config/` path.
 export function readConfigManifest(): string[] | undefined {
-  const manifestPath = path.join(rootPath, '.config', 'rolldown-validate.json')
-  if (!existsSync(manifestPath)) {
+  const manifestPath = [
+    path.join(rootPath, '.config', 'repo', 'rolldown-validate.json'),
+    path.join(rootPath, '.config', 'rolldown-validate.json'),
+  ].find(p => existsSync(p))
+  if (!manifestPath) {
     return undefined
   }
   let parsed: unknown
@@ -116,7 +124,7 @@ export function readConfigManifest(): string[] | undefined {
     parsed = JSON.parse(readFileSync(manifestPath, 'utf8'))
   } catch (e) {
     logger.error(
-      `Failed to parse .config/rolldown-validate.json: ${e instanceof Error ? e.message : String(e)}`,
+      `Failed to parse ${path.relative(rootPath, manifestPath)}: ${e instanceof Error ? e.message : String(e)}`,
     )
     process.exitCode = 1
     return undefined
@@ -125,7 +133,7 @@ export function readConfigManifest(): string[] | undefined {
     ?.configs
   if (!Array.isArray(configs) || configs.some(c => typeof c !== 'string')) {
     logger.error(
-      '.config/rolldown-validate.json must have a "configs" array of string paths',
+      `${path.relative(rootPath, manifestPath)} must have a "configs" array of string paths`,
     )
     process.exitCode = 1
     return undefined

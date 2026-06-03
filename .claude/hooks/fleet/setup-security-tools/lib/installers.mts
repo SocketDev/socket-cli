@@ -862,12 +862,16 @@ export async function setupSkillSpector(): Promise<boolean> {
   // Pinned SHA — see SKILLSPECTOR.version in external-tools.json.
   const sha = SKILLSPECTOR.version
   if (!sha) {
-    logger.error('skillspector entry in external-tools.json is missing `version`')
+    logger.error(
+      'skillspector entry in external-tools.json is missing `version`',
+    )
     return false
   }
   const repo = SKILLSPECTOR.repository?.replace(/^[^:]+:/, '') ?? ''
   if (!repo) {
-    logger.error('skillspector entry in external-tools.json is missing `repository`')
+    logger.error(
+      'skillspector entry in external-tools.json is missing `repository`',
+    )
     return false
   }
 
@@ -970,7 +974,9 @@ async function main(): Promise<void> {
   // SkillSpector is opt-in — pipx-dependent. Don't fail the umbrella
   // run if it isn't installed; surface it as "OPTIONAL" so the
   // operator knows it's an extra they can enable.
-  logger.log(`SkillSpector: ${skillspectorOk ? 'ready' : 'OPTIONAL (pipx required)'}`)
+  logger.log(
+    `SkillSpector: ${skillspectorOk ? 'ready' : 'OPTIONAL (pipx required)'}`,
+  )
   logger.log(`synp:         ${synpOk ? 'ready' : 'FAILED'}`)
   logger.log(`Trivy:        ${trivyOk ? 'ready' : 'FAILED'}`)
   logger.log(`TruffleHog:   ${trufflehogOk ? 'ready' : 'FAILED'}`)

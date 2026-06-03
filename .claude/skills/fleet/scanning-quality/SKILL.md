@@ -118,5 +118,5 @@ Report final metrics: dependency updates, structural validation results, cleanup
 This skill is read-only. It scans and reports, it doesn't fix. Cadence rules apply to _handing the report off_, not to fixes:
 
 - **Save the report before acting on it.** If the user opts to save (`reports/scanning-quality-YYYY-MM-DD.md`), commit the report file in its own commit (`docs(reports): scanning-quality YYYY-MM-DD`). That snapshot is referenceable later when fixes land.
-- **Don't fix in-skill.** If findings need fixes, hand off to the appropriate skill (`/guarding-paths` for path drift, `refactor-cleaner` agent via `/quality-loop` for code-quality findings) and commit those fixes per that skill's own cadence rules. Don't bundle scan + fixes in one commit.
+- **Don't fix in-skill.** If findings need fixes, hand off to the appropriate skill (`/fleet:guarding-paths` for path drift, `refactor-cleaner` agent via `/fleet:looping-quality` for code-quality findings) and commit those fixes per that skill's own cadence rules. Don't bundle scan + fixes in one commit.
 - **One report per scan run.** Re-running the skill produces a new report; don't overwrite the previous one's git history. Commit each fresh report so the trend line is visible.

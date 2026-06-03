@@ -6,13 +6,13 @@ A fleet repo's local `.git/config` carries **per-clone** state. Identity, signin
 
 These keys must never appear in a fleet repo's local `.git/config`:
 
-| Key                | Why it's banned                                                                                                                                      |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `core.bare`        | `bare = true` turns the work tree into a bare repo. Every `git status` / `git commit` / `git rev-parse --is-inside-work-tree` then fails with "must be run in a work tree". The repo becomes unusable until manually cleaned up. |
-| `user.email`       | Overrides the global identity. Commits sign with the global GPG key but author with the local email — GitHub rejects the push for "Found N violations: <sha>" verified-signature check. |
-| `user.name`        | Same shape — the commit author won't match the global GitHub identity.                                                                              |
-| `user.signingkey`  | Pinning a key locally drifts from the canonical global key. If the local key is wrong (or stale after rotation), every commit is unsigned to GitHub. |
-| `commit.gpgsign`   | Disabling signing locally bypasses the fleet rule. Pre-commit hook catches it for `main`/`master` but the local config has clobbered the global preference. |
+| Key               | Why it's banned                                                                                                                                                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `core.bare`       | `bare = true` turns the work tree into a bare repo. Every `git status` / `git commit` / `git rev-parse --is-inside-work-tree` then fails with "must be run in a work tree". The repo becomes unusable until manually cleaned up. |
+| `user.email`      | Overrides the global identity. Commits sign with the global GPG key but author with the local email — GitHub rejects the push for "Found N violations: <sha>" verified-signature check.                                          |
+| `user.name`       | Same shape — the commit author won't match the global GitHub identity.                                                                                                                                                           |
+| `user.signingkey` | Pinning a key locally drifts from the canonical global key. If the local key is wrong (or stale after rotation), every commit is unsigned to GitHub.                                                                             |
+| `commit.gpgsign`  | Disabling signing locally bypasses the fleet rule. Pre-commit hook catches it for `main`/`master` but the local config has clobbered the global preference.                                                                      |
 
 ## How the guard fires
 
@@ -60,4 +60,4 @@ The blast radius is high: a single bad config write knocks out an entire repo fo
 - [`docs/claude.md/fleet/commit-signing.md`](commit-signing.md) — the signing topology this guards
 - [`docs/claude.md/fleet/parallel-claude-sessions.md`](parallel-claude-sessions.md) — broader parallel-agent hygiene
 - `.claude/hooks/fleet/no-revert-guard/` — bypass-phrase pattern this hook reuses
-</content>
+  </content>

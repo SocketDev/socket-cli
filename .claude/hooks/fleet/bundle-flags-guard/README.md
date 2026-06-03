@@ -25,10 +25,10 @@ The hook checks `tsconfig.json` (any depth) and bundler configs
 (`esbuild.config.*`, `rolldown.config.*`, `tsdown.config.*`,
 `tsup.config.*`) for these keys flipping `false → true`:
 
-| File              | Key flipped to `true`                |
-| ----------------- | ------------------------------------ |
-| `tsconfig.json`   | `sourceMap`, `declarationMap`        |
-| bundler config    | `sourcemap`, `minify`                |
+| File            | Key flipped to `true`         |
+| --------------- | ----------------------------- |
+| `tsconfig.json` | `sourceMap`, `declarationMap` |
+| bundler config  | `sourcemap`, `minify`         |
 
 The block fires only on **transitions** (key absent or `false` →
 `true`). It does not fire on:

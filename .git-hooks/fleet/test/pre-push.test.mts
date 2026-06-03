@@ -224,7 +224,7 @@ test('pre-push: unsigned commit pushed to topic branch is allowed', async () => 
   }
 })
 
-test('pre-push: SOCKET_PRE_PUSH_ALLOW_UNSIGNED=1 bypasses the check', async () => {
+test('pre-push: SOCKET_PRE_PUSH_ALLOW_UNSIGNED env var no longer bypasses the check', async () => {
   const dir = setupRepo()
   try {
     const sha = commit(
@@ -239,17 +239,15 @@ test('pre-push: SOCKET_PRE_PUSH_ALLOW_UNSIGNED=1 bypasses the check', async () =
       stdio: 'pipe',
       env: { ...process.env, SOCKET_PRE_PUSH_ALLOW_UNSIGNED: '1' },
     })
-    let stderr = ''
-    child.stderr.on('data', chunk => {
-      stderr += chunk.toString('utf8')
-    })
     child.stdin.end(pushLine)
     const code = await new Promise<number>(resolve => {
       child.on('exit', c => resolve(c ?? 0))
     })
-    assert.strictEqual(code, 0, 'bypass env should allow the unsigned push')
-    // The hook prints a warning even when bypassing — confirm it.
-    assert.match(stderr, /allowed by bypass/i)
+    assert.strictEqual(
+      code,
+      2,
+      'unsigned push is always blocked — no bypass exists',
+    )
   } finally {
     rmSync(dir, { force: true, recursive: true })
   }

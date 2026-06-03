@@ -9,15 +9,14 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 
-import {
-  readCommand,
-  readFilePath,
-  readWriteContent,
-} from '../payload.mts'
+import { readCommand, readFilePath, readWriteContent } from '../payload.mts'
 
 describe('readCommand', () => {
   test('returns a string command', () => {
-    assert.equal(readCommand({ tool_input: { command: 'git push' } }), 'git push')
+    assert.equal(
+      readCommand({ tool_input: { command: 'git push' } }),
+      'git push',
+    )
   })
   test('undefined for non-string / missing', () => {
     assert.equal(readCommand({ tool_input: { command: 42 } }), undefined)
@@ -28,7 +27,10 @@ describe('readCommand', () => {
 
 describe('readFilePath', () => {
   test('returns a string path', () => {
-    assert.equal(readFilePath({ tool_input: { file_path: '/a/b.ts' } }), '/a/b.ts')
+    assert.equal(
+      readFilePath({ tool_input: { file_path: '/a/b.ts' } }),
+      '/a/b.ts',
+    )
   })
   test('undefined for non-string / missing', () => {
     assert.equal(readFilePath({ tool_input: { file_path: 0 } }), undefined)

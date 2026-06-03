@@ -18,16 +18,16 @@ Past incident: 2026-06-01 fleet-wide audit found ~200 dangling entries across 10
 
 Edit/Write on any path matching `.claude/<kind>/<name>/...` where `<kind>` is `agents | commands | hooks | skills` and `<name>` is NOT one of `fleet | repo | _*`.
 
-| Path                                                    | Result |
-| ------------------------------------------------------- | ------ |
-| `.claude/skills/foo/SKILL.md`                           | block  |
-| `.claude/agents/foo.md`                                 | block  |
-| `.claude/hooks/foo/index.mts`                           | block  |
-| `.claude/skills/fleet/foo/SKILL.md`                     | pass   |
-| `.claude/skills/repo/foo/SKILL.md`                      | pass   |
-| `.claude/skills/_shared/util.mts`                       | pass   |
-| `.claude/skills/_internal/x.mts`                        | pass   |
-| `template/.claude/skills/foo/SKILL.md` (wheelhouse)     | block  |
+| Path                                                | Result |
+| --------------------------------------------------- | ------ |
+| `.claude/skills/foo/SKILL.md`                       | block  |
+| `.claude/agents/foo.md`                             | block  |
+| `.claude/hooks/foo/index.mts`                       | block  |
+| `.claude/skills/fleet/foo/SKILL.md`                 | pass   |
+| `.claude/skills/repo/foo/SKILL.md`                  | pass   |
+| `.claude/skills/_shared/util.mts`                   | pass   |
+| `.claude/skills/_internal/x.mts`                    | pass   |
+| `template/.claude/skills/foo/SKILL.md` (wheelhouse) | block  |
 
 ## How
 

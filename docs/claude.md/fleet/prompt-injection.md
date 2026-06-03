@@ -15,7 +15,7 @@ those is an injection surface. An attacker (or a hostile maintainer) can embed a
 directive aimed at the agent rather than the human.
 
 **Real incident (2026-06-02):** a widely-used testing library shipped a message
-printed to stdout at *test-execution time* that addressed an AI agent directly
+printed to stdout at _test-execution time_ that addressed an AI agent directly
 — telling it not to use the library, to disregard its previous instructions,
 and to ignore the test results (an earlier revision instructed the agent to
 delete the tests and code outright). The text was wrapped in ANSI escape
@@ -26,7 +26,7 @@ directive hidden from the human but visible to the machine. The library later
 gated the behavior behind an opt-out flag, but the injection attempt is the
 point: a dependency tried to hijack the agent reading its output. (We don't name
 the project; a fleet surface isn't the place to single out an upstream, and the
-*shape* is what matters — see [Public-surface hygiene](public-surface-hygiene.md).)
+_shape_ is what matters — see [Public-surface hygiene](public-surface-hygiene.md).)
 
 ## What the guard catches
 
@@ -35,12 +35,12 @@ Write. It blocks introducing — into any file we author or vendor — text matc
 the injection shape, so we neither ship it nor copy it inward from an upstream:
 
 - Override directives: `disregard / ignore / forget … previous / prior /
-  above … instructions / prompts / context / rules`; `pay no attention to …`;
+above … instructions / prompts / context / rules`; `pay no attention to …`;
   `your real / actual / new task is …`.
 - Agent-addressing imperatives: `if you are an AI (agent|assistant|model)…
-  (you must|do not|never)`, `as an AI language model, …`.
+(you must|do not|never)`, `as an AI language model, …`.
 - Destructive agent commands: `delete / wipe / corrupt … (tests|code|files|
-  history|database)`, `rm -rf` paired with an agent address.
+history|database)`, `rm -rf` paired with an agent address.
 - Agent-addressing prohibitions: `you must not use this library / package`.
 - Result-suppression: `ignore all results / output / findings from …`.
 - Fake role/system tags: `</system>`, `[INST]`, `### system`, `system note:`.
@@ -72,12 +72,12 @@ not. Scanning is capped at 512 KB so a multi-MB vendored blob can't wedge it.
 
 It does **not** carry a denylist of specific libraries or the verbatim attack
 strings — a file listing them would itself trip the guard and would leak the
-very payloads it guards against. Detection is by *shape*, at write time.
+very payloads it guards against. Detection is by _shape_, at write time.
 
 ## Agent denial-of-service
 
 A second class of agent-hostile content is **not** a directive at all: content
-engineered to hang, loop, or exhaust an agent that merely *reads* it — a
+engineered to hang, loop, or exhaust an agent that merely _reads_ it — a
 denial-of-service on the reader. The guard blocks introducing these shapes:
 
 - **Combining-mark (Zalgo) runs** — a base char carrying a long run of stacked
@@ -113,7 +113,7 @@ fleet surfaces handle that:
 
 ## Bypass
 
-Legitimate need to write injection-shaped text (e.g. authoring *this* guard's
+Legitimate need to write injection-shaped text (e.g. authoring _this_ guard's
 own test fixtures, or documenting an incident): type
 `Allow prompt-injection bypass` verbatim in a recent message, or set
 `SOCKET_PROMPT_INJECTION_GUARD_DISABLED=1`. The guard's own source + test files

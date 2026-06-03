@@ -51,12 +51,12 @@ Edits to non-fleet-canonical paths (`src/`, `test/`, repo-local `.claude/hooks/r
 
 The warning is suppressed when either signal of rule promotion is present:
 
-| Suppressor                         | Applies to              |
-| ---------------------------------- | ----------------------- |
-| `**Why:**` line in current turn    | both signals            |
-| Edit to CLAUDE.md / hooks/ / skills/ in current turn | prose-only signal       |
+| Suppressor                                           | Applies to        |
+| ---------------------------------------------------- | ----------------- |
+| `**Why:**` line in current turn                      | both signals      |
+| Edit to CLAUDE.md / hooks/ / skills/ in current turn | prose-only signal |
 
-The file-path heuristic only suppresses the **prose** signal. The behavioral signal is *itself* an edit to a rule surface, so the file-path heuristic would self-suppress every repeat-edit hit. Only a `**Why:**` citation counts as suppression for the behavioral signal.
+The file-path heuristic only suppresses the **prose** signal. The behavioral signal is _itself_ an edit to a rule surface, so the file-path heuristic would self-suppress every repeat-edit hit. Only a `**Why:**` citation counts as suppression for the behavioral signal.
 
 ## Why it doesn't block
 

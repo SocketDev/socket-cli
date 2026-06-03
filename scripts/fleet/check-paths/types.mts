@@ -1,8 +1,8 @@
 /**
  * @file Shared types for the path-hygiene gate. `Finding` is the canonical
- *   finding shape every scanner produces; `AllowlistEntry` mirrors the YAML row
- *   shape in `.github/paths-allowlist.yml`. Pure types — no runtime; importing
- *   this file has zero side effects.
+ *   finding shape every scanner produces; `AllowlistEntry` mirrors one
+ *   `pathsAllowlist` entry in `.config/socket-wheelhouse.json`. Pure types — no
+ *   runtime; importing this file has zero side effects.
  */
 
 export type Finding = {

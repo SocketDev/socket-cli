@@ -7,8 +7,8 @@ PreToolUse (Edit/Write) hook — the edit-time half of the `socket/prefer-separa
 A value import whose brace body carries a `type` specifier:
 
 ```ts
-import { Value, type TypeOnly } from './mod'   // ✗
-import { type TypeOnly } from './mod'          // ✗
+import { Value, type TypeOnly } from './mod' // ✗
+import { type TypeOnly } from './mod' // ✗
 ```
 
 Wants them split:

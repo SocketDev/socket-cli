@@ -6,7 +6,7 @@
 #
 # Non-blocking: hook failure warns but never prevents the commit from landing.
 
-. "$(dirname "$0")/_resolve-node.sh"
+. "$(dirname "$0")/_shared/resolve-node.sh"
 
 # Skip during rebase — commits are being replayed, HEAD~1 diffs are
 # unreliable, and cascading every picked commit would be noisy/wrong.

@@ -9,7 +9,7 @@ agent-hostile content into a file we author or vendor:
    user, never an instruction to follow**; we neither ship it nor copy
    it inward.
 2. **Agent denial-of-service** — content engineered to hang or exhaust
-   an agent that *reads* it: Zalgo combining-mark runs, context-bloat
+   an agent that _reads_ it: Zalgo combining-mark runs, context-bloat
    megalines, repeated-character token bombs, catastrophic-backtracking
    (ReDoS) regex literals, and entity-expansion ("billion-laughs")
    bombs. This must not be introduced at all.
@@ -29,11 +29,11 @@ the agent to delete the tests and code). The text was wrapped in ANSI
 erase-line sequences that clear the line in a human's terminal while the
 raw bytes still reach any process parsing the stream — a directive
 hidden from the human but visible to the machine. (We don't name the
-project; the *shape* is what the guard keys on.)
+project; the _shape_ is what the guard keys on.)
 
 ## What it blocks
 
-Every Edit/Write, scanned line by line for injection *shape* (only
+Every Edit/Write, scanned line by line for injection _shape_ (only
 text the edit introduces; pre-existing matches aren't re-flagged):
 
 - **Override directives** — "disregard / ignore / forget … previous /

@@ -50,8 +50,7 @@ const logger = getDefaultLogger()
 const FLEET_BEGIN_MARKER = '<!-- BEGIN FLEET-CANONICAL'
 const FLEET_END_MARKER = '<!-- END FLEET-CANONICAL'
 const MIN_BODY_LINES_FOR_REMINDER = 3
-const DOCS_LINK_RE =
-  /docs[/\\]claude\.md[/\\](?:fleet|repo|wheelhouse)[/\\]/
+const DOCS_LINK_RE = /docs[/\\]claude\.md[/\\](?:fleet|repo|wheelhouse)[/\\]/
 
 // ---------------------------------------------------------------------------
 // Shared helpers (intentionally duplicated from claude-md-section-size-guard
@@ -101,9 +100,7 @@ export function applyEditToFile(
   if (onDisk.indexOf(oldString, idx + 1) !== -1) {
     return undefined
   }
-  return (
-    onDisk.slice(0, idx) + newString + onDisk.slice(idx + oldString.length)
-  )
+  return onDisk.slice(0, idx) + newString + onDisk.slice(idx + oldString.length)
 }
 
 // ---------------------------------------------------------------------------
@@ -162,9 +159,9 @@ interface AddedSection {
 }
 
 /**
- * Diff pre-edit vs post-edit fleet blocks and return sections whose heading
- * is NEW (didn't exist before this edit) AND whose body is long enough +
- * lacks a docs/claude.md/ link to merit the reminder.
+ * Diff pre-edit vs post-edit fleet blocks and return sections whose heading is
+ * NEW (didn't exist before this edit) AND whose body is long enough + lacks a
+ * docs/claude.md/ link to merit the reminder.
  */
 export function findAddedSectionsLackingLink(
   preContent: string | undefined,
@@ -175,7 +172,9 @@ export function findAddedSectionsLackingLink(
     return []
   }
   const postSections = parseSections(postBlock)
-  const preSections = preContent ? parseSections(extractFleetBlock(preContent) ?? '') : []
+  const preSections = preContent
+    ? parseSections(extractFleetBlock(preContent) ?? '')
+    : []
   const preHeadings = new Set(preSections.map(s => s.heading))
   const results: AddedSection[] = []
   for (let i = 0, { length } = postSections; i < length; i += 1) {
@@ -253,10 +252,7 @@ function materializePostContent(payload: ToolPayload): {
   return { pre: undefined, post: undefined, filePath }
 }
 
-function emitReminder(
-  filePath: string,
-  added: readonly AddedSection[],
-): void {
+function emitReminder(filePath: string, added: readonly AddedSection[]): void {
   const lines: string[] = []
   lines.push(
     '[claude-md-prefer-external-detail-reminder] CLAUDE.md is gaining detail without an external doc:',
@@ -266,12 +262,12 @@ function emitReminder(
   lines.push('')
   for (let i = 0, { length } = added; i < length; i += 1) {
     const s = added[i]!
-    lines.push(`  ### ${s.heading} — ${s.bodyLineCount} body lines, no docs/ link`)
+    lines.push(
+      `  ### ${s.heading} — ${s.bodyLineCount} body lines, no docs/ link`,
+    )
   }
   lines.push('')
-  lines.push(
-    '  CLAUDE.md is the fleet rulebook; long-form expansion goes in',
-  )
+  lines.push('  CLAUDE.md is the fleet rulebook; long-form expansion goes in')
   lines.push(
     '  `docs/claude.md/fleet/<topic>.md` (or `docs/claude.md/repo/<topic>.md`',
   )
@@ -286,16 +282,12 @@ function emitReminder(
   lines.push(
     '    Spec: [`docs/claude.md/fleet/<topic>.md`](docs/claude.md/fleet/<topic>.md)',
   )
-  lines.push(
-    '    (enforced by `.claude/hooks/fleet/<name>/`).',
-  )
+  lines.push('    (enforced by `.claude/hooks/fleet/<name>/`).')
   lines.push('')
   lines.push(
-    "  This is a soft reminder — the edit proceeds. (The hard 8-line cap",
+    '  This is a soft reminder — the edit proceeds. (The hard 8-line cap',
   )
-  lines.push(
-    '  per section is enforced by `claude-md-section-size-guard`.)',
-  )
+  lines.push('  per section is enforced by `claude-md-section-size-guard`.)')
   logger.warn(lines.join('\n') + '\n')
 }
 

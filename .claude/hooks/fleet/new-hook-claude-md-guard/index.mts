@@ -75,6 +75,12 @@ const HOOK_INDEX_PATH_RE =
 // the fleet should know about. Update when adding more.
 const WHEELHOUSE_ONLY_HOOKS: ReadonlySet<string> = new Set([
   'new-hook-claude-md-guard',
+  // Cascaded fleet-wide so the user-global wheelhouse-dispatch hook can fire it
+  // from any fleet-repo session (see manifest.mts wheelhouse-root note), but its
+  // logic + "open a chore(wheelhouse): cascade" advice only apply when authoring
+  // the wheelhouse template. Wheelhouse-only in intent — kept in fleet/ for
+  // dispatch reach, not for downstream policy.
+  'drift-check-reminder',
 ])
 
 export function findCanonicalClaudeMd(

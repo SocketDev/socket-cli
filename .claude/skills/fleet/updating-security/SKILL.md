@@ -3,6 +3,8 @@ name: updating-security
 description: Resolve open GitHub Dependabot security alerts on a fleet repo. Fetches alerts via `gh api`, then runs a Workflow that pipelines each alert through classify → fix (direct dep bump, pnpm override for transitives, or principled dismissal) → validate → commit independently, with a major-cross benignity gate before risky bumps land. Reports remaining advisories. Sibling of `updating-lockstep` under the `updating` umbrella.
 user-invocable: true
 allowed-tools: Workflow, AskUserQuestion, Read, Edit, Grep, Glob, Bash(gh api:*), Bash(gh auth:*), Bash(pnpm:*), Bash(git:*), Bash(node:*), Bash(jq:*)
+model: claude-sonnet-4-6
+context: fork
 ---
 
 # updating-security
@@ -44,8 +46,8 @@ Phase 1 (Discover) runs inline — one `gh api` call to build the work-list. The
 | --- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Discover (inline)    | `gh api repos/{owner}/{repo}/dependabot/alerts?state=open`. Group by package + relationship (direct / transitive). This is the pipeline work-list.                                                                                                                |
 | 2   | Classify (pipeline)  | Each alert → one of: `direct-fix` (bump the catalog / `package.json` pin), `override-fix` (pnpm override for transitive), `dismiss-with-reason`. Resolve the PIN TARGET = highest soaked release sharing `first_patched`'s major (see reference.md "Pin target"). |
-| 3   | Apply fix (pipeline) | Direct: bump to the resolved exact pin. Transitive: add an EXACT pin to `overrides:` in **pnpm-workspace.yaml** (not `package.json`); `pnpm install`. Commit per alert.                                                                                            |
-| 4   | Validate (pipeline)  | `pnpm run check --all` (interactive) or `pnpm run check --staged` (CI). Roll back this alert's commit if its check fails; the failed item drops out of the pipeline.                                                                                               |
+| 3   | Apply fix (pipeline) | Direct: bump to the resolved exact pin. Transitive: add an EXACT pin to `overrides:` in **pnpm-workspace.yaml** (not `package.json`); `pnpm install`. Commit per alert.                                                                                           |
+| 4   | Validate (pipeline)  | `pnpm run check --all` (interactive) or `pnpm run check --staged` (CI). Roll back this alert's commit if its check fails; the failed item drops out of the pipeline.                                                                                              |
 | 5   | Push (inline)        | After the pipeline returns: per CLAUDE.md push policy, `git push origin <branch>`, fall back to PR on rejection. NEVER force-push.                                                                                                                                |
 | 6   | Verify resolution    | `gh api .../dependabot/alerts` should show each fixed alert as `auto_dismissed` or `fixed`. Log remaining.                                                                                                                                                        |
 | 7   | Report               | Per-alert table: alert # / pkg / severity / action taken / state. Roll the pipeline's per-item `RESULT_SCHEMA` rows into this table.                                                                                                                              |

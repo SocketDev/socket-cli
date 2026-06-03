@@ -1,34 +1,23 @@
 /**
  * @file Prevent direct imports of platform-specific http-request entry points
- *   (`/node` or `/browser`) from outside the http-request module itself.
+ *   (`/node` or `/browser`) from outside the http-request module itself. Why:
+ *   `src/http-request/node.ts` and `src/http-request/browser.ts` are platform
+ *   implementations. The barrel `src/http-request/index.ts` (or the package
+ *   export `http-request`) re-exports the right one via the package.json
+ *   `"browser"` condition. Bundlers (rolldown, vite, webpack) and the Node
+ *   resolver read that condition at build time; hard-coding `/node` or
+ *   `/browser` defeats the condition and ships the wrong platform code in
+ *   browser builds. Allowed:
  *
- *   Why:
- *
- *     `src/http-request/node.ts` and `src/http-request/browser.ts` are
- *     platform implementations. The barrel `src/http-request/index.ts` (or
- *     the package export `http-request`) re-exports the right one via the
- *     package.json `"browser"` condition. Bundlers (rolldown, vite, webpack)
- *     and the Node resolver read that condition at build time; hard-coding
- *     `/node` or `/browser` defeats the condition and ships the wrong platform
- *     code in browser builds.
- *
- *   Allowed:
- *
- *     - Any file INSIDE `http-request/` (they implement the barrel and may
- *       reference sibling files directly).
- *     - Importing the barrel itself (`from '...http-request'` or
- *       `from '../http-request/http-request'`) — the platform-agnostic path.
- *
- *   Flagged:
- *
- *     - `import { httpJson } from '../http-request/node'`
- *     - `import { httpJson } from '@socketsecurity/lib/http-request/node'`
- *     - `import { httpJson } from '../http-request/browser'`
- *
- *   Autofix: rewrites the specifier to the canonical barrel path.
+ *   - Any file INSIDE `http-request/` (they implement the barrel and may
+ *     reference sibling files directly).
+ *   - Importing the barrel itself (`from '...http-request'` or `from
+ *     '../http-request/http-request'`) — the platform-agnostic path. Flagged:
+ *   - `import { httpJson } from '../http-request/node'`
+ *   - `import { httpJson } from '@socketsecurity/lib/http-request/node'`
+ *   - `import { httpJson } from '../http-request/browser'` Autofix: rewrites the
+ *     specifier to the canonical barrel path.
  */
-
-import path from 'node:path'
 
 import type { AstNode, RuleContext, RuleFixer } from '../lib/rule-types.mts'
 
@@ -44,7 +33,10 @@ const PLATFORM_SUFFIX_RE = new RegExp(
 )
 
 function canonicalSpecifier(specifier: string): string {
-  return specifier.replace(new RegExp(`\\/(${modulePatternStr})\\/(node|browser)(\\..+)?$`), '/$1')
+  return specifier.replace(
+    new RegExp(`\\/(${modulePatternStr})\\/(node|browser)(\\..+)?$`),
+    '/$1',
+  )
 }
 
 const rule = {
@@ -74,7 +66,9 @@ const rule = {
       return {}
     }
 
-    const sourceCode = context.getSourceCode ? context.getSourceCode() : context.sourceCode
+    const sourceCode = context.getSourceCode
+      ? context.getSourceCode()
+      : context.sourceCode
 
     function hasBypassComment(node: AstNode): boolean {
       const before = sourceCode.getCommentsBefore(node)

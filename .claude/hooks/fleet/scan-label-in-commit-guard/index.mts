@@ -3,7 +3,7 @@
 //
 // Blocks `git commit` invocations whose message body contains
 // scan-report-internal labels (B1, B2, …, M3, H5, L7). These are
-// the scratch-pad IDs the `/scanning-quality` and `/scanning-security`
+// the scratch-pad IDs the `/fleet:scanning-quality` and `/fleet:scanning-security`
 // skills assign to findings inside a single review session. They have
 // no meaning outside that session — a future reader of `git log` who
 // doesn't have the original report can't decode "fix B5" or
@@ -198,8 +198,12 @@ function checkCommand(command: string, payload: ToolCallPayload): void {
     lines.push(`  Line ${h.line}: ${h.label} — "${h.snippet}"`)
   }
   lines.push('')
-  lines.push('  Labels like B1 / M9 / H3 / L4 come from /scanning-quality and')
-  lines.push('  /scanning-security reports. They are scratch-pad IDs that mean')
+  lines.push(
+    '  Labels like B1 / M9 / H3 / L4 come from /fleet:scanning-quality',
+  )
+  lines.push(
+    '  and /fleet:scanning-security reports. Scratch-pad IDs that mean',
+  )
   lines.push('  nothing outside the original session — a future reader of')
   lines.push('  `git log` who does not have the report cannot decode them.')
   lines.push('')

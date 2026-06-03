@@ -3,6 +3,8 @@ name: setup-repo
 description: Full repo onboarding wizard. Orchestrates all setup concerns for a new engineer or a fresh clone — API token, OS keychain, shell rc bridge, native messaging host, security tools, and repo-specific initialization. Invoke with /setup-repo.
 user-invocable: true
 allowed-tools: Read, Bash, Edit, Write
+model: claude-sonnet-4-6
+context: fork
 ---
 
 # setup-repo
@@ -18,15 +20,15 @@ Master onboarding wizard. Runs each setup phase in order, skips phases already c
 
 ## Sub-setups (each runnable standalone via scripts)
 
-| Script | What it does |
-|---|---|
-| `node scripts/fleet/setup/token.mts` | API token → OS keychain + shell rc bridge |
-| `node scripts/fleet/setup/native-host.mts` | Chrome native messaging host manifest |
+| Script                                                     | What it does                                   |
+| ---------------------------------------------------------- | ---------------------------------------------- |
+| `node scripts/fleet/setup/token.mts`                       | API token → OS keychain + shell rc bridge      |
+| `node scripts/fleet/setup/native-host.mts`                 | Chrome native messaging host manifest          |
 | `node scripts/fleet/setup/trusted-publisher-extension.mts` | Build + load-unpacked + verify host connection |
-| `node scripts/fleet/setup/sfw.mts` | Socket Firewall shims |
-| `node scripts/fleet/setup/agentshield.mts` | AgentShield scanner |
-| `node scripts/fleet/setup/zizmor.mts` | Zizmor GitHub Actions scanner |
-| `/setup-security-tools` | All security tools in one shot |
+| `node scripts/fleet/setup/sfw.mts`                         | Socket Firewall shims                          |
+| `node scripts/fleet/setup/agentshield.mts`                 | AgentShield scanner                            |
+| `node scripts/fleet/setup/zizmor.mts`                      | Zizmor GitHub Actions scanner                  |
+| `/setup-security-tools`                                    | All security tools in one shot                 |
 
 `/setup-repo` runs all scripts in the order below and produces a summary.
 
@@ -63,6 +65,7 @@ node .claude/hooks/fleet/setup-security-tools/install.mts
 ```
 
 This writes `SOCKET_API_TOKEN` **and** `SOCKET_API_KEY` to the OS keychain:
+
 - macOS: Keychain Access (`security add-generic-password`, service `socket-cli`)
 - Linux: `secret-tool store`, service `socket-cli`
 - Windows: PowerShell CredentialManager → DPAPI file fallback
@@ -101,6 +104,7 @@ node -e "import('@socketsecurity/lib-stable/native-messaging/install').then(m =>
 ```
 
 Manifest lands at:
+
 - macOS: `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/dev.socket.trusted_publisher_host.json`
 - Linux: `~/.config/google-chrome/NativeMessagingHosts/dev.socket.trusted_publisher_host.json`
 - Windows: `%APPDATA%\Google\Chrome\User Data\NativeMessagingHosts\` + HKCU registry key
@@ -159,12 +163,12 @@ Repo Init               ✓ pnpm install + check passed
 
 Pass these in chat when invoking:
 
-| Option | Effect |
-|---|---|
-| `--rotate` | Re-prompt for the API token even if one exists |
-| `--skip-tools` | Skip Phase 4 (security tools) — useful on CI/headless |
-| `--skip-native-host` | Skip Phase 3 (native messaging host) — non-browser environments |
-| `--check` | Check-only mode: report what's missing without installing anything |
+| Option               | Effect                                                             |
+| -------------------- | ------------------------------------------------------------------ |
+| `--rotate`           | Re-prompt for the API token even if one exists                     |
+| `--skip-tools`       | Skip Phase 4 (security tools) — useful on CI/headless              |
+| `--skip-native-host` | Skip Phase 3 (native messaging host) — non-browser environments    |
+| `--check`            | Check-only mode: report what's missing without installing anything |
 
 ---
 

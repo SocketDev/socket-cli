@@ -8,7 +8,7 @@
  *
  *   - exempt.mts — file-path patterns the gate skips
  *   - walk.mts — recursive file walker with SKIP_DIRS
- *   - allowlist.mts — paths-allowlist.yml parser + matcher
+ *   - allowlist.mts — socket-wheelhouse.json `pathsAllowlist` loader + matcher
  *   - scan-code.mts — Rule A + B (.mts / .cts)
  *   - scan-workflow.mts — Rule C + D (.github/workflows/*.yml)
  *   - scan-script.mts — Rule G (Makefile / Dockerfile / shell)
@@ -20,7 +20,7 @@
  *     Hand-built workflow path outside a "Compute paths" step. D —
  *     Comment-encoded fully-qualified path. F — Same path shape constructed in
  *     2+ files. G — Hand-built paths in Makefiles, Dockerfiles, shell scripts.
- *     Allowlist: `.github/paths-allowlist.yml`. Each entry needs a `reason` so
+ *     Allowlist: `pathsAllowlist` in `.config/socket-wheelhouse.json`. Each entry needs a `reason` so
  *     the list stays audit-able. Patterns are deliberately narrow — entries
  *     should be specific, not blanket. Usage: node
  *     scripts/fleet/check-paths.mts # default: report + fail node
@@ -164,7 +164,7 @@ const main = (): number => {
   if (!args.values.explain) {
     logger.log('Run with --explain to see fix suggestions per finding.')
     logger.log(
-      'Add intentional exceptions to .github/paths-allowlist.yml with a `reason` field.',
+      'Add intentional exceptions to `pathsAllowlist` in .config/socket-wheelhouse.json with a `reason` field.',
     )
     logger.log(
       'Run with --show-hashes to print the snippet_hash for each finding (drift-resistant allowlisting).',

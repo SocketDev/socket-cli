@@ -51,7 +51,7 @@
  *       comment naming the source-of-truth `paths.mts` so the script
  *       can't drift from TS without a flagged change.
  *
- * Allowlist: `.github/paths-allowlist.yml`. Each entry needs a
+ * Allowlist: `pathsAllowlist` in `.config/socket-wheelhouse.json`. Each entry needs a
  * `reason` so the list stays audit-able. Patterns are deliberately
  * narrow — entries should be specific, not blanket.
  *
@@ -114,8 +114,6 @@ const EXEMPT_FILE_PATTERNS: RegExp[] = [
   /scripts\/check-paths\.mts$/,
   /scripts\/check-consistency\.mts$/,
   /\.claude\/hooks\/path-guard\//,
-  // Allowlist + config files.
-  /\.github\/paths-allowlist\.yml$/,
 ]
 
 type Finding = {
@@ -155,120 +153,67 @@ type AllowlistEntry = {
   reason: string
 }
 
+// Reads `pathsAllowlist` from the canonical `.config/socket-wheelhouse.json`
+// (JSON, per the fleet 'JSON not YAML for our own configs' rule). Returns []
+// when the config is absent or has no `pathsAllowlist`. `reason` is required
+// per entry; bad shapes are dropped with a stderr note.
 const loadAllowlist = (): AllowlistEntry[] => {
-  const allowlistPath = path.join(REPO_ROOT, '.github', 'paths-allowlist.yml')
-  if (!existsSync(allowlistPath)) {
+  const candidates = [
+    path.join(REPO_ROOT, '.config', 'socket-wheelhouse.json'),
+    path.join(REPO_ROOT, '.socket-wheelhouse.json'),
+  ]
+  let configPath: string | undefined
+  for (let i = 0, { length } = candidates; i < length; i += 1) {
+    if (existsSync(candidates[i]!)) {
+      configPath = candidates[i]!
+      break
+    }
+  }
+  if (!configPath) {
     return []
   }
-  const text = readFileSync(allowlistPath, 'utf8')
-  // Tiny YAML parser — only the shape we need: list of entries with
-  // `file`, `pattern`, `rule`, `line`, `reason` scalar fields, plus
-  // YAML 1.2 block-scalar indicators `|` (literal) and `>` (folded)
-  // for multi-line reasons. Avoids a yaml dep for a gate that has to
-  // be self-contained.
+  let cfg: { pathsAllowlist?: unknown }
+  try {
+    cfg = JSON.parse(readFileSync(configPath, 'utf8'))
+  } catch {
+    return []
+  }
+  const arr = cfg.pathsAllowlist
+  if (!Array.isArray(arr)) {
+    return []
+  }
   const entries: AllowlistEntry[] = []
-  let current: Partial<AllowlistEntry> | null = null
-  // When set, subsequent more-indented lines fold into this key as a
-  // block scalar (literal '|' keeps newlines, folded '>' joins with
-  // spaces).
-  let blockKey: string | null = null
-  let blockKind: '|' | '>' | null = null
-  let blockIndent = 0
-  let blockLines: string[] = []
-  const flushBlock = () => {
-    if (current && blockKey) {
-      const value =
-        blockKind === '>'
-          ? blockLines.join(' ').replace(/\s+/g, ' ').trim()
-          : blockLines.join('\n').replace(/\n+$/, '')
-      ;(current as any)[blockKey] = value
-    }
-    blockKey = null
-    blockKind = null
-    blockLines = []
-  }
-  const indentOf = (line: string): number => {
-    let i = 0
-    while (i < line.length && line[i] === ' ') {
-      i += 1
-    }
-    return i
-  }
-  const lines = text.split('\n')
-  for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i]!
-    const line = raw.replace(/\r$/, '')
-    // Block-scalar accumulation takes precedence over normal parsing.
-    if (blockKey !== null) {
-      if (line.trim() === '') {
-        // Preserve blank lines inside a literal block; folded blocks
-        // turn them into paragraph breaks (kept as separate joins).
-        blockLines.push('')
-        continue
-      }
-      const indent = indentOf(line)
-      if (indent >= blockIndent) {
-        blockLines.push(line.slice(blockIndent))
-        continue
-      }
-      flushBlock()
-      // Fall through and re-process the dedented line as normal.
-    }
-    if (!line.trim() || line.trim().startsWith('#')) {
+  for (let i = 0; i < arr.length; i += 1) {
+    const e = arr[i]
+    if (typeof e !== 'object' || e === null) {
       continue
     }
-    const tryAssign = (key: string, value: string) => {
-      const trimmed = value.trim()
-      if (current === null) {
-        return
-      }
-      if (trimmed === '|' || trimmed === '>') {
-        blockKey = key
-        blockKind = trimmed as '|' | '>'
-        blockIndent = indentOf(lines[i + 1] ?? '') || indentOf(line) + 2
-        blockLines = []
-        return
-      }
-      ;(current as any)[key] =
-        key === 'line' ? Number(unquote(trimmed)) : unquote(trimmed)
+    const obj = e as Record<string, unknown>
+    if (typeof obj['reason'] !== 'string' || obj['reason'].length === 0) {
+      process.stderr.write(
+        `[check-paths] pathsAllowlist[${i}] missing required \`reason\`; skipping.\n`,
+      )
+      continue
     }
-    if (line.startsWith('- ')) {
-      if (current && current.reason) {
-        entries.push(current as AllowlistEntry)
-      }
-      current = {}
-      const rest = line.slice(2).trim()
-      if (rest) {
-        const m = rest.match(/^([\w-]+):\s*(.*)$/)
-        if (m) {
-          tryAssign(m[1]!, m[2]!)
-        }
-      }
-    } else if (current) {
-      const m = line.match(/^\s+([\w-]+):\s*(.*)$/)
-      if (m) {
-        tryAssign(m[1]!, m[2]!)
-      }
+    const entry: AllowlistEntry = { reason: obj['reason'] }
+    if (typeof obj['file'] === 'string') {
+      entry.file = obj['file']
     }
-  }
-  if (blockKey !== null) {
-    flushBlock()
-  }
-  if (current && current.reason) {
-    entries.push(current as AllowlistEntry)
+    if (typeof obj['pattern'] === 'string') {
+      entry.pattern = obj['pattern']
+    }
+    if (typeof obj['rule'] === 'string') {
+      entry.rule = obj['rule']
+    }
+    if (typeof obj['line'] === 'number') {
+      entry.line = obj['line']
+    }
+    if (typeof obj['snippet_hash'] === 'string') {
+      entry.snippet_hash = obj['snippet_hash']
+    }
+    entries.push(entry)
   }
   return entries
-}
-
-const unquote = (s: string): string => {
-  const t = s.trim()
-  if (
-    (t.startsWith('"') && t.endsWith('"')) ||
-    (t.startsWith("'") && t.endsWith("'"))
-  ) {
-    return t.slice(1, -1)
-  }
-  return t
 }
 
 const ALLOWLIST = loadAllowlist()
@@ -930,7 +875,7 @@ const main = (): number => {
   if (!args.values.explain) {
     logger.log('Run with --explain to see fix suggestions per finding.')
     logger.log(
-      'Add intentional exceptions to .github/paths-allowlist.yml with a `reason` field.',
+      'Add intentional exceptions to `pathsAllowlist` in .config/socket-wheelhouse.json with a `reason` field.',
     )
     logger.log(
       'Run with --show-hashes to print the snippet_hash for each finding (drift-resistant allowlisting).',

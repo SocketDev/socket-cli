@@ -100,9 +100,7 @@ test('findBannedBashWrites does NOT flag --unset (cleanup is allowed)', () => {
 })
 
 test('findBannedBashWrites does NOT flag non-banned keys', () => {
-  const hits = findBannedBashWrites(
-    'git config branch.main.remote origin',
-  )
+  const hits = findBannedBashWrites('git config branch.main.remote origin')
   assert.equal(hits.length, 0)
 })
 
@@ -146,7 +144,8 @@ test('findBannedConfigWrites ignores [remote] entries', () => {
 })
 
 test('findBannedConfigWrites ignores comments', () => {
-  const content = '[core]\n\t# bare = true (commented out)\n\trepositoryformatversion = 0\n'
+  const content =
+    '[core]\n\t# bare = true (commented out)\n\trepositoryformatversion = 0\n'
   const hits = findBannedConfigWrites(content)
   assert.equal(hits.length, 0)
 })
@@ -253,7 +252,11 @@ test('scanRepoConfig returns clean for sound config', () => {
 // CLI integration (PreToolUse Bash dispatch)
 // ---------------------------------------------------------------------------
 
-function runHook(payload: object): { stderr: string; stdout: string; exitCode: number } {
+function runHook(payload: object): {
+  stderr: string
+  stdout: string
+  exitCode: number
+} {
   const result = spawnSync('node', [HOOK_PATH], {
     input: JSON.stringify(payload),
     env: { ...process.env },

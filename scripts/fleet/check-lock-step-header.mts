@@ -6,8 +6,9 @@
  *   quadruplet carries the same block, byte-for-byte (after stripping the `// `
  *   comment prefix). Drift on the contract is a different failure mode from a
  *   stale path reference (which `check-lock-step-refs.mts` catches) — this gate
- *   is the _intent_ tripwire. Opt-in per repo: uses the same
- *   `.config/lock-step-refs.json` as the path gate. Without the config, the
+ *   is the _intent_ tripwire. Opt-in per repo: uses the same repo-owned config
+ *   as the path gate (`.config/repo/lock-step-refs.json`, legacy top-level
+ *   `.config/lock-step-refs.json` fallback). Without the config, the
  *   gate is a no-op. With the config, the gate walks every scanned source file,
  *   looks for a `BEGIN LOCK-STEP HEADER` marker on the canonical side (a file
  *   whose header contains one or more `Lock-step with <Lang>: <path>` refs),
@@ -38,7 +39,12 @@ import path from 'node:path'
 import process from 'node:process'
 import { parseArgs } from 'node:util'
 
-const CONFIG_PATH = '.config/lock-step-refs.json'
+// The config is repo-owned: prefer the `.config/repo/` location, fall back to
+// the legacy top-level `.config/` path during the migration soak.
+const CONFIG_PATHS = [
+  '.config/repo/lock-step-refs.json',
+  '.config/lock-step-refs.json',
+]
 const SKIP_DIRS = new Set([
   '.git',
   '.next',
@@ -77,11 +83,13 @@ type Diff = {
 }
 
 function loadConfig(repoRoot: string): Config | undefined {
-  const configFile = path.join(repoRoot, CONFIG_PATH)
-  if (!existsSync(configFile)) {
+  const configPath = CONFIG_PATHS.find(rel =>
+    existsSync(path.join(repoRoot, rel)),
+  )
+  if (!configPath) {
     return undefined
   }
-  const raw = readFileSync(configFile, 'utf8')
+  const raw = readFileSync(path.join(repoRoot, configPath), 'utf8')
   const parsed = JSON.parse(raw) as Config
   return parsed
 }
@@ -268,7 +276,7 @@ function main(): void {
   if (!config) {
     if (!values.quiet) {
       process.stdout.write(
-        `check-lock-step-header: ${CONFIG_PATH} not present — opt-in gate disabled, exiting clean\n`,
+        `check-lock-step-header: ${CONFIG_PATHS[0]} not present — opt-in gate disabled, exiting clean\n`,
       )
     }
     return

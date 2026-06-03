@@ -40,7 +40,8 @@ const BYPASS_PHRASE = 'Allow pip-install bypass'
 // Files in scope for Edit/Write inspection. Markdown is OUT — error
 // messages telling the human user "install with: pip install X" live
 // in docs and are recovery instructions, not active build steps.
-const FILE_SCOPE_RE = /(?:^|\/)Dockerfile(?:\.[^\s/]+)?$|\.(?:sh|bash|dockerfile)$/i
+const FILE_SCOPE_RE =
+  /(?:^|\/)Dockerfile(?:\.[^\s/]+)?$|\.(?:sh|bash|dockerfile)$/i
 
 // Match a pip-install invocation anywhere in a line. Tolerates:
 //   pip install <pkg>
@@ -66,9 +67,7 @@ function isAllowedInstall(restOfArgs: string): boolean {
   // `pip install pipx`, `pip install --user pipx`, `pip install -U pipx`
   // (any flags but the only target is pipx).
   if (/(?:^|\s)pipx(?:==|\s|$)/.test(trimmed)) {
-    const targets = trimmed
-      .split(/\s+/)
-      .filter(t => t && !t.startsWith('-'))
+    const targets = trimmed.split(/\s+/).filter(t => t && !t.startsWith('-'))
     if (targets.length === 1 && /^pipx(==.*)?$/.test(targets[0]!)) {
       return true
     }
@@ -197,7 +196,8 @@ async function main(): Promise<void> {
       process.exit(0)
     }
     if (payload.tool_name === 'Write') {
-      scanText = payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
+      scanText =
+        payload.tool_input?.content ?? payload.tool_input?.new_string ?? ''
     } else {
       const oldStr = payload.tool_input?.old_string ?? ''
       const newStr = payload.tool_input?.new_string ?? ''
@@ -255,7 +255,7 @@ function reportFindings(
   }
   lines.push(
     '',
-    '  `pip install <pkg>` pollutes the host Python\'s site-packages',
+    "  `pip install <pkg>` pollutes the host Python's site-packages",
     '  and leaves the version floating. The fleet pins installs via',
     '  pipx (one tool, one venv, one exact version):',
     '',

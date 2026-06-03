@@ -1,40 +1,34 @@
 /**
- * @file Encourage the canonical Windows-tolerance test helpers when a repo
- *   has opted in by carrying `test/_shared/fleet/` (cascaded from
+ * @file Encourage the canonical Windows-tolerance test helpers when a repo has
+ *   opted in by carrying `test/_shared/fleet/` (cascaded from
  *   `socket-wheelhouse/template/test/_shared/fleet/`). The `_shared/` prefix
  *   tells vitest's `test/**\/*.test.*` include pattern (and any grep-based
  *   walker) that the contents are scaffolding, not tests. The three modules:
  *
- *     - `platform.mts` — `WIN32`, `NATIVE_PATH_SEP`, `windowsExe(name)`,
- *       and a `normalizePath` re-export.
- *     - `timing.mts` — `tolerantTimeout(ms)` / `tolerantSleep(ms)` (5× on
- *       Windows), `minTimerQuantum(ms)`, `TIMEOUT_MULTIPLIER`,
- *       `MIN_TIMER_QUANTUM_MS`.
- *     - `tags.mts` — `taggedFlaky` / `taggedWindows` / `taggedUnix`
- *       title-prefix helpers.
+ *   - `platform.mts` — `WIN32`, `NATIVE_PATH_SEP`, `windowsExe(name)`, and a
+ *     `normalizePath` re-export.
+ *   - `timing.mts` — `tolerantTimeout(ms)` / `tolerantSleep(ms)` (5× on Windows),
+ *     `minTimerQuantum(ms)`, `TIMEOUT_MULTIPLIER`, `MIN_TIMER_QUANTUM_MS`.
+ *   - `tags.mts` — `taggedFlaky` / `taggedWindows` / `taggedUnix` title-prefix
+ *     helpers. This rule is **opt-in by directory presence**. Repos without
+ *     `test/_shared/fleet/` see no warnings — pulling in the cascade turns the
+ *     rule on. That avoids the chicken-and-egg problem of cascading a rule to a
+ *     repo before its scaffolding catches up. Flags (only when
+ *     `test/_shared/fleet/` exists at a walk-up ancestor):
  *
- *   This rule is **opt-in by directory presence**. Repos without
- *   `test/_shared/fleet/` see no warnings — pulling in the cascade turns the
- *   rule on. That avoids the chicken-and-egg problem of cascading a rule to
- *   a repo before its scaffolding catches up.
- *
- *   Flags (only when `test/_shared/fleet/` exists at a walk-up ancestor):
- *
- *     1. `setTimeout(<cb>, N)` with `N ≤ 200` in a test file — small-delay
- *        sleeps are exactly the pattern that flakes on Windows. Suggest
- *        `tolerantSleep(N)` (settle/await shape) or `minTimerQuantum(N)`
- *        (hard-quantum shape) from `test/_shared/fleet/lib/timing.mts`.
- *     2. `it.skipIf(WIN32)(...)` / `describe.skipIf(WIN32)(...)` — replace
- *        with the named `itUnixOnly` / `describeUnixOnly` wrapper from the
- *        per-repo `test/util/skip-helpers.mts`.
- *     3. `it.skipIf(!WIN32)(...)` / `describe.skipIf(!WIN32)(...)` — same,
- *        but `itWindowsOnly` / `describeWindowsOnly`.
- *     4. Per-test timeout literal `≥ 5000` in the third positional arg of
- *        `it(...)` / `test(...)` — suggest `tolerantTimeout(N)` so the
- *        Windows leg gets the multiplier.
- *
- *   Per-line opt-out: `// socket-hook: allow raw-windows-test` or
- *   `// oxlint-disable-next-line socket/prefer-windows-test-helpers`.
+ *   1. `setTimeout(<cb>, N)` with `N ≤ 200` in a test file — small-delay sleeps
+ *      are exactly the pattern that flakes on Windows. Suggest
+ *      `tolerantSleep(N)` (settle/await shape) or `minTimerQuantum(N)`
+ *      (hard-quantum shape) from `test/_shared/fleet/lib/timing.mts`.
+ *   2. `it.skipIf(WIN32)(...)` / `describe.skipIf(WIN32)(...)` — replace with the
+ *      named `itUnixOnly` / `describeUnixOnly` wrapper from the per-repo
+ *      `test/util/skip-helpers.mts`.
+ *   3. `it.skipIf(!WIN32)(...)` / `describe.skipIf(!WIN32)(...)` — same, but
+ *      `itWindowsOnly` / `describeWindowsOnly`.
+ *   4. Per-test timeout literal `≥ 5000` in the third positional arg of `it(...)`
+ *      / `test(...)` — suggest `tolerantTimeout(N)` so the Windows leg gets the
+ *      multiplier. Per-line opt-out: `// socket-hook: allow raw-windows-test`
+ *      or `// oxlint-disable-next-line socket/prefer-windows-test-helpers`.
  */
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -52,7 +46,8 @@ const HELPER_DIR_PATH = 'test/_shared/fleet/lib'
 const TEST_FILE_RE = /\.(?:test|spec)\.[cm]?[jt]sx?$/
 const SMALL_SLEEP_MAX_MS = 200
 const LONG_TIMEOUT_MIN_MS = 5_000
-const SOCKET_HOOK_MARKER_RE = /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
+const SOCKET_HOOK_MARKER_RE =
+  /(?:#|\/\/|\/\*)\s*socket-hook:\s*allow(?:\s+([\w-]+))?/
 
 // Cache the opt-in result per ancestor directory so we don't re-stat for
 // every test file. The cascade is atomic: if the helper directory exists at
@@ -108,7 +103,7 @@ const rule = {
     fixable: false,
     messages: {
       smallSleep:
-        '`setTimeout(_, {{ms}})` in a test sleeps below Windows\'s 15.6 ms timer quantum and will round up unpredictably. Use `tolerantSleep({{ms}})` or `minTimerQuantum({{ms}})` from `test/_shared/fleet/lib/timing.mts`.',
+        "`setTimeout(_, {{ms}})` in a test sleeps below Windows's 15.6 ms timer quantum and will round up unpredictably. Use `tolerantSleep({{ms}})` or `minTimerQuantum({{ms}})` from `test/_shared/fleet/lib/timing.mts`.",
       skipIfWindows:
         '`it/describe.skipIf(WIN32)(...)` is the raw form. Use `itUnixOnly` / `describeUnixOnly` from `test/util/skip-helpers.mts` so the skip reason is in the helper name.',
       skipIfNotWindows:

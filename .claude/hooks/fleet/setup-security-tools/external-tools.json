@@ -106,15 +106,7 @@
           "integrity": "sha256-gg0IaLeHCvtHwJTJNoZmv5rxh0TXXJRlM6M0tX7Z8Yo="
         }
       },
-      "ecosystems": [
-        "npm",
-        "yarn",
-        "pnpm",
-        "pip",
-        "pip3",
-        "uv",
-        "cargo"
-      ]
+      "ecosystems": ["npm", "yarn", "pnpm", "pip", "pip3", "uv", "cargo"]
     },
     "sfw-enterprise": {
       "description": "Socket Firewall (enterprise tier)",

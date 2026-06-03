@@ -29,12 +29,25 @@ function run(cmd: string, cmdArgs: string[]): boolean {
 const steps: Array<() => boolean> = [
   // Lint scope is forwarded; everything else is full-scope.
   () => run('node', ['scripts/fleet/lint.mts', ...forwardedArgs]),
+  // Verify the socket/ oxlint plugin actually LOADS + registers every rule. A
+  // broken plugin import disables every socket/ rule; oxlint only warns on
+  // stderr (gating varies by version), and never checks the rule COUNT. This
+  // gate asserts both explicitly and fails closed. No-op in repos with no
+  // plugin.
+  () => run('node', ['scripts/fleet/check-oxlint-plugin-loads.mts']),
+  // CLAUDE.md doc integrity: every cited hook + socket/ rule must exist (catches
+  // stale citations after a rename/removal — the reverse of new-hook-claude-md-guard).
+  () => run('node', ['scripts/fleet/check-claude-md-citations.mts']),
+  // Cost routing: every mutating (fix) skill must declare a model: tier so
+  // mechanical work runs cheap. See docs/claude.md/fleet/skill-model-routing.md.
+  () => run('node', ['scripts/fleet/check-mutating-skills-have-model.mts']),
   () => run('pnpm', ['exec', 'tsgo', '--noEmit', '-p', 'tsconfig.check.json']),
   // Path-hygiene check (1 path, 1 reference). Mantra-driven gate;
   // see .claude/skills/path-guard/ + .claude/hooks/fleet/path-guard/.
   () => run('node', ['scripts/fleet/check-paths.mts', '--quiet']),
-  // Lock-step reference hygiene. Opt-in gate that exits clean when
-  // .config/lock-step-refs.json is absent; for repos that ship
+  // Lock-step reference hygiene. Opt-in gate that exits clean when the
+  // repo-owned .config/repo/lock-step-refs.json (legacy top-level
+  // .config/lock-step-refs.json) is absent; for repos that ship
   // cross-language ports (acorn quadruplet, socket-btm mcp/*.cpp),
   // it validates every `Lock-step with <Lang>: <path>` comment resolves
   // to an existing file. Forms documented in
@@ -88,6 +101,17 @@ const steps: Array<() => boolean> = [
   // `"private": true`. Uses `npm pack --dry-run --json` as the source of
   // truth — same logic npm itself uses for publish.
   () => run('node', ['scripts/fleet/check-package-files-allowlist.mts']),
+  // Reminder/guard duplication gate. The fleet convention: a `-guard` hook
+  // BLOCKS, a `-reminder` hook NUDGES — one surface per concern, never both.
+  // Errors when a base name has both `<base>-guard` and `<base>-reminder`
+  // (an exact same-concern duplicate); advisory-lists 2-segment shared-prefix
+  // pairs for a human glance. Past incident (2026-06-03): a prose-antipattern
+  // reminder + guard overlapped; resolved by dropping the reminder.
+  () =>
+    run('node', [
+      'scripts/fleet/check-hook-reminder-guard-overlap.mts',
+      '--quiet',
+    ]),
 ]
 
 for (let i = 0, { length } = steps; i < length; i += 1) {

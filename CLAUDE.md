@@ -8,7 +8,7 @@
 
 ### Identifying users
 
-Identify users by git credentials and use their actual name. Use "you/your" when speaking directly; use names when referencing contributions (enforced by `.claude/hooks/fleet/prose-tone-reminder/`).
+Identify users by git credentials and use their actual name. Use "you/your" when speaking directly; use names when referencing contributions (enforced by `.claude/hooks/fleet/voice-and-tone-reminder/`).
 
 ### Parallel Claude sessions
 
@@ -49,7 +49,7 @@ Full ruleset — open-PR edits, Bugbot replies, rebase-over-revert, no-empty-com
 
 ### Prose authoring (commit bodies, PRs, CHANGELOG, docs)
 
-🚨 Run human-facing prose through the `prose` skill before it lands: commit message bodies, PR descriptions, CHANGELOG entries, README sections, `docs/` markdown. The skill catches throat-clearing openers, "not X, it's Y" contrasts, em-dash chains, adverbs doing vague work, metronomic rhythms. Subject lines stay terse and imperative under `commit-message-format-guard`. Cascade commits and bot output are exempt. Full rules: [`.claude/skills/fleet/prose/SKILL.md`](.claude/skills/fleet/prose/SKILL.md).
+🚨 Run human-facing prose through the `prose` skill before it lands: commit message bodies, PR descriptions, CHANGELOG entries, README sections, `docs/` markdown. The skill catches throat-clearing openers, "not X, it's Y" contrasts, em-dash chains, adverbs doing vague work, metronomic rhythms. Edits to `CHANGELOG.md` / `docs/**/*.md` / `README.md` that carry those antipatterns are blocked at write time (bypass: `Allow prose-antipattern bypass`); subject lines stay terse and imperative under `commit-message-format-guard`. Cascade commits and bot output are exempt. Full rules: [`.claude/skills/fleet/prose/SKILL.md`](.claude/skills/fleet/prose/SKILL.md) (enforced by `.claude/hooks/fleet/prose-antipattern-guard/`).
 
 ### Squash-history opt-in
 
@@ -185,7 +185,7 @@ Soft cap **500 lines**, hard cap **1000 lines** per source file. Past those, spl
 
 ### Lint rules: errors over warnings, fixable over reporting
 
-🚨 Fleet lint rules are guardrails for AI-generated code — make them strict. Default new rules to `"error"` (never `"warn"`). Ship an autofix when the rewrite is deterministic (`fixable: 'code'` + `fix(fixer) => ...`). Defense in depth: skill (docs) + hook (edit-time) + lint (commit-time) — having one doesn't excuse the others. Tooling: oxlint + oxfmt only (no ESLint/Prettier); fleet socket-\* plugin at `template/.config/fleet/oxlint-plugin/`; always invoke with explicit `-c .config/...rc.json`. No file-scope `oxlint-disable` blocks — use `oxlint-disable-next-line <rule> -- <reason>` per call site (enforced by `socket/no-file-scope-oxlint-disable`, enforced by `.claude/hooks/fleet/no-file-scope-oxlint-disable-guard/`). Don't stack byte-identical disables on adjacent lines — refactor to a helper or named constant. Full rationale + cascade behavior + recipes in [`docs/claude.md/fleet/lint-rules.md`](docs/claude.md/fleet/lint-rules.md).
+🚨 Fleet lint rules are guardrails for AI-generated code — make them strict. Default new rules to `"error"` (never `"warn"`). Ship an autofix when the rewrite is deterministic (`fixable: 'code'` + `fix(fixer) => ...`). Defense in depth: skill (docs) + hook (edit-time) + lint (commit-time) — having one doesn't excuse the others. Tooling: oxlint + oxfmt only (no ESLint/Prettier); fleet socket-\* plugin at `template/.config/fleet/oxlint-plugin/`; always invoke with explicit `-c .config/...rc.json`. A broken import anywhere in the plugin disables EVERY `socket/` rule — oxlint only warns and never checks the rule count, so a green lint can hide a dead plugin; `scripts/fleet/check-oxlint-plugin-loads.mts` asserts load + rule-count (enforced by `.claude/hooks/fleet/oxlint-plugin-load-guard/`). No file-scope `oxlint-disable` blocks — use `oxlint-disable-next-line <rule> -- <reason>` per call site (enforced by `socket/no-file-scope-oxlint-disable`, enforced by `.claude/hooks/fleet/no-file-scope-oxlint-disable-guard/`). Don't stack byte-identical disables on adjacent lines — refactor to a helper or named constant. Full rationale + cascade behavior + recipes in [`docs/claude.md/fleet/lint-rules.md`](docs/claude.md/fleet/lint-rules.md).
 
 ### c8 / v8 coverage ignore directives
 
@@ -213,7 +213,7 @@ Never use `Bash(run_in_background: true)` for test / build commands (`vitest`, `
 
 ### Judgment & self-evaluation
 
-🚨 **Default to perfectionist** when you have latitude — "works now" ≠ "right". **Direct imperatives → execute, don't litigate**: bare commands ("do it", "kill it", "cancel the build") get the tool call, not a tradeoff paragraph. **When the user authorizes a queue** ("complete each one", "100%", "do them all"): finish every item before stopping — no "what's next?" / "session totals" mid-queue; skip AskUserQuestion when explicit go-ahead is already in transcript. **Fix warnings on sight** — don't label "pre-existing" / "out of scope". **UI/render changes**: rebuild + visually verify BEFORE committing. Flag adjacent bugs ("I also noticed X — want me to fix it?"). Name misconceptions before executing. If a fix fails twice: stop, re-read top-down, try something fundamentally different. Detail + per-rule citations in [`docs/claude.md/fleet/judgment-and-self-evaluation.md`](docs/claude.md/fleet/judgment-and-self-evaluation.md) (enforced by `.claude/hooks/fleet/{ask-suppression-reminder,dont-stop-mid-queue-reminder,excuse-detector,follow-direct-imperative-reminder,prose-tone-reminder,verify-rendered-output-before-commit-reminder}/`).
+🚨 **Default to perfectionist** when you have latitude — "works now" ≠ "right". **Direct imperatives → execute, don't litigate**: bare commands ("do it", "kill it", "cancel the build") get the tool call, not a tradeoff paragraph. **When the user authorizes a queue** ("complete each one", "100%", "do them all"): finish every item before stopping — no "what's next?" / "session totals" mid-queue; skip AskUserQuestion when explicit go-ahead is already in transcript. **Fix warnings on sight** — don't label "pre-existing" / "out of scope". **UI/render changes**: rebuild + visually verify BEFORE committing. Flag adjacent bugs ("I also noticed X — want me to fix it?"). Name misconceptions before executing. If a fix fails twice: stop, re-read top-down, try something fundamentally different. Detail + per-rule citations in [`docs/claude.md/fleet/judgment-and-self-evaluation.md`](docs/claude.md/fleet/judgment-and-self-evaluation.md) (enforced by `.claude/hooks/fleet/{ask-suppression-reminder,dont-stop-mid-queue-reminder,excuse-detector,follow-direct-imperative-reminder,voice-and-tone-reminder,verify-rendered-output-before-commit-reminder}/`).
 
 ### Error messages
 
@@ -242,8 +242,9 @@ Use `isError` / `isErrnoException` / `errorMessage` / `errorStack` from `@socket
 
 ### Agents & skills
 
-- `/scanning-security` — AgentShield + zizmor audit
-- `/scanning-quality` — quality analysis
+- `/fleet:scanning-security` — AgentShield + SkillSpector + Zizmor audit
+- `/fleet:scanning-quality` — single-pass quality scan → report
+- `/fleet:looping-quality` — loops scanning-quality, fixing until clean
 - Shared subskills in `.claude/skills/fleet/_shared/`
 - Skill telemetry (enforced by `.claude/hooks/fleet/skill-usage-logger/`)
 - **Handing off to another agent** — see [`docs/claude.md/fleet/agent-delegation.md`](docs/claude.md/fleet/agent-delegation.md).
@@ -251,7 +252,7 @@ Use `isError` / `isErrnoException` / `errorMessage` / `errorStack` from `@socket
 
 ### Hook registry
 
-Hooks under `.claude/hooks/fleet/<name>/` (fleet-canonical); host-repo-only hooks under `.claude/hooks/repo/<name>/` (exempt from citation gate). Each hook's README documents trigger + bypass. Full listing + per-hook enforcement details: [`docs/claude.md/fleet/hook-registry.md`](docs/claude.md/fleet/hook-registry.md).
+Hooks under `.claude/hooks/fleet/<name>/` (fleet-canonical); host-repo-only hooks under `.claude/hooks/repo/<name>/` (exempt from citation gate). Each hook's README documents trigger + bypass. **Naming:** a `-guard` hook BLOCKS, a `-reminder` hook NUDGES — one surface per concern, never both a `-guard` and a `-reminder` for the same thing (enforced by `scripts/fleet/check-hook-reminder-guard-overlap.mts` in `check --all`: errors on a `<base>-guard` + `<base>-reminder` collision, advisory-lists 2-segment shared-prefix pairs). Full listing + per-hook enforcement details: [`docs/claude.md/fleet/hook-registry.md`](docs/claude.md/fleet/hook-registry.md).
 
 <!-- END FLEET-CANONICAL -->
 

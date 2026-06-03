@@ -3,6 +3,8 @@ name: agent-ci
 description: Run this repo's GitHub Actions workflows locally in Docker with Agent CI to validate changes before pushing. Use before opening or updating a PR, after editing a workflow YAML under .github/workflows, or whenever catching a CI failure locally beats waiting on a remote runner.
 user-invocable: true
 allowed-tools: Bash, Read, Edit
+model: claude-haiku-4-5
+context: fork
 ---
 
 # agent-ci

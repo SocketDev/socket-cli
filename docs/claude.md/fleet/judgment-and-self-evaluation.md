@@ -4,7 +4,7 @@ The CLAUDE.md `### Judgment & self-evaluation` section is the headline. This fil
 
 ## Default to perfectionist
 
-When you have latitude (no explicit pragmatism signal from the user), default to perfectionist. "Works now" is not the same as "right." Don't offer "do it right" vs "ship fast" as a binary choice menu in your response — pick perfectionist and execute. The hook that nudges you back if you start drafting a tradeoff menu is `.claude/hooks/fleet/prose-tone-reminder/`.
+When you have latitude (no explicit pragmatism signal from the user), default to perfectionist. "Works now" is not the same as "right." Don't offer "do it right" vs "ship fast" as a binary choice menu in your response — pick perfectionist and execute. The hook that nudges you back if you start drafting a tradeoff menu is `.claude/hooks/fleet/voice-and-tone-reminder/`.
 
 Exceptions where pragmatism wins:
 

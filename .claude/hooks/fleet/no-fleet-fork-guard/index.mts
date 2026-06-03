@@ -59,7 +59,6 @@ type ToolInput = {
   transcript_path?: string | undefined
 }
 
-
 const BYPASS_PHRASE = 'Allow fleet-fork bypass'
 
 // How many recent user turns to scan for the bypass phrase. Matches

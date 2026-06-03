@@ -15,13 +15,12 @@ export const GIT_DASH_C_RE = /\bgit\s+-C\s+("([^"]+)"|'([^']+)'|(\S+))/
 
 // A leading `cd <dir>` before the git command, e.g. `cd /x/depot && git push`.
 // Only the FIRST cd in the chain matters for where git runs.
-export const LEADING_CD_RE =
-  /(?:^|[;&|]|&&)\s*cd\s+("([^"]+)"|'([^']+)'|(\S+))/
+export const LEADING_CD_RE = /(?:^|[;&|]|&&)\s*cd\s+("([^"]+)"|'([^']+)'|(\S+))/
 
 /**
- * Best-effort working directory for a `git` invocation inside `command`:
- * `git -C <dir>` wins, then a leading `cd <dir>` (resolved against the hook's
- * own cwd so a relative `cd ../foo` works), else the hook's cwd.
+ * Best-effort working directory for a `git` invocation inside `command`: `git
+ * -C <dir>` wins, then a leading `cd <dir>` (resolved against the hook's own
+ * cwd so a relative `cd ../foo` works), else the hook's cwd.
  */
 export function extractGitCwd(command: string): string {
   // Priority 1: explicit `git -C <dir>`.

@@ -51,7 +51,7 @@ test('non-pnpm-workspace.yaml passes', async () => {
 })
 
 test('adding @socketsecurity/* glob passes', async () => {
-  const p = tmpYaml('minimumReleaseAgeExclude:\n  - \'@socketregistry/*\'\n')
+  const p = tmpYaml("minimumReleaseAgeExclude:\n  - '@socketregistry/*'\n")
   const r = await runHook({
     tool_name: 'Write',
     tool_input: {
@@ -64,7 +64,7 @@ test('adding @socketsecurity/* glob passes', async () => {
 })
 
 test('adding @stuie/* first-party glob passes', async () => {
-  const p = tmpYaml('minimumReleaseAgeExclude:\n  - \'@socketregistry/*\'\n')
+  const p = tmpYaml("minimumReleaseAgeExclude:\n  - '@socketregistry/*'\n")
   const r = await runHook({
     tool_name: 'Write',
     tool_input: {
@@ -77,7 +77,7 @@ test('adding @stuie/* first-party glob passes', async () => {
 })
 
 test('adding @socketsecurity/lib@6.0.0 exact pin passes', async () => {
-  const p = tmpYaml('minimumReleaseAgeExclude:\n  - \'@socketregistry/*\'\n')
+  const p = tmpYaml("minimumReleaseAgeExclude:\n  - '@socketregistry/*'\n")
   const r = await runHook({
     tool_name: 'Write',
     tool_input: {
@@ -90,7 +90,7 @@ test('adding @socketsecurity/lib@6.0.0 exact pin passes', async () => {
 })
 
 test('adding bare-name third-party entry blocks', async () => {
-  const p = tmpYaml('minimumReleaseAgeExclude:\n  - \'@socketregistry/*\'\n')
+  const p = tmpYaml("minimumReleaseAgeExclude:\n  - '@socketregistry/*'\n")
   const r = await runHook({
     tool_name: 'Write',
     tool_input: {
@@ -106,7 +106,7 @@ test('adding bare-name third-party entry blocks', async () => {
 })
 
 test('adding @anthropic-ai/* third-party scope blocks', async () => {
-  const p = tmpYaml('minimumReleaseAgeExclude:\n  - \'@socketregistry/*\'\n')
+  const p = tmpYaml("minimumReleaseAgeExclude:\n  - '@socketregistry/*'\n")
   const r = await runHook({
     tool_name: 'Write',
     tool_input: {
@@ -120,7 +120,7 @@ test('adding @anthropic-ai/* third-party scope blocks', async () => {
 })
 
 test('all four Socket scopes allowed', async () => {
-  const p = tmpYaml('minimumReleaseAgeExclude:\n  - \'@socketregistry/*\'\n')
+  const p = tmpYaml("minimumReleaseAgeExclude:\n  - '@socketregistry/*'\n")
   const r = await runHook({
     tool_name: 'Write',
     tool_input: {
@@ -148,7 +148,7 @@ test('pre-existing third-party entry not re-flagged', async () => {
 })
 
 test('entry outside the block ignored', async () => {
-  const p = tmpYaml('overrides:\n  defu: \'>=6.1.6\'\n')
+  const p = tmpYaml("overrides:\n  defu: '>=6.1.6'\n")
   const r = await runHook({
     tool_name: 'Write',
     tool_input: {

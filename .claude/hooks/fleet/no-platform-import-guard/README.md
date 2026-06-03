@@ -13,11 +13,11 @@ build time. Hard-coding `/node` in a browser build ships the wrong HTTP stack.
 
 ## What it blocks
 
-| Pattern | Why |
-|---|---|
-| `import { httpJson } from '../http-request/node'` | Hard-codes Node.js platform |
+| Pattern                                              | Why                         |
+| ---------------------------------------------------- | --------------------------- |
+| `import { httpJson } from '../http-request/node'`    | Hard-codes Node.js platform |
 | `import { httpJson } from '../http-request/browser'` | Hard-codes browser platform |
-| `from '@socketsecurity/lib/http-request/node'` | Same, via package path |
+| `from '@socketsecurity/lib/http-request/node'`       | Same, via package path      |
 
 ## Exemptions
 

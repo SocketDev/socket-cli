@@ -47,10 +47,14 @@ test('non-Edit/Write tool passes', async () => {
 })
 
 test('non-builder script passes (file not under scripts/)', async () => {
-  const p = tmpFile('src', 'foo.mts', `
+  const p = tmpFile(
+    'src',
+    'foo.mts',
+    `
     const arch = process.env.TARGET_ARCH
     await spawn('make', [])
-  `)
+  `,
+  )
   const r = await runHook({
     tool_name: 'Write',
     tool_input: { file_path: p, content: 'see above' },
@@ -181,11 +185,7 @@ test('pre-existing violation not re-flagged', async () => {
 const arch = process.env.TARGET_ARCH
 await spawn('make', ['-j'])
 `
-  const p = tmpFile(
-    'packages/libfoo-builder/scripts',
-    'build.mts',
-    before,
-  )
+  const p = tmpFile('packages/libfoo-builder/scripts', 'build.mts', before)
   const r = await runHook({
     tool_name: 'Edit',
     tool_input: {

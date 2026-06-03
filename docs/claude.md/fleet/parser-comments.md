@@ -131,7 +131,7 @@ Rules:
 - **Mandatory: name + cross-refs.** First line is the file's purpose. Body lists `Lock-step with <Lang>: <path>` for every peer in the quadruplet, and `Lock-step from <Lang>: <path>` if the file is a port. The path forms are the same ones validated in §5.
 - **No timestamps, no authors, no per-impl prose.** Anything that differs between impls goes _outside_ the header (in language-specific doc comments, `// PORT NOTE:` blocks, etc.). The header is the contract; divergence is contraband.
 
-The gate (`scripts/check-lock-step-header.mts`, registered in the same opt-in `.config/lock-step-refs.json` as §5–6) walks the quadruplets named by each canonical-side header, extracts the `BEGIN LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block from each peer, and fails CI on any byte-diff. When the canonical impl needs to revise the contract, every peer must update in the same commit.
+The gate (`scripts/check-lock-step-header.mts`, registered in the same opt-in `.config/repo/lock-step-refs.json` as §5–6) walks the quadruplets named by each canonical-side header, extracts the `BEGIN LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block from each peer, and fails CI on any byte-diff. When the canonical impl needs to revise the contract, every peer must update in the same commit.
 
 ## Scope
 

@@ -23,8 +23,6 @@ export const EXEMPT_FILE_PATTERNS: RegExp[] = [
   /scripts\/check-paths\//,
   /scripts\/check-consistency\.mts$/,
   /\.claude\/hooks\/fleet\/path-guard\//,
-  // Allowlist + config files.
-  /\.github\/paths-allowlist\.yml$/,
 ]
 
 export function isExempt(filePath: string): boolean {

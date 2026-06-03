@@ -71,13 +71,13 @@ describe('socket/no-platform-specific-import', () => {
         {
           name: 'autofix rewrites http-request/node to http-request',
           code: 'import { httpJson } from "../http-request/node"\n',
-          output: 'import { httpJson } from \'../http-request\'\n',
+          output: "import { httpJson } from '../http-request'\n",
           errors: [{ messageId: 'platformImport' }],
         },
         {
           name: 'autofix rewrites logger/browser to logger',
           code: 'import { logger } from "../logger/browser"\n',
-          output: 'import { logger } from \'../logger\'\n',
+          output: "import { logger } from '../logger'\n",
           errors: [{ messageId: 'platformImport' }],
         },
       ],

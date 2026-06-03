@@ -1,33 +1,28 @@
 /**
- * @file Canonical fleet GitHub Actions allowlist + reference parsing.
+ * @file Canonical fleet GitHub Actions allowlist + reference parsing. Single
+ *   source of truth for which `uses: <owner>/<repo>@<sha>` lines are permitted
+ *   in fleet workflows. Every entry here MUST be referenced by at least one
+ *   shared workflow under `socket-registry/.github/workflows/` or by a fleet
+ *   repo's own workflows — removing one breaks every consumer that pins through
+ *   those shared workflows. Adding one is a fleet-level decision that should
+ *   cascade to every org's per-repo Actions allowlist. Third-party patterns
+ *   (dtolnay/, hendrikmuhs/, HaaLeo/, pnpm/action-setup, softprops/, Swatinem/)
+ *   were removed in favor of hand-rolled composites under
+ *   SocketDev/socket-registry/.github/actions/. New third-party actions should
+ *   be inlined as shell or ported to a composite there rather than added to
+ *   this list — the `workflow-third-party-action-guard` hook enforces that at
+ *   edit time. Shared by:
  *
- *   Single source of truth for which `uses: <owner>/<repo>@<sha>` lines
- *   are permitted in fleet workflows. Every entry here MUST be referenced
- *   by at least one shared workflow under
- *   `socket-registry/.github/workflows/` or by a fleet repo's own
- *   workflows — removing one breaks every consumer that pins through
- *   those shared workflows. Adding one is a fleet-level decision that
- *   should cascade to every org's per-repo Actions allowlist.
- *
- *   Third-party patterns (dtolnay/, hendrikmuhs/, HaaLeo/,
- *   pnpm/action-setup, softprops/, Swatinem/) were removed in favor of
- *   hand-rolled composites under SocketDev/socket-registry/.github/actions/.
- *   New third-party actions should be inlined as shell or ported to a
- *   composite there rather than added to this list — the
- *   `workflow-third-party-action-guard` hook enforces that at edit time.
- *
- *   Shared by:
- *     - .claude/skills/fleet/auditing-gha-settings/run.mts (audits
- *       org-level Actions permissions against this baseline).
- *     - .claude/hooks/fleet/workflow-third-party-action-guard/ (blocks
- *       Edit/Write of a workflow that introduces a non-allowlisted
- *       `uses:` line).
+ *   - .claude/skills/fleet/auditing-gha-settings/run.mts (audits org-level
+ *     Actions permissions against this baseline).
+ *   - .claude/hooks/fleet/workflow-third-party-action-guard/ (blocks Edit/Write
+ *     of a workflow that introduces a non-allowlisted `uses:` line).
  */
 
 /**
  * Canonical fleet-allowed `uses:` patterns. Each entry is an
- * `<owner>/<repo>[/<sub>]@*` wildcard — the version pin floats, but
- * the owner/repo MUST be in this set. Sorted alphabetically.
+ * `<owner>/<repo>[/<sub>]@*` wildcard — the version pin floats, but the
+ * owner/repo MUST be in this set. Sorted alphabetically.
  */
 export const CANONICAL_PATTERNS: readonly string[] = [
   'actions/cache/restore@*',
@@ -48,10 +43,10 @@ export const CANONICAL_PATTERNS: readonly string[] = [
 ]
 
 /**
- * Owner prefixes that are always permitted — first-party SocketDev orgs
- * and their reusable workflows / composite actions. Anything matching
- * `^<prefix>/` skips the allowlist check entirely. Keeps the
- * CANONICAL_PATTERNS list small + focused on third-party deps.
+ * Owner prefixes that are always permitted — first-party SocketDev orgs and
+ * their reusable workflows / composite actions. Anything matching `^<prefix>/`
+ * skips the allowlist check entirely. Keeps the CANONICAL_PATTERNS list small +
+ * focused on third-party deps.
  */
 export const FIRST_PARTY_OWNER_PREFIXES: readonly string[] = [
   'SocketDev/',
@@ -59,12 +54,11 @@ export const FIRST_PARTY_OWNER_PREFIXES: readonly string[] = [
 ]
 
 /**
- * Returns true when `ref` matches a canonical wildcard or a first-party
- * owner prefix. `ref` is the `<owner>/<repo>[/<sub>]@<version>` form as
- * it appears in the workflow file (no trailing comment, no leading
- * whitespace). Local refs (`./.github/...`) and Docker refs
- * (`docker://...`) return true — they're not subject to the
- * third-party allowlist.
+ * Returns true when `ref` matches a canonical wildcard or a first-party owner
+ * prefix. `ref` is the `<owner>/<repo>[/<sub>]@<version>` form as it appears in
+ * the workflow file (no trailing comment, no leading whitespace). Local refs
+ * (`./.github/...`) and Docker refs (`docker://...`) return true — they're not
+ * subject to the third-party allowlist.
  */
 export function isAllowedActionRef(ref: string): boolean {
   if (!ref) {
@@ -99,11 +93,17 @@ export function isAllowedActionRef(ref: string): boolean {
 }
 
 export interface UsesRefMatch {
-  /** 1-indexed line number in the source text. */
+  /**
+   * 1-indexed line number in the source text.
+   */
   readonly line: number
-  /** The full `uses: <ref>` line text (trimmed). */
+  /**
+   * The full `uses: <ref>` line text (trimmed).
+   */
   readonly text: string
-  /** `<owner>/<repo>[/<sub>]@<version>` substring (the value of `uses:`). */
+  /**
+   * `<owner>/<repo>[/<sub>]@<version>` substring (the value of `uses:`).
+   */
   readonly ref: string
 }
 
@@ -114,11 +114,11 @@ export interface UsesRefMatch {
 const USES_RE = /^\s*-?\s*uses:\s+(\S+)/
 
 /**
- * Find every `uses:` line in `text` (a workflow YAML body) and return
- * one entry per line. The order matches source order. Lines marked
- * `# socket-hook: allow third-party-action` are excluded — they're a
- * one-off opt-out for cases where inlining isn't practical (e.g. a
- * vendor-mandated action with a fleet exception on file).
+ * Find every `uses:` line in `text` (a workflow YAML body) and return one entry
+ * per line. The order matches source order. Lines marked `# socket-hook: allow
+ * third-party-action` are excluded — they're a one-off opt-out for cases where
+ * inlining isn't practical (e.g. a vendor-mandated action with a fleet
+ * exception on file).
  */
 export function extractActionRefs(text: string): UsesRefMatch[] {
   const out: UsesRefMatch[] = []
@@ -139,14 +139,13 @@ export function extractActionRefs(text: string): UsesRefMatch[] {
 
 /**
  * Diff two workflow texts and return every `uses:` ref that appears in
- * `newText` but not in `oldText`. Use this to gate Edit ops — a hook
- * can read `tool_input.old_string` + `tool_input.new_string` and only
- * block on NEWLY introduced third-party refs, leaving pre-existing
- * non-allowlisted refs alone (those are a separate cleanup pass).
+ * `newText` but not in `oldText`. Use this to gate Edit ops — a hook can read
+ * `tool_input.old_string` + `tool_input.new_string` and only block on NEWLY
+ * introduced third-party refs, leaving pre-existing non-allowlisted refs alone
+ * (those are a separate cleanup pass).
  *
- * For Write ops where `oldText` is the empty string (new file) or
- * undefined (no prior content tracked), every ref in `newText` is
- * considered "newly added".
+ * For Write ops where `oldText` is the empty string (new file) or undefined (no
+ * prior content tracked), every ref in `newText` is considered "newly added".
  */
 export function findNewlyAddedRefs(
   oldText: string | undefined,

@@ -69,11 +69,10 @@ interface BannedHit {
  * would write a banned key at the local (non-global / non-system) scope.
  * Returns one Hit per matching invocation; an empty array means no block.
  *
- * Tolerates `&&`-chained commands, leading env-var assignments
- * (`SOMETHING=x git config ...`), and quoted values.
+ * Tolerates `&&`-chained commands, leading env-var assignments (`SOMETHING=x
+ * git config ...`), and quoted values.
  *
- * Scope qualifiers that opt out:
- *   --global, --system, --worktree, --file <path>
+ * Scope qualifiers that opt out: --global, --system, --worktree, --file <path>
  *
  * (--local is the default and is treated as the banned scope.)
  */
@@ -105,7 +104,11 @@ export function findBannedBashWrites(command: string): BannedHit[] {
     // extraction below works uniformly.
     const argsNoLocal = args.replace(/(?:^|\s)--local(?:\s|$)/, ' ').trim()
     // Skip read invocations (--get / --get-all / --get-regexp / --list / -l).
-    if (/(?:^|\s)--(?:get|get-all|get-regexp|list)(?:\s|$)|(?:^|\s)-l(?:\s|$)/.test(argsNoLocal)) {
+    if (
+      /(?:^|\s)--(?:get|get-all|get-regexp|list)(?:\s|$)|(?:^|\s)-l(?:\s|$)/.test(
+        argsNoLocal,
+      )
+    ) {
       continue
     }
     // Skip --unset (the rule is about WRITES, not removals — removing
@@ -217,7 +220,7 @@ function emitBlock(
   lines.push('  Fix:')
   lines.push('    1. Use --global instead: `git config --global user.email …`')
   lines.push('    2. Or scope to a worktree: `git config --worktree …`')
-  lines.push("    3. Or, if cleaning up corruption, use `git config --unset`")
+  lines.push('    3. Or, if cleaning up corruption, use `git config --unset`')
   lines.push('       to REMOVE the existing local override (allowed).')
   lines.push('')
   lines.push(`  Bypass: type "${BYPASS_PHRASE}" in your next message.`)
@@ -243,8 +246,8 @@ interface CorruptionFinding {
 }
 
 /**
- * Scan one repo's `.git/config` for known corruption shapes. Returns the
- * issues found (empty array means clean).
+ * Scan one repo's `.git/config` for known corruption shapes. Returns the issues
+ * found (empty array means clean).
  */
 export function scanRepoConfig(configPath: string): readonly string[] {
   if (!existsSync(configPath)) {
@@ -264,7 +267,9 @@ export function scanRepoConfig(configPath: string): readonly string[] {
   // Test-fixture email leaks
   for (let i = 0, { length } = TEST_EMAIL_PATTERNS; i < length; i += 1) {
     if (TEST_EMAIL_PATTERNS[i]!.test(raw)) {
-      issues.push('user.email looks like a test fixture (e.g. test@example.com)')
+      issues.push(
+        'user.email looks like a test fixture (e.g. test@example.com)',
+      )
       break
     }
   }
@@ -283,7 +288,9 @@ export function scanRepoConfig(configPath: string): readonly string[] {
  * Probe every fleet repo under `~/projects/` for corruption. Returns the
  * findings list (empty when all clean).
  */
-export function scanFleetRepos(projectsDir: string): readonly CorruptionFinding[] {
+export function scanFleetRepos(
+  projectsDir: string,
+): readonly CorruptionFinding[] {
   if (!existsSync(projectsDir)) {
     return []
   }
@@ -418,13 +425,11 @@ async function main(): Promise<void> {
   if (!payload || typeof payload !== 'object') {
     return
   }
-  const hookEventName = (payload as { hook_event_name?: unknown }).hook_event_name
+  const hookEventName = (payload as { hook_event_name?: unknown })
+    .hook_event_name
   // SessionStart mode — probe fleet repos for corruption.
   if (hookEventName === 'SessionStart') {
-    const projectsDir = path.join(
-      process.env['HOME'] ?? '',
-      'projects',
-    )
+    const projectsDir = path.join(process.env['HOME'] ?? '', 'projects')
     const findings = scanFleetRepos(projectsDir)
     emitSessionStartReport(findings)
     return

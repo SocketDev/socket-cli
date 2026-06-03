@@ -64,7 +64,9 @@ export function isExemptPath(filePath: string): boolean {
     filePath.includes('/build/') ||
     filePath.includes('/node_modules/') ||
     filePath.includes('/.claude/hooks/fleet/prefer-async-spawn-guard/') ||
-    filePath.includes('/.config/fleet/oxlint-plugin/rules/prefer-async-spawn.') ||
+    filePath.includes(
+      '/.config/fleet/oxlint-plugin/rules/prefer-async-spawn.',
+    ) ||
     filePath.includes(
       '/.config/fleet/oxlint-plugin/rules/prefer-spawn-over-execsync.',
     ) ||

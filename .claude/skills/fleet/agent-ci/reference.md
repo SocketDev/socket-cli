@@ -36,20 +36,20 @@ When stdout is not a TTY (piped, redirected, captured by a parent process), the 
 
 ## When to use agent-ci vs. remote CI
 
-| Situation | Use |
-| --- | --- |
-| Edited a workflow YAML (`.github/workflows/*.yml`) | agent-ci first — a malformed workflow fails the same locally and remotely, skipping the push/wait loop. |
-| Code change that only needs lint / typecheck / unit tests | `pnpm run check --all` — faster than spinning up containers for the pure-Node gates. |
-| Workflow does something the local scripts don't (matrix, container steps, action wiring, secrets-shaped env) | agent-ci. |
-| No Docker, or the failure needs an off-machine action (a deploy, a remote service) | push and use `greening-ci`. |
+| Situation                                                                                                    | Use                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Edited a workflow YAML (`.github/workflows/*.yml`)                                                           | agent-ci first — a malformed workflow fails the same locally and remotely, skipping the push/wait loop. |
+| Code change that only needs lint / typecheck / unit tests                                                    | `pnpm run check --all` — faster than spinning up containers for the pure-Node gates.                    |
+| Workflow does something the local scripts don't (matrix, container steps, action wiring, secrets-shaped env) | agent-ci.                                                                                               |
+| No Docker, or the failure needs an off-machine action (a deploy, a remote service)                           | push and use `greening-ci`.                                                                             |
 
 ## Command summary
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm exec agent-ci run --all --pause-on-failure` | Run the branch's PR/push workflows; pause on first failure. |
-| `pnpm exec agent-ci run --workflow <path>` | Run a single workflow file. |
-| `pnpm exec agent-ci retry --name <runner>` | Resume a paused runner after a fix. |
-| `pnpm exec agent-ci retry --name <runner> --from-step <N>` | Resume from an earlier step. |
+| Command                                                    | Purpose                                                     |
+| ---------------------------------------------------------- | ----------------------------------------------------------- |
+| `pnpm exec agent-ci run --all --pause-on-failure`          | Run the branch's PR/push workflows; pause on first failure. |
+| `pnpm exec agent-ci run --workflow <path>`                 | Run a single workflow file.                                 |
+| `pnpm exec agent-ci retry --name <runner>`                 | Resume a paused runner after a fix.                         |
+| `pnpm exec agent-ci retry --name <runner> --from-step <N>` | Resume from an earlier step.                                |
 
 Add `--quiet` to suppress the live renderer, `--json` for the NDJSON stream.

@@ -80,9 +80,6 @@ await withBashGuard((command, payload) => {
   if (process.env['SOCKET_DEFAULT_BRANCH_GUARD_DISABLED']) {
     return
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return
-  }
 
   const hits: string[] = []
   for (let i = 0, { length } = SCRIPT_CONTEXT_PATTERNS; i < length; i += 1) {
@@ -98,6 +95,12 @@ await withBashGuard((command, payload) => {
     )
   }
   if (hits.length === 0) {
+    return
+  }
+
+  // Transcript read is the expensive last gate — only reached once a
+  // hard-coded default-branch pattern matched and we would otherwise block.
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
     return
   }
 

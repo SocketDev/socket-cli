@@ -215,9 +215,7 @@ async function main(): Promise<void> {
     ) {
       process.exit(0)
     }
-    const touchedStaged = staged.filter(
-      f => !unfamiliar.includes(f),
-    )
+    const touchedStaged = staged.filter(f => !unfamiliar.includes(f))
     process.stderr.write(
       [
         '[overeager-staging-guard] Blocked: bare `git commit` would sweep in files this session did not touch:',

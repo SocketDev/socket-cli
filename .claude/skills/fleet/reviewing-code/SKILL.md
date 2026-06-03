@@ -43,14 +43,14 @@ When the same review finding has fired in two consecutive runs (or across two re
 
 Invoke the skill; it authors the `Workflow` inline. The following knobs are passed as `args` (the Workflow reads them when building scope + routing):
 
-| Arg                          | Effect                                                            |
-| ---------------------------- | ----------------------------------------------------------------- |
+| Arg                          | Effect                                                                            |
+| ---------------------------- | --------------------------------------------------------------------------------- |
 | _(none)_                     | Default: codex×3 + claude×1, output under `docs/<branch-slug>-review-findings.md` |
-| `--base origin/main`         | Custom base ref for the diff                                      |
-| `--output docs/reviews/x.md` | Custom report path                                                |
-| `--skip-verify`              | Skip the adversarial verify phase (report marked unverified)      |
-| `--pass discovery=kimi`      | Override one or more passes' routed backend (repeatable)          |
-| `--only discovery,verify`    | Run only a subset of passes                                       |
+| `--base origin/main`         | Custom base ref for the diff                                                      |
+| `--output docs/reviews/x.md` | Custom report path                                                                |
+| `--skip-verify`              | Skip the adversarial verify phase (report marked unverified)                      |
+| `--pass discovery=kimi`      | Override one or more passes' routed backend (repeatable)                          |
+| `--only discovery,verify`    | Run only a subset of passes                                                       |
 
 ## Configuration via env vars
 

@@ -259,8 +259,8 @@ const GithubSchema = Type.Object(
 
 // ---------------------------------------------------------------------------
 // pathsAllowlist — exemptions for the path-hygiene gate
-// (scripts/fleet/check-paths.mts). Migrated from `.github/paths-allowlist.yml`
-// per the "JSON not YAML for our own configs" rule.
+// (scripts/fleet/check-paths.mts). The sole allowlist source, per the
+// "JSON not YAML for our own configs" rule.
 // ---------------------------------------------------------------------------
 
 const PathsAllowlistEntrySchema = Type.Object(
@@ -333,7 +333,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
     pathsAllowlist: Type.Optional(
       Type.Array(PathsAllowlistEntrySchema, {
         description:
-          'Exemptions for the path-hygiene gate (scripts/fleet/check-paths.mts). Migrated from `.github/paths-allowlist.yml`. Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.',
+          'Exemptions for the path-hygiene gate (scripts/fleet/check-paths.mts). Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.',
       }),
     ),
   },

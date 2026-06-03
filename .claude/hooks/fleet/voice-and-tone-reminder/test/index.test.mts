@@ -1,6 +1,6 @@
-// node --test specs for the merged prose-tone-reminder hook. Asserts each of
-// the 3 source pattern sets still fires AND each disable env var silences only
-// its own group (the regression contract for the merge).
+// node --test specs for the merged voice-and-tone-reminder hook. Asserts each
+// source pattern set fires AND each disable env var silences only its own group
+// (the regression contract for the merge).
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
@@ -47,6 +47,7 @@ function runHook(
 const COMMENT_SAMPLE = 'Note that we parse the input here.'
 const USERS_SAMPLE = 'The user wants the retries logged.'
 const PERFECTIONIST_SAMPLE = 'Want speed vs depth here?'
+const SELF_NARRATION_SAMPLE = 'Now let me run the tests.'
 
 test('fires the comment-tone group', () => {
   const { path: p, cleanup } = makeTranscript(COMMENT_SAMPLE)
@@ -79,15 +80,50 @@ test('fires the perfectionist group', () => {
   }
 })
 
-test('fires all three groups in one turn', () => {
+test('fires the self-narration group', () => {
+  const { path: p, cleanup } = makeTranscript(SELF_NARRATION_SAMPLE)
+  try {
+    const { stderr } = runHook(p)
+    assert.match(stderr, /self-narration-reminder/)
+  } finally {
+    cleanup()
+  }
+})
+
+test('self-narration: flags an unprompted status recap', () => {
   const { path: p, cleanup } = makeTranscript(
-    `${COMMENT_SAMPLE} ${USERS_SAMPLE} ${PERFECTIONIST_SAMPLE}`,
+    "Here's where things stand after the sweep.",
+  )
+  try {
+    assert.match(runHook(p).stderr, /self-narration-reminder/)
+  } finally {
+    cleanup()
+  }
+})
+
+test('self-narration: flags a conversational hedge', () => {
+  const { path: p, cleanup } = makeTranscript(
+    'Honestly the cache layer is the bottleneck.',
+  )
+  try {
+    assert.match(runHook(p).stderr, /self-narration-reminder/)
+  } finally {
+    cleanup()
+  }
+})
+
+test('fires all four groups in one turn', () => {
+  // Newline-separated: the self-narration "Now let me" pattern anchors on
+  // line-start (an opener tell), so each sample is its own line as in a turn.
+  const { path: p, cleanup } = makeTranscript(
+    `${COMMENT_SAMPLE}\n${USERS_SAMPLE}\n${PERFECTIONIST_SAMPLE}\n${SELF_NARRATION_SAMPLE}`,
   )
   try {
     const { stderr } = runHook(p)
     assert.match(stderr, /comment-tone-reminder/)
     assert.match(stderr, /identifying-users-reminder/)
     assert.match(stderr, /perfectionist-reminder/)
+    assert.match(stderr, /self-narration-reminder/)
   } finally {
     cleanup()
   }
@@ -117,6 +153,21 @@ test('SOCKET_PERFECTIONIST_REMINDER_DISABLED silences only that group', () => {
       SOCKET_PERFECTIONIST_REMINDER_DISABLED: '1',
     })
     assert.doesNotMatch(stderr, /perfectionist-reminder/)
+    assert.match(stderr, /identifying-users-reminder/)
+  } finally {
+    cleanup()
+  }
+})
+
+test('SOCKET_SELF_NARRATION_REMINDER_DISABLED silences only that group', () => {
+  const { path: p, cleanup } = makeTranscript(
+    `${SELF_NARRATION_SAMPLE} ${USERS_SAMPLE}`,
+  )
+  try {
+    const { stderr } = runHook(p, {
+      SOCKET_SELF_NARRATION_REMINDER_DISABLED: '1',
+    })
+    assert.doesNotMatch(stderr, /self-narration-reminder/)
     assert.match(stderr, /identifying-users-reminder/)
   } finally {
     cleanup()

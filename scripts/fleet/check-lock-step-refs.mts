@@ -4,13 +4,13 @@
  *   claims about file layout; stale claims rot silently. This gate greps every
  *   `Lock-step with <Lang>:` / `Lock-step from <Lang>:` / inline `// Lock-step
  *   with <Lang>: <path>:<lines>` comment in tracked source files, resolves each
- *   path against the per-lang impl root declared in
- *   `.config/lock-step-refs.json`, and fails CI when the path no longer exists.
- *   Line ranges are advisory and can drift; path existence is enforceable and
- *   that is what we enforce. The gate is opt-in per repo: if
- *   `.config/lock-step-refs.json` is absent, it exits 0 immediately. Repos that
- *   don't ship cross-language ports pay nothing. Config shape
- *   (`.config/lock-step-refs.json`): { "roots": { "Rust":
+ *   path against the per-lang impl root declared in the repo-owned config
+ *   (`.config/repo/lock-step-refs.json`, with a legacy top-level
+ *   `.config/lock-step-refs.json` fallback during the migration soak), and fails
+ *   CI when the path no longer exists. Line ranges are advisory and can drift;
+ *   path existence is enforceable and that is what we enforce. The gate is opt-in
+ *   per repo: if neither config location resolves, it exits 0 immediately. Repos
+ *   that don't ship cross-language ports pay nothing. Config shape: { "roots": { "Rust":
  *   ["packages/acorn/lang/rust/crates"], "Go": ["packages/acorn/lang/go/src"],
  *   "C++": ["packages/acorn/lang/cpp/src"], "TS":
  *   ["packages/acorn/lang/typescript/src"] }, "scan": ["packages/acorn/lang"],
@@ -28,7 +28,7 @@
  *   scripts/fleet/check-lock-step-refs.mts # report + fail on rot node
  *   scripts/fleet/check-lock-step-refs.mts --json # machine-readable node
  *   scripts/fleet/check-lock-step-refs.mts --quiet # silent on clean Exit
- *   codes: 0 — clean, or repo has no `.config/lock-step-refs.json` (opt-in
+ *   codes: 0 — clean, or repo has no lock-step-refs config (opt-in
  *   absent) 1 — at least one stale reference found 2 — gate itself crashed
  *   (malformed config, walker failure)
  */
@@ -38,7 +38,12 @@ import path from 'node:path'
 import process from 'node:process'
 import { parseArgs } from 'node:util'
 
-const CONFIG_PATH = '.config/lock-step-refs.json'
+// The config is repo-owned: prefer the `.config/repo/` location, fall back to
+// the legacy top-level `.config/` path during the migration soak.
+const CONFIG_PATHS = [
+  '.config/repo/lock-step-refs.json',
+  '.config/lock-step-refs.json',
+]
 const SKIP_DIRS = new Set([
   '.git',
   '.next',
@@ -76,34 +81,37 @@ const LOCK_STEP_RE =
   /Lock-step (?:from|with) (?:[A-Za-z][A-Za-z0-9+#-]*): (?:[^\s:,]*[./][^\s:,]*)(?::(?:\d+(?:-\d+)?))?/g
 
 function loadConfig(repoRoot: string): Config | undefined {
-  const configFile = path.join(repoRoot, CONFIG_PATH)
-  if (!existsSync(configFile)) {
+  const configPath = CONFIG_PATHS.find(rel =>
+    existsSync(path.join(repoRoot, rel)),
+  )
+  if (!configPath) {
     return undefined
   }
+  const configFile = path.join(repoRoot, configPath)
   let raw: string
   try {
     raw = readFileSync(configFile, 'utf8')
   } catch (e) {
-    throw new Error(`failed to read ${CONFIG_PATH}: ${(e as Error).message}`)
+    throw new Error(`failed to read ${configPath}: ${(e as Error).message}`)
   }
   let parsed: unknown
   try {
     parsed = JSON.parse(raw)
   } catch (e) {
-    throw new Error(`${CONFIG_PATH} is not valid JSON: ${(e as Error).message}`)
+    throw new Error(`${configPath} is not valid JSON: ${(e as Error).message}`)
   }
   if (!parsed || typeof parsed !== 'object') {
-    throw new Error(`${CONFIG_PATH} must be a JSON object`)
+    throw new Error(`${configPath} must be a JSON object`)
   }
   const obj = parsed as Record<string, unknown>
   if (!obj['roots'] || typeof obj['roots'] !== 'object') {
-    throw new Error(`${CONFIG_PATH} missing required "roots" object`)
+    throw new Error(`${configPath} missing required "roots" object`)
   }
   if (!Array.isArray(obj['scan'])) {
-    throw new Error(`${CONFIG_PATH} missing required "scan" array`)
+    throw new Error(`${configPath} missing required "scan" array`)
   }
   if (!Array.isArray(obj['extensions'])) {
-    throw new Error(`${CONFIG_PATH} missing required "extensions" array`)
+    throw new Error(`${configPath} missing required "extensions" array`)
   }
   return obj as unknown as Config
 }
@@ -231,7 +239,7 @@ function formatFindings(
       const f = fileFindings[i]!
       const tag =
         f.reason === 'unknown-lang'
-          ? `unknown <Lang> token "${f.lang}" (add to .config/lock-step-refs.json roots)`
+          ? `unknown <Lang> token "${f.lang}" (add to .config/repo/lock-step-refs.json roots)`
           : `path not found: ${f.refPath}`
       lines.push(`  L${f.line}: Lock-step ${f.lang} — ${tag}`)
     }
@@ -260,7 +268,7 @@ function main(): void {
   if (!config) {
     if (!values.quiet) {
       process.stdout.write(
-        `check-lock-step-refs: ${CONFIG_PATH} not present — opt-in gate disabled, exiting clean\n`,
+        `check-lock-step-refs: ${CONFIG_PATHS[0]} not present — opt-in gate disabled, exiting clean\n`,
       )
     }
     return

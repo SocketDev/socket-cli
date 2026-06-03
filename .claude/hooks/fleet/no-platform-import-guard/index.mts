@@ -90,8 +90,7 @@ export function findViolations(
 async function main(): Promise<void> {
   await withEditGuard(async ({ toolInput, transcriptPath }) => {
     const filePath: string = toolInput.file_path ?? ''
-    const content: string =
-      toolInput.content ?? toolInput.new_string ?? ''
+    const content: string = toolInput.content ?? toolInput.new_string ?? ''
 
     if (!content) {
       return
@@ -110,10 +109,16 @@ async function main(): Promise<void> {
     }
 
     const lines: string[] = []
-    lines.push('[no-platform-import-guard] Blocked: platform-specific http-request import.')
+    lines.push(
+      '[no-platform-import-guard] Blocked: platform-specific http-request import.',
+    )
     lines.push('')
-    lines.push('  The fleet routes HTTP through the platform-agnostic entry point.')
-    lines.push('  Importing /node or /browser directly bypasses the bundler\'s "browser"')
+    lines.push(
+      '  The fleet routes HTTP through the platform-agnostic entry point.',
+    )
+    lines.push(
+      '  Importing /node or /browser directly bypasses the bundler\'s "browser"',
+    )
     lines.push('  condition and hard-codes the platform.')
     lines.push('')
     for (const v of violations) {
@@ -121,9 +126,11 @@ async function main(): Promise<void> {
     }
     lines.push('')
     lines.push('  Fix: import from the directory (no suffix):')
-    lines.push('    import { httpJson } from \'../http-request\'')
+    lines.push("    import { httpJson } from '../http-request'")
     lines.push('')
-    lines.push('  If this file genuinely runs on one platform only, add before the import:')
+    lines.push(
+      '  If this file genuinely runs on one platform only, add before the import:',
+    )
     lines.push('    // no-platform-http-import: <reason>')
     lines.push('')
     lines.push(`  Or type "${BYPASS_PHRASE}" to bypass for this edit.`)

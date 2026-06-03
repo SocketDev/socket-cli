@@ -50,9 +50,7 @@ function isNodeTestCommand(command: string): {
     // Collect positional args (test file paths) — everything after --test
     // that doesn't start with --
     const testIdx = args.indexOf('--test')
-    const files = args
-      .slice(testIdx + 1)
-      .filter(a => !a.startsWith('-'))
+    const files = args.slice(testIdx + 1).filter(a => !a.startsWith('-'))
     return { detected: true, testFiles: files }
   }
   return { detected: false, testFiles: [] }
@@ -88,7 +86,10 @@ async function main(): Promise<void> {
     typeof payload.transcript_path === 'string'
       ? payload.transcript_path
       : undefined
-  if (transcriptPath && bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 3)) {
+  if (
+    transcriptPath &&
+    bypassPhrasePresent(transcriptPath, [BYPASS_PHRASE], 3)
+  ) {
     process.exit(0)
   }
 

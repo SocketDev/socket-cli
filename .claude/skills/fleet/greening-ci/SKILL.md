@@ -3,6 +3,8 @@ name: greening-ci
 description: Drive a target repo's CI back to green. Watches GitHub Actions, surfaces the first failure log, fixes it locally, commits + pushes, and re-watches until the run lands green (or a wall-clock budget expires). Three modes: fast (ci.yml), release (build-server matrices, fail-fast 30s polls then cool down on first success), cool (just confirm the rest of a matrix). Use when main goes red, when a build-server dispatch is failing, or when babysitting a freshly-pushed fix to verify it lands green.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash(gh:*), Bash(git:*), Bash(node:*), Bash(pnpm:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(head:*), Bash(tail:*)
+model: claude-sonnet-4-6
+context: fork
 ---
 
 # greening-ci

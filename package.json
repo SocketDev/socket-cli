@@ -33,7 +33,7 @@
     "test:unit": "pnpm --filter @socketsecurity/cli run test:unit",
     "pretest:all": "pnpm run build",
     "testu": "pnpm --filter @socketsecurity/cli run test:unit:update",
-    "cover": "pnpm --filter @socketsecurity/cli run test:unit:coverage",
+    "cover": "node scripts/fleet/cover.mts",
     "cover:all": "pnpm --filter @socketsecurity/cli run cover",
     "security": "node scripts/fleet/security.mts",
     "// Maintenance": "",

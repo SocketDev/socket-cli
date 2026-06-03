@@ -60,7 +60,11 @@ test('paths outside .claude/ pass through', async () => {
     'README.md',
     'package.json',
   ]) {
-    assert.strictEqual((await runHook(edit(p))).code, 0, `expected pass for ${p}`)
+    assert.strictEqual(
+      (await runHook(edit(p))).code,
+      0,
+      `expected pass for ${p}`,
+    )
   }
 })
 
@@ -96,11 +100,15 @@ test('passes .claude/<kind>/fleet/<name>/ paths', async () => {
   for (const p of [
     '.claude/skills/fleet/foo/SKILL.md',
     '.claude/agents/fleet/security-reviewer.md',
-    '.claude/commands/fleet/quality-loop.md',
+    '.claude/commands/fleet/looping-quality.md',
     '.claude/hooks/fleet/my-guard/index.mts',
   ]) {
     const r = await runHook(edit(p))
-    assert.strictEqual(r.code, 0, `expected pass for ${p}, got stderr: ${r.stderr}`)
+    assert.strictEqual(
+      r.code,
+      0,
+      `expected pass for ${p}, got stderr: ${r.stderr}`,
+    )
   }
 })
 
@@ -112,7 +120,11 @@ test('passes .claude/<kind>/repo/<name>/ paths', async () => {
     '.claude/hooks/repo/local-only/index.mts',
   ]) {
     const r = await runHook(edit(p))
-    assert.strictEqual(r.code, 0, `expected pass for ${p}, got stderr: ${r.stderr}`)
+    assert.strictEqual(
+      r.code,
+      0,
+      `expected pass for ${p}, got stderr: ${r.stderr}`,
+    )
   }
 })
 
@@ -124,7 +136,11 @@ test('passes _-prefixed internals folder paths', async () => {
     '.claude/hooks/_shared/test/foo.test.mts',
   ]) {
     const r = await runHook(edit(p))
-    assert.strictEqual(r.code, 0, `expected pass for ${p}, got stderr: ${r.stderr}`)
+    assert.strictEqual(
+      r.code,
+      0,
+      `expected pass for ${p}, got stderr: ${r.stderr}`,
+    )
   }
 })
 
@@ -150,7 +166,9 @@ test('passes when tool_input has no file_path', async () => {
 })
 
 test('passes for absolute paths under fleet/', async () => {
-  const r = await runHook(edit('/tmp/fake-repo/.claude/skills/fleet/bar/SKILL.md'))
+  const r = await runHook(
+    edit('/tmp/fake-repo/.claude/skills/fleet/bar/SKILL.md'),
+  )
   assert.strictEqual(r.code, 0)
 })
 

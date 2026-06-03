@@ -579,6 +579,14 @@ function extractWorkflowTarget(args: readonly string[]): string | undefined {
 }
 
 export function detectDispatch(command: string): DispatchResult {
+  // Cheap substring gate before any tokenize. A dispatch is either a
+  // `gh workflow run/dispatch` (carries `workflow`) or a
+  // `gh api .../actions/workflows/<id>/dispatches` call (carries
+  // `dispatches`). A command with neither token can't be a dispatch, so we
+  // skip the parser entirely on the common Bash path.
+  if (!command.includes('workflow') && !command.includes('dispatches')) {
+    return { blocked: false }
+  }
   // Parser-based: each real `gh` invocation is inspected on its own
   // args, so a quoted "gh workflow run" in a message body or a sibling
   // command's string can't false-trigger, and `$(…)` / chains are seen

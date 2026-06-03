@@ -1,18 +1,18 @@
 #!/usr/bin/env node
-// Claude Code Stop hook — prose-tone-reminder.
+// Claude Code Stop hook — voice-and-tone-reminder.
 //
-// Merges three pure pattern-table tone reminders into one Stop-hook
-// process (was comment-tone-reminder + identifying-users-reminder +
-// perfectionist-reminder). Each was a `runStopReminder` data-table with
-// no per-hook logic; running them as three separate Stop processes is
-// three stdin drains + three transcript reads for the same turn. This
-// hook reads once and scans all three groups via `runStopReminders`.
+// Merges pure pattern-table tone reminders into one Stop-hook process:
+// comment-tone + identifying-users + perfectionist + self-narration. Each
+// is a `runStopReminder` data-table with no per-hook logic; running them as
+// separate Stop processes is N stdin drains + N transcript reads for the
+// same turn. This hook reads once and scans all groups via `runStopReminders`.
 //
-// Per-group disabling is preserved — each group keeps its original
-// disable env var, so existing muting still works:
+// Per-group disabling is preserved — each group keeps its own disable env
+// var, so existing muting still works:
 //   SOCKET_COMMENT_TONE_REMINDER_DISABLED
 //   SOCKET_IDENTIFYING_USERS_REMINDER_DISABLED
 //   SOCKET_PERFECTIONIST_REMINDER_DISABLED
+//   SOCKET_SELF_NARRATION_REMINDER_DISABLED
 //
 // NOT merged in: commit-pr-reminder (AI-attribution, backed by the
 // shared _shared/ai-attribution.mts catalog — a different concern), and
@@ -80,7 +80,8 @@ const IDENTIFYING_USERS: ReminderGroup = {
     },
     {
       label: 'someone (singular human reference)',
-      regex: /^Someone\s+(?:asked|needs|prefers|requested|said|wants|wrote)\b/im,
+      regex:
+        /^Someone\s+(?:asked|needs|prefers|requested|said|wants|wrote)\b/im,
       why: '"Someone" hedges around naming. If you have access to git config, use the name.',
     },
     {
@@ -142,4 +143,41 @@ const PERFECTIONIST: ReminderGroup = {
     'CLAUDE.md "Judgment & self-evaluation": "Default to perfectionist when you have latitude." If the user already gave perfectionist signals (asked for correctness, asked for depth, said "do it right"), do not re-present the choice — execute the perfectionist path.',
 }
 
-await runStopReminders([COMMENT_TONE, IDENTIFYING_USERS, PERFECTIONIST])
+const SELF_NARRATION: ReminderGroup = {
+  name: 'self-narration-reminder',
+  disabledEnvVar: 'SOCKET_SELF_NARRATION_REMINDER_DISABLED',
+  patterns: [
+    {
+      label: 'unprompted status recap ("where things stand")',
+      regex:
+        /\b(?:here'?s|to recap|to summarize)\b[^.?!\n]{0,40}\b(?:where (?:things|we) (?:stand|are)|the state|stands?|recap|summary)\b/i,
+      why: 'Mid-task status recap the user did not ask for. When mid-queue, keep working; surface status only when asked (CLAUDE.md "don\'t stop mid-queue").',
+    },
+    {
+      label: 'self-narrating tool use ("now let me / let me just")',
+      regex: /(?:^|\n)\s*(?:Now\s+)?[Ll]et me\s+(?:just\s+)?\b/,
+      why: 'Narrating the next tool call adds no signal — make the call. Open on the result or the decision, not the intent.',
+    },
+    {
+      label: 'conversational hedge ("honestly / to be fair / be straight with you")',
+      regex:
+        /\b(?:honestly|to be honest|honest caveat|to be fair|in all honesty|the reality is|truth be told|be straight with you)\b/i,
+      why: 'Filler hedge that softens or pre-apologizes for a direct statement. State the fact, the limitation, or the recommendation plainly — no "honest caveat" preamble.',
+    },
+    {
+      label: 'apology-padding ("you\'re absolutely right / my apologies")',
+      regex:
+        /\b(?:you'?re\s+(?:absolutely\s+)?right|my\s+apologies|sorry\s+about\s+that)\b/i,
+      why: 'Reflexive agreement/apology padding. Acknowledge the correction by fixing it, not by performing contrition.',
+    },
+  ],
+  closingHint:
+    'CLAUDE.md "Judgment & self-evaluation": direct imperatives get the tool call, not a tradeoff paragraph; finish queued work without mid-queue status padding. Address the user in a plain, direct voice — cut warm-up, hedges, and self-narration. These are heuristic regexes that over-fire (a line-start "let me" mid-explanation, or a warranted "you\'re right" acknowledgment) — that is why the group only reminds, never blocks. Treat a match as a prompt to re-read the sentence, not a verdict.',
+}
+
+await runStopReminders([
+  COMMENT_TONE,
+  IDENTIFYING_USERS,
+  PERFECTIONIST,
+  SELF_NARRATION,
+])

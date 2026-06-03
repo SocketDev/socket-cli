@@ -62,8 +62,7 @@ const main = (): number => {
   // artifact side (unsigned commits that somehow slipped past); this
   // gate is the local-config side.
   //
-  // Bypass: SOCKET_PRE_COMMIT_ALLOW_UNSIGNED=1. One-shot env var,
-  // mirrors the pre-push bypass shape (SOCKET_PRE_PUSH_ALLOW_UNSIGNED).
+  // Bypass: SOCKET_PRE_COMMIT_ALLOW_UNSIGNED=1. One-shot env var.
   if (!process.env['SOCKET_PRE_COMMIT_ALLOW_UNSIGNED']) {
     const gpgsign = git('config', '--get', 'commit.gpgsign').toLowerCase()
     const signingKey = git('config', '--get', 'user.signingkey')

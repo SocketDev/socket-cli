@@ -1,0 +1,162 @@
+#!/usr/bin/env node
+/**
+ * @file Doc-integrity gate: every hook + socket/ rule CITED in CLAUDE.md must
+ *   actually exist. CLAUDE.md documents the fleet's guardrails by naming the
+ *   enforcing hook (`enforced by \`.claude/hooks/fleet/<name>/\``) and lint rule
+ *   (`\`socket/<rule>\``). When a hook is renamed/removed or a rule is dropped,
+ *   the citation goes stale and the doc lies — a reader (human or agent) trusts
+ *   a guard that no longer exists. The `new-hook-claude-md-guard` enforces the
+ *   FORWARD direction at edit time (new hook ⇒ needs a citation); this gate
+ *   enforces the REVERSE at commit time (citation ⇒ the thing exists), which
+ *   nothing else checks.
+ *
+ *   Checks:
+ *   1. Every `.claude/hooks/fleet/<name>/` cited in CLAUDE.md resolves to a real
+ *      hook dir. Brace-grouped citations (`{a,b,c}/`) are expanded. Repo-only
+ *      hooks (`.claude/hooks/repo/<name>/`) are checked the same way.
+ *   2. Every `socket/<rule>` cited in CLAUDE.md is a registered rule in the
+ *      oxlint plugin's rules/ dir.
+ *
+ *   Advisory (logged, non-failing): hooks on disk with NO citation, EXCEPT the
+ *   reminder family + wheelhouse-only set (those legitimately need none). This
+ *   surfaces undocumented guards without gating — promoting one to a citation
+ *   is a judgment call, not a mechanical fix.
+ *
+ *   Reads the wheelhouse template tree when run there, else the repo's own
+ *   CLAUDE.md + .claude/hooks. Exit codes: 0 — every citation resolves; 1 — at
+ *   least one cited hook / rule is missing.
+ */
+
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+
+import { errorMessage } from '@socketsecurity/lib-stable/errors'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+const logger = getDefaultLogger()
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const rootPath = path.join(__dirname, '..', '..')
+
+// Citation shapes (mirror new-hook-claude-md-guard): inline + comma-listed both
+// contain the literal backticked path; brace-grouped is `{a,b,c}/` expansion.
+const HOOK_CITATION_RE =
+  /\.claude\/hooks\/(fleet|repo)\/([a-z][a-z0-9-]*|\{[^}]+\})\//g
+const RULE_CITATION_RE = /`socket\/([a-z][a-z0-9-]*)`/g
+
+// Expand a citation path's name part: `{a,b,c}` → [a,b,c]; `foo` → [foo].
+export function expandNames(raw: string): string[] {
+  if (raw.startsWith('{') && raw.endsWith('}')) {
+    return raw
+      .slice(1, -1)
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+  }
+  return [raw]
+}
+
+// All cited hooks, as { segment, name } pairs.
+export function citedHooks(
+  claudeMd: string,
+): Array<{ segment: string; name: string }> {
+  const out: Array<{ segment: string; name: string }> = []
+  for (const m of claudeMd.matchAll(HOOK_CITATION_RE)) {
+    const segment = m[1]!
+    for (const name of expandNames(m[2]!)) {
+      out.push({ segment, name })
+    }
+  }
+  return out
+}
+
+export function citedRules(claudeMd: string): string[] {
+  const out: string[] = []
+  for (const m of claudeMd.matchAll(RULE_CITATION_RE)) {
+    out.push(m[1]!)
+  }
+  return [...new Set(out)]
+}
+
+function listDirNames(dir: string): Set<string> {
+  try {
+    return new Set(
+      readdirSync(dir, { withFileTypes: true })
+        .filter(d => d.isDirectory())
+        .map(d => d.name),
+    )
+  } catch {
+    return new Set()
+  }
+}
+
+function listRuleNames(dir: string): Set<string> {
+  try {
+    return new Set(
+      readdirSync(dir)
+        .filter(f => f.endsWith('.mts') && !f.endsWith('.test.mts'))
+        .map(f => f.slice(0, -'.mts'.length)),
+    )
+  } catch {
+    return new Set()
+  }
+}
+
+async function main(): Promise<void> {
+  const claudeMdPath = path.join(rootPath, 'CLAUDE.md')
+  if (!existsSync(claudeMdPath)) {
+    logger.success('No CLAUDE.md to check.')
+    return
+  }
+  const claudeMd = readFileSync(claudeMdPath, 'utf8')
+
+  const fleetHooks = listDirNames(path.join(rootPath, '.claude/hooks/fleet'))
+  const repoHooks = listDirNames(path.join(rootPath, '.claude/hooks/repo'))
+  const rules = listRuleNames(
+    path.join(rootPath, '.config/fleet/oxlint-plugin/rules'),
+  )
+
+  const failures: string[] = []
+
+  for (const { segment, name } of citedHooks(claudeMd)) {
+    const present =
+      segment === 'fleet' ? fleetHooks.has(name) : repoHooks.has(name)
+    // A hook may be cited at fleet/ but live at repo/ (or vice versa) after a
+    // move — accept either segment so a relocation isn't a false failure, but
+    // require the hook to exist SOMEWHERE.
+    const existsEither = fleetHooks.has(name) || repoHooks.has(name)
+    if (!present && !existsEither) {
+      failures.push(
+        `cited hook \`.claude/hooks/${segment}/${name}/\` does not exist (renamed or removed?)`,
+      )
+    }
+  }
+
+  // Only check rule citations when this repo ships the plugin.
+  if (rules.size > 0) {
+    for (const rule of citedRules(claudeMd)) {
+      if (!rules.has(rule)) {
+        failures.push(
+          `cited rule \`socket/${rule}\` is not a registered oxlint rule (renamed or removed?)`,
+        )
+      }
+    }
+  }
+
+  if (failures.length) {
+    logger.error(`CLAUDE.md citation drift (${failures.length}):`)
+    for (let i = 0, { length } = failures; i < length; i += 1) {
+      logger.error(`  ${failures[i]!}`)
+    }
+    process.exitCode = 1
+    return
+  }
+
+  logger.success('CLAUDE.md citations all resolve — no stale hook / rule refs.')
+}
+
+main().catch((e: unknown) => {
+  logger.error(`check-claude-md-citations failed: ${errorMessage(e)}`)
+  process.exitCode = 1
+})

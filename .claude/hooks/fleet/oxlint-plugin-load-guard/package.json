@@ -1,5 +1,5 @@
 {
-  "name": "hook-prose-antipattern-reminder",
+  "name": "hook-oxlint-plugin-load-guard",
   "private": true,
   "type": "module",
   "main": "./index.mts",

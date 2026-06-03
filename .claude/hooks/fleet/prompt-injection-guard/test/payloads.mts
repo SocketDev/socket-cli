@@ -1,10 +1,9 @@
 /**
- * @file Runtime payload builders for the prompt-injection-guard tests.
- *
- *   The guard exists to keep prompt-injection directives and agent
+ * @file Runtime payload builders for the prompt-injection-guard tests. The
+ *   guard exists to keep prompt-injection directives and agent
  *   denial-of-service content out of our source tree. Storing real attack
- *   strings as literals — even in this self-exempt test directory — would
- *   put exactly that content in the tree. Instead every hostile payload is
+ *   strings as literals — even in this self-exempt test directory — would put
+ *   exactly that content in the tree. Instead every hostile payload is
  *   ASSEMBLED HERE at runtime from harmless fragments, `String.fromCodePoint`,
  *   and `.repeat`, so the dangerous bytes exist only while the test runs and
  *   nothing scannable sits on disk.
@@ -33,7 +32,9 @@ export function zeroWidthSpace(): string {
 // A run of distinct zero-width characters (ZWSP, ZWNJ, ZWJ, word-joiner)
 // long enough to trip the zero-width-run detector.
 export function zeroWidthRun(): string {
-  return [0x200b, 0x200c, 0x200d, 0x2060].map(cp => String.fromCodePoint(cp)).join('')
+  return [0x200b, 0x200c, 0x200d, 0x2060]
+    .map(cp => String.fromCodePoint(cp))
+    .join('')
 }
 
 // A run of combining diacritical marks (U+0301) on its own — caller
@@ -50,7 +51,9 @@ export function bidiOverride(): string {
 // A few Unicode Tag-block codepoints (U+E0041 etc.) — an invisible
 // text-smuggling channel.
 export function tagBlock(): string {
-  return [0xe0041, 0xe0049, 0xe0020].map(cp => String.fromCodePoint(cp)).join('')
+  return [0xe0041, 0xe0049, 0xe0020]
+    .map(cp => String.fromCodePoint(cp))
+    .join('')
 }
 
 // ESC (U+001B) + CSI erase-line, hidden from a human terminal.

@@ -183,9 +183,6 @@ await withBashGuard((command, payload) => {
   if (!isGitCommit(command)) {
     return
   }
-  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
-    return
-  }
 
   const allowed = readAllowedAuthors()
   // If we don't have a canonical email configured anywhere, fail open —
@@ -199,6 +196,12 @@ await withBashGuard((command, payload) => {
   const effective = override ?? readCheckoutAuthor(payload.cwd)
 
   if (isAllowedAuthor(effective, allowed)) {
+    return
+  }
+
+  // Transcript read is the expensive last gate — only reached once we
+  // know the author would otherwise be blocked.
+  if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES)) {
     return
   }
 

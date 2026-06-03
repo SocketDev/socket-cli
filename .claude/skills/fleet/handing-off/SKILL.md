@@ -4,6 +4,8 @@ description: Compact the current conversation into a handoff doc so a fresh agen
 user-invocable: true
 argument-hint: 'What will the next session focus on?'
 allowed-tools: Bash(mkdir:*), Bash(date:*), Read, Write
+model: claude-haiku-4-5
+context: fork
 ---
 
 # handing-off

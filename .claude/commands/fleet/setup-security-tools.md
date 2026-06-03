@@ -6,15 +6,15 @@ Install all Socket security tools for local development.
 
 ## What this sets up
 
-| Tool | Purpose |
-|---|---|
-| **AgentShield** | Scans Claude config for prompt injection and secrets |
-| **Zizmor** | Static analysis for GitHub Actions workflows |
-| **SFW** | Socket Firewall — intercepts package installs to scan for malware |
-| **TruffleHog** | Secret scanning |
-| **Trivy** | Container and filesystem vulnerability scanning |
-| **OpenGrep** | Semantic code analysis |
-| **uv** | Python package manager (for tools with Python deps) |
+| Tool            | Purpose                                                           |
+| --------------- | ----------------------------------------------------------------- |
+| **AgentShield** | Scans Claude config for prompt injection and secrets              |
+| **Zizmor**      | Static analysis for GitHub Actions workflows                      |
+| **SFW**         | Socket Firewall — intercepts package installs to scan for malware |
+| **TruffleHog**  | Secret scanning                                                   |
+| **Trivy**       | Container and filesystem vulnerability scanning                   |
+| **OpenGrep**    | Semantic code analysis                                            |
+| **uv**          | Python package manager (for tools with Python deps)               |
 
 Also: API token prompt → OS keychain, native messaging host, shell rc bridge.
 

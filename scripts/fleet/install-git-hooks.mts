@@ -8,13 +8,10 @@
  *
  *   - Not inside a git repo (e.g. running in a tarball install).
  *   - .git-hooks/fleet/ doesn't exist (e.g. the template scaffold hasn't been
- *     cascaded into this repo yet).
- *
- *   `.git-hooks/` carries two subdirs:
- *
- *   - `fleet/` — hook entry points (commit-msg / pre-commit / pre-push +
- *     `.mts` implementations + tests). Git invokes scripts here as
- *     `<hook-name>` (e.g. `.git-hooks/fleet/pre-commit`).
+ *     cascaded into this repo yet). `.git-hooks/` carries two subdirs:
+ *   - `fleet/` — hook entry points (commit-msg / pre-commit / pre-push + `.mts`
+ *     implementations + tests). Git invokes scripts here as `<hook-name>` (e.g.
+ *     `.git-hooks/fleet/pre-commit`).
  *   - `_shared/` — helpers consumed BY the entry points (helpers.mts,
  *     resolve-node.sh). Never invoked by git directly.
  */

@@ -49,9 +49,10 @@ interface AssistantTurn {
   toolUses?: readonly ToolUse[]
 }
 
-function makeMultiTurnTranscript(
-  turns: readonly AssistantTurn[],
-): { path: string; cleanup: () => void } {
+function makeMultiTurnTranscript(turns: readonly AssistantTurn[]): {
+  path: string
+  cleanup: () => void
+} {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'compound-multi-'))
   const transcriptPath = path.join(dir, 'session.jsonl')
   const lines: string[] = []

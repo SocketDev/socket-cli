@@ -134,6 +134,10 @@
           },
           {
             "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/prose-antipattern-guard/index.mts"
+          },
+          {
+            "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/readme-fleet-shape-guard/index.mts"
           },
           {
@@ -372,6 +376,10 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/extension-build-current-guard/index.mts"
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/oxlint-plugin-load-guard/index.mts"
           }
         ]
       },
@@ -402,11 +410,7 @@
           },
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/prose-tone-reminder/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/prose-antipattern-reminder/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/voice-and-tone-reminder/index.mts"
           },
           {
             "type": "command",

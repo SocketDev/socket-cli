@@ -84,7 +84,9 @@ export function isExemptPath(filePath: string): boolean {
     filePath.includes(
       '/.config/fleet/oxlint-plugin/rules/prefer-function-declaration.',
     ) ||
-    filePath.includes('/.config/fleet/oxlint-plugin/test/prefer-function-declaration')
+    filePath.includes(
+      '/.config/fleet/oxlint-plugin/test/prefer-function-declaration',
+    )
   )
 }
 

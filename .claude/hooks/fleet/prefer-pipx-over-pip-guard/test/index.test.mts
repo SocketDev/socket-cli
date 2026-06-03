@@ -186,7 +186,8 @@ test('Dockerfile: comment-only pip install passes', async () => {
     tool_name: 'Write',
     tool_input: {
       file_path: p,
-      content: 'FROM alpine:3.21\n# fallback: pip install foo if pipx missing\n',
+      content:
+        'FROM alpine:3.21\n# fallback: pip install foo if pipx missing\n',
     },
   })
   assert.strictEqual(r.code, 0)

@@ -55,9 +55,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 const logger = getDefaultLogger()
 
 interface ToolInput {
-  readonly tool_input?:
-    | { readonly file_path?: string | undefined }
-    | undefined
+  readonly tool_input?: { readonly file_path?: string | undefined } | undefined
   readonly tool_name?: string | undefined
 }
 
@@ -82,7 +80,9 @@ interface SegmentMatch {
   entry: string
 }
 
-export function findDanglingSegment(filePath: string): SegmentMatch | undefined {
+export function findDanglingSegment(
+  filePath: string,
+): SegmentMatch | undefined {
   const m = SEGMENT_RE.exec(filePath)
   if (!m?.groups) {
     return undefined
@@ -158,9 +158,7 @@ process.stdin.on('end', () => {
     )
     process.exit(2)
   } catch (e) {
-    logger.error(
-      `[claude-segmentation-guard] hook error (allowing): ${e}`,
-    )
+    logger.error(`[claude-segmentation-guard] hook error (allowing): ${e}`)
     process.exit(0)
   }
 })

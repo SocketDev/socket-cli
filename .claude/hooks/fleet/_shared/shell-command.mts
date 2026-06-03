@@ -195,6 +195,14 @@ export function findInvocation(
   command: string,
   query: InvocationQuery,
 ): boolean {
+  // Cheap substring gate before the full tokenize. A command can only invoke
+  // `query.binary` if the binary name appears verbatim somewhere in the line
+  // (variable-sourced binaries collapse to '' and never match `binary` below,
+  // so they can't be missed here). On the common PreToolUse path the keyword
+  // is absent and we skip parseShell entirely.
+  if (!command.includes(query.binary)) {
+    return false
+  }
   const commands = parseCommands(command)
   for (const cmd of commands) {
     if (cmd.binary !== query.binary) {
@@ -227,6 +235,13 @@ export function findInvocation(
  * appearing in a path, a sibling command, or a quoted string).
  */
 export function commandsFor(command: string, binary: string): Command[] {
+  // Cheap substring gate before the full tokenize. A segment can only have
+  // `binary` as its resolved binary if the name appears verbatim in the line
+  // (variable-sourced binaries collapse to '' and are filtered out below), so
+  // a substring miss guarantees an empty result without parsing.
+  if (!command.includes(binary)) {
+    return []
+  }
   return parseCommands(command).filter(c => c.binary === binary)
 }
 

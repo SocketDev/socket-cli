@@ -165,9 +165,9 @@ export function formatReminderBlock(
  * Run several informational reminder groups in ONE Stop-hook process. Reads
  * stdin + the most-recent assistant turn once, then scans each group whose
  * `disabledEnvVar` is unset — preserving per-group disabling exactly as if each
- * were its own hook. Emits one stderr block per group with hits. Always exits 0.
- * Use when merging pure-table reminders to cut process count without losing the
- * granular disable env vars.
+ * were its own hook. Emits one stderr block per group with hits. Always exits
+ * 0. Use when merging pure-table reminders to cut process count without losing
+ * the granular disable env vars.
  */
 export async function runStopReminders(
   groups: readonly ReminderGroup[],
@@ -262,8 +262,8 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
  * follow-direct-imperative — "user asked X, assistant did Y instead".
  */
 /**
- * A turn-pair matcher. `label` + `why` describe it; matching is by `regex`
- * OR — when the rule needs logic a regex can't express (word-count bounds,
+ * A turn-pair matcher. `label` + `why` describe it; matching is by `regex` OR —
+ * when the rule needs logic a regex can't express (word-count bounds,
  * first-word-only, question filtering, like follow-direct-imperative's
  * `looksLikeImperative`) — by an explicit `match` predicate. Exactly one of
  * `regex` / `match` is consulted (`match` wins when present).
@@ -292,11 +292,11 @@ function turnPairMatches(rule: TurnPairRule, text: string): boolean {
 
 /**
  * Run a turn-pair Stop reminder. Reads the last user turn + the most-recent
- * assistant turn (via transcript.mts — no per-hook re-implementation of
- * JSONL parsing / role detection / content flattening), and emits a reminder
- * only when BOTH a user trigger and an assistant deflection match. Always
- * exits 0. The fired message names the matched trigger + deflection so the
- * reader sees what pair tripped it.
+ * assistant turn (via transcript.mts — no per-hook re-implementation of JSONL
+ * parsing / role detection / content flattening), and emits a reminder only
+ * when BOTH a user trigger and an assistant deflection match. Always exits 0.
+ * The fired message names the matched trigger + deflection so the reader sees
+ * what pair tripped it.
  */
 export async function runTurnPairReminder(
   config: TurnPairConfig,

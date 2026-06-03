@@ -7,7 +7,7 @@ PreToolUse (Edit|Write) hook. Blocks introducing a `/* c8 ignore … */` or
 
 The fleet rule (`docs/claude.md/fleet/c8-ignore-directives.md`): a coverage
 ignore is for external-library paths and genuinely-unreachable branches only,
-and every directive must state *why* in the same comment. A reason lets a
+and every directive must state _why_ in the same comment. A reason lets a
 reader distinguish a principled ignore from a coverage dodge on core SDK logic
 (which is forbidden — write a test instead).
 

@@ -73,7 +73,6 @@ const ALLOWED_TYPE_SET: ReadonlySet<string> = new Set(ALLOWED_TYPES)
 // - non-empty description
 const HEADER_RE = /^([a-z]+)(\([^)]+\))?(!)?: (.+)$/
 
-
 /**
  * True when the command is a `git commit ...` invocation. Tolerates leading
  * `git -c k=v` flags before the subcommand.

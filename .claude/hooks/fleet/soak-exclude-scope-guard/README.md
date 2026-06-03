@@ -72,6 +72,6 @@ overrides:
   defu: '>=6.1.6'
 
 minimumReleaseAgeExclude:
-  - '@socketsecurity/*'  # ← fleet-internal only
+  - '@socketsecurity/*' # ← fleet-internal only
   - '@socketregistry/*'
 ```

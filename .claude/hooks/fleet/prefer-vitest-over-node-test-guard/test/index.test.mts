@@ -4,14 +4,27 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-const HOOK = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'index.mts')
+const HOOK = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'index.mts',
+)
 
 function run(command: string, transcriptLines: string[] = []) {
   const transcript = transcriptLines
-    .map(l => JSON.stringify({ type: 'user', message: { role: 'user', content: [{ type: 'text', text: l }] } }))
+    .map(l =>
+      JSON.stringify({
+        type: 'user',
+        message: { role: 'user', content: [{ type: 'text', text: l }] },
+      }),
+    )
     .join('\n')
   const r = spawnSync('node', [HOOK], {
-    input: JSON.stringify({ tool_name: 'Bash', tool_input: { command }, transcript_path: undefined }),
+    input: JSON.stringify({
+      tool_name: 'Bash',
+      tool_input: { command },
+      transcript_path: undefined,
+    }),
     encoding: 'utf8',
   })
   return { code: r.status ?? -1, stderr: r.stderr }
@@ -52,7 +65,10 @@ test('allows pnpm test', () => {
 
 test('non-Bash tool passes through', () => {
   const r = spawnSync('node', [HOOK], {
-    input: JSON.stringify({ tool_name: 'Read', tool_input: { file_path: 'foo.ts' } }),
+    input: JSON.stringify({
+      tool_name: 'Read',
+      tool_input: { file_path: 'foo.ts' },
+    }),
     encoding: 'utf8',
   })
   assert.equal(r.status, 0)

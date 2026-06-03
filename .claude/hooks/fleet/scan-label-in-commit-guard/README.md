@@ -6,7 +6,7 @@ whose message body contains scan-report-internal labels (`B1`, `M9`,
 
 ## Why
 
-`/scanning-quality` and `/scanning-security` assign scratch-pad IDs
+`/fleet:scanning-quality` and `/fleet:scanning-security` assign scratch-pad IDs
 like `B5` ("Blocker #5") or `M9` ("Medium #9") to findings inside a
 review session. The label has meaning **only within the report** —
 a future reader of `git log` doesn't have the report and cannot

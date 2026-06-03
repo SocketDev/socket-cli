@@ -76,10 +76,10 @@ const HEADER_PLUGIN_VERSION = /^# @plugin-version:\s*(\d+\.\d+\.\d+)\s*$/m
 type Verdict = { ok: true } | { ok: false; reason: string }
 
 /**
- * Is the target file path a plugin-cache patch under `scripts/fleet/plugin-patches/`?
- * Normalizes to `/`-separators first so the check is cross-platform (per the
- * fleet path-regex-normalize rule), then matches the canonical dir + `.patch`
- * extension.
+ * Is the target file path a plugin-cache patch under
+ * `scripts/fleet/plugin-patches/`? Normalizes to `/`-separators first so the
+ * check is cross-platform (per the fleet path-regex-normalize rule), then
+ * matches the canonical dir + `.patch` extension.
  */
 export function isPluginPatchPath(filePath: string): boolean {
   const normalized = normalizePath(filePath)

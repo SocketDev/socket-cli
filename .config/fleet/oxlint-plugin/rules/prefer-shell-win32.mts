@@ -1,40 +1,31 @@
 /**
- * @file Per CLAUDE.md "Cross-platform" fleet idiom: pass `shell: WIN32`
- *   (a boolean constant evaluated at module load — `true` on Windows,
- *   `false` everywhere else) rather than `shell: true` to a child-process
- *   call.
- *
- *   Why: `shell: true` wraps the child in `cmd.exe` on Windows AND in
- *   `/bin/sh` on Unix. The Unix wrap is rarely what the caller wants —
- *   it adds an extra fork, breaks argv quoting for paths containing
- *   shell metacharacters, and changes signal-propagation semantics.
- *   The fleet's actual need is "wrap in `cmd.exe` so `.cmd`/`.bat`/`.ps1`
- *   resolution works on Windows" — exactly what `shell: WIN32` expresses.
- *
- *   Detection: object-literal property `shell: true` (Property node where
- *   `key.name === 'shell'` and `value` is the `true` literal). The rule
- *   doesn't try to prove the surrounding call is a child-process call —
- *   `shell: true` is virtually never used as a non-spawn flag in fleet
- *   code, so the false-positive risk is acceptable.
- *
- *   No autofix: rewriting to `shell: WIN32` requires the file to import
- *   `WIN32` from the canonical `constants/platform` (src) or
- *   `test/_shared/fleet/lib/platform` (tests). Adding that import is
- *   non-deterministic enough — different repos lay it out differently —
- *   that the right move is a report-only rule. The fix is a one-token
- *   edit; humans can do it.
- *
- *   Bypass: adjacent comment `prefer-shell-win32: intentional` (matches
- *   the `prefer-async-spawn: sync-required` shape). Use when the call
- *   genuinely needs a shell wrap on every platform — e.g. running a
- *   user-supplied shell expression where `cmd.exe`/`sh` parsing IS the
- *   feature. Document the reason inline.
- *
- *   File-scope exemptions: `src/process/spawn/**`, `src/process/exec/**`,
- *   and similar lib internals that document the `shell: true` behavior
- *   for downstream consumers. Handled at the .config/fleet/oxlintrc.json
- *   `ignorePatterns` level, not in the rule body — the rule should keep
- *   firing in plain consumer code.
+ * @file Per CLAUDE.md "Cross-platform" fleet idiom: pass `shell: WIN32` (a
+ *   boolean constant evaluated at module load — `true` on Windows, `false`
+ *   everywhere else) rather than `shell: true` to a child-process call. Why:
+ *   `shell: true` wraps the child in `cmd.exe` on Windows AND in `/bin/sh` on
+ *   Unix. The Unix wrap is rarely what the caller wants — it adds an extra
+ *   fork, breaks argv quoting for paths containing shell metacharacters, and
+ *   changes signal-propagation semantics. The fleet's actual need is "wrap in
+ *   `cmd.exe` so `.cmd`/`.bat`/`.ps1` resolution works on Windows" — exactly
+ *   what `shell: WIN32` expresses. Detection: object-literal property `shell:
+ *   true` (Property node where `key.name === 'shell'` and `value` is the `true`
+ *   literal). The rule doesn't try to prove the surrounding call is a
+ *   child-process call — `shell: true` is virtually never used as a non-spawn
+ *   flag in fleet code, so the false-positive risk is acceptable. No autofix:
+ *   rewriting to `shell: WIN32` requires the file to import `WIN32` from the
+ *   canonical `constants/platform` (src) or `test/_shared/fleet/lib/platform`
+ *   (tests). Adding that import is non-deterministic enough — different repos
+ *   lay it out differently — that the right move is a report-only rule. The fix
+ *   is a one-token edit; humans can do it. Bypass: adjacent comment
+ *   `prefer-shell-win32: intentional` (matches the `prefer-async-spawn:
+ *   sync-required` shape). Use when the call genuinely needs a shell wrap on
+ *   every platform — e.g. running a user-supplied shell expression where
+ *   `cmd.exe`/`sh` parsing IS the feature. Document the reason inline.
+ *   File-scope exemptions: `src/process/spawn/**`, `src/process/exec/**`, and
+ *   similar lib internals that document the `shell: true` behavior for
+ *   downstream consumers. Handled at the .config/fleet/oxlintrc.json
+ *   `ignorePatterns` level, not in the rule body — the rule should keep firing
+ *   in plain consumer code.
  */
 
 import type { AstNode, RuleContext } from '../lib/rule-types.mts'

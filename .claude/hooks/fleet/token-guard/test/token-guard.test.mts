@@ -210,8 +210,8 @@ describe('token-guard hook', () => {
     // as a substring, which the pre-fix unbounded match treated as
     // a sensitive env reference. Word-boundary fix means `PASS` must
     // be a standalone token (or at a `_`/`-`/`.`/`/` boundary).
-    it('paths-allowlist.yml does not trip PASS', () => {
-      assert.equal(runHook('cat .github/paths-allowlist.yml').code, 0)
+    it('a "paths-" filename does not trip PASS', () => {
+      assert.equal(runHook('cat scripts/fleet/check-paths.mts').code, 0)
     })
     it('AUTHOR_NAME does not trip AUTH', () => {
       // AUTHOR ends with R; the boundary-after match correctly skips

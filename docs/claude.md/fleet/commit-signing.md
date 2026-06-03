@@ -35,13 +35,7 @@ The pre-push hook fires after commits exist. It reads `git log --format='%H %G?'
 
 Scope: only fires when pushing to `refs/heads/main` or `refs/heads/master`. Topic branches push unsigned freely; signing matters at the point of landing on the protected ref.
 
-Bypass:
-
-```sh
-SOCKET_PRE_PUSH_ALLOW_UNSIGNED=1 git push origin main
-```
-
-One-shot. Stderr warns even when the bypass is honored, so the operator sees the exception in their own scrollback.
+No bypass. Unsigned commits on `main`/`master` are always blocked — sign the commits and retry.
 
 ## Layer 3: server-side (GitHub branch protection)
 

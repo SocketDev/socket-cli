@@ -151,7 +151,10 @@ test('Edit on .config/fleet/oxlint-plugin/rules/* in a fleet repo is BLOCKED', a
     })
     assert.strictEqual(result.code, 2)
     assert.match(result.stderr, /no-fleet-fork-guard/)
-    assert.match(result.stderr, /\.config\/fleet\/oxlint-plugin\/rules\/example\.mts/)
+    assert.match(
+      result.stderr,
+      /\.config\/fleet\/oxlint-plugin\/rules\/example\.mts/,
+    )
     assert.match(result.stderr, /Allow fleet-fork bypass/)
   } finally {
     rmSync(repo, { force: true, recursive: true })
@@ -238,7 +241,10 @@ test('Write tool also blocked, not just Edit', async () => {
 test('MultiEdit tool also blocked', async () => {
   const repo = makeFakeFleetRepo()
   try {
-    const file = makeCanonicalFile(repo, '.config/fleet/oxlint-plugin/rules/foo.mts')
+    const file = makeCanonicalFile(
+      repo,
+      '.config/fleet/oxlint-plugin/rules/foo.mts',
+    )
     const result = await runHook({
       tool_input: { file_path: file, edits: [] },
       tool_name: 'MultiEdit',
@@ -254,7 +260,10 @@ test('repo without FLEET-CANONICAL marker passes through', async () => {
   // sees CLAUDE.md but no marker, so the path doesn't qualify.
   const repo = makeFakeFleetRepo({ hasFleetCanonical: false })
   try {
-    const file = makeCanonicalFile(repo, '.config/fleet/oxlint-plugin/rules/x.mts')
+    const file = makeCanonicalFile(
+      repo,
+      '.config/fleet/oxlint-plugin/rules/x.mts',
+    )
     const result = await runHook({
       tool_input: { file_path: file, new_string: 'x' },
       tool_name: 'Edit',

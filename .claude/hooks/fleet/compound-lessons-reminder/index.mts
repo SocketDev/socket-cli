@@ -135,7 +135,11 @@ const FLEET_CANONICAL_FILE_PATTERNS: readonly RegExp[] = [
 ]
 
 function isFleetCanonicalPath(filePath: string): boolean {
-  for (let i = 0, { length } = FLEET_CANONICAL_FILE_PATTERNS; i < length; i += 1) {
+  for (
+    let i = 0, { length } = FLEET_CANONICAL_FILE_PATTERNS;
+    i < length;
+    i += 1
+  ) {
     if (FLEET_CANONICAL_FILE_PATTERNS[i]!.test(filePath)) {
       return true
     }
@@ -153,11 +157,11 @@ interface RepeatEditHit {
 }
 
 /**
- * Behavioral signal: compare the current turn's Edit/Write paths against
- * prior turns' Edit/Write paths in the same session. Any path edited by both
- * AND that lives under a fleet-canonical surface is a repeat-edit hit. The
- * assistant patching the same hook / skill / CLAUDE.md surface twice is the
- * actual compound-lessons-into-rules trigger — prose may not mention it.
+ * Behavioral signal: compare the current turn's Edit/Write paths against prior
+ * turns' Edit/Write paths in the same session. Any path edited by both AND that
+ * lives under a fleet-canonical surface is a repeat-edit hit. The assistant
+ * patching the same hook / skill / CLAUDE.md surface twice is the actual
+ * compound-lessons-into-rules trigger — prose may not mention it.
  *
  * Lookback (default 5) caps how far back to walk in prior assistant turns,
  * keeping the scan cheap on long transcripts.
@@ -290,7 +294,10 @@ async function main(): Promise<void> {
   if (hasWhy) {
     process.exit(0)
   }
-  if (editHits.length === 0 && hasRulePromotionEvidence(currentToolUses, text)) {
+  if (
+    editHits.length === 0 &&
+    hasRulePromotionEvidence(currentToolUses, text)
+  ) {
     process.exit(0)
   }
 
