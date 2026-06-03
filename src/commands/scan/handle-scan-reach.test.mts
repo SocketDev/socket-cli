@@ -8,6 +8,8 @@ const {
   mockFinalizeTier1Scan,
   mockFindSocketYmlSync,
   mockGetPackageFilesForScan,
+  mockLoggerSuccess,
+  mockLoggerWarn,
   mockOutputScanReach,
   mockPerformReachabilityAnalysis,
   mockSentryInternalsSymbol,
@@ -17,6 +19,8 @@ const {
   mockFinalizeTier1Scan: vi.fn(),
   mockFindSocketYmlSync: vi.fn(),
   mockGetPackageFilesForScan: vi.fn(),
+  mockLoggerSuccess: vi.fn(),
+  mockLoggerWarn: vi.fn(),
   mockOutputScanReach: vi.fn(),
   mockPerformReachabilityAnalysis: vi.fn(),
   mockSentryInternalsSymbol: Symbol('kInternalsSymbol'),
@@ -70,8 +74,8 @@ vi.mock('../../utils/path-resolve.mts', () => ({
 
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
-    success: vi.fn(),
-    warn: vi.fn(),
+    success: mockLoggerSuccess,
+    warn: mockLoggerWarn,
   },
 }))
 
@@ -378,5 +382,69 @@ describe('handleScanReach', () => {
     })
 
     expect(mockFinalizeTier1Scan).not.toHaveBeenCalled()
+  })
+
+  it('warns but still produces scan output when tier1 finalize fails', async () => {
+    mockPerformReachabilityAnalysis.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-id',
+      },
+    })
+    // Finalize fails with the CResult error shape; the command must not abort.
+    mockFinalizeTier1Scan.mockResolvedValueOnce({
+      ok: false,
+      message: 'Finalize request failed',
+      cause: 'Socket API server error (503)',
+    })
+    const reachabilityOptions = {
+      excludePaths: [],
+      reachAnalysisMemoryLimit: 8192,
+      reachAnalysisTimeout: 0,
+      reachConcurrency: 1,
+      reachContinueOnAnalysisErrors: false,
+      reachContinueOnInstallErrors: false,
+      reachContinueOnMissingLockFiles: false,
+      reachContinueOnNoSourceFiles: false,
+      reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
+      reachDisableAnalytics: false,
+      reachDisableExternalToolChecks: false,
+      reachEcosystems: [],
+      reachEnableAnalysisSplitting: false,
+      reachExcludePaths: [],
+      reachLazyMode: false,
+      reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
+      reachVersion: undefined,
+    }
+
+    // The handler resolves normally (no throw, returns undefined) so the
+    // command proceeds and exits 0 rather than being blocked by the failure.
+    await expect(
+      handleScanReach({
+        cwd: '/repo',
+        interactive: false,
+        orgSlug: 'fakeOrg',
+        outputKind: 'text',
+        outputPath: '',
+        reachabilityOptions,
+        targets: ['.'],
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(mockFinalizeTier1Scan).toHaveBeenCalledWith('tier1-id', null)
+    // The failure is surfaced as a single warning carrying message and cause.
+    expect(mockLoggerWarn).toHaveBeenCalledTimes(1)
+    const { 0: warnMessage } = mockLoggerWarn.mock.calls[0]
+    expect(warnMessage).toContain('Failed to finalize tier1 reachability scan')
+    expect(warnMessage).toContain('Finalize request failed')
+    expect(warnMessage).toContain('Socket API server error (503)')
+    // Normal scan output is still produced; the command is not blocked.
+    expect(mockOutputScanReach).toHaveBeenCalledWith(
+      expect.objectContaining({ ok: true }),
+      { cwd: '/repo', outputKind: 'text', outputPath: '' },
+    )
   })
 })
