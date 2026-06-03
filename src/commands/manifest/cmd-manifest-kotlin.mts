@@ -44,10 +44,15 @@ const config: CliCommandConfig = {
       description:
         'Generate `pom.xml` manifest file(s) instead of the default Socket facts file (`.socket.facts.json`)',
     },
-    configs: {
+    includeConfigs: {
       type: 'string',
       description:
-        'With --facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive, `*` and `?` wildcards). e.g. `*CompileClasspath,*RuntimeClasspath` to skip tooling configs. Default: every resolvable configuration except AGP instrumented-test classpaths',
+        'When generating facts: comma-separated glob patterns matched against Gradle configuration names (case-sensitive, `*` and `?` wildcards). Only configurations matching at least one pattern are resolved. e.g. `*CompileClasspath,*RuntimeClasspath`. Default: every resolvable configuration except AGP instrumented-test classpaths',
+    },
+    excludeConfigs: {
+      type: 'string',
+      description:
+        'When generating facts: comma-separated glob patterns; Gradle configurations matching any pattern are skipped (applied after --include-configs)',
     },
     ignoreUnresolved: {
       type: 'boolean',
@@ -74,8 +79,9 @@ const config: CliCommandConfig = {
     By default, emits a single \`.socket.facts.json\` describing the resolved
     dependency graph of the whole build, using gradle (preferably your local
     \`gradlew\`). An unresolved dependency is a fatal error. You can pass
-    --configs=<comma-separated glob patterns> to restrict resolution to matching
-    configurations (e.g. \`*CompileClasspath,*RuntimeClasspath\`), and
+    --include-configs / --exclude-configs (comma-separated glob patterns) to
+    control which configurations are resolved (e.g.
+    --include-configs=\`*CompileClasspath,*RuntimeClasspath\`), and
     --ignore-unresolved to warn on unresolved dependencies instead of failing.
 
     Pass --pom to instead generate \`pom.xml\` manifest files via gradle (one per
@@ -138,7 +144,15 @@ async function run(
     sockJson?.defaults?.manifest?.gradle,
   )
 
-  let { bin, configs, facts, gradleOpts, ignoreUnresolved, verbose } = cli.flags
+  let {
+    bin,
+    excludeConfigs,
+    facts,
+    gradleOpts,
+    ignoreUnresolved,
+    includeConfigs,
+    verbose,
+  } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -188,12 +202,26 @@ async function run(
       facts = false
     }
   }
-  if (configs === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.configs !== undefined) {
-      configs = sockJson.defaults?.manifest?.gradle?.configs
-      logger.info(`Using default --configs from ${SOCKET_JSON}:`, configs)
+  if (includeConfigs === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.includeConfigs !== undefined) {
+      includeConfigs = sockJson.defaults?.manifest?.gradle?.includeConfigs
+      logger.info(
+        `Using default --include-configs from ${SOCKET_JSON}:`,
+        includeConfigs,
+      )
     } else {
-      configs = ''
+      includeConfigs = ''
+    }
+  }
+  if (excludeConfigs === undefined) {
+    if (sockJson.defaults?.manifest?.gradle?.excludeConfigs !== undefined) {
+      excludeConfigs = sockJson.defaults?.manifest?.gradle?.excludeConfigs
+      logger.info(
+        `Using default --exclude-configs from ${SOCKET_JSON}:`,
+        excludeConfigs,
+      )
+    } else {
+      excludeConfigs = ''
     }
   }
   if (ignoreUnresolved === undefined) {
@@ -208,13 +236,16 @@ async function run(
     }
   }
 
+  // `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` only
+  // affect facts generation; the pom path has no equivalent knobs.
   if (
     !facts &&
-    (cli.flags['configs'] !== undefined ||
+    (cli.flags['includeConfigs'] !== undefined ||
+      cli.flags['excludeConfigs'] !== undefined ||
       cli.flags['ignoreUnresolved'] !== undefined)
   ) {
     logger.warn(
-      'The `--configs` and `--ignore-unresolved` options only apply with `--facts`; ignoring them.',
+      'The `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` options only apply when generating Socket facts (not with `--pom`); ignoring them.',
     )
   }
 
@@ -260,10 +291,11 @@ async function run(
   if (facts) {
     await convertGradleToFacts({
       bin: String(bin),
-      configs: String(configs || ''),
       cwd,
+      excludeConfigs: String(excludeConfigs || ''),
       gradleOpts: parsedGradleOpts,
       ignoreUnresolved: Boolean(ignoreUnresolved),
+      includeConfigs: String(includeConfigs || ''),
       verbose: Boolean(verbose),
     })
     return

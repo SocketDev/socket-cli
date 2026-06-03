@@ -7,27 +7,30 @@ import { runCoanaManifestFacts } from './coana-manifest-facts.mts'
 // `./gradlew`.
 export async function convertGradleToFacts({
   bin,
-  configs,
   cwd,
+  excludeConfigs,
   gradleOpts,
   ignoreUnresolved,
+  includeConfigs,
   verbose,
 }: {
   bin: string
-  configs: string
   cwd: string
+  excludeConfigs: string
   gradleOpts: string[]
   ignoreUnresolved: boolean
+  includeConfigs: string
   verbose: boolean
 }): Promise<void> {
   await runCoanaManifestFacts({
     bin,
     buildOpts: gradleOpts,
     buildOptsFlag: '--gradle-opts',
-    configs,
     cwd,
     ecosystem: 'gradle',
+    excludeConfigs,
     ignoreUnresolved,
+    includeConfigs,
     verbose,
   })
 }

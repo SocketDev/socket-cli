@@ -39,10 +39,15 @@ const config: CliCommandConfig = {
       description:
         'Generate `pom.xml` manifest file(s) instead of the default Socket facts file (`.socket.facts.json`)',
     },
-    configs: {
+    includeConfigs: {
       type: 'string',
       description:
-        'With --facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive, `*` and `?` wildcards). Bare names (no wildcards) act as exact-name filters. Default: compile,optional,provided,runtime,test',
+        'When generating facts: comma-separated glob patterns matched against sbt configuration names (case-sensitive, `*` and `?` wildcards). Bare names act as exact-name filters. Only configurations matching at least one pattern are resolved. Default: compile,optional,provided,runtime,test',
+    },
+    excludeConfigs: {
+      type: 'string',
+      description:
+        'When generating facts: comma-separated glob patterns; sbt configurations matching any pattern are skipped (applied after --include-configs)',
     },
     ignoreUnresolved: {
       type: 'boolean',
@@ -77,10 +82,11 @@ const config: CliCommandConfig = {
     By default, emits a single \`.socket.facts.json\` describing the resolved
     dependency graph of the whole build. It reads dependency metadata only and
     never downloads artifacts; an unresolved dependency is a fatal error. You
-    can pass --configs=<comma-separated glob patterns> to choose which sbt
-    configurations to resolve (e.g. \`compile,test\` for exact names or
-    \`*Test*\` for variants), and --ignore-unresolved to warn on unresolved
-    dependencies instead of failing the run.
+    can pass --include-configs / --exclude-configs (comma-separated glob
+    patterns) to choose which sbt configurations to resolve (e.g.
+    --include-configs=\`compile,test\` for exact names or \`*Test*\` for
+    variants), and --ignore-unresolved to warn on unresolved dependencies
+    instead of failing the run.
 
     Pass --pom to instead generate a \`pom.xml\` via \`sbt makePom\` from your
     \`build.sbt\`. The xml is the dependency manifest (like a package.json for
@@ -154,8 +160,17 @@ async function run(
     sockJson?.defaults?.manifest?.sbt,
   )
 
-  let { bin, configs, facts, ignoreUnresolved, out, sbtOpts, stdout, verbose } =
-    cli.flags
+  let {
+    bin,
+    excludeConfigs,
+    facts,
+    ignoreUnresolved,
+    includeConfigs,
+    out,
+    sbtOpts,
+    stdout,
+    verbose,
+  } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -186,12 +201,26 @@ async function run(
       facts = false
     }
   }
-  if (configs === undefined) {
-    if (sockJson.defaults?.manifest?.sbt?.configs !== undefined) {
-      configs = sockJson.defaults?.manifest?.sbt?.configs
-      logger.info(`Using default --configs from ${SOCKET_JSON}:`, configs)
+  if (includeConfigs === undefined) {
+    if (sockJson.defaults?.manifest?.sbt?.includeConfigs !== undefined) {
+      includeConfigs = sockJson.defaults?.manifest?.sbt?.includeConfigs
+      logger.info(
+        `Using default --include-configs from ${SOCKET_JSON}:`,
+        includeConfigs,
+      )
     } else {
-      configs = ''
+      includeConfigs = ''
+    }
+  }
+  if (excludeConfigs === undefined) {
+    if (sockJson.defaults?.manifest?.sbt?.excludeConfigs !== undefined) {
+      excludeConfigs = sockJson.defaults?.manifest?.sbt?.excludeConfigs
+      logger.info(
+        `Using default --exclude-configs from ${SOCKET_JSON}:`,
+        excludeConfigs,
+      )
+    } else {
+      excludeConfigs = ''
     }
   }
   if (ignoreUnresolved === undefined) {
@@ -240,17 +269,19 @@ async function run(
     verbose = false
   }
 
-  // `--configs` and `--ignore-unresolved` only affect --facts; the pom path
-  // (`sbt makePom`) has no equivalent knobs. Warn rather than silently ignore
-  // an explicitly-passed flag. (socket.json defaults don't trip this — only a
-  // flag actually present on the command line does.)
+  // `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` only
+  // affect facts generation; the pom path (`sbt makePom`) has no equivalent
+  // knobs. Warn rather than silently ignore an explicitly-passed flag.
+  // (socket.json defaults don't trip this — only a flag actually present on the
+  // command line does.)
   if (
     !facts &&
-    (cli.flags['configs'] !== undefined ||
+    (cli.flags['includeConfigs'] !== undefined ||
+      cli.flags['excludeConfigs'] !== undefined ||
       cli.flags['ignoreUnresolved'] !== undefined)
   ) {
     logger.warn(
-      'The `--configs` and `--ignore-unresolved` options only apply with `--facts`; ignoring them.',
+      'The `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` options only apply when generating Socket facts (not with `--pom`); ignoring them.',
     )
   }
 
@@ -311,9 +342,10 @@ async function run(
   if (facts) {
     await convertSbtToFacts({
       bin: String(bin),
-      configs: String(configs || ''),
       cwd,
+      excludeConfigs: String(excludeConfigs || ''),
       ignoreUnresolved: Boolean(ignoreUnresolved),
+      includeConfigs: String(includeConfigs || ''),
       sbtOpts: parsedSbtOpts,
       verbose: Boolean(verbose),
     })

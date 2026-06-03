@@ -61,7 +61,8 @@ export interface SocketJson {
       gradle?: {
         disabled?: boolean | undefined
         bin?: string | undefined
-        configs?: string | undefined
+        excludeConfigs?: string | undefined
+        includeConfigs?: string | undefined
         facts?: boolean | undefined
         gradleOpts?: string | undefined
         ignoreUnresolved?: boolean | undefined
@@ -72,7 +73,8 @@ export interface SocketJson {
         infile?: string | undefined
         stdin?: boolean | undefined
         bin?: string | undefined
-        configs?: string | undefined
+        excludeConfigs?: string | undefined
+        includeConfigs?: string | undefined
         facts?: boolean | undefined
         ignoreUnresolved?: boolean | undefined
         outfile?: string | undefined

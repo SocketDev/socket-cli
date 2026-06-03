@@ -9,16 +9,18 @@ import { runCoanaManifestFacts } from './coana-manifest-facts.mts'
 // or `JAVA_HOME`.
 export async function convertSbtToFacts({
   bin,
-  configs,
   cwd,
+  excludeConfigs,
   ignoreUnresolved,
+  includeConfigs,
   sbtOpts,
   verbose,
 }: {
   bin: string
-  configs: string
   cwd: string
+  excludeConfigs: string
   ignoreUnresolved: boolean
+  includeConfigs: string
   sbtOpts: string[]
   verbose: boolean
 }): Promise<void> {
@@ -26,10 +28,11 @@ export async function convertSbtToFacts({
     bin,
     buildOpts: sbtOpts,
     buildOptsFlag: '--sbt-opts',
-    configs,
     cwd,
     ecosystem: 'sbt',
+    excludeConfigs,
     ignoreUnresolved,
+    includeConfigs,
     verbose,
   })
 }

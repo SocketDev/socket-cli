@@ -20,19 +20,21 @@ export async function runCoanaManifestFacts({
   bin,
   buildOpts,
   buildOptsFlag,
-  configs,
   cwd,
   ecosystem,
+  excludeConfigs,
   ignoreUnresolved,
+  includeConfigs,
   verbose,
 }: {
   bin: string
   buildOpts: string[]
   buildOptsFlag: '--gradle-opts' | '--sbt-opts'
-  configs: string
   cwd: string
   ecosystem: 'gradle' | 'sbt'
+  excludeConfigs: string
   ignoreUnresolved: boolean
+  includeConfigs: string
   verbose: boolean
 }): Promise<void> {
   // `coana manifest <ecosystem> <path>` emits `.socket.facts.json` by default;
@@ -42,8 +44,11 @@ export async function runCoanaManifestFacts({
   if (bin) {
     coanaArgs.push('--bin', bin)
   }
-  if (configs) {
-    coanaArgs.push('--configs', configs)
+  if (includeConfigs) {
+    coanaArgs.push('--include-configs', includeConfigs)
+  }
+  if (excludeConfigs) {
+    coanaArgs.push('--exclude-configs', excludeConfigs)
   }
   if (ignoreUnresolved) {
     coanaArgs.push('--ignore-unresolved')
