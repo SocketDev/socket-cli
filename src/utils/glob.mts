@@ -22,7 +22,7 @@ const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(
   p => !p.endsWith('.gitignore'),
 )
 
-const IGNORED_DIRS = [
+export const IGNORED_DIRS = [
   // Taken from ignore-by-default:
   // https://github.com/novemberborn/ignore-by-default/blob/v2.1.0/index.js
   '.git', // Git repository files, see <https://git-scm.com/>

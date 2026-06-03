@@ -14,6 +14,7 @@ import { meowOrExit } from '../../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../../utils/socket-json.mts'
 
+import type { ExtractBazelStatus } from './extract_bazel_to_maven.mts'
 import type {
   CliCommandConfig,
   CliCommandContext,
@@ -80,6 +81,13 @@ const config: CliCommandConfig = {
     Note: this command generates dependency manifests for Bazel workspaces.
     It does not run reachability analysis.
 
+    Maven hub discovery: under Bzlmod, hubs are enumerated from
+    \`bazel mod show_extension\` and filtered to the root module's own hubs.
+    Under legacy WORKSPACE mode (no \`show_extension\`), only conventionally
+    named hubs are probed (\`maven\`, \`maven_install\`, \`maven_dev\`, …). A hub
+    with a non-conventional name that \`show_extension\` does not enumerate is
+    not discovered yet; a flag to name extra hubs is planned.
+
     To generate AND upload in one step, use \`socket scan create --auto-manifest\`
     instead — it detects Bazel workspaces, generates Maven manifests by
     default, and uploads the result. This subcommand is for generation only.
@@ -100,10 +108,8 @@ export const cmdManifestBazel = {
 
 export type EcosystemOutcome = {
   ecosystem: 'maven' | 'pypi'
-  ok: boolean
-  noEcosystemFound?: boolean | undefined
-  hardFailure?: boolean
-  manifestPath?: string | undefined
+  status: ExtractBazelStatus
+  manifestPaths: string[]
 }
 
 // Pure outcome-matrix evaluator. Exported so dispatcher behavior can be
@@ -111,19 +117,34 @@ export type EcosystemOutcome = {
 // failures that must propagate to a non-zero CLI exit; returns void on
 // success.
 //
-// - Hard failure: ok === false && !noEcosystemFound. The ecosystem was
-//   detected (or the runner crashed), but extraction failed. Always a
-//   non-zero exit, even when another ecosystem succeeded.
-// - No-discovery: noEcosystemFound === true. Genuinely absent ecosystem.
-//   Auto-detect mode tolerates this when at least one other ecosystem
-//   succeeded; explicit mode treats it as an error.
+// - `complete`/`partial` both count as produced output (>=1 manifest).
+//   `partial` additionally warns — a known-incomplete SBOM is still emitted,
+//   not a hard error.
+// - `hardFailure`: the ecosystem was detected (or the runner crashed) but
+//   wrote zero manifests. Always a non-zero exit, even when another
+//   ecosystem succeeded.
+// - `noEcosystem`: genuinely absent ecosystem. Auto-detect mode tolerates it
+//   when at least one other ecosystem produced output; explicit mode treats
+//   it as an error (the user requested an ecosystem that isn't there).
 export function evaluateEcosystemOutcomes(
   outcomes: readonly EcosystemOutcome[],
   isExplicit: boolean,
 ): void {
-  const hardFailures = outcomes.filter(o => !o.ok && !o.noEcosystemFound)
-  const noDiscoveries = outcomes.filter(o => o.noEcosystemFound)
-  const successes = outcomes.filter(o => o.ok && o.manifestPath)
+  const produced = outcomes.filter(
+    o =>
+      (o.status === 'complete' || o.status === 'partial') &&
+      o.manifestPaths.length > 0,
+  )
+  const hardFailures = outcomes.filter(o => o.status === 'hardFailure')
+  const noDiscoveries = outcomes.filter(o => o.status === 'noEcosystem')
+
+  for (const partial of outcomes) {
+    if (partial.status === 'partial') {
+      logger.warn(
+        `Bazel ${partial.ecosystem} manifest generation was partial; the uploaded SBOM is known-incomplete.`,
+      )
+    }
+  }
 
   if (!isExplicit) {
     if (hardFailures.length) {
@@ -131,7 +152,7 @@ export function evaluateEcosystemOutcomes(
         `Bazel auto-manifest generation hit hard failure(s) in ecosystem(s): ${hardFailures.map(f => f.ecosystem).join(', ')}.`,
       )
     }
-    if (successes.length) {
+    if (produced.length) {
       return
     }
     if (noDiscoveries.length === outcomes.length) {
@@ -142,7 +163,8 @@ export function evaluateEcosystemOutcomes(
     return
   }
 
-  // Explicit mode: every requested ecosystem must succeed.
+  // Explicit mode: every requested ecosystem must produce output. A partial
+  // run counts (it wrote manifests); absent or hard-failed ecosystems error.
   if (noDiscoveries.length) {
     throw new InputError(
       `No Bazel rules found for explicitly requested ecosystem(s): ${noDiscoveries.map(f => f.ecosystem).join(', ')}.`,
@@ -153,6 +175,27 @@ export function evaluateEcosystemOutcomes(
       `Bazel manifest generation failed for explicitly requested ecosystem(s): ${hardFailures.map(f => f.ecosystem).join(', ')}.`,
     )
   }
+}
+
+// Map the legacy PyPI result shape (single manifestPath + ok/noEcosystem
+// booleans) into the shared status vocabulary so both ecosystems flow through
+// one success gate. PyPI has no partial state. Only a `complete` outcome
+// carries a manifest path; `noEcosystem`/`hardFailure` carry none, preserving
+// the invariant that a non-success outcome produced no usable output (a
+// detected-but-empty PyPI run writes a stub file but is still a hard failure,
+// and that stub must not be surfaced as produced output).
+function pypiOutcome(result: {
+  manifestPath?: string | undefined
+  noEcosystemFound?: boolean | undefined
+  ok: boolean
+}): { manifestPaths: string[]; status: ExtractBazelStatus } {
+  if (result.noEcosystemFound) {
+    return { manifestPaths: [], status: 'noEcosystem' }
+  }
+  if (result.ok && result.manifestPath) {
+    return { manifestPaths: [result.manifestPath], status: 'complete' }
+  }
+  return { manifestPaths: [], status: 'hardFailure' }
 }
 
 async function run(
@@ -308,9 +351,8 @@ async function run(
       })
       outcomes.push({
         ecosystem: 'maven',
-        ok: mavenResult.ok,
-        noEcosystemFound: mavenResult.noEcosystemFound,
-        manifestPath: mavenResult.manifestPath,
+        manifestPaths: mavenResult.manifestPaths,
+        status: mavenResult.status,
       })
     } else if (eco === 'pypi') {
       // eslint-disable-next-line no-await-in-loop
@@ -326,9 +368,7 @@ async function run(
       })
       outcomes.push({
         ecosystem: 'pypi',
-        ok: pypiResult.ok,
-        noEcosystemFound: pypiResult.noEcosystemFound,
-        manifestPath: pypiResult.manifestPath,
+        ...pypiOutcome(pypiResult),
       })
     }
   }
