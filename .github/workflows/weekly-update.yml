@@ -97,7 +97,7 @@ jobs:
           fi
 
           set +e
-          pnpm exec claude --print \
+          node_modules/.bin/claude --print \
             --allowedTools "Bash(pnpm:*)" "Bash(git add:*)" "Bash(git commit:*)" "Bash(git status:*)" "Bash(git diff:*)" "Bash(git log:*)" "Bash(git rev-parse:*)" "Read" "Write" "Edit" "Glob" "Grep" \
             --model haiku \
             --max-turns 15 \
@@ -162,7 +162,7 @@ jobs:
           FAILURE_LOG="$(cat build.log test.log 2>/dev/null)"
 
           set +e
-          pnpm exec claude --print \
+          node_modules/.bin/claude --print \
             --allowedTools "Bash(pnpm:*)" "Bash(git add:*)" "Bash(git commit:*)" "Bash(git status:*)" "Bash(git diff:*)" "Bash(git log:*)" "Bash(git rev-parse:*)" "Read" "Write" "Edit" "Glob" "Grep" \
             --model sonnet \
             --max-turns 25 \
