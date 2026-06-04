@@ -52,16 +52,17 @@ const config: CliCommandConfig = {
     ignoreUnresolved: {
       type: 'boolean',
       description:
-        'With --facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)',
+        'When generating facts: warn on unresolved dependencies instead of failing the run (unresolved deps are not emitted to the facts file)',
     },
     out: {
       type: 'string',
       description:
-        'Path of output file; where to store the resulting manifest, see also --stdout',
+        'Only with --pom: path of the output `pom.xml`, see also --stdout. Does not apply when generating Socket facts (always written to the project root as `.socket.facts.json`)',
     },
     stdout: {
       type: 'boolean',
-      description: 'Print resulting pom.xml to stdout (supersedes --out)',
+      description:
+        'Only with --pom: print the resulting `pom.xml` to stdout (supersedes --out). Does not apply when generating Socket facts',
     },
     sbtOpts: {
       type: 'string',
@@ -284,20 +285,6 @@ async function run(
     )
   }
 
-  // Conversely, --out / --stdout only affect the pom path; with --facts the
-  // plugin always writes `.socket.facts.json` to the build root (its
-  // socket.outputDirectory/outputFile JVM props aren't exposed by the CLI), so
-  // warn rather than let `--facts --out custom.json` silently write nothing
-  // there.
-  if (
-    facts &&
-    (cli.flags['out'] !== undefined || cli.flags['stdout'] !== undefined)
-  ) {
-    logger.warn(
-      'The `--out` and `--stdout` options do not apply with `--facts`; the facts file is always written to the build root.',
-    )
-  }
-
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
     logger.group('- flags:', cli.flags)
@@ -310,12 +297,29 @@ async function run(
   //       try, store contents in a file in some folder, target that folder... what
   //       would the file name be?
 
-  const wasValidInput = checkCommandInput(outputKind, {
-    nook: true,
-    test: cli.input.length <= 1,
-    message: 'Can only accept one DIR (make sure to escape spaces!)',
-    fail: 'received ' + cli.input.length,
-  })
+  // --out / --stdout only affect the pom path. Socket facts are always written
+  // to the project root as `.socket.facts.json` so that `socket scan create`
+  // picks them up, so reject these flags in facts mode rather than silently
+  // ignoring an explicitly-passed output location.
+  const wasValidInput = checkCommandInput(
+    outputKind,
+    {
+      nook: true,
+      test: cli.input.length <= 1,
+      message: 'Can only accept one DIR (make sure to escape spaces!)',
+      fail: 'received ' + cli.input.length,
+    },
+    {
+      nook: true,
+      test: !(
+        facts &&
+        (cli.flags['out'] !== undefined || cli.flags['stdout'] !== undefined)
+      ),
+      message:
+        'The `--out` and `--stdout` options only apply with `--pom`; Socket facts are always written to the project root as `.socket.facts.json`',
+      fail: 'remove --out/--stdout, or pass --pom',
+    },
+  )
   if (!wasValidInput) {
     return
   }
