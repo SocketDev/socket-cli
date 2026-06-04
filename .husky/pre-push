@@ -1,2 +1,4 @@
 # Run pre-push security validation.
-node .git-hooks/pre-push.mts "$@"
+# The fleet hooks live under .git-hooks/fleet/ (segmented); the shell shim
+# there handles token sanitization + node resolution before the .mts.
+.git-hooks/fleet/pre-push "$@"

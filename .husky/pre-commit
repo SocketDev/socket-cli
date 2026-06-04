@@ -3,7 +3,7 @@
 # Mandatory security checks ALSO run in pre-push hook.
 #
 # Architecture (parallels commit-msg and pre-push):
-#   .husky/pre-commit (this file) → .git-hooks/pre-commit.mts (security) + pnpm lint/test
+#   .husky/pre-commit (this file) → .git-hooks/fleet/pre-commit (security) + pnpm lint/test
 #
 # Use --no-verify for:
 # - History operations (squash, rebase, amend)
@@ -15,7 +15,9 @@
 # - DISABLE_PRECOMMIT_TEST=1 to skip testing
 
 # Run Socket security pre-commit checks (API keys, .DS_Store, etc.).
-node .git-hooks/pre-commit.mts
+# Fleet hooks are segmented under .git-hooks/fleet/; the shell shim there
+# resolves node + runs the .mts.
+.git-hooks/fleet/pre-commit
 
 # Check if pnpm is available
 if ! command -v pnpm >/dev/null 2>&1; then
