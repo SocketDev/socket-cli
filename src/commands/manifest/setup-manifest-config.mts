@@ -61,22 +61,24 @@ export async function setupManifestConfig(
     {
       name: 'Gradle'.padEnd(30, ' '),
       value: 'gradle',
-      description: 'Generate pom.xml files through gradle',
+      description: 'Generate a Socket facts file or pom.xml through gradle',
     },
     {
       name: 'Kotlin (gradle)'.padEnd(30, ' '),
       value: 'gradle',
-      description: 'Generate pom.xml files (for Kotlin) through gradle',
+      description:
+        'Generate a Socket facts file or pom.xml (for Kotlin) through gradle',
     },
     {
       name: 'Scala (gradle)'.padEnd(30, ' '),
       value: 'gradle',
-      description: 'Generate pom.xml files (for Scala) through gradle',
+      description:
+        'Generate a Socket facts file or pom.xml (for Scala) through gradle',
     },
     {
       name: 'Scala (sbt)'.padEnd(30, ' '),
       value: 'sbt',
-      description: 'Generate pom.xml files through sbt',
+      description: 'Generate a Socket facts file or pom.xml through sbt',
     },
   ]
 
@@ -292,6 +294,15 @@ async function setupGradle(
     delete config.facts
   }
 
+  // The config filters and --ignore-unresolved only apply to facts generation
+  // (the default); skip them when pom generation (--pom) is selected.
+  if (config.facts !== false) {
+    const factsOptions = await setupFactsOptions(config)
+    if (!factsOptions.ok || factsOptions.data.canceled) {
+      return factsOptions
+    }
+  }
+
   const verbose = await askForVerboseFlag(config.verbose)
   if (verbose === undefined) {
     return canceledByUser()
@@ -341,9 +352,10 @@ async function setupSbt(
     delete config.facts
   }
 
-  // --facts emits a .socket.facts.json instead of pom.xml files, so the pom
-  // output questions (stdout/outfile) don't apply when it is enabled.
-  if (config.facts !== true) {
+  // Socket facts is the default. The pom output questions (stdout/outfile)
+  // only apply when pom generation (--pom) is explicitly selected; otherwise
+  // ask the facts-only options.
+  if (config.facts === false) {
     const stdout = await askForStdout(config.stdout)
     if (stdout === undefined) {
       return canceledByUser()
@@ -369,6 +381,11 @@ async function setupSbt(
           delete config.outfile
         }
       }
+    }
+  } else {
+    const factsOptions = await setupFactsOptions(config)
+    if (!factsOptions.ok || factsOptions.data.canceled) {
+      return factsOptions
     }
   }
 
@@ -506,19 +523,46 @@ async function askForFactsFlag(
   current: boolean | undefined,
 ): Promise<string | undefined> {
   return await select({
+    message: '(--facts / --pom) Which manifest should this generate?',
+    choices: [
+      {
+        name: 'Socket facts (default)',
+        value: 'yes',
+        description:
+          'Generate a .socket.facts.json file describing the resolved dependency graph',
+      },
+      {
+        name: 'pom.xml',
+        value: 'no',
+        description: 'Generate pom.xml manifest files instead (the --pom path)',
+      },
+      {
+        name: '(leave default)',
+        value: '',
+        description: 'Do not store a setting; uses the default (Socket facts)',
+      },
+    ],
+    default: current === true ? 'yes' : current === false ? 'no' : '',
+  })
+}
+
+async function askForIgnoreUnresolvedFlag(
+  current: boolean | undefined,
+): Promise<string | undefined> {
+  return await select({
     message:
-      '(--facts) Emit a Socket facts JSON file instead of generating pom.xml?',
+      '(--ignore-unresolved) Warn on unresolved dependencies instead of failing?',
     choices: [
       {
         name: 'no',
         value: 'no',
-        description: 'Generate pom.xml files (default behavior)',
+        description: 'Fail the run when a declared dependency cannot resolve',
       },
       {
         name: 'yes',
         value: 'yes',
         description:
-          'Generate a .socket.facts.json file describing the resolved dependency graph',
+          'Warn and continue; unresolved dependencies are omitted from the facts file',
       },
       {
         name: '(leave default)',
@@ -528,6 +572,55 @@ async function askForFactsFlag(
     ],
     default: current === true ? 'yes' : current === false ? 'no' : '',
   })
+}
+
+// Prompts for the facts-only options shared by gradle and sbt: the config
+// include/exclude filters and --ignore-unresolved. Mutates `config` in place.
+async function setupFactsOptions(config: {
+  excludeConfigs?: string | undefined
+  ignoreUnresolved?: boolean | undefined
+  includeConfigs?: string | undefined
+}): Promise<CResult<{ canceled: boolean }>> {
+  const includeConfigs = await input({
+    message:
+      '(--include-configs) Comma-separated config-name globs to resolve (blank = all configurations)',
+    default: config.includeConfigs || '',
+    required: false,
+  })
+  if (includeConfigs === undefined) {
+    return canceledByUser()
+  } else if (includeConfigs) {
+    config.includeConfigs = includeConfigs
+  } else {
+    delete config.includeConfigs
+  }
+
+  const excludeConfigs = await input({
+    message:
+      '(--exclude-configs) Comma-separated config-name globs to skip (blank = none)',
+    default: config.excludeConfigs || '',
+    required: false,
+  })
+  if (excludeConfigs === undefined) {
+    return canceledByUser()
+  } else if (excludeConfigs) {
+    config.excludeConfigs = excludeConfigs
+  } else {
+    delete config.excludeConfigs
+  }
+
+  const ignoreUnresolved = await askForIgnoreUnresolvedFlag(
+    config.ignoreUnresolved,
+  )
+  if (ignoreUnresolved === undefined) {
+    return canceledByUser()
+  } else if (ignoreUnresolved === 'yes' || ignoreUnresolved === 'no') {
+    config.ignoreUnresolved = ignoreUnresolved === 'yes'
+  } else {
+    delete config.ignoreUnresolved
+  }
+
+  return notCanceled()
 }
 
 function canceledByUser(): CResult<{ canceled: boolean }> {

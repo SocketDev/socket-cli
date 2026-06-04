@@ -37,9 +37,9 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
-    // Args shared by both paths. The facts-only knobs (`configs`,
-    // `ignoreUnresolved`) and the pom-only `out` are added per branch so
-    // neither handler is spread properties it doesn't accept.
+    // Args shared by both paths. The facts-only knobs (`includeConfigs`,
+    // `excludeConfigs`, `ignoreUnresolved`) and the pom-only `out` are added
+    // per branch so neither handler is spread properties it doesn't accept.
     const sbtArgs = {
       // Note: `sbt` is more likely to be resolved against PATH env.
       bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
@@ -51,14 +51,17 @@ export async function generateAutoManifest({
           .filter(Boolean) ?? [],
       verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
     }
-    if (sockJson.defaults?.manifest?.sbt?.facts) {
+    // Socket facts is the default; opt into pom generation with
+    // `defaults.manifest.sbt.facts: false` in socket.json.
+    if (sockJson.defaults?.manifest?.sbt?.facts !== false) {
       logger.log('Detected a Scala sbt build, generating Socket facts...')
       await convertSbtToFacts({
         ...sbtArgs,
-        configs: sockJson.defaults?.manifest?.sbt?.configs ?? '',
+        excludeConfigs: sockJson.defaults?.manifest?.sbt?.excludeConfigs ?? '',
         ignoreUnresolved: Boolean(
           sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
         ),
+        includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
       })
     } else {
       logger.log('Detected a Scala sbt build, generating pom files with sbt...')
@@ -85,16 +88,21 @@ export async function generateAutoManifest({
           .map(s => s.trim())
           .filter(Boolean) ?? [],
     }
-    if (sockJson.defaults?.manifest?.gradle?.facts) {
+    // Socket facts is the default; opt into pom generation with
+    // `defaults.manifest.gradle.facts: false` in socket.json.
+    if (sockJson.defaults?.manifest?.gradle?.facts !== false) {
       logger.log(
         'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts...',
       )
       await convertGradleToFacts({
         ...gradleArgs,
-        configs: sockJson.defaults?.manifest?.gradle?.configs ?? '',
+        excludeConfigs:
+          sockJson.defaults?.manifest?.gradle?.excludeConfigs ?? '',
         ignoreUnresolved: Boolean(
           sockJson.defaults?.manifest?.gradle?.ignoreUnresolved,
         ),
+        includeConfigs:
+          sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
       })
     } else {
       logger.log(

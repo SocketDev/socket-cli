@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.114](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.114) - 2026-06-04
+
+### Changed
+- `socket manifest gradle`, `kotlin`, and `scala` now generate a Socket facts file (`.socket.facts.json`) by default; pass `--pom` to generate `pom.xml` manifests instead.
+- Replaced `--configs` with `--include-configs` and `--exclude-configs` on `socket manifest gradle/kotlin/scala` for finer control over which build configurations are resolved.
+- Updated the Coana CLI to v `15.3.21`.
+
 ## [1.1.113](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.113) - 2026-06-03
 
 ### Added
