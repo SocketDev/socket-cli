@@ -444,6 +444,18 @@ export async function spawnCoanaDlx(
     )
   }
 
+  // `shadowNpmBase` (the dlx launcher) configures the child's stdio from its
+  // `options` arg, NOT from the registry-spawn `extra` arg — the latter only
+  // attaches metadata to the result. Callers that requested streaming via
+  // `spawnExtra` (the 4th arg), e.g. `{ stdio: 'inherit' }` from
+  // `socket manifest gradle`, were therefore silently ignored on this path:
+  // Coana ran piped and its output — including the real failure reason — never
+  // reached the user, leaving only an unhelpful "command failed". Promote the
+  // requested stdio into the dlx options so it is honored here too.
+  // `spawnCoanaScriptViaNode` already reads `spawnExtra.stdio` for the
+  // local-path and npm-install branches, so this aligns all three paths.
+  const requestedStdio = spawnExtra?.['stdio'] ?? getOwn(dlxOptions, 'stdio')
+
   try {
     // Use npm/dlx version.
     const result = await spawnDlx(
@@ -456,6 +468,7 @@ export async function spawnCoanaDlx(
         force: true,
         silent: true,
         ...dlxOptions,
+        ...(requestedStdio === undefined ? {} : { stdio: requestedStdio }),
         env: finalEnv,
         ipc: {
           [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
@@ -553,6 +566,7 @@ function shouldFallbackOnDlxError(e: unknown): boolean {
  */
 function buildDlxErrorResult(e: unknown): CResult<string> {
   const stderr = (e as any)?.stderr
+  const stdout = (e as any)?.stdout
   const exitCode = (e as any)?.code
   const signal = (e as any)?.signal
   const cause = getErrorCause(e)
@@ -564,8 +578,13 @@ function buildDlxErrorResult(e: unknown): CResult<string> {
     details.push(`signal ${signal}`)
   }
   const detailSuffix = details.length ? ` (${details.join(', ')})` : ''
-  const message = stderr
-    ? `Coana command failed${detailSuffix}: ${stderr}`
+  // Prefer captured stderr, then stdout, then the generic spawn error. Coana
+  // logs some failures (e.g. unresolved Gradle dependencies) to stdout, so
+  // without the stdout fallback a piped failure collapsed to an unhelpful
+  // "command failed" even when the real reason was captured.
+  const captured = stderr || stdout
+  const message = captured
+    ? `Coana command failed${detailSuffix}: ${captured}`
     : `Coana command failed${detailSuffix}: ${cause}`
   return {
     ok: false,

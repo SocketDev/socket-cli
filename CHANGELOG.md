@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.115](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.115) - 2026-06-04
+
+### Fixed
+- `socket manifest gradle`, `kotlin`, and `scala` (including sbt-based projects) now stream the underlying build-tool and Coana output and surface the real failure reason. Previously a generation failure could collapse to an unhelpful `Coana command failed (exit code 1): command failed` with no detail, hiding actionable hints such as unresolved dependencies (re-run with `--ignore-unresolved` / `--exclude-configs`, or `--pom` for the legacy `pom.xml` output).
+
 ## [1.1.114](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.114) - 2026-06-04
 
 ### Changed

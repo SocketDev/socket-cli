@@ -518,4 +518,101 @@ describe('utils/dlx', () => {
       }
     })
   })
+
+  describe('spawnCoanaDlx stdio + error surfacing', () => {
+    let mockDlxBin: ReturnType<typeof vi.fn>
+    let testCounter = 0
+
+    // Exact-pinned versions so the dlx silent/force defaults stay deterministic
+    // and each test stays clear of the module-level install cache.
+    const nextVersion = () => `98.0.${testCounter++}`
+
+    beforeEach(() => {
+      delete process.env['SOCKET_CLI_COANA_FORCE_NPM_INSTALL']
+      delete process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK']
+      delete process.env['SOCKET_CLI_COANA_LOCAL_PATH']
+
+      // The dlx launcher succeeds by default. spawnDlx picks the shadow bin by
+      // lockfile, so wire all three (npm/pnpm/yarn) to the same mock.
+      mockDlxBin = vi.fn().mockImplementation(async () => ({
+        spawnPromise: Promise.resolve({ stdout: 'coana-ok', stderr: '' }),
+      }))
+      for (const binPath of [
+        constants.shadowNpxBinPath,
+        constants.shadowPnpmBinPath,
+        constants.shadowYarnBinPath,
+      ]) {
+        // @ts-ignore
+        require.cache[binPath] = { exports: mockDlxBin }
+      }
+    })
+
+    afterEach(() => {
+      for (const binPath of [
+        constants.shadowNpxBinPath,
+        constants.shadowPnpmBinPath,
+        constants.shadowYarnBinPath,
+      ]) {
+        // @ts-ignore
+        delete require.cache[binPath]
+      }
+    })
+
+    it('forwards spawnExtra.stdio into the dlx launcher options (regression)', async () => {
+      // `socket manifest gradle` passes `{ stdio: 'inherit' }` as spawnExtra so
+      // Coana's gradle output streams to the user. Before the fix this was
+      // dropped — the launcher reads stdio from its options, not the registry
+      // spawn `extra` arg — so Coana ran piped and the real failure reason was
+      // hidden behind a bare "command failed".
+      const result = await spawnCoanaDlx(
+        ['manifest', 'gradle', '.'],
+        'acme',
+        { coanaVersion: nextVersion() },
+        { stdio: 'inherit' },
+      )
+
+      expect(result.ok).toBe(true)
+      expect(mockDlxBin).toHaveBeenCalledTimes(1)
+      const launcherOptions = mockDlxBin.mock.calls[0]![1] as {
+        stdio?: unknown
+      }
+      expect(launcherOptions.stdio).toBe('inherit')
+    })
+
+    it('forwards options.stdio into the dlx launcher options', async () => {
+      const result = await spawnCoanaDlx(['run', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+        stdio: 'inherit',
+      })
+
+      expect(result.ok).toBe(true)
+      const launcherOptions = mockDlxBin.mock.calls[0]![1] as {
+        stdio?: unknown
+      }
+      expect(launcherOptions.stdio).toBe('inherit')
+    })
+
+    it('surfaces captured stdout when stderr is empty (Coana logs some failures to stdout)', async () => {
+      mockDlxBin.mockReset()
+      mockDlxBin.mockImplementation(async () => {
+        const rejected = Promise.reject(
+          Object.assign(new Error('command failed'), {
+            code: 1,
+            stdout: 'error: Could not resolve 1 dependency(ies)',
+            stderr: '',
+          }),
+        )
+        rejected.catch(() => {})
+        return { spawnPromise: rejected }
+      })
+
+      const result = await spawnCoanaDlx(['manifest', 'gradle', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toContain('exit code 1')
+      expect(result.message).toContain('Could not resolve 1 dependency(ies)')
+    })
+  })
 })
