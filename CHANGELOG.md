@@ -4,20 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.1.114](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.114) - 2026-06-04
+
+### Changed
+- `socket manifest gradle`, `kotlin`, and `scala` now generate a Socket facts file (`.socket.facts.json`) by default; pass `--pom` to generate `pom.xml` manifests instead.
+- Replaced `--configs` with `--include-configs` and `--exclude-configs` on `socket manifest gradle/kotlin/scala` for finer control over which build configurations are resolved.
+
+## [1.1.113](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.113) - 2026-06-03
+
+### Added
 - **`socket manifest bazel [beta]`** — Generate Bazel JVM SBOM manifests by running `bazel query` against discovered Maven repos in a Bazel workspace. Closes the inline-Maven-declaration gap that lockfile-only parsing misses for repos like envoy, ray, tensorflow, tink-java, and or-tools. Auto-detects Bzlmod and legacy `WORKSPACE`.
 - **`socket scan create --auto-manifest`** now covers Bazel workspaces in addition to Gradle/Scala/Kotlin/Conda. Repos with `MODULE.bazel`, `WORKSPACE`, or `WORKSPACE.bazel` are detected automatically and their Maven dependencies extracted as part of the standard scan-create flow.
 - **Bazel PyPI extraction** — `socket manifest bazel --ecosystem pypi` now generates `requirements.txt` for Python Bazel workspaces. Discovers custom `rules_python` pip hub names with Bazel command output first, queries `py_library` / `py_binary` / `py_test` dependencies, resolves canonical pinned versions from `requirements_lock.txt`, and emits PEP 503-normalized `name==version` lines. Supports both Bzlmod (`pip.parse`) and legacy `WORKSPACE` (`pip_parse` / `pip_install`) configurations. PyPI remains explicit opt-in for `socket scan create --auto-manifest` until real-world no-lockfile recovery is validated.
 
 ### Changed
 - **Bazel diagnostics** — `socket manifest bazel --verbose` now emits bounded subprocess traces with argv, cwd, duration, exit status, output sizes, and failure stderr tails to make customer log-only triage safer and faster.
-
-## [1.1.113](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.113) - 2026-06-03
-
-### Changed
-- `socket manifest gradle`, `kotlin`, and `scala` now generate a Socket facts file (`.socket.facts.json`) by default; pass `--pom` to generate `pom.xml` manifests instead.
-- Replaced `--configs` with `--include-configs` and `--exclude-configs` on `socket manifest gradle/kotlin/scala` for finer control over which build configurations are resolved.
-- Updated the Coana CLI to v `15.3.19`.
+- Updated the Coana CLI to v `15.3.20`.
 
 ## [1.1.112](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.112) - 2026-05-29
 

@@ -12,6 +12,13 @@ export type BazelQueryOptions = {
   bazelRc?: string
   bazelFlags?: string
   bazelOutputBase?: string
+  // Per-invocation `--output_user_root` for server isolation. When set, all
+  // argv builders inject it as a startup flag so a timed-out Bazel server
+  // can be reaped via `bazel --output_user_root=<this> shutdown` + `rm -rf`
+  // without disturbing the user's shared output_user_root. The Maven
+  // orchestrator mkdtemp's a fresh path per invocation; the legacy PyPI
+  // path may leave it unset for now.
+  outputUserRoot?: string
   env?: NodeJS.ProcessEnv
   verbose?: boolean
 }
@@ -39,17 +46,28 @@ export function splitBazelFlags(flags: string | undefined): string[] {
   return flags.split(/\s+/).filter(Boolean)
 }
 
-function buildBazelModShowVisibleReposArgv(opts: BazelQueryOptions): string[] {
+// Build the shared startup-flag prefix for any bazel invocation. Centralised
+// so `--output_user_root` propagates to every spawn — principle 7 of the
+// Maven design requires per-invocation server isolation across query,
+// cquery, and `bazel mod` commands alike.
+function buildStartupFlags(opts: BazelQueryOptions): string[] {
   const startup: string[] = []
   if (opts.bazelRc) {
     startup.push(`--bazelrc=${opts.bazelRc}`)
   }
+  if (opts.outputUserRoot) {
+    startup.push(`--output_user_root=${opts.outputUserRoot}`)
+  }
   if (opts.bazelOutputBase) {
     startup.push(`--output_base=${opts.bazelOutputBase}`)
   }
+  return startup
+}
+
+function buildBazelModShowVisibleReposArgv(opts: BazelQueryOptions): string[] {
   const userFlags = splitBazelFlags(opts.bazelFlags)
   return [
-    ...startup,
+    ...buildStartupFlags(opts),
     'mod',
     'dump_repo_mapping',
     '',
@@ -58,17 +76,28 @@ function buildBazelModShowVisibleReposArgv(opts: BazelQueryOptions): string[] {
   ]
 }
 
-function buildBazelModShowPipExtensionArgv(opts: BazelQueryOptions): string[] {
-  const startup: string[] = []
-  if (opts.bazelRc) {
-    startup.push(`--bazelrc=${opts.bazelRc}`)
-  }
-  if (opts.bazelOutputBase) {
-    startup.push(`--output_base=${opts.bazelOutputBase}`)
-  }
+function buildBazelModShowMavenExtensionArgv(
+  opts: BazelQueryOptions,
+): string[] {
   const userFlags = splitBazelFlags(opts.bazelFlags)
   return [
-    ...startup,
+    ...buildStartupFlags(opts),
+    'mod',
+    'show_extension',
+    '@rules_jvm_external//:extensions.bzl%maven',
+    // Belt-and-suspenders output reducer mirroring the PyPI path: bias the
+    // report toward the root module's usages. The authoritative pruning is
+    // the importers-filter applied to the parsed output, so this is not
+    // relied on for correctness.
+    '--extension_usages=<root>',
+    ...userFlags,
+  ]
+}
+
+function buildBazelModShowPipExtensionArgv(opts: BazelQueryOptions): string[] {
+  const userFlags = splitBazelFlags(opts.bazelFlags)
+  return [
+    ...buildStartupFlags(opts),
     'mod',
     'show_extension',
     '@rules_python//python/extensions:pip.bzl%pip',
@@ -84,23 +113,39 @@ function buildBazelArgv(
 ): string[] {
   // Startup flags MUST precede the `query` subcommand.
   // Bazel argv shape: <startup> query <queryFlags> <invocationFlags> <queryStr> --output=<output> <userFlags>
-  const startup: string[] = []
-  if (opts.bazelRc) {
-    startup.push(`--bazelrc=${opts.bazelRc}`)
-  }
-  if (opts.bazelOutputBase) {
-    startup.push(`--output_base=${opts.bazelOutputBase}`)
-  }
   // Keep query output stable and avoid updating Bazel lockfiles while extracting.
   const queryFlags = ['--lockfile_mode=off', '--noshow_progress']
   const userFlags = splitBazelFlags(opts.bazelFlags)
   return [
-    ...startup,
+    ...buildStartupFlags(opts),
     'query',
     ...queryFlags,
     ...opts.invocationFlags,
     queryStr,
     `--output=${output}`,
+    ...userFlags,
+  ]
+}
+
+// Lightweight presence-check cquery used by the tri-state probe classifier.
+// `--keep_going --output=label` keeps it fast even on partial-analysis
+// repos and avoids paying for `--output=jsonproto` plus
+// `--proto:output_rule_attrs` (which the heavier metadata extraction in
+// `bazel-cquery.mts` needs but the probe does not).
+function buildBazelProbeCqueryArgv(
+  repoName: string,
+  opts: BazelQueryOptions,
+): string[] {
+  const userFlags = splitBazelFlags(opts.bazelFlags)
+  return [
+    ...buildStartupFlags(opts),
+    'cquery',
+    '--lockfile_mode=off',
+    '--noshow_progress',
+    ...opts.invocationFlags,
+    `@${repoName}//...`,
+    '--output=label',
+    '--keep_going',
     ...userFlags,
   ]
 }
@@ -229,100 +274,126 @@ export async function runBazelQuery(
   }
 }
 
+async function runBazelOneShot(
+  argv: string[],
+  opts: BazelQueryOptions,
+  step: string,
+): Promise<BazelQueryResult> {
+  if (opts.verbose) {
+    logger.log('[VERBOSE] Executing:', opts.bin, ', args:', argv)
+  }
+  const startedAt = Date.now()
+  let result: BazelQueryResult
+  try {
+    const output = await spawn(opts.bin, argv, {
+      cwd: opts.cwd,
+      timeout: BAZEL_QUERY_TIMEOUT_MS,
+      ...(opts.env ? { env: opts.env } : {}),
+    })
+    const { code, stderr, stdout } = output
+    result = { code, stdout, stderr }
+  } catch (e) {
+    result = normalizeSpawnError(e)
+  }
+  logBazelTrace({
+    argv,
+    durationMs: Date.now() - startedAt,
+    opts,
+    result,
+    step,
+  })
+  return result
+}
+
 /**
- * Bzlmod-native visible repository enumeration. This is only a candidate
- * source; callers must still validate each returned apparent repo name with a
- * semantic query for generated ecosystem rules.
+ * Bzlmod-native visible repository enumeration. NOTE: only consumed by the
+ * legacy PyPI path; the Maven path uses `runBazelModShowMavenExtension`
+ * instead because `dump_repo_mapping` over-enumerates apparent names that
+ * are not Maven hubs.
  */
 export async function runBazelModShowVisibleRepos(
   opts: BazelQueryOptions,
 ): Promise<BazelQueryResult> {
-  const argv = buildBazelModShowVisibleReposArgv(opts)
-  if (opts.verbose) {
-    logger.log('[VERBOSE] Executing:', opts.bin, ', args:', argv)
-  }
-  const startedAt = Date.now()
-  let result: BazelQueryResult
-  try {
-    const output = await spawn(opts.bin, argv, {
-      cwd: opts.cwd,
-      timeout: BAZEL_QUERY_TIMEOUT_MS,
-      ...(opts.env ? { env: opts.env } : {}),
-    })
-    const { code, stderr, stdout } = output
-    result = { code, stdout, stderr }
-  } catch (e) {
-    result = normalizeSpawnError(e)
-  }
-  logBazelTrace({
-    argv,
-    durationMs: Date.now() - startedAt,
+  return await runBazelOneShot(
+    buildBazelModShowVisibleReposArgv(opts),
     opts,
-    result,
-    step: 'bazel mod dump_repo_mapping',
-  })
-  return result
+    'bazel mod dump_repo_mapping',
+  )
 }
 
 /**
- * Bzlmod-native rules_python pip extension usage inspection. This is the
- * authoritative source for root-module pip.parse metadata when Bazel supports
- * the command; callers keep bounded static parsing as fallback.
+ * Bzlmod-native Maven hub enumeration via the rules_jvm_external maven
+ * extension. The text-format report lists every repo the extension
+ * generated; `parseShowExtensionOutput` (bazel-repo-discovery.mts)
+ * extracts the hubs from the `Fetched repositories:` section.
+ */
+export async function runBazelModShowMavenExtension(
+  opts: BazelQueryOptions,
+): Promise<BazelQueryResult> {
+  return await runBazelOneShot(
+    buildBazelModShowMavenExtensionArgv(opts),
+    opts,
+    'bazel mod show_extension rules_jvm_external maven',
+  )
+}
+
+/**
+ * Bzlmod-native rules_python pip extension usage inspection. Used by the
+ * PyPI path; kept here since the argv shape is identical to the maven
+ * variant modulo the extension target.
  */
 export async function runBazelModShowPipExtension(
   opts: BazelQueryOptions,
 ): Promise<BazelQueryResult> {
-  const argv = buildBazelModShowPipExtensionArgv(opts)
-  if (opts.verbose) {
-    logger.log('[VERBOSE] Executing:', opts.bin, ', args:', argv)
-  }
-  const startedAt = Date.now()
-  let result: BazelQueryResult
-  try {
-    const output = await spawn(opts.bin, argv, {
-      cwd: opts.cwd,
-      timeout: BAZEL_QUERY_TIMEOUT_MS,
-      ...(opts.env ? { env: opts.env } : {}),
-    })
-    const { code, stderr, stdout } = output
-    result = { code, stdout, stderr }
-  } catch (e) {
-    result = normalizeSpawnError(e)
-  }
-  logBazelTrace({
-    argv,
-    durationMs: Date.now() - startedAt,
+  return await runBazelOneShot(
+    buildBazelModShowPipExtensionArgv(opts),
     opts,
-    result,
-    step: 'bazel mod show_extension rules_python pip',
-  })
-  return result
+    'bazel mod show_extension rules_python pip',
+  )
 }
 
 /**
- * Build a `RepoProbe` (compatible with bazel-repo-discovery) bound to opts.
- * Used by `discoverMavenRepos` to validate candidate Maven repo
- * names against the running workspace.
+ * Build a `RepoProbe` (compatible with bazel-repo-discovery's tri-state
+ * classifier) bound to opts. Runs the lightweight presence-check cquery
+ * `@<name>//... --output=label --keep_going` — cheap enough to attempt
+ * every conventional Maven hub name without triggering `repository_rule`
+ * fetches on undefined names (Exp 3).
  */
-export function buildProbeFor(opts: BazelQueryOptions): RepoProbe {
+export function buildMavenProbeFor(opts: BazelQueryOptions): RepoProbe {
   return async (repoName: string) => {
-    const queryStr = `kind("jvm_import rule|aar_import rule", @${repoName}//:*)`
-    const result = await runBazelQuery(queryStr, opts)
-    return { stdout: result.stdout, code: result.code }
+    const argv = buildBazelProbeCqueryArgv(repoName, opts)
+    const result = await runBazelOneShot(
+      argv,
+      opts,
+      `bazel cquery probe @${repoName}`,
+    )
+    return { code: result.code, stdout: result.stdout, stderr: result.stderr }
   }
 }
 
 /**
  * Build a `RepoProbe` for validating pip hub candidates.
- * Queries the hub for package targets (e.g. `@<hub>//...`) and returns
- * stdout so the caller can check for `:pkg` labels or alias rules.
- * Does NOT require `pypi_name=` tags in the hub output, because those
- * tags live on spoke repos, not the hub alias layer.
+ * Queries the hub for package targets (e.g. `@<hub>//...`) and returns the
+ * full result triple so the caller can check for `:pkg` labels or alias
+ * rules. Does NOT require `pypi_name=` tags in the hub output, because
+ * those tags live on spoke repos, not the hub alias layer.
  */
 export function buildPypiProbeFor(opts: BazelQueryOptions): RepoProbe {
   return async (hubName: string) => {
     const queryStr = `@${hubName}//...`
     const result = await runBazelQuery(queryStr, opts)
-    return { stdout: result.stdout, code: result.code }
+    return { code: result.code, stdout: result.stdout, stderr: result.stderr }
   }
+}
+
+// Re-exported for direct test access — useful when asserting on argv shape
+// without spawning. Returns the exact argv `runBazelModShowMavenExtension`
+// would pass to spawn.
+export const _internalArgvBuilders = {
+  buildBazelArgv,
+  buildBazelModShowMavenExtensionArgv,
+  buildBazelModShowPipExtensionArgv,
+  buildBazelModShowVisibleReposArgv,
+  buildBazelProbeCqueryArgv,
+  buildStartupFlags,
 }
