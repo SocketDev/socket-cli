@@ -466,7 +466,12 @@ export async function spawnCoanaDlx(
       args,
       {
         force: true,
-        silent: true,
+        // Do NOT silence the launcher. `--silent` (npm loglevel silent) hides
+        // npm's own download/registry/launch errors, so when npx/pnpm-dlx fails
+        // to fetch @coana-tech/cli the user is left with a bare exit code and no
+        // cause. shadowNpmBase defaults to `--loglevel error`, which keeps real
+        // launcher errors visible while staying quiet on success.
+        silent: false,
         ...dlxOptions,
         ...(requestedStdio === undefined ? {} : { stdio: requestedStdio }),
         env: finalEnv,
@@ -539,10 +544,29 @@ export async function spawnCoanaDlx(
  *    rather than blindly re-running Coana.
  */
 function shouldFallbackOnDlxError(e: unknown): boolean {
-  const capturedStderr = String((e as any)?.stderr ?? '')
-  if (capturedStderr && /Coana CLI version/i.test(capturedStderr)) {
+  // Coana clearly ran (its banner is in the captured stderr) → any later
+  // non-zero exit is a real Coana failure and retrying would hit it again.
+  if (coanaBannerSeen(e)) {
     return false
   }
+  return dlxLauncherFailedBeforeCoana(e)
+}
+
+/**
+ * Heuristic: did the dlx launcher (npx / pnpm dlx / yarn dlx) fail BEFORE the
+ * Coana process itself started? True for spawn-level errors (a string `code`
+ * like ENOENT), signal kills, and exit codes >= 128 (conventionally
+ * signal-derived) — all cases where the launcher, not Coana, is the culprit
+ * (e.g. npx missing from PATH, or @coana-tech/cli failing to download). A small
+ * integer exit code is deliberately NOT treated as a launch failure: Coana's
+ * own exit codes are small integers too, so it is genuinely ambiguous.
+ *
+ * Caveat: a launcher that fails to download the package can also exit with a
+ * small integer (npm/npx often exit 1), which lands in the ambiguous bucket.
+ * We cannot disambiguate those from a real Coana exit without inspecting the
+ * launcher's output, so the npm-install fallback does not fire for them.
+ */
+function dlxLauncherFailedBeforeCoana(e: unknown): boolean {
   const code = (e as any)?.code
   // Spawn-level failure (e.g. ENOENT when npx is missing from PATH).
   if (typeof code === 'string') {
@@ -554,10 +578,18 @@ function shouldFallbackOnDlxError(e: unknown): boolean {
   }
   // Exit codes >= 128 are conventionally signal-derived, and the observed
   // npx-launcher failures in the wild fall into this range (e.g. 249, 254).
-  if (typeof code === 'number' && code >= 128) {
-    return true
-  }
-  return false
+  return typeof code === 'number' && code >= 128
+}
+
+/**
+ * Definitive proof Coana actually booted: its startup banner appears in the
+ * captured stderr. Only available when the launcher's output was piped
+ * (captured); with inherited stdio there is nothing to inspect, so this
+ * returns false (the failure is then classified by exit code / signal alone).
+ */
+function coanaBannerSeen(e: unknown): boolean {
+  const capturedStderr = String((e as any)?.stderr ?? '')
+  return !!capturedStderr && /Coana CLI version/i.test(capturedStderr)
 }
 
 /**
@@ -582,10 +614,21 @@ function buildDlxErrorResult(e: unknown): CResult<string> {
   // logs some failures (e.g. unresolved Gradle dependencies) to stdout, so
   // without the stdout fallback a piped failure collapsed to an unhelpful
   // "command failed" even when the real reason was captured.
-  const captured = stderr || stdout
-  const message = captured
-    ? `Coana command failed${detailSuffix}: ${captured}`
-    : `Coana command failed${detailSuffix}: ${cause}`
+  const detail = stderr || stdout || cause
+  // Be honest about WHERE the failure happened. On the dlx path the spawned
+  // process is the package-manager launcher (npx / pnpm dlx / yarn dlx), which
+  // downloads @coana-tech/cli and only then runs it — so a failure may be the
+  // launcher dying before Coana ever started (e.g. the package failed to
+  // download), not Coana itself. Asserting "Coana command failed" in that case
+  // is misleading.
+  let message: string
+  if (coanaBannerSeen(e)) {
+    message = `Coana command failed${detailSuffix}: ${detail}`
+  } else if (dlxLauncherFailedBeforeCoana(e)) {
+    message = `Failed to launch Coana via the package manager${detailSuffix} — the npx/pnpm-dlx/yarn-dlx launcher exited before Coana started (the package may have failed to download): ${detail}`
+  } else {
+    message = `Coana failed to run via the package manager${detailSuffix}: ${detail}`
+  }
   return {
     ok: false,
     data: e,
