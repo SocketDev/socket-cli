@@ -502,7 +502,7 @@ export async function spawnCoanaDlx(
     }
 
     logger.warn(
-      'Coana dlx invocation failed before Coana started; falling back to `npm install` + `node`.',
+      'Coana dlx invocation failed; retrying via `npm install` + `node`.',
     )
 
     const fallbackResult = await spawnCoanaViaNpmInstall(
@@ -618,14 +618,18 @@ function buildDlxErrorResult(e: unknown): CResult<string> {
   // Be honest about WHERE the failure happened. On the dlx path the spawned
   // process is the package-manager launcher (npx / pnpm dlx / yarn dlx), which
   // downloads @coana-tech/cli and only then runs it — so a failure may be the
-  // launcher dying before Coana ever started (e.g. the package failed to
-  // download), not Coana itself. Asserting "Coana command failed" in that case
-  // is misleading.
+  // launcher dying before Coana ever started, not Coana itself. We can only be
+  // CERTAIN of that for a spawn-level error (a string `code` like ENOENT: the
+  // launcher binary could not start, so Coana provably never ran). A non-zero
+  // exit or signal is genuinely ambiguous — Coana may have started, streamed
+  // output, and then died (e.g. OOM), or the launcher may have failed to fetch
+  // the package — and with inherited stdio there is no captured output to tell
+  // them apart, so we must not assert either way.
   let message: string
   if (coanaBannerSeen(e)) {
     message = `Coana command failed${detailSuffix}: ${detail}`
-  } else if (dlxLauncherFailedBeforeCoana(e)) {
-    message = `Failed to launch Coana via the package manager${detailSuffix} — the npx/pnpm-dlx/yarn-dlx launcher exited before Coana started (the package may have failed to download): ${detail}`
+  } else if (typeof (e as any)?.code === 'string') {
+    message = `Failed to launch Coana via the package manager${detailSuffix} — the npx/pnpm-dlx/yarn-dlx launcher could not start (e.g. it is missing from PATH): ${detail}`
   } else {
     message = `Coana failed to run via the package manager${detailSuffix}: ${detail}`
   }

@@ -355,7 +355,10 @@ describe('utils/dlx', () => {
       })
 
       expect(result.ok).toBe(false)
-      expect(result.message).toContain('Failed to launch Coana')
+      // exit 249 is ambiguous, so the message stays neutral about launcher-vs-Coana.
+      expect(result.message).toContain(
+        'Coana failed to run via the package manager',
+      )
       // No npm install was attempted.
       const npmInstallCalls = mockSpawn.mock.calls.filter(
         ([cmd, args]) => cmd === 'npm' && (args as string[])[0] === 'install',
@@ -396,7 +399,9 @@ describe('utils/dlx', () => {
       })
 
       expect(result.ok).toBe(false)
-      expect(result.message).toContain('Failed to launch Coana')
+      expect(result.message).toContain(
+        'Coana failed to run via the package manager',
+      )
       expect(result.message).toContain('npx aborted')
       expect(result.message).toContain('npm-install fallback also failed')
       expect(result.message).toContain('registry unreachable')
@@ -426,11 +431,11 @@ describe('utils/dlx', () => {
       expect(npmInstallCalls).toHaveLength(0)
     })
 
-    it('reports a launch failure (not a Coana failure) when the launcher dies before Coana starts', async () => {
-      // npx aborts (exit 249) before Coana boots and there is no Coana banner.
-      // Disable the fallback so the dlx error itself is surfaced.
+    it('reports a definitive launch failure for a spawn-level error (the launcher could not start)', async () => {
+      // ENOENT: the launcher binary (npx) is missing from PATH, so Coana
+      // provably never ran. Disable the fallback so the dlx error is surfaced.
       process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK'] = '1'
-      setDlxRejection({ code: 249, stderr: 'npx aborted' })
+      setDlxRejection({ code: 'ENOENT' })
 
       const result = await spawnCoanaDlx(['manifest', 'gradle', '.'], 'acme', {
         coanaVersion: nextVersion(),
@@ -438,8 +443,28 @@ describe('utils/dlx', () => {
 
       expect(result.ok).toBe(false)
       expect(result.message).toContain('Failed to launch Coana')
-      expect(result.message).toContain('before Coana started')
+      expect(result.message).toContain('could not start')
       expect(result.message).not.toContain('Coana command failed')
+    })
+
+    it('does NOT claim a launch failure for an ambiguous signal/high exit code (Coana may have started)', async () => {
+      // exit 137 (OOM-style) is ambiguous: Coana may have started, streamed
+      // output, and been killed — or the launcher may have failed. The message
+      // must not assert either way. Disable the fallback so it is surfaced.
+      process.env['SOCKET_CLI_COANA_DISABLE_NPM_FALLBACK'] = '1'
+      setDlxRejection({ code: 137 })
+
+      const result = await spawnCoanaDlx(['manifest', 'gradle', '.'], 'acme', {
+        coanaVersion: nextVersion(),
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toContain('exit code 137')
+      expect(result.message).toContain(
+        'Coana failed to run via the package manager',
+      )
+      expect(result.message).not.toContain('Failed to launch Coana')
+      expect(result.message).not.toContain('before Coana started')
     })
 
     it('does NOT fall back when captured stderr shows Coana booted', async () => {
