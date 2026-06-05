@@ -45,7 +45,11 @@ export async function getDefaultOrgSlug(
     }
   }
 
-  const slug = (organizations as any)[keys[0]!]?.name ?? undefined
+  // Use the org's URL-safe `slug`, not its display `name`: this value is
+  // exported as SOCKET_ORG_SLUG for the Coana CLI, which resolves the org by
+  // slug. `name` is the human-readable display name (and may be null), so using
+  // it here produced a wrong/empty org identifier.
+  const slug = organizations[0]?.slug ?? undefined
   if (!slug) {
     return {
       ok: false,
