@@ -47,6 +47,8 @@ When the plan includes the `x` source, `xHandles` scopes the X search to account
 
 Handles are bare (a leading `@` is stripped). Passing both `allowed` and `excluded` is rejected — the API accepts only one.
 
+When the `x` source runs with **no** `xHandles` in the plan, the engine seeds the allowlist with `DEFAULT_DEV_HANDLES` (a vetted set of tool-author + dev-news accounts in `lib/sources/x.mts`) so an unscoped X search still favors high-signal voices. An explicit plan `xHandles` always overrides the default — set `allowed` to your own follows to tune it, or `excluded` to opt out of the default scoping and search all of X minus a few accounts.
+
 ## Per-source query recipes
 
 - **GitHub** — searches issues + PRs created in the window, sorted by reactions. Authenticated via `GITHUB_TOKEN`/`GH_TOKEN` or `gh auth token`; falls back to unauthenticated (10 req/min). Phrase the `searchQuery` as GitHub search syntax works: bare terms match title + body. Use `--github-repo owner/repo` style targeting by putting `repo:owner/name` in the `searchQuery` if you want one project.

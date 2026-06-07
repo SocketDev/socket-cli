@@ -186,14 +186,11 @@ linkWorkspacePackages: false
 # Wait 7 days (10080 minutes) before installing newly published packages.
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
-  - '@anthropic-ai/claude-code@2.1.98'
   - '@socketaddon/*'
   - '@socketbin/*'
   - '@socketregistry/*'
   - '@socketsecurity/*'
   # Network-mocking lib used in fleet test suites. v15 betas pre-date
-  # npm's `time` field for the major; allow pinned beta until v15 GA.
-  - 'nock@15.0.0-beta.11'
   # Security fix for CVE-class CSS injection in JSX SSR + JWT
   # NumericDate validation + cache-leak. Dependabot advisories #140,
   # #141, #142 (all hono <4.12.18). Override forces the patched version
@@ -249,8 +246,6 @@ minimumReleaseAgeExclude:
   # @npmcli/read-package-json-fast 6.0.0 (2026-05-15) is npm-run-all2 9's
   # ESM-only major transitive. Bypassed alongside the parent bump so the
   # lockfile resolves cleanly today rather than waiting 4 days for the
-  # natural soak clearance on 2026-05-22.
-  - 'read-package-json-fast@6.0.0'
   - '@redwoodjs/agent-ci'
   - 'dtu-github-actions'
   - 'vite'

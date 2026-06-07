@@ -32,6 +32,29 @@ const DEFAULT_MODEL = 'grok-4.3'
 // The xAI x_search tool caps each handle list at 20.
 const MAX_HANDLES = 20
 
+// A vetted starting set of high-signal dev-tool-author and dev-news handles.
+// Applied as the allowlist ONLY when the x source runs with no plan-supplied
+// xHandles — an explicit plan allow/deny always overrides. A starting point to
+// edit, not an exhaustive list; extend per repo via a plan's xHandles.allowed.
+// Order-irrelevant (it's a set passed to the API), so kept sorted — the
+// /* sort */ marker has socket/sort-array-literals enforce + autofix it.
+/* sort */
+export const DEFAULT_DEV_HANDLES: readonly string[] = [
+  'JoviDeC', // Preact core / Shopify, DX + web perf
+  'Kikobeats', // prolific OSS author (microlink, many npm pkgs)
+  'boshen_c', // oxc (oxlint/oxfmt) author
+  'dalmaer', // Dion Almaer, web platform / AI dev
+  'jonchurch', // Express.js maintainer
+  'kdaigle', // GitHub
+  'pnpmjs', // pnpm
+  'realamlug', // Perry (TS -> native)
+  'robpalmer2', // TC39 / standards
+  'sarahgooding', // Socket / OSS news
+  'sebastienlorber', // Docusaurus / This Week in React
+  'tannerlinsley', // TanStack
+  'zkochan', // pnpm creator / lead
+]
+
 // Handle allow/deny for the x_search tool. allowed = only these accounts;
 // excluded = every account but these. The two are mutually exclusive at the API
 // (allow wins here when both are set). Handles are bare (no leading @).
@@ -238,12 +261,17 @@ export const xAdapter: SourceAdapter = {
       const fromDate = new Date(context.now - context.days * 86_400_000)
         .toISOString()
         .slice(0, 10)
+      // No plan-supplied handles -> seed the allowlist with the dev defaults.
+      const planAllowed = context.xHandles?.allowed
+      const planExcluded = context.xHandles?.excluded
+      const allowedHandles =
+        planAllowed || planExcluded ? planAllowed : DEFAULT_DEV_HANDLES
       const response = await httpJson<unknown>(RESPONSES_URL, {
         method: 'POST',
         body: JSON.stringify(
           buildPayload(searchQuery, fromDate, toDate, context.perStream, {
-            allowedHandles: context.xHandles?.allowed,
-            excludedHandles: context.xHandles?.excluded,
+            allowedHandles,
+            excludedHandles: planExcluded,
           }),
         ),
         headers: { Authorization: `Bearer ${key}` },

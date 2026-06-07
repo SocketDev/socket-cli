@@ -74,6 +74,7 @@ import socketApiTokenEnv from './rules/socket-api-token-env.mts'
 import sortBooleanChains from './rules/sort-boolean-chains.mts'
 import sortEqualityDisjunctions from './rules/sort-equality-disjunctions.mts'
 import sortNamedImports from './rules/sort-named-imports.mts'
+import sortArrayLiterals from './rules/sort-array-literals.mts'
 import sortObjectLiteralProperties from './rules/sort-object-literal-properties.mts'
 import sortRegexAlternations from './rules/sort-regex-alternations.mts'
 import sortSetArgs from './rules/sort-set-args.mts'
@@ -151,6 +152,7 @@ const plugin = {
     'prefer-undefined-over-null': preferUndefinedOverNull,
     'prefer-windows-test-helpers': preferWindowsTestHelpers,
     'socket-api-token-env': socketApiTokenEnv,
+    'sort-array-literals': sortArrayLiterals,
     'sort-boolean-chains': sortBooleanChains,
     'sort-equality-disjunctions': sortEqualityDisjunctions,
     'sort-named-imports': sortNamedImports,
