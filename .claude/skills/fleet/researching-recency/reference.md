@@ -17,6 +17,7 @@ The model builds this and passes it via `--plan <path|json>`. The engine validat
   "freshnessMode": "balancedRecent", // strictRecent | balancedRecent | evergreenOk
   "sourceWeights": { "github": 1.5 }, // optional per-source multipliers
   "notes": ["peer set: esbuild, rspack"], // optional, surfaced for your synthesis
+  "xHandles": { "allowed": ["youyuxi", "patak_dev"] }, // optional, see below
   "subqueries": [
     {
       "label": "core",             // unique slug, NO spaces (keys the fusion stream)
@@ -36,6 +37,15 @@ The model builds this and passes it via `--plan <path|json>`. The engine validat
 ```
 
 A bare topic with no `--plan` gets a default single-subquery plan over every keyless source.
+
+### Scoping X to specific handles
+
+When the plan includes the `x` source, `xHandles` scopes the X search to accounts (the xAI `x_search` tool's `allowed_x_handles` / `excluded_x_handles`, max 20 each, mutually exclusive):
+
+- `"xHandles": { "allowed": ["youyuxi", "patak_dev"] }` — **allowlist**: only posts from these handles. Use to read what a project's maintainers are saying.
+- `"xHandles": { "excluded": ["noisy_bot"] }` — **denylist**: all of X except these handles. Use to mute an aggregator or spam account drowning the signal.
+
+Handles are bare (a leading `@` is stripped). Passing both `allowed` and `excluded` is rejected — the API accepts only one.
 
 ## Per-source query recipes
 

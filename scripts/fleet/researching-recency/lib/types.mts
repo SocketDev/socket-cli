@@ -75,6 +75,15 @@ export interface SubQuery {
   weight: number
 }
 
+// X-handle scoping for the x source. `allowed` restricts the X search to those
+// accounts only (an allowlist); `excluded` searches all of X except them (a
+// denylist). Mutually exclusive at the xAI API — allow wins when both are set.
+// Each caps at 20 handles; bare (no leading @).
+export interface XHandles {
+  allowed?: readonly string[] | undefined
+  excluded?: readonly string[] | undefined
+}
+
 // The full plan the model builds for a topic and the engine fuses over.
 export interface QueryPlan {
   // Search shape hint (e.g. 'comparison', 'howTo', 'overview'); guides synthesis.
@@ -85,6 +94,8 @@ export interface QueryPlan {
   // Per-source multipliers applied on top of each subquery weight during fusion.
   sourceWeights: Record<string, number>
   notes: string[]
+  // Optional X-handle allow/deny scoping for the x source.
+  xHandles?: XHandles | undefined
 }
 
 // A fused candidate: one logical result, merged across every (subquery, source)
@@ -117,6 +128,8 @@ export interface FetchContext {
   days: number
   now: number
   perStream: number
+  // Optional X-handle allow/deny, threaded from the plan to the x adapter.
+  xHandles?: XHandles | undefined
 }
 
 // What a source adapter returns: the items it found, plus a status the footer

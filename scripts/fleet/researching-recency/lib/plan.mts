@@ -13,6 +13,7 @@ import type {
   QueryPlan,
   SourceName,
   SubQuery,
+  XHandles,
 } from './types.mts'
 
 // Every source the engine knows how to fetch. A plan may name a subset.
@@ -109,13 +110,52 @@ function validateSubQuery(raw: unknown, path: string): SubQuery {
 // Validate parsed plan JSON into a typed QueryPlan, filling defaults for the
 // optional fields. `rawTopic` is the user's original query, threaded in by the
 // CLI so the plan records what it was built for.
+// Validate an optional handle list (allowed/excluded) into a clean string[].
+// Returns undefined when absent; throws on a non-string-array shape.
+function validateHandleList(
+  raw: unknown,
+  field: string,
+): readonly string[] | undefined {
+  if (raw === undefined) {
+    return undefined
+  }
+  if (!Array.isArray(raw) || raw.some(handle => typeof handle !== 'string')) {
+    throw new Error(
+      `Plan.xHandles.${field} must be an array of X handle strings; saw ${JSON.stringify(raw)}. Use e.g. ["youyuxi", "patak_dev"] (leading @ optional).`,
+    )
+  }
+  return raw as string[]
+}
+
+// Validate the optional X-handle allow/deny block. allowed + excluded are
+// mutually exclusive (the xAI x_search tool rejects both at once).
+function validateXHandles(raw: unknown): XHandles | undefined {
+  if (raw === undefined) {
+    return undefined
+  }
+  if (!isRecord(raw)) {
+    throw new Error(
+      `Plan.xHandles must be an object { allowed?: string[], excluded?: string[] }; saw ${typeof raw}. Omit it, or pass one of the two lists.`,
+    )
+  }
+  const allowed = validateHandleList(raw['allowed'], 'allowed')
+  const excluded = validateHandleList(raw['excluded'], 'excluded')
+  if (allowed && excluded) {
+    throw new Error(
+      'Plan.xHandles.allowed and Plan.xHandles.excluded are mutually exclusive (the xAI x_search tool accepts only one). Keep the allowlist OR the denylist, not both.',
+    )
+  }
+  return { allowed, excluded }
+}
+
 export function validatePlan(raw: unknown, rawTopic: string): QueryPlan {
   if (!isRecord(raw)) {
     throw new Error(
       `Plan must be a JSON object; saw ${typeof raw}. Provide { subqueries: [...] }.`,
     )
   }
-  const { freshnessMode, intent, notes, sourceWeights, subqueries } = raw
+  const { freshnessMode, intent, notes, sourceWeights, subqueries, xHandles } =
+    raw
   if (!Array.isArray(subqueries) || subqueries.length === 0) {
     throw new Error(
       `Plan.subqueries must be a non-empty array; saw ${JSON.stringify(subqueries)}. Add at least one subquery.`,
@@ -161,6 +201,7 @@ export function validatePlan(raw: unknown, rawTopic: string): QueryPlan {
     notes: Array.isArray(notes)
       ? notes.filter((note): note is string => typeof note === 'string')
       : [],
+    xHandles: validateXHandles(xHandles),
   }
 }
 

@@ -143,13 +143,14 @@ export async function run(argv: readonly string[]): Promise<string> {
   }
   const depth = DEPTH_SETTINGS[args.depth] ?? DEPTH_SETTINGS['default']!
   const now = Date.now()
+  const plan = await resolvePlan(args)
   const context: FetchContext = {
     days: args.days,
     now,
     perStream: depth.perStream,
+    xHandles: plan.xHandles,
   }
 
-  const plan = await resolvePlan(args)
   const { results, streams } = await fetchAll(plan, context)
 
   // Web hits come from the model's --web-file, not a network adapter; fold them

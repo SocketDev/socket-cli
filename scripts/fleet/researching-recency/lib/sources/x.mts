@@ -24,9 +24,33 @@ import type {
 
 const RESPONSES_URL = 'https://api.x.ai/v1/responses'
 
-// The Grok model with X search. A current, generally-available default; the
-// account's entitlement governs which models actually resolve.
-const DEFAULT_MODEL = 'grok-4'
+// The Grok model with X search. Tracks the model the xAI X-search docs use; the
+// account's entitlement governs which models actually resolve. Override with
+// XAI_MODEL.
+const DEFAULT_MODEL = 'grok-4.3'
+
+// The xAI x_search tool caps each handle list at 20.
+const MAX_HANDLES = 20
+
+// Handle allow/deny for the x_search tool. allowed = only these accounts;
+// excluded = every account but these. The two are mutually exclusive at the API
+// (allow wins here when both are set). Handles are bare (no leading @).
+export interface XSearchOptions {
+  allowedHandles?: readonly string[] | undefined
+  excludedHandles?: readonly string[] | undefined
+}
+
+// Strip a leading @, drop blanks, de-dupe, and cap at the API's 20-handle limit.
+export function normalizeHandles(handles: readonly string[]): string[] {
+  const seen = new Set<string>()
+  for (let i = 0, { length } = handles; i < length; i += 1) {
+    const handle = handles[i]!.trim().replace(/^@/, '')
+    if (handle) {
+      seen.add(handle)
+    }
+  }
+  return [...seen].slice(0, MAX_HANDLES)
+}
 
 // One post as Grok is asked to return it inside the JSON envelope. url is
 // required (it's the citation); the rest is best-effort.
@@ -48,21 +72,44 @@ export function resolveKey(): string | undefined {
   return process.env['XAI_API_KEY'] || undefined
 }
 
-// Build the Responses-API payload: the x_search tool with the date window, and
-// a prompt asking Grok for a JSON envelope of the top posts.
+// Build the Responses-API payload: the x_search tool with the date window
+// (plus optional handle allow/deny), and a prompt asking Grok for a JSON
+// envelope of the top posts. allowed_x_handles and excluded_x_handles are
+// mutually exclusive at the API, so the allowlist wins when both are supplied.
 export function buildPayload(
   searchQuery: string,
   fromDate: string,
   toDate: string,
   perStream: number,
+  options: XSearchOptions = {},
 ): Record<string, unknown> {
+  const xSearch: Record<string, unknown> = {
+    type: 'x_search',
+    from_date: fromDate,
+    to_date: toDate,
+  }
+  const allowed = options.allowedHandles
+    ? normalizeHandles(options.allowedHandles)
+    : []
+  const excluded = options.excludedHandles
+    ? normalizeHandles(options.excludedHandles)
+    : []
+  if (allowed.length > 0) {
+    xSearch['allowed_x_handles'] = allowed
+  } else if (excluded.length > 0) {
+    xSearch['excluded_x_handles'] = excluded
+  }
+  const scope =
+    allowed.length > 0
+      ? ` from these accounts only: ${allowed.map(h => `@${h}`).join(', ')}`
+      : ''
   return {
     model: process.env['XAI_MODEL'] || DEFAULT_MODEL,
-    tools: [{ type: 'x_search', from_date: fromDate, to_date: toDate }],
+    tools: [xSearch],
     input: [
       {
         role: 'user',
-        content: `Search X for the ${perStream} most relevant posts about "${searchQuery}" between ${fromDate} and ${toDate}. Return ONLY a JSON object of the form {"items":[{"url","text","author","createdAt","likes","reposts","replies","views"}]} — no prose, no markdown fence.`,
+        content: `Search X for the ${perStream} most relevant posts about "${searchQuery}" between ${fromDate} and ${toDate}${scope}. Return ONLY a JSON object of the form {"items":[{"url","text","author","createdAt","likes","reposts","replies","views"}]} — no prose, no markdown fence.`,
       },
     ],
   }
@@ -194,7 +241,10 @@ export const xAdapter: SourceAdapter = {
       const response = await httpJson<unknown>(RESPONSES_URL, {
         method: 'POST',
         body: JSON.stringify(
-          buildPayload(searchQuery, fromDate, toDate, context.perStream),
+          buildPayload(searchQuery, fromDate, toDate, context.perStream, {
+            allowedHandles: context.xHandles?.allowed,
+            excludedHandles: context.xHandles?.excluded,
+          }),
         ),
         headers: { Authorization: `Bearer ${key}` },
         // Grok live-search is slow; give it room.

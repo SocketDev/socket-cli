@@ -159,7 +159,7 @@ For non-trivial work (multi-file refactor, new feature, migration), the plan its
 
 ### Drift watch
 
-🚨 **Drift across fleet repos is a defect, not a feature.** When two socket-\* repos pin different versions of the same shared resource (tool in `external-tools.json`, workflow SHA, CLAUDE.md fleet block, hook, submodule, `packageManager`/`engines`) **opt for the latest**. Reconcile in the same PR or open `chore(wheelhouse): cascade <thing>`. `.gitmodules` `# name-version` annotations `.claude/hooks/fleet/gitmodules-comment-guard/`; SHA-pin reachability by `.claude/hooks/fleet/uses-sha-verify-guard/` (bypass `Allow uses-sha-verify bypass`). Full surface: [`drift-watch`](docs/claude.md/fleet/drift-watch.md) (`.claude/hooks/fleet/drift-check-reminder/`).
+🚨 **Drift across fleet repos is a defect, not a feature.** When two socket-\* repos pin different versions of a resource (tool in `external-tools.json`, workflow SHA, CLAUDE.md fleet block, hook, submodule, `packageManager`/`engines`) **opt for the latest**. Reconcile in-PR or open `chore(wheelhouse): cascade <thing>`. Wide cascades are safe; never warn. `.gitmodules` `# name-version` by `.claude/hooks/fleet/gitmodules-comment-guard/`; SHA-pin by `.claude/hooks/fleet/uses-sha-verify-guard/` (bypass `Allow uses-sha-verify bypass`). Full surface: [`drift-watch`](docs/claude.md/fleet/drift-watch.md) (`.claude/hooks/fleet/drift-check-reminder/`).
 
 ### Stranded cascades
 
